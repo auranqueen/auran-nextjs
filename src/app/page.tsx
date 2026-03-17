@@ -19,23 +19,50 @@ function HomePageInner() {
   const { theme } = useTheme()
   const [isAdmin, setIsAdmin] = useState(false)
 
+  const getDbRole = async (authId: string): Promise<string | null> => {
+    // 1) profiles.role 우선 (요청사항)
+    try {
+      const { data } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('auth_id', authId)
+        .single()
+      if (typeof data?.role === 'string') return data.role
+    } catch {
+      // ignore and fallback
+    }
+
+    // 2) 기존 users.role fallback
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('role')
+        .eq('auth_id', authId)
+        .single()
+      if (typeof data?.role === 'string') return data.role
+    } catch {
+      // ignore
+    }
+
+    return null
+  }
+
   useEffect(() => {
     const checkAdmin = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return
-        const { data } = await supabase
-          .from('users')
-          .select('role')
-          .eq('auth_id', user.id)
-          .single()
-        if (data?.role === 'admin') setIsAdmin(true)
+        const role = await getDbRole(user.id)
+        if (role === 'admin') {
+          setIsAdmin(true)
+          router.replace('/admin')
+        }
       } catch {
         // ignore
       }
     }
     checkAdmin()
-  }, [supabase])
+  }, [router, supabase])
 
   const handleRoleSelect = async (roleId: string) => {
     const normalized = normalizePosition(roleId)
@@ -46,6 +73,11 @@ function HomePageInner() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       router.push('/login?position=' + position)
+      return
+    }
+    const dbRole = await getDbRole(user.id)
+    if (dbRole === 'admin') {
+      router.push('/admin')
       return
     }
     router.push(positionToDashboardPath(position))
