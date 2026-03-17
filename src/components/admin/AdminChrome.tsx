@@ -20,21 +20,31 @@ const GOLD = '#c9a84c'
 const SIDEBAR_W = 228
 
 const MENU = [
-  { section: 'OVERVIEW', items: [{ label: '메인 대시보드', href: '/admin', icon: '📊' }] },
+  { section: 'OVERVIEW', items: [{ label: '통합 현황', href: '/admin', icon: '📊' }, { label: '실시간 모니터', href: '/admin/live', icon: '📡' }] },
   {
     section: 'ROLE MANAGEMENT',
     items: [
       { label: '고객', href: '/admin/members?role=customer', icon: '💧', color: '#c9a84c', sub: '분석·주문·포인트', countKey: 'customer' as const },
       { label: '파트너스', href: '/admin/members?role=partner', icon: '💼', color: '#4a8dc0', sub: '커미션·링크·정산', countKey: 'partner' as const },
       { label: '원장님', href: '/admin/owners', icon: '🏥', color: '#bf5f90', sub: '구독·예약·스토어', countKey: 'owner' as const },
-      { label: '브랜드사', href: '/admin', icon: '🏭', color: '#4cad7e', sub: '납품·공지·정산', countKey: 'brand' as const },
+      { label: '브랜드사', href: '/admin/marketing/products', icon: '🏭', color: '#4cad7e', sub: '납품·공지·정산', countKey: 'brand' as const },
     ],
   },
   {
     section: 'ORDER',
     items: [
-      { label: '배송 관리', href: '/admin', icon: '🚚', badgeKey: 'ship' as const },
-      { label: '주문 내역', href: '/admin/revenue', icon: '📦' },
+      { label: '배송 관리', href: '/admin/shipping', icon: '🚚', badgeKey: 'ship' as const },
+      { label: '주문 내역', href: '/admin/orders', icon: '📦' },
+      { label: '정산 일괄 처리', href: '/admin/settlement', icon: '💰' },
+      { label: '매출 분석', href: '/admin/revenue', icon: '📈' },
+    ],
+  },
+  {
+    section: 'MARKETING',
+    items: [
+      { label: '이벤트·공구 생성', href: '/admin/marketing/events', icon: '🎉' },
+      { label: '공지·푸시 발송', href: '/admin/marketing/push', icon: '📢' },
+      { label: '제품 관리', href: '/admin/marketing/products', icon: '🧴' },
     ],
   },
   {
@@ -43,20 +53,27 @@ const MENU = [
       { label: '포인트 설정', href: '/admin/settings/points', icon: '✨' },
       { label: '수수료·추천 설정', href: '/admin/settings/commission', icon: '💰' },
       { label: '이상 감지·알림', href: '/admin/settings/anomaly', icon: '🚨' },
+      { label: '로그인 기록', href: '/admin/logs', icon: '📋' },
+      { label: '개인정보 접근 로그', href: '/admin/privacy', icon: '🔒' },
     ],
   },
 ] as const
 
 const pageTitleByPath = (path: string) => {
-  if (path === '/admin') return '메인 대시보드'
+  if (path === '/admin') return '통합 현황'
   if (path.startsWith('/admin/live')) return '실시간 모니터'
+  if (path.startsWith('/admin/shipping')) return '배송 관리'
+  if (path.startsWith('/admin/orders')) return '주문 내역'
   if (path.startsWith('/admin/members')) return '회원 관리'
   if (path.startsWith('/admin/owners')) return '원장님 관리'
+  if (path.startsWith('/admin/creators')) return '크리에이터'
   if (path.startsWith('/admin/revenue')) return '매출 분석'
   if (path.startsWith('/admin/settlement')) return '정산 일괄 처리'
   if (path.startsWith('/admin/settings/points')) return '포인트 설정'
   if (path.startsWith('/admin/settings/commission')) return '수수료·추천 설정'
   if (path.startsWith('/admin/settings/anomaly')) return '이상 감지·알림'
+  if (path.startsWith('/admin/logs')) return '로그인 기록'
+  if (path.startsWith('/admin/privacy')) return '개인정보 접근 로그'
   return 'Admin Console'
 }
 

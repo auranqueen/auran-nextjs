@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useSearchParams } from 'next/navigation'
 
 type Member = {
   id: string
@@ -19,6 +20,7 @@ type DetailTab = 'summary' | 'orders' | 'points' | 'logs'
 
 export default function AdminMembersPage() {
   const supabase = createClient()
+  const sp = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [q, setQ] = useState('')
   const [members, setMembers] = useState<Member[]>([])
@@ -43,14 +45,26 @@ export default function AdminMembersPage() {
     run()
   }, [supabase])
 
+  useEffect(() => {
+    const urlQ = (sp.get('q') || '').trim()
+    const urlRole = (sp.get('role') || '').trim()
+    if (urlQ) setQ(urlQ)
+    if (urlRole) {
+      // keep search input, role filter applied in computed list
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sp])
+
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase()
+    const role = (sp.get('role') || '').trim().toLowerCase()
     if (!s) return members
-    return members.filter(m =>
+    const base = members.filter(m =>
       (m.name || '').toLowerCase().includes(s) ||
       (m.email || '').toLowerCase().includes(s) ||
       (m.role || '').toLowerCase().includes(s)
     )
+    return role ? base.filter(m => (m.role || '').toLowerCase() === role) : base
   }, [members, q])
 
   const suspend = async (m: Member) => {
