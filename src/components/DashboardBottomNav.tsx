@@ -7,10 +7,10 @@ type Role = 'customer' | 'partner' | 'salon' | 'brand'
 const NAV: Record<Role, { icon: string; label: string; href: string }[]> = {
   customer: [
     { icon: '🏠', label: '홈', href: '/dashboard/customer' },
-    { icon: '🧬', label: '분석', href: '/dashboard/customer/analysis' },
-    { icon: '💊', label: '제품', href: '/dashboard/customer/products' },
-    { icon: '📅', label: '예약', href: '/dashboard/customer/booking' },
-    { icon: '🌍', label: '마이월드', href: '/dashboard/customer/myworld' },
+    { icon: '🧬', label: '분석', href: '/analysis' },
+    { icon: '💊', label: '제품', href: '/products' },
+    { icon: '📅', label: '예약', href: '/booking' },
+    { icon: '🌍', label: '마이월드', href: '/myworld' },
     { icon: '👤', label: '마이', href: '/my' },
   ],
   partner: [

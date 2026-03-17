@@ -6,9 +6,9 @@ import NoticeBell from '@/components/NoticeBell'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 
 const MENU = [
-  { icon: '🧬', label: 'AI 피부 분석', desc: '내 피부 타입 확인', color: 'rgba(201,168,76,0.12)', border: 'rgba(201,168,76,0.3)', tc: 'var(--gold)', href: '/dashboard/customer/analysis' },
-  { icon: '💊', label: '제품 추천', desc: '맞춤 제품 보기', color: 'rgba(74,141,192,0.1)', border: 'rgba(74,141,192,0.3)', tc: '#4a8dc0', href: '/dashboard/customer/products' },
-  { icon: '📅', label: '살롱 예약', desc: '가까운 클리닉 찾기', color: 'rgba(191,95,144,0.1)', border: 'rgba(191,95,144,0.3)', tc: '#bf5f90', href: '/dashboard/customer/booking' },
+  { icon: '🧬', label: 'AI 피부 분석', desc: '내 피부 타입 확인', color: 'rgba(201,168,76,0.12)', border: 'rgba(201,168,76,0.3)', tc: 'var(--gold)', href: '/analysis' },
+  { icon: '💊', label: '제품 추천', desc: '맞춤 제품 보기', color: 'rgba(74,141,192,0.1)', border: 'rgba(74,141,192,0.3)', tc: '#4a8dc0', href: '/products' },
+  { icon: '📅', label: '살롱 예약', desc: '가까운 클리닉 찾기', color: 'rgba(191,95,144,0.1)', border: 'rgba(191,95,144,0.3)', tc: '#bf5f90', href: '/booking' },
   { icon: '📦', label: '구매 내역', desc: '주문·배송 확인', color: 'rgba(76,173,126,0.1)', border: 'rgba(76,173,126,0.3)', tc: '#4cad7e', href: '/orders' },
   { icon: '💳', label: '내 지갑', desc: `포인트·충전 관리`, color: 'rgba(149,104,212,0.1)', border: 'rgba(149,104,212,0.3)', tc: '#9568d4', href: '/wallet' },
   { icon: '📓', label: '피부 일지', desc: '매일 기록하고 적립', color: 'rgba(240,160,80,0.1)', border: 'rgba(240,160,80,0.3)', tc: '#f0a050', href: '/diary' },
@@ -75,10 +75,10 @@ export default function CustomerDashboardClient({ profile, notifications, recent
               <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 3 }}>내 피부 타입</div>
               <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--gold)' }}>🧬 {profile.skin_type}</div>
             </div>
-            <button onClick={() => router.push('/dashboard/customer/analysis')} style={{ fontSize: 11, color: 'var(--gold)', background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 8, padding: '6px 12px' }}>재분석</button>
+            <button onClick={() => router.push('/analysis')} style={{ fontSize: 11, color: 'var(--gold)', background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 8, padding: '6px 12px' }}>재분석</button>
           </div>
         ) : (
-          <button onClick={() => router.push('/dashboard/customer/analysis')} style={{ width: '100%', padding: '15px', background: 'linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))', border: '1px solid rgba(201,168,76,0.35)', borderRadius: 13, color: 'var(--gold)', fontSize: 14, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <button onClick={() => router.push('/analysis')} style={{ width: '100%', padding: '15px', background: 'linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))', border: '1px solid rgba(201,168,76,0.35)', borderRadius: 13, color: 'var(--gold)', fontSize: 14, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             🧬 AI 피부 분석 무료 체험 → 500P 적립
           </button>
         )}

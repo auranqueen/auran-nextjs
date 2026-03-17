@@ -1,0 +1,19 @@
+'use client'
+
+import DashboardHeader from '@/components/DashboardHeader'
+import UnderConstructionCard from '@/components/UnderConstructionCard'
+import DashboardBottomNav from '@/components/DashboardBottomNav'
+import NoticeBell from '@/components/NoticeBell'
+
+export default function AnalysisPage() {
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
+      <DashboardHeader title="AI 피부분석" right={<NoticeBell />} />
+      <div style={{ padding: '18px 18px 0' }}>
+        <UnderConstructionCard title="🚧 준비 중입니다" desc="AI 피부분석 기능을 준비 중입니다." />
+      </div>
+      <DashboardBottomNav role="customer" />
+    </div>
+  )
+}
+
