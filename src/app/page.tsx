@@ -80,6 +80,15 @@ function HomePageInner() {
         zIndex: 50,
       }}
     >
+      <style>{`
+        .only-mobile, .only-desktop { display: none !important; }
+        @media (max-width: 767px) {
+          .only-mobile { display: flex !important; }
+        }
+        @media (min-width: 768px) {
+          .only-desktop { display: flex !important; }
+        }
+      `}</style>
 
       {/* 어드민 버튼 */}
       <button
@@ -105,7 +114,7 @@ function HomePageInner() {
       </button>
 
       {/* 모바일 레이아웃 */}
-      <div className="flex md:hidden" style={{ flexDirection: 'column', flex: 1, padding: '48px 16px 120px' }}>
+      <div className="only-mobile" style={{ flexDirection: 'column', flex: 1, padding: '48px 16px 120px' }}>
           <div style={{ marginBottom: '24px' }}>
             <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '22px', fontWeight: 700, letterSpacing: '4px', color: theme?.logo || '#fff', transition: 'color 1.2s' }}>
               AURAN
@@ -136,7 +145,7 @@ function HomePageInner() {
       </div>
 
       {/* PC 레이아웃 */}
-      <div className="hidden md:flex" style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: '60px 48px' }}>
+      <div className="only-desktop" style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: '60px 48px' }}>
           <div style={{ width: '100%', maxWidth: '960px', display: 'flex', gap: '64px', alignItems: 'center' }}>
 
             {/* 왼쪽 텍스트 */}
