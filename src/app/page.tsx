@@ -81,7 +81,7 @@ function HomePageInner() {
           {/* 역할 선택: PC에서 중앙 2x2 그리드 */}
           <div className="md:flex-1 md:flex md:justify-center" style={{ marginTop: 12 }}>
             <div className="md:max-w-[520px] w-full">
-              <div className="grid grid-cols-2 gap-2 place-items-stretch">
+              <div className="grid grid-cols-2 gap-2 px-2">
                 {cards.map(r => (
                   <button
                     key={r.id}
@@ -89,7 +89,7 @@ function HomePageInner() {
                       localStorage.setItem(POSITION_STORAGE_KEY, r.id)
                       router.push(`/login?role=${r.id}`)
                     }}
-                    className="w-full md:aspect-square"
+                    className="w-full"
                     style={{
                       background: r.t?.bg ?? r.bg,
                       border: `1px solid ${r.t?.border ?? r.border}`,
