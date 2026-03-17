@@ -81,13 +81,6 @@ function HomePageInner() {
           {/* 역할 선택: PC에서 중앙 2x2 그리드 */}
           <div className="md:flex-1 md:flex md:justify-center" style={{ marginTop: 12 }}>
             <div className="md:max-w-[520px] w-full">
-              <div
-                className="md:text-center"
-                style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', marginBottom: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.08em' }}
-              >
-                역할을 선택해 시작하세요
-              </div>
-
               <div className="grid grid-cols-2 gap-2 place-items-stretch">
                 {cards.map(r => (
                   <button
@@ -101,7 +94,7 @@ function HomePageInner() {
                       background: r.t?.bg ?? r.bg,
                       border: `1px solid ${r.t?.border ?? r.border}`,
                       borderRadius: 16,
-                      padding: '12px 10px',
+                      padding: 12,
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
@@ -109,7 +102,7 @@ function HomePageInner() {
                       gap: 8,
                       textAlign: 'center',
                       transition: 'all 1.2s ease',
-                      minHeight: 96,
+                      height: 130,
                     }}
                     onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
                     onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
@@ -120,7 +113,7 @@ function HomePageInner() {
                       <div
                         title={r.desc}
                         style={{
-                          fontSize: 9,
+                          fontSize: 10,
                           color: r.t?.desc ?? 'var(--text3)',
                           lineHeight: 1.25,
                           whiteSpace: 'nowrap',
