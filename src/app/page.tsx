@@ -69,26 +69,27 @@ function HomePageInner() {
   })
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        minHeight: '100vh',
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        overflowX: 'hidden',
-        zIndex: 50,
-      }}
-    >
+    <>
       <style>{`
-        .only-mobile, .only-desktop { display: none !important; }
-        @media (max-width: 767px) {
-          .only-mobile { display: flex !important; }
-        }
-        @media (min-width: 768px) {
-          .only-desktop { display: flex !important; }
-        }
-      `}</style>
+          .only-mobile, .only-desktop { display: none !important; }
+          @media (max-width: 767px) {
+            .only-mobile { display: flex !important; }
+          }
+          @media (min-width: 768px) {
+            .only-desktop { display: flex !important; }
+          }
+        `}</style>
+      <div
+        style={{
+          position: 'relative',
+          minHeight: '100vh',
+          width: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          overflowX: 'hidden',
+          zIndex: 50,
+        }}
+      >
 
       {/* 어드민 버튼 */}
       <button
@@ -184,7 +185,8 @@ function HomePageInner() {
       <div style={{ position: 'absolute', left: 0, right: 0, bottom: '80px', textAlign: 'center', fontSize: '9px', letterSpacing: '1px', color: theme?.footColor || '#555', transition: 'color 1.2s', pointerEvents: 'none' }}>
         © 2026 AURAN · 개인정보처리방침 · 이용약관
       </div>
-    </div>
+      </div>
+    </>
   )
 }
 
