@@ -1,18 +1,25 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+'use client'
 
-export default async function DashboardPage() {
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { normalizePosition, positionToDashboardPath, POSITION_STORAGE_KEY } from '@/lib/position'
+
+export default function DashboardPage() {
+  const router = useRouter()
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('role')
-    .eq('auth_id', user.id)
-    .single()
+  useEffect(() => {
+    ;(async () => {
+      const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
+      const { data } = await supabase.auth.getUser()
+      if (!data.user || !stored) {
+        router.replace('/')
+        return
+      }
+      router.replace(positionToDashboardPath(stored))
+    })()
+  }, [router, supabase])
 
-  const role = profile?.role || 'customer'
-  if (role === 'admin') redirect('/admin')
-  redirect(`/dashboard/${role}`)
+  return null
 }

@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { POSITION_STORAGE_KEY } from '@/lib/position'
 
 type Tab = 'dashboard' | 'shipping' | 'brands' | 'members' | 'settlement' | 'refund' | 'logs'
 
@@ -21,7 +22,11 @@ export default function AdminClient({ profile, stats, pendingOrders, pendingBran
   const [shipInput, setShipInput] = useState<Record<string, { courier: string; tracking: string }>>({})
   const [toast, setToast] = useState('')
 
-  async function logout() { await supabase.auth.signOut(); router.push('/') }
+  async function logout() {
+    await supabase.auth.signOut()
+    localStorage.removeItem(POSITION_STORAGE_KEY)
+    router.push('/')
+  }
 
   function showToast(msg: string) { setToast(msg); setTimeout(() => setToast(''), 3000) }
 

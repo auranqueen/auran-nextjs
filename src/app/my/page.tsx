@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { POSITION_STORAGE_KEY } from '@/lib/position'
 
 export default function MyPage() {
   const router = useRouter()
@@ -29,6 +30,7 @@ export default function MyPage() {
 
   async function logout() {
     await supabase.auth.signOut()
+    localStorage.removeItem(POSITION_STORAGE_KEY)
     router.push('/')
   }
 

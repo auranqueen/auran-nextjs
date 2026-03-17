@@ -1,11 +1,16 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { POSITION_STORAGE_KEY } from '@/lib/position'
 
 export default function BrandDashClient({ profile, brand, products }: { profile: any; brand: any; products: any[] }) {
   const router = useRouter()
   const supabase = createClient()
-  async function logout() { await supabase.auth.signOut(); router.push('/') }
+  async function logout() {
+    await supabase.auth.signOut()
+    localStorage.removeItem(POSITION_STORAGE_KEY)
+    router.push('/')
+  }
 
   const isActive = brand?.status === 'active'
 

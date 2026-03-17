@@ -1,7 +1,8 @@
 'use client'
-import { useState, Suspense } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { normalizePosition, positionToDashboardPath, POSITION_STORAGE_KEY } from '@/lib/position'
 
 const ROLE_META: Record<string, { label: string; icon: string; color: string; border: string; bg: string; hint: string }> = {
   customer: { label: '고객', icon: '💧', color: '#c9a84c', border: 'rgba(201,168,76,0.35)', bg: 'rgba(201,168,76,0.08)', hint: '피부 분석·제품 추천·살롱 예약' },
@@ -12,7 +13,7 @@ const ROLE_META: Record<string, { label: string; icon: string; color: string; bo
 }
 
 function LoginForm() {
-  const supabase=createClient()
+  const supabase = createClient()
   const router = useRouter()
   const params = useSearchParams()
   const role = params.get('role') || 'customer'
@@ -23,6 +24,16 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [socialLoading, setSocialLoading] = useState('')
+
+  useEffect(() => {
+    ;(async () => {
+      const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
+      if (!stored) return
+      const { data } = await supabase.auth.getUser()
+      if (!data.user) return
+      router.replace(positionToDashboardPath(stored))
+    })()
+  }, [router, supabase])
 
 
   async function handleLogin(e: React.FormEvent) {
@@ -46,9 +57,13 @@ function LoginForm() {
         return
       }
 
-      const userRole = userData?.role || role
-      if (userRole === 'admin') router.push('/admin')
-      else router.push(`/dashboard/${userRole}`)
+      const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
+      const fromDb = normalizePosition(userData?.role)
+      const fromParam = normalizePosition(role)
+      const position = fromDb || stored || fromParam || 'customer'
+
+      localStorage.setItem(POSITION_STORAGE_KEY, position)
+      router.push(positionToDashboardPath(position))
     } catch (err: any) {
       setError(err.message === 'Invalid login credentials'
         ? '이메일 또는 비밀번호가 맞지 않습니다.'
@@ -60,10 +75,14 @@ function LoginForm() {
 
   async function handleSocial(provider: 'kakao' | 'google') {
     setSocialLoading(provider)
+    const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
+    const fromParam = normalizePosition(role)
+    const position = fromParam || stored || 'customer'
+    localStorage.setItem(POSITION_STORAGE_KEY, position)
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?role=${role}`,
+        redirectTo: `${window.location.origin}/auth/callback?role=${position}`,
         queryParams: provider === 'kakao' ? { prompt: 'login' } : {},
       },
     })

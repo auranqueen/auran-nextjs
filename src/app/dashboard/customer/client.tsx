@@ -1,6 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { POSITION_STORAGE_KEY } from '@/lib/position'
 
 const MENU = [
   { icon: '🧬', label: 'AI 피부 분석', desc: '내 피부 타입 확인', color: 'rgba(201,168,76,0.12)', border: 'rgba(201,168,76,0.3)', tc: 'var(--gold)', href: '/analysis' },
@@ -24,6 +25,7 @@ export default function CustomerDashboardClient({ profile, notifications, recent
 
   async function logout() {
     await supabase.auth.signOut()
+    localStorage.removeItem(POSITION_STORAGE_KEY)
     router.push('/')
   }
 

@@ -1,6 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { POSITION_STORAGE_KEY } from '@/lib/position'
 
 const PLAN_COLORS: Record<string, string> = { basic: '#4a8dc0', pro: '#bf5f90', premium: '#c9a84c' }
 const GRADE_COLORS: Record<string, string> = { none: 'var(--text3)', basic: '#4a8dc0', silver: '#aab8c8', gold: '#c9a84c' }
@@ -8,7 +9,11 @@ const GRADE_COLORS: Record<string, string> = { none: 'var(--text3)', basic: '#4a
 export default function OwnerDashClient({ profile, salon, todayBookings }: { profile: any; salon: any; todayBookings: any[] }) {
   const router = useRouter()
   const supabase = createClient()
-  async function logout() { await supabase.auth.signOut(); router.push('/') }
+  async function logout() {
+    await supabase.auth.signOut()
+    localStorage.removeItem(POSITION_STORAGE_KEY)
+    router.push('/')
+  }
 
   const plan = profile.plan || 'basic'
   const grade = profile.store_grade || 'none'

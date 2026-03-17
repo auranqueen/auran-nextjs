@@ -1,13 +1,18 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { POSITION_STORAGE_KEY } from '@/lib/position'
 
 export default function PartnerDashClient({ profile }: { profile: any }) {
   const router = useRouter()
   const supabase = createClient()
   const myLink = `${typeof window !== 'undefined' ? window.location.origin : 'https://auran.kr'}/join/customer?ref=${profile.referral_code || 'XXXXXX'}`
 
-  async function logout() { await supabase.auth.signOut(); router.push('/') }
+  async function logout() {
+    await supabase.auth.signOut()
+    localStorage.removeItem(POSITION_STORAGE_KEY)
+    router.push('/')
+  }
 
   const gradeColors: Record<string, string> = { rookie: '#9568d4', silver: '#aab8c8', gold: '#c9a84c', platinum: '#e8c870' }
   const grade = profile.partner_grade || 'rookie'
