@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { normalizePosition, positionToDashboardPath } from '@/lib/position'
 import { MonthThemeProvider, useTheme } from '@/components/MonthTheme'
-import { useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 const ROLES = [
   { id: 'customer', icon: '💧', name: '고객',    desc: '피부분석 · 제품추천 · 살롱예약 · 마이월드' },
@@ -18,10 +18,6 @@ function HomePageInner() {
   const supabase = createClient()
   const { theme } = useTheme()
   const [isAdmin, setIsAdmin] = useState(false)
-  const [isMobile, setIsMobile] = useState<boolean | null>(() => {
-    if (typeof window === 'undefined') return null
-    return window.matchMedia('(max-width: 767px)').matches
-  })
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -40,13 +36,6 @@ function HomePageInner() {
     }
     checkAdmin()
   }, [supabase])
-
-  useLayoutEffect(() => {
-    const update = () => setIsMobile(window.matchMedia('(max-width: 767px)').matches)
-    update()
-    window.addEventListener('resize', update)
-    return () => window.removeEventListener('resize', update)
-  }, [])
 
   const handleRoleSelect = async (roleId: string) => {
     const normalized = normalizePosition(roleId)
@@ -115,11 +104,8 @@ function HomePageInner() {
         {isAdmin ? '👑 ADMIN CONSOLE' : '⚙️ 어드민'}
       </button>
 
-      {isMobile === null ? (
-        <div style={{ flex: 1 }} />
-      ) : isMobile ? (
-        /* 모바일 레이아웃 */
-        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '48px 16px 120px' }}>
+      {/* 모바일 레이아웃 */}
+      <div className="flex md:hidden" style={{ flexDirection: 'column', flex: 1, padding: '48px 16px 120px' }}>
           <div style={{ marginBottom: '24px' }}>
             <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '22px', fontWeight: 700, letterSpacing: '4px', color: theme?.logo || '#fff', transition: 'color 1.2s' }}>
               AURAN
@@ -147,10 +133,10 @@ function HomePageInner() {
               </button>
             ))}
           </div>
-        </div>
-      ) : (
-        /* PC 레이아웃 */
-        <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', padding: '60px 48px' }}>
+      </div>
+
+      {/* PC 레이아웃 */}
+      <div className="hidden md:flex" style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: '60px 48px' }}>
           <div style={{ width: '100%', maxWidth: '960px', display: 'flex', gap: '64px', alignItems: 'center' }}>
 
             {/* 왼쪽 텍스트 */}
@@ -183,8 +169,7 @@ function HomePageInner() {
               ))}
             </div>
           </div>
-        </div>
-      )}
+      </div>
 
       {/* 푸터 */}
       <div style={{ position: 'absolute', left: 0, right: 0, bottom: '80px', textAlign: 'center', fontSize: '9px', letterSpacing: '1px', color: theme?.footColor || '#555', transition: 'color 1.2s', pointerEvents: 'none' }}>
