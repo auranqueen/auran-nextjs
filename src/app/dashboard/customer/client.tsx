@@ -3,11 +3,12 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
 import NoticeBell from '@/components/NoticeBell'
+import DashboardBottomNav from '@/components/DashboardBottomNav'
 
 const MENU = [
-  { icon: '🧬', label: 'AI 피부 분석', desc: '내 피부 타입 확인', color: 'rgba(201,168,76,0.12)', border: 'rgba(201,168,76,0.3)', tc: 'var(--gold)', href: '/analysis' },
-  { icon: '💊', label: '제품 추천', desc: '맞춤 제품 보기', color: 'rgba(74,141,192,0.1)', border: 'rgba(74,141,192,0.3)', tc: '#4a8dc0', href: '/products' },
-  { icon: '📅', label: '살롱 예약', desc: '가까운 클리닉 찾기', color: 'rgba(191,95,144,0.1)', border: 'rgba(191,95,144,0.3)', tc: '#bf5f90', href: '/booking' },
+  { icon: '🧬', label: 'AI 피부 분석', desc: '내 피부 타입 확인', color: 'rgba(201,168,76,0.12)', border: 'rgba(201,168,76,0.3)', tc: 'var(--gold)', href: '/dashboard/customer/analysis' },
+  { icon: '💊', label: '제품 추천', desc: '맞춤 제품 보기', color: 'rgba(74,141,192,0.1)', border: 'rgba(74,141,192,0.3)', tc: '#4a8dc0', href: '/dashboard/customer/products' },
+  { icon: '📅', label: '살롱 예약', desc: '가까운 클리닉 찾기', color: 'rgba(191,95,144,0.1)', border: 'rgba(191,95,144,0.3)', tc: '#bf5f90', href: '/dashboard/customer/booking' },
   { icon: '📦', label: '구매 내역', desc: '주문·배송 확인', color: 'rgba(76,173,126,0.1)', border: 'rgba(76,173,126,0.3)', tc: '#4cad7e', href: '/orders' },
   { icon: '💳', label: '내 지갑', desc: `포인트·충전 관리`, color: 'rgba(149,104,212,0.1)', border: 'rgba(149,104,212,0.3)', tc: '#9568d4', href: '/wallet' },
   { icon: '📓', label: '피부 일지', desc: '매일 기록하고 적립', color: 'rgba(240,160,80,0.1)', border: 'rgba(240,160,80,0.3)', tc: '#f0a050', href: '/diary' },
@@ -35,7 +36,7 @@ export default function CustomerDashboardClient({ profile, notifications, recent
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
 
       {/* 헤더 */}
       <div style={{ background: 'linear-gradient(160deg,#0a0c0f,#111318)', borderBottom: '1px solid var(--border)', padding: '18px 20px 16px' }}>
@@ -65,7 +66,7 @@ export default function CustomerDashboardClient({ profile, notifications, recent
         </div>
       </div>
 
-      <div style={{ padding: '18px 18px 80px' }}>
+      <div style={{ padding: '18px 18px 0' }}>
 
         {/* 피부 타입 */}
         {profile.skin_type ? (
@@ -74,10 +75,10 @@ export default function CustomerDashboardClient({ profile, notifications, recent
               <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 3 }}>내 피부 타입</div>
               <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--gold)' }}>🧬 {profile.skin_type}</div>
             </div>
-            <button onClick={() => router.push('/analysis')} style={{ fontSize: 11, color: 'var(--gold)', background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 8, padding: '6px 12px' }}>재분석</button>
+            <button onClick={() => router.push('/dashboard/customer/analysis')} style={{ fontSize: 11, color: 'var(--gold)', background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 8, padding: '6px 12px' }}>재분석</button>
           </div>
         ) : (
-          <button onClick={() => router.push('/analysis')} style={{ width: '100%', padding: '15px', background: 'linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))', border: '1px solid rgba(201,168,76,0.35)', borderRadius: 13, color: 'var(--gold)', fontSize: 14, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <button onClick={() => router.push('/dashboard/customer/analysis')} style={{ width: '100%', padding: '15px', background: 'linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))', border: '1px solid rgba(201,168,76,0.35)', borderRadius: 13, color: 'var(--gold)', fontSize: 14, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             🧬 AI 피부 분석 무료 체험 → 500P 적립
           </button>
         )}
@@ -157,22 +158,7 @@ export default function CustomerDashboardClient({ profile, notifications, recent
         )}
       </div>
 
-      {/* 하단 탭바 */}
-      <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 480, background: 'rgba(10,12,15,0.95)', backdropFilter: 'blur(12px)', borderTop: '1px solid var(--border)', display: 'flex', padding: '10px 0 20px' }}>
-        {[
-          { icon: '🏠', label: '홈', href: '/dashboard/customer' },
-          { icon: '🧬', label: '분석', href: '/analysis' },
-          { icon: '💊', label: '제품', href: '/products' },
-          { icon: '🏭', label: '브랜드사', href: '/dashboard/brand' },
-          { icon: '📅', label: '예약', href: '/booking' },
-          { icon: '👤', label: '마이', href: '/my' },
-        ].map(t => (
-          <button key={t.label} onClick={() => router.push(t.href)} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: 'none', border: 'none', color: 'var(--text3)' }}>
-            <span style={{ fontSize: 20 }}>{t.icon}</span>
-            <span style={{ fontSize: 9 }}>{t.label}</span>
-          </button>
-        ))}
-      </div>
+      <DashboardBottomNav role="customer" />
     </div>
   )
 }

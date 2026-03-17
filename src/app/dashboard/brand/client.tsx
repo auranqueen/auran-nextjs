@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
 import NoticeBell from '@/components/NoticeBell'
+import DashboardBottomNav from '@/components/DashboardBottomNav'
 
 export default function BrandDashClient({ profile, brand, products }: { profile: any; brand: any; products: any[] }) {
   const router = useRouter()
@@ -16,7 +17,7 @@ export default function BrandDashClient({ profile, brand, products }: { profile:
   const isActive = brand?.status === 'active'
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
       <div style={{ background: 'linear-gradient(160deg,#0a180a,#0d1a0d)', borderBottom: '1px solid rgba(76,173,126,0.18)', padding: '20px 20px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
           <div>
@@ -43,7 +44,7 @@ export default function BrandDashClient({ profile, brand, products }: { profile:
         )}
       </div>
 
-      <div style={{ padding: '18px 18px 80px' }}>
+      <div style={{ padding: '18px 18px 0' }}>
         {!brand ? (
           <div style={{ textAlign: 'center', paddingTop: 20 }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🏭</div>
@@ -86,6 +87,7 @@ export default function BrandDashClient({ profile, brand, products }: { profile:
           </div>
         )}
       </div>
+      <DashboardBottomNav role="brand" />
     </div>
   )
 }

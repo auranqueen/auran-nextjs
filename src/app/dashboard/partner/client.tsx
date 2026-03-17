@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
 import NoticeBell from '@/components/NoticeBell'
+import DashboardBottomNav from '@/components/DashboardBottomNav'
 
 export default function PartnerDashClient({ profile }: { profile: any }) {
   const router = useRouter()
@@ -19,7 +20,7 @@ export default function PartnerDashClient({ profile }: { profile: any }) {
   const grade = profile.partner_grade || 'rookie'
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
       {/* 헤더 */}
       <div style={{ background: 'linear-gradient(160deg,#090b12,#0f1320)', borderBottom: '1px solid rgba(74,141,192,0.2)', padding: '20px 20px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
@@ -43,7 +44,7 @@ export default function PartnerDashClient({ profile }: { profile: any }) {
         </div>
       </div>
 
-      <div style={{ padding: '18px 18px 80px' }}>
+      <div style={{ padding: '18px 18px 0' }}>
         {/* 내 추천 링크 */}
         <div style={{ background: 'rgba(74,141,192,0.06)', border: '1px solid rgba(74,141,192,0.25)', borderRadius: 13, padding: '14px 15px', marginBottom: 16 }}>
           <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: '#4a8dc0', letterSpacing: '0.1em', marginBottom: 8 }}>MY REFERRAL LINK</div>
@@ -79,6 +80,7 @@ export default function PartnerDashClient({ profile }: { profile: any }) {
           ))}
         </div>
       </div>
+      <DashboardBottomNav role="partner" />
     </div>
   )
 }
