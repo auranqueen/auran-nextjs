@@ -28,6 +28,13 @@ type LocalImage = {
   error?: string
 }
 
+type ProductLite = {
+  id: string
+  name: string
+  thumb_img?: string | null
+  retail_price?: number | null
+}
+
 function uid() {
   return `${Date.now()}_${Math.random().toString(16).slice(2)}`
 }
@@ -43,6 +50,11 @@ export default function CommunityWritePage() {
   const [content, setContent] = useState('')
   const [tagInput, setTagInput] = useState('')
   const [hashtags, setHashtags] = useState<string[]>([])
+  const [productTags, setProductTags] = useState<ProductLite[]>([])
+  const [productModal, setProductModal] = useState(false)
+  const [productQ, setProductQ] = useState('')
+  const [productResults, setProductResults] = useState<ProductLite[]>([])
+  const [productLoading, setProductLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [me, setMe] = useState<{ id: string; name?: string | null } | null>(null)
 
@@ -101,6 +113,41 @@ export default function CommunityWritePage() {
   }
 
   const removeTag = (t: string) => setHashtags(prev => prev.filter(x => x !== t))
+
+  const openProductModal = async () => {
+    setProductModal(true)
+    if (productResults.length === 0) {
+      setProductLoading(true)
+      const { data } = await supabase
+        .from('products')
+        .select('id,name,thumb_img,retail_price,status')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(60)
+      setProductResults(((data || []) as any[]).map(p => ({ id: p.id, name: p.name, thumb_img: p.thumb_img, retail_price: p.retail_price })))
+      setProductLoading(false)
+    }
+  }
+
+  const filteredProducts = useMemo(() => {
+    const s = productQ.trim().toLowerCase()
+    if (!s) return productResults
+    return productResults.filter(p => (p.name || '').toLowerCase().includes(s))
+  }, [productQ, productResults])
+
+  const toggleProduct = (p: ProductLite) => {
+    setProductTags(prev => {
+      const exists = prev.some(x => x.id === p.id)
+      if (exists) return prev.filter(x => x.id !== p.id)
+      if (prev.length >= 3) {
+        alert('제품 태그는 최대 3개까지 가능합니다.')
+        return prev
+      }
+      return [...prev, p]
+    })
+  }
+
+  const removeProduct = (id: string) => setProductTags(prev => prev.filter(x => x.id !== id))
 
   const pickImages = () => fileRef.current?.click()
 
@@ -183,6 +230,7 @@ export default function CommunityWritePage() {
         content: content.trim(),
         image_urls: urls,
         hashtags,
+        product_tags: productTags.map(p => p.id),
         created_at: new Date().toISOString(),
       })
       if (error) {
@@ -333,6 +381,67 @@ export default function CommunityWritePage() {
           />
         </div>
 
+        {/* Product tags */}
+        <div style={{ marginTop: 12, background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '12px 12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: 'rgba(255,255,255,0.9)' }}>제품 태그</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{productTags.length}/3</div>
+          </div>
+          <button
+            onClick={openProductModal}
+            disabled={saving}
+            style={{
+              width: '100%',
+              padding: '12px 12px',
+              borderRadius: 14,
+              background: 'rgba(255,255,255,0.04)',
+              border: `1px solid ${BORDER}`,
+              color: 'rgba(255,255,255,0.85)',
+              fontWeight: 900,
+              cursor: saving ? 'not-allowed' : 'pointer',
+              textAlign: 'left',
+            }}
+          >
+            🏷️ 제품 태그하기
+          </button>
+
+          {productTags.length > 0 && (
+            <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {productTags.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => router.push(`/products?focus=${encodeURIComponent(p.id)}`)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 10px',
+                    borderRadius: 999,
+                    background: 'rgba(201,168,76,0.10)',
+                    border: '1px solid rgba(201,168,76,0.28)',
+                    color: GOLD,
+                    fontSize: 12,
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    maxWidth: '100%',
+                  }}
+                >
+                  <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 180 }}>{p.name}</span>
+                  <span style={{ color: 'rgba(201,168,76,0.75)', fontWeight: 800 }}>›</span>
+                  <span
+                    onClick={(e) => { e.stopPropagation(); removeProduct(p.id) }}
+                    style={{ marginLeft: 2, color: GOLD, fontSize: 14, lineHeight: 1 }}
+                    role="button"
+                    aria-label="제품 태그 삭제"
+                  >
+                    ×
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Title */}
         <div style={{ marginTop: 14, background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '12px 12px' }}>
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>제목</div>
@@ -388,6 +497,91 @@ export default function CommunityWritePage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.70)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 16, padding: '14px 16px', color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: 900 }}>
             저장 중…
+          </div>
+        </div>
+      )}
+
+      {/* Product modal */}
+      {productModal && (
+        <div
+          onClick={() => setProductModal(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 60, display: 'flex', alignItems: 'flex-end' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 560, margin: '0 auto', background: '#141414', borderRadius: '24px 24px 0 0', padding: '14px 14px 18px', border: `1px solid ${BORDER}` }}
+          >
+            <div style={{ width: 44, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.18)', margin: '4px auto 10px' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+              <div style={{ fontSize: 14, fontWeight: 900, color: '#fff' }}>제품 태그하기</div>
+              <button
+                onClick={() => setProductModal(false)}
+                style={{ background: 'transparent', border: 'none', color: GOLD, fontWeight: 900, cursor: 'pointer', padding: 6 }}
+              >
+                완료
+              </button>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <input
+                value={productQ}
+                onChange={e => setProductQ(e.target.value)}
+                placeholder="제품 검색"
+                style={{ width: '100%', padding: '12px 12px', borderRadius: 14, background: '#0f0f0f', border: `1px solid ${BORDER}`, color: '#fff', outline: 'none', fontSize: 13 }}
+              />
+            </div>
+
+            <div style={{ marginTop: 10, maxHeight: '55vh', overflowY: 'auto', borderRadius: 16, border: `1px solid ${BORDER}`, background: CARD }}>
+              {productLoading ? (
+                <div style={{ padding: 14, fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>불러오는 중...</div>
+              ) : filteredProducts.length === 0 ? (
+                <div style={{ padding: 14, fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>검색 결과가 없습니다.</div>
+              ) : (
+                filteredProducts.map(p => {
+                  const selected = productTags.some(x => x.id === p.id)
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => toggleProduct(p)}
+                      style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '12px 12px',
+                        borderTop: '1px solid rgba(255,255,255,0.06)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: 10,
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                        <div style={{ width: 42, height: 42, borderRadius: 12, background: '#111', border: `1px solid ${BORDER}`, overflow: 'hidden', flexShrink: 0 }}>
+                          {p.thumb_img ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.35)', fontSize: 16 }}>
+                              🧴
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                          {typeof p.retail_price === 'number' ? (
+                            <div style={{ marginTop: 4, fontSize: 11, color: 'rgba(255,255,255,0.55)', fontFamily: "'JetBrains Mono', monospace" }}>₩{p.retail_price.toLocaleString()}</div>
+                          ) : null}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 11, padding: '5px 9px', borderRadius: 999, border: `1px solid ${selected ? 'rgba(201,168,76,0.35)' : 'rgba(255,255,255,0.10)'}`, background: selected ? 'rgba(201,168,76,0.16)' : 'rgba(255,255,255,0.06)', color: selected ? GOLD : 'rgba(255,255,255,0.65)', fontWeight: 900 }}>
+                        {selected ? '선택됨' : '선택'}
+                      </div>
+                    </button>
+                  )
+                })
+              )}
+            </div>
           </div>
         </div>
       )}
