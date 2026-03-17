@@ -40,7 +40,7 @@ function HomePageInner() {
       <div style={{ padding: '24px 20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color: theme.logo || '#e8c870', letterSpacing: '0.15em', transition: 'all 1.2s ease' }}>AURAN</div>
-          <div style={{ fontSize: 10, color: theme.logoSub || 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", marginTop: 2, transition: 'all 1.2s ease' }}>AI BEAUTY PLATFORM</div>
+          <div style={{ fontSize: 10, color: theme.logoSub || 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", marginTop: 2, transition: 'all 1.2s ease' }}>AI BEAUTY FOUNDATION</div>
         </div>
         <button
           onClick={() => router.push('/admin')}
@@ -67,10 +67,10 @@ function HomePageInner() {
           <div className="md:flex-1" style={{ textAlign: 'center' }}>
             <div
               className="md:text-left"
-              style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 24, color: theme.titleColor || 'var(--text)', lineHeight: 1.4, marginBottom: 10, transition: 'all 1.2s ease' }}
+              style={{ fontFamily: 'var(--font-nanum)', fontSize: 24, color: theme.titleColor || 'var(--text)', lineHeight: 1.4, marginBottom: 10, transition: 'all 1.2s ease' }}
             >
               피부결이 바뀌면,<br />
-              <span style={{ color: theme.titleEmColor || 'var(--gold)', transition: 'all 1.2s ease' }}>화장이 달라집니다</span>
+              <span style={{ fontFamily: 'var(--font-nanum)', color: theme.titleEmColor || 'var(--gold)', transition: 'all 1.2s ease' }}>화장이 달라집니다</span>
             </div>
             <div className="md:text-left" style={{ fontSize: 13, color: theme.subColor || 'var(--text3)', lineHeight: 1.7, transition: 'all 1.2s ease' }}>
               AI 피부 분석 · 맞춤 제품 추천<br />
