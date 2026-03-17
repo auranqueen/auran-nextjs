@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { normalizePosition, positionToDashboardPath } from '@/lib/position'
 import { MonthThemeProvider, useTheme } from '@/components/MonthTheme'
+import NoticePopup from '@/components/NoticePopup'
 import { useEffect, useState } from 'react'
 
 const ROLES = [
@@ -236,6 +237,7 @@ function HomePageInner() {
 export default function HomePage() {
   return (
     <MonthThemeProvider>
+      <NoticePopup />
       <HomePageInner />
     </MonthThemeProvider>
   )
