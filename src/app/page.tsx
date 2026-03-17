@@ -85,6 +85,7 @@ function HomePageInner() {
         display: 'flex',
         flexDirection: 'column',
         overflowX: 'hidden',
+        zIndex: 50,
       }}
     >
 
@@ -137,7 +138,7 @@ function HomePageInner() {
                 style={{ ...cardStyle(i), padding: '16px 12px', minHeight: '120px' }}>
                 <span style={{ fontSize: '26px' }}>{role.icon}</span>
                 <span style={{ fontSize: '14px', fontWeight: 700, color: cardStyles[i]?.name || '#fff', transition: 'color 1.2s' }}>{role.name}</span>
-                <span style={{ fontSize: '10px', color: cardStyles[i]?.desc || '#aaa', transition: 'color 1.2s', textAlign: 'center', lineHeight: 1.5 }}>{role.desc}</span>
+                <span style={{ fontSize: '9px', color: cardStyles[i]?.desc || '#aaa', transition: 'color 1.2s', textAlign: 'center', lineHeight: 1.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{role.desc}</span>
               </button>
             ))}
           </div>
@@ -166,13 +167,13 @@ function HomePageInner() {
             </div>
 
             {/* 오른쪽 2x2 카드 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '420px', flexShrink: 0 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '500px', flexShrink: 0 }}>
               {ROLES.map((role, i) => (
                 <button key={role.id} onClick={() => handleRoleSelect(role.id)}
-                  style={{ ...cardStyle(i), padding: '20px 16px', minHeight: '140px' }}>
-                  <span style={{ fontSize: '30px' }}>{role.icon}</span>
-                  <span style={{ fontSize: '16px', fontWeight: 700, color: cardStyles[i]?.name || '#fff', transition: 'color 1.2s' }}>{role.name}</span>
-                  <span style={{ fontSize: '11px', color: cardStyles[i]?.desc || '#aaa', transition: 'color 1.2s', textAlign: 'center', lineHeight: 1.6 }}>{role.desc}</span>
+                  style={{ ...cardStyle(i), padding: '24px', height: '180px', width: '100%' }}>
+                  <span style={{ fontSize: '36px' }}>{role.icon}</span>
+                  <span style={{ fontSize: '18px', fontWeight: 700, color: cardStyles[i]?.name || '#fff', transition: 'color 1.2s' }}>{role.name}</span>
+                  <span style={{ fontSize: '12px', color: cardStyles[i]?.desc || '#aaa', transition: 'color 1.2s', textAlign: 'center', lineHeight: 1.6 }}>{role.desc}</span>
                 </button>
               ))}
             </div>
@@ -181,7 +182,7 @@ function HomePageInner() {
       )}
 
       {/* 푸터 */}
-      <div style={{ textAlign: 'center', paddingBottom: '80px', fontSize: '9px', letterSpacing: '1px', color: theme?.footColor || '#555', transition: 'color 1.2s' }}>
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: '80px', textAlign: 'center', fontSize: '9px', letterSpacing: '1px', color: theme?.footColor || '#555', transition: 'color 1.2s', pointerEvents: 'none' }}>
         © 2026 AURAN · 개인정보처리방침 · 이용약관
       </div>
     </div>
