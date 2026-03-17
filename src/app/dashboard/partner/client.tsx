@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
+import NoticeBell from '@/components/NoticeBell'
 
 export default function PartnerDashClient({ profile }: { profile: any }) {
   const router = useRouter()
@@ -28,6 +29,7 @@ export default function PartnerDashClient({ profile }: { profile: any }) {
           </div>
           <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
             <span style={{ fontSize: 9, padding: '3px 10px', background: `${gradeColors[grade]}22`, color: gradeColors[grade], border: `1px solid ${gradeColors[grade]}44`, borderRadius: 18, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{grade.toUpperCase()}</span>
+            <NoticeBell />
             <button onClick={logout} style={{ fontSize: 11, color: 'var(--text3)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px' }}>로그아웃</button>
           </div>
         </div>

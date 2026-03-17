@@ -2,7 +2,7 @@
 
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 interface Notice {
@@ -63,6 +63,26 @@ export default function NoticesPage() {
   const router = useRouter()
   const [selected, setSelected] = useState<Notice | null>(null)
 
+  const [readMap, setReadMap] = useState<Record<string, boolean>>({})
+
+  const isRead = useMemo(() => {
+    return (id: string) => !!readMap[id]
+  }, [readMap])
+
+  useEffect(() => {
+    const m: Record<string, boolean> = {}
+    for (const n of NOTICES) {
+      m[n.id] = !!localStorage.getItem(`auran_read_${n.id}`)
+    }
+    setReadMap(m)
+  }, [])
+
+  const openNotice = (notice: Notice) => {
+    localStorage.setItem(`auran_read_${notice.id}`, '1')
+    setReadMap(prev => ({ ...prev, [notice.id]: true }))
+    setSelected(notice)
+  }
+
   const pinned = NOTICES.filter(n => n.isPinned)
   const regular = NOTICES.filter(n => !n.isPinned)
 
@@ -87,7 +107,7 @@ export default function NoticesPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {pinned.map(notice => (
-                <NoticeCard key={notice.id} notice={notice} onClick={() => setSelected(notice)} pinned />
+                <NoticeCard key={notice.id} notice={notice} onClick={() => openNotice(notice)} pinned read={isRead(notice.id)} />
               ))}
             </div>
           </div>
@@ -101,7 +121,7 @@ export default function NoticesPage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {regular.map(notice => (
-                <NoticeCard key={notice.id} notice={notice} onClick={() => setSelected(notice)} />
+                <NoticeCard key={notice.id} notice={notice} onClick={() => openNotice(notice)} read={isRead(notice.id)} />
               ))}
             </div>
           </div>
@@ -159,7 +179,7 @@ export default function NoticesPage() {
   )
 }
 
-function NoticeCard({ notice, onClick, pinned }: { notice: Notice; onClick: () => void; pinned?: boolean }) {
+function NoticeCard({ notice, onClick, pinned, read }: { notice: Notice; onClick: () => void; pinned?: boolean; read?: boolean }) {
   return (
     <button
       onClick={onClick}
@@ -171,6 +191,7 @@ function NoticeCard({ notice, onClick, pinned }: { notice: Notice; onClick: () =
         padding: '16px',
         cursor: 'pointer',
         display: 'flex', alignItems: 'center', gap: '14px',
+        opacity: read ? 0.55 : 1,
       }}>
 
       {/* 이모지 */}
@@ -193,6 +214,9 @@ function NoticeCard({ notice, onClick, pinned }: { notice: Notice; onClick: () =
         <div style={{ fontSize: '11px', color: '#555' }}>{notice.date}</div>
       </div>
 
+      {!read && (
+        <div style={{ fontSize: 12, color: '#c9a84c', flexShrink: 0 }}>🟡</div>
+      )}
       <div style={{ color: '#444', fontSize: '16px', flexShrink: 0 }}>›</div>
     </button>
   )

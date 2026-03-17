@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
+import NoticeBell from '@/components/NoticeBell'
 
 const MENU = [
   { icon: '🧬', label: 'AI 피부 분석', desc: '내 피부 타입 확인', color: 'rgba(201,168,76,0.12)', border: 'rgba(201,168,76,0.3)', tc: 'var(--gold)', href: '/analysis' },
@@ -46,12 +47,7 @@ export default function CustomerDashboardClient({ profile, notifications, recent
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {notifications.length > 0 && (
-              <div style={{ position: 'relative' }}>
-                <button style={{ width: 34, height: 34, borderRadius: 9, background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', color: 'var(--text2)', fontSize: 16 }}>🔔</button>
-                <span style={{ position: 'absolute', top: -4, right: -4, width: 16, height: 16, background: '#d94f4f', borderRadius: '50%', fontSize: 9, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{notifications.length}</span>
-              </div>
-            )}
+            <NoticeBell />
             <button onClick={logout} style={{ fontSize: 11, color: 'var(--text3)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px' }}>로그아웃</button>
           </div>
         </div>

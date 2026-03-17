@@ -2,6 +2,7 @@
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
+import NoticeBell from '@/components/NoticeBell'
 
 export default function BrandDashClient({ profile, brand, products }: { profile: any; brand: any; products: any[] }) {
   const router = useRouter()
@@ -25,6 +26,7 @@ export default function BrandDashClient({ profile, brand, products }: { profile:
           </div>
           <div style={{ display: 'flex', gap: 7, alignItems: 'center' }}>
             <span style={{ fontSize: 9, padding: '3px 10px', background: isActive ? 'rgba(76,173,126,0.15)' : 'rgba(201,168,76,0.12)', color: isActive ? '#4cad7e' : 'var(--gold)', border: `1px solid ${isActive ? 'rgba(76,173,126,0.3)' : 'rgba(201,168,76,0.3)'}`, borderRadius: 18, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{isActive ? '입점 활성' : '심사 중'}</span>
+            <NoticeBell />
             <button onClick={logout} style={{ fontSize: 11, color: 'var(--text3)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px' }}>로그아웃</button>
           </div>
         </div>
