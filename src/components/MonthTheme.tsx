@@ -26,11 +26,22 @@ interface MonthThemeProviderProps {
 }
 
 export function MonthThemeProvider({ children }: MonthThemeProviderProps) {
-  const [theme, setTheme] = useState<Partial<MonthTheme>>(getCurrentTheme())
+  const [theme, setTheme] = useState<Partial<MonthTheme>>(() => {
+    const base = getCurrentTheme()
+    if (typeof window === 'undefined') return base
+    const saved = localStorage.getItem('auran_birthday') || ''
+    const isValid = /^\d{2}-\d{2}$/.test(saved)
+    if (!isValid) return base
+    if (isBirthdayWeek()) {
+      return { ...base, ...BIRTHDAY_THEME }
+    }
+    return base
+  })
   const [activeMonth, setActiveMonth] = useState(new Date().getMonth())
   const [bdayDays, setBdayDays] = useState<number | null>(null)
   const [bdayInput, setBdayInput] = useState('')
   const [showSelector, setShowSelector] = useState(false)
+  const [transitionsEnabled, setTransitionsEnabled] = useState(false)
   const particleRef = useRef<HTMLDivElement>(null)
   const sparkleRef = useRef<HTMLDivElement>(null)
   const lightsRef = useRef<HTMLDivElement>(null)
@@ -41,14 +52,15 @@ export function MonthThemeProvider({ children }: MonthThemeProviderProps) {
   }, [])
 
   useEffect(() => {
+    // 첫 페인트에서 깜빡임 방지: 마운트 후 트랜지션 활성화
+    setTransitionsEnabled(true)
+
     // 생일 체크
     const d = getBirthdayDaysLeft()
     setBdayDays(d)
     const saved = localStorage.getItem('auran_birthday') || ''
     setBdayInput(saved)
-    if (isBirthdayWeek()) {
-      applyTheme({ ...getCurrentTheme(), ...BIRTHDAY_THEME })
-    }
+    // 초기 state initializer에서 이미 적용했으므로 여기서는 중복 apply 하지 않음
   }, [applyTheme])
 
   // 파티클 생성
@@ -162,7 +174,7 @@ export function MonthThemeProvider({ children }: MonthThemeProviderProps) {
     <ThemeContext.Provider value={{ theme, activeMonth, setActiveMonth, applyTheme }}>
       <div
         className="relative min-h-screen overflow-hidden"
-        style={{ background: theme.bg, transition: 'all 1.2s ease' }}
+        style={{ background: theme.bg, transition: transitionsEnabled ? 'all 1.2s ease' : 'none' }}
       >
       {/* 전구 스트링 */}
       <div
