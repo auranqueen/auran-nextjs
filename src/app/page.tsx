@@ -18,7 +18,7 @@ function HomePageInner() {
   const supabase = createClient()
   const { theme } = useTheme()
   const [isAdmin, setIsAdmin] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -39,11 +39,10 @@ function HomePageInner() {
   }, [supabase])
 
   useEffect(() => {
-    const mq = window.matchMedia('(min-width: 768px)')
-    const update = () => setIsDesktop(mq.matches)
+    const update = () => setIsMobile(window.innerWidth < 768)
     update()
-    mq.addEventListener('change', update)
-    return () => mq.removeEventListener('change', update)
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
   }, [])
 
   const handleRoleSelect = async (roleId: string) => {
@@ -111,9 +110,9 @@ function HomePageInner() {
         </button>
       )}
 
-      {!isDesktop ? (
+      {isMobile ? (
         /* 모바일 레이아웃 */
-        <div className="flex flex-col flex-1 px-5 pt-12 pb-32">
+        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '48px 16px 120px' }}>
           <div style={{ marginBottom: '24px' }}>
             <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '22px', fontWeight: 700, letterSpacing: '4px', color: theme?.logo || '#fff', transition: 'color 1.2s' }}>
               AURAN
@@ -144,8 +143,8 @@ function HomePageInner() {
         </div>
       ) : (
         /* PC 레이아웃 */
-        <div className="flex flex-1 items-center justify-center px-10 py-16">
-          <div className="w-full max-w-[960px] flex gap-16 items-center">
+        <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', padding: '60px 48px' }}>
+          <div style={{ width: '100%', maxWidth: '960px', display: 'flex', gap: '64px', alignItems: 'center' }}>
 
             {/* 왼쪽 텍스트 */}
             <div style={{ flex: 1 }}>
