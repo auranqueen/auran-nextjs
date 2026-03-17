@@ -79,7 +79,7 @@ export function MonthThemeProvider({ children }: MonthThemeProviderProps) {
       // 비행기
       const plane = document.createElement('div')
       plane.style.cssText = `
-        position:absolute; bottom:32%; left:28%; z-index:9;
+        position:absolute; bottom:32%; left:28%; z-index:2;
         font-size:15px; opacity:0; pointer-events:none;
         animation:july-plane 30s linear infinite;
         animation-delay:1s;
@@ -99,7 +99,7 @@ export function MonthThemeProvider({ children }: MonthThemeProviderProps) {
         left:${positions[j % positions.length]}%;
         animation:particle-fall ${finalSpd}s linear infinite;
         animation-delay:${(j * 1.8 + Math.random() * 2).toFixed(1)}s;
-        pointer-events:none; z-index:6;
+        pointer-events:none; z-index:2;
       `
       p.textContent = chars[j % chars.length]
       container.appendChild(p)
@@ -242,7 +242,7 @@ export function MonthThemeProvider({ children }: MonthThemeProviderProps) {
       <div ref={sparkleRef} className="absolute inset-0 pointer-events-none" style={{ zIndex: 5 }} />
 
       {/* 파티클 */}
-      <div ref={particleRef} className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 6 }} />
+      <div ref={particleRef} className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 2 }} />
 
       {/* 7월 구름 */}
       {activeMonth === 6 && (

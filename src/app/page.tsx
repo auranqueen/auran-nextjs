@@ -126,8 +126,13 @@ function HomePageInner() {
             padding: '16px 20px',
           }}
         >
-          <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '22px', fontWeight: 700, letterSpacing: '4px', color: theme?.logo || '#fff', transition: 'color 1.2s' }}>
-            AURAN
+          <div>
+            <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '22px', fontWeight: 700, letterSpacing: '4px', color: theme?.logo || '#fff', transition: 'color 1.2s' }}>
+              AURAN
+            </div>
+            <div style={{ fontSize: '8px', letterSpacing: '3.5px', marginTop: '2px', color: theme?.logoSub || '#888', transition: 'color 1.2s' }}>
+              AI BEAUTY FOUNDATION
+            </div>
           </div>
           <button
             onClick={() => router.push('/admin')}
@@ -155,9 +160,6 @@ function HomePageInner() {
 
         {/* 타이틀 영역 */}
         <div style={{ padding: '20px 20px 0' }}>
-          <div style={{ fontSize: '8px', letterSpacing: '3.5px', marginTop: '3px', marginBottom: '20px', color: theme?.logoSub || '#888', transition: 'color 1.2s' }}>
-            AI BEAUTY FOUNDATION
-          </div>
           <h1 style={{ fontFamily: 'var(--font-nanum)', fontSize: '28px', fontWeight: 800, lineHeight: 1.45, color: theme?.titleColor || '#fff', transition: 'color 1.2s' }}>
             피부결이 바뀌면,<br />
             <em style={{ fontStyle: 'normal', color: theme?.titleEmColor || '#c9a84c' }}>화장이 달라집니다</em>
@@ -171,7 +173,7 @@ function HomePageInner() {
         {/* 카드 영역 */}
         <div style={{ padding: '20px 16px 120px' }}>
           <div style={{ width: '100%', padding: '0 16px', boxSizing: 'border-box' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%', boxSizing: 'border-box' }}>
             {ROLES.map((role, i) => (
               <button key={role.id} onClick={() => handleRoleSelect(role.id)}
                 style={{ ...cardStyle(i), padding: '16px 12px', minHeight: '120px', width: '100%', overflow: 'visible' }}>
