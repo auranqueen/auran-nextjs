@@ -1,143 +1,193 @@
 'use client'
-import { useEffect } from 'react'
+
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { normalizePosition, positionToDashboardPath, POSITION_STORAGE_KEY } from '@/lib/position'
+import { normalizePosition, positionToDashboardPath, POSITION_LABELS } from '@/lib/position'
 import { MonthThemeProvider, useTheme } from '@/components/MonthTheme'
+import { useEffect, useState } from 'react'
 
 const ROLES = [
-  { id: 'customer', icon: '💧', label: '고객', desc: '피부분석 · 제품추천 · 살롱예약 · 마이월드', color: '#c9a84c', bg: 'rgba(201,168,76,0.1)', border: 'rgba(201,168,76,0.3)' },
-  { id: 'partner',  icon: '💎', label: '파트너스', desc: '추천링크 · 커미션수익 · 라이브커머스', color: '#4a8dc0', bg: 'rgba(74,141,192,0.1)', border: 'rgba(74,141,192,0.3)' },
-  { id: 'salon',    icon: '✨', label: '원장님', desc: '예약관리 · 스토어 · 매출관리', color: '#bf5f90', bg: 'rgba(191,95,144,0.1)', border: 'rgba(191,95,144,0.3)' },
-  { id: 'brand',    icon: '🧴', label: '브랜드사', desc: '납품관리 · 브랜드분석', color: '#4cad7e', bg: 'rgba(76,173,126,0.1)', border: 'rgba(76,173,126,0.3)' },
+  { id: 'customer', icon: '💧', name: '고객',     desc: '피부분석 · 제품추천 · 살롱예약 · 마이월드' },
+  { id: 'partner',  icon: '💎', name: '파트너스',  desc: '추천링크 · 커미션수익 · 라이브커머스' },
+  { id: 'salon',    icon: '✨', name: '원장님',   desc: '예약관리 · 스토어 · 매출관리' },
+  { id: 'brand',    icon: '🧴', name: '브랜드사',  desc: '납품관리 · 브랜드분석' },
 ]
 
 function HomePageInner() {
   const router = useRouter()
   const supabase = createClient()
   const { theme } = useTheme()
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
-    ;(async () => {
-      const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
-      if (!stored) return
-      const { data } = await supabase.auth.getUser()
-      if (!data.user) return
-      router.replace(positionToDashboardPath(stored))
-    })()
-  }, [router, supabase])
+    const checkAdmin = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single()
+        if (data?.role === 'admin') setIsAdmin(true)
+      }
+    }
+    checkAdmin()
+  }, [])
 
-  const cards = [
-    { ...ROLES[0], t: theme.c1 },
-    { ...ROLES[1], t: theme.c2 },
-    { ...ROLES[2], t: theme.c3 },
-    { ...ROLES[3], t: theme.c4 },
-  ] as const
+  const handleRoleSelect = async (roleId: string) => {
+    const normalized = normalizePosition(roleId)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('selectedPosition', normalized)
+    }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      router.push(`/login?position=${normalized}`)
+      return
+    }
+    router.push(positionToDashboardPath(normalized))
+  }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', transition: 'all 1.2s ease' }}>
-      {/* 헤더 */}
-      <div style={{ padding: '24px 20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color: theme.logo || '#e8c870', letterSpacing: '0.15em', transition: 'all 1.2s ease' }}>AURAN</div>
-          <div style={{ fontSize: 10, color: theme.logoSub || 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", marginTop: 2, transition: 'all 1.2s ease' }}>AI BEAUTY FOUNDATION</div>
-        </div>
+    <div className="relative min-h-screen w-full flex flex-col"
+      style={{ transition: 'background 1.2s ease' }}>
+
+      {/* 어드민 버튼 */}
+      {isAdmin && (
         <button
           onClick={() => router.push('/admin')}
-          style={{ fontSize: 11, color: 'var(--text3)', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 12px' }}
-        >
-          ⚙️ 어드민
+          className="absolute top-4 right-4 z-30 flex items-center gap-2"
+          style={{
+            background: '#000',
+            border: '1.5px solid #c9a84c',
+            borderRadius: '12px',
+            padding: '10px 18px',
+            color: '#c9a84c',
+            fontSize: '13px',
+            fontWeight: '700',
+            letterSpacing: '1px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+          }}>
+          👑 어드민콘솔
         </button>
+      )}
+
+      {/* ── 모바일 레이아웃 ── */}
+      <div className="flex flex-col md:hidden flex-1 px-5 pt-12 pb-32">
+        {/* 로고 */}
+        <div className="mb-6">
+          <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '22px', fontWeight: 700, letterSpacing: '4px', color: theme?.logo || '#fff', textShadow: '0 0 15px currentColor', transition: 'color 1.2s' }}>
+            AURAN
+          </div>
+          <div style={{ fontSize: '8px', letterSpacing: '3.5px', marginTop: '3px', color: theme?.logoSub || '#888', transition: 'color 1.2s' }}>
+            AI BEAUTY FOUNDATION
+          </div>
+        </div>
+
+        {/* 타이틀 */}
+        <div className="mb-6">
+          <h1 style={{ fontFamily: 'var(--font-nanum)', fontSize: '28px', fontWeight: 800, lineHeight: 1.4, color: theme?.titleColor || '#fff', transition: 'color 1.2s' }}>
+            피부결이 바뀌면,<br />
+            <em style={{ fontStyle: 'normal', color: theme?.titleEmColor || '#c9a84c' }}>화장이 달라집니다</em>
+          </h1>
+          <p style={{ fontSize: '13px', lineHeight: 1.8, marginTop: '10px', color: theme?.subColor || '#aaa', transition: 'color 1.2s' }}>
+            AI 피부 분석 · 맞춤 제품 추천<br />
+            전국 클리닉 예약까지 한 번에
+          </p>
+        </div>
+
+        {/* 2x2 카드 그리드 */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          {ROLES.map((role) => {
+            const c = theme?.[`c${ROLES.indexOf(role) + 1}` as 'c1'] 
+            return (
+              <button
+                key={role.id}
+                onClick={() => handleRoleSelect(role.id)}
+                style={{
+                  background: c?.bg || 'rgba(255,255,255,0.08)',
+                  border: `1.5px solid ${c?.border || 'rgba(255,255,255,0.2)'}`,
+                  borderRadius: '16px',
+                  padding: '16px 12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '6px',
+                  cursor: 'pointer',
+                  transition: 'all 1.2s ease',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
+                  minHeight: '120px',
+                  justifyContent: 'center',
+                }}>
+                <span style={{ fontSize: '26px' }}>{role.icon}</span>
+                <span style={{ fontSize: '15px', fontWeight: 700, color: c?.name || '#fff', transition: 'color 1.2s' }}>{role.name}</span>
+                <span style={{ fontSize: '10px', color: c?.desc || '#aaa', transition: 'color 1.2s', textAlign: 'center', lineHeight: 1.5 }}>{role.desc}</span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      {/* 콘텐츠: 모바일(세로) 유지 + PC(좌/중앙 그리드) */}
-      <div
-        style={{
-          padding: '0 20px',
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <div
-          className="w-full flex flex-col md:flex-row md:items-center md:justify-between md:gap-10"
-          style={{ padding: '22px 0 18px' }}
-        >
-          {/* 히어로: PC에서 좌측 */}
-          <div className="md:flex-1" style={{ textAlign: 'center' }}>
-            <div
-              className="md:text-left"
-              style={{ fontFamily: 'var(--font-nanum)', fontSize: 24, color: theme.titleColor || 'var(--text)', lineHeight: 1.4, marginBottom: 10, transition: 'all 1.2s ease' }}
-            >
-              피부결이 바뀌면,<br />
-              <span style={{ fontFamily: 'var(--font-nanum)', color: theme.titleEmColor || 'var(--gold)', transition: 'all 1.2s ease' }}>화장이 달라집니다</span>
+      {/* ── PC 레이아웃 ── */}
+      <div className="hidden md:flex flex-1 items-center justify-center px-10 py-16">
+        <div className="w-full max-w-5xl flex gap-16 items-center">
+
+          {/* 왼쪽: 로고 + 타이틀 */}
+          <div className="flex-1">
+            <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '28px', fontWeight: 700, letterSpacing: '5px', color: theme?.logo || '#fff', textShadow: '0 0 20px currentColor', marginBottom: '6px', transition: 'color 1.2s' }}>
+              AURAN
             </div>
-            <div className="md:text-left" style={{ fontSize: 13, color: theme.subColor || 'var(--text3)', lineHeight: 1.7, transition: 'all 1.2s ease' }}>
+            <div style={{ fontSize: '9px', letterSpacing: '4px', color: theme?.logoSub || '#888', marginBottom: '32px', transition: 'color 1.2s' }}>
+              AI BEAUTY FOUNDATION
+            </div>
+            <h1 style={{ fontFamily: 'var(--font-nanum)', fontSize: '38px', fontWeight: 800, lineHeight: 1.45, color: theme?.titleColor || '#fff', transition: 'color 1.2s' }}>
+              피부결이 바뀌면,<br />
+              <em style={{ fontStyle: 'normal', color: theme?.titleEmColor || '#c9a84c' }}>화장이 달라집니다</em>
+            </h1>
+            <p style={{ fontSize: '15px', lineHeight: 2, marginTop: '16px', color: theme?.subColor || '#aaa', transition: 'color 1.2s' }}>
               AI 피부 분석 · 맞춤 제품 추천<br />
               전국 클리닉 예약까지 한 번에
-            </div>
+            </p>
           </div>
 
-          {/* 역할 선택: PC에서 중앙 2x2 그리드 */}
-          <div className="md:flex-1 md:flex md:justify-center" style={{ marginTop: 12 }}>
-            <div className="md:max-w-[520px] w-full">
-              <div className="grid grid-cols-2 gap-2 px-2">
-                {cards.map(r => (
-                  <button
-                    key={r.id}
-                    onClick={() => {
-                      localStorage.setItem(POSITION_STORAGE_KEY, r.id)
-                      router.push(`/login?role=${r.id}`)
-                    }}
-                    className="w-full"
-                    style={{
-                      background: r.t?.bg ?? r.bg,
-                      border: `1px solid ${r.t?.border ?? r.border}`,
-                      borderRadius: 16,
-                      padding: 12,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                      textAlign: 'center',
-                      transition: 'all 1.2s ease',
-                      height: 130,
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
-                    onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
-                  >
-                    <div style={{ fontSize: 28, lineHeight: 1 }}>{r.icon}</div>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: r.t?.name ?? r.color, marginBottom: 4, whiteSpace: 'nowrap' }}>{r.label}</div>
-                      <div
-                        title={r.desc}
-                        style={{
-                          fontSize: 10,
-                          color: r.t?.desc ?? 'var(--text3)',
-                          lineHeight: 1.25,
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          maxWidth: 220,
-                        }}
-                      >
-                        {r.desc}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
+          {/* 오른쪽: 2x2 카드 */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '420px', flexShrink: 0 }}>
+            {ROLES.map((role) => {
+              const idx = ROLES.indexOf(role) + 1
+              const c = theme?.[`c${idx}` as 'c1']
+              return (
+                <button
+                  key={role.id}
+                  onClick={() => handleRoleSelect(role.id)}
+                  style={{
+                    background: c?.bg || 'rgba(255,255,255,0.08)',
+                    border: `1.5px solid ${c?.border || 'rgba(255,255,255,0.2)'}`,
+                    borderRadius: '18px',
+                    padding: '20px 16px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 1.2s ease',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
+                    minHeight: '140px',
+                    justifyContent: 'center',
+                  }}>
+                  <span style={{ fontSize: '30px' }}>{role.icon}</span>
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: c?.name || '#fff', transition: 'color 1.2s' }}>{role.name}</span>
+                  <span style={{ fontSize: '11px', color: c?.desc || '#aaa', transition: 'color 1.2s', textAlign: 'center', lineHeight: 1.6 }}>{role.desc}</span>
+                </button>
+              )
+            })}
           </div>
         </div>
       </div>
 
-      {/* 하단 */}
-      <div style={{ padding: '24px 20px', textAlign: 'center', borderTop: `1px solid ${theme.dividerColor || 'var(--border)'}`, marginTop: 24, transition: 'all 1.2s ease' }}>
-        <div style={{ fontSize: 10, color: 'var(--text3)', lineHeight: 1.8 }}>
-          © 2026 AURAN · 개인정보처리방침 · 이용약관
-        </div>
+      {/* 하단 footer */}
+      <div className="text-center pb-20 md:pb-6" style={{ fontSize: '9px', letterSpacing: '1px', color: theme?.footColor || '#555', transition: 'color 1.2s' }}>
+        © 2026 AURAN · 개인정보처리방침 · 이용약관
       </div>
     </div>
   )
