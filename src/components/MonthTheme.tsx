@@ -158,13 +158,11 @@ export function MonthThemeProvider({ children }: MonthThemeProviderProps) {
     }
   }
 
-  const currentMonthName = MONTH_THEMES[activeMonth]?.name || ''
-
   return (
     <ThemeContext.Provider value={{ theme, activeMonth, setActiveMonth, applyTheme }}>
       <div
-        className="relative min-h-screen overflow-hidden transition-all duration-1000"
-        style={{ background: theme.bg }}
+        className="relative min-h-screen overflow-hidden"
+        style={{ background: theme.bg, transition: 'all 1.2s ease' }}
       >
       {/* 전구 스트링 */}
       <div
@@ -275,37 +273,60 @@ export function MonthThemeProvider({ children }: MonthThemeProviderProps) {
       )}
 
       {/* 월 선택기 + 생일 설정 */}
-      <div className="absolute bottom-0 left-0 right-0 z-30 pb-4 pt-2 flex flex-col items-center gap-2"
-        style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.3))' }}>
-
-        {/* 월 버튼 */}
-        <div className="flex gap-1 flex-wrap justify-center max-w-xs">
-          {MONTH_THEMES.map((m, i) => (
-            <button key={i} onClick={() => handleMonthSelect(i)}
-              className="text-xs font-bold px-2 py-1 rounded-lg transition-all"
+      <div
+        className="absolute bottom-0 left-0 right-0 z-30 px-3 pb-3 pt-2 flex flex-col items-center gap-2"
+        style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.28))' }}
+      >
+        {/* 월 버튼 (숫자만) */}
+        <div className="flex gap-1.5 flex-wrap justify-center">
+          {MONTH_THEMES.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => handleMonthSelect(i)}
+              aria-label={`${i + 1}월 테마`}
               style={{
-                background: i === activeMonth ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.25)',
-                border: `1px solid ${i === activeMonth ? theme.logo || '#fff' : 'rgba(255,255,255,0.15)'}`,
-                color: i === activeMonth ? (theme.logo || '#fff') : 'rgba(255,255,255,0.5)',
-                fontSize: '10px'
-              }}>
-              {m.name}
+                width: 28,
+                height: 28,
+                borderRadius: 10,
+                background: i === activeMonth ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.22)',
+                border: `1px solid ${i === activeMonth ? (theme.logo || 'rgba(255,255,255,0.5)') : 'rgba(255,255,255,0.14)'}`,
+                color: i === activeMonth ? (theme.logo || '#fff') : 'rgba(255,255,255,0.6)',
+                fontSize: 11,
+                fontWeight: 800,
+                lineHeight: '28px',
+                textAlign: 'center',
+              }}
+            >
+              {i + 1}
             </button>
           ))}
         </div>
 
-        {/* 생일 설정 */}
+        {/* 생일 입력 + 저장만 */}
         <div className="flex gap-2 items-center">
           <input
-            type="text" placeholder="생일 입력 (MM-DD)" maxLength={5}
+            type="text"
+            placeholder="생일 (MM-DD)"
+            maxLength={5}
             value={bdayInput}
             onChange={e => setBdayInput(e.target.value)}
             className="text-center text-xs px-3 py-1.5 rounded-xl outline-none"
-            style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.8)', width: '130px' }}
+            style={{
+              background: 'rgba(0,0,0,0.35)',
+              border: '1px solid rgba(255,255,255,0.18)',
+              color: 'rgba(255,255,255,0.82)',
+              width: '130px',
+            }}
           />
-          <button onClick={handleSaveBirthday}
+          <button
+            onClick={handleSaveBirthday}
             className="text-xs px-3 py-1.5 rounded-xl font-bold"
-            style={{ background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: 'rgba(255,255,255,0.8)' }}>
+            style={{
+              background: 'rgba(255,255,255,0.14)',
+              border: '1px solid rgba(255,255,255,0.24)',
+              color: 'rgba(255,255,255,0.82)',
+            }}
+          >
             저장
           </button>
         </div>

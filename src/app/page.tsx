@@ -6,10 +6,10 @@ import { normalizePosition, positionToDashboardPath, POSITION_STORAGE_KEY } from
 import { MonthThemeProvider, useTheme } from '@/components/MonthTheme'
 
 const ROLES = [
-  { id: 'customer', icon: '💧', label: '고객', desc: 'AI 피부 분석 · 제품 추천 · 살롱 예약', color: '#c9a84c', bg: 'rgba(201,168,76,0.1)', border: 'rgba(201,168,76,0.3)' },
-  { id: 'partner',  icon: '💼', label: '파트너스', desc: '추천 링크 · 커미션 수익', color: '#4a8dc0', bg: 'rgba(74,141,192,0.1)', border: 'rgba(74,141,192,0.3)' },
-  { id: 'salon',    icon: '🏥', label: '원장님', desc: '예약 관리 · 스토어 · 매출', color: '#bf5f90', bg: 'rgba(191,95,144,0.1)', border: 'rgba(191,95,144,0.3)' },
-  { id: 'brand',    icon: '🏭', label: '브랜드사', desc: '입점 신청 · 납품 · 분석', color: '#4cad7e', bg: 'rgba(76,173,126,0.1)', border: 'rgba(76,173,126,0.3)' },
+  { id: 'customer', icon: '💧', label: '고객', desc: '피부분석 · 제품추천 · 살롱예약 · 마이월드', color: '#c9a84c', bg: 'rgba(201,168,76,0.1)', border: 'rgba(201,168,76,0.3)' },
+  { id: 'partner',  icon: '💎', label: '파트너스', desc: '추천링크 · 커미션수익 · 라이브커머스', color: '#4a8dc0', bg: 'rgba(74,141,192,0.1)', border: 'rgba(74,141,192,0.3)' },
+  { id: 'salon',    icon: '✨', label: '원장님', desc: '예약관리 · 스토어 · 매출관리', color: '#bf5f90', bg: 'rgba(191,95,144,0.1)', border: 'rgba(191,95,144,0.3)' },
+  { id: 'brand',    icon: '🧴', label: '브랜드사', desc: '납품관리 · 브랜드분석', color: '#4cad7e', bg: 'rgba(76,173,126,0.1)', border: 'rgba(76,173,126,0.3)' },
 ]
 
 function HomePageInner() {
@@ -35,12 +35,12 @@ function HomePageInner() {
   ] as const
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', transition: 'all 1.2s ease' }}>
       {/* 헤더 */}
       <div style={{ padding: '24px 20px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color: '#e8c870', letterSpacing: '0.15em' }}>AURAN</div>
-          <div style={{ fontSize: 10, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", marginTop: 2 }}>AI BEAUTY PLATFORM</div>
+          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color: theme.logo || '#e8c870', letterSpacing: '0.15em', transition: 'all 1.2s ease' }}>AURAN</div>
+          <div style={{ fontSize: 10, color: theme.logoSub || 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", marginTop: 2, transition: 'all 1.2s ease' }}>AI BEAUTY PLATFORM</div>
         </div>
         <button
           onClick={() => router.push('/admin')}
@@ -61,34 +61,34 @@ function HomePageInner() {
       >
         <div
           className="w-full flex flex-col md:flex-row md:items-center md:justify-between md:gap-10"
-          style={{ padding: '32px 0 24px' }}
+          style={{ padding: '22px 0 18px' }}
         >
           {/* 히어로: PC에서 좌측 */}
           <div className="md:flex-1" style={{ textAlign: 'center' }}>
             <div
               className="md:text-left"
-              style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 24, color: theme.titleColor || 'var(--text)', lineHeight: 1.4, marginBottom: 10 }}
+              style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 24, color: theme.titleColor || 'var(--text)', lineHeight: 1.4, marginBottom: 10, transition: 'all 1.2s ease' }}
             >
               피부결이 바뀌면,<br />
-              <span style={{ color: theme.titleEmColor || 'var(--gold)' }}>화장이 달라집니다</span>
+              <span style={{ color: theme.titleEmColor || 'var(--gold)', transition: 'all 1.2s ease' }}>화장이 달라집니다</span>
             </div>
-            <div className="md:text-left" style={{ fontSize: 13, color: theme.subColor || 'var(--text3)', lineHeight: 1.7 }}>
+            <div className="md:text-left" style={{ fontSize: 13, color: theme.subColor || 'var(--text3)', lineHeight: 1.7, transition: 'all 1.2s ease' }}>
               AI 피부 분석 · 맞춤 제품 추천<br />
               전국 클리닉 예약까지 한 번에
             </div>
           </div>
 
           {/* 역할 선택: PC에서 중앙 2x2 그리드 */}
-          <div className="md:flex-1 md:flex md:justify-center" style={{ marginTop: 20 }}>
+          <div className="md:flex-1 md:flex md:justify-center" style={{ marginTop: 12 }}>
             <div className="md:max-w-[520px] w-full">
               <div
                 className="md:text-center"
-                style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', marginBottom: 14, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.08em' }}
+                style={{ fontSize: 11, color: 'var(--text3)', textAlign: 'center', marginBottom: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.08em' }}
               >
                 역할을 선택해 시작하세요
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 place-items-stretch">
+              <div className="grid grid-cols-2 gap-2 place-items-stretch">
                 {cards.map(r => (
                   <button
                     key={r.id}
@@ -101,23 +101,36 @@ function HomePageInner() {
                       background: r.t?.bg ?? r.bg,
                       border: `1px solid ${r.t?.border ?? r.border}`,
                       borderRadius: 16,
-                      padding: '18px 16px',
+                      padding: '12px 10px',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: 10,
+                      gap: 8,
                       textAlign: 'center',
-                      transition: 'opacity 0.15s',
-                      minHeight: 86, // 모바일에서 너무 납작해지는 것 방지
+                      transition: 'all 1.2s ease',
+                      minHeight: 96,
                     }}
                     onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
                     onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
                   >
-                    <div style={{ fontSize: 34, lineHeight: 1 }}>{r.icon}</div>
+                    <div style={{ fontSize: 28, lineHeight: 1 }}>{r.icon}</div>
                     <div>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: r.t?.name ?? r.color, marginBottom: 6 }}>{r.label}</div>
-                      <div style={{ fontSize: 11, color: r.t?.desc ?? 'var(--text3)', lineHeight: 1.55 }}>{r.desc}</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: r.t?.name ?? r.color, marginBottom: 4, whiteSpace: 'nowrap' }}>{r.label}</div>
+                      <div
+                        title={r.desc}
+                        style={{
+                          fontSize: 9,
+                          color: r.t?.desc ?? 'var(--text3)',
+                          lineHeight: 1.25,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: 220,
+                        }}
+                      >
+                        {r.desc}
+                      </div>
                     </div>
                   </button>
                 ))}
@@ -128,7 +141,7 @@ function HomePageInner() {
       </div>
 
       {/* 하단 */}
-      <div style={{ padding: '24px 20px', textAlign: 'center', borderTop: '1px solid var(--border)', marginTop: 24 }}>
+      <div style={{ padding: '24px 20px', textAlign: 'center', borderTop: `1px solid ${theme.dividerColor || 'var(--border)'}`, marginTop: 24, transition: 'all 1.2s ease' }}>
         <div style={{ fontSize: 10, color: 'var(--text3)', lineHeight: 1.8 }}>
           © 2026 AURAN · 개인정보처리방침 · 이용약관
         </div>
