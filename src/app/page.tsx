@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { normalizePosition, positionToDashboardPath } from '@/lib/position'
 import { MonthThemeProvider, useTheme } from '@/components/MonthTheme'
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 
 const ROLES = [
   { id: 'customer', icon: '💧', name: '고객',    desc: '피부분석 · 제품추천 · 살롱예약 · 마이월드' },
@@ -18,7 +18,10 @@ function HomePageInner() {
   const supabase = createClient()
   const { theme } = useTheme()
   const [isAdmin, setIsAdmin] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile, setIsMobile] = useState<boolean | null>(() => {
+    if (typeof window === 'undefined') return null
+    return window.matchMedia('(max-width: 767px)').matches
+  })
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -38,8 +41,8 @@ function HomePageInner() {
     checkAdmin()
   }, [supabase])
 
-  useEffect(() => {
-    const update = () => setIsMobile(window.innerWidth < 768)
+  useLayoutEffect(() => {
+    const update = () => setIsMobile(window.matchMedia('(max-width: 767px)').matches)
     update()
     window.addEventListener('resize', update)
     return () => window.removeEventListener('resize', update)
@@ -112,7 +115,9 @@ function HomePageInner() {
         {isAdmin ? '👑 ADMIN CONSOLE' : '⚙️ 어드민'}
       </button>
 
-      {isMobile ? (
+      {isMobile === null ? (
+        <div style={{ flex: 1 }} />
+      ) : isMobile ? (
         /* 모바일 레이아웃 */
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '48px 16px 120px' }}>
           <div style={{ marginBottom: '24px' }}>
