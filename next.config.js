@@ -11,6 +11,12 @@ const nextConfig = {
   async headers() {
     return [
       {
+        source: '/',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, max-age=0' },
+        ],
+      },
+      {
         source: '/api/:path*',
         headers: [
           { key: 'Access-Control-Allow-Origin', value: 'https://auran.kr' },
