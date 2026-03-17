@@ -115,7 +115,7 @@ function HomePageInner() {
       </button>
 
       {/* 모바일 레이아웃 */}
-      <div className="only-mobile" style={{ flexDirection: 'column', flex: 1, padding: '48px 16px 120px' }}>
+      <div className="only-mobile" style={{ flexDirection: 'column', flex: 1, padding: '48px 24px 120px' }}>
           <div style={{ marginBottom: '24px' }}>
             <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '22px', fontWeight: 700, letterSpacing: '4px', color: theme?.logo || '#fff', transition: 'color 1.2s' }}>
               AURAN
