@@ -21,18 +21,21 @@ function HomePageInner() {
 
   useEffect(() => {
     const checkAdmin = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
         const { data } = await supabase
-          .from('profiles')
+          .from('users')
           .select('role')
-          .eq('id', user.id)
+          .eq('auth_id', user.id)
           .single()
         if (data?.role === 'admin') setIsAdmin(true)
+      } catch {
+        // ignore
       }
     }
     checkAdmin()
-  }, [])
+  }, [supabase])
 
   const handleRoleSelect = async (roleId: string) => {
     const normalized = normalizePosition(roleId)
@@ -91,7 +94,7 @@ function HomePageInner() {
       )}
 
       {/* 모바일 레이아웃 */}
-      <div className="md:hidden" style={{ display: 'flex', flexDirection: 'column', flex: 1, padding: '48px 20px 120px' }}>
+      <div className="flex flex-col flex-1 md:hidden px-5 pt-12 pb-32">
         <div style={{ marginBottom: '24px' }}>
           <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '22px', fontWeight: 700, letterSpacing: '4px', color: theme?.logo || '#fff', transition: 'color 1.2s' }}>
             AURAN
@@ -122,8 +125,8 @@ function HomePageInner() {
       </div>
 
       {/* PC 레이아웃 */}
-      <div className="hidden md:flex" style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: '60px 40px' }}>
-        <div style={{ width: '100%', maxWidth: '960px', display: 'flex', gap: '64px', alignItems: 'center' }}>
+      <div className="hidden md:flex flex-1 items-center justify-center px-10 py-16">
+        <div className="w-full max-w-[960px] flex gap-16 items-center">
 
           {/* 왼쪽 텍스트 */}
           <div style={{ flex: 1 }}>
