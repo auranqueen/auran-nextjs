@@ -61,6 +61,7 @@ function HomePageInner() {
     flexDirection: 'column' as const,
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
+    minWidth: 0,
     gap: '6px',
     cursor: 'pointer',
     transition: 'all 1.2s ease',
@@ -172,7 +173,7 @@ function HomePageInner() {
 
         {/* 카드 영역 */}
         <div style={{ padding: '20px 16px 120px' }}>
-          <div style={{ width: '100%', padding: '0 16px', boxSizing: 'border-box' }}>
+          <div style={{ width: '100%', boxSizing: 'border-box' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%', boxSizing: 'border-box' }}>
             {ROLES.map((role, i) => (
               <button key={role.id} onClick={() => handleRoleSelect(role.id)}
