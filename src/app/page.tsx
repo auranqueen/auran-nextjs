@@ -18,6 +18,7 @@ function HomePageInner() {
   const supabase = createClient()
   const { theme } = useTheme()
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false)
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -36,6 +37,14 @@ function HomePageInner() {
     }
     checkAdmin()
   }, [supabase])
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const update = () => setIsDesktop(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
 
   const handleRoleSelect = async (roleId: string) => {
     const normalized = normalizePosition(roleId)
@@ -69,7 +78,16 @@ function HomePageInner() {
   })
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', width: '100%', display: 'flex', flexDirection: 'column' }}>
+    <div
+      style={{
+        position: 'relative',
+        minHeight: '100vh',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        overflowX: 'hidden',
+      }}
+    >
 
       {/* 어드민 버튼 */}
       {isAdmin && (
@@ -93,72 +111,74 @@ function HomePageInner() {
         </button>
       )}
 
-      {/* 모바일 레이아웃 */}
-      <div className="flex flex-col flex-1 md:hidden px-5 pt-12 pb-32">
-        <div style={{ marginBottom: '24px' }}>
-          <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '22px', fontWeight: 700, letterSpacing: '4px', color: theme?.logo || '#fff', transition: 'color 1.2s' }}>
-            AURAN
-          </div>
-          <div style={{ fontSize: '8px', letterSpacing: '3.5px', marginTop: '3px', marginBottom: '20px', color: theme?.logoSub || '#888', transition: 'color 1.2s' }}>
-            AI BEAUTY FOUNDATION
-          </div>
-          <h1 style={{ fontFamily: 'var(--font-nanum)', fontSize: '28px', fontWeight: 800, lineHeight: 1.45, color: theme?.titleColor || '#fff', transition: 'color 1.2s' }}>
-            피부결이 바뀌면,<br />
-            <em style={{ fontStyle: 'normal', color: theme?.titleEmColor || '#c9a84c' }}>화장이 달라집니다</em>
-          </h1>
-          <p style={{ fontSize: '13px', lineHeight: 1.85, marginTop: '10px', color: theme?.subColor || '#aaa', transition: 'color 1.2s' }}>
-            AI 피부 분석 · 맞춤 제품 추천<br />
-            전국 클리닉 예약까지 한 번에
-          </p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-          {ROLES.map((role, i) => (
-            <button key={role.id} onClick={() => handleRoleSelect(role.id)}
-              style={{ ...cardStyle(i), padding: '16px 12px', minHeight: '120px' }}>
-              <span style={{ fontSize: '26px' }}>{role.icon}</span>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: cardStyles[i]?.name || '#fff', transition: 'color 1.2s' }}>{role.name}</span>
-              <span style={{ fontSize: '10px', color: cardStyles[i]?.desc || '#aaa', transition: 'color 1.2s', textAlign: 'center', lineHeight: 1.5 }}>{role.desc}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* PC 레이아웃 */}
-      <div className="hidden md:flex flex-1 items-center justify-center px-10 py-16">
-        <div className="w-full max-w-[960px] flex gap-16 items-center">
-
-          {/* 왼쪽 텍스트 */}
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '28px', fontWeight: 700, letterSpacing: '5px', color: theme?.logo || '#fff', textShadow: '0 0 20px currentColor', marginBottom: '6px', transition: 'color 1.2s' }}>
+      {!isDesktop ? (
+        /* 모바일 레이아웃 */
+        <div className="flex flex-col flex-1 px-5 pt-12 pb-32">
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '22px', fontWeight: 700, letterSpacing: '4px', color: theme?.logo || '#fff', transition: 'color 1.2s' }}>
               AURAN
             </div>
-            <div style={{ fontSize: '9px', letterSpacing: '4px', color: theme?.logoSub || '#888', marginBottom: '32px', transition: 'color 1.2s' }}>
+            <div style={{ fontSize: '8px', letterSpacing: '3.5px', marginTop: '3px', marginBottom: '20px', color: theme?.logoSub || '#888', transition: 'color 1.2s' }}>
               AI BEAUTY FOUNDATION
             </div>
-            <h1 style={{ fontFamily: 'var(--font-nanum)', fontSize: '38px', fontWeight: 800, lineHeight: 1.45, color: theme?.titleColor || '#fff', transition: 'color 1.2s' }}>
+            <h1 style={{ fontFamily: 'var(--font-nanum)', fontSize: '28px', fontWeight: 800, lineHeight: 1.45, color: theme?.titleColor || '#fff', transition: 'color 1.2s' }}>
               피부결이 바뀌면,<br />
               <em style={{ fontStyle: 'normal', color: theme?.titleEmColor || '#c9a84c' }}>화장이 달라집니다</em>
             </h1>
-            <p style={{ fontSize: '15px', lineHeight: 2, marginTop: '16px', color: theme?.subColor || '#aaa', transition: 'color 1.2s' }}>
+            <p style={{ fontSize: '13px', lineHeight: 1.85, marginTop: '10px', color: theme?.subColor || '#aaa', transition: 'color 1.2s' }}>
               AI 피부 분석 · 맞춤 제품 추천<br />
               전국 클리닉 예약까지 한 번에
             </p>
           </div>
 
-          {/* 오른쪽 2x2 카드 */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '420px', flexShrink: 0 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
             {ROLES.map((role, i) => (
               <button key={role.id} onClick={() => handleRoleSelect(role.id)}
-                style={{ ...cardStyle(i), padding: '20px 16px', minHeight: '140px' }}>
-                <span style={{ fontSize: '30px' }}>{role.icon}</span>
-                <span style={{ fontSize: '16px', fontWeight: 700, color: cardStyles[i]?.name || '#fff', transition: 'color 1.2s' }}>{role.name}</span>
-                <span style={{ fontSize: '11px', color: cardStyles[i]?.desc || '#aaa', transition: 'color 1.2s', textAlign: 'center', lineHeight: 1.6 }}>{role.desc}</span>
+                style={{ ...cardStyle(i), padding: '16px 12px', minHeight: '120px' }}>
+                <span style={{ fontSize: '26px' }}>{role.icon}</span>
+                <span style={{ fontSize: '14px', fontWeight: 700, color: cardStyles[i]?.name || '#fff', transition: 'color 1.2s' }}>{role.name}</span>
+                <span style={{ fontSize: '10px', color: cardStyles[i]?.desc || '#aaa', transition: 'color 1.2s', textAlign: 'center', lineHeight: 1.5 }}>{role.desc}</span>
               </button>
             ))}
           </div>
         </div>
-      </div>
+      ) : (
+        /* PC 레이아웃 */
+        <div className="flex flex-1 items-center justify-center px-10 py-16">
+          <div className="w-full max-w-[960px] flex gap-16 items-center">
+
+            {/* 왼쪽 텍스트 */}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '28px', fontWeight: 700, letterSpacing: '5px', color: theme?.logo || '#fff', textShadow: '0 0 20px currentColor', marginBottom: '6px', transition: 'color 1.2s' }}>
+                AURAN
+              </div>
+              <div style={{ fontSize: '9px', letterSpacing: '4px', color: theme?.logoSub || '#888', marginBottom: '32px', transition: 'color 1.2s' }}>
+                AI BEAUTY FOUNDATION
+              </div>
+              <h1 style={{ fontFamily: 'var(--font-nanum)', fontSize: '38px', fontWeight: 800, lineHeight: 1.45, color: theme?.titleColor || '#fff', transition: 'color 1.2s' }}>
+                피부결이 바뀌면,<br />
+                <em style={{ fontStyle: 'normal', color: theme?.titleEmColor || '#c9a84c' }}>화장이 달라집니다</em>
+              </h1>
+              <p style={{ fontSize: '15px', lineHeight: 2, marginTop: '16px', color: theme?.subColor || '#aaa', transition: 'color 1.2s' }}>
+                AI 피부 분석 · 맞춤 제품 추천<br />
+                전국 클리닉 예약까지 한 번에
+              </p>
+            </div>
+
+            {/* 오른쪽 2x2 카드 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '420px', flexShrink: 0 }}>
+              {ROLES.map((role, i) => (
+                <button key={role.id} onClick={() => handleRoleSelect(role.id)}
+                  style={{ ...cardStyle(i), padding: '20px 16px', minHeight: '140px' }}>
+                  <span style={{ fontSize: '30px' }}>{role.icon}</span>
+                  <span style={{ fontSize: '16px', fontWeight: 700, color: cardStyles[i]?.name || '#fff', transition: 'color 1.2s' }}>{role.name}</span>
+                  <span style={{ fontSize: '11px', color: cardStyles[i]?.desc || '#aaa', transition: 'color 1.2s', textAlign: 'center', lineHeight: 1.6 }}>{role.desc}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 푸터 */}
       <div style={{ textAlign: 'center', paddingBottom: '80px', fontSize: '9px', letterSpacing: '1px', color: theme?.footColor || '#555', transition: 'color 1.2s' }}>
