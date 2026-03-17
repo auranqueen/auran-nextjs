@@ -89,26 +89,27 @@ function HomePageInner() {
     >
 
       {/* 어드민 버튼 */}
-      {isAdmin && (
-        <button
-          onClick={() => router.push('/admin')}
-          style={{
-            position: 'absolute', top: '16px', right: '16px', zIndex: 30,
-            display: 'flex', alignItems: 'center', gap: '8px',
-            background: '#000',
-            border: '1.5px solid #c9a84c',
-            borderRadius: '12px',
-            padding: '10px 20px',
-            color: '#c9a84c',
-            fontSize: '13px',
-            fontWeight: 700,
-            letterSpacing: '1px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
-            cursor: 'pointer',
-          }}>
-          👑 어드민콘솔
-        </button>
-      )}
+      <button
+        onClick={() => router.push('/admin')}
+        aria-label="어드민 콘솔"
+        style={{
+          position: 'absolute', top: '16px', right: '16px', zIndex: 30,
+          display: 'flex', alignItems: 'center', gap: '8px',
+          background: '#000',
+          border: '1.5px solid #c9a84c',
+          borderRadius: '12px',
+          padding: '10px 20px',
+          color: '#c9a84c',
+          fontSize: '13px',
+          fontWeight: 700,
+          letterSpacing: '1px',
+          boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+          cursor: 'pointer',
+          opacity: isAdmin ? 1 : 0.75,
+        }}
+      >
+        {isAdmin ? '👑 어드민콘솔' : '⚙️ 어드민'}
+      </button>
 
       {isMobile ? (
         /* 모바일 레이아웃 */
