@@ -91,8 +91,9 @@ function HomePageInner() {
         }}
       >
 
-      {/* 어드민 버튼 */}
+      {/* 어드민 버튼 (PC) */}
       <button
+        className="only-desktop"
         onClick={() => router.push('/admin')}
         aria-label="어드민 콘솔"
         style={{
@@ -115,34 +116,73 @@ function HomePageInner() {
       </button>
 
       {/* 모바일 레이아웃 */}
-      <div className="only-mobile" style={{ flexDirection: 'column', flex: 1, padding: '48px 24px 120px' }}>
-          <div style={{ marginBottom: '24px' }}>
-            <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '22px', fontWeight: 700, letterSpacing: '4px', color: theme?.logo || '#fff', transition: 'color 1.2s' }}>
-              AURAN
-            </div>
-            <div style={{ fontSize: '8px', letterSpacing: '3.5px', marginTop: '3px', marginBottom: '20px', color: theme?.logoSub || '#888', transition: 'color 1.2s' }}>
-              AI BEAUTY FOUNDATION
-            </div>
-            <h1 style={{ fontFamily: 'var(--font-nanum)', fontSize: '28px', fontWeight: 800, lineHeight: 1.45, color: theme?.titleColor || '#fff', transition: 'color 1.2s' }}>
-              피부결이 바뀌면,<br />
-              <em style={{ fontStyle: 'normal', color: theme?.titleEmColor || '#c9a84c' }}>화장이 달라집니다</em>
-            </h1>
-            <p style={{ fontSize: '13px', lineHeight: 1.85, marginTop: '10px', color: theme?.subColor || '#aaa', transition: 'color 1.2s' }}>
-              AI 피부 분석 · 맞춤 제품 추천<br />
-              전국 클리닉 예약까지 한 번에
-            </p>
+      <div className="only-mobile" style={{ flexDirection: 'column', flex: 1 }}>
+        {/* 헤더 (로고 + 어드민) */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '16px 20px',
+          }}
+        >
+          <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '22px', fontWeight: 700, letterSpacing: '4px', color: theme?.logo || '#fff', transition: 'color 1.2s' }}>
+            AURAN
           </div>
+          <button
+            onClick={() => router.push('/admin')}
+            aria-label="어드민 콘솔"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              background: '#000',
+              border: '1.5px solid #c9a84c',
+              borderRadius: '8px',
+              padding: '6px 10px',
+              color: '#c9a84c',
+              fontSize: '10px',
+              fontWeight: 800,
+              letterSpacing: '0.5px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
+              cursor: 'pointer',
+              opacity: isAdmin ? 1 : 0.75,
+            }}
+          >
+            👑 어드민콘솔
+          </button>
+        </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        {/* 타이틀 영역 */}
+        <div style={{ padding: '20px 20px 0' }}>
+          <div style={{ fontSize: '8px', letterSpacing: '3.5px', marginTop: '3px', marginBottom: '20px', color: theme?.logoSub || '#888', transition: 'color 1.2s' }}>
+            AI BEAUTY FOUNDATION
+          </div>
+          <h1 style={{ fontFamily: 'var(--font-nanum)', fontSize: '28px', fontWeight: 800, lineHeight: 1.45, color: theme?.titleColor || '#fff', transition: 'color 1.2s' }}>
+            피부결이 바뀌면,<br />
+            <em style={{ fontStyle: 'normal', color: theme?.titleEmColor || '#c9a84c' }}>화장이 달라집니다</em>
+          </h1>
+          <p style={{ fontSize: '13px', lineHeight: 1.85, marginTop: '10px', color: theme?.subColor || '#aaa', transition: 'color 1.2s' }}>
+            AI 피부 분석 · 맞춤 제품 추천<br />
+            전국 클리닉 예약까지 한 번에
+          </p>
+        </div>
+
+        {/* 카드 영역 */}
+        <div style={{ padding: '20px 16px 120px' }}>
+          <div style={{ width: '100%', padding: '0 16px', boxSizing: 'border-box' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%' }}>
             {ROLES.map((role, i) => (
               <button key={role.id} onClick={() => handleRoleSelect(role.id)}
-                style={{ ...cardStyle(i), padding: '16px 12px', minHeight: '120px' }}>
+                style={{ ...cardStyle(i), padding: '16px 12px', minHeight: '120px', width: '100%', overflow: 'visible' }}>
                 <span style={{ fontSize: '26px' }}>{role.icon}</span>
                 <span style={{ fontSize: '14px', fontWeight: 700, color: cardStyles[i]?.name || '#fff', transition: 'color 1.2s' }}>{role.name}</span>
                 <span style={{ fontSize: '9px', color: cardStyles[i]?.desc || '#aaa', transition: 'color 1.2s', textAlign: 'center', lineHeight: 1.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{role.desc}</span>
               </button>
             ))}
           </div>
+          </div>
+        </div>
       </div>
 
       {/* PC 레이아웃 */}
