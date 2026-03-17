@@ -109,7 +109,7 @@ function HomePageInner() {
           opacity: isAdmin ? 1 : 0.75,
         }}
       >
-        {isAdmin ? '👑 어드민콘솔' : '⚙️ 어드민'}
+        {isAdmin ? '👑 ADMIN CONSOLE' : '⚙️ 어드민'}
       </button>
 
       {isMobile ? (
