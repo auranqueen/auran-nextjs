@@ -30,6 +30,10 @@ export default function AdminMembersPage() {
   const [detailOrders, setDetailOrders] = useState<any[]>([])
   const [detailPoints, setDetailPoints] = useState<any[]>([])
   const [detailLogs, setDetailLogs] = useState<any[]>([])
+  const [pointModal, setPointModal] = useState(false)
+  const [pointAmount, setPointAmount] = useState('')
+  const [pointReason, setPointReason] = useState('관리자 수동 지급')
+  const [pointSaving, setPointSaving] = useState(false)
 
   useEffect(() => {
     const run = async () => {
@@ -132,6 +136,59 @@ export default function AdminMembersPage() {
     setDetailOrders([])
     setDetailPoints([])
     setDetailLogs([])
+    setPointModal(false)
+    setPointAmount('')
+    setPointReason('관리자 수동 지급')
+  }
+
+  const openPointModal = () => {
+    setPointModal(true)
+    setPointAmount('')
+    setPointReason('관리자 수동 지급')
+  }
+
+  const grantPoints = async () => {
+    if (!selected) return
+    const amt = Number(pointAmount)
+    if (!amt || !Number.isFinite(amt)) {
+      alert('지급 포인트를 입력해주세요.')
+      return
+    }
+    setPointSaving(true)
+    try {
+      // 현재 포인트 조회 후 업데이트
+      const { data: u, error: uerr } = await supabase.from('users').select('points').eq('id', selected.id).single()
+      if (uerr) throw uerr
+      const nextBalance = Number(u?.points || 0) + amt
+
+      const now = new Date().toISOString()
+      const [h, upd] = await Promise.all([
+        supabase.from('point_history').insert({
+          user_id: selected.id,
+          type: 'admin',
+          amount: amt,
+          balance: nextBalance,
+          description: pointReason,
+          created_at: now,
+        }),
+        supabase.from('users').update({ points: nextBalance }).eq('id', selected.id),
+      ])
+      if (h.error) throw h.error
+      if (upd.error) throw upd.error
+
+      setMembers(prev => prev.map(m => (m.id === selected.id ? { ...m, points: nextBalance } : m)))
+      setSelected(prev => (prev ? { ...prev, points: nextBalance } : prev))
+      setDetailPoints(prev => [
+        { id: `local_${now}`, type: 'admin', amount: amt, balance: nextBalance, description: pointReason, created_at: now },
+        ...prev,
+      ])
+      setPointModal(false)
+      setPointAmount('')
+    } catch (e: any) {
+      alert(e?.message || '포인트 지급 중 오류가 발생했습니다.')
+    } finally {
+      setPointSaving(false)
+    }
   }
 
   return (
@@ -334,6 +391,12 @@ export default function AdminMembersPage() {
             </div>
 
             <div style={{ marginTop: 14, display: 'flex', gap: 10 }}>
+              <button
+                onClick={openPointModal}
+                style={{ flex: 1, padding: '12px 14px', borderRadius: 16, background: 'rgba(201,168,76,0.14)', border: '1px solid rgba(201,168,76,0.30)', color: '#c9a84c', fontWeight: 900, cursor: 'pointer' }}
+              >
+                ✨ 포인트 지급
+              </button>
               {selected.status === 'suspended' ? (
                 <button
                   onClick={() => activate(selected)}
@@ -354,6 +417,58 @@ export default function AdminMembersPage() {
                 style={{ flex: 1, padding: '12px 14px', borderRadius: 16, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.65)', fontWeight: 900, cursor: 'pointer' }}
               >
                 닫기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selected && pointModal && (
+        <div
+          onClick={() => setPointModal(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.72)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: '#0f1218', border: '1px solid rgba(255,255,255,0.13)', borderTop: '2px solid #c9a84c', borderRadius: 14, padding: 26, minWidth: 360, maxWidth: 520, width: '92%' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 900, color: '#eef1f6' }}>✨ 포인트 지급</div>
+                <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.35)', marginTop: 3, fontFamily: "'JetBrains Mono', monospace" }}>{selected.email}</div>
+              </div>
+              <button onClick={() => setPointModal(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: 19, cursor: 'pointer' }}>×</button>
+            </div>
+
+            <div style={{ marginTop: 16 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>지급 포인트 (P)</div>
+              <input
+                value={pointAmount}
+                onChange={e => setPointAmount(e.target.value)}
+                placeholder="예) 1000"
+                type="number"
+                style={{ width: '100%', background: '#161b24', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, color: '#eef1f6', fontSize: 12, padding: '8px 11px', outline: 'none', fontFamily: "'JetBrains Mono', monospace" }}
+              />
+            </div>
+
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>지급 사유</div>
+              <select
+                value={pointReason}
+                onChange={e => setPointReason(e.target.value)}
+                style={{ width: '100%', background: '#161b24', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 7, color: '#eef1f6', fontSize: 12, padding: '8px 11px', outline: 'none' }}
+              >
+                <option>관리자 수동 지급</option>
+                <option>이벤트 보상</option>
+                <option>오류 보상</option>
+                <option>구매 적립 수동</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18, paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+              <button className="btn btn-gy" onClick={() => setPointModal(false)}>취소</button>
+              <button className="btn btn-gd" onClick={grantPoints} disabled={pointSaving} style={{ opacity: pointSaving ? 0.7 : 1 }}>
+                {pointSaving ? '지급 중...' : '✨ 지급'}
               </button>
             </div>
           </div>
