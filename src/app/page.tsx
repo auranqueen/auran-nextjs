@@ -36,15 +36,16 @@ function HomePageInner() {
 
   const handleRoleSelect = async (roleId: string) => {
     const normalized = normalizePosition(roleId)
+    const position = normalized || 'customer'
     if (typeof window !== 'undefined') {
-      localStorage.setItem('selectedPosition', normalized)
+      localStorage.setItem('selectedPosition', position)
     }
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      router.push('/login?position=' + normalized)
+      router.push('/login?position=' + position)
       return
     }
-    router.push(positionToDashboardPath(normalized))
+    router.push(positionToDashboardPath(position))
   }
 
   const cardStyles = [theme?.c1, theme?.c2, theme?.c3, theme?.c4]
