@@ -165,6 +165,7 @@ export default function CustomerDashboardClient({ profile, notifications, recent
           { icon: '🏠', label: '홈', href: '/dashboard/customer' },
           { icon: '🧬', label: '분석', href: '/analysis' },
           { icon: '💊', label: '제품', href: '/products' },
+          { icon: '🏭', label: '브랜드사', href: '/dashboard/brand' },
           { icon: '📅', label: '예약', href: '/booking' },
           { icon: '👤', label: '마이', href: '/my' },
         ].map(t => (
