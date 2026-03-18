@@ -4,12 +4,20 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { normalizePosition, positionToDashboardPath, POSITION_STORAGE_KEY } from '@/lib/position'
 
-const ROLE_META: Record<string, { label: string; icon: string; color: string; border: string; bg: string; hint: string }> = {
-  customer: { label: '고객', icon: '💧', color: '#c9a84c', border: 'rgba(201,168,76,0.35)', bg: 'rgba(201,168,76,0.08)', hint: '피부 분석·제품 추천·살롱 예약' },
-  partner:  { label: '파트너스', icon: '💼', color: '#4a8dc0', border: 'rgba(74,141,192,0.35)', bg: 'rgba(74,141,192,0.08)', hint: '추천 링크·커미션 수익' },
-  owner:    { label: '원장님', icon: '🏥', color: '#bf5f90', border: 'rgba(191,95,144,0.35)', bg: 'rgba(191,95,144,0.08)', hint: '예약·스토어·매출 관리' },
-  brand:    { label: '브랜드사', icon: '🏭', color: '#4cad7e', border: 'rgba(76,173,126,0.35)', bg: 'rgba(76,173,126,0.08)', hint: '입점·납품·AI 추천 노출' },
-  admin:    { label: '관리자', icon: '⚙️', color: '#9568d4', border: 'rgba(149,104,212,0.35)', bg: 'rgba(149,104,212,0.08)', hint: '플랫폼 전체 관리' },
+const ROLE_META: Record<string, { label: string; icon: string; accent: string; border: string; bg: string; hint: string; brand: string }> = {
+  customer: { label: '고객', icon: '💧', accent: '#C9A96E', border: 'rgba(201,169,110,0.35)', bg: 'rgba(201,169,110,0.08)', hint: '피부 분석·제품 추천·살롱 예약', brand: 'AURAN' },
+  partner:  { label: '파트너스', icon: '💼', accent: '#B8AF80', border: 'rgba(184,175,128,0.35)', bg: 'rgba(184,175,128,0.08)', hint: '추천 링크·커미션 수익', brand: 'AURAN PARTNERS' },
+  owner:    { label: '원장님', icon: '🏥', accent: '#D4A97A', border: 'rgba(212,169,122,0.35)', bg: 'rgba(212,169,122,0.08)', hint: '예약·스토어·매출 관리', brand: 'AURAN PRO' },
+  brand:    { label: '브랜드사', icon: '🏭', accent: '#C4A0B8', border: 'rgba(196,160,184,0.35)', bg: 'rgba(196,160,184,0.08)', hint: '입점·납품·AI 추천 노출', brand: 'AURAN BRAND HUB' },
+  admin:    { label: '관리자', icon: '⚙️', accent: '#C9A96E', border: 'rgba(201,169,110,0.35)', bg: 'rgba(201,169,110,0.08)', hint: '플랫폼 전체 관리', brand: 'AURAN' },
+}
+
+function dashboardPathForRole(role: string): string {
+  if (role === 'owner' || role === 'salon') return '/dashboard/owner'
+  if (role === 'partner') return '/dashboard/partner'
+  if (role === 'brand') return '/dashboard/brand'
+  if (role === 'admin') return '/admin'
+  return '/dashboard/customer'
 }
 
 function LoginForm() {
@@ -64,7 +72,7 @@ function LoginForm() {
       const position = fromDb || stored || fromParam || 'customer'
 
       localStorage.setItem(POSITION_STORAGE_KEY, position)
-      router.push(positionToDashboardPath(position))
+      router.push(dashboardPathForRole(userData?.role || role))
     } catch (err: any) {
       const msg = err?.message || ''
       if (msg.includes('Email not confirmed') || msg.includes('email_not_confirmed')) {
@@ -111,7 +119,7 @@ function LoginForm() {
       {/* 헤더 */}
       <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
         <button onClick={() => router.push('/')} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 22, lineHeight: 1 }}>‹</button>
-        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: meta.color }}>AURAN · {meta.label.toUpperCase()} LOGIN</div>
+        <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: meta.accent }}>{meta.brand} · {meta.label.toUpperCase()} LOGIN</div>
       </div>
 
       <div style={{ flex: 1, padding: '8px 24px 40px' }}>
@@ -119,7 +127,7 @@ function LoginForm() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28, padding: '14px 16px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 14 }}>
           <span style={{ fontSize: 28 }}>{meta.icon}</span>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: meta.color }}>{meta.label} 로그인</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: meta.accent }}>{meta.label} 로그인</div>
             <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{meta.hint}</div>
           </div>
         </div>
@@ -168,7 +176,7 @@ function LoginForm() {
               type="email" value={email} onChange={e => setEmail(e.target.value)}
               placeholder="example@email.com" required
               style={inputStyle}
-              onFocus={e => e.target.style.borderColor = meta.color}
+              onFocus={e => e.target.style.borderColor = meta.accent}
               onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
           </div>
@@ -178,7 +186,7 @@ function LoginForm() {
               type="password" value={password} onChange={e => setPassword(e.target.value)}
               placeholder="비밀번호 입력" required
               style={inputStyle}
-              onFocus={e => e.target.style.borderColor = meta.color}
+              onFocus={e => e.target.style.borderColor = meta.accent}
               onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
           </div>
@@ -191,7 +199,7 @@ function LoginForm() {
                   <button
                     type="button"
                     onClick={() => router.push(`/auth/verify-email?email=${encodeURIComponent(email)}&role=${role}`)}
-                    style={{ background: 'none', border: 'none', color: '#c9a84c', textDecoration: 'underline', cursor: 'pointer', fontSize: 12 }}
+                    style={{ background: 'none', border: 'none', color: meta.accent, textDecoration: 'underline', cursor: 'pointer', fontSize: 12 }}
                   >
                     인증 메일 다시 보내기
                   </button>
@@ -202,7 +210,7 @@ function LoginForm() {
 
           <button
             type="submit" disabled={loading}
-            style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.color, fontSize: 15, fontWeight: 700, marginTop: 4, opacity: loading ? 0.7 : 1 }}
+            style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.accent, fontSize: 15, fontWeight: 700, marginTop: 4, opacity: loading ? 0.7 : 1 }}
           >
             {loading ? '로그인 중...' : `${meta.label} 로그인`}
           </button>
@@ -213,7 +221,7 @@ function LoginForm() {
           계정이 없으신가요?{' '}
           <button
             onClick={() => router.push(`/signup?role=${role}`)}
-            style={{ background: 'none', border: 'none', color: meta.color, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+            style={{ background: 'none', border: 'none', color: meta.accent, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
           >
             회원가입 →
           </button>

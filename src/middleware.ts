@@ -82,7 +82,7 @@ export async function middleware(req: NextRequest) {
     const map: Record<string, string> = {
       customer: '/dashboard/customer',
       partner: '/dashboard/partner',
-      salon: '/dashboard/salon',
+      salon: '/dashboard/owner',
       brand: '/dashboard/brand',
       admin: '/admin',
     }

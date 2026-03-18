@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react'
 const ROLES = [
   { id: 'customer', icon: '💧', name: '고객',    desc: '피부분석 · 제품추천 · 살롱예약 · 마이월드' },
   { id: 'partner',  icon: '💎', name: '파트너스', desc: '추천링크 · 커미션수익 · 라이브커머스' },
-  { id: 'salon',    icon: '✨', name: '원장님',  desc: '예약관리 · 스토어 · 매출관리' },
+  { id: 'owner',    icon: '✨', name: '원장님',  desc: '예약관리 · 스토어 · 매출관리' },
   { id: 'brand',    icon: '🧴', name: '브랜드사', desc: '납품관리 · 브랜드분석' },
 ]
 
@@ -58,7 +58,9 @@ function HomePageInner() {
     }
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      router.push('/login?position=' + position)
+      // route to role-specific login page
+      const loginRole = roleId === 'owner' ? 'owner' : position
+      router.push('/login?role=' + loginRole)
       return
     }
     const dbRole = await getDbRole(user.id)

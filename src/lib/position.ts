@@ -17,7 +17,8 @@ export function positionToDashboardPath(position: Position): string {
     case 'partner':
       return '/dashboard/partner'
     case 'salon':
-      return '/dashboard/salon'
+      // owner dashboard entry route
+      return '/dashboard/owner'
     case 'brand':
       return '/dashboard/brand'
   }
