@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
@@ -8,6 +9,8 @@ import DashboardBottomNav from '@/components/DashboardBottomNav'
 export default function BrandDashClient({ profile, brand, products }: { profile: any; brand: any; products: any[] }) {
   const router = useRouter()
   const supabase = createClient()
+  const [applying, setApplying] = useState(false)
+  const [applyError, setApplyError] = useState('')
   async function logout() {
     await supabase.auth.signOut()
     localStorage.removeItem(POSITION_STORAGE_KEY)
@@ -15,6 +18,27 @@ export default function BrandDashClient({ profile, brand, products }: { profile:
   }
 
   const isActive = brand?.status === 'active'
+
+  async function applyBrand() {
+    setApplying(true)
+    setApplyError('')
+    try {
+      const payload: any = {
+        user_id: profile.id,
+        name: profile.brand_name || profile.name || '브랜드',
+        origin: profile.brand_origin || null,
+        status: 'pending',
+      }
+      const { error } = await supabase.from('brands').insert(payload)
+      if (error) throw error
+      alert('✅ 입점 신청이 접수되었습니다. 승인까지 잠시만 기다려주세요.')
+      router.refresh()
+    } catch (e: any) {
+      setApplyError(e?.message || '입점 신청 중 오류가 발생했습니다.')
+    } finally {
+      setApplying(false)
+    }
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
@@ -50,7 +74,14 @@ export default function BrandDashClient({ profile, brand, products }: { profile:
             <div style={{ fontSize: 40, marginBottom: 12 }}>🏭</div>
             <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 18, color: 'var(--text)', marginBottom: 8 }}>입점 신청하기</div>
             <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.7, marginBottom: 20 }}>AI 매칭·살롱 유통·플랫폼 판매는<br />본사가 전담합니다</div>
-            <button style={{ width: '100%', padding: '15px', background: 'rgba(76,173,126,0.15)', border: '1px solid rgba(76,173,126,0.4)', borderRadius: 12, color: '#4cad7e', fontSize: 15, fontWeight: 700 }}>🏭 입점 신청하기 →</button>
+            <button
+              onClick={applyBrand}
+              disabled={applying}
+              style={{ width: '100%', padding: '15px', background: 'rgba(76,173,126,0.15)', border: '1px solid rgba(76,173,126,0.4)', borderRadius: 12, color: '#4cad7e', fontSize: 15, fontWeight: 700, opacity: applying ? 0.7 : 1 }}
+            >
+              {applying ? '접수 중...' : '🏭 입점 신청하기 →'}
+            </button>
+            {applyError && <div style={{ marginTop: 10, fontSize: 12, color: '#e08080' }}>{applyError}</div>}
           </div>
         ) : (
           <div>
