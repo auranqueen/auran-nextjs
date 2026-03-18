@@ -44,9 +44,19 @@ async function getUserStatus(supabase: ReturnType<typeof createServerClient>, au
   return null
 }
 
-export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl
+const PRODUCTION_ORIGIN = 'https://www.auran.kr'
 
+export async function middleware(req: NextRequest) {
+  const url = req.nextUrl
+  const host = url.hostname || ''
+
+  // auran-deploy로 들어온 요청은 무조건 프로덕션으로 보냄 (로그인/캐시 관계없이 동일 도메인 유지)
+  if (host.includes('auran-deploy.vercel.app')) {
+    const to = new URL(url.pathname + url.search, PRODUCTION_ORIGIN)
+    return NextResponse.redirect(to.toString(), 302)
+  }
+
+  const { pathname } = url
   const isSuperConsole = pathname.startsWith('/super-console')
   const isDashboard = pathname.startsWith('/dashboard')
   const isAdmin = pathname.startsWith('/admin')
@@ -140,5 +150,11 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/super-console/:path*', '/dashboard/:path*', '/admin/:path*'],
+  // auran-deploy 리다이렉트를 위해 모든 경로에서 실행. 정적/API 제외
+  matcher: [
+    '/((?!_next/static|_next/image|favicon\\.ico|api/).*)',
+    '/super-console/:path*',
+    '/dashboard/:path*',
+    '/admin/:path*',
+  ],
 }
