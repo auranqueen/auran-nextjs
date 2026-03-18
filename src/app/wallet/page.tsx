@@ -15,6 +15,7 @@ export default function WalletPage() {
   const [profile, setProfile] = useState<any | null>(null)
   const [history, setHistory] = useState<any[]>([])
   const [hasPin, setHasPin] = useState<boolean | null>(null)
+  const [charging, setCharging] = useState(false)
 
   useEffect(() => {
     const run = async () => {
@@ -77,9 +78,37 @@ export default function WalletPage() {
             )}
             {hasPin === true && (
               <div style={{ marginBottom: 14 }}>
-                <PaymentAuthGuard title="결제 PIN 확인" onSuccess={() => alert('충전 기능 준비 중입니다.')} requirePin>
-                  <button type="button" style={{ width: '100%', padding: 14, background: 'rgba(76,173,126,0.2)', border: '1px solid rgba(76,173,126,0.4)', borderRadius: 12, color: '#4cad7e', fontWeight: 700 }}>
-                    충전하기
+                <PaymentAuthGuard
+                  title="결제 PIN 확인"
+                  requirePin
+                  onSuccess={async () => {
+                    const input = window.prompt('충전 금액을 입력해주세요 (최소 1000원)', '10000')
+                    if (!input) return
+                    const amt = Number(String(input).replaceAll(',', '').trim())
+                    if (!Number.isFinite(amt) || amt < 1000) { alert('최소 1000원 이상 입력해주세요.'); return }
+                    setCharging(true)
+                    try {
+                      const res = await fetch('/api/payments/payapp/create', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ kind: 'charge', amount: amt }),
+                      })
+                      const json = await res.json().catch(() => ({}))
+                      if (!json?.ok) throw new Error(json?.error || json?.reason || 'payapp_create_failed')
+                      window.location.href = json.pay_url
+                    } catch (e: any) {
+                      alert(e?.message || '결제 요청 중 오류가 발생했습니다.')
+                    } finally {
+                      setCharging(false)
+                    }
+                  }}
+                >
+                  <button
+                    type="button"
+                    disabled={charging}
+                    style={{ width: '100%', padding: 14, background: 'rgba(76,173,126,0.2)', border: '1px solid rgba(76,173,126,0.4)', borderRadius: 12, color: '#4cad7e', fontWeight: 700, opacity: charging ? 0.7 : 1 }}
+                  >
+                    {charging ? '결제창 여는 중...' : '충전하기'}
                   </button>
                 </PaymentAuthGuard>
               </div>
