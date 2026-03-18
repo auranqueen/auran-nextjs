@@ -13,33 +13,31 @@ export default function WalletPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any | null>(null)
-  const [history, setHistory] = useState<any[]>([])
   const [hasPin, setHasPin] = useState<boolean | null>(null)
   const [charging, setCharging] = useState(false)
 
   useEffect(() => {
     const run = async () => {
       setLoading(true)
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
+      // getUser()가 일시적으로 null을 반환하는 경우(세션 갱신 지연 등)가 있어서
+      // session을 먼저 확인하고, 한 번 재시도 후에만 로그인 페이지로 이동
+      const { data: session1 } = await supabase.auth.getSession()
+      let authUser = session1.session?.user || null
+      if (!authUser) {
+        await new Promise(r => setTimeout(r, 250))
+        const { data: session2 } = await supabase.auth.getSession()
+        authUser = session2.session?.user || null
+      }
+      if (!authUser) {
+        setLoading(false)
         router.replace('/login?role=customer')
         return
       }
-      const { data: p } = await supabase.from('users').select('id,points,charge_balance').eq('auth_id', user.id).single()
+
+      const { data: p } = await supabase.from('users').select('id,points,charge_balance').eq('auth_id', authUser.id).single()
       setProfile(p || null)
-      if (p?.id) {
-        const { data: ph } = await supabase
-          .from('point_history')
-          .select('*')
-          .eq('user_id', p.id)
-          .order('created_at', { ascending: false })
-          .limit(20)
-        setHistory(ph || [])
-      } else {
-        setHistory([])
-      }
       try {
-        const res = await fetch('/api/auth/pin/status')
+        const res = await fetch('/api/auth/pin/status', { credentials: 'same-origin' })
         const data = await res.json()
         setHasPin(!!data.hasPin)
       } catch {
@@ -50,10 +48,22 @@ export default function WalletPage() {
     run()
   }, [router, supabase])
 
+  // 모바일 전체화면 고정 (다른 페이지 배경이 비치지 않게)
+  useEffect(() => {
+    const prevHtml = document.documentElement.style.overflow
+    const prevBody = document.body.style.overflow
+    document.documentElement.style.overflow = 'hidden'
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.documentElement.style.overflow = prevHtml
+      document.body.style.overflow = prevBody
+    }
+  }, [])
+
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
+    <div style={{ height: '100dvh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <DashboardHeader title="내 지갑" right={<NoticeBell />} />
-      <div style={{ padding: '18px 18px 0' }}>
+      <div style={{ padding: '18px 18px 0', flex: 1, overflowY: 'auto', paddingBottom: 110 }}>
         {loading ? (
           <div style={{ fontSize: 12, color: 'var(--text3)' }}>불러오는 중...</div>
         ) : !profile ? (
@@ -82,6 +92,9 @@ export default function WalletPage() {
                   title="결제 PIN 확인"
                   requirePin
                   onSuccess={async () => {
+                    // 세션이 끊긴 경우 바로 로그인으로 튕기지 않고 안내
+                    const { data: s } = await supabase.auth.getSession()
+                    if (!s.session?.user) { alert('로그인이 필요합니다. 다시 로그인해주세요.'); router.replace('/login?role=customer'); return }
                     const input = window.prompt('충전 금액을 입력해주세요 (최소 1000원)', '10000')
                     if (!input) return
                     const amt = Number(String(input).replaceAll(',', '').trim())
@@ -91,6 +104,7 @@ export default function WalletPage() {
                       const res = await fetch('/api/payments/payapp/create', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
                         body: JSON.stringify({ kind: 'charge', amount: amt }),
                       })
                       const json = await res.json().catch(() => ({}))
@@ -111,30 +125,6 @@ export default function WalletPage() {
                     {charging ? '결제창 여는 중...' : '충전하기'}
                   </button>
                 </PaymentAuthGuard>
-              </div>
-            )}
-
-            <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', marginBottom: 10 }}>✨ 포인트 내역</div>
-            {history.length === 0 ? (
-              <div style={{ fontSize: 12, color: 'var(--text3)' }}>내역이 없습니다.</div>
-            ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {history.map(h => (
-                  <div key={h.id} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: '12px 14px', display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ fontSize: 12, color: '#fff', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.description || '포인트 내역'}</div>
-                      <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>{h.created_at ? new Date(h.created_at).toLocaleDateString('ko-KR') : ''}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 800, color: h.type === 'earn' ? 'var(--gold)' : '#e08080' }}>
-                        {h.type === 'earn' ? '+' : ''}{(h.amount || 0).toLocaleString()}P
-                      </div>
-                      {typeof h.balance === 'number' && (
-                        <div style={{ fontSize: 9, color: 'var(--text3)' }}>잔액 {h.balance.toLocaleString()}P</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
               </div>
             )}
           </>
