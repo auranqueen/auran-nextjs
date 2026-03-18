@@ -45,13 +45,17 @@ export async function POST(req: NextRequest) {
   if (!authId) return NextResponse.json({ ok: false, error: 'missing_auth_id' }, { status: 400 })
 
   const svc = createServiceClient()
-  const { error } = await svc
+  const { data: updated, error } = await svc
     .from('users')
-    .update({ status: 'active', approved_at: new Date().toISOString() })
+    // approved_at 컬럼이 없을 수 있어서 status만 확실히 변경
+    .update({ status: 'active' })
     .eq('auth_id', authId)
     .in('role', ['partner', 'owner', 'brand'])
+    .select('auth_id,role,status')
+    .maybeSingle()
 
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
-  return NextResponse.json({ ok: true })
+  if (!updated) return NextResponse.json({ ok: false, error: 'not_found' }, { status: 404 })
+  return NextResponse.json({ ok: true, updated })
 }
 
