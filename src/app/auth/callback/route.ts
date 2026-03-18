@@ -19,17 +19,30 @@ export async function GET(request: NextRequest) {
         .single()
 
       const meta = data.user.user_metadata || {}
+      const provider = data.user.app_metadata?.provider || 'email'
+      const kakaoIdentity = data.user.identities?.find((i: any) => i.provider === 'kakao')
+      const kakaoId: string | null =
+        (kakaoIdentity?.identity_data?.id != null ? String(kakaoIdentity.identity_data.id) : null) ||
+        (kakaoIdentity?.id != null ? String(kakaoIdentity.id) : null) ||
+        null
+
+      const emailOrFallback =
+        data.user.email ||
+        (provider === 'kakao' && kakaoId ? `kakao-${kakaoId}@no-email.auran` : null) ||
+        `${data.user.id}@no-email.auran`
+
       if (!existing) {
         const dbRole = meta.role === 'salon' ? 'owner' : (position === 'salon' ? 'owner' : position || meta.role || 'customer')
         const referralCode = Math.random().toString(36).slice(2, 8).toUpperCase()
         await supabase.from('users').insert({
           auth_id: data.user.id,
-          email: data.user.email,
-          name: meta.name || meta.full_name || data.user.email?.split('@')[0] || '사용자',
+          email: emailOrFallback,
+          name: meta.name || meta.full_name || (emailOrFallback?.split('@')[0] ?? '사용자'),
           avatar_url: meta.avatar_url || data.user.user_metadata?.avatar_url,
           phone: meta.phone || null,
           role: dbRole,
-          provider: data.user.app_metadata?.provider || 'email',
+          provider,
+          kakao_id: provider === 'kakao' ? kakaoId : null,
           referral_code: referralCode,
           status: 'active',
           points: 0,
@@ -37,7 +50,7 @@ export async function GET(request: NextRequest) {
         })
         await supabase.from('traffic_logs').insert({
           user_id: data.user.id,
-          source: data.user.app_metadata?.provider || 'direct',
+          source: provider || 'direct',
           action: 'signup',
         })
       }
