@@ -34,7 +34,8 @@ export async function GET(request: NextRequest) {
       if (!existing) {
         const dbRole = meta.role === 'salon' ? 'owner' : (position === 'salon' ? 'owner' : position || meta.role || 'customer')
         const referralCode = Math.random().toString(36).slice(2, 8).toUpperCase()
-        await supabase.from('users').insert({
+        // Kakao may not provide email. Use fallback email and upsert by auth_id
+        const basePayload = {
           auth_id: data.user.id,
           email: emailOrFallback,
           name: meta.name || meta.full_name || (emailOrFallback?.split('@')[0] ?? '사용자'),
@@ -47,7 +48,14 @@ export async function GET(request: NextRequest) {
           status: 'active',
           points: 0,
           charge_balance: 0,
-        })
+        }
+        const up = await supabase.from('users').upsert(basePayload, { onConflict: 'auth_id' })
+        if (up.error) {
+          // If email uniqueness collides, retry with auth-id based fallback
+          const retryEmail = `auth-${data.user.id}@no-email.auran`
+          const up2 = await supabase.from('users').upsert({ ...basePayload, email: retryEmail }, { onConflict: 'auth_id' })
+          if (up2.error) throw up2.error
+        }
         await supabase.from('traffic_logs').insert({
           user_id: data.user.id,
           source: provider || 'direct',
