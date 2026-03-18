@@ -3,12 +3,13 @@
 import { useEffect, useMemo, useState } from 'react'
 
 type Row = {
+  type?: 'user' | 'brand'
   id: string
-  auth_id: string
-  email: string
-  name: string
-  role: 'partner' | 'owner' | 'brand' | string
-  status: string
+  auth_id?: string
+  email?: string
+  name?: string
+  role?: 'partner' | 'owner' | 'brand' | string
+  status?: string
   created_at: string
 }
 
@@ -47,14 +48,19 @@ export default function AdminApprovalsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const approve = async (authId: string) => {
-    setSavingId(authId)
+  const approve = async (r: Row) => {
+    const key = r.type === 'brand' ? r.id : (r.auth_id || r.id)
+    setSavingId(key)
     setError('')
     try {
       const res = await fetch('/api/admin/approvals', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ auth_id: authId }),
+        body: JSON.stringify(
+          r.type === 'brand'
+            ? { type: 'brand', id: r.id }
+            : { type: 'user', auth_id: r.auth_id || r.id }
+        ),
       })
       const json = await res.json().catch(() => ({}))
       if (!json?.ok) throw new Error(json?.error || json?.reason || 'approve_failed')
@@ -102,26 +108,33 @@ export default function AdminApprovalsPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map(r => (
-                <tr key={r.auth_id}>
-                  <td><span className="b b-gy">{roleLabel(r.role)}</span></td>
-                  <td style={{ fontWeight: 700 }}>{r.name || '-'}</td>
-                  <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{r.email}</td>
-                  <td><span className="b b-gd">{r.status}</span></td>
+              {rows.map(r => {
+                const key = r.type === 'brand' ? r.id : (r.auth_id || r.id)
+                const role = r.type === 'brand' ? '브랜드 입점' : roleLabel(r.role || '-')
+                const name = r.type === 'brand' ? (r.name || '-') : (r.name || '-')
+                const email = r.type === 'brand' ? '-' : (r.email || '-')
+                const status = r.status || 'pending'
+                return (
+                <tr key={key}>
+                  <td><span className="b b-gy">{role}</span></td>
+                  <td style={{ fontWeight: 700 }}>{name}</td>
+                  <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>{email}</td>
+                  <td><span className="b b-gd">{status}</span></td>
                   <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: 'rgba(255,255,255,0.55)' }}>
                     {new Date(r.created_at).toLocaleDateString()}
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <button
                       className="btn btn-gd"
-                      onClick={() => approve(r.auth_id)}
-                      disabled={savingId === r.auth_id}
+                      onClick={() => approve(r)}
+                      disabled={savingId === key}
                     >
-                      {savingId === r.auth_id ? '처리 중...' : '승인'}
+                      {savingId === key ? '처리 중...' : '승인'}
                     </button>
                   </td>
                 </tr>
-              ))}
+                )
+              })}
             </tbody>
           </table>
         </div>
