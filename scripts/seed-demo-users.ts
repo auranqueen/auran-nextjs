@@ -1,4 +1,4 @@
-import 'dotenv/config'
+import dotenv from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
 
 type DemoUser = {
@@ -15,15 +15,27 @@ const DEMO_USERS: DemoUser[] = [
   { role: 'admin', email: 'admin@auran.kr', password: 'auran1234!' },
 ]
 
+// Load envs from .env.local first, then .env (if present)
+dotenv.config({ path: '.env.local' })
+dotenv.config()
+
 function mustEnv(name: string): string {
   const v = process.env[name]
   if (!v) throw new Error(`Missing env: ${name}`)
   return v
 }
 
+function firstEnv(names: string[]): string {
+  for (const n of names) {
+    const v = process.env[n]
+    if (v) return v
+  }
+  throw new Error(`Missing env: one of [${names.join(', ')}]`)
+}
+
 async function main() {
   const url = mustEnv('NEXT_PUBLIC_SUPABASE_URL')
-  const serviceKey = mustEnv('SUPABASE_SERVICE_ROLE_KEY')
+  const serviceKey = firstEnv(['SUPABASE_SERVICE_ROLE_KEY', 'Supabase_service_key'])
 
   const supabase = createClient(url, serviceKey, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -58,16 +70,43 @@ async function main() {
       continue
     }
 
+    // Upsert into users table as well (current app login reads role from users)
+    const { error: usersErr } = await supabase
+      .from('users')
+      .upsert(
+        {
+          auth_id: authId,
+          email: u.email,
+          name:
+            u.role === 'admin' ? '관리자' :
+            u.role === 'owner' ? '원장님' :
+            u.role === 'partner' ? '파트너스' :
+            u.role === 'brand' ? '브랜드사' : '고객',
+          role: u.role,
+          provider: 'email',
+          status: 'active',
+          points: 0,
+          charge_balance: 0,
+        },
+        { onConflict: 'auth_id' }
+      )
+    if (usersErr) throw usersErr
+    console.log(`UPSERT users: ${u.email} -> ${u.role}`)
+
     // Upsert into profiles table for role lookup
     const { error: profileErr } = await supabase
       .from('profiles')
-      .upsert(
-        { auth_id: authId, email: u.email, role: u.role },
-        { onConflict: 'auth_id' }
-      )
-    if (profileErr) throw profileErr
+      .upsert({ auth_id: authId, email: u.email, role: u.role }, { onConflict: 'auth_id' })
 
-    console.log(`UPSERT profiles: ${u.email} -> ${u.role}`)
+    if (profileErr) {
+      if ((profileErr as any).code === 'PGRST205') {
+        console.warn(`WARN profiles table missing. Apply migration 003_profiles.sql then re-run. (${u.email})`)
+      } else {
+        throw profileErr
+      }
+    } else {
+      console.log(`UPSERT profiles: ${u.email} -> ${u.role}`)
+    }
   }
 
   console.log('DONE')
