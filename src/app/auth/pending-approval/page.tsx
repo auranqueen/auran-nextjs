@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useMemo } from 'react'
+import { Suspense, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -8,6 +8,9 @@ function PendingApprovalInner() {
   const router = useRouter()
   const params = useSearchParams()
   const supabase = createClient()
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+  const [error, setError] = useState('')
 
   const role = params.get('role') || 'partner'
   const meta = useMemo(() => {
@@ -31,6 +34,43 @@ function PendingApprovalInner() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <button
+          type="button"
+          onClick={async () => {
+            setSending(true)
+            setError('')
+            setSent(false)
+            try {
+              const res = await fetch('/api/auth/request-approval', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role }),
+              })
+              const json = await res.json().catch(() => ({}))
+              if (!json?.ok) throw new Error(json?.error || json?.reason || 'failed')
+              setSent(true)
+            } catch (e: any) {
+              setError(e?.message || '요청 전송에 실패했습니다.')
+            } finally {
+              setSending(false)
+            }
+          }}
+          disabled={sending}
+          style={{
+            width: '100%',
+            padding: 14,
+            background: 'rgba(201,168,76,0.14)',
+            border: '1px solid rgba(201,168,76,0.30)',
+            borderRadius: 12,
+            color: '#c9a84c',
+            fontSize: 14,
+            fontWeight: 800,
+            opacity: sending ? 0.7 : 1,
+          }}
+        >
+          {sending ? '요청 전송 중...' : sent ? '✅ 승인 요청을 다시 보냈어요' : '✅ 승인 요청 다시 보내기'}
+        </button>
+        {error && <div style={{ fontSize: 12, color: '#e08080', textAlign: 'center' }}>{error}</div>}
         <button
           type="button"
           onClick={async () => { await supabase.auth.signOut(); router.replace('/') }}
