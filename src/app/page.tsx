@@ -19,7 +19,6 @@ function HomePageInner() {
   const router = useRouter()
   const supabase = createClient()
   const { theme } = useTheme()
-  const [isAdmin, setIsAdmin] = useState(false)
 
   const getDbRole = async (authId: string): Promise<string | null> => {
     // 1) profiles.role 우선 (요청사항)
@@ -49,22 +48,7 @@ function HomePageInner() {
     return null
   }
 
-  useEffect(() => {
-    const checkAdmin = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
-        const role = await getDbRole(user.id)
-        if (role === 'admin') {
-          setIsAdmin(true)
-          router.replace('/admin')
-        }
-      } catch {
-        // ignore
-      }
-    }
-    checkAdmin()
-  }, [router, supabase])
+  // NOTE: 슈퍼콘솔은 /super-console 에서만 접근(홈에서 노출/자동이동 금지)
 
   const handleRoleSelect = async (roleId: string) => {
     const normalized = normalizePosition(roleId)
@@ -78,10 +62,7 @@ function HomePageInner() {
       return
     }
     const dbRole = await getDbRole(user.id)
-    if (dbRole === 'admin') {
-      router.push('/admin')
-      return
-    }
+    // admin role도 홈에서 직접 진입 불가 (super-console로만)
     router.push(positionToDashboardPath(position))
   }
 
@@ -126,30 +107,6 @@ function HomePageInner() {
         }}
       >
 
-      {/* 어드민 버튼 (PC) */}
-      <button
-        className="only-desktop"
-        onClick={() => router.push('/admin')}
-        aria-label="어드민 콘솔"
-        style={{
-          position: 'absolute', top: '16px', right: '16px', zIndex: 30,
-          display: 'flex', alignItems: 'center', gap: '8px',
-          background: '#000',
-          border: '1.5px solid #c9a84c',
-          borderRadius: '12px',
-          padding: '10px 20px',
-          color: '#c9a84c',
-          fontSize: '13px',
-          fontWeight: 700,
-          letterSpacing: '1px',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
-          cursor: 'pointer',
-          opacity: isAdmin ? 1 : 0.75,
-        }}
-      >
-        👑 ADMIN CONSOLE
-      </button>
-
       {/* 모바일 레이아웃 */}
       <div className="only-mobile" style={{ flexDirection: 'column', flex: 1 }}>
         {/* 헤더 (로고 + 어드민) */}
@@ -169,28 +126,6 @@ function HomePageInner() {
               AI BEAUTY FOUNDATION
             </div>
           </div>
-          <button
-            onClick={() => router.push('/admin')}
-            aria-label="어드민 콘솔"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: '#000',
-              border: '1.5px solid #c9a84c',
-              borderRadius: '8px',
-              padding: '6px 10px',
-              color: '#c9a84c',
-              fontSize: '10px',
-              fontWeight: 800,
-              letterSpacing: '0.5px',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.35)',
-              cursor: 'pointer',
-              opacity: isAdmin ? 1 : 0.75,
-            }}
-          >
-            👑 어드민콘솔
-          </button>
         </div>
 
         <div style={{ padding: '0 20px' }}>
