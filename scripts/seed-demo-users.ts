@@ -51,8 +51,15 @@ async function main() {
     let authId: string | undefined
 
     if (existing?.id) {
-      console.log(`SKIP auth user exists: ${u.email}`)
       authId = existing.id
+      // Ensure demo users are always usable: reset password + confirm email
+      const { error: updErr } = await supabase.auth.admin.updateUserById(authId, {
+        password: u.password,
+        email_confirm: true,
+        user_metadata: { role: u.role },
+      })
+      if (updErr) throw updErr
+      console.log(`UPDATED auth user password: ${u.email}`)
     } else {
       const { data: created, error: createErr } = await supabase.auth.admin.createUser({
         email: u.email,
