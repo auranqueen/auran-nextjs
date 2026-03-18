@@ -28,14 +28,28 @@ function LoginForm() {
   const meta = ROLE_META[role] || ROLE_META.customer
   const showDemo = process.env.NEXT_PUBLIC_SHOW_DEMO === 'true'
 
+  const REMEMBER_EMAIL_KEY = 'auran_remember_email_v1'
+  const REMEMBER_EMAIL_CHECKED_KEY = 'auran_remember_email_checked_v1'
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberEmail, setRememberEmail] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [socialLoading, setSocialLoading] = useState('')
 
   useEffect(() => {
     ;(async () => {
+      // 아이디 기억하기: 체크돼 있으면 이메일 자동 입력
+      try {
+        const checked = localStorage.getItem(REMEMBER_EMAIL_CHECKED_KEY) === 'true'
+        if (checked) {
+          const saved = localStorage.getItem(REMEMBER_EMAIL_KEY) || ''
+          if (saved) setEmail(saved)
+        }
+        setRememberEmail(checked)
+      } catch {}
+
       // 역할 선택으로 들어온 경우(/login?role=...)는 자동 리다이렉트 금지
       if (params.get('role')) return
       const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
@@ -52,6 +66,13 @@ function LoginForm() {
     setLoading(true)
     setError('')
     try {
+      // 아이디 기억하기 저장/해제
+      try {
+        localStorage.setItem(REMEMBER_EMAIL_CHECKED_KEY, rememberEmail ? 'true' : 'false')
+        if (rememberEmail) localStorage.setItem(REMEMBER_EMAIL_KEY, email.trim())
+        else localStorage.removeItem(REMEMBER_EMAIL_KEY)
+      } catch {}
+
       const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
       if (authError) throw authError
 
@@ -199,6 +220,16 @@ function LoginForm() {
               onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
           </div>
+
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text3)' }}>
+            <input
+              type="checkbox"
+              checked={rememberEmail}
+              onChange={(e) => setRememberEmail(e.target.checked)}
+              style={{ width: 14, height: 14, accentColor: meta.accent }}
+            />
+            아이디 기억하기
+          </label>
 
           {error && (
             <div style={{ padding: '10px 14px', background: 'rgba(217,79,79,0.1)', border: '1px solid rgba(217,79,79,0.3)', borderRadius: 8, fontSize: 12, color: '#e08080' }}>

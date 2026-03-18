@@ -1,16 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 export default function SuperConsoleLoginPage() {
   const router = useRouter()
   const supabase = createClient()
+  const REMEMBER_EMAIL_KEY = 'auran_remember_email_v1'
+  const REMEMBER_EMAIL_CHECKED_KEY = 'auran_remember_email_checked_v1'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberEmail, setRememberEmail] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    try {
+      const checked = localStorage.getItem(REMEMBER_EMAIL_CHECKED_KEY) === 'true'
+      if (checked) {
+        const saved = localStorage.getItem(REMEMBER_EMAIL_KEY) || ''
+        if (saved) setEmail(saved)
+      }
+      setRememberEmail(checked)
+    } catch {}
+  }, [])
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
@@ -28,6 +42,13 @@ export default function SuperConsoleLoginPage() {
     setLoading(true)
     setError('')
     try {
+      // 아이디 기억하기 저장/해제
+      try {
+        localStorage.setItem(REMEMBER_EMAIL_CHECKED_KEY, rememberEmail ? 'true' : 'false')
+        if (rememberEmail) localStorage.setItem(REMEMBER_EMAIL_KEY, email.trim())
+        else localStorage.removeItem(REMEMBER_EMAIL_KEY)
+      } catch {}
+
       const { data, error: authErr } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
@@ -78,6 +99,15 @@ export default function SuperConsoleLoginPage() {
             style={inputStyle}
             required
           />
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
+            <input
+              type="checkbox"
+              checked={rememberEmail}
+              onChange={(e) => setRememberEmail(e.target.checked)}
+              style={{ width: 14, height: 14, accentColor: '#c9a84c' }}
+            />
+            아이디 기억하기
+          </label>
 
           {error && (
             <div style={{ padding: '10px 12px', background: 'rgba(217,79,79,0.10)', border: '1px solid rgba(217,79,79,0.25)', borderRadius: 12, color: '#e08080', fontSize: 13 }}>
