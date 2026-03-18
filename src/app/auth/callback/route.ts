@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url)
   const code = url.searchParams.get('code')
   const position = url.searchParams.get('role') || 'customer'
+  const redirect = url.searchParams.get('redirect') || ''
   const origin = getOrigin(request)
 
   if (code) {
@@ -72,7 +73,8 @@ export async function GET(request: NextRequest) {
       const rawRole = existing?.role ?? meta.role ?? (position === 'salon' ? 'owner' : position) ?? 'customer'
       const userRole = rawRole === 'salon' ? 'owner' : rawRole
       const finalPosition = userRole === 'owner' ? 'salon' : userRole
-      return NextResponse.redirect(`${origin}/auth/done?position=${finalPosition}`)
+      const redirectSuffix = redirect && redirect.startsWith('/') ? `&redirect=${encodeURIComponent(redirect)}` : ''
+      return NextResponse.redirect(`${origin}/auth/done?position=${finalPosition}${redirectSuffix}`)
     }
     if (code) {
       return NextResponse.redirect(`${origin}/login?error=auth_failed`)
@@ -88,6 +90,7 @@ export async function GET(request: NextRequest) {
   var hash = (window.location.hash || '').slice(1);
   var q = new URLSearchParams(window.location.search);
   var role = q.get('role') || 'customer';
+  var redirect = q.get('redirect') || '';
   var origin = ${JSON.stringify(origin)};
   var supabaseUrl = ${JSON.stringify(supabaseUrl)};
   var supabaseKey = ${JSON.stringify(supabaseAnon)};
@@ -100,11 +103,21 @@ export async function GET(request: NextRequest) {
   }
   var supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
   supabase.auth.setSession({ access_token: access_token, refresh_token: refresh_token })
-    .then(function() { return fetch(origin + '/api/auth/callback/complete?position=' + encodeURIComponent(role)); })
+    .then(function() {
+      var qs = '?position=' + encodeURIComponent(role);
+      if (redirect && redirect.charAt(0) === '/') {
+        qs += '&redirect=' + encodeURIComponent(redirect);
+      }
+      return fetch(origin + '/api/auth/callback/complete' + qs);
+    })
     .then(function(r) { return r.json(); })
     .then(function(d) {
       var pos = (d && d.position) ? d.position : role;
-      window.location.replace(origin + '/auth/done?position=' + encodeURIComponent(pos));
+      var url = origin + '/auth/done?position=' + encodeURIComponent(pos);
+      if (redirect && redirect.charAt(0) === '/') {
+        url += '&redirect=' + encodeURIComponent(redirect);
+      }
+      window.location.replace(url);
     })
     .catch(function() { window.location.href = origin + '/login?error=auth_failed'; });
 })();

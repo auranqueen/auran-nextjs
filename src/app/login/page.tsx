@@ -25,6 +25,7 @@ function LoginForm() {
   const router = useRouter()
   const params = useSearchParams()
   const role = params.get('role') || 'customer'
+  const redirectParam = params.get('redirect')
   const meta = ROLE_META[role] || ROLE_META.customer
   const showDemo = process.env.NEXT_PUBLIC_SHOW_DEMO === 'true'
 
@@ -100,7 +101,10 @@ function LoginForm() {
       const position = fromDb || stored || fromParam || 'customer'
 
       localStorage.setItem(POSITION_STORAGE_KEY, position)
-      router.push(dashboardPathForRole(effectiveRole))
+
+      // redirect 파라미터가 있으면 해당 경로로, 없으면 기본 대시보드로
+      const safeRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : null
+      router.push(safeRedirect || dashboardPathForRole(effectiveRole))
     } catch (err: any) {
       const msg = err?.message || ''
       if (msg.includes('Email not confirmed') || msg.includes('email_not_confirmed')) {
@@ -122,11 +126,14 @@ function LoginForm() {
     const position = fromParam || stored || 'customer'
     localStorage.setItem(POSITION_STORAGE_KEY, position)
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+    const redirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : null
+    const redirectQuery = redirect ? `&redirect=${encodeURIComponent(redirect)}` : ''
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
         // Use stable production URL to avoid Kakao redirect mismatch (KOE205)
-        redirectTo: `${appUrl}/auth/callback?role=${position}`,
+        // redirect 파라미터를 함께 전달해서 소셜 로그인 후에도 원래 페이지로 복귀
+        redirectTo: `${appUrl}/auth/callback?role=${position}${redirectQuery}`,
         ...(provider === 'kakao' ? { scopes: 'profile_nickname profile_image' } : {}),
         // scope만 강제 (account_email 제외). prompt 제거 → 이미 카카오 로그인돼 있으면 버튼만 눌러도 바로 인증
         queryParams: provider === 'kakao'

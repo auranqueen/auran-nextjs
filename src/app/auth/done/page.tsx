@@ -21,7 +21,9 @@ function AuthDoneInner() {
       const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
       const position = fromQuery || stored || 'customer'
       localStorage.setItem(POSITION_STORAGE_KEY, position)
-      router.replace(positionToDashboardPath(position))
+      const redirect = params.get('redirect')
+      const safeRedirect = redirect && redirect.startsWith('/') ? redirect : null
+      router.replace(safeRedirect || positionToDashboardPath(position))
     })()
   }, [params, router, supabase])
 

@@ -33,7 +33,8 @@ export default function WalletPage() {
       }
       if (!authUser) {
         setLoading(false)
-        router.replace('/login?role=customer')
+        // 로그인 후 다시 지갑으로 돌아올 수 있도록 redirect 파라미터 포함
+        router.replace('/login?role=customer&redirect=%2Fwallet')
         return
       }
 
