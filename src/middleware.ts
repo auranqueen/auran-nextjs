@@ -38,10 +38,11 @@ async function getDbRole(supabase: ReturnType<typeof createServerClient>, authId
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  // /super-console/* 는 admin만 접근
-  if (!pathname.startsWith('/super-console')) return NextResponse.next()
+  const isSuperConsole = pathname.startsWith('/super-console')
+  const isDashboard = pathname.startsWith('/dashboard')
+  if (!isSuperConsole && !isDashboard) return NextResponse.next()
 
-  // 로그인 페이지는 예외(비로그인 접근 허용)
+  // super-console 로그인 페이지는 예외(비로그인 접근 허용)
   if (pathname === '/super-console/login') return NextResponse.next()
 
   const res = NextResponse.next()
@@ -49,23 +50,61 @@ export async function middleware(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
+    if (isSuperConsole) {
+      const url = req.nextUrl.clone()
+      url.pathname = '/super-console/login'
+      url.searchParams.set('next', pathname)
+      return NextResponse.redirect(url)
+    }
+    // dashboards: if not logged in, send to normal login
     const url = req.nextUrl.clone()
-    url.pathname = '/super-console/login'
-    url.searchParams.set('next', pathname)
+    url.pathname = '/login'
+    url.search = ''
     return NextResponse.redirect(url)
   }
 
   const role = await getDbRole(supabase, user.id)
-  if (role !== 'admin') {
-    const url = req.nextUrl.clone()
-    url.pathname = '/'
-    url.search = ''
-    return NextResponse.redirect(url)
+  const normalizedRole = role === 'owner' ? 'salon' : role
+
+  // super-console: admin only
+  if (isSuperConsole) {
+    if (normalizedRole !== 'admin') {
+      const url = req.nextUrl.clone()
+      url.pathname = '/'
+      url.search = ''
+      return NextResponse.redirect(url)
+    }
+    return res
+  }
+
+  // dashboards: auto-route to role-matching dashboard root
+  if (isDashboard) {
+    const map: Record<string, string> = {
+      customer: '/dashboard/customer',
+      partner: '/dashboard/partner',
+      salon: '/dashboard/salon',
+      brand: '/dashboard/brand',
+      admin: '/admin',
+    }
+    const target = normalizedRole && map[normalizedRole] ? map[normalizedRole] : '/dashboard/customer'
+    if (target === '/admin') {
+      // admin은 대시보드 경로로 접근 시 홈으로 보내고 슈퍼콘솔로만 진입
+      const url = req.nextUrl.clone()
+      url.pathname = '/'
+      url.search = ''
+      return NextResponse.redirect(url)
+    }
+    if (!pathname.startsWith(target)) {
+      const url = req.nextUrl.clone()
+      url.pathname = target
+      url.search = ''
+      return NextResponse.redirect(url)
+    }
   }
 
   return res
 }
 
 export const config = {
-  matcher: ['/super-console/:path*'],
+  matcher: ['/super-console/:path*', '/dashboard/:path*'],
 }
