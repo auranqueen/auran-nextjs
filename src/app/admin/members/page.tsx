@@ -34,6 +34,7 @@ export default function AdminMembersPage() {
   const [pointAmount, setPointAmount] = useState('')
   const [pointReason, setPointReason] = useState('관리자 수동 지급')
   const [pointSaving, setPointSaving] = useState(false)
+  const [approving, setApproving] = useState(false)
 
   useEffect(() => {
     const run = async () => {
@@ -90,6 +91,27 @@ export default function AdminMembersPage() {
     }
     setMembers(prev => prev.map(x => (x.id === m.id ? { ...x, status: 'active' } : x)))
     if (selected?.id === m.id) setSelected({ ...selected, status: 'active' })
+  }
+
+  const approvePending = async (m: Member) => {
+    if (!confirm(`${m.name} (${m.email}) 계정을 승인(활성화)할까요?`)) return
+    setApproving(true)
+    try {
+      const res = await fetch('/api/admin/approvals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ auth_id: m.auth_id }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!json?.ok) throw new Error(json?.error || json?.reason || 'approve_failed')
+      setMembers(prev => prev.map(x => (x.id === m.id ? { ...x, status: 'active' } : x)))
+      if (selected?.id === m.id) setSelected({ ...selected, status: 'active' })
+      alert('✅ 승인 완료')
+    } catch (e: any) {
+      alert(e?.message || '승인 중 오류가 발생했습니다.')
+    } finally {
+      setApproving(false)
+    }
   }
 
   useEffect(() => {
@@ -397,6 +419,15 @@ export default function AdminMembersPage() {
               >
                 ✨ 포인트 지급
               </button>
+              {(selected.status === 'pending' && (selected.role === 'partner' || selected.role === 'owner' || selected.role === 'brand')) ? (
+                <button
+                  onClick={() => approvePending(selected)}
+                  disabled={approving}
+                  style={{ flex: 1, padding: '12px 14px', borderRadius: 16, background: 'rgba(76,173,126,0.14)', border: '1px solid rgba(76,173,126,0.30)', color: '#4cad7e', fontWeight: 900, cursor: 'pointer', opacity: approving ? 0.7 : 1 }}
+                >
+                  {approving ? '승인 중...' : '승인'}
+                </button>
+              ) : null}
               {selected.status === 'suspended' ? (
                 <button
                   onClick={() => activate(selected)}
