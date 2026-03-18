@@ -125,7 +125,8 @@ function LoginForm() {
     const fromParam = normalizePosition(role)
     const position = fromParam || stored || 'customer'
     localStorage.setItem(POSITION_STORAGE_KEY, position)
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+    // 로그인 후 반드시 현재 접속한 주소로 돌아가도록 (NEXT_PUBLIC_APP_URL 무시)
+    const appUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || '')
     const redirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : null
     const redirectQuery = redirect ? `&redirect=${encodeURIComponent(redirect)}` : ''
     const { error } = await supabase.auth.signInWithOAuth({

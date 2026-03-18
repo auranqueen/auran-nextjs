@@ -269,8 +269,8 @@ export function MonthThemeProvider({ children }: MonthThemeProviderProps) {
         </div>
       )}
 
-      {/* 실제 콘텐츠 */}
-      <div className="relative z-10">
+      {/* 실제 콘텐츠 - PC에서 고객/역할 카드 클릭 가능하도록 z-20 (하단 바 z-30은 pointer-events-none) */}
+      <div className="relative z-20">
         {children}
       </div>
 
@@ -284,11 +284,12 @@ export function MonthThemeProvider({ children }: MonthThemeProviderProps) {
         </div>
       )}
 
-      {/* 월 선택기 + 생일 설정 */}
+      {/* 월 선택기 + 생일 설정 - pointer-events-none으로 카드 클릭 통과, 내부 버튼만 클릭 가능 */}
       <div
         className="absolute bottom-0 left-0 right-0 z-30 px-3 pb-3 pt-2 flex flex-col items-center gap-2"
-        style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.28))' }}
+        style={{ background: 'linear-gradient(transparent, rgba(0,0,0,0.28))', pointerEvents: 'none' }}
       >
+        <div className="flex flex-col items-center gap-2" style={{ pointerEvents: 'auto' }}>
         {/* 월 버튼 (숫자만) */}
         <div className="flex gap-1.5 flex-wrap justify-center">
           {MONTH_THEMES.map((_, i) => (
@@ -341,6 +342,7 @@ export function MonthThemeProvider({ children }: MonthThemeProviderProps) {
           >
             저장
           </button>
+        </div>
         </div>
       </div>
 

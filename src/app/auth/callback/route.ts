@@ -1,8 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
+const PRODUCTION_HOSTS = ['www.auran.kr', 'auran.kr']
+
 function getOrigin(request: NextRequest): string {
   const url = new URL(request.url)
+  const host = url.hostname || ''
+  // 프로덕션 도메인으로 들어온 요청은 항상 같은 도메인으로 리다이렉트 (NEXT_PUBLIC_APP_URL이 Vercel URL로 되어 있어도 auran.kr 유지)
+  if (PRODUCTION_HOSTS.some(h => host === h)) {
+    const protocol = url.protocol || 'https:'
+    return `${protocol}//${host}`
+  }
   return process.env.NEXT_PUBLIC_APP_URL || url.origin
 }
 

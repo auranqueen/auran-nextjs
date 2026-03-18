@@ -105,7 +105,8 @@ function HomePageInner() {
           display: 'flex',
           flexDirection: 'column',
           overflowX: 'hidden',
-          zIndex: 50,
+          zIndex: 40,
+          pointerEvents: 'auto',
         }}
       >
 
