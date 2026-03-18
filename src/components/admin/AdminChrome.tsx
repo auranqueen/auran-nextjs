@@ -28,6 +28,7 @@ const MENU = [
       { label: '파트너스', href: '/admin/members?role=partner', icon: '💼', color: '#4a8dc0', sub: '커미션·링크·정산', countKey: 'partner' as const },
       { label: '원장님', href: '/admin/owners', icon: '🏥', color: '#bf5f90', sub: '구독·예약·스토어', countKey: 'owner' as const },
       { label: '브랜드사', href: '/admin/marketing/products', icon: '🏭', color: '#4cad7e', sub: '납품·공지·정산', countKey: 'brand' as const },
+      { label: '승인 요청', href: '/admin/approvals', icon: '✅', color: '#c9a84c', sub: '파트너·원장·브랜드 승인' },
     ],
   },
   {
@@ -70,6 +71,7 @@ const MENU = [
 const pageTitleByPath = (path: string) => {
   if (path === '/admin') return '통합 현황'
   if (path.startsWith('/admin/live')) return '실시간 모니터'
+  if (path.startsWith('/admin/approvals')) return '승인 요청'
   if (path.startsWith('/admin/shipping')) return '배송 관리'
   if (path.startsWith('/admin/orders')) return '주문 내역'
   if (path.startsWith('/admin/members')) return '회원 관리'
