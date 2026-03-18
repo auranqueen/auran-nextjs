@@ -100,9 +100,9 @@ function LoginForm() {
         // Use stable production URL to avoid Kakao redirect mismatch (KOE205)
         redirectTo: `${appUrl}/auth/callback?role=${position}`,
         ...(provider === 'kakao' ? { scopes: 'profile_nickname profile_image' } : {}),
-        // Force Kakao's own scope query param too (prevents account_email sneaking in via provider defaults)
+        // scope만 강제 (account_email 제외). prompt 제거 → 이미 카카오 로그인돼 있으면 버튼만 눌러도 바로 인증
         queryParams: provider === 'kakao'
-          ? { prompt: 'login', scope: 'profile_nickname profile_image' }
+          ? { scope: 'profile_nickname profile_image' }
           : {},
       },
     })
