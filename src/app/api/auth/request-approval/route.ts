@@ -15,7 +15,14 @@ export async function POST(req: NextRequest) {
   }
 
   const svc = tryCreateServiceClient()
-  if (!svc) return NextResponse.json({ ok: false, reason: 'service_key_missing' }, { status: 500 })
+  if (!svc) {
+    // fallback: at minimum mark my own users row as pending via session client (RLS permitting)
+    const { data: myRow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+    if (!myRow?.id) return NextResponse.json({ ok: false, error: 'user_row_missing' }, { status: 404 })
+    const { error } = await supabase.from('users').update({ role: normalizedRole, status: 'pending' }).eq('id', myRow.id)
+    if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true, via: 'session' })
+  }
 
   // get public.users row
   const { data: u } = await svc.from('users').select('id,auth_id,email,name,role,status').eq('auth_id', user.id).maybeSingle()

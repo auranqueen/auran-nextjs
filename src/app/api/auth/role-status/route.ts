@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { createServiceClient } from '@/lib/supabase/service'
+import { tryCreateServiceClient } from '@/lib/supabase/service'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -7,9 +7,20 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ ok: false, reason: 'not_logged_in' }, { status: 401 })
 
-  const svc = createServiceClient()
+  const svc = tryCreateServiceClient()
+  if (svc) {
+    const { data: u } = await svc
+      .from('users')
+      .select('role,status')
+      .eq('auth_id', user.id)
+      .maybeSingle()
+    const role = (u as any)?.role || null
+    const status = (u as any)?.status || null
+    return NextResponse.json({ ok: true, role, status, via: 'service' })
+  }
 
-  const { data: u } = await svc
+  // fallback: try via normal session client (may be restricted by RLS)
+  const { data: u } = await supabase
     .from('users')
     .select('role,status')
     .eq('auth_id', user.id)
@@ -18,6 +29,6 @@ export async function GET() {
   const role = (u as any)?.role || null
   const status = (u as any)?.status || null
 
-  return NextResponse.json({ ok: true, role, status })
+  return NextResponse.json({ ok: true, role, status, via: 'session' })
 }
 
