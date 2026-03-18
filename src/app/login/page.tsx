@@ -18,6 +18,7 @@ function LoginForm() {
   const params = useSearchParams()
   const role = params.get('role') || 'customer'
   const meta = ROLE_META[role] || ROLE_META.customer
+  const showDemo = process.env.NEXT_PUBLIC_SHOW_DEMO === 'true'
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -215,21 +216,43 @@ function LoginForm() {
         </div>
 
         {/* 데모 계정 안내 */}
-        <div style={{ marginTop: 24, padding: '12px 14px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 10 }}>
-          <div style={{ fontSize: 9, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", marginBottom: 6 }}>DEMO ACCOUNT</div>
-          {[
-            { r: 'customer', e: 'guest@auran.kr' },
-            { r: 'partner', e: 'partner@auran.kr' },
-            { r: 'owner', e: 'shop@auran.kr' },
-            { r: 'brand', e: 'brand@auran.kr' },
-            { r: 'admin', e: 'admin@auran.kr' },
-          ].map(d => (
-            <div key={d.r} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', fontSize: 10, color: 'var(--text3)' }}>
-              <span>{d.r}</span>
-              <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{d.e} / 1234</span>
+        {showDemo && (
+          <div style={{ marginTop: 24, padding: '12px 14px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)', borderRadius: 10 }}>
+            <div style={{ fontSize: 9, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", marginBottom: 6 }}>DEMO ACCOUNT</div>
+            {[
+              { r: 'customer', e: 'guest@auran.kr', p: 'auran1234!' },
+              { r: 'partner', e: 'partner@auran.kr', p: 'auran1234!' },
+              { r: 'owner', e: 'shop@auran.kr', p: 'auran1234!' },
+              { r: 'brand', e: 'brand@auran.kr', p: 'auran1234!' },
+              { r: 'admin', e: 'admin@auran.kr', p: 'auran1234!' },
+            ].map(d => (
+              <button
+                key={d.r}
+                type="button"
+                onClick={() => { setEmail(d.e); setPassword(d.p); }}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  padding: '6px 8px',
+                  fontSize: 10,
+                  color: 'var(--text3)',
+                  background: 'rgba(255,255,255,0.02)',
+                  border: '1px solid rgba(255,255,255,0.06)',
+                  borderRadius: 8,
+                  marginBottom: 6,
+                  cursor: 'pointer',
+                }}
+              >
+                <span>{d.r}</span>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{d.e} / {d.p}</span>
+              </button>
+            ))}
+            <div style={{ fontSize: 9, color: 'rgba(201,168,76,0.75)', marginTop: 6 }}>
+              ※ `.env`에서 `NEXT_PUBLIC_SHOW_DEMO=true`일 때만 표시됩니다.
             </div>
-          ))}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   )

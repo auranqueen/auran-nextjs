@@ -14,3 +14,6 @@ pnpm-debug.log*
 
 # misc
 .DS_Store
+
+# Supabase local artifacts
+supabase/.temp/
