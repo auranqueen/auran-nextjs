@@ -3,25 +3,34 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 
-const JOIN_OG: Record<string, { title: string; description: string; image: string }> = {
-  owner: { title: 'AURAN PRO · 원장님 초대', description: '예약관리 + 스토어 + 매출관리', image: '/og-pro.png' },
-  partner: { title: 'AURAN Partners · 파트너스 초대', description: '추천링크 + 커미션 수익', image: '/og-partners.png' },
-  brand: { title: 'AURAN Brand · 브랜드사 초대', description: 'AI 추천 노출 + 전국 살롱 납품', image: '/og-brand.png' },
-  customer: { title: 'AURAN · 고객 초대', description: 'AI 피부 분석 + 제품 추천 + 살롱 예약', image: '/og-image.png' },
+const METADATA_BASE = new URL('https://auran.kr')
+
+const JOIN_OG: Record<string, { title: string; description: string; image: string; path: string }> = {
+  owner: { title: 'AURAN PRO · 원장님 초대', description: '예약관리 + 스토어 + 매출관리', image: '/og-pro.png', path: '/join/owner' },
+  partner: { title: 'AURAN Partners · 파트너스 초대', description: '추천링크 + 커미션 수익', image: '/og-partners.png', path: '/join/partner' },
+  brand: { title: 'AURAN Brand · 브랜드사 초대', description: 'AI 추천 노출 + 전국 살롱 납품', image: '/og-brand.png', path: '/join/brand' },
+  customer: { title: 'AURAN · 고객 초대', description: 'AI 피부 분석 + 제품 추천 + 살롱 예약', image: '/og-image.png', path: '/join/customer' },
 }
 
 export async function generateMetadata({ params }: { params: { role: string } }): Promise<Metadata> {
   const { role } = params
   const og = JOIN_OG[role] || JOIN_OG.customer
   return {
+    metadataBase: METADATA_BASE,
     title: og.title,
     description: og.description,
     openGraph: {
       title: og.title,
       description: og.description,
-      images: [{ url: og.image, width: 1200, height: 630 }],
+      url: og.path,
+      images: [{ url: new URL(og.image, METADATA_BASE).toString(), width: 1200, height: 630 }],
     },
-    twitter: { card: 'summary_large_image', title: og.title, description: og.description, images: [og.image] },
+    twitter: {
+      card: 'summary_large_image',
+      title: og.title,
+      description: og.description,
+      images: [new URL(og.image, METADATA_BASE).toString()],
+    },
   }
 }
 
