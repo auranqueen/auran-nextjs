@@ -99,7 +99,7 @@ function LoginForm() {
       options: {
         // Use stable production URL to avoid Kakao redirect mismatch (KOE205)
         redirectTo: `${appUrl}/auth/callback?role=${position}`,
-        // Kakao: avoid requesting account_email scope
+        // Kakao scopes (no account_email)
         ...(provider === 'kakao' ? { scopes: 'profile_nickname profile_image' } : {}),
         queryParams: provider === 'kakao' ? { prompt: 'login' } : {},
       },
