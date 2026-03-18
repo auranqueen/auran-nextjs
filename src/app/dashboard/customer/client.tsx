@@ -3,6 +3,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
 import NoticeBell from '@/components/NoticeBell'
+import { SecurityNoticeTrigger } from '@/components/SecurityNoticePopup'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 
 const MENU = [
@@ -48,6 +49,7 @@ export default function CustomerDashboardClient({ profile, notifications, recent
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <SecurityNoticeTrigger />
             <NoticeBell />
             <button onClick={logout} style={{ fontSize: 11, color: 'var(--text3)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px' }}>로그아웃</button>
           </div>

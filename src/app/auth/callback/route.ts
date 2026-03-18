@@ -12,21 +12,22 @@ export async function GET(request: NextRequest) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error && data.user) {
-      // users 테이블 upsert
       const { data: existing } = await supabase
         .from('users')
         .select('id, role')
         .eq('auth_id', data.user.id)
         .single()
 
+      const meta = data.user.user_metadata || {}
       if (!existing) {
-        const dbRole = position === 'salon' ? 'owner' : position
+        const dbRole = meta.role === 'salon' ? 'owner' : (position === 'salon' ? 'owner' : position || meta.role || 'customer')
         const referralCode = Math.random().toString(36).slice(2, 8).toUpperCase()
         await supabase.from('users').insert({
           auth_id: data.user.id,
           email: data.user.email,
-          name: data.user.user_metadata?.full_name || data.user.email?.split('@')[0] || '사용자',
-          avatar_url: data.user.user_metadata?.avatar_url,
+          name: meta.name || meta.full_name || data.user.email?.split('@')[0] || '사용자',
+          avatar_url: meta.avatar_url || data.user.user_metadata?.avatar_url,
+          phone: meta.phone || null,
           role: dbRole,
           provider: data.user.app_metadata?.provider || 'email',
           referral_code: referralCode,
@@ -34,7 +35,6 @@ export async function GET(request: NextRequest) {
           points: 0,
           charge_balance: 0,
         })
-        // 트래픽 로그
         await supabase.from('traffic_logs').insert({
           user_id: data.user.id,
           source: data.user.app_metadata?.provider || 'direct',
@@ -42,7 +42,8 @@ export async function GET(request: NextRequest) {
         })
       }
 
-      const userRole = existing?.role || (position === 'salon' ? 'owner' : position)
+      const rawRole = existing?.role ?? meta.role ?? (position === 'salon' ? 'owner' : position) ?? 'customer'
+      const userRole = rawRole === 'salon' ? 'owner' : rawRole
       const finalPosition = userRole === 'owner' ? 'salon' : userRole
       return NextResponse.redirect(`${origin}/auth/done?position=${finalPosition}`)
     }

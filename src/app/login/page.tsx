@@ -65,9 +65,14 @@ function LoginForm() {
       localStorage.setItem(POSITION_STORAGE_KEY, position)
       router.push(positionToDashboardPath(position))
     } catch (err: any) {
-      setError(err.message === 'Invalid login credentials'
+      const msg = err?.message || ''
+      if (msg.includes('Email not confirmed') || msg.includes('email_not_confirmed')) {
+        setError('이메일 인증이 필요합니다. 가입 시 발송된 메일의 링크를 확인해주세요.')
+        return
+      }
+      setError(msg === 'Invalid login credentials'
         ? '이메일 또는 비밀번호가 맞지 않습니다.'
-        : err.message || '로그인 중 오류가 발생했습니다.')
+        : msg || '로그인 중 오류가 발생했습니다.')
     } finally {
       setLoading(false)
     }
@@ -176,6 +181,17 @@ function LoginForm() {
           {error && (
             <div style={{ padding: '10px 14px', background: 'rgba(217,79,79,0.1)', border: '1px solid rgba(217,79,79,0.3)', borderRadius: 8, fontSize: 12, color: '#e08080' }}>
               {error}
+              {error.includes('이메일 인증') && (
+                <div style={{ marginTop: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/auth/verify-email?email=${encodeURIComponent(email)}&role=${role}`)}
+                    style={{ background: 'none', border: 'none', color: '#c9a84c', textDecoration: 'underline', cursor: 'pointer', fontSize: 12 }}
+                  >
+                    인증 메일 다시 보내기
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

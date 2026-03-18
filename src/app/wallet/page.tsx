@@ -3,6 +3,7 @@
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import NoticeBell from '@/components/NoticeBell'
+import PaymentAuthGuard from '@/components/PaymentAuthGuard'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -13,6 +14,7 @@ export default function WalletPage() {
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any | null>(null)
   const [history, setHistory] = useState<any[]>([])
+  const [hasPin, setHasPin] = useState<boolean | null>(null)
 
   useEffect(() => {
     const run = async () => {
@@ -34,6 +36,13 @@ export default function WalletPage() {
         setHistory(ph || [])
       } else {
         setHistory([])
+      }
+      try {
+        const res = await fetch('/api/auth/pin/status')
+        const data = await res.json()
+        setHasPin(!!data.hasPin)
+      } catch {
+        setHasPin(null)
       }
       setLoading(false)
     }
@@ -60,6 +69,21 @@ export default function WalletPage() {
                 <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: '#4cad7e' }}>₩{(profile.charge_balance || 0).toLocaleString()}</div>
               </div>
             </div>
+            {hasPin === false && (
+              <div style={{ marginBottom: 14, padding: 12, background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 12 }}>
+                <p style={{ fontSize: 12, color: 'var(--text)', marginBottom: 8 }}>🔐 충전·정산을 위해 결제 PIN을 설정해주세요.</p>
+                <button onClick={() => router.push('/auth/set-pin')} style={{ padding: '8px 14px', background: '#c9a84c', border: 'none', borderRadius: 8, color: '#0a0a0a', fontWeight: 600, fontSize: 13 }}>PIN 설정하기</button>
+              </div>
+            )}
+            {hasPin === true && (
+              <div style={{ marginBottom: 14 }}>
+                <PaymentAuthGuard title="결제 PIN 확인" onSuccess={() => alert('충전 기능 준비 중입니다.')} requirePin>
+                  <button type="button" style={{ width: '100%', padding: 14, background: 'rgba(76,173,126,0.2)', border: '1px solid rgba(76,173,126,0.4)', borderRadius: 12, color: '#4cad7e', fontWeight: 700 }}>
+                    충전하기
+                  </button>
+                </PaymentAuthGuard>
+              </div>
+            )}
 
             <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', marginBottom: 10 }}>✨ 포인트 내역</div>
             {history.length === 0 ? (

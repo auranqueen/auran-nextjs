@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { normalizePosition, positionToDashboardPath } from '@/lib/position'
 import { MonthThemeProvider, useTheme } from '@/components/MonthTheme'
+import SecurityNoticePopup from '@/components/SecurityNoticePopup'
+import AnnouncementBanner from '@/components/AnnouncementBanner'
 import { useEffect, useState } from 'react'
 
 const ROLES = [
@@ -191,6 +193,10 @@ function HomePageInner() {
           </button>
         </div>
 
+        <div style={{ padding: '0 20px' }}>
+          <AnnouncementBanner />
+        </div>
+
         {/* 타이틀 영역 */}
         <div style={{ padding: '20px 20px 0' }}>
           <h1 style={{ fontFamily: 'var(--font-nanum)', fontSize: '28px', fontWeight: 800, lineHeight: 1.45, color: theme?.titleColor || '#fff', transition: 'color 1.2s' }}>
@@ -221,7 +227,10 @@ function HomePageInner() {
       </div>
 
       {/* PC 레이아웃 */}
-      <div className="only-desktop" style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: '60px 48px' }}>
+      <div className="only-desktop" style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: '60px 48px', flexDirection: 'column' }}>
+          <div style={{ width: '100%', maxWidth: '960px', marginBottom: 12 }}>
+            <AnnouncementBanner />
+          </div>
           <div style={{ width: '100%', maxWidth: '960px', display: 'flex', gap: '64px', alignItems: 'center' }}>
 
             {/* 왼쪽 텍스트 */}
@@ -269,6 +278,7 @@ export default function HomePage() {
   return (
     <MonthThemeProvider>
       <HomePageInner />
+      <SecurityNoticePopup />
     </MonthThemeProvider>
   )
 }

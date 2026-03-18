@@ -47,13 +47,26 @@ function SignupForm() {
       const { data: authData, error: authErr } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
-        options: { data: { name: form.name, role } }
+        options: {
+          data: {
+            name: form.name,
+            role,
+            phone: form.phone,
+            invite_code: inviteCode || undefined,
+          },
+        },
       })
       if (authErr) throw authErr
 
-      if (authData.user) {
+      if (authData.user && !authData.session) {
+        // 이메일 인증 필요 시 세션이 없음 → 인증 대기 화면으로
+        router.push(`/auth/verify-email?email=${encodeURIComponent(form.email)}&role=${encodeURIComponent(role)}`)
+        return
+      }
+      if (authData.user && authData.session) {
+        // 인증 없이 즉시 세션 발급된 경우(설정에 따라): users 저장 후 완료
         const referralCode = Math.random().toString(36).slice(2, 8).toUpperCase()
-        const { error: dbErr } = await supabase.from('users').insert({
+        await supabase.from('users').insert({
           auth_id: authData.user.id,
           email: form.email,
           name: form.name,
@@ -64,17 +77,10 @@ function SignupForm() {
           status: 'active',
           points: 0,
           charge_balance: 0,
-        })
-        if (dbErr && !dbErr.message.includes('duplicate')) throw dbErr
-
-        // 초대 코드 처리
+        }).then(() => {})
         if (inviteCode) {
-          await supabase.from('invite_links')
-            .update({ used_count: supabase.rpc('increment', { row_id: inviteCode }) })
-            .eq('code', inviteCode)
+          await supabase.from('invite_links').update({ used_count: supabase.rpc('increment', { row_id: inviteCode }) }).eq('code', inviteCode)
         }
-
-        // 트래픽 로그
         await supabase.from('traffic_logs').insert({
           user_id: authData.user.id,
           source: inviteCode ? 'partner' : 'direct',
@@ -200,14 +206,13 @@ function SignupForm() {
           </div>
         )}
 
-        {/* STEP 3: 완료 */}
+        {/* STEP 3: 완료 (이메일 인증 비활성 시에만 표시) */}
         {step === 3 && (
           <div style={{ textAlign: 'center', paddingTop: 40 }}>
             <div style={{ fontSize: 60, marginBottom: 20 }}>🎉</div>
             <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 22, color: 'var(--text)', marginBottom: 8 }}>가입 완료!</div>
             <div style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.7, marginBottom: 8 }}>
-              {form.name}님, AURAN에 오신 걸 환영합니다.<br />
-              이메일 인증 후 로그인해주세요.
+              {form.name}님, AURAN에 오신 걸 환영합니다.
             </div>
             <div style={{ padding: '12px 16px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 10, fontSize: 12, color: 'var(--gold)', marginBottom: 28 }}>
               🎁 가입 포인트 500P가 적립됩니다!
