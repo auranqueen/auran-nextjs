@@ -36,13 +36,15 @@ function LoginForm() {
 
   useEffect(() => {
     ;(async () => {
+      // 역할 선택으로 들어온 경우(/login?role=...)는 자동 리다이렉트 금지
+      if (params.get('role')) return
       const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
       if (!stored) return
       const { data } = await supabase.auth.getUser()
       if (!data.user) return
       router.replace(positionToDashboardPath(stored))
     })()
-  }, [router, supabase])
+  }, [params, router, supabase])
 
 
   async function handleLogin(e: React.FormEvent) {
@@ -66,13 +68,20 @@ function LoginForm() {
         return
       }
 
+      const effectiveRole = userData?.role || role
+      if ((effectiveRole === 'partner' || effectiveRole === 'owner' || effectiveRole === 'brand') && userData?.status !== 'active') {
+        await supabase.auth.signOut()
+        router.replace(`/auth/pending-approval?role=${encodeURIComponent(effectiveRole)}`)
+        return
+      }
+
       const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
       const fromDb = normalizePosition(userData?.role)
       const fromParam = normalizePosition(role)
       const position = fromDb || stored || fromParam || 'customer'
 
       localStorage.setItem(POSITION_STORAGE_KEY, position)
-      router.push(dashboardPathForRole(userData?.role || role))
+      router.push(dashboardPathForRole(effectiveRole))
     } catch (err: any) {
       const msg = err?.message || ''
       if (msg.includes('Email not confirmed') || msg.includes('email_not_confirmed')) {

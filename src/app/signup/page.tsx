@@ -66,6 +66,7 @@ function SignupForm() {
       if (authData.user && authData.session) {
         // 인증 없이 즉시 세션 발급된 경우(설정에 따라): users 저장 후 완료
         const referralCode = Math.random().toString(36).slice(2, 8).toUpperCase()
+        const status = role === 'customer' ? 'active' : 'pending'
         await supabase.from('users').insert({
           auth_id: authData.user.id,
           email: form.email,
@@ -74,7 +75,7 @@ function SignupForm() {
           role,
           provider: 'email',
           referral_code: referralCode,
-          status: 'active',
+          status,
           points: 0,
           charge_balance: 0,
         }).then(() => {})

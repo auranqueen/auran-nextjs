@@ -35,6 +35,15 @@ async function getDbRole(supabase: ReturnType<typeof createServerClient>, authId
   return null
 }
 
+async function getUserStatus(supabase: ReturnType<typeof createServerClient>, authId: string): Promise<string | null> {
+  try {
+    const { data } = await supabase.from('users').select('status').eq('auth_id', authId).single()
+    const s = (data as any)?.status
+    return typeof s === 'string' ? s : null
+  } catch {}
+  return null
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
@@ -101,6 +110,17 @@ export async function middleware(req: NextRequest) {
       url.pathname = target
       url.search = ''
       return NextResponse.redirect(url)
+    }
+
+    // partner/owner/brand는 본사 승인 전 접근 차단 (users.status !== 'active')
+    if (normalizedRole === 'partner' || normalizedRole === 'salon' || normalizedRole === 'brand') {
+      const status = await getUserStatus(supabase, user.id)
+      if (status && status !== 'active') {
+        const url = req.nextUrl.clone()
+        url.pathname = '/auth/pending-approval'
+        url.searchParams.set('role', normalizedRole === 'salon' ? 'owner' : normalizedRole)
+        return NextResponse.redirect(url)
+      }
     }
   }
 
