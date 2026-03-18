@@ -1,12 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { requireAdmin } from '../_auth'
 
 export default async function AdminOrdersPage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login?role=admin')
-  const { data: profile } = await supabase.from('users').select('role').eq('auth_id', user.id).single()
-  if (!profile || profile.role !== 'admin') redirect('/login?role=admin')
+  await requireAdmin(supabase as any)
 
   const { data: orders } = await supabase
     .from('orders')

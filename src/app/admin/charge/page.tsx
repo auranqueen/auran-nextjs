@@ -1,12 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { requireAdmin } from '../_auth'
 
 export default async function AdminChargePlansPage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login?role=admin')
-  const { data: profile } = await supabase.from('users').select('role').eq('auth_id', user.id).single()
-  if (!profile || profile.role !== 'admin') redirect('/login?role=admin')
+  await requireAdmin(supabase as any)
 
   // Optional table: charge_plans (may not exist yet)
   const res = await supabase.from('charge_plans').select('*').order('sort_order', { ascending: true }).limit(200)

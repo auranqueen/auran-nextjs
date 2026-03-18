@@ -1,12 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { requireAdmin } from '../_auth'
 
 export default async function AdminPrivacyLogsPage() {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login?role=admin')
-  const { data: profile } = await supabase.from('users').select('role').eq('auth_id', user.id).single()
-  if (!profile || profile.role !== 'admin') redirect('/login?role=admin')
+  await requireAdmin(supabase as any)
 
   // table name is not guaranteed in current schema; try a few common audit table names
   const candidates = ['privacy_logs', 'access_logs', 'audit_logs'] as const

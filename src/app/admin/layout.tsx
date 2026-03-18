@@ -1,14 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
 import AdminChrome from '@/components/admin/AdminChrome'
 import './admin.css'
+import { requireAdmin } from './_auth'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const supabase = createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login?role=admin')
-  const { data: profile } = await supabase.from('users').select('role,name').eq('auth_id', user.id).single()
-  if (!profile || profile.role !== 'admin') redirect('/login?role=admin')
+  const { adminName } = await requireAdmin(supabase as any)
 
   const [
     { count: customerCount },
@@ -26,7 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <AdminChrome
-      adminName={profile.name || 'AURAN Admin'}
+      adminName={adminName}
       roleCounts={{
         customer: customerCount || 0,
         partner: partnerCount || 0,
