@@ -34,21 +34,9 @@ export default function SuperConsoleLoginPage() {
       })
       if (authErr) throw authErr
 
-      // role check (profiles 우선, users fallback)
-      const authId = data.user.id
-      let role: string | null = null
-      try {
-        const { data: p } = await supabase.from('profiles').select('role').eq('auth_id', authId).single()
-        role = typeof p?.role === 'string' ? p.role : null
-      } catch {}
-      if (!role) {
-        try {
-          const { data: u } = await supabase.from('users').select('role').eq('auth_id', authId).single()
-          role = typeof u?.role === 'string' ? u.role : null
-        } catch {}
-      }
-
-      if (role !== 'admin') {
+      // role check: server-side verify (service role, avoids RLS issues)
+      const res = await fetch('/api/super-console/verify', { method: 'GET' })
+      if (!res.ok) {
         await supabase.auth.signOut()
         setError('접근 권한이 없습니다')
         return

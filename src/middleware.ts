@@ -63,7 +63,9 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  const role = await getDbRole(supabase, user.id)
+  let role = await getDbRole(supabase, user.id)
+  // If RLS blocks role lookup, fall back to email allowlist for admin entry
+  if (!role && user.email === 'admin@auran.kr') role = 'admin'
   const normalizedRole = role === 'owner' ? 'salon' : role
 
   // super-console: admin only
