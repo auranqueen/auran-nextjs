@@ -7,3 +7,11 @@ export function createServiceClient() {
   return createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
 }
 
+export function tryCreateServiceClient() {
+  try {
+    return createServiceClient()
+  } catch {
+    return null
+  }
+}
+

@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { tryCreateServiceClient } from '@/lib/supabase/service'
 
 type SupabaseServerClient = {
   auth: { getUser: () => Promise<{ data: { user: any | null } }> }
@@ -8,6 +9,18 @@ type SupabaseServerClient = {
 export async function requireAdmin(supabase: SupabaseServerClient) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/super-console/login')
+
+  // 0) service_role로 우선 검사 (RLS/정책 영향 제거)
+  const svc = tryCreateServiceClient()
+  if (svc) {
+    const { data: u } = await svc.from('users').select('role,name,email').eq('auth_id', user.id).maybeSingle()
+    if ((u as any)?.role === 'admin') return { user, adminName: (u as any)?.name || 'AURAN Admin' }
+    const { data: p } = await svc.from('profiles').select('role,email').eq('auth_id', user.id).maybeSingle()
+    if ((p as any)?.role === 'admin') return { user, adminName: '관리자' }
+  } else {
+    // service key가 없는 배포 환경에서도 최소한 기본 관리자 계정은 통과
+    if (user.email === 'admin@auran.kr') return { user, adminName: '관리자' }
+  }
 
   // 1) users.role 우선
   try {

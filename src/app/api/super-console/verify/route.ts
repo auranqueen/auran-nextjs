@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient as createServerClient } from '@/lib/supabase/server'
-import { createServiceClient } from '@/lib/supabase/service'
+import { tryCreateServiceClient } from '@/lib/supabase/service'
 
 export async function GET() {
   // current session user (cookie-based)
@@ -9,7 +9,12 @@ export async function GET() {
   if (!user) return NextResponse.json({ ok: false, reason: 'not_logged_in' }, { status: 401 })
 
   // Use service role to bypass any RLS for role lookup
-  const svc = createServiceClient()
+  const svc = tryCreateServiceClient()
+  if (!svc) {
+    // Safe fallback: keep admin access working even if service key is missing in deployment env
+    if (user.email === 'admin@auran.kr') return NextResponse.json({ ok: true, role: 'admin', fallback: true })
+    return NextResponse.json({ ok: false, reason: 'service_key_missing' }, { status: 500 })
+  }
 
   // Prefer users.role; fallback to profiles.role
   const { data: u } = await svc.from('users').select('role').eq('auth_id', user.id).maybeSingle()
