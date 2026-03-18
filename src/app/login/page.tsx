@@ -55,12 +55,10 @@ function LoginForm() {
       const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
       if (authError) throw authError
 
-      // users 테이블에서 역할 확인
-      const { data: userData } = await supabase
-        .from('users')
-        .select('role, status')
-        .eq('auth_id', data.user.id)
-        .single()
+      // 역할/승인 상태는 RLS 영향 없도록 서버에서 확인(service_role)
+      const roleRes = await fetch('/api/auth/role-status', { method: 'GET' })
+      const roleJson = await roleRes.json().catch(() => ({}))
+      const userData = roleJson?.ok ? { role: roleJson.role as any, status: roleJson.status as any } : null
 
       if (userData?.status === 'suspended') {
         setError('정지된 계정입니다. 고객센터에 문의해주세요.')
