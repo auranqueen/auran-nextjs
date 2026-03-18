@@ -85,10 +85,12 @@ function LoginForm() {
     const fromParam = normalizePosition(role)
     const position = fromParam || stored || 'customer'
     localStorage.setItem(POSITION_STORAGE_KEY, position)
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?role=${position}`,
+        // Use stable production URL to avoid Kakao redirect mismatch (KOE205)
+        redirectTo: `${appUrl}/auth/callback?role=${position}`,
         queryParams: provider === 'kakao' ? { prompt: 'login' } : {},
       },
     })
