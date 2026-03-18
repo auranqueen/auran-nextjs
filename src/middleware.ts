@@ -49,7 +49,8 @@ export async function middleware(req: NextRequest) {
 
   const isSuperConsole = pathname.startsWith('/super-console')
   const isDashboard = pathname.startsWith('/dashboard')
-  if (!isSuperConsole && !isDashboard) return NextResponse.next()
+  const isAdmin = pathname.startsWith('/admin')
+  if (!isSuperConsole && !isDashboard && !isAdmin) return NextResponse.next()
 
   // super-console 로그인 페이지는 예외(비로그인 접근 허용)
   if (pathname === '/super-console/login') return NextResponse.next()
@@ -76,6 +77,17 @@ export async function middleware(req: NextRequest) {
   // If RLS blocks role lookup, fall back to email allowlist for admin entry
   if (!role && user.email === 'admin@auran.kr') role = 'admin'
   const normalizedRole = role === 'owner' ? 'salon' : role
+
+  // admin routes: admin only (and keeps session refreshed via middleware cookies)
+  if (isAdmin) {
+    if (normalizedRole !== 'admin') {
+      const url = req.nextUrl.clone()
+      url.pathname = '/super-console/login'
+      url.searchParams.set('next', pathname)
+      return NextResponse.redirect(url)
+    }
+    return res
+  }
 
   // super-console: admin only
   if (isSuperConsole) {
@@ -128,5 +140,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/super-console/:path*', '/dashboard/:path*'],
+  matcher: ['/super-console/:path*', '/dashboard/:path*', '/admin/:path*'],
 }
