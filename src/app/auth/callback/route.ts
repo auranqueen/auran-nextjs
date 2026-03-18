@@ -14,12 +14,22 @@ function getOrigin(request: NextRequest): string {
   return process.env.NEXT_PUBLIC_APP_URL || url.origin
 }
 
+const PRODUCTION_ORIGIN = 'https://www.auran.kr'
+
 export async function GET(request: NextRequest) {
   const url = new URL(request.url)
+  const host = url.hostname || ''
   const code = url.searchParams.get('code')
+  const errorParam = url.searchParams.get('error') || url.searchParams.get('error_description') || ''
   const position = url.searchParams.get('role') || 'customer'
   const redirect = url.searchParams.get('redirect') || ''
   const origin = getOrigin(request)
+
+  // auran-deploy로 에러가 넘어온 경우: 프로덕션 로그인으로 보내서 재시도 유도
+  if (host.includes('auran-deploy.vercel.app') && (errorParam || !code)) {
+    const err = errorParam ? `&error=${encodeURIComponent(errorParam)}` : ''
+    return NextResponse.redirect(`${PRODUCTION_ORIGIN}/login?role=${position}${err}`)
+  }
 
   if (code) {
     const supabase = createClient()

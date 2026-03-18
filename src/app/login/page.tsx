@@ -125,8 +125,11 @@ function LoginForm() {
     const fromParam = normalizePosition(role)
     const position = fromParam || stored || 'customer'
     localStorage.setItem(POSITION_STORAGE_KEY, position)
-    // 로그인 후 반드시 현재 접속한 주소로 돌아가도록 (NEXT_PUBLIC_APP_URL 무시)
-    const appUrl = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || '')
+    // 로그인 후 돌아갈 주소: auran-deploy면 프로덕션으로, 아니면 현재 주소 (NEXT_PUBLIC_APP_URL 무시)
+    const origin = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || '')
+    const appUrl = (typeof window !== 'undefined' && window.location.hostname?.includes('auran-deploy.vercel.app'))
+      ? 'https://www.auran.kr'
+      : origin
     const redirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : null
     const redirectQuery = redirect ? `&redirect=${encodeURIComponent(redirect)}` : ''
     const { error } = await supabase.auth.signInWithOAuth({
