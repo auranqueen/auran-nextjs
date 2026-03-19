@@ -59,7 +59,7 @@ export default function AnalysisPage() {
               </div>
               <button
                 type="button"
-                onClick={() => router.push('/dashboard/customer/analysis')}
+                onClick={() => router.push('/skin-analysis')}
                 style={{
                   width: '100%',
                   padding: '12px 14px',
@@ -72,7 +72,7 @@ export default function AnalysisPage() {
                   cursor: 'pointer',
                 }}
               >
-                고객 대시보드 분석 화면으로 →
+                피부 분석 시작하기 →
               </button>
             </div>
           </>
