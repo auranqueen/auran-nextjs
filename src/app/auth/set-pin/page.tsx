@@ -40,11 +40,18 @@ export default function SetPinPage() {
       const res = await fetch('/api/auth/pin/set', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
         body: JSON.stringify({ pin }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || '저장 실패')
-      router.replace('/dashboard/customer')
+      // 성공 시 바로 이동 (finally 재렌더 전에). 절대 경로 + href로 이동 확실히
+      const origin = typeof window !== 'undefined' ? window.location.origin : ''
+      const target = origin ? `${origin}/dashboard/customer` : '/dashboard/customer'
+      setTimeout(() => {
+        window.location.href = target
+      }, 0)
+      return
     } catch (e: any) {
       setError(e?.message || '저장에 실패했습니다.')
     } finally {

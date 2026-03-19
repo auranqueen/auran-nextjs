@@ -5,12 +5,15 @@ import DashboardBottomNav from '@/components/DashboardBottomNav'
 import NoticeBell from '@/components/NoticeBell'
 import PaymentAuthGuard from '@/components/PaymentAuthGuard'
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useEffect, useRef, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function WalletPage() {
+function WalletPageInner() {
   const supabase = createClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const paymentDone = searchParams.get('payment') === 'done'
+
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any | null>(null)
   const [hasPin, setHasPin] = useState<boolean | null>(null)
@@ -18,12 +21,17 @@ export default function WalletPage() {
   const [chargeMode, setChargeMode] = useState<'preset' | 'custom'>('preset')
   const [selectedAmount, setSelectedAmount] = useState<number | null>(30000)
   const [customAmount, setCustomAmount] = useState<string>('')
+  const [showPaymentSuccess, setShowPaymentSuccess] = useState(false)
+  const paymentSuccessHandled = useRef(false)
+
+  const fetchProfile = async (authUserId: string) => {
+    const { data: p } = await supabase.from('users').select('id,points,charge_balance').eq('auth_id', authUserId).single()
+    if (p) setProfile(p)
+  }
 
   useEffect(() => {
     const run = async () => {
       setLoading(true)
-      // getUser()가 일시적으로 null을 반환하는 경우(세션 갱신 지연 등)가 있어서
-      // session을 먼저 확인하고, 한 번 재시도 후에만 로그인 페이지로 이동
       const { data: session1 } = await supabase.auth.getSession()
       let authUser = session1.session?.user || null
       if (!authUser) {
@@ -33,13 +41,11 @@ export default function WalletPage() {
       }
       if (!authUser) {
         setLoading(false)
-        // 로그인 후 다시 지갑으로 돌아올 수 있도록 redirect 파라미터 포함
         router.replace('/login?role=customer&redirect=%2Fwallet')
         return
       }
 
-      const { data: p } = await supabase.from('users').select('id,points,charge_balance').eq('auth_id', authUser.id).single()
-      setProfile(p || null)
+      await fetchProfile(authUser.id)
       try {
         const res = await fetch('/api/auth/pin/status', { credentials: 'same-origin' })
         const data = await res.json()
@@ -51,6 +57,26 @@ export default function WalletPage() {
     }
     run()
   }, [router, supabase])
+
+  // 결제 복귀 시: 충전 완료 안내 + 잔액 재조회 (웹훅 반영까지 2~4초 걸릴 수 있음)
+  useEffect(() => {
+    if (!paymentDone || !profile || paymentSuccessHandled.current) return
+    paymentSuccessHandled.current = true
+    setShowPaymentSuccess(true)
+    router.replace('/wallet', { scroll: false })
+    const refetch = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user?.id) await fetchProfile(user.id)
+    }
+    const t1 = setTimeout(refetch, 2000)
+    const t2 = setTimeout(refetch, 4500)
+    const hide = setTimeout(() => setShowPaymentSuccess(false), 6000)
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(hide)
+    }
+  }, [paymentDone, profile?.id])
 
   // 모바일 전체화면 고정 (다른 페이지 배경이 비치지 않게)
   useEffect(() => {
@@ -68,6 +94,11 @@ export default function WalletPage() {
     <div style={{ height: '100dvh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
       <DashboardHeader title="내 지갑" right={<NoticeBell />} />
       <div style={{ padding: '18px 18px 0', flex: 1, overflowY: 'auto', paddingBottom: 220, scrollPaddingBottom: 220 }}>
+        {showPaymentSuccess && (
+          <div style={{ marginBottom: 14, padding: 14, background: 'rgba(76,173,126,0.2)', border: '1px solid rgba(76,173,126,0.5)', borderRadius: 12, color: '#4cad7e', fontSize: 13, fontWeight: 600 }}>
+            ✓ 충전이 완료되었습니다. 잔액이 반영될 때까지 잠시만 기다려 주세요.
+          </div>
+        )}
         {loading ? (
           <div style={{ fontSize: 12, color: 'var(--text3)' }}>불러오는 중...</div>
         ) : !profile ? (
@@ -290,3 +321,10 @@ export default function WalletPage() {
   )
 }
 
+export default function WalletPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', color: 'var(--text3)', fontSize: 12 }}>불러오는 중...</div>}>
+      <WalletPageInner />
+    </Suspense>
+  )
+}

@@ -48,12 +48,40 @@ export async function POST(req: NextRequest) {
 
   if (perr || !p?.id) return NextResponse.json({ ok: false, error: 'user_row_missing' }, { status: 400 })
 
+  const base = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin
+  const returnurl = process.env.PAYAPP_RETURN_URL || `${base}/api/payments/payapp/return`
+  const sandbox = process.env.PAYAPP_SANDBOX === 'true' || process.env.PAYAPP_TEST_MODE === 'true'
+
+  // 샌드박스: 실결제 없이 결제창 대신 바로 return URL로 이동 (개발/테스트용)
+  if (sandbox) {
+    const { data: intent, error: ierr } = await supabase
+      .from('payment_intents')
+      .insert({
+        provider: 'payapp',
+        kind,
+        status: 'pending',
+        user_id: p.id,
+        target_id: targetId,
+        amount: Math.trunc(amount),
+        currency: 'KRW',
+      })
+      .select('id')
+      .single()
+    if (ierr || !intent?.id) return NextResponse.json({ ok: false, error: ierr?.message || 'intent_create_failed' }, { status: 500 })
+    return NextResponse.json({
+      ok: true,
+      intent_id: intent.id,
+      pay_url: returnurl,
+      mul_no: `sandbox-${intent.id}`,
+      _sandbox: true,
+    })
+  }
+
   const userid = mustEnv('PAYAPP_USER_ID')
   const shopname = mustEnv('PAYAPP_SHOPNAME')
   const linkkey = mustEnv('PAYAPP_LINKKEY')
   const linkval = mustEnv('PAYAPP_LINKVAL')
   const feedbackurl = mustEnv('PAYAPP_FEEDBACK_URL')
-  const returnurl = process.env.PAYAPP_RETURN_URL || `${process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin}/wallet`
 
   const recvphone = (p.phone || '').replaceAll('-', '').trim()
   if (!recvphone) return NextResponse.json({ ok: false, error: 'missing_phone' }, { status: 400 })
@@ -82,7 +110,7 @@ export async function POST(req: NextRequest) {
     shopname,
     linkkey,
     linkval,
-    goodname: kind === 'charge' ? 'AURAN 충전' : `AURAN 결제(${kind})`,
+    goodname: kind === 'charge' ? 'AURAN 홀리스틱 멤버십' : `AURAN 결제(${kind})`,
     price: String(Math.trunc(amount)),
     recvphone,
     memo: `AURAN ${kind}`,

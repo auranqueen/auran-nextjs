@@ -102,14 +102,14 @@ export async function GET(request: NextRequest) {
   // PC: 이메일/폰 인증 후 리다이렉트가 해시(#access_token=...)로 올 수 있음. 서버는 해시를 못 받으므로 200 HTML로 해시 처리.
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
   const supabaseAnon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  // 카카오 등 해시(#access_token=...) 리다이렉트: 클라이언트에서 현재 창 origin 사용해 같은 도메인 유지
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>로그인 처리 중</title></head><body><p>로그인 처리 중...</p><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script><script>
 (function(){
-  var u = window.location.href;
   var hash = (window.location.hash || '').slice(1);
   var q = new URLSearchParams(window.location.search);
   var role = q.get('role') || 'customer';
   var redirect = q.get('redirect') || '';
-  var origin = ${JSON.stringify(origin)};
+  var origin = window.location.origin || ${JSON.stringify(origin)};
   var supabaseUrl = ${JSON.stringify(supabaseUrl)};
   var supabaseKey = ${JSON.stringify(supabaseAnon)};
   var params = new URLSearchParams(hash);
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
       if (redirect && redirect.charAt(0) === '/') {
         qs += '&redirect=' + encodeURIComponent(redirect);
       }
-      return fetch(origin + '/api/auth/callback/complete' + qs);
+      return fetch(origin + '/api/auth/callback/complete' + qs, { credentials: 'same-origin' });
     })
     .then(function(r) { return r.json(); })
     .then(function(d) {
