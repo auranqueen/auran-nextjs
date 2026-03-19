@@ -1,28 +1,68 @@
 'use client'
 
+import Link from 'next/link'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import NoticeBell from '@/components/NoticeBell'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useMemo, useState } from 'react'
 
+function ProductCard({ p }: { p: any }) {
+  const [imgError, setImgError] = useState(false)
+  const thumbUrl = p.thumb_img && !imgError ? p.thumb_img : null
+  return (
+    <Link href={`/products/${p.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+      <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: '14px 14px', display: 'flex', gap: 12 }}>
+        <div style={{ width: 72, height: 72, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {thumbUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={thumbUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={() => setImgError(true)} />
+          ) : (
+            <span style={{ fontSize: 24, opacity: 0.4 }}>🧴</span>
+          )}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{p.name}</div>
+          <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 4 }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.brands?.name || ''}</div>
+              <div style={{ width: 4, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.18)' }} />
+              <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.created_at ? new Date(p.created_at).toLocaleDateString('ko-KR') : ''}</div>
+            </div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 800, color: (p.retail_price || 0) === 0 ? 'var(--text3)' : 'var(--gold)' }}>
+              {(p.retail_price || 0) === 0 ? '가격 설정 필요' : `₩${Number(p.retail_price).toLocaleString()}`}
+            </div>
+          </div>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
 export default function ProductsPage() {
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [products, setProducts] = useState<any[]>([])
+  const [error, setError] = useState<string | null>(null)
   const [brandFilter, setBrandFilter] = useState<string>('all')
   const [selectedBrand, setSelectedBrand] = useState<any | null>(null)
 
   useEffect(() => {
     const run = async () => {
       setLoading(true)
-      const { data } = await supabase
+      setError(null)
+      const { data, error: err } = await supabase
         .from('products')
-        .select('id,name,retail_price,status,created_at,brand_id,brands(name)')
+        .select('id,name,thumb_img,retail_price,status,created_at,brand_id,brands(name)')
         .eq('status', 'active')
         .order('created_at', { ascending: false })
         .limit(300)
-      setProducts(data || [])
+      if (err) {
+        setError(err.message || '제품 목록을 불러오지 못했습니다.')
+        setProducts([])
+      } else {
+        setProducts(data || [])
+      }
       setLoading(false)
     }
     run()
@@ -173,26 +213,21 @@ export default function ProductsPage() {
           </div>
         )}
 
-        {loading ? (
+        {error ? (
+          <div style={{ padding: 14, background: 'rgba(217,79,79,0.1)', border: '1px solid rgba(217,79,79,0.25)', borderRadius: 12, fontSize: 13, color: '#e08080' }}>
+            {error}
+          </div>
+        ) : loading ? (
           <div style={{ fontSize: 12, color: 'var(--text3)' }}>불러오는 중...</div>
         ) : visible.length === 0 ? (
-          <div style={{ fontSize: 12, color: 'var(--text3)' }}>표시할 제품이 없습니다.</div>
+          <div style={{ padding: 18, textAlign: 'center', color: 'var(--text3)', fontSize: 13, lineHeight: 1.6 }}>
+            표시할 제품이 없습니다.<br />
+            <span style={{ fontSize: 12 }}>승인된 제품이 없거나, 브랜드 필터에 맞는 제품이 없을 수 있습니다.</span>
+          </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {visible.map(p => (
-              <div key={p.id} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: '14px 14px' }}>
-                <div style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{p.name}</div>
-                <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.brands?.name || ''}</div>
-                    <div style={{ width: 4, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.18)' }} />
-                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.created_at ? new Date(p.created_at).toLocaleDateString('ko-KR') : ''}</div>
-                  </div>
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 800, color: 'var(--gold)' }}>
-                    ₩{(p.retail_price || 0).toLocaleString()}
-                  </div>
-                </div>
-              </div>
+              <ProductCard key={p.id} p={p} />
             ))}
           </div>
         )}

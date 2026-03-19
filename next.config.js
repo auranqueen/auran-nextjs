@@ -17,6 +17,12 @@ const nextConfig = {
         ],
       },
       {
+        source: '/admin/marketing/products',
+        headers: [
+          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
+        ],
+      },
+      {
         source: '/api/:path*',
         headers: [
           { key: 'Access-Control-Allow-Origin', value: 'https://auran.kr' },

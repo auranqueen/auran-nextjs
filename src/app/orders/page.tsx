@@ -5,11 +5,13 @@ import DashboardBottomNav from '@/components/DashboardBottomNav'
 import NoticeBell from '@/components/NoticeBell'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 export default function OrdersPage() {
   const supabase = createClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const paymentDone = searchParams.get('payment') === 'done'
   const [loading, setLoading] = useState(true)
   const [orders, setOrders] = useState<any[]>([])
 
@@ -29,7 +31,7 @@ export default function OrdersPage() {
       }
       const { data } = await supabase
         .from('orders')
-        .select('id,order_no,status,final_amount,ordered_at,order_items(product_name,qty)')
+        .select('id,order_no,status,final_amount,ordered_at,order_items(product_name,quantity)')
         .eq('customer_id', profile.id)
         .order('ordered_at', { ascending: false })
         .limit(20)
@@ -43,6 +45,11 @@ export default function OrdersPage() {
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
       <DashboardHeader title="구매내역" right={<NoticeBell />} />
       <div style={{ padding: '18px 18px 0' }}>
+        {paymentDone && (
+          <div style={{ marginBottom: 12, padding: 12, background: 'rgba(76,173,126,0.12)', border: '1px solid rgba(76,173,126,0.35)', borderRadius: 12, fontSize: 13, color: '#4cad7e', fontWeight: 600 }}>
+            결제가 완료되었습니다.
+          </div>
+        )}
         {loading ? (
           <div style={{ fontSize: 12, color: 'var(--text3)' }}>불러오는 중...</div>
         ) : orders.length === 0 ? (

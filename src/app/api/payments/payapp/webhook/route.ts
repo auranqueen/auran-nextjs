@@ -112,6 +112,22 @@ export async function POST(req: NextRequest) {
           })
         }
       }
+      // 주문 결제 완료: 알림만 (주문 상태는 이미 주문확인)
+      if (intent.kind === 'order' && intent.target_id && intent.user_id) {
+        const client = tryCreateServiceClient() || supabase
+        const { data: orderRow } = await client.from('orders').select('order_no').eq('id', intent.target_id).maybeSingle()
+        const { data: userRow } = await client.from('users').select('auth_id').eq('id', intent.user_id).single()
+        const amount = Number(intent.amount || 0)
+        if (userRow?.auth_id) {
+          await client.from('notifications').insert({
+            user_id: userRow.auth_id,
+            type: 'payment',
+            title: '주문 결제 완료',
+            body: `주문이 결제되었습니다. ₩${amount.toLocaleString()}${orderRow?.order_no ? ` · 주문번호 ${orderRow.order_no}` : ''}`,
+            is_read: false,
+          })
+        }
+      }
     }
   } else if (payState === '9' || payState === '64' || payState === '70' || payState === '71' || payState === '8' || payState === '16' || payState === '31') {
     if (intent.status !== 'cancelled') {

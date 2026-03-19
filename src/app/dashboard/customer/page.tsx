@@ -37,12 +37,20 @@ export default async function CustomerDashboard() {
     .order('created_at', { ascending: false })
     .limit(5)
 
+  const { data: featuredProducts } = await supabase
+    .from('products')
+    .select('id,name,thumb_img,retail_price,brands(name)')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(6)
+
   return (
     <CustomerDashboardClient
       profile={profile}
       notifications={notifications || []}
       recentOrders={recentOrders || []}
       pointHistory={pointHistory || []}
+      featuredProducts={featuredProducts || []}
     />
   )
 }

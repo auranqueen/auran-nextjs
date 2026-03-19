@@ -49,7 +49,8 @@ export async function POST(req: NextRequest) {
   if (perr || !p?.id) return NextResponse.json({ ok: false, error: 'user_row_missing' }, { status: 400 })
 
   const base = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin
-  const returnurl = process.env.PAYAPP_RETURN_URL || `${base}/api/payments/payapp/return`
+  const returnurl = process.env.PAYAPP_RETURN_URL
+    || (kind === 'order' ? `${base}/orders?payment=done` : `${base}/api/payments/payapp/return`)
   const sandbox = process.env.PAYAPP_SANDBOX === 'true' || process.env.PAYAPP_TEST_MODE === 'true'
 
   // 샌드박스: 실결제 없이 결제창 대신 바로 return URL로 이동 (개발/테스트용)

@@ -20,9 +20,10 @@ interface Props {
   notifications: any[]
   recentOrders: any[]
   pointHistory: any[]
+  featuredProducts?: any[]
 }
 
-export default function CustomerDashboardClient({ profile, notifications, recentOrders, pointHistory }: Props) {
+export default function CustomerDashboardClient({ profile, notifications, recentOrders, pointHistory, featuredProducts = [] }: Props) {
   const router = useRouter()
   const supabase = createClient()
 
@@ -83,6 +84,49 @@ export default function CustomerDashboardClient({ profile, notifications, recent
           <button onClick={() => router.push('/analysis')} style={{ width: '100%', padding: '15px', background: 'linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))', border: '1px solid rgba(201,168,76,0.35)', borderRadius: 13, color: 'var(--gold)', fontSize: 14, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
             🧬 AI 피부 분석 무료 체험 → 500P 적립
           </button>
+        )}
+
+        {/* 제품 추천 전시 */}
+        {featuredProducts.length > 0 && (
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>💊 제품 추천</div>
+              <button onClick={() => router.push('/products')} style={{ fontSize: 11, color: 'var(--gold)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>전체 보기 →</button>
+            </div>
+            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6, WebkitOverflowScrolling: 'touch' as any }}>
+              {featuredProducts.map((p: any) => (
+                <button
+                  key={p.id}
+                  onClick={() => router.push(`/products/${p.id}`)}
+                  style={{
+                    flexShrink: 0,
+                    width: 110,
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.10)',
+                    borderRadius: 12,
+                    overflow: 'hidden',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  <div style={{ width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {p.thumb_img ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ fontSize: 28, opacity: 0.4 }}>🧴</span>
+                    )}
+                  </div>
+                  <div style={{ padding: '8px 8px 10px' }}>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.brands?.name || ''}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>{p.name}</div>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--gold)', marginTop: 4 }}>₩{(Number(p.retail_price) || 0).toLocaleString()}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* 메뉴 그리드 */}
