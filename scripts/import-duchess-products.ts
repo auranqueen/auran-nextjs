@@ -1,7 +1,11 @@
-import 'dotenv/config'
+import dotenv from 'dotenv'
 import { createClient } from '@supabase/supabase-js'
 
 const BASE = 'http://won.duchess.kr'
+
+// Explicitly load .env.local (ts-node doesn't automatically load it)
+dotenv.config({ path: '.env.local' })
+dotenv.config()
 
 function uniq<T>(arr: T[]) {
   return Array.from(new Set(arr))
@@ -16,18 +20,24 @@ function absUrl(url: string) {
 }
 
 async function fetchText(url: string) {
-  const res = await fetch(url, {
+  const safeUrl = encodeURI(url)
+  const ac = new AbortController()
+  const t = setTimeout(() => ac.abort(), 20000)
+  const res = await fetch(safeUrl, {
+    signal: ac.signal,
     headers: {
       'User-Agent': 'AURAN Importer/1.0 (+https://www.auran.kr)',
       Accept: 'text/html,application/xhtml+xml',
     },
-  })
-  if (!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}`)
+  }).finally(() => clearTimeout(t))
+  if (!res.ok) throw new Error(`Fetch failed ${res.status} for ${safeUrl}`)
   return await res.text()
 }
 
 function parseCategoryIds(html: string) {
-  const ids = Array.from(html.matchAll(/list\.php\?ca_id=([0-9]+)/g)).map(m => m[1])
+  // Allow broader match, then filter to numeric-only to avoid invalid ca_id (e.g. contains Korean)
+  const raw = Array.from(html.matchAll(/list\.php\?ca_id=([0-9a-zA-Z_]+)/g)).map(m => m[1])
+  const ids = raw.filter(x => /^[0-9]+$/.test(x))
   return uniq(ids)
 }
 
@@ -92,11 +102,21 @@ async function main() {
     process.env.Supabase_service_key
   if (!url || !key) throw new Error('Missing SUPABASE service role env')
   const supabase = createClient(url, key, { auth: { autoRefreshToken: false, persistSession: false } })
+  const updateExisting = process.argv.includes('--update') || process.env.DUCHESS_UPDATE === 'true'
+  console.log(`Mode: ${updateExisting ? 'update' : 'insert-only'}`)
 
   // 1) Discover categories from brand page (has most category links)
-  const brandHtml = await fetchText(`${BASE}/m/shop/brand.php`)
-  const categoryIds = parseCategoryIds(brandHtml)
-  if (categoryIds.length === 0) throw new Error('No category ids discovered')
+  let categoryIds: string[] = []
+  try {
+    const brandHtml = await fetchText(`${BASE}/m/shop/brand.php`)
+    categoryIds = parseCategoryIds(brandHtml)
+  } catch (e: any) {
+    console.warn(`WARN brand page fetch failed: ${e?.message || e}`)
+  }
+  if (categoryIds.length === 0) {
+    console.warn('WARN No category ids discovered. Will try with common category ids.')
+    categoryIds = ['001', '001007', '001008']
+  }
 
   console.log(`Discovered categories: ${categoryIds.length}`)
 
@@ -104,10 +124,15 @@ async function main() {
   const gsIds: string[] = []
   for (const caId of categoryIds) {
     try {
-      const listHtml = await fetchText(`${BASE}/m/shop/list.php?ca_id=${encodeURIComponent(caId)}`)
-      const ids = parseGsIdsFromList(listHtml)
-      if (ids.length > 0) console.log(`ca_id=${caId} -> ${ids.length} items`)
-      gsIds.push(...ids)
+      const url = `${BASE}/m/shop/list.php?ca_id=${encodeURIComponent(caId)}`
+      const listHtml = await fetchText(url)
+      try {
+        const ids = parseGsIdsFromList(listHtml)
+        if (ids.length > 0) console.log(`ca_id=${caId} -> ${ids.length} items`)
+        gsIds.push(...ids)
+      } catch (pe: any) {
+        console.warn(`WARN category parse failed ca_id=${caId}: ${pe?.message || pe}`)
+      }
     } catch (e: any) {
       console.warn(`WARN category fetch failed ca_id=${caId}: ${e?.message || e}`)
     }
@@ -117,15 +142,24 @@ async function main() {
 
   // 3) Upsert-like insert by tag (duchess:gs_id:<id>)
   let inserted = 0
+  let updated = 0
   let skipped = 0
   let failed = 0
 
-  for (const gsId of uniqueGs) {
+  for (let idx = 0; idx < uniqueGs.length; idx++) {
+    const gsId = uniqueGs[idx]
+    if (idx > 0 && idx % 10 === 0) {
+      console.log(
+        `Progress ${idx}/${uniqueGs.length} (inserted=${inserted}, updated=${updated}, skipped=${skipped}, failed=${failed})`
+      )
+    }
     const tag = `duchess:gs_id:${gsId}`
     const { data: exists } = await supabase.from('products').select('id').eq('tag', tag).maybeSingle()
     if (exists?.id) {
-      skipped++
-      continue
+      if (!updateExisting) {
+        skipped++
+        continue
+      }
     }
 
     try {
@@ -169,15 +203,36 @@ async function main() {
         category: 'duchess',
         status: 'pending',
       })
-      if (error) throw error
-      inserted++
+      if (error) {
+        // If already exists and update mode enabled, update instead.
+        if (updateExisting && exists?.id) {
+          const { error: uerr } = await supabase
+            .from('products')
+            .update({
+              brand_id: brandId,
+              name,
+              description,
+              retail_price: price,
+              thumb_img: thumb,
+              detail_imgs: detailImgs,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', exists.id)
+          if (uerr) throw uerr
+          updated++
+        } else {
+          throw error
+        }
+      } else {
+        inserted++
+      }
     } catch (e: any) {
       failed++
       console.warn(`FAIL gs_id=${gsId}: ${e?.message || e}`)
     }
   }
 
-  console.log({ inserted, skipped, failed })
+  console.log({ inserted, updated, skipped, failed })
 }
 
 main().catch(e => {
