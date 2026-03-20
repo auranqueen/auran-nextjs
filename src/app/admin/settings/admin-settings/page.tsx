@@ -68,6 +68,14 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       owner_recruit_reward: { label: '원장님 추천 보상', unit: 'P', type: 'number', defaultValue: '10000' },
     },
   },
+  notice_ui: {
+    label: '공지 UI',
+    keys: {
+      chalk_effect_enabled: { label: '칠판 효과 활성화', unit: '', type: 'number', defaultValue: '1' },
+      typing_animation_speed: { label: '타이핑 애니메이션 속도', unit: 'ms/글자', type: 'number', defaultValue: '30' },
+      highlight_color: { label: '강조 분필 색상', unit: '', type: 'text', defaultValue: '#F5E642' },
+    },
+  },
 }
 
 export default function AdminSettingsAdminSettingsPage() {
