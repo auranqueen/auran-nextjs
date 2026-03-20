@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import CustomerDashboardClient from './client'
 
+export const dynamic = 'force-dynamic'
+
 export default async function CustomerDashboard() {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
