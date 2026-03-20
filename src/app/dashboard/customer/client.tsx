@@ -63,6 +63,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const [giftMessage, setGiftMessage] = useState('')
   const [friends, setFriends] = useState<any[]>([])
   const [selectedFriendId, setSelectedFriendId] = useState('')
+  const [productQueryDebug, setProductQueryDebug] = useState('')
   const [nowTs, setNowTs] = useState(Date.now())
   const [specialIndex, setSpecialIndex] = useState(0)
   const [coords, setCoords] = useState(DEFAULT_COORDS)
@@ -117,6 +118,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
       let list: any[] = []
       if (!error) {
         list = (data || []).map((p: any) => ({ ...p, brand_name: p.brands?.name || '' }))
+        setProductQueryDebug(`joined: ok (${(data || []).length}) @ ${new Date().toLocaleTimeString()}`)
       } else {
         // brands 조인 실패 시 fallback (brands 테이블/관계 미구성 환경 대응)
         const { data: fallbackData, error: fallbackError } = await supabase
@@ -125,9 +127,14 @@ export default function CustomerDashboardClient({ profile }: Props) {
           .limit(20)
         console.log('[customer-home products fallback error]', fallbackError)
         list = (fallbackData || []).map((p: any) => ({ ...p, brand_name: p.brand_name || '' }))
+        setProductQueryDebug(`joined error: ${error?.message || 'unknown'} / fallback: ${fallbackError?.message || 'ok'} (${(fallbackData || []).length}) @ ${new Date().toLocaleTimeString()}`)
       }
 
-      if (!list.length) return
+      if (!list.length) {
+        setProducts([])
+        setSpecials([])
+        return
+      }
       setProducts(list)
 
       const now = new Date().toISOString()
@@ -357,6 +364,9 @@ export default function CustomerDashboardClient({ profile }: Props) {
             {toast}
           </div>
         )}
+        <div style={{ marginBottom: 8, fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: "'JetBrains Mono', monospace" }}>
+          query-debug: {productQueryDebug || 'pending...'}
+        </div>
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>안녕하세요, {profile?.name || '고객'}님</div>
           <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>오늘도 아름다운 하루를 시작해요.</div>
