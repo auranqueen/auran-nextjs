@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
         const client = tryCreateServiceClient() || supabase
         const { data: orderRow } = await client
           .from('orders')
-          .select('id,order_no,customer_id,share_journal_id,purchase_lead_rewarded')
+          .select('id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,gift_receiver_id,gift_message,payment_applied,gift_created')
           .eq('id', intent.target_id)
           .maybeSingle()
         const { data: userRow } = await client.from('users').select('auth_id').eq('id', intent.user_id).single()
@@ -151,6 +151,45 @@ export async function POST(req: NextRequest) {
             body: `주문이 결제되었습니다. ₩${amount.toLocaleString()}${orderRow?.order_no ? ` · 주문번호 ${orderRow.order_no}` : ''}`,
             is_read: false,
           })
+        }
+
+        if (orderRow?.id && !orderRow.payment_applied) {
+          const pointUsed = Math.max(0, Number(orderRow.point_used || 0))
+          const chargeUsed = Math.max(0, Number(orderRow.charge_used || 0))
+          if (pointUsed > 0 || chargeUsed > 0) {
+            const { data: buyer } = await client
+              .from('users')
+              .select('points,charge_balance')
+              .eq('id', orderRow.customer_id)
+              .maybeSingle()
+            if (buyer) {
+              const nextPoints = Math.max(0, Number(buyer.points || 0) - pointUsed)
+              const nextCharge = Math.max(0, Number(buyer.charge_balance || 0) - chargeUsed)
+              await client.from('users').update({ points: nextPoints, charge_balance: nextCharge }).eq('id', orderRow.customer_id)
+            }
+          }
+          await client.from('orders').update({ payment_applied: true }).eq('id', orderRow.id)
+        }
+
+        if (orderRow?.id && orderRow.gift_receiver_id && !orderRow.gift_created) {
+          const { data: oi } = await client.from('order_items').select('product_id').eq('order_id', orderRow.id).limit(1).maybeSingle()
+          if (oi?.product_id) {
+            await client.from('gifts').insert({
+              sender_id: orderRow.customer_id,
+              receiver_id: orderRow.gift_receiver_id,
+              product_id: oi.product_id,
+              message: orderRow.gift_message || null,
+              status: 'pending',
+            })
+            await client.from('notifications').insert({
+              user_id: orderRow.gift_receiver_id,
+              type: 'gift',
+              title: '선물이 도착했어요',
+              body: 'OO님이 선물을 보냈어요 🎁 선물함을 확인하세요',
+              is_read: false,
+            })
+            await client.from('orders').update({ gift_created: true }).eq('id', orderRow.id)
+          }
         }
 
         // 공유링크 구매 유도 리워드 (중복 지급 방지: order.purchase_lead_rewarded)

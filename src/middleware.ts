@@ -70,7 +70,12 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const supabase = createMiddlewareClient(req, res)
 
-  const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session } } = await supabase.auth.getSession()
+  const sessionUser = session?.user || null
+  const {
+    data: { user: safeUser },
+  } = sessionUser ? { data: { user: sessionUser } } : await supabase.auth.getUser()
+  const user = safeUser || sessionUser
   if (!user) {
     const redirectTarget = `${pathname}${url.search || ''}`
     if (isProtectedPath) {

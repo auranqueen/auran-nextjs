@@ -14,6 +14,10 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const items = Array.isArray(body?.items) ? body.items : []
   const shareJournalId = typeof body?.share_journal_id === 'string' ? body.share_journal_id : null
+  const usePoints = Math.max(0, Math.floor(Number(body?.use_points) || 0))
+  const useCharge = Math.max(0, Math.floor(Number(body?.use_charge) || 0))
+  const giftTo = typeof body?.gift_to === 'string' && body.gift_to ? body.gift_to : null
+  const giftMessage = typeof body?.gift_message === 'string' ? body.gift_message.slice(0, 100) : null
   if (items.length === 0) return json({ ok: false, error: 'items_required' }, 400)
 
   type Item = { product_id: string; quantity: number }
@@ -68,6 +72,9 @@ export async function POST(req: NextRequest) {
     })
   }
   if (totalAmount < 1) return json({ ok: false, error: 'invalid_total' }, 400)
+  const pointUsed = Math.min(usePoints, totalAmount)
+  const chargeUsed = Math.min(useCharge, Math.max(0, totalAmount - pointUsed))
+  const finalAmount = Math.max(0, totalAmount - pointUsed - chargeUsed)
 
   const { data: order, error: orderErr } = await client
     .from('orders')
@@ -75,13 +82,15 @@ export async function POST(req: NextRequest) {
       customer_id: me.id,
       status: '주문확인',
       total_amount: totalAmount,
-      point_used: 0,
-      charge_used: 0,
+      point_used: pointUsed,
+      charge_used: chargeUsed,
       coupon_discount: 0,
-      final_amount: totalAmount,
+      final_amount: finalAmount,
       earn_points: 0,
       points_awarded: false,
       share_journal_id: validatedShareJournalId,
+      gift_receiver_id: giftTo,
+      gift_message: giftMessage,
     })
     .select('id,order_no,final_amount')
     .single()

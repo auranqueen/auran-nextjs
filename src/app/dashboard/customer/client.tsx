@@ -542,9 +542,9 @@ export default function CustomerDashboardClient({ profile }: Props) {
                     {`${buyerBadge(specialMeta[p.id]?.buyers || 0)} ${specialMeta[p.id]?.hook || ''}`.trim()}
                   </div>
                   <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); addToCart(p.id) }} style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', borderRadius: 8, color: '#fff', fontSize: 11, padding: '7px 0' }}>🛒 담기</button>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); openGift(p) }} style={{ border: '1px solid rgba(140,180,255,0.4)', background: 'rgba(140,180,255,0.12)', borderRadius: 8, color: '#bcd6ff', fontSize: 11, padding: '7px 0' }}>🎁 선물</button>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); logAction('buy_click', { productId: p.id, source: 'special' }); router.push(`/checkout?products=${p.id}`) }} style={{ border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 8, fontSize: 11, padding: '7px 0' }}>⚡ 구매</button>
+                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCart(p.id) }} style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', borderRadius: 8, color: '#fff', fontSize: 11, padding: '7px 0' }}>🛒 담기</button>
+                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openGift(p) }} style={{ border: '1px solid rgba(140,180,255,0.4)', background: 'rgba(140,180,255,0.12)', borderRadius: 8, color: '#bcd6ff', fontSize: 11, padding: '7px 0' }}>🎁 선물</button>
+                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); logAction('buy_click', { productId: p.id, source: 'special' }); router.push(`/checkout?products=${p.id}`) }} style={{ border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 8, fontSize: 11, padding: '7px 0' }}>⚡ 구매</button>
                   </div>
                 </div>
                     </>
@@ -634,13 +634,13 @@ export default function CustomerDashboardClient({ profile }: Props) {
                   </div>
                 </div>
                 <div style={{ padding: '0 10px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); addToCart(p.id) }} style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', borderRadius: 8, padding: '8px 0', fontWeight: 700, fontSize: 11 }}>
+                  <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCart(p.id) }} style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', borderRadius: 8, padding: '8px 0', fontWeight: 700, fontSize: 11 }}>
                     🛒 담기
                   </button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); openGift(p) }} style={{ border: '1px solid rgba(140,180,255,0.4)', background: 'rgba(140,180,255,0.12)', color: '#bcd6ff', borderRadius: 8, padding: '8px 0', fontWeight: 700, fontSize: 11 }}>
+                  <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openGift(p) }} style={{ border: '1px solid rgba(140,180,255,0.4)', background: 'rgba(140,180,255,0.12)', color: '#bcd6ff', borderRadius: 8, padding: '8px 0', fontWeight: 700, fontSize: 11 }}>
                     🎁 선물
                   </button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); logAction('buy_click', { productId: p.id, source: 'all-products' }); router.push(`/checkout?products=${p.id}`) }} style={{ border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 8, padding: '8px 0', fontWeight: 700, fontSize: 11 }}>
+                  <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); logAction('buy_click', { productId: p.id, source: 'all-products' }); router.push(`/checkout?products=${p.id}`) }} style={{ border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 8, padding: '8px 0', fontWeight: 700, fontSize: 11 }}>
                     ⚡ 구매
                   </button>
                 </div>

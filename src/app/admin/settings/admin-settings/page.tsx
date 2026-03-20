@@ -134,6 +134,15 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       gift_notification_enabled: { label: '선물 알림 활성화', unit: '', type: 'number', defaultValue: '1' },
     },
   },
+  checkout: {
+    label: '체크아웃',
+    keys: {
+      toast_first_priority: { label: '토스트 우선 차감', unit: '', type: 'number', defaultValue: '1' },
+      point_max_ratio: { label: '포인트 최대 사용 비율', unit: '%', type: 'number', defaultValue: '20' },
+      show_charge_option: { label: '충전 옵션 표시', unit: '', type: 'number', defaultValue: '1' },
+      min_order_amount: { label: '최소 주문 금액', unit: '원', type: 'number', defaultValue: '0' },
+    },
+  },
   home_special: {
     label: '오늘의 특가',
     keys: {

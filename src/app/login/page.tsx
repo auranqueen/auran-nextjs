@@ -216,7 +216,7 @@ function LoginForm() {
         </div>
 
         {/* 이메일 폼 */}
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', zIndex: 2, pointerEvents: 'auto' }}>
           <div>
             <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 5, fontFamily: "'JetBrains Mono', monospace" }}>이메일</div>
             <input
@@ -267,7 +267,7 @@ function LoginForm() {
 
           <button
             type="submit" disabled={loading}
-            style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.accent, fontSize: 15, fontWeight: 700, marginTop: 4, opacity: loading ? 0.7 : 1 }}
+            style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.accent, fontSize: 15, fontWeight: 700, marginTop: 4, opacity: loading ? 0.7 : 1, position: 'relative', zIndex: 3, pointerEvents: 'auto', cursor: 'pointer' }}
           >
             {loading ? '로그인 중...' : `${meta.label} 로그인`}
           </button>

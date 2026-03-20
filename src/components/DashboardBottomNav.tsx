@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 type Role = 'customer' | 'partner' | 'salon' | 'brand'
 
@@ -8,6 +9,7 @@ const NAV: Record<Role, { icon: string; label: string; href: string }[]> = {
   customer: [
     { icon: '🏠', label: '홈', href: '/dashboard/customer' },
     { icon: '💳', label: '지갑', href: '/wallet' },
+    { icon: '🛒', label: '장바구니', href: '/cart' },
     { icon: '💬', label: '커뮤니티', href: '/dashboard/customer/community' },
     { icon: '🧴', label: '제품', href: '/products' },
     { icon: '📅', label: '예약', href: '/booking' },
@@ -40,6 +42,19 @@ export default function DashboardBottomNav({ role }: { role: Role }) {
   const router = useRouter()
   const pathname = usePathname()
   const items = NAV[role]
+  const [cartBadge, setCartBadge] = useState(0)
+
+  useEffect(() => {
+    if (role !== 'customer' || typeof window === 'undefined') return
+    const read = () => setCartBadge(Number(localStorage.getItem('auran_cart_badge_count') || '0'))
+    read()
+    window.addEventListener('storage', read)
+    window.addEventListener('auran-cart-badge', read as EventListener)
+    return () => {
+      window.removeEventListener('storage', read)
+      window.removeEventListener('auran-cart-badge', read as EventListener)
+    }
+  }, [role])
 
   return (
     <div
@@ -76,7 +91,14 @@ export default function DashboardBottomNav({ role }: { role: Role }) {
               cursor: 'pointer',
             }}
           >
-            <span style={{ fontSize: 20, lineHeight: 1 }}>{t.icon}</span>
+            <span style={{ fontSize: 20, lineHeight: 1, position: 'relative' }}>
+              {t.icon}
+              {t.href === '/cart' && cartBadge > 0 ? (
+                <span style={{ position: 'absolute', right: -8, top: -6, minWidth: 14, height: 14, borderRadius: 999, background: '#d94f4f', color: '#fff', fontSize: 9, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', fontWeight: 800 }}>
+                  {cartBadge > 99 ? '99+' : cartBadge}
+                </span>
+              ) : null}
+            </span>
             <span style={{ fontSize: 9, fontWeight: active ? 700 : 400 }}>{t.label}</span>
           </button>
         )
