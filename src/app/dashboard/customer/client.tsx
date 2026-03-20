@@ -1,4 +1,5 @@
 'use client'
+
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import NoticeBell from '@/components/NoticeBell'
@@ -88,10 +89,10 @@ export default function CustomerDashboardClient({ profile }: Props) {
       const list = (data || []).map((p: any) => ({ ...p, brand_name: p.brands?.name || '' }))
       setProducts(list)
 
-      const specials = [...list]
+      const nextSpecials = [...list]
         .sort((a: any, b: any) => toNum(b.retail_price) - toNum(a.retail_price))
         .slice(0, 4)
-      setSpecials(specials)
+      setSpecials(nextSpecials)
     }
     run()
   }, [supabase])
@@ -117,6 +118,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
     const run = async () => {
       const { data, error } = await supabase.from('auran_stores').select('*').limit(60)
       if (error || !data) return
+
       const sorted = data
         .map((s: any) => {
           const lat = toNum(s.lat ?? s.latitude)
@@ -128,6 +130,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
         })
         .sort((a: any, b: any) => a.distance_km - b.distance_km)
         .slice(0, 3)
+
       setStores(sorted)
     }
     run()
@@ -144,15 +147,16 @@ export default function CustomerDashboardClient({ profile }: Props) {
   }, [products, brandTab, categoryTab])
 
   const skinTypeChips = useMemo(() => {
-    const set = new Set<string>()
+    const unique: string[] = []
     for (const p of products) {
       const skins = Array.isArray(p.skin_types) ? p.skin_types : []
       for (const s of skins) {
         const label = String(s || '').trim()
-        if (label) set.add(label)
+        if (!label) continue
+        if (!unique.includes(label)) unique.push(label)
       }
     }
-    return ['전체', ...Array.from(set)]
+    return ['전체', ...unique]
   }, [products])
 
   return (
@@ -217,7 +221,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
               <div key={s.id || idx} style={{ width: 180, flexShrink: 0, border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.04)', padding: 10 }}>
                 <div style={{ fontSize: 13, color: '#fff', fontWeight: 700 }}>{s.name || s.store_name || `스토어 ${idx + 1}`}</div>
                 <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text3)' }}>{s.address || s.region || ''}</div>
-                <div style={{ marginTop: 6, fontSize: 11, color: 'var(--gold)'}>
+                <div style={{ marginTop: 6, fontSize: 11, color: 'var(--gold)' }}>
                   {Number.isFinite(s.distance_km) ? `${s.distance_km.toFixed(1)}km` : ''}
                 </div>
               </div>

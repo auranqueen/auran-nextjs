@@ -5,15 +5,20 @@ import DashboardBottomNav from '@/components/DashboardBottomNav'
 import NoticeBell from '@/components/NoticeBell'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 export default function OrdersPage() {
   const supabase = createClient()
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const paymentDone = searchParams.get('payment') === 'done'
+  const [paymentDone, setPaymentDone] = useState(false)
   const [loading, setLoading] = useState(true)
   const [orders, setOrders] = useState<any[]>([])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const q = new URLSearchParams(window.location.search)
+    setPaymentDone(q.get('payment') === 'done')
+  }, [])
 
   useEffect(() => {
     const run = async () => {

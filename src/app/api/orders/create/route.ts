@@ -27,7 +27,8 @@ export async function POST(req: NextRequest) {
   const { data: me } = await client.from('users').select('id').eq('auth_id', user.id).single()
   if (!me?.id) return json({ ok: false, error: 'user_row_missing' }, 400)
 
-  const productIds = [...new Set(validItems.map((i: Item) => i.product_id))]
+  const productIdSet = new Set(validItems.map((i: Item) => i.product_id))
+  const productIds = Array.from(productIdSet)
   const { data: products } = await client
     .from('products')
     .select('id,name,retail_price,brand_id')
