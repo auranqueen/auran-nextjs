@@ -108,13 +108,26 @@ export default function CustomerDashboardClient({ profile }: Props) {
     const run = async () => {
       const { data, error } = await supabase
         .from('products')
-        .select('id,brand_id,name,description,retail_price,supply_price,stock,thumb_img,detail_imgs,category,status,skin_types,age_groups,sales_count,review_count,avg_rating,created_at,brands(name),is_flash_sale,flash_sale_start,flash_sale_end,flash_sale_price')
-        .eq('status', 'active')
-        .gt('retail_price', 0)
-        .order('sales_count', { ascending: false })
-        .limit(200)
-      if (error) return
-      const list = (data || []).map((p: any) => ({ ...p, brand_name: p.brands?.name || '' }))
+        .select('*, brands(name)')
+        .limit(20)
+
+      // 임시 디버깅: 홈 상품 쿼리 실패 시 콘솔에 실제 에러 출력
+      console.log('[customer-home products query error]', error)
+
+      let list: any[] = []
+      if (!error) {
+        list = (data || []).map((p: any) => ({ ...p, brand_name: p.brands?.name || '' }))
+      } else {
+        // brands 조인 실패 시 fallback (brands 테이블/관계 미구성 환경 대응)
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('products')
+          .select('*')
+          .limit(20)
+        console.log('[customer-home products fallback error]', fallbackError)
+        list = (fallbackData || []).map((p: any) => ({ ...p, brand_name: p.brand_name || '' }))
+      }
+
+      if (!list.length) return
       setProducts(list)
 
       const now = new Date().toISOString()
