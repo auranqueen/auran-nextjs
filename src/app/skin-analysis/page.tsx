@@ -144,6 +144,7 @@ export default function CustomerAnalysisPage() {
         .from('products')
         .select('id, name, thumb_img, retail_price, brands(name)')
         .eq('status', 'active')
+        .gt('retail_price', 0)
         .limit(6)
       const { data: salons } = await supabase
         .from('salons')

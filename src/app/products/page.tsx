@@ -76,6 +76,7 @@ export default function ProductsPage() {
         .from('products')
         .select('id,name,thumb_img,retail_price,status,created_at,brand_id,brands(name)')
         .eq('status', 'active')
+        .gt('retail_price', 0)
         .order('created_at', { ascending: false })
         .limit(300)
       if (err) {

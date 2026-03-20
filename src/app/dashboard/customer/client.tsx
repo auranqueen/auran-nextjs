@@ -83,6 +83,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
         .from('products')
         .select('id,brand_id,name,description,retail_price,supply_price,stock,thumb_img,detail_imgs,category,status,skin_types,age_groups,sales_count,review_count,avg_rating,created_at,brands(name)')
         .eq('status', 'active')
+        .gt('retail_price', 0)
         .order('sales_count', { ascending: false })
         .limit(200)
       if (error) return

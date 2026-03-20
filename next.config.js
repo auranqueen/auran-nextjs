@@ -9,6 +9,16 @@ const nextConfig = {
       'won.duchess.kr',
       'duchess.kr',
     ],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'won.duchess.kr',
+      },
+      {
+        protocol: 'https',
+        hostname: 'duchess.kr',
+      },
+    ],
   },
   async headers() {
     return [

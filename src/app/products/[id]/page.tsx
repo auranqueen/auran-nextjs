@@ -74,8 +74,9 @@ export default function ProductDetailPage() {
 
   const thumbUrl = product.thumb_img && !thumbError ? product.thumb_img : null
   const detailImgs = Array.isArray(product.detail_imgs) ? product.detail_imgs : []
-  const price = Number(product.retail_price) || 0
-  const isPriceUnset = price === 0
+  const rawPrice = product.retail_price
+  const price = Number(rawPrice) || 0
+  const isPriceUnset = rawPrice === null || rawPrice === undefined || price === 0
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
@@ -101,102 +102,104 @@ export default function ProductDetailPage() {
         <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>{product.brands?.name || ''}</div>
         <h1 style={{ fontSize: 18, fontWeight: 900, color: '#fff', marginBottom: 8, lineHeight: 1.35 }}>{product.name}</h1>
         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 18, fontWeight: 800, color: isPriceUnset ? 'var(--text3)' : 'var(--gold)', marginBottom: 16 }}>
-          {isPriceUnset ? '가격 설정 필요' : `₩${price.toLocaleString()}`}
+          {isPriceUnset ? '준비 중' : `₩${price.toLocaleString()}`}
         </div>
 
-        {/* 수량 + 구매하기 */}
-        <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ fontSize: 12, color: 'var(--text3)' }}>수량</span>
-            <input
-              type="number"
-              min={1}
-              max={99}
-              value={quantity}
-              onChange={e => setQuantity(Math.max(1, Math.min(99, parseInt(e.target.value, 10) || 1)))}
-              style={{
-                width: 56,
-                padding: '8px 10px',
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                borderRadius: 10,
-                color: '#fff',
-                fontSize: 14,
-                fontWeight: 700,
-                textAlign: 'center',
-              }}
-            />
-          </div>
-          <PaymentAuthGuard
-            title="결제 PIN 확인"
-            requirePin
-            onSuccess={async () => {
-              if (isPriceUnset) return
-              const { data: { user: u } } = await supabase.auth.getUser()
-              if (!u) {
-                alert('로그인이 필요합니다.')
-                router.replace('/login?role=customer')
-                return
-              }
-              const total = price * quantity
-              if (total < 1000) {
-                alert('결제 금액은 1,000원 이상이어야 합니다.')
-                return
-              }
-              if (!confirm(`${product.name} ${quantity}개 · ₩${total.toLocaleString()} 결제하시겠습니까?`)) return
-              setBuying(true)
-              try {
-                const orderRes = await fetch('/api/orders/create', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  credentials: 'same-origin',
-                  body: JSON.stringify({ items: [{ product_id: product.id, quantity }] }),
-                })
-                const orderJson = await orderRes.json().catch(() => ({}))
-                if (!orderRes.ok || !orderJson?.ok) {
-                  throw new Error(orderJson?.error || orderJson?.reason || '주문 생성 실패')
+        {/* 수량 + 구매하기 (가격 없으면 완전 숨김) */}
+        {!isPriceUnset && (
+          <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 12, color: 'var(--text3)' }}>수량</span>
+              <input
+                type="number"
+                min={1}
+                max={99}
+                value={quantity}
+                onChange={e => setQuantity(Math.max(1, Math.min(99, parseInt(e.target.value, 10) || 1)))}
+                style={{
+                  width: 56,
+                  padding: '8px 10px',
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 10,
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  textAlign: 'center',
+                }}
+              />
+            </div>
+            <PaymentAuthGuard
+              title="결제 PIN 확인"
+              requirePin
+              onSuccess={async () => {
+                if (isPriceUnset) return
+                const { data: { user: u } } = await supabase.auth.getUser()
+                if (!u) {
+                  alert('로그인이 필요합니다.')
+                  router.replace('/login?role=customer')
+                  return
                 }
-                const payRes = await fetch('/api/payments/payapp/create', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  credentials: 'same-origin',
-                  body: JSON.stringify({
-                    kind: 'order',
-                    amount: orderJson.final_amount,
-                    target_id: orderJson.order_id,
-                  }),
-                })
-                const payJson = await payRes.json().catch(() => ({}))
-                if (!payRes.ok || !payJson?.ok || !payJson?.pay_url) {
-                  throw new Error(payJson?.error || payJson?.reason || '결제 요청 실패')
+                const total = price * quantity
+                if (total < 1000) {
+                  alert('결제 금액은 1,000원 이상이어야 합니다.')
+                  return
                 }
-                window.location.href = payJson.pay_url
-              } catch (e: any) {
-                alert(e?.message || '오류가 발생했습니다.')
-              } finally {
-                setBuying(false)
-              }
-            }}
-          >
-            <button
-              type="button"
-              disabled={buying || isPriceUnset}
-              style={{
-                padding: '12px 24px',
-                background: isPriceUnset ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg, rgba(201,168,76,0.25), rgba(201,168,76,0.12))',
-                border: isPriceUnset ? '1px solid rgba(255,255,255,0.12)' : '1px solid rgba(201,168,76,0.5)',
-                borderRadius: 12,
-                color: isPriceUnset ? 'var(--text3)' : 'var(--gold)',
-                fontSize: 14,
-                fontWeight: 800,
-                cursor: isPriceUnset ? 'not-allowed' : buying ? 'wait' : 'pointer',
-                opacity: buying ? 0.8 : isPriceUnset ? 0.7 : 1,
+                if (!confirm(`${product.name} ${quantity}개 · ₩${total.toLocaleString()} 결제하시겠습니까?`)) return
+                setBuying(true)
+                try {
+                  const orderRes = await fetch('/api/orders/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ items: [{ product_id: product.id, quantity }] }),
+                  })
+                  const orderJson = await orderRes.json().catch(() => ({}))
+                  if (!orderRes.ok || !orderJson?.ok) {
+                    throw new Error(orderJson?.error || orderJson?.reason || '주문 생성 실패')
+                  }
+                  const payRes = await fetch('/api/payments/payapp/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({
+                      kind: 'order',
+                      amount: orderJson.final_amount,
+                      target_id: orderJson.order_id,
+                    }),
+                  })
+                  const payJson = await payRes.json().catch(() => ({}))
+                  if (!payRes.ok || !payJson?.ok || !payJson?.pay_url) {
+                    throw new Error(payJson?.error || payJson?.reason || '결제 요청 실패')
+                  }
+                  window.location.href = payJson.pay_url
+                } catch (e: any) {
+                  alert(e?.message || '오류가 발생했습니다.')
+                } finally {
+                  setBuying(false)
+                }
               }}
             >
-              {buying ? '결제창 이동 중...' : isPriceUnset ? '가격 설정 필요' : `구매하기 ₩${(price * quantity).toLocaleString()}`}
-            </button>
-          </PaymentAuthGuard>
-        </div>
+              <button
+                type="button"
+                disabled={buying}
+                style={{
+                  padding: '12px 24px',
+                  background: 'linear-gradient(135deg, rgba(201,168,76,0.25), rgba(201,168,76,0.12))',
+                  border: '1px solid rgba(201,168,76,0.5)',
+                  borderRadius: 12,
+                  color: 'var(--gold)',
+                  fontSize: 14,
+                  fontWeight: 800,
+                  cursor: buying ? 'wait' : 'pointer',
+                  opacity: buying ? 0.8 : 1,
+                }}
+              >
+                {buying ? '결제창 이동 중...' : `구매하기 ₩${(price * quantity).toLocaleString()}`}
+              </button>
+            </PaymentAuthGuard>
+          </div>
+        )}
 
         {product.description ? (
           <div style={{ marginBottom: 20, fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>

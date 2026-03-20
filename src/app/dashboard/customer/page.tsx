@@ -44,6 +44,7 @@ export default async function CustomerDashboard() {
     .from('products')
     .select('id,name,thumb_img,retail_price,brands(name)')
     .eq('status', 'active')
+    .gt('retail_price', 0)
     .order('created_at', { ascending: false })
     .limit(6)
 
