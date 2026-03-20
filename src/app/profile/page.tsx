@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 
-export default function CustomerMyPage() {
+export default function ProfileRedirectPage() {
   redirect('/my')
 }
 
