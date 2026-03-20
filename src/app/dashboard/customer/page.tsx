@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import CustomerDashboardClient from './client'
 
 export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function CustomerDashboard() {
   const supabase = createClient()
