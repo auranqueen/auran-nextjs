@@ -279,7 +279,7 @@ export default function JournalPublicClient({
                       <div style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 900, marginTop: 6 }}>{`₩${(p.retail_price || 0).toLocaleString()}`}</div>
                     </div>
                   </div>
-                  <button type="button" onClick={() => router.push(`/products/${p.id}`)} style={{ width: '100%', marginTop: 10, padding: '10px 12px', borderRadius: 12, background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.35)', color: 'var(--gold)', fontWeight: 900, cursor: 'pointer' }}>
+                  <button type="button" onClick={() => router.push(`/products/${p.id}?share_journal_id=${journalId}`)} style={{ width: '100%', marginTop: 10, padding: '10px 12px', borderRadius: 12, background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.35)', color: 'var(--gold)', fontWeight: 900, cursor: 'pointer' }}>
                     구매하기 →
                   </button>
                 </div>

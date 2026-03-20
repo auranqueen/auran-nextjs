@@ -12,7 +12,7 @@ import { useAdminSettings } from '@/hooks/useAdminSettings'
 const GOLD = 'var(--gold)'
 const COMMUNITY_BUCKET = 'community'
 
-type TabId = 'journal' | 'reviews' | 'guestbook'
+type TabId = 'journal' | 'reviews' | 'guestbook' | 'ranking'
 
 type ProfileRow = {
   id: string
@@ -1264,13 +1264,20 @@ export default function MyWorldPage() {
             { id: 'journal' as const, label: '스킨저널' },
             { id: 'reviews' as const, label: '사용후기' },
             { id: 'guestbook' as const, label: '방명록' },
+            { id: 'ranking' as const, label: '랭킹' },
           ].map(t => {
             const active = tab === t.id
             return (
               <button
                 key={t.id}
                 type="button"
-                onClick={() => setTab(t.id)}
+                onClick={() => {
+                  if (t.id === 'ranking') {
+                    router.push('/ranking')
+                    return
+                  }
+                  setTab(t.id)
+                }}
                 style={{
                   flex: 1,
                   padding: '10px 10px',

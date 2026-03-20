@@ -136,7 +136,11 @@ export async function POST(req: NextRequest) {
       // 주문 결제 완료: 알림만 (주문 상태는 이미 주문확인)
       if (intent.kind === 'order' && intent.target_id && intent.user_id) {
         const client = tryCreateServiceClient() || supabase
-        const { data: orderRow } = await client.from('orders').select('order_no').eq('id', intent.target_id).maybeSingle()
+        const { data: orderRow } = await client
+          .from('orders')
+          .select('id,order_no,customer_id,share_journal_id,purchase_lead_rewarded')
+          .eq('id', intent.target_id)
+          .maybeSingle()
         const { data: userRow } = await client.from('users').select('auth_id').eq('id', intent.user_id).single()
         const amount = Number(intent.amount || 0)
         if (userRow?.auth_id) {
@@ -147,6 +151,60 @@ export async function POST(req: NextRequest) {
             body: `주문이 결제되었습니다. ₩${amount.toLocaleString()}${orderRow?.order_no ? ` · 주문번호 ${orderRow.order_no}` : ''}`,
             is_read: false,
           })
+        }
+
+        // 공유링크 구매 유도 리워드 (중복 지급 방지: order.purchase_lead_rewarded)
+        if (orderRow?.share_journal_id && !orderRow.purchase_lead_rewarded) {
+          const { data: shareJournal } = await client
+            .from('skin_journals')
+            .select('id,user_id')
+            .eq('id', orderRow.share_journal_id)
+            .maybeSingle()
+
+          if (shareJournal?.user_id && String(shareJournal.user_id) !== String(orderRow.customer_id)) {
+            const { data: leadPointRow } = await client
+              .from('admin_settings')
+              .select('value')
+              .eq('category', 'star_system')
+              .eq('key', 'purchase_lead_points')
+              .maybeSingle()
+
+            const purchaseLeadPoints = Number(leadPointRow?.value ?? 8888)
+
+            // 포인트 적립: 기존 DB 함수 사용 (users.points + point_history 동시 처리)
+            await client.rpc('award_points', {
+              p_user_id: shareJournal.user_id,
+              p_amount: purchaseLeadPoints,
+              p_description: '공유링크 구매 유도',
+              p_icon: '🔗',
+              p_order_id: orderRow.id,
+            })
+
+            const { data: ownerRow } = await client.from('users').select('purchase_leads').eq('id', shareJournal.user_id).single()
+            const nextLeads = Number(ownerRow?.purchase_leads || 0) + 1
+            await client.from('users').update({ purchase_leads: nextLeads }).eq('id', shareJournal.user_id)
+
+            await client
+              .from('orders')
+              .update({ purchase_lead_rewarded: true })
+              .eq('id', orderRow.id)
+
+            await client.from('notifications').insert({
+              user_id: shareJournal.user_id,
+              type: 'system',
+              title: '공유링크 구매 발생',
+              body: `내 공유링크로 구매가 발생했어요. ${purchaseLeadPoints.toLocaleString()}P 적립!`,
+              is_read: false,
+            })
+
+            // 스타 레벨 캐시 갱신
+            await client.rpc('recalc_user_star_levels', { p_user_id: shareJournal.user_id })
+          } else {
+            await client
+              .from('orders')
+              .update({ purchase_lead_rewarded: true })
+              .eq('id', orderRow.id)
+          }
         }
       }
     }

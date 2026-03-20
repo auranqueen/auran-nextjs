@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
@@ -12,7 +12,9 @@ import { createClient } from '@/lib/supabase/client'
 export default function ProductDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const id = typeof params?.id === 'string' ? params.id : null
+  const shareJournalId = searchParams.get('share_journal_id')
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [product, setProduct] = useState<any | null>(null)
@@ -152,7 +154,7 @@ export default function ProductDetailPage() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'same-origin',
-                    body: JSON.stringify({ items: [{ product_id: product.id, quantity }] }),
+                    body: JSON.stringify({ items: [{ product_id: product.id, quantity }], share_journal_id: shareJournalId }),
                   })
                   const orderJson = await orderRes.json().catch(() => ({}))
                   if (!orderRes.ok || !orderJson?.ok) {

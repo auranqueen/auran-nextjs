@@ -55,6 +55,7 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       review_product_points: { label: '후기 작성 포인트(상품)', unit: 'P', type: 'number', defaultValue: '200' },
       like_points_per: { label: '공감(좋아요) 포인트/개', unit: 'P', type: 'number', defaultValue: '10' },
       follow_points_per: { label: '팔로워 생김 포인트/명', unit: 'P', type: 'number', defaultValue: '30' },
+      purchase_lead_points: { label: '공유링크 구매 유도 포인트', unit: 'P', type: 'number', defaultValue: '8888' },
       like_notify_reach: { label: '공감 알림 도달(10개)', unit: 'EA', type: 'number', defaultValue: '10' },
 
       streak_notify_at: { label: '연속 저널 알림 도달(5일)', unit: '일', type: 'number', defaultValue: '5' },

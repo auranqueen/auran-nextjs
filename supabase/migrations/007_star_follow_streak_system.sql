@@ -362,7 +362,7 @@ BEGIN
 
   INSERT INTO public.notifications (user_id, type, title, body, icon, is_read)
   VALUES
-    (NEW.following_id, 'system', '새 팔로워!', '새로운 팔로워가 생겼어요. +', v_points::TEXT || 'P', '✨', false);
+    (NEW.following_id, 'system', '새 팔로워!', CONCAT('새로운 팔로워가 생겼어요. +', v_points::TEXT, 'P'), '✨', false);
 
   PERFORM public.recalc_user_star_levels(NEW.following_id);
   RETURN NEW;
@@ -457,7 +457,7 @@ BEGIN
 
     INSERT INTO public.notifications (user_id, type, title, body, icon, is_read)
     VALUES
-      (v_author_id, 'system', '공감이 늘었어요', '공감 +', v_points::TEXT || 'P', '❤️', false);
+      (v_author_id, 'system', '공감이 늘었어요', CONCAT('공감 +', v_points::TEXT, 'P'), '❤️', false);
 
     PERFORM public.recalc_user_star_levels(v_author_id);
 

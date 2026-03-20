@@ -13,6 +13,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}))
   const items = Array.isArray(body?.items) ? body.items : []
+  const shareJournalId = typeof body?.share_journal_id === 'string' ? body.share_journal_id : null
   if (items.length === 0) return json({ ok: false, error: 'items_required' }, 400)
 
   type Item = { product_id: string; quantity: number }
@@ -26,6 +27,19 @@ export async function POST(req: NextRequest) {
 
   const { data: me } = await client.from('users').select('id').eq('auth_id', user.id).single()
   if (!me?.id) return json({ ok: false, error: 'user_row_missing' }, 400)
+
+  let validatedShareJournalId: string | null = null
+  if (shareJournalId) {
+    const { data: sj } = await client
+      .from('skin_journals')
+      .select('id,user_id')
+      .eq('id', shareJournalId)
+      .maybeSingle()
+
+    if (sj?.id && sj.user_id && String(sj.user_id) !== String(me.id)) {
+      validatedShareJournalId = sj.id
+    }
+  }
 
   const productIdSet = new Set(validItems.map((i: Item) => i.product_id))
   const productIds = Array.from(productIdSet)
@@ -67,6 +81,7 @@ export async function POST(req: NextRequest) {
       final_amount: totalAmount,
       earn_points: 0,
       points_awarded: false,
+      share_journal_id: validatedShareJournalId,
     })
     .select('id,order_no,final_amount')
     .single()
