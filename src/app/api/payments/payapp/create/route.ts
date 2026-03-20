@@ -115,6 +115,10 @@ export async function POST(req: NextRequest) {
     price: String(Math.trunc(amount)),
     recvphone,
     memo: `AURAN ${kind}`,
+    // 결제창 열릴 때 PayApp이 선발송하는 알림톡(SMS/Kakao)을 끄고,
+    // 성공 webhook에서만 결제 완료 알림을 보내도록 한다.
+    sms_flag: 'N',
+    kakao_flag: 'N',
     reqaddr: '0',
     feedbackurl,
     returnurl,
