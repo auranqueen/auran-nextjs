@@ -56,6 +56,13 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const [specials, setSpecials] = useState<any[]>([])
   const [stores, setStores] = useState<any[]>([])
   const [specialMeta, setSpecialMeta] = useState<Record<string, { buyers: number; hook: string }>>({})
+  const [meId, setMeId] = useState<string>('')
+  const [toast, setToast] = useState('')
+  const [giftOpen, setGiftOpen] = useState(false)
+  const [giftTargetProduct, setGiftTargetProduct] = useState<any | null>(null)
+  const [giftMessage, setGiftMessage] = useState('')
+  const [friends, setFriends] = useState<any[]>([])
+  const [selectedFriendId, setSelectedFriendId] = useState('')
   const [nowTs, setNowTs] = useState(Date.now())
   const [specialIndex, setSpecialIndex] = useState(0)
   const [coords, setCoords] = useState(DEFAULT_COORDS)
@@ -64,6 +71,9 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const reviewThreshold = getSettingNum('product_hook', 'review_threshold', 10)
   const aiHookEnabled = getSettingNum('product_hook', 'ai_hook_enabled', 1) === 1
   const buyerBadgeMin = getSettingNum('product_hook', 'buyer_badge_min', 10)
+  const giftEnabled = getSettingNum('gift', 'gift_enabled', 1) === 1
+  const giftMsgMax = getSettingNum('gift', 'gift_message_max_length', 100)
+  const giftNotifyEnabled = getSettingNum('gift', 'gift_notification_enabled', 1) === 1
 
   useEffect(() => {
     const run = async () => {
@@ -73,6 +83,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
 
       const { data: me } = await supabase.from('users').select('id, points, charge_balance').eq('auth_id', user.id).maybeSingle()
       if (me?.id) {
+        setMeId(me.id)
         const { data: uw } = await supabase.from('user_wallets').select('points, charge_balance, balance').eq('user_id', me.id).maybeSingle()
         if (uw) {
           setWallet({
@@ -86,6 +97,12 @@ export default function CustomerDashboardClient({ profile }: Props) {
     }
     run()
   }, [supabase, profile?.points, profile?.charge_balance])
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(''), 1800)
+    return () => clearTimeout(t)
+  }, [toast])
 
   useEffect(() => {
     const run = async () => {
@@ -234,6 +251,73 @@ export default function CustomerDashboardClient({ profile }: Props) {
     return ''
   }
 
+  const addToCart = async (productId: string) => {
+    if (!meId) {
+      router.push('/login?redirect=/dashboard/customer')
+      return
+    }
+    const { error } = await supabase.from('cart_items').insert({ user_id: meId, product_id: productId, quantity: 1 } as any)
+    if (error) {
+      if (String(error.message || '').toLowerCase().includes('duplicate') || String((error as any).code || '') === '23505') {
+        setToast('이미 담긴 상품이에요')
+        return
+      }
+      setToast('장바구니 저장 중 오류가 발생했어요')
+      return
+    }
+    setToast('장바구니에 담았어요 🛒')
+  }
+
+  const openGift = async (product: any) => {
+    if (!giftEnabled) {
+      setToast('선물 기능이 비활성화되어 있어요')
+      return
+    }
+    if (!meId) {
+      router.push('/login?redirect=/dashboard/customer')
+      return
+    }
+    const { data: rows } = await supabase.from('follows').select('following_id').eq('follower_id', meId)
+    const ids = (rows || []).map((r: any) => r.following_id).filter(Boolean)
+    if (ids.length === 0) {
+      setToast('오랜일촌이 없어요')
+      return
+    }
+    const { data: users } = await supabase.from('users').select('id,name,avatar_url').in('id', ids)
+    setFriends(users || [])
+    setSelectedFriendId(String(ids[0]))
+    setGiftTargetProduct(product)
+    setGiftOpen(true)
+  }
+
+  const sendGift = async () => {
+    if (!meId || !giftTargetProduct || !selectedFriendId) return
+    const target = friends.find((f: any) => String(f.id) === String(selectedFriendId))
+    const { error } = await supabase.from('gifts').insert({
+      sender_id: meId,
+      receiver_id: selectedFriendId,
+      product_id: giftTargetProduct.id,
+      message: giftMessage.trim(),
+      status: 'pending',
+    } as any)
+    if (error) {
+      setToast('선물 전송에 실패했어요')
+      return
+    }
+    if (giftNotifyEnabled) {
+      await supabase.from('notifications').insert({
+        user_id: selectedFriendId,
+        type: 'gift',
+        title: '선물이 도착했어요',
+        body: `${profile?.name || '친구'}님이 선물을 보냈어요 🎁`,
+        is_read: false,
+      } as any)
+    }
+    setGiftOpen(false)
+    setGiftMessage('')
+    setToast(`${target?.name || '친구'}님께 선물을 보냈어요 🎁`)
+  }
+
   const skinTypeChips = useMemo(() => {
     const unique: string[] = []
     for (const p of products) {
@@ -255,6 +339,11 @@ export default function CustomerDashboardClient({ profile }: Props) {
       </div>
 
       <div style={{ padding: 16 }}>
+        {toast && (
+          <div style={{ marginBottom: 10, padding: '9px 10px', borderRadius: 10, border: '1px solid rgba(201,168,76,0.35)', background: 'rgba(201,168,76,0.12)', color: 'var(--gold)', fontSize: 12, fontWeight: 700 }}>
+            {toast}
+          </div>
+        )}
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>안녕하세요, {profile?.name || '고객'}님</div>
           <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>오늘도 아름다운 하루를 시작해요.</div>
@@ -311,9 +400,10 @@ export default function CustomerDashboardClient({ profile }: Props) {
                   <div style={{ marginTop: 6, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 6, fontSize: 11, color: '#ffd98a', minHeight: 28 }}>
                     {`${buyerBadge(specialMeta[p.id]?.buyers || 0)} ${specialMeta[p.id]?.hook || ''}`.trim()}
                   </div>
-                  <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                    <button style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', borderRadius: 8, color: '#fff', fontSize: 11, padding: '7px 0' }}>담기</button>
-                    <button onClick={() => router.push(`/products/${p.id}`)} style={{ border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 8, fontSize: 11, padding: '7px 0' }}>구매하기</button>
+                  <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                    <button onClick={() => addToCart(p.id)} style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', borderRadius: 8, color: '#fff', fontSize: 11, padding: '7px 0' }}>🛒 담기</button>
+                    <button onClick={() => openGift(p)} style={{ border: '1px solid rgba(140,180,255,0.4)', background: 'rgba(140,180,255,0.12)', borderRadius: 8, color: '#bcd6ff', fontSize: 11, padding: '7px 0' }}>🎁 선물</button>
+                    <button onClick={() => router.push(`/checkout?products=${p.id}`)} style={{ border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 8, fontSize: 11, padding: '7px 0' }}>⚡ 구매</button>
                   </div>
                 </div>
               </div>
@@ -369,9 +459,15 @@ export default function CustomerDashboardClient({ profile }: Props) {
                     <div style={{ marginTop: 4, fontSize: 12, color: 'var(--gold)', fontWeight: 800 }}>₩{toNum(p.retail_price).toLocaleString()}</div>
                   </div>
                 </div>
-                <div style={{ padding: '0 10px 10px' }}>
-                  <button onClick={() => router.push(`/products/${p.id}`)} style={{ width: '100%', border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 10, padding: '9px 0', fontWeight: 700, fontSize: 12 }}>
-                    구매하기
+                <div style={{ padding: '0 10px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                  <button onClick={() => addToCart(p.id)} style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', borderRadius: 8, padding: '8px 0', fontWeight: 700, fontSize: 11 }}>
+                    🛒 담기
+                  </button>
+                  <button onClick={() => openGift(p)} style={{ border: '1px solid rgba(140,180,255,0.4)', background: 'rgba(140,180,255,0.12)', color: '#bcd6ff', borderRadius: 8, padding: '8px 0', fontWeight: 700, fontSize: 11 }}>
+                    🎁 선물
+                  </button>
+                  <button onClick={() => router.push(`/checkout?products=${p.id}`)} style={{ border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 8, padding: '8px 0', fontWeight: 700, fontSize: 11 }}>
+                    ⚡ 구매
                   </button>
                 </div>
               </div>
@@ -379,6 +475,26 @@ export default function CustomerDashboardClient({ profile }: Props) {
           </div>
         </div>
       </div>
+
+      {giftOpen && (
+        <div onClick={() => setGiftOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 130 }}>
+          <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 0, width: '100%', maxWidth: 480, background: '#11161b', borderTopLeftRadius: 18, borderTopRightRadius: 18, borderTop: '1px solid var(--border)', padding: 14 }}>
+            <div style={{ fontSize: 14, color: '#fff', fontWeight: 800, marginBottom: 8 }}>오랜일촌에게 선물하기</div>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8 }}>
+              {friends.map((f: any) => (
+                <button key={f.id} onClick={() => setSelectedFriendId(String(f.id))} style={{ minWidth: 92, borderRadius: 10, border: selectedFriendId === String(f.id) ? '1px solid rgba(201,168,76,0.55)' : '1px solid var(--border)', background: selectedFriendId === String(f.id) ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)', color: '#fff', padding: 8 }}>
+                  <div style={{ width: 36, height: 36, margin: '0 auto', borderRadius: 999, overflow: 'hidden', background: 'rgba(255,255,255,0.08)' }}>
+                    {f.avatar_url ? <img src={f.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                  </div>
+                  <div style={{ marginTop: 4, fontSize: 11, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</div>
+                </button>
+              ))}
+            </div>
+            <textarea value={giftMessage} maxLength={giftMsgMax} onChange={e => setGiftMessage(e.target.value)} placeholder="메시지를 남겨보세요" style={{ width: '100%', minHeight: 70, marginTop: 8, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', padding: 10, resize: 'none' }} />
+            <button onClick={sendGift} style={{ marginTop: 10, width: '100%', height: 40, borderRadius: 10, border: 'none', background: '#c9a84c', color: '#111', fontWeight: 900 }}>선물하기</button>
+          </div>
+        </div>
+      )}
 
       <DashboardBottomNav role="customer" />
     </div>

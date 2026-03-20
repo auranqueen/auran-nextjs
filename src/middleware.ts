@@ -57,10 +57,12 @@ export async function middleware(req: NextRequest) {
   }
 
   const { pathname } = url
+  const protectedPaths = ['/myworld', '/wallet']
+  const isProtectedPath = protectedPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`))
   const isSuperConsole = pathname.startsWith('/super-console')
   const isDashboard = pathname.startsWith('/dashboard')
   const isAdmin = pathname.startsWith('/admin')
-  if (!isSuperConsole && !isDashboard && !isAdmin) return NextResponse.next()
+  if (!isSuperConsole && !isDashboard && !isAdmin && !isProtectedPath) return NextResponse.next()
 
   // super-console 로그인 페이지는 예외(비로그인 접근 허용)
   if (pathname === '/super-console/login') return NextResponse.next()
@@ -70,6 +72,13 @@ export async function middleware(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
+    if (isProtectedPath) {
+      const loginUrl = req.nextUrl.clone()
+      loginUrl.pathname = '/login'
+      loginUrl.search = ''
+      loginUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
     if (isSuperConsole) {
       const url = req.nextUrl.clone()
       url.pathname = '/super-console/login'

@@ -126,6 +126,14 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       point_max_usage_rate: { label: '포인트 최대 사용 비율', unit: '%', type: 'number', defaultValue: '20' },
     },
   },
+  gift: {
+    label: '선물 설정',
+    keys: {
+      gift_enabled: { label: '선물 기능 활성화', unit: '', type: 'number', defaultValue: '1' },
+      gift_message_max_length: { label: '선물 메시지 최대 길이', unit: '자', type: 'number', defaultValue: '100' },
+      gift_notification_enabled: { label: '선물 알림 활성화', unit: '', type: 'number', defaultValue: '1' },
+    },
+  },
 }
 
 export default function AdminSettingsAdminSettingsPage() {
