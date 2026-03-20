@@ -617,12 +617,14 @@ export default function MyWorldPage() {
     const run = async () => {
       setLoading(true)
       try {
-        const {
-          data: { user },
-          error: authErr,
-        } = await supabase.auth.getUser()
+        const { data: { session } } = await supabase.auth.getSession()
+        const sessionUser = session?.user || null
+        const { data: { user }, error: authErr } = sessionUser
+          ? { data: { user: sessionUser }, error: null as any }
+          : await supabase.auth.getUser()
+        const authUser = user || sessionUser
 
-        if (!user || authErr) {
+        if (!authUser || authErr) {
           router.replace('/login?redirect=/myworld')
           return
         }
@@ -630,7 +632,7 @@ export default function MyWorldPage() {
         const { data } = await supabase
           .from('users')
           .select('id,name,avatar_url,skin_type,points,charge_balance,star_level,total_likes,total_followers,purchase_leads')
-          .eq('auth_id', user.id)
+          .eq('auth_id', authUser.id)
           .single()
 
         if (!data?.id) {

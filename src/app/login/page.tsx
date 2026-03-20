@@ -65,8 +65,7 @@ function LoginForm() {
   }, [params, redirectParam, router, supabase])
 
 
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault()
+  async function submitLogin() {
     setLoading(true)
     setError('')
     try {
@@ -120,6 +119,11 @@ function LoginForm() {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleLogin(e: React.FormEvent) {
+    e.preventDefault()
+    await submitLogin()
   }
 
   async function handleSocial(provider: 'kakao' | 'google') {
@@ -266,7 +270,8 @@ function LoginForm() {
           )}
 
           <button
-            type="submit" disabled={loading}
+            type="button" disabled={loading}
+            onClick={submitLogin}
             style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.accent, fontSize: 15, fontWeight: 700, marginTop: 4, opacity: loading ? 0.7 : 1, position: 'relative', zIndex: 3, pointerEvents: 'auto', cursor: 'pointer' }}
           >
             {loading ? '로그인 중...' : `${meta.label} 로그인`}

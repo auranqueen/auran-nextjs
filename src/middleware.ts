@@ -57,7 +57,7 @@ export async function middleware(req: NextRequest) {
   }
 
   const { pathname } = url
-  const protectedPaths = ['/myworld', '/wallet']
+  const protectedPaths = ['/wallet']
   const isProtectedPath = protectedPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`))
   const isSuperConsole = pathname.startsWith('/super-console')
   const isDashboard = pathname.startsWith('/dashboard')
