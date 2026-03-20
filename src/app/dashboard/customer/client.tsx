@@ -14,7 +14,6 @@ interface Props {
 }
 
 const BRAND_TABS = ['전체', 'Civasan', 'Gernetic', 'Shopbelle', '보떼덤', 'Dr.Sante']
-const CATEGORY_CHIPS = ['전체', '세럼·앰플', '크림·보습', '토너·미스트', '클렌징', '마스크팩', '선케어', '바디케어']
 const QUICK_MENUS = [
   { icon: '🧬', label: 'AI 피부 분석', href: '/ai-analysis' },
   { icon: '📅', label: '살롱 예약', href: '/booking' },
@@ -39,8 +38,8 @@ function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
   return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h))
 }
 
-function getProductCategory(p: any) {
-  return (p.category || p.product_category || p.category_name || p.subcategory || '').toString()
+function normalizeBrandName(p: any) {
+  return (p.brand_name || p.brands?.name || '').toString()
 }
 
 export default function CustomerDashboardClient({ profile }: Props) {
@@ -81,16 +80,16 @@ export default function CustomerDashboardClient({ profile }: Props) {
     const run = async () => {
       const { data, error } = await supabase
         .from('products')
-        .select('id,name,thumb_img,retail_price,discount_rate,brands(name),category,status')
+        .select('id,brand_id,name,description,retail_price,supply_price,stock,thumb_img,detail_imgs,category,status,skin_types,age_groups,sales_count,review_count,avg_rating,created_at,brands(name)')
         .eq('status', 'active')
-        .order('created_at', { ascending: false })
+        .order('sales_count', { ascending: false })
         .limit(200)
       if (error) return
-      const list = data || []
+      const list = (data || []).map((p: any) => ({ ...p, brand_name: p.brands?.name || '' }))
       setProducts(list)
 
       const specials = [...list]
-        .sort((a: any, b: any) => toNum(b.discount_rate) - toNum(a.discount_rate))
+        .sort((a: any, b: any) => toNum(b.retail_price) - toNum(a.retail_price))
         .slice(0, 4)
       setSpecials(specials)
     }
@@ -136,13 +135,25 @@ export default function CustomerDashboardClient({ profile }: Props) {
 
   const filteredProducts = useMemo(() => {
     return products.filter((p: any) => {
-      const brandName = (p.brands?.name || '').toString()
-      const categoryName = getProductCategory(p)
+      const brandName = normalizeBrandName(p)
+      const skinTypes = Array.isArray(p.skin_types) ? p.skin_types : []
       const brandOk = brandTab === '전체' || brandName.toLowerCase() === brandTab.toLowerCase()
-      const categoryOk = categoryTab === '전체' || categoryName.includes(categoryTab)
+      const categoryOk = categoryTab === '전체' || skinTypes.includes(categoryTab)
       return brandOk && categoryOk
     })
   }, [products, brandTab, categoryTab])
+
+  const skinTypeChips = useMemo(() => {
+    const set = new Set<string>()
+    for (const p of products) {
+      const skins = Array.isArray(p.skin_types) ? p.skin_types : []
+      for (const s of skins) {
+        const label = String(s || '').trim()
+        if (label) set.add(label)
+      }
+    }
+    return ['전체', ...Array.from(set)]
+  }, [products])
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 120 }}>
@@ -190,9 +201,9 @@ export default function CustomerDashboardClient({ profile }: Props) {
                   {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ height: '100%', display: 'grid', placeItems: 'center' }}>🧴</div>}
                 </div>
                 <div style={{ padding: 8 }}>
-                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.brands?.name || ''}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>{normalizeBrandName(p)}</div>
                   <div style={{ fontSize: 12, color: '#fff', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 800 }}>{toNum(p.discount_rate)}% OFF</div>
+                  <div style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 800 }}>₩{toNum(p.retail_price).toLocaleString()}</div>
                 </div>
               </div>
             ))}
@@ -223,7 +234,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
             ))}
           </div>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 10 }}>
-            {CATEGORY_CHIPS.map((c) => (
+            {skinTypeChips.map((c) => (
               <button key={c} onClick={() => setCategoryTab(c)} style={{ whiteSpace: 'nowrap', borderRadius: 999, border: categoryTab === c ? '1px solid rgba(74,141,192,0.55)' : '1px solid var(--border)', background: categoryTab === c ? 'rgba(74,141,192,0.15)' : 'rgba(255,255,255,0.04)', color: categoryTab === c ? '#8bb9dc' : '#fff', fontSize: 12, padding: '7px 12px' }}>{c}</button>
             ))}
           </div>
@@ -236,12 +247,9 @@ export default function CustomerDashboardClient({ profile }: Props) {
                     {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ height: '100%', display: 'grid', placeItems: 'center' }}>🧴</div>}
                   </div>
                   <div style={{ padding: 10 }}>
-                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.brands?.name || ''}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{normalizeBrandName(p)}</div>
                     <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', minHeight: 32 }}>{p.name}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
-                      <span style={{ fontSize: 11, color: '#4cad7e', fontWeight: 700 }}>{toNum(p.discount_rate)}%</span>
-                      <span style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 800 }}>₩{toNum(p.retail_price).toLocaleString()}</span>
-                    </div>
+                    <div style={{ marginTop: 4, fontSize: 12, color: 'var(--gold)', fontWeight: 800 }}>₩{toNum(p.retail_price).toLocaleString()}</div>
                   </div>
                 </div>
                 <div style={{ padding: '0 10px 10px' }}>
