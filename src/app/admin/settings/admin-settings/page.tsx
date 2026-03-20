@@ -76,6 +76,22 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       highlight_color: { label: '강조 분필 색상', unit: '', type: 'text', defaultValue: '#F5E642' },
     },
   },
+  flash_sale: {
+    label: '타임세일',
+    keys: {
+      default_duration_hours: { label: '기본 타임세일 시간', unit: '시간', type: 'number', defaultValue: '24' },
+      max_discount_rate: { label: '최대 할인율', unit: '%', type: 'number', defaultValue: '70' },
+      auto_end_notification: { label: '종료 1시간 전 알림', unit: '', type: 'number', defaultValue: '1' },
+    },
+  },
+  product_hook: {
+    label: '상품 후킹',
+    keys: {
+      review_threshold: { label: '리뷰 기반 멘트 전환 기준', unit: '개', type: 'number', defaultValue: '10' },
+      buyer_badge_min: { label: '구매자 배지 최소 기준', unit: '명', type: 'number', defaultValue: '10' },
+      ai_hook_enabled: { label: 'AI 후킹 멘트 활성화', unit: '', type: 'number', defaultValue: '1' },
+    },
+  },
 }
 
 export default function AdminSettingsAdminSettingsPage() {

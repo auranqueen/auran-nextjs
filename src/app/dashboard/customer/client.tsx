@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import Image from 'next/image'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import NoticeBell from '@/components/NoticeBell'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import { createClient } from '@/lib/supabase/client'
+import { useAdminSettings } from '@/hooks/useAdminSettings'
 
 interface Props {
   profile: any
@@ -46,14 +48,22 @@ function normalizeBrandName(p: any) {
 export default function CustomerDashboardClient({ profile }: Props) {
   const router = useRouter()
   const supabase = createClient()
+  const { getSettingNum, getSetting } = useAdminSettings()
   const [wallet, setWallet] = useState({ points: toNum(profile?.points), balance: toNum(profile?.charge_balance) })
   const [brandTab, setBrandTab] = useState('전체')
   const [categoryTab, setCategoryTab] = useState('전체')
   const [products, setProducts] = useState<any[]>([])
   const [specials, setSpecials] = useState<any[]>([])
   const [stores, setStores] = useState<any[]>([])
+  const [specialMeta, setSpecialMeta] = useState<Record<string, { buyers: number; hook: string }>>({})
+  const [nowTs, setNowTs] = useState(Date.now())
+  const [specialIndex, setSpecialIndex] = useState(0)
   const [coords, setCoords] = useState(DEFAULT_COORDS)
-  const [storesFallback, setStoresFallback] = useState(false)
+  const specialWrapRef = useRef<HTMLDivElement | null>(null)
+
+  const reviewThreshold = getSettingNum('product_hook', 'review_threshold', 10)
+  const aiHookEnabled = getSettingNum('product_hook', 'ai_hook_enabled', 1) === 1
+  const buyerBadgeMin = getSettingNum('product_hook', 'buyer_badge_min', 10)
 
   useEffect(() => {
     const run = async () => {
@@ -81,7 +91,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
     const run = async () => {
       const { data, error } = await supabase
         .from('products')
-        .select('id,brand_id,name,description,retail_price,supply_price,stock,thumb_img,detail_imgs,category,status,skin_types,age_groups,sales_count,review_count,avg_rating,created_at,brands(name)')
+        .select('id,brand_id,name,description,retail_price,supply_price,stock,thumb_img,detail_imgs,category,status,skin_types,age_groups,sales_count,review_count,avg_rating,created_at,brands(name),is_flash_sale,flash_sale_start,flash_sale_end,flash_sale_price')
         .eq('status', 'active')
         .gt('retail_price', 0)
         .order('sales_count', { ascending: false })
@@ -90,28 +100,74 @@ export default function CustomerDashboardClient({ profile }: Props) {
       const list = (data || []).map((p: any) => ({ ...p, brand_name: p.brands?.name || '' }))
       setProducts(list)
 
-      const nextSpecials = [...list]
-        .sort((a: any, b: any) => toNum(b.retail_price) - toNum(a.retail_price))
-        .slice(0, 4)
+      const now = new Date().toISOString()
+      const liveFlash = list
+        .filter((p: any) => p.is_flash_sale && p.flash_sale_end && p.flash_sale_end > now)
+        .sort((a: any, b: any) => new Date(a.flash_sale_end).getTime() - new Date(b.flash_sale_end).getTime())
+      const nextSpecials = (liveFlash.length > 0 ? liveFlash : [...list].sort((a: any, b: any) => toNum(b.sales_count) - toNum(a.sales_count))).slice(0, 8)
       setSpecials(nextSpecials)
+
+      const ids = nextSpecials.map((p: any) => p.id)
+      if (ids.length > 0) {
+        const { data: buyerRows } = await supabase.from('order_items').select('product_id').in('product_id', ids)
+        const buyerCountMap: Record<string, number> = {}
+        for (const r of buyerRows || []) {
+          const id = String((r as any).product_id || '')
+          if (!id) continue
+          buyerCountMap[id] = (buyerCountMap[id] || 0) + 1
+        }
+        const { data: reviewRows } = await supabase
+          .from('reviews')
+          .select('product_id,content,rating')
+          .eq('review_type', 'product')
+          .eq('status', '게시')
+          .gte('rating', 4)
+          .in('product_id', ids)
+        const map: Record<string, { buyers: number; hook: string }> = {}
+        const keywordPool = ['모공', '피지', '보습', '진정', '탄력', '미백', '트러블', '수분', '촉촉', '깨끗', '개선']
+        const skinType = String(profile?.skin_type || '')
+        const aiMap: Record<string, string> = {
+          건성: '당기는 피부에 수분막을 채워줘요 💧',
+          지성: '피지·모공 세척으로 맑은 피부 시작 ✨',
+          복합성: 'T존 피지 + U존 수분 동시 케어 🌿',
+          민감성: '자극 없이 진정시켜주는 성분 확인 🌸',
+          트러블성: '트러블 원인 차단, 맑아지는 피부 🔴→⚪',
+          안티에이징형: '탄력·주름 집중 케어 라인 👑',
+        }
+        for (const id of ids) {
+          const rows = (reviewRows || []).filter((r: any) => String(r.product_id) === id)
+          let hook = aiMap[skinType] || '내 피부타입 맞춤 추천 제품이에요'
+          if (aiHookEnabled && rows.length >= reviewThreshold) {
+            const counts: Record<string, number> = {}
+            for (const r of rows) {
+              const c = String(r.content || '')
+              for (const k of keywordPool) {
+                if (c.includes(k)) counts[k] = (counts[k] || 0) + 1
+              }
+            }
+            const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k]) => k)
+            if (top.length >= 2) hook = `${top[0]}·${top[1]} 케어에 효과적이에요 ✨`
+            else if (top.length === 1) hook = `${top[0]} 케어에 효과적이에요 ✨`
+          }
+          map[id] = { buyers: buyerCountMap[id] || 0, hook }
+        }
+        setSpecialMeta(map)
+      }
     }
     run()
-  }, [supabase])
+  }, [supabase, profile?.skin_type, aiHookEnabled, reviewThreshold])
 
   useEffect(() => {
     if (!navigator?.geolocation) {
       setCoords(DEFAULT_COORDS)
-      setStoresFallback(false)
       return
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setStoresFallback(false)
         setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
       },
       () => {
         setCoords(DEFAULT_COORDS)
-        setStoresFallback(false)
       },
       { timeout: 5000, maximumAge: 300000 }
     )
@@ -148,6 +204,35 @@ export default function CustomerDashboardClient({ profile }: Props) {
       return brandOk && categoryOk
     })
   }, [products, brandTab, categoryTab])
+
+  useEffect(() => {
+    const t = setInterval(() => setNowTs(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  useEffect(() => {
+    if (specials.length <= 1) return
+    const t = setInterval(() => {
+      setSpecialIndex((prev) => {
+        const next = (prev + 1) % specials.length
+        const wrap = specialWrapRef.current
+        if (wrap) {
+          const child = wrap.children[next] as HTMLElement | undefined
+          if (child) wrap.scrollTo({ left: child.offsetLeft, behavior: 'smooth' })
+        }
+        return next
+      })
+    }, 3000)
+    return () => clearInterval(t)
+  }, [specials.length])
+
+  const buyerBadge = (n: number) => {
+    if (n >= 500) return `👑 ${n}명 구매 · AURAN 베스트`
+    if (n >= 100) return `🔥 ${n}명의 선택! 인기 제품`
+    if (n >= 50) return `⭐ ${n}명이 만족했어요`
+    if (n >= buyerBadgeMin) return `${n}명이 구매했어요`
+    return ''
+  }
 
   const skinTypeChips = useMemo(() => {
     const unique: string[] = []
@@ -201,18 +286,42 @@ export default function CustomerDashboardClient({ profile }: Props) {
 
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 10 }}>오늘의 특가</div>
-          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+          <div ref={specialWrapRef} style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, scrollBehavior: 'smooth' }}>
             {specials.map((p: any) => (
-              <div key={p.id} onClick={() => router.push(`/products/${p.id}`)} style={{ width: 150, flexShrink: 0, border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.04)', overflow: 'hidden', cursor: 'pointer' }}>
-                <div style={{ width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)' }}>
-                  {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ height: '100%', display: 'grid', placeItems: 'center' }}>🧴</div>}
+              <div key={p.id} style={{ width: 190, flexShrink: 0, border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.04)', overflow: 'hidden', cursor: 'pointer' }}>
+                <div onClick={() => router.push(`/products/${p.id}`)} style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(128,128,128,0.3)' }}>
+                  {p.thumb_img ? <Image src={p.thumb_img} alt={p.name} fill style={{ objectFit: 'cover' }} /> : null}
+                  {p.is_flash_sale && p.flash_sale_end && new Date(p.flash_sale_end).getTime() > nowTs && (
+                    <div style={{ position: 'absolute', top: 8, left: 8, background: '#d94f4f', color: '#fff', borderRadius: 999, padding: '3px 8px', fontSize: 10, fontWeight: 800 }}>
+                      ⏱ {new Date(new Date(p.flash_sale_end).getTime() - nowTs).toISOString().slice(11, 19)}
+                    </div>
+                  )}
                 </div>
                 <div style={{ padding: 8 }}>
                   <div style={{ fontSize: 11, color: 'var(--text3)' }}>{normalizeBrandName(p)}</div>
-                  <div style={{ fontSize: 12, color: '#fff', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                  <div style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 800 }}>₩{toNum(p.retail_price).toLocaleString()}</div>
+                  <div style={{ fontSize: 12, color: '#fff', fontWeight: 700, lineHeight: 1.3, minHeight: 32, display: '-webkit-box', WebkitLineClamp: 2 as any, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{p.name}</div>
+                  {p.is_flash_sale && p.flash_sale_price && p.flash_sale_end && new Date(p.flash_sale_end).getTime() > nowTs ? (
+                    <div>
+                      <span style={{ fontSize: 11, color: 'var(--text3)', textDecoration: 'line-through' }}>₩{toNum(p.retail_price).toLocaleString()}</span>
+                      <span style={{ fontSize: 13, color: '#ff6b6b', fontWeight: 900, marginLeft: 6 }}>₩{toNum(p.flash_sale_price).toLocaleString()}</span>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 800 }}>₩{toNum(p.retail_price).toLocaleString()}</div>
+                  )}
+                  <div style={{ marginTop: 6, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 6, fontSize: 11, color: '#ffd98a', minHeight: 28 }}>
+                    {`${buyerBadge(specialMeta[p.id]?.buyers || 0)} ${specialMeta[p.id]?.hook || ''}`.trim()}
+                  </div>
+                  <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                    <button style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', borderRadius: 8, color: '#fff', fontSize: 11, padding: '7px 0' }}>담기</button>
+                    <button onClick={() => router.push(`/products/${p.id}`)} style={{ border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 8, fontSize: 11, padding: '7px 0' }}>구매하기</button>
+                  </div>
                 </div>
               </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
+            {specials.map((_, idx) => (
+              <span key={idx} style={{ width: 6, height: 6, borderRadius: 999, background: idx === specialIndex ? '#c9a84c' : 'rgba(255,255,255,0.25)' }} />
             ))}
           </div>
         </div>
