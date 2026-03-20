@@ -88,6 +88,8 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const homeSpecialSwipeEnabled = getSettingNum('home_special', 'swipe_enabled', 1) === 1
   const homeSpecialSwipeThresholdPx = Math.max(10, getSettingNum('home_special', 'swipe_threshold_px', 40))
   const homeSpecialTitle = getSetting('home_special', 'title', '오늘의 특가')
+  const flashMaxActiveCount = Math.max(1, getSettingNum('flash_sale', 'max_active_count', 8))
+  const flashUrgentMinutes = Math.max(1, getSettingNum('flash_sale', 'badge_urgent_minutes', 60))
   const homeSearchPlaceholder = getSetting('home_search', 'placeholder', '전체상품 검색 (브랜드/상품명/설명)')
   const homeSearchFields = getSetting('home_search', 'fields', 'name,description,brand')
     .split(',')
@@ -103,11 +105,16 @@ export default function CustomerDashboardClient({ profile }: Props) {
 
   const formatRemain = (endAt: string) => {
     const remainMs = new Date(endAt).getTime() - nowTs
-    if (remainMs <= 0) return '00:00:00'
+    if (remainMs <= 0) return '종료됨'
     const totalSec = Math.floor(remainMs / 1000)
+    const dd = Math.floor(totalSec / 86400)
     const hh = String(Math.floor(totalSec / 3600)).padStart(2, '0')
     const mm = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0')
     const ss = String(totalSec % 60).padStart(2, '0')
+    if (dd > 0) {
+      const hhInDay = String(Math.floor((totalSec % 86400) / 3600)).padStart(2, '0')
+      return `${dd}일 ${hhInDay}:${mm}:${ss}`
+    }
     return `${hh}:${mm}:${ss}`
   }
 
@@ -167,10 +174,11 @@ export default function CustomerDashboardClient({ profile }: Props) {
 
   useEffect(() => {
     const run = async () => {
+      const nowIso = new Date().toISOString()
       const { data, error } = await supabase
         .from('products')
         .select('*, brands(name)')
-        .limit(20)
+        .limit(50)
 
       // 임시 디버깅: 홈 상품 쿼리 실패 시 콘솔에 실제 에러 출력
       console.log('[customer-home products query error]', error)
@@ -197,11 +205,18 @@ export default function CustomerDashboardClient({ profile }: Props) {
       }
       setProducts(list)
 
-      const now = new Date().toISOString()
+      // 종료된 타임세일 자동 정리
+      const endedIds = list
+        .filter((p: any) => p.is_flash_sale && p.flash_sale_end && new Date(p.flash_sale_end).getTime() <= new Date(nowIso).getTime())
+        .map((p: any) => p.id)
+      if (endedIds.length > 0) {
+        await supabase.from('products').update({ is_flash_sale: false }).in('id', endedIds)
+      }
+
       const liveFlash = list
-        .filter((p: any) => p.is_flash_sale && p.flash_sale_end && p.flash_sale_end > now)
+        .filter((p: any) => p.is_flash_sale && p.flash_sale_start && p.flash_sale_end && p.flash_sale_start < nowIso && p.flash_sale_end > nowIso)
         .sort((a: any, b: any) => new Date(a.flash_sale_end).getTime() - new Date(b.flash_sale_end).getTime())
-      const nextSpecials = (liveFlash.length > 0 ? liveFlash : [...list].sort((a: any, b: any) => toNum(b.sales_count) - toNum(a.sales_count))).slice(0, homeSpecialMaxItems)
+      const nextSpecials = (liveFlash.length > 0 ? liveFlash : [...list].sort((a: any, b: any) => toNum(b.sales_count) - toNum(a.sales_count))).slice(0, Math.min(homeSpecialMaxItems, flashMaxActiveCount))
       setSpecials(nextSpecials)
       setSpecialIndex(0)
 
@@ -253,7 +268,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
       }
     }
     run()
-  }, [supabase, profile?.skin_type, aiHookEnabled, reviewThreshold, homeSpecialMaxItems])
+  }, [supabase, profile?.skin_type, aiHookEnabled, reviewThreshold, homeSpecialMaxItems, flashMaxActiveCount])
 
   useEffect(() => {
     if (!navigator?.geolocation) {
@@ -521,9 +536,30 @@ export default function CustomerDashboardClient({ profile }: Props) {
                       <button type="button" onClick={(e) => { e.stopPropagation(); nextSpecial() }} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: 999, border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(0,0,0,0.35)', color: '#fff', fontWeight: 900, cursor: 'pointer' }}>›</button>
                     </>
                   )}
-                  {homeSpecialShowTimer && p.is_flash_sale && p.flash_sale_end && new Date(p.flash_sale_end).getTime() > nowTs && (
-                    <div style={{ position: 'absolute', top: 8, left: 8, background: '#d94f4f', color: '#fff', borderRadius: 999, padding: '3px 8px', fontSize: 10, fontWeight: 800 }}>
-                      ⏱ {formatRemain(String(p.flash_sale_end))}
+                  {homeSpecialShowTimer && p.is_flash_sale && p.flash_sale_end && (
+                    <div style={{
+                      position: 'absolute',
+                      top: 8,
+                      left: 8,
+                      background: (() => {
+                        const remainMin = (new Date(p.flash_sale_end).getTime() - nowTs) / (1000 * 60)
+                        if (remainMin <= 0) return 'rgba(128,128,128,0.9)'
+                        if (remainMin <= flashUrgentMinutes) return '#d94f4f'
+                        return 'linear-gradient(135deg,#d79ee8,#c9a84c)'
+                      })(),
+                      color: '#fff',
+                      borderRadius: 999,
+                      padding: '4px 9px',
+                      fontSize: 10,
+                      fontWeight: 800,
+                    }}>
+                      {(() => {
+                        const txt = formatRemain(String(p.flash_sale_end))
+                        const remainMin = (new Date(p.flash_sale_end).getTime() - nowTs) / (1000 * 60)
+                        if (txt === '종료됨') return '종료됨'
+                        if (remainMin <= flashUrgentMinutes) return `🔥 ${txt}`
+                        return `⏱ ${txt}`
+                      })()}
                     </div>
                   )}
                 </div>

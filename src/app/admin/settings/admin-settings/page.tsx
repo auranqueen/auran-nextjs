@@ -82,6 +82,9 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       default_duration_hours: { label: '기본 타임세일 시간', unit: '시간', type: 'number', defaultValue: '24' },
       max_discount_rate: { label: '최대 할인율', unit: '%', type: 'number', defaultValue: '70' },
       auto_end_notification: { label: '종료 1시간 전 알림', unit: '', type: 'number', defaultValue: '1' },
+      end_alert_hours: { label: '종료 전 알림 시간', unit: '시간', type: 'number', defaultValue: '1' },
+      max_active_count: { label: '동시 진행 최대 수', unit: '개', type: 'number', defaultValue: '8' },
+      badge_urgent_minutes: { label: '긴급배지 전환 시간', unit: '분', type: 'number', defaultValue: '60' },
     },
   },
   product_hook: {
