@@ -1,64 +1,192 @@
 'use client'
+
+import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import NoticeBell from '@/components/NoticeBell'
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 const GOLD = '#c9a84c'
-const SKIN_TYPES = ['건성', '지성', '복합성', '민감성']
-const CONCERNS = ['주름', '색소침착', '모공', '트러블', '탄력', '수분']
-const PRODUCT_TYPES = ['클렌징', '토너', '세럼', '크림', '선크림', '마스크']
-const LIFESTYLE = {
-  sleep: ['5시간 미만', '5–7시간', '7시간 이상'],
-  diet: ['불규칙', '보통', '균형'],
-  sunscreen: ['거의 안 함', '가끔', '매일'],
+
+type Step = 'start' | 'q1' | 'q2' | 'q3' | 'q4' | 'q5' | 'loading' | 'result'
+
+type Scores = {
+  dry: number
+  oily: number
+  combo: number
+  acne: number
+  sensitive: number
+  pigment: number
+  aging: number
 }
 
-type Step = 'start' | 'skin_type' | 'concerns' | 'products' | 'irritation' | 'lifestyle' | 'loading' | 'result'
+type Q1Key = 'dry3' | 'dry1_combo1' | 'combo2' | 'combo2_from_normal' | 'oily3'
+type Q3Key = 'q3_dry2' | 'q3_normal2' | 'q3_combo2' | 'q3_oily3'
+type Q4Key = 'q4_normal1' | 'q4_pigment2' | 'q4_acne3' | 'q4_acne2_pigment2'
 
-// KST 기준 오늘 날짜 문자열 (yyyy-mm-dd)
+type Q2Key = 'dry2' | 'acne2' | 'oily1_acne1' | 'pigment2' | 'sensitive2' | 'aging2'
+
+type Q5SleepKey = 'sleep_lt5' | 'sleep_5_7' | 'sleep_gt7'
+type Q5DietKey = 'diet_unbalanced_acne1' | 'diet_mid' | 'diet_balanced_normal1'
+type Q5SunscreenKey = 'sunscreen_none_pigment1_aging1' | 'sunscreen_some_mid' | 'sunscreen_daily_normal1'
+
+type Lifestyle = {
+  sleep: Q5SleepKey | null
+  diet: Q5DietKey | null
+  sunscreen: Q5SunscreenKey | null
+}
+
+type Answers = {
+  q1: Q1Key | null
+  q2: Q2Key[]
+  q3: Q3Key | null
+  q4: Q4Key | null
+  q5: Lifestyle
+}
+
+const BRAND_PRODUCT_RECOMMEND_LIMIT = 6
+const RECOMMEND_PRODUCT_LIMIT = 5
+
+function initialScores(): Scores {
+  return { dry: 0, oily: 0, combo: 0, acne: 0, sensitive: 0, pigment: 0, aging: 0 }
+}
+
+function applyDelta(scores: Scores, delta: Partial<Scores>) {
+  for (const k of Object.keys(delta) as (keyof Scores)[]) {
+    const v = delta[k]
+    if (typeof v === 'number') scores[k] += v
+  }
+}
+
+function computeFinalSkinType(scores: Scores): string {
+  const antiTotal = scores.pigment + scores.aging
+  const maxOther = Math.max(scores.dry, scores.oily, scores.combo, scores.acne, scores.sensitive)
+
+  // pigment+aging가 단독 최대면 안티에이징형
+  if (antiTotal > maxOther) return '안티에이징형'
+  // 동점이면 복합성
+  if (antiTotal === maxOther) return '복합성'
+
+  const max = maxOther
+  const cats = [
+    ['dry', scores.dry],
+    ['oily', scores.oily],
+    ['combo', scores.combo],
+    ['acne', scores.acne],
+    ['sensitive', scores.sensitive],
+  ].filter(([, v]) => v === max)
+
+  if (cats.length >= 2) return '복합성'
+
+  const cat = cats[0]?.[0]
+  switch (cat) {
+    case 'dry':
+      return '건성'
+    case 'oily':
+      return '지성'
+    case 'combo':
+      return '복합성'
+    case 'acne':
+      return '트러블성'
+    case 'sensitive':
+      return '민감성'
+    default:
+      return '복합성'
+  }
+}
+
+function progressForStep(step: Step) {
+  if (step === 'start') return 0
+  if (step === 'loading') return 100
+  if (step === 'result') return 100
+  if (step === 'q1') return 20
+  if (step === 'q2') return 40
+  if (step === 'q3') return 60
+  if (step === 'q4') return 80
+  if (step === 'q5') return 100
+  return 0
+}
+
+const Q1_OPTIONS: Array<{ key: Q1Key; label: string; delta: Partial<Scores> }> = [
+  { key: 'dry3', label: '😌 당기고 건조해요', delta: { dry: 3 } },
+  { key: 'dry1_combo1', label: '😊 약간 당기지만 금방 괜찮아져요', delta: { dry: 1, combo: 1 } },
+  { key: 'combo2', label: '🌊 T존만 번들거려요', delta: { combo: 2 } },
+  { key: 'combo2_from_normal', label: '💦 전체적으로 촉촉해요', delta: { combo: 2 } },
+  { key: 'oily3', label: '🫧 금방 번들거리고 끈적여요', delta: { oily: 3 } },
+]
+
+const Q2_OPTIONS: Array<{ key: Q2Key; label: string; delta: Partial<Scores> }> = [
+  { key: 'dry2', label: '💧 건조함·당김', delta: { dry: 2 } },
+  { key: 'acne2', label: '🔴 트러블·여드름', delta: { acne: 2 } },
+  { key: 'oily1_acne1', label: '🕳 모공·블랙헤드', delta: { oily: 1, acne: 1 } },
+  { key: 'pigment2', label: '🟤 잡티·색소침착', delta: { pigment: 2 } },
+  { key: 'sensitive2', label: '😣 홍조·민감', delta: { sensitive: 2 } },
+  { key: 'aging2', label: '📉 탄력저하·주름', delta: { aging: 2 } },
+]
+
+const Q3_OPTIONS: Array<{ key: Q3Key; label: string; delta: Partial<Scores> }> = [
+  { key: 'q3_dry2', label: '✨ 모공이 거의 안 보이고 깨끗해요', delta: { dry: 2 } },
+  { key: 'q3_normal2', label: '😊 약간 보이지만 신경 안 써요', delta: { combo: 2 } },
+  { key: 'q3_combo2', label: '🌊 T존이 번들거리고 모공이 보여요', delta: { combo: 2 } },
+  { key: 'q3_oily3', label: '🫧 전체 번들거리고 모공이 커요', delta: { oily: 3 } },
+]
+
+const Q4_OPTIONS: Array<{ key: Q4Key; label: string; delta: Partial<Scores> }> = [
+  { key: 'q4_normal1', label: '😌 크게 신경 쓰이지 않아요', delta: { combo: 1 } },
+  { key: 'q4_pigment2', label: '🟤 잡티·기미가 약간 신경 쓰여요', delta: { pigment: 2 } },
+  { key: 'q4_acne3', label: '🔴 트러블이 자주 생겨요', delta: { acne: 3 } },
+  { key: 'q4_acne2_pigment2', label: '😣 색소·트러블 둘 다 심해요', delta: { acne: 2, pigment: 2 } },
+]
+
+const Q5_SLEEP: Array<{ key: Q5SleepKey; label: string }> = [
+  { key: 'sleep_lt5', label: '5시간 미만' },
+  { key: 'sleep_5_7', label: '5~7시간' },
+  { key: 'sleep_gt7', label: '7시간 이상' },
+]
+
+const Q5_DIET: Array<{ key: Q5DietKey; label: string; delta: Partial<Scores> }> = [
+  { key: 'diet_unbalanced_acne1', label: '불규칙·인스턴트 많음', delta: { acne: 1 } },
+  { key: 'diet_mid', label: '보통', delta: {} },
+  { key: 'diet_balanced_normal1', label: '균형 잡힌 식단', delta: { combo: 1 } },
+]
+
+const Q5_SUN: Array<{ key: Q5SunscreenKey; label: string; delta: Partial<Scores> }> = [
+  { key: 'sunscreen_none_pigment1_aging1', label: '거의 안 함', delta: { pigment: 1, aging: 1 } },
+  { key: 'sunscreen_some_mid', label: '가끔', delta: {} },
+  { key: 'sunscreen_daily_normal1', label: '매일', delta: { combo: 1 } },
+]
+
 function todayKST(): string {
   const now = new Date()
   const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
   return kst.toISOString().slice(0, 10)
 }
 
-export default function CustomerAnalysisPage() {
+export default function CustomerSkinAnalysisQuizPage() {
   const supabase = createClient()
   const router = useRouter()
+
   const [step, setStep] = useState<Step>('start')
-  const [answers, setAnswers] = useState<{
-    skinType: string
-    concerns: string[]
-    productTypes: string[]
-    irritation: boolean | null
-    lifestyle: { sleep?: string; diet?: string; sunscreen?: string }
-  }>({
-    skinType: '',
-    concerns: [],
-    productTypes: [],
-    irritation: null,
-    lifestyle: {},
+  const [answers, setAnswers] = useState<Answers>({
+    q1: null,
+    q2: [],
+    q3: null,
+    q4: null,
+    q5: { sleep: null, diet: null, sunscreen: null },
   })
-  const [result, setResult] = useState<{ skinType: string; products: any[]; salons: any[] } | null>(null)
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // 1일1회 제한 상태
   const [todayDone, setTodayDone] = useState(false)
   const [todayDoneLoading, setTodayDoneLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [userRowId, setUserRowId] = useState<string | null>(null)
 
-  const steps: Step[] = ['start', 'skin_type', 'concerns', 'products', 'irritation', 'lifestyle', 'loading', 'result']
-  const stepIndex = steps.indexOf(step)
-  const progress = step === 'start' ? 0 : step === 'loading' || step === 'result' ? 100 : (stepIndex / 5) * 100
+  const progress = progressForStep(step)
 
-  // 로그인 확인 + 오늘 분석 여부 체크 (실패해도 버튼 활성화되도록 try/finally)
   useEffect(() => {
-    let cancelled = false
     const run = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
@@ -66,14 +194,29 @@ export default function CustomerAnalysisPage() {
           router.replace('/login?role=customer')
           return
         }
-        if (cancelled) return
         setUserId(user.id)
 
         const { data: u } = await supabase.from('users').select('id').eq('auth_id', user.id).single()
         if (u?.id) setUserRowId(u.id)
 
         const today = todayKST()
-        const { data: existing, error } = await supabase
+
+        // skin_profiles 우선 체크, 없으면 skin_analysis fallback
+        const { data: existingProfiles, error: e1 } = await supabase
+          .from('skin_profiles')
+          .select('id, created_at')
+          .eq('user_id', user.id)
+          .gte('created_at', `${today}T00:00:00+09:00`)
+          .lte('created_at', `${today}T23:59:59+09:00`)
+          .limit(1)
+          .maybeSingle()
+
+        if (!e1 && existingProfiles) {
+          setTodayDone(true)
+          return
+        }
+
+        const { data: existingAnalysis } = await supabase
           .from('skin_analysis')
           .select('id, created_at')
           .eq('user_id', user.id)
@@ -82,48 +225,91 @@ export default function CustomerAnalysisPage() {
           .limit(1)
           .maybeSingle()
 
-        if (!cancelled && !error && existing) setTodayDone(true)
+        if (existingAnalysis) setTodayDone(true)
       } finally {
-        if (!cancelled) setTodayDoneLoading(false)
+        setTodayDoneLoading(false)
       }
     }
+
     run()
-    const t = setTimeout(() => {
-      setTodayDoneLoading((prev) => (prev ? false : prev))
-    }, 5000)
-    return () => {
-      cancelled = true
-      clearTimeout(t)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const startAnalysis = () => {
+  const canGoNext = useMemo(() => {
+    if (step === 'q1') return !!answers.q1
+    if (step === 'q2') return answers.q2.length > 0
+    if (step === 'q3') return !!answers.q3
+    if (step === 'q4') return !!answers.q4
+    if (step === 'q5') return !!answers.q5.sleep && !!answers.q5.diet && !!answers.q5.sunscreen
+    return false
+  }, [answers, step])
+
+  const startQuiz = () => {
     if (todayDone) return
-    setStep('skin_type')
+    setStep('q1')
   }
 
-  const nextStep = () => {
-    if (step === 'skin_type') setStep('concerns')
-    else if (step === 'concerns') setStep('products')
-    else if (step === 'products') setStep('irritation')
-    else if (step === 'irritation') setStep('lifestyle')
-    else if (step === 'lifestyle') runAnalysis()
+  const computeScores = (): { scores: Scores; finalType: string } => {
+    const scores = initialScores()
+
+    if (answers.q1) {
+      const opt = Q1_OPTIONS.find(o => o.key === answers.q1)
+      if (opt) applyDelta(scores, opt.delta)
+    }
+    for (const k of answers.q2) {
+      const opt = Q2_OPTIONS.find(o => o.key === k)
+      if (opt) applyDelta(scores, opt.delta)
+    }
+    if (answers.q3) {
+      const opt = Q3_OPTIONS.find(o => o.key === answers.q3)
+      if (opt) applyDelta(scores, opt.delta)
+    }
+    if (answers.q4) {
+      const opt = Q4_OPTIONS.find(o => o.key === answers.q4)
+      if (opt) applyDelta(scores, opt.delta)
+    }
+    if (answers.q5.diet) {
+      const opt = Q5_DIET.find(o => o.key === answers.q5.diet)
+      if (opt) applyDelta(scores, opt.delta)
+    }
+    if (answers.q5.sunscreen) {
+      const opt = Q5_SUN.find(o => o.key === answers.q5.sunscreen)
+      if (opt) applyDelta(scores, opt.delta)
+    }
+
+    const finalType = computeFinalSkinType(scores)
+    return { scores, finalType }
   }
 
   const runAnalysis = async () => {
-    setStep('loading')
+    setLoading(true)
     setError('')
     try {
       if (!userId) {
-        setStep('lifestyle')
+        setStep('start')
         setError('로그인이 필요합니다.')
         return
       }
 
-      // -- 서버사이드 2중 체크: 오늘 이미 했으면 차단 --
+      // 오늘 중복 체크 (마지막 안전장치)
       const today = todayKST()
-      const { data: dupCheck } = await supabase
+      const { data: existingProfiles, error: pErr } = await supabase
+        .from('skin_profiles')
+        .select('id')
+        .eq('user_id', userId)
+        .gte('created_at', `${today}T00:00:00+09:00`)
+        .lte('created_at', `${today}T23:59:59+09:00`)
+        .limit(1)
+        .maybeSingle()
+
+      if (!pErr && existingProfiles) {
+        setTodayDone(true)
+        setStep('start')
+        setError('오늘 이미 분석을 완료했습니다. 내일 다시 시도해주세요.')
+        return
+      }
+
+      const { data: existingAnalysis } = await supabase
         .from('skin_analysis')
         .select('id')
         .eq('user_id', userId)
@@ -132,103 +318,117 @@ export default function CustomerAnalysisPage() {
         .limit(1)
         .maybeSingle()
 
-      if (dupCheck) {
+      if (existingAnalysis) {
         setTodayDone(true)
         setStep('start')
         setError('오늘 이미 분석을 완료했습니다. 내일 다시 시도해주세요.')
         return
       }
 
-      // 제품/살롱 추천
+      const { scores, finalType } = computeScores()
+
+      // 제품 추천: skin_types 배열에 finalType 매칭
       const { data: products } = await supabase
         .from('products')
-        .select('id, name, thumb_img, retail_price, brands(name)')
+        .select('id,name,thumb_img,retail_price,brands(name),skin_types,sales_count')
         .eq('status', 'active')
         .gt('retail_price', 0)
-        .limit(6)
-      const { data: salons } = await supabase
-        .from('salons')
-        .select('id, name, area')
-        .limit(4)
+        .order('sales_count', { ascending: false })
+        .limit(200)
 
-      const analysisResult = {
-        skinType: answers.skinType,
-        products: products || [],
-        salons: salons || [],
+      const allProducts = products || []
+      const matched = allProducts.filter((p: any) => Array.isArray(p.skin_types) && p.skin_types.includes(finalType))
+      const rec = (matched.length ? matched : allProducts).slice(0, RECOMMEND_PRODUCT_LIMIT)
+
+      // skin_profiles 저장 (없으면 skin_analysis로 fallback)
+      const q2Concerns = answers.q2
+        .map(k => Q2_OPTIONS.find(o => o.key === k)?.label)
+        .filter(Boolean) as string[]
+
+      const lifestyle_data = {
+        sleep: answers.q5.sleep,
+        diet: answers.q5.diet,
+        sunscreen: answers.q5.sunscreen,
       }
 
-      // skin_analysis 저장
-      await supabase.from('skin_analysis').insert({
+      const payload = {
         user_id: userId,
-        skin_type: answers.skinType,
-        skin_concerns: answers.concerns,
-        lifestyle_data: answers.lifestyle,
-        result: analysisResult,
-      })
+        skin_type: finalType,
+        skin_concerns: q2Concerns,
+        lifestyle_data,
+        result: { skinType: finalType, scores },
+      }
 
-      // users 테이블 업데이트
+      try {
+        await supabase.from('skin_profiles').insert(payload as any)
+      } catch {
+        // 기존 테이블(호환)로 저장
+        await supabase.from('skin_analysis').insert({
+          user_id: userId,
+          skin_type: finalType,
+          skin_concerns: q2Concerns,
+          lifestyle_data,
+          result: payload.result,
+        })
+      }
+
+      // 사용자 프로필에도 타입/고민 반영(선택)
       if (userRowId) {
-        await supabase
-          .from('users')
-          .update({ skin_type: answers.skinType, skin_concerns: answers.concerns })
-          .eq('id', userRowId)
+        try {
+          await supabase.from('users').update({ skin_type: finalType, skin_concerns: q2Concerns }).eq('id', userRowId)
+        } catch {
+          // ignore
+        }
+      }
 
-        // -- 500P 포인트 지급 --
-        const { data: pointRow } = await supabase
-          .from('point_history')
-          .insert({
+      // +500P 적립 (기존 점수 적립 로직은 유지: 500P + 알림장)
+      if (userRowId) {
+        try {
+          await supabase.rpc('award_points', {
+            p_user_id: userRowId,
+            p_amount: 500,
+            p_description: 'AI 피부 분석 완료',
+            p_icon: '✨',
+          })
+        } catch {
+          // fallback: 기존 방식(호환) - DB 정책에 따라 실패할 수 있음
+          await supabase.from('point_history').insert({
             user_id: userRowId,
             type: 'earn',
             amount: 500,
             description: 'AI 피부 분석 완료',
-          })
-          .select()
-          .single()
-
-        if (pointRow) {
-          // 알림장 기록
-          await supabase.from('notifications').insert({
-            user_id: userRowId,
-            type: 'point',
-            title: '500P 적립!',
-            body: 'AI 피부 분석 완료로 500포인트가 적립되었습니다.',
-            is_read: false,
-          })
+          } as any)
         }
+
+        // 알림장 기록
+        await supabase.from('notifications').insert({
+          user_id: userRowId,
+          type: 'point',
+          title: '500P 적립!',
+          body: 'AI 피부 분석 완료로 500포인트가 적립되었습니다.',
+          is_read: false,
+        })
       }
 
-      setResult(analysisResult)
       setTodayDone(true)
+      setResult({
+        skinType: finalType,
+        products: rec,
+      })
       setStep('result')
     } catch (e: any) {
       setError(e?.message || '분석 저장에 실패했습니다.')
-      setStep('lifestyle')
+      setStep('start')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const canNext = () => {
-    if (step === 'skin_type') return !!answers.skinType
-    if (step === 'concerns') return answers.concerns.length > 0
-    if (step === 'products') return true
-    if (step === 'irritation') return answers.irritation !== null
-    if (step === 'lifestyle') return true
-    return false
-  }
+  const [result, setResult] = useState<{ skinType: string; products: any[] } | null>(null)
 
-  const toggle = (key: 'concerns' | 'productTypes', value: string) => {
-    setAnswers((a) => ({
-      ...a,
-      [key]: a[key].includes(value) ? a[key].filter((x) => x !== value) : [...a[key], value],
-    }))
-  }
-
-  // -- 로딩 화면 --
-  if (step === 'loading') {
+  if (loading || step === 'loading') {
     return (
-      <div style={{
-        minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto',
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24,
-      }}>
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ width: 48, height: 48, border: '3px solid var(--border)', borderTopColor: GOLD, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         <p style={{ marginTop: 20, fontSize: 14, color: 'var(--text3)' }}>피부 분석 중...</p>
@@ -240,75 +440,280 @@ export default function CustomerAnalysisPage() {
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
       <DashboardHeader title="피부분석" right={<NoticeBell />} />
       <div style={{ padding: '18px 18px 0' }}>
-
-        {/* 프로그레스 바 */}
         {step !== 'start' && step !== 'result' && (
           <div style={{ marginBottom: 20 }}>
             <div style={{ height: 4, background: 'var(--bg3)', borderRadius: 2, overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${progress}%`, background: GOLD, transition: 'width 0.3s' }} />
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>{Math.round(progress)}%</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>{progress}%</div>
           </div>
         )}
 
-        {/* 에러 메시지 */}
         {error && (
-          <div style={{
-            background: 'rgba(229,57,53,0.1)', border: '1px solid rgba(229,57,53,0.3)',
-            borderRadius: 12, padding: '12px 16px', marginBottom: 16,
-            color: '#e57373', fontSize: 13,
-          }}>
+          <div style={{ background: 'rgba(229,57,53,0.1)', border: '1px solid rgba(229,57,53,0.25)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, color: '#e57373', fontSize: 13 }}>
             {error}
           </div>
         )}
 
-        {/* -- START -- */}
+        {/* Q1 */}
+        {step === 'q1' && (
+          <>
+            <h2 style={{ fontSize: 16, color: '#fff', marginBottom: 8 }}>{`세안 후 10~15분, 피부가 어떤가요?`}</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {Q1_OPTIONS.map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => setAnswers(a => ({ ...a, q1: opt.key }))}
+                  style={{
+                    padding: '12px 16px',
+                    textAlign: 'left',
+                    background: answers.q1 === opt.key ? 'rgba(201,168,76,0.25)' : 'var(--bg3)',
+                    border: `1px solid ${answers.q1 === opt.key ? GOLD : 'var(--border)'}`,
+                    borderRadius: 12,
+                    color: answers.q1 === opt.key ? GOLD : 'var(--text)',
+                    fontSize: 14,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setStep('q2')} disabled={!canGoNext} style={{ width: '100%', padding: 14, background: canGoNext ? GOLD : 'var(--bg3)', border: 'none', borderRadius: 12, color: canGoNext ? '#0a0a0a' : 'var(--text3)', fontWeight: 700, marginTop: 16 }}>
+              다음
+            </button>
+          </>
+        )}
+
+        {/* Q2 */}
+        {step === 'q2' && (
+          <>
+            <h2 style={{ fontSize: 16, color: '#fff', marginBottom: 8 }}>{`주요 피부 고민을 선택해주세요 (복수 선택)`}</h2>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              {Q2_OPTIONS.map(opt => {
+                const checked = answers.q2.includes(opt.key)
+                return (
+                  <button
+                    key={opt.key}
+                    onClick={() =>
+                      setAnswers(a => ({
+                        ...a,
+                        q2: checked ? a.q2.filter(k => k !== opt.key) : [...a.q2, opt.key],
+                      }))
+                    }
+                    style={{
+                      padding: '12px 14px',
+                      background: checked ? 'rgba(201,168,76,0.25)' : 'var(--bg3)',
+                      border: `1px solid ${checked ? GOLD : 'var(--border)'}`,
+                      borderRadius: 12,
+                      color: checked ? GOLD : 'var(--text)',
+                      fontSize: 14,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
+            <button onClick={() => setStep('q3')} disabled={!canGoNext} style={{ width: '100%', padding: 14, background: canGoNext ? GOLD : 'var(--bg3)', border: 'none', borderRadius: 12, color: canGoNext ? '#0a0a0a' : 'var(--text3)', fontWeight: 700, marginTop: 16 }}>
+              다음
+            </button>
+          </>
+        )}
+
+        {/* Q3 */}
+        {step === 'q3' && (
+          <>
+            <h2 style={{ fontSize: 16, color: '#fff', marginBottom: 8 }}>{`오후 2~3시, T존(이마·코) 상태는?`}</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {Q3_OPTIONS.map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => setAnswers(a => ({ ...a, q3: opt.key }))}
+                  style={{
+                    padding: '12px 16px',
+                    textAlign: 'left',
+                    background: answers.q3 === opt.key ? 'rgba(201,168,76,0.25)' : 'var(--bg3)',
+                    border: `1px solid ${answers.q3 === opt.key ? GOLD : 'var(--border)'}`,
+                    borderRadius: 12,
+                    color: answers.q3 === opt.key ? GOLD : 'var(--text)',
+                    fontSize: 14,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setStep('q4')} disabled={!canGoNext} style={{ width: '100%', padding: 14, background: canGoNext ? GOLD : 'var(--bg3)', border: 'none', borderRadius: 12, color: canGoNext ? '#0a0a0a' : 'var(--text3)', fontWeight: 700, marginTop: 16 }}>
+              다음
+            </button>
+          </>
+        )}
+
+        {/* Q4 */}
+        {step === 'q4' && (
+          <>
+            <h2 style={{ fontSize: 16, color: '#fff', marginBottom: 8 }}>{`색소침착이나 트러블, 평소 얼마나 신경 쓰이나요?`}</h2>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {Q4_OPTIONS.map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => setAnswers(a => ({ ...a, q4: opt.key }))}
+                  style={{
+                    padding: '12px 16px',
+                    textAlign: 'left',
+                    background: answers.q4 === opt.key ? 'rgba(201,168,76,0.25)' : 'var(--bg3)',
+                    border: `1px solid ${answers.q4 === opt.key ? GOLD : 'var(--border)'}`,
+                    borderRadius: 12,
+                    color: answers.q4 === opt.key ? GOLD : 'var(--text)',
+                    fontSize: 14,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <button onClick={() => setStep('q5')} disabled={!canGoNext} style={{ width: '100%', padding: 14, background: canGoNext ? GOLD : 'var(--bg3)', border: 'none', borderRadius: 12, color: canGoNext ? '#0a0a0a' : 'var(--text3)', fontWeight: 700, marginTop: 16 }}>
+              다음
+            </button>
+          </>
+        )}
+
+        {/* Q5 */}
+        {step === 'q5' && (
+          <>
+            <h2 style={{ fontSize: 16, color: '#fff', marginBottom: 14 }}>{`생활 습관을 알려주세요`}</h2>
+
+            {/* 수면 */}
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 8 }}>{`[수면 시간]`}</div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {Q5_SLEEP.map(opt => {
+                  const checked = answers.q5.sleep === opt.key
+                  return (
+                    <button
+                      key={opt.key}
+                      onClick={() => setAnswers(a => ({ ...a, q5: { ...a.q5, sleep: opt.key } }))}
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: 12,
+                        border: `1px solid ${checked ? GOLD : 'var(--border)'}`,
+                        background: checked ? 'rgba(201,168,76,0.25)' : 'var(--bg3)',
+                        color: checked ? GOLD : 'var(--text)',
+                        fontSize: 14,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* 식습관 */}
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 8 }}>{`[식습관]`}</div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {Q5_DIET.map(opt => {
+                  const checked = answers.q5.diet === opt.key
+                  return (
+                    <button
+                      key={opt.key}
+                      onClick={() => setAnswers(a => ({ ...a, q5: { ...a.q5, diet: opt.key } }))}
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: 12,
+                        border: `1px solid ${checked ? GOLD : 'var(--border)'}`,
+                        background: checked ? 'rgba(201,168,76,0.25)' : 'var(--bg3)',
+                        color: checked ? GOLD : 'var(--text)',
+                        fontSize: 14,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* 선크림 */}
+            <div style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 8 }}>{`[선크림 사용]`}</div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                {Q5_SUN.map(opt => {
+                  const checked = answers.q5.sunscreen === opt.key
+                  return (
+                    <button
+                      key={opt.key}
+                      onClick={() => setAnswers(a => ({ ...a, q5: { ...a.q5, sunscreen: opt.key } }))}
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: 12,
+                        border: `1px solid ${checked ? GOLD : 'var(--border)'}`,
+                        background: checked ? 'rgba(201,168,76,0.25)' : 'var(--bg3)',
+                        color: checked ? GOLD : 'var(--text)',
+                        fontSize: 14,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {opt.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <button onClick={() => runAnalysis()} disabled={!canGoNext} style={{ width: '100%', padding: 14, background: canGoNext ? GOLD : 'var(--bg3)', border: 'none', borderRadius: 12, color: canGoNext ? '#0a0a0a' : 'var(--text3)', fontWeight: 700, marginTop: 6 }}>
+              분석 완료
+            </button>
+          </>
+        )}
+
+        {/* Start */}
         {step === 'start' && (
           <>
             <div style={{ textAlign: 'center', padding: '40px 0 24px' }}>
               <div style={{ fontSize: 48, marginBottom: 16 }}>🧬</div>
-              <h1 style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 22, color: '#fff', marginBottom: 8 }}>
-                AI 피부 분석
-              </h1>
+              <h1 style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 22, color: '#fff', marginBottom: 8 }}>{`AI 피부분석`}</h1>
               <p style={{ fontSize: 14, color: 'var(--text3)', lineHeight: 1.6 }}>
-                간단한 설문으로 피부 타입과 맞춤 추천을 확인해보세요.<br />
+                5문항 퀴즈로 피부 타입을 찾아보세요.<br />
                 <span style={{ color: GOLD, fontWeight: 700 }}>완료 시 500P 적립!</span>
               </p>
             </div>
 
-            {/* 1일1회 제한 안내 */}
             {!todayDoneLoading && todayDone ? (
-              <div style={{
-                background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)',
-                borderRadius: 16, padding: 20, textAlign: 'center',
-              }}>
+              <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: 16, padding: 20, textAlign: 'center' }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>✅</div>
-                <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', marginBottom: 8 }}>
-                  오늘 분석 완료!
-                </div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', marginBottom: 8 }}>오늘 분석 완료!</div>
                 <div style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.6, marginBottom: 16 }}>
                   내일 다시 도전하시면<br />500P를 추가로 적립할 수 있어요.
                 </div>
                 <button
                   onClick={() => router.push('/products')}
-                  style={{
-                    width: '100%', padding: 14, background: GOLD, border: 'none',
-                    borderRadius: 12, color: '#0a0a0a', fontSize: 15, fontWeight: 700, cursor: 'pointer',
-                  }}
+                  style={{ width: '100%', padding: 14, background: GOLD, border: 'none', borderRadius: 12, color: '#0a0a0a', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
                 >
                   추천 제품 보러 가기 →
                 </button>
               </div>
             ) : (
               <button
-                onClick={startAnalysis}
+                onClick={startQuiz}
                 disabled={todayDoneLoading}
                 style={{
-                  width: '100%', padding: 16,
+                  width: '100%',
+                  padding: 16,
                   background: todayDoneLoading ? 'var(--bg3)' : GOLD,
-                  border: 'none', borderRadius: 14,
+                  border: 'none',
+                  borderRadius: 14,
                   color: todayDoneLoading ? 'var(--text3)' : '#0a0a0a',
-                  fontSize: 16, fontWeight: 700, cursor: todayDoneLoading ? 'wait' : 'pointer',
+                  fontSize: 16,
+                  fontWeight: 700,
+                  cursor: todayDoneLoading ? 'wait' : 'pointer',
                 }}
               >
                 {todayDoneLoading ? '확인 중...' : '피부 분석 시작하기'}
@@ -317,208 +722,78 @@ export default function CustomerAnalysisPage() {
           </>
         )}
 
-        {/* -- SKIN TYPE -- */}
-        {step === 'skin_type' && (
+        {/* Result */}
+        {step === 'result' && result && (
           <>
-            <h2 style={{ fontSize: 16, color: '#fff', marginBottom: 8 }}>피부 타입을 선택해주세요</h2>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-              {SKIN_TYPES.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setAnswers((a) => ({ ...a, skinType: t }))}
-                  style={{
-                    padding: '12px 18px',
-                    background: answers.skinType === t ? 'rgba(201,168,76,0.25)' : 'var(--bg3)',
-                    border: `1px solid ${answers.skinType === t ? GOLD : 'var(--border)'}`,
-                    borderRadius: 12, color: answers.skinType === t ? GOLD : 'var(--text)', fontSize: 14, cursor: 'pointer',
-                  }}
-                >{t}</button>
-              ))}
-            </div>
-            <button
-              onClick={nextStep}
-              disabled={!canNext()}
-              style={{ width: '100%', padding: 14, background: canNext() ? GOLD : 'var(--bg3)', border: 'none', borderRadius: 12, color: canNext() ? '#0a0a0a' : 'var(--text3)', fontWeight: 700, cursor: canNext() ? 'pointer' : 'not-allowed' }}
-            >다음</button>
-          </>
-        )}
+            <div style={{ padding: '20px 0' }}>
+              <h2 style={{ fontSize: 18, color: '#fff', marginBottom: 8 }}>{`분석 완료!`}</h2>
+              <div style={{ padding: 16, background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 14, marginBottom: 24 }}>
+                <span style={{ fontSize: 20, fontWeight: 700, color: GOLD }}>{`🧬 ${result.skinType}`}</span>
+              </div>
 
-        {/* -- CONCERNS -- */}
-        {step === 'concerns' && (
-          <>
-            <h2 style={{ fontSize: 16, color: '#fff', marginBottom: 8 }}>피부 고민을 선택해주세요 (복수 선택)</h2>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-              {CONCERNS.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => toggle('concerns', c)}
-                  style={{
-                    padding: '12px 18px',
-                    background: answers.concerns.includes(c) ? 'rgba(201,168,76,0.25)' : 'var(--bg3)',
-                    border: `1px solid ${answers.concerns.includes(c) ? GOLD : 'var(--border)'}`,
-                    borderRadius: 12, color: answers.concerns.includes(c) ? GOLD : 'var(--text)', fontSize: 14, cursor: 'pointer',
-                  }}
-                >{c}</button>
-              ))}
-            </div>
-            <button
-              onClick={nextStep}
-              disabled={!canNext()}
-              style={{ width: '100%', padding: 14, background: canNext() ? GOLD : 'var(--bg3)', border: 'none', borderRadius: 12, color: canNext() ? '#0a0a0a' : 'var(--text3)', fontWeight: 700, cursor: canNext() ? 'pointer' : 'not-allowed' }}
-            >다음</button>
-          </>
-        )}
-
-        {/* -- PRODUCTS -- */}
-        {step === 'products' && (
-          <>
-            <h2 style={{ fontSize: 16, color: '#fff', marginBottom: 8 }}>현재 사용 중인 제품 유형 (복수 선택)</h2>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 24 }}>
-              {PRODUCT_TYPES.map((p) => (
-                <button
-                  key={p}
-                  onClick={() => toggle('productTypes', p)}
-                  style={{
-                    padding: '12px 18px',
-                    background: answers.productTypes.includes(p) ? 'rgba(201,168,76,0.25)' : 'var(--bg3)',
-                    border: `1px solid ${answers.productTypes.includes(p) ? GOLD : 'var(--border)'}`,
-                    borderRadius: 12, color: answers.productTypes.includes(p) ? GOLD : 'var(--text)', fontSize: 14, cursor: 'pointer',
-                  }}
-                >{p}</button>
-              ))}
-            </div>
-            <button
-              onClick={nextStep}
-              style={{ width: '100%', padding: 14, background: GOLD, border: 'none', borderRadius: 12, color: '#0a0a0a', fontWeight: 700, cursor: 'pointer' }}
-            >다음</button>
-          </>
-        )}
-
-        {/* -- IRRITATION -- */}
-        {step === 'irritation' && (
-          <>
-            <h2 style={{ fontSize: 16, color: '#fff', marginBottom: 8 }}>피부가 자극에 민감한 편인가요?</h2>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 24 }}>
-              {[{ label: '예', value: true }, { label: '아니오', value: false }].map(({ label, value }) => (
-                <button
-                  key={label}
-                  onClick={() => setAnswers((a) => ({ ...a, irritation: value }))}
-                  style={{
-                    flex: 1, padding: 14,
-                    background: answers.irritation === value ? 'rgba(201,168,76,0.25)' : 'var(--bg3)',
-                    border: `1px solid ${answers.irritation === value ? GOLD : 'var(--border)'}`,
-                    borderRadius: 12, color: answers.irritation === value ? GOLD : 'var(--text)', fontSize: 14, cursor: 'pointer',
-                  }}
-                >{label}</button>
-              ))}
-            </div>
-            <button
-              onClick={nextStep}
-              disabled={!canNext()}
-              style={{ width: '100%', padding: 14, background: canNext() ? GOLD : 'var(--bg3)', border: 'none', borderRadius: 12, color: canNext() ? '#0a0a0a' : 'var(--text3)', fontWeight: 700, cursor: canNext() ? 'pointer' : 'not-allowed' }}
-            >다음</button>
-          </>
-        )}
-
-        {/* -- LIFESTYLE -- */}
-        {step === 'lifestyle' && (
-          <>
-            <h2 style={{ fontSize: 16, color: '#fff', marginBottom: 16 }}>생활 습관을 알려주세요</h2>
-            {(['sleep', 'diet', 'sunscreen'] as const).map((key) => {
-              const labels: Record<string, string> = { sleep: '수면 시간', diet: '식습관', sunscreen: '선크림 사용' }
-              return (
-                <div key={key} style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 8 }}>{labels[key]}</div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {LIFESTYLE[key].map((opt) => (
+              {result.products.length > 0 && (
+                <div style={{ marginBottom: 24 }}>
+                  <h3 style={{ fontSize: 14, color: '#fff', marginBottom: 10 }}>{`맞춤 추천 제품`}</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {result.products.map((p: any) => (
                       <button
-                        key={opt}
-                        onClick={() => setAnswers((a) => ({ ...a, lifestyle: { ...a.lifestyle, [key]: opt } }))}
+                        key={p.id}
+                        type="button"
+                        onClick={() => router.push(`/products/${p.id}`)}
                         style={{
-                          padding: '10px 14px',
-                          background: answers.lifestyle[key] === opt ? 'rgba(201,168,76,0.25)' : 'var(--bg3)',
-                          border: `1px solid ${answers.lifestyle[key] === opt ? GOLD : 'var(--border)'}`,
-                          borderRadius: 10, color: answers.lifestyle[key] === opt ? GOLD : 'var(--text)', fontSize: 13, cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 12,
+                          padding: 12,
+                          borderRadius: 12,
+                          background: 'var(--bg3)',
+                          border: '1px solid var(--border)',
+                          cursor: 'pointer',
+                          textAlign: 'left',
                         }}
-                      >{opt}</button>
+                      >
+                        <div style={{ width: 48, height: 48, borderRadius: 8, background: 'rgba(0,0,0,0.3)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {p.thumb_img ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={p.thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <span style={{ fontSize: 20, opacity: 0.4 }}>🧴</span>
+                          )}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {p.name}
+                          </div>
+                          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {p.brands?.name || ''}
+                          </div>
+                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--gold)' }}>{`₩${toComma(p.retail_price)}`}</div>
+                      </button>
                     ))}
                   </div>
                 </div>
-              )
-            })}
-            <button
-              onClick={nextStep}
-              style={{ width: '100%', padding: 14, background: GOLD, border: 'none', borderRadius: 12, color: '#0a0a0a', fontWeight: 700, cursor: 'pointer', marginTop: 8 }}
-            >
-              분석 완료 → 500P 적립
-            </button>
+              )}
+
+              <button
+                onClick={() => router.push('/products')}
+                style={{ width: '100%', padding: 14, background: GOLD, border: 'none', borderRadius: 12, color: '#0a0a0a', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+              >
+                전제품 보러 가기 →
+              </button>
+            </div>
           </>
         )}
-
-        {/* -- RESULT -- */}
-        {step === 'result' && result && (
-          <div>
-            {/* 완료 배너 */}
-            <div style={{
-              background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)',
-              borderRadius: 16, padding: 20, textAlign: 'center', marginBottom: 24,
-            }}>
-              <div style={{ fontSize: 36, marginBottom: 8 }}>✨</div>
-              <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', marginBottom: 4 }}>분석 완료!</div>
-              <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 8 }}>
-                피부 타입: <span style={{ color: GOLD, fontWeight: 700 }}>{result.skinType}</span>
-              </div>
-              <div style={{
-                display: 'inline-block', background: GOLD, borderRadius: 999,
-                padding: '4px 14px', fontSize: 13, fontWeight: 900, color: '#0a0a0a',
-              }}>
-                +500P 적립 완료 🎉
-              </div>
-            </div>
-
-            {/* 추천 제품 */}
-            {result.products.length > 0 && (
-              <div style={{ marginBottom: 24 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 12 }}>맞춤 추천 제품</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {result.products.slice(0, 4).map((p: any) => (
-                    <div
-                      key={p.id}
-                      onClick={() => router.push(`/products/${p.id}`)}
-                      style={{
-                        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
-                        borderRadius: 12, padding: 12, display: 'flex', gap: 12, cursor: 'pointer',
-                      }}
-                    >
-                      <div style={{ width: 48, height: 48, borderRadius: 8, background: 'rgba(0,0,0,0.3)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        {p.thumb_img
-                          // eslint-disable-next-line @next/next/no-img-element
-                          ? <img src={p.thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} />
-                          : <span style={{ fontSize: 20, opacity: 0.4 }}>🧴</span>
-                        }
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{p.name}</div>
-                        <div style={{ fontSize: 12, color: GOLD, fontFamily: "'JetBrains Mono', monospace" }}>
-                          ₩{(p.retail_price || 0).toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <button
-              onClick={() => router.push('/products')}
-              style={{ width: '100%', padding: 14, background: GOLD, border: 'none', borderRadius: 12, color: '#0a0a0a', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
-            >
-              전제품 보러 가기 →
-            </button>
-          </div>
-        )}
       </div>
+
       <DashboardBottomNav role="customer" />
     </div>
   )
 }
+
+function toComma(v: any) {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return '0'
+  return n.toLocaleString()
+}
+
