@@ -6,6 +6,8 @@ const nextConfig = {
       'k.kakaocdn.net',                // 카카오 프로필
       'phinf.pstatic.net',             // 네이버 프로필
       'lh3.googleusercontent.com',    // 구글 프로필
+      'won.duchess.kr',
+      'duchess.kr',
     ],
   },
   async headers() {

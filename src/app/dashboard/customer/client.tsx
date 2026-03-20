@@ -99,16 +99,18 @@ export default function CustomerDashboardClient({ profile }: Props) {
 
   useEffect(() => {
     if (!navigator?.geolocation) {
-      setStoresFallback(true)
+      setCoords(DEFAULT_COORDS)
+      setStoresFallback(false)
       return
     }
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        setStoresFallback(false)
         setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
       },
       () => {
-        setStoresFallback(true)
         setCoords(DEFAULT_COORDS)
+        setStoresFallback(false)
       },
       { timeout: 5000, maximumAge: 300000 }
     )
@@ -226,7 +228,8 @@ export default function CustomerDashboardClient({ profile }: Props) {
                 </div>
               </div>
             ))}
-            {stores.length === 0 && <div style={{ fontSize: 12, color: 'var(--text3)' }}>{storesFallback ? '위치 권한 없이 기본 지역 기준으로 로딩 중입니다.' : '스토어 데이터가 없습니다.'}</div>}
+            {/* 위치 권한 없을 때도 기본 좌표로 쿼리 실행되므로 텍스트는 노출하지 않습니다. */}
+            {stores.length === 0 ? null : null}
           </div>
         </div>
 
