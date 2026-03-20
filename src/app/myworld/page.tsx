@@ -11,6 +11,7 @@ import { useAdminSettings } from '@/hooks/useAdminSettings'
 
 const GOLD = 'var(--gold)'
 const COMMUNITY_BUCKET = 'community'
+const AVATAR_BUCKET = 'avatars'
 
 type TabId = 'journal' | 'reviews' | 'guestbook' | 'ranking'
 
@@ -146,14 +147,19 @@ function toComma(n: number) {
   return Math.floor(num).toLocaleString('ko-KR')
 }
 
-async function uploadSingleToCommunity(supabase: ReturnType<typeof createClient>, file: File, path: string) {
-  const { error } = await supabase.storage.from(COMMUNITY_BUCKET).upload(path, file, {
+async function uploadSingle(
+  supabase: ReturnType<typeof createClient>,
+  file: File,
+  path: string,
+  bucket = COMMUNITY_BUCKET
+) {
+  const { error } = await supabase.storage.from(bucket).upload(path, file, {
     cacheControl: '3600',
     upsert: false,
     contentType: file.type || undefined,
   })
   if (error) throw error
-  const { data } = supabase.storage.from(COMMUNITY_BUCKET).getPublicUrl(path)
+  const { data } = supabase.storage.from(bucket).getPublicUrl(path)
   return data?.publicUrl || null
 }
 
@@ -807,13 +813,17 @@ export default function MyWorldPage() {
       setAvatarError('프로필 사진을 선택해주세요.')
       return
     }
+    if (!avatarFile.type?.startsWith('image/')) {
+      setAvatarError('이미지 파일만 업로드 가능합니다')
+      return
+    }
 
     setAvatarSaving(true)
     setAvatarError('')
     try {
       const ext = avatarFile.name.split('.').pop() || 'jpg'
-      const path = `avatars/${me.id}/${Date.now()}_${Math.random().toString(16).slice(2)}.${ext}`
-      const url = await uploadSingleToCommunity(supabase, avatarFile, path)
+      const path = `${me.id}/profile.${ext}`
+      const url = await uploadSingle(supabase, avatarFile, path, AVATAR_BUCKET)
       if (!url) throw new Error('업로드 URL을 생성할 수 없습니다.')
 
       await supabase.from('users').update({ avatar_url: url }).eq('id', me.id)
@@ -856,7 +866,7 @@ export default function MyWorldPage() {
     try {
       const ext = journalPhotoFile.name.split('.').pop() || 'jpg'
       const path = `skin_journals/${me.id}/${date}/${Date.now()}_${Math.random().toString(16).slice(2)}.${ext}`
-      const url = await uploadSingleToCommunity(supabase, journalPhotoFile, path)
+      const url = await uploadSingle(supabase, journalPhotoFile, path, COMMUNITY_BUCKET)
       if (!url) throw new Error('업로드 URL을 생성할 수 없습니다.')
 
       await supabase
@@ -1060,7 +1070,7 @@ export default function MyWorldPage() {
         const f = reviewFiles[i]
         const ext = f.name.split('.').pop() || 'jpg'
         const path = `reviews/${me.id}/${Date.now()}_${i}_${Math.random().toString(16).slice(2)}.${ext}`
-        const url = await uploadSingleToCommunity(supabase, f, path)
+        const url = await uploadSingle(supabase, f, path, COMMUNITY_BUCKET)
         if (url) urls.push(url)
       }
 
@@ -1913,6 +1923,14 @@ export default function MyWorldPage() {
                     accept="image/*"
                     onChange={e => {
                       const f = e.target.files?.[0] || null
+                      if (f && !f.type?.startsWith('image/')) {
+                        setAvatarError('이미지 파일만 업로드 가능합니다')
+                        setAvatarFile(null)
+                        if (avatarPreview) URL.revokeObjectURL(avatarPreview)
+                        setAvatarPreview(null)
+                        return
+                      }
+                      setAvatarError('')
                       if (avatarPreview) URL.revokeObjectURL(avatarPreview)
                       setAvatarFile(f)
                       setAvatarPreview(f ? URL.createObjectURL(f) : null)
