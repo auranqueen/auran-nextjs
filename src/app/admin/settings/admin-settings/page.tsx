@@ -157,6 +157,13 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       show_result_count: { label: '검색 결과 개수 표시', unit: '', type: 'number', defaultValue: '1' },
     },
   },
+  home_debug: {
+    label: '홈 디버그',
+    keys: {
+      show_query_debug: { label: '쿼리 디버그 노출', unit: '', type: 'number', defaultValue: '1' },
+      show_action_debug: { label: '액션 디버그 노출', unit: '', type: 'number', defaultValue: '1' },
+    },
+  },
 }
 
 export default function AdminSettingsAdminSettingsPage() {

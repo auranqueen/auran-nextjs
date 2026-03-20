@@ -93,6 +93,8 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const homeSearchMinChars = Math.max(0, getSettingNum('home_search', 'min_chars', 1))
   const homeSearchEnabled = getSettingNum('home_search', 'enabled', 1) === 1
   const homeSearchShowCount = getSettingNum('home_search', 'show_result_count', 1) === 1
+  const homeDebugShowQuery = getSettingNum('home_debug', 'show_query_debug', 1) === 1
+  const homeDebugShowAction = getSettingNum('home_debug', 'show_action_debug', 1) === 1
 
   const formatRemain = (endAt: string) => {
     const remainMs = new Date(endAt).getTime() - nowTs
@@ -415,12 +417,16 @@ export default function CustomerDashboardClient({ profile }: Props) {
             {toast}
           </div>
         )}
-        <div style={{ marginBottom: 8, fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: "'JetBrains Mono', monospace" }}>
-          query-debug: {productQueryDebug || 'pending...'}
-        </div>
-        <div style={{ marginBottom: 8, fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: "'JetBrains Mono', monospace" }}>
-          action-debug: {actionDebug || 'idle'}
-        </div>
+        {homeDebugShowQuery && (
+          <div style={{ marginBottom: 8, fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: "'JetBrains Mono', monospace" }}>
+            query-debug: {productQueryDebug || 'pending...'}
+          </div>
+        )}
+        {homeDebugShowAction && (
+          <div style={{ marginBottom: 8, fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: "'JetBrains Mono', monospace" }}>
+            action-debug: {actionDebug || 'idle'}
+          </div>
+        )}
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>안녕하세요, {profile?.name || '고객'}님</div>
           <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>오늘도 아름다운 하루를 시작해요.</div>
@@ -507,7 +513,16 @@ export default function CustomerDashboardClient({ profile }: Props) {
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
             {specials.map((_, idx) => (
-              <span key={idx} style={{ width: 6, height: 6, borderRadius: 999, background: idx === specialIndex ? '#c9a84c' : 'rgba(255,255,255,0.25)' }} />
+              <button
+                key={idx}
+                type="button"
+                onClick={() => {
+                  setSpecialResumeAt(Date.now() + homeSpecialResumeDelaySec * 1000)
+                  setSpecialIndex(idx)
+                  logAction('special_dot_click', { index: idx })
+                }}
+                style={{ width: 8, height: 8, borderRadius: 999, border: 'none', padding: 0, cursor: 'pointer', background: idx === specialIndex ? '#c9a84c' : 'rgba(255,255,255,0.25)' }}
+              />
             ))}
           </div>
         </div>
