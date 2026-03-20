@@ -4,7 +4,9 @@ VALUES
   ('home_search', 'placeholder', '전체상품 검색 (브랜드/상품명/설명)', '검색 안내 문구', '', 'text'),
   ('home_search', 'fields', 'name,description,brand', '검색 대상 필드(csv)', '', 'text'),
   ('home_search', 'min_chars', '1', '최소 검색 글자수', '자', 'number'),
-  ('home_search', 'show_result_count', '1', '검색 결과 개수 표시', '', 'number')
+  ('home_search', 'show_result_count', '1', '검색 결과 개수 표시', '', 'number'),
+  ('home_search', 'sync_to_url', '1', '검색어 URL 동기화', '', 'number'),
+  ('home_search', 'query_param', 'q', '검색 URL 파라미터', '', 'text')
 ON CONFLICT (category, key) DO UPDATE
 SET
   value = EXCLUDED.value,

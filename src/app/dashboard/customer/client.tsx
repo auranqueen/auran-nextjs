@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import NoticeBell from '@/components/NoticeBell'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
@@ -70,6 +70,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const [specialIndex, setSpecialIndex] = useState(0)
   const [specialResumeAt, setSpecialResumeAt] = useState(0)
   const [coords, setCoords] = useState(DEFAULT_COORDS)
+  const touchStartXRef = useRef<number | null>(null)
 
   const reviewThreshold = getSettingNum('product_hook', 'review_threshold', 10)
   const aiHookEnabled = getSettingNum('product_hook', 'ai_hook_enabled', 1) === 1
@@ -84,6 +85,8 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const homeSpecialAutoplayEnabled = getSettingNum('home_special', 'autoplay_enabled', 1) === 1
   const homeSpecialManualNavEnabled = getSettingNum('home_special', 'manual_nav_enabled', 1) === 1
   const homeSpecialResumeDelaySec = Math.max(0, getSettingNum('home_special', 'autoplay_resume_delay_sec', 8))
+  const homeSpecialSwipeEnabled = getSettingNum('home_special', 'swipe_enabled', 1) === 1
+  const homeSpecialSwipeThresholdPx = Math.max(10, getSettingNum('home_special', 'swipe_threshold_px', 40))
   const homeSpecialTitle = getSetting('home_special', 'title', '오늘의 특가')
   const homeSearchPlaceholder = getSetting('home_search', 'placeholder', '전체상품 검색 (브랜드/상품명/설명)')
   const homeSearchFields = getSetting('home_search', 'fields', 'name,description,brand')
@@ -93,6 +96,8 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const homeSearchMinChars = Math.max(0, getSettingNum('home_search', 'min_chars', 1))
   const homeSearchEnabled = getSettingNum('home_search', 'enabled', 1) === 1
   const homeSearchShowCount = getSettingNum('home_search', 'show_result_count', 1) === 1
+  const homeSearchSyncToUrl = getSettingNum('home_search', 'sync_to_url', 1) === 1
+  const homeSearchQueryParam = getSetting('home_search', 'query_param', 'q') || 'q'
   const homeDebugShowQuery = getSettingNum('home_debug', 'show_query_debug', 1) === 1
   const homeDebugShowAction = getSettingNum('home_debug', 'show_action_debug', 1) === 1
 
@@ -111,6 +116,25 @@ export default function CustomerDashboardClient({ profile }: Props) {
     console.log(msg)
     setActionDebug(`${type} @ ${new Date().toLocaleTimeString()}`)
   }
+
+  useEffect(() => {
+    if (!homeSearchSyncToUrl || typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const q = params.get(homeSearchQueryParam) || ''
+    if (q) setProductSearch(q)
+    // 초기 1회 파싱
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    if (!homeSearchSyncToUrl || typeof window === 'undefined') return
+    const url = new URL(window.location.href)
+    const q = productSearch.trim()
+    if (q) url.searchParams.set(homeSearchQueryParam, q)
+    else url.searchParams.delete(homeSearchQueryParam)
+    const query = url.searchParams.toString()
+    window.history.replaceState({}, '', query ? `${url.pathname}?${query}` : url.pathname)
+  }, [productSearch, homeSearchSyncToUrl, homeSearchQueryParam])
 
   useEffect(() => {
     const run = async () => {
@@ -472,6 +496,24 @@ export default function CustomerDashboardClient({ profile }: Props) {
                   return (
                     <>
                 <div onClick={() => router.push(`/products/${p.id}`)} style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(128,128,128,0.3)' }}>
+                  {homeSpecialSwipeEnabled && specials.length > 1 && (
+                    <div
+                      onTouchStart={(e) => {
+                        touchStartXRef.current = e.touches?.[0]?.clientX ?? null
+                      }}
+                      onTouchEnd={(e) => {
+                        const startX = touchStartXRef.current
+                        const endX = e.changedTouches?.[0]?.clientX ?? null
+                        touchStartXRef.current = null
+                        if (startX == null || endX == null) return
+                        const delta = endX - startX
+                        if (Math.abs(delta) < homeSpecialSwipeThresholdPx) return
+                        if (delta < 0) nextSpecial()
+                        else prevSpecial()
+                      }}
+                      style={{ position: 'absolute', inset: 0, zIndex: 2 }}
+                    />
+                  )}
                   {p.thumb_img ? <Image src={p.thumb_img} alt={p.name} fill style={{ objectFit: 'cover' }} /> : null}
                   {homeSpecialManualNavEnabled && specials.length > 1 && (
                     <>

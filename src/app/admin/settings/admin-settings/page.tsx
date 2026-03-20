@@ -144,6 +144,8 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       autoplay_enabled: { label: '자동 롤링 활성화', unit: '', type: 'number', defaultValue: '1' },
       manual_nav_enabled: { label: '수동 좌우 버튼 활성화', unit: '', type: 'number', defaultValue: '1' },
       autoplay_resume_delay_sec: { label: '수동 조작 후 자동재개 지연', unit: '초', type: 'number', defaultValue: '8' },
+      swipe_enabled: { label: '스와이프 활성화', unit: '', type: 'number', defaultValue: '1' },
+      swipe_threshold_px: { label: '스와이프 전환 기준', unit: 'px', type: 'number', defaultValue: '40' },
       show_timer: { label: '카운트다운 표시', unit: '', type: 'number', defaultValue: '1' },
     },
   },
@@ -155,6 +157,8 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       fields: { label: '검색 대상 필드(csv)', unit: '', type: 'text', defaultValue: 'name,description,brand' },
       min_chars: { label: '최소 검색 글자수', unit: '자', type: 'number', defaultValue: '1' },
       show_result_count: { label: '검색 결과 개수 표시', unit: '', type: 'number', defaultValue: '1' },
+      sync_to_url: { label: '검색어 URL 동기화', unit: '', type: 'number', defaultValue: '1' },
+      query_param: { label: '검색 URL 파라미터', unit: '', type: 'text', defaultValue: 'q' },
     },
   },
   home_debug: {

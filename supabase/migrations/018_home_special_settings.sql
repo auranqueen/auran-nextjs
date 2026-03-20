@@ -7,6 +7,8 @@ VALUES
   ('home_special', 'autoplay_enabled', '1', '자동 롤링 활성화', '', 'number'),
   ('home_special', 'manual_nav_enabled', '1', '수동 좌우 버튼 활성화', '', 'number'),
   ('home_special', 'autoplay_resume_delay_sec', '8', '수동 조작 후 자동재개 지연', '초', 'number'),
+  ('home_special', 'swipe_enabled', '1', '스와이프 활성화', '', 'number'),
+  ('home_special', 'swipe_threshold_px', '40', '스와이프 전환 기준', 'px', 'number'),
   ('home_special', 'show_timer', '1', '카운트다운 표시', '', 'number')
 ON CONFLICT (category, key) DO UPDATE
 SET
