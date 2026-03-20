@@ -4,6 +4,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 interface Notice {
   id: string
@@ -65,6 +66,8 @@ export default function NoticesPage() {
 
   const [readMap, setReadMap] = useState<Record<string, boolean>>({})
 
+  const supabase = createClient()
+
   const isRead = useMemo(() => {
     return (id: string) => !!readMap[id]
   }, [readMap])
@@ -75,6 +78,32 @@ export default function NoticesPage() {
       m[n.id] = !!localStorage.getItem(`auran_read_${n.id}`)
     }
     setReadMap(m)
+  }, [])
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const { data: auth } = await supabase.auth.getUser()
+        const user = auth?.user
+        if (!user) return
+
+        const { data: profile } = await supabase
+          .from('users')
+          .select('id')
+          .eq('auth_id', user.id)
+          .maybeSingle()
+
+        // schema 호환: (1) users.id 기준, (2) auth user.id 기준 둘 다 시도
+        if (profile?.id) {
+          await supabase.from('notifications').update({ is_read: true }).eq('user_id', profile.id).eq('is_read', false)
+        }
+        await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false)
+      } catch {
+        // ignore
+      }
+    }
+    run()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const openNotice = (notice: Notice) => {

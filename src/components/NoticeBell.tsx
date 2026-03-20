@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 const NOTICE_IDS = ['notice-001', 'notice-002'] as const
 
@@ -24,6 +25,9 @@ export default function NoticeBell({
  }) {
    const router = useRouter()
    const [unread, setUnread] = useState(0)
+  const [dynamicUnread, setDynamicUnread] = useState(0)
+
+  const supabase = createClient()
  
    const btnStyle = useMemo(() => ({
      width: size,
@@ -46,6 +50,50 @@ export default function NoticeBell({
        document.removeEventListener('visibilitychange', update)
      }
    }, [])
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const { data: auth } = await supabase.auth.getUser()
+        const user = auth?.user
+        if (!user) {
+          setDynamicUnread(0)
+          return
+        }
+
+        const { data: profile } = await supabase
+          .from('users')
+          .select('id')
+          .eq('auth_id', user.id)
+          .maybeSingle()
+
+        let c1 = 0
+        if (profile?.id) {
+          const { count } = await supabase
+            .from('notifications')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', profile.id)
+            .eq('is_read', false)
+          c1 = count || 0
+        }
+
+        let c2 = 0
+        {
+          const { count } = await supabase
+            .from('notifications')
+            .select('id', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('is_read', false)
+          c2 = count || 0
+        }
+
+        setDynamicUnread(c1 + c2)
+      } catch {
+        setDynamicUnread(0)
+      }
+    }
+    run()
+  }, [])
  
    return (
      <div style={{ position: 'relative' }}>
@@ -57,7 +105,7 @@ export default function NoticeBell({
        >
          🔔
        </button>
-       {unread > 0 && (
+      {unread + dynamicUnread > 0 && (
          <span
            style={{
              position: 'absolute',
@@ -78,7 +126,7 @@ export default function NoticeBell({
              lineHeight: '16px',
            }}
          >
-           {unread}
+          {unread + dynamicUnread}
          </span>
        )}
      </div>

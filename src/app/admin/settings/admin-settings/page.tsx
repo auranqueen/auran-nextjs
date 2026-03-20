@@ -47,6 +47,39 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       guestbook_preview_max: { label: '방명록 미리보기 개수', unit: 'EA', type: 'number', defaultValue: '6' },
     },
   },
+  star_system: {
+    label: '스타 시스템',
+    keys: {
+      base_journal_points: { label: '저널 작성 포인트', unit: 'P', type: 'number', defaultValue: '50' },
+      photo_journal_extra_points: { label: '사진 포함 저널 추가 포인트', unit: 'P', type: 'number', defaultValue: '100' },
+      review_product_points: { label: '후기 작성 포인트(상품)', unit: 'P', type: 'number', defaultValue: '200' },
+      like_points_per: { label: '공감(좋아요) 포인트/개', unit: 'P', type: 'number', defaultValue: '10' },
+      follow_points_per: { label: '팔로워 생김 포인트/명', unit: 'P', type: 'number', defaultValue: '30' },
+      like_notify_reach: { label: '공감 알림 도달(10개)', unit: 'EA', type: 'number', defaultValue: '10' },
+
+      streak_notify_at: { label: '연속 저널 알림 도달(5일)', unit: '일', type: 'number', defaultValue: '5' },
+      streak_7_bonus: { label: '연속 7일 보너스', unit: 'P', type: 'number', defaultValue: '300' },
+      streak_30_bonus: { label: '연속 30일 보너스', unit: 'P', type: 'number', defaultValue: '1000' },
+
+      lv2_journal_min: { label: 'Lv2 저널 최소', unit: 'EA', type: 'number', defaultValue: '5' },
+      lv2_followers_min: { label: 'Lv2 팔로워 최소', unit: '명', type: 'number', defaultValue: '10' },
+
+      lv3_journal_min: { label: 'Lv3 저널 최소', unit: 'EA', type: 'number', defaultValue: '20' },
+      lv3_followers_min: { label: 'Lv3 팔로워 최소', unit: '명', type: 'number', defaultValue: '50' },
+      lv3_purchase_review_min: { label: 'Lv3 구매 후기 최소', unit: '개', type: 'number', defaultValue: '3' },
+
+      lv4_journal_min: { label: 'Lv4 저널 최소', unit: 'EA', type: 'number', defaultValue: '50' },
+      lv4_followers_min: { label: 'Lv4 팔로워 최소', unit: '명', type: 'number', defaultValue: '200' },
+      lv4_like_min: { label: 'Lv4 공감(좋아요) 최소', unit: '개', type: 'number', defaultValue: '500' },
+
+      lv5_followers_min: { label: 'Lv5 팔로워 최소', unit: '명', type: 'number', defaultValue: '500' },
+      lv5_like_min: { label: 'Lv5 공감(좋아요) 최소', unit: '개', type: 'number', defaultValue: '2000' },
+      lv5_purchase_leads_min: { label: 'Lv5 구매 유도 최소', unit: '건', type: 'number', defaultValue: '50' },
+
+      lv2_charge_bonus_pct: { label: 'Lv2 충전 추가 보너스', unit: '%', type: 'number', defaultValue: '3' },
+      charge_base_points_pct: { label: '기본 충전 포인트 비율', unit: '%', type: 'number', defaultValue: '5' },
+    },
+  },
 }
 
 export default function AdminSettingsAdminSettingsPage() {

@@ -21,6 +21,18 @@ type ProfileRow = {
   skin_type?: string | null
   points: number
   charge_balance: number
+  star_level: number
+  total_likes: number
+  total_followers: number
+  purchase_leads: number
+}
+
+type MiniUser = {
+  id: string
+  name: string
+  avatar_url?: string | null
+  skin_type?: string | null
+  star_level: number
 }
 
 type SkinJournalRow = {
@@ -91,6 +103,15 @@ function skinBadgeText(skinType: string | null | undefined) {
   return `${skinType} ✨`
 }
 
+function starLevelMeta(level: number) {
+  const lv = Math.max(1, Math.floor(level || 1))
+  if (lv >= 5) return { label: 'AURAN 퀸 🏆', color: '#4fd8ff' }
+  if (lv === 4) return { label: '인플루언서 👑', color: '#d2a679' }
+  if (lv === 3) return { label: '뷰티스타 💫', color: '#bf5f90' }
+  if (lv === 2) return { label: '글로우 ✨', color: '#c9a84c' }
+  return { label: '새싹 🌱', color: '#4cad7e' }
+}
+
 function getBrandName(p: ProductLite) {
   const b = p.brands as any
   if (!b) return ''
@@ -154,6 +175,19 @@ export default function MyWorldPage() {
   const journalScoreMax = getSettingNum('myworld', 'journal_score_max', 5)
   const journalScoreDefault = getSettingNum('myworld', 'journal_score_default', 3)
 
+  // star_system thresholds (admin_settings)
+  const lv2_journal_min = getSettingNum('star_system', 'lv2_journal_min', 5)
+  const lv2_followers_min = getSettingNum('star_system', 'lv2_followers_min', 10)
+  const lv3_journal_min = getSettingNum('star_system', 'lv3_journal_min', 20)
+  const lv3_followers_min = getSettingNum('star_system', 'lv3_followers_min', 50)
+  const lv3_purchase_review_min = getSettingNum('star_system', 'lv3_purchase_review_min', 3)
+  const lv4_journal_min = getSettingNum('star_system', 'lv4_journal_min', 50)
+  const lv4_followers_min = getSettingNum('star_system', 'lv4_followers_min', 200)
+  const lv4_like_min = getSettingNum('star_system', 'lv4_like_min', 500)
+  const lv5_followers_min = getSettingNum('star_system', 'lv5_followers_min', 500)
+  const lv5_like_min = getSettingNum('star_system', 'lv5_like_min', 2000)
+  const lv5_purchase_leads_min = getSettingNum('star_system', 'lv5_purchase_leads_min', 50)
+
   const [loading, setLoading] = useState(true)
   const [me, setMe] = useState<ProfileRow | null>(null)
   const [tab, setTab] = useState<TabId>('journal')
@@ -173,6 +207,21 @@ export default function MyWorldPage() {
   const [shareOpen, setShareOpen] = useState(false)
   const [shareDomId, setShareDomId] = useState('')
   const [sharePayload, setSharePayload] = useState<SharePayload | null>(null)
+
+  const [followingCount, setFollowingCount] = useState(0)
+  const [followingIds, setFollowingIds] = useState<Set<string>>(new Set())
+  const [followersModalOpen, setFollowersModalOpen] = useState(false)
+  const [followingModalOpen, setFollowingModalOpen] = useState(false)
+  const [followersList, setFollowersList] = useState<MiniUser[]>([])
+  const [followingList, setFollowingList] = useState<MiniUser[]>([])
+
+  const [followingFeed, setFollowingFeed] = useState<{ author: MiniUser; journal: SkinJournalRow }[]>([])
+
+  const [monthJournalCount, setMonthJournalCount] = useState(0)
+  const [monthLikeCount, setMonthLikeCount] = useState(0)
+  const [monthFollowerCount, setMonthFollowerCount] = useState(0)
+  const [totalJournalCount, setTotalJournalCount] = useState(0)
+  const [totalPurchaseReviewCount, setTotalPurchaseReviewCount] = useState(0)
 
   const timelineProductMap = useMemo(() => {
     const m = new Map<string, ProductLite>()
@@ -290,6 +339,65 @@ export default function MyWorldPage() {
     const username = (me?.name || 'user').trim()
     return `https://auran.kr/u/${encodeURIComponent(username)}`
   }, [me?.name])
+
+  const activityProgress = useMemo(() => {
+    if (!me) return null
+    const currentLevel = Math.max(1, Math.floor(me.star_level || 1))
+
+    const journalCount = totalJournalCount
+    const reviewCount = totalPurchaseReviewCount
+    const followers = me.total_followers || 0
+    const likes = me.total_likes || 0
+    const leads = me.purchase_leads || 0
+
+    const canLv5 = followers >= lv5_followers_min && likes >= lv5_like_min && leads >= lv5_purchase_leads_min
+    const canLv4 = journalCount >= lv4_journal_min && followers >= lv4_followers_min && likes >= lv4_like_min
+    const canLv3 = journalCount >= lv3_journal_min && followers >= lv3_followers_min && reviewCount >= lv3_purchase_review_min
+    const canLv2 = journalCount >= lv2_journal_min && followers >= lv2_followers_min
+
+    const targetLevel = canLv5 ? 5 : canLv4 ? 4 : canLv3 ? 3 : canLv2 ? 2 : 1
+    const nextLevel = targetLevel < 5 ? targetLevel + 1 : 5
+
+    if (nextLevel === 2) {
+      const diff = Math.max(0, lv2_journal_min - journalCount)
+      return { currentLevel: targetLevel, nextLevel, journalNeed: diff, followersNeed: Math.max(0, lv2_followers_min - followers), likesNeed: 0, reviewNeed: 0 }
+    }
+    if (nextLevel === 3) {
+      const journalNeed = Math.max(0, lv3_journal_min - journalCount)
+      const followersNeed = Math.max(0, lv3_followers_min - followers)
+      const reviewNeed = Math.max(0, lv3_purchase_review_min - reviewCount)
+      return { currentLevel: targetLevel, nextLevel, journalNeed, followersNeed, likesNeed: 0, reviewNeed }
+    }
+    if (nextLevel === 4) {
+      const journalNeed = Math.max(0, lv4_journal_min - journalCount)
+      const followersNeed = Math.max(0, lv4_followers_min - followers)
+      const likesNeed = Math.max(0, lv4_like_min - likes)
+      return { currentLevel: targetLevel, nextLevel, journalNeed, followersNeed, likesNeed, reviewNeed: 0 }
+    }
+    if (nextLevel === 5) {
+      const followersNeed = Math.max(0, lv5_followers_min - followers)
+      const likesNeed = Math.max(0, lv5_like_min - likes)
+      const purchaseLeadNeed = Math.max(0, lv5_purchase_leads_min - leads)
+      return { currentLevel: targetLevel, nextLevel, journalNeed: 0, followersNeed, likesNeed, reviewNeed: purchaseLeadNeed }
+    }
+
+    return { currentLevel: targetLevel, nextLevel: 5, journalNeed: 0, followersNeed: 0, likesNeed: 0, reviewNeed: 0 }
+  }, [
+    me,
+    totalJournalCount,
+    totalPurchaseReviewCount,
+    lv2_journal_min,
+    lv2_followers_min,
+    lv3_journal_min,
+    lv3_followers_min,
+    lv3_purchase_review_min,
+    lv4_journal_min,
+    lv4_followers_min,
+    lv4_like_min,
+    lv5_followers_min,
+    lv5_like_min,
+    lv5_purchase_leads_min,
+  ])
 
   const refreshJournals = async (userId: string) => {
     const { data } = await supabase
@@ -511,7 +619,7 @@ export default function MyWorldPage() {
 
         const { data } = await supabase
           .from('users')
-          .select('id,name,avatar_url,skin_type,points,charge_balance')
+          .select('id,name,avatar_url,skin_type,points,charge_balance,star_level,total_likes,total_followers,purchase_leads')
           .eq('auth_id', user.id)
           .single()
 
@@ -529,6 +637,151 @@ export default function MyWorldPage() {
     run()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    const run = async () => {
+      if (!me?.id) return
+      try {
+        const { data: followingRows } = await supabase
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', me.id)
+
+        const following = (followingRows || []).map(r => r.following_id).filter(Boolean) as string[]
+        setFollowingCount(following.length)
+        setFollowingIds(new Set(following))
+
+        if (following.length === 0) {
+          setFollowingFeed([])
+          return
+        }
+
+        // 팔로잉 피드: 최신 저널 중심
+        const { data: journalRows } = await supabase
+          .from('skin_journals')
+          .select('id,user_id,date,photo_url,memo,score,product_ids,created_at')
+          .in('user_id', following)
+          .order('date', { ascending: false })
+          .limit(6)
+
+        const uniqUserIds = Array.from(new Set((journalRows || []).map((j: any) => String(j.user_id))))
+        const { data: userRows } = await supabase
+          .from('users')
+          .select('id,name,avatar_url,skin_type,star_level')
+          .in('id', uniqUserIds)
+
+        const userMap = new Map<string, MiniUser>((userRows || []).map((u: any) => [u.id, u]))
+        const feed = (journalRows || [])
+          .map((j: any) => ({
+            author: userMap.get(String(j.user_id)) || { id: String(j.user_id), name: '사용자', avatar_url: null, skin_type: null, star_level: 1 },
+            journal: j as SkinJournalRow,
+          }))
+          .slice(0, 6)
+
+        setFollowingFeed(feed)
+      } catch {
+        setFollowingCount(0)
+        setFollowingIds(new Set())
+        setFollowingFeed([])
+      }
+    }
+    run()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me?.id])
+
+  useEffect(() => {
+    const run = async () => {
+      if (!me?.id) return
+      const now = new Date()
+      const kst = new Date(now.getTime() + 9 * 60 * 60 * 1000)
+      const monthStart = new Date(kst.getFullYear(), kst.getMonth(), 1)
+      const nextMonthStart = new Date(kst.getFullYear(), kst.getMonth() + 1, 1)
+
+      const startDate = monthStart.toISOString().slice(0, 10)
+      const endDate = nextMonthStart.toISOString().slice(0, 10)
+
+      try {
+        const { data: totalJournals, count: tCount } = await supabase
+          .from('skin_journals')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', me.id)
+        const totalJ = (tCount || 0) as number
+        setTotalJournalCount(totalJ)
+
+        const { data: totalReviews, count: tReview } = await supabase
+          .from('reviews')
+          .select('id', { count: 'exact', head: true })
+          .eq('author_id', me.id)
+          .eq('review_type', 'product')
+          .eq('status', '게시')
+        const totalR = (tReview || 0) as number
+        setTotalPurchaseReviewCount(totalR)
+
+        const { count: mJ } = await supabase
+          .from('skin_journals')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', me.id)
+          .gte('date', startDate)
+          .lt('date', endDate)
+        setMonthJournalCount(mJ || 0)
+
+        // 월간 팔로워 수
+        const { count: mF } = await supabase
+          .from('follows')
+          .select('id', { count: 'exact', head: true })
+          .eq('following_id', me.id)
+          .gte('created_at', monthStart.toISOString())
+          .lt('created_at', nextMonthStart.toISOString())
+        setMonthFollowerCount(mF || 0)
+
+        // 월간 공감 수(저널 likes + 후기 likes)
+        const { data: monthJournalRows } = await supabase
+          .from('skin_journals')
+          .select('id,date')
+          .eq('user_id', me.id)
+          .gte('date', startDate)
+          .lt('date', endDate)
+        const monthJournalIds = Array.from(new Set((monthJournalRows || []).map(j => String(j.id))))
+
+        let likesFromJournals = 0
+        if (monthJournalIds.length > 0) {
+          const { count: c1 } = await supabase
+            .from('skin_journal_likes')
+            .select('id', { count: 'exact', head: true })
+            .in('journal_id', monthJournalIds)
+            .gte('created_at', monthStart.toISOString())
+            .lt('created_at', nextMonthStart.toISOString())
+          likesFromJournals = c1 || 0
+        }
+
+        const { data: monthReviewRows } = await supabase
+          .from('reviews')
+          .select('id,created_at')
+          .eq('author_id', me.id)
+          .eq('review_type', 'product')
+          .eq('status', '게시')
+          .gte('created_at', monthStart.toISOString())
+          .lt('created_at', nextMonthStart.toISOString())
+        const monthReviewIds = Array.from(new Set((monthReviewRows || []).map(r => String(r.id))))
+
+        let likesFromReviews = 0
+        if (monthReviewIds.length > 0) {
+          const { count: c2 } = await supabase
+            .from('product_review_likes')
+            .select('id', { count: 'exact', head: true })
+            .in('review_id', monthReviewIds)
+          // product_review_likes에 created_at 필터는 FK 기반이어서, 후기 created_at 기준으로 대체
+          likesFromReviews = c2 || 0
+        }
+
+        setMonthLikeCount(likesFromJournals + likesFromReviews)
+      } catch {
+        // ignore
+      }
+    }
+    run()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me?.id])
 
   useEffect(() => {
     return () => {
@@ -686,6 +939,63 @@ export default function MyWorldPage() {
     }
   }
 
+  const refreshFollowing = async () => {
+    if (!me?.id) return
+    const { data: followingRows } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', me.id)
+
+    const following = (followingRows || []).map(r => r.following_id).filter(Boolean) as string[]
+    setFollowingCount(following.length)
+    const nextSet = new Set(following)
+    setFollowingIds(nextSet)
+
+    if (following.length === 0) {
+      setFollowingFeed([])
+      return
+    }
+
+    const { data: journalRows } = await supabase
+      .from('skin_journals')
+      .select('id,user_id,date,photo_url,memo,score,product_ids,created_at')
+      .in('user_id', following)
+      .order('date', { ascending: false })
+      .limit(6)
+
+    const uniqUserIds = Array.from(new Set((journalRows || []).map((j: any) => String(j.user_id))))
+    const { data: userRows } = await supabase
+      .from('users')
+      .select('id,name,avatar_url,skin_type,star_level')
+      .in('id', uniqUserIds)
+
+    const userMap = new Map<string, MiniUser>((userRows || []).map((u: any) => [u.id, u]))
+    const feed = (journalRows || [])
+      .map((j: any) => ({
+        author: userMap.get(String(j.user_id)) || { id: String(j.user_id), name: '사용자', avatar_url: null, skin_type: null, star_level: 1 },
+        journal: j as SkinJournalRow,
+      }))
+      .slice(0, 6)
+
+    setFollowingFeed(feed)
+  }
+
+  const toggleFollow = async (targetUserId: string) => {
+    if (!me?.id) return
+    const currentlyFollowing = followingIds.has(targetUserId)
+
+    try {
+      if (currentlyFollowing) {
+        await supabase.from('follows').delete().eq('follower_id', me.id).eq('following_id', targetUserId)
+      } else {
+        await supabase.from('follows').insert({ follower_id: me.id, following_id: targetUserId })
+      }
+      await refreshFollowing()
+    } catch {
+      // ignore
+    }
+  }
+
   const addGuestbook = async () => {
     if (!me) return
     if (!guestbookMessage.trim()) {
@@ -827,10 +1137,61 @@ export default function MyWorldPage() {
                 <span style={{ border: '1px solid rgba(201,168,76,0.35)', background: 'rgba(201,168,76,0.12)', color: GOLD, fontWeight: 900, fontSize: 12, padding: '6px 10px', borderRadius: 999 }}>
                   {skinBadgeText(me?.skin_type)}
                 </span>
+                <span style={{ border: `1px solid ${starLevelMeta(me?.star_level || 1).color}55`, background: `${starLevelMeta(me?.star_level || 1).color}18`, color: starLevelMeta(me?.star_level || 1).color, fontWeight: 900, fontSize: 12, padding: '6px 10px', borderRadius: 999, whiteSpace: 'nowrap' }}>
+                  {starLevelMeta(me?.star_level || 1).label}
+                </span>
               </div>
 
               <div style={{ marginTop: 10, fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>
-                팔로워 0 · 팔로잉 0
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFollowersModalOpen(true)
+                    if (me?.id) {
+                      ;(async () => {
+                        const { data: rows } = await supabase.from('follows').select('follower_id').eq('following_id', me.id)
+                        const ids = (rows || []).map(r => r.follower_id).filter(Boolean)
+                        if (ids.length === 0) {
+                          setFollowersList([])
+                          return
+                        }
+                        const { data: users } = await supabase
+                          .from('users')
+                          .select('id,name,avatar_url,skin_type,star_level')
+                          .in('id', ids)
+                        setFollowersList((users || []) as any)
+                      })()
+                    }
+                  }}
+                  style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontWeight: 900 }}
+                >
+                  팔로워 {me?.total_followers || 0}
+                </button>
+                <span style={{ color: 'rgba(255,255,255,0.35)', margin: '0 8px' }}>·</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFollowingModalOpen(true)
+                    if (me?.id) {
+                      ;(async () => {
+                        const { data: rows } = await supabase.from('follows').select('following_id').eq('follower_id', me.id)
+                        const ids = (rows || []).map(r => r.following_id).filter(Boolean)
+                        if (ids.length === 0) {
+                          setFollowingList([])
+                          return
+                        }
+                        const { data: users } = await supabase
+                          .from('users')
+                          .select('id,name,avatar_url,skin_type,star_level')
+                          .in('id', ids)
+                        setFollowingList((users || []) as any)
+                      })()
+                    }
+                  }}
+                  style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontWeight: 900 }}
+                >
+                  팔로잉 {followingCount}
+                </button>
               </div>
             </div>
 
@@ -855,6 +1216,47 @@ export default function MyWorldPage() {
             </a>
           </div>
         </div>
+
+        {/* 내 활동 현황 */}
+        {me && activityProgress && (
+          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 14, marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>내 활동 현황</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <span style={{ border: `1px solid ${starLevelMeta(activityProgress.currentLevel).color}55`, background: `${starLevelMeta(activityProgress.currentLevel).color}18`, color: starLevelMeta(activityProgress.currentLevel).color, fontWeight: 900, fontSize: 12, padding: '6px 10px', borderRadius: 999, whiteSpace: 'nowrap' }}>
+                  {starLevelMeta(activityProgress.currentLevel).label}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6 }}>
+              이번 달: 저널 {monthJournalCount}개 · 공감 {monthLikeCount}개 · 팔로워 {monthFollowerCount}명
+            </div>
+
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              {activityProgress.nextLevel === 2 && (
+                <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>
+                  다음 등급까지 저널 {activityProgress.journalNeed}개 더!
+                </div>
+              )}
+              {activityProgress.nextLevel === 3 && (
+                <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>
+                  다음 등급까지 저널 {activityProgress.journalNeed}개 더!
+                </div>
+              )}
+              {activityProgress.nextLevel === 4 && (
+                <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>
+                  다음 등급까지 저널 {activityProgress.journalNeed}개 더!
+                </div>
+              )}
+              {activityProgress.nextLevel === 5 && (
+                <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>
+                  다음 등급까지 {activityProgress.reviewNeed > 0 ? `구매유도 ${activityProgress.reviewNeed}건 더!` : '더 달려보자!'}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* 탭 */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
@@ -1277,6 +1679,199 @@ export default function MyWorldPage() {
           </>
         )}
       </div>
+
+      {/* 팔로잉 피드 */}
+      <div style={{ padding: '0 18px 0' }}>
+        <div style={{ marginTop: 14, marginBottom: 12, fontSize: 13, fontWeight: 900, color: '#fff' }}>팔로잉 피드</div>
+
+        {followingFeed.length === 0 ? (
+          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 16, color: 'var(--text3)', fontSize: 12 }}>
+            팔로잉한 사용자의 기록이 없어요. 인기 스타 저널을 추천해드릴게요.
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {followingFeed.map(item => {
+              const a = item.author
+              const j = item.journal
+              const isFollowing = followingIds.has(a.id)
+              const sm = starLevelMeta(a.star_level)
+              return (
+                <div key={`${a.id}_${j.id}`} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', gap: 12, minWidth: 0 }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 12, overflow: 'hidden', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
+                        {a.avatar_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={a.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.55)' }}>🙂</div>
+                        )}
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{a.name}</div>
+                          <span style={{ border: `1px solid ${sm.color}55`, background: `${sm.color}18`, color: sm.color, fontWeight: 900, fontSize: 11, padding: '4px 8px', borderRadius: 999 }}>
+                            {sm.label}
+                          </span>
+                        </div>
+                        <div style={{ marginTop: 6, display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <div style={{ fontSize: 12, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace" }}>{j.date}</div>
+                          <div style={{ fontSize: 12, color: GOLD, fontWeight: 900 }}>{stars(j.score, journalScoreMax)}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => toggleFollow(a.id)}
+                      style={{ padding: '10px 12px', borderRadius: 12, border: `1px solid ${isFollowing ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`, background: isFollowing ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)', color: isFollowing ? GOLD : 'var(--text3)', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                    >
+                      {isFollowing ? '팔로잉' : '팔로우'}
+                    </button>
+                  </div>
+
+                  <div style={{ marginTop: 10 }}>
+                    <div style={{ display: 'flex', gap: 12 }}>
+                      <div style={{ width: 92, height: 92, borderRadius: 12, overflow: 'hidden', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
+                        {j.photo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={j.photo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.55)' }}>📷</div>
+                        )}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 12, color: '#fff', fontWeight: 800, lineHeight: 1.5 }}>
+                          {(j.memo || '메모 없음').slice(0, 60)}
+                          {(j.memo || '').length > 60 ? '...' : ''}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 팔로워 리스트 바텀시트 */}
+      {followersModalOpen && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 55, display: 'flex', alignItems: 'flex-end' }}
+          onClick={() => setFollowersModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            style={{ width: '100%', maxWidth: 480, background: 'rgba(10,12,15,0.98)', borderTopLeftRadius: 18, borderTopRightRadius: 18, border: '1px solid var(--border)', padding: 14 }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>팔로워 목록</div>
+              <button type="button" onClick={() => setFollowersModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 20, cursor: 'pointer' }}>
+                ×
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '50vh', overflow: 'auto' }}>
+              {followersList.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--text3)' }}>아직 팔로워가 없어요.</div>
+              ) : (
+                followersList.map(u => {
+                  const sm = starLevelMeta(u.star_level)
+                  const isFollowing = followingIds.has(u.id)
+                  return (
+                    <div key={u.id} style={{ display: 'flex', gap: 12, alignItems: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: 10 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 12, overflow: 'hidden', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
+                        {u.avatar_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={u.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.55)' }}>🙂</div>
+                        )}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.name}</div>
+                          <span style={{ border: `1px solid ${sm.color}55`, background: `${sm.color}18`, color: sm.color, fontWeight: 900, fontSize: 11, padding: '4px 8px', borderRadius: 999 }}>
+                            {sm.label}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => toggleFollow(u.id)}
+                        style={{ padding: '10px 12px', borderRadius: 12, border: `1px solid ${isFollowing ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`, background: isFollowing ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)', color: isFollowing ? GOLD : 'var(--text3)', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
+                        {isFollowing ? '팔로잉' : '팔로우'}
+                      </button>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 팔로잉 리스트 바텀시트 */}
+      {followingModalOpen && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 55, display: 'flex', alignItems: 'flex-end' }}
+          onClick={() => setFollowingModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            style={{ width: '100%', maxWidth: 480, background: 'rgba(10,12,15,0.98)', borderTopLeftRadius: 18, borderTopRightRadius: 18, border: '1px solid var(--border)', padding: 14 }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>팔로잉 목록</div>
+              <button type="button" onClick={() => setFollowingModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 20, cursor: 'pointer' }}>
+                ×
+              </button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '50vh', overflow: 'auto' }}>
+              {followingList.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--text3)' }}>팔로잉한 사용자가 없어요.</div>
+              ) : (
+                followingList.map(u => {
+                  const sm = starLevelMeta(u.star_level)
+                  const isFollowing = followingIds.has(u.id)
+                  return (
+                    <div key={u.id} style={{ display: 'flex', gap: 12, alignItems: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: 10 }}>
+                      <div style={{ width: 40, height: 40, borderRadius: 12, overflow: 'hidden', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
+                        {u.avatar_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={u.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.55)' }}>🙂</div>
+                        )}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{u.name}</div>
+                          <span style={{ border: `1px solid ${sm.color}55`, background: `${sm.color}18`, color: sm.color, fontWeight: 900, fontSize: 11, padding: '4px 8px', borderRadius: 999 }}>
+                            {sm.label}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => toggleFollow(u.id)}
+                        style={{ padding: '10px 12px', borderRadius: 12, border: `1px solid ${isFollowing ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`, background: isFollowing ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)', color: isFollowing ? GOLD : 'var(--text3)', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      >
+                        {isFollowing ? '팔로잉' : '팔로우'}
+                      </button>
+                    </div>
+                  )
+                })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Avatar Modal */}
       {avatarModalOpen && (

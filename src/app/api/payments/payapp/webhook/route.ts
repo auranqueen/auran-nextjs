@@ -95,9 +95,30 @@ export async function POST(req: NextRequest) {
       // domain apply: charge => increase charge_balance + 5% 포인트 적립 + 알림
       if (intent.kind === 'charge' && intent.user_id) {
         const amount = Number(intent.amount || 0)
-        const pointsToAdd = Math.floor(amount * 0.05)
         const client = tryCreateServiceClient() || supabase
-        const { data: u } = await client.from('users').select('charge_balance, points').eq('id', intent.user_id).single()
+        const { data: u } = await client.from('users').select('charge_balance, points, star_level').eq('id', intent.user_id).single()
+
+        const { data: baseRateRow } = await client
+          .from('admin_settings')
+          .select('value')
+          .eq('category', 'star_system')
+          .eq('key', 'charge_base_points_pct')
+          .maybeSingle()
+
+        const { data: bonusRateRow } = await client
+          .from('admin_settings')
+          .select('value')
+          .eq('category', 'star_system')
+          .eq('key', 'lv2_charge_bonus_pct')
+          .maybeSingle()
+
+        const baseRatePct = Number(baseRateRow?.value ?? 5)
+        const bonusRatePct = Number(bonusRateRow?.value ?? 3)
+
+        const basePointsToAdd = Math.floor(amount * (baseRatePct / 100))
+        const extraPointsToAdd = u?.star_level && u.star_level >= 2 ? Math.floor(amount * (bonusRatePct / 100)) : 0
+        const pointsToAdd = basePointsToAdd + extraPointsToAdd
+
         const nextBalance = Number(u?.charge_balance || 0) + amount
         const nextPoints = Number(u?.points || 0) + pointsToAdd
         await client.from('users').update({ charge_balance: nextBalance, points: nextPoints }).eq('id', intent.user_id)
