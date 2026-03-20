@@ -141,6 +141,9 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       enabled: { label: '특가 섹션 활성화', unit: '', type: 'number', defaultValue: '1' },
       max_items: { label: '표시 상품 수', unit: '개', type: 'number', defaultValue: '8' },
       rolling_interval_sec: { label: '롤링 간격', unit: '초', type: 'number', defaultValue: '6' },
+      autoplay_enabled: { label: '자동 롤링 활성화', unit: '', type: 'number', defaultValue: '1' },
+      manual_nav_enabled: { label: '수동 좌우 버튼 활성화', unit: '', type: 'number', defaultValue: '1' },
+      autoplay_resume_delay_sec: { label: '수동 조작 후 자동재개 지연', unit: '초', type: 'number', defaultValue: '8' },
       show_timer: { label: '카운트다운 표시', unit: '', type: 'number', defaultValue: '1' },
     },
   },
@@ -151,6 +154,7 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       placeholder: { label: '검색 안내 문구', unit: '', type: 'text', defaultValue: '전체상품 검색 (브랜드/상품명/설명)' },
       fields: { label: '검색 대상 필드(csv)', unit: '', type: 'text', defaultValue: 'name,description,brand' },
       min_chars: { label: '최소 검색 글자수', unit: '자', type: 'number', defaultValue: '1' },
+      show_result_count: { label: '검색 결과 개수 표시', unit: '', type: 'number', defaultValue: '1' },
     },
   },
 }

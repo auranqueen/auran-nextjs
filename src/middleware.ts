@@ -72,25 +72,26 @@ export async function middleware(req: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
+    const redirectTarget = `${pathname}${url.search || ''}`
     if (isProtectedPath) {
       const loginUrl = req.nextUrl.clone()
       loginUrl.pathname = '/login'
       loginUrl.search = ''
-      loginUrl.searchParams.set('redirect', pathname)
+      loginUrl.searchParams.set('redirect', redirectTarget)
       return NextResponse.redirect(loginUrl)
     }
     if (isSuperConsole) {
-      const url = req.nextUrl.clone()
-      url.pathname = '/super-console/login'
-      url.searchParams.set('next', pathname)
-      return NextResponse.redirect(url)
+      const superLoginUrl = req.nextUrl.clone()
+      superLoginUrl.pathname = '/super-console/login'
+      superLoginUrl.searchParams.set('next', pathname)
+      return NextResponse.redirect(superLoginUrl)
     }
     // dashboards: if not logged in, keep original path for post-login return
-    const url = req.nextUrl.clone()
-    url.pathname = '/login'
-    url.search = ''
-    if (isDashboard) url.searchParams.set('redirect', pathname)
-    return NextResponse.redirect(url)
+    const loginUrl = req.nextUrl.clone()
+    loginUrl.pathname = '/login'
+    loginUrl.search = ''
+    if (isDashboard) loginUrl.searchParams.set('redirect', redirectTarget)
+    return NextResponse.redirect(loginUrl)
   }
 
   let role = await getDbRole(supabase, user.id)

@@ -68,6 +68,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const [actionDebug, setActionDebug] = useState('')
   const [nowTs, setNowTs] = useState(Date.now())
   const [specialIndex, setSpecialIndex] = useState(0)
+  const [specialResumeAt, setSpecialResumeAt] = useState(0)
   const [coords, setCoords] = useState(DEFAULT_COORDS)
 
   const reviewThreshold = getSettingNum('product_hook', 'review_threshold', 10)
@@ -80,6 +81,9 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const homeSpecialMaxItems = Math.max(1, getSettingNum('home_special', 'max_items', 8))
   const homeSpecialRollingSec = Math.max(1, getSettingNum('home_special', 'rolling_interval_sec', 6))
   const homeSpecialShowTimer = getSettingNum('home_special', 'show_timer', 1) === 1
+  const homeSpecialAutoplayEnabled = getSettingNum('home_special', 'autoplay_enabled', 1) === 1
+  const homeSpecialManualNavEnabled = getSettingNum('home_special', 'manual_nav_enabled', 1) === 1
+  const homeSpecialResumeDelaySec = Math.max(0, getSettingNum('home_special', 'autoplay_resume_delay_sec', 8))
   const homeSpecialTitle = getSetting('home_special', 'title', '오늘의 특가')
   const homeSearchPlaceholder = getSetting('home_search', 'placeholder', '전체상품 검색 (브랜드/상품명/설명)')
   const homeSearchFields = getSetting('home_search', 'fields', 'name,description,brand')
@@ -88,6 +92,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
     .filter(Boolean)
   const homeSearchMinChars = Math.max(0, getSettingNum('home_search', 'min_chars', 1))
   const homeSearchEnabled = getSettingNum('home_search', 'enabled', 1) === 1
+  const homeSearchShowCount = getSettingNum('home_search', 'show_result_count', 1) === 1
 
   const formatRemain = (endAt: string) => {
     const remainMs = new Date(endAt).getTime() - nowTs
@@ -284,18 +289,27 @@ export default function CustomerDashboardClient({ profile }: Props) {
   }, [])
 
   useEffect(() => {
-    if (!homeSpecialEnabled || specials.length <= 1) return
+    if (!homeSpecialEnabled || !homeSpecialAutoplayEnabled || specials.length <= 1) return
     const t = setInterval(() => {
       setSpecialIndex((prev) => {
+        if (Date.now() < specialResumeAt) return prev
         return (prev + 1) % specials.length
       })
     }, homeSpecialRollingSec * 1000)
     return () => clearInterval(t)
-  }, [homeSpecialEnabled, homeSpecialRollingSec, specials.length])
+  }, [homeSpecialEnabled, homeSpecialAutoplayEnabled, homeSpecialRollingSec, specials.length, specialResumeAt])
 
   const currentSpecial = specials.length > 0 ? specials[specialIndex % specials.length] : null
-  const prevSpecial = () => setSpecialIndex((prev) => (prev - 1 + specials.length) % Math.max(1, specials.length))
-  const nextSpecial = () => setSpecialIndex((prev) => (prev + 1) % Math.max(1, specials.length))
+  const prevSpecial = () => {
+    setSpecialResumeAt(Date.now() + homeSpecialResumeDelaySec * 1000)
+    setSpecialIndex((prev) => (prev - 1 + specials.length) % Math.max(1, specials.length))
+    logAction('special_prev_click', { index: specialIndex })
+  }
+  const nextSpecial = () => {
+    setSpecialResumeAt(Date.now() + homeSpecialResumeDelaySec * 1000)
+    setSpecialIndex((prev) => (prev + 1) % Math.max(1, specials.length))
+    logAction('special_next_click', { index: specialIndex })
+  }
 
   const buyerBadge = (n: number) => {
     if (n >= 500) return `👑 ${n}명 구매 · AURAN 베스트`
@@ -453,7 +467,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
                     <>
                 <div onClick={() => router.push(`/products/${p.id}`)} style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(128,128,128,0.3)' }}>
                   {p.thumb_img ? <Image src={p.thumb_img} alt={p.name} fill style={{ objectFit: 'cover' }} /> : null}
-                  {specials.length > 1 && (
+                  {homeSpecialManualNavEnabled && specials.length > 1 && (
                     <>
                       <button type="button" onClick={(e) => { e.stopPropagation(); prevSpecial() }} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: 999, border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(0,0,0,0.35)', color: '#fff', fontWeight: 900, cursor: 'pointer' }}>‹</button>
                       <button type="button" onClick={(e) => { e.stopPropagation(); nextSpecial() }} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: 999, border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(0,0,0,0.35)', color: '#fff', fontWeight: 900, cursor: 'pointer' }}>›</button>
@@ -536,6 +550,16 @@ export default function CustomerDashboardClient({ profile }: Props) {
               placeholder={homeSearchPlaceholder}
               style={{ width: '100%', height: 38, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', padding: '0 12px', outline: 'none', fontSize: 12 }}
             />
+            <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {homeSearchShowCount ? (
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>검색 결과 {filteredProducts.length}개</div>
+              ) : <div />}
+              {!!productSearch && (
+                <button type="button" onClick={() => setProductSearch('')} style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', borderRadius: 999, fontSize: 11, padding: '4px 10px' }}>
+                  검색 초기화
+                </button>
+              )}
+            </div>
           </div>
           )}
 
