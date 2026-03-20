@@ -6,6 +6,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import NoticeBell from '@/components/NoticeBell'
 import { createClient } from '@/lib/supabase/client'
+import { useAdminSettings } from '@/hooks/useAdminSettings'
 
 const GOLD = '#c9a84c'
 
@@ -44,9 +45,6 @@ type Answers = {
   q4: Q4Key | null
   q5: Lifestyle
 }
-
-const BRAND_PRODUCT_RECOMMEND_LIMIT = 6
-const RECOMMEND_PRODUCT_LIMIT = 5
 
 function initialScores(): Scores {
   return { dry: 0, oily: 0, combo: 0, acne: 0, sensitive: 0, pigment: 0, aging: 0 }
@@ -108,35 +106,35 @@ function progressForStep(step: Step) {
   return 0
 }
 
-const Q1_OPTIONS: Array<{ key: Q1Key; label: string; delta: Partial<Scores> }> = [
-  { key: 'dry3', label: '😌 당기고 건조해요', delta: { dry: 3 } },
-  { key: 'dry1_combo1', label: '😊 약간 당기지만 금방 괜찮아져요', delta: { dry: 1, combo: 1 } },
-  { key: 'combo2', label: '🌊 T존만 번들거려요', delta: { combo: 2 } },
-  { key: 'combo2_from_normal', label: '💦 전체적으로 촉촉해요', delta: { combo: 2 } },
-  { key: 'oily3', label: '🫧 금방 번들거리고 끈적여요', delta: { oily: 3 } },
+const Q1_OPTIONS: Array<{ key: Q1Key; label: string }> = [
+  { key: 'dry3', label: '😌 당기고 건조해요' },
+  { key: 'dry1_combo1', label: '😊 약간 당기지만 금방 괜찮아져요' },
+  { key: 'combo2', label: '🌊 T존만 번들거려요' },
+  { key: 'combo2_from_normal', label: '💦 전체적으로 촉촉해요' },
+  { key: 'oily3', label: '🫧 금방 번들거리고 끈적여요' },
 ]
 
-const Q2_OPTIONS: Array<{ key: Q2Key; label: string; delta: Partial<Scores> }> = [
-  { key: 'dry2', label: '💧 건조함·당김', delta: { dry: 2 } },
-  { key: 'acne2', label: '🔴 트러블·여드름', delta: { acne: 2 } },
-  { key: 'oily1_acne1', label: '🕳 모공·블랙헤드', delta: { oily: 1, acne: 1 } },
-  { key: 'pigment2', label: '🟤 잡티·색소침착', delta: { pigment: 2 } },
-  { key: 'sensitive2', label: '😣 홍조·민감', delta: { sensitive: 2 } },
-  { key: 'aging2', label: '📉 탄력저하·주름', delta: { aging: 2 } },
+const Q2_OPTIONS: Array<{ key: Q2Key; label: string }> = [
+  { key: 'dry2', label: '💧 건조함·당김' },
+  { key: 'acne2', label: '🔴 트러블·여드름' },
+  { key: 'oily1_acne1', label: '🕳 모공·블랙헤드' },
+  { key: 'pigment2', label: '🟤 잡티·색소침착' },
+  { key: 'sensitive2', label: '😣 홍조·민감' },
+  { key: 'aging2', label: '📉 탄력저하·주름' },
 ]
 
-const Q3_OPTIONS: Array<{ key: Q3Key; label: string; delta: Partial<Scores> }> = [
-  { key: 'q3_dry2', label: '✨ 모공이 거의 안 보이고 깨끗해요', delta: { dry: 2 } },
-  { key: 'q3_normal2', label: '😊 약간 보이지만 신경 안 써요', delta: { combo: 2 } },
-  { key: 'q3_combo2', label: '🌊 T존이 번들거리고 모공이 보여요', delta: { combo: 2 } },
-  { key: 'q3_oily3', label: '🫧 전체 번들거리고 모공이 커요', delta: { oily: 3 } },
+const Q3_OPTIONS: Array<{ key: Q3Key; label: string }> = [
+  { key: 'q3_dry2', label: '✨ 모공이 거의 안 보이고 깨끗해요' },
+  { key: 'q3_normal2', label: '😊 약간 보이지만 신경 안 써요' },
+  { key: 'q3_combo2', label: '🌊 T존이 번들거리고 모공이 보여요' },
+  { key: 'q3_oily3', label: '🫧 전체 번들거리고 모공이 커요' },
 ]
 
-const Q4_OPTIONS: Array<{ key: Q4Key; label: string; delta: Partial<Scores> }> = [
-  { key: 'q4_normal1', label: '😌 크게 신경 쓰이지 않아요', delta: { combo: 1 } },
-  { key: 'q4_pigment2', label: '🟤 잡티·기미가 약간 신경 쓰여요', delta: { pigment: 2 } },
-  { key: 'q4_acne3', label: '🔴 트러블이 자주 생겨요', delta: { acne: 3 } },
-  { key: 'q4_acne2_pigment2', label: '😣 색소·트러블 둘 다 심해요', delta: { acne: 2, pigment: 2 } },
+const Q4_OPTIONS: Array<{ key: Q4Key; label: string }> = [
+  { key: 'q4_normal1', label: '😌 크게 신경 쓰이지 않아요' },
+  { key: 'q4_pigment2', label: '🟤 잡티·기미가 약간 신경 쓰여요' },
+  { key: 'q4_acne3', label: '🔴 트러블이 자주 생겨요' },
+  { key: 'q4_acne2_pigment2', label: '😣 색소·트러블 둘 다 심해요' },
 ]
 
 const Q5_SLEEP: Array<{ key: Q5SleepKey; label: string }> = [
@@ -145,16 +143,16 @@ const Q5_SLEEP: Array<{ key: Q5SleepKey; label: string }> = [
   { key: 'sleep_gt7', label: '7시간 이상' },
 ]
 
-const Q5_DIET: Array<{ key: Q5DietKey; label: string; delta: Partial<Scores> }> = [
-  { key: 'diet_unbalanced_acne1', label: '불규칙·인스턴트 많음', delta: { acne: 1 } },
-  { key: 'diet_mid', label: '보통', delta: {} },
-  { key: 'diet_balanced_normal1', label: '균형 잡힌 식단', delta: { combo: 1 } },
+const Q5_DIET: Array<{ key: Q5DietKey; label: string }> = [
+  { key: 'diet_unbalanced_acne1', label: '불규칙·인스턴트 많음' },
+  { key: 'diet_mid', label: '보통' },
+  { key: 'diet_balanced_normal1', label: '균형 잡힌 식단' },
 ]
 
-const Q5_SUN: Array<{ key: Q5SunscreenKey; label: string; delta: Partial<Scores> }> = [
-  { key: 'sunscreen_none_pigment1_aging1', label: '거의 안 함', delta: { pigment: 1, aging: 1 } },
-  { key: 'sunscreen_some_mid', label: '가끔', delta: {} },
-  { key: 'sunscreen_daily_normal1', label: '매일', delta: { combo: 1 } },
+const Q5_SUN: Array<{ key: Q5SunscreenKey; label: string }> = [
+  { key: 'sunscreen_none_pigment1_aging1', label: '거의 안 함' },
+  { key: 'sunscreen_some_mid', label: '가끔' },
+  { key: 'sunscreen_daily_normal1', label: '매일' },
 ]
 
 function todayKST(): string {
@@ -166,6 +164,21 @@ function todayKST(): string {
 export default function CustomerSkinAnalysisQuizPage() {
   const supabase = createClient()
   const router = useRouter()
+
+  const { loading: adminLoading, getSetting, getSettingNum } = useAdminSettings()
+  const rewardPoints = getSettingNum('skin_quiz', 'reward_points', 0)
+  const recommendLimit = getSettingNum('skin_quiz', 'recommend_product_limit', 0)
+  const productSearchLimit = getSettingNum('skin_quiz', 'product_search_limit', 0)
+  const productMinPrice = getSettingNum('skin_quiz', 'product_min_price', 0)
+
+  const deltasJson = getSetting('skin_quiz', 'quiz_deltas_json', '{}')
+  const quizDeltas = useMemo(() => {
+    try {
+      return JSON.parse(deltasJson) as Record<string, Partial<Scores>>
+    } catch {
+      return {}
+    }
+  }, [deltasJson])
 
   const [step, setStep] = useState<Step>('start')
   const [answers, setAnswers] = useState<Answers>({
@@ -236,15 +249,17 @@ export default function CustomerSkinAnalysisQuizPage() {
   }, [])
 
   const canGoNext = useMemo(() => {
+    if (adminLoading) return false
     if (step === 'q1') return !!answers.q1
     if (step === 'q2') return answers.q2.length > 0
     if (step === 'q3') return !!answers.q3
     if (step === 'q4') return !!answers.q4
     if (step === 'q5') return !!answers.q5.sleep && !!answers.q5.diet && !!answers.q5.sunscreen
     return false
-  }, [answers, step])
+  }, [adminLoading, answers, step])
 
   const startQuiz = () => {
+    if (adminLoading) return
     if (todayDone) return
     setStep('q1')
   }
@@ -252,30 +267,14 @@ export default function CustomerSkinAnalysisQuizPage() {
   const computeScores = (): { scores: Scores; finalType: string } => {
     const scores = initialScores()
 
-    if (answers.q1) {
-      const opt = Q1_OPTIONS.find(o => o.key === answers.q1)
-      if (opt) applyDelta(scores, opt.delta)
-    }
+    if (answers.q1) applyDelta(scores, quizDeltas[answers.q1] || {})
     for (const k of answers.q2) {
-      const opt = Q2_OPTIONS.find(o => o.key === k)
-      if (opt) applyDelta(scores, opt.delta)
+      applyDelta(scores, quizDeltas[k] || {})
     }
-    if (answers.q3) {
-      const opt = Q3_OPTIONS.find(o => o.key === answers.q3)
-      if (opt) applyDelta(scores, opt.delta)
-    }
-    if (answers.q4) {
-      const opt = Q4_OPTIONS.find(o => o.key === answers.q4)
-      if (opt) applyDelta(scores, opt.delta)
-    }
-    if (answers.q5.diet) {
-      const opt = Q5_DIET.find(o => o.key === answers.q5.diet)
-      if (opt) applyDelta(scores, opt.delta)
-    }
-    if (answers.q5.sunscreen) {
-      const opt = Q5_SUN.find(o => o.key === answers.q5.sunscreen)
-      if (opt) applyDelta(scores, opt.delta)
-    }
+    if (answers.q3) applyDelta(scores, quizDeltas[answers.q3] || {})
+    if (answers.q4) applyDelta(scores, quizDeltas[answers.q4] || {})
+    if (answers.q5.diet) applyDelta(scores, quizDeltas[answers.q5.diet] || {})
+    if (answers.q5.sunscreen) applyDelta(scores, quizDeltas[answers.q5.sunscreen] || {})
 
     const finalType = computeFinalSkinType(scores)
     return { scores, finalType }
@@ -332,13 +331,13 @@ export default function CustomerSkinAnalysisQuizPage() {
         .from('products')
         .select('id,name,thumb_img,retail_price,brands(name),skin_types,sales_count')
         .eq('status', 'active')
-        .gt('retail_price', 0)
+        .gt('retail_price', productMinPrice)
         .order('sales_count', { ascending: false })
-        .limit(200)
+        .limit(productSearchLimit)
 
       const allProducts = products || []
       const matched = allProducts.filter((p: any) => Array.isArray(p.skin_types) && p.skin_types.includes(finalType))
-      const rec = (matched.length ? matched : allProducts).slice(0, RECOMMEND_PRODUCT_LIMIT)
+      const rec = (matched.length ? matched : allProducts).slice(0, recommendLimit)
 
       // skin_profiles 저장 (없으면 skin_analysis로 fallback)
       const q2Concerns = answers.q2
@@ -386,15 +385,15 @@ export default function CustomerSkinAnalysisQuizPage() {
         await supabase.from('point_history').insert({
           user_id: userRowId,
           type: 'earn',
-          amount: 500,
+          amount: rewardPoints,
           description: 'AI 피부 분석 완료',
         } as any)
 
         await supabase.from('notifications').insert({
           user_id: userRowId,
           type: 'point',
-          title: '500P 적립!',
-          body: 'AI 피부 분석 완료로 500포인트가 적립되었습니다.',
+          title: `${rewardPoints}P 적립!`,
+          body: `AI 피부 분석 완료로 ${rewardPoints}포인트가 적립되었습니다.`,
           is_read: false,
         } as any)
       }

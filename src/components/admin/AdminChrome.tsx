@@ -62,6 +62,7 @@ const MENU = [
       { label: '포인트 설정', href: '/admin/settings/points', icon: '✨' },
       { label: '수수료·추천 설정', href: '/admin/settings/commission', icon: '💰' },
       { label: '이상 감지·알림', href: '/admin/settings/anomaly', icon: '🚨' },
+      { label: 'AURAN 설정', href: '/admin/settings/admin-settings', icon: '🧩' },
       { label: '로그인 기록', href: '/admin/logs', icon: '📋' },
       { label: '개인정보 접근 로그', href: '/admin/privacy', icon: '🔒' },
     ],
@@ -85,6 +86,7 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/settings/points')) return '포인트 설정'
   if (path.startsWith('/admin/settings/commission')) return '수수료·추천 설정'
   if (path.startsWith('/admin/settings/anomaly')) return '이상 감지·알림'
+  if (path.startsWith('/admin/settings/admin-settings')) return 'AURAN 설정'
   if (path.startsWith('/admin/logs')) return '로그인 기록'
   if (path.startsWith('/admin/privacy')) return '개인정보 접근 로그'
   return 'Admin Console'

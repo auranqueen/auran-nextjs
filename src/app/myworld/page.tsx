@@ -6,6 +6,7 @@ import DashboardBottomNav from '@/components/DashboardBottomNav'
 import DashboardHeader from '@/components/DashboardHeader'
 import NoticeBell from '@/components/NoticeBell'
 import { createClient } from '@/lib/supabase/client'
+import { useAdminSettings } from '@/hooks/useAdminSettings'
 
 const GOLD = 'var(--gold)'
 const COMMUNITY_BUCKET = 'community'
@@ -70,9 +71,9 @@ function todayKSTDate(): string {
   return kst.toISOString().slice(0, 10)
 }
 
-function stars(score: number) {
-  const s = Math.max(0, Math.min(5, Math.floor(score)))
-  return '★'.repeat(s) + '☆'.repeat(5 - s)
+function stars(score: number, maxStars: number) {
+  const s = Math.max(0, Math.min(maxStars, Math.floor(score)))
+  return '★'.repeat(s) + '☆'.repeat(maxStars - s)
 }
 
 function skinBadgeText(skinType: string | null | undefined) {
@@ -102,6 +103,20 @@ export default function MyWorldPage() {
   const supabase = createClient()
   const router = useRouter()
 
+  const { loading: adminSettingsLoading, getSettingNum } = useAdminSettings()
+
+  const guestbookMaxChars = getSettingNum('myworld', 'guestbook_max_chars', 300)
+  const journalsFetchLimit = getSettingNum('myworld', 'journals_fetch_limit', 30)
+  const guestbookFetchLimit = getSettingNum('myworld', 'guestbook_fetch_limit', 50)
+  const ordersFetchLimit = getSettingNum('myworld', 'orders_fetch_limit', 30)
+  const reviewMaxImages = getSettingNum('myworld', 'review_max_images', 5)
+  const reviewPreviewMax = getSettingNum('myworld', 'review_preview_max', 4)
+  const reviewStarMin = getSettingNum('myworld', 'review_star_min', 1)
+  const reviewStarMax = getSettingNum('myworld', 'review_star_max', 5)
+  const journalScoreMin = getSettingNum('myworld', 'journal_score_min', 1)
+  const journalScoreMax = getSettingNum('myworld', 'journal_score_max', 5)
+  const journalScoreDefault = getSettingNum('myworld', 'journal_score_default', 3)
+
   const [loading, setLoading] = useState(true)
   const [me, setMe] = useState<ProfileRow | null>(null)
   const [tab, setTab] = useState<TabId>('journal')
@@ -118,7 +133,7 @@ export default function MyWorldPage() {
 
   const [journalModalOpen, setJournalModalOpen] = useState(false)
   const [journalMemo, setJournalMemo] = useState('')
-  const [journalScore, setJournalScore] = useState<number>(3)
+  const [journalScore, setJournalScore] = useState<number>(journalScoreDefault)
   const [journalPhotoFile, setJournalPhotoFile] = useState<File | null>(null)
   const [journalPhotoPreview, setJournalPhotoPreview] = useState<string | null>(null)
   const [journalSaving, setJournalSaving] = useState(false)
@@ -130,7 +145,7 @@ export default function MyWorldPage() {
 
   const [reviewModalOpen, setReviewModalOpen] = useState(false)
   const [reviewTarget, setReviewTarget] = useState<{ product: ProductLite; orderId: string | null } | null>(null)
-  const [reviewRating, setReviewRating] = useState<number>(5)
+  const [reviewRating, setReviewRating] = useState<number>(reviewStarMax)
   const [reviewContent, setReviewContent] = useState('')
   const [reviewFiles, setReviewFiles] = useState<File[]>([])
   const [reviewPreviews, setReviewPreviews] = useState<string[]>([])
@@ -148,7 +163,7 @@ export default function MyWorldPage() {
       .select('id,user_id,date,photo_url,memo,score,created_at')
       .eq('user_id', userId)
       .order('date', { ascending: false })
-      .limit(30)
+      .limit(journalsFetchLimit)
     setJournals((data || []) as SkinJournalRow[])
   }
 
@@ -158,7 +173,7 @@ export default function MyWorldPage() {
       .select('id,owner_id,writer_id,writer_name,message,created_at')
       .eq('owner_id', ownerId)
       .order('created_at', { ascending: false })
-      .limit(50)
+      .limit(guestbookFetchLimit)
     setGuestbookRows((data || []) as GuestbookRow[])
   }
 
@@ -170,7 +185,7 @@ export default function MyWorldPage() {
       .eq('customer_id', userId)
       .eq('status', '배송완료')
       .order('delivered_at', { ascending: false })
-      .limit(30)
+      .limit(ordersFetchLimit)
 
     const orders = (ordersData || []) as any[]
     const purchased: Record<string, { orderId: string | null; productName: string }> = {}
@@ -311,7 +326,7 @@ export default function MyWorldPage() {
     setJournalError('')
     setJournalSaving(false)
     setJournalMemo('')
-    setJournalScore(3)
+    setJournalScore(journalScoreDefault)
     setJournalPhotoFile(null)
     if (journalPhotoPreview) URL.revokeObjectURL(journalPhotoPreview)
     setJournalPhotoPreview(null)
@@ -389,7 +404,7 @@ export default function MyWorldPage() {
     setReviewError('')
     setReviewSaving(false)
     setReviewTarget({ product: card.product, orderId: card.orderId })
-    setReviewRating(5)
+    setReviewRating(reviewStarMax)
     setReviewContent('')
     setReviewFiles([])
     for (const p of reviewPreviews) URL.revokeObjectURL(p)
@@ -399,7 +414,7 @@ export default function MyWorldPage() {
 
   const onReviewFiles = (files: FileList | null) => {
     if (!files || !reviewTarget) return
-    const incoming = Array.from(files).slice(0, 5) // 안전: 너무 많은 업로드 방지
+    const incoming = Array.from(files).slice(0, reviewMaxImages) // 안전: 너무 많은 업로드 방지
     // 기존 미리보기 정리
     setReviewFiles(incoming)
     setReviewPreviews(incoming.map(f => URL.createObjectURL(f)))
@@ -411,7 +426,7 @@ export default function MyWorldPage() {
       setReviewError('후기 내용을 입력해주세요.')
       return
     }
-    if (reviewRating < 1 || reviewRating > 5) {
+    if (reviewRating < reviewStarMin || reviewRating > reviewStarMax) {
       setReviewError('별점을 1~5 사이로 선택해주세요.')
       return
     }
@@ -607,7 +622,7 @@ export default function MyWorldPage() {
                         <div style={{ fontSize: 12, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace" }}>
                           {j.date}
                         </div>
-                        <div style={{ fontSize: 12, color: GOLD, fontWeight: 900 }}>{stars(j.score)}</div>
+                        <div style={{ fontSize: 12, color: GOLD, fontWeight: 900 }}>{stars(j.score, journalScoreMax)}</div>
                       </div>
                       <div style={{ marginTop: 8, fontSize: 13, color: '#fff', fontWeight: 800 }}>
                         {j.memo || '메모 없음'}
@@ -657,13 +672,13 @@ export default function MyWorldPage() {
                           <div style={{ marginTop: 10 }}>
                             {reviewed ? (
                               <>
-                                <div style={{ fontSize: 12, color: GOLD, fontWeight: 900 }}>{stars(r!.rating)}</div>
+                                <div style={{ fontSize: 12, color: GOLD, fontWeight: 900 }}>{stars(r!.rating, reviewStarMax)}</div>
                                 <div style={{ marginTop: 6, fontSize: 13, color: '#fff', fontWeight: 800, lineHeight: 1.5 }}>
                                   {r!.content || ''}
                                 </div>
                                 {r!.images && r!.images.length > 0 && (
                                   <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-                                    {r!.images.slice(0, 4).map((img, idx) => (
+                                    {r!.images.slice(0, reviewPreviewMax).map((img, idx) => (
                                       <div key={`${img}_${idx}`} style={{ width: 64, height: 64, borderRadius: 10, overflow: 'hidden', background: 'rgba(0,0,0,0.2)' }}>
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -713,6 +728,7 @@ export default function MyWorldPage() {
                   value={guestbookMessage}
                   onChange={e => setGuestbookMessage(e.target.value)}
                   placeholder="메시지를 남겨보세요."
+                  maxLength={guestbookMaxChars}
                   style={{
                     width: '100%',
                     minHeight: 70,
@@ -727,7 +743,9 @@ export default function MyWorldPage() {
                   }}
                 />
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginTop: 10 }}>
-                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>{guestbookMessage.trim().length}/300</div>
+                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+                    {guestbookMessage.trim().length}/{guestbookMaxChars}
+                  </div>
                   <button
                     type="button"
                     onClick={addGuestbook}
@@ -884,9 +902,9 @@ export default function MyWorldPage() {
                 </div>
               </div>
 
-              <div style={{ marginTop: 14, fontSize: 12, color: 'var(--text3)', marginBottom: 8, fontWeight: 900 }}>피부점수(1~5)</div>
+              <div style={{ marginTop: 14, fontSize: 12, color: 'var(--text3)', marginBottom: 8, fontWeight: 900 }}>{`피부점수(${journalScoreMin}~${journalScoreMax})`}</div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                {[1, 2, 3, 4, 5].map(s => {
+                {Array.from({ length: Math.max(0, journalScoreMax - journalScoreMin + 1) }, (_, idx) => journalScoreMin + idx).map(s => {
                   const active = journalScore === s
                   return (
                     <button
@@ -976,7 +994,7 @@ export default function MyWorldPage() {
             <div style={{ marginTop: 12 }}>
               <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 900, marginBottom: 8 }}>별점</div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                {[1, 2, 3, 4, 5].map(s => {
+                {Array.from({ length: Math.max(0, reviewStarMax - reviewStarMin + 1) }, (_, idx) => reviewStarMin + idx).map(s => {
                   const active = reviewRating === s
                   return (
                     <button
@@ -1004,7 +1022,7 @@ export default function MyWorldPage() {
                 <input type="file" multiple accept="image/*" onChange={e => onReviewFiles(e.target.files)} style={{ width: '100%', color: '#fff' }} />
                 {reviewPreviews.length > 0 && (
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-                    {reviewPreviews.slice(0, 4).map((p, idx) => (
+                    {reviewPreviews.slice(0, reviewPreviewMax).map((p, idx) => (
                       <div key={`${p}_${idx}`} style={{ width: 64, height: 64, borderRadius: 12, overflow: 'hidden', background: 'rgba(0,0,0,0.2)' }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={p} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

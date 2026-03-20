@@ -1,0 +1,9 @@
+When implementing any new feature in AURAN:
+1. Always create admin_settings seed data for any numeric/text/rate values
+2. Always add admin UI controls in /super-console for those settings  
+3. Always use getSetting('category','key') hook instead of hardcoded values
+4. Never hardcode points, rates, conditions, or thresholds
+5. Commit and push after every completed task
+
+This rule applies to ALL features without exception.
+

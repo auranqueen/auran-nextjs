@@ -94,5 +94,26 @@ export function useAdminSettings() {
     return true
   }
 
-  return { settings, raw, loading, saving, dirty, saved, error, get, getNum, getBool, set, saveCategory, saveAll, refetch: fetchSettings }
+  // alias: getSetting('category','key') 형태로도 읽기 편하게 제공
+  const getSetting = get
+  const getSettingNum = getNum
+
+  return {
+    settings,
+    raw,
+    loading,
+    saving,
+    dirty,
+    saved,
+    error,
+    get,
+    getNum,
+    getBool,
+    getSetting,
+    getSettingNum,
+    set,
+    saveCategory,
+    saveAll,
+    refetch: fetchSettings,
+  }
 }
