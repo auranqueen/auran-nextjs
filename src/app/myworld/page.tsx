@@ -623,7 +623,7 @@ export default function MyWorldPage() {
         } = await supabase.auth.getUser()
 
         if (!user || authErr) {
-          router.replace('/login?role=customer')
+          router.replace('/login?redirect=/myworld')
           return
         }
 
@@ -634,7 +634,7 @@ export default function MyWorldPage() {
           .single()
 
         if (!data?.id) {
-          router.replace('/login?role=customer')
+          router.replace('/login?redirect=/myworld')
           return
         }
 

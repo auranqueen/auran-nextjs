@@ -140,7 +140,7 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       title: { label: '섹션 제목', unit: '', type: 'text', defaultValue: '오늘의 특가' },
       enabled: { label: '특가 섹션 활성화', unit: '', type: 'number', defaultValue: '1' },
       max_items: { label: '표시 상품 수', unit: '개', type: 'number', defaultValue: '8' },
-      rolling_interval_sec: { label: '롤링 간격', unit: '초', type: 'number', defaultValue: '3' },
+      rolling_interval_sec: { label: '롤링 간격', unit: '초', type: 'number', defaultValue: '6' },
       show_timer: { label: '카운트다운 표시', unit: '', type: 'number', defaultValue: '1' },
     },
   },

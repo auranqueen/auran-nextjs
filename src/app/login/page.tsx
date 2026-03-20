@@ -54,15 +54,15 @@ function LoginForm() {
         setRememberEmail(checked)
       } catch {}
 
-      // 역할 선택으로 들어온 경우(/login?role=...)는 자동 리다이렉트 금지
-      if (params.get('role')) return
+      // 역할 선택/리다이렉트로 들어온 경우 자동 리다이렉트 금지
+      if (params.get('role') || redirectParam) return
       const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
       if (!stored) return
       const { data } = await supabase.auth.getUser()
       if (!data.user) return
       router.replace(positionToDashboardPath(stored))
     })()
-  }, [params, router, supabase])
+  }, [params, redirectParam, router, supabase])
 
 
   async function handleLogin(e: React.FormEvent) {
