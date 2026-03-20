@@ -30,6 +30,7 @@ export default function AdminInvitePage() {
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<InviteRow[]>([])
+  const [analysisPoint, setAnalysisPoint] = useState(500)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [modalRole, setModalRole] = useState<(typeof ROLES)[number]['role']>('customer')
@@ -46,6 +47,13 @@ export default function AdminInvitePage() {
     const run = async () => {
       setLoading(true)
       const { data } = await supabase.from('invite_links').select('*').order('created_at', { ascending: false }).limit(200)
+      const { data: p } = await supabase
+        .from('admin_settings')
+        .select('value')
+        .eq('category', 'points_action')
+        .eq('key', 'ai_analysis_complete')
+        .maybeSingle()
+      setAnalysisPoint(Number(p?.value ?? 500))
       setRows((data || []) as any)
       setLoading(false)
     }
@@ -53,7 +61,7 @@ export default function AdminInvitePage() {
   }, [supabase])
 
   const template = (role: string, url: string, note: string) => {
-    if (role === 'customer') return `[AURAN] ${note ? note + '\n' : ''}AI 피부 분석을 무료로 받아보세요 🌿\n\n피부 타입을 정확히 분석하고 맞춤 제품과 케어 루틴을 추천받으세요.\n\n👇 지금 무료 가입\n${url}\n\n분석 완료 시 500P 즉시 적립 🎁`
+    if (role === 'customer') return `[AURAN] ${note ? note + '\n' : ''}AI 피부 분석을 무료로 받아보세요 🌿\n\n피부 타입을 정확히 분석하고 맞춤 제품과 케어 루틴을 추천받으세요.\n\n👇 지금 무료 가입\n${url}\n\n분석 완료 시 ${analysisPoint}P 즉시 적립 🎁`
     if (role === 'partner') return `[AURAN 파트너스] ${note ? note + '\n' : ''}내 SNS가 수익 채널이 됩니다 💰\n\n추천 링크 공유 → 구매 시 커미션 자동 정산\n\n👇 파트너 가입 신청\n${url}`
     if (role === 'owner') return `[AURAN 원장님] ${note ? note + '\n' : ''}살롱 운영을 스마트하게 바꿔보세요 🏥\n\n✅ 예약 관리 자동화\n✅ 고객 피부 분석 데이터 확인\n✅ 제품 판매 커미션\n\n👇 원장님 등록 신청\n${url}`
     return `[AURAN 브랜드 입점] ${note ? note + '\n' : ''}전국 클리닉 살롱에 제품을 공급하세요 🧴\n\n✅ AI 피부 분석 자동 추천 노출\n✅ 전국 원장님 판매 채널\n\n👇 입점 신청\n${url}`

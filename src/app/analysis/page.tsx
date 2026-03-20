@@ -6,12 +6,15 @@ import NoticeBell from '@/components/NoticeBell'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAdminSettings } from '@/hooks/useAdminSettings'
 
 export default function AnalysisPage() {
   const supabase = createClient()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any | null>(null)
+  const { getSettingNum } = useAdminSettings()
+  const analysisPoint = getSettingNum('points_action', 'ai_analysis_complete', 500)
 
   useEffect(() => {
     const run = async () => {
@@ -57,7 +60,7 @@ export default function AnalysisPage() {
             <div style={{ background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.22)', borderRadius: 14, padding: '14px 14px' }}>
               <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--gold)', marginBottom: 6 }}>🧬 분석 시작</div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, marginBottom: 10 }}>
-                설문 기반 피부 타입 분석 후 맞춤 제품을 추천해 드립니다. 완료 시 500P 적립!
+                {`설문 기반 피부 타입 분석 후 맞춤 제품을 추천해 드립니다. 완료 시 ${analysisPoint}P 적립!`}
               </div>
               <button
                 type="button"

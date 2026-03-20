@@ -61,7 +61,7 @@ export default async function JoinPage({ params, searchParams }: Props) {
   }
 
   const ROLE_META: Record<string, { label: string; icon: string | null; color: string; desc: string; benefit: string }> = {
-    customer: { label: '고객', icon: '💧', color: '#c9a84c', desc: 'AI 피부 분석 + 제품 추천 + 살롱 예약', benefit: '🎁 가입 즉시 500P 적립' },
+    customer: { label: '고객', icon: '💧', color: '#c9a84c', desc: 'AI 피부 분석 + 제품 추천 + 살롱 예약', benefit: '🎁 가입 즉시 포인트 적립' },
     partner:  { label: '파트너스', icon: '💎', color: '#4a8dc0', desc: '추천링크 + 커미션 수익', benefit: '💰 가입 즉시 추천 링크 생성' },
     owner:    { label: '원장님', icon: '✨', color: '#bf5f90', desc: '예약관리 + 스토어 + 매출관리', benefit: '⭐ BASIC 스토어 무료 시작' },
     brand:    { label: '브랜드사', icon: null, color: '#4cad7e', desc: 'AI 추천 노출 + 전국 살롱 납품', benefit: '✅ 입점 신청 즉시 검토' },

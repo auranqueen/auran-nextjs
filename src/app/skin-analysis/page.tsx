@@ -166,7 +166,7 @@ export default function CustomerSkinAnalysisQuizPage() {
   const router = useRouter()
 
   const { loading: adminLoading, getSetting, getSettingNum } = useAdminSettings()
-  const rewardPoints = getSettingNum('skin_quiz', 'reward_points', 0)
+  const rewardPoints = getSettingNum('points_action', 'ai_analysis_complete', 500)
   const recommendLimit = getSettingNum('skin_quiz', 'recommend_product_limit', 0)
   const productSearchLimit = getSettingNum('skin_quiz', 'product_search_limit', 0)
   const productMinPrice = getSettingNum('skin_quiz', 'product_min_price', 0)
@@ -380,7 +380,7 @@ export default function CustomerSkinAnalysisQuizPage() {
         }
       }
 
-      // +500P 적립 (기존 방식: point_history + 알림장)
+      // 포인트 적립 (admin_settings: points_action.ai_analysis_complete)
       if (userRowId) {
         await supabase.from('point_history').insert({
           user_id: userRowId,
@@ -670,7 +670,7 @@ export default function CustomerSkinAnalysisQuizPage() {
               <h1 style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 22, color: '#fff', marginBottom: 8 }}>{`AI 피부분석`}</h1>
               <p style={{ fontSize: 14, color: 'var(--text3)', lineHeight: 1.6 }}>
                 5문항 퀴즈로 피부 타입을 찾아보세요.<br />
-                <span style={{ color: GOLD, fontWeight: 700 }}>완료 시 500P 적립!</span>
+                <span style={{ color: GOLD, fontWeight: 700 }}>{`완료 시 ${rewardPoints}P 적립!`}</span>
               </p>
             </div>
 
@@ -679,7 +679,7 @@ export default function CustomerSkinAnalysisQuizPage() {
                 <div style={{ fontSize: 32, marginBottom: 12 }}>✅</div>
                 <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', marginBottom: 8 }}>오늘 분석 완료!</div>
                 <div style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.6, marginBottom: 16 }}>
-                  내일 다시 도전하시면<br />500P를 추가로 적립할 수 있어요.
+                  {`내일 다시 도전하시면`}<br />{`${rewardPoints}P를 추가로 적립할 수 있어요.`}
                 </div>
                 <button
                   onClick={() => router.push('/products')}

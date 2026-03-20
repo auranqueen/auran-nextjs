@@ -55,9 +55,25 @@ export async function POST(req: NextRequest) {
   }
 
   const amount = Number(intent.amount) || 0
-  const pointsReclaim = Math.floor(amount * 0.05)
+  const { data: ratesBase } = await client
+    .from('admin_settings')
+    .select('value')
+    .eq('category', 'points_payment')
+    .eq('key', 'wallet_charge_rate')
+    .maybeSingle()
+  const { data: ratesBonus } = await client
+    .from('admin_settings')
+    .select('value')
+    .eq('category', 'star_benefit')
+    .eq('key', 'lv2_charge_bonus')
+    .maybeSingle()
 
-  const { data: u } = await client.from('users').select('charge_balance, points').eq('id', me.id).single()
+  const { data: u } = await client.from('users').select('charge_balance, points, star_level').eq('id', me.id).single()
+  const baseRatePct = Number(ratesBase?.value ?? 5)
+  const bonusRatePct = Number(ratesBonus?.value ?? 3)
+  const basePoints = Math.floor(amount * (baseRatePct / 100))
+  const extraPoints = u?.star_level && u.star_level >= 2 ? Math.floor(amount * (bonusRatePct / 100)) : 0
+  const pointsReclaim = basePoints + extraPoints
   const curBalance = Number(u?.charge_balance || 0)
   const curPoints = Number(u?.points || 0)
 

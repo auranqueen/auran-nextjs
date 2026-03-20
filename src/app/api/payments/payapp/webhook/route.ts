@@ -101,15 +101,15 @@ export async function POST(req: NextRequest) {
         const { data: baseRateRow } = await client
           .from('admin_settings')
           .select('value')
-          .eq('category', 'star_system')
-          .eq('key', 'charge_base_points_pct')
+          .eq('category', 'points_payment')
+          .eq('key', 'wallet_charge_rate')
           .maybeSingle()
 
         const { data: bonusRateRow } = await client
           .from('admin_settings')
           .select('value')
-          .eq('category', 'star_system')
-          .eq('key', 'lv2_charge_bonus_pct')
+          .eq('category', 'star_benefit')
+          .eq('key', 'lv2_charge_bonus')
           .maybeSingle()
 
         const baseRatePct = Number(baseRateRow?.value ?? 5)
@@ -165,11 +165,11 @@ export async function POST(req: NextRequest) {
             const { data: leadPointRow } = await client
               .from('admin_settings')
               .select('value')
-              .eq('category', 'star_system')
-              .eq('key', 'purchase_lead_points')
+              .eq('category', 'points_action')
+              .eq('key', 'share_purchase')
               .maybeSingle()
 
-            const purchaseLeadPoints = Number(leadPointRow?.value ?? 8888)
+            const purchaseLeadPoints = Number(leadPointRow?.value ?? 500)
 
             // 포인트 적립: 기존 DB 함수 사용 (users.points + point_history 동시 처리)
             await client.rpc('award_points', {
@@ -213,8 +213,24 @@ export async function POST(req: NextRequest) {
       const client = tryCreateServiceClient() || supabase
       if (intent.status === 'paid' && intent.kind === 'charge' && intent.user_id) {
         const amount = Number(intent.amount || 0)
-        const pointsReclaim = Math.floor(amount * 0.05)
-        const { data: u } = await client.from('users').select('charge_balance, points').eq('id', intent.user_id).single()
+        const { data: u } = await client.from('users').select('charge_balance, points, star_level').eq('id', intent.user_id).single()
+        const { data: baseRateRow } = await client
+          .from('admin_settings')
+          .select('value')
+          .eq('category', 'points_payment')
+          .eq('key', 'wallet_charge_rate')
+          .maybeSingle()
+        const { data: bonusRateRow } = await client
+          .from('admin_settings')
+          .select('value')
+          .eq('category', 'star_benefit')
+          .eq('key', 'lv2_charge_bonus')
+          .maybeSingle()
+        const baseRatePct = Number(baseRateRow?.value ?? 5)
+        const bonusRatePct = Number(bonusRateRow?.value ?? 3)
+        const basePoints = Math.floor(amount * (baseRatePct / 100))
+        const extraPoints = u?.star_level && u.star_level >= 2 ? Math.floor(amount * (bonusRatePct / 100)) : 0
+        const pointsReclaim = basePoints + extraPoints
         const curBalance = Number(u?.charge_balance || 0)
         const curPoints = Number(u?.points || 0)
         const nextBalance = Math.max(0, curBalance - amount)
