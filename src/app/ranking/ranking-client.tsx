@@ -58,7 +58,7 @@ export default function RankingClient({
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
           {[
             { id: 'likes' as const, label: '이번 주 인기 스타' },
-            { id: 'rising' as const, label: '팔로워 급상승' },
+            { id: 'rising' as const, label: '오랜일촌 급상승' },
             { id: 'lead' as const, label: '구매 유도 TOP' },
           ].map(t => {
             const active = tab === t.id
@@ -93,7 +93,7 @@ export default function RankingClient({
               tab === 'likes'
                 ? `${Number(r.total_likes || 0).toLocaleString()} 공감`
                 : tab === 'rising'
-                  ? `${Number(r.rise_count || 0).toLocaleString()} 신규 팔로워`
+                  ? `${Number(r.rise_count || 0).toLocaleString()} 신규 오랜일촌`
                   : `${Number(r.purchase_leads || 0).toLocaleString()} 구매 유도`
             return (
               <div key={r.id} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 12, display: 'flex', gap: 12, alignItems: 'center' }}>

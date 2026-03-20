@@ -167,7 +167,7 @@ export default function MyWorldPage() {
   const supabase = createClient()
   const router = useRouter()
 
-  const { loading: adminSettingsLoading, getSettingNum } = useAdminSettings()
+  const { loading: adminSettingsLoading, getSettingNum, getSetting } = useAdminSettings()
 
   const guestbookMaxChars = getSettingNum('myworld', 'guestbook_max_chars', 300)
   const journalsFetchLimit = getSettingNum('myworld', 'journals_fetch_limit', 30)
@@ -180,6 +180,10 @@ export default function MyWorldPage() {
   const journalScoreMin = getSettingNum('myworld', 'journal_score_min', 1)
   const journalScoreMax = getSettingNum('myworld', 'journal_score_max', 5)
   const journalScoreDefault = getSettingNum('myworld', 'journal_score_default', 3)
+  const copyFollowerLabel = getSetting('copy_social', 'follower_label', '오랜일촌')
+  const copyFollowingLabel = getSetting('copy_social', 'following_label', '내 오랜일촌')
+  const copyFollowBtn = getSetting('copy_social', 'follow_btn', '오랜일촌 맺기')
+  const copyFollowingBtn = getSetting('copy_social', 'following_btn', '오랜일촌 ✓')
 
   // star_level thresholds (admin_settings)
   const lv2_journal_min = getSettingNum('star_level', 'lv2_journals', 5)
@@ -662,7 +666,7 @@ export default function MyWorldPage() {
           return
         }
 
-        // 팔로잉 피드: 최신 저널 중심
+        // 오랜일촌 피드: 최신 저널 중심
         const { data: journalRows } = await supabase
           .from('skin_journals')
           .select('id,user_id,date,photo_url,memo,score,product_ids,created_at')
@@ -731,7 +735,7 @@ export default function MyWorldPage() {
           .lt('date', endDate)
         setMonthJournalCount(mJ || 0)
 
-        // 월간 팔로워 수
+        // 월간 오랜일촌 수
         const { count: mF } = await supabase
           .from('follows')
           .select('id', { count: 'exact', head: true })
@@ -1175,7 +1179,7 @@ export default function MyWorldPage() {
                   }}
                   style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontWeight: 900 }}
                 >
-                  팔로워 {me?.total_followers || 0}
+                  {copyFollowerLabel} {me?.total_followers || 0}
                 </button>
                 <span style={{ color: 'rgba(255,255,255,0.35)', margin: '0 8px' }}>·</span>
                 <button
@@ -1200,7 +1204,7 @@ export default function MyWorldPage() {
                   }}
                   style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.65)', cursor: 'pointer', fontWeight: 900 }}
                 >
-                  팔로잉 {followingCount}
+                  {copyFollowingLabel} {followingCount}
                 </button>
               </div>
             </div>
@@ -1240,7 +1244,7 @@ export default function MyWorldPage() {
             </div>
 
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6 }}>
-              이번 달: 저널 {monthJournalCount}개 · 공감 {monthLikeCount}개 · 팔로워 {monthFollowerCount}명
+              이번 달: 저널 {monthJournalCount}개 · 공감 {monthLikeCount}개 · {copyFollowerLabel} {monthFollowerCount}명
             </div>
 
             <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
@@ -1697,13 +1701,13 @@ export default function MyWorldPage() {
         )}
       </div>
 
-      {/* 팔로잉 피드 */}
+      {/* 오랜일촌 피드 */}
       <div style={{ padding: '0 18px 0' }}>
-        <div style={{ marginTop: 14, marginBottom: 12, fontSize: 13, fontWeight: 900, color: '#fff' }}>팔로잉 피드</div>
+        <div style={{ marginTop: 14, marginBottom: 12, fontSize: 13, fontWeight: 900, color: '#fff' }}>{copyFollowingLabel} 피드</div>
 
         {followingFeed.length === 0 ? (
           <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 16, color: 'var(--text3)', fontSize: 12 }}>
-            팔로잉한 사용자의 기록이 없어요. 인기 스타 저널을 추천해드릴게요.
+            {copyFollowingLabel}의 기록이 없어요. 인기 스타 저널을 추천해드릴게요.
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1743,7 +1747,7 @@ export default function MyWorldPage() {
                       onClick={() => toggleFollow(a.id)}
                       style={{ padding: '10px 12px', borderRadius: 12, border: `1px solid ${isFollowing ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`, background: isFollowing ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)', color: isFollowing ? GOLD : 'var(--text3)', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap' }}
                     >
-                      {isFollowing ? '팔로잉' : '팔로우'}
+                      {isFollowing ? copyFollowingBtn : copyFollowBtn}
                     </button>
                   </div>
 
@@ -1772,7 +1776,7 @@ export default function MyWorldPage() {
         )}
       </div>
 
-      {/* 팔로워 리스트 바텀시트 */}
+      {/* 오랜일촌 리스트 바텀시트 */}
       {followersModalOpen && (
         <div
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 55, display: 'flex', alignItems: 'flex-end' }}
@@ -1785,14 +1789,14 @@ export default function MyWorldPage() {
             onClick={e => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>팔로워 목록</div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>{copyFollowerLabel} 목록</div>
               <button type="button" onClick={() => setFollowersModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 20, cursor: 'pointer' }}>
                 ×
               </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '50vh', overflow: 'auto' }}>
               {followersList.length === 0 ? (
-                <div style={{ fontSize: 12, color: 'var(--text3)' }}>아직 팔로워가 없어요.</div>
+                <div style={{ fontSize: 12, color: 'var(--text3)' }}>아직 {copyFollowerLabel}이 없어요.</div>
               ) : (
                 followersList.map(u => {
                   const sm = starLevelMeta(u.star_level)
@@ -1820,7 +1824,7 @@ export default function MyWorldPage() {
                         onClick={() => toggleFollow(u.id)}
                         style={{ padding: '10px 12px', borderRadius: 12, border: `1px solid ${isFollowing ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`, background: isFollowing ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)', color: isFollowing ? GOLD : 'var(--text3)', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap' }}
                       >
-                        {isFollowing ? '팔로잉' : '팔로우'}
+                        {isFollowing ? copyFollowingBtn : copyFollowBtn}
                       </button>
                     </div>
                   )
@@ -1831,7 +1835,7 @@ export default function MyWorldPage() {
         </div>
       )}
 
-      {/* 팔로잉 리스트 바텀시트 */}
+      {/* 내가 맺은 오랜일촌 리스트 바텀시트 */}
       {followingModalOpen && (
         <div
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 55, display: 'flex', alignItems: 'flex-end' }}
@@ -1844,14 +1848,14 @@ export default function MyWorldPage() {
             onClick={e => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>팔로잉 목록</div>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>{copyFollowingLabel} 목록</div>
               <button type="button" onClick={() => setFollowingModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 20, cursor: 'pointer' }}>
                 ×
               </button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '50vh', overflow: 'auto' }}>
               {followingList.length === 0 ? (
-                <div style={{ fontSize: 12, color: 'var(--text3)' }}>팔로잉한 사용자가 없어요.</div>
+                <div style={{ fontSize: 12, color: 'var(--text3)' }}>{copyFollowingLabel}이 없어요.</div>
               ) : (
                 followingList.map(u => {
                   const sm = starLevelMeta(u.star_level)
@@ -1879,7 +1883,7 @@ export default function MyWorldPage() {
                         onClick={() => toggleFollow(u.id)}
                         style={{ padding: '10px 12px', borderRadius: 12, border: `1px solid ${isFollowing ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`, background: isFollowing ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)', color: isFollowing ? GOLD : 'var(--text3)', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap' }}
                       >
-                        {isFollowing ? '팔로잉' : '팔로우'}
+                        {isFollowing ? copyFollowingBtn : copyFollowBtn}
                       </button>
                     </div>
                   )

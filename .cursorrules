@@ -1,9 +1,28 @@
-When implementing any new feature in AURAN:
-1. Always create admin_settings seed data for any numeric/text/rate values
-2. Always add admin UI controls in /super-console for those settings  
-3. Always use getSetting('category','key') hook instead of hardcoded values
-4. Never hardcode points, rates, conditions, or thresholds
-5. Commit and push after every completed task
+# AURAN 개발 철칙 — Cursor 자동 적용 규칙
 
-This rule applies to ALL features without exception.
+## 절대 규칙: 숫자가 들어가는 모든 작업
+새 기능 구현 시 아래 3가지를 반드시 동시 작업.
+단 한 번도 예외 없음.
+
+### 1. admin_settings seed 자동 생성
+숫자·텍스트·비율·조건·가격이 하나라도 있으면
+admin_settings 테이블에 즉시 seed insert.
+하드코딩 절대 금지.
+
+### 2. 어드민 UI 자동 생성
+/super-console 또는 /admin 패널의 해당 카테고리 탭에
+[라벨] [입력필드] [단위] [저장] 행 자동 추가.
+
+### 3. getSetting() 훅 연동
+모든 수치는 반드시:
+getSetting('category', 'key') ?? 기본값
+으로 읽어오기. 절대 하드코딩 금지.
+
+## 소셜 카피 고정 규칙
+- 화면 표시에 "팔로우/팔로워/팔로잉" 용어 사용 금지
+- 화면 표시는 항상 "오랜일촌" 계열 용어 사용
+- DB 컬럼명/내부 변수명은 follow/follower/following 유지 가능
+
+## 커밋 규칙
+모든 작업 완료 후 반드시 커밋/푸시까지 수행.
 
