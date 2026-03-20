@@ -24,7 +24,7 @@ function SignupForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const { getSettingNum } = useAdminSettings()
-  const signupWelcomePoint = getSettingNum('points_action', 'signup_welcome', 500)
+  const signupWelcomePoint = getSettingNum('points_action', 'signup_welcome', 8888)
 
   const supabase = createClient()
 
@@ -219,7 +219,7 @@ function SignupForm() {
               {form.name}님, AURAN에 오신 걸 환영합니다.
             </div>
             <div style={{ padding: '12px 16px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 10, fontSize: 12, color: 'var(--gold)', marginBottom: 28 }}>
-              {`🎁 가입 포인트 ${signupWelcomePoint.toLocaleString()}P가 적립됩니다!`}
+              {`환영해요! 🎉 +${signupWelcomePoint.toLocaleString()}P가 적립됐어요`}
             </div>
             <button
               onClick={() => router.push(`/login?role=${role}`)}

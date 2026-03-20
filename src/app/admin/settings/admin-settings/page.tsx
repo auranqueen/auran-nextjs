@@ -25,7 +25,7 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       streak_7days: { label: '7일 연속 저널 보너스', unit: 'P', type: 'number', defaultValue: '300' },
       streak_30days: { label: '30일 연속 저널 보너스', unit: 'P', type: 'number', defaultValue: '1000' },
       ai_analysis_complete: { label: 'AI 피부분석 완료 포인트', unit: 'P', type: 'number', defaultValue: '500' },
-      signup_welcome: { label: '회원가입 환영 포인트', unit: 'P', type: 'number', defaultValue: '500' },
+      signup_welcome: { label: '회원가입 환영 포인트', unit: 'P', type: 'number', defaultValue: '8888' },
     },
   },
   points_payment: {
@@ -112,6 +112,18 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       following_label: { label: '내 오랜일촌 라벨', unit: '', type: 'text', defaultValue: '내 오랜일촌' },
       notify_text: { label: '오랜일촌 신청 알림 문구', unit: '', type: 'text', defaultValue: '님이 오랜일촌을 신청했어요 🤝' },
       new_follower_text: { label: '새 오랜일촌 알림 문구', unit: '', type: 'text', defaultValue: '새 오랜일촌이 생겼어요!' },
+    },
+  },
+  toast: {
+    label: '토스트',
+    keys: {
+      exchange_rate: { label: '1T당 원화', unit: '원', type: 'number', defaultValue: '100' },
+      min_charge: { label: '최소 충전 토스트', unit: 'T', type: 'number', defaultValue: '100' },
+      bonus_threshold_1: { label: '보너스 기준 1', unit: 'T', type: 'number', defaultValue: '1000' },
+      bonus_amount_1: { label: '보너스 지급 1', unit: 'T', type: 'number', defaultValue: '50' },
+      bonus_threshold_2: { label: '보너스 기준 2', unit: 'T', type: 'number', defaultValue: '3000' },
+      bonus_amount_2: { label: '보너스 지급 2', unit: 'T', type: 'number', defaultValue: '200' },
+      point_max_usage_rate: { label: '포인트 최대 사용 비율', unit: '%', type: 'number', defaultValue: '20' },
     },
   },
 }

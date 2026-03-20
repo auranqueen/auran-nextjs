@@ -7,6 +7,7 @@ import PaymentAuthGuard from '@/components/PaymentAuthGuard'
 import { createClient } from '@/lib/supabase/client'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useAdminSettings } from '@/hooks/useAdminSettings'
 
 function WalletPageInner() {
   const supabase = createClient()
@@ -23,6 +24,9 @@ function WalletPageInner() {
   const [customAmount, setCustomAmount] = useState<string>('')
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false)
   const paymentSuccessHandled = useRef(false)
+  const { getSettingNum } = useAdminSettings()
+  const toastRate = getSettingNum('toast', 'exchange_rate', 100)
+  const pointMaxUsageRate = getSettingNum('toast', 'point_max_usage_rate', 20)
 
   const fetchProfile = async (authUserId: string) => {
     const { data: p } = await supabase.from('users').select('id,points,charge_balance').eq('auth_id', authUserId).single()
@@ -96,7 +100,7 @@ function WalletPageInner() {
       <div style={{ padding: '18px 18px 0', flex: 1, overflowY: 'auto', paddingBottom: 220, scrollPaddingBottom: 220 }}>
         {showPaymentSuccess && (
           <div style={{ marginBottom: 14, padding: 14, background: 'rgba(76,173,126,0.2)', border: '1px solid rgba(76,173,126,0.5)', borderRadius: 12, color: '#4cad7e', fontSize: 13, fontWeight: 600 }}>
-            ✓ 충전이 완료되었습니다. 잔액이 반영될 때까지 잠시만 기다려 주세요.
+            ✓ 토스트가 구워졌어요! 🍞 잔액 반영까지 잠시만 기다려 주세요.
           </div>
         )}
         {loading ? (
@@ -111,8 +115,13 @@ function WalletPageInner() {
                 <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: 'var(--gold)' }}>{(profile.points || 0).toLocaleString()}P</div>
               </div>
               <div style={{ background: 'rgba(76,173,126,0.10)', border: '1px solid rgba(76,173,126,0.25)', borderRadius: 14, padding: '14px 14px' }}>
-                <div style={{ fontSize: 10, color: 'rgba(76,173,126,0.65)', marginBottom: 6 }}>충전 잔액</div>
-                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: '#4cad7e' }}>₩{(profile.charge_balance || 0).toLocaleString()}</div>
+                <div style={{ fontSize: 10, color: 'rgba(76,173,126,0.65)', marginBottom: 6 }}>🍞 토스트</div>
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: '#4cad7e' }}>
+                  {Math.floor((profile.charge_balance || 0) / Math.max(1, toastRate)).toLocaleString()}T
+                </div>
+                <div style={{ fontSize: 10, color: 'rgba(76,173,126,0.65)', marginTop: 4 }}>
+                  ₩{(profile.charge_balance || 0).toLocaleString()}
+                </div>
               </div>
             </div>
             {hasPin === false && (
@@ -135,8 +144,8 @@ function WalletPageInner() {
                   }}
                 >
                   {[
-                    { key: 'preset', label: '고정 금액' },
-                    { key: 'custom', label: '자유 입력' },
+                    { key: 'preset', label: '토스트 굽기 🍞' },
+                    { key: 'custom', label: '직접 굽기' },
                   ].map(t => {
                     const active = chargeMode === t.key
                     return (
@@ -232,7 +241,7 @@ function WalletPageInner() {
 
                 {/* 선택 금액 표시 */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>충전 예정 금액</span>
+                  <span style={{ fontSize: 11, color: 'var(--text3)' }}>굽기 예정 금액</span>
                   <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 16, fontWeight: 700, color: 'var(--gold)' }}>
                     ₩
                     {(() => {
@@ -308,11 +317,14 @@ function WalletPageInner() {
                       opacity: charging ? 0.7 : 1,
                     }}
                   >
-                    {charging ? '결제창 여는 중...' : '충전하기'}
+                    {charging ? '결제창 여는 중...' : '토스트 굽기 🍞'}
                   </button>
                 </PaymentAuthGuard>
               </div>
             )}
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: -8 }}>
+              {`✨ 포인트는 결제 시 최대 ${pointMaxUsageRate}%까지 보조 사용 가능`}
+            </div>
           </>
         )}
       </div>

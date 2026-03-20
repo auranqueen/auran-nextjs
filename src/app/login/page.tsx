@@ -3,6 +3,7 @@ import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { normalizePosition, positionToDashboardPath, POSITION_STORAGE_KEY } from '@/lib/position'
+import { useAdminSettings } from '@/hooks/useAdminSettings'
 
 const ROLE_META: Record<string, { label: string; icon: string; accent: string; border: string; bg: string; hint: string; brand: string }> = {
   customer: { label: '고객', icon: '💧', accent: '#C9A96E', border: 'rgba(201,169,110,0.35)', bg: 'rgba(201,169,110,0.08)', hint: '피부 분석·제품 추천·살롱 예약', brand: 'AURAN' },
@@ -28,6 +29,8 @@ function LoginForm() {
   const redirectParam = params.get('redirect')
   const meta = ROLE_META[role] || ROLE_META.customer
   const showDemo = process.env.NEXT_PUBLIC_SHOW_DEMO === 'true'
+  const { getSettingNum } = useAdminSettings()
+  const signupWelcomePoint = getSettingNum('points_action', 'signup_welcome', 8888)
 
   const REMEMBER_EMAIL_KEY = 'auran_remember_email_v1'
   const REMEMBER_EMAIL_CHECKED_KEY = 'auran_remember_email_checked_v1'
@@ -171,6 +174,9 @@ function LoginForm() {
             <div style={{ fontSize: 16, fontWeight: 700, color: meta.accent }}>{meta.label} 로그인</div>
             <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{meta.hint}</div>
           </div>
+        </div>
+        <div style={{ marginTop: -16, marginBottom: 20, padding: '10px 12px', borderRadius: 10, background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)', fontSize: 12, color: 'var(--gold)', fontWeight: 700 }}>
+          {`지금 가입하면 ${signupWelcomePoint.toLocaleString()}P 즉시 지급`}
         </div>
 
         {/* 소셜 로그인 */}
