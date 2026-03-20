@@ -58,7 +58,9 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       like_notify_reach: { label: '공감 알림 도달(10개)', unit: 'EA', type: 'number', defaultValue: '10' },
 
       streak_notify_at: { label: '연속 저널 알림 도달(5일)', unit: '일', type: 'number', defaultValue: '5' },
+      streak_7_days: { label: '연속 7일 조건(멤버십 보너스 지급 기준)', unit: '일', type: 'number', defaultValue: '7' },
       streak_7_bonus: { label: '연속 7일 보너스', unit: 'P', type: 'number', defaultValue: '300' },
+      streak_30_days: { label: '연속 30일 조건(멤버십 보너스 지급 기준)', unit: '일', type: 'number', defaultValue: '30' },
       streak_30_bonus: { label: '연속 30일 보너스', unit: 'P', type: 'number', defaultValue: '1000' },
 
       lv2_journal_min: { label: 'Lv2 저널 최소', unit: 'EA', type: 'number', defaultValue: '5' },
