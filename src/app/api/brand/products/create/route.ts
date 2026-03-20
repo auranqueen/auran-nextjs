@@ -24,6 +24,10 @@ export async function POST(req: NextRequest) {
   const ingredient = typeof body?.ingredient === 'string' ? body.ingredient.trim() : ''
   const category = typeof body?.category === 'string' ? body.category.trim() : null
   const videoUrl = typeof body?.video_url === 'string' ? body.video_url.trim() : null
+  const isFlashSale = body?.is_flash_sale === true
+  const flashSalePrice = body?.flash_sale_price == null ? null : Number(body?.flash_sale_price)
+  const flashSaleStart = typeof body?.flash_sale_start === 'string' ? body.flash_sale_start : null
+  const flashSaleEnd = typeof body?.flash_sale_end === 'string' ? body.flash_sale_end : null
 
   if (!name) return json({ ok: false, error: 'missing_name' }, 400)
   if (!Number.isFinite(retailPrice) || retailPrice < 0) return json({ ok: false, error: 'invalid_price' }, 400)
@@ -54,6 +58,10 @@ export async function POST(req: NextRequest) {
       detail_imgs: detailImgs,
       category,
       video_url: videoUrl || null,
+      is_flash_sale: isFlashSale,
+      flash_sale_price: isFlashSale && Number.isFinite(flashSalePrice as number) ? Math.max(0, Math.trunc(flashSalePrice as number)) : null,
+      flash_sale_start: isFlashSale ? flashSaleStart : null,
+      flash_sale_end: isFlashSale ? flashSaleEnd : null,
       status: 'pending',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

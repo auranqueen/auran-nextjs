@@ -361,12 +361,13 @@ export default function CustomerDashboardClient({ profile }: Props) {
   }
 
   const addToCart = async (productId: string) => {
-    logAction('cart_click', { productId, meId })
-    if (!meId) {
+    const resolvedMeId = await ensureMeId()
+    logAction('cart_click', { productId, meId: resolvedMeId })
+    if (!resolvedMeId) {
       router.push('/login?redirect=/dashboard/customer')
       return
     }
-    const { error } = await supabase.from('cart_items').insert({ user_id: meId, product_id: productId, quantity: 1 } as any)
+    const { error } = await supabase.from('cart_items').insert({ user_id: resolvedMeId, product_id: productId, quantity: 1 } as any)
     if (error) {
       if (String(error.message || '').toLowerCase().includes('duplicate') || String((error as any).code || '') === '23505') {
         setToast('이미 담긴 상품이에요')
@@ -379,16 +380,17 @@ export default function CustomerDashboardClient({ profile }: Props) {
   }
 
   const openGift = async (product: any) => {
-    logAction('gift_click', { productId: product?.id, meId })
+    const resolvedMeId = await ensureMeId()
+    logAction('gift_click', { productId: product?.id, meId: resolvedMeId })
     if (!giftEnabled) {
       setToast('선물 기능이 비활성화되어 있어요')
       return
     }
-    if (!meId) {
+    if (!resolvedMeId) {
       router.push('/login?redirect=/dashboard/customer')
       return
     }
-    const { data: rows } = await supabase.from('follows').select('following_id').eq('follower_id', meId)
+    const { data: rows } = await supabase.from('follows').select('following_id').eq('follower_id', resolvedMeId)
     const ids = (rows || []).map((r: any) => r.following_id).filter(Boolean)
     if (ids.length === 0) {
       setToast('오랜일촌이 없어요')
@@ -428,6 +430,17 @@ export default function CustomerDashboardClient({ profile }: Props) {
     setGiftOpen(false)
     setGiftMessage('')
     setToast(`${target?.name || '친구'}님께 선물을 보냈어요 🎁`)
+  }
+
+  const ensureMeId = async () => {
+    if (meId) return meId
+    const { data: auth } = await supabase.auth.getUser()
+    const user = auth?.user
+    if (!user) return ''
+    const { data: me } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+    const id = String(me?.id || '')
+    if (id) setMeId(id)
+    return id
   }
 
   const skinTypeChips = useMemo(() => {
@@ -510,25 +523,25 @@ export default function CustomerDashboardClient({ profile }: Props) {
                   const p = currentSpecial
                   return (
                     <>
-                <div onClick={() => router.push(`/products/${p.id}`)} style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(128,128,128,0.3)' }}>
-                  {homeSpecialSwipeEnabled && specials.length > 1 && (
-                    <div
-                      onTouchStart={(e) => {
-                        touchStartXRef.current = e.touches?.[0]?.clientX ?? null
-                      }}
-                      onTouchEnd={(e) => {
-                        const startX = touchStartXRef.current
-                        const endX = e.changedTouches?.[0]?.clientX ?? null
-                        touchStartXRef.current = null
-                        if (startX == null || endX == null) return
-                        const delta = endX - startX
-                        if (Math.abs(delta) < homeSpecialSwipeThresholdPx) return
-                        if (delta < 0) nextSpecial()
-                        else prevSpecial()
-                      }}
-                      style={{ position: 'absolute', inset: 0, zIndex: 2 }}
-                    />
-                  )}
+                <div
+                  onClick={() => router.push(`/products/${p.id}`)}
+                  onTouchStart={(e) => {
+                    if (!homeSpecialSwipeEnabled || specials.length <= 1) return
+                    touchStartXRef.current = e.touches?.[0]?.clientX ?? null
+                  }}
+                  onTouchEnd={(e) => {
+                    if (!homeSpecialSwipeEnabled || specials.length <= 1) return
+                    const startX = touchStartXRef.current
+                    const endX = e.changedTouches?.[0]?.clientX ?? null
+                    touchStartXRef.current = null
+                    if (startX == null || endX == null) return
+                    const delta = endX - startX
+                    if (Math.abs(delta) < homeSpecialSwipeThresholdPx) return
+                    if (delta < 0) nextSpecial()
+                    else prevSpecial()
+                  }}
+                  style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(128,128,128,0.3)' }}
+                >
                   {p.thumb_img ? <Image src={p.thumb_img} alt={p.name} fill style={{ objectFit: 'cover' }} /> : null}
                   {homeSpecialManualNavEnabled && specials.length > 1 && (
                     <>

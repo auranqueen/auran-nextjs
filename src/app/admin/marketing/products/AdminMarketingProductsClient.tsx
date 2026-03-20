@@ -131,6 +131,7 @@ function ProductDetailModal({
   onApprove,
   onReject,
   onImageMap,
+  onSaveFlash,
 }: {
   product: any
   tab: 'pending' | 'active' | 'rejected'
@@ -139,9 +140,14 @@ function ProductDetailModal({
   onApprove: (id: string) => void
   onReject: (id: string) => void
   onImageMap: (product: any) => void
+  onSaveFlash: (id: string, payload: { is_flash_sale: boolean; flash_sale_price: number | null; flash_sale_start: string | null; flash_sale_end: string | null }) => Promise<void>
 }) {
   const [imgError, setImgError] = useState(false)
   const thumbUrl = product.thumb_img && !imgError ? product.thumb_img : null
+  const [isFlashSale, setIsFlashSale] = useState(!!product.is_flash_sale)
+  const [flashSalePrice, setFlashSalePrice] = useState(String(product.flash_sale_price || ''))
+  const [flashSaleStart, setFlashSaleStart] = useState(product.flash_sale_start ? new Date(product.flash_sale_start).toISOString().slice(0, 16) : '')
+  const [flashSaleEnd, setFlashSaleEnd] = useState(product.flash_sale_end ? new Date(product.flash_sale_end).toISOString().slice(0, 16) : '')
 
   const fields = [
     { label: '브랜드', value: product.brandName },
@@ -224,6 +230,35 @@ function ProductDetailModal({
             {product.description}
           </div>
         )}
+
+        <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 14, marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: '#fff', fontWeight: 900, marginBottom: 10 }}>타임세일 설정</div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 12, color: '#fff' }}>
+            <input type="checkbox" checked={isFlashSale} onChange={(e) => setIsFlashSale(e.target.checked)} />
+            타임세일 적용
+          </label>
+          {isFlashSale && (
+            <div style={{ display: 'grid', gap: 8 }}>
+              <input value={flashSalePrice} onChange={(e) => setFlashSalePrice(e.target.value.replace(/[^0-9]/g, ''))} placeholder="세일가(원)" style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
+              <input type="datetime-local" value={flashSaleStart} onChange={(e) => setFlashSaleStart(e.target.value)} style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
+              <input type="datetime-local" value={flashSaleEnd} onChange={(e) => setFlashSaleEnd(e.target.value)} style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={async () => {
+              await onSaveFlash(product.id, {
+                is_flash_sale: isFlashSale,
+                flash_sale_price: isFlashSale ? Number(flashSalePrice || 0) : null,
+                flash_sale_start: isFlashSale && flashSaleStart ? new Date(flashSaleStart).toISOString() : null,
+                flash_sale_end: isFlashSale && flashSaleEnd ? new Date(flashSaleEnd).toISOString() : null,
+              })
+            }}
+            style={{ marginTop: 10, background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: 10, padding: '8px 12px', color: '#c9a84c', fontSize: 12, fontWeight: 800 }}
+          >
+            타임세일 저장
+          </button>
+        </div>
 
         {/* 액션 버튼 */}
         <div style={{ display: 'flex', gap: 10 }}>
@@ -504,6 +539,12 @@ export default function AdminMarketingProductsClient() {
     }
   }
 
+  const saveFlashSale = async (id: string, payload: { is_flash_sale: boolean; flash_sale_price: number | null; flash_sale_start: string | null; flash_sale_end: string | null }) => {
+    await supabase.from('products').update(payload as any).eq('id', id)
+    setRows(prev => prev.map(r => (r.id === id ? { ...r, ...payload } : r)))
+    setSelectedProduct((prev: any) => (prev?.id === id ? { ...prev, ...payload } : prev))
+  }
+
   const TABS: { key: 'pending' | 'active' | 'rejected'; label: string }[] = [
     { key: 'pending', label: 'PENDING' },
     { key: 'active', label: 'ACTIVE' },
@@ -522,6 +563,7 @@ export default function AdminMarketingProductsClient() {
           onApprove={approveOne}
           onReject={rejectOne}
           onImageMap={p => { setSelectedProduct(null); setImageMapTarget(p) }}
+          onSaveFlash={saveFlashSale}
         />
       )}
 

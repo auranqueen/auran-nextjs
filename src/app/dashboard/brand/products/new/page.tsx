@@ -32,6 +32,10 @@ export default function BrandNewProductPage() {
   const [ingredient, setIngredient] = useState('')
   const [category, setCategory] = useState('')
   const [detailHtml, setDetailHtml] = useState('')
+  const [isFlashSale, setIsFlashSale] = useState(false)
+  const [flashSalePrice, setFlashSalePrice] = useState('')
+  const [flashSaleStart, setFlashSaleStart] = useState('')
+  const [flashSaleEnd, setFlashSaleEnd] = useState('')
 
   const [thumb, setThumb] = useState<LocalFile | null>(null)
   const [images, setImages] = useState<LocalFile[]>([])
@@ -175,6 +179,10 @@ export default function BrandNewProductPage() {
           detail_imgs: detailUrls,
           detail_html: detailHtml,
           video_url: videoUrl,
+          is_flash_sale: isFlashSale,
+          flash_sale_price: isFlashSale ? Number(flashSalePrice || '0') : null,
+          flash_sale_start: isFlashSale && flashSaleStart ? new Date(flashSaleStart).toISOString() : null,
+          flash_sale_end: isFlashSale && flashSaleEnd ? new Date(flashSaleEnd).toISOString() : null,
         }),
       })
       const json = await res.json().catch(() => ({}))
@@ -261,6 +269,21 @@ export default function BrandNewProductPage() {
                 <input value={category} onChange={e => setCategory(e.target.value)} placeholder="카테고리(선택)" style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12 }} />
                 <textarea value={ingredient} onChange={e => setIngredient(e.target.value)} placeholder="주요성분/특징(선택)" rows={3} style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12, resize: 'vertical' }} />
               </div>
+            </div>
+
+            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 14 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, color: '#fff', marginBottom: 10 }}>타임세일 설정</div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 12, color: '#fff' }}>
+                <input type="checkbox" checked={isFlashSale} onChange={(e) => setIsFlashSale(e.target.checked)} />
+                타임세일 적용
+              </label>
+              {isFlashSale && (
+                <div style={{ display: 'grid', gap: 10 }}>
+                  <input value={flashSalePrice} onChange={e => setFlashSalePrice(e.target.value.replace(/[^0-9]/g, ''))} placeholder="세일가(원)" style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12 }} />
+                  <input type="datetime-local" value={flashSaleStart} onChange={e => setFlashSaleStart(e.target.value)} style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12 }} />
+                  <input type="datetime-local" value={flashSaleEnd} onChange={e => setFlashSaleEnd(e.target.value)} style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12 }} />
+                </div>
+              )}
             </div>
 
             <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 14 }}>
