@@ -92,6 +92,16 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       ai_hook_enabled: { label: 'AI 후킹 멘트 활성화', unit: '', type: 'number', defaultValue: '1' },
     },
   },
+  seo: {
+    label: 'SEO',
+    keys: {
+      site_title: { label: '사이트 제목', unit: '', type: 'text', defaultValue: 'AURAN — 클리닉 뷰티 플랫폼' },
+      site_description: { label: '사이트 설명', unit: '', type: 'text', defaultValue: 'AI 피부분석 기반 클리닉 전용 스킨케어' },
+      naver_site_verification: { label: '네이버 사이트 인증코드', unit: '', type: 'text', defaultValue: '' },
+      google_site_verification: { label: '구글 사이트 인증코드', unit: '', type: 'text', defaultValue: '' },
+      og_default_image: { label: '기본 OG 이미지', unit: '', type: 'text', defaultValue: 'https://auran.kr/og-default.jpg' },
+    },
+  },
 }
 
 export default function AdminSettingsAdminSettingsPage() {
