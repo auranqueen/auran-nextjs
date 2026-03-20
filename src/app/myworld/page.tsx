@@ -427,7 +427,7 @@ export default function MyWorldPage() {
       return
     }
     if (reviewRating < reviewStarMin || reviewRating > reviewStarMax) {
-      setReviewError('별점을 1~5 사이로 선택해주세요.')
+      setReviewError(`별점을 ${reviewStarMin}~${reviewStarMax} 사이로 선택해주세요.`)
       return
     }
 
