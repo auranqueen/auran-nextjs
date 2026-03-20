@@ -381,33 +381,22 @@ export default function CustomerSkinAnalysisQuizPage() {
         }
       }
 
-      // +500P 적립 (기존 점수 적립 로직은 유지: 500P + 알림장)
+      // +500P 적립 (기존 방식: point_history + 알림장)
       if (userRowId) {
-        try {
-          await supabase.rpc('award_points', {
-            p_user_id: userRowId,
-            p_amount: 500,
-            p_description: 'AI 피부 분석 완료',
-            p_icon: '✨',
-          })
-        } catch {
-          // fallback: 기존 방식(호환) - DB 정책에 따라 실패할 수 있음
-          await supabase.from('point_history').insert({
-            user_id: userRowId,
-            type: 'earn',
-            amount: 500,
-            description: 'AI 피부 분석 완료',
-          } as any)
-        }
+        await supabase.from('point_history').insert({
+          user_id: userRowId,
+          type: 'earn',
+          amount: 500,
+          description: 'AI 피부 분석 완료',
+        } as any)
 
-        // 알림장 기록
         await supabase.from('notifications').insert({
           user_id: userRowId,
           type: 'point',
           title: '500P 적립!',
           body: 'AI 피부 분석 완료로 500포인트가 적립되었습니다.',
           is_read: false,
-        })
+        } as any)
       }
 
       setTodayDone(true)
