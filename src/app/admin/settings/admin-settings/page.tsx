@@ -39,6 +39,14 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       journal_score_default: { label: '저널 점수 기본값', unit: '', type: 'number', defaultValue: '3' },
     },
   },
+  journal_public: {
+    label: '공개 저널',
+    keys: {
+      guestbook_fetch_limit: { label: '공개 저널 방명록 로드 개수', unit: 'EA', type: 'number', defaultValue: '20' },
+      used_products_preview_max: { label: '사용 제품 표시 개수', unit: 'EA', type: 'number', defaultValue: '4' },
+      guestbook_preview_max: { label: '방명록 미리보기 개수', unit: 'EA', type: 'number', defaultValue: '6' },
+    },
+  },
 }
 
 export default function AdminSettingsAdminSettingsPage() {

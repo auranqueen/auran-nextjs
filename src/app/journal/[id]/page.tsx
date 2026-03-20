@@ -50,6 +50,15 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 export default async function JournalPublicPage({ params }: { params: { id: string } }) {
   const supabase = createClient()
 
+  const { data: guestbookFetchRow } = await supabase
+    .from('admin_settings')
+    .select('value')
+    .eq('category', 'journal_public')
+    .eq('key', 'guestbook_fetch_limit')
+    .maybeSingle()
+
+  const guestbookFetchLimit = Number(guestbookFetchRow?.value ?? 20)
+
   const { data: journal } = await supabase
     .from('skin_journals')
     .select('id,user_id,date,photo_url,memo,score,product_ids,created_at')
@@ -86,7 +95,7 @@ export default async function JournalPublicPage({ params }: { params: { id: stri
     .select('id,owner_id,writer_id,writer_name,message,created_at')
     .eq('owner_id', journal.user_id)
     .order('created_at', { ascending: false })
-    .limit(20)
+    .limit(guestbookFetchLimit)
 
   return (
     <JournalPublicClient

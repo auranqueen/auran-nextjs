@@ -72,6 +72,8 @@ export default function JournalPublicClient({
 
   const { getSettingNum } = useAdminSettings()
   const guestbookMaxChars = getSettingNum('myworld', 'guestbook_max_chars', 300)
+  const usedProductsPreviewMax = getSettingNum('journal_public', 'used_products_preview_max', 4)
+  const guestbookPreviewMax = getSettingNum('journal_public', 'guestbook_preview_max', 6)
 
   const [authUserId, setAuthUserId] = useState<string | null>(null)
   const [me, setMe] = useState<{ id: string; name: string } | null>(null)
@@ -260,7 +262,7 @@ export default function JournalPublicClient({
           <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 14, marginBottom: 14 }}>
             <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 10 }}>사용 제품</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {usedProducts.slice(0, 4).map(p => (
+              {usedProducts.slice(0, usedProductsPreviewMax).map(p => (
                 <div key={p.id} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}>
                   <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                     <div style={{ width: 54, height: 54, borderRadius: 10, overflow: 'hidden', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
@@ -319,7 +321,7 @@ export default function JournalPublicClient({
             <div style={{ fontSize: 12, color: 'var(--text3)' }}>아직 방명록이 없어요.</div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {guestbookRows.slice(0, 6).map(g => (
+              {guestbookRows.slice(0, guestbookPreviewMax).map(g => (
                 <div key={g.id} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
                     <div style={{ fontSize: 12, fontWeight: 900, color: '#fff' }}>{g.writer_name}</div>
