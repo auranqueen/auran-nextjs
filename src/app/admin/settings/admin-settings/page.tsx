@@ -144,6 +144,15 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       show_timer: { label: '카운트다운 표시', unit: '', type: 'number', defaultValue: '1' },
     },
   },
+  home_search: {
+    label: '홈 상품 검색',
+    keys: {
+      enabled: { label: '검색바 활성화', unit: '', type: 'number', defaultValue: '1' },
+      placeholder: { label: '검색 안내 문구', unit: '', type: 'text', defaultValue: '전체상품 검색 (브랜드/상품명/설명)' },
+      fields: { label: '검색 대상 필드(csv)', unit: '', type: 'text', defaultValue: 'name,description,brand' },
+      min_chars: { label: '최소 검색 글자수', unit: '자', type: 'number', defaultValue: '1' },
+    },
+  },
 }
 
 export default function AdminSettingsAdminSettingsPage() {

@@ -65,6 +65,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const [friends, setFriends] = useState<any[]>([])
   const [selectedFriendId, setSelectedFriendId] = useState('')
   const [productQueryDebug, setProductQueryDebug] = useState('')
+  const [actionDebug, setActionDebug] = useState('')
   const [nowTs, setNowTs] = useState(Date.now())
   const [specialIndex, setSpecialIndex] = useState(0)
   const [coords, setCoords] = useState(DEFAULT_COORDS)
@@ -80,6 +81,13 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const homeSpecialRollingSec = Math.max(1, getSettingNum('home_special', 'rolling_interval_sec', 6))
   const homeSpecialShowTimer = getSettingNum('home_special', 'show_timer', 1) === 1
   const homeSpecialTitle = getSetting('home_special', 'title', '오늘의 특가')
+  const homeSearchPlaceholder = getSetting('home_search', 'placeholder', '전체상품 검색 (브랜드/상품명/설명)')
+  const homeSearchFields = getSetting('home_search', 'fields', 'name,description,brand')
+    .split(',')
+    .map(v => v.trim().toLowerCase())
+    .filter(Boolean)
+  const homeSearchMinChars = Math.max(0, getSettingNum('home_search', 'min_chars', 1))
+  const homeSearchEnabled = getSettingNum('home_search', 'enabled', 1) === 1
 
   const formatRemain = (endAt: string) => {
     const remainMs = new Date(endAt).getTime() - nowTs
@@ -89,6 +97,12 @@ export default function CustomerDashboardClient({ profile }: Props) {
     const mm = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0')
     const ss = String(totalSec % 60).padStart(2, '0')
     return `${hh}:${mm}:${ss}`
+  }
+
+  const logAction = (type: string, detail: Record<string, any> = {}) => {
+    const msg = `[home-action] ${type} ${JSON.stringify(detail)}`
+    console.log(msg)
+    setActionDebug(`${type} @ ${new Date().toLocaleTimeString()}`)
   }
 
   useEffect(() => {
@@ -255,14 +269,14 @@ export default function CustomerDashboardClient({ profile }: Props) {
       const skinTypes = Array.isArray(p.skin_types) ? p.skin_types : []
       const brandOk = brandTab === '전체' || brandName.toLowerCase() === brandTab.toLowerCase()
       const categoryOk = categoryTab === '전체' || skinTypes.includes(categoryTab)
-      const searchOk =
-        !search ||
-        String(p.name || '').toLowerCase().includes(search) ||
-        String(p.description || '').toLowerCase().includes(search) ||
-        brandName.toLowerCase().includes(search)
+      const searchActive = search.length >= homeSearchMinChars
+      const inName = homeSearchFields.includes('name') && String(p.name || '').toLowerCase().includes(search)
+      const inDescription = homeSearchFields.includes('description') && String(p.description || '').toLowerCase().includes(search)
+      const inBrand = homeSearchFields.includes('brand') && brandName.toLowerCase().includes(search)
+      const searchOk = !searchActive || inName || inDescription || inBrand
       return brandOk && categoryOk && searchOk
     })
-  }, [products, brandTab, categoryTab, productSearch])
+  }, [products, brandTab, categoryTab, productSearch, homeSearchFields, homeSearchMinChars])
 
   useEffect(() => {
     const t = setInterval(() => setNowTs(Date.now()), 1000)
@@ -280,6 +294,8 @@ export default function CustomerDashboardClient({ profile }: Props) {
   }, [homeSpecialEnabled, homeSpecialRollingSec, specials.length])
 
   const currentSpecial = specials.length > 0 ? specials[specialIndex % specials.length] : null
+  const prevSpecial = () => setSpecialIndex((prev) => (prev - 1 + specials.length) % Math.max(1, specials.length))
+  const nextSpecial = () => setSpecialIndex((prev) => (prev + 1) % Math.max(1, specials.length))
 
   const buyerBadge = (n: number) => {
     if (n >= 500) return `👑 ${n}명 구매 · AURAN 베스트`
@@ -290,6 +306,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
   }
 
   const addToCart = async (productId: string) => {
+    logAction('cart_click', { productId, meId })
     if (!meId) {
       router.push('/login?redirect=/dashboard/customer')
       return
@@ -307,6 +324,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
   }
 
   const openGift = async (product: any) => {
+    logAction('gift_click', { productId: product?.id, meId })
     if (!giftEnabled) {
       setToast('선물 기능이 비활성화되어 있어요')
       return
@@ -329,6 +347,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
   }
 
   const sendGift = async () => {
+    logAction('gift_send_click', { productId: giftTargetProduct?.id, selectedFriendId })
     if (!meId || !giftTargetProduct || !selectedFriendId) return
     const target = friends.find((f: any) => String(f.id) === String(selectedFriendId))
     const { error } = await supabase.from('gifts').insert({
@@ -385,6 +404,9 @@ export default function CustomerDashboardClient({ profile }: Props) {
         <div style={{ marginBottom: 8, fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: "'JetBrains Mono', monospace" }}>
           query-debug: {productQueryDebug || 'pending...'}
         </div>
+        <div style={{ marginBottom: 8, fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: "'JetBrains Mono', monospace" }}>
+          action-debug: {actionDebug || 'idle'}
+        </div>
         <div style={{ marginBottom: 12 }}>
           <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>안녕하세요, {profile?.name || '고객'}님</div>
           <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>오늘도 아름다운 하루를 시작해요.</div>
@@ -431,6 +453,12 @@ export default function CustomerDashboardClient({ profile }: Props) {
                     <>
                 <div onClick={() => router.push(`/products/${p.id}`)} style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(128,128,128,0.3)' }}>
                   {p.thumb_img ? <Image src={p.thumb_img} alt={p.name} fill style={{ objectFit: 'cover' }} /> : null}
+                  {specials.length > 1 && (
+                    <>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); prevSpecial() }} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: 999, border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(0,0,0,0.35)', color: '#fff', fontWeight: 900, cursor: 'pointer' }}>‹</button>
+                      <button type="button" onClick={(e) => { e.stopPropagation(); nextSpecial() }} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: 999, border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(0,0,0,0.35)', color: '#fff', fontWeight: 900, cursor: 'pointer' }}>›</button>
+                    </>
+                  )}
                   {homeSpecialShowTimer && p.is_flash_sale && p.flash_sale_end && new Date(p.flash_sale_end).getTime() > nowTs && (
                     <div style={{ position: 'absolute', top: 8, left: 8, background: '#d94f4f', color: '#fff', borderRadius: 999, padding: '3px 8px', fontSize: 10, fontWeight: 800 }}>
                       ⏱ {formatRemain(String(p.flash_sale_end))}
@@ -454,7 +482,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
                   <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
                     <button type="button" onClick={(e) => { e.stopPropagation(); addToCart(p.id) }} style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', borderRadius: 8, color: '#fff', fontSize: 11, padding: '7px 0' }}>🛒 담기</button>
                     <button type="button" onClick={(e) => { e.stopPropagation(); openGift(p) }} style={{ border: '1px solid rgba(140,180,255,0.4)', background: 'rgba(140,180,255,0.12)', borderRadius: 8, color: '#bcd6ff', fontSize: 11, padding: '7px 0' }}>🎁 선물</button>
-                    <button type="button" onClick={(e) => { e.stopPropagation(); router.push(`/checkout?products=${p.id}`) }} style={{ border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 8, fontSize: 11, padding: '7px 0' }}>⚡ 구매</button>
+                    <button type="button" onClick={(e) => { e.stopPropagation(); logAction('buy_click', { productId: p.id, source: 'special' }); router.push(`/checkout?products=${p.id}`) }} style={{ border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 8, fontSize: 11, padding: '7px 0' }}>⚡ 구매</button>
                   </div>
                 </div>
                     </>
@@ -500,14 +528,16 @@ export default function CustomerDashboardClient({ profile }: Props) {
               <button key={c} onClick={() => setCategoryTab(c)} style={{ whiteSpace: 'nowrap', borderRadius: 999, border: categoryTab === c ? '1px solid rgba(74,141,192,0.55)' : '1px solid var(--border)', background: categoryTab === c ? 'rgba(74,141,192,0.15)' : 'rgba(255,255,255,0.04)', color: categoryTab === c ? '#8bb9dc' : '#fff', fontSize: 12, padding: '7px 12px' }}>{c}</button>
             ))}
           </div>
+          {homeSearchEnabled && (
           <div style={{ marginBottom: 10 }}>
             <input
               value={productSearch}
               onChange={(e) => setProductSearch(e.target.value)}
-              placeholder="전체상품 검색 (브랜드/상품명/설명)"
+              placeholder={homeSearchPlaceholder}
               style={{ width: '100%', height: 38, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', padding: '0 12px', outline: 'none', fontSize: 12 }}
             />
           </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {filteredProducts.map((p: any) => (
@@ -529,7 +559,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
                   <button type="button" onClick={(e) => { e.stopPropagation(); openGift(p) }} style={{ border: '1px solid rgba(140,180,255,0.4)', background: 'rgba(140,180,255,0.12)', color: '#bcd6ff', borderRadius: 8, padding: '8px 0', fontWeight: 700, fontSize: 11 }}>
                     🎁 선물
                   </button>
-                  <button type="button" onClick={(e) => { e.stopPropagation(); router.push(`/checkout?products=${p.id}`) }} style={{ border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 8, padding: '8px 0', fontWeight: 700, fontSize: 11 }}>
+                  <button type="button" onClick={(e) => { e.stopPropagation(); logAction('buy_click', { productId: p.id, source: 'all-products' }); router.push(`/checkout?products=${p.id}`) }} style={{ border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 8, padding: '8px 0', fontWeight: 700, fontSize: 11 }}>
                     ⚡ 구매
                   </button>
                 </div>

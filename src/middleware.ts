@@ -85,10 +85,11 @@ export async function middleware(req: NextRequest) {
       url.searchParams.set('next', pathname)
       return NextResponse.redirect(url)
     }
-    // dashboards: if not logged in, send to normal login
+    // dashboards: if not logged in, keep original path for post-login return
     const url = req.nextUrl.clone()
     url.pathname = '/login'
     url.search = ''
+    if (isDashboard) url.searchParams.set('redirect', pathname)
     return NextResponse.redirect(url)
   }
 
