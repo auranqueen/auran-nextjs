@@ -75,6 +75,21 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const giftEnabled = getSettingNum('gift', 'gift_enabled', 1) === 1
   const giftMsgMax = getSettingNum('gift', 'gift_message_max_length', 100)
   const giftNotifyEnabled = getSettingNum('gift', 'gift_notification_enabled', 1) === 1
+  const homeSpecialEnabled = getSettingNum('home_special', 'enabled', 1) === 1
+  const homeSpecialMaxItems = Math.max(1, getSettingNum('home_special', 'max_items', 8))
+  const homeSpecialRollingSec = Math.max(1, getSettingNum('home_special', 'rolling_interval_sec', 3))
+  const homeSpecialShowTimer = getSettingNum('home_special', 'show_timer', 1) === 1
+  const homeSpecialTitle = getSetting('home_special', 'title', '오늘의 특가')
+
+  const formatRemain = (endAt: string) => {
+    const remainMs = new Date(endAt).getTime() - nowTs
+    if (remainMs <= 0) return '00:00:00'
+    const totalSec = Math.floor(remainMs / 1000)
+    const hh = String(Math.floor(totalSec / 3600)).padStart(2, '0')
+    const mm = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0')
+    const ss = String(totalSec % 60).padStart(2, '0')
+    return `${hh}:${mm}:${ss}`
+  }
 
   useEffect(() => {
     const run = async () => {
@@ -141,7 +156,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
       const liveFlash = list
         .filter((p: any) => p.is_flash_sale && p.flash_sale_end && p.flash_sale_end > now)
         .sort((a: any, b: any) => new Date(a.flash_sale_end).getTime() - new Date(b.flash_sale_end).getTime())
-      const nextSpecials = (liveFlash.length > 0 ? liveFlash : [...list].sort((a: any, b: any) => toNum(b.sales_count) - toNum(a.sales_count))).slice(0, 8)
+      const nextSpecials = (liveFlash.length > 0 ? liveFlash : [...list].sort((a: any, b: any) => toNum(b.sales_count) - toNum(a.sales_count))).slice(0, homeSpecialMaxItems)
       setSpecials(nextSpecials)
 
       const ids = nextSpecials.map((p: any) => p.id)
@@ -192,7 +207,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
       }
     }
     run()
-  }, [supabase, profile?.skin_type, aiHookEnabled, reviewThreshold])
+  }, [supabase, profile?.skin_type, aiHookEnabled, reviewThreshold, homeSpecialMaxItems])
 
   useEffect(() => {
     if (!navigator?.geolocation) {
@@ -248,7 +263,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
   }, [])
 
   useEffect(() => {
-    if (specials.length <= 1) return
+    if (!homeSpecialEnabled || specials.length <= 1) return
     const t = setInterval(() => {
       setSpecialIndex((prev) => {
         const next = (prev + 1) % specials.length
@@ -259,9 +274,9 @@ export default function CustomerDashboardClient({ profile }: Props) {
         }
         return next
       })
-    }, 3000)
+    }, homeSpecialRollingSec * 1000)
     return () => clearInterval(t)
-  }, [specials.length])
+  }, [homeSpecialEnabled, homeSpecialRollingSec, specials.length])
 
   const buyerBadge = (n: number) => {
     if (n >= 500) return `👑 ${n}명 구매 · AURAN 베스트`
@@ -396,16 +411,22 @@ export default function CustomerDashboardClient({ profile }: Props) {
           ))}
         </div>
 
+        {homeSpecialEnabled && (
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 10 }}>오늘의 특가</div>
+          <button
+            onClick={() => router.push(`/products?specialIds=${encodeURIComponent(specials.map((s: any) => s.id).join(','))}`)}
+            style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 10, background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
+          >
+            {homeSpecialTitle} 전체보기 ›
+          </button>
           <div ref={specialWrapRef} style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, scrollBehavior: 'smooth' }}>
             {specials.map((p: any) => (
               <div key={p.id} style={{ width: 190, flexShrink: 0, border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.04)', overflow: 'hidden', cursor: 'pointer' }}>
                 <div onClick={() => router.push(`/products/${p.id}`)} style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(128,128,128,0.3)' }}>
                   {p.thumb_img ? <Image src={p.thumb_img} alt={p.name} fill style={{ objectFit: 'cover' }} /> : null}
-                  {p.is_flash_sale && p.flash_sale_end && new Date(p.flash_sale_end).getTime() > nowTs && (
+                  {homeSpecialShowTimer && p.is_flash_sale && p.flash_sale_end && new Date(p.flash_sale_end).getTime() > nowTs && (
                     <div style={{ position: 'absolute', top: 8, left: 8, background: '#d94f4f', color: '#fff', borderRadius: 999, padding: '3px 8px', fontSize: 10, fontWeight: 800 }}>
-                      ⏱ {new Date(new Date(p.flash_sale_end).getTime() - nowTs).toISOString().slice(11, 19)}
+                      ⏱ {formatRemain(String(p.flash_sale_end))}
                     </div>
                   )}
                 </div>
@@ -438,6 +459,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
             ))}
           </div>
         </div>
+        )}
 
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 10 }}>내 지역 인기 관리샵</div>

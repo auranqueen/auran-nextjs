@@ -5,7 +5,8 @@ import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import NoticeBell from '@/components/NoticeBell'
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 
 function ProductCard({ p }: { p: any }) {
   const [imgError, setImgError] = useState(false)
@@ -60,13 +61,19 @@ function ProductCard({ p }: { p: any }) {
   )
 }
 
-export default function ProductsPage() {
+function ProductsPageInner() {
+  const searchParams = useSearchParams()
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [products, setProducts] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
   const [brandFilter, setBrandFilter] = useState<string>('all')
   const [selectedBrand, setSelectedBrand] = useState<any | null>(null)
+  const specialIdsParam = searchParams.get('specialIds') || ''
+  const specialIds = useMemo(
+    () => specialIdsParam.split(',').map(v => v.trim()).filter(Boolean),
+    [specialIdsParam]
+  )
 
   useEffect(() => {
     const run = async () => {
@@ -120,14 +127,20 @@ export default function ProductsPage() {
   }, [products])
 
   const visible = useMemo(() => {
-    if (brandFilter === 'all') return products
-    return products.filter(p => p.brand_id === brandFilter)
-  }, [brandFilter, products])
+    const source = specialIds.length > 0 ? products.filter(p => specialIds.includes(String(p.id))) : products
+    if (brandFilter === 'all') return source
+    return source.filter(p => p.brand_id === brandFilter)
+  }, [brandFilter, products, specialIds])
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
       <DashboardHeader title="제품추천" right={<NoticeBell />} />
       <div style={{ padding: '18px 18px 0' }}>
+        {specialIds.length > 0 && (
+          <div style={{ marginBottom: 10, borderRadius: 10, border: '1px solid rgba(201,168,76,0.25)', background: 'rgba(201,168,76,0.08)', padding: '8px 10px', color: 'var(--gold)', fontSize: 12, fontWeight: 700 }}>
+            오늘의 특가 전체 상품
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 12, WebkitOverflowScrolling: 'touch' as any }}>
           <button
             onClick={() => setBrandFilter('all')}
@@ -256,6 +269,14 @@ export default function ProductsPage() {
       </div>
       <DashboardBottomNav role="customer" />
     </div>
+  )
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--bg)' }} />}>
+      <ProductsPageInner />
+    </Suspense>
   )
 }
 
