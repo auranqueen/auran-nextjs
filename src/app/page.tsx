@@ -164,15 +164,26 @@ function HomePageInner() {
         </div>
       </div>
 
-      {/* PC 레이아웃 */}
-      <div className="only-desktop" style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: '60px 48px', flexDirection: 'column' }}>
+      {/* PC 레이아웃 - 클릭 가능하도록 position/zIndex/pointerEvents 명시 */}
+      <div
+        className="only-desktop"
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '60px 48px',
+          flexDirection: 'column',
+          position: 'relative',
+          zIndex: 50,
+          pointerEvents: 'auto',
+        }}
+      >
           <div style={{ width: '100%', maxWidth: '960px', marginBottom: 12 }}>
             <AnnouncementBanner />
           </div>
-          <div style={{ width: '100%', maxWidth: '960px', display: 'flex', gap: '64px', alignItems: 'center' }}>
-
+          <div style={{ width: '100%', maxWidth: '960px', display: 'flex', gap: '64px', alignItems: 'center', position: 'relative', zIndex: 50 }}>
             {/* 왼쪽 텍스트 */}
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: 1, pointerEvents: 'auto' }}>
               <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: '28px', fontWeight: 700, letterSpacing: '5px', color: theme?.logo || '#fff', textShadow: '0 0 20px currentColor', marginBottom: '6px', transition: 'color 1.2s' }}>
                 AURAN
               </div>
@@ -189,11 +200,25 @@ function HomePageInner() {
               </p>
             </div>
 
-            {/* 오른쪽 2x2 카드 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '500px', flexShrink: 0 }}>
+            {/* 오른쪽 2x2 카드 - 버튼 클릭 보장 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '500px', flexShrink: 0, position: 'relative', zIndex: 51, pointerEvents: 'auto' }}>
               {ROLES.map((role, i) => (
-                <button key={role.id} onClick={() => handleRoleSelect(role.id)}
-                  style={{ ...cardStyle(i), padding: '24px', height: '180px', width: '100%' }}>
+                <button
+                  key={role.id}
+                  type="button"
+                  onPointerUp={() => handleRoleSelect(role.id)}
+                  onClick={() => handleRoleSelect(role.id)}
+                  style={{
+                    ...cardStyle(i),
+                    padding: '24px',
+                    height: '180px',
+                    width: '100%',
+                    position: 'relative',
+                    zIndex: 999,
+                    pointerEvents: 'auto',
+                    touchAction: 'manipulation',
+                  }}
+                >
                   <span style={{ fontSize: '36px' }}>{role.icon}</span>
                   <span style={{ fontSize: '18px', fontWeight: 700, color: cardStyles[i]?.name || '#fff', transition: 'color 1.2s' }}>{role.name}</span>
                   <span style={{ fontSize: '12px', color: cardStyles[i]?.desc || '#aaa', transition: 'color 1.2s', textAlign: 'center', lineHeight: 1.6 }}>{role.desc}</span>
@@ -203,8 +228,8 @@ function HomePageInner() {
           </div>
       </div>
 
-      {/* 푸터 */}
-      <div style={{ position: 'absolute', left: 0, right: 0, bottom: '80px', textAlign: 'center', fontSize: '9px', letterSpacing: '1px', color: theme?.footColor || '#555', transition: 'color 1.2s', pointerEvents: 'none' }}>
+      {/* 푸터 - 클릭 통과 + 메인 콘텐츠보다 뒤에 */}
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: '80px', textAlign: 'center', fontSize: '9px', letterSpacing: '1px', color: theme?.footColor || '#555', transition: 'color 1.2s', pointerEvents: 'none', zIndex: 1 }}>
         © 2026 AURAN · 개인정보처리방침 · 이용약관
       </div>
       </div>

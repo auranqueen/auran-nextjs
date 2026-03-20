@@ -11,12 +11,33 @@ function ProductCard({ p }: { p: any }) {
   const [imgError, setImgError] = useState(false)
   const thumbUrl = p.thumb_img && !imgError ? p.thumb_img : null
   return (
-    <Link href={`/products/${p.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
-      <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: '14px 14px', display: 'flex', gap: 12 }}>
+    <Link
+      href={`/products/${p.id}`}
+      style={{
+        textDecoration: 'none',
+        color: 'inherit',
+        display: 'block',
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+      }}
+    >
+      <div
+        style={{
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.10)',
+          borderRadius: 14,
+          padding: '14px 14px',
+          display: 'flex',
+          gap: 12,
+          cursor: 'pointer',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+        }}
+      >
         <div style={{ width: 72, height: 72, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {thumbUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={thumbUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={() => setImgError(true)} />
+            <img src={thumbUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} onError={() => setImgError(true)} />
           ) : (
             <span style={{ fontSize: 24, opacity: 0.4 }}>🧴</span>
           )}

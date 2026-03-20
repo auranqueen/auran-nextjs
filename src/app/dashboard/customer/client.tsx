@@ -1,19 +1,9 @@
 'use client'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-import { POSITION_STORAGE_KEY } from '@/lib/position'
 import NoticeBell from '@/components/NoticeBell'
-import { SecurityNoticeTrigger } from '@/components/SecurityNoticePopup'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-
-const MENU = [
-  { icon: '🧬', label: 'AI 피부 분석', desc: '내 피부 타입 확인', color: 'rgba(201,168,76,0.12)', border: 'rgba(201,168,76,0.3)', tc: 'var(--gold)', href: '/skin-analysis' },
-  { icon: '💊', label: '제품 추천', desc: '맞춤 제품 보기', color: 'rgba(74,141,192,0.1)', border: 'rgba(74,141,192,0.3)', tc: '#4a8dc0', href: '/products' },
-  { icon: '📅', label: '살롱 예약', desc: '가까운 클리닉 찾기', color: 'rgba(191,95,144,0.1)', border: 'rgba(191,95,144,0.3)', tc: '#bf5f90', href: '/booking' },
-  { icon: '📦', label: '구매 내역', desc: '주문·배송 확인', color: 'rgba(76,173,126,0.1)', border: 'rgba(76,173,126,0.3)', tc: '#4cad7e', href: '/orders' },
-  { icon: '💳', label: '내 지갑', desc: `포인트·충전 관리`, color: 'rgba(149,104,212,0.1)', border: 'rgba(149,104,212,0.3)', tc: '#9568d4', href: '/wallet' },
-  { icon: '📓', label: '피부 일지', desc: '매일 기록하고 적립', color: 'rgba(240,160,80,0.1)', border: 'rgba(240,160,80,0.3)', tc: '#f0a050', href: '/diary' },
-]
+import { createClient } from '@/lib/supabase/client'
 
 interface Props {
   profile: any
@@ -23,185 +13,246 @@ interface Props {
   featuredProducts?: any[]
 }
 
-export default function CustomerDashboardClient({ profile, notifications, recentOrders, pointHistory, featuredProducts = [] }: Props) {
+const BRAND_TABS = ['전체', 'Civasan', 'Gernetic', 'Shopbelle', '보떼덤', 'Dr.Sante']
+const CATEGORY_CHIPS = ['전체', '세럼·앰플', '크림·보습', '토너·미스트', '클렌징', '마스크팩', '선케어', '바디케어']
+const QUICK_MENUS = [
+  { icon: '🧬', label: 'AI 피부 분석', href: '/ai-analysis' },
+  { icon: '📅', label: '살롱 예약', href: '/booking' },
+  { icon: '🌍', label: '마이월드', href: '/myworld' },
+  { icon: '📦', label: '구매 내역', href: '/orders' },
+]
+
+const DEFAULT_COORDS = { lat: 35.8562, lng: 128.6310 }
+
+function toNum(v: any) {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : 0
+}
+
+function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
+  const rad = (deg: number) => (deg * Math.PI) / 180
+  const dLat = rad(bLat - aLat)
+  const dLng = rad(bLng - aLng)
+  const h =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(rad(aLat)) * Math.cos(rad(bLat)) * Math.sin(dLng / 2) * Math.sin(dLng / 2)
+  return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h))
+}
+
+function getProductCategory(p: any) {
+  return (p.category || p.product_category || p.category_name || p.subcategory || '').toString()
+}
+
+export default function CustomerDashboardClient({ profile }: Props) {
   const router = useRouter()
   const supabase = createClient()
+  const [wallet, setWallet] = useState({ points: toNum(profile?.points), balance: toNum(profile?.charge_balance) })
+  const [brandTab, setBrandTab] = useState('전체')
+  const [categoryTab, setCategoryTab] = useState('전체')
+  const [products, setProducts] = useState<any[]>([])
+  const [specials, setSpecials] = useState<any[]>([])
+  const [stores, setStores] = useState<any[]>([])
+  const [coords, setCoords] = useState(DEFAULT_COORDS)
+  const [storesFallback, setStoresFallback] = useState(false)
 
-  async function logout() {
-    await supabase.auth.signOut()
-    localStorage.removeItem(POSITION_STORAGE_KEY)
-    router.push('/')
-  }
+  useEffect(() => {
+    const run = async () => {
+      const { data: auth } = await supabase.auth.getUser()
+      const user = auth?.user
+      if (!user) return
 
-  const statusColors: Record<string, string> = {
-    '주문확인': '#4a8dc0', '발송준비': '#c9a84c', '배송중': '#9568d4', '배송완료': '#4cad7e'
-  }
+      const { data: me } = await supabase.from('users').select('id, points, charge_balance').eq('auth_id', user.id).maybeSingle()
+      if (me?.id) {
+        const { data: uw } = await supabase.from('user_wallets').select('points, charge_balance, balance').eq('user_id', me.id).maybeSingle()
+        if (uw) {
+          setWallet({
+            points: toNum(uw.points ?? me.points),
+            balance: toNum(uw.charge_balance ?? uw.balance ?? me.charge_balance),
+          })
+        } else {
+          setWallet({ points: toNum(me.points), balance: toNum(me.charge_balance) })
+        }
+      }
+    }
+    run()
+  }, [supabase, profile?.points, profile?.charge_balance])
+
+  useEffect(() => {
+    const run = async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id,name,thumb_img,retail_price,discount_rate,brands(name),category,status')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(200)
+      if (error) return
+      const list = data || []
+      setProducts(list)
+
+      const specials = [...list]
+        .sort((a: any, b: any) => toNum(b.discount_rate) - toNum(a.discount_rate))
+        .slice(0, 4)
+      setSpecials(specials)
+    }
+    run()
+  }, [supabase])
+
+  useEffect(() => {
+    if (!navigator?.geolocation) {
+      setStoresFallback(true)
+      return
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+      },
+      () => {
+        setStoresFallback(true)
+        setCoords(DEFAULT_COORDS)
+      },
+      { timeout: 5000, maximumAge: 300000 }
+    )
+  }, [])
+
+  useEffect(() => {
+    const run = async () => {
+      const { data, error } = await supabase.from('auran_stores').select('*').limit(60)
+      if (error || !data) return
+      const sorted = data
+        .map((s: any) => {
+          const lat = toNum(s.lat ?? s.latitude)
+          const lng = toNum(s.lng ?? s.longitude)
+          return {
+            ...s,
+            distance_km: lat && lng ? distanceKm(coords.lat, coords.lng, lat, lng) : 9999,
+          }
+        })
+        .sort((a: any, b: any) => a.distance_km - b.distance_km)
+        .slice(0, 3)
+      setStores(sorted)
+    }
+    run()
+  }, [supabase, coords.lat, coords.lng])
+
+  const filteredProducts = useMemo(() => {
+    return products.filter((p: any) => {
+      const brandName = (p.brands?.name || '').toString()
+      const categoryName = getProductCategory(p)
+      const brandOk = brandTab === '전체' || brandName.toLowerCase() === brandTab.toLowerCase()
+      const categoryOk = categoryTab === '전체' || categoryName.includes(categoryTab)
+      return brandOk && categoryOk
+    })
+  }, [products, brandTab, categoryTab])
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-
-      {/* 헤더 */}
-      <div style={{ background: 'linear-gradient(160deg,#0a0c0f,#111318)', borderBottom: '1px solid var(--border)', padding: '18px 20px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
-          <div>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8, color: 'rgba(201,168,76,0.5)', letterSpacing: '0.2em', marginBottom: 4 }}>MY DASHBOARD</div>
-            <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 20, color: '#fff' }}>
-              안녕하세요, <span style={{ color: '#c9a84c' }}>{profile.name}</span>님
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            <SecurityNoticeTrigger />
-            <NoticeBell />
-            <button onClick={logout} style={{ fontSize: 11, color: 'var(--text3)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px' }}>로그아웃</button>
-          </div>
-        </div>
-
-        {/* 지갑 요약 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <div style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: 12, padding: '11px 13px' }}>
-            <div style={{ fontSize: 9, color: 'rgba(201,168,76,0.6)', marginBottom: 4 }}>보유 포인트</div>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color: '#c9a84c' }}>{(profile.points || 0).toLocaleString()}P</div>
-          </div>
-          <div style={{ background: 'rgba(76,173,126,0.1)', border: '1px solid rgba(76,173,126,0.25)', borderRadius: 12, padding: '11px 13px' }}>
-            <div style={{ fontSize: 9, color: 'rgba(76,173,126,0.6)', marginBottom: 4 }}>충전 잔액</div>
-            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 700, color: '#4cad7e' }}>₩{(profile.charge_balance || 0).toLocaleString()}</div>
-          </div>
-        </div>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 120 }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 20, backdropFilter: 'blur(12px)', background: 'rgba(10,12,15,0.92)', borderBottom: '1px solid var(--border)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: 20, color: '#fff', letterSpacing: 2 }}>AURAN</div>
+        <NoticeBell />
       </div>
 
-      <div style={{ padding: '18px 18px 0' }}>
+      <div style={{ padding: 16 }}>
+        <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>안녕하세요, {profile?.name || '고객'}님</div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>오늘도 아름다운 하루를 시작해요.</div>
+        </div>
 
-        {/* 피부 타입 */}
-        {profile.skin_type ? (
-          <div style={{ background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 13, padding: '13px 15px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 3 }}>내 피부 타입</div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--gold)' }}>🧬 {profile.skin_type}</div>
-            </div>
-            <button onClick={() => router.push('/skin-analysis')} style={{ fontSize: 11, color: 'var(--gold)', background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 8, padding: '6px 12px' }}>재분석</button>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+          <div style={{ border: '1px solid rgba(201,168,76,0.28)', background: 'rgba(201,168,76,0.1)', borderRadius: 14, padding: 12 }}>
+            <div style={{ fontSize: 10, color: 'rgba(201,168,76,0.75)' }}>포인트</div>
+            <div style={{ marginTop: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: 'var(--gold)' }}>{wallet.points.toLocaleString()}P</div>
           </div>
-        ) : (
-          <button onClick={() => router.push('/skin-analysis')} style={{ width: '100%', padding: '15px', background: 'linear-gradient(135deg,rgba(201,168,76,0.15),rgba(201,168,76,0.05))', border: '1px solid rgba(201,168,76,0.35)', borderRadius: 13, color: 'var(--gold)', fontSize: 14, fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            🧬 AI 피부 분석 무료 체험 → 500P 적립
-          </button>
-        )}
-
-        {/* 제품 추천 전시 */}
-        {featuredProducts.length > 0 && (
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>💊 제품 추천</div>
-              <button onClick={() => router.push('/products')} style={{ fontSize: 11, color: 'var(--gold)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600 }}>전체 보기 →</button>
-            </div>
-            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6, WebkitOverflowScrolling: 'touch' as any }}>
-              {featuredProducts.map((p: any) => (
-                <button
-                  key={p.id}
-                  onClick={() => router.push(`/products/${p.id}`)}
-                  style={{
-                    flexShrink: 0,
-                    width: 110,
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255,255,255,0.10)',
-                    borderRadius: 12,
-                    overflow: 'hidden',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    padding: 0,
-                  }}
-                >
-                  <div style={{ width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {p.thumb_img ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <span style={{ fontSize: 28, opacity: 0.4 }}>🧴</span>
-                    )}
-                  </div>
-                  <div style={{ padding: '8px 8px 10px' }}>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.brands?.name || ''}</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>{p.name}</div>
-                    <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--gold)', marginTop: 4 }}>₩{(Number(p.retail_price) || 0).toLocaleString()}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
+          <div style={{ border: '1px solid rgba(76,173,126,0.28)', background: 'rgba(76,173,126,0.1)', borderRadius: 14, padding: 12 }}>
+            <div style={{ fontSize: 10, color: 'rgba(76,173,126,0.75)' }}>충전 잔액</div>
+            <div style={{ marginTop: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: '#4cad7e' }}>₩{wallet.balance.toLocaleString()}</div>
           </div>
-        )}
+        </div>
 
-        {/* 메뉴 그리드 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginBottom: 20 }}>
-          {MENU.map(m => (
-            <button key={m.label} onClick={() => router.push(m.href)} style={{ background: m.color, border: `1px solid ${m.border}`, borderRadius: 13, padding: '14px 13px', textAlign: 'left', transition: 'opacity 0.15s' }}
-              onMouseEnter={e => e.currentTarget.style.opacity = '0.85'} onMouseLeave={e => e.currentTarget.style.opacity = '1'}>
-              <div style={{ fontSize: 22, marginBottom: 7 }}>{m.icon}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: m.tc, marginBottom: 2 }}>{m.label}</div>
-              <div style={{ fontSize: 9, color: 'var(--text3)' }}>{m.desc}</div>
+        <button onClick={() => router.push('/ai-analysis')} style={{ width: '100%', marginBottom: 14, border: '1px solid rgba(201,168,76,0.35)', background: 'linear-gradient(135deg, rgba(201,168,76,0.2), rgba(201,168,76,0.08))', borderRadius: 14, padding: '14px 12px', color: 'var(--gold)', fontWeight: 800, fontSize: 14, textAlign: 'left' }}>
+          🧬 AI 피부분석 시작하기
+        </button>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+          {QUICK_MENUS.map((m) => (
+            <button key={m.label} onClick={() => router.push(m.href)} style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '14px 12px', textAlign: 'left' }}>
+              <div style={{ fontSize: 20 }}>{m.icon}</div>
+              <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700, color: '#fff' }}>{m.label}</div>
             </button>
           ))}
         </div>
 
-        {/* 최근 주문 */}
-        {recentOrders.length > 0 && (
-          <div style={{ marginBottom: 18 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>📦 최근 주문</div>
-              <button onClick={() => router.push('/orders')} style={{ fontSize: 11, color: 'var(--text3)', background: 'none', border: 'none' }}>전체 보기 →</button>
-            </div>
-            {recentOrders.map(order => (
-              <div key={order.id} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 13px', marginBottom: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: 11, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text3)', marginBottom: 3 }}>{order.order_no}</div>
-                  <div style={{ fontSize: 12, color: 'var(--text)' }}>{order.order_items?.[0]?.product_name || '주문 상품'}{order.order_items?.length > 1 ? ` 외 ${order.order_items.length - 1}종` : ''}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>₩{order.final_amount?.toLocaleString()}</div>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 10 }}>오늘의 특가</div>
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+            {specials.map((p: any) => (
+              <div key={p.id} onClick={() => router.push(`/products/${p.id}`)} style={{ width: 150, flexShrink: 0, border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.04)', overflow: 'hidden', cursor: 'pointer' }}>
+                <div style={{ width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)' }}>
+                  {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ height: '100%', display: 'grid', placeItems: 'center' }}>🧴</div>}
                 </div>
-                <span style={{ fontSize: 10, padding: '3px 9px', borderRadius: 18, fontWeight: 600, background: `${statusColors[order.status] || 'var(--text3)'}22`, color: statusColors[order.status] || 'var(--text3)', border: `1px solid ${statusColors[order.status] || 'var(--text3)'}44` }}>
-                  {order.status}
-                </span>
+                <div style={{ padding: 8 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.brands?.name || ''}</div>
+                  <div style={{ fontSize: 12, color: '#fff', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                  <div style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 800 }}>{toNum(p.discount_rate)}% OFF</div>
+                </div>
               </div>
             ))}
           </div>
-        )}
+        </div>
 
-        {/* 포인트 내역 */}
-        {pointHistory.length > 0 && (
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>✨ 포인트 내역</div>
-            {pointHistory.map(ph => (
-              <div key={ph.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                  <span style={{ fontSize: 18 }}>{ph.icon || '✨'}</span>
-                  <div>
-                    <div style={{ fontSize: 12, color: 'var(--text)' }}>{ph.description}</div>
-                    <div style={{ fontSize: 10, color: 'var(--text3)' }}>{new Date(ph.created_at).toLocaleDateString('ko-KR')}</div>
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 10 }}>내 지역 인기 관리샵</div>
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+            {stores.map((s: any, idx) => (
+              <div key={s.id || idx} style={{ width: 180, flexShrink: 0, border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.04)', padding: 10 }}>
+                <div style={{ fontSize: 13, color: '#fff', fontWeight: 700 }}>{s.name || s.store_name || `스토어 ${idx + 1}`}</div>
+                <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text3)' }}>{s.address || s.region || ''}</div>
+                <div style={{ marginTop: 6, fontSize: 11, color: 'var(--gold)'}>
+                  {Number.isFinite(s.distance_km) ? `${s.distance_km.toFixed(1)}km` : ''}
+                </div>
+              </div>
+            ))}
+            {stores.length === 0 && <div style={{ fontSize: 12, color: 'var(--text3)' }}>{storesFallback ? '위치 권한 없이 기본 지역 기준으로 로딩 중입니다.' : '스토어 데이터가 없습니다.'}</div>}
+          </div>
+        </div>
+
+        <div style={{ marginBottom: 8 }}>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 10 }}>전체 상품</div>
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 6 }}>
+            {BRAND_TABS.map((b) => (
+              <button key={b} onClick={() => setBrandTab(b)} style={{ whiteSpace: 'nowrap', borderRadius: 999, border: brandTab === b ? '1px solid rgba(201,168,76,0.55)' : '1px solid var(--border)', background: brandTab === b ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)', color: brandTab === b ? 'var(--gold)' : '#fff', fontSize: 12, padding: '7px 12px' }}>{b}</button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 10 }}>
+            {CATEGORY_CHIPS.map((c) => (
+              <button key={c} onClick={() => setCategoryTab(c)} style={{ whiteSpace: 'nowrap', borderRadius: 999, border: categoryTab === c ? '1px solid rgba(74,141,192,0.55)' : '1px solid var(--border)', background: categoryTab === c ? 'rgba(74,141,192,0.15)' : 'rgba(255,255,255,0.04)', color: categoryTab === c ? '#8bb9dc' : '#fff', fontSize: 12, padding: '7px 12px' }}>{c}</button>
+            ))}
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {filteredProducts.map((p: any) => (
+              <div key={p.id} style={{ border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
+                <div onClick={() => router.push(`/products/${p.id}`)} style={{ cursor: 'pointer' }}>
+                  <div style={{ width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)' }}>
+                    {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ height: '100%', display: 'grid', placeItems: 'center' }}>🧴</div>}
+                  </div>
+                  <div style={{ padding: 10 }}>
+                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.brands?.name || ''}</div>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', minHeight: 32 }}>{p.name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                      <span style={{ fontSize: 11, color: '#4cad7e', fontWeight: 700 }}>{toNum(p.discount_rate)}%</span>
+                      <span style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 800 }}>₩{toNum(p.retail_price).toLocaleString()}</span>
+                    </div>
                   </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 700, color: ph.type === 'earn' ? 'var(--gold)' : '#e08080' }}>
-                    {ph.type === 'earn' ? '+' : ''}{ph.amount.toLocaleString()}P
-                  </div>
-                  <div style={{ fontSize: 9, color: 'var(--text3)' }}>잔액 {ph.balance.toLocaleString()}P</div>
+                <div style={{ padding: '0 10px 10px' }}>
+                  <button onClick={() => router.push(`/products/${p.id}`)} style={{ width: '100%', border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 10, padding: '9px 0', fontWeight: 700, fontSize: 12 }}>
+                    구매하기
+                  </button>
                 </div>
               </div>
             ))}
           </div>
-        )}
-
-        {/* 알림 */}
-        {notifications.length > 0 && (
-          <div style={{ marginTop: 18 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>🔔 새 알림</div>
-            {notifications.map(n => (
-              <div key={n.id} style={{ background: 'rgba(74,141,192,0.06)', border: '1px solid rgba(74,141,192,0.18)', borderRadius: 11, padding: '11px 13px', marginBottom: 7, display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <span style={{ fontSize: 18 }}>{n.icon || '🔔'}</span>
-                <div>
-                  <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)', marginBottom: 2 }}>{n.title}</div>
-                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>{n.body}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        </div>
       </div>
 
       <DashboardBottomNav role="customer" />

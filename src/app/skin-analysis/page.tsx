@@ -56,32 +56,45 @@ export default function CustomerAnalysisPage() {
   const stepIndex = steps.indexOf(step)
   const progress = step === 'start' ? 0 : step === 'loading' || step === 'result' ? 100 : (stepIndex / 5) * 100
 
-  // 로그인 확인 + 오늘 분석 여부 체크
+  // 로그인 확인 + 오늘 분석 여부 체크 (실패해도 버튼 활성화되도록 try/finally)
   useEffect(() => {
+    let cancelled = false
     const run = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.replace('/login?role=customer'); return }
-      setUserId(user.id)
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.replace('/login?role=customer')
+          return
+        }
+        if (cancelled) return
+        setUserId(user.id)
 
-      // users 테이블에서 row id 가져오기
-      const { data: u } = await supabase.from('users').select('id').eq('auth_id', user.id).single()
-      if (u?.id) setUserRowId(u.id)
+        const { data: u } = await supabase.from('users').select('id').eq('auth_id', user.id).single()
+        if (u?.id) setUserRowId(u.id)
 
-      // 오늘(KST) 이미 분석했는지 확인
-      const today = todayKST()
-      const { data: existing } = await supabase
-        .from('skin_analysis')
-        .select('id, created_at')
-        .eq('user_id', user.id)
-        .gte('created_at', `${today}T00:00:00+09:00`)
-        .lte('created_at', `${today}T23:59:59+09:00`)
-        .limit(1)
-        .maybeSingle()
+        const today = todayKST()
+        const { data: existing, error } = await supabase
+          .from('skin_analysis')
+          .select('id, created_at')
+          .eq('user_id', user.id)
+          .gte('created_at', `${today}T00:00:00+09:00`)
+          .lte('created_at', `${today}T23:59:59+09:00`)
+          .limit(1)
+          .maybeSingle()
 
-      if (existing) setTodayDone(true)
-      setTodayDoneLoading(false)
+        if (!cancelled && !error && existing) setTodayDone(true)
+      } finally {
+        if (!cancelled) setTodayDoneLoading(false)
+      }
     }
     run()
+    const t = setTimeout(() => {
+      setTodayDoneLoading((prev) => (prev ? false : prev))
+    }, 5000)
+    return () => {
+      cancelled = true
+      clearTimeout(t)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
