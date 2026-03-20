@@ -46,6 +46,20 @@ type Answers = {
   q5: Lifestyle
 }
 
+type ProductRow = {
+  id: string
+  name: string
+  thumb_img?: string | null
+  retail_price?: number | null
+  description?: string | null
+  category?: string | null
+  brands?: { name?: string | null } | null
+  skin_types?: string[] | null
+  age_groups?: string[] | null
+  quiz_match?: string[] | null
+  sales_count?: number | null
+}
+
 function initialScores(): Scores {
   return { dry: 0, oily: 0, combo: 0, acne: 0, sensitive: 0, pigment: 0, aging: 0 }
 }
@@ -104,6 +118,73 @@ function progressForStep(step: Step) {
   if (step === 'q4') return 80
   if (step === 'q5') return 100
   return 0
+}
+
+function productText(p: ProductRow) {
+  return `${p.name || ''} ${p.description || ''} ${p.category || ''}`.toLowerCase()
+}
+
+function normalizeTypeLabel(v: string) {
+  if (v === '안티에이징형') return '안티에이징'
+  return v
+}
+
+function careStepsForSkinType(skinType: string): Array<{ title: string; keywords: string[] }> {
+  const t = normalizeTypeLabel(skinType)
+  if (t === '건성') return [
+    { title: '클렌징', keywords: ['클렌징'] },
+    { title: '토너', keywords: ['토너'] },
+    { title: '세럼', keywords: ['세럼', '앰플', '에센스'] },
+    { title: '크림', keywords: ['크림', '보습'] },
+    { title: '오일', keywords: ['오일'] },
+    { title: '마스크', keywords: ['마스크', '팩'] },
+  ]
+  if (t === '지성') return [
+    { title: '클렌징', keywords: ['클렌징'] },
+    { title: '토너', keywords: ['토너'] },
+    { title: '세럼', keywords: ['세럼', '앰플'] },
+    { title: '수분크림', keywords: ['수분크림', '젤크림', '크림'] },
+    { title: '선크림', keywords: ['선크림', '선케어'] },
+  ]
+  if (t === '복합성') return [
+    { title: '클렌징', keywords: ['클렌징'] },
+    { title: '토너', keywords: ['토너'] },
+    { title: '앰플', keywords: ['앰플'] },
+    { title: '세럼', keywords: ['세럼', '에센스'] },
+    { title: '크림', keywords: ['크림'] },
+    { title: '마스크', keywords: ['마스크', '팩'] },
+  ]
+  if (t === '민감성') return [
+    { title: '클렌징', keywords: ['클렌징'] },
+    { title: '진정토너', keywords: ['진정토너', '토너', '시카'] },
+    { title: '세럼', keywords: ['세럼', '앰플'] },
+    { title: '크림', keywords: ['크림'] },
+    { title: '선크림', keywords: ['선크림', '선케어'] },
+  ]
+  if (t === '트러블성') return [
+    { title: '클렌징', keywords: ['클렌징'] },
+    { title: '토너', keywords: ['토너'] },
+    { title: '트러블세럼', keywords: ['트러블세럼', '세럼', '앰플'] },
+    { title: '수분크림', keywords: ['수분크림', '젤크림', '크림'] },
+    { title: '마스크', keywords: ['마스크', '팩'] },
+  ]
+  return [
+    { title: '클렌징', keywords: ['클렌징'] },
+    { title: '에센스', keywords: ['에센스'] },
+    { title: '앰플', keywords: ['앰플'] },
+    { title: '크림', keywords: ['크림'] },
+    { title: '아이크림', keywords: ['아이크림'] },
+    { title: '선크림', keywords: ['선크림', '선케어'] },
+  ]
+}
+
+function calcMatchRate(p: ProductRow, skinType: string, ageGroup: string, quizTags: string[]) {
+  let score = 0
+  if (Array.isArray(p.skin_types) && p.skin_types.includes(skinType)) score += 40
+  if (ageGroup && Array.isArray(p.age_groups) && p.age_groups.includes(ageGroup)) score += 20
+  const productTags = Array.isArray(p.quiz_match) ? p.quiz_match : []
+  if (quizTags.some(t => productTags.includes(t))) score += 40
+  return Math.min(100, score)
 }
 
 const Q1_OPTIONS: Array<{ key: Q1Key; label: string }> = [
@@ -191,11 +272,16 @@ export default function CustomerSkinAnalysisQuizPage() {
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [toast, setToast] = useState('')
 
   const [todayDone, setTodayDone] = useState(false)
   const [todayDoneLoading, setTodayDoneLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
   const [userRowId, setUserRowId] = useState<string | null>(null)
+  const [userAgeGroup, setUserAgeGroup] = useState('')
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [cartedIds, setCartedIds] = useState<string[]>([])
+  const [searchText, setSearchText] = useState('')
 
   const progress = progressForStep(step)
 
@@ -210,7 +296,11 @@ export default function CustomerSkinAnalysisQuizPage() {
         setUserId(user.id)
 
         const { data: u } = await supabase.from('users').select('id').eq('auth_id', user.id).single()
-        if (u?.id) setUserRowId(u.id)
+        if (u?.id) {
+          setUserRowId(u.id)
+          const { data: userProfile } = await supabase.from('users').select('age_group').eq('id', u.id).maybeSingle()
+          setUserAgeGroup((userProfile?.age_group || '').toString())
+        }
 
         const today = todayKST()
 
@@ -326,18 +416,43 @@ export default function CustomerSkinAnalysisQuizPage() {
 
       const { scores, finalType } = computeScores()
 
-      // 제품 추천: skin_types 배열에 finalType 매칭
-      const { data: products } = await supabase
+      const { data: matchedProducts } = await supabase
         .from('products')
-        .select('id,name,thumb_img,retail_price,brands(name),skin_types,sales_count')
+        .select('id,name,thumb_img,retail_price,description,category,brands(name),skin_types,age_groups,quiz_match,sales_count')
         .eq('status', 'active')
         .gt('retail_price', productMinPrice)
+        .contains('skin_types', [finalType])
         .order('sales_count', { ascending: false })
         .limit(productSearchLimit)
 
-      const allProducts = products || []
-      const matched = allProducts.filter((p: any) => Array.isArray(p.skin_types) && p.skin_types.includes(finalType))
-      const rec = (matched.length ? matched : allProducts).slice(0, recommendLimit)
+      let sourceProducts = (matchedProducts || []) as ProductRow[]
+      if (sourceProducts.length === 0) {
+        const { data: fallbackByText } = await supabase
+          .from('products')
+          .select('id,name,thumb_img,retail_price,description,category,brands(name),skin_types,age_groups,quiz_match,sales_count')
+          .eq('status', 'active')
+          .gt('retail_price', productMinPrice)
+          .ilike('description', `%${normalizeTypeLabel(finalType)}%`)
+          .order('sales_count', { ascending: false })
+          .limit(productSearchLimit)
+        sourceProducts = (fallbackByText || []) as ProductRow[]
+      }
+      if (sourceProducts.length === 0) {
+        const { data: fallbackPopular } = await supabase
+          .from('products')
+          .select('id,name,thumb_img,retail_price,description,category,brands(name),skin_types,age_groups,quiz_match,sales_count')
+          .eq('status', 'active')
+          .gt('retail_price', productMinPrice)
+          .order('sales_count', { ascending: false })
+          .limit(productSearchLimit)
+        sourceProducts = (fallbackPopular || []) as ProductRow[]
+      }
+
+      const quizTags = answers.q2
+      const rec = sourceProducts
+        .map((p) => ({ ...p, matchRate: calcMatchRate(p, finalType, userAgeGroup, quizTags) }))
+        .sort((a: any, b: any) => b.matchRate - a.matchRate)
+        .slice(0, recommendLimit || 5)
 
       // skin_profiles 저장 (없으면 skin_analysis로 fallback)
       const q2Concerns = answers.q2
@@ -399,9 +514,11 @@ export default function CustomerSkinAnalysisQuizPage() {
       }
 
       setTodayDone(true)
+      setSelectedIds([])
+      setSearchText('')
       setResult({
         skinType: finalType,
-        products: rec,
+        products: rec as any[],
       })
       setStep('result')
     } catch (e: any) {
@@ -413,6 +530,88 @@ export default function CustomerSkinAnalysisQuizPage() {
   }
 
   const [result, setResult] = useState<{ skinType: string; products: any[] } | null>(null)
+  const selectedTotal = useMemo(() => {
+    if (!result) return 0
+    const picked = result.products.filter((p: any) => selectedIds.includes(p.id))
+    return picked.reduce((sum: number, p: any) => sum + Number(p.retail_price || 0), 0)
+  }, [result, selectedIds])
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => (prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]))
+  }
+
+  const visibleIds = useMemo(() => {
+    if (!result) return [] as string[]
+    const ids = new Set<string>()
+    result.products.forEach((p: any) => ids.add(p.id))
+    return Array.from(ids)
+  }, [result])
+
+  const searchResults = useMemo(() => {
+    if (!result) return [] as any[]
+    const q = searchText.trim().toLowerCase()
+    if (!q) return []
+    return result.products.filter((p: ProductRow) => `${p.name || ''} ${p.description || ''}`.toLowerCase().includes(q))
+  }, [result, searchText])
+
+  const stepSections = useMemo(() => {
+    if (!result) return [] as Array<{ stepTitle: string; products: any[] }>
+    const steps = careStepsForSkinType(result.skinType)
+    return steps.map((s) => ({
+      stepTitle: s.title,
+      products: result.products.filter((p: ProductRow) => s.keywords.some(k => productText(p).includes(k.toLowerCase()))).slice(0, 8),
+    }))
+  }, [result])
+
+  useEffect(() => {
+    if (!result || !userId) return
+    const run = async () => {
+      const { data: latest } = await supabase
+        .from('skin_profiles')
+        .select('skin_type')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      const nextType = latest?.skin_type
+      if (nextType && nextType !== result.skinType) {
+        setSearchText('')
+        setSelectedIds([])
+        setToast('피부 타입이 변경되어 추천 제품을 업데이트했어요')
+        setResult(prev => (prev ? { ...prev, skinType: nextType } : prev))
+      }
+    }
+    run()
+  }, [result?.skinType, userId])
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(''), 2200)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  const addSelectedToCart = async () => {
+    if (!selectedIds.length || !userId) return
+    const target = result?.products.filter((p: any) => selectedIds.includes(p.id)) || []
+    try {
+      await supabase.from('cart_items').upsert(
+        target.map((p: any) => ({ user_id: userId, product_id: p.id, quantity: 1 })),
+        { onConflict: 'user_id,product_id' }
+      )
+    } catch {
+      // ignore table mismatch
+    }
+    const existing = JSON.parse(localStorage.getItem('auran_cart_items') || '[]') as string[]
+    const merged = Array.from(new Set([...existing, ...selectedIds]))
+    localStorage.setItem('auran_cart_items', JSON.stringify(merged))
+    setCartedIds(merged)
+    setToast(`${selectedIds.length}개를 장바구니에 담았어요 🛒`)
+  }
+
+  const paySelected = () => {
+    if (!selectedIds.length) return
+    router.push(`/checkout?products=${selectedIds.join(',')}&from=ai-result`)
+  }
 
   if (loading || step === 'loading') {
     return (
@@ -710,6 +909,12 @@ export default function CustomerSkinAnalysisQuizPage() {
           </>
         )}
 
+        {toast && (
+          <div style={{ position: 'sticky', top: 66, zIndex: 35, marginBottom: 10, background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.45)', color: GOLD, fontSize: 12, padding: '10px 12px', borderRadius: 10 }}>
+            {toast}
+          </div>
+        )}
+
         {/* Result */}
         {step === 'result' && result && (
           <>
@@ -720,47 +925,85 @@ export default function CustomerSkinAnalysisQuizPage() {
               </div>
 
               {result.products.length > 0 && (
-                <div style={{ marginBottom: 24 }}>
-                  <h3 style={{ fontSize: 14, color: '#fff', marginBottom: 10 }}>{`맞춤 추천 제품`}</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {result.products.map((p: any) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => router.push(`/products/${p.id}`)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 12,
-                          padding: 12,
-                          borderRadius: 12,
-                          background: 'var(--bg3)',
-                          border: '1px solid var(--border)',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                        }}
-                      >
-                        <div style={{ width: 48, height: 48, borderRadius: 8, background: 'rgba(0,0,0,0.3)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {p.thumb_img ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={p.thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            <span style={{ fontSize: 20, opacity: 0.4 }}>🧴</span>
-                          )}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {p.name}
+                <>
+                  <div style={{ marginBottom: 16 }}>
+                    <h3 style={{ fontSize: 14, color: '#fff', marginBottom: 10 }}>AI 맞춤 추천 TOP 5</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {result.products.slice(0, 5).map((p: any) => (
+                        <div key={p.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: 10, borderRadius: 12, background: 'var(--bg3)', border: '1px solid var(--border)' }}>
+                          <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelect(p.id)} />
+                          <div onClick={() => router.push(`/products/${p.id}`)} style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, cursor: 'pointer' }}>
+                            <div style={{ width: 52, height: 52, borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
+                              {p.thumb_img ? <img src={p.thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                            </div>
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontSize: 12, color: 'var(--text3)' }}>{p.brands?.name || ''}</div>
+                              <div style={{ fontSize: 13, color: '#fff', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                              <div style={{ fontSize: 12, color: GOLD, marginTop: 2 }}>{`맞춤도 ${Number(p.matchRate || 0)}%`}</div>
+                            </div>
                           </div>
-                          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                            {p.brands?.name || ''}
-                          </div>
+                          <button onClick={() => toggleSelect(p.id)} style={{ border: '1px solid rgba(201,168,76,0.35)', background: selectedIds.includes(p.id) ? 'rgba(201,168,76,0.2)' : 'transparent', color: GOLD, borderRadius: 8, padding: '6px 9px', fontSize: 12 }}>
+                            {cartedIds.includes(p.id) ? '담김' : '담기'}
+                          </button>
                         </div>
-                        <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--gold)' }}>{`₩${toComma(p.retail_price)}`}</div>
-                      </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: 16 }}>
+                    <h3 style={{ fontSize: 14, color: '#fff', marginBottom: 8 }}>피부타입별 검색바</h3>
+                    <input
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      placeholder={`🔍 ${result.skinType} 피부 제품 검색...`}
+                      style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg3)', color: '#fff', padding: '0 12px', outline: 'none' }}
+                    />
+                    {searchText.trim() && (
+                      <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {searchResults.map((p: any) => (
+                          <div key={`search-${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg3)', padding: 8 }}>
+                            <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelect(p.id)} />
+                            <div onClick={() => router.push(`/products/${p.id}`)} style={{ flex: 1, cursor: 'pointer', minWidth: 0 }}>
+                              <div style={{ color: '#fff', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                              <div style={{ color: 'var(--text3)', fontSize: 11 }}>{p.brands?.name || ''}</div>
+                            </div>
+                            <div style={{ color: GOLD, fontSize: 12, fontWeight: 800 }}>{`₩${toComma(p.retail_price)}`}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div style={{ marginBottom: 24 }}>
+                    <h3 style={{ fontSize: 14, color: '#fff', marginBottom: 8 }}>단계별 케어 라인업</h3>
+                    {stepSections.map((sec, idx) => (
+                      <div key={sec.stepTitle} style={{ marginBottom: 14 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                          <div style={{ color: '#fff', fontSize: 13, fontWeight: 800 }}>{`STEP ${idx + 1} · ${sec.stepTitle}`}</div>
+                          <button style={{ border: 'none', background: 'transparent', color: 'var(--text3)', fontSize: 12 }}>전체보기 ›</button>
+                        </div>
+                        <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+                          {sec.products.map((p: any) => (
+                            <div key={`${sec.stepTitle}-${p.id}`} style={{ width: 160, flexShrink: 0, border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', background: 'var(--bg3)' }}>
+                              <div style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(255,255,255,0.04)' }}>
+                                <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelect(p.id)} style={{ position: 'absolute', top: 8, left: 8, zIndex: 1 }} />
+                                {p.thumb_img ? <img src={p.thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                              </div>
+                              <div style={{ padding: 8 }}>
+                                <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.brands?.name || ''}</div>
+                                <div style={{ color: '#fff', fontSize: 12, fontWeight: 700, lineHeight: 1.3, minHeight: 32, display: '-webkit-box', WebkitLineClamp: 2 as any, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{p.name}</div>
+                                <div style={{ color: GOLD, fontSize: 12, marginTop: 3 }}>{`₩${toComma(p.retail_price)}`}</div>
+                                <button onClick={() => toggleSelect(p.id)} style={{ marginTop: 6, width: '100%', borderRadius: 8, border: '1px solid rgba(201,168,76,0.35)', background: selectedIds.includes(p.id) ? 'rgba(201,168,76,0.2)' : 'transparent', color: GOLD, fontSize: 12, padding: '6px 0' }}>
+                                  {cartedIds.includes(p.id) ? '담김' : '담기'}
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
-                </div>
+                </>
               )}
 
               <button
@@ -774,6 +1017,35 @@ export default function CustomerSkinAnalysisQuizPage() {
         )}
       </div>
 
+      {step === 'result' && result && (
+        <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 66, width: '100%', maxWidth: 480, padding: '10px 12px', borderTop: '1px solid var(--border)', background: 'rgba(10,12,15,0.96)', zIndex: 45 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: 12, marginBottom: 8 }}>
+            <button
+              onClick={() => setSelectedIds(selectedIds.length === visibleIds.length ? [] : visibleIds)}
+              style={{ border: 'none', background: 'transparent', color: selectedIds.length ? GOLD : '#fff', fontWeight: 700, cursor: 'pointer' }}
+            >
+              {selectedIds.length === visibleIds.length ? '☑ 전체해제' : '☑ 전체선택'}
+            </button>
+            <span>{`선택 ${selectedIds.length}개 · ₩${toComma(selectedTotal)}`}</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <button
+              disabled={!selectedIds.length}
+              onClick={addSelectedToCart}
+              style={{ height: 42, borderRadius: 10, border: '1px solid var(--border)', background: selectedIds.length ? 'rgba(201,168,76,0.18)' : 'var(--bg3)', color: selectedIds.length ? GOLD : 'var(--text3)', fontWeight: 700 }}
+            >
+              🛒 장바구니
+            </button>
+            <button
+              disabled={!selectedIds.length}
+              onClick={paySelected}
+              style={{ height: 42, borderRadius: 10, border: 'none', background: selectedIds.length ? GOLD : 'var(--bg3)', color: selectedIds.length ? '#0a0a0a' : 'var(--text3)', fontWeight: 900 }}
+            >
+              ⚡ 선택 결제하기
+            </button>
+          </div>
+        </div>
+      )}
       <DashboardBottomNav role="customer" />
     </div>
   )

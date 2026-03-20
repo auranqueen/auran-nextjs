@@ -11,6 +11,10 @@ const nextConfig = {
     ],
     remotePatterns: [
       {
+        protocol: 'http',
+        hostname: 'won.duchess.kr',
+      },
+      {
         protocol: 'https',
         hostname: 'won.duchess.kr',
       },
