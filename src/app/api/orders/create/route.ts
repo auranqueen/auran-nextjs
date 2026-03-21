@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
+import { computeCouponDiscount } from '@/lib/coupon/computeDiscount'
 
 function json(data: object, status = 200) {
   return NextResponse.json(data, { status })
@@ -22,6 +23,7 @@ export async function POST(req: NextRequest) {
   const usePoints = Math.max(0, Math.floor(Number(body?.use_points) || 0))
   const useCharge = Math.max(0, Math.floor(Number(body?.use_charge) || 0))
   const giftTo = typeof body?.gift_to === 'string' && body.gift_to ? body.gift_to : null
+  const userCouponId = typeof body?.user_coupon_id === 'string' && body.user_coupon_id ? body.user_coupon_id : null
   if (items.length === 0) return json({ ok: false, error: 'items_required' }, 400)
 
   type Item = { product_id: string; quantity: number }
@@ -110,9 +112,39 @@ export async function POST(req: NextRequest) {
     })
   }
   if (totalAmount < 1) return json({ ok: false, error: 'invalid_total' }, 400)
-  const pointUsed = Math.min(usePoints, totalAmount)
-  const chargeUsed = Math.min(useCharge, Math.max(0, totalAmount - pointUsed))
-  const finalAmount = Math.max(0, totalAmount - pointUsed - chargeUsed)
+
+  let couponDiscount = 0
+  let validatedUserCouponId: string | null = null
+  if (userCouponId) {
+    const { data: maxC } = await client
+      .from('admin_settings')
+      .select('value')
+      .eq('category', 'coupon')
+      .eq('key', 'max_coupons_per_order')
+      .maybeSingle()
+    const maxPerOrder = Math.max(0, Number(maxC?.value ?? 1))
+    if (maxPerOrder < 1) return json({ ok: false, error: 'coupon_not_allowed' }, 400)
+
+    const { data: uc } = await client
+      .from('user_coupons')
+      .select('id,status,coupon_id')
+      .eq('id', userCouponId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+    if (!uc || uc.status !== 'unused') return json({ ok: false, error: 'invalid_coupon' }, 400)
+
+    const { data: c } = await client.from('coupons').select('*').eq('id', uc.coupon_id).maybeSingle()
+    if (!c || !c.is_active) return json({ ok: false, error: 'coupon_inactive' }, 400)
+
+    couponDiscount = computeCouponDiscount(totalAmount, c)
+    if (couponDiscount <= 0) return json({ ok: false, error: 'coupon_not_applicable' }, 400)
+    validatedUserCouponId = uc.id
+  }
+
+  const afterCoupon = Math.max(0, totalAmount - couponDiscount)
+  const pointUsed = Math.min(usePoints, afterCoupon)
+  const chargeUsed = Math.min(useCharge, Math.max(0, afterCoupon - pointUsed))
+  const finalAmount = Math.max(0, afterCoupon - pointUsed - chargeUsed)
 
   const { data: order, error: orderErr } = await client
     .from('orders')
@@ -122,13 +154,14 @@ export async function POST(req: NextRequest) {
       total_amount: totalAmount,
       point_used: pointUsed,
       charge_used: chargeUsed,
-      coupon_discount: 0,
+      coupon_discount: couponDiscount,
       final_amount: finalAmount,
       earn_points: 0,
       points_awarded: false,
       share_journal_id: validatedShareJournalId,
       gift_receiver_id: giftTo,
       gift_message: giftMessage,
+      user_coupon_id: validatedUserCouponId,
     })
     .select('id,order_no,final_amount')
     .single()
@@ -146,6 +179,15 @@ export async function POST(req: NextRequest) {
       subtotal: row.subtotal,
     })
     if (itemErr) return json({ ok: false, error: 'order_item_failed', detail: itemErr.message }, 500)
+  }
+
+  if (finalAmount === 0 && validatedUserCouponId) {
+    const db = tryCreateServiceClient() || client
+    await db
+      .from('user_coupons')
+      .update({ status: 'used', used_at: new Date().toISOString(), order_id: order.id })
+      .eq('id', validatedUserCouponId)
+      .eq('status', 'unused')
   }
 
   return json({

@@ -62,6 +62,10 @@ export async function GET(request: NextRequest) {
       source: provider || 'direct',
       action: 'signup',
     })
+    const { issueSignupCouponsForAuthUser } = await import('@/lib/coupon/issueSignup')
+    await issueSignupCouponsForAuthUser(user.id)
+    const { sendSignupAlimtalkIfNeeded } = await import('@/lib/signup/sendSignupAlimtalk')
+    await sendSignupAlimtalkIfNeeded(user.id)
   }
 
   const rawRole = existing?.role ?? meta.role ?? (position === 'salon' ? 'owner' : position) ?? 'customer'

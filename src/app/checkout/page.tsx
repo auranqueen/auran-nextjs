@@ -8,10 +8,17 @@ import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import { createClient } from '@/lib/supabase/client'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
+import { computeCouponDiscount, isCouponExpiredForUser } from '@/lib/coupon/computeDiscount'
 
 function toNum(v: any) {
   const n = Number(v)
   return Number.isFinite(n) ? n : 0
+}
+
+type UcRow = {
+  id: string
+  status: string
+  coupons: any
 }
 
 function CheckoutPageInner() {
@@ -29,6 +36,9 @@ function CheckoutPageInner() {
   const [paying, setPaying] = useState(false)
   const [toast, setToast] = useState('')
   const [chargeSheetOpen, setChargeSheetOpen] = useState(false)
+  const [couponSheetOpen, setCouponSheetOpen] = useState(false)
+  const [userCoupons, setUserCoupons] = useState<UcRow[]>([])
+  const [selectedUserCouponId, setSelectedUserCouponId] = useState<string | null>(null)
 
   const toastRate = getSettingNum('toast', 'exchange_rate', 100)
   const checkoutToastFirst = getSettingNum('checkout', 'toast_first_priority', 1) === 1
@@ -84,6 +94,12 @@ function CheckoutPageInner() {
       setMeId(me.id)
       setPoints(toNum(me.points))
       setBalance(toNum(me.charge_balance))
+      const { data: ucs } = await supabase
+        .from('user_coupons')
+        .select('id,status,coupons(*)')
+        .eq('user_id', user.id)
+        .eq('status', 'unused')
+      setUserCoupons((ucs || []) as UcRow[])
       if (productIds.length > 0) {
         const { data: rows } = await supabase
           .from('products')
@@ -106,19 +122,50 @@ function CheckoutPageInner() {
       }, 0),
     [orderedProducts, qtyList]
   )
+
+  const selectedRow = useMemo(
+    () => userCoupons.find((u) => u.id === selectedUserCouponId) || null,
+    [userCoupons, selectedUserCouponId]
+  )
+  const couponDiscount = useMemo(() => {
+    if (!selectedRow?.coupons) return 0
+    return computeCouponDiscount(subtotal, selectedRow.coupons)
+  }, [selectedRow, subtotal])
+
+  const afterCoupon = Math.max(0, subtotal - couponDiscount)
   const maxPointsUsable = useMemo(() => Math.min(points, Math.floor((subtotal * maxPointRate) / 100)), [points, subtotal, maxPointRate])
   const pointUsed = useMemo(() => {
     if (!usePoints) return 0
     const input = Math.max(0, Math.floor(pointInput || 0))
-    return Math.min(maxPointsUsable, input)
-  }, [usePoints, pointInput, maxPointsUsable])
-  const remaining = Math.max(0, subtotal - pointUsed)
+    return Math.min(maxPointsUsable, input, afterCoupon)
+  }, [usePoints, pointInput, maxPointsUsable, afterCoupon])
+  const remaining = Math.max(0, afterCoupon - pointUsed)
   const toastUsed = checkoutToastFirst ? Math.min(balance, remaining) : 0
   const needCharge = Math.max(0, remaining - toastUsed)
 
   useEffect(() => {
     setPointInput(maxPointsUsable)
   }, [maxPointsUsable])
+
+  useEffect(() => {
+    if (!selectedUserCouponId) return
+    const row = userCoupons.find((u) => u.id === selectedUserCouponId)
+    if (!row?.coupons) {
+      setSelectedUserCouponId(null)
+      return
+    }
+    if (isCouponExpiredForUser({ status: 'unused' }, row.coupons) || computeCouponDiscount(subtotal, row.coupons) <= 0) {
+      setSelectedUserCouponId(null)
+    }
+  }, [subtotal, userCoupons, selectedUserCouponId])
+
+  const usableCouponCount = useMemo(() => {
+    return userCoupons.filter((u) => {
+      if (!u.coupons) return false
+      if (isCouponExpiredForUser({ status: u.status }, u.coupons)) return false
+      return computeCouponDiscount(subtotal, u.coupons) > 0
+    }).length
+  }, [userCoupons, subtotal])
 
   const onPay = async (allowCharge = true) => {
     if (!orderedProducts.length || !meId) return
@@ -137,13 +184,14 @@ function CheckoutPageInner() {
     }
     setPaying(true)
     try {
-      const payload = {
+      const payload: Record<string, unknown> = {
         items: orderedProducts.map((p, i) => ({ product_id: p.id, quantity: qtyList[i] ?? qtyList[0] ?? 1 })),
         use_points: pointUsed,
         use_charge: toastUsed,
         gift_to: giftTo || null,
         gift_message: giftMessage || null,
       }
+      if (selectedUserCouponId && couponDiscount > 0) payload.user_coupon_id = selectedUserCouponId
       const orderRes = await fetch('/api/orders/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -194,8 +242,36 @@ function CheckoutPageInner() {
             </div>
             {!!giftTo && <div style={{ marginBottom: 10, fontSize: 12, color: '#bcd6ff' }}>🎁 선물 주문 · 받는 분 ID: {giftTo}</div>}
 
+            <button
+              type="button"
+              onClick={() => setCouponSheetOpen(true)}
+              style={{
+                width: '100%',
+                marginBottom: 10,
+                padding: '12px 14px',
+                borderRadius: 12,
+                border: '1px solid rgba(201,168,76,0.35)',
+                background: 'rgba(201,168,76,0.08)',
+                color: '#fff',
+                fontWeight: 800,
+                fontSize: 13,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+              }}
+            >
+              <span>🎫 쿠폰 {selectedRow?.coupons?.name ? `· ${selectedRow.coupons.name}` : ''}</span>
+              <span style={{ color: 'var(--gold)' }}>사용가능 {usableCouponCount}장 ›</span>
+            </button>
+
             <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 12, padding: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#fff', fontSize: 13 }}><span>주문금액</span><span>₩{subtotal.toLocaleString()}</span></div>
+              {couponDiscount > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#7eb8ff', fontSize: 13 }}>
+                  <span>🎫 쿠폰 할인</span>
+                  <span>-₩{couponDiscount.toLocaleString()}</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#4cad7e', fontSize: 13 }}><span>🍞 토스트 사용</span><span>-₩{toastUsed.toLocaleString()}</span></div>
               <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--text3)' }}>보유: {Math.floor(balance / Math.max(1, toastRate)).toLocaleString()}T (₩{balance.toLocaleString()})</div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#c9a84c', fontSize: 13 }}>
@@ -217,8 +293,8 @@ function CheckoutPageInner() {
                 />
               )}
               <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--text3)' }}>보유: {points.toLocaleString()}P · 최대 ₩{maxPointsUsable.toLocaleString()}</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', color: needCharge > 0 ? '#e57373' : '#fff', fontSize: 14, fontWeight: 900 }}>
-                <span>추가 필요</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.08)', color: needCharge > 0 ? '#e57373' : '#fff', fontSize: 14, fontWeight: 900 }}>
+                <span>최종 결제금액</span>
                 <span>₩{needCharge.toLocaleString()}</span>
               </div>
               {showChargeOption && needCharge > 0 && (
@@ -232,7 +308,7 @@ function CheckoutPageInner() {
                 </button>
               )}
               <button onClick={() => onPay(true)} disabled={paying || needCharge > 0} style={{ marginTop: 10, width: '100%', height: 42, borderRadius: 10, border: 'none', background: needCharge > 0 ? '#55606f' : '#c9a84c', color: needCharge > 0 ? '#c8d0db' : '#111', fontWeight: 900 }}>
-                {paying ? '결제 준비 중...' : `결제하기 · 최종 ₩${needCharge.toLocaleString()}`}
+                {paying ? '결제 준비 중...' : `결제하기 · ₩${needCharge.toLocaleString()}`}
               </button>
             </div>
             <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text3)' }}>
@@ -268,6 +344,79 @@ function CheckoutPageInner() {
                 🍞 {pkg.t.toLocaleString()}T  ₩{pkg.p.toLocaleString()} {pkg.popular ? '[인기 🔥]' : ''} {pkg.bonus ? `(+${pkg.bonus}T 보너스)` : ''}
               </button>
             ))}
+          </div>
+        </div>
+      )}
+      {couponSheetOpen && (
+        <div onClick={() => setCouponSheetOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 131 }}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              bottom: 0,
+              width: '100%',
+              maxWidth: 480,
+              maxHeight: '72vh',
+              overflow: 'auto',
+              background: '#11161b',
+              borderTopLeftRadius: 18,
+              borderTopRightRadius: 18,
+              borderTop: '1px solid var(--border)',
+              padding: 14,
+            }}
+          >
+            <div style={{ fontSize: 15, color: '#fff', fontWeight: 900, marginBottom: 10 }}>쿠폰 선택</div>
+            <button
+              type="button"
+              onClick={() => { setSelectedUserCouponId(null); setCouponSheetOpen(false) }}
+              style={{ width: '100%', padding: 10, marginBottom: 8, borderRadius: 10, border: '1px dashed var(--border)', background: 'transparent', color: 'var(--text3)', fontSize: 12 }}
+            >
+              쿠폰 적용 안 함
+            </button>
+            {userCoupons.map((uc) => {
+              const c = uc.coupons
+              if (!c) return null
+              const expired = isCouponExpiredForUser({ status: uc.status }, c)
+              const disc = computeCouponDiscount(subtotal, c)
+              const ok = !expired && disc > 0
+              const sel = selectedUserCouponId === uc.id
+              return (
+                <button
+                  key={uc.id}
+                  type="button"
+                  disabled={!ok}
+                  onClick={() => {
+                    if (!ok) return
+                    setSelectedUserCouponId(uc.id)
+                    setCouponSheetOpen(false)
+                  }}
+                  style={{
+                    width: '100%',
+                    textAlign: 'left',
+                    padding: 12,
+                    marginBottom: 8,
+                    borderRadius: 12,
+                    border: sel ? '1px solid rgba(201,168,76,0.6)' : '1px solid var(--border)',
+                    background: ok ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.2)',
+                    color: ok ? '#fff' : 'rgba(255,255,255,0.35)',
+                    cursor: ok ? 'pointer' : 'not-allowed',
+                  }}
+                >
+                  <div style={{ fontWeight: 900, fontSize: 13 }}>{c.name}</div>
+                  <div style={{ fontSize: 12, marginTop: 4, color: ok ? 'var(--gold)' : 'inherit' }}>
+                    {c.type === 'amount' ? `₩${Number(c.discount_amount || 0).toLocaleString()} 할인` : `${Number(c.discount_rate || 0)}% 할인`}
+                  </div>
+                  {!ok && (
+                    <div style={{ fontSize: 11, marginTop: 6, color: '#e57373' }}>
+                      {expired ? '기간 만료' : `최소 주문 ₩${Number(c.min_order || 0).toLocaleString()} 미충족`}
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+            {userCoupons.length === 0 && <div style={{ fontSize: 12, color: 'var(--text3)' }}>사용 가능한 쿠폰이 없어요. 나 → 쿠폰함을 확인해 주세요.</div>}
           </div>
         </div>
       )}

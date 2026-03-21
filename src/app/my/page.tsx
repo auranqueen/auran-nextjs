@@ -130,6 +130,18 @@ export default function MyPage() {
 
               <button
                 type="button"
+                onClick={() => router.push('/my/coupons')}
+                style={{ width: '100%', textAlign: 'left', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: '14px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+              >
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>🎫 쿠폰함</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 4 }}>앱 전용 할인 쿠폰</div>
+                </div>
+                <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: 18 }}>›</div>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => router.push('/notices')}
                 style={{ width: '100%', textAlign: 'left', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: '14px 14px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
               >

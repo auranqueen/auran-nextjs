@@ -138,7 +138,7 @@ export async function POST(req: NextRequest) {
         const client = tryCreateServiceClient() || supabase
         const { data: orderRow } = await client
           .from('orders')
-          .select('id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,gift_receiver_id,gift_message,payment_applied,gift_created')
+          .select('id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,gift_receiver_id,gift_message,payment_applied,gift_created,user_coupon_id')
           .eq('id', intent.target_id)
           .maybeSingle()
         const { data: userRow } = await client.from('users').select('auth_id').eq('id', intent.user_id).single()
@@ -169,6 +169,18 @@ export async function POST(req: NextRequest) {
             }
           }
           await client.from('orders').update({ payment_applied: true }).eq('id', orderRow.id)
+
+          if (orderRow.user_coupon_id) {
+            await client
+              .from('user_coupons')
+              .update({
+                status: 'used',
+                used_at: new Date().toISOString(),
+                order_id: orderRow.id,
+              })
+              .eq('id', orderRow.user_coupon_id)
+              .eq('status', 'unused')
+          }
         }
 
         if (orderRow?.id && orderRow.gift_receiver_id && !orderRow.gift_created) {

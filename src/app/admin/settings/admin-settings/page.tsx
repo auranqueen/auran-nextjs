@@ -181,11 +181,34 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       show_action_debug: { label: '액션 디버그 노출', unit: '', type: 'number', defaultValue: '1' },
     },
   },
+  coupon: {
+    label: '쿠폰',
+    keys: {
+      signup_coupon_enabled: { label: '가입 쿠폰 자동 발급', unit: '', type: 'number', defaultValue: '1' },
+      max_coupons_per_order: { label: '주문당 최대 쿠폰 수', unit: '장', type: 'number', defaultValue: '1' },
+      welcome_coupon_amount: { label: '웰컴 쿠폰 금액', unit: '원', type: 'number', defaultValue: '5000' },
+      welcome_min_order: { label: '웰컴 쿠폰 최소 주문', unit: '원', type: 'number', defaultValue: '50000' },
+    },
+  },
+  alimtalk: {
+    label: '알림톡',
+    keys: {
+      enabled: { label: '알림톡 발송', unit: '', type: 'number', defaultValue: '1' },
+      signup_enabled: { label: '가입 알림톡', unit: '', type: 'number', defaultValue: '1' },
+      coupon_enabled: { label: '쿠폰 알림톡', unit: '', type: 'number', defaultValue: '1' },
+      order_enabled: { label: '주문 알림톡', unit: '', type: 'number', defaultValue: '1' },
+      gift_enabled: { label: '선물 알림톡', unit: '', type: 'number', defaultValue: '1' },
+    },
+  },
 }
 
 export default function AdminSettingsAdminSettingsPage() {
   const { settings, loading, saving, error, saved, set, saveCategory } = useAdminSettings()
   const [active, setActive] = useState<string>('points_action')
+  const [testPhone, setTestPhone] = useState('')
+  const [testMsg, setTestMsg] = useState('AURAN 테스트 알림입니다.')
+  const [testBusy, setTestBusy] = useState(false)
+  const [testResult, setTestResult] = useState<string | null>(null)
 
   const categories = useMemo(() => Object.keys(META), [])
   const activeMeta = META[active]
@@ -201,7 +224,7 @@ export default function AdminSettingsAdminSettingsPage() {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 14 }}>
         {categories.map(c => {
           const isActive = c === active
           return (
@@ -298,6 +321,48 @@ export default function AdminSettingsAdminSettingsPage() {
       {saved && (
         <div style={{ marginTop: 12, background: 'rgba(76,173,126,0.10)', border: '1px solid rgba(76,173,126,0.35)', borderRadius: 12, padding: 12, color: '#83d3a8', fontSize: 13 }}>
           설정이 저장됐어요 ✓
+        </div>
+      )}
+
+      {active === 'alimtalk' && (
+        <div style={{ marginTop: 16, background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 16, padding: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 8 }}>테스트 발송 (알리고 SMS)</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 10 }}>ALIGO_API_KEY, ALIGO_USER_ID, KAKAO_SENDER_PHONE 환경변수 필요</div>
+          <input
+            value={testPhone}
+            onChange={(e) => setTestPhone(e.target.value)}
+            placeholder="수신 번호"
+            style={{ width: '100%', marginBottom: 8, padding: 10, borderRadius: 12, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontSize: 12 }}
+          />
+          <textarea
+            value={testMsg}
+            onChange={(e) => setTestMsg(e.target.value)}
+            rows={3}
+            style={{ width: '100%', marginBottom: 8, padding: 10, borderRadius: 12, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontSize: 12, resize: 'vertical' }}
+          />
+          <button
+            type="button"
+            disabled={testBusy}
+            onClick={async () => {
+              setTestBusy(true)
+              setTestResult(null)
+              const res = await fetch('/api/kakao/alimtalk', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ phone: testPhone, message: testMsg, title: 'AURAN 테스트' }),
+              })
+              const j = await res.json().catch(() => ({}))
+              setTestBusy(false)
+              setTestResult(JSON.stringify(j, null, 2))
+            }}
+            style={{ padding: '10px 14px', borderRadius: 12, border: 'none', background: '#c9a84c', color: '#111', fontWeight: 900, cursor: testBusy ? 'wait' : 'pointer' }}
+          >
+            {testBusy ? '발송 중...' : '테스트 발송'}
+          </button>
+          {testResult && (
+            <pre style={{ marginTop: 10, fontSize: 11, color: 'rgba(255,255,255,0.65)', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{testResult}</pre>
+          )}
         </div>
       )}
 
