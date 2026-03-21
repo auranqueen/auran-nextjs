@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
-import { createNotification } from '@/lib/notifications/createNotification'
+import { issueCouponManualToUser } from '@/lib/admin/issueCouponManual'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 
@@ -207,48 +207,23 @@ export async function POST(req: NextRequest) {
   if (action === 'issue') {
     const coupon_id = typeof body?.coupon_id === 'string' ? body.coupon_id : ''
     const user_auth_id = typeof body?.user_auth_id === 'string' ? body.user_auth_id : ''
-    if (!coupon_id || !user_auth_id) return json({ ok: false, error: 'missing_fields' }, 400)
 
-    const db = tryCreateServiceClient() || auth.supabase
-
-    const { data: c } = await db.from('coupons').select('id,issued_count,max_issue_count').eq('id', coupon_id).maybeSingle()
-    if (!c) return json({ ok: false, error: 'coupon_not_found' }, 400)
-    if (c.max_issue_count != null && (c.issued_count || 0) >= c.max_issue_count) {
-      return json({ ok: false, error: 'issue_limit_reached' }, 400)
-    }
-
-    const { data: exists } = await db
-      .from('user_coupons')
-      .select('id')
-      .eq('user_id', user_auth_id)
-      .eq('coupon_id', coupon_id)
-      .maybeSingle()
-    if (exists) return json({ ok: false, error: 'already_issued' }, 400)
-
-    const { error: insErr } = await db.from('user_coupons').insert({
-      user_id: user_auth_id,
-      coupon_id,
-      status: 'unused',
-    })
-    if (insErr) return json({ ok: false, error: insErr.message }, 500)
-
-    await db
-      .from('coupons')
-      .update({ issued_count: (c.issued_count || 0) + 1 })
-      .eq('id', coupon_id)
-
-    const { data: recipient } = await db.from('users').select('id').eq('auth_id', user_auth_id).maybeSingle()
-    if (recipient?.id) {
-      await createNotification(
-        db,
-        recipient.id,
-        'coupon',
-        '새 쿠폰이 발급됐어요!',
-        '쿠폰함에서 확인해 보세요.',
-        '/my/coupons'
+    const svc = tryCreateServiceClient()
+    if (!svc) {
+      return json(
+        {
+          ok: false,
+          error: 'service_role_unconfigured',
+          message: 'SUPABASE_SERVICE_ROLE_KEY가 설정되어야 수동 발급이 가능합니다.',
+        },
+        503
       )
     }
 
+    const result = await issueCouponManualToUser(svc, coupon_id, user_auth_id)
+    if (!result.ok) {
+      return json({ ok: false, error: result.error }, result.status)
+    }
     return json({ ok: true })
   }
 

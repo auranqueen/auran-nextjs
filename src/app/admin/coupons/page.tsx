@@ -50,6 +50,7 @@ export default function AdminCouponsPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([])
   const [stats, setStats] = useState<Stats>({})
   const [err, setErr] = useState<string | null>(null)
+  const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -214,6 +215,7 @@ export default function AdminCouponsPage() {
     }
     setIssuing(true)
     setErr(null)
+    setSuccessMsg(null)
     const res = await fetch('/api/admin/coupons', {
       method: 'POST',
       credentials: 'same-origin',
@@ -227,9 +229,19 @@ export default function AdminCouponsPage() {
     const j = await res.json().catch(() => ({}))
     setIssuing(false)
     if (!res.ok || !j?.ok) {
-      setErr(j?.error || 'issue_failed')
+      const msg =
+        j?.error === 'service_role_unconfigured'
+          ? (j?.message as string) || 'SUPABASE_SERVICE_ROLE_KEY가 필요합니다.'
+          : j?.error === 'already_issued'
+            ? '이미 해당 쿠폰이 발급된 회원입니다.'
+            : j?.error === 'issue_limit_reached'
+              ? '쿠폰 발행 한도에 도달했습니다.'
+              : (j?.error as string) || 'issue_failed'
+      setErr(msg)
       return
     }
+    setSuccessMsg('쿠폰이 고객 쿠폰함에 발급되었습니다.')
+    window.setTimeout(() => setSuccessMsg(null), 4500)
     await load()
   }
 
@@ -260,6 +272,11 @@ export default function AdminCouponsPage() {
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 4 }}>템플릿 생성 · 발행 통계 · 수동 발급</div>
       </div>
 
+      {successMsg && (
+        <div style={{ marginBottom: 12, background: 'rgba(76,173,126,0.12)', border: '1px solid rgba(76,173,126,0.35)', borderRadius: 12, padding: 12, color: '#9ed4b8', fontSize: 13, fontWeight: 700 }}>
+          {successMsg}
+        </div>
+      )}
       {err && (
         <div style={{ marginBottom: 12, background: 'rgba(217,79,79,0.10)', border: '1px solid rgba(217,79,79,0.25)', borderRadius: 12, padding: 12, color: '#e08080', fontSize: 13 }}>
           {err}

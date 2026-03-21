@@ -32,6 +32,8 @@ export function getNotificationIcon(type: string | null | undefined) {
       return '🤝'
     case 'promo':
       return '🎫'
+    case 'coupon_issued':
+      return '🎁'
     default:
       return '🔔'
   }
@@ -43,6 +45,7 @@ export function getDefaultLinkForType(type: string | null | undefined): string |
     case 'point':
       return '/wallet'
     case 'coupon':
+    case 'coupon_issued':
     case 'birthday':
     case 'promo':
       return '/my/coupons'
