@@ -1,4 +1,4 @@
-import { insertNotificationForAuthUser } from '@/lib/notifications/notifyProfile'
+import { createNotificationForAuthUser } from '@/lib/notifications/createNotification'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 
 /** 신규 가입 시 issue_trigger = signup 인 쿠폰을 user_coupons 에 발급 (service role) */
@@ -52,12 +52,6 @@ export async function issueSignupCouponsForAuthUser(authUserId: string): Promise
       issuedNames.length === 1
         ? `${issuedNames[0]}이 발급됐어요. 쿠폰함을 확인하세요!`
         : `${issuedNames.length}개의 쿠폰이 발급됐어요. 쿠폰함을 확인하세요!`
-    await insertNotificationForAuthUser(client, authUserId, {
-      type: 'coupon',
-      title: '쿠폰 발급',
-      body,
-      icon: '🎫',
-      link: '/my/coupons',
-    })
+    await createNotificationForAuthUser(client, authUserId, 'coupon', '쿠폰 발급', body, '/my/coupons')
   }
 }

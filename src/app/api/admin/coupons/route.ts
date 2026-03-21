@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
+import { createNotification } from '@/lib/notifications/createNotification'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 
@@ -236,15 +237,14 @@ export async function POST(req: NextRequest) {
 
     const { data: recipient } = await auth.supabase.from('users').select('id').eq('auth_id', user_auth_id).maybeSingle()
     if (recipient?.id) {
-      await auth.supabase.from('notifications').insert({
-        user_id: recipient.id,
-        type: 'coupon',
-        title: '🎫 새 쿠폰이 발급됐어요!',
-        body: '쿠폰함에서 확인해 보세요.',
-        icon: '🎫',
-        is_read: false,
-        link: '/my/coupons',
-      } as any)
+      await createNotification(
+        auth.supabase,
+        recipient.id,
+        'coupon',
+        '새 쿠폰이 발급됐어요!',
+        '쿠폰함에서 확인해 보세요.',
+        '/my/coupons'
+      )
     }
 
     return json({ ok: true })

@@ -7,6 +7,7 @@ import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import { createClient } from '@/lib/supabase/client'
 import { broadcastCartCountRefresh } from '@/lib/cartEvents'
+import { createNotification } from '@/lib/notifications/createNotification'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
 
 interface Props {
@@ -431,13 +432,14 @@ export default function CustomerDashboardClient({ profile }: Props) {
       return
     }
     if (giftNotifyEnabled) {
-      await supabase.from('notifications').insert({
-        user_id: selectedFriendId,
-        type: 'gift',
-        title: '선물이 도착했어요',
-        body: `${profile?.name || '친구'}님이 선물을 보냈어요 🎁`,
-        is_read: false,
-      } as any)
+      await createNotification(
+        supabase,
+        selectedFriendId,
+        'gift',
+        '선물이 도착했어요',
+        `${profile?.name || '친구'}님이 선물을 보냈어요 🎁`,
+        '/my/gifts'
+      )
     }
     setGiftOpen(false)
     setGiftMessage('')

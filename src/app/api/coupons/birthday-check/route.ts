@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createNotification } from '@/lib/notifications/createNotification'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 import { daysUntilNextBirthday } from '@/lib/coupon/daysUntilBirthday'
 
@@ -66,15 +67,7 @@ export async function POST() {
   }
 
   if (issued > 0 && profile.id) {
-    await client.from('notifications').insert({
-      user_id: profile.id,
-      type: 'coupon',
-      title: '🎂 생일 쿠폰이 발급됐어요',
-      body: '쿠폰함에서 확인해 보세요.',
-      icon: '🎂',
-      is_read: false,
-      link: '/my/coupons',
-    } as any)
+    await createNotification(client, profile.id, 'birthday', '생일 쿠폰이 발급됐어요', '쿠폰함에서 확인해 보세요.', '/my/coupons')
   }
 
   return json({ ok: true, issued })

@@ -8,6 +8,7 @@ import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import { createClient } from '@/lib/supabase/client'
 import { broadcastCartCountRefresh } from '@/lib/cartEvents'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
+import { createNotification } from '@/lib/notifications/createNotification'
 
 const GOLD = '#c9a84c'
 
@@ -505,15 +506,14 @@ export default function CustomerSkinAnalysisQuizPage() {
           description: 'AI 피부 분석 완료',
         } as any)
 
-        await supabase.from('notifications').insert({
-          user_id: userRowId,
-          type: 'point',
-          title: `${rewardPoints}P 적립!`,
-          body: `AI 피부 분석 완료로 ${rewardPoints}포인트가 적립되었습니다.`,
-          icon: '✨',
-          is_read: false,
-          link: '/wallet',
-        } as any)
+        await createNotification(
+          supabase,
+          userRowId,
+          'point',
+          '포인트 적립',
+          `AI 피부 분석 완료로 ${rewardPoints}포인트가 적립되었습니다.`,
+          '/wallet'
+        )
       }
 
       setTodayDone(true)

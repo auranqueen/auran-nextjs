@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { createNotification } from '@/lib/notifications/createNotification'
 
 /** 신규 가입 직후 환영 알림 (public.users.id 기준) */
 export async function insertSignupWelcomeNotification(supabase: SupabaseClient, authUserId: string) {
@@ -22,13 +23,12 @@ export async function insertSignupWelcomeNotification(supabase: SupabaseClient, 
     .maybeSingle()
   const pts = Number(wp?.value ?? 8888)
 
-  await supabase.from('notifications').insert({
-    user_id: prof.id,
-    type: 'welcome',
-    title: 'AURAN 가입을 환영해요 🎉',
-    body: `${pts.toLocaleString()}P가 즉시 적립됐어요. AI 피부분석으로 시작해보세요!`,
-    icon: '🎉',
-    is_read: false,
-    link: '/dashboard/customer',
-  } as any)
+  await createNotification(
+    supabase,
+    prof.id,
+    'welcome',
+    'AURAN 가입을 환영해요',
+    `${pts.toLocaleString()}P가 즉시 적립됐어요. AI 피부분석으로 시작해보세요!`,
+    '/dashboard/customer'
+  )
 }
