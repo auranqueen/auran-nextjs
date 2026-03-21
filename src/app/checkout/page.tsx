@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import ProductThumbnail from '@/components/ProductThumbnail'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
@@ -280,9 +281,14 @@ function CheckoutPageInner() {
               {orderedProducts.map((p, idx) => {
                 const lineQty = qtyList[idx] ?? qtyList[0] ?? 1
                 return (
-                <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: 10, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
-                  <div style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>{p.name} · {lineQty}개</div>
-                  <div style={{ color: 'var(--gold)', fontSize: 12, fontWeight: 800 }}>₩{(toNum(p.retail_price) * lineQty).toLocaleString()}</div>
+                <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: 10, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+                    <div style={{ position: 'relative', width: 44, height: 44, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: 'rgba(0,0,0,0.2)' }}>
+                      <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
+                    </div>
+                    <div style={{ color: '#fff', fontSize: 13, fontWeight: 700, minWidth: 0 }}>{p.name} · {lineQty}개</div>
+                  </div>
+                  <div style={{ color: 'var(--gold)', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>₩{(toNum(p.retail_price) * lineQty).toLocaleString()}</div>
                 </div>
               )})}
             </div>

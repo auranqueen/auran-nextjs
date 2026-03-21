@@ -1,7 +1,7 @@
 'use client'
 
-import Image from 'next/image'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import ProductThumbnail from '@/components/ProductThumbnail'
 import { useRouter } from 'next/navigation'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
@@ -546,7 +546,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
                   }}
                   style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(128,128,128,0.3)' }}
                 >
-                  {p.thumb_img ? <Image src={p.thumb_img} alt={p.name} fill style={{ objectFit: 'cover' }} /> : null}
+                  <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
                   {homeSpecialManualNavEnabled && specials.length > 1 && (
                     <>
                       <button type="button" onClick={(e) => { e.stopPropagation(); prevSpecial() }} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: 999, border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(0,0,0,0.35)', color: '#fff', fontWeight: 900, cursor: 'pointer' }}>‹</button>
@@ -678,7 +678,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
               <div key={p.id} style={{ border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
                 <div onClick={() => router.push(`/products/${p.id}`)} style={{ cursor: 'pointer' }}>
                   <div style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)' }}>
-                    {p.thumb_img ? <Image src={p.thumb_img} alt={p.name} fill style={{ objectFit: 'cover' }} /> : <div style={{ height: '100%', display: 'grid', placeItems: 'center' }}>🧴</div>}
+                    <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
                   </div>
                   <div style={{ padding: 10 }}>
                     <div style={{ fontSize: 11, color: 'var(--text3)' }}>{normalizeBrandName(p)}</div>

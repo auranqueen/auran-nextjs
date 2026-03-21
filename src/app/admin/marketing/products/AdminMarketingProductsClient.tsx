@@ -1,127 +1,22 @@
 'use client'
 
+import ProductThumbnail from '@/components/ProductThumbnail'
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 // DB status: pending | active | discontinued (UI "rejected" = discontinued)
 function toDbStatus(tab: 'pending' | 'active' | 'rejected') {
   return tab === 'rejected' ? 'discontinued' : tab
 }
 
-// ───────────────────────────────────────────────
-// 이미지 URL 매핑 팝업
-// ───────────────────────────────────────────────
-function ImageMapModal({
-  product,
-  onClose,
-  onSave,
-}: {
-  product: any
-  onClose: () => void
-  onSave: (id: string, url: string) => Promise<void>
-}) {
-  const [url, setUrl] = useState(product.thumb_img || '')
-  const [saving, setSaving] = useState(false)
-  const [preview, setPreview] = useState(product.thumb_img || '')
-  const [previewError, setPreviewError] = useState(false)
-
-  return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 200,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.12)',
-          borderRadius: 20, padding: 28, width: '100%', maxWidth: 480,
-        }}
-      >
-        <div style={{ fontSize: 15, fontWeight: 900, color: '#fff', marginBottom: 16 }}>
-          🖼 이미지 URL 수정
-        </div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>
-          {product.name}
-        </div>
-
-        {/* 미리보기 */}
-        <div style={{
-          width: '100%', height: 160, borderRadius: 12, overflow: 'hidden',
-          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-          marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>
-          {preview && !previewError ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={preview}
-              alt=""
-              onError={() => setPreviewError(true)}
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-            />
-          ) : (
-            <span style={{ fontSize: 40, opacity: 0.3 }}>🧴</span>
-          )}
-        </div>
-
-        <input
-          value={url}
-          onChange={e => { setUrl(e.target.value); setPreviewError(false) }}
-          placeholder="https://... 이미지 URL 입력"
-          style={{
-            width: '100%', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13,
-            boxSizing: 'border-box', marginBottom: 8,
-          }}
-        />
-        <button
-          onClick={() => { setPreview(url); setPreviewError(false) }}
-          style={{
-            width: '100%', background: 'rgba(255,255,255,0.08)', border: 'none',
-            borderRadius: 10, padding: '8px 0', color: 'rgba(255,255,255,0.7)',
-            fontSize: 12, cursor: 'pointer', marginBottom: 16,
-          }}
-        >
-          미리보기 확인
-        </button>
-
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1, background: 'rgba(255,255,255,0.07)', border: 'none',
-              borderRadius: 10, padding: '12px 0', color: 'rgba(255,255,255,0.6)',
-              fontSize: 13, cursor: 'pointer',
-            }}
-          >
-            취소
-          </button>
-          <button
-            onClick={async () => {
-              setSaving(true)
-              await onSave(product.id, url)
-              setSaving(false)
-              onClose()
-            }}
-            disabled={saving}
-            style={{
-              flex: 1, background: 'var(--gold, #c9a84c)', border: 'none',
-              borderRadius: 10, padding: '12px 0', color: '#000',
-              fontSize: 13, fontWeight: 900, cursor: 'pointer',
-            }}
-          >
-            {saving ? '저장 중...' : '저장'}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+function isMissingPrice(p: { retail_price?: number | null }) {
+  const v = p.retail_price
+  if (v == null) return true
+  return Number(v) === 0
 }
 
 // ───────────────────────────────────────────────
-// 제품 상세 팝업
+// 제품 상세 모달 (썸네일 URL 즉시 미리보기 + 저장)
 // ───────────────────────────────────────────────
 function ProductDetailModal({
   product,
@@ -130,7 +25,7 @@ function ProductDetailModal({
   onClose,
   onApprove,
   onReject,
-  onImageMap,
+  onSaveThumb,
   onSaveFlash,
 }: {
   product: any
@@ -139,19 +34,26 @@ function ProductDetailModal({
   onClose: () => void
   onApprove: (id: string) => void
   onReject: (id: string) => void
-  onImageMap: (product: any) => void
+  onSaveThumb: (id: string, url: string) => Promise<void>
   onSaveFlash: (id: string, payload: { is_flash_sale: boolean; flash_sale_price: number | null; flash_sale_start: string | null; flash_sale_end: string | null }) => Promise<void>
 }) {
-  const [imgError, setImgError] = useState(false)
-  const thumbUrl = product.thumb_img && !imgError ? product.thumb_img : null
+  const [thumbDraft, setThumbDraft] = useState(product.thumb_img || '')
+  const [thumbSaving, setThumbSaving] = useState(false)
   const [isFlashSale, setIsFlashSale] = useState(!!product.is_flash_sale)
   const [flashSalePrice, setFlashSalePrice] = useState(String(product.flash_sale_price || ''))
   const [flashSaleStart, setFlashSaleStart] = useState(product.flash_sale_start ? new Date(product.flash_sale_start).toISOString().slice(0, 16) : '')
   const [flashSaleEnd, setFlashSaleEnd] = useState(product.flash_sale_end ? new Date(product.flash_sale_end).toISOString().slice(0, 16) : '')
 
+  useEffect(() => {
+    setThumbDraft(product.thumb_img || '')
+  }, [product.id, product.thumb_img])
+
   const fields = [
     { label: '브랜드', value: product.brandName },
-    { label: '가격', value: `₩${product.price?.toLocaleString()}` },
+    {
+      label: '가격',
+      value: isMissingPrice(product) ? '⚠️ 가격 없음' : `₩${Number(product.retail_price || 0).toLocaleString()}`,
+    },
     { label: '등록일', value: product.created_at ? new Date(product.created_at).toLocaleDateString('ko-KR') : '-' },
     { label: '상태', value: product.status },
     { label: 'ID', value: product.id },
@@ -173,45 +75,50 @@ function ProductDetailModal({
           maxHeight: '90vh', overflowY: 'auto',
         }}
       >
-        {/* 이미지 */}
         <div style={{
           width: '100%', height: 220, borderRadius: 16, overflow: 'hidden',
           background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-          marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          position: 'relative',
+          marginBottom: 12, position: 'relative',
         }}>
-          {thumbUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={thumbUrl}
-              alt=""
-              onError={() => setImgError(true)}
-              style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-            />
-          ) : (
-            <span style={{ fontSize: 60, opacity: 0.2 }}>🧴</span>
-          )}
-          {/* 이미지 수정 버튼 */}
-          <button
-            onClick={() => onImageMap(product)}
+          <ProductThumbnail src={thumbDraft} alt={product.name || ''} fill objectFit="contain" style={{ borderRadius: 16 }} />
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>썸네일 URL (입력 시 미리보기 즉시 반영)</div>
+          <input
+            value={thumbDraft}
+            onChange={e => setThumbDraft(e.target.value)}
+            placeholder="https://..."
             style={{
-              position: 'absolute', bottom: 10, right: 10,
-              background: imgError ? '#e53935' : 'rgba(0,0,0,0.6)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              borderRadius: 8, padding: '5px 10px', color: '#fff',
-              fontSize: 11, cursor: 'pointer',
+              width: '100%', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)',
+              borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 12,
+              boxSizing: 'border-box', marginBottom: 8,
+            }}
+          />
+          <button
+            type="button"
+            onClick={async () => {
+              setThumbSaving(true)
+              try {
+                await onSaveThumb(product.id, thumbDraft.trim())
+              } finally {
+                setThumbSaving(false)
+              }
+            }}
+            disabled={thumbSaving}
+            style={{
+              width: '100%', background: 'rgba(201,168,76,0.2)', border: '1px solid rgba(201,168,76,0.45)',
+              borderRadius: 10, padding: '10px 0', color: '#c9a84c', fontSize: 12, fontWeight: 800, cursor: 'pointer',
             }}
           >
-            {imgError ? '⚠️ 이미지 깨짐 — URL 수정' : '🖼 이미지 수정'}
+            {thumbSaving ? '저장 중...' : '썸네일 URL 저장'}
           </button>
         </div>
 
-        {/* 제품명 */}
         <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', marginBottom: 16 }}>
           {product.name}
         </div>
 
-        {/* 필드 */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
           {fields.map(f => (
             <div key={f.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -221,7 +128,6 @@ function ProductDetailModal({
           ))}
         </div>
 
-        {/* 설명 */}
         {product.description && (
           <div style={{
             background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 14,
@@ -260,7 +166,6 @@ function ProductDetailModal({
           </button>
         </div>
 
-        {/* 액션 버튼 */}
         <div style={{ display: 'flex', gap: 10 }}>
           <button
             onClick={onClose}
@@ -324,82 +229,116 @@ function AdminProductRow({
   p,
   tab,
   busyId,
+  selected,
+  onToggleSelect,
   onApprove,
   onReject,
   onClick,
+  onToggleVisibility,
+  toggleBusyId,
 }: {
   p: any
   tab: 'pending' | 'active' | 'rejected'
   busyId: string | null
+  selected: boolean
+  onToggleSelect: (id: string) => void
   onApprove: (id: string) => void
   onReject: (id: string) => void
   onClick: () => void
+  onToggleVisibility: (id: string, next: 'active' | 'discontinued') => void
+  toggleBusyId: string | null
 }) {
-  const [imgError, setImgError] = useState(false)
-  const thumbUrl = p.thumb_img && !imgError ? p.thumb_img : null
+  const noPrice = isMissingPrice(p)
 
   return (
     <div
-      onClick={onClick}
       style={{
         background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)',
-        borderRadius: 14, padding: 12, display: 'flex', gap: 12,
-        cursor: 'pointer', transition: 'background 0.15s',
+        borderRadius: 14, padding: 12, display: 'flex', gap: 10,
+        alignItems: 'center',
+        transition: 'background 0.15s',
       }}
-      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
-      onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
     >
-      {/* 썸네일 */}
-      <div style={{
-        width: 64, height: 64, borderRadius: 12, overflow: 'hidden',
-        border: imgError ? '1px solid rgba(229,57,53,0.5)' : '1px solid rgba(255,255,255,0.10)',
-        background: 'rgba(0,0,0,0.2)', flexShrink: 0,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        position: 'relative',
-      }}>
-        {thumbUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={thumbUrl}
-            alt=""
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <span style={{ fontSize: 20, opacity: 0.4 }}>🧴</span>
-        )}
-        {imgError && (
-          <div style={{
-            position: 'absolute', inset: 0, background: 'rgba(229,57,53,0.15)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 10, color: '#e57373',
-          }}>⚠️</div>
-        )}
-      </div>
-
-      {/* 정보 */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {p.name}
-        </div>
-        <div style={{ marginTop: 6, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>{p.brandName}</span>
-          <span style={{ width: 4, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
-          <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 900, color: 'var(--gold, #c9a84c)' }}>
-            ₩{p.price.toLocaleString()}
-          </span>
-          <span style={{ width: 4, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
-            {p.created_at ? new Date(p.created_at).toLocaleDateString('ko-KR') : ''}
-          </span>
-        </div>
-      </div>
-
-      {/* 버튼 */}
       <div
         onClick={e => e.stopPropagation()}
-        style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end' }}
+        style={{ flexShrink: 0, paddingTop: 2 }}
       >
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={() => onToggleSelect(p.id)}
+          aria-label="선택"
+        />
+      </div>
+
+      <div
+        onClick={onClick}
+        style={{
+          display: 'flex', gap: 12, flex: 1, minWidth: 0, cursor: 'pointer',
+          alignItems: 'center',
+        }}
+      >
+        <div style={{
+          width: 64, height: 64, borderRadius: 12, overflow: 'hidden',
+          border: '1px solid rgba(255,255,255,0.10)',
+          background: 'rgba(0,0,0,0.2)', flexShrink: 0, position: 'relative',
+        }}>
+          <ProductThumbnail src={p.thumb_img} alt={p.name || ''} size={64} />
+        </div>
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {p.name}
+            </div>
+            {noPrice ? (
+              <span style={{
+                fontSize: 10, fontWeight: 800, color: '#ffb74d',
+                border: '1px solid rgba(255,183,77,0.45)', borderRadius: 6, padding: '2px 6px',
+              }}>
+                ⚠️ 가격 없음
+              </span>
+            ) : null}
+          </div>
+          <div style={{ marginTop: 6, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>{p.brandName}</span>
+            <span style={{ width: 4, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
+            <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 900, color: noPrice ? 'rgba(255,255,255,0.35)' : 'var(--gold, #c9a84c)' }}>
+              {noPrice ? '—' : `₩${p.price.toLocaleString()}`}
+            </span>
+            <span style={{ width: 4, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
+              {p.created_at ? new Date(p.created_at).toLocaleDateString('ko-KR') : ''}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-end', flexShrink: 0 }}
+      >
+        {tab === 'active' && (
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#fff', cursor: 'pointer' }}>
+            <span style={{ color: 'rgba(255,255,255,0.5)' }}>노출</span>
+            <input
+              type="checkbox"
+              checked={p.status === 'active'}
+              disabled={toggleBusyId === p.id}
+              onChange={() => {
+                if (p.status === 'active') onToggleVisibility(p.id, 'discontinued')
+                else onToggleVisibility(p.id, 'active')
+              }}
+            />
+            <span style={{ color: p.status === 'active' ? '#81c784' : 'rgba(255,255,255,0.4)' }}>
+              {p.status === 'active' ? 'ACTIVE' : 'HIDDEN'}
+            </span>
+          </label>
+        )}
+        {tab === 'rejected' && (
+          <span style={{ fontSize: 11, color: '#ffb74d', fontWeight: 700 }}>HIDDEN</span>
+        )}
+
         {tab === 'pending' ? (
           <>
             <button
@@ -438,9 +377,7 @@ function AdminProductRow({
           >
             다시 승인
           </button>
-        ) : (
-          <span style={{ fontSize: 11, color: '#4caf50', fontWeight: 700 }}>ACTIVE</span>
-        )}
+        ) : null}
       </div>
     </div>
   )
@@ -456,15 +393,26 @@ export default function AdminMarketingProductsClient() {
   const [rows, setRows] = useState<any[]>([])
   const [counts, setCounts] = useState({ pending: 0, active: 0, rejected: 0 })
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [toggleBusyId, setToggleBusyId] = useState<string | null>(null)
   const [bulkBusy, setBulkBusy] = useState(false)
+  const [hideAllBusy, setHideAllBusy] = useState(false)
+  const [bulkHideBusy, setBulkHideBusy] = useState(false)
   const [q, setQ] = useState('')
   const [brandQ, setBrandQ] = useState('all')
+  const [listFilter, setListFilter] = useState<'all' | 'no_price' | 'with_price'>('all')
+  const [brandOptionsFromDb, setBrandOptionsFromDb] = useState<string[] | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
+  const [toast, setToast] = useState('')
 
-  // 팝업 상태
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null)
-  const [imageMapTarget, setImageMapTarget] = useState<any | null>(null)
 
-  const fetchRows = async () => {
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(''), 3200)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  const fetchRows = useCallback(async () => {
     setLoading(true)
     const statusDb = toDbStatus(tab)
     const { data } = await supabase
@@ -474,7 +422,6 @@ export default function AdminMarketingProductsClient() {
       .order('created_at', { ascending: false })
     setRows(data || [])
 
-    // 카운트 (DB: pending, active, discontinued)
     const [p, a, r] = await Promise.all([
       supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
       supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'active'),
@@ -482,9 +429,16 @@ export default function AdminMarketingProductsClient() {
     ])
     setCounts({ pending: p.count || 0, active: a.count || 0, rejected: r.count || 0 })
     setLoading(false)
-  }
+  }, [supabase, tab])
 
-  useEffect(() => { fetchRows() }, [tab])
+  useEffect(() => { fetchRows() }, [fetchRows])
+
+  useEffect(() => {
+    supabase.from('brands').select('name').order('name').then(({ data }) => {
+      const names = (data || []).map((b: { name: string }) => b.name).filter(Boolean)
+      setBrandOptionsFromDb(names.length ? names : null)
+    })
+  }, [supabase])
 
   const mappedRows = useMemo(() =>
     rows.map(r => ({
@@ -496,24 +450,46 @@ export default function AdminMarketingProductsClient() {
   )
 
   const brandOptions = useMemo(() => {
+    if (brandOptionsFromDb?.length) return ['all', ...brandOptionsFromDb]
     const set = new Set(mappedRows.map(r => r.brandName))
     return ['all', ...Array.from(set)]
-  }, [mappedRows])
+  }, [brandOptionsFromDb, mappedRows])
 
   const filteredRows = useMemo(() =>
     mappedRows.filter(r => {
       const matchQ = !q || r.name?.toLowerCase().includes(q.toLowerCase()) || r.brandName?.toLowerCase().includes(q.toLowerCase())
       const matchB = brandQ === 'all' || r.brandName === brandQ
-      return matchQ && matchB
+      const matchP = listFilter === 'all'
+        ? true
+        : listFilter === 'no_price'
+          ? isMissingPrice(r)
+          : !isMissingPrice(r)
+      return matchQ && matchB && matchP
     }),
-    [brandQ, mappedRows, q]
+    [brandQ, listFilter, mappedRows, q]
   )
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const n = new Set(prev)
+      if (n.has(id)) n.delete(id)
+      else n.add(id)
+      return n
+    })
+  }
+
+  const selectAllFiltered = () => {
+    setSelectedIds(new Set(filteredRows.map(r => r.id)))
+  }
+
+  const clearSelection = () => setSelectedIds(new Set())
 
   const approveOne = async (id: string) => {
     setBusyId(id)
     await supabase.from('products').update({ status: 'active' }).eq('id', id)
     await fetchRows()
     setBusyId(null)
+    setToast('✅ 승인되었습니다')
   }
 
   const rejectOne = async (id: string) => {
@@ -521,6 +497,7 @@ export default function AdminMarketingProductsClient() {
     await supabase.from('products').update({ status: 'discontinued' }).eq('id', id)
     await fetchRows()
     setBusyId(null)
+    setToast('숨김(거절) 처리되었습니다')
   }
 
   const bulkApprove = async () => {
@@ -528,32 +505,85 @@ export default function AdminMarketingProductsClient() {
     await supabase.from('products').update({ status: 'active' }).eq('status', 'pending')
     await fetchRows()
     setBulkBusy(false)
+    setToast(`✅ 전체 승인 완료 (${counts.pending}건)`)
   }
 
-  // 이미지 URL 저장
   const saveImageUrl = async (id: string, url: string) => {
     await supabase.from('products').update({ thumb_img: url }).eq('id', id)
     setRows(prev => prev.map(r => r.id === id ? { ...r, thumb_img: url } : r))
     if (selectedProduct?.id === id) {
       setSelectedProduct((prev: any) => prev ? { ...prev, thumb_img: url } : prev)
     }
+    setToast('✅ 썸네일이 저장되었습니다')
   }
 
   const saveFlashSale = async (id: string, payload: { is_flash_sale: boolean; flash_sale_price: number | null; flash_sale_start: string | null; flash_sale_end: string | null }) => {
     await supabase.from('products').update(payload as any).eq('id', id)
     setRows(prev => prev.map(r => (r.id === id ? { ...r, ...payload } : r)))
     setSelectedProduct((prev: any) => (prev?.id === id ? { ...prev, ...payload } : prev))
+    setToast('타임세일이 저장되었습니다')
+  }
+
+  const toggleVisibility = async (id: string, next: 'active' | 'discontinued') => {
+    setToggleBusyId(id)
+    await supabase.from('products').update({ status: next }).eq('id', id)
+    await fetchRows()
+    setToggleBusyId(null)
+    setToast(next === 'active' ? '✅ 노출(ACTIVE)로 변경되었습니다' : '✅ 숨김(HIDDEN) 처리되었습니다')
+  }
+
+  const hideAllNoPrice = async () => {
+    if (!window.confirm('가격이 없는(retail_price 0 또는 미설정) 모든 제품을 숨김(discontinued) 처리할까요?')) return
+    setHideAllBusy(true)
+    const { error } = await supabase
+      .from('products')
+      .update({ status: 'discontinued' })
+      .or('retail_price.eq.0,retail_price.is.null')
+    if (error) {
+      setToast(error.message || '일괄 숨김 실패')
+      setHideAllBusy(false)
+      return
+    }
+    await fetchRows()
+    setHideAllBusy(false)
+    setToast('✅ 가격 없는 제품을 모두 숨김 처리했습니다')
+  }
+
+  const bulkHideSelected = async () => {
+    if (selectedIds.size === 0) return
+    setBulkHideBusy(true)
+    const ids = Array.from(selectedIds)
+    const { error } = await supabase.from('products').update({ status: 'discontinued' }).in('id', ids)
+    if (error) {
+      setToast(error.message || '선택 숨김 실패')
+      setBulkHideBusy(false)
+      return
+    }
+    setSelectedIds(new Set())
+    await fetchRows()
+    setBulkHideBusy(false)
+    setToast(`✅ 선택 ${ids.length}건을 숨김 처리했습니다`)
   }
 
   const TABS: { key: 'pending' | 'active' | 'rejected'; label: string }[] = [
     { key: 'pending', label: 'PENDING' },
     { key: 'active', label: 'ACTIVE' },
-    { key: 'rejected', label: 'REJECTED' },
+    { key: 'rejected', label: 'HIDDEN' },
   ]
 
   return (
     <div style={{ padding: '24px 20px', maxWidth: 720, margin: '0 auto' }}>
-      {/* 제품 상세 팝업 */}
+      {toast ? (
+        <div style={{
+          position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 300,
+          maxWidth: 420, width: 'calc(100% - 32px)', padding: '12px 16px', borderRadius: 12,
+          background: 'rgba(26,26,26,0.96)', border: '1px solid rgba(201,168,76,0.35)', color: '#fff',
+          fontSize: 13, fontWeight: 700, textAlign: 'center', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+        }}>
+          {toast}
+        </div>
+      ) : null}
+
       {selectedProduct && (
         <ProductDetailModal
           product={selectedProduct}
@@ -562,49 +592,89 @@ export default function AdminMarketingProductsClient() {
           onClose={() => setSelectedProduct(null)}
           onApprove={approveOne}
           onReject={rejectOne}
-          onImageMap={p => { setSelectedProduct(null); setImageMapTarget(p) }}
+          onSaveThumb={saveImageUrl}
           onSaveFlash={saveFlashSale}
         />
       )}
 
-      {/* 이미지 매핑 팝업 */}
-      {imageMapTarget && (
-        <ImageMapModal
-          product={imageMapTarget}
-          onClose={() => setImageMapTarget(null)}
-          onSave={saveImageUrl}
-        />
-      )}
-
-      {/* 헤더 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
         <div>
           <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>제품 관리</div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>
-            대기/승인/거절 탭 · 검색 · 브랜드 필터 · 일괄 승인
+            예외만 처리 · 썸네일·노출 토글 · 가격 없음 일괄 숨김
           </div>
         </div>
+      </div>
+
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16, alignItems: 'center',
+        padding: 12, borderRadius: 14, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)',
+      }}>
+        <button
+          type="button"
+          onClick={hideAllNoPrice}
+          disabled={hideAllBusy}
+          style={{
+            background: 'rgba(255,183,77,0.12)', border: '1px solid rgba(255,183,77,0.35)',
+            borderRadius: 10, padding: '8px 12px', color: '#ffb74d', fontSize: 12, fontWeight: 800, cursor: 'pointer',
+          }}
+        >
+          {hideAllBusy ? '처리 중...' : '가격 없는 제품 전체 숨김'}
+        </button>
         {tab === 'pending' && counts.pending > 0 && (
           <button
             onClick={bulkApprove}
             disabled={bulkBusy}
             style={{
-              background: 'var(--gold, #c9a84c)', border: 'none', borderRadius: 12,
-              padding: '10px 18px', color: '#000', fontSize: 13, fontWeight: 900,
+              background: 'var(--gold, #c9a84c)', border: 'none', borderRadius: 10,
+              padding: '8px 14px', color: '#000', fontSize: 12, fontWeight: 900,
               cursor: 'pointer', opacity: bulkBusy ? 0.6 : 1,
             }}
           >
             {bulkBusy ? '처리 중...' : `전체 승인 (${counts.pending})`}
           </button>
         )}
+        {selectedIds.size > 0 && (
+          <button
+            type="button"
+            onClick={bulkHideSelected}
+            disabled={bulkHideBusy}
+            style={{
+              background: 'rgba(229,57,53,0.15)', border: '1px solid rgba(229,57,53,0.4)',
+              borderRadius: 10, padding: '8px 12px', color: '#e57373', fontSize: 12, fontWeight: 800, cursor: 'pointer',
+            }}
+          >
+            {bulkHideBusy ? '처리 중...' : `선택 숨김 (${selectedIds.size})`}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={selectAllFiltered}
+          style={{
+            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 10, padding: '8px 12px', color: 'rgba(255,255,255,0.75)', fontSize: 12, cursor: 'pointer',
+          }}
+        >
+          목록 전체 선택
+        </button>
+        {selectedIds.size > 0 && (
+          <button
+            type="button"
+            onClick={clearSelection}
+            style={{
+              background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.45)', fontSize: 12, cursor: 'pointer',
+            }}
+          >
+            선택 해제
+          </button>
+        )}
       </div>
 
-      {/* 탭 */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         {TABS.map(t => (
           <button
             key={t.key}
-            onClick={() => setTab(t.key)}
+            onClick={() => { setTab(t.key); clearSelection() }}
             style={{
               background: tab === t.key ? 'transparent' : 'rgba(255,255,255,0.05)',
               border: tab === t.key ? '1.5px solid var(--gold, #c9a84c)' : '1px solid rgba(255,255,255,0.12)',
@@ -618,14 +688,13 @@ export default function AdminMarketingProductsClient() {
         ))}
       </div>
 
-      {/* 검색 + 브랜드 필터 */}
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
+      <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <input
           value={q}
           onChange={e => setQ(e.target.value)}
           placeholder="검색: 제품명 / 브랜드"
           style={{
-            flex: 1, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
+            flex: 1, minWidth: 160, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13,
           }}
         />
@@ -643,9 +712,21 @@ export default function AdminMarketingProductsClient() {
             </option>
           ))}
         </select>
-        {(q || brandQ !== 'all') && (
+        <select
+          value={listFilter}
+          onChange={e => setListFilter(e.target.value as 'all' | 'no_price' | 'with_price')}
+          style={{
+            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13, minWidth: 140,
+          }}
+        >
+          <option value="all" style={{ background: '#1a1a1a' }}>가격: 전체</option>
+          <option value="no_price" style={{ background: '#1a1a1a' }}>가격 없음만</option>
+          <option value="with_price" style={{ background: '#1a1a1a' }}>가격 있음만</option>
+        </select>
+        {(q || brandQ !== 'all' || listFilter !== 'all') && (
           <button
-            onClick={() => { setQ(''); setBrandQ('all') }}
+            onClick={() => { setQ(''); setBrandQ('all'); setListFilter('all') }}
             style={{
               background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
               borderRadius: 10, padding: '10px 14px', color: 'rgba(255,255,255,0.55)',
@@ -657,7 +738,6 @@ export default function AdminMarketingProductsClient() {
         )}
       </div>
 
-      {/* 리스트 */}
       {loading ? (
         <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: 40 }}>불러오는 중...</div>
       ) : filteredRows.length === 0 ? (
@@ -670,9 +750,13 @@ export default function AdminMarketingProductsClient() {
               p={p}
               tab={tab}
               busyId={busyId}
+              selected={selectedIds.has(p.id)}
+              onToggleSelect={toggleSelect}
               onApprove={approveOne}
               onReject={rejectOne}
               onClick={() => setSelectedProduct(p)}
+              onToggleVisibility={toggleVisibility}
+              toggleBusyId={toggleBusyId}
             />
           ))}
         </div>

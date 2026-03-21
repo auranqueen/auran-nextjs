@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
+    unoptimized: true,
     domains: [
       'xxxxxxxxxxxxxxxx.supabase.co',
       'k.kakaocdn.net',
@@ -11,6 +12,8 @@ const nextConfig = {
       'bhpcqgedhfawlehobphq.supabase.co',
     ],
     remotePatterns: [
+      { protocol: 'https', hostname: '**', pathname: '/**' },
+      { protocol: 'http', hostname: '**', pathname: '/**' },
       { protocol: 'https', hostname: 'won.duchess.kr', pathname: '/**' },
       { protocol: 'http', hostname: 'won.duchess.kr', pathname: '/**' },
       { protocol: 'https', hostname: 'duchess.kr', pathname: '/**' },

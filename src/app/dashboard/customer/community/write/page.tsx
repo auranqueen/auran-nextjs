@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import ProductThumbnail from '@/components/ProductThumbnail'
 import { createClient } from '@/lib/supabase/client'
 
 const BG = '#0a0a0a'
@@ -557,15 +558,8 @@ export default function CommunityWritePage() {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                        <div style={{ width: 42, height: 42, borderRadius: 12, background: '#111', border: `1px solid ${BORDER}`, overflow: 'hidden', flexShrink: 0 }}>
-                          {p.thumb_img ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.35)', fontSize: 16 }}>
-                              🧴
-                            </div>
-                          )}
+                        <div style={{ position: 'relative', width: 42, height: 42, borderRadius: 12, background: '#111', border: `1px solid ${BORDER}`, overflow: 'hidden', flexShrink: 0 }}>
+                          <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import ProductThumbnail from '@/components/ProductThumbnail'
 import { createClient } from '@/lib/supabase/client'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
 
@@ -265,13 +266,8 @@ export default function JournalPublicClient({
               {usedProducts.slice(0, usedProductsPreviewMax).map(p => (
                 <div key={p.id} style={{ background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 10 }}>
                   <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                    <div style={{ width: 54, height: 54, borderRadius: 10, overflow: 'hidden', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
-                      {p.thumb_img ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={p.thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.55)' }}>🧴</div>
-                      )}
+                    <div style={{ position: 'relative', width: 54, height: 54, borderRadius: 10, overflow: 'hidden', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
+                      <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>

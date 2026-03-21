@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
+import ProductThumbnail from '@/components/ProductThumbnail'
 import { createClient } from '@/lib/supabase/client'
 import { broadcastCartCountRefresh } from '@/lib/cartEvents'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
@@ -937,8 +938,8 @@ export default function CustomerSkinAnalysisQuizPage() {
                         <div key={p.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: 10, borderRadius: 12, background: 'var(--bg3)', border: '1px solid var(--border)' }}>
                           <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelect(p.id)} />
                           <div onClick={() => router.push(`/products/${p.id}`)} style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, cursor: 'pointer' }}>
-                            <div style={{ width: 52, height: 52, borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
-                              {p.thumb_img ? <img src={p.thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                            <div style={{ position: 'relative', width: 52, height: 52, borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
+                              <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
                             </div>
                             <div style={{ minWidth: 0 }}>
                               <div style={{ fontSize: 12, color: 'var(--text3)' }}>{p.brands?.name || ''}</div>
@@ -991,7 +992,7 @@ export default function CustomerSkinAnalysisQuizPage() {
                             <div key={`${sec.stepTitle}-${p.id}`} style={{ width: 160, flexShrink: 0, border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', background: 'var(--bg3)' }}>
                               <div style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(255,255,255,0.04)' }}>
                                 <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelect(p.id)} style={{ position: 'absolute', top: 8, left: 8, zIndex: 1 }} />
-                                {p.thumb_img ? <img src={p.thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                                <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
                               </div>
                               <div style={{ padding: 8 }}>
                                 <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.brands?.name || ''}</div>

@@ -7,6 +7,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import LoginRequiredModal from '@/components/LoginRequiredModal'
 import { createClient } from '@/lib/supabase/client'
+import ProductThumbnail from '@/components/ProductThumbnail'
 import ShareBottomSheet from '@/components/ShareBottomSheet'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
 
@@ -1593,15 +1594,8 @@ export default function MyWorldPage() {
 
                           <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                              <div style={{ width: 42, height: 42, borderRadius: 10, overflow: 'hidden', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
-                                {card.product.thumb_img ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={card.product.thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                ) : (
-                                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.55)' }}>
-                                    🧴
-                                  </div>
-                                )}
+                              <div style={{ position: 'relative', width: 42, height: 42, borderRadius: 10, overflow: 'hidden', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
+                                <ProductThumbnail src={card.product.thumb_img} alt={card.product.name || ''} fill objectFit="cover" />
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
