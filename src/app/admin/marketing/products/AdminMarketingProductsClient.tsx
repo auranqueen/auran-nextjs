@@ -210,12 +210,28 @@ export default function AdminMarketingProductsClient() {
   const fetchRows = useCallback(async () => {
     setLoading(true)
     const statusDb = toDbStatus(tab)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('products')
-      .select('*, brands(name)')
-      .eq('status', statusDb)
+      .select('*, brands(id, name)')
+      .in('status', ['active', 'pending', 'discontinued', 'hidden'])
       .order('created_at', { ascending: false })
-    setRows(data || [])
+      .limit(10000)
+
+    console.log('products:', data?.length, 'error:', error, 'tab:', tab, 'filter:', statusDb)
+
+    if (error) {
+      console.error('[admin products]', error)
+      setRows([])
+    } else {
+      const list = data || []
+      const filtered = list.filter((p: { status?: string }) => {
+        if (statusDb === 'discontinued') {
+          return p.status === 'discontinued' || p.status === 'hidden'
+        }
+        return p.status === statusDb
+      })
+      setRows(filtered)
+    }
 
     const [p, a, r] = await Promise.all([
       supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
