@@ -13,6 +13,8 @@ type Row = {
   id: string
   quantity: number
   product_id: string
+  gift_to?: string | null
+  gift_message?: string | null
   products: {
     id: string
     name: string
@@ -52,7 +54,7 @@ export default function CartPage() {
       setMeId(me.id)
       const { data } = await supabase
         .from('cart_items')
-        .select('id,quantity,product_id, products(id,name,thumb_img,retail_price,brands(name))')
+        .select('id,quantity,product_id,gift_to,gift_message, products(id,name,thumb_img,retail_price,brands(name))')
         .eq('user_id', me.id)
         .order('id', { ascending: false })
       setRows((data as unknown as Row[]) || [])
@@ -98,12 +100,33 @@ export default function CartPage() {
   }, 0)
 
   const goCheckout = () => {
-    const ids = rows.map((r) => r.product_id).filter(Boolean)
-    if (!ids.length) return
+    if (!rows.length) return
+    const giftRows = rows.filter((r) => r.gift_to)
+    const plainRows = rows.filter((r) => !r.gift_to)
+    if (giftRows.length && plainRows.length) {
+      setToast('일반 상품과 선물 상품은 함께 결제할 수 없어요')
+      return
+    }
+    if (giftRows.length) {
+      const receivers = new Set(giftRows.map((r) => r.gift_to).filter(Boolean) as string[])
+      if (receivers.size !== 1) {
+        setToast('선물 받는 분이 다른 상품은 나누어 결제해 주세요')
+        return
+      }
+      const gid = Array.from(receivers)[0]
+      const msg =
+        giftRows.map((r) => (r.gift_message || '').trim()).find((m) => m.length > 0) || ''
+      const params = new URLSearchParams()
+      params.set('products', rows.map((r) => r.product_id).join(','))
+      params.set('qty', rows.map((r) => r.quantity).join(','))
+      params.set('gift_to', gid)
+      if (msg) params.set('gift_message', msg)
+      router.push(`/checkout?${params.toString()}`)
+      return
+    }
     const params = new URLSearchParams()
-    params.set('products', ids.join(','))
-    const q = rows.length === 1 ? String(rows[0].quantity) : String(Math.min(...rows.map((r) => r.quantity)))
-    params.set('qty', q)
+    params.set('products', rows.map((r) => r.product_id).join(','))
+    params.set('qty', rows.map((r) => r.quantity).join(','))
     router.push(`/checkout?${params.toString()}`)
   }
 
@@ -142,7 +165,12 @@ export default function CartPage() {
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 11, color: 'var(--text3)' }}>{brandName(p)}</div>
-                      <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginTop: 2 }}>{p?.name || '제품'}</div>
+                      <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginTop: 2 }}>
+                        {p?.name || '제품'}
+                        {r.gift_to ? (
+                          <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 800, color: '#bcd6ff', verticalAlign: 'middle' }}>🎁 선물 예정</span>
+                        ) : null}
+                      </div>
                       <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 800, color: 'var(--gold)', marginTop: 4 }}>₩{(price * r.quantity).toLocaleString()}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
                         <button type="button" onClick={() => updateQty(r.id, r.quantity - 1)} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff' }}>

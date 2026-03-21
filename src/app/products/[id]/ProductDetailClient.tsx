@@ -170,6 +170,7 @@ export default function ProductDetailClient({ product }: { product: any }) {
         .select('id,quantity')
         .eq('user_id', uid)
         .eq('product_id', product.id)
+        .is('gift_to', null)
         .maybeSingle()
       if (found?.id) {
         const nextQty = Number(found.quantity || 0) + quantity
@@ -181,6 +182,73 @@ export default function ProductDetailClient({ product }: { product: any }) {
       }
       broadcastCartCountRefresh()
       setToast('🛒 장바구니에 담았어요!')
+    } catch (e: any) {
+      setToast(e?.message || '장바구니 저장 중 오류가 발생했어요')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const onGiftAddToCartLater = async () => {
+    if (!selectedFriendId) return
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data: me } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+    const uid = me?.id ? String(me.id) : ''
+    if (!uid) {
+      setToast('회원 정보를 불러오지 못했어요')
+      return
+    }
+    setMeId(uid)
+    setSubmitting(true)
+    try {
+      const msgTrim = giftMessage.trim() || null
+      const { data: sameGift } = await supabase
+        .from('cart_items')
+        .select('id,quantity')
+        .eq('user_id', uid)
+        .eq('product_id', product.id)
+        .eq('gift_to', selectedFriendId)
+        .maybeSingle()
+      if (sameGift?.id) {
+        const nextQty = Number(sameGift.quantity || 0) + quantity
+        const { error: upErr } = await supabase
+          .from('cart_items')
+          .update({ quantity: nextQty, gift_message: msgTrim })
+          .eq('id', sameGift.id)
+        if (upErr) throw upErr
+      } else {
+        const { data: anyLine } = await supabase
+          .from('cart_items')
+          .select('id,quantity,gift_to')
+          .eq('user_id', uid)
+          .eq('product_id', product.id)
+          .maybeSingle()
+        if (anyLine?.id) {
+          if (anyLine.gift_to != null && String(anyLine.gift_to) !== String(selectedFriendId)) {
+            setToast('이 상품은 이미 다른 분께 선물 예정으로 담겨 있어요. 장바구니에서 확인해 주세요.')
+            return
+          }
+          const nextQty = Number(anyLine.quantity || 0) + quantity
+          const { error: upErr } = await supabase
+            .from('cart_items')
+            .update({ gift_to: selectedFriendId, gift_message: msgTrim, quantity: nextQty })
+            .eq('id', anyLine.id)
+          if (upErr) throw upErr
+        } else {
+          const { error: insErr } = await supabase.from('cart_items').insert({
+            user_id: uid,
+            product_id: product.id,
+            quantity,
+            gift_to: selectedFriendId,
+            gift_message: msgTrim,
+          } as any)
+          if (insErr) throw insErr
+        }
+      }
+      broadcastCartCountRefresh()
+      setGiftOpen(false)
+      setToast('장바구니에 담았어요 🛒 나중에 선물하세요')
     } catch (e: any) {
       setToast(e?.message || '장바구니 저장 중 오류가 발생했어요')
     } finally {
@@ -341,24 +409,50 @@ export default function ProductDetailClient({ product }: { product: any }) {
             <div style={{ fontSize: 12, color: 'var(--text3)', fontWeight: 700 }}>💌 메시지 (선택 · 최대 {giftMessageMax}자)</div>
             <textarea value={giftMessage} maxLength={giftMessageMax} onChange={e => setGiftMessage(e.target.value)} placeholder="따뜻한 한마디를 남겨보세요" style={{ width: '100%', minHeight: 74, marginTop: 6, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', padding: 10, resize: 'none' }} />
             <div style={{ width: '100%', height: 1, background: 'rgba(255,255,255,0.08)', margin: '10px 0 10px' }} />
-            <button
-              type="button"
-              disabled={!selectedFriendId}
-              onClick={() => {
-                if (!selectedFriendId) return
-                const params = new URLSearchParams()
-                params.set('products', String(product.id))
-                params.set('qty', String(quantity))
-                params.set('gift_to', selectedFriendId)
-                const trimmed = giftMessage.trim()
-                if (trimmed) params.set('gift_message', trimmed)
-                setGiftOpen(false)
-                router.push(`/checkout?${params.toString()}`)
-              }}
-              style={{ marginTop: 2, width: '100%', height: 42, borderRadius: 10, border: 'none', background: selectedFriendId ? '#c9a84c' : '#55606f', color: selectedFriendId ? '#111' : '#c8d0db', fontWeight: 900 }}
-            >
-              🎁 선물하기 · ₩{(price * quantity).toLocaleString()}
-            </button>
+            <div style={{ display: 'grid', gap: 8 }}>
+              <button
+                type="button"
+                disabled={submitting || friends.length === 0 || !selectedFriendId}
+                onClick={() => void onGiftAddToCartLater()}
+                style={{
+                  width: '100%',
+                  height: 44,
+                  borderRadius: 10,
+                  border: '1px solid var(--border)',
+                  background: friends.length === 0 || !selectedFriendId ? 'rgba(255,255,255,0.04)' : 'rgba(255,255,255,0.08)',
+                  color: friends.length === 0 || !selectedFriendId ? 'var(--text3)' : '#fff',
+                  fontWeight: 800,
+                }}
+              >
+                🛒 나중에 (장바구니 담기)
+              </button>
+              <button
+                type="button"
+                disabled={submitting || friends.length === 0 || !selectedFriendId}
+                onClick={() => {
+                  if (!selectedFriendId) return
+                  const params = new URLSearchParams()
+                  params.set('products', String(product.id))
+                  params.set('qty', String(quantity))
+                  params.set('gift_to', selectedFriendId)
+                  const trimmed = giftMessage.trim()
+                  if (trimmed) params.set('gift_message', trimmed)
+                  setGiftOpen(false)
+                  router.push(`/checkout?${params.toString()}`)
+                }}
+                style={{
+                  width: '100%',
+                  height: 44,
+                  borderRadius: 10,
+                  border: 'none',
+                  background: friends.length === 0 || !selectedFriendId ? '#55606f' : '#c9a84c',
+                  color: friends.length === 0 || !selectedFriendId ? '#c8d0db' : '#111',
+                  fontWeight: 900,
+                }}
+              >
+                🎁 지금 선물하기 · ₩{(price * quantity).toLocaleString()}
+              </button>
+            </div>
           </div>
         </div>
       )}
