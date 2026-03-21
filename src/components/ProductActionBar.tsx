@@ -6,12 +6,17 @@ import { useState } from 'react'
 
 export default function ProductActionBar({
   product,
+  quantity = 1,
 }: {
   product: { id: string; name: string; retail_price: number; thumb_img: string }
+  /** 상세 페이지 수량 선택과 동일하게 장바구니·결제에 반영 (1~99) */
+  quantity?: number
 }) {
   const { addToCart } = useCart()
   const router = useRouter()
   const [showGift, setShowGift] = useState(false)
+
+  const q = Math.max(1, Math.min(99, Math.floor(Number(quantity) || 1)))
 
   const handleCart = () => {
     addToCart({
@@ -19,13 +24,16 @@ export default function ProductActionBar({
       name: product.name,
       price: product.retail_price,
       thumb_img: product.thumb_img,
-      quantity: 1,
+      quantity: q,
     })
-    alert('🛒 장바구니에 담겼어요!')
+    alert(q > 1 ? `🛒 ${q}개 장바구니에 담겼어요!` : '🛒 장바구니에 담겼어요!')
   }
 
   const handleBuy = () => {
-    router.push(`/checkout?product_id=${product.id}`)
+    const qs = new URLSearchParams()
+    qs.set('product_id', product.id)
+    qs.set('qty', String(q))
+    router.push(`/checkout?${qs.toString()}`)
   }
 
   return (

@@ -263,7 +263,7 @@ export default function ProductDetailClient({ product }: { product: any }) {
         </div>
       </div>
 
-      {!isPriceUnset ? <ProductActionBar product={actionProduct} /> : null}
+      {!isPriceUnset ? <ProductActionBar product={actionProduct} quantity={quantity} /> : null}
 
       <DashboardBottomNav role="customer" />
     </div>
