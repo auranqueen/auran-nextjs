@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { useCartStore } from '@/stores/cartStore'
+import { useCart } from '@/context/CartContext'
 
 const btnStyle: React.CSSProperties = {
   width: 34,
@@ -21,8 +21,7 @@ const btnStyle: React.CSSProperties = {
 }
 
 export default function CartHeaderButton() {
-  const totalQty = useCartStore((s) => s.items.reduce((a, i) => a + i.quantity, 0))
-  const bump = useCartStore((s) => s.bump)
+  const { count: totalQty, bump } = useCart()
   const prevBump = useRef(-1)
   const skipFirstBump = useRef(true)
   const [bounceClass, setBounceClass] = useState(false)

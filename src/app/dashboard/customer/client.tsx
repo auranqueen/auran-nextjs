@@ -192,6 +192,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
       const { data, error } = await supabase
         .from('products')
         .select('*, brands(name)')
+        .eq('status', 'active')
         .limit(50)
 
       // 임시 디버깅: 홈 상품 쿼리 실패 시 콘솔에 실제 에러 출력
@@ -205,6 +206,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('products')
           .select('*')
+          .eq('status', 'active')
           .limit(20)
         console.log('[customer-home products fallback error]', fallbackError)
         list = (fallbackData || []).map((p: any) => ({ ...p, brand_name: p.brand_name || '' }))

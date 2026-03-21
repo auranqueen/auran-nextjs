@@ -27,7 +27,7 @@ function tabLabel(t: TabKey, dirty: boolean) {
   return `${dirty ? '🔴 ' : ''}${labels[t]}`
 }
 
-export default function AdminProductDetailModal({
+export default function ProductDetailModal({
   product,
   tab: listTab,
   busyId,

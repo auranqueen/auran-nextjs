@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { useCartStore } from '@/stores/cartStore'
+import { useCart } from '@/context/CartContext'
 
 type Role = 'customer' | 'partner' | 'salon' | 'brand'
 
@@ -42,7 +42,7 @@ export default function DashboardBottomNav({ role }: { role: Role }) {
   const router = useRouter()
   const pathname = usePathname()
   const items = NAV[role]
-  const cartBadge = useCartStore((s) => s.items.reduce((a, i) => a + i.quantity, 0))
+  const { count: cartBadge } = useCart()
 
   return (
     <div

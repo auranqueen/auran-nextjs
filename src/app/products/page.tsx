@@ -8,11 +8,11 @@ import ProductThumbImage from '@/components/ProductThumbImage'
 import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useMemo, useState } from 'react'
-import { useCartStore } from '@/stores/cartStore'
+import { useCart } from '@/context/CartContext'
 
 function ProductCard({ p }: { p: any }) {
   const [toast, setToast] = useState('')
-  const addItem = useCartStore((s) => s.addItem)
+  const { addItem } = useCart()
 
   useEffect(() => {
     if (!toast) return

@@ -1,53 +1,22 @@
-# AURAN 개발 철칙 — Cursor 자동 적용 규칙
+# AURAN Next.js — AI / 코딩 에이전트 규칙
 
-## 절대 규칙: 숫자가 들어가는 모든 작업
-새 기능 구현 시 아래 3가지를 반드시 동시 작업.
-단 한 번도 예외 없음.
+## Supabase 클라이언트 (이 3개만 사용)
+- `@/lib/supabase/client` — 브라우저 / Client Components
+- `@/lib/supabase/server` — Server Components / Route handlers (anon + 쿠키)
+- `@/lib/supabase/admin` — 서비스 롤 (`createAdminClient`, `tryCreateAdminClient`). **서버 전용**, API·스크립트만.
 
-### 1. admin_settings seed 자동 생성
-숫자·텍스트·비율·조건·가격이 하나라도 있으면
-admin_settings 테이블에 즉시 seed insert.
-하드코딩 절대 금지.
+`@/lib/supabase/service` 는 `admin` 재export(하위 호환). 신규 코드는 `admin` import 권장.
 
-### 2. 어드민 UI 자동 생성
-/super-console 또는 /admin 패널의 해당 카테고리 탭에
-[라벨] [입력필드] [단위] [저장] 행 자동 추가.
+## LOCKED — 임의 변경 금지 (변경 시 전역 검색·연관 플로우 점검)
+- `src/components/ui/ProductThumbnail.tsx`
+- `src/components/ui/ProductActionBar.tsx`
+- `src/context/CartContext.tsx` (장바구니 단일 소스; `CartProvider`는 `AppProviders` → root layout)
 
-### 3. getSetting() 훅 연동
-모든 수치는 반드시:
-getSetting('category', 'key') ?? 기본값
-으로 읽어오기. 절대 하드코딩 금지.
+## 장바구니
+- `useCart()` from `@/context/CartContext` 만 사용. Zustand `cartStore` 제거됨.
 
-## 소셜 카피 고정 규칙
-- 화면 표시에 "팔로우/팔로워/팔로잉" 용어 사용 금지
-- 화면 표시는 항상 "오랜일촌" 계열 용어 사용
-- DB 컬럼명/내부 변수명은 follow/follower/following 유지 가능
+## 타입
+- 공통 도메인 타입: `@/types` (`src/types/index.ts`)
 
-## 커밋 규칙
-모든 작업 완료 후 반드시 커밋/푸시까지 수행.
-
-## 🔒 LOCKED FILES - DO NOT MODIFY
-다음 파일들은 이미 완성된 파일이야.
-새 기능 추가할 때 절대 건드리지 마:
-
-- src/components/ProductThumbnail.tsx ← 썸네일 컴포넌트 완성
-- src/components/ProductActionBar.tsx ← 상품 상세 하단 장바구니/선물/구매 바 (고정 동작)
-- next.config.ts ← 이미지 도메인 설정 완성
-- src/app/products/[id]/page.tsx ← 서버 페이지(메타/JSON-LD만). 클라 UI는 client.tsx + ProductActionBar
-- src/context/CartContext.tsx ← useCart() / addToCart 시그니처 (zustand 래퍼)
-- src/app/cart/page.tsx ← 장바구니 페이지 완성
-- src/app/checkout/page.tsx ← 결제 페이지 완성 (`products` 또는 단일 `product_id` 쿼리 지원)
-
-## 규칙
-1. 위 파일 수정 필요시 반드시 먼저 물어볼 것
-2. 새 기능은 새 파일로 만들 것
-3. 기존 import/export 절대 변경 금지
-4. 버튼 onClick 핸들러 절대 제거 금지
-
-## 장바구니/선물/구매 버튼 현재 올바른 구현
-`ProductActionBar` 하단 고정 버튼바 (상세 `client.tsx`에서 `quantity` 전달):
-- 장바구니: CartContext의 addToCart() — 선택 수량(1~99) 반영
-- 선물하기: 내부 setShowGift(true) (선물 모달)
-- 구매하기: `/checkout?product_id=…&qty=…` (체크아웃이 기존과 동일하게 qty 처리)
-
-이 흐름은 완성됨. onClick 제거·시그니처 깨뜨리기 금지.
+## 어드민 API
+- `/api/admin/*` 는 로그인 + admin 역할 확인 후, 가능하면 `tryCreateAdminClient()` 로 RLS 우회 처리.

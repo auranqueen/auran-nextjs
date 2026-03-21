@@ -3,7 +3,7 @@
 import ProductThumbnail from '@/components/ProductThumbnail'
 import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import AdminProductDetailModal from './AdminProductDetailModal'
+import ProductDetailModal from './ProductDetailModal'
 
 // DB status: pending | active | discontinued (UI "rejected" = discontinued)
 function toDbStatus(tab: 'pending' | 'active' | 'rejected') {
@@ -406,7 +406,7 @@ export default function AdminMarketingProductsClient() {
       ) : null}
 
       {selectedProduct && (
-        <AdminProductDetailModal
+        <ProductDetailModal
           product={selectedProduct}
           tab={tab}
           busyId={busyId}

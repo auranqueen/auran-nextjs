@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import { Nanum_Myeongjo } from 'next/font/google'
+import { AppProviders } from '@/components/providers/AppProviders'
 import './globals.css'
 
 const nanumMyeongjo = Nanum_Myeongjo({
@@ -55,7 +56,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body style={{ margin: 0, padding: 0 }}>{children}</body>
+      <body style={{ margin: 0, padding: 0 }}>
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   )
 }

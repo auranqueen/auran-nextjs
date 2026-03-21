@@ -1,12 +1,29 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import ProductActionBar from '@/components/ProductActionBar'
+
+function earnPercentOf(product: any): number {
+  const n = product.earn_points_percent
+  if (n != null && n !== '') {
+    const v = Number(n)
+    if (Number.isFinite(v)) return Math.min(100, Math.max(0, v))
+  }
+  const e = product.earn_points
+  if (e != null && e !== '') {
+    const v = Number(e)
+    if (Number.isFinite(v)) return Math.min(100, Math.max(0, Math.floor(v)))
+  }
+  return 0
+}
 
 export default function ProductDetailClient({ product }: { product: any }) {
   const [qty, setQty] = useState(1)
   const unit = Math.max(0, Math.floor(Number(product.retail_price) || 0))
   const isPriceUnset = unit < 1
+  const pct = earnPercentOf(product)
+  const lineTotal = unit * qty
+  const expectedPurchasePts = useMemo(() => Math.floor((lineTotal * pct) / 100), [lineTotal, pct])
 
   return (
     <div style={{ paddingBottom: 100, maxWidth: 480, margin: '0 auto' }}>
@@ -43,6 +60,27 @@ export default function ProductDetailClient({ product }: { product: any }) {
 
         {product.description ? (
           <p style={{ color: '#aaa', fontSize: 14, marginTop: 12, lineHeight: 1.6 }}>{product.description}</p>
+        ) : null}
+
+        {!isPriceUnset && pct > 0 ? (
+          <div
+            style={{
+              marginTop: 16,
+              padding: 14,
+              borderRadius: 14,
+              border: '1px solid rgba(201,168,76,0.25)',
+              background: 'rgba(201,168,76,0.06)',
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 800, color: 'rgba(255,255,255,0.92)', lineHeight: 1.5 }}>
+              이 상품 구매 시 약{' '}
+              <span style={{ color: '#C9A96E', fontWeight: 900 }}>{expectedPurchasePts.toLocaleString()}P</span> 적립
+              {qty > 1 ? (
+                <span style={{ color: '#888', fontSize: 12 }}> (수량 {qty} · 합계 ₩{lineTotal.toLocaleString()} 기준)</span>
+              ) : null}
+            </div>
+            <div style={{ marginTop: 8, fontSize: 11, color: '#888' }}>배송 완료 시 지급 · 적립율 {pct}%</div>
+          </div>
         ) : null}
 
         {!isPriceUnset ? (

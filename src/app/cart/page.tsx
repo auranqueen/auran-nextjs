@@ -8,19 +8,21 @@ import DashboardHeader from '@/components/DashboardHeader'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import ProductThumbImage from '@/components/ProductThumbImage'
 import { createClient } from '@/lib/supabase/client'
-import { useCartStore } from '@/stores/cartStore'
+import { useCart } from '@/context/CartContext'
 
 type SearchHit = { id: string; name: string; email: string }
 
 export default function CartPage() {
   const router = useRouter()
   const supabase = createClient()
-  const items = useCartStore((s) => s.items)
-  const selectedIds = useCartStore((s) => s.selectedIds)
-  const setSelected = useCartStore((s) => s.setSelected)
-  const setAllSelected = useCartStore((s) => s.setAllSelected)
-  const setQuantity = useCartStore((s) => s.setQuantity)
-  const removeLine = useCartStore((s) => s.removeLine)
+  const {
+    items,
+    selectedIds,
+    setSelected,
+    setAllSelected,
+    setQuantity,
+    removeLine,
+  } = useCart()
   const selectedLines = useMemo(() => items.filter((i) => selectedIds[i.id] !== false), [items, selectedIds])
 
   const [toast, setToast] = useState('')
