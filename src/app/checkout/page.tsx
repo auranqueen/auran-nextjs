@@ -8,7 +8,12 @@ import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import { createClient } from '@/lib/supabase/client'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
-import { computeCouponDiscount, isCouponExpiredForUser } from '@/lib/coupon/computeDiscount'
+import {
+  computeCouponDiscount,
+  isCouponApplicableForOrder,
+  isCouponExpiredForUser,
+  type OrderLineForCoupon,
+} from '@/lib/coupon/computeDiscount'
 
 function toNum(v: any) {
   const n = Number(v)
@@ -39,8 +44,10 @@ function CheckoutPageInner() {
   const [couponSheetOpen, setCouponSheetOpen] = useState(false)
   const [userCoupons, setUserCoupons] = useState<UcRow[]>([])
   const [selectedUserCouponId, setSelectedUserCouponId] = useState<string | null>(null)
+  const [authUid, setAuthUid] = useState<string | null>(null)
 
   const toastRate = getSettingNum('toast', 'exchange_rate', 100)
+  const maxCouponPct = getSettingNum('coupon', 'max_percent_discount', 70)
   const checkoutToastFirst = getSettingNum('checkout', 'toast_first_priority', 1) === 1
   const maxPointRate = getSettingNum('checkout', 'point_max_ratio', 20) || getSettingNum('toast', 'point_max_usage_rate', 20)
   const showChargeOption = getSettingNum('checkout', 'show_charge_option', 1) === 1
@@ -91,6 +98,7 @@ function CheckoutPageInner() {
         router.replace('/login?redirect=/checkout')
         return
       }
+      setAuthUid(user.id)
       setMeId(me.id)
       setPoints(toNum(me.points))
       setBalance(toNum(me.charge_balance))
@@ -103,7 +111,7 @@ function CheckoutPageInner() {
       if (productIds.length > 0) {
         const { data: rows } = await supabase
           .from('products')
-          .select('id,name,thumb_img,retail_price,brands(name)')
+          .select('id,name,thumb_img,retail_price,brand_id,brands(name)')
           .in('id', productIds)
           .eq('status', 'active')
           .gt('retail_price', 0)
@@ -123,14 +131,29 @@ function CheckoutPageInner() {
     [orderedProducts, qtyList]
   )
 
+  const orderLines: OrderLineForCoupon[] = useMemo(
+    () =>
+      orderedProducts.map((p, i) => {
+        const q = qtyList[i] ?? qtyList[0] ?? 1
+        return {
+          product_id: p.id,
+          brand_id: p.brand_id ?? null,
+          subtotal: toNum(p.retail_price) * q,
+        }
+      }),
+    [orderedProducts, qtyList]
+  )
+
   const selectedRow = useMemo(
     () => userCoupons.find((u) => u.id === selectedUserCouponId) || null,
     [userCoupons, selectedUserCouponId]
   )
   const couponDiscount = useMemo(() => {
-    if (!selectedRow?.coupons) return 0
-    return computeCouponDiscount(subtotal, selectedRow.coupons)
-  }, [selectedRow, subtotal])
+    if (!selectedRow?.coupons || !authUid) return 0
+    const c = selectedRow.coupons
+    if (!isCouponApplicableForOrder(c, orderLines, subtotal, authUid)) return 0
+    return computeCouponDiscount(subtotal, c, { maxPercent: maxCouponPct })
+  }, [selectedRow, subtotal, orderLines, authUid, maxCouponPct])
 
   const afterCoupon = Math.max(0, subtotal - couponDiscount)
   const maxPointsUsable = useMemo(() => Math.min(points, Math.floor((subtotal * maxPointRate) / 100)), [points, subtotal, maxPointRate])
@@ -154,18 +177,25 @@ function CheckoutPageInner() {
       setSelectedUserCouponId(null)
       return
     }
-    if (isCouponExpiredForUser({ status: 'unused' }, row.coupons) || computeCouponDiscount(subtotal, row.coupons) <= 0) {
+    if (
+      !authUid ||
+      isCouponExpiredForUser({ status: 'unused' }, row.coupons) ||
+      !isCouponApplicableForOrder(row.coupons, orderLines, subtotal, authUid) ||
+      computeCouponDiscount(subtotal, row.coupons, { maxPercent: maxCouponPct }) <= 0
+    ) {
       setSelectedUserCouponId(null)
     }
-  }, [subtotal, userCoupons, selectedUserCouponId])
+  }, [subtotal, userCoupons, selectedUserCouponId, orderLines, authUid, maxCouponPct])
 
   const usableCouponCount = useMemo(() => {
+    if (!authUid) return 0
     return userCoupons.filter((u) => {
       if (!u.coupons) return false
       if (isCouponExpiredForUser({ status: u.status }, u.coupons)) return false
-      return computeCouponDiscount(subtotal, u.coupons) > 0
+      if (!isCouponApplicableForOrder(u.coupons, orderLines, subtotal, authUid)) return false
+      return computeCouponDiscount(subtotal, u.coupons, { maxPercent: maxCouponPct }) > 0
     }).length
-  }, [userCoupons, subtotal])
+  }, [userCoupons, subtotal, orderLines, authUid, maxCouponPct])
 
   const onPay = async (allowCharge = true) => {
     if (!orderedProducts.length || !meId) return
@@ -379,9 +409,22 @@ function CheckoutPageInner() {
               const c = uc.coupons
               if (!c) return null
               const expired = isCouponExpiredForUser({ status: uc.status }, c)
-              const disc = computeCouponDiscount(subtotal, c)
-              const ok = !expired && disc > 0
+              const applicable =
+                !!authUid && !expired && isCouponApplicableForOrder(c, orderLines, subtotal, authUid)
+              const disc = applicable ? computeCouponDiscount(subtotal, c, { maxPercent: maxCouponPct }) : 0
+              const ok = applicable && disc > 0
               const sel = selectedUserCouponId === uc.id
+              const minO = Math.max(0, Number(c.min_order ?? 0))
+              const subFail = !expired && subtotal < minO
+              const dt = (c.discount_type || (c.type === 'rate' ? 'rate' : 'amount')) as string
+              const dv =
+                c.discount_value != null
+                  ? Number(c.discount_value)
+                  : dt === 'rate'
+                    ? Number(c.discount_rate || 0)
+                    : Number(c.discount_amount || 0)
+              const discLabel =
+                dt === 'rate' ? `${dv}% 할인` : `₩${dv.toLocaleString()} 할인`
               return (
                 <button
                   key={uc.id}
@@ -399,18 +442,16 @@ function CheckoutPageInner() {
                     marginBottom: 8,
                     borderRadius: 12,
                     border: sel ? '1px solid rgba(201,168,76,0.6)' : '1px solid var(--border)',
-                    background: ok ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.2)',
+                    background: ok ? 'rgba(201,168,76,0.08)' : 'rgba(0,0,0,0.2)',
                     color: ok ? '#fff' : 'rgba(255,255,255,0.35)',
                     cursor: ok ? 'pointer' : 'not-allowed',
                   }}
                 >
                   <div style={{ fontWeight: 900, fontSize: 13 }}>{c.name}</div>
-                  <div style={{ fontSize: 12, marginTop: 4, color: ok ? 'var(--gold)' : 'inherit' }}>
-                    {c.type === 'amount' ? `₩${Number(c.discount_amount || 0).toLocaleString()} 할인` : `${Number(c.discount_rate || 0)}% 할인`}
-                  </div>
+                  <div style={{ fontSize: 12, marginTop: 4, color: ok ? 'var(--gold)' : 'inherit' }}>{discLabel}</div>
                   {!ok && (
-                    <div style={{ fontSize: 11, marginTop: 6, color: '#e57373' }}>
-                      {expired ? '기간 만료' : `최소 주문 ₩${Number(c.min_order || 0).toLocaleString()} 미충족`}
+                    <div style={{ fontSize: 11, marginTop: 6, color: '#888' }}>
+                      {expired ? '기간 만료' : subFail ? `최소 주문 ₩${minO.toLocaleString()} 미충족` : '이 상품에 적용 불가'}
                     </div>
                   )}
                 </button>

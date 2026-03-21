@@ -33,6 +33,8 @@ export default function MyCouponsPage() {
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<Row[]>([])
   const [tab, setTab] = useState<Tab>('usable')
+  const [brandNames, setBrandNames] = useState<Record<string, string>>({})
+  const [productNames, setProductNames] = useState<Record<string, string>>({})
 
   useEffect(() => {
     const run = async () => {
@@ -52,6 +54,65 @@ export default function MyCouponsPage() {
     }
     run()
   }, [supabase, router])
+
+  useEffect(() => {
+    const bids = new Set<string>()
+    const pids = new Set<string>()
+    for (const r of rows) {
+      const c = r.coupons
+      if (!c) continue
+      const sc = String(c.scope || 'all').toLowerCase()
+      if (sc === 'brand' && Array.isArray(c.scope_brand_ids)) {
+        for (const id of c.scope_brand_ids as string[]) bids.add(id)
+      }
+      if (sc === 'product' && Array.isArray(c.scope_product_ids)) {
+        for (const id of c.scope_product_ids as string[]) pids.add(id)
+      }
+    }
+    ;(async () => {
+      if (bids.size) {
+        const { data } = await supabase.from('brands').select('id,name').in('id', Array.from(bids))
+        const m: Record<string, string> = {}
+        for (const b of data || []) m[b.id] = (b as { name?: string }).name || ''
+        setBrandNames((prev) => ({ ...prev, ...m }))
+      }
+      if (pids.size) {
+        const { data } = await supabase.from('products').select('id,name').in('id', Array.from(pids))
+        const m: Record<string, string> = {}
+        for (const p of data || []) m[p.id] = (p as { name?: string }).name || ''
+        setProductNames((prev) => ({ ...prev, ...m }))
+      }
+    })()
+  }, [rows, supabase])
+
+  const scopeHint = (c: any) => {
+    const sc = String(c.scope || 'all').toLowerCase()
+    if (sc === 'brand') {
+      const ids = (c.scope_brand_ids || []) as string[]
+      const names = ids.map((id) => brandNames[id]).filter(Boolean)
+      if (names.length) return `✓ ${names.join(' · ')} 전용`
+      return '✓ 브랜드 지정 상품'
+    }
+    if (sc === 'product') {
+      const ids = (c.scope_product_ids || []) as string[]
+      const names = ids.map((id) => productNames[id]).filter(Boolean)
+      if (names.length === 1) return `✓ ${names[0]} 전용`
+      if (names.length > 1) return `✓ ${names[0]} 외 ${names.length - 1}종 전용`
+      return '✓ 지정 상품 한정'
+    }
+    return '✓ 전체 상품 적용'
+  }
+
+  const discLabelFor = (c: any) => {
+    const dt = (c.discount_type || (c.type === 'rate' ? 'rate' : 'amount')) as string
+    const dv =
+      c.discount_value != null
+        ? Number(c.discount_value)
+        : dt === 'rate'
+          ? Number(c.discount_rate || 0)
+          : Number(c.discount_amount || 0)
+    return dt === 'rate' ? `${dv}% 할인` : `${dv.toLocaleString()}원 할인`
+  }
 
   const categorized = useMemo(() => {
     const usable: Row[] = []
@@ -115,10 +176,7 @@ export default function MyCouponsPage() {
             {list.map((r) => {
               const c = r.coupons
               if (!c) return null
-              const discLabel =
-                c.type === 'amount'
-                  ? `${Number(c.discount_amount || 0).toLocaleString()}원 할인`
-                  : `${Number(c.discount_rate || 0)}% 할인`
+              const discLabel = discLabelFor(c)
               return (
                 <div
                   key={r.id}
@@ -138,11 +196,23 @@ export default function MyCouponsPage() {
                   <div style={{ fontSize: 16, fontWeight: 900, color: '#fff', marginBottom: 8 }}>{c.name}</div>
                   <div style={{ borderTop: '1px dashed rgba(255,255,255,0.15)', margin: '10px 0', opacity: 0.8 }} />
                   <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--gold)', marginBottom: 8 }}>{discLabel}</div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: 'rgba(255,255,255,0.55)',
+                      lineHeight: 1.5,
+                      paddingBottom: 8,
+                      borderBottom: '1px dashed rgba(255,255,255,0.12)',
+                      marginBottom: 8,
+                    }}
+                  >
+                    {scopeHint(c)}
+                  </div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
                     {c.description || `${Number(c.min_order || 0).toLocaleString()}원 이상 구매시`}
                   </div>
                   <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 8 }}>
-                    ~{fmtDate(c.end_at)}까지 · AURAN 전체 상품 적용
+                    {Number(c.min_order || 0).toLocaleString()}원 이상 구매시 · ~{fmtDate(c.end_at)}까지
                   </div>
                   {tab === 'used' && r.used_at && (
                     <div style={{ fontSize: 11, color: 'rgba(76,173,126,0.85)', marginTop: 8 }}>사용일 {fmtDate(r.used_at)}</div>

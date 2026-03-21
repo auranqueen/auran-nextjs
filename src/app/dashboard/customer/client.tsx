@@ -174,6 +174,23 @@ export default function CustomerDashboardClient({ profile }: Props) {
   }, [toast])
 
   useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const { data: auth } = await supabase.auth.getUser()
+      if (!auth?.user) return
+      const res = await fetch('/api/coupons/birthday-check', { method: 'POST', credentials: 'same-origin' })
+      const j = await res.json().catch(() => ({}))
+      if (cancelled) return
+      if (res.ok && j?.ok && Number(j?.issued || 0) > 0) {
+        setToast('🎂 생일 축하해요! 특별 쿠폰이 발급됐어요 🎫')
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [supabase])
+
+  useEffect(() => {
     const run = async () => {
       const nowIso = new Date().toISOString()
       const { data, error } = await supabase

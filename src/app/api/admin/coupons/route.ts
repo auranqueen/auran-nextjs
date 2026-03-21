@@ -34,11 +34,36 @@ export async function GET(req: NextRequest) {
     const s = userSearch.trim().replace(/%/g, '').slice(0, 80)
     const { data: users, error: uerr } = await auth.supabase
       .from('users')
-      .select('id,auth_id,name,email,phone')
-      .or(`email.ilike.%${s}%,name.ilike.%${s}%`)
+      .select('id,auth_id,name,email,phone,skin_type')
+      .or(`email.ilike.%${s}%,name.ilike.%${s}%,phone.ilike.%${s}%`)
       .limit(25)
     if (uerr) return json({ ok: false, error: uerr.message }, 500)
     return json({ ok: true, users: users || [] })
+  }
+
+  const brandQ = req.nextUrl.searchParams.get('brand_q')
+  if (brandQ && brandQ.trim()) {
+    const s = brandQ.trim().replace(/%/g, '').slice(0, 80)
+    const { data: rows, error } = await auth.supabase
+      .from('brands')
+      .select('id,name,logo_url')
+      .ilike('name', `%${s}%`)
+      .limit(30)
+    if (error) return json({ ok: false, error: error.message }, 500)
+    return json({ ok: true, brands: rows || [] })
+  }
+
+  const productQ = req.nextUrl.searchParams.get('product_q')
+  if (productQ && productQ.trim()) {
+    const s = productQ.trim().replace(/%/g, '').slice(0, 80)
+    const { data: rows, error } = await auth.supabase
+      .from('products')
+      .select('id,name,retail_price,brand_id,brands(name)')
+      .eq('status', 'active')
+      .ilike('name', `%${s}%`)
+      .limit(30)
+    if (error) return json({ ok: false, error: error.message }, 500)
+    return json({ ok: true, products: rows || [] })
   }
 
   const { data: coupons, error } = await auth.supabase
@@ -65,6 +90,11 @@ export async function GET(req: NextRequest) {
   return json({ ok: true, coupons: coupons || [], stats })
 }
 
+function parseUuidArray(v: unknown): string[] {
+  if (!Array.isArray(v)) return []
+  return v.filter((x) => typeof x === 'string' && x.length > 10).map((x) => x.trim())
+}
+
 export async function POST(req: NextRequest) {
   const auth = await requireAdminApi()
   if (!auth.ok) return json({ ok: false, reason: auth.status === 401 ? 'not_logged_in' : 'forbidden' }, auth.status)
@@ -75,13 +105,26 @@ export async function POST(req: NextRequest) {
   if (action === 'create') {
     const name = typeof body?.name === 'string' ? body.name.trim() : ''
     if (!name) return json({ ok: false, error: 'name_required' }, 400)
-    const type = body?.type === 'rate' ? 'rate' : 'amount'
+
+    const discountType = body?.discount_type === 'rate' || body?.discount_type === 'percent' ? 'rate' : 'amount'
+    const discountValue = Math.max(0, Math.floor(Number(body?.discount_value) || 0))
+    const { data: maxPctRow } = await auth.supabase
+      .from('admin_settings')
+      .select('value')
+      .eq('category', 'coupon')
+      .eq('key', 'max_percent_discount')
+      .maybeSingle()
+    const maxPct = Math.min(100, Math.max(0, Number(maxPctRow?.value ?? 70)))
+    if (discountType === 'rate' && discountValue > maxPct) {
+      return json({ ok: false, error: 'rate_too_high', max: maxPct }, 400)
+    }
+
+    const type = discountType === 'rate' ? 'rate' : 'amount'
     const code =
       typeof body?.code === 'string' && body.code.trim()
         ? body.code.trim()
         : `APP-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`.toUpperCase()
-    const discount_amount = Math.max(0, Math.floor(Number(body?.discount_amount) || 0))
-    const discount_rate = Math.max(0, Number(body?.discount_rate) || 0)
+
     const min_order = Math.max(0, Math.floor(Number(body?.min_order) || 0))
     const issue_trigger = typeof body?.issue_trigger === 'string' ? body.issue_trigger : 'manual'
     const max_issue_count = body?.max_issue_count == null ? null : Math.max(0, Math.floor(Number(body.max_issue_count)))
@@ -90,29 +133,74 @@ export async function POST(req: NextRequest) {
     const start_at = body?.start_at ? String(body.start_at) : null
     const end_at = body?.end_at ? String(body.end_at) : null
 
+    const scope = typeof body?.scope === 'string' ? body.scope : 'all'
+    const scope_brand_ids = parseUuidArray(body?.scope_brand_ids)
+    const scope_product_ids = parseUuidArray(body?.scope_product_ids)
+    const scope_user_ids = parseUuidArray(body?.scope_user_ids)
+    const birthday_days_before = Math.max(0, Math.floor(Number(body?.birthday_days_before ?? 7)))
+    const birthday_days_after = Math.max(0, Math.floor(Number(body?.birthday_days_after ?? 7)))
+
+    const insertRow: Record<string, any> = {
+      code,
+      name,
+      description,
+      type,
+      discount_amount: type === 'amount' ? discountValue : null,
+      discount_rate: type === 'rate' ? discountValue : null,
+      discount_type: discountType === 'rate' ? 'rate' : 'amount',
+      discount_value: discountValue,
+      min_order,
+      start_at,
+      end_at,
+      issue_trigger,
+      max_issue_count,
+      is_active,
+      issued_count: 0,
+      usage_limit: null,
+      used_count: 0,
+      scope,
+      scope_brand_ids: scope === 'brand' && scope_brand_ids.length ? scope_brand_ids : null,
+      scope_product_ids: scope === 'product' && scope_product_ids.length ? scope_product_ids : null,
+      scope_user_ids: scope_user_ids.length ? scope_user_ids : null,
+      birthday_days_before,
+      birthday_days_after,
+    }
+
     const { data: row, error } = await auth.supabase
       .from('coupons')
-      .insert({
-        code,
-        name,
-        description,
-        type,
-        discount_amount: type === 'amount' ? discount_amount : null,
-        discount_rate: type === 'rate' ? discount_rate : null,
-        min_order,
-        start_at,
-        end_at,
-        issue_trigger,
-        max_issue_count,
-        is_active,
-        issued_count: 0,
-        usage_limit: null,
-        used_count: 0,
-      })
+      .insert(insertRow)
       .select('id')
       .single()
     if (error) return json({ ok: false, error: error.message }, 500)
-    return json({ ok: true, id: row?.id })
+
+    const newId = row?.id as string
+    if (issue_trigger === 'specific_user' && scope_user_ids.length && newId) {
+      let n = 0
+      for (const uid of scope_user_ids) {
+        const { data: ex } = await auth.supabase
+          .from('user_coupons')
+          .select('id')
+          .eq('user_id', uid)
+          .eq('coupon_id', newId)
+          .maybeSingle()
+        if (ex) continue
+        const { error: insUc } = await auth.supabase.from('user_coupons').insert({
+          user_id: uid,
+          coupon_id: newId,
+          status: 'unused',
+        })
+        if (!insUc) n += 1
+      }
+      if (n > 0) {
+        const { data: cur } = await auth.supabase.from('coupons').select('issued_count').eq('id', newId).maybeSingle()
+        await auth.supabase
+          .from('coupons')
+          .update({ issued_count: (cur?.issued_count || 0) + n })
+          .eq('id', newId)
+      }
+    }
+
+    return json({ ok: true, id: newId })
   }
 
   if (action === 'issue') {
@@ -145,6 +233,18 @@ export async function POST(req: NextRequest) {
       .from('coupons')
       .update({ issued_count: (c.issued_count || 0) + 1 })
       .eq('id', coupon_id)
+
+    const { data: recipient } = await auth.supabase.from('users').select('id').eq('auth_id', user_auth_id).maybeSingle()
+    if (recipient?.id) {
+      await auth.supabase.from('notifications').insert({
+        user_id: recipient.id,
+        type: 'promo',
+        title: '🎫 새 쿠폰이 발급됐어요!',
+        body: '쿠폰함에서 확인해 보세요.',
+        icon: '🎫',
+        is_read: false,
+      })
+    }
 
     return json({ ok: true })
   }

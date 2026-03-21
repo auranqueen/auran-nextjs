@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
-import { computeCouponDiscount } from '@/lib/coupon/computeDiscount'
+import { computeCouponDiscount, isCouponApplicableForOrder } from '@/lib/coupon/computeDiscount'
 
 function json(data: object, status = 200) {
   return NextResponse.json(data, { status })
@@ -136,7 +136,24 @@ export async function POST(req: NextRequest) {
     const { data: c } = await client.from('coupons').select('*').eq('id', uc.coupon_id).maybeSingle()
     if (!c || !c.is_active) return json({ ok: false, error: 'coupon_inactive' }, 400)
 
-    couponDiscount = computeCouponDiscount(totalAmount, c)
+    const linesForCoupon = orderItemsRows.map((r) => ({
+      product_id: r.product_id,
+      brand_id: r.brand_id,
+      subtotal: r.subtotal,
+    }))
+    if (!isCouponApplicableForOrder(c, linesForCoupon, totalAmount, user.id)) {
+      return json({ ok: false, error: 'coupon_not_applicable' }, 400)
+    }
+
+    const { data: mxRow } = await client
+      .from('admin_settings')
+      .select('value')
+      .eq('category', 'coupon')
+      .eq('key', 'max_percent_discount')
+      .maybeSingle()
+    const maxPct = Math.min(100, Math.max(0, Number(mxRow?.value ?? 70)))
+
+    couponDiscount = computeCouponDiscount(totalAmount, c, { maxPercent: maxPct })
     if (couponDiscount <= 0) return json({ ok: false, error: 'coupon_not_applicable' }, 400)
     validatedUserCouponId = uc.id
   }
