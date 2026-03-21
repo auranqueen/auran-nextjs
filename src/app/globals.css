@@ -55,3 +55,12 @@ button { cursor: pointer; font-family: 'Pretendard', sans-serif; }
 .auran-cart-badge-bounce {
   animation: auran-cart-badge-bounce 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
+@keyframes auran-skeleton-pulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+
+.auran-skeleton-pulse {
+  animation: auran-skeleton-pulse 1.35s ease-in-out infinite;
+}

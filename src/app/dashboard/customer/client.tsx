@@ -47,10 +47,17 @@ function normalizeBrandName(p: any) {
   return (p.brand_name || p.brands?.name || '').toString()
 }
 
-export default function CustomerDashboardClient({ profile }: Props) {
+export default function CustomerDashboardClient({
+  profile,
+  notifications: _notifications,
+  recentOrders: _recentOrders,
+  pointHistory: _pointHistory,
+  featuredProducts: _featuredProducts,
+}: Props) {
   const router = useRouter()
   const supabase = createClient()
   const { getSettingNum, getSetting } = useAdminSettings()
+  const [feedLoading, setFeedLoading] = useState(true)
   const [wallet, setWallet] = useState({ points: toNum(profile?.points), balance: toNum(profile?.charge_balance) })
   const [brandTab, setBrandTab] = useState('전체')
   const [categoryTab, setCategoryTab] = useState('전체')
@@ -71,6 +78,16 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const [specialResumeAt, setSpecialResumeAt] = useState(0)
   const [coords, setCoords] = useState(DEFAULT_COORDS)
   const touchStartXRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.history.pushState(null, '', window.location.href)
+    const onPop = () => {
+      window.history.pushState(null, '', window.location.href)
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
 
   const reviewThreshold = getSettingNum('product_hook', 'review_threshold', 10)
   const aiHookEnabled = getSettingNum('product_hook', 'ai_hook_enabled', 1) === 1
@@ -172,8 +189,8 @@ export default function CustomerDashboardClient({ profile }: Props) {
   useEffect(() => {
     let cancelled = false
     ;(async () => {
-      const { data: auth } = await supabase.auth.getUser()
-      if (!auth?.user) return
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
       const res = await fetch('/api/coupons/birthday-check', { method: 'POST', credentials: 'same-origin' })
       const j = await res.json().catch(() => ({}))
       if (cancelled) return
@@ -188,27 +205,25 @@ export default function CustomerDashboardClient({ profile }: Props) {
 
   useEffect(() => {
     const run = async () => {
+      setFeedLoading(true)
       const nowIso = new Date().toISOString()
+      try {
       const { data, error } = await supabase
         .from('products')
         .select('*, brands(name)')
         .eq('status', 'active')
         .limit(50)
 
-      // 임시 디버깅: 홈 상품 쿼리 실패 시 콘솔에 실제 에러 출력
-      console.log('[customer-home products query error]', error)
-
       let list: any[] = []
       if (!error) {
         list = (data || []).map((p: any) => ({ ...p, brand_name: p.brands?.name || '' }))
       } else {
-        // brands 조인 실패 시 fallback (brands 테이블/관계 미구성 환경 대응)
         const { data: fallbackData, error: fallbackError } = await supabase
           .from('products')
           .select('*')
           .eq('status', 'active')
           .limit(20)
-        console.log('[customer-home products fallback error]', fallbackError)
+        if (fallbackError) console.warn('[customer-home products fallback error]', fallbackError)
         list = (fallbackData || []).map((p: any) => ({ ...p, brand_name: p.brand_name || '' }))
       }
 
@@ -219,7 +234,6 @@ export default function CustomerDashboardClient({ profile }: Props) {
       }
       setProducts(list)
 
-      // 종료된 타임세일 자동 정리
       const endedIds = list
         .filter((p: any) => p.is_flash_sale && p.flash_sale_end && new Date(p.flash_sale_end).getTime() <= new Date(nowIso).getTime())
         .map((p: any) => p.id)
@@ -236,20 +250,24 @@ export default function CustomerDashboardClient({ profile }: Props) {
 
       const ids = nextSpecials.map((p: any) => p.id)
       if (ids.length > 0) {
-        const { data: buyerRows } = await supabase.from('order_items').select('product_id').in('product_id', ids)
+        const [buyerRes, reviewRes] = await Promise.all([
+          supabase.from('order_items').select('product_id').in('product_id', ids),
+          supabase
+            .from('reviews')
+            .select('product_id,content,rating')
+            .eq('review_type', 'product')
+            .eq('status', '게시')
+            .gte('rating', 4)
+            .in('product_id', ids),
+        ])
+        const buyerRows = buyerRes.data
+        const reviewRows = reviewRes.data
         const buyerCountMap: Record<string, number> = {}
         for (const r of buyerRows || []) {
           const id = String((r as any).product_id || '')
           if (!id) continue
           buyerCountMap[id] = (buyerCountMap[id] || 0) + 1
         }
-        const { data: reviewRows } = await supabase
-          .from('reviews')
-          .select('product_id,content,rating')
-          .eq('review_type', 'product')
-          .eq('status', '게시')
-          .gte('rating', 4)
-          .in('product_id', ids)
         const map: Record<string, { buyers: number; hook: string }> = {}
         const keywordPool = ['모공', '피지', '보습', '진정', '탄력', '미백', '트러블', '수분', '촉촉', '깨끗', '개선']
         const skinType = String(profile?.skin_type || '')
@@ -279,6 +297,9 @@ export default function CustomerDashboardClient({ profile }: Props) {
           map[id] = { buyers: buyerCountMap[id] || 0, hook }
         }
         setSpecialMeta(map)
+      }
+      } finally {
+        setFeedLoading(false)
       }
     }
     run()
@@ -514,7 +535,19 @@ export default function CustomerDashboardClient({ profile }: Props) {
           ))}
         </div>
 
-        {homeSpecialEnabled && (
+        {feedLoading && (
+          <div style={{ marginBottom: 16 }}>
+            {[1, 2, 3, 4].map(i => (
+              <div
+                key={i}
+                className="auran-skeleton-pulse"
+                style={{ height: 88, background: 'rgba(255,255,255,0.06)', borderRadius: 14, marginBottom: 10 }}
+              />
+            ))}
+          </div>
+        )}
+
+        {!feedLoading && homeSpecialEnabled && (
         <div style={{ marginBottom: 16 }}>
           <button
             onClick={() => router.push(`/products?specialIds=${encodeURIComponent(specials.map((s: any) => s.id).join(','))}`)}
@@ -676,7 +709,22 @@ export default function CustomerDashboardClient({ profile }: Props) {
           )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {filteredProducts.map((p: any) => (
+            {feedLoading
+              ? [1, 2, 3, 4, 5, 6].map(i => (
+                  <div
+                    key={i}
+                    className="auran-skeleton-pulse"
+                    style={{ borderRadius: 12, overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}
+                  >
+                    <div style={{ width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.25)' }} />
+                    <div style={{ padding: 10 }}>
+                      <div style={{ height: 10, width: '40%', background: 'rgba(255,255,255,0.08)', borderRadius: 4, marginBottom: 8 }} />
+                      <div style={{ height: 12, width: '90%', background: 'rgba(255,255,255,0.08)', borderRadius: 4, marginBottom: 8 }} />
+                      <div style={{ height: 12, width: '35%', background: 'rgba(255,255,255,0.08)', borderRadius: 4 }} />
+                    </div>
+                  </div>
+                ))
+              : filteredProducts.map((p: any) => (
               <div key={p.id} style={{ border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
                 <div onClick={() => router.push(`/products/${p.id}`)} style={{ cursor: 'pointer' }}>
                   <div style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)' }}>

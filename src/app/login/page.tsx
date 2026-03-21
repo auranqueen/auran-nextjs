@@ -44,7 +44,6 @@ function LoginForm() {
 
   useEffect(() => {
     ;(async () => {
-      // 아이디 기억하기: 체크돼 있으면 이메일 자동 입력
       try {
         const checked = localStorage.getItem(REMEMBER_EMAIL_CHECKED_KEY) === 'true'
         if (checked) {
@@ -54,13 +53,13 @@ function LoginForm() {
         setRememberEmail(checked)
       } catch {}
 
-      // 역할 선택/리다이렉트로 들어온 경우 자동 리다이렉트 금지
       if (params.get('role') || redirectParam) return
+
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+
       const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
-      if (!stored) return
-      const { data } = await supabase.auth.getUser()
-      if (!data.user) return
-      router.replace(positionToDashboardPath(stored))
+      router.replace(positionToDashboardPath(stored || 'customer'))
     })()
   }, [params, redirectParam, router, supabase])
 
@@ -106,7 +105,7 @@ function LoginForm() {
 
       // redirect 파라미터가 있으면 해당 경로로, 없으면 기본 대시보드로
       const safeRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : null
-      router.push(safeRedirect || dashboardPathForRole(effectiveRole))
+      router.replace(safeRedirect || dashboardPathForRole(effectiveRole))
     } catch (err: any) {
       const msg = err?.message || ''
       if (msg.includes('Email not confirmed') || msg.includes('email_not_confirmed')) {
@@ -145,11 +144,13 @@ function LoginForm() {
         // Use stable production URL to avoid Kakao redirect mismatch (KOE205)
         // redirect 파라미터를 함께 전달해서 소셜 로그인 후에도 원래 페이지로 복귀
         redirectTo: `${appUrl}/auth/callback?role=${position}${redirectQuery}`,
-        ...(provider === 'kakao' ? { scopes: 'profile_nickname profile_image' } : {}),
-        // scope만 강제 (account_email 제외). prompt 제거 → 이미 카카오 로그인돼 있으면 버튼만 눌러도 바로 인증
-        queryParams: provider === 'kakao'
-          ? { scope: 'profile_nickname profile_image' }
-          : {},
+        ...(provider === 'kakao'
+          ? { scopes: 'profile_nickname profile_image account_email' }
+          : {}),
+        queryParams:
+          provider === 'kakao'
+            ? { scope: 'profile_nickname profile_image account_email' }
+            : {},
       },
     })
     if (error) setError(error.message)

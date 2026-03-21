@@ -83,9 +83,11 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const supabase = createMiddlewareClient(req, res)
 
+  // 세션 갱신(쿠키) 후 사용자 판별 — getUser() 단독 호출보다 지연·비용 감소에 유리
   const {
-    data: { user },
-  } = await supabase.auth.getUser()
+    data: { session },
+  } = await supabase.auth.getSession()
+  const user = session?.user ?? null
 
   if (!user) {
     if (softAuth) {
