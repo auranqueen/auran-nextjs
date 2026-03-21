@@ -59,14 +59,15 @@ function CheckoutPageInner() {
   const maxPointRate = getSettingNum('checkout', 'point_max_ratio', 20) || getSettingNum('toast', 'point_max_usage_rate', 20)
   const showChargeOption = getSettingNum('checkout', 'show_charge_option', 1) === 1
   const minOrderAmount = getSettingNum('checkout', 'min_order_amount', 0)
-  const productIds = useMemo(
-    () =>
-      String(search.get('products') || '')
-        .split(',')
-        .map((v) => v.trim())
-        .filter(Boolean),
-    [search]
-  )
+  const productIds = useMemo(() => {
+    const fromProducts = String(search.get('products') || '')
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean)
+    if (fromProducts.length > 0) return fromProducts
+    const one = search.get('product_id')?.trim()
+    return one ? [one] : []
+  }, [search])
   const giftTo = search.get('gift_to') || ''
   const giftMessage = search.get('gift_message') || search.get('message') || ''
   const shareJournalId = search.get('share_journal_id') || ''

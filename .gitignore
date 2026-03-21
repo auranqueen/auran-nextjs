@@ -21,6 +21,8 @@ failed-images.json
 # scraped vendor data
 scripts/gernetic-products.json
 scripts/civasan-products.json
+scripts/soskin-products.json
+scripts/thalac-products.json
 
 # Supabase local artifacts
 supabase/.temp/

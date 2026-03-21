@@ -26,3 +26,28 @@ getSetting('category', 'key') ?? 기본값
 ## 커밋 규칙
 모든 작업 완료 후 반드시 커밋/푸시까지 수행.
 
+## 🔒 LOCKED FILES - DO NOT MODIFY
+다음 파일들은 이미 완성된 파일이야.
+새 기능 추가할 때 절대 건드리지 마:
+
+- src/components/ProductThumbnail.tsx ← 썸네일 컴포넌트 완성
+- src/components/ProductActionBar.tsx ← 상품 상세 하단 장바구니/선물/구매 바 (고정 동작)
+- next.config.ts ← 이미지 도메인 설정 완성
+- src/app/products/[id]/page.tsx ← 서버 페이지(메타/JSON-LD만). 버튼은 ProductDetailClient + ProductActionBar
+- src/context/CartContext.tsx ← useCart() / addToCart 시그니처 (zustand 래퍼)
+- src/app/cart/page.tsx ← 장바구니 페이지 완성
+- src/app/checkout/page.tsx ← 결제 페이지 완성 (`products` 또는 단일 `product_id` 쿼리 지원)
+
+## 규칙
+1. 위 파일 수정 필요시 반드시 먼저 물어볼 것
+2. 새 기능은 새 파일로 만들 것
+3. 기존 import/export 절대 변경 금지
+4. 버튼 onClick 핸들러 절대 제거 금지
+
+## 장바구니/선물/구매 버튼 현재 올바른 구현
+`ProductActionBar` 하단 고정 버튼바:
+- 장바구니: CartContext의 addToCart() 호출
+- 선물하기: 내부 setShowGift(true) (선물 모달)
+- 구매하기: router.push('/checkout?product_id='+id) 호출
+
+이 로직은 완성됨. 절대 변경 금지.
