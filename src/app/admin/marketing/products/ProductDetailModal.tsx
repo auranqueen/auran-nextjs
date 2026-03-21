@@ -37,7 +37,7 @@ export default function ProductDetailModal({
   onReject,
   onToast,
   onProductUpdated,
-  onSaveFlash,
+  onSaveFlash: _onSaveFlash,
 }: {
   product: any
   tab: 'pending' | 'active' | 'rejected'
@@ -105,14 +105,27 @@ export default function ProductDetailModal({
   const [videoPoints, setVideoPoints] = useState(Number(product.review_points_video ?? 0))
   const [pointsSaving, setPointsSaving] = useState(false)
 
-  const [isFlashSale, setIsFlashSale] = useState(!!product.is_flash_sale)
-  const [flashSalePrice, setFlashSalePrice] = useState(String(product.flash_sale_price || ''))
+  const [isFlashSale, setIsFlashSale] = useState(
+    !!(product.is_timesale ?? product.is_flash_sale)
+  )
+  const [flashSalePrice, setFlashSalePrice] = useState(
+    String(product.sale_price ?? product.flash_sale_price ?? '')
+  )
   const [flashSaleStart, setFlashSaleStart] = useState(
-    product.flash_sale_start ? new Date(product.flash_sale_start).toISOString().slice(0, 16) : ''
+    product.timesale_starts_at
+      ? new Date(product.timesale_starts_at).toISOString().slice(0, 16)
+      : product.flash_sale_start
+        ? new Date(product.flash_sale_start).toISOString().slice(0, 16)
+        : ''
   )
   const [flashSaleEnd, setFlashSaleEnd] = useState(
-    product.flash_sale_end ? new Date(product.flash_sale_end).toISOString().slice(0, 16) : ''
+    product.timesale_ends_at
+      ? new Date(product.timesale_ends_at).toISOString().slice(0, 16)
+      : product.flash_sale_end
+        ? new Date(product.flash_sale_end).toISOString().slice(0, 16)
+        : ''
   )
+  const [timesaleSaving, setTimesaleSaving] = useState(false)
 
   const thumbDisplay = thumbPreview || product.thumb_img || product.storage_thumb_url || '/og-image.png'
 
@@ -136,12 +149,23 @@ export default function ProductDetailModal({
     setTextReviewPts(Number(product.review_points_text ?? 0))
     setPhotoPoints(Number(product.review_points_photo ?? 0))
     setVideoPoints(Number(product.review_points_video ?? 0))
-    setIsFlashSale(!!product.is_flash_sale)
-    setFlashSalePrice(String(product.flash_sale_price || ''))
+    setIsFlashSale(!!(product.is_timesale ?? product.is_flash_sale))
+    setFlashSalePrice(String(product.sale_price ?? product.flash_sale_price ?? ''))
     setFlashSaleStart(
-      product.flash_sale_start ? new Date(product.flash_sale_start).toISOString().slice(0, 16) : ''
+      product.timesale_starts_at
+        ? new Date(product.timesale_starts_at).toISOString().slice(0, 16)
+        : product.flash_sale_start
+          ? new Date(product.flash_sale_start).toISOString().slice(0, 16)
+          : ''
     )
-    setFlashSaleEnd(product.flash_sale_end ? new Date(product.flash_sale_end).toISOString().slice(0, 16) : '')
+    setFlashSaleEnd(
+      product.timesale_ends_at
+        ? new Date(product.timesale_ends_at).toISOString().slice(0, 16)
+        : product.flash_sale_end
+          ? new Date(product.flash_sale_end).toISOString().slice(0, 16)
+          : ''
+    )
+    setTimesaleSaving(false)
     setDirty({ thumb: false, basic: false, detail: false, points: false, flash: false })
     setModalTab('thumb')
   }, [product.id])
@@ -998,31 +1022,109 @@ export default function ProductDetailModal({
                 />
               </div>
             )}
-            <button
-              type="button"
-              onClick={async () => {
-                await onSaveFlash(product.id, {
-                  is_flash_sale: isFlashSale,
-                  flash_sale_price: isFlashSale ? Number(flashSalePrice || 0) : null,
-                  flash_sale_start: isFlashSale && flashSaleStart ? new Date(flashSaleStart).toISOString() : null,
-                  flash_sale_end: isFlashSale && flashSaleEnd ? new Date(flashSaleEnd).toISOString() : null,
-                })
-                mark('flash', false)
-              }}
-              style={{
-                marginTop: 10,
-                background: 'rgba(201,168,76,0.15)',
-                border: '1px solid rgba(201,168,76,0.35)',
-                borderRadius: 10,
-                padding: '8px 12px',
-                color: '#c9a84c',
-                fontSize: 12,
-                fontWeight: 800,
-                cursor: 'pointer',
-              }}
-            >
-              타임세일 저장
-            </button>
+            <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                disabled={timesaleSaving}
+                onClick={async () => {
+                  if (!isFlashSale) {
+                    onToast('타임세일 적용을 켜주세요')
+                    return
+                  }
+                  const salePrice = Math.max(0, Math.floor(Number(flashSalePrice || 0)))
+                  const timesaleStart = flashSaleStart ? new Date(flashSaleStart).toISOString() : null
+                  const timesaleEnd = flashSaleEnd ? new Date(flashSaleEnd).toISOString() : null
+                  setTimesaleSaving(true)
+                  const { error } = await supabase
+                    .from('products')
+                    .update({
+                      is_timesale: true,
+                      sale_price: salePrice,
+                      timesale_starts_at: timesaleStart,
+                      timesale_ends_at: timesaleEnd,
+                    })
+                    .eq('id', product.id)
+                  setTimesaleSaving(false)
+                  if (error) {
+                    onToast('저장 실패: ' + error.message)
+                    return
+                  }
+                  onToast('✅ 타임세일 설정됨 — 홈에 즉시 노출')
+                  onProductUpdated({
+                    ...product,
+                    is_timesale: true,
+                    sale_price: salePrice,
+                    timesale_starts_at: timesaleStart,
+                    timesale_ends_at: timesaleEnd,
+                  })
+                  mark('flash', false)
+                }}
+                style={{
+                  flex: 1,
+                  minWidth: 120,
+                  background: 'rgba(201,168,76,0.15)',
+                  border: '1px solid rgba(201,168,76,0.35)',
+                  borderRadius: 10,
+                  padding: '8px 12px',
+                  color: '#c9a84c',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  opacity: timesaleSaving ? 0.6 : 1,
+                }}
+              >
+                {timesaleSaving ? '저장 중…' : '타임세일 저장'}
+              </button>
+              <button
+                type="button"
+                disabled={timesaleSaving}
+                onClick={async () => {
+                  setTimesaleSaving(true)
+                  const { error } = await supabase
+                    .from('products')
+                    .update({
+                      is_timesale: false,
+                      sale_price: null,
+                      timesale_starts_at: null,
+                      timesale_ends_at: null,
+                    })
+                    .eq('id', product.id)
+                  setTimesaleSaving(false)
+                  if (error) {
+                    onToast('저장 실패: ' + error.message)
+                    return
+                  }
+                  onToast('✅ 타임세일 해제됨')
+                  setIsFlashSale(false)
+                  setFlashSalePrice('')
+                  setFlashSaleStart('')
+                  setFlashSaleEnd('')
+                  onProductUpdated({
+                    ...product,
+                    is_timesale: false,
+                    sale_price: null,
+                    timesale_starts_at: null,
+                    timesale_ends_at: null,
+                  })
+                  mark('flash', false)
+                }}
+                style={{
+                  flex: 1,
+                  minWidth: 120,
+                  background: 'rgba(255,255,255,0.06)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 10,
+                  padding: '8px 12px',
+                  color: 'rgba(255,255,255,0.75)',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                  opacity: timesaleSaving ? 0.6 : 1,
+                }}
+              >
+                해제
+              </button>
+            </div>
           </div>
         )}
 

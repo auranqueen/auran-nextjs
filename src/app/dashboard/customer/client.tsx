@@ -85,6 +85,96 @@ function SkeletonCard() {
   )
 }
 
+function TimesaleProductCard({
+  product: p,
+  showTimer,
+  router,
+  onAddToCart,
+  onBuyClick,
+}: {
+  product: any
+  showTimer?: boolean
+  router: ReturnType<typeof useRouter>
+  onAddToCart: (id: string) => void
+  onBuyClick: (id: string) => void
+}) {
+  const retail = toNum(p.retail_price)
+  const sale = toNum(p.sale_price ?? p.retail_price)
+  return (
+    <div
+      style={{
+        width: 160,
+        flexShrink: 0,
+        border: '1px solid var(--border)',
+        borderRadius: 12,
+        background: 'rgba(255,255,255,0.04)',
+        overflow: 'hidden',
+      }}
+    >
+      <div onClick={() => router.push(`/products/${p.id}`)} style={{ cursor: 'pointer' }}>
+        <div style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)' }}>
+          <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
+          {showTimer && p.timesale_ends_at ? (
+            <div style={{ position: 'absolute', top: 8, right: 8 }}>
+              <Countdown endsAt={p.timesale_ends_at} />
+            </div>
+          ) : null}
+        </div>
+        <div style={{ padding: 10 }}>
+          <div style={{ fontSize: 10, color: 'var(--text3)' }}>{normalizeBrandName(p)}</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', marginTop: 4, lineHeight: 1.3, minHeight: 32 }}>{p.name}</div>
+          <div style={{ marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+            {showTimer ? (
+              <>
+                <span style={{ fontSize: 11, color: 'var(--text3)', textDecoration: 'line-through' }}>₩{retail.toLocaleString()}</span>
+                <span style={{ fontSize: 14, color: '#ff6b6b', fontWeight: 900 }}>₩{sale.toLocaleString()}</span>
+              </>
+            ) : (
+              <span style={{ fontSize: 14, color: 'var(--gold)', fontWeight: 900 }}>₩{retail.toLocaleString()}</span>
+            )}
+          </div>
+        </div>
+      </div>
+      <div style={{ padding: '0 10px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+        <button
+          type="button"
+          onClick={e => {
+            e.stopPropagation()
+            onAddToCart(p.id)
+          }}
+          style={{
+            border: '1px solid var(--border)',
+            background: 'rgba(255,255,255,0.04)',
+            color: '#fff',
+            borderRadius: 8,
+            fontSize: 11,
+            padding: '7px 0',
+          }}
+        >
+          🛒 담기
+        </button>
+        <button
+          type="button"
+          onClick={e => {
+            e.stopPropagation()
+            onBuyClick(p.id)
+          }}
+          style={{
+            border: '1px solid rgba(201,168,76,0.45)',
+            background: 'rgba(201,168,76,0.1)',
+            color: 'var(--gold)',
+            borderRadius: 8,
+            fontSize: 11,
+            padding: '7px 0',
+          }}
+        >
+          ⚡ 구매
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function HomeProductRowCard({
   p,
   router,
@@ -321,10 +411,11 @@ export default function CustomerDashboardClient({
         supabase.from('products').select('*, brands(name)').eq('status', 'active').limit(80),
         supabase
           .from('products')
-          .select('*, brands(name)')
+          .select('id, name, thumb_img, retail_price, sale_price, timesale_ends_at, brands(name)')
           .eq('is_timesale', true)
           .eq('status', 'active')
           .gt('timesale_ends_at', nowIso)
+          .order('timesale_ends_at', { ascending: true })
           .limit(10),
         supabase.from('brands').select('id, name, logo_url').not('logo_url', 'is', null).limit(10),
         supabase
@@ -704,97 +795,37 @@ export default function CustomerDashboardClient({
           ))}
         </div>
 
-        {/* 4. 타임세일 */}
-        <section style={{ marginTop: 20, padding: '0 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <span style={{ fontSize: 15, fontWeight: 900, color: '#fff' }}>⚡ 타임세일</span>
-          </div>
-          {homeInitLoading ? (
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
-              {[1, 2, 3].map(i => (
-                <SkeletonCard key={i} />
-              ))}
+        {/* 4. 타임세일 — 로딩 중이거나 노출할 제품이 있을 때만 섹션 표시 */}
+        {(homeInitLoading || timesaleProducts.length > 0) && (
+          <section style={{ marginTop: 20, padding: '0 16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <h3 style={{ fontSize: 15, fontWeight: 900, color: '#fff', margin: 0 }}>⚡ 타임세일</h3>
             </div>
-          ) : timesaleProducts.length === 0 ? (
-            <div style={{ fontSize: 12, color: 'var(--text3)', paddingBottom: 8 }}>진행 중인 타임세일이 없어요</div>
-          ) : (
-            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
-              {timesaleProducts.map(p => (
-                <div
-                  key={p.id}
-                  style={{
-                    width: 160,
-                    flexShrink: 0,
-                    border: '1px solid var(--border)',
-                    borderRadius: 12,
-                    background: 'rgba(255,255,255,0.04)',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div onClick={() => router.push(`/products/${p.id}`)} style={{ cursor: 'pointer' }}>
-                    <div style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)' }}>
-                      <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
-                      {p.timesale_ends_at ? (
-                        <div style={{ position: 'absolute', top: 8, right: 8 }}>
-                          <Countdown endsAt={p.timesale_ends_at} />
-                        </div>
-                      ) : null}
-                    </div>
-                    <div style={{ padding: 10 }}>
-                      <div style={{ fontSize: 10, color: 'var(--text3)' }}>{normalizeBrandName(p)}</div>
-                      <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', marginTop: 4, lineHeight: 1.3, minHeight: 32 }}>{p.name}</div>
-                      <div style={{ marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
-                        <span style={{ fontSize: 11, color: 'var(--text3)', textDecoration: 'line-through' }}>
-                          ₩{toNum(p.retail_price).toLocaleString()}
-                        </span>
-                        <span style={{ fontSize: 14, color: '#ff6b6b', fontWeight: 900 }}>
-                          ₩{toNum(p.sale_price ?? p.retail_price).toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div style={{ padding: '0 10px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                    <button
-                      type="button"
-                      onClick={e => {
-                        e.stopPropagation()
-                        addToCart(p.id)
-                      }}
-                      style={{
-                        border: '1px solid var(--border)',
-                        background: 'rgba(255,255,255,0.04)',
-                        color: '#fff',
-                        borderRadius: 8,
-                        fontSize: 11,
-                        padding: '7px 0',
-                      }}
-                    >
-                      🛒 담기
-                    </button>
-                    <button
-                      type="button"
-                      onClick={e => {
-                        e.stopPropagation()
-                        logAction('buy_click', { productId: p.id, source: 'timesale' })
-                        router.push(`/checkout?products=${p.id}`)
-                      }}
-                      style={{
-                        border: '1px solid rgba(201,168,76,0.45)',
-                        background: 'rgba(201,168,76,0.1)',
-                        color: 'var(--gold)',
-                        borderRadius: 8,
-                        fontSize: 11,
-                        padding: '7px 0',
-                      }}
-                    >
-                      ⚡ 구매
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
+            {homeInitLoading ? (
+              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
+                {[1, 2, 3].map(i => (
+                  <SkeletonCard key={i} />
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+                {timesaleProducts.map(p => (
+                  <TimesaleProductCard
+                    key={p.id}
+                    product={p}
+                    showTimer
+                    router={router}
+                    onAddToCart={addToCart}
+                    onBuyClick={id => {
+                      logAction('buy_click', { productId: id, source: 'timesale' })
+                      router.push(`/checkout?products=${id}`)
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* 5. 브랜드관 */}
         <section style={{ marginTop: 20, padding: '0 16px' }}>
