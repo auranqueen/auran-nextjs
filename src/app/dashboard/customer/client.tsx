@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import ProductThumbnail from '@/components/ProductThumbnail'
 import { useRouter } from 'next/navigation'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
@@ -19,32 +19,162 @@ interface Props {
 }
 
 const BRAND_TABS = ['전체', 'Civasan', 'Gernetic', 'Shopbelle', '보떼덤', 'Dr.Sante']
-const QUICK_MENUS = [
-  { icon: '🧬', label: 'AI 피부 분석', href: '/ai-analysis' },
-  { icon: '📅', label: '살롱 예약', href: '/booking' },
-  { icon: '🌍', label: '마이월드', href: '/myworld' },
-  { icon: '📦', label: '구매 내역', href: '/orders' },
-]
 
-const DEFAULT_COORDS = { lat: 35.8562, lng: 128.6310 }
+const SKIN_CONCERNS = [
+  { emoji: '💧', label: '속당김·건조' },
+  { emoji: '🔥', label: '민감·홍조' },
+  { emoji: '✨', label: '미백·기미' },
+  { emoji: '💪', label: '탄력·안티에이징' },
+  { emoji: '🌊', label: '수분·모공' },
+  { emoji: '☀️', label: '자외선차단' },
+]
 
 function toNum(v: any) {
   const n = Number(v)
   return Number.isFinite(n) ? n : 0
 }
 
-function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
-  const rad = (deg: number) => (deg * Math.PI) / 180
-  const dLat = rad(bLat - aLat)
-  const dLng = rad(bLng - aLng)
-  const h =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(rad(aLat)) * Math.cos(rad(bLat)) * Math.sin(dLng / 2) * Math.sin(dLng / 2)
-  return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h))
-}
-
 function normalizeBrandName(p: any) {
   return (p.brand_name || p.brands?.name || '').toString()
+}
+
+function Countdown({ endsAt }: { endsAt: string }) {
+  const [time, setTime] = useState('')
+  useEffect(() => {
+    const tick = () => {
+      const diff = new Date(endsAt).getTime() - Date.now()
+      if (diff <= 0) {
+        setTime('종료')
+        return
+      }
+      const h = Math.floor(diff / 3600000)
+      const m = Math.floor((diff % 3600000) / 60000)
+      const s = Math.floor((diff % 60000) / 1000)
+      setTime(`${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`)
+    }
+    tick()
+    const timer = setInterval(tick, 1000)
+    return () => clearInterval(timer)
+  }, [endsAt])
+  return (
+    <span
+      style={{
+        background: '#C9A96E',
+        color: '#000',
+        padding: '4px 10px',
+        borderRadius: 20,
+        fontSize: 12,
+        fontWeight: 700,
+      }}
+    >
+      ⏰ {time}
+    </span>
+  )
+}
+
+function SkeletonCard() {
+  return (
+    <div
+      className="home-shimmer-card"
+      style={{
+        width: 140,
+        height: 200,
+        borderRadius: 12,
+      }}
+    />
+  )
+}
+
+function HomeProductRowCard({
+  p,
+  router,
+  onCart,
+  newBadge,
+}: {
+  p: any
+  router: ReturnType<typeof useRouter>
+  onCart: (id: string) => void
+  newBadge?: boolean
+}) {
+  const price = toNum(p.retail_price)
+  return (
+    <div
+      style={{
+        width: 140,
+        flexShrink: 0,
+        border: '1px solid var(--border)',
+        borderRadius: 12,
+        background: 'rgba(255,255,255,0.04)',
+        overflow: 'hidden',
+      }}
+    >
+      <div onClick={() => router.push(`/products/${p.id}`)} style={{ cursor: 'pointer' }}>
+        <div style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)' }}>
+          <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
+          {newBadge ? (
+            <div
+              style={{
+                position: 'absolute',
+                top: 6,
+                left: 6,
+                background: 'linear-gradient(135deg,#ff6b6b,#c9a84c)',
+                color: '#fff',
+                fontSize: 10,
+                fontWeight: 900,
+                padding: '3px 8px',
+                borderRadius: 6,
+              }}
+            >
+              NEW
+            </div>
+          ) : null}
+        </div>
+        <div style={{ padding: 8 }}>
+          <div style={{ fontSize: 10, color: 'var(--text3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {normalizeBrandName(p)}
+          </div>
+          <div
+            style={{
+              marginTop: 4,
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#fff',
+              lineHeight: 1.3,
+              minHeight: 32,
+              display: '-webkit-box',
+              WebkitLineClamp: 2 as any,
+              WebkitBoxOrient: 'vertical' as any,
+              overflow: 'hidden',
+            }}
+          >
+            {p.name}
+          </div>
+          <div style={{ marginTop: 6, fontSize: 12, color: 'var(--gold)', fontWeight: 800 }}>₩{price.toLocaleString()}</div>
+        </div>
+      </div>
+      <div style={{ padding: '0 8px 8px' }}>
+        <button
+          type="button"
+          onClick={e => {
+            e.stopPropagation()
+            onCart(p.id)
+          }}
+          style={{
+            width: '100%',
+            border: '1px solid rgba(201,168,76,0.35)',
+            background: 'rgba(201,168,76,0.1)',
+            color: 'var(--gold)',
+            borderRadius: 8,
+            fontSize: 11,
+            padding: '6px 0',
+            fontWeight: 700,
+          }}
+        >
+          🛒 담기
+        </button>
+      </div>
+    </div>
+  )
 }
 
 export default function CustomerDashboardClient({
@@ -57,15 +187,13 @@ export default function CustomerDashboardClient({
   const router = useRouter()
   const supabase = createClient()
   const { getSettingNum, getSetting } = useAdminSettings()
-  const [feedLoading, setFeedLoading] = useState(true)
+
+  const [homeInitLoading, setHomeInitLoading] = useState(true)
   const [wallet, setWallet] = useState({ points: toNum(profile?.points), balance: toNum(profile?.charge_balance) })
   const [brandTab, setBrandTab] = useState('전체')
   const [categoryTab, setCategoryTab] = useState('전체')
   const [productSearch, setProductSearch] = useState('')
   const [products, setProducts] = useState<any[]>([])
-  const [specials, setSpecials] = useState<any[]>([])
-  const [stores, setStores] = useState<any[]>([])
-  const [specialMeta, setSpecialMeta] = useState<Record<string, { buyers: number; hook: string }>>({})
   const [meId, setMeId] = useState<string>('')
   const [toast, setToast] = useState('')
   const [giftOpen, setGiftOpen] = useState(false)
@@ -73,40 +201,18 @@ export default function CustomerDashboardClient({
   const [giftMessage, setGiftMessage] = useState('')
   const [friends, setFriends] = useState<any[]>([])
   const [selectedFriendId, setSelectedFriendId] = useState('')
-  const [nowTs, setNowTs] = useState(Date.now())
-  const [specialIndex, setSpecialIndex] = useState(0)
-  const [specialResumeAt, setSpecialResumeAt] = useState(0)
-  const [coords, setCoords] = useState(DEFAULT_COORDS)
-  const touchStartXRef = useRef<number | null>(null)
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.history.pushState(null, '', window.location.href)
-    const onPop = () => {
-      window.history.pushState(null, '', window.location.href)
-    }
-    window.addEventListener('popstate', onPop)
-    return () => window.removeEventListener('popstate', onPop)
-  }, [])
+  const [bannerSlides, setBannerSlides] = useState<{ image: string; caption: string }[]>([])
+  const [bannerIdx, setBannerIdx] = useState(0)
+  const [timesaleProducts, setTimesaleProducts] = useState<any[]>([])
+  const [brandLogos, setBrandLogos] = useState<{ id: string; name: string; logo_url: string }[]>([])
+  const [curationBlocks, setCurationBlocks] = useState<{ section: any; products: any[] }[]>([])
+  const [newProducts, setNewProducts] = useState<any[]>([])
+  const [recentReviews, setRecentReviews] = useState<any[]>([])
 
-  const reviewThreshold = getSettingNum('product_hook', 'review_threshold', 10)
-  const aiHookEnabled = getSettingNum('product_hook', 'ai_hook_enabled', 1) === 1
-  const buyerBadgeMin = getSettingNum('product_hook', 'buyer_badge_min', 10)
   const giftEnabled = getSettingNum('gift', 'gift_enabled', 1) === 1
   const giftMsgMax = getSettingNum('gift', 'gift_message_max_length', 100)
   const giftNotifyEnabled = getSettingNum('gift', 'gift_notification_enabled', 1) === 1
-  const homeSpecialEnabled = getSettingNum('home_special', 'enabled', 1) === 1
-  const homeSpecialMaxItems = Math.max(1, getSettingNum('home_special', 'max_items', 8))
-  const homeSpecialRollingSec = Math.max(1, getSettingNum('home_special', 'rolling_interval_sec', 6))
-  const homeSpecialShowTimer = getSettingNum('home_special', 'show_timer', 1) === 1
-  const homeSpecialAutoplayEnabled = getSettingNum('home_special', 'autoplay_enabled', 1) === 1
-  const homeSpecialManualNavEnabled = getSettingNum('home_special', 'manual_nav_enabled', 1) === 1
-  const homeSpecialResumeDelaySec = Math.max(0, getSettingNum('home_special', 'autoplay_resume_delay_sec', 8))
-  const homeSpecialSwipeEnabled = getSettingNum('home_special', 'swipe_enabled', 1) === 1
-  const homeSpecialSwipeThresholdPx = Math.max(10, getSettingNum('home_special', 'swipe_threshold_px', 40))
-  const homeSpecialTitle = getSetting('home_special', 'title', '오늘의 특가')
-  const flashMaxActiveCount = Math.max(1, getSettingNum('flash_sale', 'max_active_count', 8))
-  const flashUrgentMinutes = Math.max(1, getSettingNum('flash_sale', 'badge_urgent_minutes', 60))
   const homeSearchPlaceholder = getSetting('home_search', 'placeholder', '전체상품 검색 (브랜드/상품명/설명)')
   const homeSearchFields = getSetting('home_search', 'fields', 'name,description,brand')
     .split(',')
@@ -118,33 +224,25 @@ export default function CustomerDashboardClient({
   const homeSearchSyncToUrl = getSettingNum('home_search', 'sync_to_url', 1) === 1
   const homeSearchQueryParam = getSetting('home_search', 'query_param', 'q') || 'q'
 
-  const formatRemain = (endAt: string) => {
-    const remainMs = new Date(endAt).getTime() - nowTs
-    if (remainMs <= 0) return '종료됨'
-    const totalSec = Math.floor(remainMs / 1000)
-    const dd = Math.floor(totalSec / 86400)
-    const hh = String(Math.floor(totalSec / 3600)).padStart(2, '0')
-    const mm = String(Math.floor((totalSec % 3600) / 60)).padStart(2, '0')
-    const ss = String(totalSec % 60).padStart(2, '0')
-    if (dd > 0) {
-      const hhInDay = String(Math.floor((totalSec % 86400) / 3600)).padStart(2, '0')
-      return `${dd}일 ${hhInDay}:${mm}:${ss}`
-    }
-    return `${hh}:${mm}:${ss}`
+  const logAction = (type: string, detail: Record<string, any> = {}) => {
+    console.log(`[home-action] ${type} ${JSON.stringify(detail)}`)
   }
 
-  const logAction = (type: string, detail: Record<string, any> = {}) => {
-    const msg = `[home-action] ${type} ${JSON.stringify(detail)}`
-    console.log(msg)
-  }
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.history.pushState(null, '', window.location.href)
+    const onPop = () => {
+      window.history.pushState(null, '', window.location.href)
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
 
   useEffect(() => {
     if (!homeSearchSyncToUrl || typeof window === 'undefined') return
     const params = new URLSearchParams(window.location.search)
     const q = params.get(homeSearchQueryParam) || ''
     if (q) setProductSearch(q)
-    // 초기 1회 파싱
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -158,11 +256,16 @@ export default function CustomerDashboardClient({
   }, [productSearch, homeSearchSyncToUrl, homeSearchQueryParam])
 
   useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(''), 1800)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  useEffect(() => {
     const run = async () => {
       const { data: auth } = await supabase.auth.getUser()
       const user = auth?.user
       if (!user) return
-
       const { data: me } = await supabase.from('users').select('id, points, charge_balance').eq('auth_id', user.id).maybeSingle()
       if (me?.id) {
         setMeId(me.id)
@@ -179,12 +282,6 @@ export default function CustomerDashboardClient({
     }
     run()
   }, [supabase, profile?.points, profile?.charge_balance])
-
-  useEffect(() => {
-    if (!toast) return
-    const t = setTimeout(() => setToast(''), 1800)
-    return () => clearTimeout(t)
-  }, [toast])
 
   useEffect(() => {
     let cancelled = false
@@ -204,144 +301,133 @@ export default function CustomerDashboardClient({
   }, [supabase])
 
   useEffect(() => {
-    const run = async () => {
-      setFeedLoading(true)
+    let cancelled = false
+    ;(async () => {
+      setHomeInitLoading(true)
       const nowIso = new Date().toISOString()
-      try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*, brands(name)')
-        .eq('status', 'active')
-        .limit(50)
+      const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString()
+
+      const [
+        bannerRes,
+        curationRes,
+        productsRes,
+        timesaleRes,
+        brandsRes,
+        newRes,
+        reviewsRes,
+      ] = await Promise.all([
+        supabase.from('admin_settings').select('*').eq('category', 'home_banner').order('sort_order', { ascending: true }),
+        supabase.from('admin_settings').select('*').eq('category', 'home_curation').order('sort_order', { ascending: true }),
+        supabase.from('products').select('*, brands(name)').eq('status', 'active').limit(80),
+        supabase
+          .from('products')
+          .select('*, brands(name)')
+          .eq('is_timesale', true)
+          .eq('status', 'active')
+          .gt('timesale_ends_at', nowIso)
+          .limit(10),
+        supabase.from('brands').select('id, name, logo_url').not('logo_url', 'is', null).limit(10),
+        supabase
+          .from('products')
+          .select('*, brands(name)')
+          .eq('status', 'active')
+          .gte('created_at', weekAgo)
+          .order('created_at', { ascending: false })
+          .limit(10),
+        supabase
+          .from('reviews')
+          .select('id,rating,content,target_id,created_at')
+          .eq('review_type', 'product')
+          .eq('status', '게시')
+          .order('created_at', { ascending: false })
+          .limit(5),
+      ])
+
+      if (cancelled) return
+
+      const slides = (bannerRes.data || [])
+        .filter((r: any) => r.is_active !== false && String(r.value || '').trim())
+        .sort((a: any, b: any) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0))
+        .map((r: any) => ({ image: String(r.value), caption: String(r.label || '') }))
+
+      if (slides.length === 0) {
+        setBannerSlides([
+          {
+            image:
+              'https://images.unsplash.com/photo-1556228578-8c89e6adf883?w=1200&q=80',
+            caption: 'AURAN',
+          },
+        ])
+      } else {
+        setBannerSlides(slides)
+      }
 
       let list: any[] = []
-      if (!error) {
-        list = (data || []).map((p: any) => ({ ...p, brand_name: p.brands?.name || '' }))
+      if (!productsRes.error) {
+        list = (productsRes.data || []).map((p: any) => ({ ...p, brand_name: p.brands?.name || '' }))
       } else {
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('products')
-          .select('*')
-          .eq('status', 'active')
-          .limit(20)
+        const { data: fallbackData, error: fallbackError } = await supabase.from('products').select('*').eq('status', 'active').limit(40)
         if (fallbackError) console.warn('[customer-home products fallback error]', fallbackError)
         list = (fallbackData || []).map((p: any) => ({ ...p, brand_name: p.brand_name || '' }))
       }
-
-      if (!list.length) {
-        setProducts([])
-        setSpecials([])
-        return
-      }
       setProducts(list)
 
-      const endedIds = list
-        .filter((p: any) => p.is_flash_sale && p.flash_sale_end && new Date(p.flash_sale_end).getTime() <= new Date(nowIso).getTime())
-        .map((p: any) => p.id)
-      if (endedIds.length > 0) {
-        await supabase.from('products').update({ is_flash_sale: false }).in('id', endedIds)
+      const ts = (timesaleRes.data || []).map((p: any) => ({ ...p, brand_name: p.brands?.name || '' }))
+      setTimesaleProducts(ts)
+
+      setBrandLogos((brandsRes.data || []) as { id: string; name: string; logo_url: string }[])
+
+      const newP = (newRes.data || []).map((p: any) => ({ ...p, brand_name: p.brands?.name || '' }))
+      setNewProducts(newP)
+
+      const revs = reviewsRes.data || []
+      const pids = Array.from(new Set(revs.map(r => r.target_id).filter(Boolean))) as string[]
+      let revRows = revs
+      if (pids.length) {
+        const { data: pn } = await supabase.from('products').select('id,name').in('id', pids)
+        const map: Record<string, string> = Object.fromEntries((pn || []).map(p => [p.id, p.name]))
+        revRows = revs.map(r => ({ ...r, product_name: map[r.target_id as string] || '제품' }))
+      } else {
+        revRows = revs.map(r => ({ ...r, product_name: '제품' }))
       }
+      setRecentReviews(revRows)
 
-      const liveFlash = list
-        .filter((p: any) => p.is_flash_sale && p.flash_sale_start && p.flash_sale_end && p.flash_sale_start < nowIso && p.flash_sale_end > nowIso)
-        .sort((a: any, b: any) => new Date(a.flash_sale_end).getTime() - new Date(b.flash_sale_end).getTime())
-      const nextSpecials = (liveFlash.length > 0 ? liveFlash : [...list].sort((a: any, b: any) => toNum(b.sales_count) - toNum(a.sales_count))).slice(0, Math.min(homeSpecialMaxItems, flashMaxActiveCount))
-      setSpecials(nextSpecials)
-      setSpecialIndex(0)
-
-      const ids = nextSpecials.map((p: any) => p.id)
-      if (ids.length > 0) {
-        const [buyerRes, reviewRes] = await Promise.all([
-          supabase.from('order_items').select('product_id').in('product_id', ids),
-          supabase
-            .from('reviews')
-            .select('product_id,content,rating')
-            .eq('review_type', 'product')
-            .eq('status', '게시')
-            .gte('rating', 4)
-            .in('product_id', ids),
-        ])
-        const buyerRows = buyerRes.data
-        const reviewRows = reviewRes.data
-        const buyerCountMap: Record<string, number> = {}
-        for (const r of buyerRows || []) {
-          const id = String((r as any).product_id || '')
-          if (!id) continue
-          buyerCountMap[id] = (buyerCountMap[id] || 0) + 1
-        }
-        const map: Record<string, { buyers: number; hook: string }> = {}
-        const keywordPool = ['모공', '피지', '보습', '진정', '탄력', '미백', '트러블', '수분', '촉촉', '깨끗', '개선']
-        const skinType = String(profile?.skin_type || '')
-        const aiMap: Record<string, string> = {
-          건성: '당기는 피부에 수분막을 채워줘요 💧',
-          지성: '피지·모공 세척으로 맑은 피부 시작 ✨',
-          복합성: 'T존 피지 + U존 수분 동시 케어 🌿',
-          민감성: '자극 없이 진정시켜주는 성분 확인 🌸',
-          트러블성: '트러블 원인 차단, 맑아지는 피부 🔴→⚪',
-          안티에이징형: '탄력·주름 집중 케어 라인 👑',
-        }
-        for (const id of ids) {
-          const rows = (reviewRows || []).filter((r: any) => String(r.product_id) === id)
-          let hook = aiMap[skinType] || '내 피부타입 맞춤 추천 제품이에요'
-          if (aiHookEnabled && rows.length >= reviewThreshold) {
-            const counts: Record<string, number> = {}
-            for (const r of rows) {
-              const c = String(r.content || '')
-              for (const k of keywordPool) {
-                if (c.includes(k)) counts[k] = (counts[k] || 0) + 1
-              }
-            }
-            const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k]) => k)
-            if (top.length >= 2) hook = `${top[0]}·${top[1]} 케어에 효과적이에요 ✨`
-            else if (top.length === 1) hook = `${top[0]} 케어에 효과적이에요 ✨`
-          }
-          map[id] = { buyers: buyerCountMap[id] || 0, hook }
-        }
-        setSpecialMeta(map)
-      }
-      } finally {
-        setFeedLoading(false)
-      }
-    }
-    run()
-  }, [supabase, profile?.skin_type, aiHookEnabled, reviewThreshold, homeSpecialMaxItems, flashMaxActiveCount])
-
-  useEffect(() => {
-    if (!navigator?.geolocation) {
-      setCoords(DEFAULT_COORDS)
-      return
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
-      },
-      () => {
-        setCoords(DEFAULT_COORDS)
-      },
-      { timeout: 5000, maximumAge: 300000 }
-    )
-  }, [])
-
-  useEffect(() => {
-    const run = async () => {
-      const { data, error } = await supabase.from('auran_stores').select('*').limit(60)
-      if (error || !data) return
-
-      const sorted = data
-        .map((s: any) => {
-          const lat = toNum(s.lat ?? s.latitude)
-          const lng = toNum(s.lng ?? s.longitude)
+      const rawSections = (curationRes.data || []).filter((r: any) => r.is_active !== false)
+      const sortedSections = [...rawSections].sort(
+        (a: any, b: any) => (Number(a.sort_order) || 0) - (Number(b.sort_order) || 0)
+      )
+      const blocks = await Promise.all(
+        sortedSections.map(async section => {
+          const skinType = String(section.value || '').trim()
+          if (!skinType) return { section, products: [] as any[] }
+          const { data: prods } = await supabase
+            .from('products')
+            .select('*, brands(name)')
+            .contains('skin_types', [skinType])
+            .eq('status', 'active')
+            .limit(4)
           return {
-            ...s,
-            distance_km: lat && lng ? distanceKm(coords.lat, coords.lng, lat, lng) : 9999,
+            section,
+            products: (prods || []).map((p: any) => ({ ...p, brand_name: p.brands?.name || '' })),
           }
         })
-        .sort((a: any, b: any) => a.distance_km - b.distance_km)
-        .slice(0, 3)
+      )
+      if (!cancelled) setCurationBlocks(blocks)
 
-      setStores(sorted)
+      setHomeInitLoading(false)
+    })()
+    return () => {
+      cancelled = true
     }
-    run()
-  }, [supabase, coords.lat, coords.lng])
+  }, [supabase])
+
+  useEffect(() => {
+    if (bannerSlides.length <= 1) return
+    const t = setInterval(() => {
+      setBannerIdx(i => (i + 1) % bannerSlides.length)
+    }, 3000)
+    return () => clearInterval(t)
+  }, [bannerSlides.length])
 
   const filteredProducts = useMemo(() => {
     return products.filter((p: any) => {
@@ -352,47 +438,36 @@ export default function CustomerDashboardClient({
       const categoryOk = categoryTab === '전체' || skinTypes.includes(categoryTab)
       const searchActive = search.length >= homeSearchMinChars
       const inName = homeSearchFields.includes('name') && String(p.name || '').toLowerCase().includes(search)
-      const inDescription = homeSearchFields.includes('description') && String(p.description || '').toLowerCase().includes(search)
+      const inDescription =
+        homeSearchFields.includes('description') && String(p.description || '').toLowerCase().includes(search)
       const inBrand = homeSearchFields.includes('brand') && brandName.toLowerCase().includes(search)
       const searchOk = !searchActive || inName || inDescription || inBrand
       return brandOk && categoryOk && searchOk
     })
   }, [products, brandTab, categoryTab, productSearch, homeSearchFields, homeSearchMinChars])
 
-  useEffect(() => {
-    const t = setInterval(() => setNowTs(Date.now()), 1000)
-    return () => clearInterval(t)
-  }, [])
+  const skinTypeChips = useMemo(() => {
+    const unique: string[] = []
+    for (const p of products) {
+      const skins = Array.isArray(p.skin_types) ? p.skin_types : []
+      for (const s of skins) {
+        const label = String(s || '').trim()
+        if (!label) continue
+        if (!unique.includes(label)) unique.push(label)
+      }
+    }
+    return ['전체', ...unique]
+  }, [products])
 
-  useEffect(() => {
-    if (!homeSpecialEnabled || !homeSpecialAutoplayEnabled || specials.length <= 1) return
-    const t = setInterval(() => {
-      setSpecialIndex((prev) => {
-        if (Date.now() < specialResumeAt) return prev
-        return (prev + 1) % specials.length
-      })
-    }, homeSpecialRollingSec * 1000)
-    return () => clearInterval(t)
-  }, [homeSpecialEnabled, homeSpecialAutoplayEnabled, homeSpecialRollingSec, specials.length, specialResumeAt])
-
-  const currentSpecial = specials.length > 0 ? specials[specialIndex % specials.length] : null
-  const prevSpecial = () => {
-    setSpecialResumeAt(Date.now() + homeSpecialResumeDelaySec * 1000)
-    setSpecialIndex((prev) => (prev - 1 + specials.length) % Math.max(1, specials.length))
-    logAction('special_prev_click', { index: specialIndex })
-  }
-  const nextSpecial = () => {
-    setSpecialResumeAt(Date.now() + homeSpecialResumeDelaySec * 1000)
-    setSpecialIndex((prev) => (prev + 1) % Math.max(1, specials.length))
-    logAction('special_next_click', { index: specialIndex })
-  }
-
-  const buyerBadge = (n: number) => {
-    if (n >= 500) return `👑 ${n}명 구매 · AURAN 베스트`
-    if (n >= 100) return `🔥 ${n}명의 선택! 인기 제품`
-    if (n >= 50) return `⭐ ${n}명이 만족했어요`
-    if (n >= buyerBadgeMin) return `${n}명이 구매했어요`
-    return ''
+  const ensureMeId = async () => {
+    if (meId) return meId
+    const { data: auth } = await supabase.auth.getUser()
+    const user = auth?.user
+    if (!user) return ''
+    const { data: me } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+    const id = String(me?.id || '')
+    if (id) setMeId(id)
+    return id
   }
 
   const addToCart = async (productId: string) => {
@@ -440,7 +515,6 @@ export default function CustomerDashboardClient({
   }
 
   const sendGift = async () => {
-    logAction('gift_send_click', { productId: giftTargetProduct?.id, selectedFriendId })
     if (!meId || !giftTargetProduct || !selectedFriendId) return
     const target = friends.find((f: any) => String(f.id) === String(selectedFriendId))
     const { error } = await supabase.from('gifts').insert({
@@ -469,253 +543,492 @@ export default function CustomerDashboardClient({
     setToast(`${target?.name || '친구'}님께 선물을 보냈어요 🎁`)
   }
 
-  const ensureMeId = async () => {
-    if (meId) return meId
-    const { data: auth } = await supabase.auth.getUser()
-    const user = auth?.user
-    if (!user) return ''
-    const { data: me } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
-    const id = String(me?.id || '')
-    if (id) setMeId(id)
-    return id
-  }
-
-  const skinTypeChips = useMemo(() => {
-    const unique: string[] = []
-    for (const p of products) {
-      const skins = Array.isArray(p.skin_types) ? p.skin_types : []
-      for (const s of skins) {
-        const label = String(s || '').trim()
-        if (!label) continue
-        if (!unique.includes(label)) unique.push(label)
-      }
-    }
-    return ['전체', ...unique]
-  }, [products])
+  const currentBanner = bannerSlides[bannerIdx % Math.max(1, bannerSlides.length)] || bannerSlides[0]
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 120 }}>
-      <div style={{ position: 'sticky', top: 0, zIndex: 20, backdropFilter: 'blur(12px)', background: 'rgba(10,12,15,0.92)', borderBottom: '1px solid var(--border)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 20,
+          backdropFilter: 'blur(12px)',
+          background: 'rgba(10,12,15,0.92)',
+          borderBottom: '1px solid var(--border)',
+          padding: '14px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
         <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: 20, color: '#fff', letterSpacing: 2 }}>AURAN</div>
         <CustomerHeaderRight />
       </div>
 
-      <div style={{ padding: 16 }}>
+      <div style={{ padding: '0 0 16px' }}>
         {toast && (
-          <div style={{ marginBottom: 10, padding: '9px 10px', borderRadius: 10, border: '1px solid rgba(201,168,76,0.35)', background: 'rgba(201,168,76,0.12)', color: 'var(--gold)', fontSize: 12, fontWeight: 700 }}>
+          <div
+            style={{
+              margin: '12px 16px 0',
+              padding: '9px 10px',
+              borderRadius: 10,
+              border: '1px solid rgba(201,168,76,0.35)',
+              background: 'rgba(201,168,76,0.12)',
+              color: 'var(--gold)',
+              fontSize: 12,
+              fontWeight: 700,
+            }}
+          >
             {toast}
           </div>
         )}
-        <div style={{ marginBottom: 12 }}>
+
+        <div style={{ padding: '12px 16px 0' }}>
           <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>안녕하세요, {profile?.name || '고객'}님</div>
           <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>오늘도 아름다운 하루를 시작해요.</div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, margin: '12px 16px 0' }}>
           <div style={{ border: '1px solid rgba(201,168,76,0.28)', background: 'rgba(201,168,76,0.1)', borderRadius: 14, padding: 12 }}>
             <div style={{ fontSize: 10, color: 'rgba(201,168,76,0.75)' }}>포인트</div>
-            <div style={{ marginTop: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: 'var(--gold)' }}>{wallet.points.toLocaleString()}P</div>
+            <div style={{ marginTop: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: 'var(--gold)' }}>
+              {wallet.points.toLocaleString()}P
+            </div>
           </div>
           <div style={{ border: '1px solid rgba(76,173,126,0.28)', background: 'rgba(76,173,126,0.1)', borderRadius: 14, padding: 12 }}>
             <div style={{ fontSize: 10, color: 'rgba(76,173,126,0.75)' }}>충전 잔액</div>
-            <div style={{ marginTop: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: '#4cad7e' }}>₩{wallet.balance.toLocaleString()}</div>
+            <div style={{ marginTop: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: '#4cad7e' }}>
+              ₩{wallet.balance.toLocaleString()}
+            </div>
           </div>
         </div>
 
-        <button onClick={() => router.push('/ai-analysis')} style={{ width: '100%', marginBottom: 14, border: '1px solid rgba(201,168,76,0.35)', background: 'linear-gradient(135deg, rgba(201,168,76,0.2), rgba(201,168,76,0.08))', borderRadius: 14, padding: '14px 12px', color: 'var(--gold)', fontWeight: 800, fontSize: 14, textAlign: 'left' }}>
-          🧬 AI 피부분석 시작하기
-        </button>
+        {/* 1. 배너 슬라이더 */}
+        <div style={{ marginTop: 16, position: 'relative', width: '100%', aspectRatio: '2 / 1', background: '#111' }}>
+          {homeInitLoading ? (
+            <div className="home-shimmer-card" style={{ width: '100%', height: '100%', borderRadius: 0 }} />
+          ) : currentBanner ? (
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={currentBanner.image}
+                alt=""
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  padding: '14px 16px',
+                  background: 'linear-gradient(transparent, rgba(0,0,0,0.75))',
+                  color: '#fff',
+                  fontSize: 15,
+                  fontWeight: 800,
+                }}
+              >
+                {currentBanner.caption}
+              </div>
+            </>
+          ) : null}
+          {bannerSlides.length > 1 ? (
+            <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 6 }}>
+              {bannerSlides.map((_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setBannerIdx(i)}
+                  style={{
+                    width: 7,
+                    height: 7,
+                    borderRadius: 999,
+                    border: 'none',
+                    padding: 0,
+                    background: i === bannerIdx ? '#c9a84c' : 'rgba(255,255,255,0.35)',
+                  }}
+                  aria-label={`배너 ${i + 1}`}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
-          {QUICK_MENUS.map((m) => (
-            <button key={m.label} onClick={() => router.push(m.href)} style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '14px 12px', textAlign: 'left' }}>
-              <div style={{ fontSize: 20 }}>{m.icon}</div>
-              <div style={{ marginTop: 6, fontSize: 13, fontWeight: 700, color: '#fff' }}>{m.label}</div>
+        {/* 2. AI 피부분석 CTA */}
+        <div style={{ marginTop: 16 }}>
+          <div
+            onClick={() => router.push('/skin-analysis')}
+            style={{
+              margin: '0 16px',
+              padding: '16px 20px',
+              background: 'linear-gradient(135deg, #C9A96E, #D4A97A)',
+              borderRadius: 16,
+              cursor: 'pointer',
+            }}
+          >
+            <p style={{ color: '#000', fontWeight: 700, fontSize: 16 }}>✨ 내 피부타입 분석하기</p>
+            <p style={{ color: '#333', fontSize: 13, marginTop: 4 }}>AI가 맞춤 제품을 추천해드려요</p>
+          </div>
+        </div>
+
+        {/* 3. 피부고민 태그 */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 8,
+            overflowX: 'auto',
+            padding: '16px 16px 0',
+            scrollbarWidth: 'none',
+            WebkitOverflowScrolling: 'touch' as any,
+          }}
+        >
+          {SKIN_CONCERNS.map(c => (
+            <button
+              key={c.label}
+              type="button"
+              onClick={() => router.push(`/products?concern=${encodeURIComponent(c.label)}`)}
+              style={{
+                flexShrink: 0,
+                padding: '8px 14px',
+                borderRadius: 20,
+                border: '1px solid #333',
+                background: '#1a1a1a',
+                color: '#fff',
+                fontSize: 13,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {c.emoji} {c.label}
             </button>
           ))}
         </div>
 
-        {feedLoading && (
-          <div style={{ marginBottom: 16 }}>
-            {[1, 2, 3, 4].map(i => (
-              <div
-                key={i}
-                className="auran-skeleton-pulse"
-                style={{ height: 88, background: 'rgba(255,255,255,0.06)', borderRadius: 14, marginBottom: 10 }}
-              />
-            ))}
+        {/* 4. 타임세일 */}
+        <section style={{ marginTop: 20, padding: '0 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <span style={{ fontSize: 15, fontWeight: 900, color: '#fff' }}>⚡ 타임세일</span>
           </div>
-        )}
-
-        {!feedLoading && homeSpecialEnabled && (
-        <div style={{ marginBottom: 16 }}>
-          <button
-            onClick={() => router.push(`/products?specialIds=${encodeURIComponent(specials.map((s: any) => s.id).join(','))}`)}
-            style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 10, background: 'transparent', border: 'none', padding: 0, cursor: 'pointer' }}
-          >
-            {homeSpecialTitle} 전체보기 ›
-          </button>
-          <div style={{ paddingBottom: 4 }}>
-            {currentSpecial ? (
-              <div key={currentSpecial.id} style={{ width: '100%', border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.04)', overflow: 'hidden', cursor: 'pointer' }}>
-                {(() => {
-                  const p = currentSpecial
-                  return (
-                    <>
+          {homeInitLoading ? (
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
+              {[1, 2, 3].map(i => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+          ) : timesaleProducts.length === 0 ? (
+            <div style={{ fontSize: 12, color: 'var(--text3)', paddingBottom: 8 }}>진행 중인 타임세일이 없어요</div>
+          ) : (
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+              {timesaleProducts.map(p => (
                 <div
-                  onClick={() => router.push(`/products/${p.id}`)}
-                  onTouchStart={(e) => {
-                    if (!homeSpecialSwipeEnabled || specials.length <= 1) return
-                    touchStartXRef.current = e.touches?.[0]?.clientX ?? null
+                  key={p.id}
+                  style={{
+                    width: 160,
+                    flexShrink: 0,
+                    border: '1px solid var(--border)',
+                    borderRadius: 12,
+                    background: 'rgba(255,255,255,0.04)',
+                    overflow: 'hidden',
                   }}
-                  onTouchEnd={(e) => {
-                    if (!homeSpecialSwipeEnabled || specials.length <= 1) return
-                    const startX = touchStartXRef.current
-                    const endX = e.changedTouches?.[0]?.clientX ?? null
-                    touchStartXRef.current = null
-                    if (startX == null || endX == null) return
-                    const delta = endX - startX
-                    if (Math.abs(delta) < homeSpecialSwipeThresholdPx) return
-                    if (delta < 0) nextSpecial()
-                    else prevSpecial()
-                  }}
-                  style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(128,128,128,0.3)' }}
                 >
-                  <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
-                  {homeSpecialManualNavEnabled && specials.length > 1 && (
-                    <>
-                      <button type="button" onClick={(e) => { e.stopPropagation(); prevSpecial() }} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: 999, border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(0,0,0,0.35)', color: '#fff', fontWeight: 900, cursor: 'pointer' }}>‹</button>
-                      <button type="button" onClick={(e) => { e.stopPropagation(); nextSpecial() }} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: 999, border: '1px solid rgba(255,255,255,0.35)', background: 'rgba(0,0,0,0.35)', color: '#fff', fontWeight: 900, cursor: 'pointer' }}>›</button>
-                    </>
-                  )}
-                  {homeSpecialShowTimer && p.is_flash_sale && p.flash_sale_end && (
-                    <div style={{
-                      position: 'absolute',
-                      top: 8,
-                      left: 8,
-                      background: (() => {
-                        const remainMin = (new Date(p.flash_sale_end).getTime() - nowTs) / (1000 * 60)
-                        if (remainMin <= 0) return 'rgba(128,128,128,0.9)'
-                        if (remainMin <= flashUrgentMinutes) return '#d94f4f'
-                        return 'linear-gradient(135deg,#d79ee8,#c9a84c)'
-                      })(),
-                      color: '#fff',
-                      borderRadius: 999,
-                      padding: '4px 9px',
-                      fontSize: 10,
-                      fontWeight: 800,
-                    }}>
-                      {(() => {
-                        const txt = formatRemain(String(p.flash_sale_end))
-                        const remainMin = (new Date(p.flash_sale_end).getTime() - nowTs) / (1000 * 60)
-                        if (txt === '종료됨') return '종료됨'
-                        if (remainMin <= flashUrgentMinutes) return `🔥 ${txt}`
-                        return `⏱ ${txt}`
-                      })()}
+                  <div onClick={() => router.push(`/products/${p.id}`)} style={{ cursor: 'pointer' }}>
+                    <div style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)' }}>
+                      <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
+                      {p.timesale_ends_at ? (
+                        <div style={{ position: 'absolute', top: 8, right: 8 }}>
+                          <Countdown endsAt={p.timesale_ends_at} />
+                        </div>
+                      ) : null}
                     </div>
-                  )}
+                    <div style={{ padding: 10 }}>
+                      <div style={{ fontSize: 10, color: 'var(--text3)' }}>{normalizeBrandName(p)}</div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', marginTop: 4, lineHeight: 1.3, minHeight: 32 }}>{p.name}</div>
+                      <div style={{ marginTop: 6, display: 'flex', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 11, color: 'var(--text3)', textDecoration: 'line-through' }}>
+                          ₩{toNum(p.retail_price).toLocaleString()}
+                        </span>
+                        <span style={{ fontSize: 14, color: '#ff6b6b', fontWeight: 900 }}>
+                          ₩{toNum(p.sale_price ?? p.retail_price).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ padding: '0 10px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={e => {
+                        e.stopPropagation()
+                        addToCart(p.id)
+                      }}
+                      style={{
+                        border: '1px solid var(--border)',
+                        background: 'rgba(255,255,255,0.04)',
+                        color: '#fff',
+                        borderRadius: 8,
+                        fontSize: 11,
+                        padding: '7px 0',
+                      }}
+                    >
+                      🛒 담기
+                    </button>
+                    <button
+                      type="button"
+                      onClick={e => {
+                        e.stopPropagation()
+                        logAction('buy_click', { productId: p.id, source: 'timesale' })
+                        router.push(`/checkout?products=${p.id}`)
+                      }}
+                      style={{
+                        border: '1px solid rgba(201,168,76,0.45)',
+                        background: 'rgba(201,168,76,0.1)',
+                        color: 'var(--gold)',
+                        borderRadius: 8,
+                        fontSize: 11,
+                        padding: '7px 0',
+                      }}
+                    >
+                      ⚡ 구매
+                    </button>
+                  </div>
                 </div>
-                <div style={{ padding: 8 }}>
-                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>{normalizeBrandName(p)}</div>
-                  <div style={{ fontSize: 12, color: '#fff', fontWeight: 700, lineHeight: 1.3, minHeight: 32, display: '-webkit-box', WebkitLineClamp: 2 as any, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{p.name}</div>
-                  {p.is_flash_sale && p.flash_sale_price && p.flash_sale_end && new Date(p.flash_sale_end).getTime() > nowTs ? (
-                    <div>
-                      <span style={{ fontSize: 11, color: 'var(--text3)', textDecoration: 'line-through' }}>₩{toNum(p.retail_price).toLocaleString()}</span>
-                      <span style={{ fontSize: 13, color: '#ff6b6b', fontWeight: 900, marginLeft: 6 }}>₩{toNum(p.flash_sale_price).toLocaleString()}</span>
-                    </div>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* 5. 브랜드관 */}
+        <section style={{ marginTop: 20, padding: '0 16px' }}>
+          <div style={{ fontSize: 15, fontWeight: 900, color: '#fff', marginBottom: 12 }}>브랜드관</div>
+          {homeInitLoading ? (
+            <div style={{ display: 'flex', gap: 14, overflowX: 'auto' }}>
+              {[1, 2, 3, 4].map(i => (
+                <div
+                  key={i}
+                  className="home-shimmer-card"
+                  style={{ width: 64, height: 64, borderRadius: 999, flexShrink: 0 }}
+                />
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 14, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+              {brandLogos.map(b => (
+                <button
+                  key={b.id}
+                  type="button"
+                  onClick={() => router.push(`/products?brandFilter=${encodeURIComponent(b.id)}`)}
+                  style={{
+                    flexShrink: 0,
+                    width: 64,
+                    height: 64,
+                    borderRadius: 999,
+                    overflow: 'hidden',
+                    border: '1px solid var(--border)',
+                    background: 'rgba(255,255,255,0.06)',
+                    padding: 0,
+                    cursor: 'pointer',
+                  }}
+                  title={b.name}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={b.logo_url} alt={b.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* 6. 큐레이션 */}
+        {homeInitLoading
+          ? [1, 2].map(i => (
+              <section key={i} style={{ padding: '0 16px', marginTop: 24 }}>
+                <div className="home-shimmer-card" style={{ width: '60%', height: 20, borderRadius: 8, marginBottom: 12 }} />
+                <div style={{ display: 'flex', gap: 12, overflowX: 'auto' }}>
+                  <SkeletonCard />
+                  <SkeletonCard />
+                </div>
+              </section>
+            ))
+          : curationBlocks.map(({ section, products: cProducts }) => (
+              <section key={String(section.key ?? section.id)} style={{ padding: '0 16px', marginBottom: 24, marginTop: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, alignItems: 'flex-start' }}>
+                  <div>
+                    <p style={{ color: '#888', fontSize: 11, letterSpacing: '0.12em' }}>PRODUCTS</p>
+                    <h3 style={{ color: '#fff', fontSize: 17, fontWeight: 700, marginTop: 4 }}>{section.label}</h3>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/products?skin=${encodeURIComponent(section.value)}`)}
+                    style={{ color: '#C9A96E', fontSize: 13, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700 }}
+                  >
+                    전체보기 &gt;
+                  </button>
+                </div>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 12,
+                    overflowX: 'auto',
+                    scrollbarWidth: 'none',
+                    WebkitOverflowScrolling: 'touch' as any,
+                  }}
+                >
+                  {cProducts.length === 0 ? (
+                    <div style={{ fontSize: 12, color: 'var(--text3)' }}>이 섹션에 표시할 상품이 없어요</div>
                   ) : (
-                    <div style={{ fontSize: 12, color: 'var(--gold)', fontWeight: 800 }}>₩{toNum(p.retail_price).toLocaleString()}</div>
+                    cProducts.map(p => (
+                      <HomeProductRowCard key={p.id} p={p} router={router} onCart={addToCart} />
+                    ))
                   )}
-                  <div style={{ marginTop: 6, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 6, fontSize: 11, color: '#ffd98a', minHeight: 28 }}>
-                    {`${buyerBadge(specialMeta[p.id]?.buyers || 0)} ${specialMeta[p.id]?.hook || ''}`.trim()}
+                </div>
+              </section>
+            ))}
+
+        {/* 7. 신제품 */}
+        <section style={{ padding: '0 16px', marginBottom: 24 }}>
+          <div style={{ fontSize: 15, fontWeight: 900, color: '#fff', marginBottom: 12 }}>🆕 신제품</div>
+          {homeInitLoading ? (
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto' }}>
+              {[1, 2, 3].map(i => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+          ) : newProducts.length === 0 ? (
+            <div style={{ fontSize: 12, color: 'var(--text3)' }}>최근 일주일 신제품이 없어요</div>
+          ) : (
+            <div style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollbarWidth: 'none' }}>
+              {newProducts.map(p => (
+                <HomeProductRowCard key={p.id} p={p} router={router} onCart={addToCart} newBadge />
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* 8. 실시간 리뷰 */}
+        <section style={{ padding: '0 16px', marginBottom: 24 }}>
+          <div style={{ fontSize: 15, fontWeight: 900, color: '#fff', marginBottom: 12 }}>💬 실시간 리뷰</div>
+          {homeInitLoading ? (
+            <div className="home-shimmer-card" style={{ width: '100%', height: 88, borderRadius: 12 }} />
+          ) : recentReviews.length === 0 ? (
+            <div style={{ fontSize: 12, color: 'var(--text3)' }}>아직 등록된 리뷰가 없어요</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {recentReviews.map(r => (
+                <div
+                  key={r.id}
+                  onClick={() => r.target_id && router.push(`/products/${r.target_id}`)}
+                  style={{
+                    border: '1px solid var(--border)',
+                    borderRadius: 12,
+                    background: 'rgba(255,255,255,0.04)',
+                    padding: 12,
+                    cursor: r.target_id ? 'pointer' : 'default',
+                  }}
+                >
+                  <div style={{ fontSize: 12, color: 'var(--gold)', marginBottom: 4 }}>
+                    {'★'.repeat(Math.min(5, Math.max(0, r.rating || 0)))}
+                    <span style={{ color: 'var(--text3)', marginLeft: 8, fontSize: 11 }}>{r.product_name}</span>
                   </div>
-                  <div style={{ marginTop: 8, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCart(p.id) }} style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', borderRadius: 8, color: '#fff', fontSize: 11, padding: '7px 0' }}>🛒 담기</button>
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openGift(p) }} style={{ border: '1px solid rgba(140,180,255,0.4)', background: 'rgba(140,180,255,0.12)', borderRadius: 8, color: '#bcd6ff', fontSize: 11, padding: '7px 0' }}>🎁 선물</button>
-                    <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); logAction('buy_click', { productId: p.id, source: 'special' }); router.push(`/checkout?products=${p.id}`) }} style={{ border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 8, fontSize: 11, padding: '7px 0' }}>⚡ 구매</button>
+                  <div style={{ fontSize: 13, color: '#fff', lineHeight: 1.5 }}>
+                    {(r.content || '').slice(0, 120)}
+                    {(r.content || '').length > 120 ? '…' : ''}
                   </div>
                 </div>
-                    </>
-                  )
-                })()}
-              </div>
-            ) : null}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
-            {specials.map((_, idx) => (
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* 9. 전체 제품 */}
+        <div style={{ padding: '0 16px 16px' }}>
+          <div style={{ fontSize: 15, fontWeight: 900, color: '#fff', marginBottom: 12 }}>전체 제품</div>
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 6, scrollbarWidth: 'none' }}>
+            {BRAND_TABS.map(b => (
               <button
-                key={idx}
+                key={b}
                 type="button"
-                onClick={() => {
-                  setSpecialResumeAt(Date.now() + homeSpecialResumeDelaySec * 1000)
-                  setSpecialIndex(idx)
-                  logAction('special_dot_click', { index: idx })
+                onClick={() => setBrandTab(b)}
+                style={{
+                  whiteSpace: 'nowrap',
+                  borderRadius: 999,
+                  border: brandTab === b ? '1px solid rgba(201,168,76,0.55)' : '1px solid var(--border)',
+                  background: brandTab === b ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)',
+                  color: brandTab === b ? 'var(--gold)' : '#fff',
+                  fontSize: 12,
+                  padding: '7px 12px',
                 }}
-                style={{ width: 8, height: 8, borderRadius: 999, border: 'none', padding: 0, cursor: 'pointer', background: idx === specialIndex ? '#c9a84c' : 'rgba(255,255,255,0.25)' }}
-              />
+              >
+                {b}
+              </button>
             ))}
           </div>
-        </div>
-        )}
-
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 10 }}>내 지역 인기 관리샵</div>
-          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
-            {stores.map((s: any, idx) => (
-              <div key={s.id || idx} style={{ width: 180, flexShrink: 0, border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.04)', padding: 10 }}>
-                <div style={{ fontSize: 13, color: '#fff', fontWeight: 700 }}>{s.name || s.store_name || `스토어 ${idx + 1}`}</div>
-                <div style={{ marginTop: 4, fontSize: 11, color: 'var(--text3)' }}>{s.address || s.region || ''}</div>
-                <div style={{ marginTop: 6, fontSize: 11, color: 'var(--gold)' }}>
-                  {Number.isFinite(s.distance_km) ? `${s.distance_km.toFixed(1)}km` : ''}
-                </div>
-              </div>
-            ))}
-            {/* 위치 권한 없을 때도 기본 좌표로 쿼리 실행되므로 텍스트는 노출하지 않습니다. */}
-            {stores.length === 0 ? null : null}
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 8 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 10 }}>전체 상품</div>
-          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 6 }}>
-            {BRAND_TABS.map((b) => (
-              <button key={b} onClick={() => setBrandTab(b)} style={{ whiteSpace: 'nowrap', borderRadius: 999, border: brandTab === b ? '1px solid rgba(201,168,76,0.55)' : '1px solid var(--border)', background: brandTab === b ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)', color: brandTab === b ? 'var(--gold)' : '#fff', fontSize: 12, padding: '7px 12px' }}>{b}</button>
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 10 }}>
-            {skinTypeChips.map((c) => (
-              <button key={c} onClick={() => setCategoryTab(c)} style={{ whiteSpace: 'nowrap', borderRadius: 999, border: categoryTab === c ? '1px solid rgba(74,141,192,0.55)' : '1px solid var(--border)', background: categoryTab === c ? 'rgba(74,141,192,0.15)' : 'rgba(255,255,255,0.04)', color: categoryTab === c ? '#8bb9dc' : '#fff', fontSize: 12, padding: '7px 12px' }}>{c}</button>
+          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 10, scrollbarWidth: 'none' }}>
+            {skinTypeChips.map(c => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCategoryTab(c)}
+                style={{
+                  whiteSpace: 'nowrap',
+                  borderRadius: 999,
+                  border: categoryTab === c ? '1px solid rgba(74,141,192,0.55)' : '1px solid var(--border)',
+                  background: categoryTab === c ? 'rgba(74,141,192,0.15)' : 'rgba(255,255,255,0.04)',
+                  color: categoryTab === c ? '#8bb9dc' : '#fff',
+                  fontSize: 12,
+                  padding: '7px 12px',
+                }}
+              >
+                {c}
+              </button>
             ))}
           </div>
           {homeSearchEnabled && (
-          <div style={{ marginBottom: 10 }}>
-            <input
-              value={productSearch}
-              onChange={(e) => setProductSearch(e.target.value)}
-              placeholder={homeSearchPlaceholder}
-              style={{ width: '100%', height: 38, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', padding: '0 12px', outline: 'none', fontSize: 12 }}
-            />
-            <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              {homeSearchShowCount ? (
-                <div style={{ fontSize: 11, color: 'var(--text3)' }}>검색 결과 {filteredProducts.length}개</div>
-              ) : <div />}
-              {!!productSearch && (
-                <button type="button" onClick={() => setProductSearch('')} style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', borderRadius: 999, fontSize: 11, padding: '4px 10px' }}>
-                  검색 초기화
-                </button>
-              )}
+            <div style={{ marginBottom: 10 }}>
+              <input
+                value={productSearch}
+                onChange={e => setProductSearch(e.target.value)}
+                placeholder={homeSearchPlaceholder}
+                style={{
+                  width: '100%',
+                  height: 38,
+                  borderRadius: 10,
+                  border: '1px solid var(--border)',
+                  background: 'rgba(255,255,255,0.04)',
+                  color: '#fff',
+                  padding: '0 12px',
+                  outline: 'none',
+                  fontSize: 12,
+                }}
+              />
+              <div style={{ marginTop: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {homeSearchShowCount ? (
+                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>검색 결과 {filteredProducts.length}개</div>
+                ) : (
+                  <div />
+                )}
+                {!!productSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setProductSearch('')}
+                    style={{
+                      border: '1px solid var(--border)',
+                      background: 'rgba(255,255,255,0.04)',
+                      color: '#fff',
+                      borderRadius: 999,
+                      fontSize: 11,
+                      padding: '4px 10px',
+                    }}
+                  >
+                    검색 초기화
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
           )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {feedLoading
+            {homeInitLoading
               ? [1, 2, 3, 4, 5, 6].map(i => (
-                  <div
-                    key={i}
-                    className="auran-skeleton-pulse"
-                    style={{ borderRadius: 12, overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}
-                  >
+                  <div key={i} className="auran-skeleton-pulse" style={{ borderRadius: 12, overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
                     <div style={{ width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.25)' }} />
                     <div style={{ padding: 10 }}>
                       <div style={{ height: 10, width: '40%', background: 'rgba(255,255,255,0.08)', borderRadius: 4, marginBottom: 8 }} />
@@ -725,50 +1038,171 @@ export default function CustomerDashboardClient({
                   </div>
                 ))
               : filteredProducts.map((p: any) => (
-              <div key={p.id} style={{ border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
-                <div onClick={() => router.push(`/products/${p.id}`)} style={{ cursor: 'pointer' }}>
-                  <div style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)' }}>
-                    <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
+                  <div key={p.id} style={{ border: '1px solid var(--border)', borderRadius: 12, background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
+                    <div onClick={() => router.push(`/products/${p.id}`)} style={{ cursor: 'pointer' }}>
+                      <div style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(0,0,0,0.2)' }}>
+                        <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
+                      </div>
+                      <div style={{ padding: 10 }}>
+                        <div style={{ fontSize: 11, color: 'var(--text3)' }}>{normalizeBrandName(p)}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', minHeight: 32 }}>{p.name}</div>
+                        <div style={{ marginTop: 4, fontSize: 12, color: 'var(--gold)', fontWeight: 800 }}>
+                          ₩{toNum(p.retail_price).toLocaleString()}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ padding: '0 10px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          addToCart(p.id)
+                        }}
+                        style={{
+                          border: '1px solid var(--border)',
+                          background: 'rgba(255,255,255,0.04)',
+                          color: '#fff',
+                          borderRadius: 8,
+                          padding: '8px 0',
+                          fontWeight: 700,
+                          fontSize: 11,
+                        }}
+                      >
+                        🛒 담기
+                      </button>
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          openGift(p)
+                        }}
+                        style={{
+                          border: '1px solid rgba(140,180,255,0.4)',
+                          background: 'rgba(140,180,255,0.12)',
+                          color: '#bcd6ff',
+                          borderRadius: 8,
+                          padding: '8px 0',
+                          fontWeight: 700,
+                          fontSize: 11,
+                        }}
+                      >
+                        🎁 선물
+                      </button>
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          logAction('buy_click', { productId: p.id, source: 'all-products' })
+                          router.push(`/checkout?products=${p.id}`)
+                        }}
+                        style={{
+                          border: '1px solid rgba(201,168,76,0.45)',
+                          background: 'rgba(201,168,76,0.1)',
+                          color: 'var(--gold)',
+                          borderRadius: 8,
+                          padding: '8px 0',
+                          fontWeight: 700,
+                          fontSize: 11,
+                        }}
+                      >
+                        ⚡ 구매
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ padding: 10 }}>
-                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>{normalizeBrandName(p)}</div>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', minHeight: 32 }}>{p.name}</div>
-                    <div style={{ marginTop: 4, fontSize: 12, color: 'var(--gold)', fontWeight: 800 }}>₩{toNum(p.retail_price).toLocaleString()}</div>
-                  </div>
-                </div>
-                <div style={{ padding: '0 10px 10px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
-                  <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addToCart(p.id) }} style={{ border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', borderRadius: 8, padding: '8px 0', fontWeight: 700, fontSize: 11 }}>
-                    🛒 담기
-                  </button>
-                  <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); openGift(p) }} style={{ border: '1px solid rgba(140,180,255,0.4)', background: 'rgba(140,180,255,0.12)', color: '#bcd6ff', borderRadius: 8, padding: '8px 0', fontWeight: 700, fontSize: 11 }}>
-                    🎁 선물
-                  </button>
-                  <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); logAction('buy_click', { productId: p.id, source: 'all-products' }); router.push(`/checkout?products=${p.id}`) }} style={{ border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', borderRadius: 8, padding: '8px 0', fontWeight: 700, fontSize: 11 }}>
-                    ⚡ 구매
-                  </button>
-                </div>
-              </div>
-            ))}
+                ))}
           </div>
         </div>
       </div>
 
       {giftOpen && (
         <div onClick={() => setGiftOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 130 }}>
-          <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 0, width: '100%', maxWidth: 480, background: '#11161b', borderTopLeftRadius: 18, borderTopRightRadius: 18, borderTop: '1px solid var(--border)', padding: 14 }}>
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              bottom: 0,
+              width: '100%',
+              maxWidth: 480,
+              background: '#11161b',
+              borderTopLeftRadius: 18,
+              borderTopRightRadius: 18,
+              borderTop: '1px solid var(--border)',
+              padding: 14,
+            }}
+          >
             <div style={{ fontSize: 14, color: '#fff', fontWeight: 800, marginBottom: 8 }}>오랜일촌에게 선물하기</div>
             <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8 }}>
               {friends.map((f: any) => (
-                <button key={f.id} onClick={() => setSelectedFriendId(String(f.id))} style={{ minWidth: 92, borderRadius: 10, border: selectedFriendId === String(f.id) ? '1px solid rgba(201,168,76,0.55)' : '1px solid var(--border)', background: selectedFriendId === String(f.id) ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)', color: '#fff', padding: 8 }}>
-                  <div style={{ width: 36, height: 36, margin: '0 auto', borderRadius: 999, overflow: 'hidden', background: 'rgba(255,255,255,0.08)' }}>
-                    {f.avatar_url ? <img src={f.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setSelectedFriendId(String(f.id))}
+                  style={{
+                    minWidth: 92,
+                    borderRadius: 10,
+                    border: selectedFriendId === String(f.id) ? '1px solid rgba(201,168,76,0.55)' : '1px solid var(--border)',
+                    background: selectedFriendId === String(f.id) ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)',
+                    color: '#fff',
+                    padding: 8,
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      margin: '0 auto',
+                      borderRadius: 999,
+                      overflow: 'hidden',
+                      background: 'rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    {f.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={f.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : null}
                   </div>
                   <div style={{ marginTop: 4, fontSize: 11, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.name}</div>
                 </button>
               ))}
             </div>
-            <textarea value={giftMessage} maxLength={giftMsgMax} onChange={e => setGiftMessage(e.target.value)} placeholder="메시지를 남겨보세요" style={{ width: '100%', minHeight: 70, marginTop: 8, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', padding: 10, resize: 'none' }} />
-            <button onClick={sendGift} style={{ marginTop: 10, width: '100%', height: 40, borderRadius: 10, border: 'none', background: '#c9a84c', color: '#111', fontWeight: 900 }}>선물하기</button>
+            <textarea
+              value={giftMessage}
+              maxLength={giftMsgMax}
+              onChange={e => setGiftMessage(e.target.value)}
+              placeholder="메시지를 남겨보세요"
+              style={{
+                width: '100%',
+                minHeight: 70,
+                marginTop: 8,
+                borderRadius: 10,
+                border: '1px solid var(--border)',
+                background: 'rgba(255,255,255,0.04)',
+                color: '#fff',
+                padding: 10,
+                resize: 'none',
+              }}
+            />
+            <button
+              type="button"
+              onClick={sendGift}
+              style={{
+                marginTop: 10,
+                width: '100%',
+                height: 40,
+                borderRadius: 10,
+                border: 'none',
+                background: '#c9a84c',
+                color: '#111',
+                fontWeight: 900,
+              }}
+            >
+              선물하기
+            </button>
           </div>
         </div>
       )}

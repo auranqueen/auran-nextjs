@@ -64,3 +64,14 @@ button { cursor: pointer; font-family: 'Pretendard', sans-serif; }
 .auran-skeleton-pulse {
   animation: auran-skeleton-pulse 1.35s ease-in-out infinite;
 }
+
+@keyframes home-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.home-shimmer-card {
+  background: linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%);
+  background-size: 200% 100%;
+  animation: home-shimmer 1.5s linear infinite;
+}

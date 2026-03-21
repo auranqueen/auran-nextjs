@@ -141,6 +141,13 @@ function ProductsPageInner() {
     () => specialIdsParam.split(',').map(v => v.trim()).filter(Boolean),
     [specialIdsParam]
   )
+  const skinParam = searchParams.get('skin') || ''
+  const concernParam = searchParams.get('concern') || ''
+
+  useEffect(() => {
+    const bid = searchParams.get('brandFilter')
+    if (bid) setBrandFilter(bid)
+  }, [searchParams])
 
   useEffect(() => {
     const run = async () => {
@@ -148,7 +155,9 @@ function ProductsPageInner() {
       setError(null)
       const { data, error: err } = await supabase
         .from('products')
-        .select('id,name,thumb_img,retail_price,status,created_at,brand_id,brands(name)')
+        .select(
+          'id,name,thumb_img,retail_price,status,created_at,brand_id,description,tag,category,skin_types,quiz_match,brands(name)'
+        )
         .eq('status', 'active')
         .gt('retail_price', 0)
         .order('created_at', { ascending: false })
@@ -194,10 +203,22 @@ function ProductsPageInner() {
   }, [products])
 
   const visible = useMemo(() => {
-    const source = specialIds.length > 0 ? products.filter(p => specialIds.includes(String(p.id))) : products
-    if (brandFilter === 'all') return source
-    return source.filter(p => p.brand_id === brandFilter)
-  }, [brandFilter, products, specialIds])
+    let source = specialIds.length > 0 ? products.filter(p => specialIds.includes(String(p.id))) : products
+    if (brandFilter !== 'all') source = source.filter(p => p.brand_id === brandFilter)
+    if (skinParam) {
+      source = source.filter(
+        p => Array.isArray(p.skin_types) && p.skin_types.some((s: string) => String(s) === skinParam)
+      )
+    }
+    if (concernParam) {
+      source = source.filter(p => {
+        const qm = Array.isArray(p.quiz_match) ? p.quiz_match.join(' ') : ''
+        const blob = [p.name, p.description, p.tag, p.category, qm].filter(Boolean).join(' ')
+        return blob.includes(concernParam)
+      })
+    }
+    return source
+  }, [brandFilter, products, specialIds, skinParam, concernParam])
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
@@ -206,6 +227,16 @@ function ProductsPageInner() {
         {specialIds.length > 0 && (
           <div style={{ marginBottom: 10, borderRadius: 10, border: '1px solid rgba(201,168,76,0.25)', background: 'rgba(201,168,76,0.08)', padding: '8px 10px', color: 'var(--gold)', fontSize: 12, fontWeight: 700 }}>
             오늘의 특가 전체 상품
+          </div>
+        )}
+        {!!skinParam && (
+          <div style={{ marginBottom: 10, borderRadius: 10, border: '1px solid rgba(74,141,192,0.25)', background: 'rgba(74,141,192,0.08)', padding: '8px 10px', color: '#8bb9dc', fontSize: 12, fontWeight: 700 }}>
+            피부타입 · {skinParam}
+          </div>
+        )}
+        {!!concernParam && (
+          <div style={{ marginBottom: 10, borderRadius: 10, border: '1px solid rgba(201,168,76,0.25)', background: 'rgba(201,168,76,0.08)', padding: '8px 10px', color: 'var(--gold)', fontSize: 12, fontWeight: 700 }}>
+            피부고민 · {concernParam}
           </div>
         )}
         <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 12, WebkitOverflowScrolling: 'touch' as any }}>
