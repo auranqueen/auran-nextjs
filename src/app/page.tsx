@@ -107,6 +107,7 @@ function HomePageInner() {
           overflowX: 'hidden',
           zIndex: 40,
           pointerEvents: 'auto',
+          isolation: 'isolate',
         }}
       >
 
@@ -147,13 +148,27 @@ function HomePageInner() {
           </p>
         </div>
 
-        {/* 카드 영역 */}
-        <div style={{ padding: '20px 16px 120px' }}>
-          <div style={{ width: '100%', boxSizing: 'border-box' }}>
+        {/* 카드 영역 — 배경 레이어보다 위에서 클릭 수신 */}
+        <div style={{ padding: '20px 16px 120px', position: 'relative', zIndex: 10, pointerEvents: 'auto' }}>
+          <div style={{ width: '100%', boxSizing: 'border-box', position: 'relative', zIndex: 10, pointerEvents: 'auto' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%', boxSizing: 'border-box' }}>
             {ROLES.map((role, i) => (
-              <button key={role.id} onClick={() => handleRoleSelect(role.id)}
-                style={{ ...cardStyle(i), padding: '16px 12px', minHeight: '120px', width: '100%', overflow: 'visible' }}>
+              <button
+                key={role.id}
+                type="button"
+                onClick={() => handleRoleSelect(role.id)}
+                style={{
+                  ...cardStyle(i),
+                  padding: '16px 12px',
+                  minHeight: '120px',
+                  width: '100%',
+                  overflow: 'visible',
+                  position: 'relative',
+                  zIndex: 20,
+                  cursor: 'pointer',
+                  pointerEvents: 'auto',
+                }}
+              >
                 <span style={{ fontSize: '26px' }}>{role.icon}</span>
                 <span style={{ fontSize: '14px', fontWeight: 700, color: cardStyles[i]?.name || '#fff', transition: 'color 1.2s' }}>{role.name}</span>
                 <span style={{ fontSize: '9px', color: cardStyles[i]?.desc || '#aaa', transition: 'color 1.2s', textAlign: 'center', lineHeight: 1.5, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{role.desc}</span>
@@ -201,12 +216,11 @@ function HomePageInner() {
             </div>
 
             {/* 오른쪽 2x2 카드 - 버튼 클릭 보장 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '500px', flexShrink: 0, position: 'relative', zIndex: 51, pointerEvents: 'auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '500px', flexShrink: 0, position: 'relative', zIndex: 10, pointerEvents: 'auto' }}>
               {ROLES.map((role, i) => (
                 <button
                   key={role.id}
                   type="button"
-                  onPointerUp={() => handleRoleSelect(role.id)}
                   onClick={() => handleRoleSelect(role.id)}
                   style={{
                     ...cardStyle(i),
@@ -214,7 +228,8 @@ function HomePageInner() {
                     height: '180px',
                     width: '100%',
                     position: 'relative',
-                    zIndex: 999,
+                    zIndex: 20,
+                    cursor: 'pointer',
                     pointerEvents: 'auto',
                     touchAction: 'manipulation',
                   }}
