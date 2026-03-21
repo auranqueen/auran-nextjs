@@ -46,12 +46,6 @@ async function getUserStatus(supabase: ReturnType<typeof createServerClient>, au
 
 const PRODUCTION_ORIGIN = 'https://www.auran.kr'
 
-function isSoftClientNavigation(req: NextRequest): boolean {
-  const rsc = req.headers.get('RSC') === '1'
-  const prefetch = req.headers.get('Next-Router-Prefetch') === '1'
-  return rsc || prefetch
-}
-
 function isSoftAuthPath(pathname: string): boolean {
   if (pathname === '/myworld' || pathname.startsWith('/myworld/')) return true
   if (pathname === '/my/gifts' || pathname.startsWith('/my/gifts/')) return true
@@ -66,6 +60,12 @@ export async function middleware(req: NextRequest) {
   if (host.includes('auran-deploy.vercel.app')) {
     const to = new URL(url.pathname + url.search, PRODUCTION_ORIGIN)
     return NextResponse.redirect(to.toString(), 302)
+  }
+
+  const isRSCRequest = req.headers.get('RSC') === '1'
+  const isInternalRequest = !!req.headers.get('Next-Router-Prefetch')
+  if (isRSCRequest || isInternalRequest) {
+    return NextResponse.next()
   }
 
   const { pathname } = url
@@ -89,10 +89,6 @@ export async function middleware(req: NextRequest) {
 
   if (!user) {
     if (softAuth) {
-      if (isSoftClientNavigation(req)) {
-        res.cookies.set('auran_login_modal', '1', { path: '/', maxAge: 45, sameSite: 'lax' })
-        return res
-      }
       const loginUrl = req.nextUrl.clone()
       loginUrl.pathname = '/login'
       loginUrl.search = ''
