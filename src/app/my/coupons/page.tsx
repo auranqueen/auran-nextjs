@@ -7,6 +7,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import { createClient } from '@/lib/supabase/client'
 import { isCouponExpiredForUser } from '@/lib/coupon/computeDiscount'
+import { fetchUserCouponsWithCoupons } from '@/lib/coupon/fetchUserCouponsWithCoupons'
 
 type Tab = 'usable' | 'used' | 'expired'
 
@@ -15,6 +16,7 @@ type Row = {
   status: string
   issued_at: string | null
   used_at: string | null
+  coupon_id: string
   coupons: any
 }
 
@@ -44,12 +46,9 @@ export default function MyCouponsPage() {
         router.replace('/login?redirect=/my/coupons')
         return
       }
-      const { data } = await supabase
-        .from('user_coupons')
-        .select('id,status,issued_at,used_at,coupons!left(*)')
-        .eq('user_id', auth.user.id)
-        .order('issued_at', { ascending: false })
-      setRows((data || []) as Row[])
+      const { rows, error } = await fetchUserCouponsWithCoupons(supabase, auth.user.id)
+      if (error) console.warn('[my/coupons]', error.message)
+      setRows(rows as Row[])
       setLoading(false)
     }
     run()
@@ -175,7 +174,31 @@ export default function MyCouponsPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {list.map((r) => {
               const c = r.coupons
-              if (!c) return null
+              if (!c) {
+                return (
+                  <div
+                    key={r.id}
+                    style={{
+                      borderRadius: 14,
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: 'rgba(255,255,255,0.04)',
+                      padding: 16,
+                    }}
+                  >
+                    <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', marginBottom: 6 }}>보유 쿠폰</div>
+                    <div style={{ fontSize: 12, color: 'var(--text3)', lineHeight: 1.5 }}>
+                      쿠폰 정보를 불러오지 못했어요. 아래를 눌러 다시 시도해 주세요.
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => router.refresh()}
+                      style={{ marginTop: 10, padding: '8px 12px', borderRadius: 10, border: '1px solid rgba(201,168,76,0.35)', background: 'rgba(201,168,76,0.1)', color: 'var(--gold)', fontSize: 12, fontWeight: 700 }}
+                    >
+                      새로고침
+                    </button>
+                  </div>
+                )
+              }
               const discLabel = discLabelFor(c)
               return (
                 <div

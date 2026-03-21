@@ -14,6 +14,7 @@ import {
   isCouponExpiredForUser,
   type OrderLineForCoupon,
 } from '@/lib/coupon/computeDiscount'
+import { fetchUserCouponsWithCoupons } from '@/lib/coupon/fetchUserCouponsWithCoupons'
 
 function toNum(v: any) {
   const n = Number(v)
@@ -23,6 +24,7 @@ function toNum(v: any) {
 type UcRow = {
   id: string
   status: string
+  coupon_id: string
   coupons: any
 }
 
@@ -102,11 +104,8 @@ function CheckoutPageInner() {
       setMeId(me.id)
       setPoints(toNum(me.points))
       setBalance(toNum(me.charge_balance))
-      const { data: ucs } = await supabase
-        .from('user_coupons')
-        .select('id,status,coupons!left(*)')
-        .eq('user_id', user.id)
-        .eq('status', 'unused')
+      const { rows: ucs, error: ucErr } = await fetchUserCouponsWithCoupons(supabase, user.id, { status: 'unused' })
+      if (ucErr) console.warn('[checkout] user_coupons', ucErr.message)
       setUserCoupons((ucs || []) as UcRow[])
       if (productIds.length > 0) {
         const { data: rows } = await supabase
@@ -407,7 +406,25 @@ function CheckoutPageInner() {
             </button>
             {userCoupons.map((uc) => {
               const c = uc.coupons
-              if (!c) return null
+              if (!c) {
+                return (
+                  <div
+                    key={uc.id}
+                    style={{
+                      width: '100%',
+                      padding: 12,
+                      marginBottom: 8,
+                      borderRadius: 12,
+                      border: '1px solid var(--border)',
+                      background: 'rgba(0,0,0,0.2)',
+                      color: 'var(--text3)',
+                      fontSize: 12,
+                    }}
+                  >
+                    쿠폰 정보를 불러오지 못했어요. 페이지를 새로고침 해 주세요.
+                  </div>
+                )
+              }
               const expired = isCouponExpiredForUser({ status: uc.status }, c)
               const applicable =
                 !!authUid && !expired && isCouponApplicableForOrder(c, orderLines, subtotal, authUid)

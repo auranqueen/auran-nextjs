@@ -209,13 +209,15 @@ export async function POST(req: NextRequest) {
     const user_auth_id = typeof body?.user_auth_id === 'string' ? body.user_auth_id : ''
     if (!coupon_id || !user_auth_id) return json({ ok: false, error: 'missing_fields' }, 400)
 
-    const { data: c } = await auth.supabase.from('coupons').select('id,issued_count,max_issue_count').eq('id', coupon_id).maybeSingle()
+    const db = tryCreateServiceClient() || auth.supabase
+
+    const { data: c } = await db.from('coupons').select('id,issued_count,max_issue_count').eq('id', coupon_id).maybeSingle()
     if (!c) return json({ ok: false, error: 'coupon_not_found' }, 400)
     if (c.max_issue_count != null && (c.issued_count || 0) >= c.max_issue_count) {
       return json({ ok: false, error: 'issue_limit_reached' }, 400)
     }
 
-    const { data: exists } = await auth.supabase
+    const { data: exists } = await db
       .from('user_coupons')
       .select('id')
       .eq('user_id', user_auth_id)
@@ -223,22 +225,22 @@ export async function POST(req: NextRequest) {
       .maybeSingle()
     if (exists) return json({ ok: false, error: 'already_issued' }, 400)
 
-    const { error: insErr } = await auth.supabase.from('user_coupons').insert({
+    const { error: insErr } = await db.from('user_coupons').insert({
       user_id: user_auth_id,
       coupon_id,
       status: 'unused',
     })
     if (insErr) return json({ ok: false, error: insErr.message }, 500)
 
-    await auth.supabase
+    await db
       .from('coupons')
       .update({ issued_count: (c.issued_count || 0) + 1 })
       .eq('id', coupon_id)
 
-    const { data: recipient } = await auth.supabase.from('users').select('id').eq('auth_id', user_auth_id).maybeSingle()
+    const { data: recipient } = await db.from('users').select('id').eq('auth_id', user_auth_id).maybeSingle()
     if (recipient?.id) {
       await createNotification(
-        auth.supabase,
+        db,
         recipient.id,
         'coupon',
         '새 쿠폰이 발급됐어요!',
