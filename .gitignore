@@ -15,5 +15,8 @@ pnpm-debug.log*
 # misc
 .DS_Store
 
+# image migration artifacts
+failed-images.json
+
 # Supabase local artifacts
 supabase/.temp/

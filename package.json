@@ -9,7 +9,9 @@
     "lint": "next lint",
     "type-check": "tsc --noEmit",
     "db:push": "supabase db push",
-    "db:reset": "supabase db reset"
+    "db:reset": "supabase db reset",
+    "migrate:images": "ts-node --project tsconfig.scripts.json scripts/migrate-images.ts",
+    "migrate:images:retry": "ts-node --project tsconfig.scripts.json scripts/retry-failed-images.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
