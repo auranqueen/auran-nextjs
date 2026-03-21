@@ -1,6 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import DatePicker, { registerLocale } from 'react-datepicker'
+import { endOfDay, isSameDay } from 'date-fns'
+import { ko } from 'date-fns/locale'
+import 'react-datepicker/dist/react-datepicker.css'
+import './admin-coupons-datepicker.css'
+
+registerLocale('ko', ko)
 
 type Coupon = {
   id: string
@@ -36,8 +43,8 @@ export default function AdminCouponsPage() {
   const [discountRate, setDiscountRate] = useState(10)
   const [minOrder, setMinOrder] = useState(0)
   const [issueTrigger, setIssueTrigger] = useState('manual')
-  const [startAt, setStartAt] = useState('')
-  const [endAt, setEndAt] = useState('')
+  const [validFrom, setValidFrom] = useState<Date | null>(null)
+  const [validTo, setValidTo] = useState<Date | null>(null)
   const [maxIssue, setMaxIssue] = useState<number | ''>('')
   const [creating, setCreating] = useState(false)
 
@@ -91,8 +98,8 @@ export default function AdminCouponsPage() {
         discount_rate: discountRate,
         min_order: minOrder,
         issue_trigger: issueTrigger,
-        start_at: startAt || null,
-        end_at: endAt || null,
+        start_at: validFrom ? validFrom.toISOString() : null,
+        end_at: validTo ? validTo.toISOString() : null,
         max_issue_count: maxIssue === '' ? null : maxIssue,
         is_active: true,
       }),
@@ -104,6 +111,8 @@ export default function AdminCouponsPage() {
       return
     }
     setName('')
+    setValidFrom(null)
+    setValidTo(null)
     await load()
   }
 
@@ -180,10 +189,54 @@ export default function AdminCouponsPage() {
           <option value="event">이벤트</option>
           <option value="birthday">생일</option>
         </select>
-        <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>유효 시작 (datetime-local)</label>
-        <input type="datetime-local" value={startAt} onChange={(e) => setStartAt(e.target.value)} style={{ width: '100%', marginBottom: 8, padding: 10, borderRadius: 10, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }} />
+        <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>유효 시작</label>
+        <DatePicker
+          selected={validFrom}
+          onChange={(d: Date | null) => {
+            setValidFrom(d)
+            if (d && validTo && validTo < d) setValidTo(d)
+          }}
+          showTimeSelect
+          timeIntervals={15}
+          dateFormat="yyyy-MM-dd HH:mm"
+          locale={ko}
+          placeholderText="시작일시 선택"
+          className="admin-coupon-datepicker-input"
+          wrapperClassName="admin-coupon-datepicker-wrap"
+          popperClassName="auran-admin-datepicker-popper"
+          isClearable
+        />
         <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>유효 종료</label>
-        <input type="datetime-local" value={endAt} onChange={(e) => setEndAt(e.target.value)} style={{ width: '100%', marginBottom: 8, padding: 10, borderRadius: 10, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }} />
+        <DatePicker
+          selected={validTo}
+          onChange={(d: Date | null) => {
+            if (d && validFrom && d < validFrom) {
+              setValidTo(validFrom)
+              return
+            }
+            setValidTo(d)
+          }}
+          showTimeSelect
+          timeIntervals={15}
+          dateFormat="yyyy-MM-dd HH:mm"
+          locale={ko}
+          placeholderText="종료일시 선택"
+          className="admin-coupon-datepicker-input"
+          wrapperClassName="admin-coupon-datepicker-wrap"
+          popperClassName="auran-admin-datepicker-popper"
+          minDate={validFrom ?? undefined}
+          minTime={
+            validFrom && validTo && isSameDay(validFrom, validTo)
+              ? validFrom
+              : undefined
+          }
+          maxTime={
+            validFrom && validTo && isSameDay(validFrom, validTo)
+              ? endOfDay(validTo)
+              : undefined
+          }
+          isClearable
+        />
         <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>발행 한도 (비우면 무제한)</label>
         <input
           type="number"
