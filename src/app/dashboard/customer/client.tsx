@@ -65,8 +65,6 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const [giftMessage, setGiftMessage] = useState('')
   const [friends, setFriends] = useState<any[]>([])
   const [selectedFriendId, setSelectedFriendId] = useState('')
-  const [productQueryDebug, setProductQueryDebug] = useState('')
-  const [actionDebug, setActionDebug] = useState('')
   const [nowTs, setNowTs] = useState(Date.now())
   const [specialIndex, setSpecialIndex] = useState(0)
   const [specialResumeAt, setSpecialResumeAt] = useState(0)
@@ -101,8 +99,6 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const homeSearchShowCount = getSettingNum('home_search', 'show_result_count', 1) === 1
   const homeSearchSyncToUrl = getSettingNum('home_search', 'sync_to_url', 1) === 1
   const homeSearchQueryParam = getSetting('home_search', 'query_param', 'q') || 'q'
-  const homeDebugShowQuery = getSettingNum('home_debug', 'show_query_debug', 1) === 1
-  const homeDebugShowAction = getSettingNum('home_debug', 'show_action_debug', 1) === 1
 
   const formatRemain = (endAt: string) => {
     const remainMs = new Date(endAt).getTime() - nowTs
@@ -122,7 +118,6 @@ export default function CustomerDashboardClient({ profile }: Props) {
   const logAction = (type: string, detail: Record<string, any> = {}) => {
     const msg = `[home-action] ${type} ${JSON.stringify(detail)}`
     console.log(msg)
-    setActionDebug(`${type} @ ${new Date().toLocaleTimeString()}`)
   }
 
   useEffect(() => {
@@ -204,7 +199,6 @@ export default function CustomerDashboardClient({ profile }: Props) {
       let list: any[] = []
       if (!error) {
         list = (data || []).map((p: any) => ({ ...p, brand_name: p.brands?.name || '' }))
-        setProductQueryDebug(`joined: ok (${(data || []).length}) @ ${new Date().toLocaleTimeString()}`)
       } else {
         // brands 조인 실패 시 fallback (brands 테이블/관계 미구성 환경 대응)
         const { data: fallbackData, error: fallbackError } = await supabase
@@ -213,7 +207,6 @@ export default function CustomerDashboardClient({ profile }: Props) {
           .limit(20)
         console.log('[customer-home products fallback error]', fallbackError)
         list = (fallbackData || []).map((p: any) => ({ ...p, brand_name: p.brand_name || '' }))
-        setProductQueryDebug(`joined error: ${error?.message || 'unknown'} / fallback: ${fallbackError?.message || 'ok'} (${(fallbackData || []).length}) @ ${new Date().toLocaleTimeString()}`)
       }
 
       if (!list.length) {
@@ -486,16 +479,6 @@ export default function CustomerDashboardClient({ profile }: Props) {
         {toast && (
           <div style={{ marginBottom: 10, padding: '9px 10px', borderRadius: 10, border: '1px solid rgba(201,168,76,0.35)', background: 'rgba(201,168,76,0.12)', color: 'var(--gold)', fontSize: 12, fontWeight: 700 }}>
             {toast}
-          </div>
-        )}
-        {homeDebugShowQuery && (
-          <div style={{ marginBottom: 8, fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: "'JetBrains Mono', monospace" }}>
-            query-debug: {productQueryDebug || 'pending...'}
-          </div>
-        )}
-        {homeDebugShowAction && (
-          <div style={{ marginBottom: 8, fontSize: 10, color: 'rgba(255,255,255,0.5)', fontFamily: "'JetBrains Mono', monospace" }}>
-            action-debug: {actionDebug || 'idle'}
           </div>
         )}
         <div style={{ marginBottom: 12 }}>
