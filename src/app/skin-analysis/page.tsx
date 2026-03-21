@@ -510,7 +510,9 @@ export default function CustomerSkinAnalysisQuizPage() {
           type: 'point',
           title: `${rewardPoints}P 적립!`,
           body: `AI 피부 분석 완료로 ${rewardPoints}포인트가 적립되었습니다.`,
+          icon: '✨',
           is_read: false,
+          link: '/wallet',
         } as any)
       }
 

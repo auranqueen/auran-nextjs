@@ -104,7 +104,7 @@ function CheckoutPageInner() {
       setBalance(toNum(me.charge_balance))
       const { data: ucs } = await supabase
         .from('user_coupons')
-        .select('id,status,coupons(*)')
+        .select('id,status,coupons!left(*)')
         .eq('user_id', user.id)
         .eq('status', 'unused')
       setUserCoupons((ucs || []) as UcRow[])

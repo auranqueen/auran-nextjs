@@ -238,12 +238,13 @@ export async function POST(req: NextRequest) {
     if (recipient?.id) {
       await auth.supabase.from('notifications').insert({
         user_id: recipient.id,
-        type: 'promo',
+        type: 'coupon',
         title: '🎫 새 쿠폰이 발급됐어요!',
         body: '쿠폰함에서 확인해 보세요.',
         icon: '🎫',
         is_read: false,
-      })
+        link: '/my/coupons',
+      } as any)
     }
 
     return json({ ok: true })

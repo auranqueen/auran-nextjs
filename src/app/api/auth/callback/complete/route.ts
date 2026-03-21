@@ -64,6 +64,8 @@ export async function GET(request: NextRequest) {
     })
     const { issueSignupCouponsForAuthUser } = await import('@/lib/coupon/issueSignup')
     await issueSignupCouponsForAuthUser(user.id)
+    const { insertSignupWelcomeNotification } = await import('@/lib/notifications/signupWelcome')
+    await insertSignupWelcomeNotification(supabase, user.id)
     const { sendSignupAlimtalkIfNeeded } = await import('@/lib/signup/sendSignupAlimtalk')
     await sendSignupAlimtalkIfNeeded(user.id)
   }

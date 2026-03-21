@@ -46,7 +46,7 @@ export default function MyCouponsPage() {
       }
       const { data } = await supabase
         .from('user_coupons')
-        .select('id,status,issued_at,used_at,coupons(*)')
+        .select('id,status,issued_at,used_at,coupons!left(*)')
         .eq('user_id', auth.user.id)
         .order('issued_at', { ascending: false })
       setRows((data || []) as Row[])
