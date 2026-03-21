@@ -190,7 +190,7 @@ function buildListUrl(base: string, page: number): string {
 }
 
 /** 회사·소개 등 비상품 페이지 (숫자 URL이어도 제외) */
-const EXCLUDE_NUMERIC_SLUGS = new Set(['33'])
+const EXCLUDE_NUMERIC_SLUGS = new Set<string>(['33'])
 
 /** 메인 /product 1페이지에서 숫자 경로(브랜드·서브) 링크 수집 */
 function discoverNumericSectionUrls($: CheerioRoot): string[] {
