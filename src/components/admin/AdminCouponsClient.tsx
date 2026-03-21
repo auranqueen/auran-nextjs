@@ -439,8 +439,9 @@ export default function AdminCouponsClient() {
       if (okN > 0) {
         setAdminToast({
           type: 'ok',
-          text: `${custName}님에게 [${couponName}] 쿠폰이 발급되었습니다 🎁`,
+          text: `✅ [${couponName}]이 ${custName}님께 발급되었습니다`,
         })
+        void load()
       } else if (dupN > 0) {
         setAdminToast({ type: 'err', text: '이미 발급된 쿠폰입니다.' })
       } else {

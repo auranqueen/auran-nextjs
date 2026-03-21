@@ -25,6 +25,7 @@ type UcRow = {
   id: string
   status: string
   coupon_id: string
+  expired_at?: string | null
   coupons: any
 }
 
@@ -93,8 +94,12 @@ function CheckoutPageInner() {
   useEffect(() => {
     const run = async () => {
       setLoading(true)
-      const { data: auth } = await supabase.auth.getUser()
-      const user = auth?.user
+      const { data: sessionData } = await supabase.auth.getSession()
+      let user = sessionData.session?.user ?? null
+      if (!user) {
+        const { data: auth } = await supabase.auth.getUser()
+        user = auth?.user ?? null
+      }
       if (!user) {
         router.replace('/login?redirect=/checkout')
         return
@@ -184,7 +189,7 @@ function CheckoutPageInner() {
     }
     if (
       !authUid ||
-      isCouponExpiredForUser({ status: 'unused' }, row.coupons) ||
+      isCouponExpiredForUser({ status: 'unused', expired_at: row.expired_at }, row.coupons) ||
       !isCouponApplicableForOrder(row.coupons, orderLines, subtotal, authUid) ||
       computeCouponDiscount(subtotal, row.coupons, { maxPercent: maxCouponPct }) <= 0
     ) {
@@ -192,15 +197,17 @@ function CheckoutPageInner() {
     }
   }, [subtotal, userCoupons, selectedUserCouponId, orderLines, authUid, maxCouponPct])
 
-  const usableCouponCount = useMemo(() => {
-    if (!authUid) return 0
+  const applicableCheckoutCoupons = useMemo(() => {
+    if (!authUid) return []
     return userCoupons.filter((u) => {
-      if (!u.coupons) return false
-      if (isCouponExpiredForUser({ status: u.status }, u.coupons)) return false
+      if (!u.coupons || u.status !== 'unused') return false
+      if (isCouponExpiredForUser({ status: u.status, expired_at: u.expired_at }, u.coupons)) return false
       if (!isCouponApplicableForOrder(u.coupons, orderLines, subtotal, authUid)) return false
       return computeCouponDiscount(subtotal, u.coupons, { maxPercent: maxCouponPct }) > 0
-    }).length
+    })
   }, [userCoupons, subtotal, orderLines, authUid, maxCouponPct])
+
+  const usableCouponCount = applicableCheckoutCoupons.length
 
   const onPay = async (allowCharge = true) => {
     if (!orderedProducts.length || !meId) return
@@ -279,6 +286,76 @@ function CheckoutPageInner() {
                 </div>
               )})}
             </div>
+
+            <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)' }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 10 }}>🎟 쿠폰 선택</div>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10, fontSize: 12, color: 'rgba(255,255,255,0.9)', cursor: 'pointer' }}>
+                <input type="radio" name="checkout_coupon" checked={selectedUserCouponId === null} onChange={() => setSelectedUserCouponId(null)} />
+                <span>쿠폰 적용 안 함</span>
+              </label>
+              {applicableCheckoutCoupons.map((uc) => {
+                const c = uc.coupons
+                if (!c) return null
+                const disc = computeCouponDiscount(subtotal, c, { maxPercent: maxCouponPct })
+                const minO = Number(c.min_order || 0)
+                const exp = uc.expired_at || c.end_at
+                const expLabel = exp
+                  ? new Date(exp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit' })
+                  : '—'
+                return (
+                  <label
+                    key={uc.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 10,
+                      marginBottom: 10,
+                      fontSize: 12,
+                      color: 'rgba(255,255,255,0.92)',
+                      cursor: 'pointer',
+                      padding: '8px 10px',
+                      borderRadius: 10,
+                      border: selectedUserCouponId === uc.id ? '1px solid rgba(201,168,76,0.55)' : '1px solid rgba(255,255,255,0.08)',
+                      background: selectedUserCouponId === uc.id ? 'rgba(201,168,76,0.08)' : 'transparent',
+                    }}
+                  >
+                    <input type="radio" name="checkout_coupon" checked={selectedUserCouponId === uc.id} onChange={() => setSelectedUserCouponId(uc.id)} />
+                    <span style={{ lineHeight: 1.45 }}>
+                      <span style={{ fontWeight: 900 }}>{c.name}</span>
+                      <br />
+                      <span style={{ color: 'var(--gold)', fontWeight: 800 }}>−₩{disc.toLocaleString()}</span>
+                      {' · '}
+                      최소 ₩{minO.toLocaleString()} · ~{expLabel}
+                    </span>
+                  </label>
+                )
+              })}
+              {applicableCheckoutCoupons.length === 0 ? (
+                <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.5 }}>
+                  이 주문 금액·상품 조건에 맞는 사용 가능 쿠폰이 없어요. (만료·최소주문·적용범위)
+                </div>
+              ) : null}
+              {couponDiscount > 0 && selectedUserCouponId ? (
+                <div style={{ marginTop: 8, fontSize: 13, fontWeight: 900, color: 'var(--gold)' }}>적용 시 −₩{couponDiscount.toLocaleString()}</div>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setCouponSheetOpen(true)}
+                style={{
+                  marginTop: 8,
+                  fontSize: 11,
+                  color: 'var(--text3)',
+                  background: 'none',
+                  border: 'none',
+                  textDecoration: 'underline',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                전체 보유 쿠폰 목록 (시트)
+              </button>
+            </div>
+
             {!!giftTo && <div style={{ marginBottom: 10, fontSize: 12, color: '#bcd6ff' }}>🎁 선물 주문 · 받는 분 ID: {giftTo}</div>}
 
             <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)' }}>
@@ -317,28 +394,6 @@ function CheckoutPageInner() {
                 💳 PayApp 카드 (토스트 미사용 · 남은 금액은 카드)
               </label>
             </div>
-
-            <button
-              type="button"
-              onClick={() => setCouponSheetOpen(true)}
-              style={{
-                width: '100%',
-                marginBottom: 10,
-                padding: '12px 14px',
-                borderRadius: 12,
-                border: '1px solid rgba(201,168,76,0.35)',
-                background: 'rgba(201,168,76,0.08)',
-                color: '#fff',
-                fontWeight: 800,
-                fontSize: 13,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}
-            >
-              <span>🎫 쿠폰 {selectedRow?.coupons?.name ? `· ${selectedRow.coupons.name}` : ''}</span>
-              <span style={{ color: 'var(--gold)' }}>사용가능 {usableCouponCount}장 ›</span>
-            </button>
 
             <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 12, padding: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#fff', fontSize: 13 }}><span>주문금액</span><span>₩{subtotal.toLocaleString()}</span></div>
@@ -472,7 +527,7 @@ function CheckoutPageInner() {
                   </div>
                 )
               }
-              const expired = isCouponExpiredForUser({ status: uc.status }, c)
+              const expired = isCouponExpiredForUser({ status: uc.status, expired_at: uc.expired_at }, c)
               const applicable =
                 !!authUid && !expired && isCouponApplicableForOrder(c, orderLines, subtotal, authUid)
               const disc = applicable ? computeCouponDiscount(subtotal, c, { maxPercent: maxCouponPct }) : 0

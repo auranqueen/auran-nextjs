@@ -76,8 +76,9 @@ export function computeCouponDiscount(
   return Math.min(raw, cap)
 }
 
-export function isCouponExpiredForUser(uc: { status: string }, c: any): boolean {
+export function isCouponExpiredForUser(uc: { status: string; expired_at?: string | null }, c: any): boolean {
   if (uc.status === 'expired') return true
+  if (uc.expired_at && new Date(uc.expired_at).getTime() < Date.now()) return true
   if (!c?.end_at) return false
   return new Date(c.end_at).getTime() < Date.now()
 }
