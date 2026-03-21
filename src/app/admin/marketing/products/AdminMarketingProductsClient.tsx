@@ -287,30 +287,51 @@ export default function AdminMarketingProductsClient() {
 
   const approveOne = async (id: string) => {
     setBusyId(id)
-    await supabase.from('products').update({ status: 'active' }).eq('id', id)
-    await fetchRows()
+    const { error } = await supabase.from('products').update({ status: 'active' }).eq('id', id)
     setBusyId(null)
+    if (error) {
+      setToast('저장 실패: ' + error.message)
+      return
+    }
     setToast('✅ 승인되었습니다')
+    setRows(prev => prev.map(r => (r.id === id ? { ...r, status: 'active' } : r)))
+    setSelectedProduct((prev: any) => (prev?.id === id ? null : prev))
+    await fetchRows()
   }
 
   const rejectOne = async (id: string) => {
     setBusyId(id)
-    await supabase.from('products').update({ status: 'discontinued' }).eq('id', id)
-    await fetchRows()
+    const { error } = await supabase.from('products').update({ status: 'discontinued' }).eq('id', id)
     setBusyId(null)
+    if (error) {
+      setToast('저장 실패: ' + error.message)
+      return
+    }
     setToast('숨김(거절) 처리되었습니다')
+    setRows(prev => prev.filter(r => r.id !== id))
+    setSelectedProduct((prev: any) => (prev?.id === id ? null : prev))
+    await fetchRows()
   }
 
   const bulkApprove = async () => {
+    if (!window.confirm('PENDING 제품 전체를 승인할까요?')) return
     setBulkBusy(true)
-    await supabase.from('products').update({ status: 'active' }).eq('status', 'pending')
-    await fetchRows()
+    const { error } = await supabase.from('products').update({ status: 'active' }).eq('status', 'pending')
     setBulkBusy(false)
+    if (error) {
+      setToast('저장 실패: ' + error.message)
+      return
+    }
     setToast(`✅ 전체 승인 완료 (${counts.pending}건)`)
+    await fetchRows()
   }
 
   const saveFlashSale = async (id: string, payload: { is_flash_sale: boolean; flash_sale_price: number | null; flash_sale_start: string | null; flash_sale_end: string | null }) => {
-    await supabase.from('products').update(payload as any).eq('id', id)
+    const { error } = await supabase.from('products').update(payload as any).eq('id', id)
+    if (error) {
+      setToast('저장 실패: ' + error.message)
+      return
+    }
     setRows(prev => prev.map(r => (r.id === id ? { ...r, ...payload } : r)))
     setSelectedProduct((prev: any) => (prev?.id === id ? { ...prev, ...payload } : prev))
     setToast('타임세일이 저장되었습니다')
@@ -406,6 +427,27 @@ export default function AdminMarketingProductsClient() {
             예외만 처리 · 썸네일·노출 토글 · 가격 없음 일괄 숨김
           </div>
         </div>
+        {tab === 'pending' && counts.pending > 0 && (
+          <button
+            type="button"
+            onClick={() => void bulkApprove()}
+            disabled={bulkBusy}
+            style={{
+              background: 'linear-gradient(135deg, #c9a84c 0%, #a8863a 100%)',
+              border: 'none',
+              borderRadius: 12,
+              padding: '12px 18px',
+              color: '#000',
+              fontSize: 13,
+              fontWeight: 900,
+              cursor: 'pointer',
+              boxShadow: '0 4px 20px rgba(201,168,76,0.35)',
+              opacity: bulkBusy ? 0.65 : 1,
+            }}
+          >
+            {bulkBusy ? '처리 중...' : `⚡ PENDING 전체 승인 (${counts.pending})`}
+          </button>
+        )}
       </div>
 
       <div style={{
@@ -423,19 +465,6 @@ export default function AdminMarketingProductsClient() {
         >
           {hideAllBusy ? '처리 중...' : '가격 없는 제품 전체 숨김'}
         </button>
-        {tab === 'pending' && counts.pending > 0 && (
-          <button
-            onClick={bulkApprove}
-            disabled={bulkBusy}
-            style={{
-              background: 'var(--gold, #c9a84c)', border: 'none', borderRadius: 10,
-              padding: '8px 14px', color: '#000', fontSize: 12, fontWeight: 900,
-              cursor: 'pointer', opacity: bulkBusy ? 0.6 : 1,
-            }}
-          >
-            {bulkBusy ? '처리 중...' : `전체 승인 (${counts.pending})`}
-          </button>
-        )}
         {selectedIds.size > 0 && (
           <button
             type="button"

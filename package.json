@@ -16,7 +16,8 @@
     "scrape:civasan": "ts-node --project tsconfig.scripts.json scripts/scrape-civasan.ts",
     "scrape:soskin": "ts-node --project tsconfig.scripts.json scripts/scrape-soskin.ts",
     "scrape:thalac": "ts-node --project tsconfig.scripts.json scripts/scrape-thalac.ts",
-    "scrape:all": "npm run scrape:gernetic && npm run scrape:civasan && npm run scrape:soskin && npm run scrape:thalac"
+    "scrape:all": "npm run scrape:gernetic && npm run scrape:civasan && npm run scrape:soskin && npm run scrape:thalac",
+    "import:products": "ts-node --project tsconfig.scripts.json scripts/import-scraped-products.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",

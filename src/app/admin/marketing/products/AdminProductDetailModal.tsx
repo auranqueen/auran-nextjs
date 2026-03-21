@@ -6,6 +6,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 type TabKey = 'thumb' | 'basic' | 'detail' | 'points' | 'flash'
 
+function debounce<A extends unknown[]>(fn: (...args: A) => void | Promise<void>, ms: number) {
+  let t: ReturnType<typeof setTimeout> | undefined
+  return (...args: A) => {
+    if (t) clearTimeout(t)
+    t = setTimeout(() => {
+      void fn(...args)
+    }, ms)
+  }
+}
+
 function tabLabel(t: TabKey, dirty: boolean) {
   const labels: Record<TabKey, string> = {
     thumb: '📷 썸네일',
@@ -68,7 +78,9 @@ export default function AdminProductDetailModal({
 
   const [thumbPreview, setThumbPreview] = useState<string | null>(null)
   const [thumbUploading, setThumbUploading] = useState(false)
+  const [thumbUrlSaving, setThumbUrlSaving] = useState(false)
   const [thumbHover, setThumbHover] = useState(false)
+  const [thumbUrlDraft, setThumbUrlDraft] = useState('')
 
   const [nameDraft, setNameDraft] = useState(String(product.name || ''))
   const [priceDraft, setPriceDraft] = useState(String(product.retail_price ?? ''))
@@ -106,6 +118,7 @@ export default function AdminProductDetailModal({
 
   useEffect(() => {
     setThumbPreview(null)
+    setThumbUrlDraft(String(product.thumb_img || product.storage_thumb_url || ''))
     setNameDraft(String(product.name || ''))
     setPriceDraft(String(product.retail_price ?? ''))
     setBrandId(String(product.brand_id || ''))
@@ -134,6 +147,67 @@ export default function AdminProductDetailModal({
   }, [product.id])
 
   const hasDirty = useMemo(() => Object.values(dirty).some(Boolean), [dirty])
+
+  const productRef = useRef(product)
+  const onToastRef = useRef(onToast)
+  const onProductUpdatedRef = useRef(onProductUpdated)
+  useEffect(() => {
+    productRef.current = product
+  }, [product])
+  useEffect(() => {
+    onToastRef.current = onToast
+    onProductUpdatedRef.current = onProductUpdated
+  }, [onToast, onProductUpdated])
+
+  const debouncedSaveNamePrice = useMemo(
+    () =>
+      debounce(async (field: 'name' | 'retail_price', value: string) => {
+        const p = productRef.current
+        const id = p.id
+        const payload =
+          field === 'name'
+            ? { name: value.trim() }
+            : { retail_price: Math.max(0, Math.floor(Number(value) || 0)) }
+        const { error } = await supabase.from('products').update(payload).eq('id', id)
+        if (error) {
+          onToastRef.current(error.message || '저장 실패')
+          return
+        }
+        onToastRef.current('✅ 저장됨')
+        onProductUpdatedRef.current({
+          ...p,
+          ...(field === 'name'
+            ? { name: value.trim() }
+            : {
+                retail_price: Math.max(0, Math.floor(Number(value) || 0)),
+                price: Math.max(0, Math.floor(Number(value) || 0)),
+              }),
+        })
+      }, 1000),
+    [supabase]
+  )
+
+  const saveThumbUrl = async () => {
+    const newUrl = thumbUrlDraft.trim()
+    if (!newUrl) {
+      onToast('URL을 입력하세요')
+      return
+    }
+    setThumbUrlSaving(true)
+    const { error } = await supabase
+      .from('products')
+      .update({ thumb_img: newUrl, storage_thumb_url: newUrl })
+      .eq('id', product.id)
+    setThumbUrlSaving(false)
+    if (error) {
+      onToast(error.message || '저장 실패')
+      return
+    }
+    setThumbPreview(null)
+    mark('thumb', false)
+    onToast('✅ 썸네일 저장됨')
+    onProductUpdated({ ...product, thumb_img: newUrl, storage_thumb_url: newUrl })
+  }
 
   const requestClose = () => {
     if (hasDirty) {
@@ -377,6 +451,45 @@ export default function AdminProductDetailModal({
                 onProductUpdated({ ...product, thumb_img: newUrl, storage_thumb_url: newUrl })
               }}
             />
+            <div style={{ display: 'grid', gap: 8, marginTop: 4 }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>썸네일 URL (직접 입력)</span>
+              <input
+                value={thumbUrlDraft}
+                onChange={e => {
+                  setThumbUrlDraft(e.target.value)
+                  mark('thumb', true)
+                }}
+                placeholder="https://..."
+                style={{
+                  width: '100%',
+                  background: 'rgba(255,255,255,0.07)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 10,
+                  padding: '10px 14px',
+                  color: '#fff',
+                  fontSize: 12,
+                  boxSizing: 'border-box',
+                }}
+              />
+              <button
+                type="button"
+                disabled={thumbUrlSaving}
+                onClick={() => void saveThumbUrl()}
+                style={{
+                  background: 'rgba(201,168,76,0.2)',
+                  border: '1px solid rgba(201,168,76,0.45)',
+                  borderRadius: 10,
+                  padding: '10px 0',
+                  color: '#c9a84c',
+                  fontSize: 12,
+                  fontWeight: 900,
+                  cursor: 'pointer',
+                  opacity: thumbUrlSaving ? 0.6 : 1,
+                }}
+              >
+                {thumbUrlSaving ? '저장 중...' : '썸네일 URL 저장'}
+              </button>
+            </div>
             {thumbUploading ? (
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>업로드 중...</div>
             ) : null}
@@ -390,8 +503,10 @@ export default function AdminProductDetailModal({
               <input
                 value={nameDraft}
                 onChange={e => {
-                  setNameDraft(e.target.value)
+                  const v = e.target.value
+                  setNameDraft(v)
                   mark('basic', true)
+                  debouncedSaveNamePrice('name', v)
                 }}
                 style={{
                   width: '100%',
@@ -410,8 +525,10 @@ export default function AdminProductDetailModal({
               <input
                 value={priceDraft}
                 onChange={e => {
-                  setPriceDraft(e.target.value.replace(/[^0-9]/g, ''))
+                  const v = e.target.value.replace(/[^0-9]/g, '')
+                  setPriceDraft(v)
                   mark('basic', true)
+                  debouncedSaveNamePrice('retail_price', v)
                 }}
                 style={{
                   width: '100%',
@@ -928,10 +1045,7 @@ export default function AdminProductDetailModal({
           {listTab === 'pending' && (
             <>
               <button
-                onClick={() => {
-                  onReject(product.id)
-                  onClose()
-                }}
+                onClick={() => void onReject(product.id)}
                 disabled={busyId === product.id}
                 style={{
                   flex: 1,
@@ -948,10 +1062,7 @@ export default function AdminProductDetailModal({
                 거절
               </button>
               <button
-                onClick={() => {
-                  onApprove(product.id)
-                  onClose()
-                }}
+                onClick={() => void onApprove(product.id)}
                 disabled={busyId === product.id}
                 style={{
                   flex: 1,
@@ -971,10 +1082,7 @@ export default function AdminProductDetailModal({
           )}
           {listTab === 'rejected' && (
             <button
-              onClick={() => {
-                onApprove(product.id)
-                onClose()
-              }}
+              onClick={() => void onApprove(product.id)}
               disabled={busyId === product.id}
               style={{
                 flex: 2,
