@@ -45,9 +45,9 @@ getSetting('category', 'key') ?? 기본값
 4. 버튼 onClick 핸들러 절대 제거 금지
 
 ## 장바구니/선물/구매 버튼 현재 올바른 구현
-`ProductActionBar` 하단 고정 버튼바:
-- 장바구니: CartContext의 addToCart() 호출
+`ProductActionBar` 하단 고정 버튼바 (상세 `client.tsx`에서 `quantity` 전달):
+- 장바구니: CartContext의 addToCart() — 선택 수량(1~99) 반영
 - 선물하기: 내부 setShowGift(true) (선물 모달)
-- 구매하기: router.push('/checkout?product_id='+id) 호출
+- 구매하기: `/checkout?product_id=…&qty=…` (체크아웃이 기존과 동일하게 qty 처리)
 
-이 로직은 완성됨. 절대 변경 금지.
+이 흐름은 완성됨. onClick 제거·시그니처 깨뜨리기 금지.
