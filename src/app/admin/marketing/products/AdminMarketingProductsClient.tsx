@@ -3,6 +3,7 @@
 import ProductThumbnail from '@/components/ProductThumbnail'
 import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import AdminProductDetailModal from './AdminProductDetailModal'
 
 // DB status: pending | active | discontinued (UI "rejected" = discontinued)
 function toDbStatus(tab: 'pending' | 'active' | 'rejected') {
@@ -13,213 +14,6 @@ function isMissingPrice(p: { retail_price?: number | null }) {
   const v = p.retail_price
   if (v == null) return true
   return Number(v) === 0
-}
-
-// ───────────────────────────────────────────────
-// 제품 상세 모달 (썸네일 URL 즉시 미리보기 + 저장)
-// ───────────────────────────────────────────────
-function ProductDetailModal({
-  product,
-  tab,
-  busyId,
-  onClose,
-  onApprove,
-  onReject,
-  onSaveThumb,
-  onSaveFlash,
-}: {
-  product: any
-  tab: 'pending' | 'active' | 'rejected'
-  busyId: string | null
-  onClose: () => void
-  onApprove: (id: string) => void
-  onReject: (id: string) => void
-  onSaveThumb: (id: string, url: string) => Promise<void>
-  onSaveFlash: (id: string, payload: { is_flash_sale: boolean; flash_sale_price: number | null; flash_sale_start: string | null; flash_sale_end: string | null }) => Promise<void>
-}) {
-  const [thumbDraft, setThumbDraft] = useState(product.thumb_img || '')
-  const [thumbSaving, setThumbSaving] = useState(false)
-  const [isFlashSale, setIsFlashSale] = useState(!!product.is_flash_sale)
-  const [flashSalePrice, setFlashSalePrice] = useState(String(product.flash_sale_price || ''))
-  const [flashSaleStart, setFlashSaleStart] = useState(product.flash_sale_start ? new Date(product.flash_sale_start).toISOString().slice(0, 16) : '')
-  const [flashSaleEnd, setFlashSaleEnd] = useState(product.flash_sale_end ? new Date(product.flash_sale_end).toISOString().slice(0, 16) : '')
-
-  useEffect(() => {
-    setThumbDraft(product.thumb_img || '')
-  }, [product.id, product.thumb_img])
-
-  const fields = [
-    { label: '브랜드', value: product.brandName },
-    {
-      label: '가격',
-      value: isMissingPrice(product) ? '⚠️ 가격 없음' : `₩${Number(product.retail_price || 0).toLocaleString()}`,
-    },
-    { label: '등록일', value: product.created_at ? new Date(product.created_at).toLocaleDateString('ko-KR') : '-' },
-    { label: '상태', value: product.status },
-    { label: 'ID', value: product.id },
-  ]
-
-  return (
-    <div
-      onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.80)', zIndex: 100,
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
-      }}
-    >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{
-          background: '#181818', border: '1px solid rgba(255,255,255,0.12)',
-          borderRadius: 24, padding: 28, width: '100%', maxWidth: 520,
-          maxHeight: '90vh', overflowY: 'auto',
-        }}
-      >
-        <div style={{
-          width: '100%', height: 220, borderRadius: 16, overflow: 'hidden',
-          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-          marginBottom: 12, position: 'relative',
-        }}>
-          <ProductThumbnail src={thumbDraft} alt={product.name || ''} fill objectFit="contain" style={{ borderRadius: 16 }} />
-        </div>
-
-        <div style={{ marginBottom: 14 }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>썸네일 URL (입력 시 미리보기 즉시 반영)</div>
-          <input
-            value={thumbDraft}
-            onChange={e => setThumbDraft(e.target.value)}
-            placeholder="https://..."
-            style={{
-              width: '100%', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.15)',
-              borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 12,
-              boxSizing: 'border-box', marginBottom: 8,
-            }}
-          />
-          <button
-            type="button"
-            onClick={async () => {
-              setThumbSaving(true)
-              try {
-                await onSaveThumb(product.id, thumbDraft.trim())
-              } finally {
-                setThumbSaving(false)
-              }
-            }}
-            disabled={thumbSaving}
-            style={{
-              width: '100%', background: 'rgba(201,168,76,0.2)', border: '1px solid rgba(201,168,76,0.45)',
-              borderRadius: 10, padding: '10px 0', color: '#c9a84c', fontSize: 12, fontWeight: 800, cursor: 'pointer',
-            }}
-          >
-            {thumbSaving ? '저장 중...' : '썸네일 URL 저장'}
-          </button>
-        </div>
-
-        <div style={{ fontSize: 18, fontWeight: 900, color: '#fff', marginBottom: 16 }}>
-          {product.name}
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 24 }}>
-          {fields.map(f => (
-            <div key={f.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{f.label}</span>
-              <span style={{ fontSize: 13, color: '#fff', fontWeight: 700 }}>{f.value}</span>
-            </div>
-          ))}
-        </div>
-
-        {product.description && (
-          <div style={{
-            background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 14,
-            fontSize: 13, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7, marginBottom: 24,
-          }}>
-            {product.description}
-          </div>
-        )}
-
-        <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 14, marginBottom: 20 }}>
-          <div style={{ fontSize: 12, color: '#fff', fontWeight: 900, marginBottom: 10 }}>타임세일 설정</div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 12, color: '#fff' }}>
-            <input type="checkbox" checked={isFlashSale} onChange={(e) => setIsFlashSale(e.target.checked)} />
-            타임세일 적용
-          </label>
-          {isFlashSale && (
-            <div style={{ display: 'grid', gap: 8 }}>
-              <input value={flashSalePrice} onChange={(e) => setFlashSalePrice(e.target.value.replace(/[^0-9]/g, ''))} placeholder="세일가(원)" style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
-              <input type="datetime-local" value={flashSaleStart} onChange={(e) => setFlashSaleStart(e.target.value)} style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
-              <input type="datetime-local" value={flashSaleEnd} onChange={(e) => setFlashSaleEnd(e.target.value)} style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={async () => {
-              await onSaveFlash(product.id, {
-                is_flash_sale: isFlashSale,
-                flash_sale_price: isFlashSale ? Number(flashSalePrice || 0) : null,
-                flash_sale_start: isFlashSale && flashSaleStart ? new Date(flashSaleStart).toISOString() : null,
-                flash_sale_end: isFlashSale && flashSaleEnd ? new Date(flashSaleEnd).toISOString() : null,
-              })
-            }}
-            style={{ marginTop: 10, background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: 10, padding: '8px 12px', color: '#c9a84c', fontSize: 12, fontWeight: 800 }}
-          >
-            타임세일 저장
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button
-            onClick={onClose}
-            style={{
-              flex: 1, background: 'rgba(255,255,255,0.07)', border: 'none',
-              borderRadius: 12, padding: '13px 0', color: 'rgba(255,255,255,0.6)',
-              fontSize: 13, cursor: 'pointer',
-            }}
-          >
-            닫기
-          </button>
-          {tab === 'pending' && (
-            <>
-              <button
-                onClick={() => { onReject(product.id); onClose() }}
-                disabled={busyId === product.id}
-                style={{
-                  flex: 1, background: 'rgba(229,57,53,0.15)', border: '1px solid rgba(229,57,53,0.4)',
-                  borderRadius: 12, padding: '13px 0', color: '#e57373',
-                  fontSize: 13, fontWeight: 700, cursor: 'pointer',
-                }}
-              >
-                거절
-              </button>
-              <button
-                onClick={() => { onApprove(product.id); onClose() }}
-                disabled={busyId === product.id}
-                style={{
-                  flex: 1, background: 'var(--gold, #c9a84c)', border: 'none',
-                  borderRadius: 12, padding: '13px 0', color: '#000',
-                  fontSize: 13, fontWeight: 900, cursor: 'pointer',
-                }}
-              >
-                승인
-              </button>
-            </>
-          )}
-          {tab === 'rejected' && (
-            <button
-              onClick={() => { onApprove(product.id); onClose() }}
-              disabled={busyId === product.id}
-              style={{
-                flex: 2, background: 'var(--gold, #c9a84c)', border: 'none',
-                borderRadius: 12, padding: '13px 0', color: '#000',
-                fontSize: 13, fontWeight: 900, cursor: 'pointer',
-              }}
-            >
-              다시 승인
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  )
 }
 
 // ───────────────────────────────────────────────
@@ -401,6 +195,7 @@ export default function AdminMarketingProductsClient() {
   const [brandQ, setBrandQ] = useState('all')
   const [listFilter, setListFilter] = useState<'all' | 'no_price' | 'with_price'>('all')
   const [brandOptionsFromDb, setBrandOptionsFromDb] = useState<string[] | null>(null)
+  const [brandsWithId, setBrandsWithId] = useState<{ id: string; name: string }[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const [toast, setToast] = useState('')
 
@@ -434,10 +229,16 @@ export default function AdminMarketingProductsClient() {
   useEffect(() => { fetchRows() }, [fetchRows])
 
   useEffect(() => {
-    supabase.from('brands').select('name').order('name').then(({ data }) => {
-      const names = (data || []).map((b: { name: string }) => b.name).filter(Boolean)
-      setBrandOptionsFromDb(names.length ? names : null)
-    })
+    supabase
+      .from('brands')
+      .select('id,name')
+      .order('name')
+      .then(({ data }) => {
+        const rows = (data || []) as { id: string; name: string }[]
+        setBrandsWithId(rows)
+        const names = rows.map(b => b.name).filter(Boolean)
+        setBrandOptionsFromDb(names.length ? names : null)
+      })
   }, [supabase])
 
   const mappedRows = useMemo(() =>
@@ -508,20 +309,19 @@ export default function AdminMarketingProductsClient() {
     setToast(`✅ 전체 승인 완료 (${counts.pending}건)`)
   }
 
-  const saveImageUrl = async (id: string, url: string) => {
-    await supabase.from('products').update({ thumb_img: url }).eq('id', id)
-    setRows(prev => prev.map(r => r.id === id ? { ...r, thumb_img: url } : r))
-    if (selectedProduct?.id === id) {
-      setSelectedProduct((prev: any) => prev ? { ...prev, thumb_img: url } : prev)
-    }
-    setToast('✅ 썸네일이 저장되었습니다')
-  }
-
   const saveFlashSale = async (id: string, payload: { is_flash_sale: boolean; flash_sale_price: number | null; flash_sale_start: string | null; flash_sale_end: string | null }) => {
     await supabase.from('products').update(payload as any).eq('id', id)
     setRows(prev => prev.map(r => (r.id === id ? { ...r, ...payload } : r)))
     setSelectedProduct((prev: any) => (prev?.id === id ? { ...prev, ...payload } : prev))
     setToast('타임세일이 저장되었습니다')
+  }
+
+  const handleProductUpdated = (p: any) => {
+    const brandName =
+      p.brands?.name ?? brandsWithId.find(b => b.id === p.brand_id)?.name ?? p.brandName
+    const merged = { ...p, brandName: brandName || p.brandName }
+    setSelectedProduct(merged)
+    setRows(prev => prev.map(r => (r.id === merged.id ? { ...r, ...merged } : r)))
   }
 
   const toggleVisibility = async (id: string, next: 'active' | 'discontinued') => {
@@ -585,14 +385,16 @@ export default function AdminMarketingProductsClient() {
       ) : null}
 
       {selectedProduct && (
-        <ProductDetailModal
+        <AdminProductDetailModal
           product={selectedProduct}
           tab={tab}
           busyId={busyId}
+          brands={brandsWithId}
           onClose={() => setSelectedProduct(null)}
           onApprove={approveOne}
           onReject={rejectOne}
-          onSaveThumb={saveImageUrl}
+          onToast={setToast}
+          onProductUpdated={handleProductUpdated}
           onSaveFlash={saveFlashSale}
         />
       )}

@@ -7,7 +7,9 @@ async function getProduct(id: string) {
   const supabase = createServiceClient()
   const { data } = await supabase
     .from('products')
-    .select('id,name,description,thumb_img,detail_imgs,detail_html,video_url,ingredient,retail_price,created_at,updated_at,brand_id,category,review_count,avg_rating,brands(id,name)')
+    .select(
+      'id,name,description,thumb_img,detail_content,detail_images,detail_imgs,detail_html,video_url,ingredient,retail_price,created_at,updated_at,brand_id,category,review_count,avg_rating,earn_points,share_points,review_points_text,review_points_photo,review_points_video,brands(id,name)'
+    )
     .eq('id', id)
     .eq('status', 'active')
     .maybeSingle()

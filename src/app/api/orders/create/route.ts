@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
   const productIds = Array.from(productIdSet)
   const { data: products } = await client
     .from('products')
-    .select('id,name,retail_price,brand_id')
+    .select('id,name,retail_price,brand_id,earn_points')
     .eq('status', 'active')
     .in('id', productIds)
   const productMap = new Map((products || []).map((p: any) => [p.id, p]))
@@ -115,6 +115,13 @@ export async function POST(req: NextRequest) {
     })
   }
   if (totalAmount < 1) return json({ ok: false, error: 'invalid_total' }, 400)
+
+  let purchaseEarnPoints = 0
+  for (const row of orderItemsRows) {
+    const pr = productMap.get(row.product_id) as { earn_points?: number } | undefined
+    const pct = Math.max(0, Math.min(100, Math.floor(Number(pr?.earn_points ?? 0))))
+    purchaseEarnPoints += Math.floor((row.subtotal * pct) / 100)
+  }
 
   let couponDiscount = 0
   let validatedUserCouponId: string | null = null
@@ -176,7 +183,7 @@ export async function POST(req: NextRequest) {
       charge_used: chargeUsed,
       coupon_discount: couponDiscount,
       final_amount: finalAmount,
-      earn_points: 0,
+      earn_points: purchaseEarnPoints,
       points_awarded: false,
       share_journal_id: validatedShareJournalId,
       gift_receiver_id: giftTo,
