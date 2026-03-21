@@ -1,16 +1,19 @@
 import type { Metadata } from 'next'
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import ProductDetailClient from './client'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 async function getProduct(id: string) {
-  const supabase = createServerComponentClient({ cookies })
-  const { data } = await supabase
+  const supabase = createClient()
+  const { data, error } = await supabase
     .from('products')
     .select('*, brands(id, name)')
     .eq('id', id)
     .maybeSingle()
+  if (error) return null
   return data
 }
 
