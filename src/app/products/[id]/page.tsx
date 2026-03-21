@@ -1,17 +1,15 @@
 import type { Metadata } from 'next'
+import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
+import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
-import { createServiceClient } from '@/lib/supabase/service'
-import ProductDetailClient from './ProductDetailClient'
+import ProductDetailClient from './client'
 
 async function getProduct(id: string) {
-  const supabase = createServiceClient()
+  const supabase = createServerComponentClient({ cookies })
   const { data } = await supabase
     .from('products')
-    .select(
-      'id,name,description,thumb_img,detail_content,detail_images,detail_imgs,detail_html,video_url,ingredient,retail_price,created_at,updated_at,brand_id,category,review_count,avg_rating,earn_points,share_points,review_points_text,review_points_photo,review_points_video,brands(id,name)'
-    )
+    .select('*, brands(id, name)')
     .eq('id', id)
-    .eq('status', 'active')
     .maybeSingle()
   return data
 }
@@ -43,6 +41,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
   const product = await getProduct(params.id)
   if (!product) notFound()
+
   const brandName = Array.isArray((product as any).brands)
     ? (product as any).brands?.[0]?.name || 'AURAN'
     : (product as any).brands?.name || 'AURAN'
@@ -64,6 +63,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
       ? { '@type': 'AggregateRating', ratingValue: product.avg_rating, reviewCount: product.review_count || 0 }
       : undefined,
   }
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />

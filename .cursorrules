@@ -33,7 +33,7 @@ getSetting('category', 'key') ?? 기본값
 - src/components/ProductThumbnail.tsx ← 썸네일 컴포넌트 완성
 - src/components/ProductActionBar.tsx ← 상품 상세 하단 장바구니/선물/구매 바 (고정 동작)
 - next.config.ts ← 이미지 도메인 설정 완성
-- src/app/products/[id]/page.tsx ← 서버 페이지(메타/JSON-LD만). 버튼은 ProductDetailClient + ProductActionBar
+- src/app/products/[id]/page.tsx ← 서버 페이지(메타/JSON-LD만). 클라 UI는 client.tsx + ProductActionBar
 - src/context/CartContext.tsx ← useCart() / addToCart 시그니처 (zustand 래퍼)
 - src/app/cart/page.tsx ← 장바구니 페이지 완성
 - src/app/checkout/page.tsx ← 결제 페이지 완성 (`products` 또는 단일 `product_id` 쿼리 지원)
