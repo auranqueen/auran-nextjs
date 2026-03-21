@@ -6,6 +6,11 @@ function json(data: object, status = 200) {
   return NextResponse.json(data, { status })
 }
 
+function kstTodayStartIso(): string {
+  const s = new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Seoul' })
+  return `${s}T00:00:00+09:00`
+}
+
 export async function POST(req: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -17,7 +22,6 @@ export async function POST(req: NextRequest) {
   const usePoints = Math.max(0, Math.floor(Number(body?.use_points) || 0))
   const useCharge = Math.max(0, Math.floor(Number(body?.use_charge) || 0))
   const giftTo = typeof body?.gift_to === 'string' && body.gift_to ? body.gift_to : null
-  const giftMessage = typeof body?.gift_message === 'string' ? body.gift_message.slice(0, 100) : null
   if (items.length === 0) return json({ ok: false, error: 'items_required' }, 400)
 
   type Item = { product_id: string; quantity: number }
@@ -29,8 +33,42 @@ export async function POST(req: NextRequest) {
   const svc = tryCreateServiceClient()
   const client = svc || supabase
 
+  const { data: msgLenRow } = await client
+    .from('admin_settings')
+    .select('value')
+    .eq('category', 'gift')
+    .eq('key', 'gift_message_max_length')
+    .maybeSingle()
+  const giftMsgMax = Math.min(500, Math.max(1, Number(msgLenRow?.value ?? 100)))
+  const giftMessage = typeof body?.gift_message === 'string' ? body.gift_message.slice(0, giftMsgMax) : null
+
   const { data: me } = await client.from('users').select('id').eq('auth_id', user.id).single()
   if (!me?.id) return json({ ok: false, error: 'user_row_missing' }, 400)
+
+  if (giftTo) {
+    const { data: maxRow } = await client
+      .from('admin_settings')
+      .select('value')
+      .eq('category', 'gift')
+      .eq('key', 'max_gift_per_day')
+      .maybeSingle()
+    const maxDay = Math.max(1, Number(maxRow?.value ?? 10))
+    const start = kstTodayStartIso()
+    const { count: sentGifts } = await client
+      .from('gifts')
+      .select('id', { count: 'exact', head: true })
+      .eq('sender_id', me.id)
+      .gte('created_at', start)
+    const { count: pendingGiftOrders } = await client
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('customer_id', me.id)
+      .not('gift_receiver_id', 'is', null)
+      .eq('gift_created', false)
+      .gte('created_at', start)
+    const used = (sentGifts || 0) + (pendingGiftOrders || 0)
+    if (used >= maxDay) return json({ ok: false, error: 'gift_daily_limit' }, 400)
+  }
 
   let validatedShareJournalId: string | null = null
   if (shareJournalId) {

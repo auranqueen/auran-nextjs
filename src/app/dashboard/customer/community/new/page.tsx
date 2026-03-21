@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-import NoticeBell from '@/components/NoticeBell'
+import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 
 type Category = 'skin' | 'review' | 'salon' | 'routine' | 'qa'
 
@@ -74,7 +74,7 @@ export default function CommunityNewPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-      <DashboardHeader title="글쓰기" right={<NoticeBell />} />
+      <DashboardHeader title="글쓰기" right={<CustomerHeaderRight />} />
       <div style={{ padding: '14px 16px 0' }}>
         <div style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 16, padding: '14px 14px' }}>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>카테고리</div>

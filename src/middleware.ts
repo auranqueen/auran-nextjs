@@ -46,6 +46,18 @@ async function getUserStatus(supabase: ReturnType<typeof createServerClient>, au
 
 const PRODUCTION_ORIGIN = 'https://www.auran.kr'
 
+function isSoftClientNavigation(req: NextRequest): boolean {
+  const rsc = req.headers.get('RSC') === '1'
+  const prefetch = req.headers.get('Next-Router-Prefetch') === '1'
+  return rsc || prefetch
+}
+
+function isSoftAuthPath(pathname: string): boolean {
+  if (pathname === '/myworld' || pathname.startsWith('/myworld/')) return true
+  if (pathname === '/my/gifts' || pathname.startsWith('/my/gifts/')) return true
+  return false
+}
+
 export async function middleware(req: NextRequest) {
   const url = req.nextUrl
   const host = url.hostname || ''
@@ -62,7 +74,8 @@ export async function middleware(req: NextRequest) {
   const isSuperConsole = pathname.startsWith('/super-console')
   const isDashboard = pathname.startsWith('/dashboard')
   const isAdmin = pathname.startsWith('/admin')
-  if (!isSuperConsole && !isDashboard && !isAdmin && !isProtectedPath) return NextResponse.next()
+  const softAuth = isSoftAuthPath(pathname)
+  if (!isSuperConsole && !isDashboard && !isAdmin && !isProtectedPath && !softAuth) return NextResponse.next()
 
   // super-console 로그인 페이지는 예외(비로그인 접근 허용)
   if (pathname === '/super-console/login') return NextResponse.next()
@@ -70,13 +83,23 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next()
   const supabase = createMiddlewareClient(req, res)
 
-  const { data: { session } } = await supabase.auth.getSession()
-  const sessionUser = session?.user || null
   const {
-    data: { user: safeUser },
-  } = sessionUser ? { data: { user: sessionUser } } : await supabase.auth.getUser()
-  const user = safeUser || sessionUser
+    data: { user },
+  } = await supabase.auth.getUser()
+
   if (!user) {
+    if (softAuth) {
+      if (isSoftClientNavigation(req)) {
+        res.cookies.set('auran_login_modal', '1', { path: '/', maxAge: 45, sameSite: 'lax' })
+        return res
+      }
+      const loginUrl = req.nextUrl.clone()
+      loginUrl.pathname = '/login'
+      loginUrl.search = ''
+      loginUrl.searchParams.set('redirect', `${pathname}${url.search || ''}`)
+      loginUrl.searchParams.set('role', 'customer')
+      return NextResponse.redirect(loginUrl)
+    }
     const redirectTarget = `${pathname}${url.search || ''}`
     if (isProtectedPath) {
       const loginUrl = req.nextUrl.clone()

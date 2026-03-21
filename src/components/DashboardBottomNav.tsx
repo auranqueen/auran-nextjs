@@ -1,7 +1,9 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { CART_COUNT_REFRESH_EVENT } from '@/lib/cartEvents'
 
 type Role = 'customer' | 'partner' | 'salon' | 'brand'
 
@@ -44,17 +46,44 @@ export default function DashboardBottomNav({ role }: { role: Role }) {
   const items = NAV[role]
   const [cartBadge, setCartBadge] = useState(0)
 
+  const supabase = createClient()
+  const refreshCartBadge = useCallback(async () => {
+    if (role !== 'customer') return
+    try {
+      const { data: auth } = await supabase.auth.getUser()
+      if (!auth?.user) {
+        setCartBadge(0)
+        return
+      }
+      const { data: me } = await supabase.from('users').select('id').eq('auth_id', auth.user.id).maybeSingle()
+      if (!me?.id) {
+        setCartBadge(0)
+        return
+      }
+      const { count } = await supabase.from('cart_items').select('id', { count: 'exact', head: true }).eq('user_id', me.id)
+      const n = count || 0
+      setCartBadge(n)
+      try {
+        localStorage.setItem('auran_cart_badge_count', String(n))
+      } catch {}
+    } catch {
+      setCartBadge(Number(localStorage.getItem('auran_cart_badge_count') || '0'))
+    }
+  }, [role, supabase])
+
   useEffect(() => {
     if (role !== 'customer' || typeof window === 'undefined') return
-    const read = () => setCartBadge(Number(localStorage.getItem('auran_cart_badge_count') || '0'))
-    read()
-    window.addEventListener('storage', read)
-    window.addEventListener('auran-cart-badge', read as EventListener)
-    return () => {
-      window.removeEventListener('storage', read)
-      window.removeEventListener('auran-cart-badge', read as EventListener)
+    void refreshCartBadge()
+    const onRefresh = () => {
+      void refreshCartBadge()
     }
-  }, [role])
+    window.addEventListener(CART_COUNT_REFRESH_EVENT, onRefresh)
+    window.addEventListener('storage', onRefresh)
+    return () => {
+      window.removeEventListener(CART_COUNT_REFRESH_EVENT, onRefresh)
+      window.removeEventListener('storage', onRefresh)
+    }
+  }, [role, refreshCartBadge])
 
   return (
     <div

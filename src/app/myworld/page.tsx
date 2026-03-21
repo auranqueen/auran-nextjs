@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import DashboardHeader from '@/components/DashboardHeader'
-import NoticeBell from '@/components/NoticeBell'
+import CustomerHeaderRight from '@/components/CustomerHeaderRight'
+import LoginRequiredModal from '@/components/LoginRequiredModal'
 import { createClient } from '@/lib/supabase/client'
 import ShareBottomSheet from '@/components/ShareBottomSheet'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
@@ -199,6 +200,7 @@ export default function MyWorldPage() {
   const lv5_purchase_leads_min = getSettingNum('star_level', 'lv5_purchase_leads', 50)
 
   const [loading, setLoading] = useState(true)
+  const [needLoginWall, setNeedLoginWall] = useState(false)
   const [me, setMe] = useState<ProfileRow | null>(null)
   const [tab, setTab] = useState<TabId>('journal')
 
@@ -617,29 +619,30 @@ export default function MyWorldPage() {
     const run = async () => {
       setLoading(true)
       try {
-        const { data: { session } } = await supabase.auth.getSession()
-        const sessionUser = session?.user || null
-        const { data: { user }, error: authErr } = sessionUser
-          ? { data: { user: sessionUser }, error: null as any }
-          : await supabase.auth.getUser()
-        const authUser = user || sessionUser
+        try {
+          if (typeof document !== 'undefined' && document.cookie.includes('auran_login_modal=')) {
+            document.cookie = 'auran_login_modal=; path=/; max-age=0'
+          }
+        } catch {}
 
-        if (!authUser || authErr) {
-          router.replace('/login?redirect=/myworld')
+        const { data: { user }, error: authErr } = await supabase.auth.getUser()
+        if (!user || authErr) {
+          setNeedLoginWall(true)
           return
         }
 
         const { data } = await supabase
           .from('users')
           .select('id,name,avatar_url,skin_type,points,charge_balance,star_level,total_likes,total_followers,purchase_leads')
-          .eq('auth_id', authUser.id)
+          .eq('auth_id', user.id)
           .single()
 
         if (!data?.id) {
-          router.replace('/login?redirect=/myworld')
+          setNeedLoginWall(true)
           return
         }
 
+        setNeedLoginWall(false)
         setMe(data as ProfileRow)
         await Promise.all([refreshJournals(data.id), refreshGuestbook(data.id), refreshReviews(data.id)])
       } finally {
@@ -1109,9 +1112,22 @@ export default function MyWorldPage() {
     )
   }
 
+  if (needLoginWall) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
+        <DashboardHeader title="마이월드" right={<CustomerHeaderRight />} />
+        <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 13, lineHeight: 1.6 }}>
+          로그인 후 마이월드를 이용할 수 있어요
+        </div>
+        <LoginRequiredModal open onClose={() => router.push('/')} returnPath="/myworld" />
+        <DashboardBottomNav role="customer" />
+      </div>
+    )
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-      <DashboardHeader title="마이월드" right={<NoticeBell />} />
+      <DashboardHeader title="마이월드" right={<CustomerHeaderRight />} />
 
       <div style={{ padding: '18px 18px 0' }}>
         {/* 프로필 영역 */}

@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-import NoticeBell from '@/components/NoticeBell'
+import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 
 type Post = {
   id: string
@@ -156,7 +156,7 @@ export default function CommunityPostDetailPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-      <DashboardHeader title="게시글" right={<NoticeBell />} />
+      <DashboardHeader title="게시글" right={<CustomerHeaderRight />} />
 
       <div style={{ padding: '14px 16px 0' }}>
         {loading ? (

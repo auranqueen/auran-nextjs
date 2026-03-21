@@ -1,7 +1,7 @@
 'use client'
 
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-import NoticeBell from '@/components/NoticeBell'
+import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import DashboardHeader from '@/components/DashboardHeader'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useMemo, useState } from 'react'
@@ -137,7 +137,7 @@ export default function CustomerCommunityPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110, position: 'relative' }}>
-      <DashboardHeader title={activeLabel} right={<NoticeBell />} />
+      <DashboardHeader title={activeLabel} right={<CustomerHeaderRight />} />
 
       {/* 검색 + 탭 */}
       <div style={{ padding: '12px 16px 0' }}>

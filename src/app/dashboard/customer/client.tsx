@@ -3,9 +3,10 @@
 import Image from 'next/image'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import NoticeBell from '@/components/NoticeBell'
+import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import { createClient } from '@/lib/supabase/client'
+import { broadcastCartCountRefresh } from '@/lib/cartEvents'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
 
 interface Props {
@@ -376,6 +377,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
       setToast('장바구니 저장 중 오류가 발생했어요')
       return
     }
+    broadcastCartCountRefresh()
     setToast('장바구니에 담았어요 🛒')
   }
 
@@ -460,7 +462,7 @@ export default function CustomerDashboardClient({ profile }: Props) {
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 120 }}>
       <div style={{ position: 'sticky', top: 0, zIndex: 20, backdropFilter: 'blur(12px)', background: 'rgba(10,12,15,0.92)', borderBottom: '1px solid var(--border)', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontFamily: "'Cinzel Decorative', serif", fontSize: 20, color: '#fff', letterSpacing: 2 }}>AURAN</div>
-        <NoticeBell />
+        <CustomerHeaderRight />
       </div>
 
       <div style={{ padding: 16 }}>

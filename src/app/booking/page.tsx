@@ -2,7 +2,7 @@
 
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-import NoticeBell from '@/components/NoticeBell'
+import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 
@@ -27,7 +27,7 @@ export default function BookingPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-      <DashboardHeader title="살롱예약" right={<NoticeBell />} />
+      <DashboardHeader title="살롱예약" right={<CustomerHeaderRight />} />
       <div style={{ padding: '18px 18px 0' }}>
         {loading ? (
           <div style={{ fontSize: 12, color: 'var(--text3)' }}>불러오는 중...</div>

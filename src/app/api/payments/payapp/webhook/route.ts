@@ -181,13 +181,24 @@ export async function POST(req: NextRequest) {
               message: orderRow.gift_message || null,
               status: 'pending',
             })
-            await client.from('notifications').insert({
-              user_id: orderRow.gift_receiver_id,
-              type: 'gift',
-              title: '선물이 도착했어요',
-              body: 'OO님이 선물을 보냈어요 🎁 선물함을 확인하세요',
-              is_read: false,
-            })
+            const { data: notifOn } = await client
+              .from('admin_settings')
+              .select('value')
+              .eq('category', 'gift')
+              .eq('key', 'gift_notification_enabled')
+              .maybeSingle()
+            const notifEnabled = Number(notifOn?.value ?? 1) === 1
+            if (notifEnabled) {
+              const { data: sender } = await client.from('users').select('name').eq('id', orderRow.customer_id).maybeSingle()
+              const senderName = (sender as any)?.name || 'OO'
+              await client.from('notifications').insert({
+                user_id: orderRow.gift_receiver_id,
+                type: 'gift',
+                title: '🎁 선물이 도착했어요',
+                body: `${senderName}님이 선물을 보냈어요! 선물함을 확인하세요`,
+                is_read: false,
+              })
+            }
             await client.from('orders').update({ gift_created: true }).eq('id', orderRow.id)
           }
         }

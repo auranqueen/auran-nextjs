@@ -2,7 +2,7 @@
 
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-import NoticeBell from '@/components/NoticeBell'
+import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -37,7 +37,7 @@ export default function AnalysisPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-      <DashboardHeader title="AI 피부분석" right={<NoticeBell />} />
+      <DashboardHeader title="AI 피부분석" right={<CustomerHeaderRight />} />
       <div style={{ padding: '18px 18px 0' }}>
         {loading ? (
           <div style={{ fontSize: 12, color: 'var(--text3)' }}>불러오는 중...</div>

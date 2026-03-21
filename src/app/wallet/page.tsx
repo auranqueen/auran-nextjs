@@ -2,7 +2,7 @@
 
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-import NoticeBell from '@/components/NoticeBell'
+import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import PaymentAuthGuard from '@/components/PaymentAuthGuard'
 import { createClient } from '@/lib/supabase/client'
 import { Suspense, useEffect, useRef, useState } from 'react'
@@ -96,7 +96,7 @@ function WalletPageInner() {
 
   return (
     <div style={{ height: '100dvh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      <DashboardHeader title="내 지갑" right={<NoticeBell />} />
+      <DashboardHeader title="내 지갑" right={<CustomerHeaderRight />} />
       <div style={{ padding: '18px 18px 0', flex: 1, overflowY: 'auto', paddingBottom: 220, scrollPaddingBottom: 220 }}>
         {showPaymentSuccess && (
           <div style={{ marginBottom: 14, padding: 14, background: 'rgba(76,173,126,0.2)', border: '1px solid rgba(76,173,126,0.5)', borderRadius: 12, color: '#4cad7e', fontSize: 13, fontWeight: 600 }}>

@@ -2,7 +2,7 @@
 
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-import NoticeBell from '@/components/NoticeBell'
+import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -13,6 +13,7 @@ export default function OrdersPage() {
   const [paymentDone, setPaymentDone] = useState(false)
   const [loading, setLoading] = useState(true)
   const [orders, setOrders] = useState<any[]>([])
+  const [giftToast, setGiftToast] = useState('')
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -36,7 +37,7 @@ export default function OrdersPage() {
       }
       const { data } = await supabase
         .from('orders')
-        .select('id,order_no,status,final_amount,ordered_at,order_items(product_name,quantity)')
+        .select('id,order_no,status,final_amount,ordered_at,gift_receiver_id,order_items(product_name,quantity)')
         .eq('customer_id', profile.id)
         .order('ordered_at', { ascending: false })
         .limit(20)
@@ -46,10 +47,29 @@ export default function OrdersPage() {
     run()
   }, [router, supabase])
 
+  useEffect(() => {
+    if (!paymentDone || !orders.length) return
+    const top = orders[0]
+    if (!top?.gift_receiver_id) return
+    let cancelled = false
+    ;(async () => {
+      const { data } = await supabase.from('users').select('name').eq('id', top.gift_receiver_id).maybeSingle()
+      if (!cancelled && data?.name) setGiftToast(`${data.name}님께 선물했어요 🎁`)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [paymentDone, orders, supabase])
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-      <DashboardHeader title="구매내역" right={<NoticeBell />} />
+      <DashboardHeader title="구매내역" right={<CustomerHeaderRight />} />
       <div style={{ padding: '18px 18px 0' }}>
+        {giftToast ? (
+          <div style={{ marginBottom: 12, padding: 12, background: 'rgba(140,180,255,0.12)', border: '1px solid rgba(140,180,255,0.35)', borderRadius: 12, fontSize: 13, color: '#bcd6ff', fontWeight: 700 }}>
+            {giftToast}
+          </div>
+        ) : null}
         {paymentDone && (
           <div style={{ marginBottom: 12, padding: 12, background: 'rgba(76,173,126,0.12)', border: '1px solid rgba(76,173,126,0.35)', borderRadius: 12, fontSize: 13, color: '#4cad7e', fontWeight: 600 }}>
             결제가 완료되었습니다.

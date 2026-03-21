@@ -134,6 +134,7 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
     keys: {
       gift_enabled: { label: '선물 기능 활성화', unit: '', type: 'number', defaultValue: '1' },
       gift_message_max_length: { label: '선물 메시지 최대 길이', unit: '자', type: 'number', defaultValue: '100' },
+      max_gift_per_day: { label: '하루 최대 선물 수', unit: '건', type: 'number', defaultValue: '10' },
       gift_notification_enabled: { label: '선물 알림 활성화', unit: '', type: 'number', defaultValue: '1' },
     },
   },

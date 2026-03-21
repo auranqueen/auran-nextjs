@@ -2,7 +2,7 @@
 
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-import NoticeBell from '@/components/NoticeBell'
+import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import { useEffect, useMemo, useState } from 'react'
 
 type DiaryEntry = {
@@ -64,7 +64,7 @@ export default function DiaryPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-      <DashboardHeader title="피부일지" right={<NoticeBell />} />
+      <DashboardHeader title="피부일지" right={<CustomerHeaderRight />} />
       <div style={{ padding: '18px 18px 0' }}>
         <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: '14px 14px', marginBottom: 12 }}>
           <div style={{ fontSize: 12, fontWeight: 900, color: '#fff', marginBottom: 10 }}>오늘의 기록</div>

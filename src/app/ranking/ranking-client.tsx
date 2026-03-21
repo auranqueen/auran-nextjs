@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import DashboardHeader from '@/components/DashboardHeader'
-import NoticeBell from '@/components/NoticeBell'
+import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 
 type Row = {
   id: string
@@ -53,7 +53,7 @@ export default function RankingClient({
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-      <DashboardHeader title="랭킹" right={<NoticeBell />} />
+      <DashboardHeader title="랭킹" right={<CustomerHeaderRight />} />
       <div style={{ padding: '16px 18px 0' }}>
         <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
           {[

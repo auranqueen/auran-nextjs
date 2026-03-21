@@ -5,7 +5,7 @@ import { Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-import NoticeBell from '@/components/NoticeBell'
+import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import { createClient } from '@/lib/supabase/client'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
 
@@ -29,7 +29,6 @@ function CheckoutPageInner() {
   const [paying, setPaying] = useState(false)
   const [toast, setToast] = useState('')
   const [chargeSheetOpen, setChargeSheetOpen] = useState(false)
-  const [qty, setQty] = useState(1)
 
   const toastRate = getSettingNum('toast', 'exchange_rate', 100)
   const checkoutToastFirst = getSettingNum('checkout', 'toast_first_priority', 1) === 1
@@ -45,7 +44,22 @@ function CheckoutPageInner() {
     [search]
   )
   const giftTo = search.get('gift_to') || ''
-  const giftMessage = search.get('message') || ''
+  const giftMessage = search.get('gift_message') || search.get('message') || ''
+
+  const qtyList = useMemo(() => {
+    const raw = String(search.get('qty') || '1')
+      .split(',')
+      .map((v) => v.trim())
+      .filter(Boolean)
+      .map((v) => Number(v))
+    const nums = raw.length ? raw : [1]
+    return nums.map((n) => Math.max(1, Math.min(99, Number.isFinite(n) ? n : 1)))
+  }, [search])
+
+  const orderedProducts = useMemo(() => {
+    const orderMap = new Map(productIds.map((id, i) => [id, i]))
+    return [...products].sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0))
+  }, [products, productIds])
 
   useEffect(() => {
     if (!toast) return
@@ -79,14 +93,19 @@ function CheckoutPageInner() {
           .gt('retail_price', 0)
         setProducts(rows || [])
       }
-      const q = Number(search.get('qty') || '1')
-      setQty(Math.max(1, Math.min(99, Number.isFinite(q) ? q : 1)))
       setLoading(false)
     }
     run()
   }, [supabase, router, productIds.join(','), search])
 
-  const subtotal = useMemo(() => products.reduce((s, p) => s + toNum(p.retail_price) * qty, 0), [products, qty])
+  const subtotal = useMemo(
+    () =>
+      orderedProducts.reduce((s, p, i) => {
+        const q = qtyList[i] ?? qtyList[0] ?? 1
+        return s + toNum(p.retail_price) * q
+      }, 0),
+    [orderedProducts, qtyList]
+  )
   const maxPointsUsable = useMemo(() => Math.min(points, Math.floor((subtotal * maxPointRate) / 100)), [points, subtotal, maxPointRate])
   const pointUsed = useMemo(() => {
     if (!usePoints) return 0
@@ -102,7 +121,7 @@ function CheckoutPageInner() {
   }, [maxPointsUsable])
 
   const onPay = async (allowCharge = true) => {
-    if (!products.length || !meId) return
+    if (!orderedProducts.length || !meId) return
     if (subtotal < minOrderAmount) {
       setToast(`최소 주문금액은 ₩${minOrderAmount.toLocaleString()}입니다`)
       return
@@ -119,7 +138,7 @@ function CheckoutPageInner() {
     setPaying(true)
     try {
       const payload = {
-        items: products.map((p) => ({ product_id: p.id, quantity: qty })),
+        items: orderedProducts.map((p, i) => ({ product_id: p.id, quantity: qtyList[i] ?? qtyList[0] ?? 1 })),
         use_points: pointUsed,
         use_charge: toastUsed,
         gift_to: giftTo || null,
@@ -156,7 +175,7 @@ function CheckoutPageInner() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-      <DashboardHeader title="체크아웃" right={<NoticeBell />} />
+      <DashboardHeader title="체크아웃" right={<CustomerHeaderRight />} />
       <div style={{ padding: 16 }}>
         {toast && <div style={{ marginBottom: 10, padding: 10, borderRadius: 10, border: '1px solid rgba(201,168,76,0.35)', background: 'rgba(201,168,76,0.12)', color: 'var(--gold)', fontSize: 12 }}>{toast}</div>}
         {loading ? (
@@ -164,12 +183,14 @@ function CheckoutPageInner() {
         ) : (
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-              {products.map((p) => (
+              {orderedProducts.map((p, idx) => {
+                const lineQty = qtyList[idx] ?? qtyList[0] ?? 1
+                return (
                 <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: 10, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
-                  <div style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>{p.name} · {qty}개</div>
-                  <div style={{ color: 'var(--gold)', fontSize: 12, fontWeight: 800 }}>₩{(toNum(p.retail_price) * qty).toLocaleString()}</div>
+                  <div style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>{p.name} · {lineQty}개</div>
+                  <div style={{ color: 'var(--gold)', fontSize: 12, fontWeight: 800 }}>₩{(toNum(p.retail_price) * lineQty).toLocaleString()}</div>
                 </div>
-              ))}
+              )})}
             </div>
             {!!giftTo && <div style={{ marginBottom: 10, fontSize: 12, color: '#bcd6ff' }}>🎁 선물 주문 · 받는 분 ID: {giftTo}</div>}
 

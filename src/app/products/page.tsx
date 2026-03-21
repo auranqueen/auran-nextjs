@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-import NoticeBell from '@/components/NoticeBell'
+import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useMemo, useState } from 'react'
@@ -134,7 +134,7 @@ function ProductsPageInner() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-      <DashboardHeader title="제품추천" right={<NoticeBell />} />
+      <DashboardHeader title="제품추천" right={<CustomerHeaderRight />} />
       <div style={{ padding: '18px 18px 0' }}>
         {specialIds.length > 0 && (
           <div style={{ marginBottom: 10, borderRadius: 10, border: '1px solid rgba(201,168,76,0.25)', background: 'rgba(201,168,76,0.08)', padding: '8px 10px', color: 'var(--gold)', fontSize: 12, fontWeight: 700 }}>
