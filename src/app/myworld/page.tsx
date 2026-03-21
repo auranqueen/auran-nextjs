@@ -1367,12 +1367,9 @@ export default function MyWorldPage() {
                       <div key={g.productId} style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 12 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', marginBottom: 8 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                            {g.product?.thumb_img ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img src={g.product.thumb_img} alt="" style={{ width: 32, height: 32, borderRadius: 10, objectFit: 'cover' }} />
-                            ) : (
-                              <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🧴</div>
-                            )}
+                            <div style={{ position: 'relative', width: 32, height: 32, borderRadius: 10, overflow: 'hidden', background: 'rgba(255,255,255,0.06)', flexShrink: 0 }}>
+                              <ProductThumbnail src={g.product?.thumb_img} alt={g.product?.name || ''} fill objectFit="cover" />
+                            </div>
                             <div style={{ minWidth: 0 }}>
                               <div style={{ fontSize: 12, color: '#fff', fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                 {g.product?.name || '제품'}
@@ -1509,15 +1506,8 @@ export default function MyWorldPage() {
                       </div>
 
                       <div style={{ display: 'flex', gap: 12 }}>
-                        <div style={{ width: 72, height: 72, borderRadius: 12, overflow: 'hidden', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
-                          {card.product.thumb_img ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={card.product.thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.55)' }}>
-                              🧴
-                            </div>
-                          )}
+                        <div style={{ position: 'relative', width: 72, height: 72, borderRadius: 12, overflow: 'hidden', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
+                          <ProductThumbnail src={card.product.thumb_img} alt={card.product.name || ''} fill objectFit="cover" />
                         </div>
 
                         <div style={{ flex: 1, minWidth: 0 }}>
