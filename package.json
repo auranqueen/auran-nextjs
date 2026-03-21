@@ -12,7 +12,9 @@
     "db:reset": "supabase db reset",
     "migrate:images": "ts-node --project tsconfig.scripts.json scripts/migrate-images.ts",
     "migrate:images:retry": "ts-node --project tsconfig.scripts.json scripts/retry-failed-images.ts",
-    "scrape:gernetic": "ts-node --project tsconfig.scripts.json scripts/scrape-gernetic.ts"
+    "scrape:gernetic": "ts-node --project tsconfig.scripts.json scripts/scrape-gernetic.ts",
+    "scrape:civasan": "ts-node --project tsconfig.scripts.json scripts/scrape-civasan.ts",
+    "scrape:all": "npm run scrape:gernetic && npm run scrape:civasan"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",

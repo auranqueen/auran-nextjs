@@ -20,6 +20,7 @@ failed-images.json
 
 # scraped vendor data
 scripts/gernetic-products.json
+scripts/civasan-products.json
 
 # Supabase local artifacts
 supabase/.temp/
