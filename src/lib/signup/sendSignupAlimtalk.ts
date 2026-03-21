@@ -1,4 +1,4 @@
-import { sendAlimtalkSms } from '@/lib/aligo/sendAlimtalk'
+import { sendAlimtalkSms } from '@/lib/ppurio/sendAlimtalk'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 
 function fmtDate(d: Date) {
@@ -37,14 +37,17 @@ export async function sendSignupAlimtalkIfNeeded(authUserId: string): Promise<vo
   const wcMin = Number(wc?.min_order ?? 50000)
   const wcEnd = wc?.end_at ? fmtDate(new Date(String(wc.end_at))) : '2026.12.31까지'
 
+  const tplSignup = process.env.PPURIO_TEMPLATE_SIGNUP?.trim()
+  const tplCoupon = process.env.PPURIO_TEMPLATE_COUPON?.trim()
+
   if (Number(sSignup?.value ?? 1) === 1) {
     const msg1 = `${name}님,\nAURAN 회원가입이 완료되었습니다!\n\n안녕하세요, ${name}님 🎉\nAURAN 가입을 환영해요.\n✨ ${welcomePts.toLocaleString()}P 즉시 적립 완료\n🎫 ${wcName} 발급 완료\n■ 가입일: ${joinDate}\n■ 가입방법: ${provider}\n\n나의 혜택은 앱에서 확인하세요.`
-    await sendAlimtalkSms({ phone, message: msg1, title: 'AURAN 가입 완료' })
+    await sendAlimtalkSms({ phone, message: msg1, title: 'AURAN 가입 완료', templateCode: tplSignup })
   }
 
   if (Number(sCoupon?.value ?? 1) === 1) {
     const msg2 = `${name}고객님께\nAURAN 웰컴 쿠폰이 발행되었습니다.\n■ 쿠폰명: ${wcName}\n■ 할인금액: ${wcAmt.toLocaleString()}원\n■ 사용조건: ${wcMin.toLocaleString()}원 이상 구매시\n■ 유효기간: ${wcEnd}\n\nAURAN 앱 → 나 → 쿠폰함에서 확인하세요!`
-    await sendAlimtalkSms({ phone, message: msg2, title: 'AURAN 웰컴 쿠폰' })
+    await sendAlimtalkSms({ phone, message: msg2, title: 'AURAN 웰컴 쿠폰', templateCode: tplCoupon })
   }
 
   await client.from('users').update({ signup_alimtalk_sent_at: new Date().toISOString() }).eq('id', u.id)

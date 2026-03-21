@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
-import { sendAlimtalkSms } from '@/lib/aligo/sendAlimtalk'
+import { sendAlimtalkSms } from '@/lib/ppurio/sendAlimtalk'
 
 function json(data: object, status = 200) {
   return NextResponse.json(data, { status })
@@ -33,6 +33,10 @@ export async function POST(req: NextRequest) {
   const phone = typeof body?.phone === 'string' ? body.phone.replace(/\D/g, '') : ''
   const message = typeof body?.message === 'string' ? body.message : ''
   const title = typeof body?.title === 'string' ? body.title : 'AURAN 테스트'
+  const templateCode =
+    typeof body?.template_code === 'string' && body.template_code.trim()
+      ? body.template_code.trim()
+      : process.env.PPURIO_TEMPLATE_TEST?.trim() || process.env.PPURIO_TEMPLATE_DEFAULT?.trim() || ''
   if (!phone || phone.length < 10) return json({ ok: false, error: 'invalid_phone' }, 400)
   if (!message.trim()) return json({ ok: false, error: 'message_required' }, 400)
 
@@ -44,6 +48,6 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
   if (Number(onRow?.value ?? 1) !== 1) return json({ ok: false, error: 'alimtalk_disabled' }, 400)
 
-  const r = await sendAlimtalkSms({ phone, message, title })
+  const r = await sendAlimtalkSms({ phone, message, title, templateCode: templateCode || undefined })
   return json({ ok: r.ok, skipped: r.skipped, raw: r.raw })
 }

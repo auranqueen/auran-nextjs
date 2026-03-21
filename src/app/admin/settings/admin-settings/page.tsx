@@ -326,8 +326,10 @@ export default function AdminSettingsAdminSettingsPage() {
 
       {active === 'alimtalk' && (
         <div style={{ marginTop: 16, background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 16, padding: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 8 }}>테스트 발송 (알리고 SMS)</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 10 }}>ALIGO_API_KEY, ALIGO_USER_ID, KAKAO_SENDER_PHONE 환경변수 필요</div>
+          <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 8 }}>테스트 발송 (뿌리오 알림톡)</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 10 }}>
+            PPURIO_API_KEY, PPURIO_SENDER_KEY, PPURIO_FROM, 템플릿 코드(PPURIO_TEMPLATE_TEST 등) — 미설정 시 로그만
+          </div>
           <input
             value={testPhone}
             onChange={(e) => setTestPhone(e.target.value)}
