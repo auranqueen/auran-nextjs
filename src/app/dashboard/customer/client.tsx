@@ -583,26 +583,6 @@ export default function CustomerDashboardClient({
           </div>
         )}
 
-        <div style={{ padding: '12px 16px 0' }}>
-          <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>안녕하세요, {profile?.name || '고객'}님</div>
-          <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>오늘도 아름다운 하루를 시작해요.</div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, margin: '12px 16px 0' }}>
-          <div style={{ border: '1px solid rgba(201,168,76,0.28)', background: 'rgba(201,168,76,0.1)', borderRadius: 14, padding: 12 }}>
-            <div style={{ fontSize: 10, color: 'rgba(201,168,76,0.75)' }}>포인트</div>
-            <div style={{ marginTop: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: 'var(--gold)' }}>
-              {wallet.points.toLocaleString()}P
-            </div>
-          </div>
-          <div style={{ border: '1px solid rgba(76,173,126,0.28)', background: 'rgba(76,173,126,0.1)', borderRadius: 14, padding: 12 }}>
-            <div style={{ fontSize: 10, color: 'rgba(76,173,126,0.75)' }}>충전 잔액</div>
-            <div style={{ marginTop: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: '#4cad7e' }}>
-              ₩{wallet.balance.toLocaleString()}
-            </div>
-          </div>
-        </div>
-
         {/* 1. 배너 슬라이더 */}
         <div style={{ marginTop: 16, position: 'relative', width: '100%', aspectRatio: '2 / 1', background: '#111' }}>
           {homeInitLoading ? (
@@ -652,6 +632,26 @@ export default function CustomerDashboardClient({
               ))}
             </div>
           ) : null}
+        </div>
+
+        <div style={{ padding: '12px 16px 0' }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>안녕하세요, {profile?.name || '고객'}님</div>
+          <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 2 }}>오늘도 아름다운 하루를 시작해요.</div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, margin: '12px 16px 0' }}>
+          <div style={{ border: '1px solid rgba(201,168,76,0.28)', background: 'rgba(201,168,76,0.1)', borderRadius: 14, padding: 12 }}>
+            <div style={{ fontSize: 10, color: 'rgba(201,168,76,0.75)' }}>포인트</div>
+            <div style={{ marginTop: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: 'var(--gold)' }}>
+              {wallet.points.toLocaleString()}P
+            </div>
+          </div>
+          <div style={{ border: '1px solid rgba(76,173,126,0.28)', background: 'rgba(76,173,126,0.1)', borderRadius: 14, padding: 12 }}>
+            <div style={{ fontSize: 10, color: 'rgba(76,173,126,0.75)' }}>충전 잔액</div>
+            <div style={{ marginTop: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: '#4cad7e' }}>
+              ₩{wallet.balance.toLocaleString()}
+            </div>
+          </div>
         </div>
 
         {/* 2. AI 피부분석 CTA */}
