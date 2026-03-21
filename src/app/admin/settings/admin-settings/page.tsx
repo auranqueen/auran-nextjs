@@ -198,6 +198,12 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       coupon_enabled: { label: '쿠폰 알림톡', unit: '', type: 'number', defaultValue: '1' },
       order_enabled: { label: '주문 알림톡', unit: '', type: 'number', defaultValue: '1' },
       gift_enabled: { label: '선물 알림톡', unit: '', type: 'number', defaultValue: '1' },
+      wallet_charge_alimtalk: {
+        label: '토스트 충전 완료 알림톡 (페이앱 결제 완료 후 뿌리오)',
+        unit: '',
+        type: 'number',
+        defaultValue: '0',
+      },
     },
   },
 }

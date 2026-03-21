@@ -250,6 +250,25 @@ export default function NoticeBell({
                 )}
                 <button
                   type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    router.push('/my/notifications')
+                  }}
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(255,255,255,0.06)',
+                    color: 'rgba(255,255,255,0.85)',
+                    borderRadius: 10,
+                    padding: '6px 10px',
+                    cursor: 'pointer',
+                    fontSize: 11,
+                    fontWeight: 800,
+                  }}
+                >
+                  알림장
+                </button>
+                <button
+                  type="button"
                   onClick={() => router.push('/notices')}
                   style={{
                     border: '1px dashed rgba(255,255,255,0.35)',

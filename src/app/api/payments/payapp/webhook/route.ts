@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendWalletChargeCompleteAlimtalkIfEnabled } from '@/lib/payments/sendWalletChargeCompleteAlimtalk'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 
 function mustEnv(name: string): string {
@@ -122,16 +123,18 @@ export async function POST(req: NextRequest) {
         const nextBalance = Number(u?.charge_balance || 0) + amount
         const nextPoints = Number(u?.points || 0) + pointsToAdd
         await client.from('users').update({ charge_balance: nextBalance, points: nextPoints }).eq('id', intent.user_id)
-        const { data: userRow } = await client.from('users').select('auth_id').eq('id', intent.user_id).single()
-        if (userRow?.auth_id) {
-          await client.from('notifications').insert({
-            user_id: userRow.auth_id,
-            type: 'payment',
-            title: '충전 완료',
-            body: `충전금 ₩${amount.toLocaleString()} · 적립 포인트 ${pointsToAdd.toLocaleString()}P`,
-            is_read: false,
-          })
-        }
+        await client.from('notifications').insert({
+          user_id: intent.user_id,
+          type: 'payment',
+          title: '충전 완료',
+          body: `충전금 ₩${amount.toLocaleString()} · 적립 포인트 ${pointsToAdd.toLocaleString()}P`,
+          is_read: false,
+        })
+        await sendWalletChargeCompleteAlimtalkIfEnabled(client, {
+          userId: intent.user_id,
+          amount,
+          pointsAdded: pointsToAdd,
+        })
       }
       // 주문 결제 완료: 알림만 (주문 상태는 이미 주문확인)
       if (intent.kind === 'order' && intent.target_id && intent.user_id) {
@@ -141,17 +144,14 @@ export async function POST(req: NextRequest) {
           .select('id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,gift_receiver_id,gift_message,payment_applied,gift_created,user_coupon_id')
           .eq('id', intent.target_id)
           .maybeSingle()
-        const { data: userRow } = await client.from('users').select('auth_id').eq('id', intent.user_id).single()
         const amount = Number(intent.amount || 0)
-        if (userRow?.auth_id) {
-          await client.from('notifications').insert({
-            user_id: userRow.auth_id,
-            type: 'payment',
-            title: '주문 결제 완료',
-            body: `주문이 결제되었습니다. ₩${amount.toLocaleString()}${orderRow?.order_no ? ` · 주문번호 ${orderRow.order_no}` : ''}`,
-            is_read: false,
-          })
-        }
+        await client.from('notifications').insert({
+          user_id: intent.user_id,
+          type: 'payment',
+          title: '주문 결제 완료',
+          body: `주문이 결제되었습니다. ₩${amount.toLocaleString()}${orderRow?.order_no ? ` · 주문번호 ${orderRow.order_no}` : ''}`,
+          is_read: false,
+        })
 
         if (orderRow?.id && !orderRow.payment_applied) {
           const pointUsed = Math.max(0, Number(orderRow.point_used || 0))
@@ -298,16 +298,13 @@ export async function POST(req: NextRequest) {
         const nextBalance = Math.max(0, curBalance - amount)
         const nextPoints = Math.max(0, curPoints - pointsReclaim)
         await client.from('users').update({ charge_balance: nextBalance, points: nextPoints }).eq('id', intent.user_id)
-        const { data: userRow } = await client.from('users').select('auth_id').eq('id', intent.user_id).single()
-        if (userRow?.auth_id) {
-          await client.from('notifications').insert({
-            user_id: userRow.auth_id,
-            type: 'payment',
-            title: '충전 취소',
-            body: `₩${amount.toLocaleString()} 충전이 취소되었습니다. 지갑 잔액이 조정되었습니다.`,
-            is_read: false,
-          })
-        }
+        await client.from('notifications').insert({
+          user_id: intent.user_id,
+          type: 'payment',
+          title: '충전 취소',
+          body: `₩${amount.toLocaleString()} 충전이 취소되었습니다. 지갑 잔액이 조정되었습니다.`,
+          is_read: false,
+        })
       }
       if (intent.status === 'paid' && intent.kind === 'order' && intent.target_id) {
         const { data: orderRow } = await client
@@ -342,10 +339,9 @@ export async function POST(req: NextRequest) {
             .from('orders')
             .update({ status: '취소', payment_applied: false })
             .eq('id', orderRow.id)
-          const { data: buyerAuth } = await client.from('users').select('auth_id').eq('id', orderRow.customer_id).maybeSingle()
-          if (buyerAuth?.auth_id) {
+          if (orderRow.customer_id) {
             await client.from('notifications').insert({
-              user_id: buyerAuth.auth_id,
+              user_id: orderRow.customer_id,
               type: 'system',
               title: '주문 결제 취소',
               body: '결제가 취소되었습니다. 쿠폰은 다시 사용할 수 있어요.',

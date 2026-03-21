@@ -47,10 +47,13 @@ function CheckoutPageInner() {
   const [userCoupons, setUserCoupons] = useState<UcRow[]>([])
   const [selectedUserCouponId, setSelectedUserCouponId] = useState<string | null>(null)
   const [authUid, setAuthUid] = useState<string | null>(null)
+  const [recipientName, setRecipientName] = useState('')
+  const [recipientPhone, setRecipientPhone] = useState('')
+  const [address, setAddress] = useState('')
+  const [payWithToast, setPayWithToast] = useState(true)
 
   const toastRate = getSettingNum('toast', 'exchange_rate', 100)
   const maxCouponPct = getSettingNum('coupon', 'max_percent_discount', 70)
-  const checkoutToastFirst = getSettingNum('checkout', 'toast_first_priority', 1) === 1
   const maxPointRate = getSettingNum('checkout', 'point_max_ratio', 20) || getSettingNum('toast', 'point_max_usage_rate', 20)
   const showChargeOption = getSettingNum('checkout', 'show_charge_option', 1) === 1
   const minOrderAmount = getSettingNum('checkout', 'min_order_amount', 0)
@@ -64,6 +67,7 @@ function CheckoutPageInner() {
   )
   const giftTo = search.get('gift_to') || ''
   const giftMessage = search.get('gift_message') || search.get('message') || ''
+  const shareJournalId = search.get('share_journal_id') || ''
 
   const qtyList = useMemo(() => {
     const raw = String(search.get('qty') || '1')
@@ -95,13 +99,15 @@ function CheckoutPageInner() {
         router.replace('/login?redirect=/checkout')
         return
       }
-      const { data: me } = await supabase.from('users').select('id,points,charge_balance').eq('auth_id', user.id).maybeSingle()
+      const { data: me } = await supabase.from('users').select('id,name,phone,points,charge_balance').eq('auth_id', user.id).maybeSingle()
       if (!me?.id) {
         router.replace('/login?redirect=/checkout')
         return
       }
       setAuthUid(user.id)
       setMeId(me.id)
+      setRecipientName(String((me as any).name || ''))
+      setRecipientPhone(String((me as any).phone || ''))
       setPoints(toNum(me.points))
       setBalance(toNum(me.charge_balance))
       const { rows: ucs, error: ucErr } = await fetchUserCouponsWithCoupons(supabase, user.id, { status: 'unused' })
@@ -162,7 +168,7 @@ function CheckoutPageInner() {
     return Math.min(maxPointsUsable, input, afterCoupon)
   }, [usePoints, pointInput, maxPointsUsable, afterCoupon])
   const remaining = Math.max(0, afterCoupon - pointUsed)
-  const toastUsed = checkoutToastFirst ? Math.min(balance, remaining) : 0
+  const toastUsed = payWithToast ? Math.min(balance, remaining) : 0
   const needCharge = Math.max(0, remaining - toastUsed)
 
   useEffect(() => {
@@ -219,6 +225,10 @@ function CheckoutPageInner() {
         use_charge: toastUsed,
         gift_to: giftTo || null,
         gift_message: giftMessage || null,
+        recipient_name: recipientName.trim() || null,
+        recipient_phone: recipientPhone.trim() || null,
+        address: address.trim() || null,
+        share_journal_id: shareJournalId || null,
       }
       if (selectedUserCouponId && couponDiscount > 0) payload.user_coupon_id = selectedUserCouponId
       const orderRes = await fetch('/api/orders/create', {
@@ -270,6 +280,43 @@ function CheckoutPageInner() {
               )})}
             </div>
             {!!giftTo && <div style={{ marginBottom: 10, fontSize: 12, color: '#bcd6ff' }}>🎁 선물 주문 · 받는 분 ID: {giftTo}</div>}
+
+            <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)' }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 10 }}>배송 정보</div>
+              <input
+                type="text"
+                placeholder="받는 분 이름"
+                value={recipientName}
+                onChange={(e) => setRecipientName(e.target.value)}
+                style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }}
+              />
+              <input
+                type="tel"
+                placeholder="연락처"
+                value={recipientPhone}
+                onChange={(e) => setRecipientPhone(e.target.value)}
+                style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }}
+              />
+              <textarea
+                placeholder="주소"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                rows={2}
+                style={{ width: '100%', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff', resize: 'none' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)' }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 8 }}>결제 수단</div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: 12, color: '#fff' }}>
+                <input type="radio" name="pay" checked={payWithToast} onChange={() => setPayWithToast(true)} />
+                🍞 토스트 잔액으로 차감 (가능한 범위까지)
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#fff' }}>
+                <input type="radio" name="pay" checked={!payWithToast} onChange={() => setPayWithToast(false)} />
+                💳 PayApp 카드 (토스트 미사용 · 남은 금액은 카드)
+              </label>
+            </div>
 
             <button
               type="button"

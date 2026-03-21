@@ -11,8 +11,15 @@ function computeExpiredAtIso(couponEndAt: string | null | undefined): string {
   return new Date(now + days30).toISOString()
 }
 
+export type IssuedUserCouponPayload = {
+  id: string
+  user_id: string
+  coupon_id: string
+  issued_at: string
+}
+
 export type IssueCouponResult =
-  | { ok: true }
+  | { ok: true; issued: IssuedUserCouponPayload }
   | { ok: false; error: string; status: number }
 
 /**
@@ -28,9 +35,14 @@ export async function issueCouponManualToUser(
     return { ok: false, error: 'missing_fields', status: 400 }
   }
 
+  const { data: authUser, error: authLookupErr } = await svc.auth.admin.getUserById(user_auth_id)
+  if (authLookupErr || !authUser?.user) {
+    return { ok: false, error: 'user_not_found', status: 400 }
+  }
+
   const { data: coupon, error: cErr } = await svc
     .from('coupons')
-    .select('id,name,issued_count,max_issue_count,end_at')
+    .select('id,name,issued_count,max_issue_count,end_at,coupon_type')
     .eq('id', coupon_id)
     .maybeSingle()
 
@@ -44,6 +56,7 @@ export async function issueCouponManualToUser(
     issued_count?: number
     max_issue_count?: number | null
     end_at?: string | null
+    coupon_type?: string | null
   }
   if (c.max_issue_count != null && (c.issued_count || 0) >= c.max_issue_count) {
     return { ok: false, error: 'issue_limit_reached', status: 400 }
@@ -70,19 +83,38 @@ export async function issueCouponManualToUser(
     expired_at: expiredAt,
   }
 
-  let insErr = (await svc.from('user_coupons').insert(insertRow as any)).error
+  let insRes = await svc.from('user_coupons').insert(insertRow as any).select('id,user_id,coupon_id,issued_at').single()
+  let insErr = insRes.error
   if (insErr && /expired_at|created_at|column .* does not exist|Could not find/i.test(insErr.message)) {
-    insErr = (
-      await svc.from('user_coupons').insert({
+    insRes = await svc
+      .from('user_coupons')
+      .insert({
         user_id: user_auth_id,
         coupon_id,
         status: 'unused',
         issued_at: issuedAt,
       } as any)
-    ).error
+      .select('id,user_id,coupon_id,issued_at')
+      .single()
+    insErr = insRes.error
   }
   if (insErr) {
+    if (/23503|foreign key/i.test(insErr.message || '') || insErr.code === '23503') {
+      return { ok: false, error: 'user_not_found', status: 400 }
+    }
     return { ok: false, error: insErr.message || 'user_coupons_insert_failed', status: 500 }
+  }
+  let inserted = insRes.data as IssuedUserCouponPayload
+  if (!inserted?.id) {
+    const { data: row2 } = await svc
+      .from('user_coupons')
+      .select('id,user_id,coupon_id,issued_at')
+      .eq('user_id', user_auth_id)
+      .eq('coupon_id', coupon_id)
+      .order('issued_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (row2) inserted = row2 as IssuedUserCouponPayload
   }
 
   await svc
@@ -92,15 +124,18 @@ export async function issueCouponManualToUser(
 
   const { data: recipient } = await svc.from('users').select('id').eq('auth_id', user_auth_id).maybeSingle()
   const couponName = (c.name || '쿠폰').trim()
+  const isSpecial = (c.coupon_type || 'regular') === 'special_event'
   if (recipient?.id) {
     await insertNotificationForProfile(svc, recipient.id, {
       type: 'coupon_issued',
-      title: '🎁 쿠폰이 도착했어요!',
-      body: `[${couponName}] 쿠폰이 발급되었습니다.`,
+      title: isSpecial ? '🎁 특별 쿠폰이 도착했어요!' : '🎁 쿠폰이 도착했어요!',
+      body: isSpecial
+        ? `[${couponName}] 쿠폰이 발급되었습니다. 유효기간 내 사용해보세요 ✨`
+        : `[${couponName}] 쿠폰이 발급되었습니다.`,
       link: '/my/coupons',
       icon: '🎁',
     })
   }
 
-  return { ok: true }
+  return { ok: true, issued: inserted }
 }

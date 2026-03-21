@@ -7,12 +7,14 @@ import DashboardHeader from '@/components/DashboardHeader'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
+import { getCustomerGradeLabel } from '@/lib/customerGrade'
 
 type ProfileRow = {
   id: string
   name: string
   avatar_url?: string | null
   skin_type?: string | null
+  customer_grade?: string | null
   points: number
   charge_balance: number
 }
@@ -41,7 +43,7 @@ export default function MyPage() {
 
         const { data: profile } = await supabase
           .from('users')
-          .select('id,name,avatar_url,skin_type,points,charge_balance')
+          .select('id,name,avatar_url,skin_type,customer_grade,points,charge_balance')
           .eq('auth_id', data.user.id)
           .single()
 
@@ -86,9 +88,12 @@ export default function MyPage() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 16, color: '#fff', fontWeight: 900, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{me.name}</div>
-                  <div style={{ marginTop: 8 }}>
+                  <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     <span style={{ border: '1px solid rgba(201,168,76,0.35)', background: 'rgba(201,168,76,0.12)', color: 'var(--gold)', fontWeight: 900, fontSize: 12, padding: '6px 10px', borderRadius: 999 }}>
                       {skinBadgeText(me.skin_type)}
+                    </span>
+                    <span style={{ border: '1px solid rgba(120,140,200,0.35)', background: 'rgba(120,140,200,0.12)', color: 'rgba(200,210,255,0.95)', fontWeight: 900, fontSize: 12, padding: '6px 10px', borderRadius: 999 }}>
+                      등급 {getCustomerGradeLabel(me.customer_grade)}
                     </span>
                   </div>
                 </div>

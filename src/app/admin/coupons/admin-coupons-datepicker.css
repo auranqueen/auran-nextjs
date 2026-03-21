@@ -25,6 +25,22 @@
   z-index: 300;
 }
 
+@keyframes auran-admin-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.auran-admin-issue-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #b5e6c8;
+  border-radius: 50%;
+  animation: auran-admin-spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
+
 .auran-admin-datepicker-popper .react-datepicker {
   font-family: inherit;
   background: #11161b;

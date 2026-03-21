@@ -1,9 +1,7 @@
 'use client'
 
 import { usePathname, useRouter } from 'next/navigation'
-import { useCallback, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { CART_COUNT_REFRESH_EVENT } from '@/lib/cartEvents'
+import { useCartStore } from '@/stores/cartStore'
 
 type Role = 'customer' | 'partner' | 'salon' | 'brand'
 
@@ -44,46 +42,7 @@ export default function DashboardBottomNav({ role }: { role: Role }) {
   const router = useRouter()
   const pathname = usePathname()
   const items = NAV[role]
-  const [cartBadge, setCartBadge] = useState(0)
-
-  const supabase = createClient()
-  const refreshCartBadge = useCallback(async () => {
-    if (role !== 'customer') return
-    try {
-      const { data: auth } = await supabase.auth.getUser()
-      if (!auth?.user) {
-        setCartBadge(0)
-        return
-      }
-      const { data: me } = await supabase.from('users').select('id').eq('auth_id', auth.user.id).maybeSingle()
-      if (!me?.id) {
-        setCartBadge(0)
-        return
-      }
-      const { count } = await supabase.from('cart_items').select('id', { count: 'exact', head: true }).eq('user_id', me.id)
-      const n = count || 0
-      setCartBadge(n)
-      try {
-        localStorage.setItem('auran_cart_badge_count', String(n))
-      } catch {}
-    } catch {
-      setCartBadge(Number(localStorage.getItem('auran_cart_badge_count') || '0'))
-    }
-  }, [role, supabase])
-
-  useEffect(() => {
-    if (role !== 'customer' || typeof window === 'undefined') return
-    void refreshCartBadge()
-    const onRefresh = () => {
-      void refreshCartBadge()
-    }
-    window.addEventListener(CART_COUNT_REFRESH_EVENT, onRefresh)
-    window.addEventListener('storage', onRefresh)
-    return () => {
-      window.removeEventListener(CART_COUNT_REFRESH_EVENT, onRefresh)
-      window.removeEventListener('storage', onRefresh)
-    }
-  }, [role, refreshCartBadge])
+  const cartBadge = useCartStore((s) => s.items.reduce((a, i) => a + i.quantity, 0))
 
   return (
     <div

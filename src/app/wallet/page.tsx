@@ -171,6 +171,9 @@ function WalletPageInner() {
                     )
                   })}
                 </div>
+                <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.5, padding: '0 2px' }}>
+                  <strong style={{ color: 'rgba(255,255,255,0.55)' }}>충전하기</strong> — 토스트 굽기는 결제 금액만큼 지갑에 충전하는 단계예요. 충전된 금액은 주문 결제 시 토스트로 사용돼요.
+                </div>
 
                 {/* 방식 A: 고정 금액 버튼 */}
                 {chargeMode === 'preset' && (

@@ -43,6 +43,9 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
   const giftMsgMax = Math.min(500, Math.max(1, Number(msgLenRow?.value ?? 100)))
   const giftMessage = typeof body?.gift_message === 'string' ? body.gift_message.slice(0, giftMsgMax) : null
+  const recipientName = typeof body?.recipient_name === 'string' ? body.recipient_name.trim().slice(0, 80) : ''
+  const recipientPhone = typeof body?.recipient_phone === 'string' ? body.recipient_phone.trim().slice(0, 40) : ''
+  const address = typeof body?.address === 'string' ? body.address.trim().slice(0, 500) : ''
 
   const { data: me } = await client.from('users').select('id').eq('auth_id', user.id).single()
   if (!me?.id) return json({ ok: false, error: 'user_row_missing' }, 400)
@@ -179,6 +182,9 @@ export async function POST(req: NextRequest) {
       gift_receiver_id: giftTo,
       gift_message: giftMessage,
       user_coupon_id: validatedUserCouponId,
+      recipient_name: recipientName || null,
+      recipient_phone: recipientPhone || null,
+      address: address || null,
     })
     .select('id,order_no,final_amount')
     .single()

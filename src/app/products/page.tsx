@@ -4,44 +4,91 @@ import Link from 'next/link'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
+import ProductThumbImage from '@/components/ProductThumbImage'
 import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useMemo, useState } from 'react'
+import { useCartStore } from '@/stores/cartStore'
 
 function ProductCard({ p }: { p: any }) {
-  const [imgError, setImgError] = useState(false)
-  const thumbUrl = p.thumb_img && !imgError ? p.thumb_img : null
+  const [toast, setToast] = useState('')
+  const addItem = useCartStore((s) => s.addItem)
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(''), 2000)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  const onCart = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const price = Number(p.retail_price) || 0
+    if (price < 1) {
+      setToast('가격이 설정된 상품만 담을 수 있어요')
+      return
+    }
+    const { wasNewLine } = addItem({
+      product_id: String(p.id),
+      name: String(p.name || '제품'),
+      price,
+      thumb_img: p.thumb_img ?? null,
+      brand_name: p.brands?.name || '',
+      quantity: 1,
+    })
+    setToast(wasNewLine ? '🛒 장바구니에 담겼어요!' : '수량이 +1 되었습니다')
+  }
+
   return (
-    <Link
-      href={`/products/${p.id}`}
+    <div
       style={{
-        textDecoration: 'none',
-        color: 'inherit',
-        display: 'block',
+        position: 'relative',
+        background: 'rgba(255,255,255,0.04)',
+        border: '1px solid rgba(255,255,255,0.10)',
+        borderRadius: 14,
+        padding: '14px 14px',
+        display: 'flex',
+        gap: 10,
+        alignItems: 'stretch',
         userSelect: 'none',
         WebkitUserSelect: 'none',
       }}
     >
-      <div
+      {toast ? (
+        <div
+          style={{
+            position: 'absolute',
+            left: 12,
+            right: 12,
+            top: -6,
+            zIndex: 2,
+            padding: '8px 10px',
+            borderRadius: 10,
+            border: '1px solid rgba(201,168,76,0.35)',
+            background: 'rgba(201,168,76,0.14)',
+            color: 'var(--gold)',
+            fontSize: 11,
+            fontWeight: 800,
+            textAlign: 'center',
+          }}
+        >
+          {toast}
+        </div>
+      ) : null}
+      <Link
+        href={`/products/${p.id}`}
         style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.10)',
-          borderRadius: 14,
-          padding: '14px 14px',
+          textDecoration: 'none',
+          color: 'inherit',
           display: 'flex',
           gap: 12,
+          flex: 1,
+          minWidth: 0,
           cursor: 'pointer',
-          userSelect: 'none',
-          WebkitUserSelect: 'none',
         }}
       >
-        <div style={{ width: 72, height: 72, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: 'rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {thumbUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={thumbUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', pointerEvents: 'none' }} onError={() => setImgError(true)} />
-          ) : (
-            <span style={{ fontSize: 24, opacity: 0.4 }}>🧴</span>
-          )}
+        <div style={{ position: 'relative', width: 72, height: 72, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: 'rgba(0,0,0,0.2)' }}>
+          <ProductThumbImage src={p.thumb_img} alt={p.name || ''} fill sizes="72px" />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{p.name}</div>
@@ -56,8 +103,28 @@ function ProductCard({ p }: { p: any }) {
             </div>
           </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+      <button
+        type="button"
+        onClick={onCart}
+        aria-label="장바구니에 담기"
+        style={{
+          alignSelf: 'center',
+          flexShrink: 0,
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          border: '1px solid rgba(201,168,76,0.35)',
+          background: 'rgba(201,168,76,0.1)',
+          fontSize: 18,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        🛒
+      </button>
+    </div>
   )
 }
 

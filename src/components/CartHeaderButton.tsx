@@ -1,9 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import { CART_COUNT_REFRESH_EVENT } from '@/lib/cartEvents'
+import { useEffect, useRef, useState } from 'react'
+import { useCartStore } from '@/stores/cartStore'
 
 const btnStyle: React.CSSProperties = {
   width: 34,
@@ -22,56 +21,34 @@ const btnStyle: React.CSSProperties = {
 }
 
 export default function CartHeaderButton() {
-  const supabase = createClient()
-  const [count, setCount] = useState(0)
-
-  const refresh = useCallback(async () => {
-    try {
-      const { data: auth } = await supabase.auth.getUser()
-      if (!auth?.user) {
-        setCount(0)
-        try {
-          localStorage.setItem('auran_cart_badge_count', '0')
-        } catch {}
-        return
-      }
-      const { data: me } = await supabase.from('users').select('id').eq('auth_id', auth.user.id).maybeSingle()
-      if (!me?.id) {
-        setCount(0)
-        return
-      }
-      const { count: c } = await supabase
-        .from('cart_items')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', me.id)
-      const n = c || 0
-      setCount(n)
-      try {
-        localStorage.setItem('auran_cart_badge_count', String(n))
-      } catch {}
-    } catch {
-      setCount(0)
-    }
-  }, [supabase])
+  const totalQty = useCartStore((s) => s.items.reduce((a, i) => a + i.quantity, 0))
+  const bump = useCartStore((s) => s.bump)
+  const prevBump = useRef(-1)
+  const skipFirstBump = useRef(true)
+  const [bounceClass, setBounceClass] = useState(false)
 
   useEffect(() => {
-    refresh()
-    const onRefresh = () => {
-      void refresh()
+    if (skipFirstBump.current) {
+      skipFirstBump.current = false
+      prevBump.current = bump
+      return
     }
-    window.addEventListener(CART_COUNT_REFRESH_EVENT, onRefresh)
-    window.addEventListener('storage', onRefresh)
-    return () => {
-      window.removeEventListener(CART_COUNT_REFRESH_EVENT, onRefresh)
-      window.removeEventListener('storage', onRefresh)
+    if (bump <= prevBump.current) {
+      prevBump.current = bump
+      return
     }
-  }, [refresh])
+    prevBump.current = bump
+    setBounceClass(true)
+    const t = window.setTimeout(() => setBounceClass(false), 500)
+    return () => clearTimeout(t)
+  }, [bump])
 
   return (
     <Link href="/cart" aria-label="장바구니" style={btnStyle}>
       🛒
-      {count > 0 ? (
+      {totalQty > 0 ? (
         <span
+          className={bounceClass ? 'auran-cart-badge-bounce' : undefined}
           style={{
             position: 'absolute',
             top: -4,
@@ -91,7 +68,7 @@ export default function CartHeaderButton() {
             lineHeight: '16px',
           }}
         >
-          {count > 99 ? '99+' : count}
+          {totalQty > 99 ? '99+' : totalQty}
         </span>
       ) : null}
     </Link>

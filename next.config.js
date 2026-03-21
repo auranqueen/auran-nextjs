@@ -2,26 +2,21 @@
 const nextConfig = {
   images: {
     domains: [
-      'xxxxxxxxxxxxxxxx.supabase.co',  // Supabase Storage
-      'k.kakaocdn.net',                // 카카오 프로필
-      'phinf.pstatic.net',             // 네이버 프로필
-      'lh3.googleusercontent.com',    // 구글 프로필
+      'xxxxxxxxxxxxxxxx.supabase.co',
+      'k.kakaocdn.net',
+      'phinf.pstatic.net',
+      'lh3.googleusercontent.com',
       'won.duchess.kr',
       'duchess.kr',
+      'bhpcqgedhfawlehobphq.supabase.co',
     ],
     remotePatterns: [
-      {
-        protocol: 'http',
-        hostname: 'won.duchess.kr',
-      },
-      {
-        protocol: 'https',
-        hostname: 'won.duchess.kr',
-      },
-      {
-        protocol: 'https',
-        hostname: 'duchess.kr',
-      },
+      { protocol: 'https', hostname: 'won.duchess.kr', pathname: '/**' },
+      { protocol: 'http', hostname: 'won.duchess.kr', pathname: '/**' },
+      { protocol: 'https', hostname: 'duchess.kr', pathname: '/**' },
+      { protocol: 'https', hostname: '**.duchess.kr', pathname: '/**' },
+      { protocol: 'https', hostname: '**.supabase.co', pathname: '/**' },
+      { protocol: 'https', hostname: 'bhpcqgedhfawlehobphq.supabase.co', pathname: '/**' },
     ],
   },
   async headers() {
