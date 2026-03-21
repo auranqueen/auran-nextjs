@@ -309,6 +309,51 @@ export async function POST(req: NextRequest) {
           })
         }
       }
+      if (intent.status === 'paid' && intent.kind === 'order' && intent.target_id) {
+        const { data: orderRow } = await client
+          .from('orders')
+          .select('id,customer_id,point_used,charge_used,payment_applied')
+          .eq('id', intent.target_id)
+          .maybeSingle()
+        if (orderRow?.id) {
+          if (orderRow.payment_applied) {
+            const pointUsed = Math.max(0, Number(orderRow.point_used || 0))
+            const chargeUsed = Math.max(0, Number(orderRow.charge_used || 0))
+            if (pointUsed > 0 || chargeUsed > 0) {
+              const { data: buyer } = await client
+                .from('users')
+                .select('points,charge_balance')
+                .eq('id', orderRow.customer_id)
+                .maybeSingle()
+              if (buyer) {
+                await client
+                  .from('users')
+                  .update({
+                    points: Number(buyer.points || 0) + pointUsed,
+                    charge_balance: Number(buyer.charge_balance || 0) + chargeUsed,
+                  })
+                  .eq('id', orderRow.customer_id)
+              }
+            }
+          }
+          const { restoreUserCouponForOrder } = await import('@/lib/coupon/restoreForOrder')
+          await restoreUserCouponForOrder(orderRow.id)
+          await client
+            .from('orders')
+            .update({ status: '취소', payment_applied: false })
+            .eq('id', orderRow.id)
+          const { data: buyerAuth } = await client.from('users').select('auth_id').eq('id', orderRow.customer_id).maybeSingle()
+          if (buyerAuth?.auth_id) {
+            await client.from('notifications').insert({
+              user_id: buyerAuth.auth_id,
+              type: 'system',
+              title: '주문 결제 취소',
+              body: '결제가 취소되었습니다. 쿠폰은 다시 사용할 수 있어요.',
+              is_read: false,
+            })
+          }
+        }
+      }
       await supabase
         .from('payment_intents')
         .update({ status: 'cancelled', cancelled_at: data.canceldate || new Date().toISOString(), updated_at: new Date().toISOString() })
