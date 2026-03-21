@@ -11,7 +11,8 @@
     "db:push": "supabase db push",
     "db:reset": "supabase db reset",
     "migrate:images": "ts-node --project tsconfig.scripts.json scripts/migrate-images.ts",
-    "migrate:images:retry": "ts-node --project tsconfig.scripts.json scripts/retry-failed-images.ts"
+    "migrate:images:retry": "ts-node --project tsconfig.scripts.json scripts/retry-failed-images.ts",
+    "scrape:gernetic": "ts-node --project tsconfig.scripts.json scripts/scrape-gernetic.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
@@ -19,6 +20,7 @@
     "@supabase/ssr": "^0.1.0",
     "@supabase/supabase-js": "^2.39.0",
     "bcryptjs": "^3.0.3",
+    "cheerio": "^1.2.0",
     "clsx": "^2.1.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.11",
@@ -27,6 +29,7 @@
     "lucide-react": "^0.363.0",
     "nanoid": "^5.0.7",
     "next": "14.2.0",
+    "node-fetch": "^3.3.2",
     "react": "^18.2.0",
     "react-datepicker": "^9.1.0",
     "react-dom": "^18.2.0",
@@ -40,6 +43,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/cheerio": "^0.22.35",
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",

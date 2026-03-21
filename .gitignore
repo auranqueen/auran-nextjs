@@ -18,5 +18,8 @@ pnpm-debug.log*
 # image migration artifacts
 failed-images.json
 
+# scraped vendor data
+scripts/gernetic-products.json
+
 # Supabase local artifacts
 supabase/.temp/
