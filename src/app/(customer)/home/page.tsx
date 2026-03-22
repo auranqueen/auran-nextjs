@@ -237,6 +237,27 @@ export default function CustomerHomePage() {
               </div>
             ))}
           </div>
+          <button
+            type="button"
+            onClick={e => {
+              e.stopPropagation()
+              router.push('/skin-analysis')
+            }}
+            style={{
+              marginTop: 10,
+              padding: '8px 12px',
+              borderRadius: 8,
+              border: '1px solid rgba(201,169,110,0.35)',
+              background: 'rgba(201,169,110,0.1)',
+              fontSize: 11,
+              fontWeight: 400,
+              color: GOLD,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            피부타입 분석하기
+          </button>
         </div>
         <span style={{ fontSize: '13px', color: TEXT_MUTED }}>›</span>
       </div>
