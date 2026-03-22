@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import ProductThumbnail from '@/components/ProductThumbnail'
+import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'

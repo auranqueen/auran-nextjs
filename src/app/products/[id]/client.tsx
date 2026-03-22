@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import ProductActionBar from '@/components/ProductActionBar'
+import ProductActionBar from '@/components/ui/ProductActionBar'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'

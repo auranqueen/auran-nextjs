@@ -10,7 +10,7 @@ const NAV: Record<Role, { icon: string; label: string; href: string }[]> = {
     { icon: '🏠', label: '홈', href: '/home' },
     { icon: '💳', label: '지갑', href: '/wallet' },
     { icon: '🛒', label: '장바구니', href: '/cart' },
-    { icon: '💬', label: '커뮤니티', href: '/dashboard/customer/community' },
+    { icon: '💬', label: '커뮤니티', href: '/community' },
     { icon: '🧴', label: '제품', href: '/products' },
     { icon: '📅', label: '예약', href: '/booking' },
     { icon: '🌍', label: '마이월드', href: '/myworld' },

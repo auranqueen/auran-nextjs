@@ -25,6 +25,14 @@ const nextConfig = {
       { protocol: 'https', hostname: 'bhpcqgedhfawlehobphq.supabase.co', pathname: '/**' },
     ],
   },
+  async rewrites() {
+    return [
+      { source: '/community', destination: '/dashboard/customer/community' },
+      { source: '/community/write', destination: '/dashboard/customer/community/write' },
+      { source: '/community/new', destination: '/dashboard/customer/community/new' },
+      { source: '/community/:path*', destination: '/dashboard/customer/community/:path*' },
+    ]
+  },
   async headers() {
     return [
       {

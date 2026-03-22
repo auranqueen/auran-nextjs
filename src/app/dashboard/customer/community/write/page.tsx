@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import ProductThumbnail from '@/components/ProductThumbnail'
+import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import { createClient } from '@/lib/supabase/client'
 
 const BG = '#0a0a0a'

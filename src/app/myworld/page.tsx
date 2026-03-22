@@ -7,7 +7,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import LoginRequiredModal from '@/components/LoginRequiredModal'
 import { createClient } from '@/lib/supabase/client'
-import ProductThumbnail from '@/components/ProductThumbnail'
+import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import ShareBottomSheet from '@/components/ShareBottomSheet'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
 

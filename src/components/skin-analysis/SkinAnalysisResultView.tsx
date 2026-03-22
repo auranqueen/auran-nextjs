@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import ProductThumbnail from '@/components/ProductThumbnail'
+import ProductThumbnail from '@/components/ui/ProductThumbnail'
 
 const GOLD = '#c9a84c'
 

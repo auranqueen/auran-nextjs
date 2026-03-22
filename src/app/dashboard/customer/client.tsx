@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import ProductThumbnail from '@/components/ProductThumbnail'
+import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import { useRouter } from 'next/navigation'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import DashboardBottomNav from '@/components/DashboardBottomNav'

@@ -1,6 +1,6 @@
 'use client'
 
-import ProductThumbnail from '@/components/ProductThumbnail'
+import ProductThumbnail from '@/components/ui/ProductThumbnail'
 
 type Props = {
   src: string | null | undefined
