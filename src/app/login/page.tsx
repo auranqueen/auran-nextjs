@@ -40,7 +40,8 @@ function LoginForm() {
   const [rememberEmail, setRememberEmail] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [socialLoading, setSocialLoading] = useState('')
+  const [kakaoOAuthLoading, setKakaoOAuthLoading] = useState(false)
+  const [googleOAuthLoading, setGoogleOAuthLoading] = useState(false)
 
   useEffect(() => {
     ;(async () => {
@@ -141,7 +142,6 @@ function LoginForm() {
   }
 
   async function handleSocial(provider: 'kakao' | 'google') {
-    setSocialLoading(provider)
     setError('')
     const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
     const fromParam = normalizePosition(role)
@@ -152,38 +152,51 @@ function LoginForm() {
     const callbackQuery = `?role=${encodeURIComponent(position)}${redirectQuery}`
 
     if (provider === 'kakao') {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'kakao',
-        options: {
-          // 카카오 콘솔 등록 URI와 일치해야 함 — localhost/Vercel preview URL이면 KOE205로 멈춤
-          redirectTo: `https://www.auran.kr/auth/callback${callbackQuery}`,
-          scopes: 'profile_nickname profile_image',
-        },
-      })
-      if (error) {
-        console.error('카카오 로그인 에러:', error)
-        setError(error.message || '카카오 로그인에 실패했습니다.')
+      setKakaoOAuthLoading(true)
+      try {
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'kakao',
+          options: {
+            redirectTo: `https://www.auran.kr/auth/callback${callbackQuery}`,
+            scopes: 'profile_nickname profile_image',
+          }
+        })
+        if (error) {
+          setError(error.message)
+          setKakaoOAuthLoading(false)
+        }
+      } catch (e: unknown) {
+        console.error('카카오 로그인:', e)
+        setError(e instanceof Error ? e.message : '카카오 로그인에 실패했습니다.')
+        setKakaoOAuthLoading(false)
       }
-      setSocialLoading('')
       return
     }
 
-    const origin = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || '')
-    const appUrl =
-      typeof window !== 'undefined' && window.location.hostname?.includes('auran-deploy.vercel.app')
-        ? 'https://www.auran.kr'
-        : origin
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${appUrl}/auth/callback${callbackQuery}`,
-      },
-    })
-    if (error) {
-      console.error('Google 로그인 에러:', error)
-      setError(error.message || 'Google 로그인에 실패했습니다.')
+    setGoogleOAuthLoading(true)
+    try {
+      const origin = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || '')
+      const appUrl =
+        typeof window !== 'undefined' && window.location.hostname?.includes('auran-deploy.vercel.app')
+          ? 'https://www.auran.kr'
+          : origin
+      const googleRedirectTo = `${appUrl}/auth/callback${callbackQuery}`
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: googleRedirectTo,
+          scopes: 'openid email profile',
+        }
+      })
+      if (error) {
+        setError(error.message)
+        setGoogleOAuthLoading(false)
+      }
+    } catch (e: unknown) {
+      console.error('Google 로그인:', e)
+      setError(e instanceof Error ? e.message : 'Google 로그인에 실패했습니다.')
+      setGoogleOAuthLoading(false)
     }
-    setSocialLoading('')
   }
 
   const inputStyle: React.CSSProperties = {
@@ -217,18 +230,20 @@ function LoginForm() {
         {role !== 'admin' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
             <button
-              onClick={() => handleSocial('kakao')}
-              disabled={!!socialLoading}
+              type="button"
+              onClick={() => void handleSocial('kakao')}
+              disabled={kakaoOAuthLoading || googleOAuthLoading}
               style={{ width: '100%', padding: '14px', background: '#fee500', border: 'none', borderRadius: 12, color: '#3c1e1e', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path d="M9 1C4.58 1 1 3.91 1 7.5c0 2.3 1.44 4.32 3.62 5.5L3.5 17l4.18-2.76A9.6 9.6 0 009 14c4.42 0 8-2.91 8-6.5S13.42 1 9 1z" fill="#3c1e1e"/>
               </svg>
-              {socialLoading === 'kakao' ? '연결 중...' : '카카오로 계속하기'}
+              {kakaoOAuthLoading ? '연결 중...' : '카카오로 계속하기'}
             </button>
             <button
-              onClick={() => handleSocial('google')}
-              disabled={!!socialLoading}
+              type="button"
+              onClick={() => void handleSocial('google')}
+              disabled={kakaoOAuthLoading || googleOAuthLoading}
               style={{ width: '100%', padding: '14px', background: '#fff', border: '1px solid #e0e0e0', borderRadius: 12, color: '#333', fontSize: 14, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
             >
               <svg width="18" height="18" viewBox="0 0 18 18">
@@ -237,7 +252,7 @@ function LoginForm() {
                 <path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
                 <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
               </svg>
-              {socialLoading === 'google' ? '연결 중...' : 'Google로 계속하기'}
+              {googleOAuthLoading ? '연결 중...' : 'Google로 계속하기'}
             </button>
           </div>
         )}

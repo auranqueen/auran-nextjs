@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { navigateToSupabaseOAuthRedirect } from '@/lib/supabase/oauth-pkce-client'
 import { normalizePosition, POSITION_STORAGE_KEY } from '@/lib/position'
 
 type Props = {
@@ -14,7 +14,6 @@ type Props = {
 
 export default function LoginRequiredModal({ open, onClose, returnPath }: Props) {
   const router = useRouter()
-  const supabase = createClient()
   const [socialLoading, setSocialLoading] = useState('')
   const [oauthError, setOauthError] = useState('')
 
@@ -29,17 +28,15 @@ export default function LoginRequiredModal({ open, onClose, returnPath }: Props)
       localStorage.setItem(POSITION_STORAGE_KEY, position)
       const safeReturn = returnPath.startsWith('/') ? returnPath : '/'
       const callbackQuery = `?role=${encodeURIComponent(position)}&redirect=${encodeURIComponent(safeReturn)}`
-      const { error } = await supabase.auth.signInWithOAuth({
+      const redirectTo = `https://www.auran.kr/auth/callback${callbackQuery}`
+      await navigateToSupabaseOAuthRedirect({
         provider,
-        options: {
-          redirectTo: `https://www.auran.kr/auth/callback${callbackQuery}`,
-          scopes: 'profile_nickname profile_image',
-        },
+        redirectTo,
+        scopes: 'profile_nickname profile_image',
       })
-      if (error) {
-        console.error('카카오 로그인 에러:', error)
-        setOauthError(error.message || '카카오 로그인에 실패했습니다.')
-      }
+    } catch (e: unknown) {
+      console.error('카카오 로그인 예외:', e)
+      setOauthError(e instanceof Error ? e.message : '카카오 로그인에 실패했습니다.')
     } finally {
       setSocialLoading('')
     }
@@ -81,7 +78,7 @@ export default function LoginRequiredModal({ open, onClose, returnPath }: Props)
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <button
             type="button"
-            onClick={() => handleSocial('kakao')}
+            onClick={() => void handleSocial('kakao')}
             disabled={!!socialLoading}
             style={{
               width: '100%',

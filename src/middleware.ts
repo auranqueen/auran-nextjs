@@ -1,24 +1,40 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
+import type { SerializeOptions } from 'cookie'
 
-function createMiddlewareClient(req: NextRequest, res: NextResponse) {
-  return createServerClient(
+type CookieToSet = { name: string; value: string; options: SerializeOptions }
+
+/** Supabase 세션 갱신 쿠키를 리다이렉트 응답에도 실어 보냄 */
+function redirectPreservingSupabaseCookies(from: NextResponse, to: NextResponse) {
+  from.cookies.getAll().forEach(({ name, value }) => {
+    to.cookies.set(name, value)
+  })
+  return to
+}
+
+function createMiddlewareSupabase(req: NextRequest) {
+  let res = NextResponse.next()
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get(name: string) {
-          return req.cookies.get(name)?.value
+        getAll() {
+          return req.cookies.getAll()
         },
-        set(name: string, value: string, options: any) {
-          res.cookies.set({ name, value, ...options })
-        },
-        remove(name: string, options: any) {
-          res.cookies.set({ name, value: '', ...options })
+        setAll(cookiesToSet: CookieToSet[]) {
+          cookiesToSet.forEach(({ name, value }) => {
+            req.cookies.set(name, value)
+          })
+          res = NextResponse.next()
+          cookiesToSet.forEach(({ name, value, options }) => {
+            res.cookies.set(name, value, options)
+          })
         },
       },
     }
   )
+  return { supabase, response: res }
 }
 
 async function getDbRole(supabase: ReturnType<typeof createServerClient>, authId: string): Promise<string | null> {
@@ -80,8 +96,7 @@ export async function middleware(req: NextRequest) {
   // super-console 로그인 페이지는 예외(비로그인 접근 허용)
   if (pathname === '/super-console/login') return NextResponse.next()
 
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient(req, res)
+  const { supabase, response: res } = createMiddlewareSupabase(req)
 
   // 세션 갱신(쿠키) 후 사용자 판별 — getUser() 단독 호출보다 지연·비용 감소에 유리
   const {
@@ -96,7 +111,7 @@ export async function middleware(req: NextRequest) {
       loginUrl.search = ''
       loginUrl.searchParams.set('redirect', `${pathname}${url.search || ''}`)
       loginUrl.searchParams.set('role', 'customer')
-      return NextResponse.redirect(loginUrl)
+      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(loginUrl))
     }
     const redirectTarget = `${pathname}${url.search || ''}`
     if (isProtectedPath) {
@@ -104,20 +119,20 @@ export async function middleware(req: NextRequest) {
       loginUrl.pathname = '/login'
       loginUrl.search = ''
       loginUrl.searchParams.set('redirect', redirectTarget)
-      return NextResponse.redirect(loginUrl)
+      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(loginUrl))
     }
     if (isSuperConsole) {
       const superLoginUrl = req.nextUrl.clone()
       superLoginUrl.pathname = '/super-console/login'
       superLoginUrl.searchParams.set('next', pathname)
-      return NextResponse.redirect(superLoginUrl)
+      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(superLoginUrl))
     }
     // dashboards: if not logged in, keep original path for post-login return
     const loginUrl = req.nextUrl.clone()
     loginUrl.pathname = '/login'
     loginUrl.search = ''
     if (isDashboard) loginUrl.searchParams.set('redirect', redirectTarget)
-    return NextResponse.redirect(loginUrl)
+    return redirectPreservingSupabaseCookies(res, NextResponse.redirect(loginUrl))
   }
 
   let role = await getDbRole(supabase, user.id)
@@ -131,7 +146,7 @@ export async function middleware(req: NextRequest) {
       const url = req.nextUrl.clone()
       url.pathname = '/super-console/login'
       url.searchParams.set('next', pathname)
-      return NextResponse.redirect(url)
+      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
     }
     return res
   }
@@ -142,7 +157,7 @@ export async function middleware(req: NextRequest) {
       const url = req.nextUrl.clone()
       url.pathname = '/'
       url.search = ''
-      return NextResponse.redirect(url)
+      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
     }
     return res
   }
@@ -162,13 +177,13 @@ export async function middleware(req: NextRequest) {
       const url = req.nextUrl.clone()
       url.pathname = '/'
       url.search = ''
-      return NextResponse.redirect(url)
+      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
     }
     if (!pathname.startsWith(target)) {
       const url = req.nextUrl.clone()
       url.pathname = target
       url.search = ''
-      return NextResponse.redirect(url)
+      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
     }
 
     // partner/owner/brand는 본사 승인 전 접근 차단 (users.status !== 'active')
@@ -178,7 +193,7 @@ export async function middleware(req: NextRequest) {
         const url = req.nextUrl.clone()
         url.pathname = '/auth/pending-approval'
         url.searchParams.set('role', normalizedRole === 'salon' ? 'owner' : normalizedRole)
-        return NextResponse.redirect(url)
+        return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
       }
     }
   }
