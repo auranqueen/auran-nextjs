@@ -18,7 +18,7 @@ function dashboardPathForRole(role: string): string {
   if (role === 'partner') return '/dashboard/partner'
   if (role === 'brand') return '/dashboard/brand'
   if (role === 'admin') return '/admin'
-  return '/dashboard/customer'
+  return '/home'
 }
 
 function LoginForm() {

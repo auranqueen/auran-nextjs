@@ -17,7 +17,7 @@ function AuthExchangeInner() {
       params.get('error_description') ||
       ''
     if (err) {
-      router.replace('/dashboard/customer')
+      router.replace('/home')
       return
     }
 
@@ -26,7 +26,7 @@ function AuthExchangeInner() {
     const redirect = params.get('redirect') || ''
 
     if (!code) {
-      router.replace('/dashboard/customer')
+      router.replace('/home')
       return
     }
 
@@ -36,7 +36,7 @@ function AuthExchangeInner() {
       const { data: exData, error: exErr } = await supabase.auth.exchangeCodeForSession(code)
       if (cancelled) return
       if (exErr || !exData?.session) {
-        router.replace('/dashboard/customer')
+        router.replace('/home')
         return
       }
       let url = `/auth/done?position=${encodeURIComponent(role)}`
@@ -44,7 +44,7 @@ function AuthExchangeInner() {
       window.location.replace(url)
     })().catch((e) => {
       console.error('[auth/exchange]', e)
-      if (!cancelled) router.replace('/dashboard/customer')
+      if (!cancelled) router.replace('/home')
     })
 
     return () => {

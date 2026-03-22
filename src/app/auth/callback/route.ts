@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
   const position = roleParam || 'customer'
   const origin = getOrigin(request)
 
-  let dashboardPath = '/dashboard/customer'
+  let dashboardPath = '/home'
   if (roleParam) {
     if (roleParam === 'owner' || roleParam === 'salon') dashboardPath = '/dashboard/owner'
     else if (roleParam === 'partner') dashboardPath = '/dashboard/partner'
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
   var access_token = params.get('access_token');
   var refresh_token = params.get('refresh_token') || '';
   if (!access_token || !supabaseUrl || !supabaseKey) {
-    var dashFail = '/dashboard/customer';
+    var dashFail = '/home';
     if (role === 'owner' || role === 'salon') dashFail = '/dashboard/owner';
     else if (role === 'partner') dashFail = '/dashboard/partner';
     else if (role === 'brand') dashFail = '/dashboard/brand';
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       window.location.replace(url);
     })
     .catch(function() {
-      var dashCatch = '/dashboard/customer';
+      var dashCatch = '/home';
       if (role === 'owner' || role === 'salon') dashCatch = '/dashboard/owner';
       else if (role === 'partner') dashCatch = '/dashboard/partner';
       else if (role === 'brand') dashCatch = '/dashboard/brand';

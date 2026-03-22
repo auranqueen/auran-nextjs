@@ -47,7 +47,7 @@ export default function SetPinPage() {
       if (!res.ok) throw new Error(data.error || '저장 실패')
       // 성공 시 바로 이동 (finally 재렌더 전에). 절대 경로 + href로 이동 확실히
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
-      const target = origin ? `${origin}/dashboard/customer` : '/dashboard/customer'
+      const target = origin ? `${origin}/home` : '/home'
       setTimeout(() => {
         window.location.href = target
       }, 0)
