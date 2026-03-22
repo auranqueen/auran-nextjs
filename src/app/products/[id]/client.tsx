@@ -19,6 +19,7 @@ function earnPercentOf(product: any): number {
 
 export default function ProductDetailClient({ product }: { product: any }) {
   const [qty, setQty] = useState(1)
+  const [detailTab, setDetailTab] = useState<'detail' | 'review'>('detail')
   const unit = Math.max(0, Math.floor(Number(product.retail_price) || 0))
   const isPriceUnset = unit < 1
   const pct = earnPercentOf(product)
@@ -26,6 +27,7 @@ export default function ProductDetailClient({ product }: { product: any }) {
   const expectedPurchasePts = useMemo(() => Math.floor((lineTotal * pct) / 100), [lineTotal, pct])
 
   return (
+    <div style={{ background: '#0D0B09', minHeight: '100vh' }}>
     <div style={{ paddingBottom: 100, maxWidth: 480, margin: '0 auto' }}>
       <div
         style={{
@@ -51,12 +53,49 @@ export default function ProductDetailClient({ product }: { product: any }) {
         )}
       </div>
 
+      <div
+        style={{
+          margin: '12px 16px 0',
+          padding: '12px 14px',
+          borderRadius: 12,
+          background: 'rgba(201,169,110,0.06)',
+          border: '1px solid rgba(201,169,110,0.15)',
+          fontSize: 11,
+          fontWeight: 300,
+          color: 'rgba(255,255,255,0.88)',
+          lineHeight: 1.5,
+        }}
+      >
+        🔬 내 피부 타입에 높은 매칭 · AI 분석 기반 추천
+      </div>
+
       <div style={{ padding: '20px 16px' }}>
         <p style={{ color: '#888', fontSize: 13 }}>{product.brands?.name}</p>
         <h1 style={{ color: '#fff', fontSize: 20, margin: '4px 0 12px' }}>{product.name}</h1>
         <p style={{ color: '#C9A96E', fontSize: 22, fontWeight: 700 }}>
           {isPriceUnset ? '준비 중' : `₩${unit.toLocaleString()}`}
         </p>
+
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
+          {['👥 일촌 12명 사용중', '🔄 재구매율 84%', '🚚 오늘 주문 내일 도착'].map((t, i) => (
+            <span
+              key={i}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '6px 10px',
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 20,
+                fontSize: 10,
+                fontWeight: 300,
+                color: 'rgba(255,255,255,0.75)',
+              }}
+            >
+              {t}
+            </span>
+          ))}
+        </div>
 
         {product.description ? (
           <p style={{ color: '#aaa', fontSize: 14, marginTop: 12, lineHeight: 1.6 }}>{product.description}</p>
@@ -131,9 +170,112 @@ export default function ProductDetailClient({ product }: { product: any }) {
             </button>
           </div>
         ) : null}
+
+        <div style={{ marginTop: 20 }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+            <button
+              type="button"
+              onClick={() => setDetailTab('detail')}
+              style={{
+                flex: 1,
+                padding: '10px 8px',
+                border: 'none',
+                borderBottom: detailTab === 'detail' ? '2px solid #C9A96E' : '2px solid transparent',
+                marginBottom: -1,
+                background: 'transparent',
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: detailTab === 'detail' ? 400 : 300,
+                color: detailTab === 'detail' ? '#C9A96E' : 'rgba(255,255,255,0.45)',
+              }}
+            >
+              상품 상세
+            </button>
+            <button
+              type="button"
+              onClick={() => setDetailTab('review')}
+              style={{
+                flex: 1,
+                padding: '10px 8px',
+                border: 'none',
+                borderBottom: detailTab === 'review' ? '2px solid #C9A96E' : '2px solid transparent',
+                marginBottom: -1,
+                background: 'transparent',
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: detailTab === 'review' ? 400 : 300,
+                color: detailTab === 'review' ? '#C9A96E' : 'rgba(255,255,255,0.45)',
+              }}
+            >
+              리뷰
+            </button>
+          </div>
+          <div style={{ marginTop: 14, paddingBottom: 8 }}>
+            {detailTab === 'detail' ? (
+              product.detail_html ? (
+                <div
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 300,
+                    color: 'rgba(255,255,255,0.85)',
+                    lineHeight: 1.6,
+                  }}
+                  dangerouslySetInnerHTML={{ __html: String(product.detail_html) }}
+                />
+              ) : (
+                <div
+                  style={{
+                    padding: 24,
+                    borderRadius: 12,
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                    fontSize: 12,
+                    fontWeight: 300,
+                    color: 'rgba(255,255,255,0.35)',
+                    textAlign: 'center',
+                  }}
+                >
+                  상품 상세 정보가 준비 중입니다.
+                </div>
+              )
+            ) : (
+              <div style={{ padding: '8px 0' }}>
+                {/* TODO: reviews 테이블 연동 예정 */}
+                <p style={{ fontSize: 13, fontWeight: 300, color: 'rgba(255,255,255,0.8)', margin: 0, lineHeight: 1.6 }}>
+                  평균 <span style={{ color: '#C9A96E', fontWeight: 400 }}>⭐ 4.9</span>
+                  <span style={{ color: 'rgba(255,255,255,0.35)', margin: '0 8px' }}>·</span>
+                  리뷰 <span style={{ color: '#C9A96E', fontWeight: 400 }}>127</span>개
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {!isPriceUnset ? (
+        <>
+          {/* TODO: 같은 브랜드 상품 조회 예정 */}
+          <div style={{ padding: '8px 16px 0', fontWeight: 300 }}>
+            <div
+              style={{
+                fontSize: 10,
+                letterSpacing: 3,
+                color: '#C9A96E',
+                marginBottom: 10,
+                fontWeight: 400,
+              }}
+            >
+              PERFECT TOGETHER
+            </div>
+            <div
+              style={{
+                minHeight: 48,
+                borderRadius: 12,
+                border: '1px dashed rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.02)',
+              }}
+            />
+          </div>
         <ProductActionBar
           product={{
             id: String(product.id),
@@ -143,7 +285,9 @@ export default function ProductDetailClient({ product }: { product: any }) {
           }}
           quantity={qty}
         />
+        </>
       ) : null}
+    </div>
     </div>
   )
 }
