@@ -13,65 +13,65 @@ const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
 const TEXT_MUTED = 'rgba(255,255,255,0.4)'
 const TEXT_DIM = 'rgba(255,255,255,0.25)'
 
-// ?? ????? (Supabase ????? ??)
+// 폴백 데이터 (Supabase 연동 전)
 const FALLBACK_CONCERNS = [
-  { id: 1, name: '????????', icon: '????' },
-  { id: 2, name: '?????????', icon: '???' },
-  { id: 3, name: '??????', icon: '????' },
-  { id: 4, name: '???????', icon: '????' },
-  { id: 5, name: '????????????', icon: '?' },
-  { id: 6, name: '?????????????', icon: '????' },
-  { id: 7, name: '????????????', icon: '????' },
+  { id: 1, name: '수분부족', icon: '💧' },
+  { id: 2, name: '미백·톤업', icon: '✨' },
+  { id: 3, name: '모공·각질', icon: '🔍' },
+  { id: 4, name: '민감·진정', icon: '🌿' },
+  { id: 5, name: '안티에이징', icon: '⏰' },
+  { id: 6, name: '자외선차단', icon: '☀️' },
+  { id: 7, name: '탄력·리프팅', icon: '💆' },
 ]
 
 const FALLBACK_PRODUCTS = [
-  { id: 1, name: 'MESS CREAM 50ml', brand: 'CIVASAN', price: 58000, badge: 'AI????', icon: '????' },
-  { id: 2, name: '?????? ????????? ??????', brand: 'GERNETIC', price: 94000, badge: '??', icon: '????' },
-  { id: 3, name: '???????? ?', brand: 'SHOPBELLE', price: 32000, badge: '', icon: '????' },
-  { id: 4, name: '???????? ???????????', brand: 'THALAC', price: 45000, badge: '', icon: '????' },
+  { id: 1, name: 'MESS CREAM 50ml', brand: 'CIVASAN', price: 58000, badge: 'AI추천', icon: '🧴' },
+  { id: 2, name: '바이오 에센스 세럼', brand: 'GERNETIC', price: 94000, badge: '인기', icon: '🌿' },
+  { id: 3, name: '딥클렌징 폼', brand: 'SHOPBELLE', price: 32000, badge: '', icon: '🫧' },
+  { id: 4, name: '크리스토 바스솔트', brand: 'THALAC', price: 45000, badge: '', icon: '🌊' },
 ]
 
 const FALLBACK_SALES = [
-  { id: 1, name: 'MESS CREAM 50ml', brand: 'CIVASAN', orig: 58000, sale: 40600, disc: 30, icon: '????' },
-  { id: 2, name: '?????? ????????? ??????', brand: 'GERNETIC', orig: 94000, sale: 70500, disc: 25, icon: '????' },
-  { id: 3, name: '???????? ??? ???????????', brand: 'THALAC', orig: 45000, sale: 36000, disc: 20, icon: '????' },
+  { id: 1, name: 'MESS CREAM 50ml', brand: 'CIVASAN', orig: 58000, sale: 40600, disc: 30, icon: '🧴' },
+  { id: 2, name: '바이오 에센스 세럼', brand: 'GERNETIC', orig: 94000, sale: 70500, disc: 25, icon: '🌿' },
+  { id: 3, name: '크리스토 마린 바스솔트', brand: 'THALAC', orig: 45000, sale: 36000, disc: 20, icon: '🌊' },
 ]
 
 const FALLBACK_SALONS = [
-  { id: 1, name: '????????? ???????????', rating: 4.9, reviews: 127, area: '???? ???????', dist: '0.3km', open: true, tags: ['???????', '?????', '???????'] },
-  { id: 2, name: '????????? ?????', rating: 4.7, reviews: 89, area: '???? ???????', dist: '1.2km', open: true, tags: ['???????', '?????'] },
-  { id: 3, name: '??????????????????', rating: 4.5, reviews: 54, area: '???? ???', dist: '2.1km', open: false, tags: ['????????', '?????'] },
+  { id: 1, name: '더하노이 풋앤바디', rating: 4.9, reviews: 127, area: '대구 달서구', dist: '0.3km', open: true, tags: ['페이셜', '바디', '아로마'] },
+  { id: 2, name: '뷰티클리닉 대구점', rating: 4.7, reviews: 89, area: '대구 수성구', dist: '1.2km', open: true, tags: ['리프팅', '클리닉'] },
+  { id: 3, name: '스킨에스테틱', rating: 4.5, reviews: 54, area: '대구 중구', dist: '2.1km', open: false, tags: ['피부관리', '민감성'] },
 ]
 
 const FALLBACK_NEW = [
-  { id: 1, name: '??????? ??????? ??', brand: 'CIVASAN', price: 68000, icon: '????' },
-  { id: 2, name: '?? ????????? ???????', brand: 'GERNETIC', price: 52000, icon: '????' },
-  { id: 3, name: '???? ?????? ??????', brand: 'SHOPBELLE', price: 38000, icon: '????' },
-  { id: 4, name: '??? ??????? ??????', brand: 'THALAC', price: 84000, icon: '????' },
+  { id: 1, name: '퍼펙트 나이트 크림', brand: 'CIVASAN', price: 68000, icon: '💜' },
+  { id: 2, name: '칼밍 에센스 미스트', brand: 'GERNETIC', price: 52000, icon: '🩵' },
+  { id: 3, name: '로즈 토닝 패드', brand: 'SHOPBELLE', price: 38000, icon: '🌸' },
+  { id: 4, name: '마린 리페어 앰플', brand: 'THALAC', price: 84000, icon: '🌊' },
 ]
 
 const FALLBACK_BRANDS = [
-  { id: 1, name: 'CIVASAN', label: '????????', color: '#C9A96E', bg: 'rgba(201,169,110,0.1)', border: 'rgba(201,169,110,0.3)' },
-  { id: 2, name: 'GERNETIC', label: '?????????', color: 'rgba(120,180,240,0.9)', bg: 'rgba(100,160,220,0.1)', border: 'rgba(100,160,220,0.25)' },
-  { id: 3, name: 'SHOPBELLE', label: '?????', color: 'rgba(200,150,220,0.9)', bg: 'rgba(180,120,200,0.1)', border: 'rgba(180,120,200,0.25)' },
-  { id: 4, name: 'THALAC', label: '????', color: 'rgba(80,190,210,0.9)', bg: 'rgba(60,160,180,0.1)', border: 'rgba(60,160,180,0.25)' },
-  { id: 5, name: 'SOTHYS', label: '?????????', color: 'rgba(240,180,100,0.9)', bg: 'rgba(220,160,80,0.1)', border: 'rgba(220,160,80,0.25)' },
-  { id: 6, name: 'PHYTO', label: '???????', color: 'rgba(180,220,140,0.9)', bg: 'rgba(160,200,120,0.1)', border: 'rgba(160,200,120,0.25)' },
-  { id: 7, name: 'ESTER', label: '?????????', color: 'rgba(240,120,140,0.9)', bg: 'rgba(220,100,120,0.1)', border: 'rgba(220,100,120,0.25)' },
+  { id: 1, name: 'CIVASAN', label: '시바산', color: '#C9A96E', bg: 'rgba(201,169,110,0.1)', border: 'rgba(201,169,110,0.3)' },
+  { id: 2, name: 'GERNETIC', label: '제르네틱', color: 'rgba(120,180,240,0.9)', bg: 'rgba(100,160,220,0.1)', border: 'rgba(100,160,220,0.25)' },
+  { id: 3, name: 'SHOPBELLE', label: '샵벨르', color: 'rgba(200,150,220,0.9)', bg: 'rgba(180,120,200,0.1)', border: 'rgba(180,120,200,0.25)' },
+  { id: 4, name: 'THALAC', label: '탈락', color: 'rgba(80,190,210,0.9)', bg: 'rgba(60,160,180,0.1)', border: 'rgba(60,160,180,0.25)' },
+  { id: 5, name: 'SOTHYS', label: '소티스', color: 'rgba(240,180,100,0.9)', bg: 'rgba(220,160,80,0.1)', border: 'rgba(220,160,80,0.25)' },
+  { id: 6, name: 'PHYTO', label: '피토머', color: 'rgba(180,220,140,0.9)', bg: 'rgba(160,200,120,0.1)', border: 'rgba(160,200,120,0.25)' },
+  { id: 7, name: 'ESTER', label: '에스터', color: 'rgba(240,120,140,0.9)', bg: 'rgba(220,100,120,0.1)', border: 'rgba(220,100,120,0.25)' },
 ]
 
 const FALLBACK_HISTORY = [
-  { icon: '????', date: '03.01', brand: 'CIVASAN', name: 'MESS CREAM' },
-  { icon: '????', date: '02.15', brand: 'GERNETIC', name: '?????? ??????' },
-  { icon: '????', date: '02.01', brand: 'SHOPBELLE', name: '???????? ?' },
-  { icon: '????', date: '01.20', brand: 'THALAC', name: '???????????' },
+  { icon: '🧴', date: '03.01', brand: 'CIVASAN', name: 'MESS CREAM' },
+  { icon: '🌿', date: '02.15', brand: 'GERNETIC', name: '바이오 세럼' },
+  { icon: '🫧', date: '02.01', brand: 'SHOPBELLE', name: '딥클렌징 폼' },
+  { icon: '🌊', date: '01.20', brand: 'THALAC', name: '바스솔트' },
 ]
 
 export default function CustomerHomePage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const [userName, setUserName] = useState('????')
+  const [userName, setUserName] = useState('유미')
   const [selectedConcern, setSelectedConcern] = useState(0)
   const [saleTab, setSaleTab] = useState<'sale' | 'group'>('sale')
   const [timers, setTimers] = useState([
@@ -80,7 +80,7 @@ export default function CustomerHomePage() {
     { h: 5, m: 12, s: 8 },
   ])
 
-  // Supabase ?????
+  // Supabase 데이터
   const [concerns, setConcerns] = useState<any[]>([])
   const [products, setProducts] = useState<any[]>([])
   const [timeSales, setTimeSales] = useState<any[]>([])
@@ -89,38 +89,38 @@ export default function CustomerHomePage() {
   const [brands, setBrands] = useState<any[]>([])
 
   useEffect(() => {
-    // TODO: user_daily_tracker ???????????? ?????? ????? ????
+    // TODO: user_daily_tracker 테이블에서 오늘 데이터 조회
     supabase.auth.getUser().then(({ data }) => {
       const name = data.user?.user_metadata?.full_name || data.user?.user_metadata?.name
       if (name) setUserName(name)
     })
-    // TODO: skin_concerns ??????
+    // TODO: skin_concerns 테이블
     supabase.from('skin_concerns').select('*').order('sort_order').then(({ data }) => {
       if (data && data.length > 0) setConcerns(data)
     })
-    // TODO: products ?????? (AI ???? ???)
+    // TODO: products 테이블 (AI 추천 기준)
     supabase.from('products').select('*').eq('is_active', true).limit(8).then(({ data }) => {
       if (data && data.length > 0) setProducts(data)
     })
-    // TODO: time_sales ??????
+    // TODO: time_sales 테이블
     supabase.from('time_sales').select('*, product:products(*)').eq('is_active', true).then(({ data }) => {
       if (data && data.length > 0) setTimeSales(data)
     })
-    // TODO: salons ?????? (????? ??? ???)
+    // TODO: salons 테이블 (위치 기반 정렬)
     supabase.from('salons').select('*').eq('is_active', true).limit(3).then(({ data }) => {
       if (data && data.length > 0) setSalons(data)
     })
-    // TODO: products is_new ????
+    // TODO: products is_new 컬럼
     supabase.from('products').select('*').eq('is_new', true).limit(6).then(({ data }) => {
       if (data && data.length > 0) setNewProducts(data)
     })
-    // TODO: brands ??????
+    // TODO: brands 테이블
     supabase.from('brands').select('*').eq('is_active', true).limit(7).then(({ data }) => {
       if (data && data.length > 0) setBrands(data)
     })
   }, [])
 
-  // ???????? ?????
+  // 실시간 타이머
   useEffect(() => {
     const id = setInterval(() => {
       setTimers(prev =>
@@ -137,7 +137,7 @@ export default function CustomerHomePage() {
 
   const pad = (n: number) => String(n).padStart(2, '0')
 
-  // ?? ????
+  // 폴백 적용
   const concernList = concerns.length > 0 ? concerns : FALLBACK_CONCERNS
   const productList = products.length > 0 ? products : FALLBACK_PRODUCTS
   const saleList = timeSales.length > 0 ? timeSales : FALLBACK_SALES
@@ -152,11 +152,11 @@ export default function CustomerHomePage() {
   return (
     <HomeCustomerShell>
 
-      {/* ?????? ????? ?????? */}
+      {/* ── 탑바 ── */}
             <TopBar />
 
 
-      {/* ?????? ????? ?????? */}
+      {/* ── 인사말 ── */}
       <div style={{
         padding: '14px 20px 0',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -166,10 +166,10 @@ export default function CustomerHomePage() {
             {today}
           </div>
           <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
-            ???????????????, <span style={{ color: GOLD }}>{userName}???</span> ????
+            안녕하세요, <span style={{ color: GOLD }}>{userName}님</span> 👋
           </div>
           <div style={{ fontSize: '11px', color: TEXT_MUTED }}>
-            ?????? ???? ????? 75% ? ????? 6/8??? ????
+            오늘 루틴 완료 75% · 수분 6/8잔 💧
           </div>
         </div>
         <div style={{
@@ -178,10 +178,10 @@ export default function CustomerHomePage() {
           border: '1px solid rgba(255,255,255,0.1)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '20px',
-        }}>????</div>
+        }}>👩</div>
       </div>
 
-      {/* ?????? BEAUTY TRACKER ?????? */}
+      {/* ── BEAUTY TRACKER ── */}
       <div style={{
         margin: '12px 16px 0',
         background: CARD_BG, border: CARD_BORDER,
@@ -197,10 +197,10 @@ export default function CustomerHomePage() {
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           {[
-            { icon: '????', val: '6', unit: '/8', label: '????? ????', pct: 75, color: '#6ab0e0' },
-            { icon: '????', val: 'UV', unit: '3', label: '?????????', pct: 40, color: '#f0c040' },
-            { icon: '????', val: '7.5', unit: 'h', label: '????', pct: 80, color: '#a080e0' },
-            { icon: '????', val: '75', unit: '%', label: '????', pct: 75, color: GOLD },
+            { icon: '💧', val: '6', unit: '/8', label: '수분 섭취', pct: 75, color: '#6ab0e0' },
+            { icon: '🌞', val: 'UV', unit: '3', label: '자외선', pct: 40, color: '#f0c040' },
+            { icon: '😴', val: '7.5', unit: 'h', label: '수면', pct: 80, color: '#a080e0' },
+            { icon: '🧴', val: '75', unit: '%', label: '루틴', pct: 75, color: GOLD },
           ].map((item, i) => (
             <div key={i} style={{
               flex: 1, background: 'rgba(255,255,255,0.03)',
@@ -220,7 +220,7 @@ export default function CustomerHomePage() {
         </div>
       </div>
 
-      {/* ?????? ???????? ???? ?????? */}
+      {/* ── 히어로 배너 ── */}
       <div style={{
         margin: '12px 16px 0', height: '148px',
         borderRadius: '20px', overflow: 'hidden',
@@ -238,10 +238,10 @@ export default function CustomerHomePage() {
               background: 'rgba(255,255,255,0.1)', borderRadius: '20px',
               padding: '3px 10px', fontSize: '10px', fontFamily: 'monospace',
               color: 'rgba(255,255,255,0.7)', marginBottom: '7px',
-            }}>??? 3??? ? SPRING SKIN</div>
+            }}>✦ 3월 · SPRING SKIN</div>
             <div style={{ fontSize: '17px', fontWeight: 300, lineHeight: 1.5 }}>
-              ?? ????? ?????,<br />
-              <em style={{ color: GOLD, fontStyle: 'normal' }}>AI?? ???</em> ??????????????
+              봄 피부 변화,<br />
+              <em style={{ color: GOLD, fontStyle: 'normal' }}>AI가 먼저</em> 알아챕니다
             </div>
           </div>
           <div style={{ display: 'flex', gap: '4px' }}>
@@ -253,10 +253,10 @@ export default function CustomerHomePage() {
         <div style={{
           position: 'absolute', right: '16px', top: '50%',
           transform: 'translateY(-50%)', fontSize: '56px', opacity: 0.85,
-        }}>????</div>
+        }}>🌸</div>
       </div>
 
-      {/* ?????? TODAY'S SKIN ?????? */}
+      {/* ── TODAY'S SKIN ── */}
       <div
         onClick={() => router.push('/analysis')}
         style={{
@@ -265,14 +265,14 @@ export default function CustomerHomePage() {
           display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
         }}
       >
-        <span style={{ fontSize: '30px' }}>????</span>
+        <span style={{ fontSize: '30px' }}>💧</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: '3px' }}>
             TODAY&apos;S SKIN
           </div>
-          <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>???? ? ?? ????</div>
+          <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>건성 · 민감 복합</div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            {[{ label: '?????', pct: 62, color: '#6ab0e0' }, { label: '?????', pct: 38, color: GOLD }].map((b, i) => (
+            {[{ label: '수분', pct: 62, color: '#6ab0e0' }, { label: '유분', pct: 38, color: GOLD }].map((b, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                 <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.label}</span>
                 <div style={{ width: '44px', height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
@@ -283,16 +283,16 @@ export default function CustomerHomePage() {
             ))}
           </div>
         </div>
-        <span style={{ fontSize: '13px', color: TEXT_MUTED }}>???</span>
+        <span style={{ fontSize: '13px', color: TEXT_MUTED }}>›</span>
       </div>
 
-      {/* ?????? 4??? ???? ????? ?????? */}
+      {/* ── 4대 기능 그리드 ── */}
       <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
         {[
-          { icon: '????', title: '??????????', desc: 'AI ???? ?????', badge: 'AI', path: '/analysis', bg: 'linear-gradient(135deg,rgba(160,80,220,0.15),rgba(120,60,180,0.1))' },
-          { icon: '????', title: 'MY WORLD', desc: '??????? ??????????', badge: 'MY', path: '/my-world', bg: 'linear-gradient(135deg,rgba(60,120,220,0.15),rgba(40,80,180,0.1))' },
-          { icon: '????', title: '????????', desc: '????? ???????? ??????', badge: 'NEW', path: '/community', bg: 'linear-gradient(135deg,rgba(220,60,60,0.1),rgba(180,40,40,0.08))', badgeColor: '#E04030' },
-          { icon: '????', title: '??????????', desc: '??? ?????? ??????', badge: '???', path: '/salon', bg: 'linear-gradient(135deg,rgba(60,180,120,0.12),rgba(40,140,90,0.08))' },
+          { icon: '🔬', title: '피부분석', desc: 'AI 정밀 분석', badge: 'AI', path: '/analysis', bg: 'linear-gradient(135deg,rgba(160,80,220,0.15),rgba(120,60,180,0.1))' },
+          { icon: '🌍', title: 'MY WORLD', desc: '나만의 미니홈피', badge: 'MY', path: '/my-world', bg: 'linear-gradient(135deg,rgba(60,120,220,0.15),rgba(40,80,180,0.1))' },
+          { icon: '💬', title: '커뮤니티', desc: '피부 타입별 소통', badge: 'NEW', path: '/community', bg: 'linear-gradient(135deg,rgba(220,60,60,0.1),rgba(180,40,40,0.08))', badgeColor: '#E04030' },
+          { icon: '💆', title: '살롱예약', desc: '전문 관리샵 예약', badge: '근처', path: '/salon', bg: 'linear-gradient(135deg,rgba(60,180,120,0.12),rgba(40,140,90,0.08))' },
         ].map((f, i) => (
           <div
             key={i}
@@ -316,7 +316,7 @@ export default function CustomerHomePage() {
         ))}
       </div>
 
-      {/* ?????? AURAN POINT ?????? */}
+      {/* ── AURAN POINT ── */}
       <div style={{
         margin: '14px 16px 0',
         background: CARD_BG, border: '1px solid rgba(201,169,110,0.2)',
@@ -325,24 +325,24 @@ export default function CustomerHomePage() {
         cursor: 'pointer',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>???</span>
+          <span style={{ fontSize: '20px' }}>✨</span>
           <div>
             <div style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_MUTED, marginBottom: '2px' }}>AURAN POINT</div>
-            {/* TODO: user_wallets ???????????? ????? ???? */}
+            {/* TODO: user_wallets 테이블에서 포인트 조회 */}
             <div style={{ fontSize: '14px', fontWeight: 400 }}>
               <em style={{ color: GOLD, fontStyle: 'normal' }}>8,888P</em>{' '}
-              <span style={{ color: TEXT_MUTED, fontSize: '11px' }}>??????</span>
+              <span style={{ color: TEXT_MUTED, fontSize: '11px' }}>보유중</span>
             </div>
           </div>
         </div>
-        <span style={{ fontSize: '16px', color: 'rgba(201,169,110,0.35)' }}>???</span>
+        <span style={{ fontSize: '16px', color: 'rgba(201,169,110,0.35)' }}>›</span>
       </div>
 
-      {/* ?????? ??? ????? ??? ???? ?????? */}
+      {/* ── 내 피부 맞춤 추천 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>??? ????? ??? ????</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>???? ???</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>내 피부 맞춤 추천</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>더보기 ›</span>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
@@ -361,7 +361,7 @@ export default function CustomerHomePage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '34px', position: 'relative',
             }}>
-              {p.icon || '????'}
+              {p.icon || '🧴'}
               {p.badge && (
                 <div style={{
                   position: 'absolute', top: '5px', left: '5px',
@@ -373,24 +373,24 @@ export default function CustomerHomePage() {
             <div style={{ padding: '8px 10px' }}>
               <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{p.brand}</div>
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '4px' }}>{p.name}</div>
-              <div style={{ fontSize: '12px', fontWeight: 400 }}>{p.price?.toLocaleString()}???</div>
+              <div style={{ fontSize: '12px', fontWeight: 400 }}>{p.price?.toLocaleString()}원</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* ?????? DUCHESS.KR ?????? ?????? */}
+      {/* ── DUCHESS.KR 구분선 ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '20px 16px 0' }}>
         <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
         <span style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '2px', color: TEXT_DIM }}>DUCHESS.KR STORE</span>
         <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
       </div>
 
-      {/* ?????? ????? ???? ?????? */}
+      {/* ── 피부 고민별 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>????? ???? ???????</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>??? ???</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>피부 고민별 솔루션</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 ›</span>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
@@ -406,7 +406,7 @@ export default function CustomerHomePage() {
               fontSize: '22px', flexShrink: 0,
               background: i === selectedConcern ? 'rgba(201,169,110,0.12)' : CARD_BG,
               border: i === selectedConcern ? '1px solid rgba(201,169,110,0.3)' : CARD_BORDER,
-            }}>{c.icon || '????'}</div>
+            }}>{c.icon || '💧'}</div>
             <span style={{
               fontSize: '9px', fontWeight: 300, textAlign: 'center', whiteSpace: 'nowrap',
               color: i === selectedConcern ? GOLD : TEXT_MUTED,
@@ -415,13 +415,13 @@ export default function CustomerHomePage() {
         ))}
       </div>
 
-      {/* ?????? BEST ?????? ?????? */}
+      {/* ── BEST 랭킹 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>
-            ???? {concernList[selectedConcern]?.name} BEST
+            🏆 {concernList[selectedConcern]?.name} BEST
           </span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>???? ???</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>더보기 ›</span>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
@@ -438,7 +438,7 @@ export default function CustomerHomePage() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '38px', position: 'relative',
               }}>
-                {p.icon || '????'}
+                {p.icon || '🧴'}
                 <div style={{
                   position: 'absolute', top: '7px', left: '7px',
                   width: '22px', height: '22px', borderRadius: '50%',
@@ -452,20 +452,20 @@ export default function CustomerHomePage() {
                     position: 'absolute', top: '7px', right: '7px',
                     background: 'rgba(201,169,110,0.85)', color: BG,
                     fontSize: '8px', padding: '2px 5px', borderRadius: '4px',
-                  }}>AI????</div>
+                  }}>AI추천</div>
                 )}
               </div>
               <div style={{ padding: '9px 11px' }}>
                 <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{p.brand}</div>
                 <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '5px' }}>{p.name}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 400 }}>{p.price?.toLocaleString()}???</span>
-                  <span style={{ fontSize: '14px', cursor: 'pointer' }}>????</span>
+                  <span style={{ fontSize: '13px', fontWeight: 400 }}>{p.price?.toLocaleString()}원</span>
+                  <span style={{ fontSize: '14px', cursor: 'pointer' }}>🤍</span>
                 </div>
                 <div style={{ display: 'flex', gap: '4px' }}>
-                  <div style={{ flex: 1, padding: '7px 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '9px', color: 'rgba(255,255,255,0.55)', textAlign: 'center', cursor: 'pointer' }}>???? ????</div>
-                  <div style={{ flex: 1, padding: '7px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '9px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>???? ????</div>
-                  <div style={{ flex: 1.3, padding: '7px 0', background: GOLD, borderRadius: '8px', fontSize: '9px', fontWeight: 400, color: BG, textAlign: 'center', cursor: 'pointer' }}>??????</div>
+                  <div style={{ flex: 1, padding: '7px 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '9px', color: 'rgba(255,255,255,0.55)', textAlign: 'center', cursor: 'pointer' }}>🛒 담기</div>
+                  <div style={{ flex: 1, padding: '7px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '9px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>🎁 선물</div>
+                  <div style={{ flex: 1.3, padding: '7px 0', background: GOLD, borderRadius: '8px', fontSize: '9px', fontWeight: 400, color: BG, textAlign: 'center', cursor: 'pointer' }}>바로구매</div>
                 </div>
               </div>
             </div>
@@ -473,40 +473,40 @@ export default function CustomerHomePage() {
         })}
       </div>
 
-      {/* ?????? ?? ?? ?????? */}
+      {/* ── 롤링 리뷰 ── */}
       <div style={{ margin: '16px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1.5px', color: TEXT_DIM }}>? ???????? ??</span>
-          <span onClick={() => router.push('/reviews')} style={{ fontSize: '10px', color: GOLD, cursor: 'pointer' }}>????? ???</span>
+          <span style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1.5px', color: TEXT_DIM }}>⭐ 실시간 리뷰</span>
+          <span onClick={() => router.push('/reviews')} style={{ fontSize: '10px', color: GOLD, cursor: 'pointer' }}>전체보기 →</span>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>????</span>
+          <span style={{ fontSize: '20px' }}>🧴</span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '11px', marginBottom: '3px' }}>?????</div>
+            <div style={{ fontSize: '11px', marginBottom: '3px' }}>⭐⭐⭐⭐⭐</div>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7 }}>
-              &quot;????????? ? ?? ??????? ????? ??? ??????????. ????? ?????????? ???? ???? ??? ??? ????????? ????&quot;
+              &quot;환절기에 이 크림 덕분에 피부 안 땅겼어요. 민감한 피부에도 자극 없이 쓸 수 있어요 💧&quot;
             </div>
-            <div style={{ fontSize: '9px', color: TEXT_DIM, marginTop: '3px' }}>????????? ? ??????? ? CIVASAN MESS CREAM</div>
+            <div style={{ fontSize: '9px', color: TEXT_DIM, marginTop: '3px' }}>건성피부 · 유미님 · CIVASAN MESS CREAM</div>
             <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px', gap: '6px' }}>
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: '3px',
                 padding: '3px 8px', background: 'rgba(255,255,255,0.04)',
                 border: CARD_BORDER, borderRadius: '6px',
                 fontSize: '10px', color: TEXT_MUTED, cursor: 'pointer',
-              }}>???? ????????? 24</div>
-              <span style={{ fontSize: '9px', color: 'rgba(201,169,110,0.6)' }}>+5P ??</span>
+              }}>👍 도움돼요 24</div>
+              <span style={{ fontSize: '9px', color: 'rgba(201,169,110,0.6)' }}>+5P 적립</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* ?????? ????????????? ?????? */}
+      {/* ── 타임세일·공구 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>??? ?????????? ? ??</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>??? ???</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>⚡ 타임세일 · 공구</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 ›</span>
         </div>
-        {/* ??? */}
+        {/* 탭 */}
         <div style={{ display: 'flex', border: CARD_BORDER, borderRadius: '12px', overflow: 'hidden', marginBottom: '12px' }}>
           {(['sale', 'group'] as const).map((tab) => (
             <div
@@ -524,12 +524,12 @@ export default function CustomerHomePage() {
                 cursor: 'pointer',
               }}
             >
-              {tab === 'sale' ? '???? ??????????' : '???? ?????'}
+              {tab === 'sale' ? '🔥 타임세일' : '👥 공동구매'}
             </div>
           ))}
         </div>
 
-        {/* ?????????? */}
+        {/* 타임세일 */}
         {saleTab === 'sale' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {saleList.map((item: any, i: number) => (
@@ -541,7 +541,7 @@ export default function CustomerHomePage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '28px', flexShrink: 0, position: 'relative',
                   }}>
-                    {item.icon || '????'}
+                    {item.icon || '🧴'}
                     <div style={{
                       position: 'absolute', top: '-4px', right: '-4px',
                       background: '#E04030', borderRadius: '20px', padding: '2px 6px',
@@ -557,15 +557,15 @@ export default function CustomerHomePage() {
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '5px' }}>
                       <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
-                        {(item.orig || item.original_price)?.toLocaleString()}???
+                        {(item.orig || item.original_price)?.toLocaleString()}원
                       </span>
                       <span style={{ fontSize: '15px', fontWeight: 400, color: '#E07060' }}>
-                        {(item.sale || item.sale_price)?.toLocaleString()}???
+                        {(item.sale || item.sale_price)?.toLocaleString()}원
                       </span>
                     </div>
-                    {/* ???? ????? */}
+                    {/* 개별 타이머 */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontSize: '9px', color: TEXT_DIM }}>? ???</span>
+                      <span style={{ fontSize: '9px', color: TEXT_DIM }}>⏱ 마감</span>
                       {[timers[i]?.h, timers[i]?.m, timers[i]?.s].map((v, ti) => (
                         <span key={ti} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                           {ti > 0 && <span style={{ color: 'rgba(220,60,40,0.4)', fontSize: '11px' }}>:</span>}
@@ -581,53 +581,53 @@ export default function CustomerHomePage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
-                  <div style={{ flex: 1, padding: '8px 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.6)', textAlign: 'center', cursor: 'pointer' }}>???? ????</div>
-                  <div style={{ flex: 1, padding: '8px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>???? ????</div>
-                  <div style={{ flex: 1.3, padding: '8px 0', background: '#C04030', borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: '#fff', textAlign: 'center', cursor: 'pointer' }}>???? ??</div>
+                  <div style={{ flex: 1, padding: '8px 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.6)', textAlign: 'center', cursor: 'pointer' }}>🛒 담기</div>
+                  <div style={{ flex: 1, padding: '8px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>🎁 선물</div>
+                  <div style={{ flex: 1.3, padding: '8px 0', background: '#C04030', borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: '#fff', textAlign: 'center', cursor: 'pointer' }}>지금 구매</div>
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* ????? */}
+        {/* 공동구매 */}
         {saleTab === 'group' && (
           <div style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
             <div style={{ background: 'linear-gradient(135deg,rgba(60,80,200,0.15),rgba(80,120,240,0.1))', padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '10px', color: 'rgba(120,160,255,0.9)', fontFamily: 'monospace' }}>???? ????? ? ???? ????????? ?????</span>
-              <span style={{ fontSize: '10px', color: TEXT_MUTED }}>127/200??</span>
+              <span style={{ fontSize: '10px', color: 'rgba(120,160,255,0.9)', fontFamily: 'monospace' }}>👥 공동구매 · 목표 달성시 발송</span>
+              <span style={{ fontSize: '10px', color: TEXT_MUTED }}>127/200명</span>
             </div>
             <div style={{ height: '3px', background: 'rgba(255,255,255,0.08)' }}>
               <div style={{ height: '100%', width: '63%', background: 'linear-gradient(90deg,#4060C0,#8090E0)' }} />
             </div>
             <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
-              <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px' }}>????</div>
+              <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px' }}>🧴</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>CIVASAN</div>
-                <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>MESS CREAM ??????????</div>
-                <div style={{ fontSize: '10px', color: 'rgba(120,160,255,0.8)', marginBottom: '4px' }}>???? 200?? ?????? ??? ????? ? 73?? ?? ??????</div>
+                <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>MESS CREAM 더블세트</div>
+                <div style={{ fontSize: '10px', color: 'rgba(120,160,255,0.8)', marginBottom: '4px' }}>🎯 200명 달성 시 발송 · 73명 더 필요</div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>116,000???</span>
-                  <span style={{ fontSize: '15px', color: 'rgba(120,160,255,0.9)' }}>69,600??? (-40%)</span>
+                  <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>116,000원</span>
+                  <span style={{ fontSize: '15px', color: 'rgba(120,160,255,0.9)' }}>69,600원 (-40%)</span>
                 </div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
-              <div style={{ flex: 2, padding: '9px 0', background: 'linear-gradient(135deg,#4060C0,#6080E0)', borderRadius: '8px', fontSize: '11px', color: '#fff', textAlign: 'center', cursor: 'pointer' }}>???? ?? ????????</div>
-              <div style={{ flex: 1, padding: '9px 0', background: 'rgba(80,120,220,0.1)', border: '1px solid rgba(80,120,220,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(120,160,255,0.8)', textAlign: 'center', cursor: 'pointer' }}>???? ??? ?????</div>
+              <div style={{ flex: 2, padding: '9px 0', background: 'linear-gradient(135deg,#4060C0,#6080E0)', borderRadius: '8px', fontSize: '11px', color: '#fff', textAlign: 'center', cursor: 'pointer' }}>👥 공구 참여하기</div>
+              <div style={{ flex: 1, padding: '9px 0', background: 'rgba(80,120,220,0.1)', border: '1px solid rgba(80,120,220,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(120,160,255,0.8)', textAlign: 'center', cursor: 'pointer' }}>📤 친구 초대</div>
             </div>
           </div>
         )}
       </div>
 
-      {/* ?????? ???? ?????? */}
+      {/* ── 살롱 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>???? ??? ??? ??????</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>?????? ???</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>📍 내 주변 관리샵</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>지도보기 ›</span>
         </div>
         <div style={{ display: 'flex', gap: '7px', overflowX: 'auto', paddingBottom: '10px', scrollbarWidth: 'none' }}>
-          {['???? ?????', '???? ?????', '? ?????', '???? ???????', '???? ?????', '??? ?????'].map((f, i) => (
+          {['📍 거리순', '🔥 인기순', '⭐ 리뷰순', '💆 페이셜', '🌿 바디', '✨ 클리닉'].map((f, i) => (
             <div key={i} style={{
               padding: '5px 12px', whiteSpace: 'nowrap', cursor: 'pointer', fontSize: '10px',
               background: i === 0 ? 'rgba(201,169,110,0.15)' : CARD_BG,
@@ -640,14 +640,14 @@ export default function CustomerHomePage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {salonList.map((salon: any, i: number) => (
             <div key={i} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '16px', padding: '13px 14px', display: 'flex', gap: '12px', alignItems: 'center', cursor: 'pointer' }}>
-              <div style={{ width: '50px', height: '50px', borderRadius: '12px', background: 'linear-gradient(135deg,#1a1520,#2a1a30)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>????</div>
+              <div style={{ width: '50px', height: '50px', borderRadius: '12px', background: 'linear-gradient(135deg,#1a1520,#2a1a30)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>💆</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13px', fontWeight: 400, marginBottom: '2px' }}>{salon.name}</div>
                 <div style={{ fontSize: '10px', color: TEXT_MUTED, marginBottom: '4px' }}>
                   {salon.open && (
                     <span style={{ display: 'inline-block', width: '5px', height: '5px', borderRadius: '50%', background: '#3ab870', marginRight: '4px' }} />
                   )}
-                  ? {salon.rating} ? ?? {salon.reviews} ? {salon.area}
+                  ⭐ {salon.rating} · 리뷰 {salon.reviews} · {salon.area}
                 </div>
                 <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
                   {(salon.tags || []).map((tag: string, ti: number) => (
@@ -660,23 +660,23 @@ export default function CustomerHomePage() {
                   fontSize: '9px', padding: '3px 8px', borderRadius: '10px',
                   background: salon.open ? 'rgba(74,200,120,0.15)' : 'rgba(200,80,80,0.1)',
                   color: salon.open ? '#3ab870' : '#c05050',
-                }}>{salon.open ? '????????' : '??????????'}</div>
+                }}>{salon.open ? '영업중' : '영업종료'}</div>
                 <div style={{ fontSize: '9px', color: TEXT_DIM }}>{salon.dist}</div>
-                <div style={{ padding: '6px 10px', background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: '8px', fontSize: '10px', color: GOLD, cursor: 'pointer' }}>??????????</div>
+                <div style={{ padding: '6px 10px', background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: '8px', fontSize: '10px', color: GOLD, cursor: 'pointer' }}>예약하기</div>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ?????? ????? ???? ?????? */}
+      {/* ── 소진 알림 ── */}
       <div style={{ margin: '16px 16px 0', background: 'rgba(220,100,40,0.08)', border: '1px solid rgba(220,120,60,0.2)', borderRadius: '16px', padding: '14px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 400, color: 'rgba(220,150,80,0.9)' }}>???? ? ???????? ? ??????????!</span>
-          <span style={{ fontSize: '10px', color: 'rgba(201,169,110,0.7)', cursor: 'pointer' }}>????????? ????? ???</span>
+          <span style={{ fontSize: '11px', fontWeight: 400, color: 'rgba(220,150,80,0.9)' }}>🔔 이 제품들 곧 떨어져요!</span>
+          <span style={{ fontSize: '10px', color: 'rgba(201,169,110,0.7)', cursor: 'pointer' }}>자동알림 설정 ›</span>
         </div>
-        {/* TODO: refill_alerts ???????????? user_id ??? ???? */}
-        {[{ icon: '????', name: 'CIVASAN MESS CREAM', pct: 20 }, { icon: '????', name: 'GERNETIC ?????? ??????', pct: 35 }].map((item, i) => (
+        {/* TODO: refill_alerts 테이블에서 user_id 기준 조회 */}
+        {[{ icon: '🧴', name: 'CIVASAN MESS CREAM', pct: 20 }, { icon: '🌿', name: 'GERNETIC 바이오 세럼', pct: 35 }].map((item, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: i === 0 ? '8px' : 0 }}>
             <span style={{ fontSize: '22px' }}>{item.icon}</span>
             <div style={{ flex: 1 }}>
@@ -685,22 +685,22 @@ export default function CustomerHomePage() {
                 <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
                   <div style={{ height: '100%', width: `${item.pct}%`, background: i === 0 ? 'linear-gradient(90deg,#E07030,#C05020)' : 'linear-gradient(90deg,#E0A030,#C08020)', borderRadius: '2px' }} />
                 </div>
-                <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{item.pct}% ?????</span>
+                <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{item.pct}% 남음</span>
               </div>
             </div>
-            <div style={{ padding: '5px 10px', background: 'rgba(220,150,60,0.15)', border: '1px solid rgba(220,150,60,0.3)', borderRadius: '8px', fontSize: '10px', color: '#E09040', cursor: 'pointer' }}>?????</div>
+            <div style={{ padding: '5px 10px', background: 'rgba(220,150,60,0.15)', border: '1px solid rgba(220,150,60,0.3)', borderRadius: '8px', fontSize: '10px', color: '#E09040', cursor: 'pointer' }}>재구매</div>
           </div>
         ))}
       </div>
 
-      {/* ?????? ?? ?????????? ?????? */}
+      {/* ── 구매 히스토리 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>???? ??? ?? ??????????</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>????? ???</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>📋 내 구매 히스토리</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체보기 ›</span>
         </div>
       </div>
-      {/* TODO: user_products ???????????? ??? 4?? ???? */}
+      {/* TODO: user_products 테이블에서 최근 4개 조회 */}
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
         {FALLBACK_HISTORY.map((item, i) => (
           <div key={i} style={{ minWidth: '110px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', flexShrink: 0 }}>
@@ -711,70 +711,70 @@ export default function CustomerHomePage() {
             <div style={{ padding: '7px 8px' }}>
               <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '1px' }}>{item.brand}</div>
               <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)', marginBottom: '5px' }}>{item.name}</div>
-              <div style={{ width: '100%', padding: '4px 0', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.15)', borderRadius: '6px', fontSize: '9px', color: GOLD, textAlign: 'center', cursor: 'pointer' }}>???? ?????</div>
+              <div style={{ width: '100%', padding: '4px 0', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.15)', borderRadius: '6px', fontSize: '9px', color: GOLD, textAlign: 'center', cursor: 'pointer' }}>🔄 재구매</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* ?????? ??? ?????? ?????? */}
+      {/* ── 일촌 피드 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>???? ???????? ????</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>???? ???</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>👥 일촌들의 추천</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>더보기 ›</span>
         </div>
-        {/* TODO: friend_activities ?????? ????? */}
+        {/* TODO: friend_activities 테이블 연동 */}
         <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '12px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>????</div>
-            <div style={{ flex: 1, fontSize: '11px', fontWeight: 400 }}>???????</div>
-            <span style={{ fontSize: '9px', color: TEXT_DIM }}>???</span>
+            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>🌺</div>
+            <div style={{ flex: 1, fontSize: '11px', fontWeight: 400 }}>소미님</div>
+            <span style={{ fontSize: '9px', color: TEXT_DIM }}>방금</span>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '8px' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>????</div>
+            <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>🧴</div>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, flex: 1 }}>
-              &quot;MESS CREAM 3??? ?????! ???? ???????? ???? ??? ????&quot;
+              &quot;MESS CREAM 3번째 재구매! 건성 피부에 진짜 최고 💧&quot;
             </div>
           </div>
           <div style={{ display: 'flex', gap: '6px' }}>
-            <div style={{ flex: 1, padding: '6px 0', background: 'rgba(255,100,100,0.1)', border: '1px solid rgba(255,100,100,0.2)', borderRadius: '8px', fontSize: '10px', color: 'rgba(255,120,120,0.8)', textAlign: 'center', cursor: 'pointer' }}>?? ?? 12</div>
-            <div style={{ flex: 1, padding: '6px 0', background: 'rgba(201,169,110,0.1)', border: '1px solid rgba(201,169,110,0.25)', borderRadius: '8px', fontSize: '10px', color: GOLD, textAlign: 'center', cursor: 'pointer' }}>????? ??</div>
-            <div style={{ flex: 1, padding: '6px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '8px', fontSize: '10px', color: TEXT_MUTED, textAlign: 'center', cursor: 'pointer' }}>????</div>
+            <div style={{ flex: 1, padding: '6px 0', background: 'rgba(255,100,100,0.1)', border: '1px solid rgba(255,100,100,0.2)', borderRadius: '8px', fontSize: '10px', color: 'rgba(255,120,120,0.8)', textAlign: 'center', cursor: 'pointer' }}>❤️ 공감 12</div>
+            <div style={{ flex: 1, padding: '6px 0', background: 'rgba(201,169,110,0.1)', border: '1px solid rgba(201,169,110,0.25)', borderRadius: '8px', fontSize: '10px', color: GOLD, textAlign: 'center', cursor: 'pointer' }}>나도 구매</div>
+            <div style={{ flex: 1, padding: '6px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '8px', fontSize: '10px', color: TEXT_MUTED, textAlign: 'center', cursor: 'pointer' }}>공유</div>
           </div>
         </div>
       </div>
 
-      {/* ?????? ???????? ?????? */}
+      {/* ── 신제품 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>???? ????? ????????????</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>??? ???</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>🆕 새로 나왔어요</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 ›</span>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
         {newList.map((item: any, i: number) => (
           <div key={i} onClick={() => router.push(`/products/${item.id}`)} style={{ minWidth: '130px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
             <div style={{ height: '90px', background: 'linear-gradient(135deg,#1a0a2a,#2a1540)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', position: 'relative' }}>
-              {item.icon || '????'}
+              {item.icon || '💜'}
               <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'linear-gradient(90deg,#6040E0,#A040E0)', borderRadius: '5px', padding: '2px 6px', fontSize: '8px', color: '#fff' }}>NEW</div>
             </div>
             <div style={{ padding: '9px 10px' }}>
               <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.brand}</div>
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.4, marginBottom: '4px' }}>{item.name}</div>
-              <div style={{ fontSize: '12px', fontWeight: 400 }}>{item.price?.toLocaleString()}???</div>
+              <div style={{ fontSize: '12px', fontWeight: 400 }}>{item.price?.toLocaleString()}원</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* ?????? ???????? ?????? ????? ?????? */}
+      {/* ── 브랜드 원형 그리드 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>???? ?????????? ??</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>??? ???????? ???</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>🏷 브랜드별 보기</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 브랜드 ›</span>
         </div>
         <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '12px', scrollbarWidth: 'none' }}>
-          {['???', '???????? ??????', '???????? ????', '???????? ??', '?????', '?????'].map((tab, i) => (
+          {['전체', '🇪🇺 유럽', '🇰🇷 국내', '🇯🇵 일본', '클리닉', '바디'].map((tab, i) => (
             <div key={i} style={{
               padding: '4px 12px', whiteSpace: 'nowrap', cursor: 'pointer', fontSize: '10px',
               background: i === 0 ? GOLD : CARD_BG,
@@ -804,7 +804,7 @@ export default function CustomerHomePage() {
               </span>
             </div>
           ))}
-          {/* ???? */}
+          {/* 더보기 */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
             <div style={{
               width: '58px', height: '58px', borderRadius: '50%',
@@ -814,31 +814,31 @@ export default function CustomerHomePage() {
               flexDirection: 'column', gap: '2px',
             }}>
               <span style={{ fontSize: '16px', color: 'rgba(255,255,255,0.4)' }}>+</span>
-              <span style={{ fontSize: '8px', color: TEXT_DIM }}>23??</span>
+              <span style={{ fontSize: '8px', color: TEXT_DIM }}>23개</span>
             </div>
-            <span style={{ fontSize: '9px', color: TEXT_DIM }}>?????</span>
+            <span style={{ fontSize: '9px', color: TEXT_DIM }}>전체보기</span>
           </div>
         </div>
       </div>
 
-      {/* ?????? ?????? ?????? */}
+      {/* ── 푸터 ── */}
       <div style={{ margin: '20px 16px 0', padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ textAlign: 'center', marginBottom: '16px' }}>
           <span style={{ fontFamily: 'Georgia, serif', fontSize: '16px', fontWeight: 400, color: '#C9A96E', letterSpacing: '4px' }}>AURAN</span>
-          <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', marginLeft: '8px' }}>? DUCHESS.KR</span>
+          <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', marginLeft: '8px' }}>· DUCHESS.KR</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '14px', flexWrap: 'wrap' }}>
-          {['?????????', 'FAQ', '1:1???', '???????????', '?????????'].map((item, i) => (
+          {['공지사항', 'FAQ', '1:1문의', '개인정보처리방침', '이용약관'].map((item, i) => (
             <span key={i} style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)', cursor: 'pointer' }}>{item}</span>
           ))}
         </div>
         <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.2)', lineHeight: 2 }}>
-          <div>?????? : ?????? ? ?????????????????? : 197-87-01357</div>
-          <div>???????????? ? support@auran.kr</div>
-          <div style={{ marginTop: '4px', fontSize: '9px', color: 'rgba(255,255,255,0.15)' }}>? 2026 AURAN. All rights reserved.</div>
+          <div>대표 : 박유미 · 사업자등록번호 : 197-87-01357</div>
+          <div>대구광역시 · support@auran.kr</div>
+          <div style={{ marginTop: '4px', fontSize: '9px', color: 'rgba(255,255,255,0.15)' }}>© 2026 AURAN. All rights reserved.</div>
         </div>
       </div>
-      {/* ?????? ?????? ??????????? ?????? */}
+      {/* ── 하단 네비게이션 ── */}
       <nav style={{
         position: 'fixed', bottom: 0,
         left: '50%', transform: 'translateX(-50%)',
@@ -849,11 +849,11 @@ export default function CustomerHomePage() {
         padding: '0 10px 16px', zIndex: 50,
       }}>
         <div onClick={() => router.push('/home')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '20px' }}>????</span>
+          <span style={{ fontSize: '20px' }}>🏠</span>
           <span style={{ fontSize: '9px', fontFamily: 'monospace', color: GOLD }}>HOME</span>
         </div>
         <div onClick={() => router.push('/products')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '20px' }}>?????</span>
+          <span style={{ fontSize: '20px' }}>🛍️</span>
           <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM }}>SHOP</span>
         </div>
         <div
@@ -866,15 +866,15 @@ export default function CustomerHomePage() {
             marginTop: '-20px', cursor: 'pointer',
           }}
         >
-          <span style={{ fontSize: '20px' }}>????</span>
-          <span style={{ fontSize: '8px', fontWeight: 400, color: BG, fontFamily: 'monospace' }}>AI?????</span>
+          <span style={{ fontSize: '20px' }}>🔬</span>
+          <span style={{ fontSize: '8px', fontWeight: 400, color: BG, fontFamily: 'monospace' }}>AI분석</span>
         </div>
         <div onClick={() => router.push('/salon')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '20px' }}>????</span>
-          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM }}>??????</span>
+          <span style={{ fontSize: '20px' }}>📅</span>
+          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM }}>예약</span>
         </div>
         <div onClick={() => router.push('/my')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '20px' }}>????</span>
+          <span style={{ fontSize: '20px' }}>👤</span>
           <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM }}>MY</span>
         </div>
       </nav>

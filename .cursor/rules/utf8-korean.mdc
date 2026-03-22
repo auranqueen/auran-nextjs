@@ -1,0 +1,12 @@
+---
+description: UTF-8 only; preserve Korean strings in TSX/JSON
+globs: "**/*.{tsx,ts,jsx,js,json,md}"
+alwaysApply: false
+---
+
+# Encoding and Korean text
+
+- Save all source files as **UTF-8** (no ANSI, EUC-KR, or other legacy encodings).
+- **Do not change** existing Korean UI copy, Korean variable names, or translation strings unless the user explicitly asks.
+- When editing, avoid replacing large regions of a file in ways that re-save mojibake; if Korean appears as `?` or garbage, restore from git history (`git show <commit>:path`) and re-apply edits using tools that preserve UTF-8 (e.g. read/write the file as UTF-8 in Node, not lossy clipboard or mis-encoded shell redirects).
+- Extra care: `page.tsx`, `layout.tsx`, `client.tsx`, components under `src/components/`, and JSON with user-facing text.
