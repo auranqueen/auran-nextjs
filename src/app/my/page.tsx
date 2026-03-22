@@ -7,6 +7,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
+import { getStoredTheme, setStoredTheme } from '@/lib/theme'
 import { getCustomerGradeLabel } from '@/lib/customerGrade'
 
 type ProfileRow = {
@@ -30,6 +31,11 @@ export default function MyPage() {
 
   const [loading, setLoading] = useState(true)
   const [me, setMe] = useState<ProfileRow | null>(null)
+  const [themeMode, setThemeMode] = useState<'dark' | 'light'>('dark')
+
+  useEffect(() => {
+    setThemeMode(getStoredTheme())
+  }, [])
 
   useEffect(() => {
     const run = async () => {
@@ -66,9 +72,33 @@ export default function MyPage() {
     router.push('/')
   }
 
+  const toggleThemeMode = () => {
+    const next = themeMode === 'dark' ? 'light' : 'dark'
+    setStoredTheme(next)
+    setThemeMode(next)
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
       <DashboardHeader title="나" right={<CustomerHeaderRight />} />
+
+      <div style={{ padding: '8px 18px 0', display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          type="button"
+          onClick={toggleThemeMode}
+          style={{
+            fontSize: 12,
+            padding: '8px 12px',
+            borderRadius: 10,
+            border: '1px solid var(--border)',
+            background: 'var(--bg3)',
+            color: 'var(--text2)',
+            fontWeight: 700,
+          }}
+        >
+          {themeMode === 'dark' ? '라이트 모드' : '다크 모드'}
+        </button>
+      </div>
 
       <div style={{ padding: '18px 18px 0' }}>
         {loading || !me ? (

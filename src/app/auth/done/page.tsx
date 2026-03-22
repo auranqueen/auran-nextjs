@@ -4,15 +4,42 @@ import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { normalizePosition, positionToDashboardPath, POSITION_STORAGE_KEY } from '@/lib/position'
 import { createClient } from '@/lib/supabase/client'
+import { setStoredTheme } from '@/lib/theme'
 
 function AuthDoneInner() {
   const router = useRouter()
   const params = useSearchParams()
   const supabase = createClient()
-  const [phase, setPhase] = useState<'loading' | 'phone' | 'redirect'>('loading')
+  const [phase, setPhase] = useState<'loading' | 'phone' | 'redirect' | 'theme'>('loading')
   const [phoneInput, setPhoneInput] = useState('')
   const [saving, setSaving] = useState(false)
   const [hint, setHint] = useState('')
+  const [sessionUserCreatedAt, setSessionUserCreatedAt] = useState<string | null>(null)
+
+  const navigateDashboard = () => {
+    const fromQuery = normalizePosition(params.get('position'))
+    const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
+    const position = fromQuery || stored || 'customer'
+    localStorage.setItem(POSITION_STORAGE_KEY, position)
+    const redirect = params.get('redirect')
+    const safeRedirect = redirect && redirect.startsWith('/') ? redirect : null
+    router.replace(safeRedirect || positionToDashboardPath(position))
+  }
+
+  const goDashboard = () => {
+    try {
+      if (sessionUserCreatedAt && localStorage.getItem('auran_theme_onboarded') !== '1') {
+        const age = Date.now() - new Date(sessionUserCreatedAt).getTime()
+        if (age >= 0 && age < 10 * 60 * 1000) {
+          setPhase('theme')
+          return
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    navigateDashboard()
+  }
 
   useEffect(() => {
     ;(async () => {
@@ -29,32 +56,30 @@ function AuthDoneInner() {
         }
         data = retry
       }
+      const createdAt = data.session!.user.created_at
+      setSessionUserCreatedAt(createdAt)
       const { data: row } = await supabase.from('users').select('phone').eq('auth_id', data.session!.user.id).maybeSingle()
       const p = String(row?.phone || '').replace(/\D/g, '')
       if (p.length >= 10) {
+        let onboarded = false
+        try {
+          onboarded = localStorage.getItem('auran_theme_onboarded') === '1'
+        } catch {
+          onboarded = true
+        }
+        const age = Date.now() - new Date(createdAt).getTime()
+        const isNewSignup = age >= 0 && age < 10 * 60 * 1000
+        if (isNewSignup && !onboarded) {
+          setPhase('theme')
+          return
+        }
         setPhase('redirect')
-        const fromQuery = normalizePosition(params.get('position'))
-        const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
-        const position = fromQuery || stored || 'customer'
-        localStorage.setItem(POSITION_STORAGE_KEY, position)
-        const redirect = params.get('redirect')
-        const safeRedirect = redirect && redirect.startsWith('/') ? redirect : null
-        router.replace(safeRedirect || positionToDashboardPath(position))
+        navigateDashboard()
         return
       }
       setPhase('phone')
     })()
   }, [params, router, supabase])
-
-  const goDashboard = () => {
-    const fromQuery = normalizePosition(params.get('position'))
-    const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
-    const position = fromQuery || stored || 'customer'
-    localStorage.setItem(POSITION_STORAGE_KEY, position)
-    const redirect = params.get('redirect')
-    const safeRedirect = redirect && redirect.startsWith('/') ? redirect : null
-    router.replace(safeRedirect || positionToDashboardPath(position))
-  }
 
   const savePhone = async () => {
     const digits = phoneInput.replace(/\D/g, '')
@@ -77,6 +102,73 @@ function AuthDoneInner() {
       return
     }
     goDashboard()
+  }
+
+  const pickThemeAndContinue = (t: 'dark' | 'light') => {
+    setStoredTheme(t)
+    try {
+      localStorage.setItem('auran_theme_onboarded', '1')
+    } catch {
+      /* ignore */
+    }
+    setPhase('redirect')
+    navigateDashboard()
+  }
+
+  if (phase === 'theme') {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          background: 'var(--bg)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+        }}
+      >
+        <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', marginBottom: 10, textAlign: 'center' }}>테마 선택</div>
+        <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 22, textAlign: 'center', lineHeight: 1.5 }}>
+          화면 테마를 선택해 주세요.
+        </div>
+        <button
+          type="button"
+          onClick={() => pickThemeAndContinue('dark')}
+          style={{
+            width: '100%',
+            maxWidth: 320,
+            padding: 14,
+            marginBottom: 10,
+            borderRadius: 12,
+            border: '1px solid var(--border)',
+            background: 'var(--bg3)',
+            color: 'var(--text)',
+            fontSize: 15,
+            fontWeight: 800,
+          }}
+        >
+          다크 모드
+        </button>
+        <button
+          type="button"
+          onClick={() => pickThemeAndContinue('light')}
+          style={{
+            width: '100%',
+            maxWidth: 320,
+            padding: 14,
+            borderRadius: 12,
+            border: '1px solid var(--border)',
+            background: 'var(--bg2)',
+            color: 'var(--text)',
+            fontSize: 15,
+            fontWeight: 800,
+          }}
+        >
+          라이트 모드
+        </button>
+      </div>
+    )
   }
 
   if (phase === 'loading' || phase === 'redirect') {

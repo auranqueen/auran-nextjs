@@ -16,6 +16,24 @@
   --pink: #bf5f90;
 }
 
+[data-theme="light"] {
+  --bg: #ffffff;
+  --bg2: #f8f8f8;
+  --bg3: #f5f5f5;
+  --border: rgba(0, 0, 0, 0.08);
+  --border2: rgba(0, 0, 0, 0.12);
+  --text: #111111;
+  --text2: #333333;
+  --text3: #666666;
+  --gold: #a8862e;
+  --gold2: #8a6f24;
+  --green: #2d8a5a;
+  --blue: #2a6fa0;
+  --purple: #6b4aa3;
+  --red: #c43d3d;
+  --pink: #a04a78;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
