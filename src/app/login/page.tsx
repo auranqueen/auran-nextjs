@@ -42,6 +42,17 @@ function LoginForm() {
   const [error, setError] = useState('')
   const [kakaoOAuthLoading, setKakaoOAuthLoading] = useState(false)
   const [googleOAuthLoading, setGoogleOAuthLoading] = useState(false)
+  const [recentKakao, setRecentKakao] = useState(false)
+  const [autoLogin, setAutoLogin] = useState(true)
+
+  useEffect(() => {
+    try {
+      setRecentKakao(localStorage.getItem('auran_last_provider') === 'kakao')
+    } catch {}
+    try {
+      if (localStorage.getItem('auran_auto_login') === 'false') setAutoLogin(false)
+    } catch {}
+  }, [])
 
   useEffect(() => {
     ;(async () => {
@@ -164,6 +175,10 @@ function LoginForm() {
         if (error) {
           setError(error.message)
           setKakaoOAuthLoading(false)
+        } else {
+          try {
+            localStorage.setItem('auran_last_provider', 'kakao')
+          } catch {}
         }
       } catch (e: unknown) {
         console.error('카카오 로그인:', e)
@@ -222,24 +237,74 @@ function LoginForm() {
             <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{meta.hint}</div>
           </div>
         </div>
-        <div style={{ marginTop: -16, marginBottom: 20, padding: '10px 12px', borderRadius: 10, background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)', fontSize: 12, color: 'var(--gold)', fontWeight: 700 }}>
+        {role !== 'admin' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginBottom: 16 }}>
+            {recentKakao && (
+              <div
+                style={{
+                  alignSelf: 'flex-start',
+                  marginBottom: 8,
+                  padding: '6px 10px',
+                  borderRadius: 10,
+                  background: 'rgba(201,169,110,0.22)',
+                  border: '1px solid rgba(201,169,110,0.45)',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: 'var(--gold)',
+                  position: 'relative',
+                }}
+              >
+                최근 로그인
+                <span
+                  style={{
+                    position: 'absolute',
+                    left: 20,
+                    bottom: -6,
+                    width: 0,
+                    height: 0,
+                    borderLeft: '6px solid transparent',
+                    borderRight: '6px solid transparent',
+                    borderTop: '6px solid rgba(201,169,110,0.35)',
+                  }}
+                  aria-hidden
+                />
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => void handleSocial('kakao')}
+              disabled={kakaoOAuthLoading || googleOAuthLoading}
+              style={{
+                width: '100%',
+                height: 60,
+                minHeight: 60,
+                padding: '0 14px',
+                background: '#fee500',
+                border: 'none',
+                borderRadius: 12,
+                color: '#3c1e1e',
+                fontSize: 16,
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
+            >
+              <svg width="20" height="20" viewBox="0 0 18 18" fill="none">
+                <path d="M9 1C4.58 1 1 3.91 1 7.5c0 2.3 1.44 4.32 3.62 5.5L3.5 17l4.18-2.76A9.6 9.6 0 009 14c4.42 0 8-2.91 8-6.5S13.42 1 9 1z" fill="#3c1e1e"/>
+              </svg>
+              {kakaoOAuthLoading ? '연결 중...' : '카카오로 계속하기'}
+            </button>
+          </div>
+        )}
+        <div style={{ marginTop: 0, marginBottom: 20, padding: '10px 12px', borderRadius: 10, background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)', fontSize: 12, color: 'var(--gold)', fontWeight: 700 }}>
           {`지금 가입하면 ${signupWelcomePoint.toLocaleString()}P 즉시 지급`}
         </div>
 
         {/* 소셜 로그인 */}
         {role !== 'admin' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
-            <button
-              type="button"
-              onClick={() => void handleSocial('kakao')}
-              disabled={kakaoOAuthLoading || googleOAuthLoading}
-              style={{ width: '100%', padding: '14px', background: '#fee500', border: 'none', borderRadius: 12, color: '#3c1e1e', fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M9 1C4.58 1 1 3.91 1 7.5c0 2.3 1.44 4.32 3.62 5.5L3.5 17l4.18-2.76A9.6 9.6 0 009 14c4.42 0 8-2.91 8-6.5S13.42 1 9 1z" fill="#3c1e1e"/>
-              </svg>
-              {kakaoOAuthLoading ? '연결 중...' : '카카오로 계속하기'}
-            </button>
             <button
               type="button"
               onClick={() => void handleSocial('google')}
@@ -322,6 +387,22 @@ function LoginForm() {
             {loading ? '로그인 중...' : `${meta.label} 로그인`}
           </button>
         </form>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text3)', marginTop: 14, marginBottom: 4 }}>
+          <input
+            type="checkbox"
+            checked={autoLogin}
+            onChange={(e) => {
+              const v = e.target.checked
+              setAutoLogin(v)
+              try {
+                localStorage.setItem('auran_auto_login', v ? 'true' : 'false')
+              } catch {}
+            }}
+            style={{ width: 14, height: 14, accentColor: meta.accent }}
+          />
+          자동로그인
+        </label>
 
         {/* 회원가입 링크 */}
         <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text3)' }}>
