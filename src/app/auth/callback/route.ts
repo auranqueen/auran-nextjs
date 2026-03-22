@@ -20,18 +20,27 @@ export async function GET(request: NextRequest) {
   const host = url.hostname || ''
   const code = url.searchParams.get('code')
   const errorParam = url.searchParams.get('error') || url.searchParams.get('error_description') || ''
-  const position = url.searchParams.get('role') || 'customer'
+  const roleParam = url.searchParams.get('role')
+  const position = roleParam || 'customer'
   const origin = getOrigin(request)
 
-  // auran-deploy로 에러가 넘어온 경우: 프로덕션 로그인으로 보내서 재시도 유도
+  let dashboardPath = '/dashboard/customer'
+  if (roleParam) {
+    if (roleParam === 'owner' || roleParam === 'salon') dashboardPath = '/dashboard/owner'
+    else if (roleParam === 'partner') dashboardPath = '/dashboard/partner'
+    else if (roleParam === 'brand') dashboardPath = '/dashboard/brand'
+    else if (roleParam === 'admin') dashboardPath = '/admin'
+  }
+
+  // auran-deploy로 에러가 넘어온 경우: 프로덕션 대시보드로 보내서 재시도 유도 (/login 사용 안 함)
   if (host.includes('auran-deploy.vercel.app') && (errorParam || !code)) {
-    const err = errorParam ? `&error=${encodeURIComponent(errorParam)}` : ''
-    return NextResponse.redirect(`${PRODUCTION_ORIGIN}/login?role=${position}${err}`)
+    const q = errorParam ? `?error=${encodeURIComponent(errorParam)}` : ''
+    return NextResponse.redirect(`${PRODUCTION_ORIGIN}${dashboardPath}${q}`)
   }
 
   if (errorParam && !code) {
     return NextResponse.redirect(
-      `${origin}/login?role=${encodeURIComponent(position)}&error=${encodeURIComponent(errorParam)}`
+      `${origin}${dashboardPath}?error=${encodeURIComponent(errorParam)}`
     )
   }
 
@@ -59,7 +68,12 @@ export async function GET(request: NextRequest) {
   var access_token = params.get('access_token');
   var refresh_token = params.get('refresh_token') || '';
   if (!access_token || !supabaseUrl || !supabaseKey) {
-    window.location.href = origin + '/login?error=auth_failed';
+    var dashFail = '/dashboard/customer';
+    if (role === 'owner' || role === 'salon') dashFail = '/dashboard/owner';
+    else if (role === 'partner') dashFail = '/dashboard/partner';
+    else if (role === 'brand') dashFail = '/dashboard/brand';
+    else if (role === 'admin') dashFail = '/admin';
+    window.location.replace(origin + dashFail + '?error=auth_failed');
     return;
   }
   var supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
@@ -80,7 +94,14 @@ export async function GET(request: NextRequest) {
       }
       window.location.replace(url);
     })
-    .catch(function() { window.location.href = origin + '/login?error=auth_failed'; });
+    .catch(function() {
+      var dashCatch = '/dashboard/customer';
+      if (role === 'owner' || role === 'salon') dashCatch = '/dashboard/owner';
+      else if (role === 'partner') dashCatch = '/dashboard/partner';
+      else if (role === 'brand') dashCatch = '/dashboard/brand';
+      else if (role === 'admin') dashCatch = '/admin';
+      window.location.replace(origin + dashCatch + '?error=auth_failed');
+    });
 })();
 </script></body></html>`
   return new NextResponse(html, {
