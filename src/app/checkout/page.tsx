@@ -220,7 +220,7 @@ function CheckoutPageInner() {
     if (needCharge > 0) {
       if (!allowCharge) {
         setToast('토스트가 부족해요. 충전 후 구매 가능해요 🍞')
-        router.push('/dashboard/customer')
+        router.push('/home')
         return
       }
       setChargeSheetOpen(true)

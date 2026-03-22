@@ -54,7 +54,7 @@ export function getDefaultLinkForType(type: string | null | undefined): string |
     case 'gift':
       return '/my/gifts'
     case 'welcome':
-      return '/dashboard/customer'
+      return '/home'
     case 'social':
       return '/myworld'
     default:

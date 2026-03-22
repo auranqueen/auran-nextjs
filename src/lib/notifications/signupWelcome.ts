@@ -29,6 +29,6 @@ export async function insertSignupWelcomeNotification(supabase: SupabaseClient, 
     'welcome',
     'AURAN 가입을 환영해요',
     `${pts.toLocaleString()}P가 즉시 적립됐어요. AI 피부분석으로 시작해보세요!`,
-    '/dashboard/customer'
+    '/home'
   )
 }

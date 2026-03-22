@@ -186,6 +186,14 @@ export async function middleware(req: NextRequest) {
       return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
     }
 
+    // 고객 대시보드 루트(/dashboard/customer)는 비활성화 → 앱 홈으로
+    if (pathname === '/dashboard/customer' || pathname === '/dashboard/customer/') {
+      const url = req.nextUrl.clone()
+      url.pathname = '/home'
+      url.search = ''
+      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
+    }
+
     // partner/owner/brand는 본사 승인 전 접근 차단 (users.status !== 'active')
     if (normalizedRole === 'partner' || normalizedRole === 'salon' || normalizedRole === 'brand') {
       const status = await getUserStatus(supabase, user.id)
