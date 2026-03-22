@@ -211,81 +211,6 @@ export default function CustomerHomePage() {
         }}>👩</div>
       </div>
 
-      {/* ── BEAUTY TRACKER ── */}
-      <div style={{
-        margin: '12px 16px 0',
-        background: CARD_BG, border: CARD_BORDER,
-        borderRadius: '18px', padding: '14px 16px',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <span style={{ fontSize: '10px', fontFamily: 'monospace', letterSpacing: '1.5px', color: TEXT_MUTED }}>
-            BEAUTY TRACKER
-          </span>
-          <span style={{ fontSize: '10px', fontFamily: 'monospace', color: TEXT_DIM }}>
-            {new Date().toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })}
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {[
-            { icon: '💧', val: '6', unit: '/8', label: '수분 섭취', pct: 75, color: '#6ab0e0' },
-            { icon: '🌞', val: 'UV', unit: '3', label: '자외선', pct: 40, color: '#f0c040' },
-            { icon: '😴', val: '7.5', unit: 'h', label: '수면', pct: 80, color: '#a080e0' },
-            { icon: '🧴', val: '75', unit: '%', label: '루틴', pct: 75, color: GOLD },
-          ].map((item, i) => (
-            <div key={i} style={{
-              flex: 1, background: 'rgba(255,255,255,0.03)',
-              borderRadius: '12px', padding: '10px 6px',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-            }}>
-              <span style={{ fontSize: '18px' }}>{item.icon}</span>
-              <span style={{ fontSize: '13px', fontWeight: 400 }}>
-                {item.val}<span style={{ fontSize: '9px', fontWeight: 300 }}>{item.unit}</span>
-              </span>
-              <span style={{ fontSize: '9px', color: TEXT_MUTED, textAlign: 'center' }}>{item.label}</span>
-              <div style={{ width: '100%', height: '2px', borderRadius: '2px', background: 'rgba(255,255,255,0.08)' }}>
-                <div style={{ height: '100%', width: `${item.pct}%`, background: item.color, borderRadius: '2px' }} />
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── 히어로 배너 ── */}
-      <div style={{
-        margin: '12px 16px 0', height: '148px',
-        borderRadius: '20px', overflow: 'hidden',
-        background: 'linear-gradient(135deg,#1a0a2a,#2d1545)',
-        position: 'relative', display: 'flex',
-      }}>
-        <div style={{
-          position: 'relative', zIndex: 2, padding: '18px 20px',
-          height: '100%', display: 'flex', flexDirection: 'column',
-          justifyContent: 'space-between', flex: 1,
-        }}>
-          <div>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: '4px',
-              background: 'rgba(255,255,255,0.1)', borderRadius: '20px',
-              padding: '3px 10px', fontSize: '10px', fontFamily: 'monospace',
-              color: 'rgba(255,255,255,0.7)', marginBottom: '7px',
-            }}>✦ 3월 · SPRING SKIN</div>
-            <div style={{ fontSize: '17px', fontWeight: 300, lineHeight: 1.5 }}>
-              봄 피부 변화,<br />
-              <em style={{ color: GOLD, fontStyle: 'normal' }}>AI가 먼저</em> 알아챕니다
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <div style={{ width: '14px', height: '4px', borderRadius: '2px', background: GOLD }} />
-            <div style={{ width: '5px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.2)' }} />
-            <div style={{ width: '5px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.2)' }} />
-          </div>
-        </div>
-        <div style={{
-          position: 'absolute', right: '16px', top: '50%',
-          transform: 'translateY(-50%)', fontSize: '56px', opacity: 0.85,
-        }}>🌸</div>
-      </div>
-
       {/* ── TODAY'S SKIN ── */}
       <div
         onClick={() => router.push('/skin-analysis')}
@@ -314,58 +239,6 @@ export default function CustomerHomePage() {
           </div>
         </div>
         <span style={{ fontSize: '13px', color: TEXT_MUTED }}>›</span>
-      </div>
-
-      {/* ── 4대 기능 그리드 ── */}
-      <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        {[
-          { icon: '🔬', title: '피부분석', desc: 'AI 정밀 분석', badge: 'AI', path: '/skin-analysis', bg: 'linear-gradient(135deg,rgba(160,80,220,0.15),rgba(120,60,180,0.1))' },
-          { icon: '🌍', title: 'MY WORLD', desc: '나만의 미니홈피', badge: 'MY', path: '/my-world', bg: 'linear-gradient(135deg,rgba(60,120,220,0.15),rgba(40,80,180,0.1))' },
-          { icon: '💬', title: '커뮤니티', desc: '피부 타입별 소통', badge: 'NEW', path: '/community', bg: 'linear-gradient(135deg,rgba(220,60,60,0.1),rgba(180,40,40,0.08))', badgeColor: '#E04030' },
-          { icon: '💆', title: '살롱예약', desc: '전문 관리샵 예약', badge: '근처', path: '/salon', bg: 'linear-gradient(135deg,rgba(60,180,120,0.12),rgba(40,140,90,0.08))' },
-        ].map((f, i) => (
-          <div
-            key={i}
-            onClick={() => router.push(f.path)}
-            style={{
-              background: f.bg, border: CARD_BORDER,
-              borderRadius: '20px', padding: '16px 14px',
-              cursor: 'pointer', position: 'relative',
-            }}
-          >
-            <div style={{
-              position: 'absolute', top: '10px', right: '10px',
-              background: f.badgeColor || 'rgba(201,169,110,0.2)',
-              color: f.badgeColor ? '#fff' : GOLD,
-              fontSize: '9px', padding: '2px 7px', borderRadius: '6px',
-            }}>{f.badge}</div>
-            <span style={{ fontSize: '28px', display: 'block', marginBottom: '8px' }}>{f.icon}</span>
-            <div style={{ fontSize: '13px', fontWeight: 400, marginBottom: '3px' }}>{f.title}</div>
-            <div style={{ fontSize: '10px', color: TEXT_MUTED }}>{f.desc}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── AURAN POINT ── */}
-      <div style={{
-        margin: '14px 16px 0',
-        background: CARD_BG, border: '1px solid rgba(201,169,110,0.2)',
-        borderRadius: '14px', padding: '12px 16px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        cursor: 'pointer',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>✨</span>
-          <div>
-            <div style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_MUTED, marginBottom: '2px' }}>AURAN POINT</div>
-            {/* TODO: user_wallets 테이블에서 포인트 조회 */}
-            <div style={{ fontSize: '14px', fontWeight: 400 }}>
-              <em style={{ color: GOLD, fontStyle: 'normal' }}>8,888P</em>{' '}
-              <span style={{ color: TEXT_MUTED, fontSize: '11px' }}>보유중</span>
-            </div>
-          </div>
-        </div>
-        <span style={{ fontSize: '16px', color: 'rgba(201,169,110,0.35)' }}>›</span>
       </div>
 
       {/* ── 내 피부 맞춤 추천 ── */}
@@ -409,11 +282,110 @@ export default function CustomerHomePage() {
         ))}
       </div>
 
+      {/* ── 4대 기능 그리드 ── */}
+      <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+        {[
+          { icon: '🔬', title: '피부분석', desc: 'AI 정밀 분석', badge: 'AI', path: '/skin-analysis', bg: 'linear-gradient(135deg,rgba(160,80,220,0.15),rgba(120,60,180,0.1))' },
+          { icon: '🌍', title: 'MY WORLD', desc: '나만의 미니홈피', badge: 'MY', path: '/my-world', bg: 'linear-gradient(135deg,rgba(60,120,220,0.15),rgba(40,80,180,0.1))' },
+          { icon: '💬', title: '커뮤니티', desc: '피부 타입별 소통', badge: 'NEW', path: '/community', bg: 'linear-gradient(135deg,rgba(220,60,60,0.1),rgba(180,40,40,0.08))', badgeColor: '#E04030' },
+          { icon: '💆', title: '살롱예약', desc: '전문 관리샵 예약', badge: '근처', path: '/salon', bg: 'linear-gradient(135deg,rgba(60,180,120,0.12),rgba(40,140,90,0.08))' },
+        ].map((f, i) => (
+          <div
+            key={i}
+            onClick={() => router.push(f.path)}
+            style={{
+              background: f.bg, border: CARD_BORDER,
+              borderRadius: '20px', padding: '16px 14px',
+              cursor: 'pointer', position: 'relative',
+            }}
+          >
+            <div style={{
+              position: 'absolute', top: '10px', right: '10px',
+              background: f.badgeColor || 'rgba(201,169,110,0.2)',
+              color: f.badgeColor ? '#fff' : GOLD,
+              fontSize: '9px', padding: '2px 7px', borderRadius: '6px',
+            }}>{f.badge}</div>
+            <span style={{ fontSize: '28px', display: 'block', marginBottom: '8px' }}>{f.icon}</span>
+            <div style={{ fontSize: '13px', fontWeight: 400, marginBottom: '3px' }}>{f.title}</div>
+            <div style={{ fontSize: '10px', color: TEXT_MUTED }}>{f.desc}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── 히어로 배너 ── */}
+      <div style={{
+        margin: '12px 16px 0', height: '148px',
+        borderRadius: '20px', overflow: 'hidden',
+        background: 'linear-gradient(135deg,#1a0a2a,#2d1545)',
+        position: 'relative', display: 'flex',
+      }}>
+        <div style={{
+          position: 'relative', zIndex: 2, padding: '18px 20px',
+          height: '100%', display: 'flex', flexDirection: 'column',
+          justifyContent: 'space-between', flex: 1,
+        }}>
+          <div>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: '4px',
+              background: 'rgba(255,255,255,0.1)', borderRadius: '20px',
+              padding: '3px 10px', fontSize: '10px', fontFamily: 'monospace',
+              color: 'rgba(255,255,255,0.7)', marginBottom: '7px',
+            }}>✦ 3월 · SPRING SKIN</div>
+            <div style={{ fontSize: '17px', fontWeight: 300, lineHeight: 1.5 }}>
+              봄 피부 변화,<br />
+              <em style={{ color: GOLD, fontStyle: 'normal' }}>AI가 먼저</em> 알아챕니다
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <div style={{ width: '14px', height: '4px', borderRadius: '2px', background: GOLD }} />
+            <div style={{ width: '5px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.2)' }} />
+            <div style={{ width: '5px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.2)' }} />
+          </div>
+        </div>
+        <div style={{
+          position: 'absolute', right: '16px', top: '50%',
+          transform: 'translateY(-50%)', fontSize: '56px', opacity: 0.85,
+        }}>🌸</div>
+      </div>
+
       {/* ── DUCHESS.KR 구분선 ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '20px 16px 0' }}>
         <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
         <span style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '2px', color: TEXT_DIM }}>DUCHESS.KR STORE</span>
         <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
+      </div>
+
+
+      {/* ── 브랜드 영상 ── */}
+      {/* TODO: brand_videos 테이블에서 is_active=true, order by sort_order */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>🎬 브랜드 영상</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 ›</span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
+        {[
+          { brand: 'CIVASAN', title: 'MESS CREAM 신제품 출시', duration: '2:34', isLive: true, bg: 'linear-gradient(135deg,#1a1510,#2a2015)', icon: '🧴' },
+          { brand: 'GERNETIC', title: '바이오 세럼 사용법', duration: '1:45', isLive: false, bg: 'linear-gradient(135deg,#0a1a10,#1a2a15)', icon: '🌿' },
+          { brand: 'AURAN', title: '살롱 케어 브이로그', duration: '3:12', isLive: false, bg: 'linear-gradient(135deg,#1a0a2a,#2a1540)', icon: '💆' },
+          { brand: 'THALAC', title: '마린 라인 소개', duration: '2:10', isLive: false, bg: 'linear-gradient(135deg,#0a1a2a,#1a2a3a)', icon: '🌊' },
+        ].map((v: any, i: number) => (
+          <div key={i} style={{ minWidth: i === 0 ? '230px' : '150px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', overflow: 'hidden', flexShrink: 0, cursor: 'pointer' }}>
+            <div style={{ height: i === 0 ? '130px' : '96px', background: v.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: i === 0 ? '48px' : '36px', position: 'relative' }}>
+              {v.icon}
+              <div style={{ position: 'absolute', width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>▶</div>
+              {v.isLive && (
+                <div style={{ position: 'absolute', top: '8px', left: '8px', background: 'rgba(220,60,60,0.85)', borderRadius: '5px', padding: '2px 7px', fontSize: '9px', color: '#fff' }}>LIVE</div>
+              )}
+              <div style={{ position: 'absolute', bottom: '7px', right: '7px', background: 'rgba(0,0,0,0.55)', borderRadius: '4px', padding: '2px 5px', fontSize: '9px', color: 'rgba(255,255,255,0.8)', fontFamily: 'monospace' }}>{v.duration}</div>
+            </div>
+            <div style={{ padding: '9px 11px' }}>
+              <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{v.brand}</div>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.4 }}>{v.title}</div>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* ── 피부 고민별 ── */}
@@ -501,6 +473,66 @@ export default function CustomerHomePage() {
             </div>
           )
         })}
+      </div>
+
+
+      {/* ── 포토·영상 리뷰 ── */}
+      {/* TODO: reviews 테이블 photo_url, video_url 있는 것만 조회 */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>📸 포토·영상 리뷰</span>
+          <span onClick={() => router.push('/reviews')} style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>127개 ›</span>
+        </div>
+        {/* 일촌 추천 스트립 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 12px', background: CARD_BG, border: CARD_BORDER, borderRadius: '10px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex' }}>
+            {['🌸','🌺','💜'].map((a, i) => (
+              <div key={i} style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', border: `1.5px solid ${BG}`, marginLeft: i > 0 ? '-6px' : '0' }}>{a}</div>
+            ))}
+          </div>
+          <span style={{ fontSize: '10px', color: TEXT_MUTED, flex: 1 }}>일촌 <span style={{ color: GOLD }}>소미님 외 2명</span>이 포토 리뷰를 남겼어요</span>
+          <span onClick={() => router.push('/reviews')} style={{ fontSize: '10px', color: GOLD, cursor: 'pointer' }}>보기</span>
+        </div>
+        {/* 포토 그리드 */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '3px', borderRadius: '14px', overflow: 'hidden' }}>
+          {[
+            { emoji: '🧴', bg: 'linear-gradient(135deg,#2a1a30,#1a1020)', badge: '일촌', isVid: false },
+            { emoji: '✨', bg: 'linear-gradient(135deg,#0a1a2a,#1a2a3a)', badge: '영상', isVid: true, dur: '0:24' },
+            { emoji: '🌿', bg: 'linear-gradient(135deg,#0a1a0a,#1a2a1a)', badge: '', isVid: false },
+            { emoji: '💧', bg: 'linear-gradient(135deg,#1a1020,#2a1830)', badge: '', isVid: false },
+            { emoji: '🎬', bg: 'linear-gradient(135deg,#1a0a2a,#2a1540)', badge: '영상', isVid: true, dur: '0:18' },
+            { emoji: '+122', bg: 'rgba(255,255,255,0.04)', badge: '', isVid: false, isMore: true },
+          ].map((item: any, i: number) => (
+            <div key={i} onClick={() => router.push('/reviews')} style={{ aspectRatio: '1', background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: item.isMore ? '14px' : '28px', position: 'relative', cursor: 'pointer', flexDirection: item.isMore ? 'column' : 'row', gap: item.isMore ? '2px' : '0' }}>
+              {item.isMore ? (
+                <>
+                  <span style={{ fontSize: '16px', color: 'rgba(255,255,255,0.5)' }}>{item.emoji}</span>
+                  <span style={{ fontSize: '9px', color: TEXT_DIM }}>더보기</span>
+                </>
+              ) : (
+                <>
+                  {item.emoji}
+                  {item.badge === '일촌' && <div style={{ position: 'absolute', top: '5px', left: '5px', background: 'rgba(201,169,110,0.85)', borderRadius: '4px', padding: '1px 5px', fontSize: '7px', color: BG }}>일촌</div>}
+                  {item.isVid && (
+                    <>
+                      <div style={{ position: 'absolute', top: '5px', left: '5px', background: 'rgba(60,120,220,0.9)', borderRadius: '4px', padding: '1px 5px', fontSize: '7px', color: '#fff' }}>영상</div>
+                      <div style={{ position: 'absolute', bottom: '5px', right: '5px', background: 'rgba(0,0,0,0.6)', borderRadius: '3px', padding: '1px 4px', fontSize: '8px', color: '#fff', fontFamily: 'monospace' }}>{item.dur}</div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── 리뷰 작성 유도 ── */}
+      <div style={{ margin: '10px 16px 0', padding: '12px 14px', background: 'rgba(201,169,110,0.05)', border: '1px solid rgba(201,169,110,0.15)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>
+          내 리뷰 사진·영상 올리면<br/>
+          <span style={{ color: GOLD }}>+50P 즉시 적립</span> · 일촌들도 볼 수 있어요
+        </div>
+        <div onClick={() => router.push('/reviews/write')} style={{ padding: '8px 14px', background: GOLD, borderRadius: '8px', fontSize: '11px', color: BG, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, marginLeft: '10px' }}>✍️ 리뷰 작성</div>
       </div>
 
       {/* ── 롤링 리뷰 ── */}
@@ -854,20 +886,23 @@ export default function CustomerHomePage() {
       {/* ── 푸터 ── */}
       <div style={{ margin: '20px 16px 0', padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div style={{ textAlign: 'center', marginBottom: '16px' }}>
-          <span style={{ fontFamily: 'Georgia, serif', fontSize: '16px', fontWeight: 400, color: '#C9A96E', letterSpacing: '4px' }}>AURAN</span>
-          <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', marginLeft: '8px' }}>· DUCHESS.KR</span>
+          <span style={{ fontFamily: 'Georgia, serif', fontSize: '16px', fontWeight: 400, color: GOLD, letterSpacing: '4px' }}>AURAN</span>
+          <span style={{ fontSize: '9px', color: TEXT_DIM, fontFamily: 'monospace', marginLeft: '8px' }}>· DUCHESS.KR</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '14px', flexWrap: 'wrap' }}>
           {['공지사항', 'FAQ', '1:1문의', '개인정보처리방침', '이용약관'].map((item, i) => (
-            <span key={i} style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)', cursor: 'pointer' }}>{item}</span>
+            <span key={i} style={{ fontSize: '10px', color: TEXT_DIM, cursor: 'pointer' }}>{item}</span>
           ))}
         </div>
         <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.2)', lineHeight: 2 }}>
-          <div>대표 : 박유미 · 사업자등록번호 : 197-87-01357</div>
+          <div>대표 : 박유미 · 사업자등록번호 : 000-00-00000</div>
           <div>대구광역시 · support@auran.kr</div>
-          <div style={{ marginTop: '4px', fontSize: '9px', color: 'rgba(255,255,255,0.15)' }}>© 2026 AURAN. All rights reserved.</div>
+          <div style={{ marginTop: '4px', fontSize: '9px', color: 'rgba(255,255,255,0.15)' }}>
+            © 2026 AURAN. All rights reserved.
+          </div>
         </div>
       </div>
+
       {/* ── 하단 네비게이션 ── */}
       <nav style={{
         position: 'fixed', bottom: 0,
