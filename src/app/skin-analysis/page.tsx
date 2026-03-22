@@ -2,9 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import DashboardHeader from '@/components/DashboardHeader'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
-import CustomerHeaderRight from '@/components/CustomerHeaderRight'
+import SkinAnalysisPageShell from '@/components/views/SkinAnalysisPageShell'
 import SkinAnalysisResultView from '@/components/skin-analysis/SkinAnalysisResultView'
 import { createClient } from '@/lib/supabase/client'
 import { broadcastCartCountRefresh } from '@/lib/cartEvents'
@@ -629,24 +627,53 @@ export default function CustomerSkinAnalysisQuizPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-      <DashboardHeader title="피부분석" right={<CustomerHeaderRight />} />
-      <div style={{ padding: '18px 18px 0' }}>
-        {step !== 'start' && step !== 'result' && (
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ height: 4, background: 'var(--bg3)', borderRadius: 2, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${progress}%`, background: GOLD, transition: 'width 0.3s' }} />
+    <SkinAnalysisPageShell
+      progressSlot={
+        step !== 'start' && step !== 'result' ? (
+          <div style={{ marginBottom: 22 }}>
+            <div
+              style={{
+                height: 6,
+                background: 'rgba(255,255,255,0.06)',
+                borderRadius: 999,
+                overflow: 'hidden',
+                border: '1px solid rgba(201,168,76,0.15)',
+              }}
+            >
+              <div
+                style={{
+                  height: '100%',
+                  width: `${progress}%`,
+                  background: `linear-gradient(90deg, ${GOLD}, #e8c88a)`,
+                  transition: 'width 0.3s',
+                  borderRadius: 999,
+                }}
+              />
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 6 }}>{progress}%</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 8, textAlign: 'right' }}>{progress}%</div>
           </div>
-        )}
-
-        {error && (
-          <div style={{ background: 'rgba(229,57,53,0.1)', border: '1px solid rgba(229,57,53,0.25)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, color: '#e57373', fontSize: 13 }}>
+        ) : null
+      }
+      errorSlot={
+        error ? (
+          <div
+            style={{
+              background: 'rgba(229,57,53,0.1)',
+              border: '1px solid rgba(229,57,53,0.25)',
+              borderRadius: 12,
+              padding: '12px 16px',
+              marginBottom: 16,
+              color: '#e57373',
+              fontSize: 13,
+            }}
+          >
             {error}
           </div>
-        )}
-
+        ) : null
+      }
+      toastSlot={null}
+    >
+      <>
         {/* Q1 */}
         {step === 'q1' && (
           <>
@@ -939,9 +966,8 @@ export default function CustomerSkinAnalysisQuizPage() {
             onBrowseProducts={() => router.push('/products')}
           />
         )}
-      </div>
-      <DashboardBottomNav role="customer" />
-    </div>
+      </>
+    </SkinAnalysisPageShell>
   )
 }
 

@@ -9,6 +9,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useCart } from '@/context/CartContext'
+import ProductsCatalogView from '@/components/views/ProductsCatalogView'
 
 function ProductCard({ p }: { p: any }) {
   const [toast, setToast] = useState('')
@@ -43,15 +44,16 @@ function ProductCard({ p }: { p: any }) {
     <div
       style={{
         position: 'relative',
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.10)',
-        borderRadius: 14,
-        padding: '14px 14px',
+        background: 'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
+        border: '1px solid rgba(201,168,76,0.15)',
+        borderRadius: 18,
+        padding: '14px 14px 14px 16px',
         display: 'flex',
-        gap: 10,
+        gap: 12,
         alignItems: 'stretch',
         userSelect: 'none',
         WebkitUserSelect: 'none',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
       }}
     >
       {toast ? (
@@ -222,152 +224,28 @@ function ProductsPageInner() {
   }, [brandFilter, products, specialIds, skinParam, concernParam])
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-      <DashboardHeader title="제품추천" right={<CustomerHeaderRight />} />
-      <div style={{ padding: '18px 18px 0' }}>
-        {specialIds.length > 0 && (
-          <div style={{ marginBottom: 10, borderRadius: 10, border: '1px solid rgba(201,168,76,0.25)', background: 'rgba(201,168,76,0.08)', padding: '8px 10px', color: 'var(--gold)', fontSize: 12, fontWeight: 700 }}>
-            오늘의 특가 전체 상품
-          </div>
-        )}
-        {!!skinParam && (
-          <div style={{ marginBottom: 10, borderRadius: 10, border: '1px solid rgba(74,141,192,0.25)', background: 'rgba(74,141,192,0.08)', padding: '8px 10px', color: '#8bb9dc', fontSize: 12, fontWeight: 700 }}>
-            피부타입 · {skinParam}
-          </div>
-        )}
-        {!!concernParam && (
-          <div style={{ marginBottom: 10, borderRadius: 10, border: '1px solid rgba(201,168,76,0.25)', background: 'rgba(201,168,76,0.08)', padding: '8px 10px', color: 'var(--gold)', fontSize: 12, fontWeight: 700 }}>
-            피부고민 · {concernParam}
-          </div>
-        )}
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 12, WebkitOverflowScrolling: 'touch' as any }}>
-          <button
-            onClick={() => setBrandFilter('all')}
-            style={{
-              border: brandFilter === 'all' ? '1px solid rgba(201,168,76,0.65)' : '1px solid rgba(255,255,255,0.10)',
-              background: brandFilter === 'all' ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)',
-              color: '#fff',
-              borderRadius: 999,
-              padding: '8px 12px',
-              fontSize: 12,
-              fontWeight: 800,
-              whiteSpace: 'nowrap',
-            }}
-          >
-            전체 ({products.length})
-          </button>
-          {brands.map(b => (
-            <button
-              key={b.id}
-              onClick={() => setBrandFilter(b.id)}
-              style={{
-                border: brandFilter === b.id ? '1px solid rgba(201,168,76,0.65)' : '1px solid rgba(255,255,255,0.10)',
-                background: brandFilter === b.id ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)',
-                color: '#fff',
-                borderRadius: 999,
-                padding: '8px 12px',
-                fontSize: 12,
-                fontWeight: 800,
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {b.name} ({b.count})
-            </button>
+    <ProductsCatalogView
+      header={<DashboardHeader title="제품추천" right={<CustomerHeaderRight />} />}
+      bottomNav={<DashboardBottomNav role="customer" />}
+      specialIdsActive={specialIds.length > 0}
+      skinParam={skinParam}
+      concernParam={concernParam}
+      brands={brands}
+      brandFilter={brandFilter}
+      onBrandFilter={setBrandFilter}
+      productTotal={products.length}
+      selectedBrand={selectedBrand}
+      error={error}
+      loading={loading}
+      empty={!loading && visible.length === 0}
+      list={
+        <>
+          {visible.map(p => (
+            <ProductCard key={p.id} p={p} />
           ))}
-        </div>
-
-        {selectedBrand && (
-          <div style={{ marginBottom: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(201,168,76,0.20)', borderRadius: 16, padding: '14px 14px' }}>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                {selectedBrand.logo_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={selectedBrand.logo_url} alt={selectedBrand.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ fontSize: 16 }}>🏷️</div>
-                )}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>{selectedBrand.name}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {selectedBrand.origin || ''} {selectedBrand.description ? `· ${selectedBrand.description}` : ''}
-                </div>
-              </div>
-            </div>
-
-            {(selectedBrand.story_title || selectedBrand.story_body || selectedBrand.story_image_url) && (
-              <div style={{ marginTop: 12, background: 'rgba(0,0,0,0.18)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, overflow: 'hidden' }}>
-                {selectedBrand.story_image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={selectedBrand.story_image_url} alt="" style={{ width: '100%', height: 140, objectFit: 'cover', display: 'block' }} />
-                ) : null}
-                <div style={{ padding: '12px 12px' }}>
-                  {selectedBrand.story_title ? <div style={{ fontSize: 12, fontWeight: 900, color: '#fff' }}>{selectedBrand.story_title}</div> : null}
-                  {selectedBrand.story_body ? (
-                    <div style={{ marginTop: 6, fontSize: 12, color: 'rgba(255,255,255,0.78)', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-                      {selectedBrand.story_body}
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            )}
-
-            {selectedBrand.promo_enabled && (selectedBrand.promo_title || selectedBrand.promo_body || selectedBrand.promo_image_url) && (
-              <a
-                href={selectedBrand.promo_link_url || '#'}
-                onClick={e => {
-                  if (!selectedBrand.promo_link_url) e.preventDefault()
-                }}
-                style={{
-                  display: 'block',
-                  marginTop: 12,
-                  textDecoration: 'none',
-                  background: 'rgba(201,168,76,0.10)',
-                  border: '1px solid rgba(201,168,76,0.25)',
-                  borderRadius: 14,
-                  overflow: 'hidden',
-                }}
-              >
-                {selectedBrand.promo_image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={selectedBrand.promo_image_url} alt="" style={{ width: '100%', height: 120, objectFit: 'cover', display: 'block' }} />
-                ) : null}
-                <div style={{ padding: '12px 12px' }}>
-                  <div style={{ fontSize: 10, fontFamily: "'JetBrains Mono', monospace", letterSpacing: '0.18em', color: 'rgba(201,168,76,0.9)', marginBottom: 6 }}>PROMOTION</div>
-                  {selectedBrand.promo_title ? <div style={{ fontSize: 12, fontWeight: 900, color: '#fff' }}>{selectedBrand.promo_title}</div> : null}
-                  {selectedBrand.promo_body ? (
-                    <div style={{ marginTop: 6, fontSize: 12, color: 'rgba(255,255,255,0.78)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
-                      {selectedBrand.promo_body}
-                    </div>
-                  ) : null}
-                  {selectedBrand.promo_link_url ? <div style={{ marginTop: 8, fontSize: 11, color: 'var(--gold)', fontWeight: 900 }}>자세히 보기 →</div> : null}
-                </div>
-              </a>
-            )}
-          </div>
-        )}
-
-        {error ? (
-          <div style={{ padding: 14, background: 'rgba(217,79,79,0.1)', border: '1px solid rgba(217,79,79,0.25)', borderRadius: 12, fontSize: 13, color: '#e08080' }}>
-            {error}
-          </div>
-        ) : loading ? (
-          <div style={{ fontSize: 12, color: 'var(--text3)' }}>불러오는 중...</div>
-        ) : visible.length === 0 ? (
-          <div style={{ padding: 18, textAlign: 'center', color: 'var(--text3)', fontSize: 13, lineHeight: 1.6 }}>
-            표시할 제품이 없습니다.<br />
-            <span style={{ fontSize: 12 }}>승인된 제품이 없거나, 브랜드 필터에 맞는 제품이 없을 수 있습니다.</span>
-          </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {visible.map(p => (
-              <ProductCard key={p.id} p={p} />
-            ))}
-          </div>
-        )}
-      </div>
-      <DashboardBottomNav role="customer" />
-    </div>
+        </>
+      }
+    />
   )
 }
 
