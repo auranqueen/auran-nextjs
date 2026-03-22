@@ -11,65 +11,65 @@ const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
 const TEXT_MUTED = 'rgba(255,255,255,0.4)'
 const TEXT_DIM = 'rgba(255,255,255,0.25)'
 
-// í´ë°± ë°ì´í„° (Supabase ì—°ë™ ì „)
+// í´ë°± ë°ì´í?° (Supabase ì?°ë? ì ?)
 const FALLBACK_CONCERNS = [
-  { id: 1, name: 'ìˆ˜ë¶„ë¶€ì¡±', icon: 'ğŸ’§' },
-  { id: 2, name: 'ë¯¸ë°±Â·í†¤ì—…', icon: 'âœ¨' },
-  { id: 3, name: 'ëª¨ê³µÂ·ê°ì§ˆ', icon: 'ğŸ”' },
-  { id: 4, name: 'ë¯¼ê°Â·ì§„ì •', icon: 'ğŸŒ¿' },
-  { id: 5, name: 'ì•ˆí‹°ì—ì´ì§•', icon: 'â°' },
-  { id: 6, name: 'ìì™¸ì„ ì°¨ë‹¨', icon: 'â˜€ï¸' },
-  { id: 7, name: 'íƒ„ë ¥Â·ë¦¬í”„íŒ…', icon: 'ğŸ’†' },
+  { id: 1, name: 'ì??ë¶?ë¶?ì¡±', icon: 'ğ??§' },
+  { id: 2, name: 'ë¯¸ë°±Â·í?¤ì??', icon: 'â?¨' },
+  { id: 3, name: 'ëª¨ê³µÂ·ê°ì§?', icon: 'ğ??' },
+  { id: 4, name: 'ë¯¼ê°Â·ì§?ì ?', icon: 'ğ??¿' },
+  { id: 5, name: 'ì??í?°ì?ì´ì§?', icon: 'â°' },
+  { id: 6, name: 'ì?ì?¸ì? ì°¨ë?¨', icon: 'â??ï¸' },
+  { id: 7, name: 'í??ë ¥Â·ë¦¬í??í??', icon: 'ğ???' },
 ]
 
 const FALLBACK_PRODUCTS = [
-  { id: 1, name: 'MESS CREAM 50ml', brand: 'CIVASAN', price: 58000, badge: 'AIì¶”ì²œ', icon: 'ğŸ§´' },
-  { id: 2, name: 'ë°”ì´ì˜¤ ì—ì„¼ìŠ¤ ì„¸ëŸ¼', brand: 'GERNETIC', price: 94000, badge: 'ì¸ê¸°', icon: 'ğŸŒ¿' },
-  { id: 3, name: 'ë”¥í´ë Œì§• í¼', brand: 'SHOPBELLE', price: 32000, badge: '', icon: 'ğŸ«§' },
-  { id: 4, name: 'í¬ë¦¬ìŠ¤í†  ë°”ìŠ¤ì†”íŠ¸', brand: 'THALAC', price: 45000, badge: '', icon: 'ğŸŒŠ' },
+  { id: 1, name: 'MESS CREAM 50ml', brand: 'CIVASAN', price: 58000, badge: 'AIì¶?ì²?', icon: 'ğ?§´' },
+  { id: 2, name: 'ë°?ì´ì?¤ ì?ì?¼ì?¤ ì?¸ë?¼', brand: 'GERNETIC', price: 94000, badge: 'ì¸ê¸°', icon: 'ğ??¿' },
+  { id: 3, name: 'ë?¥í´ë ?ì§? í¼', brand: 'SHOPBELLE', price: 32000, badge: '', icon: 'ğ?«§' },
+  { id: 4, name: 'í¬ë¦¬ì?¤í?  ë°?ì?¤ì??í?¸', brand: 'THALAC', price: 45000, badge: '', icon: 'ğ???' },
 ]
 
 const FALLBACK_SALES = [
-  { id: 1, name: 'MESS CREAM 50ml', brand: 'CIVASAN', orig: 58000, sale: 40600, disc: 30, icon: 'ğŸ§´' },
-  { id: 2, name: 'ë°”ì´ì˜¤ ì—ì„¼ìŠ¤ ì„¸ëŸ¼', brand: 'GERNETIC', orig: 94000, sale: 70500, disc: 25, icon: 'ğŸŒ¿' },
-  { id: 3, name: 'í¬ë¦¬ìŠ¤í†  ë§ˆë¦° ë°”ìŠ¤ì†”íŠ¸', brand: 'THALAC', orig: 45000, sale: 36000, disc: 20, icon: 'ğŸŒŠ' },
+  { id: 1, name: 'MESS CREAM 50ml', brand: 'CIVASAN', orig: 58000, sale: 40600, disc: 30, icon: 'ğ?§´' },
+  { id: 2, name: 'ë°?ì´ì?¤ ì?ì?¼ì?¤ ì?¸ë?¼', brand: 'GERNETIC', orig: 94000, sale: 70500, disc: 25, icon: 'ğ??¿' },
+  { id: 3, name: 'í¬ë¦¬ì?¤í?  ë§?ë¦° ë°?ì?¤ì??í?¸', brand: 'THALAC', orig: 45000, sale: 36000, disc: 20, icon: 'ğ???' },
 ]
 
 const FALLBACK_SALONS = [
-  { id: 1, name: 'ë”í•˜ë…¸ì´ í’‹ì•¤ë°”ë””', rating: 4.9, reviews: 127, area: 'ëŒ€êµ¬ ë‹¬ì„œêµ¬', dist: '0.3km', open: true, tags: ['í˜ì´ì…œ', 'ë°”ë””', 'ì•„ë¡œë§ˆ'] },
-  { id: 2, name: 'ë·°í‹°í´ë¦¬ë‹‰ ëŒ€êµ¬ì ', rating: 4.7, reviews: 89, area: 'ëŒ€êµ¬ ìˆ˜ì„±êµ¬', dist: '1.2km', open: true, tags: ['ë¦¬í”„íŒ…', 'í´ë¦¬ë‹‰'] },
-  { id: 3, name: 'ìŠ¤í‚¨ì—ìŠ¤í…Œí‹±', rating: 4.5, reviews: 54, area: 'ëŒ€êµ¬ ì¤‘êµ¬', dist: '2.1km', open: false, tags: ['í”¼ë¶€ê´€ë¦¬', 'ë¯¼ê°ì„±'] },
+  { id: 1, name: 'ë?í??ë?¸ì´ í??ì?¤ë°?ë??', rating: 4.9, reviews: 127, area: 'ë??êµ¬ ë?¬ì??êµ¬', dist: '0.3km', open: true, tags: ['í??ì´ì??', 'ë°?ë??', 'ì??ë¡?ë§?'] },
+  { id: 2, name: 'ë·°í?°í´ë¦¬ë?? ë??êµ¬ì ', rating: 4.7, reviews: 89, area: 'ë??êµ¬ ì??ì?±êµ¬', dist: '1.2km', open: true, tags: ['ë¦¬í??í??', 'í´ë¦¬ë??'] },
+  { id: 3, name: 'ì?¤í?¨ì?ì?¤í??í?±', rating: 4.5, reviews: 54, area: 'ë??êµ¬ ì¤?êµ¬', dist: '2.1km', open: false, tags: ['í?¼ë¶?ê´?ë¦¬', 'ë¯¼ê°ì?±'] },
 ]
 
 const FALLBACK_NEW = [
-  { id: 1, name: 'í¼í™íŠ¸ ë‚˜ì´íŠ¸ í¬ë¦¼', brand: 'CIVASAN', price: 68000, icon: 'ğŸ’œ' },
-  { id: 2, name: 'ì¹¼ë° ì—ì„¼ìŠ¤ ë¯¸ìŠ¤íŠ¸', brand: 'GERNETIC', price: 52000, icon: 'ğŸ©µ' },
-  { id: 3, name: 'ë¡œì¦ˆ í† ë‹ íŒ¨ë“œ', brand: 'SHOPBELLE', price: 38000, icon: 'ğŸŒ¸' },
-  { id: 4, name: 'ë§ˆë¦° ë¦¬í˜ì–´ ì•°í”Œ', brand: 'THALAC', price: 84000, icon: 'ğŸŒŠ' },
+  { id: 1, name: 'í¼í??í?¸ ë??ì´í?¸ í¬ë¦¼', brand: 'CIVASAN', price: 68000, icon: 'ğ???' },
+  { id: 2, name: 'ì¹¼ë° ì?ì?¼ì?¤ ë¯¸ì?¤í?¸', brand: 'GERNETIC', price: 52000, icon: 'ğ?©µ' },
+  { id: 3, name: 'ë¡?ì¦? í? ë? í?¨ë??', brand: 'SHOPBELLE', price: 38000, icon: 'ğ??¸' },
+  { id: 4, name: 'ë§?ë¦° ë¦¬í??ì?´ ì?°í??', brand: 'THALAC', price: 84000, icon: 'ğ???' },
 ]
 
 const FALLBACK_BRANDS = [
-  { id: 1, name: 'CIVASAN', label: 'ì‹œë°”ì‚°', color: '#C9A96E', bg: 'rgba(201,169,110,0.1)', border: 'rgba(201,169,110,0.3)' },
-  { id: 2, name: 'GERNETIC', label: 'ì œë¥´ë„¤í‹±', color: 'rgba(120,180,240,0.9)', bg: 'rgba(100,160,220,0.1)', border: 'rgba(100,160,220,0.25)' },
-  { id: 3, name: 'SHOPBELLE', label: 'ìƒµë²¨ë¥´', color: 'rgba(200,150,220,0.9)', bg: 'rgba(180,120,200,0.1)', border: 'rgba(180,120,200,0.25)' },
-  { id: 4, name: 'THALAC', label: 'íƒˆë½', color: 'rgba(80,190,210,0.9)', bg: 'rgba(60,160,180,0.1)', border: 'rgba(60,160,180,0.25)' },
-  { id: 5, name: 'SOTHYS', label: 'ì†Œí‹°ìŠ¤', color: 'rgba(240,180,100,0.9)', bg: 'rgba(220,160,80,0.1)', border: 'rgba(220,160,80,0.25)' },
-  { id: 6, name: 'PHYTO', label: 'í”¼í† ë¨¸', color: 'rgba(180,220,140,0.9)', bg: 'rgba(160,200,120,0.1)', border: 'rgba(160,200,120,0.25)' },
-  { id: 7, name: 'ESTER', label: 'ì—ìŠ¤í„°', color: 'rgba(240,120,140,0.9)', bg: 'rgba(220,100,120,0.1)', border: 'rgba(220,100,120,0.25)' },
+  { id: 1, name: 'CIVASAN', label: 'ì??ë°?ì?°', color: '#C9A96E', bg: 'rgba(201,169,110,0.1)', border: 'rgba(201,169,110,0.3)' },
+  { id: 2, name: 'GERNETIC', label: 'ì ?ë¥´ë?¤í?±', color: 'rgba(120,180,240,0.9)', bg: 'rgba(100,160,220,0.1)', border: 'rgba(100,160,220,0.25)' },
+  { id: 3, name: 'SHOPBELLE', label: 'ì?µë²¨ë¥´', color: 'rgba(200,150,220,0.9)', bg: 'rgba(180,120,200,0.1)', border: 'rgba(180,120,200,0.25)' },
+  { id: 4, name: 'THALAC', label: 'í??ë½', color: 'rgba(80,190,210,0.9)', bg: 'rgba(60,160,180,0.1)', border: 'rgba(60,160,180,0.25)' },
+  { id: 5, name: 'SOTHYS', label: 'ì??í?°ì?¤', color: 'rgba(240,180,100,0.9)', bg: 'rgba(220,160,80,0.1)', border: 'rgba(220,160,80,0.25)' },
+  { id: 6, name: 'PHYTO', label: 'í?¼í? ë¨¸', color: 'rgba(180,220,140,0.9)', bg: 'rgba(160,200,120,0.1)', border: 'rgba(160,200,120,0.25)' },
+  { id: 7, name: 'ESTER', label: 'ì?ì?¤í?°', color: 'rgba(240,120,140,0.9)', bg: 'rgba(220,100,120,0.1)', border: 'rgba(220,100,120,0.25)' },
 ]
 
 const FALLBACK_HISTORY = [
-  { icon: 'ğŸ§´', date: '03.01', brand: 'CIVASAN', name: 'MESS CREAM' },
-  { icon: 'ğŸŒ¿', date: '02.15', brand: 'GERNETIC', name: 'ë°”ì´ì˜¤ ì„¸ëŸ¼' },
-  { icon: 'ğŸ«§', date: '02.01', brand: 'SHOPBELLE', name: 'ë”¥í´ë Œì§• í¼' },
-  { icon: 'ğŸŒŠ', date: '01.20', brand: 'THALAC', name: 'ë°”ìŠ¤ì†”íŠ¸' },
+  { icon: 'ğ?§´', date: '03.01', brand: 'CIVASAN', name: 'MESS CREAM' },
+  { icon: 'ğ??¿', date: '02.15', brand: 'GERNETIC', name: 'ë°?ì´ì?¤ ì?¸ë?¼' },
+  { icon: 'ğ?«§', date: '02.01', brand: 'SHOPBELLE', name: 'ë?¥í´ë ?ì§? í¼' },
+  { icon: 'ğ???', date: '01.20', brand: 'THALAC', name: 'ë°?ì?¤ì??í?¸' },
 ]
 
 export default function CustomerHomePage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const [userName, setUserName] = useState('ìœ ë¯¸')
+  const [userName, setUserName] = useState('ì? ë¯¸')
   const [selectedConcern, setSelectedConcern] = useState(0)
   const [saleTab, setSaleTab] = useState<'sale' | 'group'>('sale')
   const [timers, setTimers] = useState([
@@ -78,7 +78,7 @@ export default function CustomerHomePage() {
     { h: 5, m: 12, s: 8 },
   ])
 
-  // Supabase ë°ì´í„°
+  // Supabase ë°ì´í?°
   const [concerns, setConcerns] = useState<any[]>([])
   const [products, setProducts] = useState<any[]>([])
   const [timeSales, setTimeSales] = useState<any[]>([])
@@ -87,38 +87,38 @@ export default function CustomerHomePage() {
   const [brands, setBrands] = useState<any[]>([])
 
   useEffect(() => {
-    // TODO: user_daily_tracker í…Œì´ë¸”ì—ì„œ ì˜¤ëŠ˜ ë°ì´í„° ì¡°íšŒ
+    // TODO: user_daily_tracker í??ì´ë¸?ì?ì?? ì?¤ë?? ë°ì´í?° ì¡°í??
     supabase.auth.getUser().then(({ data }) => {
       const name = data.user?.user_metadata?.full_name || data.user?.user_metadata?.name
       if (name) setUserName(name)
     })
-    // TODO: skin_concerns í…Œì´ë¸”
+    // TODO: skin_concerns í??ì´ë¸?
     supabase.from('skin_concerns').select('*').order('sort_order').then(({ data }) => {
       if (data && data.length > 0) setConcerns(data)
     })
-    // TODO: products í…Œì´ë¸” (AI ì¶”ì²œ ê¸°ì¤€)
+    // TODO: products í??ì´ë¸? (AI ì¶?ì²? ê¸°ì¤?)
     supabase.from('products').select('*').eq('is_active', true).limit(8).then(({ data }) => {
       if (data && data.length > 0) setProducts(data)
     })
-    // TODO: time_sales í…Œì´ë¸”
+    // TODO: time_sales í??ì´ë¸?
     supabase.from('time_sales').select('*, product:products(*)').eq('is_active', true).then(({ data }) => {
       if (data && data.length > 0) setTimeSales(data)
     })
-    // TODO: salons í…Œì´ë¸” (ìœ„ì¹˜ ê¸°ë°˜ ì •ë ¬)
+    // TODO: salons í??ì´ë¸? (ì??ì¹? ê¸°ë°? ì ?ë ¬)
     supabase.from('salons').select('*').eq('is_active', true).limit(3).then(({ data }) => {
       if (data && data.length > 0) setSalons(data)
     })
-    // TODO: products is_new ì»¬ëŸ¼
+    // TODO: products is_new ì»¬ë?¼
     supabase.from('products').select('*').eq('is_new', true).limit(6).then(({ data }) => {
       if (data && data.length > 0) setNewProducts(data)
     })
-    // TODO: brands í…Œì´ë¸”
+    // TODO: brands í??ì´ë¸?
     supabase.from('brands').select('*').eq('is_active', true).limit(7).then(({ data }) => {
       if (data && data.length > 0) setBrands(data)
     })
   }, [])
 
-  // ì‹¤ì‹œê°„ íƒ€ì´ë¨¸
+  // ì?¤ì??ê°? í??ì´ë¨¸
   useEffect(() => {
     const id = setInterval(() => {
       setTimers(prev =>
@@ -135,7 +135,7 @@ export default function CustomerHomePage() {
 
   const pad = (n: number) => String(n).padStart(2, '0')
 
-  // í´ë°± ì ìš©
+  // í´ë°± ì ì?©
   const concernList = concerns.length > 0 ? concerns : FALLBACK_CONCERNS
   const productList = products.length > 0 ? products : FALLBACK_PRODUCTS
   const saleList = timeSales.length > 0 ? timeSales : FALLBACK_SALES
@@ -159,7 +159,7 @@ export default function CustomerHomePage() {
       paddingBottom: '96px',
     }}>
 
-      {/* â”€â”€ íƒ‘ë°” â”€â”€ */}
+      {/* â??â?? í??ë°? â??â?? */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 40,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -174,7 +174,7 @@ export default function CustomerHomePage() {
           color: GOLD, letterSpacing: '6px',
         }}>AURAN</span>
         <div style={{ display: 'flex', gap: '10px' }}>
-          {['ğŸ”', 'ğŸ””'].map((icon, i) => (
+          {['ğ??', 'ğ???'].map((icon, i) => (
             <button key={i} style={{
               width: '34px', height: '34px', borderRadius: '50%',
               background: 'rgba(255,255,255,0.04)',
@@ -186,7 +186,7 @@ export default function CustomerHomePage() {
         </div>
       </header>
 
-      {/* â”€â”€ ì¸ì‚¬ë§ â”€â”€ */}
+      {/* â??â?? ì¸ì?¬ë§ â??â?? */}
       <div style={{
         padding: '14px 20px 0',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -196,10 +196,10 @@ export default function CustomerHomePage() {
             {today}
           </div>
           <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
-            ì•ˆë…•í•˜ì„¸ìš”, <span style={{ color: GOLD }}>{userName}ë‹˜</span> ğŸ‘‹
+            ì??ë??í??ì?¸ì??, <span style={{ color: GOLD }}>{userName}ë??</span> ğ???
           </div>
           <div style={{ fontSize: '11px', color: TEXT_MUTED }}>
-            ì˜¤ëŠ˜ ë£¨í‹´ ì™„ë£Œ 75% Â· ìˆ˜ë¶„ 6/8ì” ğŸ’§
+            ì?¤ë?? ë£¨í?´ ì??ë£? 75% Â· ì??ë¶? 6/8ì?? ğ??§
           </div>
         </div>
         <div style={{
@@ -208,10 +208,10 @@ export default function CustomerHomePage() {
           border: '1px solid rgba(255,255,255,0.1)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '20px',
-        }}>ğŸ‘©</div>
+        }}>ğ??©</div>
       </div>
 
-      {/* â”€â”€ BEAUTY TRACKER â”€â”€ */}
+      {/* â??â?? BEAUTY TRACKER â??â?? */}
       <div style={{
         margin: '12px 16px 0',
         background: CARD_BG, border: CARD_BORDER,
@@ -227,10 +227,10 @@ export default function CustomerHomePage() {
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           {[
-            { icon: 'ğŸ’§', val: '6', unit: '/8', label: 'ìˆ˜ë¶„ ì„­ì·¨', pct: 75, color: '#6ab0e0' },
-            { icon: 'ğŸŒ', val: 'UV', unit: '3', label: 'ìì™¸ì„ ', pct: 40, color: '#f0c040' },
-            { icon: 'ğŸ˜´', val: '7.5', unit: 'h', label: 'ìˆ˜ë©´', pct: 80, color: '#a080e0' },
-            { icon: 'ğŸ§´', val: '75', unit: '%', label: 'ë£¨í‹´', pct: 75, color: GOLD },
+            { icon: 'ğ??§', val: '6', unit: '/8', label: 'ì??ë¶? ì?­ì·¨', pct: 75, color: '#6ab0e0' },
+            { icon: 'ğ???', val: 'UV', unit: '3', label: 'ì?ì?¸ì? ', pct: 40, color: '#f0c040' },
+            { icon: 'ğ??´', val: '7.5', unit: 'h', label: 'ì??ë©´', pct: 80, color: '#a080e0' },
+            { icon: 'ğ?§´', val: '75', unit: '%', label: 'ë£¨í?´', pct: 75, color: GOLD },
           ].map((item, i) => (
             <div key={i} style={{
               flex: 1, background: 'rgba(255,255,255,0.03)',
@@ -250,7 +250,7 @@ export default function CustomerHomePage() {
         </div>
       </div>
 
-      {/* â”€â”€ íˆì–´ë¡œ ë°°ë„ˆ â”€â”€ */}
+      {/* â??â?? í??ì?´ë¡? ë°°ë?? â??â?? */}
       <div style={{
         margin: '12px 16px 0', height: '148px',
         borderRadius: '20px', overflow: 'hidden',
@@ -268,10 +268,10 @@ export default function CustomerHomePage() {
               background: 'rgba(255,255,255,0.1)', borderRadius: '20px',
               padding: '3px 10px', fontSize: '10px', fontFamily: 'monospace',
               color: 'rgba(255,255,255,0.7)', marginBottom: '7px',
-            }}>âœ¦ 3ì›” Â· SPRING SKIN</div>
+            }}>â?¦ 3ì?? Â· SPRING SKIN</div>
             <div style={{ fontSize: '17px', fontWeight: 300, lineHeight: 1.5 }}>
-              ë´„ í”¼ë¶€ ë³€í™”,<br />
-              <em style={{ color: GOLD, fontStyle: 'normal' }}>AIê°€ ë¨¼ì €</em> ì•Œì•„ì±•ë‹ˆë‹¤
+              ë´? í?¼ë¶? ë³?í??,<br />
+              <em style={{ color: GOLD, fontStyle: 'normal' }}>AIê°? ë¨¼ì ?</em> ì??ì??ì±?ë??ë?¤
             </div>
           </div>
           <div style={{ display: 'flex', gap: '4px' }}>
@@ -283,10 +283,10 @@ export default function CustomerHomePage() {
         <div style={{
           position: 'absolute', right: '16px', top: '50%',
           transform: 'translateY(-50%)', fontSize: '56px', opacity: 0.85,
-        }}>ğŸŒ¸</div>
+        }}>ğ??¸</div>
       </div>
 
-      {/* â”€â”€ TODAY'S SKIN â”€â”€ */}
+      {/* â??â?? TODAY'S SKIN â??â?? */}
       <div
         onClick={() => router.push('/skin-analysis')}
         style={{
@@ -295,14 +295,14 @@ export default function CustomerHomePage() {
           display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
         }}
       >
-        <span style={{ fontSize: '30px' }}>ğŸ’§</span>
+        <span style={{ fontSize: '30px' }}>ğ??§</span>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: '3px' }}>
             TODAY&apos;S SKIN
           </div>
-          <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>ê±´ì„± Â· ë¯¼ê° ë³µí•©</div>
+          <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>ê±´ì?± Â· ë¯¼ê° ë³µí?©</div>
           <div style={{ display: 'flex', gap: '8px' }}>
-            {[{ label: 'ìˆ˜ë¶„', pct: 62, color: '#6ab0e0' }, { label: 'ìœ ë¶„', pct: 38, color: GOLD }].map((b, i) => (
+            {[{ label: 'ì??ë¶?', pct: 62, color: '#6ab0e0' }, { label: 'ì? ë¶?', pct: 38, color: GOLD }].map((b, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
                 <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.label}</span>
                 <div style={{ width: '44px', height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
@@ -313,16 +313,16 @@ export default function CustomerHomePage() {
             ))}
           </div>
         </div>
-        <span style={{ fontSize: '13px', color: TEXT_MUTED }}>â€º</span>
+        <span style={{ fontSize: '13px', color: TEXT_MUTED }}>â?º</span>
       </div>
 
-      {/* â”€â”€ 4ëŒ€ ê¸°ëŠ¥ ê·¸ë¦¬ë“œ â”€â”€ */}
+      {/* â??â?? 4ë?? ê¸°ë?¥ ê·¸ë¦¬ë?? â??â?? */}
       <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
         {[
-          { icon: 'ğŸ”¬', title: 'í”¼ë¶€ë¶„ì„', desc: 'AI ì •ë°€ ë¶„ì„', badge: 'AI', path: '/skin-analysis', bg: 'linear-gradient(135deg,rgba(160,80,220,0.15),rgba(120,60,180,0.1))' },
-          { icon: 'ğŸŒ', title: 'MY WORLD', desc: 'ë‚˜ë§Œì˜ ë¯¸ë‹ˆí™ˆí”¼', badge: 'MY', path: '/my-world', bg: 'linear-gradient(135deg,rgba(60,120,220,0.15),rgba(40,80,180,0.1))' },
-          { icon: 'ğŸ’¬', title: 'ì»¤ë®¤ë‹ˆí‹°', desc: 'í”¼ë¶€ íƒ€ì…ë³„ ì†Œí†µ', badge: 'NEW', path: '/community', bg: 'linear-gradient(135deg,rgba(220,60,60,0.1),rgba(180,40,40,0.08))', badgeColor: '#E04030' },
-          { icon: 'ğŸ’†', title: 'ì‚´ë¡±ì˜ˆì•½', desc: 'ì „ë¬¸ ê´€ë¦¬ìƒµ ì˜ˆì•½', badge: 'ê·¼ì²˜', path: '/salon', bg: 'linear-gradient(135deg,rgba(60,180,120,0.12),rgba(40,140,90,0.08))' },
+          { icon: 'ğ??¬', title: 'í?¼ë¶?ë¶?ì?', desc: 'AI ì ?ë°? ë¶?ì?', badge: 'AI', path: '/skin-analysis', bg: 'linear-gradient(135deg,rgba(160,80,220,0.15),rgba(120,60,180,0.1))' },
+          { icon: 'ğ??', title: 'MY WORLD', desc: 'ë??ë§?ì? ë¯¸ë??í??í?¼', badge: 'MY', path: '/my-world', bg: 'linear-gradient(135deg,rgba(60,120,220,0.15),rgba(40,80,180,0.1))' },
+          { icon: 'ğ??¬', title: 'ì»¤ë®¤ë??í?°', desc: 'í?¼ë¶? í??ì??ë³? ì??í?µ', badge: 'NEW', path: '/community', bg: 'linear-gradient(135deg,rgba(220,60,60,0.1),rgba(180,40,40,0.08))', badgeColor: '#E04030' },
+          { icon: 'ğ???', title: 'ì?´ë¡±ì??ì?½', desc: 'ì ?ë¬¸ ê´?ë¦¬ì?µ ì??ì?½', badge: 'ê·¼ì²?', path: '/salon', bg: 'linear-gradient(135deg,rgba(60,180,120,0.12),rgba(40,140,90,0.08))' },
         ].map((f, i) => (
           <div
             key={i}
@@ -346,7 +346,7 @@ export default function CustomerHomePage() {
         ))}
       </div>
 
-      {/* â”€â”€ AURAN POINT â”€â”€ */}
+      {/* â??â?? AURAN POINT â??â?? */}
       <div style={{
         margin: '14px 16px 0',
         background: CARD_BG, border: '1px solid rgba(201,169,110,0.2)',
@@ -355,24 +355,24 @@ export default function CustomerHomePage() {
         cursor: 'pointer',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>âœ¨</span>
+          <span style={{ fontSize: '20px' }}>â?¨</span>
           <div>
             <div style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_MUTED, marginBottom: '2px' }}>AURAN POINT</div>
-            {/* TODO: user_wallets í…Œì´ë¸”ì—ì„œ í¬ì¸íŠ¸ ì¡°íšŒ */}
+            {/* TODO: user_wallets í??ì´ë¸?ì?ì?? í¬ì¸í?¸ ì¡°í?? */}
             <div style={{ fontSize: '14px', fontWeight: 400 }}>
               <em style={{ color: GOLD, fontStyle: 'normal' }}>8,888P</em>{' '}
-              <span style={{ color: TEXT_MUTED, fontSize: '11px' }}>ë³´ìœ ì¤‘</span>
+              <span style={{ color: TEXT_MUTED, fontSize: '11px' }}>ë³´ì? ì¤?</span>
             </div>
           </div>
         </div>
-        <span style={{ fontSize: '16px', color: 'rgba(201,169,110,0.35)' }}>â€º</span>
+        <span style={{ fontSize: '16px', color: 'rgba(201,169,110,0.35)' }}>â?º</span>
       </div>
 
-      {/* â”€â”€ ë‚´ í”¼ë¶€ ë§ì¶¤ ì¶”ì²œ â”€â”€ */}
+      {/* â??â?? ë?´ í?¼ë¶? ë§?ì¶¤ ì¶?ì²? â??â?? */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>ë‚´ í”¼ë¶€ ë§ì¶¤ ì¶”ì²œ</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ë”ë³´ê¸° â€º</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>ë?´ í?¼ë¶? ë§?ì¶¤ ì¶?ì²?</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ë?ë³´ê¸° â?º</span>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
@@ -391,7 +391,7 @@ export default function CustomerHomePage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '34px', position: 'relative',
             }}>
-              {p.icon || 'ğŸ§´'}
+              {p.icon || 'ğ?§´'}
               {p.badge && (
                 <div style={{
                   position: 'absolute', top: '5px', left: '5px',
@@ -403,24 +403,24 @@ export default function CustomerHomePage() {
             <div style={{ padding: '8px 10px' }}>
               <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{p.brand}</div>
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '4px' }}>{p.name}</div>
-              <div style={{ fontSize: '12px', fontWeight: 400 }}>{p.price?.toLocaleString()}ì›</div>
+              <div style={{ fontSize: '12px', fontWeight: 400 }}>{p.price?.toLocaleString()}ì?</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* â”€â”€ DUCHESS.KR êµ¬ë¶„ì„  â”€â”€ */}
+      {/* â??â?? DUCHESS.KR êµ¬ë¶?ì?  â??â?? */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '20px 16px 0' }}>
         <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
         <span style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '2px', color: TEXT_DIM }}>DUCHESS.KR STORE</span>
         <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
       </div>
 
-      {/* â”€â”€ í”¼ë¶€ ê³ ë¯¼ë³„ â”€â”€ */}
+      {/* â??â?? í?¼ë¶? ê³ ë¯¼ë³? â??â?? */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>í”¼ë¶€ ê³ ë¯¼ë³„ ì†”ë£¨ì…˜</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ì „ì²´ â€º</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>í?¼ë¶? ê³ ë¯¼ë³? ì??ë£¨ì??</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ì ?ì²´ â?º</span>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
@@ -436,7 +436,7 @@ export default function CustomerHomePage() {
               fontSize: '22px', flexShrink: 0,
               background: i === selectedConcern ? 'rgba(201,169,110,0.12)' : CARD_BG,
               border: i === selectedConcern ? '1px solid rgba(201,169,110,0.3)' : CARD_BORDER,
-            }}>{c.icon || 'ğŸ’§'}</div>
+            }}>{c.icon || 'ğ??§'}</div>
             <span style={{
               fontSize: '9px', fontWeight: 300, textAlign: 'center', whiteSpace: 'nowrap',
               color: i === selectedConcern ? GOLD : TEXT_MUTED,
@@ -445,13 +445,13 @@ export default function CustomerHomePage() {
         ))}
       </div>
 
-      {/* â”€â”€ BEST ë­í‚¹ â”€â”€ */}
+      {/* â??â?? BEST ë?­í?¹ â??â?? */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>
-            ğŸ† {concernList[selectedConcern]?.name} BEST
+            ğ?? {concernList[selectedConcern]?.name} BEST
           </span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ë”ë³´ê¸° â€º</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ë?ë³´ê¸° â?º</span>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
@@ -468,7 +468,7 @@ export default function CustomerHomePage() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '38px', position: 'relative',
               }}>
-                {p.icon || 'ğŸ§´'}
+                {p.icon || 'ğ?§´'}
                 <div style={{
                   position: 'absolute', top: '7px', left: '7px',
                   width: '22px', height: '22px', borderRadius: '50%',
@@ -482,20 +482,20 @@ export default function CustomerHomePage() {
                     position: 'absolute', top: '7px', right: '7px',
                     background: 'rgba(201,169,110,0.85)', color: BG,
                     fontSize: '8px', padding: '2px 5px', borderRadius: '4px',
-                  }}>AIì¶”ì²œ</div>
+                  }}>AIì¶?ì²?</div>
                 )}
               </div>
               <div style={{ padding: '9px 11px' }}>
                 <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{p.brand}</div>
                 <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '5px' }}>{p.name}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 400 }}>{p.price?.toLocaleString()}ì›</span>
-                  <span style={{ fontSize: '14px', cursor: 'pointer' }}>ğŸ¤</span>
+                  <span style={{ fontSize: '13px', fontWeight: 400 }}>{p.price?.toLocaleString()}ì?</span>
+                  <span style={{ fontSize: '14px', cursor: 'pointer' }}>ğ?¤</span>
                 </div>
                 <div style={{ display: 'flex', gap: '4px' }}>
-                  <div style={{ flex: 1, padding: '7px 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '9px', color: 'rgba(255,255,255,0.55)', textAlign: 'center', cursor: 'pointer' }}>ğŸ›’ ë‹´ê¸°</div>
-                  <div style={{ flex: 1, padding: '7px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '9px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>ğŸ ì„ ë¬¼</div>
-                  <div style={{ flex: 1.3, padding: '7px 0', background: GOLD, borderRadius: '8px', fontSize: '9px', fontWeight: 400, color: BG, textAlign: 'center', cursor: 'pointer' }}>ë°”ë¡œêµ¬ë§¤</div>
+                  <div style={{ flex: 1, padding: '7px 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '9px', color: 'rgba(255,255,255,0.55)', textAlign: 'center', cursor: 'pointer' }}>ğ??? ë?´ê¸°</div>
+                  <div style={{ flex: 1, padding: '7px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '9px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>ğ?? ì? ë¬¼</div>
+                  <div style={{ flex: 1.3, padding: '7px 0', background: GOLD, borderRadius: '8px', fontSize: '9px', fontWeight: 400, color: BG, textAlign: 'center', cursor: 'pointer' }}>ë°?ë¡?êµ¬ë§¤</div>
                 </div>
               </div>
             </div>
@@ -503,40 +503,40 @@ export default function CustomerHomePage() {
         })}
       </div>
 
-      {/* â”€â”€ ë¡¤ë§ ë¦¬ë·° â”€â”€ */}
+      {/* â??â?? ë¡¤ë§ ë¦¬ë·° â??â?? */}
       <div style={{ margin: '16px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1.5px', color: TEXT_DIM }}>â­ ì‹¤ì‹œê°„ ë¦¬ë·°</span>
-          <span onClick={() => router.push('/reviews')} style={{ fontSize: '10px', color: GOLD, cursor: 'pointer' }}>ì „ì²´ë³´ê¸° â†’</span>
+          <span style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1.5px', color: TEXT_DIM }}>â­ ì?¤ì??ê°? ë¦¬ë·°</span>
+          <span onClick={() => router.push('/reviews')} style={{ fontSize: '10px', color: GOLD, cursor: 'pointer' }}>ì ?ì²´ë³´ê¸° â??</span>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>ğŸ§´</span>
+          <span style={{ fontSize: '20px' }}>ğ?§´</span>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '11px', marginBottom: '3px' }}>â­â­â­â­â­</div>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7 }}>
-              &quot;í™˜ì ˆê¸°ì— ì´ í¬ë¦¼ ë•ë¶„ì— í”¼ë¶€ ì•ˆ ë•…ê²¼ì–´ìš”. ë¯¼ê°í•œ í”¼ë¶€ì—ë„ ìê·¹ ì—†ì´ ì“¸ ìˆ˜ ìˆì–´ìš” ğŸ’§&quot;
+              &quot;í??ì ?ê¸°ì? ì´ í¬ë¦¼ ë?ë¶?ì? í?¼ë¶? ì?? ë??ê²¼ì?´ì??. ë¯¼ê°í?? í?¼ë¶?ì?ë? ì?ê·¹ ì??ì´ ì?¸ ì?? ì??ì?´ì?? ğ??§&quot;
             </div>
-            <div style={{ fontSize: '9px', color: TEXT_DIM, marginTop: '3px' }}>ê±´ì„±í”¼ë¶€ Â· ìœ ë¯¸ë‹˜ Â· CIVASAN MESS CREAM</div>
+            <div style={{ fontSize: '9px', color: TEXT_DIM, marginTop: '3px' }}>ê±´ì?±í?¼ë¶? Â· ì? ë¯¸ë?? Â· CIVASAN MESS CREAM</div>
             <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px', gap: '6px' }}>
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: '3px',
                 padding: '3px 8px', background: 'rgba(255,255,255,0.04)',
                 border: CARD_BORDER, borderRadius: '6px',
                 fontSize: '10px', color: TEXT_MUTED, cursor: 'pointer',
-              }}>ğŸ‘ ë„ì›€ë¼ìš” 24</div>
+              }}>ğ?? ë?ì??ë¼ì?? 24</div>
               <span style={{ fontSize: '9px', color: 'rgba(201,169,110,0.6)' }}>+5P ì ë¦½</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* â”€â”€ íƒ€ì„ì„¸ì¼Â·ê³µêµ¬ â”€â”€ */}
+      {/* â??â?? í??ì??ì?¸ì¼Â·ê³µêµ¬ â??â?? */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>âš¡ íƒ€ì„ì„¸ì¼ Â· ê³µêµ¬</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ì „ì²´ â€º</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>â?¡ í??ì??ì?¸ì¼ Â· ê³µêµ¬</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ì ?ì²´ â?º</span>
         </div>
-        {/* íƒ­ */}
+        {/* í?­ */}
         <div style={{ display: 'flex', border: CARD_BORDER, borderRadius: '12px', overflow: 'hidden', marginBottom: '12px' }}>
           {(['sale', 'group'] as const).map((tab) => (
             <div
@@ -554,12 +554,12 @@ export default function CustomerHomePage() {
                 cursor: 'pointer',
               }}
             >
-              {tab === 'sale' ? 'ğŸ”¥ íƒ€ì„ì„¸ì¼' : 'ğŸ‘¥ ê³µë™êµ¬ë§¤'}
+              {tab === 'sale' ? 'ğ??¥ í??ì??ì?¸ì¼' : 'ğ??¥ ê³µë?êµ¬ë§¤'}
             </div>
           ))}
         </div>
 
-        {/* íƒ€ì„ì„¸ì¼ */}
+        {/* í??ì??ì?¸ì¼ */}
         {saleTab === 'sale' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {saleList.map((item: any, i: number) => (
@@ -571,7 +571,7 @@ export default function CustomerHomePage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '28px', flexShrink: 0, position: 'relative',
                   }}>
-                    {item.icon || 'ğŸ§´'}
+                    {item.icon || 'ğ?§´'}
                     <div style={{
                       position: 'absolute', top: '-4px', right: '-4px',
                       background: '#E04030', borderRadius: '20px', padding: '2px 6px',
@@ -587,15 +587,15 @@ export default function CustomerHomePage() {
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '5px' }}>
                       <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
-                        {(item.orig || item.original_price)?.toLocaleString()}ì›
+                        {(item.orig || item.original_price)?.toLocaleString()}ì?
                       </span>
                       <span style={{ fontSize: '15px', fontWeight: 400, color: '#E07060' }}>
-                        {(item.sale || item.sale_price)?.toLocaleString()}ì›
+                        {(item.sale || item.sale_price)?.toLocaleString()}ì?
                       </span>
                     </div>
-                    {/* ê°œë³„ íƒ€ì´ë¨¸ */}
+                    {/* ê°?ë³? í??ì´ë¨¸ */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontSize: '9px', color: TEXT_DIM }}>â± ë§ˆê°</span>
+                      <span style={{ fontSize: '9px', color: TEXT_DIM }}>â± ë§?ê°</span>
                       {[timers[i]?.h, timers[i]?.m, timers[i]?.s].map((v, ti) => (
                         <span key={ti} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                           {ti > 0 && <span style={{ color: 'rgba(220,60,40,0.4)', fontSize: '11px' }}>:</span>}
@@ -611,53 +611,53 @@ export default function CustomerHomePage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
-                  <div style={{ flex: 1, padding: '8px 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.6)', textAlign: 'center', cursor: 'pointer' }}>ğŸ›’ ë‹´ê¸°</div>
-                  <div style={{ flex: 1, padding: '8px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>ğŸ ì„ ë¬¼</div>
-                  <div style={{ flex: 1.3, padding: '8px 0', background: '#C04030', borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: '#fff', textAlign: 'center', cursor: 'pointer' }}>ì§€ê¸ˆ êµ¬ë§¤</div>
+                  <div style={{ flex: 1, padding: '8px 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.6)', textAlign: 'center', cursor: 'pointer' }}>ğ??? ë?´ê¸°</div>
+                  <div style={{ flex: 1, padding: '8px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>ğ?? ì? ë¬¼</div>
+                  <div style={{ flex: 1.3, padding: '8px 0', background: '#C04030', borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: '#fff', textAlign: 'center', cursor: 'pointer' }}>ì§?ê¸? êµ¬ë§¤</div>
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* ê³µë™êµ¬ë§¤ */}
+        {/* ê³µë?êµ¬ë§¤ */}
         {saleTab === 'group' && (
           <div style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
             <div style={{ background: 'linear-gradient(135deg,rgba(60,80,200,0.15),rgba(80,120,240,0.1))', padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '10px', color: 'rgba(120,160,255,0.9)', fontFamily: 'monospace' }}>ğŸ‘¥ ê³µë™êµ¬ë§¤ Â· ëª©í‘œ ë‹¬ì„±ì‹œ ë°œì†¡</span>
-              <span style={{ fontSize: '10px', color: TEXT_MUTED }}>127/200ëª…</span>
+              <span style={{ fontSize: '10px', color: 'rgba(120,160,255,0.9)', fontFamily: 'monospace' }}>ğ??¥ ê³µë?êµ¬ë§¤ Â· ëª©í?? ë?¬ì?±ì?? ë°?ì?¡</span>
+              <span style={{ fontSize: '10px', color: TEXT_MUTED }}>127/200ëª?</span>
             </div>
             <div style={{ height: '3px', background: 'rgba(255,255,255,0.08)' }}>
               <div style={{ height: '100%', width: '63%', background: 'linear-gradient(90deg,#4060C0,#8090E0)' }} />
             </div>
             <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
-              <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px' }}>ğŸ§´</div>
+              <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px' }}>ğ?§´</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>CIVASAN</div>
-                <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>MESS CREAM ë”ë¸”ì„¸íŠ¸</div>
-                <div style={{ fontSize: '10px', color: 'rgba(120,160,255,0.8)', marginBottom: '4px' }}>ğŸ¯ 200ëª… ë‹¬ì„± ì‹œ ë°œì†¡ Â· 73ëª… ë” í•„ìš”</div>
+                <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>MESS CREAM ë?ë¸?ì?¸í?¸</div>
+                <div style={{ fontSize: '10px', color: 'rgba(120,160,255,0.8)', marginBottom: '4px' }}>ğ??¯ 200ëª? ë?¬ì?± ì?? ë°?ì?¡ Â· 73ëª? ë? í??ì??</div>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>116,000ì›</span>
-                  <span style={{ fontSize: '15px', color: 'rgba(120,160,255,0.9)' }}>69,600ì› (-40%)</span>
+                  <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>116,000ì?</span>
+                  <span style={{ fontSize: '15px', color: 'rgba(120,160,255,0.9)' }}>69,600ì? (-40%)</span>
                 </div>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
-              <div style={{ flex: 2, padding: '9px 0', background: 'linear-gradient(135deg,#4060C0,#6080E0)', borderRadius: '8px', fontSize: '11px', color: '#fff', textAlign: 'center', cursor: 'pointer' }}>ğŸ‘¥ ê³µêµ¬ ì°¸ì—¬í•˜ê¸°</div>
-              <div style={{ flex: 1, padding: '9px 0', background: 'rgba(80,120,220,0.1)', border: '1px solid rgba(80,120,220,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(120,160,255,0.8)', textAlign: 'center', cursor: 'pointer' }}>ğŸ“¤ ì¹œêµ¬ ì´ˆëŒ€</div>
+              <div style={{ flex: 2, padding: '9px 0', background: 'linear-gradient(135deg,#4060C0,#6080E0)', borderRadius: '8px', fontSize: '11px', color: '#fff', textAlign: 'center', cursor: 'pointer' }}>ğ??¥ ê³µêµ¬ ì°¸ì?¬í??ê¸°</div>
+              <div style={{ flex: 1, padding: '9px 0', background: 'rgba(80,120,220,0.1)', border: '1px solid rgba(80,120,220,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(120,160,255,0.8)', textAlign: 'center', cursor: 'pointer' }}>ğ??¤ ì¹?êµ¬ ì´?ë??</div>
             </div>
           </div>
         )}
       </div>
 
-      {/* â”€â”€ ì‚´ë¡± â”€â”€ */}
+      {/* â??â?? ì?´ë¡± â??â?? */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>ğŸ“ ë‚´ ì£¼ë³€ ê´€ë¦¬ìƒµ</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ì§€ë„ë³´ê¸° â€º</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>ğ?? ë?´ ì£¼ë³? ê´?ë¦¬ì?µ</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ì§?ë?ë³´ê¸° â?º</span>
         </div>
         <div style={{ display: 'flex', gap: '7px', overflowX: 'auto', paddingBottom: '10px', scrollbarWidth: 'none' }}>
-          {['ğŸ“ ê±°ë¦¬ìˆœ', 'ğŸ”¥ ì¸ê¸°ìˆœ', 'â­ ë¦¬ë·°ìˆœ', 'ğŸ’† í˜ì´ì…œ', 'ğŸŒ¿ ë°”ë””', 'âœ¨ í´ë¦¬ë‹‰'].map((f, i) => (
+          {['ğ?? ê±°ë¦¬ì??', 'ğ??¥ ì¸ê¸°ì??', 'â­ ë¦¬ë·°ì??', 'ğ??? í??ì´ì??', 'ğ??¿ ë°?ë??', 'â?¨ í´ë¦¬ë??'].map((f, i) => (
             <div key={i} style={{
               padding: '5px 12px', whiteSpace: 'nowrap', cursor: 'pointer', fontSize: '10px',
               background: i === 0 ? 'rgba(201,169,110,0.15)' : CARD_BG,
@@ -670,7 +670,7 @@ export default function CustomerHomePage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {salonList.map((salon: any, i: number) => (
             <div key={i} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '16px', padding: '13px 14px', display: 'flex', gap: '12px', alignItems: 'center', cursor: 'pointer' }}>
-              <div style={{ width: '50px', height: '50px', borderRadius: '12px', background: 'linear-gradient(135deg,#1a1520,#2a1a30)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>ğŸ’†</div>
+              <div style={{ width: '50px', height: '50px', borderRadius: '12px', background: 'linear-gradient(135deg,#1a1520,#2a1a30)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>ğ???</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13px', fontWeight: 400, marginBottom: '2px' }}>{salon.name}</div>
                 <div style={{ fontSize: '10px', color: TEXT_MUTED, marginBottom: '4px' }}>
@@ -690,23 +690,23 @@ export default function CustomerHomePage() {
                   fontSize: '9px', padding: '3px 8px', borderRadius: '10px',
                   background: salon.open ? 'rgba(74,200,120,0.15)' : 'rgba(200,80,80,0.1)',
                   color: salon.open ? '#3ab870' : '#c05050',
-                }}>{salon.open ? 'ì˜ì—…ì¤‘' : 'ì˜ì—…ì¢…ë£Œ'}</div>
+                }}>{salon.open ? 'ì?ì??ì¤?' : 'ì?ì??ì¢?ë£?'}</div>
                 <div style={{ fontSize: '9px', color: TEXT_DIM }}>{salon.dist}</div>
-                <div style={{ padding: '6px 10px', background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: '8px', fontSize: '10px', color: GOLD, cursor: 'pointer' }}>ì˜ˆì•½í•˜ê¸°</div>
+                <div style={{ padding: '6px 10px', background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: '8px', fontSize: '10px', color: GOLD, cursor: 'pointer' }}>ì??ì?½í??ê¸°</div>
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* â”€â”€ ì†Œì§„ ì•Œë¦¼ â”€â”€ */}
+      {/* â??â?? ì??ì§? ì??ë¦¼ â??â?? */}
       <div style={{ margin: '16px 16px 0', background: 'rgba(220,100,40,0.08)', border: '1px solid rgba(220,120,60,0.2)', borderRadius: '16px', padding: '14px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
-          <span style={{ fontSize: '11px', fontWeight: 400, color: 'rgba(220,150,80,0.9)' }}>ğŸ”” ì´ ì œí’ˆë“¤ ê³§ ë–¨ì–´ì ¸ìš”!</span>
-          <span style={{ fontSize: '10px', color: 'rgba(201,169,110,0.7)', cursor: 'pointer' }}>ìë™ì•Œë¦¼ ì„¤ì • â€º</span>
+          <span style={{ fontSize: '11px', fontWeight: 400, color: 'rgba(220,150,80,0.9)' }}>ğ??? ì´ ì ?í??ë?¤ ê³§ ë?¨ì?´ì ¸ì??!</span>
+          <span style={{ fontSize: '10px', color: 'rgba(201,169,110,0.7)', cursor: 'pointer' }}>ì?ë?ì??ë¦¼ ì?¤ì ? â?º</span>
         </div>
-        {/* TODO: refill_alerts í…Œì´ë¸”ì—ì„œ user_id ê¸°ì¤€ ì¡°íšŒ */}
-        {[{ icon: 'ğŸ§´', name: 'CIVASAN MESS CREAM', pct: 20 }, { icon: 'ğŸŒ¿', name: 'GERNETIC ë°”ì´ì˜¤ ì„¸ëŸ¼', pct: 35 }].map((item, i) => (
+        {/* TODO: refill_alerts í??ì´ë¸?ì?ì?? user_id ê¸°ì¤? ì¡°í?? */}
+        {[{ icon: 'ğ?§´', name: 'CIVASAN MESS CREAM', pct: 20 }, { icon: 'ğ??¿', name: 'GERNETIC ë°?ì´ì?¤ ì?¸ë?¼', pct: 35 }].map((item, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: i === 0 ? '8px' : 0 }}>
             <span style={{ fontSize: '22px' }}>{item.icon}</span>
             <div style={{ flex: 1 }}>
@@ -715,22 +715,22 @@ export default function CustomerHomePage() {
                 <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
                   <div style={{ height: '100%', width: `${item.pct}%`, background: i === 0 ? 'linear-gradient(90deg,#E07030,#C05020)' : 'linear-gradient(90deg,#E0A030,#C08020)', borderRadius: '2px' }} />
                 </div>
-                <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{item.pct}% ë‚¨ìŒ</span>
+                <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{item.pct}% ë?¨ì?</span>
               </div>
             </div>
-            <div style={{ padding: '5px 10px', background: 'rgba(220,150,60,0.15)', border: '1px solid rgba(220,150,60,0.3)', borderRadius: '8px', fontSize: '10px', color: '#E09040', cursor: 'pointer' }}>ì¬êµ¬ë§¤</div>
+            <div style={{ padding: '5px 10px', background: 'rgba(220,150,60,0.15)', border: '1px solid rgba(220,150,60,0.3)', borderRadius: '8px', fontSize: '10px', color: '#E09040', cursor: 'pointer' }}>ì?¬êµ¬ë§¤</div>
           </div>
         ))}
       </div>
 
-      {/* â”€â”€ êµ¬ë§¤ íˆìŠ¤í† ë¦¬ â”€â”€ */}
+      {/* â??â?? êµ¬ë§¤ í??ì?¤í? ë¦¬ â??â?? */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>ğŸ“‹ ë‚´ êµ¬ë§¤ íˆìŠ¤í† ë¦¬</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ì „ì²´ë³´ê¸° â€º</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>ğ??? ë?´ êµ¬ë§¤ í??ì?¤í? ë¦¬</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ì ?ì²´ë³´ê¸° â?º</span>
         </div>
       </div>
-      {/* TODO: user_products í…Œì´ë¸”ì—ì„œ ìµœê·¼ 4ê°œ ì¡°íšŒ */}
+      {/* TODO: user_products í??ì´ë¸?ì?ì?? ìµ?ê·¼ 4ê°? ì¡°í?? */}
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
         {FALLBACK_HISTORY.map((item, i) => (
           <div key={i} style={{ minWidth: '110px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', flexShrink: 0 }}>
@@ -741,70 +741,70 @@ export default function CustomerHomePage() {
             <div style={{ padding: '7px 8px' }}>
               <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '1px' }}>{item.brand}</div>
               <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)', marginBottom: '5px' }}>{item.name}</div>
-              <div style={{ width: '100%', padding: '4px 0', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.15)', borderRadius: '6px', fontSize: '9px', color: GOLD, textAlign: 'center', cursor: 'pointer' }}>ğŸ”„ ì¬êµ¬ë§¤</div>
+              <div style={{ width: '100%', padding: '4px 0', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.15)', borderRadius: '6px', fontSize: '9px', color: GOLD, textAlign: 'center', cursor: 'pointer' }}>ğ??? ì?¬êµ¬ë§¤</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* â”€â”€ ì¼ì´Œ í”¼ë“œ â”€â”€ */}
+      {/* â??â?? ì¼ì´? í?¼ë?? â??â?? */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>ğŸ‘¥ ì¼ì´Œë“¤ì˜ ì¶”ì²œ</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ë”ë³´ê¸° â€º</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>ğ??¥ ì¼ì´?ë?¤ì? ì¶?ì²?</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ë?ë³´ê¸° â?º</span>
         </div>
-        {/* TODO: friend_activities í…Œì´ë¸” ì—°ë™ */}
+        {/* TODO: friend_activities í??ì´ë¸? ì?°ë? */}
         <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '12px 14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>ğŸŒº</div>
-            <div style={{ flex: 1, fontSize: '11px', fontWeight: 400 }}>ì†Œë¯¸ë‹˜</div>
-            <span style={{ fontSize: '9px', color: TEXT_DIM }}>ë°©ê¸ˆ</span>
+            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>ğ??º</div>
+            <div style={{ flex: 1, fontSize: '11px', fontWeight: 400 }}>ì??ë¯¸ë??</div>
+            <span style={{ fontSize: '9px', color: TEXT_DIM }}>ë°©ê¸?</span>
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '8px' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>ğŸ§´</div>
+            <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>ğ?§´</div>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, flex: 1 }}>
-              &quot;MESS CREAM 3ë²ˆì§¸ ì¬êµ¬ë§¤! ê±´ì„± í”¼ë¶€ì— ì§„ì§œ ìµœê³  ğŸ’§&quot;
+              &quot;MESS CREAM 3ë²?ì§¸ ì?¬êµ¬ë§¤! ê±´ì?± í?¼ë¶?ì? ì§?ì§? ìµ?ê³  ğ??§&quot;
             </div>
           </div>
           <div style={{ display: 'flex', gap: '6px' }}>
             <div style={{ flex: 1, padding: '6px 0', background: 'rgba(255,100,100,0.1)', border: '1px solid rgba(255,100,100,0.2)', borderRadius: '8px', fontSize: '10px', color: 'rgba(255,120,120,0.8)', textAlign: 'center', cursor: 'pointer' }}>â¤ï¸ ê³µê° 12</div>
-            <div style={{ flex: 1, padding: '6px 0', background: 'rgba(201,169,110,0.1)', border: '1px solid rgba(201,169,110,0.25)', borderRadius: '8px', fontSize: '10px', color: GOLD, textAlign: 'center', cursor: 'pointer' }}>ë‚˜ë„ êµ¬ë§¤</div>
-            <div style={{ flex: 1, padding: '6px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '8px', fontSize: '10px', color: TEXT_MUTED, textAlign: 'center', cursor: 'pointer' }}>ê³µìœ </div>
+            <div style={{ flex: 1, padding: '6px 0', background: 'rgba(201,169,110,0.1)', border: '1px solid rgba(201,169,110,0.25)', borderRadius: '8px', fontSize: '10px', color: GOLD, textAlign: 'center', cursor: 'pointer' }}>ë??ë? êµ¬ë§¤</div>
+            <div style={{ flex: 1, padding: '6px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '8px', fontSize: '10px', color: TEXT_MUTED, textAlign: 'center', cursor: 'pointer' }}>ê³µì? </div>
           </div>
         </div>
       </div>
 
-      {/* â”€â”€ ì‹ ì œí’ˆ â”€â”€ */}
+      {/* â??â?? ì? ì ?í?? â??â?? */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>ğŸ†• ìƒˆë¡œ ë‚˜ì™”ì–´ìš”</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ì „ì²´ â€º</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>ğ??? ì??ë¡? ë??ì??ì?´ì??</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ì ?ì²´ â?º</span>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
         {newList.map((item: any, i: number) => (
           <div key={i} onClick={() => router.push(`/products/${item.id}`)} style={{ minWidth: '130px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
             <div style={{ height: '90px', background: 'linear-gradient(135deg,#1a0a2a,#2a1540)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', position: 'relative' }}>
-              {item.icon || 'ğŸ’œ'}
+              {item.icon || 'ğ???'}
               <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'linear-gradient(90deg,#6040E0,#A040E0)', borderRadius: '5px', padding: '2px 6px', fontSize: '8px', color: '#fff' }}>NEW</div>
             </div>
             <div style={{ padding: '9px 10px' }}>
               <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.brand}</div>
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.4, marginBottom: '4px' }}>{item.name}</div>
-              <div style={{ fontSize: '12px', fontWeight: 400 }}>{item.price?.toLocaleString()}ì›</div>
+              <div style={{ fontSize: '12px', fontWeight: 400 }}>{item.price?.toLocaleString()}ì?</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* â”€â”€ ë¸Œëœë“œ ì›í˜• ê·¸ë¦¬ë“œ â”€â”€ */}
+      {/* â??â?? ë¸?ë??ë?? ì?í?? ê·¸ë¦¬ë?? â??â?? */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>ğŸ· ë¸Œëœë“œë³„ ë³´ê¸°</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ì „ì²´ ë¸Œëœë“œ â€º</span>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>ğ?· ë¸?ë??ë??ë³? ë³´ê¸°</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>ì ?ì²´ ë¸?ë??ë?? â?º</span>
         </div>
         <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '12px', scrollbarWidth: 'none' }}>
-          {['ì „ì²´', 'ğŸ‡ªğŸ‡º ìœ ëŸ½', 'ğŸ‡°ğŸ‡· êµ­ë‚´', 'ğŸ‡¯ğŸ‡µ ì¼ë³¸', 'í´ë¦¬ë‹‰', 'ë°”ë””'].map((tab, i) => (
+          {['ì ?ì²´', 'ğ??ªğ??º ì? ë?½', 'ğ??°ğ??· êµ­ë?´', 'ğ??¯ğ??µ ì¼ë³¸', 'í´ë¦¬ë??', 'ë°?ë??'].map((tab, i) => (
             <div key={i} style={{
               padding: '4px 12px', whiteSpace: 'nowrap', cursor: 'pointer', fontSize: '10px',
               background: i === 0 ? GOLD : CARD_BG,
@@ -834,7 +834,7 @@ export default function CustomerHomePage() {
               </span>
             </div>
           ))}
-          {/* ë”ë³´ê¸° */}
+          {/* ë?ë³´ê¸° */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
             <div style={{
               width: '58px', height: '58px', borderRadius: '50%',
@@ -844,14 +844,31 @@ export default function CustomerHomePage() {
               flexDirection: 'column', gap: '2px',
             }}>
               <span style={{ fontSize: '16px', color: 'rgba(255,255,255,0.4)' }}>+</span>
-              <span style={{ fontSize: '8px', color: TEXT_DIM }}>23ê°œ</span>
+              <span style={{ fontSize: '8px', color: TEXT_DIM }}>23ê°?</span>
             </div>
-            <span style={{ fontSize: '9px', color: TEXT_DIM }}>ì „ì²´ë³´ê¸°</span>
+            <span style={{ fontSize: '9px', color: TEXT_DIM }}>ì ?ì²´ë³´ê¸°</span>
           </div>
         </div>
       </div>
 
-      {/* â”€â”€ í•˜ë‹¨ ë„¤ë¹„ê²Œì´ì…˜ â”€â”€ */}
+      {/* ?? ?? ?? */}
+      <div style={{ margin: '20px 16px 0', padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ textAlign: 'center', marginBottom: '16px' }}>
+          <span style={{ fontFamily: 'Georgia, serif', fontSize: '16px', fontWeight: 400, color: '#C9A96E', letterSpacing: '4px' }}>AURAN</span>
+          <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)', fontFamily: 'monospace', marginLeft: '8px' }}>· DUCHESS.KR</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '14px', flexWrap: 'wrap' }}>
+          {['????', 'FAQ', '1:1??', '????????', '????'].map((item, i) => (
+            <span key={i} style={{ fontSize: '10px', color: 'rgba(255,255,255,0.25)', cursor: 'pointer' }}>{item}</span>
+          ))}
+        </div>
+        <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.2)', lineHeight: 2 }}>
+          <div>?? : ??? · ??????? : 197-87-01357</div>
+          <div>????? · support@auran.kr</div>
+          <div style={{ marginTop: '4px', fontSize: '9px', color: 'rgba(255,255,255,0.15)' }}>© 2026 AURAN. All rights reserved.</div>
+        </div>
+      </div>
+      {/* ?? ?? ????? ?? */}
       <nav style={{
         position: 'fixed', bottom: 0,
         left: '50%', transform: 'translateX(-50%)',
@@ -862,11 +879,11 @@ export default function CustomerHomePage() {
         padding: '0 10px 16px', zIndex: 50,
       }}>
         <div onClick={() => router.push('/home')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '20px' }}>ğŸ </span>
+          <span style={{ fontSize: '20px' }}>ğ? </span>
           <span style={{ fontSize: '9px', fontFamily: 'monospace', color: GOLD }}>HOME</span>
         </div>
         <div onClick={() => router.push('/products')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '20px' }}>ğŸ›ï¸</span>
+          <span style={{ fontSize: '20px' }}>ğ??ï¸</span>
           <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM }}>SHOP</span>
         </div>
         <div
@@ -879,15 +896,15 @@ export default function CustomerHomePage() {
             marginTop: '-20px', cursor: 'pointer',
           }}
         >
-          <span style={{ fontSize: '20px' }}>ğŸ”¬</span>
-          <span style={{ fontSize: '8px', fontWeight: 400, color: BG, fontFamily: 'monospace' }}>AIë¶„ì„</span>
+          <span style={{ fontSize: '20px' }}>ğ??¬</span>
+          <span style={{ fontSize: '8px', fontWeight: 400, color: BG, fontFamily: 'monospace' }}>AIë¶?ì?</span>
         </div>
         <div onClick={() => router.push('/salon')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '20px' }}>ğŸ“…</span>
-          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM }}>ì˜ˆì•½</span>
+          <span style={{ fontSize: '20px' }}>ğ???</span>
+          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM }}>ì??ì?½</span>
         </div>
         <div onClick={() => router.push('/my')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '20px' }}>ğŸ‘¤</span>
+          <span style={{ fontSize: '20px' }}>ğ??¤</span>
           <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM }}>MY</span>
         </div>
       </nav>
