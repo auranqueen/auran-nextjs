@@ -17,12 +17,16 @@ async function getProduct(id: string) {
   return data
 }
 
+function brandNameOf(product: any): string {
+  const b = product?.brands
+  if (Array.isArray(b)) return b[0]?.name || ''
+  return b?.name || ''
+}
+
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const product = await getProduct(params.id)
   if (!product) return { title: '제품 | AURAN' }
-  const brandName = Array.isArray((product as any).brands)
-    ? (product as any).brands?.[0]?.name || ''
-    : (product as any).brands?.name || ''
+  const brandName = brandNameOf(product)
   return {
     title: `${product.name} | AURAN`,
     description: String(product.description || '').slice(0, 160),
@@ -45,9 +49,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
   const product = await getProduct(params.id)
   if (!product) notFound()
 
-  const brandName = Array.isArray((product as any).brands)
-    ? (product as any).brands?.[0]?.name || 'AURAN'
-    : (product as any).brands?.name || 'AURAN'
+  const brandName = brandNameOf(product) || 'AURAN'
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -67,10 +69,16 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
       : undefined,
   }
 
+  const productForClient = {
+    ...product,
+    price: product.retail_price,
+    brand_name: brandName,
+  }
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <ProductDetailClient product={product} />
+      <ProductDetailClient product={productForClient} />
     </>
   )
 }
