@@ -155,18 +155,19 @@ function ProductsPageInner() {
       setError(null)
       const { data, error: err } = await supabase
         .from('products')
-        .select(
-          'id,name,thumb_img,retail_price,status,created_at,brand_id,description,tag,category,skin_types,quiz_match,brands(name)'
-        )
-        .eq('status', 'active')
-        .gt('retail_price', 0)
+        .select('*, brands(name)')
         .order('created_at', { ascending: false })
-        .limit(300)
       if (err) {
         setError(err.message || '제품 목록을 불러오지 못했습니다.')
         setProducts([])
       } else {
-        setProducts(data || [])
+        setProducts(
+          (data || []).map((row: any) => ({
+            ...row,
+            price: row.retail_price,
+            brand_name: row.brands?.name || '',
+          }))
+        )
       }
       setLoading(false)
     }
