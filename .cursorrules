@@ -20,3 +20,17 @@
 
 ## 어드민 API
 - `/api/admin/*` 는 로그인 + admin 역할 확인 후, 가능하면 `tryCreateAdminClient()` 로 RLS 우회 처리.
+
+## 🔒 LOCKED - 절대 수정 금지
+
+### 역할 선택 버튼 클릭 (완료 2026-03-22)
+src/app/page.tsx:
+- 역할 카드 그리드: position relative, zIndex 10 유지
+- 각 버튼: position relative, zIndex 20, cursor pointer 유지
+
+src/components/MonthTheme.tsx:
+- 테마 루트에 pointerEvents none 유지
+
+위 두 파일의 zIndex, pointerEvents 설정은
+어떤 작업에서도 절대 변경/제거 금지.
+다른 기능 추가 시 이 설정에 영향 없도록 새 파일로 분리할 것.

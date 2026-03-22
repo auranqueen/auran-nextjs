@@ -142,33 +142,47 @@ function LoginForm() {
 
   async function handleSocial(provider: 'kakao' | 'google') {
     setSocialLoading(provider)
+    setError('')
     const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
     const fromParam = normalizePosition(role)
     const position = fromParam || stored || 'customer'
     localStorage.setItem(POSITION_STORAGE_KEY, position)
-    // 로그인 후 돌아갈 주소: auran-deploy면 프로덕션으로, 아니면 현재 주소 (NEXT_PUBLIC_APP_URL 무시)
-    const origin = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || '')
-    const appUrl = (typeof window !== 'undefined' && window.location.hostname?.includes('auran-deploy.vercel.app'))
-      ? 'https://www.auran.kr'
-      : origin
     const redirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : null
     const redirectQuery = redirect ? `&redirect=${encodeURIComponent(redirect)}` : ''
+    const callbackQuery = `?role=${encodeURIComponent(position)}${redirectQuery}`
+
+    if (provider === 'kakao') {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'kakao',
+        options: {
+          // 카카오 콘솔 등록 URI와 일치해야 함 — localhost/Vercel preview URL이면 KOE205로 멈춤
+          redirectTo: `https://www.auran.kr/auth/callback${callbackQuery}`,
+          scopes: 'profile_nickname profile_image',
+        },
+      })
+      if (error) {
+        console.error('카카오 로그인 에러:', error)
+        setError(error.message || '카카오 로그인에 실패했습니다.')
+      }
+      setSocialLoading('')
+      return
+    }
+
+    const origin = typeof window !== 'undefined' ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL || '')
+    const appUrl =
+      typeof window !== 'undefined' && window.location.hostname?.includes('auran-deploy.vercel.app')
+        ? 'https://www.auran.kr'
+        : origin
     const { error } = await supabase.auth.signInWithOAuth({
-      provider,
+      provider: 'google',
       options: {
-        // Use stable production URL to avoid Kakao redirect mismatch (KOE205)
-        // redirect 파라미터를 함께 전달해서 소셜 로그인 후에도 원래 페이지로 복귀
-        redirectTo: `${appUrl}/auth/callback?role=${position}${redirectQuery}`,
-        ...(provider === 'kakao'
-          ? { scopes: 'profile_nickname profile_image account_email' }
-          : {}),
-        queryParams:
-          provider === 'kakao'
-            ? { scope: 'profile_nickname profile_image account_email' }
-            : {},
+        redirectTo: `${appUrl}/auth/callback${callbackQuery}`,
       },
     })
-    if (error) setError(error.message)
+    if (error) {
+      console.error('Google 로그인 에러:', error)
+      setError(error.message || 'Google 로그인에 실패했습니다.')
+    }
     setSocialLoading('')
   }
 
@@ -228,6 +242,23 @@ function LoginForm() {
           </div>
         )}
 
+        {error && (
+          <div style={{ marginBottom: 16, padding: '10px 14px', background: 'rgba(217,79,79,0.1)', border: '1px solid rgba(217,79,79,0.3)', borderRadius: 8, fontSize: 12, color: '#e08080' }}>
+            {error}
+            {error.includes('이메일 인증') && (
+              <div style={{ marginTop: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => router.push(`/auth/verify-email?email=${encodeURIComponent(email)}&role=${role}`)}
+                  style={{ background: 'none', border: 'none', color: meta.accent, textDecoration: 'underline', cursor: 'pointer', fontSize: 12 }}
+                >
+                  인증 메일 다시 보내기
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* 구분선 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
           <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
@@ -267,23 +298,6 @@ function LoginForm() {
             />
             아이디 기억하기
           </label>
-
-          {error && (
-            <div style={{ padding: '10px 14px', background: 'rgba(217,79,79,0.1)', border: '1px solid rgba(217,79,79,0.3)', borderRadius: 8, fontSize: 12, color: '#e08080' }}>
-              {error}
-              {error.includes('이메일 인증') && (
-                <div style={{ marginTop: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => router.push(`/auth/verify-email?email=${encodeURIComponent(email)}&role=${role}`)}
-                    style={{ background: 'none', border: 'none', color: meta.accent, textDecoration: 'underline', cursor: 'pointer', fontSize: 12 }}
-                  >
-                    인증 메일 다시 보내기
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
 
           <button
             type="button" disabled={loading}

@@ -16,30 +16,30 @@ export default function LoginRequiredModal({ open, onClose, returnPath }: Props)
   const router = useRouter()
   const supabase = createClient()
   const [socialLoading, setSocialLoading] = useState('')
+  const [oauthError, setOauthError] = useState('')
 
   if (!open) return null
 
   async function handleSocial(provider: 'kakao') {
     setSocialLoading(provider)
+    setOauthError('')
     try {
       const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
       const position = stored || 'customer'
       localStorage.setItem(POSITION_STORAGE_KEY, position)
-      const origin = typeof window !== 'undefined' ? window.location.origin : ''
-      const appUrl =
-        typeof window !== 'undefined' && window.location.hostname?.includes('auran-deploy.vercel.app')
-          ? 'https://www.auran.kr'
-          : origin
       const safeReturn = returnPath.startsWith('/') ? returnPath : '/'
+      const callbackQuery = `?role=${encodeURIComponent(position)}&redirect=${encodeURIComponent(safeReturn)}`
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${appUrl}/auth/callback?role=${position}&redirect=${encodeURIComponent(safeReturn)}`,
-          ...(provider === 'kakao' ? { scopes: 'profile_nickname profile_image' } : {}),
-          queryParams: provider === 'kakao' ? { scope: 'profile_nickname profile_image' } : {},
+          redirectTo: `https://www.auran.kr/auth/callback${callbackQuery}`,
+          scopes: 'profile_nickname profile_image',
         },
       })
-      if (error) alert(error.message)
+      if (error) {
+        console.error('카카오 로그인 에러:', error)
+        setOauthError(error.message || '카카오 로그인에 실패했습니다.')
+      }
     } finally {
       setSocialLoading('')
     }
@@ -63,6 +63,21 @@ export default function LoginRequiredModal({ open, onClose, returnPath }: Props)
       >
         <div style={{ fontSize: 17, fontWeight: 800, color: '#fff', marginBottom: 6 }}>로그인이 필요해요</div>
         <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 16 }}>로그인 후 이어서 진행할 수 있어요.</div>
+        {oauthError && (
+          <div
+            style={{
+              marginBottom: 12,
+              padding: '10px 12px',
+              background: 'rgba(217,79,79,0.12)',
+              border: '1px solid rgba(217,79,79,0.35)',
+              borderRadius: 10,
+              fontSize: 12,
+              color: '#e08080',
+            }}
+          >
+            {oauthError}
+          </div>
+        )}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <button
             type="button"
