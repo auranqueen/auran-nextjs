@@ -19,7 +19,7 @@ function earnPercentOf(product: any): number {
   return 0
 }
 
-export default function ProductDetailClient({ product }: { product: any }) {
+export default function ProductDetailUI({ product }: { product: any }) {
   const router = useRouter()
   const [qty, setQty] = useState(1)
   const [detailTab, setDetailTab] = useState<'detail' | 'review'>('detail')

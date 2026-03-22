@@ -411,7 +411,7 @@ export default function CommunityWritePage() {
               {productTags.map(p => (
                 <button
                   key={p.id}
-                  onClick={() => router.push(`/products?focus=${encodeURIComponent(p.id)}`)}
+                  onClick={() => router.push(`/products/${p.id}`)}
                   style={{
                     display: 'flex',
                     alignItems: 'center',

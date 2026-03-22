@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import ProductDetailClient from './client'
+import ProductDetailUI from '@/components/ui/ProductDetailUI'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -78,7 +78,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
-      <ProductDetailClient product={productForClient} />
+      <ProductDetailUI product={productForClient} />
     </>
   )
 }
