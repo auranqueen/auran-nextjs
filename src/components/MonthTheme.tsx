@@ -174,7 +174,7 @@ export function MonthThemeProvider({ children }: MonthThemeProviderProps) {
     <ThemeContext.Provider value={{ theme, activeMonth, setActiveMonth, applyTheme }}>
       <div
         className="relative min-h-screen overflow-hidden"
-        style={{ background: theme.bg, transition: transitionsEnabled ? 'all 1.2s ease' : 'none' }}
+        style={{ background: theme.bg, transition: transitionsEnabled ? 'all 1.2s ease' : 'none', pointerEvents: 'none' }}
       >
       {/* 전구 스트링 */}
       <div

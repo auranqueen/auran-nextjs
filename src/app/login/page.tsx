@@ -75,13 +75,19 @@ function LoginForm() {
         else localStorage.removeItem(REMEMBER_EMAIL_KEY)
       } catch {}
 
-      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
+      const { data: signData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
       if (authError) throw authError
 
-      // 역할/승인 상태는 RLS 영향 없도록 서버에서 확인(service_role)
-      const roleRes = await fetch('/api/auth/role-status', { method: 'GET' })
+      // 서버 API는 로그인 직후 쿠키가 아직 없어 401일 수 있음 → 클라이언트 users 조회로 보완
+      let userData: { role: string | null; status: string | null } | null = null
+      const roleRes = await fetch('/api/auth/role-status', { method: 'GET', credentials: 'same-origin' })
       const roleJson = await roleRes.json().catch(() => ({}))
-      const userData = roleJson?.ok ? { role: roleJson.role as any, status: roleJson.status as any } : null
+      if (roleJson?.ok) {
+        userData = { role: roleJson.role ?? null, status: roleJson.status ?? null }
+      } else if (signData.user?.id) {
+        const { data: row } = await supabase.from('users').select('role,status').eq('auth_id', signData.user.id).maybeSingle()
+        if (row) userData = { role: (row as { role?: string }).role ?? null, status: (row as { status?: string }).status ?? null }
+      }
 
       if (userData?.status === 'suspended') {
         setError('정지된 계정입니다. 고객센터에 문의해주세요.')
@@ -90,9 +96,18 @@ function LoginForm() {
       }
 
       const effectiveRole = userData?.role || role
-      if ((effectiveRole === 'partner' || effectiveRole === 'owner' || effectiveRole === 'brand') && userData?.status !== 'active') {
+      // 미승인 분기: userData를 실제로 알 때만 (null이면 status 비교 금지 — 전부 미승인으로 오인)
+      const needsApproval =
+        userData &&
+        userData.status !== 'active' &&
+        (effectiveRole === 'partner' ||
+          effectiveRole === 'owner' ||
+          effectiveRole === 'brand' ||
+          effectiveRole === 'salon')
+      if (needsApproval) {
         await supabase.auth.signOut()
-        router.replace(`/auth/pending-approval?role=${encodeURIComponent(effectiveRole)}`)
+        const r = effectiveRole === 'salon' ? 'owner' : effectiveRole
+        router.replace(`/auth/pending-approval?role=${encodeURIComponent(r)}`)
         return
       }
 

@@ -1,12 +1,9 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { normalizePosition, positionToDashboardPath } from '@/lib/position'
 import { MonthThemeProvider, useTheme } from '@/components/MonthTheme'
-import SecurityNoticePopup from '@/components/SecurityNoticePopup'
 import AnnouncementBanner from '@/components/AnnouncementBanner'
-import { useEffect, useState } from 'react'
 
 const ROLES = [
   { id: 'customer', icon: '💧', name: '고객',    desc: '피부분석 · 제품추천 · 살롱예약 · 마이월드' },
@@ -16,56 +13,40 @@ const ROLES = [
 ]
 
 function HomePageInner() {
-  const router = useRouter()
   const supabase = createClient()
   const { theme } = useTheme()
 
-  const getDbRole = async (authId: string): Promise<string | null> => {
-    // 1) profiles.role 우선 (요청사항)
-    try {
-      const { data } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('auth_id', authId)
-        .single()
-      if (typeof data?.role === 'string') return data.role
-    } catch {
-      // ignore and fallback
-    }
-
-    // 2) 기존 users.role fallback
-    try {
-      const { data } = await supabase
-        .from('users')
-        .select('role')
-        .eq('auth_id', authId)
-        .single()
-      if (typeof data?.role === 'string') return data.role
-    } catch {
-      // ignore
-    }
-
-    return null
-  }
-
   // NOTE: 슈퍼콘솔은 /super-console 에서만 접근(홈에서 노출/자동이동 금지)
+  // router만 쓰면 클라이언트에서 막히는 경우가 있어 assign + 세션 타임아웃 시 대시보드로 보내 미들웨어가 처리
 
-  const handleRoleSelect = async (roleId: string) => {
+  const handleRoleSelect = (roleId: string) => {
     const normalized = normalizePosition(roleId)
     const position = normalized || 'customer'
     if (typeof window !== 'undefined') {
       localStorage.setItem('selectedPosition', position)
     }
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      // route to role-specific login page
-      const loginRole = roleId === 'owner' ? 'owner' : position
-      router.push('/login?role=' + loginRole)
-      return
+    const loginRole = roleId === 'owner' ? 'owner' : position
+    const loginPath = '/login?role=' + encodeURIComponent(loginRole)
+    const dashPath = positionToDashboardPath(position)
+
+    const go = (path: string) => {
+      window.location.assign(path)
     }
-    const dbRole = await getDbRole(user.id)
-    // admin role도 홈에서 직접 진입 불가 (super-console로만)
-    router.push(positionToDashboardPath(position))
+
+    const sessionMs = supabase.auth.getSession()
+    const timeoutMs = new Promise<'timeout'>((resolve) => setTimeout(() => resolve('timeout'), 1200))
+
+    void Promise.race([sessionMs, timeoutMs])
+      .then((result) => {
+        if (result === 'timeout') {
+          go(dashPath)
+          return
+        }
+        const user = result.data.session?.user ?? null
+        if (!user) go(loginPath)
+        else go(dashPath)
+      })
+      .catch(() => go(loginPath))
   }
 
   const cardStyles = [theme?.c1, theme?.c2, theme?.c3, theme?.c4]
@@ -105,9 +86,8 @@ function HomePageInner() {
           display: 'flex',
           flexDirection: 'column',
           overflowX: 'hidden',
-          zIndex: 40,
+          zIndex: 1,
           pointerEvents: 'auto',
-          isolation: 'isolate',
         }}
       >
 
@@ -149,9 +129,9 @@ function HomePageInner() {
         </div>
 
         {/* 카드 영역 — 배경 레이어보다 위에서 클릭 수신 */}
-        <div style={{ padding: '20px 16px 120px', position: 'relative', zIndex: 10, pointerEvents: 'auto' }}>
-          <div style={{ width: '100%', boxSizing: 'border-box', position: 'relative', zIndex: 10, pointerEvents: 'auto' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ padding: '20px 16px 120px' }}>
+          <div style={{ width: '100%', boxSizing: 'border-box' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', width: '100%', boxSizing: 'border-box', position: 'relative', zIndex: 10 }}>
             {ROLES.map((role, i) => (
               <button
                 key={role.id}
@@ -166,7 +146,6 @@ function HomePageInner() {
                   position: 'relative',
                   zIndex: 20,
                   cursor: 'pointer',
-                  pointerEvents: 'auto',
                 }}
               >
                 <span style={{ fontSize: '26px' }}>{role.icon}</span>
@@ -216,7 +195,7 @@ function HomePageInner() {
             </div>
 
             {/* 오른쪽 2x2 카드 - 버튼 클릭 보장 */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '500px', flexShrink: 0, position: 'relative', zIndex: 10, pointerEvents: 'auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '500px', flexShrink: 0, position: 'relative', zIndex: 10 }}>
               {ROLES.map((role, i) => (
                 <button
                   key={role.id}
@@ -230,7 +209,6 @@ function HomePageInner() {
                     position: 'relative',
                     zIndex: 20,
                     cursor: 'pointer',
-                    pointerEvents: 'auto',
                     touchAction: 'manipulation',
                   }}
                 >
@@ -256,7 +234,6 @@ export default function HomePage() {
   return (
     <MonthThemeProvider>
       <HomePageInner />
-      <SecurityNoticePopup />
     </MonthThemeProvider>
   )
 }

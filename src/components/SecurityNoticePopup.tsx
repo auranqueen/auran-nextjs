@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 
 const STORAGE_KEY = 'auran_security_notice_dismissed'
 
-export default function SecurityNoticePopup() {
+export default function SecurityNoticePopup({ autoShowOnMount = true }: { autoShowOnMount?: boolean }) {
   const [visible, setVisible] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -13,10 +13,10 @@ export default function SecurityNoticePopup() {
   }, [])
 
   useEffect(() => {
-    if (!mounted) return
+    if (!mounted || !autoShowOnMount) return
     const dismissed = localStorage.getItem(STORAGE_KEY)
     if (!dismissed) setVisible(true)
-  }, [mounted])
+  }, [mounted, autoShowOnMount])
 
   const dismiss = (dontShowAgain: boolean) => {
     if (dontShowAgain) localStorage.setItem(STORAGE_KEY, '1')
