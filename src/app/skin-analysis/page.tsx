@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
-import ProductThumbnail from '@/components/ProductThumbnail'
+import SkinAnalysisResultView from '@/components/skin-analysis/SkinAnalysisResultView'
 import { createClient } from '@/lib/supabase/client'
 import { broadcastCartCountRefresh } from '@/lib/cartEvents'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
@@ -920,145 +920,28 @@ export default function CustomerSkinAnalysisQuizPage() {
           </div>
         )}
 
-        {/* Result */}
         {step === 'result' && result && (
-          <>
-            <div style={{ padding: '20px 0' }}>
-              <h2 style={{ fontSize: 18, color: '#fff', marginBottom: 8 }}>{`분석 완료!`}</h2>
-              <div style={{ padding: 16, background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 14, marginBottom: 24 }}>
-                <span style={{ fontSize: 20, fontWeight: 700, color: GOLD }}>{`🧬 ${result.skinType}`}</span>
-              </div>
-
-              {result.products.length > 0 && (
-                <>
-                  <div style={{ marginBottom: 16 }}>
-                    <h3 style={{ fontSize: 14, color: '#fff', marginBottom: 10 }}>AI 맞춤 추천 TOP 5</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {result.products.slice(0, 5).map((p: any) => (
-                        <div key={p.id} style={{ display: 'flex', gap: 10, alignItems: 'center', padding: 10, borderRadius: 12, background: 'var(--bg3)', border: '1px solid var(--border)' }}>
-                          <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelect(p.id)} />
-                          <div onClick={() => router.push(`/products/${p.id}`)} style={{ display: 'flex', gap: 10, alignItems: 'center', flex: 1, cursor: 'pointer' }}>
-                            <div style={{ position: 'relative', width: 52, height: 52, borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.05)' }}>
-                              <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
-                            </div>
-                            <div style={{ minWidth: 0 }}>
-                              <div style={{ fontSize: 12, color: 'var(--text3)' }}>{p.brands?.name || ''}</div>
-                              <div style={{ fontSize: 13, color: '#fff', fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                              <div style={{ fontSize: 12, color: GOLD, marginTop: 2 }}>{`맞춤도 ${Number(p.matchRate || 0)}%`}</div>
-                            </div>
-                          </div>
-                          <button onClick={() => toggleSelect(p.id)} style={{ border: '1px solid rgba(201,168,76,0.35)', background: selectedIds.includes(p.id) ? 'rgba(201,168,76,0.2)' : 'transparent', color: GOLD, borderRadius: 8, padding: '6px 9px', fontSize: 12 }}>
-                            {cartedIds.includes(p.id) ? '담김' : '담기'}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div style={{ marginBottom: 16 }}>
-                    <h3 style={{ fontSize: 14, color: '#fff', marginBottom: 8 }}>피부타입별 검색바</h3>
-                    <input
-                      value={searchText}
-                      onChange={(e) => setSearchText(e.target.value)}
-                      placeholder={`🔍 ${result.skinType} 피부 제품 검색...`}
-                      style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'var(--bg3)', color: '#fff', padding: '0 12px', outline: 'none' }}
-                    />
-                    {searchText.trim() && (
-                      <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {searchResults.map((p: any) => (
-                          <div key={`search-${p.id}`} style={{ display: 'flex', alignItems: 'center', gap: 8, border: '1px solid var(--border)', borderRadius: 10, background: 'var(--bg3)', padding: 8 }}>
-                            <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelect(p.id)} />
-                            <div onClick={() => router.push(`/products/${p.id}`)} style={{ flex: 1, cursor: 'pointer', minWidth: 0 }}>
-                              <div style={{ color: '#fff', fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                              <div style={{ color: 'var(--text3)', fontSize: 11 }}>{p.brands?.name || ''}</div>
-                            </div>
-                            <div style={{ color: GOLD, fontSize: 12, fontWeight: 800 }}>{`₩${toComma(p.retail_price)}`}</div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div style={{ marginBottom: 24 }}>
-                    <h3 style={{ fontSize: 14, color: '#fff', marginBottom: 8 }}>단계별 케어 라인업</h3>
-                    {stepSections.map((sec, idx) => (
-                      <div key={sec.stepTitle} style={{ marginBottom: 14 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                          <div style={{ color: '#fff', fontSize: 13, fontWeight: 800 }}>{`STEP ${idx + 1} · ${sec.stepTitle}`}</div>
-                          <button style={{ border: 'none', background: 'transparent', color: 'var(--text3)', fontSize: 12 }}>전체보기 ›</button>
-                        </div>
-                        <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
-                          {sec.products.map((p: any) => (
-                            <div key={`${sec.stepTitle}-${p.id}`} style={{ width: 160, flexShrink: 0, border: '1px solid var(--border)', borderRadius: 10, overflow: 'hidden', background: 'var(--bg3)' }}>
-                              <div style={{ position: 'relative', width: '100%', aspectRatio: '1', background: 'rgba(255,255,255,0.04)' }}>
-                                <input type="checkbox" checked={selectedIds.includes(p.id)} onChange={() => toggleSelect(p.id)} style={{ position: 'absolute', top: 8, left: 8, zIndex: 1 }} />
-                                <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
-                              </div>
-                              <div style={{ padding: 8 }}>
-                                <div style={{ fontSize: 11, color: 'var(--text3)' }}>{p.brands?.name || ''}</div>
-                                <div style={{ color: '#fff', fontSize: 12, fontWeight: 700, lineHeight: 1.3, minHeight: 32, display: '-webkit-box', WebkitLineClamp: 2 as any, WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>{p.name}</div>
-                                <div style={{ color: GOLD, fontSize: 12, marginTop: 3 }}>{`₩${toComma(p.retail_price)}`}</div>
-                                <button onClick={() => toggleSelect(p.id)} style={{ marginTop: 6, width: '100%', borderRadius: 8, border: '1px solid rgba(201,168,76,0.35)', background: selectedIds.includes(p.id) ? 'rgba(201,168,76,0.2)' : 'transparent', color: GOLD, fontSize: 12, padding: '6px 0' }}>
-                                  {cartedIds.includes(p.id) ? '담김' : '담기'}
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              <button
-                onClick={() => router.push('/products')}
-                style={{ width: '100%', padding: 14, background: GOLD, border: 'none', borderRadius: 12, color: '#0a0a0a', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
-              >
-                전제품 보러 가기 →
-              </button>
-            </div>
-          </>
+          <SkinAnalysisResultView
+            skinType={result.skinType}
+            products={result.products}
+            selectedIds={selectedIds}
+            cartedIds={cartedIds}
+            visibleIds={visibleIds}
+            searchText={searchText}
+            onSearchTextChange={setSearchText}
+            searchResults={searchResults}
+            stepSections={stepSections}
+            selectedTotal={selectedTotal}
+            onToggleSelect={toggleSelect}
+            onToggleSelectAll={() => setSelectedIds(selectedIds.length === visibleIds.length ? [] : visibleIds)}
+            onAddToCart={addSelectedToCart}
+            onCheckout={paySelected}
+            onBrowseProducts={() => router.push('/products')}
+          />
         )}
       </div>
-
-      {step === 'result' && result && (
-        <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 66, width: '100%', maxWidth: 480, padding: '10px 12px', borderTop: '1px solid var(--border)', background: 'rgba(10,12,15,0.96)', zIndex: 45 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', color: '#fff', fontSize: 12, marginBottom: 8 }}>
-            <button
-              onClick={() => setSelectedIds(selectedIds.length === visibleIds.length ? [] : visibleIds)}
-              style={{ border: 'none', background: 'transparent', color: selectedIds.length ? GOLD : '#fff', fontWeight: 700, cursor: 'pointer' }}
-            >
-              {selectedIds.length === visibleIds.length ? '☑ 전체해제' : '☑ 전체선택'}
-            </button>
-            <span>{`선택 ${selectedIds.length}개 · ₩${toComma(selectedTotal)}`}</span>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <button
-              disabled={!selectedIds.length}
-              onClick={addSelectedToCart}
-              style={{ height: 42, borderRadius: 10, border: '1px solid var(--border)', background: selectedIds.length ? 'rgba(201,168,76,0.18)' : 'var(--bg3)', color: selectedIds.length ? GOLD : 'var(--text3)', fontWeight: 700 }}
-            >
-              🛒 장바구니
-            </button>
-            <button
-              disabled={!selectedIds.length}
-              onClick={paySelected}
-              style={{ height: 42, borderRadius: 10, border: 'none', background: selectedIds.length ? GOLD : 'var(--bg3)', color: selectedIds.length ? '#0a0a0a' : 'var(--text3)', fontWeight: 900 }}
-            >
-              ⚡ 선택 결제하기
-            </button>
-          </div>
-        </div>
-      )}
       <DashboardBottomNav role="customer" />
     </div>
   )
-}
-
-function toComma(v: any) {
-  const n = Number(v)
-  if (!Number.isFinite(n)) return '0'
-  return n.toLocaleString()
 }
 
