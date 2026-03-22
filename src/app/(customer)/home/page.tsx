@@ -213,7 +213,7 @@ export default function CustomerHomePage() {
 
       {/* ── TODAY'S SKIN ── */}
       <div
-        onClick={() => router.push('/skin-analysis')}
+        onClick={() => router.push('/analysis')}
         style={{
           margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER,
           borderRadius: '16px', padding: '12px 16px',
@@ -241,7 +241,7 @@ export default function CustomerHomePage() {
             type="button"
             onClick={e => {
               e.stopPropagation()
-              router.push('/skin-analysis')
+              router.push('/analysis')
             }}
             style={{
               marginTop: 10,
@@ -306,7 +306,7 @@ export default function CustomerHomePage() {
       {/* ── 4대 기능 그리드 ── */}
       <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
         {[
-          { icon: '🔬', title: '피부분석', desc: 'AI 정밀 분석', badge: 'AI', path: '/skin-analysis', bg: 'linear-gradient(135deg,rgba(160,80,220,0.15),rgba(120,60,180,0.1))' },
+          { icon: '🔬', title: '피부분석', desc: 'AI 정밀 분석', badge: 'AI', path: '/analysis', bg: 'linear-gradient(135deg,rgba(160,80,220,0.15),rgba(120,60,180,0.1))' },
           { icon: '🌍', title: 'MY WORLD', desc: '나만의 미니홈피', badge: 'MY', path: '/my-world', bg: 'linear-gradient(135deg,rgba(60,120,220,0.15),rgba(40,80,180,0.1))' },
           { icon: '💬', title: '커뮤니티', desc: '피부 타입별 소통', badge: 'NEW', path: '/community', bg: 'linear-gradient(135deg,rgba(220,60,60,0.1),rgba(180,40,40,0.08))', badgeColor: '#E04030' },
           { icon: '💆', title: '살롱예약', desc: '전문 관리샵 예약', badge: '근처', path: '/salon', bg: 'linear-gradient(135deg,rgba(60,180,120,0.12),rgba(40,140,90,0.08))' },
@@ -943,7 +943,7 @@ export default function CustomerHomePage() {
           <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM }}>SHOP</span>
         </div>
         <div
-          onClick={() => router.push('/skin-analysis')}
+          onClick={() => router.push('/analysis')}
           style={{
             width: '56px', height: '56px', borderRadius: '50%',
             background: 'linear-gradient(135deg,#C9A96E,#E8C88A)',
