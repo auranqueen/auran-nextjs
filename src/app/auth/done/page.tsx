@@ -16,12 +16,20 @@ function AuthDoneInner() {
 
   useEffect(() => {
     ;(async () => {
-      const { data } = await supabase.auth.getUser()
-      if (!data.user) {
-        router.replace('/')
-        return
+      let { data } = await supabase.auth.getSession()
+      if (!data.session?.user) {
+        // 세션 동기화 지연 대응 - 1초 후 재시도
+        await new Promise(r => setTimeout(r, 1000))
+        const { data: retry } = await supabase.auth.getSession()
+        if (!retry.session?.user) {
+          const fromQuery = normalizePosition(params.get('position'))
+          const position = fromQuery || 'customer'
+          router.replace(positionToDashboardPath(position))
+          return
+        }
+        data = retry
       }
-      const { data: row } = await supabase.from('users').select('phone').eq('auth_id', data.user.id).maybeSingle()
+      const { data: row } = await supabase.from('users').select('phone').eq('auth_id', data.session!.user.id).maybeSingle()
       const p = String(row?.phone || '').replace(/\D/g, '')
       if (p.length >= 10) {
         setPhase('redirect')
