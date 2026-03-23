@@ -1,23 +1,3 @@
-cd src/app/(customer)/products/[id]
-mv client.tsx client.backup.tsx
-```
-
----
-
-**STEP 2 — Cursor 프롬프트**
-```
-⚠️ 절대 규칙:
-1. 현재 정상 동작하는 코드는 한 줄도 교체하지 마
-2. client.backup.tsx 절대 건드리지 마
-3. 새 파일 client.tsx 만 생성
-4. inline style만 사용, Tailwind 클래스 금지
-5. 규칙 어기면 즉시 중단하고 나에게 물어봐
-위 규칙 확인했으면 아래 작업 시작해:
-
-src/app/(customer)/products/[id]/client.tsx 파일을 새로 생성해줘.
-
-아래 코드를 그대로 작성해:
-
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
