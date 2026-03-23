@@ -60,16 +60,9 @@ export default function CartPage() {
       params.set('products', lines.map((r) => r.product_id).join(','))
       params.set('qty', lines.map((r) => r.quantity).join(','))
       if (giftTo) params.set('gift_to', giftTo)
-      const path = `/checkout?${params.toString()}`
-      void supabase.auth.getUser().then(({ data: auth }) => {
-        if (!auth?.user) {
-          router.push(`/login?redirect=${encodeURIComponent(path)}`)
-          return
-        }
-        router.push(path)
-      })
+      router.push(`/checkout?${params.toString()}`)
     },
-    [router, selectedLines, supabase]
+    [router, selectedLines]
   )
 
   const onBuyClick = () => router.push('/checkout')
@@ -101,11 +94,6 @@ export default function CartPage() {
   }, [giftQ, giftOpen, searchGiftUsers])
 
   const openGiftModal = async () => {
-    const { data: auth } = await supabase.auth.getUser()
-    if (!auth?.user) {
-      router.push('/login?redirect=/cart')
-      return
-    }
     if (!selectedLines.length) {
       setToast('선물할 상품을 선택해 주세요')
       return
