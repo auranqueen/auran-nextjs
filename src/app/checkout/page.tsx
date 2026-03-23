@@ -103,12 +103,12 @@ function CheckoutPageInner() {
         user = auth?.user ?? null
       }
       if (!user) {
-        router.replace('/login?redirect=/checkout')
+        setLoading(false)
         return
       }
       const { data: me } = await supabase.from('users').select('id,name,phone,points,charge_balance').eq('auth_id', user.id).maybeSingle()
       if (!me?.id) {
-        router.replace('/login?redirect=/checkout')
+        setLoading(false)
         return
       }
       setAuthUid(user.id)
