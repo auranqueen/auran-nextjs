@@ -72,16 +72,16 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             <div style={{ position: 'absolute', top: 14, left: 14, background: '#c02030', color: '#fff', fontSize: 12, fontWeight: 800, padding: '4px 12px', borderRadius: 20 }}>⚡ -{discount}%</div>
           )}
           <div style={{ position: 'absolute', top: 14, right: 14, background: '#2a1f0e', border: `1px solid ${GOLD}`, color: GOLD, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
-            피부 매칭 {product.match_pct}
+            피부 매칭 {product.match_pct ?? ''}
           </div>
           {activeThumb === 99 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(201,169,110,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, cursor: 'pointer' }}>▶</div>
-              <div style={{ fontSize: 12, color: '#888' }}>{product.brand} 공식 영상</div>
+              <div style={{ fontSize: 12, color: '#888' }}>{product.brand ?? ''} 공식 영상</div>
             </div>
           ) : (
             product.storage_thumb_url
-              ? <img src={product.storage_thumb_url} alt={product.name} style={{ maxHeight: 240, maxWidth: '80%', objectFit: 'contain' }} />
+              ? <img src={product.storage_thumb_url ?? ''} alt={product.name ?? ''} style={{ maxHeight: 240, maxWidth: '80%', objectFit: 'contain' }} />
               : <div style={{ fontSize: 80, color: '#555' }}>🧴</div>
           )}
         </div>
@@ -90,7 +90,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         <div style={{ display: 'flex', gap: 6, padding: '8px 10px', background: '#0a0807', overflowX: 'auto' }}>
           <div onClick={() => setActiveThumb(0)} style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === 0 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             {product.storage_thumb_url
-              ? <img src={product.storage_thumb_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ? <img src={product.storage_thumb_url ?? ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : <div style={{ fontSize: 26 }}>🧴</div>}
           </div>
           {maxThumbs.map((url, i) => (
@@ -110,12 +110,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       {/* 제품 기본 정보 */}
       <div style={{ padding: '16px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8, flexWrap: 'wrap' as const }}>
-          <span style={{ fontSize: 12, color: '#888' }}>{product.brand} · {product.origin}</span>
+          <span style={{ fontSize: 12, color: '#888' }}>{product.brand ?? ''} · {product.origin ?? ''}</span>
           <span style={tag('#1a2e1a','#6fcf97','#2a4a2a')}>재구매 {product.repurchase_rate}%</span>
           <span style={tag('#1a1e30','#74b0ff','#2a2e50')}>일촌 {product.active_users}명 사용중</span>
         </div>
-        <div style={{ fontSize: 20, fontWeight: 400, lineHeight: 1.4, marginBottom: 5, color: '#e8e4dc' }}>{product.name}</div>
-        <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6, marginBottom: 10 }}>{product.seo_desc}</div>
+        <div style={{ fontSize: 20, fontWeight: 400, lineHeight: 1.4, marginBottom: 5, color: '#e8e4dc' }}>{product.name ?? ''}</div>
+        <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6, marginBottom: 10 }}>{product.seo_desc ?? ''}</div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
           <div style={{ fontSize: 28, fontWeight: 700, color: GOLD }}>{price.toLocaleString()}원</div>
           {discount > 0 && <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{origPrice.toLocaleString()}원</div>}
@@ -142,10 +142,10 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
         <div style={{ background: '#171310', border: '1px solid #252018', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#2a2010,#3a3020)', border: `1px solid ${GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: GOLD, textAlign: 'center', lineHeight: 1.3, flexShrink: 0 }}>
-            {product.brand.substring(0,4)}<br />{product.brand.substring(4)}
+            {(product.brand ?? '').substring(0,4)}<br />{(product.brand ?? '').substring(4)}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{product.brand} 공식 브랜드 상세</div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{product.brand ?? ''} 공식 브랜드 상세</div>
             <div style={{ fontSize: 11, color: '#666' }}>브랜드사 직접 등록</div>
           </div>
           <span style={{ fontSize: 10, color: '#6fcf97', background: '#1a3020', border: '1px solid #2a4530', padding: '3px 9px', borderRadius: 20, flexShrink: 0 }}>✓ 공식</span>
@@ -154,10 +154,10 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
       {/* 브랜드 스토리 */}
       <div style={{ background: 'linear-gradient(180deg,#1e1810,#14100c)', padding: '28px 20px' }}>
-        <div style={{ textAlign: 'center', fontSize: 22, fontWeight: 900, letterSpacing: 4, color: GOLD, marginBottom: 3 }}>{product.story_hero}</div>
-        <div style={{ textAlign: 'center', fontSize: 10, color: '#666', letterSpacing: 3, marginBottom: 22 }}>{product.story_sub}</div>
+        <div style={{ textAlign: 'center', fontSize: 22, fontWeight: 900, letterSpacing: 4, color: GOLD, marginBottom: 3 }}>{product.story_hero ?? ''}</div>
+        <div style={{ textAlign: 'center', fontSize: 10, color: '#666', letterSpacing: 3, marginBottom: 22 }}>{product.story_sub ?? ''}</div>
         <div style={{ background: '#1a1410', borderLeft: `3px solid ${GOLD}`, padding: '14px 16px', borderRadius: '0 10px 10px 0', marginBottom: 18, fontSize: 13, lineHeight: 1.75, color: '#ccc', fontStyle: 'italic' }}>
-          {product.story_quote}<br /><span style={{ fontSize: 10, color: '#555', fontStyle: 'normal' }}>© {product.brand}</span>
+          {product.story_quote ?? ''}<br /><span style={{ fontSize: 10, color: '#555', fontStyle: 'normal' }}>© {product.brand ?? ''}</span>
         </div>
         <div style={{ fontSize: 13, lineHeight: 1.85, color: '#bbb', textAlign: 'center', marginBottom: 20 }}>
           {(product.story_desc ?? '').split('\n').map((line, i) => <span key={i}>{line}<br /></span>)}
