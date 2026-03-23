@@ -4,6 +4,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import AnalysisHubView from '@/components/ui/AnalysisHubView'
+import CustomerDashboardShell from '@/components/views/CustomerDashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -37,7 +38,7 @@ export default function AnalysisPage() {
   }, [router, supabase])
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
+    <CustomerDashboardShell>
       <DashboardHeader title="AI 피부분석" right={<CustomerHeaderRight />} />
       <div style={{ padding: '18px 18px 0' }}>
         <AnalysisHubView
@@ -48,7 +49,7 @@ export default function AnalysisPage() {
         />
       </div>
       <DashboardBottomNav role="customer" />
-    </div>
+    </CustomerDashboardShell>
   )
 }
 

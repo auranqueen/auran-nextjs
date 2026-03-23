@@ -6,6 +6,7 @@ import DashboardBottomNav from '@/components/DashboardBottomNav'
 import DashboardHeader from '@/components/DashboardHeader'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import MyAccountHubView from '@/components/ui/MyAccountHubView'
+import CustomerDashboardShell from '@/components/views/CustomerDashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
 import { getStoredTheme, setStoredTheme } from '@/lib/theme'
@@ -80,7 +81,7 @@ export default function MyPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
+    <CustomerDashboardShell>
       <DashboardHeader title="나" right={<CustomerHeaderRight />} />
 
       <div style={{ padding: '8px 18px 0', display: 'flex', justifyContent: 'flex-end' }}>
@@ -116,7 +117,7 @@ export default function MyPage() {
       </div>
 
       <DashboardBottomNav role="customer" />
-    </div>
+    </CustomerDashboardShell>
   )
 }
 

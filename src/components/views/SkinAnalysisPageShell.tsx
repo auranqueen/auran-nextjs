@@ -17,11 +17,11 @@ export default function SkinAnalysisPageShell({ progressSlot, errorSlot, toastSl
     <div
       style={{
         minHeight: '100vh',
-        background: 'linear-gradient(175deg, #12100e 0%, var(--bg) 35%, #090807 100%)',
+        background: 'linear-gradient(165deg, #12100e 0%, var(--bg) 38%, #0a0908 100%)',
         maxWidth: 480,
         margin: '0 auto',
         paddingBottom: 110,
-        boxShadow: 'inset 0 1px 0 rgba(201,168,76,0.05)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
       }}
     >
       <DashboardHeader title="피부분석" right={<CustomerHeaderRight />} />

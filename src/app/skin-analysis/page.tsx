@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import SkinAnalysisPageShell from '@/components/views/SkinAnalysisPageShell'
+import CustomerDashboardShell from '@/components/views/CustomerDashboardShell'
 import SkinAnalysisResultView from '@/components/skin-analysis/SkinAnalysisResultView'
 import { createClient } from '@/lib/supabase/client'
 import { broadcastCartCountRefresh } from '@/lib/cartEvents'
@@ -618,11 +619,13 @@ export default function CustomerSkinAnalysisQuizPage() {
 
   if (loading || step === 'loading') {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <div style={{ width: 48, height: 48, border: '3px solid var(--border)', borderTopColor: GOLD, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <p style={{ marginTop: 20, fontSize: 14, color: 'var(--text3)' }}>피부 분석 중...</p>
-      </div>
+      <CustomerDashboardShell>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, minHeight: '60vh' }}>
+          <div style={{ width: 48, height: 48, border: '3px solid var(--border)', borderTopColor: GOLD, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          <p style={{ marginTop: 20, fontSize: 14, color: 'var(--text3)' }}>피부 분석 중...</p>
+        </div>
+      </CustomerDashboardShell>
     )
   }
 

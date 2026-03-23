@@ -4,6 +4,7 @@ import DashboardHeader from '@/components/DashboardHeader'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import BookingSalonListView from '@/components/ui/BookingSalonListView'
+import CustomerDashboardShell from '@/components/views/CustomerDashboardShell'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 
@@ -27,13 +28,13 @@ export default function BookingPage() {
   }, [supabase])
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
+    <CustomerDashboardShell>
       <DashboardHeader title="살롱예약" right={<CustomerHeaderRight />} />
       <div style={{ padding: '18px 18px 0' }}>
         <BookingSalonListView loading={loading} salons={salons} />
       </div>
       <DashboardBottomNav role="customer" />
-    </div>
+    </CustomerDashboardShell>
   )
 }
 

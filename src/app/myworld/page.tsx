@@ -9,6 +9,7 @@ import LoginRequiredModal from '@/components/LoginRequiredModal'
 import { createClient } from '@/lib/supabase/client'
 import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import ShareBottomSheet from '@/components/ShareBottomSheet'
+import CustomerDashboardShell from '@/components/views/CustomerDashboardShell'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
 
 const GOLD = 'var(--gold)'
@@ -1107,27 +1108,29 @@ export default function MyWorldPage() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ fontSize: 12, color: 'var(--text3)' }}>불러오는 중...</div>
-      </div>
+      <CustomerDashboardShell>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '50vh' }}>
+          <div style={{ fontSize: 12, color: 'var(--text3)' }}>불러오는 중...</div>
+        </div>
+      </CustomerDashboardShell>
     )
   }
 
   if (needLoginWall) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
+      <CustomerDashboardShell>
         <DashboardHeader title="마이월드" right={<CustomerHeaderRight />} />
         <div style={{ padding: 24, textAlign: 'center', color: 'var(--text3)', fontSize: 13, lineHeight: 1.6 }}>
           로그인 후 마이월드를 이용할 수 있어요
         </div>
         <LoginRequiredModal open onClose={() => router.push('/')} returnPath="/myworld" />
         <DashboardBottomNav role="customer" />
-      </div>
+      </CustomerDashboardShell>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
+    <CustomerDashboardShell>
       <DashboardHeader title="마이월드" right={<CustomerHeaderRight />} />
 
       <div style={{ padding: '18px 18px 0' }}>
@@ -2238,7 +2241,7 @@ export default function MyWorldPage() {
           payload={sharePayload}
         />
       )}
-    </div>
+    </CustomerDashboardShell>
   )
 }
 
