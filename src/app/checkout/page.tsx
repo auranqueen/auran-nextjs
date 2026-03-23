@@ -209,8 +209,6 @@ function CheckoutPageInner() {
     })
   }, [userCoupons, subtotal, orderLines, authUid, maxCouponPct])
 
-  const usableCouponCount = applicableCheckoutCoupons.length
-
   const onPay = async (allowCharge = true) => {
     if (!orderedProducts.length || !meId) return
     if (subtotal < minOrderAmount) {
