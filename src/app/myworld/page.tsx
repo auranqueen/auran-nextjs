@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import ImpactToast from '@/components/impact/ImpactToast'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
@@ -17,7 +18,7 @@ export default function MyWorldPage() {
 
   const [userName, setUserName] = useState('유미')
   const [userAge, setUserAge] = useState(42)
-  const [activeTab, setActiveTab] = useState<'history' | 'routine' | 'diary' | 'guest'>('history')
+  const [activeTab, setActiveTab] = useState<'history' | 'routine' | 'toast' | 'diary' | 'guest'>('history')
   const [skinData, setSkinData] = useState<any[]>([])
   const [isPublic, setIsPublic] = useState(true)
   const [showBdayPopup, setShowBdayPopup] = useState(false)
@@ -82,6 +83,7 @@ export default function MyWorldPage() {
           {([
             { key: 'history', label: '히스토리' },
             { key: 'routine', label: '루틴' },
+            { key: 'toast', label: '토스트지갑' },
             { key: 'diary', label: '피부일기' },
             { key: 'guest', label: '방명록' },
           ] as const).map((tab) => (
@@ -265,6 +267,9 @@ export default function MyWorldPage() {
           </div>
         </div>
       )}
+
+      {/* 피부일기 탭 */}
+      {activeTab === 'toast' && <ImpactToast />}
 
       {/* 피부일기 탭 */}
       {activeTab === 'diary' && (
