@@ -23,7 +23,10 @@ function AuthDoneInner() {
     localStorage.setItem(POSITION_STORAGE_KEY, position)
     const redirect = params.get('redirect')
     const safeRedirect = redirect && redirect.startsWith('/') ? redirect : null
-    router.replace(safeRedirect || positionToDashboardPath(position))
+    const savedReturnUrl = localStorage.getItem('returnUrl')
+    const safeSavedReturnUrl = savedReturnUrl && savedReturnUrl.startsWith('/') ? savedReturnUrl : null
+    if (safeSavedReturnUrl) localStorage.removeItem('returnUrl')
+    router.replace(safeSavedReturnUrl || safeRedirect || positionToDashboardPath(position))
   }
 
   const goDashboard = () => {

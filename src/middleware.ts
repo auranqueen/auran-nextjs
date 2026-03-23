@@ -85,7 +85,7 @@ export async function middleware(req: NextRequest) {
   }
 
   const { pathname } = url
-  const protectedPaths = ['/wallet']
+  const protectedPaths = ['/wallet', '/checkout']
   const isProtectedPath = protectedPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`))
   const isSuperConsole = pathname.startsWith('/super-console')
   const isDashboard = pathname.startsWith('/dashboard')
@@ -119,6 +119,7 @@ export async function middleware(req: NextRequest) {
       loginUrl.pathname = '/login'
       loginUrl.search = ''
       loginUrl.searchParams.set('redirect', redirectTarget)
+      loginUrl.searchParams.set('returnUrl', redirectTarget)
       return redirectPreservingSupabaseCookies(res, NextResponse.redirect(loginUrl))
     }
     if (isSuperConsole) {

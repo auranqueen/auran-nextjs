@@ -27,6 +27,7 @@ function LoginForm() {
   const params = useSearchParams()
   const role = params.get('role') || 'customer'
   const redirectParam = params.get('redirect')
+  const returnUrlParam = params.get('returnUrl')
   const meta = ROLE_META[role] || ROLE_META.customer
   const showDemo = process.env.NEXT_PUBLIC_SHOW_DEMO === 'true'
   const { getSettingNum } = useAdminSettings()
@@ -132,7 +133,8 @@ function LoginForm() {
 
       // redirect 파라미터가 있으면 해당 경로로, 없으면 기본 대시보드로
       const safeRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : null
-      router.replace(safeRedirect || dashboardPathForRole(effectiveRole))
+      const safeReturnUrl = returnUrlParam && returnUrlParam.startsWith('/') ? returnUrlParam : null
+      router.replace(safeReturnUrl || safeRedirect || dashboardPathForRole(effectiveRole))
     } catch (err: any) {
       const msg = err?.message || ''
       if (msg.includes('Email not confirmed') || msg.includes('email_not_confirmed')) {
@@ -158,7 +160,10 @@ function LoginForm() {
     const fromParam = normalizePosition(role)
     const position = fromParam || stored || 'customer'
     localStorage.setItem(POSITION_STORAGE_KEY, position)
-    const redirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : null
+    const redirect = returnUrlParam && returnUrlParam.startsWith('/') ? returnUrlParam : (redirectParam && redirectParam.startsWith('/') ? redirectParam : null)
+    if (redirect) {
+      localStorage.setItem('returnUrl', redirect)
+    }
     const redirectQuery = redirect ? `&redirect=${encodeURIComponent(redirect)}` : ''
     const callbackQuery = `?role=${encodeURIComponent(position)}${redirectQuery}`
 
