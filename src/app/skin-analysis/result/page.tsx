@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+export const dynamic = 'force-dynamic'
+
+import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import ProductClient from '@/app/products/product-client'
@@ -34,7 +36,7 @@ function Btn3({ id, retail_price, name, router }: any) {
   )
 }
 
-export default function SkinAnalysisResultPage() {
+function SkinAnalysisResultPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -340,5 +342,13 @@ export default function SkinAnalysisResultPage() {
         </div>
       </nav>
     </div>
+  )
+}
+
+export default function SkinAnalysisResultPage() {
+  return (
+    <Suspense fallback={null}>
+      <SkinAnalysisResultPageContent />
+    </Suspense>
   )
 }

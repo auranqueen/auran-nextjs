@@ -1,5 +1,8 @@
 'use client'
 
+export const dynamic = 'force-dynamic'
+
+import { Suspense } from 'react'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -44,7 +47,7 @@ interface Answers {
   stress: number
 }
 
-export default function SkinAnalysisQPage() {
+function SkinAnalysisQPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
@@ -528,5 +531,13 @@ export default function SkinAnalysisQPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <SkinAnalysisQPageContent />
+    </Suspense>
   )
 }
