@@ -1,5 +1,11 @@
 'use client'
 
+const GOLD = '#C9A96E'
+const CARD_BG = 'rgba(255,255,255,0.03)'
+const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
+const TEXT_MUTED = 'rgba(255,255,255,0.4)'
+const TEXT_DIM = 'rgba(255,255,255,0.25)'
+
 type Profile = {
   name?: string | null
   skin_type?: string | null
@@ -20,7 +26,7 @@ function concernsText(skin_concerns: unknown): string {
 
 export default function AnalysisHubView({ loading, profile, analysisPoint, onStartAnalysis }: Props) {
   if (loading) {
-    return <div style={{ fontSize: 12, color: 'var(--text3)' }}>불러오는 중...</div>
+    return <div style={{ fontSize: 12, color: TEXT_MUTED }}>불러오는 중...</div>
   }
 
   return (
@@ -28,40 +34,49 @@ export default function AnalysisHubView({ loading, profile, analysisPoint, onSta
       {profile ? (
         <div
           style={{
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.07) 0%, rgba(255,255,255,0.02) 100%)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 18,
-            padding: '16px 16px',
+            background: CARD_BG,
+            border: CARD_BORDER,
+            borderRadius: 16,
+            padding: '14px 16px',
             marginBottom: 14,
-            boxShadow: '0 8px 28px rgba(0,0,0,0.2)',
           }}
         >
-          <div style={{ fontSize: 10, letterSpacing: '0.14em', color: 'var(--text3)', marginBottom: 8, fontWeight: 700 }}>
+          <div
+            style={{
+              fontSize: 9,
+              fontFamily: 'monospace',
+              letterSpacing: '1.5px',
+              color: TEXT_DIM,
+              marginBottom: 8,
+              fontWeight: 400,
+            }}
+          >
             MY SKIN PROFILE
           </div>
-          <div style={{ fontSize: 15, fontWeight: 900, color: '#fff' }}>{profile.name || '사용자'}</div>
-          <div style={{ marginTop: 10, fontSize: 12, color: 'rgba(255,255,255,0.78)', lineHeight: 1.75 }}>
-            피부 타입: <span style={{ color: 'var(--gold)', fontWeight: 900 }}>{profile.skin_type || '미설정'}</span>
+          <div style={{ fontSize: 15, fontWeight: 400, color: 'rgba(255,255,255,0.85)' }}>{profile.name || '사용자'}</div>
+          <div style={{ marginTop: 10, fontSize: 12, color: TEXT_MUTED, lineHeight: 1.75 }}>
+            피부 타입: <span style={{ color: GOLD, fontWeight: 600 }}>{profile.skin_type || '미설정'}</span>
             <br />
-            피부 고민: <span style={{ color: 'rgba(255,255,255,0.92)' }}>{concernsText(profile.skin_concerns)}</span>
+            피부 고민: <span style={{ color: 'rgba(255,255,255,0.78)' }}>{concernsText(profile.skin_concerns)}</span>
           </div>
         </div>
       ) : (
-        <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 12 }}>
+        <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 12 }}>
           프로필 정보를 불러올 수 없습니다. 아래에서 바로 분석을 시작할 수 있습니다.
         </div>
       )}
 
       <div
         style={{
-          borderRadius: 18,
-          padding: '18px 16px',
-          background: 'linear-gradient(145deg, rgba(201,168,76,0.18) 0%, rgba(20,18,14,0.95) 55%)',
-          border: '1px solid rgba(201,168,76,0.35)',
+          borderRadius: 16,
+          padding: '16px 16px',
+          background: CARD_BG,
+          border: '1px solid rgba(201,169,110,0.28)',
         }}
       >
-        <div style={{ fontSize: 14, fontWeight: 900, color: 'var(--gold)', marginBottom: 8 }}>분석 시작</div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.7, marginBottom: 14 }}>
+        <div style={{ fontSize: 9, fontFamily: 'monospace', letterSpacing: '1.5px', color: TEXT_DIM, marginBottom: 6 }}>AI ANALYSIS</div>
+        <div style={{ fontSize: 14, fontWeight: 400, color: GOLD, marginBottom: 8 }}>분석 시작</div>
+        <div style={{ fontSize: 12, color: TEXT_MUTED, lineHeight: 1.7, marginBottom: 14 }}>
           {`설문 기반 피부 타입 분석 후 맞춤 제품을 추천해 드립니다. 완료 시 ${analysisPoint}P 적립!`}
         </div>
         <button
@@ -70,14 +85,14 @@ export default function AnalysisHubView({ loading, profile, analysisPoint, onSta
           style={{
             width: '100%',
             padding: '14px 16px',
-            borderRadius: 14,
-            background: 'linear-gradient(90deg, var(--gold), #e8c88a)',
+            borderRadius: 12,
+            background: GOLD,
             border: 'none',
-            color: '#0a0a0a',
-            fontSize: 14,
-            fontWeight: 900,
+            color: '#0D0B09',
+            fontSize: 13,
+            fontWeight: 600,
             cursor: 'pointer',
-            boxShadow: '0 6px 20px rgba(201,168,76,0.25)',
+            boxShadow: '0 8px 24px rgba(201,169,110,0.22)',
           }}
         >
           피부 분석 시작하기 →

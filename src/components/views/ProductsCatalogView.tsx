@@ -2,7 +2,10 @@
 
 import type { ReactNode } from 'react'
 
-const GOLD = 'var(--gold)'
+const GOLD = '#C9A96E'
+const CARD_BG = 'rgba(255,255,255,0.03)'
+const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
+const TEXT_MUTED = 'rgba(255,255,255,0.4)'
 
 type BrandChip = { id: string; name: string; count: number }
 
@@ -40,29 +43,30 @@ export default function ProductsCatalogView({
   list,
 }: Props) {
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(165deg, #12100e 0%, var(--bg) 38%, #0a0908 100%)',
-        maxWidth: 480,
-        margin: '0 auto',
-        paddingBottom: 110,
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-      }}
-    >
+    <div className="mx-auto min-h-screen w-full max-w-[390px] bg-[#0D0B09] pb-24">
       {header}
-      <div style={{ padding: '20px 16px 0' }}>
+      <div style={{ padding: '16px 16px 0' }}>
         <div
           style={{
             marginBottom: 14,
             padding: '12px 14px',
             borderRadius: 16,
-            background: 'linear-gradient(90deg, rgba(201,168,76,0.12) 0%, rgba(255,255,255,0.03) 100%)',
-            border: '1px solid rgba(201,168,76,0.22)',
+            background: CARD_BG,
+            border: `1px solid ${GOLD}38`,
           }}
         >
-          <div style={{ fontSize: 10, letterSpacing: '0.2em', color: 'rgba(255,255,255,0.45)', fontWeight: 700 }}>AURAN SHOP</div>
-          <div style={{ marginTop: 4, fontSize: 15, fontWeight: 800, color: '#fff' }}>클리닉 맞춤 제품</div>
+          <div
+            style={{
+              fontSize: 9,
+              fontFamily: 'monospace',
+              letterSpacing: '1.5px',
+              color: 'rgba(255,255,255,0.25)',
+              fontWeight: 400,
+            }}
+          >
+            SHOP
+          </div>
+          <div style={{ marginTop: 6, fontSize: 15, fontWeight: 400, color: 'rgba(255,255,255,0.85)' }}>클리닉 맞춤 제품</div>
         </div>
 
         {specialIdsActive && (
@@ -130,16 +134,15 @@ export default function ProductsCatalogView({
             onClick={() => onBrandFilter('all')}
             style={{
               border:
-                brandFilter === 'all' ? '1px solid rgba(201,168,76,0.75)' : '1px solid rgba(255,255,255,0.08)',
-              background: brandFilter === 'all' ? 'rgba(201,168,76,0.18)' : 'rgba(255,255,255,0.04)',
-              color: '#fff',
+                brandFilter === 'all' ? '1px solid rgba(201,169,110,0.4)' : CARD_BORDER,
+              background: brandFilter === 'all' ? 'rgba(201,169,110,0.14)' : CARD_BG,
+              color: brandFilter === 'all' ? GOLD : TEXT_MUTED,
               borderRadius: 999,
               padding: '9px 14px',
               fontSize: 12,
-              fontWeight: 800,
+              fontWeight: brandFilter === 'all' ? 600 : 400,
               whiteSpace: 'nowrap',
               cursor: 'pointer',
-              boxShadow: brandFilter === 'all' ? '0 4px 16px rgba(201,168,76,0.15)' : 'none',
             }}
           >
             전체 ({productTotal})
@@ -151,16 +154,15 @@ export default function ProductsCatalogView({
               onClick={() => onBrandFilter(b.id)}
               style={{
                 border:
-                  brandFilter === b.id ? '1px solid rgba(201,168,76,0.75)' : '1px solid rgba(255,255,255,0.08)',
-                background: brandFilter === b.id ? 'rgba(201,168,76,0.18)' : 'rgba(255,255,255,0.04)',
-                color: '#fff',
+                  brandFilter === b.id ? '1px solid rgba(201,169,110,0.4)' : CARD_BORDER,
+                background: brandFilter === b.id ? 'rgba(201,169,110,0.14)' : CARD_BG,
+                color: brandFilter === b.id ? GOLD : TEXT_MUTED,
                 borderRadius: 999,
                 padding: '9px 14px',
                 fontSize: 12,
-                fontWeight: 800,
+                fontWeight: brandFilter === b.id ? 600 : 400,
                 whiteSpace: 'nowrap',
                 cursor: 'pointer',
-                boxShadow: brandFilter === b.id ? '0 4px 16px rgba(201,168,76,0.12)' : 'none',
               }}
             >
               {b.name} ({b.count})
@@ -172,11 +174,10 @@ export default function ProductsCatalogView({
           <div
             style={{
               marginBottom: 14,
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
-              border: '1px solid rgba(201,168,76,0.28)',
-              borderRadius: 20,
+              background: CARD_BG,
+              border: `1px solid ${GOLD}38`,
+              borderRadius: 16,
               padding: '16px 16px',
-              boxShadow: '0 12px 32px rgba(0,0,0,0.25)',
             }}
           >
             <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>

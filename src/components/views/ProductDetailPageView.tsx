@@ -1,6 +1,7 @@
 'use client'
 
 import type { ReactNode } from 'react'
+import { productDetailImageUrls } from '@/lib/productImage'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
@@ -40,6 +41,12 @@ export default function ProductDetailPageView({
   lineTotal,
   actionSlot,
 }: Props) {
+  const heroSrc =
+    typeof product.display_image_url === 'string' && product.display_image_url.trim()
+      ? product.display_image_url.trim()
+      : null
+  const detailGalleryUrls = productDetailImageUrls(product).filter(u => u !== heroSrc)
+
   return (
     <div style={{ background: BG, minHeight: '100vh', color: '#fff' }}>
       <div
@@ -127,19 +134,17 @@ export default function ProductDetailPageView({
               boxShadow: '0 20px 50px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04) inset',
             }}
           >
-            {product.thumb_img ? (
+            {heroSrc ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={product.thumb_img}
+                src={heroSrc}
                 alt={product.name}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                 onError={e => {
                   ;(e.target as HTMLImageElement).style.display = 'none'
                 }}
               />
-            ) : (
-              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 56 }}>🧴</div>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -333,28 +338,44 @@ export default function ProductDetailPageView({
             </div>
             <div style={{ marginTop: 16, minHeight: 48 }}>
               {detailTab === 'detail' ? (
-                product.detail_html ? (
-                  <div
-                    className="product-detail-html"
-                    style={{ fontSize: 13, fontWeight: 300, color: 'rgba(255,255,255,0.82)', lineHeight: 1.65 }}
-                    dangerouslySetInnerHTML={{ __html: String(product.detail_html) }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      padding: 28,
-                      borderRadius: 16,
-                      background: 'rgba(255,255,255,0.03)',
-                      border: '1px solid rgba(255,255,255,0.06)',
-                      fontSize: 12,
-                      fontWeight: 300,
-                      color: 'rgba(255,255,255,0.35)',
-                      textAlign: 'center',
-                    }}
-                  >
-                    상품 상세 정보가 준비 중입니다.
-                  </div>
-                )
+                <>
+                  {product.detail_html ? (
+                    <div
+                      className="product-detail-html"
+                      style={{ fontSize: 13, fontWeight: 300, color: 'rgba(255,255,255,0.82)', lineHeight: 1.65 }}
+                      dangerouslySetInnerHTML={{ __html: String(product.detail_html) }}
+                    />
+                  ) : null}
+                  {detailGalleryUrls.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: product.detail_html ? 16 : 0 }}>
+                      {detailGalleryUrls.map((url, idx) => (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          key={`${url}_${idx}`}
+                          src={url}
+                          alt=""
+                          style={{ width: '100%', height: 'auto', display: 'block', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)' }}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
+                  {!product.detail_html && detailGalleryUrls.length === 0 ? (
+                    <div
+                      style={{
+                        padding: 28,
+                        borderRadius: 16,
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        fontSize: 12,
+                        fontWeight: 300,
+                        color: 'rgba(255,255,255,0.35)',
+                        textAlign: 'center',
+                      }}
+                    >
+                      상품 상세 정보가 준비 중입니다.
+                    </div>
+                  ) : null}
+                </>
               ) : (
                 <div style={{ padding: '4px 0 12px' }}>
                   <div

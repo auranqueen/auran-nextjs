@@ -2,11 +2,14 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import ProductDetailUI from '@/components/ui/ProductDetailUI'
+import { productDisplayImageUrl } from '@/lib/productImage'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-async function getProduct(id: string) {
+async function getProduct(rawId: string) {
+  const id = String(rawId ?? '').trim()
+  if (!id) return null
   const supabase = createClient()
   const { data, error } = await supabase
     .from('products')
@@ -24,9 +27,10 @@ function brandNameOf(product: any): string {
 }
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const product = await getProduct(params.id)
+  const product = await getProduct(String(params.id))
   if (!product) return { title: '제품 | AURAN' }
   const brandName = brandNameOf(product)
+  const ogImage = productDisplayImageUrl(product)
   return {
     title: `${product.name} | AURAN`,
     description: String(product.description || '').slice(0, 160),
@@ -34,7 +38,7 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     openGraph: {
       title: product.name,
       description: product.description || '',
-      images: product.thumb_img ? [{ url: product.thumb_img }] : undefined,
+      images: ogImage ? [{ url: ogImage }] : undefined,
       type: 'website',
       siteName: 'AURAN',
     },
@@ -46,15 +50,16 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 }
 
 export default async function ProductDetailPage({ params }: { params: { id: string } }) {
-  const product = await getProduct(params.id)
+  const product = await getProduct(String(params.id))
   if (!product) notFound()
 
+  const displayImageUrl = productDisplayImageUrl(product)
   const brandName = brandNameOf(product) || 'AURAN'
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: product.name,
-    image: product.thumb_img,
+    image: displayImageUrl || undefined,
     description: product.description || '',
     brand: { '@type': 'Brand', name: brandName },
     offers: {
@@ -73,6 +78,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
     ...product,
     price: product.retail_price,
     brand_name: brandName,
+    display_image_url: displayImageUrl,
   }
 
   return (

@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import ProductThumbImage from '@/components/ProductThumbImage'
+import { productDisplayImageUrl } from '@/lib/productImage'
 import { useCart } from '@/context/CartContext'
 import { useEffect, useState } from 'react'
 
@@ -27,12 +28,15 @@ export default function ProductCatalogCard({ p }: { p: any }) {
       product_id: String(p.id),
       name: String(p.name || '제품'),
       price,
-      thumb_img: p.thumb_img ?? null,
+      thumb_img: productDisplayImageUrl(p) ?? p.thumb_img ?? null,
       brand_name: p.brands?.name || '',
       quantity: 1,
     })
     setToast(wasNewLine ? '🛒 장바구니에 담겼어요!' : '수량이 +1 되었습니다')
   }
+
+  const pid = String(p.id)
+  const listImageUrl = productDisplayImageUrl(p)
 
   return (
     <div
@@ -72,7 +76,7 @@ export default function ProductCatalogCard({ p }: { p: any }) {
         </div>
       ) : null}
       <Link
-        href={`/products/${p.id}`}
+        href={`/products/${pid}`}
         style={{
           textDecoration: 'none',
           color: 'inherit',
@@ -84,7 +88,9 @@ export default function ProductCatalogCard({ p }: { p: any }) {
         }}
       >
         <div style={{ position: 'relative', width: 72, height: 72, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: 'rgba(0,0,0,0.2)' }}>
-          <ProductThumbImage src={p.thumb_img} alt={p.name || ''} fill sizes="72px" />
+          {listImageUrl ? (
+            <ProductThumbImage src={listImageUrl} alt={p.name || ''} fill sizes="72px" />
+          ) : null}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: '#fff', lineHeight: 1.3 }}>{p.name}</div>

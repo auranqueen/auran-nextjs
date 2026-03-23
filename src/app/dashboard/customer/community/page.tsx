@@ -7,6 +7,12 @@ import { createClient } from '@/lib/supabase/client'
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+const GOLD = '#C9A96E'
+const CARD_BG = 'rgba(255,255,255,0.03)'
+const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
+const TEXT_MUTED = 'rgba(255,255,255,0.4)'
+const TEXT_DIM = 'rgba(255,255,255,0.25)'
+
 type TabId = 'all' | 'hot' | 'skin' | 'review' | 'salon' | 'routine' | 'qa'
 
 type Post = {
@@ -136,14 +142,14 @@ export default function CustomerCommunityPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110, position: 'relative' }}>
+    <div className="relative mx-auto min-h-screen w-full max-w-[390px] bg-[#0D0B09] pb-24">
       <DashboardHeader title={activeLabel} right={<CustomerHeaderRight />} />
 
       {/* 검색 + 탭 */}
       <div style={{ padding: '12px 16px 0' }}>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
           <div style={{ flex: 1, position: 'relative' }}>
-            <span style={{ position: 'absolute', left: 12, top: 10, fontSize: 14, color: 'rgba(255,255,255,0.35)' }}>🔍</span>
+            <span style={{ position: 'absolute', left: 12, top: 10, fontSize: 14, color: TEXT_DIM }}>🔍</span>
             <input
               value={q}
               onChange={e => setQ(e.target.value)}
@@ -152,8 +158,8 @@ export default function CustomerCommunityPage() {
                 width: '100%',
                 padding: '10px 12px 10px 34px',
                 borderRadius: 16,
-                background: '#1a1a1a',
-                border: '1px solid rgba(255,255,255,0.10)',
+                background: CARD_BG,
+                border: CARD_BORDER,
                 color: '#fff',
                 fontSize: 12,
                 outline: 'none',
@@ -162,7 +168,7 @@ export default function CustomerCommunityPage() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 10 }}>
+        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 10, scrollbarWidth: 'none' as const }}>
           {TABS.map(t => {
             const active = t.id === tab
             return (
@@ -174,11 +180,11 @@ export default function CustomerCommunityPage() {
                   flexShrink: 0,
                   padding: '8px 12px',
                   borderRadius: 999,
-                  background: active ? 'rgba(201,168,76,0.14)' : '#1a1a1a',
-                  border: `1px solid ${active ? 'rgba(201,168,76,0.45)' : 'rgba(255,255,255,0.10)'}`,
-                  color: active ? '#c9a84c' : 'rgba(255,255,255,0.70)',
+                  background: active ? 'rgba(201,169,110,0.14)' : CARD_BG,
+                  border: `1px solid ${active ? 'rgba(201,169,110,0.4)' : 'rgba(255,255,255,0.07)'}`,
+                  color: active ? GOLD : TEXT_MUTED,
                   fontSize: 12,
-                  fontWeight: active ? 800 : 600,
+                  fontWeight: active ? 600 : 400,
                   cursor: 'pointer',
                 }}
               >
@@ -192,7 +198,7 @@ export default function CustomerCommunityPage() {
       {/* 콘텐츠 */}
       <div style={{ padding: '6px 16px 0' }}>
         {loading ? (
-          <div style={{ fontSize: 12, color: 'var(--text3)' }}>불러오는 중...</div>
+          <div style={{ fontSize: 12, color: TEXT_MUTED }}>불러오는 중...</div>
         ) : tab === 'hot' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {posts.map((p, idx) => (
@@ -202,8 +208,8 @@ export default function CustomerCommunityPage() {
                 style={{
                   width: '100%',
                   textAlign: 'left',
-                  background: '#1a1a1a',
-                  border: '1px solid rgba(255,255,255,0.10)',
+                  background: CARD_BG,
+                  border: CARD_BORDER,
                   borderRadius: 16,
                   padding: '12px 12px',
                   display: 'flex',
@@ -212,7 +218,7 @@ export default function CustomerCommunityPage() {
                   cursor: 'pointer',
                 }}
               >
-                <div style={{ width: 24, textAlign: 'center', fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 900, color: '#c9a84c' }}>{idx + 1}</div>
+                <div style={{ width: 24, textAlign: 'center', fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 900, color: GOLD }}>{idx + 1}</div>
                 <div
                   style={{
                     width: 44,
@@ -244,8 +250,8 @@ export default function CustomerCommunityPage() {
                 <div
                   key={p.id}
                   style={{
-                    background: '#1a1a1a',
-                    border: '1px solid rgba(255,255,255,0.10)',
+                    background: CARD_BG,
+                    border: CARD_BORDER,
                     borderRadius: 16,
                     overflow: 'hidden',
                   }}
@@ -282,7 +288,7 @@ export default function CustomerCommunityPage() {
                     <button type="button" onClick={() => router.push(`/dashboard/customer/community/${p.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.65)', fontSize: 14 }}>
                       💬
                     </button>
-                    <button type="button" onClick={() => toggleScrap(p.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: scrappedIds.has(p.id) ? '#c9a84c' : 'rgba(255,255,255,0.65)', fontSize: 14 }}>
+                    <button type="button" onClick={() => toggleScrap(p.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: scrappedIds.has(p.id) ? GOLD : 'rgba(255,255,255,0.65)', fontSize: 14 }}>
                       🔖
                     </button>
                   </div>
@@ -301,8 +307,8 @@ export default function CustomerCommunityPage() {
                   style={{
                     width: '100%',
                     textAlign: 'left',
-                    background: '#1a1a1a',
-                    border: '1px solid rgba(255,255,255,0.10)',
+                    background: CARD_BG,
+                    border: CARD_BORDER,
                     borderRadius: 16,
                     padding: '14px 14px',
                     cursor: 'pointer',
@@ -316,7 +322,7 @@ export default function CustomerCommunityPage() {
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
                     {tags.map(t => (
-                      <span key={t} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.22)', color: '#c9a84c' }}>
+                      <span key={t} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 999, background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.22)', color: GOLD }}>
                         #{t}
                       </span>
                     ))}
@@ -338,14 +344,14 @@ export default function CustomerCommunityPage() {
         onClick={() => router.push('/dashboard/customer/community/new')}
         style={{
           position: 'fixed',
-          right: 'calc(50% - 240px + 16px)',
+          right: 'max(16px, calc((100vw - 390px) / 2 + 16px))',
           bottom: 88,
           width: 52,
           height: 52,
           borderRadius: 999,
-          background: '#c9a84c',
+          background: GOLD,
           border: 'none',
-          color: '#111',
+          color: '#0D0B09',
           fontSize: 20,
           fontWeight: 900,
           cursor: 'pointer',

@@ -51,7 +51,7 @@ export default function ProductDetailUI({ product }: { product: any }) {
               id: String(product.id),
               name: String(product.name || '제품'),
               retail_price: unit,
-              thumb_img: String(product.thumb_img || ''),
+              thumb_img: String(product.display_image_url || product.thumb_img || ''),
             }}
             quantity={qty}
           />

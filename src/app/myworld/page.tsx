@@ -13,6 +13,8 @@ import CustomerDashboardShell from '@/components/views/CustomerDashboardShell'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
 
 const GOLD = 'var(--gold)'
+const CARD_BG = 'rgba(255,255,255,0.03)'
+const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
 const COMMUNITY_BUCKET = 'community'
 const AVATAR_BUCKET = 'avatars'
 
@@ -1133,9 +1135,9 @@ export default function MyWorldPage() {
     <CustomerDashboardShell>
       <DashboardHeader title="마이월드" right={<CustomerHeaderRight />} />
 
-      <div style={{ padding: '18px 18px 0' }}>
+      <div style={{ padding: '16px 16px 0' }}>
         {/* 프로필 영역 */}
-        <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 14, marginBottom: 14 }}>
+        <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 14 }}>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
             <button
               type="button"
@@ -1255,7 +1257,7 @@ export default function MyWorldPage() {
 
         {/* 내 활동 현황 */}
         {me && activityProgress && (
-          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 14, marginBottom: 14 }}>
+          <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 14 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, marginBottom: 10 }}>
               <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>내 활동 현황</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
@@ -1319,7 +1321,7 @@ export default function MyWorldPage() {
                   padding: '10px 10px',
                   borderRadius: 12,
                   border: `1px solid ${active ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`,
-                  background: active ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)',
+                  background: active ? 'rgba(201,168,76,0.12)' : CARD_BG,
                   color: active ? GOLD : 'rgba(255,255,255,0.75)',
                   fontWeight: 900,
                   fontSize: 12,
@@ -1402,7 +1404,7 @@ export default function MyWorldPage() {
             )}
 
             {journals.length === 0 ? (
-              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 16, color: 'var(--text3)', fontSize: 12 }}>
+              <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 16, color: 'var(--text3)', fontSize: 12 }}>
                 아직 작성된 기록이 없어요.
               </div>
             ) : (
@@ -1411,7 +1413,7 @@ export default function MyWorldPage() {
                   <div
                     key={j.id}
                     id={`journal-card-${j.id}`}
-                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 12, display: 'flex', gap: 12 }}
+                    style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 12, display: 'flex', gap: 12 }}
                   >
                     <div style={{ width: 72, height: 72, borderRadius: 12, overflow: 'hidden', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
                       {j.photo_url ? (
@@ -1432,7 +1434,7 @@ export default function MyWorldPage() {
                           <button
                             type="button"
                             onClick={() => openShareForJournal(j)}
-                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 10, padding: '6px 10px', color: 'var(--text3)', fontWeight: 900, fontSize: 12, cursor: 'pointer' }}
+                            style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 10, padding: '6px 10px', color: 'var(--text3)', fontWeight: 900, fontSize: 12, cursor: 'pointer' }}
                           >
                             공유
                           </button>
@@ -1466,7 +1468,7 @@ export default function MyWorldPage() {
                             width: '100%',
                             padding: '10px 12px',
                             borderRadius: 12,
-                            background: likedJournalIds.has(j.id) ? 'rgba(201,168,76,0.18)' : 'rgba(255,255,255,0.04)',
+                            background: likedJournalIds.has(j.id) ? 'rgba(201,168,76,0.18)' : CARD_BG,
                             border: `1px solid ${likedJournalIds.has(j.id) ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`,
                             color: likedJournalIds.has(j.id) ? GOLD : 'var(--text3)',
                             fontWeight: 900,
@@ -1488,7 +1490,7 @@ export default function MyWorldPage() {
         {tab === 'reviews' && (
           <>
             {reviewCards.length === 0 ? (
-              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 16, color: 'var(--text3)', fontSize: 12 }}>
+              <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 16, color: 'var(--text3)', fontSize: 12 }}>
                 배송완료된 구매 내역이 없어서 후기를 작성할 수 없어요.
               </div>
             ) : (
@@ -1497,12 +1499,12 @@ export default function MyWorldPage() {
                   const r = card.review
                   const reviewed = !!r && r.status === '게시'
                   return (
-                    <div key={card.product.id} id={`review-card-${card.product.id}`} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 12 }}>
+                    <div key={card.product.id} id={`review-card-${card.product.id}`} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 12 }}>
                       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 6 }}>
                         <button
                           type="button"
                           onClick={() => openShareForReviewCard(card)}
-                          style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 10, padding: '6px 10px', color: 'var(--text3)', fontWeight: 900, fontSize: 12, cursor: 'pointer' }}
+                          style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 10, padding: '6px 10px', color: 'var(--text3)', fontWeight: 900, fontSize: 12, cursor: 'pointer' }}
                         >
                           공유
                         </button>
@@ -1573,7 +1575,7 @@ export default function MyWorldPage() {
                                 flex: 1,
                                 padding: '10px 12px',
                                 borderRadius: 12,
-                                background: reviewed && r && likedReviewIds.has(r.id) ? 'rgba(201,168,76,0.18)' : 'rgba(255,255,255,0.04)',
+                                background: reviewed && r && likedReviewIds.has(r.id) ? 'rgba(201,168,76,0.18)' : CARD_BG,
                                 border: `1px solid ${reviewed && r && likedReviewIds.has(r.id) ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`,
                                 color: reviewed && r && likedReviewIds.has(r.id) ? GOLD : 'var(--text3)',
                                 fontWeight: 900,
@@ -1634,7 +1636,7 @@ export default function MyWorldPage() {
             <div style={{ marginBottom: 12 }}>
               <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 8 }}>다른 사용자의 메시지</div>
 
-              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 12, marginBottom: 10 }}>
+              <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 12, marginBottom: 10 }}>
                 <textarea
                   value={guestbookMessage}
                   onChange={e => setGuestbookMessage(e.target.value)}
@@ -1682,13 +1684,13 @@ export default function MyWorldPage() {
             </div>
 
             {guestbookRows.length === 0 ? (
-              <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 16, color: 'var(--text3)', fontSize: 12 }}>
+              <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 16, color: 'var(--text3)', fontSize: 12 }}>
                 아직 방명록이 없어요.
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {guestbookRows.map(g => (
-                  <div key={g.id} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 12 }}>
+                  <div key={g.id} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 12 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                       <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>{g.writer_name}</div>
                       <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace" }}>
@@ -1711,7 +1713,7 @@ export default function MyWorldPage() {
         <div style={{ marginTop: 14, marginBottom: 12, fontSize: 13, fontWeight: 900, color: '#fff' }}>{copyFollowingLabel} 피드</div>
 
         {followingFeed.length === 0 ? (
-          <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 16, color: 'var(--text3)', fontSize: 12 }}>
+          <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 16, color: 'var(--text3)', fontSize: 12 }}>
             {copyFollowingLabel}의 기록이 없어요. 인기 스타 저널을 추천해드릴게요.
           </div>
         ) : (
@@ -1722,7 +1724,7 @@ export default function MyWorldPage() {
               const isFollowing = followingIds.has(a.id)
               const sm = starLevelMeta(a.star_level)
               return (
-                <div key={`${a.id}_${j.id}`} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 12 }}>
+                <div key={`${a.id}_${j.id}`} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 12 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'flex-start' }}>
                     <div style={{ display: 'flex', gap: 12, minWidth: 0 }}>
                       <div style={{ width: 44, height: 44, borderRadius: 12, overflow: 'hidden', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
@@ -1750,7 +1752,7 @@ export default function MyWorldPage() {
                     <button
                       type="button"
                       onClick={() => toggleFollow(a.id)}
-                      style={{ padding: '10px 12px', borderRadius: 12, border: `1px solid ${isFollowing ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`, background: isFollowing ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)', color: isFollowing ? GOLD : 'var(--text3)', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                      style={{ padding: '10px 12px', borderRadius: 12, border: `1px solid ${isFollowing ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`, background: isFollowing ? 'rgba(201,168,76,0.12)' : CARD_BG, color: isFollowing ? GOLD : 'var(--text3)', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap' }}
                     >
                       {isFollowing ? copyFollowingBtn : copyFollowBtn}
                     </button>
@@ -1807,7 +1809,7 @@ export default function MyWorldPage() {
                   const sm = starLevelMeta(u.star_level)
                   const isFollowing = followingIds.has(u.id)
                   return (
-                    <div key={u.id} style={{ display: 'flex', gap: 12, alignItems: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: 10 }}>
+                    <div key={u.id} style={{ display: 'flex', gap: 12, alignItems: 'center', background: CARD_BG, border: CARD_BORDER, borderRadius: 12, padding: 10 }}>
                       <div style={{ width: 40, height: 40, borderRadius: 12, overflow: 'hidden', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
                         {u.avatar_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -1827,7 +1829,7 @@ export default function MyWorldPage() {
                       <button
                         type="button"
                         onClick={() => toggleFollow(u.id)}
-                        style={{ padding: '10px 12px', borderRadius: 12, border: `1px solid ${isFollowing ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`, background: isFollowing ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)', color: isFollowing ? GOLD : 'var(--text3)', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        style={{ padding: '10px 12px', borderRadius: 12, border: `1px solid ${isFollowing ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`, background: isFollowing ? 'rgba(201,168,76,0.12)' : CARD_BG, color: isFollowing ? GOLD : 'var(--text3)', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap' }}
                       >
                         {isFollowing ? copyFollowingBtn : copyFollowBtn}
                       </button>
@@ -1866,7 +1868,7 @@ export default function MyWorldPage() {
                   const sm = starLevelMeta(u.star_level)
                   const isFollowing = followingIds.has(u.id)
                   return (
-                    <div key={u.id} style={{ display: 'flex', gap: 12, alignItems: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: 10 }}>
+                    <div key={u.id} style={{ display: 'flex', gap: 12, alignItems: 'center', background: CARD_BG, border: CARD_BORDER, borderRadius: 12, padding: 10 }}>
                       <div style={{ width: 40, height: 40, borderRadius: 12, overflow: 'hidden', background: 'rgba(0,0,0,0.2)', flexShrink: 0 }}>
                         {u.avatar_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -1886,7 +1888,7 @@ export default function MyWorldPage() {
                       <button
                         type="button"
                         onClick={() => toggleFollow(u.id)}
-                        style={{ padding: '10px 12px', borderRadius: 12, border: `1px solid ${isFollowing ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`, background: isFollowing ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)', color: isFollowing ? GOLD : 'var(--text3)', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        style={{ padding: '10px 12px', borderRadius: 12, border: `1px solid ${isFollowing ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`, background: isFollowing ? 'rgba(201,168,76,0.12)' : CARD_BG, color: isFollowing ? GOLD : 'var(--text3)', fontWeight: 900, cursor: 'pointer', whiteSpace: 'nowrap' }}
                       >
                         {isFollowing ? copyFollowingBtn : copyFollowBtn}
                       </button>
@@ -2035,7 +2037,7 @@ export default function MyWorldPage() {
                               padding: '10px 12px',
                               borderRadius: 12,
                               border: `1px solid ${active ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`,
-                              background: active ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)',
+                              background: active ? 'rgba(201,168,76,0.12)' : CARD_BG,
                               color: active ? GOLD : 'rgba(255,255,255,0.75)',
                               fontWeight: 900,
                               cursor: 'pointer',
@@ -2068,7 +2070,7 @@ export default function MyWorldPage() {
                         padding: '10px 12px',
                         borderRadius: 12,
                         border: `1px solid ${active ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`,
-                        background: active ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)',
+                        background: active ? 'rgba(201,168,76,0.12)' : CARD_BG,
                         color: active ? GOLD : 'rgba(255,255,255,0.75)',
                         fontWeight: 900,
                         cursor: 'pointer',
@@ -2158,7 +2160,7 @@ export default function MyWorldPage() {
                         padding: '10px 12px',
                         borderRadius: 12,
                         border: `1px solid ${active ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.10)'}`,
-                        background: active ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.04)',
+                        background: active ? 'rgba(201,168,76,0.12)' : CARD_BG,
                         color: active ? GOLD : 'rgba(255,255,255,0.75)',
                         fontWeight: 900,
                         cursor: 'pointer',

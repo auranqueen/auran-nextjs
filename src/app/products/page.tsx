@@ -36,7 +36,9 @@ function ProductsPageInner() {
       setError(null)
       const { data, error: err } = await supabase
         .from('products')
-        .select('*, brands(name)')
+        .select(
+          'id,name,retail_price,thumb_img,storage_thumb_url,detail_imgs,detail_images,created_at,brand_id,status,skin_types,quiz_match,description,tag,category,brands(name)'
+        )
         .order('created_at', { ascending: false })
       if (err) {
         setError(err.message || '제품 목록을 불러오지 못했습니다.')
@@ -120,7 +122,7 @@ function ProductsPageInner() {
       list={
         <>
           {visible.map(p => (
-            <ProductCatalogCard key={p.id} p={p} />
+            <ProductCatalogCard key={String(p.id)} p={p} />
           ))}
         </>
       }
