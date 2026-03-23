@@ -88,19 +88,16 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
         {/* 썸네일 스트립 */}
         <div style={{ display: 'flex', gap: 6, padding: '8px 10px', background: '#0a0807', overflowX: 'auto' }}>
-          {/* 메인 */}
           <div onClick={() => setActiveThumb(0)} style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === 0 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             {product.storage_thumb_url
               ? <img src={product.storage_thumb_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : <div style={{ fontSize: 26 }}>🧴</div>}
           </div>
-          {/* 추가 썸네일 최대 4장 */}
           {maxThumbs.map((url, i) => (
             <div key={i} onClick={() => setActiveThumb(i + 1)} style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === i + 1 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           ))}
-          {/* 영상 썸네일 */}
           {product.has_video && (
             <div onClick={() => setActiveThumb(99)} style={{ width: 58, height: 58, borderRadius: 8, flexShrink: 0, border: `2px solid ${activeThumb === 99 ? GOLD : 'transparent'}`, background: '#1a1008', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
               <div style={{ fontSize: 20 }}>📹</div>
@@ -117,18 +114,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           <span style={tag('#1a2e1a','#6fcf97','#2a4a2a')}>재구매 {product.repurchase_rate}%</span>
           <span style={tag('#1a1e30','#74b0ff','#2a2e50')}>일촌 {product.active_users}명 사용중</span>
         </div>
-
-        {/* 제품명 - 굵은글 해제 */}
         <div style={{ fontSize: 20, fontWeight: 400, lineHeight: 1.4, marginBottom: 5, color: '#e8e4dc' }}>{product.name}</div>
-        {/* SEO 설명 */}
         <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6, marginBottom: 10 }}>{product.seo_desc}</div>
-
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
           <div style={{ fontSize: 28, fontWeight: 700, color: GOLD }}>{price.toLocaleString()}원</div>
           {discount > 0 && <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{origPrice.toLocaleString()}원</div>}
         </div>
 
-        {/* 타이머 */}
         {discount > 0 && (
           <div style={{ background: '#171310', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
             <div style={{ color: '#e05050' }}>🔥</div>
@@ -141,7 +133,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           </div>
         )}
 
-        {/* 리뷰 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ color: GOLD, fontSize: 17, letterSpacing: 2 }}>★★★★★</span>
           <span style={{ fontSize: 20, fontWeight: 700, color: GOLD }}>{product.rating}</span>
@@ -149,10 +140,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           <span style={{ fontSize: 12, color: '#666', marginLeft: 'auto', cursor: 'pointer' }}>전체보기 ›</span>
         </div>
 
-        {/* 브랜드 공식 */}
         <div style={{ background: '#171310', border: '1px solid #252018', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#2a2010,#3a3020)', border: `1px solid ${GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: GOLD, textAlign: 'center', lineHeight: 1.3, flexShrink: 0 }}>
-            {product.brand.substring(0, 4)}<br />{product.brand.substring(4)}
+            {product.brand.substring(0,4)}<br />{product.brand.substring(4)}
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13, fontWeight: 600 }}>{product.brand} 공식 브랜드 상세</div>
@@ -170,7 +160,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           {product.story_quote}<br /><span style={{ fontSize: 10, color: '#555', fontStyle: 'normal' }}>© {product.brand}</span>
         </div>
         <div style={{ fontSize: 13, lineHeight: 1.85, color: '#bbb', textAlign: 'center', marginBottom: 20 }}>
-          {product.story_desc.split('\n').map((line, i) => <span key={i}>{line}<br /></span>)}
+          {(product.story_desc ?? '').split('\n').map((line, i) => <span key={i}>{line}<br /></span>)}
         </div>
         <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' as const, justifyContent: 'center', marginBottom: 22 }}>
           {(product.tags ?? []).map((t, i) => (
@@ -178,7 +168,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           ))}
         </div>
 
-        {/* 성분 */}
         <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>KEY INGREDIENTS</div>
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
           {(product.ingredients ?? []).map((ing, i) => (
@@ -190,7 +179,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           ))}
         </div>
 
-        {/* 임상 */}
         <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, fontWeight: 700, marginBottom: 3 }}>CLINICAL RESULT</div>
         <div style={{ fontSize: 10, color: '#555', marginBottom: 12 }}>프랑스 피부과 임상 30명 · 4주 사용 후</div>
         {(product.clinicals ?? []).map((c, i) => (
@@ -253,12 +241,3 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     </div>
   )
 }
-```
-
----
-
-**STEP 3 — page.tsx 확인**
-
-`src/app/(customer)/products/[id]/page.tsx` 에서 import 줄만 확인해요. 아래처럼 되어있으면 그대로 둬요. 건드리지 말고요.
-```
-import ProductDetailClient from './client'
