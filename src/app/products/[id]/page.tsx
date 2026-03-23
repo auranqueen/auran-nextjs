@@ -76,9 +76,11 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
 
   const productForClient = {
     ...product,
-    price: product.retail_price,
+    price: product.price ?? product.retail_price,
     brand_name: brandName,
     display_image_url: displayImageUrl,
+    image_url: product.image_url || null,
+    detail_html: product.detail_html || '',
   }
 
   return (

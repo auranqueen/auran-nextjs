@@ -44,6 +44,8 @@ export default function ProductDetailPageView({
   const heroSrc =
     typeof product.display_image_url === 'string' && product.display_image_url.trim()
       ? product.display_image_url.trim()
+      : typeof product.image_url === 'string' && product.image_url.trim()
+        ? product.image_url.trim()
       : null
   const detailGalleryUrls = productDetailImageUrls(product).filter(u => u !== heroSrc)
 
@@ -206,6 +208,22 @@ export default function ProductDetailPageView({
 
           {product.description ? (
             <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, marginTop: 18, lineHeight: 1.65, fontWeight: 300 }}>{product.description}</p>
+          ) : null}
+
+          {product.detail_html ? (
+            <div
+              style={{
+                marginTop: 14,
+                padding: '14px 14px',
+                borderRadius: 14,
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'rgba(255,255,255,0.03)',
+                fontSize: 12,
+                lineHeight: 1.7,
+                color: 'rgba(255,255,255,0.78)',
+              }}
+              dangerouslySetInnerHTML={{ __html: String(product.detail_html) }}
+            />
           ) : null}
 
           {!isPriceUnset && pct > 0 ? (

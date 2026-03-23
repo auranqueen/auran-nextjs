@@ -23,7 +23,7 @@ export default function ProductDetailUI({ product }: { product: any }) {
   const router = useRouter()
   const [qty, setQty] = useState(1)
   const [detailTab, setDetailTab] = useState<'detail' | 'review'>('detail')
-  const unit = Math.max(0, Math.floor(Number(product.retail_price) || 0))
+  const unit = Math.max(0, Math.floor(Number(product.price ?? product.retail_price) || 0))
   const isPriceUnset = unit < 1
   const pct = earnPercentOf(product)
   const lineTotal = unit * qty
@@ -51,7 +51,7 @@ export default function ProductDetailUI({ product }: { product: any }) {
               id: String(product.id),
               name: String(product.name || '제품'),
               retail_price: unit,
-              thumb_img: String(product.display_image_url || product.thumb_img || ''),
+              thumb_img: String(product.display_image_url || product.image_url || product.thumb_img || ''),
             }}
             quantity={qty}
           />
