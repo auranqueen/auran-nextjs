@@ -28,14 +28,11 @@ export default function ProductActionBar({
       thumb_img: product.thumb_img,
       quantity: q,
     })
-    alert(q > 1 ? `🛒 ${q}개 장바구니에 담겼어요!` : '🛒 장바구니에 담겼어요!')
+    router.push('/cart')
   }
 
   const handleBuy = () => {
-    const qs = new URLSearchParams()
-    qs.set('product_id', product.id)
-    qs.set('qty', String(q))
-    router.push(`/checkout?${qs.toString()}`)
+    router.push(`/checkout?productId=${product.id}`)
   }
 
   return (

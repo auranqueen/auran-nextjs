@@ -72,7 +72,7 @@ export default function CartPage() {
     [router, selectedLines, supabase]
   )
 
-  const onBuyClick = () => goCheckout()
+  const onBuyClick = () => router.push('/checkout')
 
   const searchGiftUsers = useCallback(async (q: string) => {
     const t = q.trim()

@@ -65,7 +65,7 @@ function CheckoutPageInner() {
       .map((v) => v.trim())
       .filter(Boolean)
     if (fromProducts.length > 0) return fromProducts
-    const one = search.get('product_id')?.trim()
+    const one = (search.get('productId') || search.get('product_id') || '').trim()
     return one ? [one] : []
   }, [search])
   const giftTo = search.get('gift_to') || ''
@@ -224,47 +224,7 @@ function CheckoutPageInner() {
       setChargeSheetOpen(true)
       return
     }
-    setPaying(true)
-    try {
-      const payload: Record<string, unknown> = {
-        items: orderedProducts.map((p, i) => ({ product_id: p.id, quantity: qtyList[i] ?? qtyList[0] ?? 1 })),
-        use_points: pointUsed,
-        use_charge: toastUsed,
-        gift_to: giftTo || null,
-        gift_message: giftMessage || null,
-        recipient_name: recipientName.trim() || null,
-        recipient_phone: recipientPhone.trim() || null,
-        address: address.trim() || null,
-        share_journal_id: shareJournalId || null,
-      }
-      if (selectedUserCouponId && couponDiscount > 0) payload.user_coupon_id = selectedUserCouponId
-      const orderRes = await fetch('/api/orders/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify(payload),
-      })
-      const orderJson = await orderRes.json().catch(() => ({}))
-      if (!orderRes.ok || !orderJson?.ok) throw new Error(orderJson?.error || '주문 생성 실패')
-
-      if (Number(orderJson.final_amount || 0) > 0) {
-        const payRes = await fetch('/api/payments/payapp/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({ kind: 'order', amount: orderJson.final_amount, target_id: orderJson.order_id }),
-        })
-        const payJson = await payRes.json().catch(() => ({}))
-        if (!payRes.ok || !payJson?.ok || !payJson?.pay_url) throw new Error(payJson?.error || '결제 요청 실패')
-        window.location.href = payJson.pay_url
-      } else {
-        router.push('/orders?payment=done')
-      }
-    } catch (e: any) {
-      setToast(e?.message || '결제 진행 중 오류가 발생했어요')
-    } finally {
-      setPaying(false)
-    }
+    router.push('/payment/payapp')
   }
 
   const onChargeKrw = async (krw: number) => {
