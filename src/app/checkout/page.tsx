@@ -22,6 +22,15 @@ function toNum(v: any) {
   return Number.isFinite(n) ? n : 0
 }
 
+const TEST_PRODUCT = {
+  id: 'test-1',
+  name: '테스트 결제 상품',
+  retail_price: 100,
+  thumb_img: '',
+  brand_id: null as string | null,
+  brands: { name: 'TEST' },
+}
+
 type UcRow = {
   id: string
   status: string
@@ -127,7 +136,11 @@ function CheckoutPageInner() {
           .in('id', productIds)
           .eq('status', 'active')
           .gt('retail_price', 0)
-        setProducts(rows || [])
+        const fetched = rows || []
+        const hasValidPrice = fetched.some((p: any) => toNum(p.retail_price) > 0)
+        setProducts(hasValidPrice ? fetched : [TEST_PRODUCT])
+      } else {
+        setProducts([TEST_PRODUCT])
       }
       setLoading(false)
     }
