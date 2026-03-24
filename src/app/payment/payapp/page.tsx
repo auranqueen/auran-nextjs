@@ -1,6 +1,8 @@
+
 'use client'
 import { useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 function PayAppInner() {
   const router = useRouter()
@@ -8,22 +10,37 @@ function PayAppInner() {
 
   useEffect(() => {
     const productId = params.get('product_id')
-    const qty = params.get('qty') || '1'
-    const amount = params.get('amount')
+    const qty = Number(params.get('qty') || '1')
 
-    if (!productId && !amount) {
+    if (!productId) {
       router.push('/home')
       return
     }
 
     const doPayment = async () => {
+      const supabase = createClient()
+      const { data: product } = await supabase
+        .from('products')
+        .select('id, name, retail_price, original_price')
+        .eq('id', productId)
+        .single()
+
+      if (!product) {
+        alert('제품 정보를 찾을 수 없어요')
+        router.push('/home')
+        return
+      }
+
+      const price = product.retail_price ?? product.original_price ?? 0
+      const amount = price * qty
+
       const res = await fetch('/api/payments/payapp/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({
           kind: 'order',
-          amount: Number(amount) || 0,
+          amount,
           target_id: productId,
         }),
       })
@@ -62,7 +79,7 @@ export default function PayAppPage() {
         minHeight: '100vh', display: 'flex',
         alignItems: 'center', justifyContent: 'center'
       }}>
-        <div>로딩 중...</div>
+        <div style={{ color: '#e8e4dc' }}>로딩 중...</div>
       </div>
     }>
       <PayAppInner />
