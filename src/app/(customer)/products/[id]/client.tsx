@@ -19,6 +19,7 @@ interface Product {
   active_users: number
   match_pct: string
   has_video: boolean
+  video_url?: string
   story_hero: string
   story_sub: string
   story_quote: string
@@ -96,10 +97,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             피부 매칭 {matchPct}
           </div>
           {activeThumb === 99 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-              <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(201,169,110,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, cursor: 'pointer' }}>▶</div>
-              <div style={{ fontSize: 12, color: '#888' }}>{brand} 공식 영상</div>
-            </div>
+            <video
+              src={product.video_url}
+              controls
+              autoPlay
+              style={{ width: '100%', height: '280px', objectFit: 'cover' }}
+            />
           ) : (
             thumbUrl
               ? <img src={thumbUrl} alt={name} style={{ maxHeight: 240, maxWidth: '80%', objectFit: 'contain' }} />
