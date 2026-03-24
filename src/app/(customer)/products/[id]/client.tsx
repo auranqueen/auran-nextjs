@@ -37,9 +37,30 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [qty, setQty] = useState(1)
   const [activeThumb, setActiveThumb] = useState(0)
 
+  const brand = product.brand ?? 'AURAN'
+  const origin = product.origin ?? ''
+  const name = product.name ?? '제품명'
+  const seoDesc = product.seo_desc ?? ''
   const price = product.retail_price ?? product.original_price ?? 0
   const origPrice = product.original_price ?? 0
   const discount = product.discount_rate ?? 0
+  const rating = product.rating ?? 4.9
+  const reviewCount = product.review_count ?? 0
+  const repurchaseRate = product.repurchase_rate ?? 0
+  const activeUsers = product.active_users ?? 0
+  const matchPct = product.match_pct ?? ''
+  const hasVideo = product.has_video ?? false
+  const storyHero = product.story_hero ?? name
+  const storySub = product.story_sub ?? ''
+  const storyQuote = product.story_quote ?? ''
+  const storyDesc = product.story_desc ?? ''
+  const tags = product.tags ?? []
+  const ingredients = product.ingredients ?? []
+  const clinicals = product.clinicals ?? []
+  const certs = product.certs ?? []
+  const together = product.together ?? []
+  const thumbImgs = product.thumb_imgs ?? []
+  const thumbUrl = product.storage_thumb_url ?? ''
   const total = (price * qty).toLocaleString() + '원'
 
   const wrap: React.CSSProperties = {
@@ -53,7 +74,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     background: bg, color, border: `1px solid ${border}`,
   })
 
-  const thumbs = product.thumb_imgs ?? []
+  const thumbs = thumbImgs
   const maxThumbs = thumbs.slice(0, 4)
 
   return (
@@ -72,16 +93,16 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             <div style={{ position: 'absolute', top: 14, left: 14, background: '#c02030', color: '#fff', fontSize: 12, fontWeight: 800, padding: '4px 12px', borderRadius: 20 }}>⚡ -{discount}%</div>
           )}
           <div style={{ position: 'absolute', top: 14, right: 14, background: '#2a1f0e', border: `1px solid ${GOLD}`, color: GOLD, fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
-            피부 매칭 {product.match_pct ?? ''}
+            피부 매칭 {matchPct}
           </div>
           {activeThumb === 99 ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(201,169,110,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, cursor: 'pointer' }}>▶</div>
-              <div style={{ fontSize: 12, color: '#888' }}>{product.brand ?? ''} 공식 영상</div>
+              <div style={{ fontSize: 12, color: '#888' }}>{brand} 공식 영상</div>
             </div>
           ) : (
-            product.storage_thumb_url
-              ? <img src={product.storage_thumb_url ?? ''} alt={product.name ?? ''} style={{ maxHeight: 240, maxWidth: '80%', objectFit: 'contain' }} />
+            thumbUrl
+              ? <img src={thumbUrl} alt={name} style={{ maxHeight: 240, maxWidth: '80%', objectFit: 'contain' }} />
               : <div style={{ fontSize: 80, color: '#555' }}>🧴</div>
           )}
         </div>
@@ -89,8 +110,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         {/* 썸네일 스트립 */}
         <div style={{ display: 'flex', gap: 6, padding: '8px 10px', background: '#0a0807', overflowX: 'auto' }}>
           <div onClick={() => setActiveThumb(0)} style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === 0 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            {product.storage_thumb_url
-              ? <img src={product.storage_thumb_url ?? ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {thumbUrl
+              ? <img src={thumbUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : <div style={{ fontSize: 26 }}>🧴</div>}
           </div>
           {maxThumbs.map((url, i) => (
@@ -98,7 +119,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           ))}
-          {product.has_video && (
+          {hasVideo && (
             <div onClick={() => setActiveThumb(99)} style={{ width: 58, height: 58, borderRadius: 8, flexShrink: 0, border: `2px solid ${activeThumb === 99 ? GOLD : 'transparent'}`, background: '#1a1008', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
               <div style={{ fontSize: 20 }}>📹</div>
               <div style={{ position: 'absolute', bottom: 3, right: 3, background: 'rgba(201,169,110,0.9)', borderRadius: 3, padding: '1px 4px', fontSize: 8, color: '#000', fontWeight: 700 }}>▶</div>
@@ -110,12 +131,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       {/* 제품 기본 정보 */}
       <div style={{ padding: '16px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8, flexWrap: 'wrap' as const }}>
-          <span style={{ fontSize: 12, color: '#888' }}>{product.brand ?? ''} · {product.origin ?? ''}</span>
-          <span style={tag('#1a2e1a','#6fcf97','#2a4a2a')}>재구매 {product.repurchase_rate}%</span>
-          <span style={tag('#1a1e30','#74b0ff','#2a2e50')}>일촌 {product.active_users}명 사용중</span>
+          <span style={{ fontSize: 12, color: '#888' }}>{brand} · {origin}</span>
+          <span style={tag('#1a2e1a','#6fcf97','#2a4a2a')}>재구매 {repurchaseRate}%</span>
+          <span style={tag('#1a1e30','#74b0ff','#2a2e50')}>일촌 {activeUsers}명 사용중</span>
         </div>
-        <div style={{ fontSize: 20, fontWeight: 400, lineHeight: 1.4, marginBottom: 5, color: '#e8e4dc' }}>{product.name ?? ''}</div>
-        <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6, marginBottom: 10 }}>{product.seo_desc ?? ''}</div>
+        <div style={{ fontSize: 20, fontWeight: 400, lineHeight: 1.4, marginBottom: 5, color: '#e8e4dc' }}>{name}</div>
+        <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6, marginBottom: 10 }}>{seoDesc}</div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
           <div style={{ fontSize: 28, fontWeight: 700, color: GOLD }}>{price.toLocaleString()}원</div>
           {discount > 0 && <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{origPrice.toLocaleString()}원</div>}
@@ -135,17 +156,17 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ color: GOLD, fontSize: 17, letterSpacing: 2 }}>★★★★★</span>
-          <span style={{ fontSize: 20, fontWeight: 700, color: GOLD }}>{product.rating}</span>
-          <span style={{ fontSize: 12, color: '#666' }}>리뷰 {product.review_count}개</span>
+          <span style={{ fontSize: 20, fontWeight: 700, color: GOLD }}>{rating}</span>
+          <span style={{ fontSize: 12, color: '#666' }}>리뷰 {reviewCount}개</span>
           <span style={{ fontSize: 12, color: '#666', marginLeft: 'auto', cursor: 'pointer' }}>전체보기 ›</span>
         </div>
 
         <div style={{ background: '#171310', border: '1px solid #252018', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#2a2010,#3a3020)', border: `1px solid ${GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: GOLD, textAlign: 'center', lineHeight: 1.3, flexShrink: 0 }}>
-            {(product.brand ?? '').substring(0,4)}<br />{(product.brand ?? '').substring(4)}
+            {brand.substring(0,4)}<br />{brand.substring(4)}
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{product.brand ?? ''} 공식 브랜드 상세</div>
+            <div style={{ fontSize: 13, fontWeight: 600 }}>{brand} 공식 브랜드 상세</div>
             <div style={{ fontSize: 11, color: '#666' }}>브랜드사 직접 등록</div>
           </div>
           <span style={{ fontSize: 10, color: '#6fcf97', background: '#1a3020', border: '1px solid #2a4530', padding: '3px 9px', borderRadius: 20, flexShrink: 0 }}>✓ 공식</span>
@@ -154,23 +175,23 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
       {/* 브랜드 스토리 */}
       <div style={{ background: 'linear-gradient(180deg,#1e1810,#14100c)', padding: '28px 20px' }}>
-        <div style={{ textAlign: 'center', fontSize: 22, fontWeight: 900, letterSpacing: 4, color: GOLD, marginBottom: 3 }}>{product.story_hero ?? ''}</div>
-        <div style={{ textAlign: 'center', fontSize: 10, color: '#666', letterSpacing: 3, marginBottom: 22 }}>{product.story_sub ?? ''}</div>
+        <div style={{ textAlign: 'center', fontSize: 22, fontWeight: 900, letterSpacing: 4, color: GOLD, marginBottom: 3 }}>{storyHero}</div>
+        <div style={{ textAlign: 'center', fontSize: 10, color: '#666', letterSpacing: 3, marginBottom: 22 }}>{storySub}</div>
         <div style={{ background: '#1a1410', borderLeft: `3px solid ${GOLD}`, padding: '14px 16px', borderRadius: '0 10px 10px 0', marginBottom: 18, fontSize: 13, lineHeight: 1.75, color: '#ccc', fontStyle: 'italic' }}>
-          {product.story_quote ?? ''}<br /><span style={{ fontSize: 10, color: '#555', fontStyle: 'normal' }}>© {product.brand ?? ''}</span>
+          {storyQuote}<br /><span style={{ fontSize: 10, color: '#555', fontStyle: 'normal' }}>© {brand}</span>
         </div>
         <div style={{ fontSize: 13, lineHeight: 1.85, color: '#bbb', textAlign: 'center', marginBottom: 20 }}>
-          {(product.story_desc ?? '').split('\n').map((line, i) => <span key={i}>{line}<br /></span>)}
+          {storyDesc.split('\n').map((line, i) => <span key={i}>{line}<br /></span>)}
         </div>
         <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' as const, justifyContent: 'center', marginBottom: 22 }}>
-          {(product.tags ?? []).map((t, i) => (
+          {tags.map((t, i) => (
             <div key={i} style={{ fontSize: 11, color: '#888', background: '#1a1610', border: '1px solid #252018', padding: '4px 11px', borderRadius: 20 }}>#{t}</div>
           ))}
         </div>
 
         <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>KEY INGREDIENTS</div>
         <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-          {(product.ingredients ?? []).map((ing, i) => (
+          {ingredients.map((ing, i) => (
             <div key={i} style={{ flex: 1, background: '#1a1610', border: '1px solid #252018', borderRadius: 12, padding: '12px 8px', textAlign: 'center' }}>
               <div style={{ fontSize: 26, marginBottom: 6 }}>{ing.ico}</div>
               <div style={{ fontSize: 11, fontWeight: 600, lineHeight: 1.4 }}>{ing.name}</div>
@@ -181,7 +202,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
         <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, fontWeight: 700, marginBottom: 3 }}>CLINICAL RESULT</div>
         <div style={{ fontSize: 10, color: '#555', marginBottom: 12 }}>프랑스 피부과 임상 30명 · 4주 사용 후</div>
-        {(product.clinicals ?? []).map((c, i) => (
+        {clinicals.map((c, i) => (
           <div key={i} style={{ marginBottom: 10 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
               <span style={{ fontSize: 12, color: '#aaa' }}>{c.label}</span>
@@ -197,7 +218,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       {/* 인증 */}
       <div style={{ padding: '18px 20px' }}>
         <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>CERTIFICATIONS</div>
-        {(product.certs ?? []).map((c, i) => (
+        {certs.map((c, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#141210', border: '1px solid #201c16', borderRadius: 10, padding: '10px 14px', marginBottom: 8 }}>
             <div style={{ fontSize: 19 }}>{['🏆','✅','🌿','🏅','📋'][i % 5]}</div>
             <div style={{ fontSize: 12, fontWeight: 600 }}>{c}</div>
@@ -209,7 +230,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       <div style={{ padding: '0 20px 20px' }}>
         <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>PERFECT TOGETHER</div>
         <div style={{ display: 'flex', gap: 8 }}>
-          {(product.together ?? []).map((t, i) => (
+          {together.map((t, i) => (
             <div key={i} style={{ flex: 1, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center' }}>
               <div style={{ fontSize: 8, background: '#2a1f0e', color: GOLD, padding: '2px 6px', borderRadius: 4, fontWeight: 700, display: 'inline-block', marginBottom: 6 }}>{t.step}</div>
               <div style={{ fontSize: 28, marginBottom: 5 }}>{t.ico}</div>
