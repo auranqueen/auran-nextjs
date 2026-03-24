@@ -24,18 +24,18 @@ const FALLBACK_CONCERNS = [
   { id: 7, name: '탄력·리프팅', icon: '💆' },
 ]
 
-const FALLBACK_PRODUCTS = [
-  { id: 1, name: 'MESS CREAM 50ml', brand: 'CIVASAN', price: 58000, badge: 'AI추천', icon: '🧴' },
-  { id: 2, name: '바이오 에센스 세럼', brand: 'GERNETIC', price: 94000, badge: '인기', icon: '🌿' },
-  { id: 3, name: '딥클렌징 폼', brand: 'SHOPBELLE', price: 32000, badge: '', icon: '🫧' },
-  { id: 4, name: '크리스토 바스솔트', brand: 'THALAC', price: 45000, badge: '', icon: '🌊' },
-]
+// const FALLBACK_PRODUCTS = [
+//   { id: "008809bb-4b01-4fa1-81e6-fe36b24ba675", name: 'MESS CREAM 50ml', brand: 'CIVASAN', price: 58000, badge: 'AI추천', icon: '🧴' },
+//   { id: 2, name: '바이오 에센스 세럼', brand: 'GERNETIC', price: 94000, badge: '인기', icon: '🌿' },
+//   { id: 3, name: '딥클렌징 폼', brand: 'SHOPBELLE', price: 32000, badge: '', icon: '🫧' },
+//   { id: 4, name: '크리스토 바스솔트', brand: 'THALAC', price: 45000, badge: '', icon: '🌊' },
+// ]
 
-const FALLBACK_SALES = [
-  { id: 1, name: 'MESS CREAM 50ml', brand: 'CIVASAN', orig: 58000, sale: 40600, disc: 30, icon: '🧴' },
-  { id: 2, name: '바이오 에센스 세럼', brand: 'GERNETIC', orig: 94000, sale: 70500, disc: 25, icon: '🌿' },
-  { id: 3, name: '크리스토 마린 바스솔트', brand: 'THALAC', orig: 45000, sale: 36000, disc: 20, icon: '🌊' },
-]
+// const FALLBACK_SALES = [
+//   { id: 1, name: 'MESS CREAM 50ml', brand: 'CIVASAN', orig: 58000, sale: 40600, disc: 30, icon: '🧴' },
+//   { id: 2, name: '바이오 에센스 세럼', brand: 'GERNETIC', orig: 94000, sale: 70500, disc: 25, icon: '🌿' },
+//   { id: 3, name: '크리스토 마린 바스솔트', brand: 'THALAC', orig: 45000, sale: 36000, disc: 20, icon: '🌊' },
+// ]
 
 const FALLBACK_SALONS = [
   { id: 1, name: '더하노이 풋앤바디', rating: 4.9, reviews: 127, area: '대구 달서구', dist: '0.3km', open: true, tags: ['페이셜', '바디', '아로마'] },
@@ -43,12 +43,12 @@ const FALLBACK_SALONS = [
   { id: 3, name: '스킨에스테틱', rating: 4.5, reviews: 54, area: '대구 중구', dist: '2.1km', open: false, tags: ['피부관리', '민감성'] },
 ]
 
-const FALLBACK_NEW = [
-  { id: 1, name: '퍼펙트 나이트 크림', brand: 'CIVASAN', price: 68000, icon: '💜' },
-  { id: 2, name: '칼밍 에센스 미스트', brand: 'GERNETIC', price: 52000, icon: '🩵' },
-  { id: 3, name: '로즈 토닝 패드', brand: 'SHOPBELLE', price: 38000, icon: '🌸' },
-  { id: 4, name: '마린 리페어 앰플', brand: 'THALAC', price: 84000, icon: '🌊' },
-]
+// const FALLBACK_NEW = [
+//   { id: 1, name: '퍼펙트 나이트 크림', brand: 'CIVASAN', price: 68000, icon: '💜' },
+//   { id: 2, name: '칼밍 에센스 미스트', brand: 'GERNETIC', price: 52000, icon: '🩵' },
+//   { id: 3, name: '로즈 토닝 패드', brand: 'SHOPBELLE', price: 38000, icon: '🌸' },
+//   { id: 4, name: '마린 리페어 앰플', brand: 'THALAC', price: 84000, icon: '🌊' },
+// ]
 
 const FALLBACK_BRANDS = [
   { id: 1, name: 'CIVASAN', label: '시바산', color: '#C9A96E', bg: 'rgba(201,169,110,0.1)', border: 'rgba(201,169,110,0.3)' },
@@ -153,10 +153,10 @@ export default function CustomerHomePage() {
 
   // 폴백 적용
   const concernList = concerns.length > 0 ? concerns : FALLBACK_CONCERNS
-  const productList = products.length > 0 ? products : FALLBACK_PRODUCTS
-  const saleList = timeSales.length > 0 ? timeSales : FALLBACK_SALES
+  const productList = products
+  const saleList = timeSales
   const salonList = salons.length > 0 ? salons : FALLBACK_SALONS
-  const newList = newProducts.length > 0 ? newProducts : FALLBACK_NEW
+  const newList = newProducts
   const brandList = brands.length > 0 ? brands : FALLBACK_BRANDS
 
   const today = new Date().toLocaleDateString('ko-KR', {
@@ -375,7 +375,11 @@ export default function CustomerHomePage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '34px', position: 'relative',
             }}>
-              {p.icon || '🧴'}
+              {p.storage_thumb_url ? (
+                <img src={p.storage_thumb_url} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                p.icon || '🧴'
+              )}
               {p.badge && (
                 <div style={{
                   position: 'absolute', top: '5px', left: '5px',
@@ -387,7 +391,7 @@ export default function CustomerHomePage() {
             <div style={{ padding: '8px 10px' }}>
               <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{p.brand}</div>
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '4px' }}>{p.name}</div>
-              <div style={{ fontSize: '12px', fontWeight: 400 }}>{p.price?.toLocaleString()}원</div>
+              <div style={{ fontSize: '12px', fontWeight: 400 }}>{(p.retail_price ?? p.price ?? 0)?.toLocaleString()}원</div>
             </div>
           </div>
         ))}
@@ -442,7 +446,7 @@ export default function CustomerHomePage() {
         {productList.slice(0, 4).map((p: any, i: number) => {
           const rankColors = ['#C9A96E', 'rgba(180,180,180,0.8)', 'rgba(180,120,60,0.8)']
           return (
-            <div key={i} style={{
+            <div key={i} onClick={() => router.push(`/products/${p.id}`)} style={{
               minWidth: '150px', background: CARD_BG, border: CARD_BORDER,
               borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0,
             }}>
@@ -452,7 +456,11 @@ export default function CustomerHomePage() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '38px', position: 'relative',
               }}>
-                {p.icon || '🧴'}
+                {p.storage_thumb_url ? (
+                  <img src={p.storage_thumb_url} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  p.icon || '🧴'
+                )}
                 <div style={{
                   position: 'absolute', top: '7px', left: '7px',
                   width: '22px', height: '22px', borderRadius: '50%',
@@ -473,7 +481,7 @@ export default function CustomerHomePage() {
                 <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{p.brand}</div>
                 <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '5px' }}>{p.name}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 400 }}>{p.price?.toLocaleString()}원</span>
+                  <span style={{ fontSize: '13px', fontWeight: 400 }}>{(p.retail_price ?? p.price ?? 0)?.toLocaleString()}원</span>
                   <span style={{ fontSize: '14px', cursor: 'pointer' }}>🤍</span>
                 </div>
                 <div style={{ display: 'flex', gap: '4px' }}>
@@ -547,7 +555,7 @@ export default function CustomerHomePage() {
         {saleTab === 'sale' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {saleList.map((item: any, i: number) => (
-              <div key={i} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden' }}>
+              <div key={i} onClick={() => router.push(`/products/${item.product?.id || item.id}`)} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
                   <div style={{
                     width: '64px', height: '64px', borderRadius: '12px',
@@ -555,7 +563,11 @@ export default function CustomerHomePage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '28px', flexShrink: 0, position: 'relative',
                   }}>
-                    {item.icon || '🧴'}
+                    {item.product?.storage_thumb_url ? (
+                      <img src={item.product.storage_thumb_url} alt={item.product?.name || item.name || 'product'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      item.icon || '🧴'
+                    )}
                     <div style={{
                       position: 'absolute', top: '-4px', right: '-4px',
                       background: '#E04030', borderRadius: '20px', padding: '2px 6px',
@@ -571,10 +583,10 @@ export default function CustomerHomePage() {
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '5px' }}>
                       <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
-                        {(item.orig || item.original_price)?.toLocaleString()}원
+                        {(item.orig || item.original_price || item.product?.original_price || item.product?.retail_price || item.price)?.toLocaleString()}원
                       </span>
                       <span style={{ fontSize: '15px', fontWeight: 400, color: '#E07060' }}>
-                        {(item.sale || item.sale_price)?.toLocaleString()}원
+                        {(item.sale || item.sale_price || item.product?.retail_price || item.price)?.toLocaleString()}원
                       </span>
                     </div>
                     {/* 개별 타이머 */}
@@ -769,13 +781,17 @@ export default function CustomerHomePage() {
         {newList.map((item: any, i: number) => (
           <div key={i} onClick={() => router.push(`/products/${item.id}`)} style={{ minWidth: '130px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
             <div style={{ height: '90px', background: 'linear-gradient(135deg,#1a0a2a,#2a1540)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', position: 'relative' }}>
-              {item.icon || '💜'}
+              {item.storage_thumb_url ? (
+                <img src={item.storage_thumb_url} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                item.icon || '💜'
+              )}
               <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'linear-gradient(90deg,#6040E0,#A040E0)', borderRadius: '5px', padding: '2px 6px', fontSize: '8px', color: '#fff' }}>NEW</div>
             </div>
             <div style={{ padding: '9px 10px' }}>
               <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.brand}</div>
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.4, marginBottom: '4px' }}>{item.name}</div>
-              <div style={{ fontSize: '12px', fontWeight: 400 }}>{item.price?.toLocaleString()}원</div>
+              <div style={{ fontSize: '12px', fontWeight: 400 }}>{(item.retail_price ?? item.price ?? 0)?.toLocaleString()}원</div>
             </div>
           </div>
         ))}
