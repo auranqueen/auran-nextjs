@@ -62,6 +62,11 @@ function CheckoutPageInner() {
   const [recipientPhone, setRecipientPhone] = useState('')
   const [address, setAddress] = useState('')
   const [payWithToast, setPayWithToast] = useState(true)
+  const [payModal, setPayModal] = useState(false)
+  const [earnToast, setEarnToast] = useState(true)
+  const [pinOpen, setPinOpen] = useState(false)
+  const [pinInput, setPinInput] = useState('')
+  const [pinChecking, setPinChecking] = useState(false)
 
   const toastRate = getSettingNum('toast', 'exchange_rate', 100)
   const maxCouponPct = getSettingNum('coupon', 'max_percent_discount', 70)
@@ -229,14 +234,23 @@ function CheckoutPageInner() {
       return
     }
     if (needCharge > 0) {
-      if (!allowCharge) {
-        setToast('토스트가 부족해요. 충전 후 구매 가능해요 🍞')
-        router.push('/home')
-        return
-      }
-      setChargeSheetOpen(true)
+      setPayModal(true)
       return
     }
+    router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1`)
+  }
+
+  const confirmPinAndPay = async () => {
+    if (!meId || pinInput.length !== 6 || pinChecking) return
+    setPinChecking(true)
+    const { data: me } = await supabase.from('users').select('payment_pin').eq('id', meId).maybeSingle()
+    if (!me?.payment_pin || String(me.payment_pin) !== pinInput) {
+      setPinChecking(false)
+      setToast('결제 PIN이 올바르지 않습니다')
+      return
+    }
+    setPinOpen(false)
+    setPinChecking(false)
     router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&amount=${subtotal}&qty=1`)
   }
 
@@ -302,6 +316,55 @@ function CheckoutPageInner() {
         onPay={onPay}
         onChargeKrw={onChargeKrw}
       />
+      {pinOpen ? (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 120, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ width: '100%', maxWidth: 340, background: '#141210', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 8 }}>결제 PIN 확인</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 10 }}>6자리 결제 PIN을 입력해 주세요.</div>
+            <input
+              value={pinInput}
+              onChange={(e) => setPinInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              inputMode="numeric"
+              maxLength={6}
+              placeholder="••••••"
+              style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: '#0d0b09', color: '#fff', padding: '0 12px', marginBottom: 12, fontSize: 16, letterSpacing: 4 }}
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => setPinOpen(false)}
+                style={{ flex: 1, height: 40, borderRadius: 10, border: '1px solid rgba(255,255,255,0.16)', background: 'transparent', color: 'rgba(255,255,255,0.72)', cursor: 'pointer' }}
+              >
+                취소
+              </button>
+              <button
+                onClick={confirmPinAndPay}
+                disabled={pinInput.length !== 6 || pinChecking}
+                style={{ flex: 1, height: 40, borderRadius: 10, border: 'none', background: '#C9A96E', color: '#0d0b09', fontWeight: 700, cursor: 'pointer', opacity: pinInput.length !== 6 || pinChecking ? 0.6 : 1 }}
+              >
+                {pinChecking ? '확인 중...' : '확인'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {payModal && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'flex-end',zIndex:999}}>
+          <div style={{width:'100%',background:'#171310',borderRadius:'20px 20px 0 0',padding:'24px 20px 40px'}}>
+            <div style={{fontSize:16,fontWeight:700,color:'#e8e4dc',marginBottom:6}}>결제 방법 선택</div>
+            <div style={{fontSize:13,color:'#888',marginBottom:20}}>토스트 잔액이 부족해요</div>
+            <button onClick={() => { setPayModal(false); setEarnToast(true); setChargeSheetOpen(true) }}
+              style={{width:'100%',background:'#C9A96E',border:'none',borderRadius:12,padding:'14px 0',fontSize:15,fontWeight:800,color:'#000',marginBottom:10,cursor:'pointer',fontFamily:'inherit'}}>
+              충전하고 결제하기<br/>
+              <span style={{fontSize:11,fontWeight:400}}>토스트 충전 후 결제 · 구매금액의 5% 적립</span>
+            </button>
+            <button onClick={() => { setPayModal(false); setEarnToast(false); router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1`) }}
+              style={{width:'100%',background:'#1e1a14',border:'1px solid #2a2520',borderRadius:12,padding:'14px 0',fontSize:15,fontWeight:700,color:'#e8e4dc',cursor:'pointer',fontFamily:'inherit'}}>
+              지금 바로 결제하기<br/>
+              <span style={{fontSize:11,fontWeight:400,color:'#888'}}>토스트 없이 바로 결제</span>
+            </button>
+          </div>
+        </div>
+      )}
     </CustomerDashboardShell>
   )
 }
