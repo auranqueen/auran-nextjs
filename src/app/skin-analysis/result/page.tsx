@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic'
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import ProductClient from '@/app/products/product-client'
+import ProductClient from '@/app/(customer)/products/[id]/client'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
