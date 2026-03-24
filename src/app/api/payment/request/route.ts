@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
   const supabase = createClient()
   // const { data: { user } } = await supabase.auth.getUser()
  // if (!user) { // return NextResponse.json({ error: '로그인 필요' }, { status: 401 }) // }
-  const { data: me } = await supabase.from('users').select('id').eq('auth_id', '00000000-0000-0000-0000-000000000000').maybeSingle()
+  const { data: me } = await supabase.from('users').select('id').eq('auth_id', '00d1de32-44a8-4304-b88c-3ab61f0df09c').maybeSingle()
   if (!me?.id) return NextResponse.json({ error: '사용자 정보 없음' }, { status: 401 })
 
   const { product_id, quantity } = await req.json()
