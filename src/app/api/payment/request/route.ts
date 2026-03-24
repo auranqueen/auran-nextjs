@@ -20,15 +20,15 @@ export async function POST(req: NextRequest) {
   const totalAmount = price * quantity
 
   const { data: order } = await supabase
-    .from('orders')
-    .insert({
-      user_id: user.id,
-      total_amount: totalAmount,
-      status: 'pending',
-      items: [{ product_id, quantity, price }]
-    })
-    .select()
-    .single()
+  .from('orders')
+  .insert({
+    customer_id: user.id,
+    total_amount: totalAmount,
+    final_amount: totalAmount,
+    status: 'pending',
+  })
+  .select()
+  .single()
 
   if (!order) return NextResponse.json({ error: '주문 생성 실패' }, { status: 500 })
 
