@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 
   const { data: rows, error } = await auth.supabase
     .from('products')
-    .select('id,name,thumb_img,retail_price,status,created_at,approved_at,brands(name)')
+    .select('id,name,thumb_img,retail_price,status,created_at,approved_at')
     .eq('status', status)
     .order('created_at', { ascending: false })
     .limit(500)

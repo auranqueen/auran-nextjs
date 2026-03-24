@@ -185,7 +185,7 @@ export async function GET(req: NextRequest) {
     const s = productQ.trim().replace(/%/g, '').slice(0, 80)
     const { data: rows, error } = await auth.supabase
       .from('products')
-      .select('id,name,retail_price,brand_id,brands(name)')
+      .select('id,name,retail_price,brand_id')
       .eq('status', 'active')
       .ilike('name', `%${s}%`)
       .limit(30)

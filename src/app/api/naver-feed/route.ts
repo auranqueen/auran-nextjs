@@ -5,7 +5,7 @@ export async function GET() {
   const supabase = createServiceClient()
   const { data } = await supabase
     .from('products')
-    .select('id,name,retail_price,thumb_img,brands(name)')
+    .select('id,name,retail_price,thumb_img')
     .eq('status', 'active')
     .gt('retail_price', 0)
     .order('sales_count', { ascending: false })

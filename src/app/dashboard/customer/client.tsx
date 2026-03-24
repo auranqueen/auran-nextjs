@@ -408,10 +408,10 @@ export default function CustomerDashboardClient({
       ] = await Promise.all([
         supabase.from('admin_settings').select('*').eq('category', 'home_banner').order('sort_order', { ascending: true }),
         supabase.from('admin_settings').select('*').eq('category', 'home_curation').order('sort_order', { ascending: true }),
-        supabase.from('products').select('*, brands(name)').eq('status', 'active').limit(80),
+        supabase.from('products').select('*').eq('status', 'active').limit(80),
         supabase
           .from('products')
-          .select('id, name, thumb_img, retail_price, sale_price, timesale_ends_at, brands(name)')
+          .select('id, name, thumb_img, retail_price, sale_price, timesale_ends_at')
           .eq('is_timesale', true)
           .eq('status', 'active')
           .gt('timesale_ends_at', nowIso)
@@ -420,7 +420,7 @@ export default function CustomerDashboardClient({
         supabase.from('brands').select('id, name, logo_url').not('logo_url', 'is', null).limit(10),
         supabase
           .from('products')
-          .select('*, brands(name)')
+          .select('*')
           .eq('status', 'active')
           .gte('created_at', weekAgo)
           .order('created_at', { ascending: false })
@@ -493,7 +493,7 @@ export default function CustomerDashboardClient({
           if (!skinType) return { section, products: [] as any[] }
           const { data: prods } = await supabase
             .from('products')
-            .select('*, brands(name)')
+            .select('*')
             .contains('skin_types', [skinType])
             .eq('status', 'active')
             .limit(4)

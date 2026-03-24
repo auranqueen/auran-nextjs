@@ -27,7 +27,7 @@ export default function FlashSaleSettingsPage() {
       const query = q.trim()
       let req = supabase
         .from('products')
-        .select('id,name,retail_price,flash_sale_price,flash_sale_start,flash_sale_end,is_flash_sale,brands(name)')
+        .select('id,name,retail_price,flash_sale_price,flash_sale_start,flash_sale_end,is_flash_sale')
         .order('created_at', { ascending: false })
         .limit(30)
       if (query) req = req.ilike('name', `%${query}%`)

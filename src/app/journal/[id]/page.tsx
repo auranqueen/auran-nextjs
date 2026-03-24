@@ -78,7 +78,7 @@ export default async function JournalPublicPage({ params }: { params: { id: stri
   const { data: products } = productIds.length
     ? await supabase
       .from('products')
-      .select('id,name,thumb_img,retail_price,brands(name),status,skin_types')
+      .select('id,name,thumb_img,retail_price,status,skin_types')
       .in('id', productIds)
       .eq('status', 'active')
     : { data: [] as any[] }

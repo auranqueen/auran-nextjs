@@ -38,7 +38,7 @@ export default async function CustomerDashboard() {
       .limit(5),
     supabase
       .from('products')
-      .select('id,name,thumb_img,retail_price,brands(name)')
+      .select('id,name,thumb_img,retail_price')
       .eq('status', 'active')
       .gt('retail_price', 0)
       .order('created_at', { ascending: false })
