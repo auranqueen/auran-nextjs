@@ -3,10 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
   const supabase = createClient()
-  // const { data: { user } } = await supabase.auth.getUser()
- // if (!user) { // return NextResponse.json({ error: '로그인 필요' }, { status: 401 }) // }
-  const { data: me } = await supabase.from('users').select('id').eq('auth_id', '00d1de32-44a8-4304-b88c-3ab61f0df09c').maybeSingle()
-  if (!me?.id) return NextResponse.json({ error: '사용자 정보 없음' }, { status: 401 })
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
 
   const { product_id, quantity } = await req.json()
 
@@ -22,15 +20,15 @@ export async function POST(req: NextRequest) {
   const totalAmount = price * quantity
 
   const { data: order } = await supabase
-  .from('orders')
-  .insert({
-    customer_id: '00000000-0000-0000-0000-000000000000',
-    total_amount: totalAmount,
-    final_amount: totalAmount,
-    status: 'pending',
-  })
-  .select()
-  .single()
+    .from('orders')
+    .insert({
+      customer_id: user.id,
+      total_amount: totalAmount,
+      final_amount: totalAmount,
+      status: 'pending',
+    })
+    .select()
+    .single()
 
   if (!order) return NextResponse.json({ error: '주문 생성 실패' }, { status: 500 })
 
@@ -51,9 +49,5 @@ export async function POST(req: NextRequest) {
   const response = await fetch(`https://www.payapp.kr/kspay/webpayment.do?${params}`)
   const text = await response.text()
 
-
-
   return NextResponse.json({ payUrl: text, orderId: order.id })
 }
-
-// redeploy trigger
