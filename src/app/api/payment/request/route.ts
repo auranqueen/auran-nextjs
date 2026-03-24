@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   const { data: order } = await supabase
   .from('orders')
   .insert({
-    customer_id: '00000000-0000-0000-0000-000000000000'
+    customer_id: '00000000-0000-0000-0000-000000000000',
     total_amount: totalAmount,
     final_amount: totalAmount,
     status: 'pending',
