@@ -237,7 +237,7 @@ function CheckoutPageInner() {
       setChargeSheetOpen(true)
       return
     }
-    router.push('/payment/payapp')
+    router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&amount=${subtotal}&qty=1`)
   }
 
   const onChargeKrw = async (krw: number) => {
