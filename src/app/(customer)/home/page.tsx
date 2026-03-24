@@ -691,7 +691,7 @@ export default function CustomerHomePage() {
         </div>
         {/* TODO: refill_alerts 테이블에서 user_id 기준 조회 */}
         {[{ icon: '🧴', name: 'CIVASAN MESS CREAM', pct: 20, id: '9957100e-1a42-4466-869a-cdcde14b6fcc' }, { icon: '🌿', name: 'GERNETIC 바이오 세럼', pct: 35 }].map((item, i) => (
-          <div key={i} onClick={() => item.id && router.push(`/products/${item.id}`)} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: i === 0 ? '8px' : 0 }}>
+          <div key={i} onClick={() => router.push(`/products/${item.id}`)} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: i === 0 ? '8px' : 0 }}>
             <span style={{ fontSize: '22px' }}>{item.icon}</span>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: '12px', fontWeight: 400, marginBottom: '3px' }}>{item.name}</div>
