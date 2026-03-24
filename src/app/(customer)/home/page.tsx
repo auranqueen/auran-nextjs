@@ -101,7 +101,7 @@ export default function CustomerHomePage() {
     // 루틴 아래 추천 제품: 태그 단순 매칭 (확장 시 점수 기반으로 교체 가능)
     supabase
       .from('products')
-      .select('id,name,retail_price,thumb_img,storage_thumb_url,brands(name),tag,status')
+      .select('id,name,retail_price,thumb_img,storage_thumb_url,tag,status')
       .or('tag.ilike.%retinol%,tag.ilike.%niacinamide%,tag.ilike.%collagen%,tag.ilike.%peptide%,tag.ilike.%ceramide%')
       .eq('status', 'active')
       .limit(8)
