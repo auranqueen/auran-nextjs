@@ -132,7 +132,7 @@ function CheckoutPageInner() {
       if (productIds.length > 0) {
         const { data: rows } = await supabase
           .from('products')
-          .select('id,name,thumb_img,retail_price,brand_id,brands(name)')
+          .select('id,name,thumb_img,retail_price,brand_id')
           .in('id', productIds)
           .eq('status', 'active')
           .gt('retail_price', 0)
