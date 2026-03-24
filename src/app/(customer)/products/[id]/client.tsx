@@ -38,6 +38,20 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [qty, setQty] = useState(1)
   const [activeThumb, setActiveThumb] = useState(0)
 
+  const handleBuy = async () => {
+    const res = await fetch('/api/payment/request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: product.id, quantity: qty })
+    })
+    const data = await res.json()
+    if (data.payUrl) {
+      window.location.href = data.payUrl
+    } else {
+      alert('결제 요청 실패')
+    }
+  }
+
   const brand = product.brand ?? 'AURAN'
   const origin = product.origin ?? ''
   const name = product.name ?? '제품명'
@@ -260,7 +274,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       <div style={{ display: 'table', width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse' }}>
         <button style={{ display: 'table-cell', width: '25%', background: '#1e1a14', border: 'none', borderRight: '1px solid #2a2520', color: '#aaa', fontSize: 13, fontWeight: 600, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', verticalAlign: 'middle' }}>🛒 담기</button>
         <button style={{ display: 'table-cell', width: '25%', background: '#241e0e', border: 'none', borderRight: '1px solid #3a3020', color: GOLD, fontSize: 13, fontWeight: 600, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', verticalAlign: 'middle' }}>🎁 선물하기</button>
-        <button style={{ display: 'table-cell', width: '50%', background: `linear-gradient(135deg,${GOLD},#a07840)`, border: 'none', color: '#000', fontSize: 16, fontWeight: 800, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', verticalAlign: 'middle' }}>지금 구매</button>
+        <button onClick={handleBuy} style={{ display: 'table-cell', width: '50%', background: `linear-gradient(135deg,${GOLD},#a07840)`, border: 'none', color: '#000', fontSize: 16, fontWeight: 800, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', verticalAlign: 'middle' }}>지금 구매</button>
       </div>
     </div>
   )
