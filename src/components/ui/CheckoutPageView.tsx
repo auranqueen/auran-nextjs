@@ -183,7 +183,7 @@ export default function CheckoutPageView({
               })}
               {applicableCheckoutCoupons.length === 0 ? (
                 <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.5 }}>
-                  이 주문 금액·상품 조건에 맞는 사용 가능 쿠폰이 없어요. (만료·최소주문·적용범위)
+                  이 주문 금액·상품 조건에 맞는 사용 가능 쿠폰이 없어요.
                 </div>
               ) : null}
               {couponDiscount > 0 && selectedUserCouponId ? (
@@ -192,18 +192,9 @@ export default function CheckoutPageView({
               <button
                 type="button"
                 onClick={() => setCouponSheetOpen(true)}
-                style={{
-                  marginTop: 8,
-                  fontSize: 11,
-                  color: 'var(--text3)',
-                  background: 'none',
-                  border: 'none',
-                  textDecoration: 'underline',
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
+                style={{ marginTop: 8, fontSize: 11, color: 'var(--text3)', background: 'none', border: 'none', textDecoration: 'underline', cursor: 'pointer', padding: 0 }}
               >
-                전체 보유 쿠폰 목록 (시트)
+                전체 보유 쿠폰 목록
               </button>
             </div>
 
@@ -211,27 +202,9 @@ export default function CheckoutPageView({
 
             <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)' }}>
               <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 10 }}>배송 정보</div>
-              <input
-                type="text"
-                placeholder="받는 분 이름"
-                value={recipientName}
-                onChange={e => setRecipientName(e.target.value)}
-                style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }}
-              />
-              <input
-                type="tel"
-                placeholder="연락처"
-                value={recipientPhone}
-                onChange={e => setRecipientPhone(e.target.value)}
-                style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }}
-              />
-              <textarea
-                placeholder="주소"
-                value={address}
-                onChange={e => setAddress(e.target.value)}
-                rows={2}
-                style={{ width: '100%', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff', resize: 'none' }}
-              />
+              <input type="text" placeholder="받는 분 이름" value={recipientName} onChange={e => setRecipientName(e.target.value)} style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }} />
+              <input type="tel" placeholder="연락처" value={recipientPhone} onChange={e => setRecipientPhone(e.target.value)} style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }} />
+              <textarea placeholder="주소" value={address} onChange={e => setAddress(e.target.value)} rows={2} style={{ width: '100%', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff', resize: 'none' }} />
             </div>
 
             <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)' }}>
@@ -273,34 +246,23 @@ export default function CheckoutPageView({
                 포인트 사용 (최대 {maxPointRate}%)
               </label>
               {usePoints && (
-                <input
-                  type="number"
-                  min={0}
-                  max={maxPointsUsable}
-                  value={pointInput}
-                  onChange={e => setPointInput(Math.max(0, Math.min(maxPointsUsable, Number(e.target.value || 0))))}
-                  style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }}
-                />
+                <input type="number" min={0} max={maxPointsUsable} value={pointInput} onChange={e => setPointInput(Math.max(0, Math.min(maxPointsUsable, Number(e.target.value || 0))))} style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }} />
               )}
               <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--text3)' }}>
                 보유: {points.toLocaleString()}P · 최대 ₩{maxPointsUsable.toLocaleString()}
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.08)', color: needCharge > 0 ? '#e57373' : '#fff', fontSize: 14, fontWeight: 900 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: 14, fontWeight: 900, marginBottom: 10 }}>
                 <span>최종 결제금액</span>
-                <span>₩{needCharge.toLocaleString()}</span>
+                <span>₩{subtotal.toLocaleString()}</span>
               </div>
-              {showChargeOption && needCharge > 0 && (
-                <button onClick={() => setChargeSheetOpen(true)} style={{ marginTop: 10, width: '100%', height: 42, borderRadius: 10, border: 'none', background: '#c9a84c', color: '#111', fontWeight: 900 }}>
-                  ⚡ 토스트 충전 후 결제
-                </button>
-              )}
-              {needCharge > 0 && (
-                <button onClick={() => onPay(false)} style={{ marginTop: 8, width: '100%', height: 40, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: 'var(--text3)', fontWeight: 800 }}>
-                  토스트 충전 안함 · 부분결제 불가
-                </button>
-              )}
-              <button onClick={() => onPay(true)} disabled={paying || needCharge > 0} style={{ marginTop: 10, width: '100%', height: 42, borderRadius: 10, border: 'none', background: needCharge > 0 ? '#55606f' : '#c9a84c', color: needCharge > 0 ? '#c8d0db' : '#111', fontWeight: 900 }}>
-                {paying ? '결제 준비 중...' : `결제하기 · ₩${needCharge.toLocaleString()}`}
+
+              {/* 결제 버튼 */}
+              <button
+                onClick={() => onPay(true)}
+                disabled={paying}
+                style={{ width: '100%', height: 48, borderRadius: 10, border: 'none', background: '#C9A96E', color: '#000', fontWeight: 900, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                {paying ? '결제 준비 중...' : `결제하기 · ₩${subtotal.toLocaleString()}`}
               </button>
             </div>
             <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text3)' }}>{`🍞 ${Math.floor(balance / Math.max(1, toastRate)).toLocaleString()}T 보유 (1T=${toastRate}원)`}</div>
@@ -309,18 +271,10 @@ export default function CheckoutPageView({
       </div>
       {chargeSheetOpen && (
         <div onClick={() => setChargeSheetOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 130 }}>
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 0, width: '100%', maxWidth: 480, background: '#11161b', borderTopLeftRadius: 18, borderTopRightRadius: 18, borderTop: '1px solid var(--border)', padding: 14 }}
-          >
+          <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 0, width: '100%', maxWidth: 480, background: '#11161b', borderTopLeftRadius: 18, borderTopRightRadius: 18, borderTop: '1px solid var(--border)', padding: 14 }}>
             <div style={{ fontSize: 14, color: '#fff', fontWeight: 800, marginBottom: 8 }}>토스트 충전 선택</div>
             {[{ t: 100, p: 10000 }, { t: 300, p: 30000, popular: true }, { t: 500, p: 50000 }, { t: 1000, p: 100000, bonus: 50 }].map(pkg => (
-              <button
-                key={pkg.t}
-                type="button"
-                onClick={() => onChargeKrw(pkg.p)}
-                style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontWeight: 800, marginTop: 8, textAlign: 'left', padding: '0 12px' }}
-              >
+              <button key={pkg.t} type="button" onClick={() => onChargeKrw(pkg.p)} style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontWeight: 800, marginTop: 8, textAlign: 'left', padding: '0 12px' }}>
                 🍞 {pkg.t.toLocaleString()}T ₩{pkg.p.toLocaleString()} {pkg.popular ? '[인기 🔥]' : ''} {pkg.bonus ? `(+${pkg.bonus}T 보너스)` : ''}
               </button>
             ))}
@@ -329,56 +283,18 @@ export default function CheckoutPageView({
       )}
       {couponSheetOpen && (
         <div onClick={() => setCouponSheetOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 131 }}>
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              position: 'absolute',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              bottom: 0,
-              width: '100%',
-              maxWidth: 480,
-              maxHeight: '72vh',
-              overflow: 'auto',
-              background: '#11161b',
-              borderTopLeftRadius: 18,
-              borderTopRightRadius: 18,
-              borderTop: '1px solid var(--border)',
-              padding: 14,
-            }}
-          >
+          <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 0, width: '100%', maxWidth: 480, maxHeight: '72vh', overflow: 'auto', background: '#11161b', borderTopLeftRadius: 18, borderTopRightRadius: 18, borderTop: '1px solid var(--border)', padding: 14 }}>
             <div style={{ fontSize: 15, color: '#fff', fontWeight: 900, marginBottom: 10 }}>쿠폰 선택</div>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedUserCouponId(null)
-                setCouponSheetOpen(false)
-              }}
-              style={{ width: '100%', padding: 10, marginBottom: 8, borderRadius: 10, border: '1px dashed var(--border)', background: 'transparent', color: 'var(--text3)', fontSize: 12 }}
-            >
+            <button type="button" onClick={() => { setSelectedUserCouponId(null); setCouponSheetOpen(false) }} style={{ width: '100%', padding: 10, marginBottom: 8, borderRadius: 10, border: '1px dashed var(--border)', background: 'transparent', color: 'var(--text3)', fontSize: 12 }}>
               쿠폰 적용 안 함
             </button>
             {userCoupons.map(uc => {
               const c = uc.coupons
-              if (!c) {
-                return (
-                  <div
-                    key={uc.id}
-                    style={{
-                      width: '100%',
-                      padding: 12,
-                      marginBottom: 8,
-                      borderRadius: 12,
-                      border: '1px solid var(--border)',
-                      background: 'rgba(0,0,0,0.2)',
-                      color: 'var(--text3)',
-                      fontSize: 12,
-                    }}
-                  >
-                    쿠폰 정보를 불러오지 못했어요. 페이지를 새로고침 해 주세요.
-                  </div>
-                )
-              }
+              if (!c) return (
+                <div key={uc.id} style={{ width: '100%', padding: 12, marginBottom: 8, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(0,0,0,0.2)', color: 'var(--text3)', fontSize: 12 }}>
+                  쿠폰 정보를 불러오지 못했어요.
+                </div>
+              )
               const expired = isCouponExpiredForUser({ status: uc.status, expired_at: uc.expired_at }, c)
               const applicable = !!authUid && !expired && isCouponApplicableForOrder(c, orderLines, subtotal, authUid)
               const disc = applicable ? computeCouponDiscount(subtotal, c, { maxPercent: maxCouponPct }) : 0
@@ -390,38 +306,15 @@ export default function CheckoutPageView({
               const dv = c.discount_value != null ? Number(c.discount_value) : dt === 'rate' ? Number(c.discount_rate || 0) : Number(c.discount_amount || 0)
               const discLabel = dt === 'rate' ? `${dv}% 할인` : `₩${dv.toLocaleString()} 할인`
               return (
-                <button
-                  key={uc.id}
-                  type="button"
-                  disabled={!ok}
-                  onClick={() => {
-                    if (!ok) return
-                    setSelectedUserCouponId(uc.id)
-                    setCouponSheetOpen(false)
-                  }}
-                  style={{
-                    width: '100%',
-                    textAlign: 'left',
-                    padding: 12,
-                    marginBottom: 8,
-                    borderRadius: 12,
-                    border: sel ? '1px solid rgba(201,168,76,0.6)' : '1px solid var(--border)',
-                    background: ok ? 'rgba(201,168,76,0.08)' : 'rgba(0,0,0,0.2)',
-                    color: ok ? '#fff' : 'rgba(255,255,255,0.35)',
-                    cursor: ok ? 'pointer' : 'not-allowed',
-                  }}
-                >
+                <button key={uc.id} type="button" disabled={!ok} onClick={() => { if (!ok) return; setSelectedUserCouponId(uc.id); setCouponSheetOpen(false) }}
+                  style={{ width: '100%', textAlign: 'left', padding: 12, marginBottom: 8, borderRadius: 12, border: sel ? '1px solid rgba(201,168,76,0.6)' : '1px solid var(--border)', background: ok ? 'rgba(201,168,76,0.08)' : 'rgba(0,0,0,0.2)', color: ok ? '#fff' : 'rgba(255,255,255,0.35)', cursor: ok ? 'pointer' : 'not-allowed' }}>
                   <div style={{ fontWeight: 900, fontSize: 13 }}>{c.name}</div>
                   <div style={{ fontSize: 12, marginTop: 4, color: ok ? 'var(--gold)' : 'inherit' }}>{discLabel}</div>
-                  {!ok && (
-                    <div style={{ fontSize: 11, marginTop: 6, color: '#888' }}>
-                      {expired ? '기간 만료' : subFail ? `최소 주문 ₩${minO.toLocaleString()} 미충족` : '이 상품에 적용 불가'}
-                    </div>
-                  )}
+                  {!ok && <div style={{ fontSize: 11, marginTop: 6, color: '#888' }}>{expired ? '기간 만료' : subFail ? `최소 주문 ₩${minO.toLocaleString()} 미충족` : '이 상품에 적용 불가'}</div>}
                 </button>
               )
             })}
-            {userCoupons.length === 0 && <div style={{ fontSize: 12, color: 'var(--text3)' }}>사용 가능한 쿠폰이 없어요. 나 → 쿠폰함을 확인해 주세요.</div>}
+            {userCoupons.length === 0 && <div style={{ fontSize: 12, color: 'var(--text3)' }}>사용 가능한 쿠폰이 없어요.</div>}
           </div>
         </div>
       )}
