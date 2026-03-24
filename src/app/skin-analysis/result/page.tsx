@@ -65,7 +65,7 @@ function SkinAnalysisResultPageContent() {
   const fetchRecommendedProducts = async () => {
     let query = supabase
       .from('products')
-      .select('*, brands(name)')
+      .select('*')
       .eq('skin_type', skinType)
       .limit(3)
 
