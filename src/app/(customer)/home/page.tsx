@@ -106,15 +106,14 @@ export default function CustomerHomePage() {
       .eq('status', 'active')
       .limit(8)
       .then(({ data }) => {
-        if (data && data.length > 0) {
+        if (data && data.length > 0)
           setProducts(
             data.map((p: any) => ({
               ...p,
-              price: p.retail_price,
-              brand: p.brands?.name || '',
+              price: p.retail_price ?? p.original_price ?? 0,
+              brand: p.brand_name ?? '',
             }))
           )
-        }
       })
     // TODO: time_sales 테이블
     supabase.from('time_sales').select('*, product:products(*)').eq('is_active', true).then(({ data }) => {
