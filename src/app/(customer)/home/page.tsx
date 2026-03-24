@@ -102,7 +102,7 @@ export default function CustomerHomePage() {
     supabase
       .from('products')
       .select('id,name,retail_price,thumb_img,storage_thumb_url,tag,status')
-      .or('tag.ilike.%retinol%,tag.ilike.%niacinamide%,tag.ilike.%collagen%,tag.ilike.%peptide%,tag.ilike.%ceramide%')
+  
       .eq('status', 'active')
       .limit(8)
       .then(({ data }) => {
