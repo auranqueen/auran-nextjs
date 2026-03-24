@@ -1,8 +1,8 @@
 'use client'
-import { useEffect } from 'react'
+import { useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
-export default function PayAppPage() {
+function PayAppInner() {
   const router = useRouter()
   const params = useSearchParams()
 
@@ -51,5 +51,21 @@ export default function PayAppPage() {
       <div style={{ fontSize: 16, fontWeight: 600 }}>결제창으로 이동 중...</div>
       <div style={{ fontSize: 13, color: '#888' }}>잠시만 기다려주세요</div>
     </div>
+  )
+}
+
+export default function PayAppPage() {
+  return (
+    <Suspense fallback={
+      <div style={{
+        background: '#0d0b09', color: '#e8e4dc',
+        minHeight: '100vh', display: 'flex',
+        alignItems: 'center', justifyContent: 'center'
+      }}>
+        <div>로딩 중...</div>
+      </div>
+    }>
+      <PayAppInner />
+    </Suspense>
   )
 }
