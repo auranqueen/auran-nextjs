@@ -82,6 +82,7 @@ export default function CustomerHomePage() {
   const [concerns, setConcerns] = useState<any[]>([])
   const [products, setProducts] = useState<any[]>([])
   const [timeSales, setTimeSales] = useState<any[]>([])
+  const [groupBuys, setGroupBuys] = useState<any[]>([])
   const [salons, setSalons] = useState<any[]>([])
   const [newProducts, setNewProducts] = useState<any[]>([])
   const [brands, setBrands] = useState<any[]>([])
@@ -101,8 +102,12 @@ export default function CustomerHomePage() {
       if (data && data.length > 0) setProducts(data)
     })
     // TODO: time_sales 테이블
-    supabase.from('time_sales').select('*, product:products(*)').eq('is_active', true).then(({ data }) => {
+    supabase.from('time_sales').select('*, product:products(id, name, retail_price, thumb_img)').eq('is_active', true).then(({ data }) => {
       if (data && data.length > 0) setTimeSales(data)
+    })
+    // TODO: group_buys 테이블
+    supabase.from('group_buys').select('*, product:products(id, name, retail_price, thumb_img)').then(({ data }) => {
+      if (data && data.length > 0) setGroupBuys(data)
     })
     // TODO: salons 테이블 (위치 기반 정렬)
     supabase.from('salons').select('*').eq('is_active', true).limit(3).then(({ data }) => {
@@ -139,6 +144,7 @@ export default function CustomerHomePage() {
   const concernList = concerns.length > 0 ? concerns : FALLBACK_CONCERNS
   const productList = products.length > 0 ? products : FALLBACK_PRODUCTS
   const saleList = timeSales.length > 0 ? timeSales : FALLBACK_SALES
+  const groupBuyList = groupBuys.length > 0 ? groupBuys : FALLBACK_SALES
   const salonList = salons.length > 0 ? salons : FALLBACK_SALONS
   const newList = newProducts.length > 0 ? newProducts : FALLBACK_NEW
   const brandList = brands.length > 0 ? brands : FALLBACK_BRANDS
@@ -609,7 +615,7 @@ export default function CustomerHomePage() {
               <div key={i} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
                   <div style={{
-                    width: '80px',
+                    width: '120px',
                     height: '100px',
                     overflow: 'hidden',
                     borderRadius: '8px',
@@ -617,7 +623,7 @@ export default function CustomerHomePage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '28px', flexShrink: 0, position: 'relative',
                   }}>
-                    {((item.product?.thumb_img || item.thumb_img) ? <img src={item.product?.thumb_img || item.thumb_img} alt={item.product?.name || item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 }} /> : (item.icon || '🧴'))}
+                    {(item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (item.icon || '🧴'))}
                     <div style={{
                       position: 'absolute', top: '-4px', right: '-4px',
                       background: '#E04030', borderRadius: '20px', padding: '2px 6px',
@@ -629,14 +635,14 @@ export default function CustomerHomePage() {
                       {item.brand || item.product?.brand}
                     </div>
                     <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>
-                      {item.name || item.product?.name}
+                      {item.product?.name}
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '5px' }}>
                       <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
-                        {(item.product?.retail_price ?? item.orig ?? item.original_price)?.toLocaleString()}원
+                        {(item.orig ?? item.original_price)?.toLocaleString()}원
                       </span>
                       <span style={{ fontSize: '15px', fontWeight: 400, color: '#E07060' }}>
-                        {(item.product?.retail_price ?? item.sale ?? item.sale_price)?.toLocaleString()}원
+                        {item.product?.retail_price?.toLocaleString()}원
                       </span>
                     </div>
                     {/* 개별 타이머 */}
@@ -669,7 +675,7 @@ export default function CustomerHomePage() {
         {/* 공동구매 */}
         {saleTab === 'group' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {saleList.slice(0, 3).map((item: any, i: number) => (
+            {groupBuyList.slice(0, 3).map((item: any, i: number) => (
               <div key={i} style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
                 <div style={{ background: 'linear-gradient(135deg,rgba(60,80,200,0.15),rgba(80,120,240,0.1))', padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '10px', color: 'rgba(120,160,255,0.9)', fontFamily: 'monospace' }}>👥 공동구매 · 목표 달성시 발송</span>
@@ -679,18 +685,18 @@ export default function CustomerHomePage() {
                   <div style={{ height: '100%', width: '63%', background: 'linear-gradient(90deg,#4060C0,#8090E0)' }} />
                 </div>
                 <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
-                  <div style={{ width: '80px', height: '100px', borderRadius: '8px', overflow: 'hidden', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', flexShrink: 0 }}>
-                    {((item.product?.thumb_img || item.thumb_img) ? <img src={item.product?.thumb_img || item.thumb_img} alt={item.product?.name || item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 }} /> : (item.icon || '🧴'))}
+                  <div style={{ width: '120px', height: '100px', borderRadius: '8px', overflow: 'hidden', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', flexShrink: 0 }}>
+                    {(item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (item.icon || '🧴'))}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.brand || item.product?.brand}</div>
-                    <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>{item.name || item.product?.name}</div>
+                    <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>{item.product?.name}</div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
-                        {(item.product?.retail_price ?? item.orig ?? item.original_price)?.toLocaleString()}원
+                        {(item.orig ?? item.original_price)?.toLocaleString()}원
                       </span>
                       <span style={{ fontSize: '15px', color: 'rgba(120,160,255,0.9)' }}>
-                        {(item.product?.retail_price ?? item.sale ?? item.sale_price)?.toLocaleString()}원
+                        {item.product?.retail_price?.toLocaleString()}원
                       </span>
                     </div>
                   </div>
