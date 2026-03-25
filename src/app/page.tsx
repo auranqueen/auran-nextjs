@@ -610,14 +610,14 @@ export default function CustomerHomePage() {
                 <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
                   <div style={{
                     width: '80px',
-                    height: '80px',
+                    height: '100px',
                     overflow: 'hidden',
                     borderRadius: '8px',
                     background: 'linear-gradient(135deg,#1a1510,#2a2015)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '28px', flexShrink: 0, position: 'relative',
                   }}>
-                    {(item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (item.icon || '🧴'))}
+                    {((item.product?.thumb_img || item.thumb_img) ? <img src={item.product?.thumb_img || item.thumb_img} alt={item.product?.name || item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 }} /> : (item.icon || '🧴'))}
                     <div style={{
                       position: 'absolute', top: '-4px', right: '-4px',
                       background: '#E04030', borderRadius: '20px', padding: '2px 6px',
@@ -679,8 +679,8 @@ export default function CustomerHomePage() {
                   <div style={{ height: '100%', width: '63%', background: 'linear-gradient(90deg,#4060C0,#8090E0)' }} />
                 </div>
                 <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
-                  <div style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', flexShrink: 0 }}>
-                    {item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (item.icon || '🧴')}
+                  <div style={{ width: '80px', height: '100px', borderRadius: '8px', overflow: 'hidden', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', flexShrink: 0 }}>
+                    {((item.product?.thumb_img || item.thumb_img) ? <img src={item.product?.thumb_img || item.thumb_img} alt={item.product?.name || item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px', flexShrink: 0 }} /> : (item.icon || '🧴'))}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.brand || item.product?.brand}</div>
