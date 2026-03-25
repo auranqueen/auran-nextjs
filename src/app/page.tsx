@@ -113,7 +113,7 @@ export default function CustomerHomePage() {
       if (data && data.length > 0) setNewProducts(data)
     })
     // TODO: brands 테이블
-    supabase.from('brands').select('*').eq('is_active', true).limit(7).then(({ data }) => {
+    supabase.from('brands').select('*').limit(7).then(({ data }) => {
       if (data && data.length > 0) setBrands(data)
     })
   }, [])
