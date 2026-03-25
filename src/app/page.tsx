@@ -93,20 +93,22 @@ export default function CustomerHomePage() {
     // TODO: user_daily_tracker 테이블에서 오늘 데이터 조회
     const tasks: Promise<any>[] = []
 
-    tasks.push(supabase.auth.getUser().then(({ data }) => {
+    const tAuth = supabase.auth.getUser().then(({ data }) => {
       const name = data.user?.user_metadata?.full_name || data.user?.user_metadata?.name
       if (name) setUserName(name)
-    }))
+    })
+    tasks.push(tAuth)
     // TODO: skin_concerns 테이블
     supabase.from('skin_concerns').select('*').order('sort_order').then(({ data }) => {
       if (data && data.length > 0) setConcerns(data)
     })
     // TODO: products 테이블 (AI 추천 기준)
-    tasks.push(supabase.from('products').select('*').eq('is_active', true).limit(8).then(({ data }) => {
+    const tProducts = supabase.from('products').select('*').eq('is_active', true).limit(8).then(({ data }) => {
       if (data && data.length > 0) setProducts(data)
-    }))
+    })
+    tasks.push(tProducts)
     // TODO: time_sales 테이블
-    tasks.push(supabase.from('time_sales').select('*, product:products(id, name, retail_price, thumb_img)').eq('is_active', true).then(({ data }) => {
+    const tTimeSales = supabase.from('time_sales').select('*, product:products(id, name, retail_price, thumb_img)').eq('is_active', true).then(({ data }) => {
       if (data && data.length > 0) {
         setTimeSales(data)
       } else {
@@ -123,9 +125,10 @@ export default function CustomerHomePage() {
           }
         })
       }
-    }))
+    })
+    tasks.push(tTimeSales)
     // TODO: group_buys 테이블
-    tasks.push(supabase.from('group_buys').select('*, product:products(id, name, retail_price, thumb_img)').then(({ data }) => {
+    const tGroupBuys = supabase.from('group_buys').select('*, product:products(id, name, retail_price, thumb_img)').then(({ data }) => {
       if (data && data.length > 0) {
         setGroupBuys(data)
       } else {
@@ -142,19 +145,23 @@ export default function CustomerHomePage() {
           }
         })
       }
-    }))
+    })
+    tasks.push(tGroupBuys)
     // TODO: salons 테이블 (위치 기반 정렬)
-    tasks.push(supabase.from('salons').select('*').eq('is_active', true).limit(3).then(({ data }) => {
+    const tSalons = supabase.from('salons').select('*').eq('is_active', true).limit(3).then(({ data }) => {
       if (data && data.length > 0) setSalons(data)
-    }))
+    })
+    tasks.push(tSalons)
     // TODO: products is_new 컬럼
-    tasks.push(supabase.from('products').select('*').eq('is_new', true).limit(6).then(({ data }) => {
+    const tNew = supabase.from('products').select('*').eq('is_new', true).limit(6).then(({ data }) => {
       if (data && data.length > 0) setNewProducts(data)
-    }))
+    })
+    tasks.push(tNew)
     // TODO: brands 테이블
-    tasks.push(supabase.from('brands').select('*').limit(7).then(({ data }) => {
+    const tBrands = supabase.from('brands').select('*').limit(7).then(({ data }) => {
       if (data && data.length > 0) setBrands(data)
-    }))
+    })
+    tasks.push(tBrands)
 
     Promise.allSettled(tasks).finally(() => setLoading(false))
   }, [])
