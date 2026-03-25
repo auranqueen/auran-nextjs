@@ -63,10 +63,45 @@ export async function POST(req: NextRequest) {
 
   console.log('PayApp 호출 시작', params.toString())
   // fetch 호출
-  const queryString = params
-    .toString()
-    .replaceAll(`linkkey=${process.env.PAYAPP_LINKKEY!}`, `linkkey=${encodeURIComponent(process.env.PAYAPP_LINKKEY!)}`)
-    .replaceAll(`linkval=${process.env.PAYAPP_LINKVAL!}`, `linkval=${encodeURIComponent(process.env.PAYAPP_LINKVAL!)}`)
-  const payUrl = `https://www.payapp.kr/kspay/webpayment.do?${queryString}`
-  return NextResponse.json({ payUrl, orderId: order.id })
+  const postdata: Record<string, string> = {
+    cmd: 'payrequest',
+    userid: process.env.PAYAPP_USER_ID!,
+    shopname: process.env.PAYAPP_SHOPNAME!,
+    linkkey: process.env.PAYAPP_LINKKEY!,
+    linkval: process.env.PAYAPP_LINKVAL!,
+    goodname: product.name,
+    price: String(Math.trunc(totalAmount)),
+    recvphone: '',
+    memo: 'AURAN order',
+    smsuse: 'n',
+    reqaddr: '0',
+    feedbackurl: process.env.PAYAPP_FEEDBACK_URL!,
+    returnurl,
+    checkretry: 'y',
+    skip_cstpage: 'y',
+    var1: order.id,
+    var2: order.id,
+    charset: 'utf-8',
+  }
+
+  const response = await fetch('https://api.payapp.kr/oapi/apiLoad.html', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8' },
+    body: new URLSearchParams(postdata).toString(),
+    cache: 'no-store',
+  })
+
+  const text = await response.text()
+
+  const parsed: Record<string, string> = {}
+  const qs = new URLSearchParams((text || '').trim())
+  for (const [k, v] of qs.entries()) {
+    parsed[k] = v
+  }
+
+  if (parsed.state !== '1' || !parsed.mul_no || !parsed.payurl) {
+    return NextResponse.json({ ok: false, error: parsed.errorMessage || 'payapp_request_failed', raw: text }, { status: 502 })
+  }
+
+  return NextResponse.json({ payUrl: parsed.payurl, orderId: order.id })
 }
