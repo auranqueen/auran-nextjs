@@ -9,11 +9,14 @@ export async function POST(req: NextRequest) {
 
   const { product_id, quantity } = await req.json()
 
-  const { data: product } = await supabase
+  const { data: product, error } = await supabase
     .from('products')
     .select('id, name, retail_price, original_price')
     .eq('id', product_id)
     .single()
+
+  console.log('product:', product)
+  console.log('error:', error)
 
   if (!product) return NextResponse.json({ error: '제품 없음' }, { status: 404 })
 
