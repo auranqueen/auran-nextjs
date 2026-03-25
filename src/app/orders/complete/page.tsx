@@ -17,14 +17,14 @@ export default function OrderCompletePage() {
         1~3 영업일 내 배송 출발 예정이에요
       </div>
       <div style={{display:'flex',gap:8}}>
-        <a href="/home" style={{
+        <a href="/" style={{
           padding:'14px 24px',
           background:'rgba(255,255,255,0.05)',
           border:'1px solid rgba(255,255,255,0.1)',
           borderRadius:10,color:'rgba(255,255,255,0.6)',
           fontSize:13,textDecoration:'none'
         }}>홈으로</a>
-        <a href="/dashboard/customer/products" style={{
+        <a href="/" style={{
           padding:'14px 24px',
           background:'#C9A96E',
           border:'none',
