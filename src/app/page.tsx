@@ -86,27 +86,31 @@ export default function CustomerHomePage() {
   const [salons, setSalons] = useState<any[]>([])
   const [newProducts, setNewProducts] = useState<any[]>([])
   const [brands, setBrands] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    setLoading(true)
     // TODO: user_daily_tracker 테이블에서 오늘 데이터 조회
-    supabase.auth.getUser().then(({ data }) => {
+    const tasks: Promise<any>[] = []
+
+    tasks.push(supabase.auth.getUser().then(({ data }) => {
       const name = data.user?.user_metadata?.full_name || data.user?.user_metadata?.name
       if (name) setUserName(name)
-    })
+    }))
     // TODO: skin_concerns 테이블
-    supabase.from('skin_concerns').select('*').order('sort_order').then(({ data }) => {
+    tasks.push(supabase.from('skin_concerns').select('*').order('sort_order').then(({ data }) => {
       if (data && data.length > 0) setConcerns(data)
-    })
+    }))
     // TODO: products 테이블 (AI 추천 기준)
-    supabase.from('products').select('*').eq('is_active', true).limit(8).then(({ data }) => {
+    tasks.push(supabase.from('products').select('*').eq('is_active', true).limit(8).then(({ data }) => {
       if (data && data.length > 0) setProducts(data)
-    })
+    }))
     // TODO: time_sales 테이블
-    supabase.from('time_sales').select('*, product:products(id, name, retail_price, thumb_img)').eq('is_active', true).then(({ data }) => {
+    tasks.push(supabase.from('time_sales').select('*, product:products(id, name, retail_price, thumb_img)').eq('is_active', true).then(({ data }) => {
       if (data && data.length > 0) {
         setTimeSales(data)
       } else {
-        supabase.from('products').select('*').gt('retail_price', 0).limit(3).then(({ data: ps }) => {
+        return supabase.from('products').select('*').gt('retail_price', 0).limit(3).then(({ data: ps }) => {
           if (ps && ps.length > 0) {
             const endTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
             setTimeSales(ps.map((p: any) => ({
@@ -119,13 +123,13 @@ export default function CustomerHomePage() {
           }
         })
       }
-    })
+    }))
     // TODO: group_buys 테이블
-    supabase.from('group_buys').select('*, product:products(id, name, retail_price, thumb_img)').then(({ data }) => {
+    tasks.push(supabase.from('group_buys').select('*, product:products(id, name, retail_price, thumb_img)').then(({ data }) => {
       if (data && data.length > 0) {
         setGroupBuys(data)
       } else {
-        supabase.from('products').select('*').gt('retail_price', 0).limit(3).then(({ data: ps }) => {
+        return supabase.from('products').select('*').gt('retail_price', 0).limit(3).then(({ data: ps }) => {
           if (ps && ps.length > 0) {
             setGroupBuys(ps.map((p: any) => ({
               product: p,
@@ -138,19 +142,21 @@ export default function CustomerHomePage() {
           }
         })
       }
-    })
+    }))
     // TODO: salons 테이블 (위치 기반 정렬)
-    supabase.from('salons').select('*').eq('is_active', true).limit(3).then(({ data }) => {
+    tasks.push(supabase.from('salons').select('*').eq('is_active', true).limit(3).then(({ data }) => {
       if (data && data.length > 0) setSalons(data)
-    })
+    }))
     // TODO: products is_new 컬럼
-    supabase.from('products').select('*').eq('is_new', true).limit(6).then(({ data }) => {
+    tasks.push(supabase.from('products').select('*').eq('is_new', true).limit(6).then(({ data }) => {
       if (data && data.length > 0) setNewProducts(data)
-    })
+    }))
     // TODO: brands 테이블
-    supabase.from('brands').select('*').limit(7).then(({ data }) => {
+    tasks.push(supabase.from('brands').select('*').limit(7).then(({ data }) => {
       if (data && data.length > 0) setBrands(data)
-    })
+    }))
+
+    Promise.allSettled(tasks).finally(() => setLoading(false))
   }, [])
 
   // 실시간 타이머
@@ -194,6 +200,7 @@ export default function CustomerHomePage() {
       color: '#fff',
       paddingBottom: '96px',
     }}>
+      <style>{`@keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}`}</style>
 
       {/* ── 탑바 ── */}
       <header style={{
@@ -285,7 +292,9 @@ export default function CustomerHomePage() {
         </div>
       </div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
-        {productList.slice(0, 4).map((p: any, i: number) => (
+        {loading ? Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} style={{ minWidth: '130px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, height: '200px', animation: 'pulse 1.2s ease-in-out infinite', flexShrink: 0 }} />
+        )) : productList.slice(0, 4).map((p: any, i: number) => (
           <div
             key={i}
             onClick={() => router.push(`/products/${p.id}`)}
@@ -435,7 +444,9 @@ export default function CustomerHomePage() {
         </div>
       </div>
       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
-        {concernList.map((c: any, i: number) => (
+        {loading ? Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} style={{ minWidth: '58px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, height: '200px', animation: 'pulse 1.2s ease-in-out infinite', flexShrink: 0 }} />
+        )) : concernList.map((c: any, i: number) => (
           <div
             key={i}
             onClick={() => setSelectedConcern(i)}
