@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       customer_id: user.id,
       total_amount: totalAmount,
       final_amount: totalAmount,
-      status: 'pending',
+      status: '주문확인',
     })
     .select()
     .single()
