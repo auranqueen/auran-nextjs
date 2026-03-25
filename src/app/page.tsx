@@ -572,7 +572,12 @@ export default function CustomerHomePage() {
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>⚡ 타임세일 · 공구</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 ›</span>
+          <span
+            onClick={() => router.push(saleTab === 'sale' ? '/time-sales' : '/group-buys')}
+            style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}
+          >
+            더보기 →
+          </span>
         </div>
         {/* 탭 */}
         <div style={{ display: 'flex', border: CARD_BORDER, borderRadius: '12px', overflow: 'hidden', marginBottom: '12px' }}>
@@ -663,30 +668,38 @@ export default function CustomerHomePage() {
 
         {/* 공동구매 */}
         {saleTab === 'group' && (
-          <div style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
-            <div style={{ background: 'linear-gradient(135deg,rgba(60,80,200,0.15),rgba(80,120,240,0.1))', padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontSize: '10px', color: 'rgba(120,160,255,0.9)', fontFamily: 'monospace' }}>👥 공동구매 · 목표 달성시 발송</span>
-              <span style={{ fontSize: '10px', color: TEXT_MUTED }}>127/200명</span>
-            </div>
-            <div style={{ height: '3px', background: 'rgba(255,255,255,0.08)' }}>
-              <div style={{ height: '100%', width: '63%', background: 'linear-gradient(90deg,#4060C0,#8090E0)' }} />
-            </div>
-            <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
-              <div style={{ width: '60px', height: '60px', borderRadius: '12px', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px' }}>🧴</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>CIVASAN</div>
-                <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>MESS CREAM 더블세트</div>
-                <div style={{ fontSize: '10px', color: 'rgba(120,160,255,0.8)', marginBottom: '4px' }}>🎯 200명 달성 시 발송 · 73명 더 필요</div>
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                  <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>116,000원</span>
-                  <span style={{ fontSize: '15px', color: 'rgba(120,160,255,0.9)' }}>69,600원 (-40%)</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {saleList.slice(0, 3).map((item: any, i: number) => (
+              <div key={i} style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
+                <div style={{ background: 'linear-gradient(135deg,rgba(60,80,200,0.15),rgba(80,120,240,0.1))', padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '10px', color: 'rgba(120,160,255,0.9)', fontFamily: 'monospace' }}>👥 공동구매 · 목표 달성시 발송</span>
+                  <span style={{ fontSize: '10px', color: TEXT_MUTED }}>127/200명</span>
+                </div>
+                <div style={{ height: '3px', background: 'rgba(255,255,255,0.08)' }}>
+                  <div style={{ height: '100%', width: '63%', background: 'linear-gradient(90deg,#4060C0,#8090E0)' }} />
+                </div>
+                <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
+                  <div style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', flexShrink: 0 }}>
+                    {item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (item.icon || '🧴')}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.brand || item.product?.brand}</div>
+                    <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>{item.name || item.product?.name}</div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
+                        {(item.product?.retail_price ?? item.orig ?? item.original_price)?.toLocaleString()}원
+                      </span>
+                      <span style={{ fontSize: '15px', color: 'rgba(120,160,255,0.9)' }}>
+                        {(item.product?.retail_price ?? item.sale ?? item.sale_price)?.toLocaleString()}원
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
+                  <div style={{ flex: 2, padding: '9px 0', background: 'linear-gradient(135deg,#4060C0,#6080E0)', borderRadius: '8px', fontSize: '11px', color: '#fff', textAlign: 'center', cursor: 'pointer' }}>👥 공구 참여하기</div>
                 </div>
               </div>
-            </div>
-            <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
-              <div style={{ flex: 2, padding: '9px 0', background: 'linear-gradient(135deg,#4060C0,#6080E0)', borderRadius: '8px', fontSize: '11px', color: '#fff', textAlign: 'center', cursor: 'pointer' }}>👥 공구 참여하기</div>
-              <div style={{ flex: 1, padding: '9px 0', background: 'rgba(80,120,220,0.1)', border: '1px solid rgba(80,120,220,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(120,160,255,0.8)', textAlign: 'center', cursor: 'pointer' }}>📤 친구 초대</div>
-            </div>
+            ))}
           </div>
         )}
       </div>
