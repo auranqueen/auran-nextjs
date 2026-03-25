@@ -64,8 +64,12 @@ export async function POST(req: NextRequest) {
     orderid: order.id,
   })
 
+  console.log('PayApp 호출 시작', params.toString())
+  // fetch 호출
   const response = await fetch(`https://www.payapp.kr/kspay/webpayment.do?${params}`)
   const text = await response.text()
+
+  console.log('PayApp 응답:', text)
 
   return NextResponse.json({ payUrl: text, orderId: order.id })
 }
