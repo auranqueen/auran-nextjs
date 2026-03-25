@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     linkkey: process.env.PAYAPP_LINKKEY!,
     linkval: process.env.PAYAPP_LINKVAL!,
     shopname: process.env.PAYAPP_SHOPNAME!,
-    recvphone: '',
+    recvphone: '01000000000',
     feedbackurl: process.env.PAYAPP_FEEDBACK_URL!,
     returnurl,
     orderid: order.id,
