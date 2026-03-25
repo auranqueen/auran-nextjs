@@ -1,4 +1,3 @@
-console.log('✅ payment/request called')
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
@@ -9,28 +8,18 @@ export async function POST(req: NextRequest) {
 
   const { product_id, quantity } = await req.json()
 
-  const { data: product, error } = await supabase
+  const { data: product } = await supabase
     .from('products')
     .select('id, name, retail_price')
     .eq('id', product_id)
     .single()
-
-  console.log('product:', product)
-  console.log('error:', error)
 
   if (!product) return NextResponse.json({ error: '제품 없음' }, { status: 404 })
 
   const price = product.retail_price ?? 0
   const totalAmount = price * quantity
 
-  console.log('insert data:', {
-    customer_id: user.id,
-    total_amount: totalAmount,
-    status: 'pending',
-    items: [{ product_id, quantity, price }]
-  })
-
-  const { data: order, error: insertError } = await supabase
+  const { data: order } = await supabase
     .from('orders')
     .insert({
       customer_id: user.id,
@@ -41,28 +30,10 @@ export async function POST(req: NextRequest) {
     .select()
     .single()
 
-  console.log('insert error:', insertError)
-
   if (!order) return NextResponse.json({ error: '주문 생성 실패' }, { status: 500 })
 
   const returnurl = 'https://auran.kr/orders/complete'
 
-  const params = new URLSearchParams({
-    cmd: 'payrequest',
-    userid: process.env.PAYAPP_USER_ID!,
-    goodname: product.name,
-    price: totalAmount.toString(),
-    linkkey: process.env.PAYAPP_LINKKEY!,
-    linkval: process.env.PAYAPP_LINKVAL!,
-    shopname: process.env.PAYAPP_SHOPNAME!,
-    recvphone: '01000000000',
-    feedbackurl: process.env.PAYAPP_FEEDBACK_URL!,
-    returnurl,
-    orderid: order.id,
-  })
-
-  console.log('PayApp 호출 시작', params.toString())
-  // fetch 호출
   const postdata: Record<string, string> = {
     cmd: 'payrequest',
     userid: process.env.PAYAPP_USER_ID!,
@@ -71,7 +42,7 @@ export async function POST(req: NextRequest) {
     linkval: process.env.PAYAPP_LINKVAL!,
     goodname: product.name,
     price: String(Math.trunc(totalAmount)),
-    recvphone: '',
+    recvphone: '01000000000',
     memo: 'AURAN order',
     smsuse: 'n',
     reqaddr: '0',
@@ -92,16 +63,11 @@ export async function POST(req: NextRequest) {
   })
 
   const text = await response.text()
-  console.log('PayApp 응답 status:', response.status)
-  console.log('PayApp 응답 text:', text)
-
   const parsed: Record<string, string> = {}
-  const qs = new URLSearchParams((text || '').trim())
-  qs.forEach((v, k) => { parsed[k] = v })
-  console.log('PayApp parsed:', parsed)
+  new URLSearchParams((text || '').trim()).forEach((v, k) => { parsed[k] = v })
 
   if (parsed.state !== '1' || !parsed.mul_no || !parsed.payurl) {
-    return NextResponse.json({ ok: false, error: parsed.errorMessage || 'payapp_request_failed', raw: text }, { status: 502 })
+    return NextResponse.json({ error: parsed.errorMessage || '결제 요청 실패' }, { status: 502 })
   }
 
   return NextResponse.json({ payUrl: parsed.payurl, orderId: order.id })
