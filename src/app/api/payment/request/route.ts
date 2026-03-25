@@ -97,9 +97,7 @@ export async function POST(req: NextRequest) {
 
   const parsed: Record<string, string> = {}
   const qs = new URLSearchParams((text || '').trim())
-  for (const [k, v] of qs.entries()) {
-    parsed[k] = v
-  }
+  qs.forEach((v, k) => { parsed[k] = v })
   console.log('PayApp parsed:', parsed)
 
   if (parsed.state !== '1' || !parsed.mul_no || !parsed.payurl) {
