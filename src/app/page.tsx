@@ -690,7 +690,7 @@ export default function CustomerHomePage() {
               return (
               <div key={i} style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
                 <div style={{ background: 'linear-gradient(135deg,rgba(60,80,200,0.15),rgba(80,120,240,0.1))', padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '10px', color: 'rgba(120,160,255,0.9)', fontFamily: 'monospace' }}>👥 공동구매 · 목표 달성시 발송</span>
+                  <span style={{ fontSize: '10px', color: 'rgba(120,160,255,0.9)', fontFamily: 'monospace' }}>👥 공동구매 · </span>
                   <span style={{ fontSize: '10px', color: TEXT_MUTED }}>{current}/{target}명</span>
                 </div>
                 <div style={{ height: '3px', background: 'rgba(255,255,255,0.08)' }}>
