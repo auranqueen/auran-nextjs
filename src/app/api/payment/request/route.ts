@@ -63,6 +63,10 @@ export async function POST(req: NextRequest) {
 
   console.log('PayApp 호출 시작', params.toString())
   // fetch 호출
-  const payUrl = `https://www.payapp.kr/kspay/webpayment.do?${params}`
+  const queryString = params
+    .toString()
+    .replaceAll(`linkkey=${process.env.PAYAPP_LINKKEY!}`, `linkkey=${encodeURIComponent(process.env.PAYAPP_LINKKEY!)}`)
+    .replaceAll(`linkval=${process.env.PAYAPP_LINKVAL!}`, `linkval=${encodeURIComponent(process.env.PAYAPP_LINKVAL!)}`)
+  const payUrl = `https://www.payapp.kr/kspay/webpayment.do?${queryString}`
   return NextResponse.json({ payUrl, orderId: order.id })
 }
