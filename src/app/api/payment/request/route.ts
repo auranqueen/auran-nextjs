@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
 
   const { data: product, error } = await supabase
     .from('products')
-    .select('id, name, retail_price, original_price')
+    .select('id, name, retail_price')
     .eq('id', product_id)
     .single()
 
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
 
   if (!product) return NextResponse.json({ error: '제품 없음' }, { status: 404 })
 
-  const price = product.retail_price ?? product.original_price ?? 0
+  const price = product.retail_price ?? 0
   const totalAmount = price * quantity
 
   const { data: order } = await supabase
