@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   const totalAmount = price * quantity
 
   console.log('insert data:', {
-    user_id: user.id,
+    customer_id: user.id,
     total_amount: totalAmount,
     status: 'pending',
     items: [{ product_id, quantity, price }]
