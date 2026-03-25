@@ -103,11 +103,41 @@ export default function CustomerHomePage() {
     })
     // TODO: time_sales 테이블
     supabase.from('time_sales').select('*, product:products(id, name, retail_price, thumb_img)').eq('is_active', true).then(({ data }) => {
-      if (data && data.length > 0) setTimeSales(data)
+      if (data && data.length > 0) {
+        setTimeSales(data)
+      } else {
+        supabase.from('products').select('*').gt('retail_price', 0).limit(3).then(({ data: ps }) => {
+          if (ps && ps.length > 0) {
+            const endTime = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+            setTimeSales(ps.map((p: any) => ({
+              product: p,
+              disc: 20,
+              orig: p.retail_price,
+              sale: Math.trunc((Number(p.retail_price) || 0) * 0.8),
+              end_time: endTime,
+            })))
+          }
+        })
+      }
     })
     // TODO: group_buys 테이블
     supabase.from('group_buys').select('*, product:products(id, name, retail_price, thumb_img)').then(({ data }) => {
-      if (data && data.length > 0) setGroupBuys(data)
+      if (data && data.length > 0) {
+        setGroupBuys(data)
+      } else {
+        supabase.from('products').select('*').gt('retail_price', 0).limit(3).then(({ data: ps }) => {
+          if (ps && ps.length > 0) {
+            setGroupBuys(ps.map((p: any) => ({
+              product: p,
+              target_count: 200,
+              current_count: 127,
+              orig: p.retail_price,
+              sale: p.retail_price,
+              disc: 0,
+            })))
+          }
+        })
+      }
     })
     // TODO: salons 테이블 (위치 기반 정렬)
     supabase.from('salons').select('*').eq('is_active', true).limit(3).then(({ data }) => {
