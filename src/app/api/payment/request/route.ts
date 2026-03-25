@@ -45,10 +45,7 @@ export async function POST(req: NextRequest) {
 
   if (!order) return NextResponse.json({ error: '주문 생성 실패' }, { status: 500 })
 
-  const payappReturn = process.env.PAYAPP_RETURN_URL!
-  const returnurl = payappReturn.includes('?')
-    ? `${payappReturn}&order_id=${order.id}`
-    : `${payappReturn}?order_id=${order.id}`
+  const returnurl = 'https://auran.kr/orders/complete'
 
   const params = new URLSearchParams({
     cmd: 'payrequest',
