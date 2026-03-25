@@ -98,9 +98,9 @@ export default function CustomerHomePage() {
       if (name) setUserName(name)
     }))
     // TODO: skin_concerns 테이블
-    tasks.push(supabase.from('skin_concerns').select('*').order('sort_order').then(({ data }) => {
+    supabase.from('skin_concerns').select('*').order('sort_order').then(({ data }) => {
       if (data && data.length > 0) setConcerns(data)
-    }))
+    })
     // TODO: products 테이블 (AI 추천 기준)
     tasks.push(supabase.from('products').select('*').eq('is_active', true).limit(8).then(({ data }) => {
       if (data && data.length > 0) setProducts(data)
