@@ -603,7 +603,7 @@ export default function CustomerHomePage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '28px', flexShrink: 0, position: 'relative',
                   }}>
-                    {((item.thumb_img || item.product?.thumb_img) ? <img src={item.thumb_img || item.product?.thumb_img} alt={item.name || item.product?.name || ''} style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain' }} /> : (item.icon || '🧴'))}
+                    {(item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain' }} /> : (item.icon || '🧴'))}
                     <div style={{
                       position: 'absolute', top: '-4px', right: '-4px',
                       background: '#E04030', borderRadius: '20px', padding: '2px 6px',
@@ -619,10 +619,10 @@ export default function CustomerHomePage() {
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '5px' }}>
                       <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
-                        {(item.product?.retail_price ?? item.retail_price)?.toLocaleString()}원
+                        {(item.product?.retail_price ?? item.orig ?? item.original_price)?.toLocaleString()}원
                       </span>
                       <span style={{ fontSize: '15px', fontWeight: 400, color: '#E07060' }}>
-                        {(item.product?.retail_price ?? item.retail_price)?.toLocaleString()}원
+                        {(item.product?.retail_price ?? item.sale ?? item.sale_price)?.toLocaleString()}원
                       </span>
                     </div>
                     {/* 개별 타이머 */}
@@ -742,7 +742,7 @@ export default function CustomerHomePage() {
         {newList.map((item: any, i: number) => (
           <div key={i} onClick={() => router.push(`/products/${item.id}`)} style={{ minWidth: '130px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
             <div style={{ height: '90px', background: 'linear-gradient(135deg,#1a0a2a,#2a1540)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', position: 'relative' }}>
-              {((item.thumb_img || item.product?.thumb_img) ? <img src={item.thumb_img || item.product?.thumb_img} alt={item.name || item.product?.name || ''} style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain' }} /> : (item.icon || '💜'))}
+              {(item.thumb_img ? <img src={item.thumb_img} alt={item.name || ''} style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain' }} /> : (item.icon || '💜'))}
               <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'linear-gradient(90deg,#6040E0,#A040E0)', borderRadius: '5px', padding: '2px 6px', fontSize: '8px', color: '#fff' }}>NEW</div>
             </div>
             <div style={{ padding: '9px 10px' }}>
