@@ -604,10 +604,10 @@ export default function CustomerHomePage() {
               <div key={i} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
                   <div style={{
-                    width: '100%',
-                    aspectRatio: '1/1',
+                    width: '80px',
+                    height: '80px',
                     overflow: 'hidden',
-                    borderRadius: '8px 8px 0 0',
+                    borderRadius: '8px',
                     background: 'linear-gradient(135deg,#1a1510,#2a2015)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '28px', flexShrink: 0, position: 'relative',
