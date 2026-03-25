@@ -92,12 +92,15 @@ export async function POST(req: NextRequest) {
   })
 
   const text = await response.text()
+  console.log('PayApp 응답 status:', response.status)
+  console.log('PayApp 응답 text:', text)
 
   const parsed: Record<string, string> = {}
   const qs = new URLSearchParams((text || '').trim())
   for (const [k, v] of qs.entries()) {
     parsed[k] = v
   }
+  console.log('PayApp parsed:', parsed)
 
   if (parsed.state !== '1' || !parsed.mul_no || !parsed.payurl) {
     return NextResponse.json({ ok: false, error: parsed.errorMessage || 'payapp_request_failed', raw: text }, { status: 502 })
