@@ -264,7 +264,7 @@ export default function CustomerHomePage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '34px', position: 'relative',
             }}>
-              {p.icon || '🧴'}
+              {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain' }} /> : (p.icon || '🧴')}
               {p.badge && (
                 <div style={{
                   position: 'absolute', top: '5px', left: '5px',
@@ -276,7 +276,7 @@ export default function CustomerHomePage() {
             <div style={{ padding: '8px 10px' }}>
               <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{p.brand}</div>
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '4px' }}>{p.name}</div>
-              <div style={{ fontSize: '12px', fontWeight: 400 }}>{p.price?.toLocaleString()}원</div>
+              <div style={{ fontSize: '12px', fontWeight: 400 }}>{(p.retail_price?.toLocaleString() ?? p.price?.toLocaleString())}원</div>
             </div>
           </div>
         ))}
@@ -440,7 +440,7 @@ export default function CustomerHomePage() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '38px', position: 'relative',
               }}>
-                {p.icon || '🧴'}
+                {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain' }} /> : (p.icon || '🧴')}
                 <div style={{
                   position: 'absolute', top: '7px', left: '7px',
                   width: '22px', height: '22px', borderRadius: '50%',
@@ -461,7 +461,7 @@ export default function CustomerHomePage() {
                 <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{p.brand}</div>
                 <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '5px' }}>{p.name}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 400 }}>{p.price?.toLocaleString()}원</span>
+                  <span style={{ fontSize: '13px', fontWeight: 400 }}>{(p.retail_price?.toLocaleString() ?? p.price?.toLocaleString())}원</span>
                   <span style={{ fontSize: '14px', cursor: 'pointer' }}>🤍</span>
                 </div>
                 <div style={{ display: 'flex', gap: '4px' }}>
@@ -603,7 +603,7 @@ export default function CustomerHomePage() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '28px', flexShrink: 0, position: 'relative',
                   }}>
-                    {item.icon || '🧴'}
+                    {((item.thumb_img || item.product?.thumb_img) ? <img src={item.thumb_img || item.product?.thumb_img} alt={item.name || item.product?.name || ''} style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain' }} /> : (item.icon || '🧴'))}
                     <div style={{
                       position: 'absolute', top: '-4px', right: '-4px',
                       background: '#E04030', borderRadius: '20px', padding: '2px 6px',
@@ -619,10 +619,10 @@ export default function CustomerHomePage() {
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '5px' }}>
                       <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
-                        {(item.orig || item.original_price)?.toLocaleString()}원
+                        {(item.product?.retail_price ?? item.retail_price)?.toLocaleString()}원
                       </span>
                       <span style={{ fontSize: '15px', fontWeight: 400, color: '#E07060' }}>
-                        {(item.sale || item.sale_price)?.toLocaleString()}원
+                        {(item.product?.retail_price ?? item.retail_price)?.toLocaleString()}원
                       </span>
                     </div>
                     {/* 개별 타이머 */}
@@ -742,13 +742,13 @@ export default function CustomerHomePage() {
         {newList.map((item: any, i: number) => (
           <div key={i} onClick={() => router.push(`/products/${item.id}`)} style={{ minWidth: '130px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
             <div style={{ height: '90px', background: 'linear-gradient(135deg,#1a0a2a,#2a1540)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', position: 'relative' }}>
-              {item.icon || '💜'}
+              {((item.thumb_img || item.product?.thumb_img) ? <img src={item.thumb_img || item.product?.thumb_img} alt={item.name || item.product?.name || ''} style={{ maxWidth: '80%', maxHeight: '80%', objectFit: 'contain' }} /> : (item.icon || '💜'))}
               <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'linear-gradient(90deg,#6040E0,#A040E0)', borderRadius: '5px', padding: '2px 6px', fontSize: '8px', color: '#fff' }}>NEW</div>
             </div>
             <div style={{ padding: '9px 10px' }}>
               <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.brand}</div>
               <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.4, marginBottom: '4px' }}>{item.name}</div>
-              <div style={{ fontSize: '12px', fontWeight: 400 }}>{item.price?.toLocaleString()}원</div>
+              <div style={{ fontSize: '12px', fontWeight: 400 }}>{(item.retail_price?.toLocaleString() ?? item.price?.toLocaleString())}원</div>
             </div>
           </div>
         ))}
