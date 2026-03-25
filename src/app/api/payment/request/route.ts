@@ -32,6 +32,11 @@ export async function POST(req: NextRequest) {
 
   if (!order) return NextResponse.json({ error: '주문 생성 실패' }, { status: 500 })
 
+  const payappReturn = process.env.PAYAPP_RETURN_URL!
+  const returnurl = payappReturn.includes('?')
+    ? `${payappReturn}&order_id=${order.id}`
+    : `${payappReturn}?order_id=${order.id}`
+
   const params = new URLSearchParams({
     cmd: 'payrequest',
     userid: process.env.PAYAPP_USER_ID!,
@@ -42,7 +47,7 @@ export async function POST(req: NextRequest) {
     shopname: process.env.PAYAPP_SHOPNAME!,
     recvphone: '',
     feedbackurl: process.env.PAYAPP_FEEDBACK_URL!,
-    returnurl: process.env.PAYAPP_RETURN_URL!,
+    returnurl,
     orderid: order.id,
   })
 
