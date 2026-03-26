@@ -565,7 +565,7 @@ export default function CustomerDashboardClient({
     const resolvedMeId = await ensureMeId()
     logAction('cart_click', { productId, meId: resolvedMeId })
     if (!resolvedMeId) {
-      router.push('/login?redirect=/home')
+      router.push('/login?redirect=/')
       return
     }
     const { error } = await supabase.from('cart_items').insert({ user_id: resolvedMeId, product_id: productId, quantity: 1 } as any)
@@ -589,7 +589,7 @@ export default function CustomerDashboardClient({
       return
     }
     if (!resolvedMeId) {
-      router.push('/login?redirect=/home')
+      router.push('/login?redirect=/')
       return
     }
     const { data: rows } = await supabase.from('follows').select('following_id').eq('follower_id', resolvedMeId)

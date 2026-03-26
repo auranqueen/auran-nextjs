@@ -13,7 +13,7 @@ function PayAppInner() {
     const qty = Number(params.get('qty') || '1')
 
     if (!productId) {
-      router.push('/home')
+      router.push('/')
       return
     }
 
@@ -27,7 +27,7 @@ function PayAppInner() {
 
       if (!product) {
         alert('제품 정보를 찾을 수 없어요')
-        router.push('/home')
+        router.push('/')
         return
       }
 
@@ -49,7 +49,7 @@ function PayAppInner() {
         window.location.href = json.pay_url
       } else {
         alert('결제 요청 실패: ' + (json?.error || '알 수 없는 오류'))
-        router.push('/home')
+        router.push('/')
       }
     }
 

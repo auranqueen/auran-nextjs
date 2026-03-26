@@ -78,7 +78,7 @@ export default function BrandProductsPage({ params }: { params: { id: string } }
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
           <button
-            onClick={() => router.push('/home')}
+            onClick={() => router.push('/')}
             style={{
               width: 34,
               height: 34,

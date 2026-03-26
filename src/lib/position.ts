@@ -13,7 +13,7 @@ export function normalizePosition(input: string | null | undefined): Position | 
 export function positionToDashboardPath(position: Position): string {
   switch (position) {
     case 'customer':
-      return '/home'
+      return '/'
     case 'partner':
       return '/dashboard/partner'
     case 'salon':

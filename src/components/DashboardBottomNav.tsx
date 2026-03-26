@@ -7,7 +7,7 @@ type Role = 'customer' | 'partner' | 'salon' | 'brand'
 
 const NAV: Record<Role, { icon: string; label: string; href: string }[]> = {
   customer: [
-    { icon: '🏠', label: '홈', href: '/home' },
+    { icon: '🏠', label: '홈', href: '/' },
     { icon: '💳', label: '지갑', href: '/wallet' },
     { icon: '🛒', label: '장바구니', href: '/cart' },
     { icon: '💬', label: '커뮤니티', href: '/diary' },
