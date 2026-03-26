@@ -44,6 +44,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
   const [items, setItems] = useState<any[]>([])
   const [notices, setNotices] = useState<any[]>([])
   const [expandedNotice, setExpandedNotice] = useState<string | null>(null)
+  const [expandedNotification, setExpandedNotification] = useState<string | null>(null)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
   const [swipeColor, setSwipeColor] = useState<Record<string, string>>({})
 
@@ -177,6 +178,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                       }
                     }}
                     onClick={async () => {
+                      setExpandedNotification(expandedNotification === n.id ? null : n.id)
                       if (!n.is_read) {
                         await supabase.from('notifications').update({ is_read: true }).eq('id', n.id)
                         setItems(prev => prev.map(x => (x.id === n.id ? { ...x, is_read: true } : x)))
@@ -191,14 +193,26 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                       cursor: 'pointer',
                       opacity: n.is_read ? 0.5 : 1,
                       borderLeft: n.is_read ? '3px solid transparent' : `3px solid ${PURPLE}`,
+                      boxShadow: expandedNotification === n.id ? '0 0 16px rgba(123,94,167,0.25)' : 'none',
+                      transition: 'box-shadow 0.3s ease',
                     }}
                   >
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-                      <span style={{ fontSize: 14, color: iconStyle.color }}>{iconStyle.icon}</span>
+                      <span style={{ fontSize: 14, color: iconStyle.color, animation: expandedNotification === n.id ? 'popIn 0.4s ease' : 'none' }}>{iconStyle.icon}</span>
                       <span style={{ fontSize: 13, color: '#fff' }}>{n.title}</span>
+                      <span style={{ marginLeft: 'auto', fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{expandedNotification === n.id ? 'v' : '>'}</span>
                     </div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>{n.body || ''}</div>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>{n.created_at ? String(n.created_at).slice(0, 16).replace('T', ' ') : ''}</div>
+                    <div
+                      style={{
+                        maxHeight: expandedNotification === n.id ? '300px' : '0px',
+                        overflow: 'hidden',
+                        transition: 'max-height 0.3s ease, opacity 0.3s ease',
+                        opacity: expandedNotification === n.id ? 1 : 0,
+                      }}
+                    >
+                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 4, animation: expandedNotification === n.id ? 'wordRise 0.32s ease' : 'none' }}>{n.body || ''}</div>
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', animation: expandedNotification === n.id ? 'wordRise 0.38s ease' : 'none' }}>{n.created_at ? String(n.created_at).slice(0, 16).replace('T', ' ') : ''}</div>
+                    </div>
                   </div>
                 )
               })
@@ -228,38 +242,42 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                   type === 'brand' ? '#6bcb77' :
                   'rgba(255,255,255,0.85)'
                 return (
-                  <div
-                    key={n.id || idx}
-                    onClick={() => setExpandedNotice(expandedNotice === n.id ? null : n.id)}
-                    style={{ display: 'grid', gridTemplateColumns: '20px 1fr', gap: 8, marginBottom: 10, cursor: 'pointer' }}
-                  >
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', paddingTop: 2 }}>{idx + 1}</div>
-                    <div>
-                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 2 }}>
-                        // {n.created_at ? String(n.created_at).slice(0, 10) : ''} {n.is_important ? '⚠️ ' : ''}{n.title}
+                  <div key={n.id || idx} style={{ marginBottom: 10, cursor: 'pointer' }} onClick={() => setExpandedNotice(expandedNotice === n.id ? null : n.id)}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '20px 1fr auto', gap: 8, alignItems: 'center' }}>
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', paddingTop: 2 }}>{idx + 1}</div>
+                      <div>
+                        <div style={{ fontSize: 13, color: '#fff' }}>{n.title}</div>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>{n.created_at ? String(n.created_at).slice(0, 10) : ''}</div>
                       </div>
-                      <div
-                        style={{
-                          maxHeight: expandedNotice === n.id ? '300px' : '0px',
-                          overflow: 'hidden',
-                          transition: 'max-height 0.3s ease, opacity 0.3s ease',
-                          opacity: expandedNotice === n.id ? 1 : 0,
-                          padding: expandedNotice === n.id ? '8px 0' : '0',
-                          fontSize: 12,
-                          color: 'rgba(255,255,255,0.6)',
-                        }}
-                      >
-                        const notice = '{String(n.body || '').replace(/'/g, "\\'")}'
+                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{expandedNotice === n.id ? 'v' : '>'}</div>
+                    </div>
+                    <div
+                      style={{
+                        background: '#1a3a1a',
+                        borderRadius: 10,
+                        padding: expandedNotice === n.id ? '16px' : '0 16px',
+                        fontFamily: "'Courier New', monospace",
+                        maxHeight: expandedNotice === n.id ? '400px' : '0px',
+                        transition: 'max-height 0.4s ease, padding 0.4s ease, opacity 0.4s ease',
+                        opacity: expandedNotice === n.id ? 1 : 0,
+                        overflow: 'hidden',
+                        marginTop: expandedNotice === n.id ? 8 : 0,
+                      }}
+                    >
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginBottom: 4 }}>
+                        // {n.created_at ? String(n.created_at).slice(0, 10) : ''}
                       </div>
-                      <div style={{ fontSize: 11, color: chalkColor }}>
-                        import {'{'} {n.title} {'}'} from '@/auran/{type || 'general'}'
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>const notice = '</div>
+                      <div style={{ fontSize: 12, color: chalkColor, margin: '4px 0 4px 10px' }}>
+                        {String(n.body || '')}
                       </div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>'</div>
+                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', animation: expandedNotice === n.id ? 'blinkCursor 1s steps(1) infinite' : 'none' }}>|</div>
                     </div>
                   </div>
                 )
               })}
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', animation: 'blinkCursor 1s steps(1) infinite' }}>|</div>
-              <style>{`@keyframes blinkCursor { 0%{opacity:1} 50%{opacity:0} 100%{opacity:1} }`}</style>
+              <style>{`@keyframes blinkCursor { 0%{opacity:1} 50%{opacity:0} 100%{opacity:1} } @keyframes popIn { 0% { transform: scale(0) translateY(10px); opacity: 0; } 60% { transform: scale(1.1) translateY(-3px); opacity: 1; } 100% { transform: scale(1) translateY(0); opacity: 1; } } @keyframes wordRise { 0% { transform: translateY(10px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }`}</style>
             </div>
           )}
         </div>
