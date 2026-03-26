@@ -26,6 +26,13 @@ export async function POST(req: NextRequest) {
       total_amount: totalAmount,
       final_amount: totalAmount,
       status: '주문확인',
+      order_no: `ORD-${Date.now()}`,
+      items: JSON.stringify([{
+        product_id: product.id,
+        product_name: product.name,
+        price: product.retail_price,
+        quantity: quantity
+      }]),
     })
     .select()
     .single()
