@@ -24,7 +24,8 @@ function OrderCompleteContent() {
   const supabase = createClient()
 
   const [loading, setLoading] = useState(true)
-  const [forbidden, setForbidden] = useState(false)
+  const [orderMissing, setOrderMissing] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [orderNo, setOrderNo] = useState<string>('')
   const [productLabel, setProductLabel] = useState<string>('')
   const [payAmount, setPayAmount] = useState<number>(0)
@@ -41,32 +42,17 @@ function OrderCompleteContent() {
       const {
         data: { user },
       } = await supabase.auth.getUser()
-      if (!user) {
-        if (!cancelled) {
-          setForbidden(true)
-          setLoading(false)
-        }
-        return
-      }
-      const { data: me } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
-      const myId = me?.id as string | undefined
-      if (!myId) {
-        if (!cancelled) {
-          setForbidden(true)
-          setLoading(false)
-        }
-        return
-      }
+      const loggedIn = !!user
 
       const { data: order } = await supabase
         .from('orders')
-        .select('order_no, total_amount, final_amount, customer_id')
+        .select('order_no, total_amount, final_amount')
         .eq('id', orderId)
         .maybeSingle()
 
-      if (!order || String(order.customer_id) !== String(myId)) {
+      if (!order) {
         if (!cancelled) {
-          setForbidden(true)
+          setOrderMissing(true)
           setLoading(false)
         }
         return
@@ -79,28 +65,35 @@ function OrderCompleteContent() {
       const names = (lineItems || []).map(i => (i as { product_name?: string }).product_name).filter(Boolean) as string[]
       const label = names.length ? names.join(', ') : '상품'
 
-      const { data: tx } = await supabase
-        .from('toast_transactions')
-        .select('amount')
-        .eq('reference_id', orderId)
-        .eq('transaction_type', 'purchase')
-        .maybeSingle()
-
-      const { data: bs } = await supabase
-        .from('benefit_settings')
-        .select('setting_value')
-        .eq('setting_key', 'purchase_point_rate')
-        .maybeSingle()
+      let tx: { amount?: number } | null = null
+      let bs: { setting_value?: unknown } | null = null
+      if (loggedIn) {
+        const txRes = await supabase
+          .from('toast_transactions')
+          .select('amount')
+          .eq('reference_id', orderId)
+          .eq('transaction_type', 'purchase')
+          .maybeSingle()
+        tx = txRes.data as { amount?: number } | null
+        const bsRes = await supabase
+          .from('benefit_settings')
+          .select('setting_value')
+          .eq('setting_key', 'purchase_point_rate')
+          .maybeSingle()
+        bs = bsRes.data as { setting_value?: unknown } | null
+      }
 
       if (!cancelled) {
+        setIsLoggedIn(loggedIn)
         setOrderNo(String((order as { order_no?: string }).order_no || ''))
         setProductLabel(label)
         setPayAmount(
           num((order as { final_amount?: number }).final_amount, 0) ||
             num((order as { total_amount?: number }).total_amount, 0)
         )
-        setToastAmount(tx ? num((tx as { amount?: number }).amount, 0) : null)
-        setPurchaseRate(num((bs as { setting_value?: unknown })?.setting_value, 3))
+        setToastAmount(tx ? num(tx.amount, 0) : null)
+        setPurchaseRate(num(bs?.setting_value, 3))
+        setOrderMissing(false)
         setLoading(false)
       }
     }
@@ -118,10 +111,10 @@ function OrderCompleteContent() {
     )
   }
 
-  if (forbidden) {
+  if (orderMissing) {
     return (
       <div style={{ minHeight: '100vh', background: BG, color: '#fff', padding: 24, fontFamily: 'sans-serif' }}>
-        <p style={{ color: GOLD }}>주문 정보를 불러올 수 없습니다. 로그인 후 다시 시도해 주세요.</p>
+        <p style={{ color: GOLD }}>주문 정보를 불러올 수 없습니다.</p>
       </div>
     )
   }
@@ -221,7 +214,9 @@ function OrderCompleteContent() {
             }}
           >
             <div style={{ fontSize: 11, color: PURPLE, marginBottom: 10, letterSpacing: '0.08em' }}>토스트 적립</div>
-            {toastAmount != null && toastAmount > 0 ? (
+            {!isLoggedIn ? (
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>로그인 후 확인 가능</div>
+            ) : toastAmount != null && toastAmount > 0 ? (
               <>
                 <div style={{ fontSize: 17, fontWeight: 800, color: GOLD, marginBottom: 8 }}>
                   🎉 {toastAmount.toLocaleString()}T 토스트 적립됐어요!
@@ -238,40 +233,81 @@ function OrderCompleteContent() {
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <Link
-              href="/dashboard/customer/orders"
-              style={{
-                display: 'block',
-                textAlign: 'center',
-                padding: '14px 20px',
-                borderRadius: 12,
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.12)',
-                color: 'rgba(255,255,255,0.85)',
-                fontSize: 14,
-                fontWeight: 600,
-                textDecoration: 'none',
-              }}
-            >
-              주문내역 보기
-            </Link>
-            <Link
-              href="/dashboard/customer/products"
-              style={{
-                display: 'block',
-                textAlign: 'center',
-                padding: '14px 20px',
-                borderRadius: 12,
-                background: GOLD,
-                border: 'none',
-                color: '#0D0B09',
-                fontSize: 14,
-                fontWeight: 800,
-                textDecoration: 'none',
-              }}
-            >
-              쇼핑 계속하기
-            </Link>
+            {!isLoggedIn ? (
+              <>
+                <Link
+                  href="/login"
+                  style={{
+                    display: 'block',
+                    textAlign: 'center',
+                    padding: '14px 20px',
+                    borderRadius: 12,
+                    background: GOLD,
+                    border: 'none',
+                    color: '#0D0B09',
+                    fontSize: 14,
+                    fontWeight: 800,
+                    textDecoration: 'none',
+                  }}
+                >
+                  로그인하기
+                </Link>
+                <Link
+                  href="/"
+                  style={{
+                    display: 'block',
+                    textAlign: 'center',
+                    padding: '14px 20px',
+                    borderRadius: 12,
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    color: 'rgba(255,255,255,0.85)',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                  }}
+                >
+                  홈으로
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/dashboard/customer/orders"
+                  style={{
+                    display: 'block',
+                    textAlign: 'center',
+                    padding: '14px 20px',
+                    borderRadius: 12,
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    color: 'rgba(255,255,255,0.85)',
+                    fontSize: 14,
+                    fontWeight: 600,
+                    textDecoration: 'none',
+                  }}
+                >
+                  주문내역 보기
+                </Link>
+                <Link
+                  href="/dashboard/customer/products"
+                  style={{
+                    display: 'block',
+                    textAlign: 'center',
+                    padding: '14px 20px',
+                    borderRadius: 12,
+                    background: GOLD,
+                    border: 'none',
+                    color: '#0D0B09',
+                    fontSize: 14,
+                    fontWeight: 800,
+                    textDecoration: 'none',
+                  }}
+                >
+                  쇼핑 계속하기
+                </Link>
+              </>
+            )}
           </div>
         </>
       )}
