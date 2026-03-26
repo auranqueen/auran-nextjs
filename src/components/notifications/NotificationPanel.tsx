@@ -177,6 +177,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                       }
                     }}
                     onClick={async () => {
+                      console.log('카드 클릭됨', n.id)
                       setExpandedNotice(expandedNotice === n.id ? null : n.id)
                       if (!n.is_read) {
                         await supabase.from('notifications').update({ is_read: true }).eq('id', n.id)
