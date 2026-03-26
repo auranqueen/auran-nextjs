@@ -616,7 +616,7 @@ export default function CustomerHomePage() {
         {saleTab === 'sale' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {saleList.map((item: any, i: number) => (
-              <div key={i} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden' }}>
+              <div key={i} onClick={() => router.push(`/products/${item.id}`)} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
                   <div style={{
                     width: '120px',
@@ -669,7 +669,15 @@ export default function CustomerHomePage() {
                 <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
                   <div style={{ flex: 1, padding: '8px 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.6)', textAlign: 'center', cursor: 'pointer' }}>🛒 담기</div>
                   <div style={{ flex: 1, padding: '8px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>🎁 선물</div>
-                  <div style={{ flex: 1.3, padding: '8px 0', background: '#C04030', borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: '#fff', textAlign: 'center', cursor: 'pointer' }}>지금 구매</div>
+                  <div onClick={async (e) => {
+                    e.stopPropagation()
+                    const { data: { session } } = await supabase.auth.getSession()
+                    if (!session) {
+                      router.push(`/products/${item.id}`)
+                      return
+                    }
+                    router.push(`/products/${item.id}`)
+                  }} style={{ flex: 1.3, padding: '8px 0', background: '#C04030', borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: '#fff', textAlign: 'center', cursor: 'pointer' }}>지금 구매</div>
                 </div>
               </div>
             ))}
@@ -688,7 +696,7 @@ export default function CustomerHomePage() {
               const salePrice = item.sale ?? item.sale_price ?? item.product?.retail_price
               const discPct = Number(item.disc ?? item.discount_rate ?? (origPrice && salePrice ? Math.round(((Number(origPrice) - Number(salePrice)) / Number(origPrice)) * 100) : 0))
               return (
-              <div key={i} style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
+              <div key={i} onClick={() => router.push(`/products/${item.product_id || item.id}`)} style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
                 <div style={{ background: 'linear-gradient(135deg,rgba(60,80,200,0.15),rgba(80,120,240,0.1))', padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '10px', color: 'rgba(120,160,255,0.9)', fontFamily: 'monospace' }}>👥 공동구매 · </span>
                   <span style={{ fontSize: '10px', color: TEXT_MUTED }}>{current}/{target}명</span>
@@ -713,7 +721,10 @@ export default function CustomerHomePage() {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
-                  <div style={{ flex: 2, padding: '9px 0', background: 'linear-gradient(135deg,#4060C0,#6080E0)', borderRadius: '8px', fontSize: '11px', color: '#fff', textAlign: 'center', cursor: 'pointer' }}>👥 공구 참여하기</div>
+                  <div onClick={(e) => {
+                    e.stopPropagation()
+                    router.push(`/products/${item.product_id || item.id}`)
+                  }} style={{ flex: 2, padding: '9px 0', background: 'linear-gradient(135deg,#4060C0,#6080E0)', borderRadius: '8px', fontSize: '11px', color: '#fff', textAlign: 'center', cursor: 'pointer' }}>👥 공구 참여하기</div>
                   <div style={{ flex: 1, padding: '9px 0', background: 'rgba(80,120,220,0.1)', border: '1px solid rgba(80,120,220,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(120,160,255,0.8)', textAlign: 'center', cursor: 'pointer' }}>📤 친구 초대</div>
                 </div>
               </div>
@@ -823,7 +834,7 @@ export default function CustomerHomePage() {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px' }}>
           {brandList.map((brand: any, i: number) => (
-            <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+            <div key={i} onClick={() => router.push(`/brands/${brand.id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
               <div style={{
                 width: '58px', height: '58px', borderRadius: '50%',
                 background: brand.bg || 'rgba(201,169,110,0.1)',
