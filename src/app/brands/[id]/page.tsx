@@ -27,7 +27,7 @@ export default function BrandProductsPage({ params }: { params: { id: string } }
       supabase.from('brands').select('*').eq('id', brandId).single(),
       supabase
         .from('products')
-        .select('id, name, retail_price, thumb_img, brand_id')
+        .select('id, name, retail_price, storage_thumb_url, thumb_img, brand_id')
         .eq('brand_id', brandId),
     ])
       .then(([b, p]) => {
@@ -147,14 +147,20 @@ export default function BrandProductsPage({ params }: { params: { id: string } }
                   justifyContent: 'center',
                 }}
               >
-                {p.thumb_img ? (
+                {p.storage_thumb_url ? (
+                  <img
+                    src={p.storage_thumb_url}
+                    alt={p.name || ''}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : p.thumb_img ? (
                   <img
                     src={p.thumb_img}
                     alt={p.name || ''}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />
                 ) : (
-                  <div style={{ fontSize: 36, opacity: 0.8 }}>🧴</div>
+                  <div style={{ width: '100%', height: '100%', background: '#3a3a3a' }} />
                 )}
               </div>
 
@@ -206,7 +212,7 @@ export default function BrandProductsPage({ params }: { params: { id: string } }
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
-                      requestPay(p.id)
+                      router.push(`/products/${p.id}`)
                     }}
                     style={{
                       flex: 1,
