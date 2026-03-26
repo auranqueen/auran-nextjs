@@ -41,6 +41,8 @@ interface Product {
 export default function ProductDetailClient({ product }: { product: Product }) {
   const router = useRouter()
   const supabase = createClient()
+  const [reviews, setReviews] = useState<any[]>([])
+  const [reviewsLoading, setReviewsLoading] = useState(false)
   const [qty, setQty] = useState(1)
   const [activeThumb, setActiveThumb] = useState(0)
   const [loginSheetOpen, setLoginSheetOpen] = useState(false)
@@ -103,6 +105,23 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     }
     void run()
   }, [supabase, product.id, qty])
+
+  useEffect(() => {
+    if (!product?.id) return
+    const fetchReviews = async () => {
+      setReviewsLoading(true)
+      const { data } = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('target_id', product.id)
+        .eq('status', '게시')
+        .order('created_at', { ascending: false })
+        .limit(20)
+      setReviews(data || [])
+      setReviewsLoading(false)
+    }
+    fetchReviews()
+  }, [product?.id])
 
   const brand = product.brands?.name || 'AURAN'
   const origin = product.origin ?? ''
@@ -236,6 +255,45 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           <span style={{ fontSize: 12, color: '#666' }}>리뷰 {reviewCount}개</span>
           <span style={{ fontSize: 12, color: '#666', marginLeft: 'auto', cursor: 'pointer' }}>전체보기 ›</span>
         </div>
+        {reviewsLoading ? (
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>로딩중...</div>
+        ) : reviews.length === 0 ? (
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>아직 리뷰가 없어요</div>
+        ) : (
+          <div style={{ marginBottom: 12 }}>
+            {reviews.map((rv, i) => (
+              <div
+                key={rv.id || i}
+                style={{
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 12,
+                  padding: 16,
+                  margin: '8px 0',
+                  color: '#fff',
+                }}
+              >
+                <div style={{ marginBottom: 8, color: GOLD }}>
+                  {'★'.repeat(Math.max(0, Number(rv.rating || 0)))}
+                </div>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, marginBottom: 8 }}>
+                  {rv.content || ''}
+                </div>
+                {Array.isArray(rv.images) && rv.images[0] ? (
+                  <img
+                    src={rv.images[0]}
+                    alt=""
+                    style={{ width: '100%', maxHeight: 180, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }}
+                  />
+                ) : null}
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>
+                  {rv.created_at ? String(rv.created_at).slice(0, 10) : ''}
+                </div>
+                <div style={{ height: 1, background: 'rgba(255,255,255,0.08)' }} />
+              </div>
+            ))}
+          </div>
+        )}
 
         <div style={{ background: '#171310', border: '1px solid #252018', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#2a2010,#3a3020)', border: `1px solid ${GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: GOLD, textAlign: 'center', lineHeight: 1.3, flexShrink: 0 }}>
