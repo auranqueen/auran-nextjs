@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { ReviewForm } from '@/components/reviews/ReviewForm'
 
 const GOLD = '#C9A96E'
 
@@ -47,6 +48,19 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [activeThumb, setActiveThumb] = useState(0)
   const [loginSheetOpen, setLoginSheetOpen] = useState(false)
   const paymentResumeOnce = useRef(false)
+
+  const fetchReviews = async () => {
+    setReviewsLoading(true)
+    const { data } = await supabase
+      .from('reviews')
+      .select('*')
+      .eq('target_id', product.id)
+      .eq('status', '게시')
+      .order('created_at', { ascending: false })
+      .limit(20)
+    setReviews(data || [])
+    setReviewsLoading(false)
+  }
 
   const executeBuy = async () => {
     const res = await fetch(`${window.location.origin}/api/payment/request`, {
@@ -108,19 +122,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   useEffect(() => {
     if (!product?.id) return
-    const fetchReviews = async () => {
-      setReviewsLoading(true)
-      const { data } = await supabase
-        .from('reviews')
-        .select('*')
-        .eq('target_id', product.id)
-        .eq('status', '게시')
-        .order('created_at', { ascending: false })
-        .limit(20)
-      setReviews(data || [])
-      setReviewsLoading(false)
-    }
-    fetchReviews()
+    void fetchReviews()
   }, [product?.id])
 
   const brand = product.brands?.name || 'AURAN'
@@ -294,6 +296,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             ))}
           </div>
         )}
+        <ReviewForm
+          productId={product.id}
+          onSuccess={() => {
+            void fetchReviews()
+          }}
+        />
 
         <div style={{ background: '#171310', border: '1px solid #252018', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#2a2010,#3a3020)', border: `1px solid ${GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: GOLD, textAlign: 'center', lineHeight: 1.3, flexShrink: 0 }}>
