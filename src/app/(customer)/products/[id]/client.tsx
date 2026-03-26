@@ -44,10 +44,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const supabase = createClient()
   const [reviews, setReviews] = useState<any[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [showReviewBanner, setShowReviewBanner] = useState(false)
+  const [reviewToastAmount, setReviewToastAmount] = useState(500)
   const [qty, setQty] = useState(1)
   const [activeThumb, setActiveThumb] = useState(0)
   const [loginSheetOpen, setLoginSheetOpen] = useState(false)
   const paymentResumeOnce = useRef(false)
+  const reviewSectionRef = useRef<HTMLDivElement | null>(null)
 
   const fetchReviews = async () => {
     setReviewsLoading(true)
@@ -124,6 +128,54 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     if (!product?.id) return
     void fetchReviews()
   }, [product?.id])
+
+  useEffect(() => {
+    if (!product?.id) return
+    const run = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        setShowReviewForm(false)
+        setShowReviewBanner(false)
+        return
+      }
+      const myId = session.user.id
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('items')
+        .eq('customer_id', myId)
+      let purchased = false
+      ;(orders || []).forEach((row: any) => {
+        if (purchased) return
+        const raw = row?.items
+        let parsed: any[] = []
+        if (Array.isArray(raw)) parsed = raw
+        else if (typeof raw === 'string') {
+          try {
+            parsed = JSON.parse(raw)
+          } catch {}
+        }
+        if (Array.isArray(parsed) && parsed.some(it => String(it?.product_id || '') === String(product.id))) purchased = true
+      })
+      const { data: myReview } = await supabase
+        .from('reviews')
+        .select('id')
+        .eq('author_id', myId)
+        .eq('target_id', product.id)
+        .maybeSingle()
+      const canWrite = !!session && purchased && !myReview
+      setShowReviewForm(canWrite)
+      setShowReviewBanner(canWrite)
+      const { data: setting } = await supabase
+        .from('benefit_settings')
+        .select('setting_value')
+        .eq('setting_key', 'review_toast_amount')
+        .maybeSingle()
+      setReviewToastAmount(Number((setting as any)?.setting_value) || 500)
+    }
+    void run()
+  }, [product?.id, supabase])
 
   const brand = product.brands?.name || 'AURAN'
   const origin = product.origin ?? ''
@@ -257,6 +309,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           <span style={{ fontSize: 12, color: '#666' }}>리뷰 {reviewCount}개</span>
           <span style={{ fontSize: 12, color: '#666', marginLeft: 'auto', cursor: 'pointer' }}>전체보기 ›</span>
         </div>
+        <div ref={reviewSectionRef}>
         {reviewsLoading ? (
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>로딩중...</div>
         ) : reviews.length === 0 ? (
@@ -296,12 +349,15 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             ))}
           </div>
         )}
-        <ReviewForm
-          productId={product.id}
-          onSuccess={() => {
-            void fetchReviews()
-          }}
-        />
+        {showReviewForm ? (
+          <ReviewForm
+            productId={product.id}
+            onSuccess={() => {
+              void fetchReviews()
+            }}
+          />
+        ) : null}
+        </div>
 
         <div style={{ background: '#171310', border: '1px solid #252018', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#2a2010,#3a3020)', border: `1px solid ${GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: GOLD, textAlign: 'center', lineHeight: 1.3, flexShrink: 0 }}>
@@ -494,6 +550,38 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           </div>
         </div>
       )}
+      {showReviewBanner ? (
+        <>
+          <style>{`
+            @keyframes reviewFloating {
+              0% { transform: translateY(0px); }
+              50% { transform: translateY(-6px); }
+              100% { transform: translateY(0px); }
+            }
+          `}</style>
+          <button
+            type="button"
+            onClick={() => reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            style={{
+              position: 'fixed',
+              right: 20,
+              bottom: 90,
+              background: '#7B5EA7',
+              border: 'none',
+              borderRadius: 20,
+              padding: '12px 20px',
+              fontSize: 13,
+              fontWeight: 400,
+              color: '#fff',
+              cursor: 'pointer',
+              zIndex: 70,
+              animation: 'reviewFloating 2.4s ease-in-out infinite',
+            }}
+          >
+            ✍️ 리뷰 쓰기  +{reviewToastAmount}T
+          </button>
+        </>
+      ) : null}
     </div>
   )
 }

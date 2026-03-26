@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 type ReviewFormProps = {
@@ -33,6 +33,26 @@ export function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
   const [previewUrls, setPreviewUrls] = useState<string[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
+  const [textToast, setTextToast] = useState(100)
+  const [photoToast, setPhotoToast] = useState(300)
+  const [videoToast, setVideoToast] = useState(500)
+
+  useEffect(() => {
+    const loadToastSettings = async () => {
+      const { data } = await supabase
+        .from('benefit_settings')
+        .select('setting_key, setting_value')
+        .in('setting_key', ['review_text_toast', 'review_photo_toast', 'review_video_toast'])
+      const map = new Map<string, number>()
+      ;(data || []).forEach((row: any) => {
+        map.set(String(row.setting_key), Number(row.setting_value) || 0)
+      })
+      setTextToast(map.get('review_text_toast') ?? 100)
+      setPhotoToast(map.get('review_photo_toast') ?? 300)
+      setVideoToast(map.get('review_video_toast') ?? 500)
+    }
+    void loadToastSettings()
+  }, [supabase])
 
   const canSubmit = useMemo(() => rating > 0 && content.trim().length >= 10 && !submitting, [rating, content, submitting])
 
@@ -74,6 +94,11 @@ export function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
       }
 
       const reviewType = uploadedUrls.length > 0 ? 'photo' : 'general'
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('skin_type')
+        .eq('auth_id', userId)
+        .maybeSingle()
       const { error: insertError } = await supabase.from('reviews').insert({
         target_id: productId,
         author_id: userId,
@@ -82,6 +107,7 @@ export function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
         content: content.trim(),
         images: uploadedUrls,
         helpful_concerns: helpfulConcerns,
+        skin_type: (profile as any)?.skin_type || null,
         status: '게시',
         is_best: false,
         helpful_count: 0,
@@ -107,6 +133,20 @@ export function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
   return (
     <div style={{ background: BG, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 16, marginTop: 12 }}>
       <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 10 }}>리뷰 작성</div>
+      <div
+        style={{
+          background: 'rgba(123,94,167,0.1)',
+          border: '1px solid rgba(123,94,167,0.3)',
+          borderRadius: 12,
+          padding: '10px 12px',
+          marginBottom: 12,
+          color: '#fff',
+        }}
+      >
+        <div style={{ fontSize: 11, color: '#fff', marginBottom: 4 }}>텍스트만    +{textToast}T</div>
+        <div style={{ fontSize: 11, color: '#fff', marginBottom: 4 }}>사진 첨부   +{photoToast}T  <span style={{ color: PURPLE }}>추천</span></div>
+        <div style={{ fontSize: 11, color: '#fff' }}>영상 첨부   +{videoToast}T  <span style={{ color: PURPLE }}>최고</span></div>
+      </div>
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
         {[1, 2, 3, 4, 5].map(n => (
@@ -187,10 +227,10 @@ export function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
           padding: '12px 14px',
           borderRadius: 10,
           border: 'none',
-          background: GOLD,
-          color: '#0D0B09',
-          fontWeight: 800,
-          fontSize: 14,
+          background: PURPLE,
+          color: '#fff',
+          fontWeight: 400,
+          fontSize: 15,
           cursor: canSubmit ? 'pointer' : 'not-allowed',
           opacity: canSubmit ? 1 : 0.6,
         }}
