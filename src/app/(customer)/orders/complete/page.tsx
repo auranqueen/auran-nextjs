@@ -28,6 +28,7 @@ function OrderCompleteContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [orderNo, setOrderNo] = useState<string>('')
   const [productLabel, setProductLabel] = useState<string>('')
+  const [productQty, setProductQty] = useState<number>(1)
   const [payAmount, setPayAmount] = useState<number>(0)
   const [toastAmount, setToastAmount] = useState<number | null>(null)
   const [purchaseRate, setPurchaseRate] = useState<number>(3)
@@ -46,7 +47,7 @@ function OrderCompleteContent() {
 
       const { data: order } = await supabase
         .from('orders')
-        .select('order_no, total_amount, final_amount')
+        .select('id, order_no, items, total_amount, final_amount')
         .eq('id', orderId)
         .maybeSingle()
 
@@ -58,12 +59,14 @@ function OrderCompleteContent() {
         return
       }
 
-      const { data: lineItems } = await supabase
-        .from('order_items')
-        .select('product_name')
-        .eq('order_id', orderId)
-      const names = (lineItems || []).map(i => (i as { product_name?: string }).product_name).filter(Boolean) as string[]
-      const label = names.length ? names.join(', ') : '상품'
+      let items: any[] = []
+      try {
+        items = (order as { items?: string })?.items ? JSON.parse((order as { items?: string }).items as string) : []
+      } catch {
+        items = []
+      }
+      const productName = items[0]?.product_name || '상품'
+      const qty = Number(items[0]?.quantity || 1)
 
       let tx: { amount?: number } | null = null
       let bs: { setting_value?: unknown } | null = null
@@ -85,12 +88,10 @@ function OrderCompleteContent() {
 
       if (!cancelled) {
         setIsLoggedIn(loggedIn)
-        setOrderNo(String((order as { order_no?: string }).order_no || ''))
-        setProductLabel(label)
-        setPayAmount(
-          num((order as { final_amount?: number }).final_amount, 0) ||
-            num((order as { total_amount?: number }).total_amount, 0)
-        )
+        setOrderNo(String((order as { order_no?: string; id?: string }).order_no || (order as { id?: string }).id || ''))
+        setProductLabel(productName)
+        setProductQty(Number.isNaN(qty) ? 1 : qty)
+        setPayAmount(num((order as { final_amount?: number }).final_amount, 0))
         setToastAmount(tx ? num(tx.amount, 0) : null)
         setPurchaseRate(num(bs?.setting_value, 3))
         setOrderMissing(false)
@@ -198,6 +199,9 @@ function OrderCompleteContent() {
             </div>
             <div style={{ fontSize: 13, marginBottom: 8 }}>
               <span style={{ color: 'rgba(255,255,255,0.5)' }}>상품</span> {productLabel}
+            </div>
+            <div style={{ fontSize: 13, marginBottom: 8 }}>
+              <span style={{ color: 'rgba(255,255,255,0.5)' }}>수량</span> {productQty}
             </div>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>
               결제금액 {payAmount.toLocaleString()}원
