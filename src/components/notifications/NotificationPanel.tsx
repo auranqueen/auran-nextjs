@@ -182,7 +182,9 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                         await supabase.from('notifications').update({ is_read: true }).eq('id', n.id)
                         setItems(prev => prev.map(x => (x.id === n.id ? { ...x, is_read: true } : x)))
                       }
-                      if (n.link_url) router.push(String(n.link_url))
+                      if (expandedNotice === n.id && n.link_url) {
+                        router.push(String(n.link_url))
+                      }
                     }}
                     style={{
                       background: swipeColor[n.id] || (n.is_read ? 'rgba(255,255,255,0.03)' : 'rgba(123,94,167,0.08)'),
