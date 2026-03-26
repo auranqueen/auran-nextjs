@@ -87,6 +87,10 @@ export default function CustomerHomePage() {
   const [newProducts, setNewProducts] = useState<any[]>([])
   const [brands, setBrands] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchKeyword, setSearchKeyword] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
 
   useEffect(() => {
     const supabase = createClient()
@@ -121,6 +125,32 @@ export default function CustomerHomePage() {
 
     setLoading(false)
   }, [])
+
+  useEffect(() => {
+    const keyword = searchKeyword.trim()
+    if (keyword.length < 2) {
+      setSearchResults([])
+      setSearchLoading(false)
+      return
+    }
+    let cancelled = false
+    const run = async () => {
+      setSearchLoading(true)
+      const { data } = await supabase
+        .from('products')
+        .select('id, name, storage_thumb_url, thumb_img, retail_price, sale_price, is_timesale, brand_id')
+        .or(`name.ilike.%${keyword}%, description.ilike.%${keyword}%`)
+        .eq('is_active', true)
+        .limit(10)
+      if (cancelled) return
+      setSearchResults(data || [])
+      setSearchLoading(false)
+    }
+    void run()
+    return () => {
+      cancelled = true
+    }
+  }, [searchKeyword, supabase])
 
   // 실시간 타이머
   useEffect(() => {
@@ -181,16 +211,126 @@ export default function CustomerHomePage() {
         }}>AURAN</span>
         <div style={{ display: 'flex', gap: '10px' }}>
           {['🔍', '🔔'].map((icon, i) => (
-            <button key={i} style={{
-              width: '34px', height: '34px', borderRadius: '50%',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '15px', cursor: 'pointer',
-            }}>{icon}</button>
+            <button
+              key={i}
+              onClick={() => {
+                if (i === 0) setSearchOpen(true)
+              }}
+              style={{
+                width: '34px', height: '34px', borderRadius: '50%',
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '15px', cursor: 'pointer',
+              }}
+            >
+              {icon}
+            </button>
           ))}
         </div>
       </header>
+      <div
+        style={{
+          maxHeight: searchOpen ? 420 : 0,
+          opacity: searchOpen ? 1 : 0,
+          overflow: 'hidden',
+          transition: 'max-height 260ms ease, opacity 220ms ease',
+          padding: searchOpen ? '10px 16px 0' : '0 16px',
+        }}
+      >
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            value={searchKeyword}
+            onChange={e => setSearchKeyword(e.target.value)}
+            placeholder="제품명, 브랜드 검색"
+            style={{
+              flex: 1,
+              height: 40,
+              padding: '0 14px',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: 20,
+              color: '#fff',
+              fontSize: 14,
+              outline: 'none',
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              setSearchOpen(false)
+              setSearchKeyword('')
+              setSearchResults([])
+            }}
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: '50%',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.05)',
+              color: '#fff',
+              fontSize: 14,
+              cursor: 'pointer',
+            }}
+          >
+            X
+          </button>
+        </div>
+        {searchOpen ? (
+          <div
+            style={{
+              marginTop: 8,
+              background: '#1a1a1a',
+              borderRadius: 12,
+              maxHeight: 300,
+              overflowY: 'auto',
+              border: '1px solid rgba(255,255,255,0.08)',
+            }}
+          >
+            {searchLoading ? (
+              <div style={{ padding: 12, fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>검색중...</div>
+            ) : searchKeyword.trim().length >= 2 && searchResults.length === 0 ? (
+              <div style={{ padding: 12, fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>검색 결과가 없어요</div>
+            ) : (
+              searchResults.map((p: any) => {
+                const price = Number((p?.is_timesale ? p?.sale_price : p?.retail_price) ?? 0)
+                const thumb = p?.storage_thumb_url || p?.thumb_img || ''
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => {
+                      router.push(`/products/${p.id}`)
+                      setSearchOpen(false)
+                      setSearchKeyword('')
+                      setSearchResults([])
+                    }}
+                    style={{
+                      display: 'flex',
+                      gap: 10,
+                      alignItems: 'center',
+                      padding: '10px 12px',
+                      borderBottom: '1px solid rgba(255,255,255,0.06)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div style={{ width: 42, height: 42, borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {thumb ? (
+                        <img src={thumb} alt={p.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div style={{ fontSize: 18 }}>🧴</div>
+                      )}
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 13, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                      <div style={{ fontSize: 12, color: '#7B5EA7', marginTop: 2 }}>{price.toLocaleString()}원</div>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        ) : null}
+      </div>
 
       {/* ── 인사말 ── */}
       <div style={{
