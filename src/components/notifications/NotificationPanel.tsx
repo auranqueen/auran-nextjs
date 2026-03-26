@@ -44,6 +44,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
   const [items, setItems] = useState<any[]>([])
   const [notices, setNotices] = useState<any[]>([])
   const [expandedNotice, setExpandedNotice] = useState<string | null>(null)
+  const [popNotice, setPopNotice] = useState<any>(null)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
   const [swipeColor, setSwipeColor] = useState<Record<string, string>>({})
 
@@ -178,13 +179,10 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                     }}
                     onClick={async () => {
                       console.log('카드 클릭됨', n.id)
-                      setExpandedNotice(expandedNotice === n.id ? null : n.id)
+                      setPopNotice(n)
                       if (!n.is_read) {
                         await supabase.from('notifications').update({ is_read: true }).eq('id', n.id)
                         setItems(prev => prev.map(x => (x.id === n.id ? { ...x, is_read: true } : x)))
-                      }
-                      if (expandedNotice === n.id && n.link_url) {
-                        router.push(String(n.link_url))
                       }
                     }}
                     style={{
@@ -196,25 +194,12 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                       pointerEvents: 'all',
                       opacity: n.is_read ? 0.5 : 1,
                       borderLeft: n.is_read ? '3px solid transparent' : `3px solid ${PURPLE}`,
-                      boxShadow: expandedNotice === n.id ? '0 0 16px rgba(123,94,167,0.25)' : 'none',
-                      transition: 'box-shadow 0.3s ease',
                     }}
                   >
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-                      <span style={{ fontSize: 14, color: iconStyle.color, animation: expandedNotice === n.id ? 'popIn 0.4s ease' : 'none' }}>{iconStyle.icon}</span>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <span style={{ fontSize: 14, color: iconStyle.color }}>{iconStyle.icon}</span>
                       <span style={{ fontSize: 13, color: '#fff' }}>{n.title}</span>
-                      <span style={{ marginLeft: 'auto', fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{expandedNotice === n.id ? 'v' : '>'}</span>
-                    </div>
-                    <div
-                      style={{
-                        maxHeight: expandedNotice === n.id ? '300px' : '0px',
-                        overflow: 'hidden',
-                        transition: 'max-height 0.3s ease, opacity 0.3s ease',
-                        opacity: expandedNotice === n.id ? 1 : 0,
-                      }}
-                    >
-                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 4, animation: expandedNotice === n.id ? 'wordRise 0.32s ease' : 'none' }}>{n.body || ''}</div>
-                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', animation: expandedNotice === n.id ? 'wordRise 0.38s ease' : 'none' }}>{n.created_at ? String(n.created_at).slice(0, 16).replace('T', ' ') : ''}</div>
+                      <span style={{ marginLeft: 'auto', fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{'>'}</span>
                     </div>
                   </div>
                 )
@@ -285,6 +270,53 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
           )}
         </div>
       </div>
+      {popNotice ? (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div
+            style={{
+              width: '90vw',
+              maxWidth: 360,
+              borderRadius: 20,
+              padding: '32px 24px',
+              textAlign: 'center',
+              position: 'relative',
+              background:
+                popNotice?.type === 'birthday' ? 'linear-gradient(135deg, #3d1f5e, #7B5EA7)' :
+                popNotice?.type === 'grade_up' ? 'linear-gradient(135deg, #1f3d2e, #C9A96E)' :
+                popNotice?.type === 'toast_expire' ? 'linear-gradient(135deg, #3d1f00, #ff6b00)' :
+                popNotice?.type === 'best_review' ? 'linear-gradient(135deg, #1f003d, #7B5EA7)' :
+                'linear-gradient(135deg, #1a1a2e, #7B5EA7)',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setPopNotice(null)}
+              style={{ position: 'absolute', right: 12, top: 10, border: 'none', background: 'transparent', color: '#fff', fontSize: 16, cursor: 'pointer' }}
+            >
+              X
+            </button>
+            <div style={{ fontSize: 64, animation: 'bounceIn 0.5s ease' }}>{iconForType(String(popNotice?.type || '')).icon}</div>
+            <div style={{ fontSize: 18, color: '#fff', marginTop: 10, animation: 'slideDown 0.35s ease' }}>{String(popNotice?.title || '')}</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 10, lineHeight: 1.6, animation: 'fadeIn 0.4s ease' }}>
+              {String(popNotice?.body || '')}
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 10 }}>{popNotice?.created_at ? String(popNotice.created_at).slice(0, 16).replace('T', ' ') : ''}</div>
+            {popNotice?.link_url ? (
+              <button
+                type="button"
+                onClick={() => {
+                  router.push(String(popNotice.link_url))
+                  setPopNotice(null)
+                }}
+                style={{ marginTop: 14, border: 'none', background: '#7B5EA7', color: '#fff', borderRadius: 10, padding: '10px 14px', fontSize: 13, cursor: 'pointer' }}
+              >
+                바로가기 →
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+      <style>{`@keyframes bounceIn { 0%{transform:scale(0)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} } @keyframes slideDown { 0%{transform:translateY(-20px);opacity:0} 100%{transform:translateY(0);opacity:1} } @keyframes fadeIn { 0%{opacity:0} 100%{opacity:1} }`}</style>
     </>
   )
 }
