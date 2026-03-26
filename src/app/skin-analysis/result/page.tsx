@@ -26,12 +26,12 @@ const HORMONE_LABELS: Record<string, string> = {
   menopause_transition: '갱년기', post_menopause: '폐경 후', hrt: 'HRT 중',
 }
 
-function Btn3({ id, retail_price, name, router }: any) {
+function Btn3({ id, retail_price, name, router, onBuy }: any) {
   return (
     <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
       <div onClick={() => router.push(`/products/${id}`)} style={{ flex: 1, padding: '8px 0', background: 'rgba(255,255,255,0.05)', border: CARD_BORDER, borderRadius: '8px', fontSize: '11px', color: TEXT_MUTED, textAlign: 'center', cursor: 'pointer' }}>🛒 담기</div>
       <div onClick={() => router.push(`/gift?product_id=${id}`)} style={{ flex: 1, padding: '8px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>🎁 선물</div>
-      <div onClick={() => router.push(`/checkout?product_id=${id}&qty=1`)} style={{ flex: 1.3, padding: '8px 0', background: GOLD, borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: BG, textAlign: 'center', cursor: 'pointer' }}>지금 구매</div>
+      <div onClick={() => void onBuy(id)} style={{ flex: 1.3, padding: '8px 0', background: GOLD, borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: BG, textAlign: 'center', cursor: 'pointer' }}>지금 구매</div>
     </div>
   )
 }
@@ -60,6 +60,7 @@ function SkinAnalysisResultPageContent() {
   const [prevScores, setPrevScores] = useState<any>(null)
   const [userName, setUserName] = useState('유미')
   const [historyData, setHistoryData] = useState<number[]>([])
+  const [payLoginSheet, setPayLoginSheet] = useState(false)
 
   // Simple skin_type exact-match strategy (easy to swap to score-based later).
   const fetchRecommendedProducts = async () => {
@@ -96,6 +97,45 @@ function SkinAnalysisResultPageContent() {
       }
     })
   }, [skinType, isPregnant])
+
+  useEffect(() => {
+    const run = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (!session) return
+      let ctx = ''
+      try {
+        if (localStorage.getItem('pending_payment') !== 'true') return
+        ctx = localStorage.getItem('pending_payment_ctx') || ''
+        if (!ctx.startsWith('checkout:')) return
+      } catch {
+        return
+      }
+      const pid = ctx.replace('checkout:', '')
+      try {
+        localStorage.removeItem('pending_payment')
+        localStorage.removeItem('pending_payment_ctx')
+      } catch {}
+      router.push(`/checkout?product_id=${pid}&qty=1`)
+    }
+    void run()
+  }, [router, supabase])
+
+  const handleCheckoutBuy = async (productId: string) => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session) {
+      try {
+        localStorage.setItem('pending_payment', 'true')
+        localStorage.setItem('pending_payment_ctx', `checkout:${productId}`)
+      } catch {}
+      setPayLoginSheet(true)
+      return
+    }
+    router.push(`/checkout?product_id=${productId}&qty=1`)
+  }
 
   const getSkinLabel = () => {
     const types = []
@@ -307,7 +347,7 @@ function SkinAnalysisResultPageContent() {
                 <div style={{ fontSize: '13px', fontWeight: 400 }}>{(p.retail_price || 0).toLocaleString()}원</div>
               </div>
             </div>
-            <Btn3 id={p.id} retail_price={p.retail_price} name={p.name} router={router} />
+            <Btn3 id={p.id} retail_price={p.retail_price} name={p.name} router={router} onBuy={handleCheckoutBuy} />
           </div>
         ))}
       </div>
@@ -319,6 +359,93 @@ function SkinAnalysisResultPageContent() {
       </div>
 
       {/* 하단 네비 */}
+      {payLoginSheet && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            zIndex: 90,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+          }}
+          onClick={() => {
+            try {
+              localStorage.removeItem('pending_payment')
+              localStorage.removeItem('pending_payment_ctx')
+            } catch {}
+            setPayLoginSheet(false)
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: 390,
+              background: '#1a1a1a',
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              padding: '22px 20px 28px',
+              borderTop: `1px solid ${GOLD}44`,
+            }}
+          >
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 8, textAlign: 'center' }}>
+              결제를 위해 로그인이 필요해요
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 18, textAlign: 'center' }}>
+              로그인 후 이 페이지에서 결제를 이어갈게요
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                void supabase.auth.signInWithOAuth({
+                  provider: 'kakao',
+                  options: { redirectTo: typeof window !== 'undefined' ? window.location.href.split('#')[0] : undefined },
+                })
+              }
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                borderRadius: 12,
+                border: 'none',
+                background: '#FEE500',
+                color: '#191600',
+                fontSize: 15,
+                fontWeight: 800,
+                cursor: 'pointer',
+                marginBottom: 10,
+              }}
+            >
+              카카오로 로그인
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  localStorage.removeItem('pending_payment')
+                  localStorage.removeItem('pending_payment_ctx')
+                } catch {}
+                setPayLoginSheet(false)
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: 12,
+                border: `1px solid ${GOLD}`,
+                background: 'transparent',
+                color: GOLD,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
+
       <nav style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '390px', height: '80px', background: 'rgba(13,11,9,0.96)', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '0 10px 16px', zIndex: 50 }}>
         <div onClick={() => router.push('/home')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
           <span style={{ fontSize: '22px' }}>🏠</span>

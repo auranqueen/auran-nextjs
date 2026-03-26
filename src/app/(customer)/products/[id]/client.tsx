@@ -1,6 +1,7 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 const GOLD = '#C9A96E'
 
@@ -35,10 +36,13 @@ interface Product {
 
 export default function ProductDetailClient({ product }: { product: Product }) {
   const router = useRouter()
+  const supabase = createClient()
   const [qty, setQty] = useState(1)
   const [activeThumb, setActiveThumb] = useState(0)
+  const [loginSheetOpen, setLoginSheetOpen] = useState(false)
+  const paymentResumeOnce = useRef(false)
 
-  const handleBuy = async () => {
+  const executeBuy = async () => {
     const res = await fetch(`${window.location.origin}/api/payment/request`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -46,11 +50,55 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     })
     const data = await res.json()
     if (data.payUrl) {
+      try {
+        localStorage.removeItem('pending_payment')
+        localStorage.removeItem('pending_payment_ctx')
+      } catch {}
       window.location.href = data.payUrl
     } else {
       alert('결제 요청 실패')
     }
   }
+
+  const handleBuy = async () => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session) {
+      try {
+        localStorage.setItem('pending_payment', 'true')
+        localStorage.setItem('pending_payment_ctx', 'pay')
+      } catch {}
+      setLoginSheetOpen(true)
+      return
+    }
+    await executeBuy()
+  }
+
+  useEffect(() => {
+    if (paymentResumeOnce.current) return
+    const run = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (!session) return
+      let ctx = ''
+      try {
+        if (localStorage.getItem('pending_payment') !== 'true') return
+        ctx = localStorage.getItem('pending_payment_ctx') || ''
+        if (ctx.startsWith('checkout:')) return
+      } catch {
+        return
+      }
+      paymentResumeOnce.current = true
+      try {
+        localStorage.removeItem('pending_payment')
+        localStorage.removeItem('pending_payment_ctx')
+      } catch {}
+      await executeBuy()
+    }
+    void run()
+  }, [supabase, product.id, qty])
 
   const brand = product.brand ?? 'AURAN'
   const origin = product.origin ?? ''
@@ -274,8 +322,95 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       <div style={{ display: 'table', width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse' }}>
         <button style={{ display: 'table-cell', width: '25%', background: '#1e1a14', border: 'none', borderRight: '1px solid #2a2520', color: '#aaa', fontSize: 13, fontWeight: 600, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', verticalAlign: 'middle' }}>🛒 담기</button>
         <button style={{ display: 'table-cell', width: '25%', background: '#241e0e', border: 'none', borderRight: '1px solid #3a3020', color: GOLD, fontSize: 13, fontWeight: 600, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', verticalAlign: 'middle' }}>🎁 선물하기</button>
-        <button onClick={handleBuy} style={{ display: 'table-cell', width: '50%', background: `linear-gradient(135deg,${GOLD},#a07840)`, border: 'none', color: '#000', fontSize: 16, fontWeight: 800, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', verticalAlign: 'middle' }}>지금 구매</button>
+        <button onClick={() => void handleBuy()} style={{ display: 'table-cell', width: '50%', background: `linear-gradient(135deg,${GOLD},#a07840)`, border: 'none', color: '#000', fontSize: 16, fontWeight: 800, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit', verticalAlign: 'middle' }}>지금 구매</button>
       </div>
+
+      {loginSheetOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            zIndex: 80,
+            display: 'flex',
+            alignItems: 'flex-end',
+            justifyContent: 'center',
+          }}
+          onClick={() => {
+            try {
+              localStorage.removeItem('pending_payment')
+              localStorage.removeItem('pending_payment_ctx')
+            } catch {}
+            setLoginSheetOpen(false)
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: 430,
+              background: '#1a1a1a',
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              padding: '22px 20px 28px',
+              borderTop: `1px solid ${GOLD}44`,
+            }}
+          >
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 8, textAlign: 'center' }}>
+              결제를 위해 로그인이 필요해요
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 18, textAlign: 'center' }}>
+              로그인 후 이 페이지에서 결제를 이어갈게요
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                void supabase.auth.signInWithOAuth({
+                  provider: 'kakao',
+                  options: { redirectTo: typeof window !== 'undefined' ? window.location.href.split('#')[0] : undefined },
+                })
+              }
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                borderRadius: 12,
+                border: 'none',
+                background: '#FEE500',
+                color: '#191600',
+                fontSize: 15,
+                fontWeight: 800,
+                cursor: 'pointer',
+                marginBottom: 10,
+              }}
+            >
+              카카오로 로그인
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                try {
+                  localStorage.removeItem('pending_payment')
+                  localStorage.removeItem('pending_payment_ctx')
+                } catch {}
+                setLoginSheetOpen(false)
+              }}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: 12,
+                border: `1px solid ${GOLD}`,
+                background: 'transparent',
+                color: GOLD,
+                fontSize: 13,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

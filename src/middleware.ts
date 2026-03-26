@@ -85,6 +85,13 @@ export async function middleware(req: NextRequest) {
   }
 
   const { pathname } = url
+  if (
+    pathname.startsWith('/api/payment') ||
+    pathname.startsWith('/api/payapp') ||
+    pathname.startsWith('/api/payments/payapp')
+  ) {
+    return NextResponse.next()
+  }
   const protectedPaths = ['/wallet', '/checkout']
   const isProtectedPath = protectedPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`))
   const isSuperConsole = pathname.startsWith('/super-console')
