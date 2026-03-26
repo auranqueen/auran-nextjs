@@ -271,13 +271,13 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
         </div>
       </div>
       {popNotice ? (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div
             style={{
               width: '90vw',
               maxWidth: 360,
-              borderRadius: 20,
-              padding: '32px 24px',
+              borderRadius: 24,
+              padding: '40px 28px',
               textAlign: 'center',
               position: 'relative',
               background:
@@ -295,12 +295,11 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
             >
               X
             </button>
-            <div style={{ fontSize: 64, animation: 'bounceIn 0.5s ease' }}>{iconForType(String(popNotice?.type || '')).icon}</div>
-            <div style={{ fontSize: 18, color: '#fff', marginTop: 10, animation: 'slideDown 0.35s ease' }}>{String(popNotice?.title || '')}</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 10, lineHeight: 1.6, animation: 'fadeIn 0.4s ease' }}>
+            <div style={{ fontSize: 72, animation: 'bounceIn 0.5s ease' }}>{iconForType(String(popNotice?.type || '')).icon}</div>
+            <div style={{ fontSize: 18, color: '#fff', marginTop: 10, animation: 'slideDown 0.3s ease' }}>{String(popNotice?.title || '')}</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 10, lineHeight: 1.6, animation: 'fadeIn 0.5s ease' }}>
               {String(popNotice?.body || '')}
             </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 10 }}>{popNotice?.created_at ? String(popNotice.created_at).slice(0, 16).replace('T', ' ') : ''}</div>
             {popNotice?.link_url ? (
               <button
                 type="button"
