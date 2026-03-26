@@ -64,6 +64,23 @@ export async function GET(request: NextRequest) {
     })
     const { issueSignupCouponsForAuthUser } = await import('@/lib/coupon/issueSignup')
     await issueSignupCouponsForAuthUser(user.id)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('name, nickname')
+      .eq('id', user.id)
+      .maybeSingle()
+    const displayName = String(profile?.name || profile?.nickname || '').trim()
+    const welcomeBody = displayName
+      ? `세상에서 제일 예쁜 ${displayName}님이 오셨네요 💜 유미님만을 위한 뷰티 플랫폼이에요. 피부분석부터 시작해봐요!`
+      : '세상에서 제일 예쁜 분이 오셨네요 💜 유미님만을 위한 뷰티 플랫폼이에요. 피부분석부터 시작해봐요!'
+    await supabase.from('notifications').insert({
+      user_id: user.id,
+      title: '🌸 AURAN에 오신 걸 환영해요!',
+      body: welcomeBody,
+      type: 'personal',
+      is_read: false,
+      link_url: '/skin-analysis',
+    })
     const { insertSignupWelcomeNotification } = await import('@/lib/notifications/signupWelcome')
     await insertSignupWelcomeNotification(supabase, user.id)
     const { sendSignupAlimtalkIfNeeded } = await import('@/lib/signup/sendSignupAlimtalk')
