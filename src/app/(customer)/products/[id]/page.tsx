@@ -6,7 +6,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
   const supabase = createClient()
   const { data: product } = await supabase
     .from('products')
-    .select('*')
+    .select('*, brands(name, logo_url)')
     .eq('id', params.id)
     .single()
 

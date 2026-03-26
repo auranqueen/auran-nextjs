@@ -7,14 +7,14 @@ const GOLD = '#C9A96E'
 
 interface Product {
   id: string
-  brand: string
+  brands?: { name?: string; logo_url?: string } | null
   origin: string
   name: string
-  seo_desc: string
+  description: string
   retail_price: number
   original_price: number
   discount_rate: number
-  rating: number
+  avg_rating: number
   review_count: number
   repurchase_rate: number
   active_users: number
@@ -30,8 +30,11 @@ interface Product {
   clinicals: { label: string; pct: number; width: number }[]
   certs: string[]
   together: { ico: string; brand: string; name: string; price: string; step: string }[]
-  thumb_imgs: string[]
+  thumb_images: string[]
+  gallery_imgs?: string[]
   storage_thumb_url: string
+  is_timesale?: boolean
+  sale_price?: number
 }
 
 export default function ProductDetailClient({ product }: { product: Product }) {
@@ -100,14 +103,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     void run()
   }, [supabase, product.id, qty])
 
-  const brand = product.brand ?? 'AURAN'
+  const brand = product.brands?.name || 'AURAN'
   const origin = product.origin ?? ''
   const name = product.name ?? '제품명'
-  const seoDesc = product.seo_desc ?? ''
-  const price = product.retail_price ?? product.original_price ?? 0
+  const seoDesc = product.description ?? ''
+  const price = product.is_timesale && product.sale_price ? product.sale_price : (product.retail_price ?? product.original_price ?? 0)
   const origPrice = product.original_price ?? 0
   const discount = product.discount_rate ?? 0
-  const rating = product.rating ?? 4.9
+  const rating = product.avg_rating ?? 4.9
   const reviewCount = product.review_count ?? 0
   const repurchaseRate = product.repurchase_rate ?? 0
   const activeUsers = product.active_users ?? 0
@@ -122,7 +125,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const clinicals = product.clinicals ?? []
   const certs = product.certs ?? []
   const together = product.together ?? []
-  const thumbImgs = product.thumb_imgs ?? []
+  const thumbImgs = product.thumb_images ?? []
+  const galleryImgs = product.gallery_imgs ?? []
   const thumbUrl = product.storage_thumb_url ?? ''
   const total = (price * qty).toLocaleString() + '원'
 
@@ -181,6 +185,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           </div>
           {maxThumbs.map((url, i) => (
             <div key={i} onClick={() => setActiveThumb(i + 1)} style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === i + 1 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </div>
+          ))}
+          {galleryImgs.map((url, i) => (
+            <div key={`g-${i}`} onClick={() => setActiveThumb(maxThumbs.length + i + 1)} style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === maxThumbs.length + i + 1 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           ))}
