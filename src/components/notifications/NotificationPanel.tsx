@@ -192,6 +192,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                       padding: 14,
                       margin: 8,
                       cursor: 'pointer',
+                      pointerEvents: 'all',
                       opacity: n.is_read ? 0.5 : 1,
                       borderLeft: n.is_read ? '3px solid transparent' : `3px solid ${PURPLE}`,
                       boxShadow: expandedNotice === n.id ? '0 0 16px rgba(123,94,167,0.25)' : 'none',
