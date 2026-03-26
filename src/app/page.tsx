@@ -91,6 +91,13 @@ export default function CustomerHomePage() {
   const [searchKeyword, setSearchKeyword] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
+  const [noticeOpen, setNoticeOpen] = useState(false)
+  const [noticeTab, setNoticeTab] = useState<'notif' | 'notice'>('notif')
+  const [myUserId, setMyUserId] = useState('')
+  const [myNotifications, setMyNotifications] = useState<any[]>([])
+  const [notices, setNotices] = useState<any[]>([])
+  const [noticeLoading, setNoticeLoading] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
     const supabase = createClient()
@@ -152,6 +159,53 @@ export default function CustomerHomePage() {
     }
   }, [searchKeyword, supabase])
 
+  useEffect(() => {
+    const run = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      const uid = session?.user?.id || ''
+      setMyUserId(uid)
+      if (!uid) {
+        setUnreadCount(0)
+        return
+      }
+      const { data: unreadRows } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('user_id', uid)
+        .eq('is_read', false)
+      setUnreadCount((unreadRows || []).length)
+    }
+    void run()
+  }, [supabase, noticeOpen])
+
+  useEffect(() => {
+    if (!noticeOpen) return
+    const loadPanelData = async () => {
+      setNoticeLoading(true)
+      if (myUserId) {
+        const { data: nRows } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', myUserId)
+          .order('created_at', { ascending: false })
+          .limit(20)
+        setMyNotifications(nRows || [])
+      } else {
+        setMyNotifications([])
+      }
+      const { data: noticeRows } = await supabase
+        .from('notices')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(20)
+      setNotices(noticeRows || [])
+      setNoticeLoading(false)
+    }
+    void loadPanelData()
+  }, [noticeOpen, myUserId, supabase])
+
   // 실시간 타이머
   useEffect(() => {
     const id = setInterval(() => {
@@ -210,23 +264,52 @@ export default function CustomerHomePage() {
           color: GOLD, letterSpacing: '6px',
         }}>AURAN</span>
         <div style={{ display: 'flex', gap: '10px' }}>
-          {['🔍', '🔔'].map((icon, i) => (
-            <button
-              key={i}
-              onClick={() => {
-                if (i === 0) setSearchOpen(true)
-              }}
-              style={{
-                width: '34px', height: '34px', borderRadius: '50%',
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '15px', cursor: 'pointer',
-              }}
-            >
-              {icon}
-            </button>
-          ))}
+          <button
+            onClick={() => setSearchOpen(true)}
+            style={{
+              width: '34px', height: '34px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '15px', cursor: 'pointer',
+            }}
+          >
+            🔍
+          </button>
+          <button
+            onClick={() => setNoticeOpen(true)}
+            style={{
+              width: '34px', height: '34px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '15px', cursor: 'pointer',
+              position: 'relative',
+            }}
+          >
+            🔔
+            {unreadCount > 0 ? (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  minWidth: 16,
+                  height: 16,
+                  borderRadius: 8,
+                  background: '#E04030',
+                  color: '#fff',
+                  fontSize: 10,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '0 4px',
+                }}
+              >
+                {unreadCount}
+              </span>
+            ) : null}
+          </button>
         </div>
       </header>
       <div
@@ -331,6 +414,118 @@ export default function CustomerHomePage() {
           </div>
         ) : null}
       </div>
+      {noticeOpen ? (
+        <>
+          <div
+            onClick={() => setNoticeOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 190 }}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: 'min(320px, 100%)',
+              background: '#111',
+              borderLeft: '1px solid rgba(255,255,255,0.08)',
+              zIndex: 200,
+              transform: noticeOpen ? 'translateX(0)' : 'translateX(100%)',
+              transition: 'transform 240ms ease',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 12px 8px' }}>
+              <div style={{ display: 'flex', gap: 14 }}>
+                <button
+                  type="button"
+                  onClick={() => setNoticeTab('notif')}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: 14,
+                    cursor: 'pointer',
+                    padding: 0,
+                    borderBottom: noticeTab === 'notif' ? '2px solid #7B5EA7' : '2px solid transparent',
+                  }}
+                >
+                  알림
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setNoticeTab('notice')}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: 14,
+                    cursor: 'pointer',
+                    padding: 0,
+                    borderBottom: noticeTab === 'notice' ? '2px solid #7B5EA7' : '2px solid transparent',
+                  }}
+                >
+                  공지
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNoticeOpen(false)}
+                style={{ border: 'none', background: 'transparent', color: '#fff', fontSize: 14, cursor: 'pointer' }}
+              >
+                X
+              </button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto', padding: '4px 12px 16px' }}>
+              {noticeLoading ? (
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', padding: '10px 4px' }}>불러오는 중...</div>
+              ) : noticeTab === 'notif' ? (
+                myNotifications.length === 0 ? (
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', padding: '10px 4px' }}>새 알림이 없어요</div>
+                ) : (
+                  myNotifications.map((n: any) => (
+                    <div
+                      key={n.id}
+                      onClick={async () => {
+                        if (!n.is_read) {
+                          await supabase.from('notifications').update({ is_read: true }).eq('id', n.id)
+                          setMyNotifications(prev => prev.map(row => (row.id === n.id ? { ...row, is_read: true } : row)))
+                          setUnreadCount(prev => Math.max(0, prev - 1))
+                        }
+                        if (n.link_url) router.push(String(n.link_url))
+                      }}
+                      style={{
+                        padding: '10px 4px',
+                        borderBottom: '1px solid rgba(255,255,255,0.08)',
+                        cursor: 'pointer',
+                        position: 'relative',
+                      }}
+                    >
+                      {!n.is_read ? <span style={{ position: 'absolute', left: -6, top: 16, width: 6, height: 6, borderRadius: 3, background: '#7B5EA7' }} /> : null}
+                      <div style={{ fontSize: 13, color: '#fff', marginBottom: 4 }}>{n.title}</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>{n.body || ''}</div>
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>{n.created_at ? String(n.created_at).slice(0, 16).replace('T', ' ') : ''}</div>
+                    </div>
+                  ))
+                )
+              ) : notices.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', padding: '10px 4px' }}>공지사항이 없어요</div>
+              ) : (
+                notices.map((n: any) => (
+                  <div key={n.id} style={{ padding: '10px 4px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                    {n.is_important ? (
+                      <div style={{ display: 'inline-block', background: '#7B5EA7', color: '#fff', borderRadius: 10, padding: '2px 8px', fontSize: 10, marginBottom: 6 }}>중요</div>
+                    ) : null}
+                    <div style={{ fontSize: 13, color: '#fff', marginBottom: 4 }}>{n.title}</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>{n.created_at ? String(n.created_at).slice(0, 10) : ''}</div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </>
+      ) : null}
 
       {/* ── 인사말 ── */}
       <div style={{
