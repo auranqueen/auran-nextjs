@@ -8,6 +8,7 @@ const GOLD = '#C9A96E'
 interface Product {
   id: string
   brands?: { name?: string; logo_url?: string } | null
+  thumb_img?: string
   origin: string
   name: string
   description: string
@@ -29,7 +30,7 @@ interface Product {
   ingredients: { ico: string; name: string; desc: string }[]
   clinicals: { label: string; pct: number; width: number }[]
   certs: string[]
-  together: { ico: string; brand: string; name: string; price: string; step: string }[]
+  together: { ico: string; brand: string; name: string; price: string; step: string; storage_thumb_url?: string; thumb_img?: string }[]
   thumb_images: string[]
   gallery_imgs?: string[]
   storage_thumb_url: string
@@ -107,7 +108,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const origin = product.origin ?? ''
   const name = product.name ?? '제품명'
   const seoDesc = product.description ?? ''
-  const price = product.is_timesale && product.sale_price ? product.sale_price : (product.retail_price ?? product.original_price ?? 0)
+  const price = Number((product.is_timesale ? product.sale_price : product.retail_price) ?? 0)
   const origPrice = product.original_price ?? 0
   const discount = product.discount_rate ?? 0
   const rating = product.avg_rating ?? 4.9
@@ -128,6 +129,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const thumbImgs = product.thumb_images ?? []
   const galleryImgs = product.gallery_imgs ?? []
   const thumbUrl = product.storage_thumb_url ?? ''
+  const mainImageUrl = product.storage_thumb_url || product.thumb_img || thumbImgs[0] || ''
   const total = (price * qty).toLocaleString() + '원'
 
   const wrap: React.CSSProperties = {
@@ -170,8 +172,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               style={{ width: '100%', height: '280px', objectFit: 'cover' }}
             />
           ) : (
-            thumbUrl
-              ? <img src={thumbUrl} alt={name} style={{ maxHeight: 240, maxWidth: '80%', objectFit: 'contain' }} />
+            mainImageUrl
+              ? <img src={mainImageUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : <div style={{ fontSize: 80, color: '#555' }}>🧴</div>
           )}
         </div>
@@ -307,7 +309,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           {together.map((t, i) => (
             <div key={i} style={{ flex: 1, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center' }}>
               <div style={{ fontSize: 8, background: '#2a1f0e', color: GOLD, padding: '2px 6px', borderRadius: 4, fontWeight: 700, display: 'inline-block', marginBottom: 6 }}>{t.step}</div>
-              <div style={{ fontSize: 28, marginBottom: 5 }}>{t.ico}</div>
+              <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {t.storage_thumb_url || t.thumb_img ? (
+                  <img src={t.storage_thumb_url || t.thumb_img} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ fontSize: 28 }}>{t.ico}</div>
+                )}
+              </div>
               <div style={{ fontSize: 8, color: '#666' }}>{t.brand}</div>
               <div style={{ fontSize: 10, lineHeight: 1.3 }}>{t.name}</div>
               <div style={{ fontSize: 11, color: GOLD, fontWeight: 700, marginTop: 3 }}>{t.price}</div>
