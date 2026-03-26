@@ -44,7 +44,6 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
   const [items, setItems] = useState<any[]>([])
   const [notices, setNotices] = useState<any[]>([])
   const [expandedNotice, setExpandedNotice] = useState<string | null>(null)
-  const [expandedNotification, setExpandedNotification] = useState<string | null>(null)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
   const [swipeColor, setSwipeColor] = useState<Record<string, string>>({})
 
@@ -178,7 +177,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                       }
                     }}
                     onClick={async () => {
-                      setExpandedNotification(expandedNotification === n.id ? null : n.id)
+                      setExpandedNotice(expandedNotice === n.id ? null : n.id)
                       if (!n.is_read) {
                         await supabase.from('notifications').update({ is_read: true }).eq('id', n.id)
                         setItems(prev => prev.map(x => (x.id === n.id ? { ...x, is_read: true } : x)))
@@ -193,25 +192,25 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                       cursor: 'pointer',
                       opacity: n.is_read ? 0.5 : 1,
                       borderLeft: n.is_read ? '3px solid transparent' : `3px solid ${PURPLE}`,
-                      boxShadow: expandedNotification === n.id ? '0 0 16px rgba(123,94,167,0.25)' : 'none',
+                      boxShadow: expandedNotice === n.id ? '0 0 16px rgba(123,94,167,0.25)' : 'none',
                       transition: 'box-shadow 0.3s ease',
                     }}
                   >
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
-                      <span style={{ fontSize: 14, color: iconStyle.color, animation: expandedNotification === n.id ? 'popIn 0.4s ease' : 'none' }}>{iconStyle.icon}</span>
+                      <span style={{ fontSize: 14, color: iconStyle.color, animation: expandedNotice === n.id ? 'popIn 0.4s ease' : 'none' }}>{iconStyle.icon}</span>
                       <span style={{ fontSize: 13, color: '#fff' }}>{n.title}</span>
-                      <span style={{ marginLeft: 'auto', fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{expandedNotification === n.id ? 'v' : '>'}</span>
+                      <span style={{ marginLeft: 'auto', fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{expandedNotice === n.id ? 'v' : '>'}</span>
                     </div>
                     <div
                       style={{
-                        maxHeight: expandedNotification === n.id ? '300px' : '0px',
+                        maxHeight: expandedNotice === n.id ? '300px' : '0px',
                         overflow: 'hidden',
                         transition: 'max-height 0.3s ease, opacity 0.3s ease',
-                        opacity: expandedNotification === n.id ? 1 : 0,
+                        opacity: expandedNotice === n.id ? 1 : 0,
                       }}
                     >
-                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 4, animation: expandedNotification === n.id ? 'wordRise 0.32s ease' : 'none' }}>{n.body || ''}</div>
-                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', animation: expandedNotification === n.id ? 'wordRise 0.38s ease' : 'none' }}>{n.created_at ? String(n.created_at).slice(0, 16).replace('T', ' ') : ''}</div>
+                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginBottom: 4, animation: expandedNotice === n.id ? 'wordRise 0.32s ease' : 'none' }}>{n.body || ''}</div>
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', animation: expandedNotice === n.id ? 'wordRise 0.38s ease' : 'none' }}>{n.created_at ? String(n.created_at).slice(0, 16).replace('T', ' ') : ''}</div>
                     </div>
                   </div>
                 )
