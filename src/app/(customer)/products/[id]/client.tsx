@@ -197,7 +197,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         .eq('target_id', product.id)
         .maybeSingle()
       const myReview = !!myReviewRow
-      const canWrite = !!session && purchased === true && !myReview
+      const canWrite = !!session && !!purchased && !myReview
       setShowReviewForm(canWrite)
       setShowReviewBanner(canWrite)
       const { data: setting } = await supabase
