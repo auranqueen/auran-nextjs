@@ -100,7 +100,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     setReviewsLoading(true)
     const { data, error } = await supabase
       .from('reviews')
-      .select('*')
+      .select('*, author:profiles(id, full_name, nickname)')
       .eq('target_id', product.id)
       .eq('status', '게시')
       .order('created_at', { ascending: false })
@@ -217,6 +217,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         .eq('target_id', product.id)
         .maybeSingle()
       setMyReviewDoc(myRow || null)
+      if (myRow) {
+        setShowReviewForm(false)
+        setShowReviewBanner(false)
+        return
+      }
       const canWrite = !!session && !!purchased && !myRow
       setShowReviewForm(canWrite)
       setShowReviewBanner(canWrite)
@@ -370,7 +375,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const total = (price * qty).toLocaleString() + '원'
 
   let reviewListAvg = 0
-  const starCounts = [0, 0, 0, 0, 0]
   const concernFreq: Record<string, number> = {}
   const skinFreq: Record<string, number> = {}
   if (reviews.length >= 1) {
@@ -379,8 +383,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       const r = reviews[ri]
       const rv = Number(r?.rating || 0)
       sumR += rv
-      const s = Math.min(5, Math.max(1, Math.round(rv)))
-      starCounts[s - 1]++
       if (Array.isArray(r?.helpful_concerns)) {
         for (let ci = 0; ci < r.helpful_concerns.length; ci++) {
           const k = String(r.helpful_concerns[ci] || '').trim()
@@ -552,12 +554,20 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             <div style={{ fontSize: 12, color: '#e8e4dc', marginBottom: 10 }}>
               평균 별점 <span style={{ color: GOLD }}>{reviewListAvg.toFixed(1)}</span>
             </div>
-            <div style={{ fontSize: 11, color: '#aaa', marginBottom: 10, lineHeight: 1.7 }}>
-              {[5, 4, 3, 2, 1].map(star => (
-                <div key={star}>
-                  {star}★ {starCounts[star - 1]}개
-                </div>
-              ))}
+            <div style={{ marginBottom: 10 }}>
+              {[5, 4, 3, 2, 1].map(star => {
+                const count = reviews.filter(r => r.rating === star).length
+                const pct = reviews.length > 0 ? Math.round((count / reviews.length) * 100) : 0
+                return (
+                  <div key={star} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, color: '#C9A96E', width: 20 }}>{star}★</span>
+                    <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.1)', borderRadius: 3 }}>
+                      <div style={{ width: `${pct}%`, height: '100%', background: '#C9A96E', borderRadius: 3 }} />
+                    </div>
+                    <span style={{ fontSize: 11, color: '#666', width: 24 }}>{count}</span>
+                  </div>
+                )
+              })}
             </div>
             {top3Concerns.length > 0 ? (
               <div style={{ marginBottom: 10 }}>
@@ -635,7 +645,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   />
                 ) : null}
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>
-                  {rv.created_at ? String(rv.created_at).slice(0, 10) : ''}
+                  {rv.author?.nickname || rv.author?.full_name || '익명'}
+                  {rv.created_at ? ` · ${String(rv.created_at).slice(0, 10)}` : ''}
                 </div>
                 {myReviewDoc &&
                 rv.id === myReviewDoc.id &&
