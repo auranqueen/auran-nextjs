@@ -42,6 +42,8 @@ interface Product {
   is_timesale?: boolean
   sale_price?: number
   sales_count?: number | null
+  skin_types?: string[] | null
+  skin_concerns?: string[] | null
 }
 
 export default function ProductDetailClient({ product }: { product: Product }) {
@@ -77,6 +79,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       brands?: { name?: string } | null
     }[]
   >([])
+  const [aiRecommendLine, setAiRecommendLine] = useState<string | null>(null)
 
   const fetchReviews = async () => {
     setReviewsLoading(true)
@@ -284,6 +287,53 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     }
   }, [product.id, supabase])
 
+  useEffect(() => {
+    if (!product?.id) return
+    let cancelled = false
+    ;(async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        if (!cancelled) setAiRecommendLine(null)
+        return
+      }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('skin_type, skin_concerns')
+        .eq('auth_id', session.user.id)
+        .maybeSingle()
+      if (cancelled) return
+      const userSkinType = String((profile as any)?.skin_type || '').trim()
+      const rawConcerns = (profile as any)?.skin_concerns
+      const userConcerns = Array.isArray(rawConcerns)
+        ? rawConcerns.map((c: unknown) => String(c || '').trim()).filter(Boolean)
+        : []
+      const prodTypes = Array.isArray(product.skin_types)
+        ? product.skin_types.map(s => String(s || '').trim())
+        : []
+      const prodConcerns = Array.isArray(product.skin_concerns)
+        ? product.skin_concerns.map(s => String(s || '').trim())
+        : []
+      const typeMatch = !!userSkinType && prodTypes.includes(userSkinType)
+      const concernMatch =
+        userConcerns.length > 0 &&
+        prodConcerns.length > 0 &&
+        userConcerns.some(uc => prodConcerns.includes(uc))
+      if (!typeMatch && !concernMatch) {
+        setAiRecommendLine(null)
+        return
+      }
+      const parts: string[] = []
+      if (typeMatch) parts.push(`내 피부타입(${userSkinType})에 맞는 제품이에요`)
+      if (concernMatch) parts.push(`내 피부고민 해결에 도움되는 제품이에요`)
+      setAiRecommendLine(parts.length === 1 ? `✦ ${parts[0]}` : `✦ ${parts[0]} · ${parts[1]}`)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [product.id, product.skin_types, product.skin_concerns, supabase])
+
   const brand = product.brands?.name || 'AURAN'
   const origin = product.origin ?? ''
   const name = product.name ?? '제품명'
@@ -398,6 +448,23 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           <span style={tag('#1a2e1a','#6fcf97','#2a4a2a')}>재구매 {repurchaseRate}%</span>
           <span style={tag('#1a1e30','#74b0ff','#2a2e50')}>일촌 {activeUsers}명 사용중</span>
         </div>
+        {aiRecommendLine ? (
+          <div
+            style={{
+              alignSelf: 'flex-start',
+              marginBottom: 6,
+              display: 'inline-block',
+              background: 'rgba(201,169,110,0.1)',
+              border: '1px solid rgba(201,169,110,0.3)',
+              borderRadius: 20,
+              padding: '4px 12px',
+              fontSize: 11,
+              color: '#C9A96E',
+            }}
+          >
+            {aiRecommendLine}
+          </div>
+        ) : null}
         <div style={{ fontSize: 20, fontWeight: 400, lineHeight: 1.4, marginBottom: 5, color: '#e8e4dc' }}>{name}</div>
         <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6, marginBottom: 10 }}>{seoDesc}</div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
