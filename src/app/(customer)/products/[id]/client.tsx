@@ -202,7 +202,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const together = product.together ?? []
   const thumbImgs = product.thumb_images ?? []
   const galleryImgs = product.gallery_imgs ?? []
-  const thumbUrl = product.storage_thumb_url ?? ''
+  const thumbUrl = product.storage_thumb_url || product.thumb_img || thumbImgs[0] || galleryImgs[0] || ''
   const mainImageUrl = product.storage_thumb_url || product.thumb_img || thumbImgs[0] || galleryImgs[0] || ''
   const total = (price * qty).toLocaleString() + '원'
 
