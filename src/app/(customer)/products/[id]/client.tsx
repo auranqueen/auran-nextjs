@@ -699,35 +699,31 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       </div>
 
       {showReviewBanner ? (
-        <>
-          <style>{`
-            @keyframes reviewFloating {
-              0% { transform: translateY(0px); }
-              50% { transform: translateY(-6px); }
-              100% { transform: translateY(0px); }
-            }
-          `}</style>
-          <div style={{ padding: '0 18px 12px' }}>
-            <button
-              type="button"
-              onClick={() => reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              style={{
-                width: '100%',
-                background: '#7B5EA7',
-                border: 'none',
-                borderRadius: 20,
-                padding: '12px 20px',
-                fontSize: 13,
-                fontWeight: 400,
-                color: '#fff',
-                cursor: 'pointer',
-                animation: 'reviewFloating 2.4s ease-in-out infinite',
-              }}
-            >
-              ✍️ 리뷰 쓰기  +{reviewToastAmount}T
-            </button>
-          </div>
-        </>
+        <button
+          type="button"
+          onClick={() => reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            right: 20,
+            width: 56,
+            height: 56,
+            borderRadius: '50%',
+            background: '#7B5EA7',
+            color: '#fff',
+            fontSize: 11,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 999,
+            cursor: 'pointer',
+            border: 'none',
+          }}
+        >
+          <span style={{ lineHeight: 1.1 }}>✍️</span>
+          <span style={{ lineHeight: 1.1 }}>+{reviewToastAmount}T</span>
+        </button>
       ) : null}
 
       {/* 3버튼 완전 붙이기 */}
