@@ -201,11 +201,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       setShowReviewForm(canWrite)
       setShowReviewBanner(canWrite)
       const { data: setting } = await supabase
-        .from('benefit_settings')
-        .select('setting_value')
-        .eq('setting_key', 'review_toast_amount')
-        .maybeSingle()
-      setReviewToastAmount(Number((setting as any)?.setting_value) || 500)
+        .from('admin_settings')
+        .select('value')
+        .eq('category', 'review')
+        .eq('key', 'points_text')
+        .single()
+      const reviewToastAmount = setting?.value ? Number(setting.value) : 500
+      setReviewToastAmount(reviewToastAmount)
     }
     void run()
   }, [product?.id, supabase])
@@ -704,19 +706,19 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           onClick={() => reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
           style={{
             position: 'fixed',
-            bottom: 24,
-            right: 20,
-            width: 56,
-            height: 56,
-            borderRadius: '50%',
+            top: '30%',
+            right: 0,
+            borderRadius: '50% 0 0 50%',
+            width: 52,
+            height: 52,
             background: '#7B5EA7',
             color: '#fff',
-            fontSize: 11,
+            fontSize: 10,
+            zIndex: 999,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 999,
             cursor: 'pointer',
             border: 'none',
           }}
