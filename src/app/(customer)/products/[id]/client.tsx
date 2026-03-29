@@ -181,7 +181,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const origin = product.origin ?? ''
   const name = product.name ?? '제품명'
   const seoDesc = product.description ?? ''
-  const price = Number((product.is_timesale ? product.sale_price : product.retail_price) ?? 0)
+  const priceRaw = product.is_timesale ? (product.sale_price ?? 0) : (product.retail_price ?? 0)
+  const price = Number(priceRaw) || 0
   const origPrice = product.original_price ?? 0
   const discount = product.discount_rate ?? 0
   const rating = product.avg_rating ?? 4.9
@@ -245,9 +246,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               style={{ width: '100%', height: '280px', objectFit: 'cover' }}
             />
           ) : (
-            mainImageUrl
-              ? <img src={mainImageUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              : <div style={{ fontSize: 80, color: '#555' }}>🧴</div>
+            mainImageUrl ? (
+              <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
+                <img src={mainImageUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </div>
+            ) : (
+              <div style={{ fontSize: 80, color: '#555' }}>🧴</div>
+            )
           )}
         </div>
 
