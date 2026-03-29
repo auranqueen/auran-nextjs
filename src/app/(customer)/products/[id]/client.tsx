@@ -55,13 +55,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   const fetchReviews = async () => {
     setReviewsLoading(true)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('reviews')
       .select('*')
       .eq('target_id', product.id)
       .eq('status', '게시')
       .order('created_at', { ascending: false })
       .limit(20)
+    if (error) console.error('fetchReviews error:', error)
     setReviews(data || [])
     setReviewsLoading(false)
   }
