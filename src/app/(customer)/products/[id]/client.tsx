@@ -173,7 +173,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         setShowReviewBanner(false)
         return
       }
-      const myId = session.user.id
       const { data: orders } = await supabase
         .from('orders')
         .select('items')
@@ -191,13 +190,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         }
         if (Array.isArray(parsed) && parsed.some(it => String(it?.product_id || '') === String(product.id))) purchased = true
       })
-      const { data: myReview } = await supabase
+      const { data: myReviewRow } = await supabase
         .from('reviews')
         .select('id')
-        .eq('author_id', myId)
+        .eq('author_id', session.user.id)
         .eq('target_id', product.id)
         .maybeSingle()
-      const canWrite = !!session && purchased && !myReview
+      const myReview = !!myReviewRow
+      const canWrite = !!session && purchased === true && !myReview
       setShowReviewForm(canWrite)
       setShowReviewBanner(canWrite)
       const { data: setting } = await supabase
@@ -698,6 +698,38 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         <div style={{ fontSize: 22, fontWeight: 700, color: GOLD }}>{total}</div>
       </div>
 
+      {showReviewBanner ? (
+        <>
+          <style>{`
+            @keyframes reviewFloating {
+              0% { transform: translateY(0px); }
+              50% { transform: translateY(-6px); }
+              100% { transform: translateY(0px); }
+            }
+          `}</style>
+          <div style={{ padding: '0 18px 12px' }}>
+            <button
+              type="button"
+              onClick={() => reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              style={{
+                width: '100%',
+                background: '#7B5EA7',
+                border: 'none',
+                borderRadius: 20,
+                padding: '12px 20px',
+                fontSize: 13,
+                fontWeight: 400,
+                color: '#fff',
+                cursor: 'pointer',
+                animation: 'reviewFloating 2.4s ease-in-out infinite',
+              }}
+            >
+              ✍️ 리뷰 쓰기  +{reviewToastAmount}T
+            </button>
+          </div>
+        </>
+      ) : null}
+
       {/* 3버튼 완전 붙이기 */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 8 }}>
         <button style={{ flex: 1, background: '#1e1a14', border: 'none', color: '#aaa', fontSize: 13, fontWeight: 400, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>🛒 담기</button>
@@ -791,38 +823,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           </div>
         </div>
       )}
-      {showReviewBanner ? (
-        <>
-          <style>{`
-            @keyframes reviewFloating {
-              0% { transform: translateY(0px); }
-              50% { transform: translateY(-6px); }
-              100% { transform: translateY(0px); }
-            }
-          `}</style>
-          <button
-            type="button"
-            onClick={() => reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            style={{
-              position: 'fixed',
-              right: 20,
-              bottom: 90,
-              background: '#7B5EA7',
-              border: 'none',
-              borderRadius: 20,
-              padding: '12px 20px',
-              fontSize: 13,
-              fontWeight: 400,
-              color: '#fff',
-              cursor: 'pointer',
-              zIndex: 70,
-              animation: 'reviewFloating 2.4s ease-in-out infinite',
-            }}
-          >
-            ✍️ 리뷰 쓰기  +{reviewToastAmount}T
-          </button>
-        </>
-      ) : null}
     </div>
   )
 }
