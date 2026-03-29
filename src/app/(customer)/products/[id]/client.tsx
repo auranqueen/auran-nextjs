@@ -66,6 +66,16 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       brands?: { name?: string } | null
     }[]
   >([])
+  const [sameSkinTypeRows, setSameSkinTypeRows] = useState<
+    {
+      id: string
+      name: string
+      retail_price: number
+      thumb_img?: string | null
+      storage_thumb_url?: string | null
+      brands?: { name?: string } | null
+    }[]
+  >([])
 
   const fetchReviews = async () => {
     setReviewsLoading(true)
@@ -227,6 +237,51 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       cancelled = true
     }
   }, [product.id, product.perfect_together, supabase])
+
+  useEffect(() => {
+    if (!product?.id) return
+    let cancelled = false
+    ;(async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        if (!cancelled) setSameSkinTypeRows([])
+        return
+      }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('skin_type')
+        .eq('auth_id', session.user.id)
+        .maybeSingle()
+      const skinType = String((profile as any)?.skin_type || '').trim()
+      if (!skinType) {
+        if (!cancelled) setSameSkinTypeRows([])
+        return
+      }
+      const { data } = await supabase
+        .from('products')
+        .select('id,name,retail_price,thumb_img,storage_thumb_url,brands(name)')
+        .contains('skin_types', [skinType])
+        .neq('id', product.id)
+        .eq('status', 'active')
+        .limit(4)
+      if (cancelled) return
+      setSameSkinTypeRows(
+        (data || []) as {
+          id: string
+          name: string
+          retail_price: number
+          thumb_img?: string | null
+          storage_thumb_url?: string | null
+          brands?: { name?: string } | null
+        }[]
+      )
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [product.id, supabase])
 
   const brand = product.brands?.name || 'AURAN'
   const origin = product.origin ?? ''
@@ -525,6 +580,40 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 >
                   + 담기
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {sameSkinTypeRows.length > 0 ? (
+        <div style={{ padding: '0 20px 20px' }}>
+          <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>같은 피부타입이 선택한 제품</div>
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' as const }}>
+            {sameSkinTypeRows.map((t, i) => (
+              <div
+                key={t.id || i}
+                onClick={() => router.push(`/products/${t.id}`)}
+                style={{
+                  flexShrink: 0,
+                  width: 120,
+                  background: '#141210',
+                  border: '1px solid #201c16',
+                  borderRadius: 12,
+                  padding: 9,
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {t.storage_thumb_url || t.thumb_img ? (
+                    <img src={t.storage_thumb_url || t.thumb_img || ''} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ fontSize: 28 }}>📦</div>
+                  )}
+                </div>
+                <div style={{ fontSize: 11, lineHeight: 1.3, marginBottom: 4 }}>{t.name}</div>
+                <div style={{ fontSize: 11, color: GOLD, fontWeight: 700 }}>{Number(t.retail_price || 0).toLocaleString()}원</div>
               </div>
             ))}
           </div>
