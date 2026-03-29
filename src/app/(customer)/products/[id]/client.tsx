@@ -178,7 +178,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         .from('orders')
         .select('items')
         .eq('customer_id', session.user.id)
-        .in('status', ['결제완료', '배송중', '배송완료', '구매확정'])
       let purchased = false
       ;(orders || []).forEach((row: any) => {
         if (purchased) return
