@@ -41,6 +41,7 @@ interface Product {
   storage_thumb_url: string
   is_timesale?: boolean
   sale_price?: number
+  sales_count?: number | null
 }
 
 export default function ProductDetailClient({ product }: { product: Product }) {
@@ -402,6 +403,24 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
           <div style={{ fontSize: 28, fontWeight: 700, color: GOLD }}>{price.toLocaleString()}원</div>
           {discount > 0 && <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{origPrice.toLocaleString()}원</div>}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'row', gap: 12, alignItems: 'center', flexWrap: 'wrap' as const, marginBottom: 10, fontSize: 11 }}>
+          {product.review_count >= 5 ? (
+            <span style={{ color: '#888' }}>
+              재구매율 <span style={{ color: GOLD }}>{product.avg_rating * 18}%</span>
+            </span>
+          ) : null}
+          <span style={{ color: '#888' }}>
+            <span style={{ color: GOLD }}>오늘 주문 시 내일 출고</span>
+            {' · '}
+            무료배송 3만원 이상
+          </span>
+          {product.sales_count != null && Number(product.sales_count) > 0 ? (
+            <span style={{ color: '#888' }}>
+              <span style={{ color: GOLD }}>{Number(product.sales_count).toLocaleString()}</span>명이 구매했어요
+            </span>
+          ) : null}
         </div>
 
         {discount > 0 && (
