@@ -129,6 +129,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   useEffect(() => {
     if (!product?.id) return
+    console.log('reviews fetch 실행', product?.id)
     void fetchReviews()
   }, [product?.id])
 
