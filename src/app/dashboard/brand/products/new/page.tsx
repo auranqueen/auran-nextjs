@@ -32,6 +32,11 @@ export default function BrandNewProductPage() {
   const [ingredient, setIngredient] = useState('')
   const [category, setCategory] = useState('')
   const [detailHtml, setDetailHtml] = useState('')
+  const [keyIngredients, setKeyIngredients] = useState('')
+  const [clinicalResult, setClinicalResult] = useState('')
+  const [certificationsText, setCertificationsText] = useState('')
+  const [perfectTogetherInput, setPerfectTogetherInput] = useState('')
+  const [detailImagesCol, setDetailImagesCol] = useState<LocalFile[]>([])
   const [isFlashSale, setIsFlashSale] = useState(false)
   const [flashSalePrice, setFlashSalePrice] = useState('')
   const [flashSaleStart, setFlashSaleStart] = useState('')
@@ -75,6 +80,21 @@ export default function BrandNewProductPage() {
     const arr = Array.from(files)
     const next = arr.map(f => ({ id: uid(), file: f, previewUrl: URL.createObjectURL(f), uploading: false })) as LocalFile[]
     setImages(prev => [...prev, ...next].slice(0, 5))
+  }
+
+  const addDetailColImages = (files: FileList | null) => {
+    if (!files) return
+    const arr = Array.from(files)
+    const next = arr.map(f => ({ id: uid(), file: f, previewUrl: URL.createObjectURL(f), uploading: false })) as LocalFile[]
+    setDetailImagesCol(prev => [...prev, ...next].slice(0, 20))
+  }
+
+  const removeDetailColImage = (id: string) => {
+    setDetailImagesCol(prev => {
+      const x = prev.find(p => p.id === id)
+      if (x) URL.revokeObjectURL(x.previewUrl)
+      return prev.filter(p => p.id !== id)
+    })
   }
 
   const removeImage = (id: string) => {
@@ -155,6 +175,20 @@ export default function BrandNewProductPage() {
         detailUrls.push(u)
       }
 
+      const detailImagesColumnUrls: string[] = []
+      for (const img of detailImagesCol) {
+        if (img.uploadedUrl) {
+          detailImagesColumnUrls.push(img.uploadedUrl)
+          continue
+        }
+        const u = await uploadOne(img, 'image')
+        if (!u) {
+          alert('상세 이미지(detail_images) 업로드에 실패했습니다.')
+          return
+        }
+        detailImagesColumnUrls.push(u)
+      }
+
       let videoUrl: string | null = null
       if (video?.file) {
         videoUrl = video.uploadedUrl || (await uploadOne(video, 'video'))
@@ -178,6 +212,11 @@ export default function BrandNewProductPage() {
           thumb_img: thumbUrl,
           detail_imgs: detailUrls,
           detail_html: detailHtml,
+          key_ingredients: keyIngredients.trim(),
+          clinical_result: clinicalResult.trim(),
+          certifications: certificationsText.trim(),
+          perfect_together: perfectTogetherInput.trim(),
+          detail_images: detailImagesColumnUrls,
           video_url: videoUrl,
           is_flash_sale: isFlashSale,
           flash_sale_price: isFlashSale ? Number(flashSalePrice || '0') : null,
@@ -282,6 +321,58 @@ export default function BrandNewProductPage() {
                   <input value={flashSalePrice} onChange={e => setFlashSalePrice(e.target.value.replace(/[^0-9]/g, ''))} placeholder="세일가(원)" style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12 }} />
                   <input type="datetime-local" value={flashSaleStart} onChange={e => setFlashSaleStart(e.target.value)} style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12 }} />
                   <input type="datetime-local" value={flashSaleEnd} onChange={e => setFlashSaleEnd(e.target.value)} style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12 }} />
+                </div>
+              )}
+            </div>
+
+            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 14 }}>
+              <div style={{ fontSize: 12, fontWeight: 900, color: '#fff', marginBottom: 10 }}>상세 섹션 (DB)</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <textarea
+                  value={keyIngredients}
+                  onChange={e => setKeyIngredients(e.target.value)}
+                  placeholder="KEY INGREDIENTS"
+                  rows={4}
+                  style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12, resize: 'vertical' }}
+                />
+                <textarea
+                  value={clinicalResult}
+                  onChange={e => setClinicalResult(e.target.value)}
+                  placeholder="CLINICAL RESULT"
+                  rows={4}
+                  style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12, resize: 'vertical' }}
+                />
+                <textarea
+                  value={certificationsText}
+                  onChange={e => setCertificationsText(e.target.value)}
+                  placeholder="CERTIFICATIONS (줄바꿈으로 구분)"
+                  rows={3}
+                  style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12, resize: 'vertical' }}
+                />
+                <input
+                  value={perfectTogetherInput}
+                  onChange={e => setPerfectTogetherInput(e.target.value)}
+                  placeholder="PERFECT TOGETHER — 제품 UUID, 쉼표 구분"
+                  style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 11px', color: '#fff', fontSize: 12 }}
+                />
+              </div>
+            </div>
+
+            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 14, padding: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 900, color: '#fff' }}>상세 이미지 (detail_images)</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>{detailImagesCol.length}/20</div>
+              </div>
+              <input type="file" accept="image/*" multiple onChange={e => addDetailColImages(e.target.files)} />
+              {detailImagesCol.length > 0 && (
+                <div style={{ marginTop: 10, display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+                  {detailImagesCol.map(img => (
+                    <div key={img.id} style={{ position: 'relative', width: 92, height: 92, borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.10)', flex: '0 0 auto' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={img.previewUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <button type="button" onClick={() => removeDetailColImage(img.id)} style={{ position: 'absolute', top: 6, right: 6, width: 22, height: 22, borderRadius: 999, background: 'rgba(0,0,0,0.55)', border: '1px solid rgba(255,255,255,0.18)', color: '#fff', fontSize: 12 }}>×</button>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

@@ -51,6 +51,10 @@ const PATCHABLE = new Set([
   'timesale_starts_at',
   'timesale_ends_at',
   'sale_price',
+  'key_ingredients',
+  'clinical_result',
+  'certifications',
+  'perfect_together',
 ])
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {

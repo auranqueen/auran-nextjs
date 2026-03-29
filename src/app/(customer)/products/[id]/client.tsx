@@ -28,10 +28,14 @@ interface Product {
   story_quote: string
   story_desc: string
   tags: string[]
-  ingredients: { ico: string; name: string; desc: string }[]
-  clinicals: { label: string; pct: number; width: number }[]
-  certs: string[]
-  together: { ico: string; brand: string; name: string; price: string; step: string; storage_thumb_url?: string; thumb_img?: string }[]
+  ingredients?: { ico: string; name: string; desc: string }[]
+  clinicals?: { label: string; pct: number; width: number }[]
+  certs?: string[]
+  together?: { ico: string; brand: string; name: string; price: string; step: string; storage_thumb_url?: string; thumb_img?: string }[]
+  key_ingredients?: string | null
+  clinical_result?: string | null
+  certifications?: string | null
+  perfect_together?: string[] | null
   thumb_images: string[]
   gallery_imgs?: string[]
   storage_thumb_url: string
@@ -52,6 +56,16 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [loginSheetOpen, setLoginSheetOpen] = useState(false)
   const paymentResumeOnce = useRef(false)
   const reviewSectionRef = useRef<HTMLDivElement | null>(null)
+  const [perfectTogetherRows, setPerfectTogetherRows] = useState<
+    {
+      id: string
+      name: string
+      retail_price: number
+      thumb_img?: string | null
+      storage_thumb_url?: string | null
+      brands?: { name?: string } | null
+    }[]
+  >([])
 
   const fetchReviews = async () => {
     setReviewsLoading(true)
@@ -183,6 +197,37 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     void run()
   }, [product?.id, supabase])
 
+  useEffect(() => {
+    const raw = product.perfect_together
+    const ids = Array.isArray(raw) ? raw.map(x => String(x)).filter(Boolean) : []
+    if (ids.length === 0) {
+      setPerfectTogetherRows([])
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      const { data } = await supabase
+        .from('products')
+        .select('id,name,retail_price,thumb_img,storage_thumb_url,brands(name)')
+        .in('id', ids)
+      if (cancelled) return
+      const rows = (data || []) as {
+        id: string
+        name: string
+        retail_price: number
+        thumb_img?: string | null
+        storage_thumb_url?: string | null
+        brands?: { name?: string } | null
+      }[]
+      const order = new Map(ids.map((id, i) => [id, i]))
+      rows.sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
+      setPerfectTogetherRows(rows)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [product.id, product.perfect_together, supabase])
+
   const brand = product.brands?.name || 'AURAN'
   const origin = product.origin ?? ''
   const name = product.name ?? '제품명'
@@ -202,10 +247,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const storyQuote = product.story_quote ?? ''
   const storyDesc = product.story_desc ?? ''
   const tags = product.tags ?? []
-  const ingredients = product.ingredients ?? []
-  const clinicals = product.clinicals ?? []
-  const certs = product.certs ?? []
-  const together = product.together ?? []
+  const keyIngredientsText = String(product.key_ingredients ?? '').trim()
+  const clinicalResultText = String(product.clinical_result ?? '').trim()
+  const certificationLines = String(product.certifications ?? '')
+    .split('\n')
+    .map(s => s.trim())
+    .filter(Boolean)
   const thumbImgs = product.thumb_images ?? []
   const galleryImgs = product.gallery_imgs ?? []
   const thumbUrl = product.storage_thumb_url || product.thumb_img || thumbImgs[0] || galleryImgs[0] || ''
@@ -398,65 +445,91 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           ))}
         </div>
 
-        <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>KEY INGREDIENTS</div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-          {ingredients.map((ing, i) => (
-            <div key={i} style={{ flex: 1, background: '#1a1610', border: '1px solid #252018', borderRadius: 12, padding: '12px 8px', textAlign: 'center' }}>
-              <div style={{ fontSize: 26, marginBottom: 6 }}>{ing.ico}</div>
-              <div style={{ fontSize: 11, fontWeight: 600, lineHeight: 1.4 }}>{ing.name}</div>
-              <div style={{ fontSize: 9, color: '#666', marginTop: 2 }}>{ing.desc}</div>
+        {keyIngredientsText ? (
+          <>
+            <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>KEY INGREDIENTS</div>
+            <div
+              style={{
+                fontSize: 13,
+                lineHeight: 1.75,
+                color: '#bbb',
+                whiteSpace: 'pre-wrap',
+                marginBottom: 20,
+                background: '#1a1610',
+                border: '1px solid #252018',
+                borderRadius: 12,
+                padding: '14px 12px',
+              }}
+            >
+              {keyIngredientsText}
             </div>
-          ))}
-        </div>
+          </>
+        ) : null}
 
-        <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, fontWeight: 700, marginBottom: 3 }}>CLINICAL RESULT</div>
-        <div style={{ fontSize: 10, color: '#555', marginBottom: 12 }}>프랑스 피부과 임상 30명 · 4주 사용 후</div>
-        {clinicals.map((c, i) => (
-          <div key={i} style={{ marginBottom: 10 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 12, color: '#aaa' }}>{c.label}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: GOLD }}>+{c.pct}%</span>
+        {clinicalResultText ? (
+          <>
+            <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>CLINICAL RESULT</div>
+            <div
+              style={{
+                fontSize: 13,
+                lineHeight: 1.75,
+                color: '#bbb',
+                whiteSpace: 'pre-wrap',
+                marginBottom: 20,
+                background: '#1a1610',
+                border: '1px solid #252018',
+                borderRadius: 12,
+                padding: '14px 12px',
+              }}
+            >
+              {clinicalResultText}
             </div>
-            <div style={{ height: 6, background: '#1e1a14', borderRadius: 3, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${c.width}%`, background: `linear-gradient(90deg,${GOLD},#e8c878)`, borderRadius: 3 }} />
-            </div>
-          </div>
-        ))}
+          </>
+        ) : null}
       </div>
 
       {/* 인증 */}
-      <div style={{ padding: '18px 20px' }}>
-        <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>CERTIFICATIONS</div>
-        {certs.map((c, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#141210', border: '1px solid #201c16', borderRadius: 10, padding: '10px 14px', marginBottom: 8 }}>
-            <div style={{ fontSize: 19 }}>{['🏆','✅','🌿','🏅','📋'][i % 5]}</div>
-            <div style={{ fontSize: 12, fontWeight: 600 }}>{c}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* 같이 쓰면 */}
-      <div style={{ padding: '0 20px 20px' }}>
-        <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>PERFECT TOGETHER</div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {together.map((t, i) => (
-            <div key={i} style={{ flex: 1, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center' }}>
-              <div style={{ fontSize: 8, background: '#2a1f0e', color: GOLD, padding: '2px 6px', borderRadius: 4, fontWeight: 700, display: 'inline-block', marginBottom: 6 }}>{t.step}</div>
-              <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {t.storage_thumb_url || t.thumb_img ? (
-                  <img src={t.storage_thumb_url || t.thumb_img} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ fontSize: 28 }}>{t.ico}</div>
-                )}
-              </div>
-              <div style={{ fontSize: 8, color: '#666' }}>{t.brand}</div>
-              <div style={{ fontSize: 10, lineHeight: 1.3 }}>{t.name}</div>
-              <div style={{ fontSize: 11, color: GOLD, fontWeight: 700, marginTop: 3 }}>{t.price}</div>
-              <div style={{ fontSize: 10, color: '#888', background: '#1e1a14', borderRadius: 5, padding: 4, marginTop: 5, cursor: 'pointer' }}>+ 담기</div>
+      {certificationLines.length > 0 ? (
+        <div style={{ padding: '18px 20px' }}>
+          <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>CERTIFICATIONS</div>
+          {certificationLines.map((c, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#141210', border: '1px solid #201c16', borderRadius: 10, padding: '10px 14px', marginBottom: 8 }}>
+              <div style={{ fontSize: 19 }}>{['🏆','✅','🌿','🏅','📋'][i % 5]}</div>
+              <div style={{ fontSize: 12, fontWeight: 600 }}>{c}</div>
             </div>
           ))}
         </div>
-      </div>
+      ) : null}
+
+      {/* 같이 쓰면 */}
+      {perfectTogetherRows.length > 0 ? (
+        <div style={{ padding: '0 20px 20px' }}>
+          <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, fontWeight: 700, marginBottom: 12 }}>PERFECT TOGETHER</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {perfectTogetherRows.map((t, i) => (
+              <div key={t.id || i} style={{ flex: 1, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center' }}>
+                <div style={{ fontSize: 8, background: '#2a1f0e', color: GOLD, padding: '2px 6px', borderRadius: 4, fontWeight: 700, display: 'inline-block', marginBottom: 6 }}>STEP {i + 1}</div>
+                <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {t.storage_thumb_url || t.thumb_img ? (
+                    <img src={t.storage_thumb_url || t.thumb_img || ''} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ fontSize: 28 }}>📦</div>
+                  )}
+                </div>
+                <div style={{ fontSize: 8, color: '#666' }}>{t.brands?.name || ''}</div>
+                <div style={{ fontSize: 10, lineHeight: 1.3 }}>{t.name}</div>
+                <div style={{ fontSize: 11, color: GOLD, fontWeight: 700, marginTop: 3 }}>{Number(t.retail_price || 0).toLocaleString()}원</div>
+                <div
+                  style={{ fontSize: 10, color: '#888', background: '#1e1a14', borderRadius: 5, padding: 4, marginTop: 5, cursor: 'pointer' }}
+                  onClick={() => router.push(`/products/${t.id}`)}
+                >
+                  + 담기
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {/* 수량 */}
       <div style={{ padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#0d0b09', borderTop: '1px solid #1a1610' }}>

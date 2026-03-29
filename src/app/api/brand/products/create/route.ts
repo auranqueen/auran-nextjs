@@ -28,6 +28,20 @@ export async function POST(req: NextRequest) {
   const flashSalePrice = body?.flash_sale_price == null ? null : Number(body?.flash_sale_price)
   const flashSaleStart = typeof body?.flash_sale_start === 'string' ? body.flash_sale_start : null
   const flashSaleEnd = typeof body?.flash_sale_end === 'string' ? body.flash_sale_end : null
+  const keyIngredients = typeof body?.key_ingredients === 'string' ? body.key_ingredients.trim() : ''
+  const clinicalResult = typeof body?.clinical_result === 'string' ? body.clinical_result.trim() : ''
+  const certifications = typeof body?.certifications === 'string' ? body.certifications.trim() : ''
+  const detailImagesExtra = Array.isArray(body?.detail_images) ? body.detail_images.filter((x: unknown) => typeof x === 'string') : []
+
+  function isUuid(s: string) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s.trim())
+  }
+  let perfectTogether: string[] = []
+  if (Array.isArray(body?.perfect_together)) {
+    perfectTogether = (body.perfect_together as unknown[]).map(x => String(x)).filter(isUuid)
+  } else if (typeof body?.perfect_together === 'string') {
+    perfectTogether = body.perfect_together.split(',').map((s: string) => s.trim()).filter(isUuid)
+  }
 
   if (!name) return json({ ok: false, error: 'missing_name' }, 400)
   if (!Number.isFinite(retailPrice) || retailPrice < 0) return json({ ok: false, error: 'invalid_price' }, 400)
@@ -62,6 +76,11 @@ export async function POST(req: NextRequest) {
       flash_sale_price: isFlashSale && Number.isFinite(flashSalePrice as number) ? Math.max(0, Math.trunc(flashSalePrice as number)) : null,
       flash_sale_start: isFlashSale ? flashSaleStart : null,
       flash_sale_end: isFlashSale ? flashSaleEnd : null,
+      key_ingredients: keyIngredients || null,
+      clinical_result: clinicalResult || null,
+      certifications: certifications || null,
+      perfect_together: perfectTogether,
+      detail_images: detailImagesExtra,
       status: 'pending',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

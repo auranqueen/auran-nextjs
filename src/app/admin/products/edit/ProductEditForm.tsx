@@ -123,9 +123,15 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   const [thumbImages, setThumbImages] = useState<string[]>(['', '', '', '', ''])
   const [videoUrl, setVideoUrl] = useState('')
   const [detailContent, setDetailContent] = useState('')
+  const [keyIngredients, setKeyIngredients] = useState('')
+  const [clinicalResult, setClinicalResult] = useState('')
+  const [certificationsText, setCertificationsText] = useState('')
+  const [perfectTogetherInput, setPerfectTogetherInput] = useState('')
+  const [detailImages, setDetailImages] = useState<string[]>([])
 
   const fileRefs = useRef<(HTMLInputElement | null)[]>([])
   const videoRef = useRef<HTMLInputElement | null>(null)
+  const detailFileRef = useRef<HTMLInputElement | null>(null)
   const workingIdRef = useRef<string | null>(null)
 
   useEffect(() => {
@@ -211,6 +217,19 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       setThumbImages(thumbs.slice(0, 5))
       setVideoUrl(String(p.video_url || ''))
       setDetailContent(String(p.detail_content || ''))
+      setKeyIngredients(String(p.key_ingredients || ''))
+      setClinicalResult(String(p.clinical_result || ''))
+      setCertificationsText(String(p.certifications || ''))
+      setPerfectTogetherInput(
+        Array.isArray(p.perfect_together) && (p.perfect_together as string[]).length
+          ? (p.perfect_together as string[]).join(', ')
+          : ''
+      )
+      setDetailImages(
+        Array.isArray(p.detail_images) && (p.detail_images as string[]).length
+          ? [...(p.detail_images as string[])]
+          : []
+      )
 
       setLoading(false)
     })()
@@ -285,6 +304,24 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
     }
   }
 
+  const handleDetailImagePick = async (file: File | undefined) => {
+    if (!file) return
+    const pid = workingIdRef.current
+    if (!pid) {
+      setMsg('먼저 상품을 저장해 ID를 만든 뒤 이미지를 올려주세요 (저장 버튼)')
+      return
+    }
+    const ext = file.name.split('.').pop() || 'jpg'
+    const path = `edit/${pid}/detail-${Date.now()}.${ext}`
+    try {
+      const url = await uploadToStorage(file, path)
+      setDetailImages(prev => [...prev, url])
+      setMsg('상세 이미지 업로드됨 · 저장으로 반영하세요')
+    } catch (e: unknown) {
+      setMsg(e instanceof Error ? e.message : '상세 이미지 업로드 실패')
+    }
+  }
+
   const buildPayload = (pid: string, quizExisting: string[] | null | undefined) => {
     const nameTrim = name.trim().slice(0, 100)
     const limited = qtyUi === 'limited' ? Math.max(0, Math.floor(Number(stockInput) || 0)) : 999999
@@ -315,6 +352,11 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
 
     const thumbsClean = thumbImages.map(s => s.trim()).filter(Boolean)
     const quiz = encodeAdminMeta(optionsText, shipFee, shipMemo, quizExisting)
+    const perfectIds = perfectTogetherInput
+      .split(',')
+      .map(s => s.trim())
+      .filter(s => isUuid(s))
+    const detailImgsClean = detailImages.map(s => s.trim()).filter(Boolean)
 
     return {
       brand_id: brandId || null,
@@ -342,6 +384,12 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       storage_thumb_url: thumbsClean[0] || null,
       video_url: videoUrl.trim() || null,
       detail_content: detailContent.trim() || null,
+      key_ingredients: keyIngredients.trim() || null,
+      clinical_result: clinicalResult.trim() || null,
+      certifications: certificationsText.trim() || null,
+      perfect_together: perfectIds,
+      detail_images: detailImgsClean,
+      detail_imgs: detailImgsClean,
       is_flash_sale: isFlashSaleState,
       updated_at: new Date().toISOString(),
     }
@@ -737,6 +785,99 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
               style={{ ...inputStyle, minHeight: 200, resize: 'vertical' }}
             />
           </label>
+          <label style={{ display: 'grid', gap: 6 }}>
+            <span style={labelStyle}>KEY INGREDIENTS</span>
+            <textarea
+              value={keyIngredients}
+              onChange={e => setKeyIngredients(e.target.value)}
+              rows={5}
+              style={{ ...inputStyle, minHeight: 100, resize: 'vertical' }}
+            />
+          </label>
+          <label style={{ display: 'grid', gap: 6 }}>
+            <span style={labelStyle}>CLINICAL RESULT</span>
+            <textarea
+              value={clinicalResult}
+              onChange={e => setClinicalResult(e.target.value)}
+              rows={5}
+              style={{ ...inputStyle, minHeight: 100, resize: 'vertical' }}
+            />
+          </label>
+          <label style={{ display: 'grid', gap: 6 }}>
+            <span style={labelStyle}>CERTIFICATIONS</span>
+            <textarea
+              value={certificationsText}
+              onChange={e => setCertificationsText(e.target.value)}
+              rows={4}
+              placeholder="한 줄에 한 항목 (줄바꿈 구분)"
+              style={{ ...inputStyle, minHeight: 88, resize: 'vertical' }}
+            />
+          </label>
+          <label style={{ display: 'grid', gap: 6 }}>
+            <span style={labelStyle}>PERFECT TOGETHER (제품 UUID, 쉼표 구분)</span>
+            <input
+              value={perfectTogetherInput}
+              onChange={e => setPerfectTogetherInput(e.target.value)}
+              placeholder="uuid, uuid, ..."
+              style={inputStyle}
+            />
+          </label>
+          <div style={{ display: 'grid', gap: 8 }}>
+            <span style={labelStyle}>상세 이미지 (detail_images)</span>
+            <input
+              ref={detailFileRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={e => void handleDetailImagePick(e.target.files?.[0])}
+            />
+            <button
+              type="button"
+              onClick={() => detailFileRef.current?.click()}
+              style={{
+                alignSelf: 'flex-start',
+                padding: '8px 12px',
+                borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.15)',
+                background: 'rgba(255,255,255,0.08)',
+                color: '#fff',
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              상세 이미지 추가
+            </button>
+            {detailImages.length > 0 ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+                {detailImages.map((url, i) => (
+                  <div key={url + i} style={{ position: 'relative' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8 }} />
+                    <button
+                      type="button"
+                      onClick={() => setDetailImages(prev => prev.filter((_, j) => j !== i))}
+                      style={{
+                        position: 'absolute',
+                        top: -6,
+                        right: -6,
+                        width: 22,
+                        height: 22,
+                        borderRadius: 999,
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        background: 'rgba(0,0,0,0.65)',
+                        color: '#fff',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        lineHeight: 1,
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </div>
       )}
 
