@@ -145,6 +145,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         .from('orders')
         .select('items')
         .eq('customer_id', myId)
+        .in('status', ['결제완료', '배송중', '배송완료', '구매확정'])
       let purchased = false
       ;(orders || []).forEach((row: any) => {
         if (purchased) return
@@ -186,7 +187,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const origPrice = product.original_price ?? 0
   const discount = product.discount_rate ?? 0
   const rating = product.avg_rating ?? 4.9
-  const reviewCount = product.review_count ?? 0
+  const reviewCount = reviews.length
   const repurchaseRate = product.repurchase_rate ?? 0
   const activeUsers = product.active_users ?? 0
   const matchPct = product.match_pct ?? ''
