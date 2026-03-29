@@ -125,6 +125,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     void run()
   }, [supabase, product.id, qty])
 
+  console.log('useEffect 실행', product?.id)
+
   useEffect(() => {
     if (!product?.id) return
     void fetchReviews()
