@@ -294,14 +294,15 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       const {
         data: { session },
       } = await supabase.auth.getSession()
-      if (!session?.user?.id) {
+      const uid = session?.user?.id
+      if (!uid) {
         if (!cancelled) setAiRecommendLine(null)
         return
       }
       const { data: profile } = await supabase
         .from('profiles')
         .select('skin_type')
-        .eq('auth_id', session.user.id)
+        .eq('auth_id', uid)
         .maybeSingle()
       if (cancelled) return
       const userSkinType = String((profile as any)?.skin_type || '').trim()
