@@ -100,7 +100,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     setReviewsLoading(true)
     const { data, error } = await supabase
       .from('reviews')
-      .select('*, author:profiles(id, full_name, nickname)')
+      .select('*')
       .eq('target_id', product.id)
       .eq('status', '게시')
       .order('created_at', { ascending: false })
@@ -645,8 +645,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                   />
                 ) : null}
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>
-                  {rv.author?.nickname || rv.author?.full_name || '익명'}
-                  {rv.created_at ? ` · ${String(rv.created_at).slice(0, 10)}` : ''}
+                  {rv.author_id ? '익명' : ''}
+                  {rv.created_at ? `${rv.author_id ? ' · ' : ''}${String(rv.created_at).slice(0, 10)}` : ''}
                 </div>
                 {myReviewDoc &&
                 rv.id === myReviewDoc.id &&
