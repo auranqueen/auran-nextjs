@@ -55,8 +55,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [showReviewBanner, setShowReviewBanner] = useState(false)
   const [myReviewDoc, setMyReviewDoc] = useState<{
     id: string
-    created_at: string
+    content?: string | null
+    rating?: number | null
+    helpful_concerns?: string[] | null
     is_edited: boolean | null
+    created_at: string
   } | null>(null)
   const [editReviewDraft, setEditReviewDraft] = useState<{
     id: string
@@ -209,7 +212,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       })
       const { data: myRow } = await supabase
         .from('reviews')
-        .select('id, created_at, is_edited')
+        .select('id, content, rating, helpful_concerns, is_edited, created_at')
         .eq('author_id', session.user.id)
         .eq('target_id', product.id)
         .maybeSingle()
@@ -366,6 +369,33 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const mainImageUrl = product.storage_thumb_url || product.thumb_img || thumbImgs[0] || galleryImgs[0] || ''
   const total = (price * qty).toLocaleString() + '원'
 
+  let reviewListAvg = 0
+  const starCounts = [0, 0, 0, 0, 0]
+  const concernFreq: Record<string, number> = {}
+  const skinFreq: Record<string, number> = {}
+  if (reviews.length >= 1) {
+    let sumR = 0
+    for (let ri = 0; ri < reviews.length; ri++) {
+      const r = reviews[ri]
+      const rv = Number(r?.rating || 0)
+      sumR += rv
+      const s = Math.min(5, Math.max(1, Math.round(rv)))
+      starCounts[s - 1]++
+      if (Array.isArray(r?.helpful_concerns)) {
+        for (let ci = 0; ci < r.helpful_concerns.length; ci++) {
+          const k = String(r.helpful_concerns[ci] || '').trim()
+          if (!k) continue
+          concernFreq[k] = (concernFreq[k] || 0) + 1
+        }
+      }
+      const st = r?.skin_type != null ? String(r.skin_type).trim() : ''
+      if (st) skinFreq[st] = (skinFreq[st] || 0) + 1
+    }
+    reviewListAvg = sumR / reviews.length
+  }
+  const top3Concerns = Object.entries(concernFreq).sort((a, b) => b[1] - a[1]).slice(0, 3)
+  const skinDistEntries = Object.entries(skinFreq)
+
   const wrap: React.CSSProperties = {
     background: '#0d0b09', color: '#e8e4dc', maxWidth: 430,
     margin: '0 auto', minHeight: '100vh', paddingBottom: '80px',
@@ -509,6 +539,62 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           <span style={{ fontSize: 12, color: '#666' }}>리뷰 {reviewCount}개</span>
           <span style={{ fontSize: 12, color: '#666', marginLeft: 'auto', cursor: 'pointer' }}>전체보기 ›</span>
         </div>
+        {!reviewsLoading && reviews.length >= 1 ? (
+          <div
+            style={{
+              background: 'rgba(255,255,255,0.03)',
+              borderRadius: 12,
+              padding: 16,
+              marginBottom: 12,
+            }}
+          >
+            <div style={{ fontSize: 11, color: '#888', marginBottom: 10, fontWeight: 700 }}>리뷰 통계</div>
+            <div style={{ fontSize: 12, color: '#e8e4dc', marginBottom: 10 }}>
+              평균 별점 <span style={{ color: GOLD }}>{reviewListAvg.toFixed(1)}</span>
+            </div>
+            <div style={{ fontSize: 11, color: '#aaa', marginBottom: 10, lineHeight: 1.7 }}>
+              {[5, 4, 3, 2, 1].map(star => (
+                <div key={star}>
+                  {star}★ {starCounts[star - 1]}개
+                </div>
+              ))}
+            </div>
+            {top3Concerns.length > 0 ? (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 10, color: '#888', marginBottom: 6 }}>도움 태그 Top3</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {top3Concerns.map(([label, cnt]) => (
+                    <span
+                      key={label}
+                      style={{
+                        fontSize: 11,
+                        padding: '3px 10px',
+                        borderRadius: 10,
+                        background: 'rgba(123,94,167,0.15)',
+                        border: '1px solid rgba(123,94,167,0.3)',
+                        color: '#B09AD0',
+                      }}
+                    >
+                      {label} {cnt}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {skinDistEntries.length > 0 ? (
+              <div>
+                <div style={{ fontSize: 10, color: '#888', marginBottom: 6 }}>피부타입</div>
+                <div style={{ fontSize: 11, color: '#aaa', lineHeight: 1.7 }}>
+                  {skinDistEntries.map(([sk, cnt]) => (
+                    <div key={sk}>
+                      {sk} {cnt}명
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
         <div ref={reviewSectionRef}>
         {reviewsLoading ? (
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>로딩중...</div>
@@ -605,7 +691,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               }
               const { data: refreshed } = await supabase
                 .from('reviews')
-                .select('id, created_at, is_edited')
+                .select('id, content, rating, helpful_concerns, is_edited, created_at')
                 .eq('author_id', session.user.id)
                 .eq('target_id', product.id)
                 .maybeSingle()
