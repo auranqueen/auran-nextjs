@@ -6,6 +6,13 @@ import { createClient } from '@/lib/supabase/client'
 type ReviewFormProps = {
   productId: string
   onSuccess: () => void
+  initialReview?: {
+    id: string
+    rating: number
+    content: string
+    helpful_concerns?: string[] | null
+    images?: string[] | null
+  } | null
 }
 
 const GOLD = '#C9A96E'
@@ -24,7 +31,7 @@ const CONCERNS = [
   '재구매 의사',
 ]
 
-export function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
+export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormProps) {
   const supabase = createClient()
   const [rating, setRating] = useState(0)
   const [content, setContent] = useState('')
@@ -53,6 +60,22 @@ export function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
     }
     void loadToastSettings()
   }, [supabase])
+
+  useEffect(() => {
+    if (initialReview) {
+      setRating(initialReview.rating)
+      setContent(initialReview.content)
+      setHelpfulConcerns(Array.isArray(initialReview.helpful_concerns) ? initialReview.helpful_concerns : [])
+      setPreviewUrls(Array.isArray(initialReview.images) ? initialReview.images : [])
+      setFiles([])
+    } else {
+      setRating(0)
+      setContent('')
+      setHelpfulConcerns([])
+      setPreviewUrls([])
+      setFiles([])
+    }
+  }, [initialReview])
 
   const canSubmit = useMemo(() => rating > 0 && content.trim().length >= 10 && !submitting, [rating, content, submitting])
 
@@ -93,26 +116,49 @@ export function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
         }
       }
 
-      const reviewType = uploadedUrls.length > 0 ? 'photo' : 'general'
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('skin_type')
-        .eq('auth_id', userId)
-        .maybeSingle()
-      const { error: insertError } = await supabase.from('reviews').insert({
-        target_id: productId,
-        author_id: userId,
-        review_type: reviewType,
-        rating,
-        content: content.trim(),
-        images: uploadedUrls,
-        helpful_concerns: helpfulConcerns,
-        skin_type: (profile as any)?.skin_type || null,
-        status: '게시',
-        is_best: false,
-        helpful_count: 0,
-      })
-      if (insertError) throw insertError
+      const mergedImages = initialReview
+        ? uploadedUrls.length > 0
+          ? [...(initialReview.images || []), ...uploadedUrls]
+          : initialReview.images || []
+        : uploadedUrls
+      const reviewType = mergedImages.length > 0 ? 'photo' : 'general'
+
+      if (initialReview?.id) {
+        const { error: updateError } = await supabase
+          .from('reviews')
+          .update({
+            content: content.trim(),
+            rating,
+            images: mergedImages,
+            helpful_concerns: helpfulConcerns,
+            is_edited: true,
+            edited_at: new Date().toISOString(),
+          })
+          .eq('id', initialReview.id)
+        if (updateError) throw updateError
+        setToastMsg('리뷰가 수정됐어요! 🎉')
+      } else {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('skin_type')
+          .eq('auth_id', userId)
+          .maybeSingle()
+        const { error: insertError } = await supabase.from('reviews').insert({
+          target_id: productId,
+          author_id: userId,
+          review_type: reviewType,
+          rating,
+          content: content.trim(),
+          images: mergedImages,
+          helpful_concerns: helpfulConcerns,
+          skin_type: (profile as any)?.skin_type || null,
+          status: '게시',
+          is_best: false,
+          helpful_count: 0,
+        })
+        if (insertError) throw insertError
+        setToastMsg('리뷰가 등록됐어요! 🎉')
+      }
 
       setRating(0)
       setContent('')
@@ -120,10 +166,9 @@ export function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
       setFiles([])
       setPreviewUrls([])
       onSuccess()
-      setToastMsg('리뷰가 등록됐어요! 🎉')
       setTimeout(() => setToastMsg(''), 1800)
     } catch {
-      setToastMsg('리뷰 등록에 실패했어요')
+      setToastMsg(initialReview?.id ? '리뷰 수정에 실패했어요' : '리뷰 등록에 실패했어요')
       setTimeout(() => setToastMsg(''), 1800)
     } finally {
       setSubmitting(false)
@@ -132,7 +177,7 @@ export function ReviewForm({ productId, onSuccess }: ReviewFormProps) {
 
   return (
     <div style={{ background: BG, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 16, marginTop: 12 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 10 }}>리뷰 작성</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 10 }}>{initialReview?.id ? '리뷰 수정' : '리뷰 작성'}</div>
       <div
         style={{
           background: 'rgba(123,94,167,0.1)',

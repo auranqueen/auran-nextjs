@@ -53,6 +53,18 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [reviewsLoading, setReviewsLoading] = useState(false)
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [showReviewBanner, setShowReviewBanner] = useState(false)
+  const [myReviewDoc, setMyReviewDoc] = useState<{
+    id: string
+    created_at: string
+    is_edited: boolean | null
+  } | null>(null)
+  const [editReviewDraft, setEditReviewDraft] = useState<{
+    id: string
+    rating: number
+    content: string
+    helpful_concerns: string[]
+    images: string[]
+  } | null>(null)
   const [reviewToastAmount, setReviewToastAmount] = useState(500)
   const [qty, setQty] = useState(1)
   const [activeThumb, setActiveThumb] = useState(0)
@@ -163,6 +175,10 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   }, [product?.id])
 
   useEffect(() => {
+    setEditReviewDraft(null)
+  }, [product.id])
+
+  useEffect(() => {
     if (!product?.id) return
     const run = async () => {
       const {
@@ -171,6 +187,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       if (!session?.user?.id) {
         setShowReviewForm(false)
         setShowReviewBanner(false)
+        setMyReviewDoc(null)
         return
       }
       const { data: orders } = await supabase
@@ -190,14 +207,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         }
         if (Array.isArray(parsed) && parsed.some(it => String(it?.product_id || '') === String(product.id))) purchased = true
       })
-      const { data: myReviewRow } = await supabase
+      const { data: myRow } = await supabase
         .from('reviews')
-        .select('id')
+        .select('id, created_at, is_edited')
         .eq('author_id', session.user.id)
         .eq('target_id', product.id)
         .maybeSingle()
-      const myReview = !!myReviewRow
-      const canWrite = !!session && !!purchased && !myReview
+      setMyReviewDoc(myRow || null)
+      const canWrite = !!session && !!purchased && !myRow
       setShowReviewForm(canWrite)
       setShowReviewBanner(canWrite)
       const { data: setting } = await supabase
@@ -527,16 +544,65 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>
                   {rv.created_at ? String(rv.created_at).slice(0, 10) : ''}
                 </div>
+                {myReviewDoc &&
+                rv.id === myReviewDoc.id &&
+                myReviewDoc.is_edited !== true &&
+                Date.now() - new Date(myReviewDoc.created_at).getTime() < 7 * 24 * 60 * 60 * 1000 ? (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setEditReviewDraft({
+                        id: String(rv.id),
+                        rating: Number(rv.rating || 0),
+                        content: String(rv.content || ''),
+                        helpful_concerns: Array.isArray(rv.helpful_concerns) ? rv.helpful_concerns : [],
+                        images: Array.isArray(rv.images) ? rv.images : [],
+                      })
+                    }
+                    style={{
+                      fontSize: 12,
+                      color: GOLD,
+                      background: 'rgba(201,169,110,0.12)',
+                      border: '1px solid rgba(201,169,110,0.35)',
+                      borderRadius: 8,
+                      padding: '6px 12px',
+                      marginBottom: 8,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    수정하기
+                  </button>
+                ) : null}
                 <div style={{ height: 1, background: 'rgba(255,255,255,0.08)' }} />
               </div>
             ))}
           </div>
         )}
-        {showReviewForm ? (
+        {showReviewForm || editReviewDraft ? (
           <ReviewForm
+            key={editReviewDraft?.id || 'new'}
             productId={product.id}
-            onSuccess={() => {
-              void fetchReviews()
+            initialReview={editReviewDraft}
+            onSuccess={async () => {
+              setShowReviewForm(false)
+              setShowReviewBanner(false)
+              setEditReviewDraft(null)
+              await fetchReviews()
+              const {
+                data: { session },
+              } = await supabase.auth.getSession()
+              if (!session?.user?.id) {
+                setMyReviewDoc(null)
+                return
+              }
+              const { data: refreshed } = await supabase
+                .from('reviews')
+                .select('id, created_at, is_edited')
+                .eq('author_id', session.user.id)
+                .eq('target_id', product.id)
+                .maybeSingle()
+              setMyReviewDoc(refreshed || null)
             }}
           />
         ) : null}
