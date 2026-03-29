@@ -534,6 +534,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, marginBottom: 8 }}>
                   {rv.content || ''}
                 </div>
+                {Array.isArray(rv.helpful_concerns) && rv.helpful_concerns.length > 0 && (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {rv.helpful_concerns.map((c: string) => (
+                      <span key={c} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 10, background: 'rgba(123,94,167,0.15)', border: '1px solid rgba(123,94,167,0.3)', color: '#B09AD0' }}>✓ {c}</span>
+                    ))}
+                  </div>
+                )}
                 {Array.isArray(rv.images) && rv.images[0] ? (
                   <img
                     src={rv.images[0]}
@@ -585,8 +592,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             productId={product.id}
             initialReview={editReviewDraft}
             onSuccess={async () => {
-              setShowReviewForm(false)
               setShowReviewBanner(false)
+              setShowReviewForm(false)
               setEditReviewDraft(null)
               await fetchReviews()
               const {
