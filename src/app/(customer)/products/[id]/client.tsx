@@ -300,39 +300,21 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       }
       const { data: profile } = await supabase
         .from('profiles')
-        .select('skin_type, skin_concerns')
+        .select('skin_type')
         .eq('auth_id', session.user.id)
         .maybeSingle()
       if (cancelled) return
       const userSkinType = String((profile as any)?.skin_type || '').trim()
-      const rawConcerns = (profile as any)?.skin_concerns
-      const userConcerns = Array.isArray(rawConcerns)
-        ? rawConcerns.map((c: unknown) => String(c || '').trim()).filter(Boolean)
-        : []
-      const prodTypes = Array.isArray(product.skin_types)
-        ? product.skin_types.map(s => String(s || '').trim())
-        : []
-      const prodConcerns = Array.isArray(product.skin_concerns)
-        ? product.skin_concerns.map(s => String(s || '').trim())
-        : []
-      const typeMatch = !!userSkinType && prodTypes.includes(userSkinType)
-      const concernMatch =
-        userConcerns.length > 0 &&
-        prodConcerns.length > 0 &&
-        userConcerns.some(uc => prodConcerns.includes(uc))
-      if (!typeMatch && !concernMatch) {
+      if (!product.skin_types?.includes(userSkinType)) {
         setAiRecommendLine(null)
         return
       }
-      const parts: string[] = []
-      if (typeMatch) parts.push(`내 피부타입(${userSkinType})에 맞는 제품이에요`)
-      if (concernMatch) parts.push(`내 피부고민 해결에 도움되는 제품이에요`)
-      setAiRecommendLine(parts.length === 1 ? `✦ ${parts[0]}` : `✦ ${parts[0]} · ${parts[1]}`)
+      setAiRecommendLine(`✦ 내 피부타입(${userSkinType})에 맞는 제품이에요`)
     })()
     return () => {
       cancelled = true
     }
-  }, [product.id, product.skin_types, product.skin_concerns, supabase])
+  }, [product.id, product.skin_types, supabase])
 
   const brand = product.brands?.name || 'AURAN'
   const origin = product.origin ?? ''
