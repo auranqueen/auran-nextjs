@@ -63,6 +63,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       .order('created_at', { ascending: false })
       .limit(20)
     if (error) console.error('fetchReviews error:', error)
+    console.log('reviews data:', data)
     setReviews(data || [])
     setReviewsLoading(false)
   }
