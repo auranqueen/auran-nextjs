@@ -272,7 +272,10 @@ export default function AdminMarketingProductsClient() {
         const [p, a, r, t] = await Promise.all([
           supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'pending').is('deleted_at', null),
           supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'active').is('deleted_at', null),
-          supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'discontinued').is('deleted_at', null),
+          supabase.from('products')
+            .select('id', { count: 'exact', head: true })
+            .or('status.eq.discontinued,status.eq.hidden')
+            .is('deleted_at', null),
           supabase.from('products').select('id', { count: 'exact', head: true }).not('deleted_at', 'is', null),
         ])
         setCounts({ pending: p.count || 0, active: a.count || 0, rejected: r.count || 0, trash: t.count || 0 })
@@ -413,7 +416,11 @@ export default function AdminMarketingProductsClient() {
   const bulkApprove = async () => {
     if (!window.confirm('PENDING 제품 전체를 승인할까요?')) return
     setBulkBusy(true)
-    const { error } = await supabase.from('products').update({ status: 'active' }).eq('status', 'pending')
+    const { error } = await supabase
+      .from('products')
+      .update({ status: 'active' })
+      .eq('status', 'pending')
+      .is('deleted_at', null)
     setBulkBusy(false)
     if (error) {
       setToast('저장 실패: ' + error.message)

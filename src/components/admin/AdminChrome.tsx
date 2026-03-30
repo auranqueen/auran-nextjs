@@ -117,7 +117,7 @@ export default function AdminChrome({ adminName, roleCounts, pendingShipCount = 
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', display: 'flex', overflow: 'hidden' }}>
+    <div className="admin-wrap" style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text)', display: 'flex', overflow: 'hidden' }}>
       {/* SIDEBAR */}
       <aside
         style={{

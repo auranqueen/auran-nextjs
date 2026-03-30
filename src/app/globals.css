@@ -97,3 +97,9 @@ button { cursor: pointer; font-family: 'Pretendard', sans-serif; }
   background-size: 200% 100%;
   animation: home-shimmer 1.5s linear infinite;
 }
+
+.admin-wrap *,
+.super-console *,
+[class*="admin"] * {
+  font-weight: 400 !important;
+}
