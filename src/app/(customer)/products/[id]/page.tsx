@@ -24,8 +24,16 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
     openGraph: {
       title,
       description: `${description} | ${price}원`,
-      images: imageUrl ? [{ url: imageUrl, width: 800, height: 800 }] : [],
+      images: imageUrl ? [{
+        url: imageUrl,
+        width: 800,
+        height: 800,
+        alt: product.name,
+        type: 'image/jpeg',
+      }] : [],
       type: 'website',
+      siteName: 'AURAN',
+      locale: 'ko_KR',
     },
     twitter: {
       card: 'summary_large_image',
