@@ -100,7 +100,7 @@ export default function ProductDetailModal({
   const [detailPreview, setDetailPreview] = useState(false)
   const [detailSaving, setDetailSaving] = useState(false)
 
-  const [earnPercent, setEarnPercent] = useState(Number(product.earn_points ?? 0))
+  const [earnPercent, setEarnPercent] = useState<number | ''>(product.earn_points == null ? '' : Number(product.earn_points))
   const [sharePoints, setSharePoints] = useState(Number(product.share_points ?? 0))
   const [textReviewPts, setTextReviewPts] = useState(Number(product.review_points_text ?? 0))
   const [photoPoints, setPhotoPoints] = useState(Number(product.review_points_photo ?? 0))
@@ -151,7 +151,7 @@ export default function ProductDetailModal({
           ? product.detail_imgs
           : []
     )
-    setEarnPercent(Number(product.earn_points ?? 0))
+    setEarnPercent(product.earn_points == null ? '' : Number(product.earn_points))
     setSharePoints(Number(product.share_points ?? 0))
     setTextReviewPts(Number(product.review_points_text ?? 0))
     setPhotoPoints(Number(product.review_points_photo ?? 0))
@@ -277,7 +277,7 @@ export default function ProductDetailModal({
     const { error } = await supabase
       .from('products')
       .update({
-        earn_points: Math.max(0, Math.min(100, Math.floor(earnPercent))),
+        earn_points: Math.max(0, Math.min(100, Math.floor(Number(earnPercent) || 0))),
         share_points: Math.max(0, Math.floor(sharePoints)),
         review_points_text: Math.max(0, Math.floor(textReviewPts)),
         review_points_photo: Math.max(0, Math.floor(photoPoints)),
@@ -293,7 +293,7 @@ export default function ProductDetailModal({
     onToast('✅ 포인트 설정 저장됨')
     onProductUpdated({
       ...product,
-      earn_points: Math.max(0, Math.min(100, Math.floor(earnPercent))),
+      earn_points: Math.max(0, Math.min(100, Math.floor(Number(earnPercent) || 0))),
       share_points: Math.max(0, Math.floor(sharePoints)),
       review_points_text: Math.max(0, Math.floor(textReviewPts)),
       review_points_photo: Math.max(0, Math.floor(photoPoints)),
@@ -326,7 +326,7 @@ export default function ProductDetailModal({
 
   const exampleEarn = useMemo(() => {
     const p = Math.max(0, Math.floor(Number(priceDraft) || 0))
-    const pct = Math.max(0, Math.min(100, Math.floor(earnPercent)))
+    const pct = Math.max(0, Math.min(100, Math.floor(Number(earnPercent) || 0)))
     return Math.floor((p * pct) / 100)
   }, [priceDraft, earnPercent])
 
@@ -545,8 +545,7 @@ export default function ProductDetailModal({
                         onToast('영상은 30초 이내만 등록 가능합니다')
                         continue
                       }
-                      const safe = file.name.replace(/[^\w.\-가-힣]/g, '_')
-                      const path = `thumbnails/${product.id}/${Date.now()}_${safe}`
+                      const path = `thumbnails/${encodeURIComponent(product.id)}/${Date.now()}.mp4`
                       const { error } = await supabase.storage.from('products').upload(path, file, { upsert: true })
                       if (error) {
                         onToast(error.message || '업로드 실패')
@@ -1125,8 +1124,10 @@ export default function ProductDetailModal({
                 min={0}
                 max={100}
                 value={earnPercent}
+                placeholder="0"
                 onChange={e => {
-                  setEarnPercent(Number(e.target.value))
+                  const v = e.target.value
+                  setEarnPercent(v === '' ? '' : Number(v))
                   mark('points', true)
                 }}
                 style={{

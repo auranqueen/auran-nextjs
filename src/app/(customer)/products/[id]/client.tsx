@@ -371,7 +371,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const thumbImgs = product.thumb_images ?? []
   const galleryImgs = product.gallery_imgs ?? []
   const thumbUrl = product.storage_thumb_url || product.thumb_img || thumbImgs[0] || galleryImgs[0] || ''
-  const mainImageUrl = product.storage_thumb_url || product.thumb_img || thumbImgs[0] || galleryImgs[0] || ''
+  const pointRateRaw = Number((product as any).earn_points_percent ?? (product as any).earn_points ?? 0)
+  const pointRate = Number.isFinite(pointRateRaw) && pointRateRaw > 0 ? Math.min(100, Math.max(0, pointRateRaw)) : 1
+  const expectedPurchasePts = Math.floor((price * pointRate) / 100)
+  const detailHtml = (product as any).detail_html ? String((product as any).detail_html) : ''
+  const detailGalleryUrls = (Array.isArray((product as any).detail_images) ? (product as any).detail_images : Array.isArray((product as any).detail_imgs) ? (product as any).detail_imgs : []) as unknown[]
+  const detailGalleryUrlsClean = detailGalleryUrls
+    .map(u => (typeof u === 'string' ? u.trim() : ''))
+    .filter(Boolean) as string[]
   const total = (price * qty).toLocaleString() + '원'
 
   let reviewListAvg = 0
@@ -411,6 +418,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   const thumbs = thumbImgs
   const maxThumbs = thumbs.slice(0, 4)
+  const activeMainImageUrl =
+    activeThumb === 0
+      ? thumbUrl
+      : activeThumb >= 1 && activeThumb <= maxThumbs.length
+        ? maxThumbs[activeThumb - 1]
+        : activeThumb > maxThumbs.length
+          ? galleryImgs[activeThumb - maxThumbs.length - 1] || thumbUrl
+          : thumbUrl
 
   return (
     <div style={wrap}>
@@ -438,9 +453,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               style={{ width: '100%', height: '280px', objectFit: 'cover' }}
             />
           ) : (
-            mainImageUrl ? (
+            activeMainImageUrl ? (
               <div style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }}>
-                <img src={mainImageUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={activeMainImageUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             ) : (
               <div style={{ fontSize: 80, color: '#555' }}>🧴</div>
@@ -504,6 +519,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           <div style={{ fontSize: 28, fontWeight: 700, color: GOLD }}>{price.toLocaleString()}원</div>
           {discount > 0 && <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{origPrice.toLocaleString()}원</div>}
         </div>
+        {price > 0 ? (
+          <div style={{ fontSize: 11, color: GOLD, fontWeight: 700, marginBottom: 10 }}>
+            이 상품 구매시 {expectedPurchasePts.toLocaleString()}P 적립
+          </div>
+        ) : null}
 
         <div style={{ display: 'flex', flexDirection: 'row', gap: 12, alignItems: 'center', flexWrap: 'wrap' as const, marginBottom: 10, fontSize: 11 }}>
           {product.review_count >= 5 ? (
@@ -534,6 +554,44 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             </div>
           </div>
         )}
+
+        {detailHtml ? (
+          <div
+            style={{
+              marginBottom: 12,
+              padding: '12px 14px',
+              borderRadius: 12,
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              color: 'rgba(255,255,255,0.85)',
+              fontSize: 13,
+              lineHeight: 1.7,
+            }}
+            dangerouslySetInnerHTML={{ __html: detailHtml }}
+          />
+        ) : null}
+        {detailGalleryUrlsClean.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 12 }}>
+            {detailGalleryUrlsClean.map((u, i) =>
+              /\.mp4($|\?)/i.test(u) ? (
+                <video
+                  key={`${u}_${i}`}
+                  src={u}
+                  controls
+                  playsInline
+                  style={{ width: '100%', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)' }}
+                />
+              ) : (
+                <img
+                  key={`${u}_${i}`}
+                  src={u}
+                  alt=""
+                  style={{ width: '100%', height: 'auto', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)' }}
+                />
+              )
+            )}
+          </div>
+        ) : null}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ color: GOLD, fontSize: 17, letterSpacing: 2 }}>★★★★★</span>

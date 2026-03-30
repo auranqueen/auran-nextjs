@@ -120,9 +120,48 @@ export default function CustomerHomePage() {
       if (data && data.length > 0) setBrands(data)
     })
 
-    supabase.from('time_sales').select('*, product:products(id, name, retail_price, thumb_img)').eq('is_active', true).limit(3).then(({ data }) => {
-      if (data && data.length > 0) setTimeSales(data)
-    })
+    // admin에서 products.is_timesale / sale_price / timesale_ends_at 을 업데이트하므로,
+    // 홈 타임세일은 time_sales 테이블이 아니라 products 기준으로 조회
+    supabase
+      .from('products')
+      .select('id, name, brand_id, retail_price, sale_price, thumb_img, storage_thumb_url, timesale_ends_at, brands(name)')
+      .eq('is_timesale', true)
+      .gt('timesale_ends_at', new Date().toISOString())
+      .order('timesale_ends_at', { ascending: true })
+      .limit(3)
+      .then(({ data }) => {
+        if (!data || data.length === 0) return
+        const mapped = data.map((p: any) => {
+          const orig = Number(p.retail_price ?? 0)
+          const sale = Number(p.sale_price ?? 0)
+          const disc = orig > 0 && sale >= 0 ? Math.round(((orig - sale) / orig) * 100) : 0
+          return {
+            id: p.id,
+            disc,
+            orig,
+            brand: p.brands?.name || null,
+            product: {
+              id: p.id,
+              name: p.name,
+              retail_price: sale,
+              thumb_img: p.storage_thumb_url || p.thumb_img || null,
+              brand: p.brands?.name || null,
+            },
+          }
+        })
+        setTimeSales(mapped)
+        setTimers(
+          mapped.map((it: any) => {
+            const rawEnd = data.find((x: any) => x.id === it.id)?.timesale_ends_at
+            const endMs = rawEnd ? new Date(rawEnd).getTime() : 0
+            const diffMs = Math.max(0, endMs - Date.now())
+            const h = Math.floor(diffMs / 3600000)
+            const m = Math.floor((diffMs % 3600000) / 60000)
+            const s = Math.floor((diffMs % 60000) / 1000)
+            return { h, m, s }
+          })
+        )
+      })
 
     supabase.from('group_buys').select('*, product:products(id, name, retail_price, thumb_img)').eq('is_active', true).limit(3).then(({ data }) => {
       if (data && data.length > 0) setGroupBuys(data)
