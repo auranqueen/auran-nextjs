@@ -29,15 +29,22 @@ export default function MyPage() {
         setUser(data.user)
         const name = data.user.user_metadata?.full_name || data.user.user_metadata?.name
         if (name) setUserName(name)
+        supabase
+          .from('orders')
+          .select('*, order_items(*, products(*, brands(name)))')
+          .eq('customer_id', data.user.id)
+          .order('created_at', { ascending: false })
+          .limit(5)
+          .then(({ data: ord }) => {
+            if (ord) setOrders(ord)
+          })
+      } else {
+        setOrders([])
       }
     })
     // TODO: user_wallets 테이블에서 포인트 조회
     supabase.from('user_wallets').select('balance').single().then(({ data }) => {
       if (data) setPoint(data.balance)
-    })
-    // TODO: orders 테이블에서 최근 주문 조회
-    supabase.from('orders').select('*, order_items(*, products(*))').order('created_at', { ascending: false }).limit(5).then(({ data }) => {
-      if (data) setOrders(data)
     })
     // TODO: coupons 테이블에서 사용 가능한 쿠폰 조회
     supabase.from('user_coupons').select('*, coupons(*)').eq('is_used', false).then(({ data }) => {
@@ -167,26 +174,48 @@ export default function MyPage() {
           <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>📋 구매 히스토리</span>
           <span onClick={() => router.push('/my/orders')} style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체보기 ›</span>
         </div>
-        {/* TODO: orders 테이블에서 최근 4개 */}
         <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
-          {[
-            { icon: '🧴', date: '03.01', brand: 'CIVASAN', name: 'MESS CREAM', status: '배송완료' },
-            { icon: '🌿', date: '02.15', brand: 'GERNETIC', name: '바이오 세럼', status: '배송완료' },
-            { icon: '🫧', date: '02.01', brand: 'SHOPBELLE', name: '딥클렌징 폼', status: '배송완료' },
-            { icon: '🌊', date: '01.20', brand: 'THALAC', name: '바스솔트', status: '배송완료' },
-          ].map((item, i) => (
-            <div key={i} style={{ minWidth: '110px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', flexShrink: 0 }}>
-              <div style={{ height: '70px', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', position: 'relative' }}>
-                {item.icon}
-                <span style={{ position: 'absolute', bottom: '4px', right: '6px', fontSize: '8px', fontFamily: 'monospace', color: TEXT_DIM }}>{item.date}</span>
+          {(() => {
+            const historyItems: { productId: string; name: string; thumb: string; brand: string; date: string }[] = []
+            const seen = new Set<string>()
+            for (const order of orders) {
+              const dateStr = order.created_at ? String(order.created_at).slice(5, 10).replace('-', '.') : ''
+              for (const oi of order.order_items || []) {
+                const p = oi.products
+                if (!p?.id || seen.has(String(p.id))) continue
+                seen.add(String(p.id))
+                historyItems.push({
+                  productId: String(p.id),
+                  name: p.name || '제품',
+                  thumb: p.storage_thumb_url || p.thumb_img || '',
+                  brand: (p.brands as { name?: string } | null)?.name || '',
+                  date: dateStr,
+                })
+                if (historyItems.length >= 4) break
+              }
+              if (historyItems.length >= 4) break
+            }
+            if (historyItems.length === 0) {
+              return <div style={{ fontSize: 12, color: TEXT_MUTED, padding: '8px 0' }}>최근 구매 내역이 없어요</div>
+            }
+            return historyItems.map((item) => (
+              <div key={item.productId} style={{ minWidth: '110px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', flexShrink: 0 }}>
+                <div style={{ height: '70px', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', position: 'relative', overflow: 'hidden' }}>
+                  {item.thumb ? (
+                    <img src={item.thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span>🧴</span>
+                  )}
+                  <span style={{ position: 'absolute', bottom: '4px', right: '6px', fontSize: '8px', fontFamily: 'monospace', color: TEXT_DIM }}>{item.date}</span>
+                </div>
+                <div style={{ padding: '7px 8px' }}>
+                  <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '1px' }}>{item.brand || '—'}</div>
+                  <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)', marginBottom: '5px' }}>{item.name}</div>
+                  <div onClick={() => router.push(`/products/${item.productId}`)} style={{ width: '100%', padding: '4px 0', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.15)', borderRadius: '6px', fontSize: '9px', color: GOLD, textAlign: 'center', cursor: 'pointer' }}>🔄 재구매</div>
+                </div>
               </div>
-              <div style={{ padding: '7px 8px' }}>
-                <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '1px' }}>{item.brand}</div>
-                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.7)', marginBottom: '5px' }}>{item.name}</div>
-                <div onClick={() => router.push('/products')} style={{ width: '100%', padding: '4px 0', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.15)', borderRadius: '6px', fontSize: '9px', color: GOLD, textAlign: 'center', cursor: 'pointer' }}>🔄 재구매</div>
-              </div>
-            </div>
-          ))}
+            ))
+          })()}
         </div>
       </div>
 
