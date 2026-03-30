@@ -606,13 +606,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           return null
         })}
 
-        {detailHtml ? (
-          <div
-            className="toastui-editor-contents"
-            dangerouslySetInnerHTML={{ __html: detailHtml }}
-            style={{ padding: '0 18px', color: '#ccc', marginBottom: 12 }}
-          />
-        ) : null}
         {!detailHtml && detailContentText ? (
           <div
             style={{
@@ -830,6 +823,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           </div>
           <span style={{ fontSize: 10, color: '#6fcf97', background: '#1a3020', border: '1px solid #2a4530', padding: '3px 9px', borderRadius: 20, flexShrink: 0 }}>✓ 공식</span>
         </div>
+        {detailHtml ? (
+          <div
+            className="toastui-editor-contents"
+            dangerouslySetInnerHTML={{ __html: detailHtml }}
+            style={{ padding: '0 18px', color: '#ccc', marginBottom: 12 }}
+          />
+        ) : null}
       </div>
 
       {/* 브랜드 스토리 */}
