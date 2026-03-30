@@ -357,7 +357,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const repurchaseRate = product.repurchase_rate ?? 0
   const activeUsers = product.active_users ?? 0
   const matchPct = product.match_pct ?? ''
-  const hasVideo = product.has_video ?? false
+  const hasVideo = Boolean(String(product.video_url || '').trim()) || (product.has_video ?? false)
   const storyHero = product.story_hero ?? name
   const storySub = product.story_sub ?? ''
   const storyQuote = product.story_quote ?? ''
@@ -483,9 +483,33 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             </div>
           ))}
           {hasVideo && (
-            <div onClick={() => setActiveThumb(99)} onMouseEnter={() => setActiveThumb(99)} style={{ width: 58, height: 58, borderRadius: 8, flexShrink: 0, border: `2px solid ${activeThumb === 99 ? GOLD : 'transparent'}`, background: '#1a1008', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
-              <div style={{ fontSize: 20 }}>📹</div>
-              <div style={{ position: 'absolute', bottom: 3, right: 3, background: 'rgba(201,169,110,0.9)', borderRadius: 3, padding: '1px 4px', fontSize: 8, color: '#000', fontWeight: 700 }}>▶</div>
+            <div
+              onClick={() => setActiveThumb(99)}
+              onMouseEnter={() => setActiveThumb(99)}
+              style={{
+                width: 58,
+                height: 58,
+                borderRadius: 8,
+                flexShrink: 0,
+                border: `2px solid ${activeThumb === 99 ? GOLD : 'transparent'}`,
+                background: '#1a1008',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+            >
+              <video
+                src={product.video_url}
+                muted
+                playsInline
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+              <div style={{ position: 'absolute', bottom: 3, right: 3, background: 'rgba(201,169,110,0.9)', borderRadius: 3, padding: '1px 4px', fontSize: 8, color: '#000', fontWeight: 700 }}>
+                ▶
+              </div>
             </div>
           )}
         </div>
@@ -591,24 +615,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         ) : null}
         {detailGalleryUrlsClean.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 12 }}>
-            {detailGalleryUrlsClean.map((u, i) =>
-              /\.mp4($|\?)/i.test(u) ? (
-                <video
-                  key={`${u}_${i}`}
-                  src={u}
-                  controls
-                  playsInline
-                  style={{ width: '100%', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)' }}
-                />
-              ) : (
-                <img
-                  key={`${u}_${i}`}
-                  src={u}
-                  alt=""
-                  style={{ width: '100%', height: 'auto', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)' }}
-                />
-              )
-            )}
+            {detailGalleryUrlsClean.map((u, i) => (
+              <img
+                key={`${u}_${i}`}
+                src={u}
+                alt=""
+                style={{ width: '100%', height: 'auto', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)' }}
+              />
+            ))}
           </div>
         ) : null}
 
