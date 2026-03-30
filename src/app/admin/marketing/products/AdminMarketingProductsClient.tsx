@@ -27,17 +27,21 @@ function AdminProductRow({
   onToggleSelect,
   onApprove,
   onReject,
+  onRestoreTrash,
+  onDeleteTrash,
   onClick,
   onToggleVisibility,
   toggleBusyId,
 }: {
   p: any
-  tab: 'pending' | 'active' | 'rejected'
+  tab: 'pending' | 'active' | 'rejected' | 'trash'
   busyId: string | null
   selected: boolean
   onToggleSelect: (id: string) => void
   onApprove: (id: string) => void
   onReject: (id: string) => void
+  onRestoreTrash: (id: string) => void
+  onDeleteTrash: (id: string) => void
   onClick: () => void
   onToggleVisibility: (id: string, next: 'active' | 'discontinued') => void
   toggleBusyId: string | null
@@ -132,6 +136,9 @@ function AdminProductRow({
         {tab === 'rejected' && (
           <span style={{ fontSize: 11, color: '#ffb74d', fontWeight: 700 }}>HIDDEN</span>
         )}
+        {tab === 'trash' && (
+          <span style={{ fontSize: 11, color: '#ef5350', fontWeight: 800 }}>TRASH</span>
+        )}
 
         {tab === 'pending' ? (
           <>
@@ -171,6 +178,42 @@ function AdminProductRow({
           >
             다시 승인
           </button>
+        ) : tab === 'trash' ? (
+          <>
+            <button
+              onClick={() => onRestoreTrash(p.id)}
+              disabled={busyId === p.id}
+              style={{
+                background: 'rgba(255,255,255,0.06)',
+                border: '1px solid rgba(255,255,255,0.12)',
+                borderRadius: 8,
+                padding: '5px 14px',
+                color: 'var(--gold, #c9a84c)',
+                fontSize: 12,
+                cursor: 'pointer',
+                opacity: busyId === p.id ? 0.5 : 1,
+                marginRight: 6,
+              }}
+            >
+              복구
+            </button>
+            <button
+              onClick={() => onDeleteTrash(p.id)}
+              disabled={busyId === p.id}
+              style={{
+                background: 'rgba(229,57,53,0.15)',
+                border: '1px solid rgba(229,57,53,0.4)',
+                borderRadius: 8,
+                padding: '5px 14px',
+                color: '#e57373',
+                fontSize: 12,
+                cursor: 'pointer',
+                opacity: busyId === p.id ? 0.5 : 1,
+              }}
+            >
+              영구삭제
+            </button>
+          </>
         ) : null}
       </div>
     </div>
@@ -182,15 +225,16 @@ function AdminProductRow({
 // ───────────────────────────────────────────────
 export default function AdminMarketingProductsClient() {
   const supabase = createClient()
-  const [tab, setTab] = useState<'pending' | 'active' | 'rejected'>('pending')
+  const [tab, setTab] = useState<'pending' | 'active' | 'rejected' | 'trash'>('pending')
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<any[]>([])
-  const [counts, setCounts] = useState({ pending: 0, active: 0, rejected: 0 })
+  const [counts, setCounts] = useState({ pending: 0, active: 0, rejected: 0, trash: 0 })
   const [busyId, setBusyId] = useState<string | null>(null)
   const [toggleBusyId, setToggleBusyId] = useState<string | null>(null)
   const [bulkBusy, setBulkBusy] = useState(false)
-  const [hideAllBusy, setHideAllBusy] = useState(false)
   const [bulkHideBusy, setBulkHideBusy] = useState(false)
+  const [bulkTrashBusy, setBulkTrashBusy] = useState(false)
+  const [trashEmptyBusy, setTrashEmptyBusy] = useState(false)
   const [q, setQ] = useState('')
   const [brandQ, setBrandQ] = useState('all')
   const [listFilter, setListFilter] = useState<'all' | 'no_price' | 'with_price'>('all')
@@ -209,37 +253,74 @@ export default function AdminMarketingProductsClient() {
 
   const fetchRows = useCallback(async () => {
     setLoading(true)
-    const statusDb = toDbStatus(tab)
-    const { data, error } = await supabase
-      .from('products')
-      .select('*, brands(id, name)')
-      .in('status', ['active', 'pending', 'discontinued', 'hidden'])
-      .order('created_at', { ascending: false })
-      .limit(10000)
+    try {
+      if (tab === 'trash') {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*, brands(id, name)')
+          .not('deleted_at', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(10000)
 
-    console.log('products:', data?.length, 'error:', error, 'tab:', tab, 'filter:', statusDb)
-
-    if (error) {
-      console.error('[admin products]', error)
-      setRows([])
-    } else {
-      const list = data || []
-      const filtered = list.filter((p: { status?: string }) => {
-        if (statusDb === 'discontinued') {
-          return p.status === 'discontinued' || p.status === 'hidden'
+        if (error) {
+          console.error('[admin products trash]', error)
+          setRows([])
+        } else {
+          setRows(data || [])
         }
-        return p.status === statusDb
-      })
-      setRows(filtered)
-    }
 
-    const [p, a, r] = await Promise.all([
-      supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
-      supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'active'),
-      supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'discontinued'),
-    ])
-    setCounts({ pending: p.count || 0, active: a.count || 0, rejected: r.count || 0 })
-    setLoading(false)
+        const [p, a, r, t] = await Promise.all([
+          supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'pending').is('deleted_at', null),
+          supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'active').is('deleted_at', null),
+          supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'discontinued').is('deleted_at', null),
+          supabase.from('products').select('id', { count: 'exact', head: true }).not('deleted_at', 'is', null),
+        ])
+        setCounts({ pending: p.count || 0, active: a.count || 0, rejected: r.count || 0, trash: t.count || 0 })
+        setLoading(false)
+        return
+      }
+
+      const statusDb = toDbStatus(tab)
+      const { data, error } = await supabase
+        .from('products')
+        .select('*, brands(id, name)')
+        .is('deleted_at', null)
+        .in('status', ['active', 'pending', 'discontinued', 'hidden'])
+        .order('created_at', { ascending: false })
+        .limit(10000)
+
+      console.log('products:', data?.length, 'error:', error, 'tab:', tab, 'filter:', statusDb)
+
+      if (error) {
+        console.error('[admin products]', error)
+        setRows([])
+      } else {
+        const list = data || []
+        const filtered = list.filter((p: { status?: string }) => {
+          if (statusDb === 'discontinued') {
+            return p.status === 'discontinued' || p.status === 'hidden'
+          }
+          return p.status === statusDb
+        })
+        setRows(filtered)
+      }
+
+      const [p, a, r, t] = await Promise.all([
+        supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'pending').is('deleted_at', null),
+        supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'active').is('deleted_at', null),
+        supabase.from('products')
+          .select('id', { count: 'exact', head: true })
+          .or('status.eq.discontinued,status.eq.hidden')
+          .is('deleted_at', null),
+        supabase.from('products').select('id', { count: 'exact', head: true }).not('deleted_at', 'is', null),
+      ])
+      setCounts({ pending: p.count || 0, active: a.count || 0, rejected: r.count || 0, trash: t.count || 0 })
+      setLoading(false)
+    } catch (e) {
+      console.error('[admin products fetchRows]', e)
+      setRows([])
+      setLoading(false)
+    }
   }, [supabase, tab])
 
   useEffect(() => { fetchRows() }, [fetchRows])
@@ -369,23 +450,6 @@ export default function AdminMarketingProductsClient() {
     setToast(next === 'active' ? '✅ 노출(ACTIVE)로 변경되었습니다' : '✅ 숨김(HIDDEN) 처리되었습니다')
   }
 
-  const hideAllNoPrice = async () => {
-    if (!window.confirm('가격이 없는(retail_price 0 또는 미설정) 모든 제품을 숨김(discontinued) 처리할까요?')) return
-    setHideAllBusy(true)
-    const { error } = await supabase
-      .from('products')
-      .update({ status: 'discontinued' })
-      .or('retail_price.eq.0,retail_price.is.null')
-    if (error) {
-      setToast(error.message || '일괄 숨김 실패')
-      setHideAllBusy(false)
-      return
-    }
-    await fetchRows()
-    setHideAllBusy(false)
-    setToast('✅ 가격 없는 제품을 모두 숨김 처리했습니다')
-  }
-
   const bulkHideSelected = async () => {
     if (selectedIds.size === 0) return
     setBulkHideBusy(true)
@@ -402,10 +466,86 @@ export default function AdminMarketingProductsClient() {
     setToast(`✅ 선택 ${ids.length}건을 숨김 처리했습니다`)
   }
 
-  const TABS: { key: 'pending' | 'active' | 'rejected'; label: string }[] = [
+  const moveSelectedToTrash = async () => {
+    if (selectedIds.size === 0) return
+    const ids = Array.from(selectedIds)
+    const msg = `선택한 ${ids.length}개 제품을 휴지통으로 이동합니다.\n휴지통에서 30일 후 자동 영구삭제됩니다.`
+    if (!window.confirm(msg)) return
+    setBulkTrashBusy(true)
+    const nowIso = new Date().toISOString()
+    const { error } = await supabase
+      .from('products')
+      .update({ status: 'discontinued', deleted_at: nowIso })
+      .in('id', ids)
+    if (error) {
+      setToast(error.message || '휴지통 이동 실패')
+      setBulkTrashBusy(false)
+      return
+    }
+    setSelectedIds(new Set())
+    await fetchRows()
+    setBulkTrashBusy(false)
+    setToast(`✅ 선택 ${ids.length}건을 휴지통으로 이동했습니다`)
+  }
+
+  const restoreOneFromTrash = async (id: string) => {
+    setBusyId(id)
+    const { error } = await supabase.from('products').update({ status: 'active', deleted_at: null }).eq('id', id)
+    setBusyId(null)
+    if (error) {
+      setToast('복구 실패: ' + error.message)
+      return
+    }
+    setToast('✅ 복구되었습니다')
+    setSelectedIds(new Set())
+    await fetchRows()
+  }
+
+  const deleteOneFromTrash = async (id: string) => {
+    const ok = window.confirm('이 작업은 되돌릴 수 없습니다. 영구삭제할까요?')
+    if (!ok) return
+    setBusyId(id)
+    const { error } = await supabase.from('products').delete().eq('id', id)
+    setBusyId(null)
+    if (error) {
+      setToast('영구삭제 실패: ' + error.message)
+      return
+    }
+    setToast('✅ 영구삭제되었습니다')
+    setSelectedIds(new Set())
+    await fetchRows()
+  }
+
+  const emptyTrash = async () => {
+    const ok = window.confirm('휴지통의 모든 제품을 영구삭제합니다.\n이 작업은 되돌릴 수 없습니다.')
+    if (!ok) return
+    setTrashEmptyBusy(true)
+    const { data } = await supabase.from('products').select('id').not('deleted_at', 'is', null)
+    const ids = (data || []).map((d: any) => d.id).filter(Boolean)
+    if (ids.length === 0) {
+      setTrashEmptyBusy(false)
+      setToast('휴지통이 비어있습니다')
+      return
+    }
+    const { error } = await supabase.from('products').delete().in('id', ids)
+    setTrashEmptyBusy(false)
+    if (error) {
+      setToast('영구삭제 실패: ' + error.message)
+      return
+    }
+    setToast('✅ 휴지통 비우기 완료')
+    setSelectedIds(new Set())
+    await fetchRows()
+  }
+
+  const visibleSelectedCount = useMemo(() => filteredRows.filter(r => selectedIds.has(r.id)).length, [filteredRows, selectedIds])
+  const allSelected = filteredRows.length > 0 && visibleSelectedCount === filteredRows.length
+
+  const TABS: { key: 'pending' | 'active' | 'rejected' | 'trash'; label: string }[] = [
     { key: 'pending', label: 'PENDING' },
     { key: 'active', label: 'ACTIVE' },
     { key: 'rejected', label: 'HIDDEN' },
+    { key: 'trash', label: '🗑️ 휴지통' },
   ]
 
   return (
@@ -421,7 +561,7 @@ export default function AdminMarketingProductsClient() {
         </div>
       ) : null}
 
-      {selectedProduct && (
+      {selectedProduct && tab !== 'trash' && (
         <ProductDetailModal
           product={selectedProduct}
           tab={tab}
@@ -440,7 +580,7 @@ export default function AdminMarketingProductsClient() {
         <div>
           <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>제품 관리</div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>
-            예외만 처리 · 썸네일·노출 토글 · 가격 없음 일괄 숨김
+            예외만 처리 · 썸네일·노출 토글
           </div>
         </div>
         {tab === 'pending' && counts.pending > 0 && (
@@ -472,48 +612,42 @@ export default function AdminMarketingProductsClient() {
       }}>
         <button
           type="button"
-          onClick={hideAllNoPrice}
-          disabled={hideAllBusy}
-          style={{
-            background: 'rgba(255,183,77,0.12)', border: '1px solid rgba(255,183,77,0.35)',
-            borderRadius: 10, padding: '8px 12px', color: '#ffb74d', fontSize: 12, fontWeight: 800, cursor: 'pointer',
+          onClick={() => {
+            if (allSelected) clearSelection()
+            else selectAllFiltered()
           }}
-        >
-          {hideAllBusy ? '처리 중...' : '가격 없는 제품 전체 숨김'}
-        </button>
-        {selectedIds.size > 0 && (
-          <button
-            type="button"
-            onClick={bulkHideSelected}
-            disabled={bulkHideBusy}
-            style={{
-              background: 'rgba(229,57,53,0.15)', border: '1px solid rgba(229,57,53,0.4)',
-              borderRadius: 10, padding: '8px 12px', color: '#e57373', fontSize: 12, fontWeight: 800, cursor: 'pointer',
-            }}
-          >
-            {bulkHideBusy ? '처리 중...' : `선택 숨김 (${selectedIds.size})`}
-          </button>
-        )}
-        <button
-          type="button"
-          onClick={selectAllFiltered}
           style={{
             background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 10, padding: '8px 12px', color: 'rgba(255,255,255,0.75)', fontSize: 12, cursor: 'pointer',
           }}
         >
-          목록 전체 선택
+          [전체선택]
         </button>
-        {selectedIds.size > 0 && (
-          <button
-            type="button"
-            onClick={clearSelection}
-            style={{
-              background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.45)', fontSize: 12, cursor: 'pointer',
-            }}
-          >
-            선택 해제
-          </button>
+        {visibleSelectedCount > 0 && (
+          <>
+            <button
+              type="button"
+              onClick={bulkHideSelected}
+              disabled={bulkHideBusy}
+              style={{
+                background: 'rgba(229,57,53,0.15)', border: '1px solid rgba(229,57,53,0.4)',
+                borderRadius: 10, padding: '8px 12px', color: '#e57373', fontSize: 12, fontWeight: 800, cursor: 'pointer',
+              }}
+            >
+              {bulkHideBusy ? '처리 중...' : '숨김처리'}
+            </button>
+            <button
+              type="button"
+              onClick={moveSelectedToTrash}
+              disabled={bulkTrashBusy}
+              style={{
+                background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.45)',
+                borderRadius: 10, padding: '8px 12px', color: '#ef5350', fontSize: 12, fontWeight: 900, cursor: 'pointer',
+              }}
+            >
+              {bulkTrashBusy ? '처리 중...' : '휴지통으로 이동'}
+            </button>
+          </>
         )}
       </div>
 
@@ -534,6 +668,28 @@ export default function AdminMarketingProductsClient() {
           </button>
         ))}
       </div>
+
+      {tab === 'trash' ? (
+        <div style={{ marginBottom: 12 }}>
+          <button
+            type="button"
+            onClick={emptyTrash}
+            disabled={trashEmptyBusy}
+            style={{
+              background: 'rgba(239,83,80,0.12)',
+              border: '1px solid rgba(239,83,80,0.35)',
+              borderRadius: 10,
+              padding: '8px 12px',
+              color: '#ffb74d',
+              fontSize: 12,
+              fontWeight: 900,
+              cursor: 'pointer',
+            }}
+          >
+            {trashEmptyBusy ? '처리 중...' : '휴지통 비우기'}
+          </button>
+        </div>
+      ) : null}
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <input
@@ -601,6 +757,8 @@ export default function AdminMarketingProductsClient() {
               onToggleSelect={toggleSelect}
               onApprove={approveOne}
               onReject={rejectOne}
+              onRestoreTrash={restoreOneFromTrash}
+              onDeleteTrash={deleteOneFromTrash}
               onClick={() => setSelectedProduct(p)}
               onToggleVisibility={toggleVisibility}
               toggleBusyId={toggleBusyId}
