@@ -269,12 +269,10 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const detailHtml = (product as any).detail_html ? String((product as any).detail_html) : ''
   const total = (price * qty).toLocaleString() + '원'
   const shareLinkWithRef =
-    typeof shareRefUserId === 'string' && shareRefUserId && typeof window !== 'undefined'
-      ? (() => {
-          const u = new URL(window.location.href)
-          u.searchParams.set('ref', shareRefUserId)
-          return u.toString()
-        })()
+    typeof window !== 'undefined'
+      ? `${window.location.origin}/products/${product.id}${
+          typeof shareRefUserId === 'string' && shareRefUserId ? `?ref=${shareRefUserId}` : ''
+        }`
       : ''
 
   // 리뷰 통계
@@ -766,31 +764,16 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             ) : shareRefUserId ? (
               <>
                 {/* 링크 복사 */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 10, padding: '10px 12px', marginBottom: 16 }}>
-                  <div style={{ flex: 1, fontSize: 11, color: '#B09AD0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 10, padding: '10px 12px', marginBottom: 16 }}>
+                  <div style={{ fontSize: 11, color: '#B09AD0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 8 }}>
                     {shareLinkWithRef}
                   </div>
                   <button onClick={() => {
                     navigator.clipboard.writeText(shareLinkWithRef)
                     alert('링크가 복사됐어요!')
-                  }} style={{ background: '#7B5EA7', border: 'none', color: '#fff', fontSize: 11, padding: '6px 14px', borderRadius: 20, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' }}>
-                    링크 복사
+                  }} style={{ width: '100%', background: '#7B5EA7', border: 'none', color: '#fff', fontSize: 14, padding: '14px', borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    🔗 링크 복사하기
                   </button>
-                </div>
-
-                {/* 공유 채널 */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
-                  {[
-                    { label: '카카오톡', bg: '#FEE500', mark: 'K', markColor: '#000', action: () => { window.open(`https://sharer.kakao.com/talk/friends/picker/link?url=${encodeURIComponent(shareLinkWithRef)}`) } },
-                    { label: '인스타', bg: '#E1306C', mark: 'I', markColor: '#fff', action: () => { navigator.clipboard.writeText(shareLinkWithRef); alert('링크 복사됐어요! 인스타에 붙여넣기 해주세요') } },
-                    { label: '페이스북', bg: '#1877F2', mark: 'f', markColor: '#fff', action: () => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLinkWithRef)}`) } },
-                    { label: '문자', bg: '#2a2520', mark: '문', markColor: '#fff', action: () => { window.open(`sms:?body=${encodeURIComponent(name + ' ' + shareLinkWithRef)}`) } },
-                  ].map(ch => (
-                    <div key={ch.label} onClick={ch.action} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                      <div style={{ width: 48, height: 48, borderRadius: '50%', background: ch.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 500, color: ch.markColor }}>{ch.mark}</div>
-                      <span style={{ fontSize: 10, color: '#888' }}>{ch.label}</span>
-                    </div>
-                  ))}
                 </div>
 
                 {/* 적립 안내 */}
