@@ -73,6 +73,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [qty, setQty] = useState(1)
   const [activeThumb, setActiveThumb] = useState(0)
   const [loginSheetOpen, setLoginSheetOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
   const [myProfileSkinType, setMyProfileSkinType] = useState<string | null>(null)
   const paymentResumeOnce = useRef(false)
   const reviewSectionRef = useRef<HTMLDivElement | null>(null)
@@ -325,6 +326,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         <div style={{ fontSize: 15 }}>상품 상세</div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <div
+            onClick={() => setShareOpen(true)}
             style={{
               color: '#7B5EA7',
               background: 'rgba(123,94,167,0.15)',
@@ -705,6 +707,67 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         <button style={{ flex: 1, background: '#241e0e', border: 'none', color: GOLD, fontSize: 13, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>🎁 선물하기</button>
         <button onClick={() => void handleBuy()} style={{ flex: 2, background: `linear-gradient(135deg,${GOLD},#a07840)`, border: 'none', color: '#000', fontSize: 16, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>지금 구매</button>
       </div>
+
+      {shareOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 80, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+          onClick={() => setShareOpen(false)}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 430, background: '#1a1610', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: '22px 20px 32px', borderTop: '1px solid rgba(123,94,167,0.4)' }}>
+
+            {/* 헤더 */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ fontSize: 15, color: '#e8e4dc' }}>공유하기</div>
+              <div onClick={() => setShareOpen(false)} style={{ fontSize: 20, color: '#666', cursor: 'pointer' }}>✕</div>
+            </div>
+
+            {/* 제품 미리보기 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 12px', marginBottom: 16 }}>
+              {thumbUrl && <img src={thumbUrl} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }} />}
+              <div>
+                <div style={{ fontSize: 12, color: '#e8e4dc' }}>{name}</div>
+                <div style={{ fontSize: 12, color: '#C9A96E' }}>{hasValidPrice ? `${price.toLocaleString()}원` : '가격문의'}</div>
+              </div>
+            </div>
+
+            {/* 링크 복사 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 10, padding: '10px 12px', marginBottom: 16 }}>
+              <div style={{ flex: 1, fontSize: 11, color: '#B09AD0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {typeof window !== 'undefined' ? window.location.href : ''}
+              </div>
+              <button onClick={() => {
+                navigator.clipboard.writeText(typeof window !== 'undefined' ? window.location.href : '')
+                alert('링크가 복사됐어요!')
+              }} style={{ background: '#7B5EA7', border: 'none', color: '#fff', fontSize: 11, padding: '6px 14px', borderRadius: 20, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' }}>
+                링크 복사
+              </button>
+            </div>
+
+            {/* 공유 채널 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
+              {[
+                { label: '카카오톡', bg: '#FEE500', emoji: '💬', action: () => { window.open(`https://sharer.kakao.com/talk/friends/picker/link?url=${encodeURIComponent(window.location.href)}`) } },
+                { label: '인스타', bg: 'linear-gradient(45deg,#f09433,#dc2743,#bc1888)', emoji: '📸', action: () => { navigator.clipboard.writeText(window.location.href); alert('링크 복사됐어요! 인스타에 붙여넣기 해주세요') } },
+                { label: '페이스북', bg: '#1877F2', emoji: '👥', action: () => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`) } },
+                { label: '문자', bg: '#2a2520', emoji: '📱', action: () => { window.open(`sms:?body=${encodeURIComponent(name + ' ' + window.location.href)}`) } },
+              ].map(ch => (
+                <div key={ch.label} onClick={ch.action} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: ch.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{ch.emoji}</div>
+                  <span style={{ fontSize: 10, color: '#888' }}>{ch.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* 적립 안내 */}
+            <div style={{ background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 12, padding: '12px 14px' }}>
+              <div style={{ fontSize: 12, color: '#B09AD0', marginBottom: 6 }}>🍞 공유 적립 안내</div>
+              <div style={{ fontSize: 11, color: '#888', lineHeight: 1.7 }}>
+                친구가 가입하면 친구 <span style={{ color: '#C9A96E' }}>+10,000T</span> · 나 <span style={{ color: '#C9A96E' }}>+1,000T</span><br />
+                친구가 5만원↑ 첫구매 확정하면 나 <span style={{ color: '#C9A96E' }}>+5,000T</span> 추가 적립
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {loginSheetOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 80, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
