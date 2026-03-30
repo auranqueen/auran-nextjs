@@ -20,16 +20,13 @@ const PURPLE = '#7B5EA7'
 const BG = '#0D0B09'
 
 const CONCERNS = [
-  '수분감 좋아요',
-  '트러블 진정',
-  '발림성 좋아요',
-  '향이 좋아요',
-  '지속력 좋아요',
-  '피부톤 개선',
-  '탄력 향상',
-  '자극 없어요',
-  '재구매 의사',
+  '수분감 좋아요', '트러블 진정', '발림성 좋아요',
+  '향이 좋아요', '지속력 좋아요', '피부톤 개선',
+  '탄력 향상', '자극 없어요', '재구매 의사',
 ]
+const SKIN_TYPES = ['건성', '지성', '복합성', '민감성', '트러블성']
+const USAGE_PERIODS = ['1주일', '1달', '3달 이상']
+const EFFECT_TAGS = ['촉촉해요', '진정돼요', '흡수빨라요', '끈적임없어요', '자극없어요', '탄력있어요']
 
 export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormProps) {
   const supabase = createClient()
@@ -43,6 +40,9 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
   const [textToast, setTextToast] = useState(100)
   const [photoToast, setPhotoToast] = useState(300)
   const [videoToast, setVideoToast] = useState(500)
+  const [selectedSkinType, setSelectedSkinType] = useState<string | null>(null)
+  const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null)
+  const [selectedEffects, setSelectedEffects] = useState<string[]>([])
 
   useEffect(() => {
     const loadToastSettings = async () => {
@@ -74,6 +74,9 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
       setHelpfulConcerns([])
       setPreviewUrls([])
       setFiles([])
+      setSelectedSkinType(null)
+      setSelectedPeriod(null)
+      setSelectedEffects([])
     }
   }, [initialReview])
 
@@ -82,7 +85,9 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
   const toggleConcern = (value: string) => {
     setHelpfulConcerns(prev => (prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]))
   }
-
+  const toggleEffect = (value: string) => {
+    setSelectedEffects(prev => (prev.includes(value) ? prev.filter(v => v !== value) : [...prev, value]))
+  }
   const onPickImages = (selected: FileList | null) => {
     const next = Array.from(selected || []).slice(0, 3)
     setFiles(next)
@@ -93,9 +98,7 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
     if (!canSubmit) return
     setSubmitting(true)
     try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
+      const { data: { session } } = await supabase.auth.getSession()
       const userId = session?.user?.id
       if (!userId) {
         setToastMsg('로그인이 필요해요')
@@ -103,7 +106,6 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
         setSubmitting(false)
         return
       }
-
       const uploadedUrls: string[] = []
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
@@ -115,56 +117,33 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
           uploadedUrls.push(`${base}/storage/v1/object/public/product-images/${path}`)
         }
       }
-
       const mergedImages = initialReview
-        ? uploadedUrls.length > 0
-          ? [...(initialReview.images || []), ...uploadedUrls]
-          : initialReview.images || []
+        ? uploadedUrls.length > 0 ? [...(initialReview.images || []), ...uploadedUrls] : initialReview.images || []
         : uploadedUrls
       const reviewType = mergedImages.length > 0 ? 'photo' : 'general'
 
       if (initialReview?.id) {
-        const { error: updateError } = await supabase
-          .from('reviews')
-          .update({
-            content: content.trim(),
-            rating,
-            images: mergedImages,
-            helpful_concerns: helpfulConcerns,
-            is_edited: true,
-            edited_at: new Date().toISOString(),
-          })
-          .eq('id', initialReview.id)
+        const { error: updateError } = await supabase.from('reviews').update({
+          content: content.trim(), rating, images: mergedImages,
+          helpful_concerns: helpfulConcerns, is_edited: true, edited_at: new Date().toISOString(),
+        }).eq('id', initialReview.id)
         if (updateError) throw updateError
         setToastMsg('리뷰가 수정됐어요! 🎉')
       } else {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('skin_type')
-          .eq('auth_id', userId)
-          .maybeSingle()
+        const { data: profile } = await supabase.from('profiles').select('skin_type').eq('auth_id', userId).maybeSingle()
         const { error: insertError } = await supabase.from('reviews').insert({
-          target_id: productId,
-          author_id: userId,
-          review_type: reviewType,
-          rating,
-          content: content.trim(),
-          images: mergedImages,
-          helpful_concerns: helpfulConcerns,
-          skin_type: (profile as any)?.skin_type || null,
-          status: '게시',
-          is_best: false,
-          helpful_count: 0,
+          target_id: productId, author_id: userId, review_type: reviewType,
+          rating, content: content.trim(), images: mergedImages, helpful_concerns: helpfulConcerns,
+          skin_type: selectedSkinType || (profile as any)?.skin_type || null,
+          usage_period: selectedPeriod || null,
+          effect_tags: selectedEffects.length > 0 ? selectedEffects : null,
+          status: '게시', is_best: false, helpful_count: 0,
         })
         if (insertError) throw insertError
         setToastMsg('리뷰가 등록됐어요! 🎉')
       }
-
-      setRating(0)
-      setContent('')
-      setHelpfulConcerns([])
-      setFiles([])
-      setPreviewUrls([])
+      setRating(0); setContent(''); setHelpfulConcerns([]); setFiles([]); setPreviewUrls([])
+      setSelectedSkinType(null); setSelectedPeriod(null); setSelectedEffects([])
       onSuccess()
       setTimeout(() => setToastMsg(''), 1800)
     } catch {
@@ -177,85 +156,39 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
 
   return (
     <div style={{ background: BG, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 16, marginTop: 12 }}>
-      <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 10 }}>{initialReview?.id ? '리뷰 수정' : '리뷰 작성'}</div>
-      <div
-        style={{
-          background: 'rgba(123,94,167,0.1)',
-          border: '1px solid rgba(123,94,167,0.3)',
-          borderRadius: 12,
-          padding: '10px 12px',
-          marginBottom: 12,
-          color: '#fff',
-        }}
-      >
+      <div style={{ fontSize: 14, color: '#fff', marginBottom: 10 }}>{initialReview?.id ? '리뷰 수정' : '리뷰 작성'}</div>
+      <div style={{ background: 'rgba(123,94,167,0.1)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 12, padding: '10px 12px', marginBottom: 12 }}>
         <div style={{ fontSize: 11, color: '#fff', marginBottom: 4 }}>텍스트만    +{textToast}T</div>
         <div style={{ fontSize: 11, color: '#fff', marginBottom: 4 }}>사진 첨부   +{photoToast}T  <span style={{ color: PURPLE }}>추천</span></div>
         <div style={{ fontSize: 11, color: '#fff' }}>영상 첨부   +{videoToast}T  <span style={{ color: PURPLE }}>최고</span></div>
       </div>
 
+      {/* 별점 */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 12 }}>
-        {[1, 2, 3, 4, 5].map(n => (
-          <button
-            key={n}
-            type="button"
-            onClick={() => setRating(n)}
-            style={{
-              border: 'none',
-              background: 'transparent',
-              color: n <= rating ? GOLD : 'rgba(255,255,255,0.3)',
-              fontSize: 24,
-              cursor: 'pointer',
-              padding: 0,
-            }}
-          >
-            ★
-          </button>
+        {[1,2,3,4,5].map(n => (
+          <button key={n} type="button" onClick={() => setRating(n)}
+            style={{ border: 'none', background: 'transparent', color: n <= rating ? GOLD : 'rgba(255,255,255,0.3)', fontSize: 24, cursor: 'pointer', padding: 0 }}>★</button>
         ))}
       </div>
 
+      {/* 도움 태그 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
         {CONCERNS.map(item => {
           const selected = helpfulConcerns.includes(item)
           return (
-            <button
-              key={item}
-              type="button"
-              onClick={() => toggleConcern(item)}
-              style={{
-                padding: '8px 10px',
-                borderRadius: 20,
-                border: '1px solid rgba(255,255,255,0.08)',
-                background: selected ? PURPLE : 'rgba(255,255,255,0.05)',
-                color: '#fff',
-                fontSize: 12,
-                cursor: 'pointer',
-              }}
-            >
+            <button key={item} type="button" onClick={() => toggleConcern(item)}
+              style={{ padding: '8px 10px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)', background: selected ? PURPLE : 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 12, cursor: 'pointer' }}>
               {item}
             </button>
           )
         })}
       </div>
 
-      <textarea
-        placeholder="솔직한 리뷰를 남겨주세요 (최소 10자)"
-        value={content}
-        onChange={e => setContent(e.target.value)}
-        rows={5}
-        style={{
-          width: '100%',
-          padding: 12,
-          borderRadius: 10,
-          border: '1px solid rgba(255,255,255,0.12)',
-          background: 'rgba(255,255,255,0.05)',
-          color: '#fff',
-          fontSize: 13,
-          resize: 'vertical',
-          marginBottom: 10,
-          boxSizing: 'border-box',
-        }}
-      />
+      {/* 텍스트 */}
+      <textarea placeholder="솔직한 리뷰를 남겨주세요 (최소 10자)" value={content} onChange={e => setContent(e.target.value)} rows={5}
+        style={{ width: '100%', padding: 12, borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 13, resize: 'vertical', marginBottom: 10, boxSizing: 'border-box' }} />
 
+      {/* 이미지 */}
       <input type="file" accept="image/*" multiple onChange={e => onPickImages(e.target.files)} style={{ marginBottom: 10, color: '#fff' }} />
       <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 12 }}>
         {previewUrls.map((url, i) => (
@@ -263,26 +196,48 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
         ))}
       </div>
 
-      <button
-        type="button"
-        onClick={submit}
-        disabled={!canSubmit}
-        style={{
-          width: '100%',
-          padding: '12px 14px',
-          borderRadius: 10,
-          border: 'none',
-          background: PURPLE,
-          color: '#fff',
-          fontWeight: 400,
-          fontSize: 15,
-          cursor: canSubmit ? 'pointer' : 'not-allowed',
-          opacity: canSubmit ? 1 : 0.6,
-        }}
-      >
+      {/* 추가 선택 +50T */}
+      <div style={{ background: 'rgba(201,169,110,0.06)', border: '1px solid rgba(201,169,110,0.2)', borderRadius: 12, padding: '12px 14px', marginBottom: 12 }}>
+        <div style={{ fontSize: 11, color: GOLD, marginBottom: 10 }}>아래 선택 시 +50T 추가 적립</div>
+
+        <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>내 피부타입</div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 12 }}>
+          {SKIN_TYPES.map(st => (
+            <button key={st} type="button" onClick={() => setSelectedSkinType(prev => prev === st ? null : st)}
+              style={{ padding: '6px 12px', borderRadius: 20, border: `1px solid ${selectedSkinType === st ? GOLD : 'rgba(255,255,255,0.12)'}`, background: selectedSkinType === st ? 'rgba(201,169,110,0.15)' : 'rgba(255,255,255,0.05)', color: selectedSkinType === st ? GOLD : '#aaa', fontSize: 12, cursor: 'pointer' }}>
+              {st}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>사용기간</div>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+          {USAGE_PERIODS.map(p => (
+            <button key={p} type="button" onClick={() => setSelectedPeriod(prev => prev === p ? null : p)}
+              style={{ padding: '6px 12px', borderRadius: 20, border: `1px solid ${selectedPeriod === p ? GOLD : 'rgba(255,255,255,0.12)'}`, background: selectedPeriod === p ? 'rgba(201,169,110,0.15)' : 'rgba(255,255,255,0.05)', color: selectedPeriod === p ? GOLD : '#aaa', fontSize: 12, cursor: 'pointer' }}>
+              {p}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>효과 (복수선택)</div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+          {EFFECT_TAGS.map(et => {
+            const sel = selectedEffects.includes(et)
+            return (
+              <button key={et} type="button" onClick={() => toggleEffect(et)}
+                style={{ padding: '6px 12px', borderRadius: 20, border: `1px solid ${sel ? GOLD : 'rgba(255,255,255,0.12)'}`, background: sel ? 'rgba(201,169,110,0.15)' : 'rgba(255,255,255,0.05)', color: sel ? GOLD : '#aaa', fontSize: 12, cursor: 'pointer' }}>
+                {et}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <button type="button" onClick={submit} disabled={!canSubmit}
+        style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: 'none', background: PURPLE, color: '#fff', fontSize: 15, cursor: canSubmit ? 'pointer' : 'not-allowed', opacity: canSubmit ? 1 : 0.6 }}>
         리뷰 등록하기
       </button>
-
       {toastMsg ? <div style={{ marginTop: 10, color: '#fff', fontSize: 12 }}>{toastMsg}</div> : null}
     </div>
   )
