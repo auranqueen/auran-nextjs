@@ -59,7 +59,6 @@ export default function ProductDetailModal({
   ) => Promise<void>
 }) {
   const supabase = createClient()
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
 
   const [modalTab, setModalTab] = useState<TabKey>('thumb')
   const [dirty, setDirty] = useState<Record<TabKey, boolean>>({
@@ -74,13 +73,16 @@ export default function ProductDetailModal({
   }, [])
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const extraGalleryInputRef = useRef<HTMLInputElement>(null)
   const detailFilesRef = useRef<HTMLInputElement>(null)
 
   const [thumbPreview, setThumbPreview] = useState<string | null>(null)
   const [thumbUploading, setThumbUploading] = useState(false)
-  const [thumbUrlSaving, setThumbUrlSaving] = useState(false)
   const [thumbHover, setThumbHover] = useState(false)
-  const [thumbUrlDraft, setThumbUrlDraft] = useState('')
+  const [galleryImgUrls, setGalleryImgUrls] = useState<string[]>([])
+  const [galleryGifUrl, setGalleryGifUrl] = useState<string | null>(null)
+  const [galleryVideoUrl, setGalleryVideoUrl] = useState<string | null>(null)
+  const [galleryBusy, setGalleryBusy] = useState(false)
 
   const [nameDraft, setNameDraft] = useState(String(product.name || ''))
   const [priceDraft, setPriceDraft] = useState(String(product.retail_price ?? ''))
@@ -131,7 +133,12 @@ export default function ProductDetailModal({
 
   useEffect(() => {
     setThumbPreview(null)
-    setThumbUrlDraft(String(product.thumb_img || product.storage_thumb_url || ''))
+    const ti = Array.isArray(product.thumb_images) ? ([...(product.thumb_images as string[])] as string[]) : []
+    const g = ti.find(u => /\.gif($|\?)/i.test(String(u).trim())) || null
+    const rest = ti.filter(u => u !== g)
+    setGalleryImgUrls(rest.slice(0, 5))
+    setGalleryGifUrl(g)
+    setGalleryVideoUrl(typeof product.video_url === 'string' && product.video_url.trim() ? product.video_url.trim() : null)
     setNameDraft(String(product.name || ''))
     setPriceDraft(String(product.retail_price ?? ''))
     setBrandId(String(product.brand_id || ''))
@@ -210,28 +217,6 @@ export default function ProductDetailModal({
       }, 1000),
     [supabase]
   )
-
-  const saveThumbUrl = async () => {
-    const newUrl = thumbUrlDraft.trim()
-    if (!newUrl) {
-      onToast('URL을 입력하세요')
-      return
-    }
-    setThumbUrlSaving(true)
-    const { error } = await supabase
-      .from('products')
-      .update({ thumb_img: newUrl, storage_thumb_url: newUrl })
-      .eq('id', product.id)
-    setThumbUrlSaving(false)
-    if (error) {
-      onToast(error.message || '저장 실패')
-      return
-    }
-    setThumbPreview(null)
-    mark('thumb', false)
-    onToast('✅ 썸네일 저장됨')
-    onProductUpdated({ ...product, thumb_img: newUrl, storage_thumb_url: newUrl })
-  }
 
   const requestClose = () => {
     if (hasDirty) {
@@ -326,7 +311,10 @@ export default function ProductDetailModal({
   }
 
   const insertImageMarkdown = (url: string) => {
-    const line = `\n![](${url})\n`
+    const isVid = /\.mp4($|\?)/i.test(url)
+    const line = isVid
+      ? `\n<video src="${url}" controls playsInline style="max-width:100%;border-radius:8px;"></video>\n`
+      : `\n![](${url})\n`
     setDetailContent(c => c + line)
     mark('detail', true)
   }
@@ -401,19 +389,20 @@ export default function ProductDetailModal({
         </div>
 
         {modalTab === 'thumb' && (
-          <div>
+          <div style={{ display: 'grid', gap: 14 }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>대표 이미지 (1:1 · 클릭하여 선택)</span>
             <div
               onClick={() => fileInputRef.current?.click()}
               onMouseEnter={() => setThumbHover(true)}
               onMouseLeave={() => setThumbHover(false)}
               style={{
                 position: 'relative',
-                width: '100%',
-                height: 220,
+                width: 300,
+                height: 300,
                 borderRadius: 16,
                 overflow: 'hidden',
                 cursor: 'pointer',
-                marginBottom: 12,
+                border: '1px solid rgba(255,255,255,0.12)',
               }}
             >
               <ProductThumbnail
@@ -448,19 +437,26 @@ export default function ProductDetailModal({
               style={{ display: 'none' }}
               onChange={async e => {
                 const file = e.target.files?.[0]
+                const inputEl = e.target
+                inputEl.value = ''
                 if (!file) return
+                if (file.size > 20 * 1024 * 1024) {
+                  onToast('이미지는 20MB, 영상은 50MB 이하만 가능합니다')
+                  return
+                }
                 const preview = URL.createObjectURL(file)
                 setThumbPreview(preview)
                 setThumbUploading(true)
-                const ext = file.name.split('.').pop() || 'jpg'
-                const fileName = `${product.id}.${ext}`
-                const { error } = await supabase.storage.from('product-images').upload(fileName, file, { upsert: true })
+                const safe = file.name.replace(/[^\w.\-가-힣]/g, '_')
+                const path = `thumbnails/${product.id}/${Date.now()}_${safe}`
+                const { error } = await supabase.storage.from('products').upload(path, file, { upsert: true })
                 if (error) {
                   onToast(error.message || '업로드 실패')
                   setThumbUploading(false)
                   return
                 }
-                const newUrl = `${supabaseUrl}/storage/v1/object/public/product-images/${fileName}`
+                const { data: pub } = supabase.storage.from('products').getPublicUrl(path)
+                const newUrl = pub.publicUrl
                 const { error: upErr } = await supabase
                   .from('products')
                   .update({ thumb_img: newUrl, storage_thumb_url: newUrl })
@@ -475,47 +471,324 @@ export default function ProductDetailModal({
                 onProductUpdated({ ...product, thumb_img: newUrl, storage_thumb_url: newUrl })
               }}
             />
-            <div style={{ display: 'grid', gap: 8, marginTop: 4 }}>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>썸네일 URL (직접 입력)</span>
-              <input
-                value={thumbUrlDraft}
-                onChange={e => {
-                  setThumbUrlDraft(e.target.value)
-                  mark('thumb', true)
-                }}
-                placeholder="https://..."
+            <div style={{ display: 'grid', gap: 8 }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>
+                추가 미디어 (이미지 최대 5장 · GIF 1개 · 영상 1개, 영상 30초·50MB)
+              </span>
+              <button
+                type="button"
+                disabled={galleryBusy}
+                onClick={() => extraGalleryInputRef.current?.click()}
                 style={{
-                  width: '100%',
-                  background: 'rgba(255,255,255,0.07)',
+                  background: 'rgba(255,255,255,0.08)',
                   border: '1px solid rgba(255,255,255,0.15)',
                   borderRadius: 10,
                   padding: '10px 14px',
                   color: '#fff',
                   fontSize: 12,
-                  boxSizing: 'border-box',
-                }}
-              />
-              <button
-                type="button"
-                disabled={thumbUrlSaving}
-                onClick={() => void saveThumbUrl()}
-                style={{
-                  background: 'rgba(201,168,76,0.2)',
-                  border: '1px solid rgba(201,168,76,0.45)',
-                  borderRadius: 10,
-                  padding: '10px 0',
-                  color: '#c9a84c',
-                  fontSize: 12,
-                  fontWeight: 900,
-                  cursor: 'pointer',
-                  opacity: thumbUrlSaving ? 0.6 : 1,
+                  fontWeight: 800,
+                  cursor: galleryBusy ? 'wait' : 'pointer',
+                  opacity: galleryBusy ? 0.65 : 1,
+                  justifySelf: 'start',
                 }}
               >
-                {thumbUrlSaving ? '저장 중...' : '썸네일 URL 저장'}
+                파일 선택 (이미지 / GIF / MP4)
               </button>
+              <input
+                ref={extraGalleryInputRef}
+                type="file"
+                accept="image/*,image/gif,video/mp4"
+                multiple
+                className="hidden"
+                style={{ display: 'none' }}
+                onChange={async e => {
+                  const files = Array.from(e.target.files || [])
+                  const inputEl = e.target
+                  inputEl.value = ''
+                  if (!files.length) return
+                  setGalleryBusy(true)
+                  const IMG_MAX = 20 * 1024 * 1024
+                  const VID_MAX = 50 * 1024 * 1024
+                  let imgs = [...galleryImgUrls]
+                  let gif = galleryGifUrl
+                  let vid = galleryVideoUrl
+                  let anyOk = false
+                  for (const file of files) {
+                    const isVid = file.type.startsWith('video/') || /\.mp4$/i.test(file.name)
+                    const isGif = file.type === 'image/gif' || /\.gif$/i.test(file.name)
+                    if (isVid) {
+                      if (file.size > VID_MAX) {
+                        onToast('이미지는 20MB, 영상은 50MB 이하만 가능합니다')
+                        continue
+                      }
+                      let dur = 0
+                      try {
+                        dur = await new Promise<number>((resolve, reject) => {
+                          const el = document.createElement('video')
+                          el.preload = 'metadata'
+                          el.onloadedmetadata = () => {
+                            const d = el.duration
+                            URL.revokeObjectURL(el.src)
+                            resolve(Number.isFinite(d) ? d : 0)
+                          }
+                          el.onerror = () => {
+                            URL.revokeObjectURL(el.src)
+                            reject(new Error('meta'))
+                          }
+                          el.src = URL.createObjectURL(file)
+                        })
+                      } catch {
+                        onToast('영상을 불러오지 못했습니다')
+                        continue
+                      }
+                      if (dur > 30) {
+                        onToast('영상은 30초 이내만 등록 가능합니다')
+                        continue
+                      }
+                      const safe = file.name.replace(/[^\w.\-가-힣]/g, '_')
+                      const path = `thumbnails/${product.id}/${Date.now()}_${safe}`
+                      const { error } = await supabase.storage.from('products').upload(path, file, { upsert: true })
+                      if (error) {
+                        onToast(error.message || '업로드 실패')
+                        continue
+                      }
+                      const { data: pub } = supabase.storage.from('products').getPublicUrl(path)
+                      vid = pub.publicUrl
+                      const tArr = [...imgs, ...(gif ? [gif] : [])]
+                      const { error: upErr } = await supabase
+                        .from('products')
+                        .update({ thumb_images: tArr, video_url: vid })
+                        .eq('id', product.id)
+                      if (upErr) {
+                        onToast(upErr.message || 'DB 저장 실패')
+                        continue
+                      }
+                      anyOk = true
+                      onProductUpdated({ ...product, thumb_images: tArr, video_url: vid })
+                      continue
+                    }
+                    if (isGif) {
+                      if (file.size > IMG_MAX) {
+                        onToast('이미지는 20MB, 영상은 50MB 이하만 가능합니다')
+                        continue
+                      }
+                      if (gif) {
+                        onToast('GIF는 1개만 등록할 수 있습니다')
+                        continue
+                      }
+                      const safe = file.name.replace(/[^\w.\-가-힣]/g, '_')
+                      const path = `thumbnails/${product.id}/${Date.now()}_${safe}`
+                      const { error } = await supabase.storage.from('products').upload(path, file, { upsert: true })
+                      if (error) {
+                        onToast(error.message || '업로드 실패')
+                        continue
+                      }
+                      const { data: pub } = supabase.storage.from('products').getPublicUrl(path)
+                      gif = pub.publicUrl
+                      const tArr = [...imgs, gif]
+                      const { error: upErr } = await supabase
+                        .from('products')
+                        .update({ thumb_images: tArr, video_url: vid || null })
+                        .eq('id', product.id)
+                      if (upErr) {
+                        onToast(upErr.message || 'DB 저장 실패')
+                        continue
+                      }
+                      anyOk = true
+                      onProductUpdated({ ...product, thumb_images: tArr, video_url: vid || null })
+                      continue
+                    }
+                    if (file.size > IMG_MAX) {
+                      onToast('이미지는 20MB, 영상은 50MB 이하만 가능합니다')
+                      continue
+                    }
+                    if (imgs.length >= 5) {
+                      onToast('추가 이미지는 최대 5장입니다')
+                      continue
+                    }
+                    const safe = file.name.replace(/[^\w.\-가-힣]/g, '_')
+                    const path = `thumbnails/${product.id}/${Date.now()}_${safe}`
+                    const { error } = await supabase.storage.from('products').upload(path, file, { upsert: true })
+                    if (error) {
+                      onToast(error.message || '업로드 실패')
+                      continue
+                    }
+                    const { data: pub } = supabase.storage.from('products').getPublicUrl(path)
+                    imgs = [...imgs, pub.publicUrl]
+                    const tArr = [...imgs, ...(gif ? [gif] : [])]
+                    const { error: upErr } = await supabase
+                      .from('products')
+                      .update({ thumb_images: tArr, video_url: vid || null })
+                      .eq('id', product.id)
+                    if (upErr) {
+                      onToast(upErr.message || 'DB 저장 실패')
+                      continue
+                    }
+                    anyOk = true
+                    onProductUpdated({ ...product, thumb_images: tArr, video_url: vid || null })
+                  }
+                  setGalleryImgUrls(imgs)
+                  setGalleryGifUrl(gif)
+                  setGalleryVideoUrl(vid)
+                  setGalleryBusy(false)
+                  if (anyOk) {
+                    mark('thumb', false)
+                    onToast('✅ 추가 미디어 반영됨')
+                  }
+                }}
+              />
             </div>
-            {thumbUploading ? (
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>업로드 중...</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-start' }}>
+              {galleryImgUrls.map((u, i) => (
+                <div
+                  key={`${u}-${i}`}
+                  style={{ position: 'relative', width: 72, height: 72, borderRadius: 8, overflow: 'hidden' }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={u} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void (async () => {
+                        const next = galleryImgUrls.filter((_, j) => j !== i)
+                        const tArr = [...next, ...(galleryGifUrl ? [galleryGifUrl] : [])]
+                        setGalleryImgUrls(next)
+                        setGalleryBusy(true)
+                        const { error } = await supabase
+                          .from('products')
+                          .update({ thumb_images: tArr, video_url: galleryVideoUrl || null })
+                          .eq('id', product.id)
+                        setGalleryBusy(false)
+                        if (error) {
+                          onToast(error.message || '저장 실패')
+                          setGalleryImgUrls(galleryImgUrls)
+                          return
+                        }
+                        mark('thumb', false)
+                        onProductUpdated({ ...product, thumb_images: tArr, video_url: galleryVideoUrl || null })
+                        onToast('✅ 삭제 반영됨')
+                      })()
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 2,
+                      right: 2,
+                      width: 22,
+                      height: 22,
+                      borderRadius: 6,
+                      border: 'none',
+                      background: 'rgba(0,0,0,0.65)',
+                      color: '#fff',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      lineHeight: 1,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+              {galleryGifUrl ? (
+                <div
+                  style={{ position: 'relative', width: 72, height: 72, borderRadius: 8, overflow: 'hidden' }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={galleryGifUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void (async () => {
+                        const tArr = [...galleryImgUrls]
+                        setGalleryGifUrl(null)
+                        setGalleryBusy(true)
+                        const { error } = await supabase
+                          .from('products')
+                          .update({ thumb_images: tArr, video_url: galleryVideoUrl || null })
+                          .eq('id', product.id)
+                        setGalleryBusy(false)
+                        if (error) {
+                          onToast(error.message || '저장 실패')
+                          setGalleryGifUrl(galleryGifUrl)
+                          return
+                        }
+                        mark('thumb', false)
+                        onProductUpdated({ ...product, thumb_images: tArr, video_url: galleryVideoUrl || null })
+                        onToast('✅ 삭제 반영됨')
+                      })()
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 2,
+                      right: 2,
+                      width: 22,
+                      height: 22,
+                      borderRadius: 6,
+                      border: 'none',
+                      background: 'rgba(0,0,0,0.65)',
+                      color: '#fff',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      lineHeight: 1,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ) : null}
+              {galleryVideoUrl ? (
+                <div
+                  style={{ position: 'relative', width: 72, height: 72, borderRadius: 8, overflow: 'hidden' }}
+                >
+                  <video
+                    src={galleryVideoUrl}
+                    muted
+                    playsInline
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void (async () => {
+                        const tArr = [...galleryImgUrls, ...(galleryGifUrl ? [galleryGifUrl] : [])]
+                        setGalleryVideoUrl(null)
+                        setGalleryBusy(true)
+                        const { error } = await supabase
+                          .from('products')
+                          .update({ thumb_images: tArr, video_url: null })
+                          .eq('id', product.id)
+                        setGalleryBusy(false)
+                        if (error) {
+                          onToast(error.message || '저장 실패')
+                          setGalleryVideoUrl(galleryVideoUrl)
+                          return
+                        }
+                        mark('thumb', false)
+                        onProductUpdated({ ...product, thumb_images: tArr, video_url: null })
+                        onToast('✅ 삭제 반영됨')
+                      })()
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 2,
+                      right: 2,
+                      width: 22,
+                      height: 22,
+                      borderRadius: 6,
+                      border: 'none',
+                      background: 'rgba(0,0,0,0.65)',
+                      color: '#fff',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      lineHeight: 1,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ) : null}
+            </div>
+            {thumbUploading || galleryBusy ? (
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>업로드/처리 중...</div>
             ) : null}
           </div>
         )}
@@ -671,39 +944,88 @@ export default function ProductDetailModal({
             <input
               ref={detailFilesRef}
               type="file"
-              accept="image/*"
+              accept="image/*,image/gif,video/mp4"
               multiple
               className="hidden"
               style={{ display: 'none' }}
               onChange={async e => {
                 const files = Array.from(e.target.files || [])
+                const inputEl = e.target
+                inputEl.value = ''
                 const urls: string[] = []
+                const IMG_MAX = 20 * 1024 * 1024
+                const VID_MAX = 50 * 1024 * 1024
                 for (const file of files) {
-                  const safe = file.name.replace(/[^\w.\-가-힣]/g, '_')
-                  const path = `detail/${product.id}/${Date.now()}-${safe}`
-                  const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true })
-                  if (!error) {
-                    urls.push(`${supabaseUrl}/storage/v1/object/public/product-images/${path}`)
+                  const isVid = file.type.startsWith('video/') || /\.mp4$/i.test(file.name)
+                  if (isVid) {
+                    if (file.size > VID_MAX) {
+                      onToast('이미지는 20MB, 영상은 50MB 이하만 가능합니다')
+                      continue
+                    }
+                    let dur = 0
+                    try {
+                      dur = await new Promise<number>((resolve, reject) => {
+                        const el = document.createElement('video')
+                        el.preload = 'metadata'
+                        el.onloadedmetadata = () => {
+                          const d = el.duration
+                          URL.revokeObjectURL(el.src)
+                          resolve(Number.isFinite(d) ? d : 0)
+                        }
+                        el.onerror = () => {
+                          URL.revokeObjectURL(el.src)
+                          reject(new Error('meta'))
+                        }
+                        el.src = URL.createObjectURL(file)
+                      })
+                    } catch {
+                      onToast('영상을 불러오지 못했습니다')
+                      continue
+                    }
+                    if (dur > 30) {
+                      onToast('영상은 30초 이내만 등록 가능합니다')
+                      continue
+                    }
+                  } else if (file.size > IMG_MAX) {
+                    onToast('이미지는 20MB, 영상은 50MB 이하만 가능합니다')
+                    continue
                   }
+                  const safe = file.name.replace(/[^\w.\-가-힣]/g, '_')
+                  const path = `detail/${product.id}/${Date.now()}_${safe}`
+                  const { error } = await supabase.storage.from('products').upload(path, file, { upsert: true })
+                  if (error) {
+                    onToast(error.message || '업로드 실패')
+                    continue
+                  }
+                  const { data: pub } = supabase.storage.from('products').getPublicUrl(path)
+                  urls.push(pub.publicUrl)
                 }
                 if (urls.length === 0) {
-                  onToast('이미지 업로드 실패')
+                  onToast('파일 업로드에 실패했습니다')
                   return
                 }
                 const updated = [...detailImages, ...urls]
                 setDetailImages(updated)
                 urls.forEach(insertImageMarkdown)
                 mark('detail', true)
-                onToast(`✅ 이미지 ${urls.length}개 추가됨 · 상세 저장으로 확정`)
-                e.target.value = ''
+                onToast(`✅ ${urls.length}개 추가됨 · 상세 저장으로 확정`)
               }}
             />
             {detailImages.length > 0 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))', gap: 8 }}>
                 {detailImages.map((u, i) => (
                   <div key={`${u}-${i}`} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={u} alt="" style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }} />
+                    {/\.mp4($|\?)/i.test(u) ? (
+                      <video
+                        src={u}
+                        muted
+                        playsInline
+                        style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }}
+                      />
+                    ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={u} alt="" style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }} />
+                    )}
                     <button
                       type="button"
                       onClick={() => removeDetailImage(i)}

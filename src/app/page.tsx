@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { NotificationPanel } from '@/components/notifications/NotificationPanel'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
@@ -91,6 +92,7 @@ export default function CustomerHomePage() {
   const [searchKeyword, setSearchKeyword] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
+  const [notificationOpen, setNotificationOpen] = useState(false)
   const [noticeOpen, setNoticeOpen] = useState(false)
   const [noticeTab, setNoticeTab] = useState<'notif' | 'notice'>('notif')
   const [myUserId, setMyUserId] = useState('')
@@ -178,7 +180,7 @@ export default function CustomerHomePage() {
       setUnreadCount((unreadRows || []).length)
     }
     void run()
-  }, [supabase, noticeOpen])
+  }, [supabase, notificationOpen])
 
   useEffect(() => {
     if (!noticeOpen) return
@@ -277,7 +279,7 @@ export default function CustomerHomePage() {
             🔍
           </button>
           <button
-            onClick={() => setNoticeOpen(true)}
+            onClick={() => setNotificationOpen(true)}
             style={{
               width: '34px', height: '34px', borderRadius: '50%',
               background: 'rgba(255,255,255,0.04)',
@@ -312,6 +314,7 @@ export default function CustomerHomePage() {
           </button>
         </div>
       </header>
+      <NotificationPanel isOpen={notificationOpen} onClose={() => setNotificationOpen(false)} />
       <div
         style={{
           maxHeight: searchOpen ? 420 : 0,
