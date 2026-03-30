@@ -91,6 +91,7 @@ export default function ProductDetailModal({
   const [descDraft, setDescDraft] = useState(String(product.description || ''))
 
   const [detailContent, setDetailContent] = useState(String(product.detail_html || product.detail_content || ''))
+  const [blocks, setBlocks] = useState<any[]>(Array.isArray(product.detail_sections) ? product.detail_sections : [])
   const [detailImages, setDetailImages] = useState<string[]>(
     Array.isArray(product.detail_images) && product.detail_images.length
       ? product.detail_images
@@ -146,6 +147,7 @@ export default function ProductDetailModal({
     setBrandId(String(product.brand_id || ''))
     setDescDraft(String(product.description || ''))
     setDetailContent(String(product.detail_html || product.detail_content || ''))
+    setBlocks(Array.isArray(product.detail_sections) ? product.detail_sections : [])
     setDetailImages(
       Array.isArray(product.detail_images) && product.detail_images.length
         ? product.detail_images
@@ -259,10 +261,7 @@ export default function ProductDetailModal({
     const { error } = await supabase
       .from('products')
       .update({
-        detail_html: detailContent.trim() || null,
-        detail_content: detailContent.trim() || null,
-        detail_images: imgs,
-        detail_imgs: imgs,
+        detail_sections: blocks,
       })
       .eq('id', product.id)
     setDetailSaving(false)
@@ -271,19 +270,10 @@ export default function ProductDetailModal({
       return
     }
     mark('detail', false)
-    const { data: checkRow } = await supabase
-      .from('products')
-      .select('detail_html, detail_content')
-      .eq('id', product.id)
-      .maybeSingle()
-    console.log('Saved detail_html:', checkRow?.detail_html, 'Saved detail_content:', checkRow?.detail_content)
     onToast('✅ 상세내용 저장됨')
     onProductUpdated({
       ...product,
-      detail_html: detailContent.trim() || null,
-      detail_content: detailContent.trim() || null,
-      detail_images: imgs,
-      detail_imgs: imgs,
+      detail_sections: blocks,
     })
   }
 
@@ -323,15 +313,6 @@ export default function ProductDetailModal({
     setPhotoPoints(300)
     setVideoPoints(500)
     mark('points', true)
-  }
-
-  const insertImageMarkdown = (url: string) => {
-    const isVid = /\.mp4($|\?)/i.test(url)
-    const line = isVid
-      ? `\n<video src="${url}" controls playsInline style="max-width:100%;border-radius:8px;"></video>\n`
-      : `\n![](${url})\n`
-    setDetailContent(c => c + line)
-    mark('detail', true)
   }
 
   const removeDetailImage = (idx: number) => {
@@ -938,11 +919,49 @@ export default function ProductDetailModal({
                   cursor: 'pointer',
                 }}
               >
-                이미지 추가 (다중)
+                📷 이미지
               </button>
               <button
                 type="button"
-                onClick={() => setDetailPreview(v => !v)}
+                onClick={() => {
+                  setBlocks(prev => [...prev, { type: 'text', content: '' }])
+                  mark('detail', true)
+                }}
+                style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 10,
+                  padding: '8px 14px',
+                  color: '#fff',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                📝 텍스트
+              </button>
+              <button
+                type="button"
+                onClick={() => (extraGalleryInputRef.current as any)?.click?.()}
+                style={{
+                  background: 'rgba(255,255,255,0.08)',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 10,
+                  padding: '8px 14px',
+                  color: '#fff',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                🎬 영상
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setBlocks(prev => [...prev, { type: 'divider' }])
+                  mark('detail', true)
+                }}
                 style={{
                   background: 'rgba(255,255,255,0.06)',
                   border: '1px solid rgba(255,255,255,0.12)',
@@ -953,155 +972,210 @@ export default function ProductDetailModal({
                   cursor: 'pointer',
                 }}
               >
-                미리보기 {detailPreview ? '끄기' : '켜기'}
+                ─── 구분선
               </button>
             </div>
+
             <input
               ref={detailFilesRef}
               type="file"
-              accept="image/*,image/gif,video/mp4"
-              multiple
+              accept="image/*"
               className="hidden"
               style={{ display: 'none' }}
               onChange={async e => {
-                const files = Array.from(e.target.files || [])
+                const file = e.target.files?.[0]
                 const inputEl = e.target
                 inputEl.value = ''
-                const urls: string[] = []
-                const IMG_MAX = 20 * 1024 * 1024
-                const VID_MAX = 50 * 1024 * 1024
-                for (const file of files) {
-                  const isVid = file.type.startsWith('video/') || /\.mp4$/i.test(file.name)
-                  if (isVid) {
-                    if (file.size > VID_MAX) {
-                      onToast('이미지는 20MB, 영상은 50MB 이하만 가능합니다')
-                      continue
-                    }
-                    let dur = 0
-                    try {
-                      dur = await new Promise<number>((resolve, reject) => {
-                        const el = document.createElement('video')
-                        el.preload = 'metadata'
-                        el.onloadedmetadata = () => {
-                          const d = el.duration
-                          URL.revokeObjectURL(el.src)
-                          resolve(Number.isFinite(d) ? d : 0)
-                        }
-                        el.onerror = () => {
-                          URL.revokeObjectURL(el.src)
-                          reject(new Error('meta'))
-                        }
-                        el.src = URL.createObjectURL(file)
-                      })
-                    } catch {
-                      onToast('영상을 불러오지 못했습니다')
-                      continue
-                    }
-                    if (dur > 30) {
-                      onToast('영상은 30초 이내만 등록 가능합니다')
-                      continue
-                    }
-                  } else if (file.size > IMG_MAX) {
-                    onToast('이미지는 20MB, 영상은 50MB 이하만 가능합니다')
-                    continue
-                  }
-                  const safe = file.name.replace(/[^\w.\-가-힣]/g, '_')
-                  const path = `detail/${product.id}/${Date.now()}_${safe}`
-                  const { error } = await supabase.storage.from('products').upload(path, file, { upsert: true })
-                  if (error) {
-                    onToast(error.message || '업로드 실패')
-                    continue
-                  }
-                  const { data: pub } = supabase.storage.from('products').getPublicUrl(path)
-                  urls.push(pub.publicUrl)
-                }
-                if (urls.length === 0) {
-                  onToast('파일 업로드에 실패했습니다')
+                if (!file) return
+                if (file.size > 20 * 1024 * 1024) {
+                  onToast('이미지는 20MB 이하만 가능합니다')
                   return
                 }
-                const updated = [...detailImages, ...urls]
-                setDetailImages(updated)
-                urls.forEach(insertImageMarkdown)
+                const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
+                const path = `detail/${product.id}/${Date.now()}.${ext || 'jpg'}`
+                const { error } = await supabase.storage.from('products').upload(path, file, { upsert: true })
+                if (error) {
+                  onToast(error.message || '업로드 실패')
+                  return
+                }
+                const { data: pub } = supabase.storage.from('products').getPublicUrl(path)
+                setBlocks(prev => [...prev, { type: 'image', url: pub.publicUrl }])
                 mark('detail', true)
-                onToast(`✅ ${urls.length}개 추가됨 · 상세 저장으로 확정`)
               }}
             />
-            {detailImages.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(72px, 1fr))', gap: 8 }}>
-                {detailImages.map((u, i) => (
-                  <div key={`${u}-${i}`} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
-                    {/\.mp4($|\?)/i.test(u) ? (
-                      <video
-                        src={u}
-                        muted
-                        playsInline
-                        style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }}
-                      />
-                    ) : (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={u} alt="" style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }} />
-                    )}
+
+            <input
+              ref={extraGalleryInputRef as any}
+              type="file"
+              accept="video/mp4"
+              className="hidden"
+              style={{ display: 'none' }}
+              onChange={async e => {
+                const file = e.target.files?.[0]
+                const inputEl = e.target
+                inputEl.value = ''
+                if (!file) return
+                if (file.size > 50 * 1024 * 1024) {
+                  onToast('영상은 50MB 이하만 가능합니다')
+                  return
+                }
+                let dur = 0
+                try {
+                  dur = await new Promise<number>((resolve, reject) => {
+                    const el = document.createElement('video')
+                    el.preload = 'metadata'
+                    el.onloadedmetadata = () => {
+                      const d = el.duration
+                      URL.revokeObjectURL(el.src)
+                      resolve(Number.isFinite(d) ? d : 0)
+                    }
+                    el.onerror = () => {
+                      URL.revokeObjectURL(el.src)
+                      reject(new Error('meta'))
+                    }
+                    el.src = URL.createObjectURL(file)
+                  })
+                } catch {
+                  onToast('영상을 불러오지 못했습니다')
+                  return
+                }
+                if (dur > 30) {
+                  onToast('영상은 30초 이내만 등록 가능합니다')
+                  return
+                }
+                const path = `detail/${product.id}/${Date.now()}.mp4`
+                const { error } = await supabase.storage.from('products').upload(path, file, { upsert: true })
+                if (error) {
+                  onToast(error.message || '업로드 실패')
+                  return
+                }
+                const { data: pub } = supabase.storage.from('products').getPublicUrl(path)
+                setBlocks(prev => [...prev, { type: 'video', url: pub.publicUrl }])
+                mark('detail', true)
+              }}
+            />
+
+            <div style={{ display: 'grid', gap: 10 }}>
+              {blocks.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>아직 블록이 없습니다. 위 버튼으로 추가하세요.</div>
+              ) : null}
+              {blocks.map((b, i) => (
+                <div
+                  key={i}
+                  style={{
+                    border: '1px solid rgba(255,255,255,0.10)',
+                    borderRadius: 12,
+                    padding: 12,
+                    background: 'rgba(255,255,255,0.03)',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                     <button
                       type="button"
-                      onClick={() => removeDetailImage(i)}
+                      onClick={() => {
+                        if (i <= 0) return
+                        setBlocks(prev => {
+                          const next = [...prev]
+                          const tmp = next[i - 1]
+                          next[i - 1] = next[i]
+                          next[i] = tmp
+                          return next
+                        })
+                        mark('detail', true)
+                      }}
                       style={{
-                        position: 'absolute',
-                        top: 2,
-                        right: 2,
-                        width: 22,
-                        height: 22,
-                        borderRadius: 6,
+                        width: 30,
+                        height: 30,
+                        borderRadius: 10,
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: 'rgba(255,255,255,0.06)',
+                        color: 'rgba(255,255,255,0.85)',
+                        cursor: i <= 0 ? 'not-allowed' : 'pointer',
+                        opacity: i <= 0 ? 0.4 : 1,
+                      }}
+                    >
+                      ↑
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (i >= blocks.length - 1) return
+                        setBlocks(prev => {
+                          const next = [...prev]
+                          const tmp = next[i + 1]
+                          next[i + 1] = next[i]
+                          next[i] = tmp
+                          return next
+                        })
+                        mark('detail', true)
+                      }}
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: 10,
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: 'rgba(255,255,255,0.06)',
+                        color: 'rgba(255,255,255,0.85)',
+                        cursor: i >= blocks.length - 1 ? 'not-allowed' : 'pointer',
+                        opacity: i >= blocks.length - 1 ? 0.4 : 1,
+                      }}
+                    >
+                      ↓
+                    </button>
+                    <div style={{ marginLeft: 'auto' }} />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBlocks(prev => prev.filter((_, j) => j !== i))
+                        mark('detail', true)
+                      }}
+                      style={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: 10,
                         border: 'none',
                         background: 'rgba(0,0,0,0.65)',
                         color: '#fff',
-                        fontSize: 12,
                         cursor: 'pointer',
-                        lineHeight: 1,
                       }}
                     >
                       ×
                     </button>
                   </div>
-                ))}
-              </div>
-            )}
-            {detailPreview ? (
-              <div
-                style={{
-                  minHeight: 120,
-                  padding: 12,
-                  borderRadius: 12,
-                  background: 'rgba(255,255,255,0.04)',
-                  color: 'rgba(255,255,255,0.85)',
-                  fontSize: 13,
-                  whiteSpace: 'pre-wrap',
-                  lineHeight: 1.65,
-                }}
-              >
-                {detailContent || '(내용 없음)'}
-              </div>
-            ) : (
-              <textarea
-                value={detailContent}
-                onChange={e => {
-                  setDetailContent(e.target.value)
-                  mark('detail', true)
-                }}
-                placeholder="상세 설명을 입력하세요. 이미지 추가 시 URL이 본문에 삽입됩니다."
-                style={{
-                  width: '100%',
-                  minHeight: 200,
-                  background: 'rgba(255,255,255,0.07)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: 10,
-                  padding: '12px 14px',
-                  color: '#fff',
-                  fontSize: 13,
-                  resize: 'vertical',
-                  boxSizing: 'border-box',
-                }}
-              />
-            )}
+
+                  {b?.type === 'image' ? (
+                    <img src={String(b?.url || '')} alt="" style={{ width: '100%', height: 'auto', borderRadius: 10, display: 'block', border: '1px solid rgba(255,255,255,0.08)' }} />
+                  ) : b?.type === 'video' ? (
+                    <video src={String(b?.url || '')} controls playsInline muted style={{ width: '100%', borderRadius: 10, display: 'block', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)' }} />
+                  ) : b?.type === 'divider' ? (
+                    <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.12)' }} />
+                  ) : (
+                    <textarea
+                      value={String(b?.content || '')}
+                      onChange={e => {
+                        const v = e.target.value
+                        setBlocks(prev => prev.map((x, j) => (j === i ? { ...x, content: v } : x)))
+                        mark('detail', true)
+                      }}
+                      placeholder="텍스트를 입력하세요"
+                      style={{
+                        width: '100%',
+                        minHeight: 120,
+                        background: 'rgba(255,255,255,0.06)',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 10,
+                        padding: '10px 12px',
+                        color: '#fff',
+                        fontSize: 13,
+                        resize: 'vertical',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
             <button
               type="button"
               disabled={detailSaving}

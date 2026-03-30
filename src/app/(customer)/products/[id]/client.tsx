@@ -377,6 +377,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const expectedPurchasePts = Math.floor((price * pointRate) / 100)
   const detailHtml = (product as any).detail_html ? String((product as any).detail_html) : ''
   const detailContentText = (product as any).detail_content ? String((product as any).detail_content) : ''
+  const detailSections = (Array.isArray((product as any).detail_sections) ? (product as any).detail_sections : []) as any[]
   const detailGalleryUrls = (Array.isArray((product as any).detail_images) ? (product as any).detail_images : Array.isArray((product as any).detail_imgs) ? (product as any).detail_imgs : []) as unknown[]
   const detailGalleryUrlsClean = detailGalleryUrls
     .map(u => (typeof u === 'string' ? u.trim() : ''))
@@ -582,6 +583,26 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             </div>
           </div>
         )}
+
+        {detailSections.map((block: any, i: number) => {
+          if (block?.type === 'image') {
+            return <img key={i} src={String(block?.url || '')} style={{ width: '100%', display: 'block', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', marginBottom: 12 }} alt="" />
+          }
+          if (block?.type === 'text') {
+            return (
+              <p key={i} style={{ padding: '16px 18px', fontSize: 14, lineHeight: 1.8, color: '#ccc', margin: 0, marginBottom: 12 }}>
+                {String(block?.content || '')}
+              </p>
+            )
+          }
+          if (block?.type === 'video') {
+            return <video key={i} src={String(block?.url || '')} controls playsInline muted style={{ width: '100%', display: 'block', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)', marginBottom: 12 }} />
+          }
+          if (block?.type === 'divider') {
+            return <hr key={i} style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.1)', margin: '8px 0 16px' }} />
+          }
+          return null
+        })}
 
         {detailHtml ? (
           <div
