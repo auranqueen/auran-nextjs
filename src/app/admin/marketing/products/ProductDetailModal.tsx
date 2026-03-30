@@ -77,6 +77,7 @@ export default function ProductDetailModal({
   const detailFilesRef = useRef<HTMLInputElement>(null)
 
   const [thumbPreview, setThumbPreview] = useState<string | null>(null)
+  const [thumbUploadedUrl, setThumbUploadedUrl] = useState<string | null>(null)
   const [thumbUploading, setThumbUploading] = useState(false)
   const [thumbHover, setThumbHover] = useState(false)
   const [galleryImgUrls, setGalleryImgUrls] = useState<string[]>([])
@@ -133,6 +134,7 @@ export default function ProductDetailModal({
 
   useEffect(() => {
     setThumbPreview(null)
+    setThumbUploadedUrl(null)
     const ti = Array.isArray(product.thumb_images) ? ([...(product.thumb_images as string[])] as string[]) : []
     const g = ti.find(u => /\.gif($|\?)/i.test(String(u).trim())) || null
     const rest = ti.filter(u => u !== g)
@@ -457,6 +459,7 @@ export default function ProductDetailModal({
                 }
                 const { data: pub } = supabase.storage.from('products').getPublicUrl(path)
                 const newUrl = pub.publicUrl
+                setThumbUploadedUrl(newUrl)
                 const { error: upErr } = await supabase
                   .from('products')
                   .update({ thumb_img: newUrl, storage_thumb_url: newUrl })
@@ -1448,6 +1451,59 @@ export default function ProductDetailModal({
                 해제
               </button>
             </div>
+          </div>
+        )}
+
+        {modalTab === 'thumb' && (
+          <div style={{ marginTop: 14, marginBottom: -4 }}>
+            <button
+              type="button"
+              onClick={async () => {
+                const rep = thumbUploadedUrl || product.thumb_img || product.storage_thumb_url || null
+                const imgs = [...galleryImgUrls, ...(galleryGifUrl ? [galleryGifUrl] : [])]
+                const vid = galleryVideoUrl || null
+
+                const { error } = await supabase
+                  .from('products')
+                  .update({
+                    thumb_img: rep,
+                    storage_thumb_url: rep,
+                    thumb_images: imgs,
+                    video_url: vid,
+                  })
+                  .eq('id', product.id)
+
+                if (error) {
+                  onToast('썸네일 저장 실패: ' + (error.message || '알 수 없는 오류'))
+                  return
+                }
+
+                setThumbUploadedUrl(null)
+                setThumbPreview(null)
+                mark('thumb', false)
+                onToast('저장되었습니다')
+                onProductUpdated({
+                  ...product,
+                  thumb_img: rep,
+                  storage_thumb_url: rep,
+                  thumb_images: imgs,
+                  video_url: vid,
+                })
+              }}
+              style={{
+                width: '100%',
+                background: 'var(--gold, #c9a84c)',
+                border: 'none',
+                borderRadius: 12,
+                padding: '13px 0',
+                color: '#000',
+                fontSize: 13,
+                fontWeight: 900,
+                cursor: 'pointer',
+              }}
+            >
+              썸네일 저장
+            </button>
           </div>
         )}
 
