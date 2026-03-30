@@ -2,7 +2,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { ReviewForm } from '@/components/reviews/ReviewForm'
 import '@toast-ui/editor/dist/toastui-editor-viewer.css'
 
 const GOLD = '#C9A96E'
@@ -52,8 +51,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const supabase = createClient()
   const [reviews, setReviews] = useState<any[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(false)
-  const [showReviewForm, setShowReviewForm] = useState(false)
-  const [showReviewBanner, setShowReviewBanner] = useState(false)
   const [myReviewDoc, setMyReviewDoc] = useState<{
     id: string
     content?: string | null
@@ -62,14 +59,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     is_edited: boolean | null
     created_at: string
   } | null>(null)
-  const [editReviewDraft, setEditReviewDraft] = useState<{
-    id: string
-    rating: number
-    content: string
-    helpful_concerns: string[]
-    images: string[]
-  } | null>(null)
-  const [reviewToastAmount, setReviewToastAmount] = useState(500)
   const [qty, setQty] = useState(1)
   const [activeThumb, setActiveThumb] = useState(0)
   const [loginSheetOpen, setLoginSheetOpen] = useState(false)
@@ -149,14 +138,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     void fetchReviews()
   }, [product?.id])
 
-  useEffect(() => { setEditReviewDraft(null) }, [product.id])
-
   useEffect(() => {
     if (!product?.id) return
     const run = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user?.id) {
-        setShowReviewForm(false); setShowReviewBanner(false); setMyReviewDoc(null); return
+        setMyReviewDoc(null); return
       }
       const { data: orders } = await supabase.from('orders').select('id, items').eq('customer_id', session.user.id)
       let purchased = false
@@ -183,13 +170,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         .select('id, content, rating, helpful_concerns, is_edited, created_at')
         .eq('author_id', session.user.id).eq('target_id', product.id).maybeSingle()
       setMyReviewDoc(myReviewRow || null)
-      if (myReviewRow) { setShowReviewForm(false); setShowReviewBanner(false); return }
-      const canWrite = !!session && !!purchased && !myReviewRow
-      setShowReviewForm(canWrite)
-      setShowReviewBanner(canWrite)
-      const { data: setting } = await supabase.from('admin_settings').select('value')
-        .eq('category', 'review').eq('key', 'points_text').single()
-      setReviewToastAmount(setting?.value ? Number(setting.value) : 500)
+      if (myReviewRow) return
     }
     void run()
   }, [product?.id, supabase])
@@ -584,34 +565,10 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                     {rv.created_at ? String(rv.created_at).slice(0, 10) : ''}
                     {rv.usage_period ? ` · ${rv.usage_period} 사용` : ''}
                   </div>
-                  {myReviewDoc && rv.id === myReviewDoc.id && myReviewDoc.is_edited !== true &&
-                    Date.now() - new Date(myReviewDoc.created_at).getTime() < 7 * 24 * 60 * 60 * 1000 ? (
-                    <button type="button" onClick={() => setEditReviewDraft({ id: String(rv.id), rating: Number(rv.rating || 0), content: String(rv.content || ''), helpful_concerns: Array.isArray(rv.helpful_concerns) ? rv.helpful_concerns : [], images: Array.isArray(rv.images) ? rv.images : [] })}
-                      style={{ fontSize: 12, color: GOLD, background: 'rgba(201,169,110,0.12)', border: '1px solid rgba(201,169,110,0.35)', borderRadius: 8, padding: '6px 12px', marginTop: 8, cursor: 'pointer', fontFamily: 'inherit' }}>
-                      수정하기
-                    </button>
-                  ) : null}
                 </div>
               ))}
             </div>
           )}
-          {showReviewForm || editReviewDraft ? (
-            <ReviewForm
-              key={editReviewDraft?.id || 'new'}
-              productId={product.id}
-              initialReview={editReviewDraft}
-              onSuccess={async () => {
-                setShowReviewBanner(false); setShowReviewForm(false); setEditReviewDraft(null)
-                await fetchReviews()
-                const { data: { session } } = await supabase.auth.getSession()
-                if (!session?.user?.id) { setMyReviewDoc(null); return }
-                const { data: refreshed } = await supabase.from('reviews')
-                  .select('id, content, rating, helpful_concerns, is_edited, created_at')
-                  .eq('author_id', session.user.id).eq('target_id', product.id).maybeSingle()
-                setMyReviewDoc(refreshed || null)
-              }}
-            />
-          ) : null}
         </div>
 
         {/* 브랜드 카드 */}
@@ -719,14 +676,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         </div>
         <div style={{ fontSize: 22, color: GOLD }}>{total}</div>
       </div>
-
-      {showReviewBanner ? (
-        <button type="button" onClick={() => reviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-          style={{ position: 'fixed', top: '30%', right: 0, borderRadius: '50% 0 0 50%', width: 52, height: 52, background: '#7B5EA7', color: '#fff', fontSize: 10, zIndex: 999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: 'none' }}>
-          <span style={{ lineHeight: 1.1 }}>✍️</span>
-          <span style={{ lineHeight: 1.1 }}>+{reviewToastAmount}T</span>
-        </button>
-      ) : null}
 
       {/* 3버튼 */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 8 }}>
