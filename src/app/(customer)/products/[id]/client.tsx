@@ -347,8 +347,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const origin = product.origin ?? ''
   const name = product.name ?? '제품명'
   const seoDesc = product.description ?? ''
-  const priceRaw = product.is_timesale ? (product.sale_price ?? 0) : (product.retail_price ?? 0)
+  const priceRaw = product.is_timesale ? (product.sale_price ?? (product as any).price ?? 0) : (product.retail_price ?? (product as any).price ?? 0)
   const price = Number(priceRaw) || 0
+  const hasValidPrice = price > 0
   const origPrice = product.original_price ?? 0
   const discount = product.discount_rate ?? 0
   const rating = product.avg_rating ?? 4.9
@@ -375,6 +376,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const pointRate = Number.isFinite(pointRateRaw) && pointRateRaw > 0 ? Math.min(100, Math.max(0, pointRateRaw)) : 1
   const expectedPurchasePts = Math.floor((price * pointRate) / 100)
   const detailHtml = (product as any).detail_html ? String((product as any).detail_html) : ''
+  const detailContentText = (product as any).detail_content ? String((product as any).detail_content) : ''
   const detailGalleryUrls = (Array.isArray((product as any).detail_images) ? (product as any).detail_images : Array.isArray((product as any).detail_imgs) ? (product as any).detail_imgs : []) as unknown[]
   const detailGalleryUrlsClean = detailGalleryUrls
     .map(u => (typeof u === 'string' ? u.trim() : ''))
@@ -465,23 +467,23 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
         {/* 썸네일 스트립 */}
         <div style={{ display: 'flex', gap: 6, padding: '8px 10px', background: '#0a0807', overflowX: 'auto' }}>
-          <div onClick={() => setActiveThumb(0)} style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === 0 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+          <div onClick={() => setActiveThumb(0)} onMouseEnter={() => setActiveThumb(0)} style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === 0 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
             {thumbUrl
               ? <img src={thumbUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : <div style={{ fontSize: 26 }}>🧴</div>}
           </div>
           {maxThumbs.map((url, i) => (
-            <div key={i} onClick={() => setActiveThumb(i + 1)} style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === i + 1 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <div key={i} onClick={() => setActiveThumb(i + 1)} onMouseEnter={() => setActiveThumb(i + 1)} style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === i + 1 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           ))}
           {galleryImgs.map((url, i) => (
-            <div key={`g-${i}`} onClick={() => setActiveThumb(maxThumbs.length + i + 1)} style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === maxThumbs.length + i + 1 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+            <div key={`g-${i}`} onClick={() => setActiveThumb(maxThumbs.length + i + 1)} onMouseEnter={() => setActiveThumb(maxThumbs.length + i + 1)} style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === maxThumbs.length + i + 1 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           ))}
           {hasVideo && (
-            <div onClick={() => setActiveThumb(99)} style={{ width: 58, height: 58, borderRadius: 8, flexShrink: 0, border: `2px solid ${activeThumb === 99 ? GOLD : 'transparent'}`, background: '#1a1008', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
+            <div onClick={() => setActiveThumb(99)} onMouseEnter={() => setActiveThumb(99)} style={{ width: 58, height: 58, borderRadius: 8, flexShrink: 0, border: `2px solid ${activeThumb === 99 ? GOLD : 'transparent'}`, background: '#1a1008', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative' }}>
               <div style={{ fontSize: 20 }}>📹</div>
               <div style={{ position: 'absolute', bottom: 3, right: 3, background: 'rgba(201,169,110,0.9)', borderRadius: 3, padding: '1px 4px', fontSize: 8, color: '#000', fontWeight: 700 }}>▶</div>
             </div>
@@ -516,10 +518,10 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         <div style={{ fontSize: 20, fontWeight: 400, lineHeight: 1.4, marginBottom: 5, color: '#e8e4dc' }}>{name}</div>
         <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6, marginBottom: 10 }}>{seoDesc}</div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
-          <div style={{ fontSize: 28, fontWeight: 700, color: GOLD }}>{price.toLocaleString()}원</div>
+          <div style={{ fontSize: 28, fontWeight: 700, color: GOLD }}>{hasValidPrice ? `${price.toLocaleString()}원` : '가격문의'}</div>
           {discount > 0 && <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{origPrice.toLocaleString()}원</div>}
         </div>
-        {price > 0 ? (
+        {hasValidPrice ? (
           <div style={{ fontSize: 11, color: GOLD, fontWeight: 700, marginBottom: 10 }}>
             이 상품 구매시 {expectedPurchasePts.toLocaleString()}P 적립
           </div>
@@ -569,6 +571,23 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             }}
             dangerouslySetInnerHTML={{ __html: detailHtml }}
           />
+        ) : null}
+        {!detailHtml && detailContentText ? (
+          <div
+            style={{
+              marginBottom: 12,
+              padding: '12px 14px',
+              borderRadius: 12,
+              background: 'rgba(255,255,255,0.03)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              color: 'rgba(255,255,255,0.85)',
+              fontSize: 13,
+              lineHeight: 1.7,
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {detailContentText}
+          </div>
         ) : null}
         {detailGalleryUrlsClean.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 12 }}>
