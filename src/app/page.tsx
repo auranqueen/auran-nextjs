@@ -438,9 +438,9 @@ export default function CustomerHomePage() {
                       cursor: 'pointer',
                     }}
                   >
-                    <div style={{ width: 42, height: 42, borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 42, height: 42, borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       {thumb ? (
-                        <img src={thumb} alt={p.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={thumb} alt={p.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} />
                       ) : (
                         <div style={{ fontSize: 18 }}>🧴</div>
                       )}
@@ -644,15 +644,17 @@ export default function CustomerHomePage() {
             }}
           >
             <div style={{
-              width: '100%',
-              aspectRatio: '1/1',
+              width: 120,
+              height: 120,
+              margin: '0 auto',
               overflow: 'hidden',
-              borderRadius: '8px 8px 0 0',
+              borderRadius: 12,
+              flexShrink: 0,
               background: 'linear-gradient(135deg,#1a1510,#2a2015)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '34px', position: 'relative',
             }}>
-              {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (p.icon || '🧴')}
+              {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (p.icon || '🧴')}
               {p.badge && (
                 <div style={{
                   position: 'absolute', top: '5px', left: '5px',
@@ -825,15 +827,17 @@ export default function CustomerHomePage() {
               borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0,
             }}>
               <div style={{
-                width: '100%',
-                aspectRatio: '1/1',
+                width: 120,
+                height: 120,
+                margin: '0 auto',
                 overflow: 'hidden',
-                borderRadius: '8px 8px 0 0',
+                borderRadius: 12,
+                flexShrink: 0,
                 background: 'linear-gradient(135deg,#1a1510,#2a2015)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '38px', position: 'relative',
               }}>
-                {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (p.icon || '🧴')}
+                {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (p.icon || '🧴')}
                 <div style={{
                   position: 'absolute', top: '7px', left: '7px',
                   width: '22px', height: '22px', borderRadius: '50%',
@@ -997,14 +1001,14 @@ export default function CustomerHomePage() {
                 <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
                   <div style={{
                     width: '120px',
-                    height: '100px',
+                    height: '120px',
                     overflow: 'hidden',
-                    borderRadius: '8px',
+                    borderRadius: 12,
                     background: 'linear-gradient(135deg,#1a1510,#2a2015)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: '28px', flexShrink: 0, position: 'relative',
                   }}>
-                    {(item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (item.icon || '🧴'))}
+                    {(item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (item.icon || '🧴'))}
                     <div style={{
                       position: 'absolute', top: '-4px', right: '-4px',
                       background: '#E04030', borderRadius: '20px', padding: '2px 6px',
@@ -1082,8 +1086,8 @@ export default function CustomerHomePage() {
                   <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg,#4060C0,#8090E0)' }} />
                 </div>
                 <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
-                  <div style={{ width: '120px', height: '100px', borderRadius: '8px', overflow: 'hidden', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', flexShrink: 0 }}>
-                    {(item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (item.icon || '🧴'))}
+                  <div style={{ width: '120px', height: '120px', borderRadius: 12, overflow: 'hidden', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', flexShrink: 0 }}>
+                    {(item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (item.icon || '🧴'))}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.product?.brand_name || item.brand || item.product?.brand}</div>
@@ -1171,15 +1175,17 @@ export default function CustomerHomePage() {
         {newList.map((item: any, i: number) => (
           <div key={i} onClick={() => router.push(`/products/${item.id}`)} style={{ minWidth: '130px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
             <div style={{
-              width: '100%',
-              aspectRatio: '1/1',
+              width: 120,
+              height: 120,
+              margin: '0 auto',
               overflow: 'hidden',
-              borderRadius: '8px 8px 0 0',
+              borderRadius: 12,
+              flexShrink: 0,
               background: 'linear-gradient(135deg,#1a0a2a,#2a1540)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '32px', position: 'relative'
             }}>
-              {(item.thumb_img ? <img src={item.thumb_img} alt={item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (item.icon || '💜'))}
+              {(item.thumb_img ? <img src={item.thumb_img} alt={item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (item.icon || '💜'))}
               <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'linear-gradient(90deg,#6040E0,#A040E0)', borderRadius: '5px', padding: '2px 6px', fontSize: '8px', color: '#fff' }}>NEW</div>
             </div>
             <div style={{ padding: '9px 10px' }}>
