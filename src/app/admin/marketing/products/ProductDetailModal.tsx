@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Editor } from '@toast-ui/react-editor'
 import '@toast-ui/editor/dist/toastui-editor.css'
+import '@toast-ui/editor/dist/i18n/ko-kr'
 
 type TabKey = 'thumb' | 'basic' | 'detail' | 'points' | 'flash'
 
