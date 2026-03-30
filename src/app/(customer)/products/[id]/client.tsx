@@ -323,7 +323,26 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: '#0d0b09', position: 'sticky', top: 0, zIndex: 10 }}>
         <div style={{ fontSize: 20, color: GOLD, cursor: 'pointer' }} onClick={() => router.back()}>←</div>
         <div style={{ fontSize: 15 }}>상품 상세</div>
-        <div style={{ fontSize: 18, cursor: 'pointer' }}>⎙</div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <div
+            style={{
+              color: '#7B5EA7',
+              background: 'rgba(123,94,167,0.15)',
+              border: '1px solid rgba(123,94,167,0.3)',
+              borderRadius: '50%',
+              width: 32,
+              height: 32,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              fontSize: 18,
+            }}
+          >
+            ⎙
+          </div>
+          <div style={{ fontSize: 9, color: '#7B5EA7' }}>공유</div>
+        </div>
       </div>
 
       {/* 갤러리 */}
