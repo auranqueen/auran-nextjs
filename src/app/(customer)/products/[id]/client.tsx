@@ -158,7 +158,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       if (!session?.user?.id) {
         setShowReviewForm(false); setShowReviewBanner(false); setMyReviewDoc(null); return
       }
-      const { data: orders } = await supabase.from('orders').select('items').eq('customer_id', session.user.id)
+      const { data: orders } = await supabase.from('orders').select('id, items').eq('customer_id', session.user.id)
       let purchased = false
       ;(orders || []).forEach((row: any) => {
         if (purchased) return
@@ -168,13 +168,25 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         else if (typeof raw === 'string') { try { parsed = JSON.parse(raw) } catch {} }
         if (Array.isArray(parsed) && parsed.some(it => String(it?.product_id || '') === String(product.id))) purchased = true
       })
-      const { data: myRow } = await supabase.from('reviews')
+      if (!purchased) {
+        const orderIds = (orders || []).map((o: any) => o.id).filter(Boolean)
+        if (orderIds.length > 0) {
+          const { data: orderItems } = await supabase
+            .from('order_items')
+            .select('product_id')
+            .eq('product_id', product.id)
+            .in('order_id', orderIds)
+          if (orderItems && orderItems.length > 0) purchased = true
+        }
+      }
+      const { data: myReviewRow } = await supabase.from('reviews')
         .select('id, content, rating, helpful_concerns, is_edited, created_at')
         .eq('author_id', session.user.id).eq('target_id', product.id).maybeSingle()
-      setMyReviewDoc(myRow || null)
-      if (myRow) { setShowReviewForm(false); setShowReviewBanner(false); return }
-      const canWrite = !!session && !!purchased && !myRow
-      setShowReviewForm(canWrite); setShowReviewBanner(canWrite)
+      setMyReviewDoc(myReviewRow || null)
+      if (myReviewRow) { setShowReviewForm(false); setShowReviewBanner(false); return }
+      const canWrite = !!session && !!purchased && !myReviewRow
+      setShowReviewForm(canWrite)
+      setShowReviewBanner(canWrite)
       const { data: setting } = await supabase.from('admin_settings').select('value')
         .eq('category', 'review').eq('key', 'points_text').single()
       setReviewToastAmount(setting?.value ? Number(setting.value) : 500)
