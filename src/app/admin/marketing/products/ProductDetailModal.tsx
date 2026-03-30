@@ -90,7 +90,7 @@ export default function ProductDetailModal({
   const [brandId, setBrandId] = useState(String(product.brand_id || ''))
   const [descDraft, setDescDraft] = useState(String(product.description || ''))
 
-  const [detailContent, setDetailContent] = useState(String(product.detail_content || ''))
+  const [detailContent, setDetailContent] = useState(String(product.detail_html || product.detail_content || ''))
   const [detailImages, setDetailImages] = useState<string[]>(
     Array.isArray(product.detail_images) && product.detail_images.length
       ? product.detail_images
@@ -145,7 +145,7 @@ export default function ProductDetailModal({
     setPriceDraft(String(product.retail_price ?? ''))
     setBrandId(String(product.brand_id || ''))
     setDescDraft(String(product.description || ''))
-    setDetailContent(String(product.detail_content || ''))
+    setDetailContent(String(product.detail_html || product.detail_content || ''))
     setDetailImages(
       Array.isArray(product.detail_images) && product.detail_images.length
         ? product.detail_images
@@ -271,8 +271,20 @@ export default function ProductDetailModal({
       return
     }
     mark('detail', false)
+    const { data: checkRow } = await supabase
+      .from('products')
+      .select('detail_html, detail_content')
+      .eq('id', product.id)
+      .maybeSingle()
+    console.log('Saved detail_html:', checkRow?.detail_html, 'Saved detail_content:', checkRow?.detail_content)
     onToast('✅ 상세내용 저장됨')
-    onProductUpdated({ ...product, detail_html: detailContent, detail_content: detailContent, detail_images: imgs, detail_imgs: imgs })
+    onProductUpdated({
+      ...product,
+      detail_html: detailContent.trim() || null,
+      detail_content: detailContent.trim() || null,
+      detail_images: imgs,
+      detail_imgs: imgs,
+    })
   }
 
   const savePoints = async () => {

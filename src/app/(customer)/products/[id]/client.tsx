@@ -451,8 +451,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             <video
               src={product.video_url}
               controls
-              autoPlay
+              muted
               playsInline
+              preload="metadata"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           ) : (
