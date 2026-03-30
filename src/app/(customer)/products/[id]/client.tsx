@@ -709,10 +709,10 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       </div>
 
       {shareOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 80, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={() => setShareOpen(false)}>
           <div onClick={e => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: 430, background: '#1a1610', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: '22px 20px 32px', borderTop: '1px solid rgba(123,94,167,0.4)' }}>
+            style={{ width: '100%', maxWidth: 430, background: '#1a1610', borderRadius: 20, padding: '22px 20px 32px', maxHeight: '85vh', overflowY: 'auto' }}>
 
             {/* 헤더 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
@@ -745,13 +745,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             {/* 공유 채널 */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
               {[
-                { label: '카카오톡', bg: '#FEE500', emoji: '💬', action: () => { window.open(`https://sharer.kakao.com/talk/friends/picker/link?url=${encodeURIComponent(window.location.href)}`) } },
-                { label: '인스타', bg: 'linear-gradient(45deg,#f09433,#dc2743,#bc1888)', emoji: '📸', action: () => { navigator.clipboard.writeText(window.location.href); alert('링크 복사됐어요! 인스타에 붙여넣기 해주세요') } },
-                { label: '페이스북', bg: '#1877F2', emoji: '👥', action: () => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`) } },
-                { label: '문자', bg: '#2a2520', emoji: '📱', action: () => { window.open(`sms:?body=${encodeURIComponent(name + ' ' + window.location.href)}`) } },
+                { label: '카카오톡', bg: '#FEE500', mark: 'K', markColor: '#000', action: () => { window.open(`https://sharer.kakao.com/talk/friends/picker/link?url=${encodeURIComponent(window.location.href)}`) } },
+                { label: '인스타', bg: '#E1306C', mark: 'I', markColor: '#fff', action: () => { navigator.clipboard.writeText(window.location.href); alert('링크 복사됐어요! 인스타에 붙여넣기 해주세요') } },
+                { label: '페이스북', bg: '#1877F2', mark: 'f', markColor: '#fff', action: () => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`) } },
+                { label: '문자', bg: '#2a2520', mark: '문', markColor: '#fff', action: () => { window.open(`sms:?body=${encodeURIComponent(name + ' ' + window.location.href)}`) } },
               ].map(ch => (
                 <div key={ch.label} onClick={ch.action} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: ch.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>{ch.emoji}</div>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: ch.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 500, color: ch.markColor }}>{ch.mark}</div>
                   <span style={{ fontSize: 10, color: '#888' }}>{ch.label}</span>
                 </div>
               ))}
