@@ -259,6 +259,7 @@ export default function ProductDetailModal({
     const { error } = await supabase
       .from('products')
       .update({
+        detail_html: detailContent.trim() || null,
         detail_content: detailContent.trim() || null,
         detail_images: imgs,
         detail_imgs: imgs,
@@ -271,7 +272,7 @@ export default function ProductDetailModal({
     }
     mark('detail', false)
     onToast('✅ 상세내용 저장됨')
-    onProductUpdated({ ...product, detail_content: detailContent, detail_images: imgs, detail_imgs: imgs })
+    onProductUpdated({ ...product, detail_html: detailContent, detail_content: detailContent, detail_images: imgs, detail_imgs: imgs })
   }
 
   const savePoints = async () => {

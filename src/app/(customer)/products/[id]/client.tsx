@@ -452,7 +452,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               src={product.video_url}
               controls
               autoPlay
-              style={{ width: '100%', height: '280px', objectFit: 'cover' }}
+              playsInline
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
             />
           ) : (
             activeMainImageUrl ? (
