@@ -908,39 +908,42 @@ export default function ProductDetailModal({
 
         {modalTab === 'detail' && (
           <div style={{ display: 'grid', gap: 12 }}>
-            <Editor
-              key={product.id}
-              ref={editorRef}
-              initialValue={detailContent || ''}
-              initialEditType="wysiwyg"
-              height="600px"
-              language="ko-KR"
-              toolbarItems={[
-                ['heading', 'bold', 'italic', 'strike'],
-                ['hr', 'quote'],
-                ['ul', 'ol'],
-                ['image', 'link'],
-                ['code', 'codeblock'],
-              ]}
-              hooks={{
-                addImageBlobHook: async (blob: any, callback: (url: string, alt: string) => void) => {
-                  const file = blob
-                  const ext = file?.name?.split?.('.')?.pop?.() || 'jpg'
-                  const productId = product.id
-                  const path = `detail/${productId}/${Date.now()}.${ext}`
-                  const { error: upErr } = await supabase.storage.from('products').upload(path, file, { upsert: true })
-                  if (upErr) {
-                    onToast(upErr.message || '이미지 업로드 실패')
-                    return
-                  }
-                  const {
-                    data: { publicUrl },
-                  } = supabase.storage.from('products').getPublicUrl(path)
-                  callback(publicUrl, '상세이미지')
-                },
-              }}
-              onChange={() => mark('detail', true)}
-            />
+            <div style={{ overflowX: 'auto', width: '100%' }}>
+              <Editor
+                key={product.id}
+                ref={editorRef}
+                initialValue={detailContent || ''}
+                initialEditType="wysiwyg"
+                hideModeSwitch
+                height="400px"
+                language="ko-KR"
+                toolbarItems={[
+                  ['heading', 'bold', 'italic', 'strike'],
+                  ['hr', 'quote'],
+                  ['ul', 'ol'],
+                  ['image', 'link'],
+                  ['code', 'codeblock'],
+                ]}
+                hooks={{
+                  addImageBlobHook: async (blob: any, callback: (url: string, alt: string) => void) => {
+                    const file = blob
+                    const ext = file?.name?.split?.('.')?.pop?.() || 'jpg'
+                    const productId = product.id
+                    const path = `detail/${productId}/${Date.now()}.${ext}`
+                    const { error: upErr } = await supabase.storage.from('products').upload(path, file, { upsert: true })
+                    if (upErr) {
+                      onToast(upErr.message || '이미지 업로드 실패')
+                      return
+                    }
+                    const {
+                      data: { publicUrl },
+                    } = supabase.storage.from('products').getPublicUrl(path)
+                    callback(publicUrl, '상세이미지')
+                  },
+                }}
+                onChange={() => mark('detail', true)}
+              />
+            </div>
 
             <button
               type="button"
