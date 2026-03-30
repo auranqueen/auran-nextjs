@@ -3,6 +3,8 @@
 import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Editor } from '@toast-ui/react-editor'
+import '@toast-ui/editor/dist/toastui-editor.css'
 
 type TabKey = 'thumb' | 'basic' | 'detail' | 'points' | 'flash'
 
@@ -75,6 +77,7 @@ export default function ProductDetailModal({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const extraGalleryInputRef = useRef<HTMLInputElement>(null)
   const detailFilesRef = useRef<HTMLInputElement>(null)
+  const editorRef = useRef<any>(null)
 
   const [thumbPreview, setThumbPreview] = useState<string | null>(null)
   const [thumbUploadedUrl, setThumbUploadedUrl] = useState<string | null>(null)
@@ -257,24 +260,25 @@ export default function ProductDetailModal({
 
   const saveDetail = async () => {
     setDetailSaving(true)
-    const imgs = [...detailImages]
-    const { error } = await supabase
-      .from('products')
-      .update({
-        detail_sections: blocks,
-      })
-      .eq('id', product.id)
-    setDetailSaving(false)
-    if (error) {
-      onToast(error.message || '저장 실패')
-      return
+    try {
+      const inst = editorRef.current?.getInstance?.()
+      const html = inst?.getHTML?.() || ''
+      const { error } = await supabase
+        .from('products')
+        .update({ detail_html: html.trim() || null })
+        .eq('id', product.id)
+
+      if (error) {
+        onToast(error.message || '저장 실패')
+        return
+      }
+
+      mark('detail', false)
+      onToast('저장되었습니다')
+      onProductUpdated({ ...product, detail_html: html.trim() || null })
+    } finally {
+      setDetailSaving(false)
     }
-    mark('detail', false)
-    onToast('✅ 상세내용 저장됨')
-    onProductUpdated({
-      ...product,
-      detail_sections: blocks,
-    })
   }
 
   const savePoints = async () => {
@@ -904,277 +908,39 @@ export default function ProductDetailModal({
 
         {modalTab === 'detail' && (
           <div style={{ display: 'grid', gap: 12 }}>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              <button
-                type="button"
-                onClick={() => detailFilesRef.current?.click()}
-                style={{
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: 10,
-                  padding: '8px 14px',
-                  color: '#fff',
-                  fontSize: 12,
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                }}
-              >
-                📷 이미지
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setBlocks(prev => [...prev, { type: 'text', content: '' }])
-                  mark('detail', true)
-                }}
-                style={{
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: 10,
-                  padding: '8px 14px',
-                  color: '#fff',
-                  fontSize: 12,
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                }}
-              >
-                📝 텍스트
-              </button>
-              <button
-                type="button"
-                onClick={() => (extraGalleryInputRef.current as any)?.click?.()}
-                style={{
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  borderRadius: 10,
-                  padding: '8px 14px',
-                  color: '#fff',
-                  fontSize: 12,
-                  fontWeight: 800,
-                  cursor: 'pointer',
-                }}
-              >
-                🎬 영상
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setBlocks(prev => [...prev, { type: 'divider' }])
-                  mark('detail', true)
-                }}
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: 10,
-                  padding: '8px 14px',
-                  color: 'rgba(255,255,255,0.75)',
-                  fontSize: 12,
-                  cursor: 'pointer',
-                }}
-              >
-                ─── 구분선
-              </button>
-            </div>
-
-            <input
-              ref={detailFilesRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              style={{ display: 'none' }}
-              onChange={async e => {
-                const file = e.target.files?.[0]
-                const inputEl = e.target
-                inputEl.value = ''
-                if (!file) return
-                if (file.size > 20 * 1024 * 1024) {
-                  onToast('이미지는 20MB 이하만 가능합니다')
-                  return
-                }
-                const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
-                const path = `detail/${product.id}/${Date.now()}.${ext || 'jpg'}`
-                const { error } = await supabase.storage.from('products').upload(path, file, { upsert: true })
-                if (error) {
-                  onToast(error.message || '업로드 실패')
-                  return
-                }
-                const { data: pub } = supabase.storage.from('products').getPublicUrl(path)
-                setBlocks(prev => [...prev, { type: 'image', url: pub.publicUrl }])
-                mark('detail', true)
+            <Editor
+              key={product.id}
+              ref={editorRef}
+              initialValue={detailContent || ''}
+              initialEditType="wysiwyg"
+              height="600px"
+              language="ko-KR"
+              toolbarItems={[
+                ['heading', 'bold', 'italic', 'strike'],
+                ['hr', 'quote'],
+                ['ul', 'ol'],
+                ['image', 'link'],
+                ['code', 'codeblock'],
+              ]}
+              hooks={{
+                addImageBlobHook: async (blob: any, callback: (url: string, alt: string) => void) => {
+                  const file = blob
+                  const ext = file?.name?.split?.('.')?.pop?.() || 'jpg'
+                  const productId = product.id
+                  const path = `detail/${productId}/${Date.now()}.${ext}`
+                  const { error: upErr } = await supabase.storage.from('products').upload(path, file, { upsert: true })
+                  if (upErr) {
+                    onToast(upErr.message || '이미지 업로드 실패')
+                    return
+                  }
+                  const {
+                    data: { publicUrl },
+                  } = supabase.storage.from('products').getPublicUrl(path)
+                  callback(publicUrl, '상세이미지')
+                },
               }}
+              onChange={() => mark('detail', true)}
             />
-
-            <input
-              ref={extraGalleryInputRef as any}
-              type="file"
-              accept="video/mp4"
-              className="hidden"
-              style={{ display: 'none' }}
-              onChange={async e => {
-                const file = e.target.files?.[0]
-                const inputEl = e.target
-                inputEl.value = ''
-                if (!file) return
-                if (file.size > 50 * 1024 * 1024) {
-                  onToast('영상은 50MB 이하만 가능합니다')
-                  return
-                }
-                let dur = 0
-                try {
-                  dur = await new Promise<number>((resolve, reject) => {
-                    const el = document.createElement('video')
-                    el.preload = 'metadata'
-                    el.onloadedmetadata = () => {
-                      const d = el.duration
-                      URL.revokeObjectURL(el.src)
-                      resolve(Number.isFinite(d) ? d : 0)
-                    }
-                    el.onerror = () => {
-                      URL.revokeObjectURL(el.src)
-                      reject(new Error('meta'))
-                    }
-                    el.src = URL.createObjectURL(file)
-                  })
-                } catch {
-                  onToast('영상을 불러오지 못했습니다')
-                  return
-                }
-                if (dur > 30) {
-                  onToast('영상은 30초 이내만 등록 가능합니다')
-                  return
-                }
-                const path = `detail/${product.id}/${Date.now()}.mp4`
-                const { error } = await supabase.storage.from('products').upload(path, file, { upsert: true })
-                if (error) {
-                  onToast(error.message || '업로드 실패')
-                  return
-                }
-                const { data: pub } = supabase.storage.from('products').getPublicUrl(path)
-                setBlocks(prev => [...prev, { type: 'video', url: pub.publicUrl }])
-                mark('detail', true)
-              }}
-            />
-
-            <div style={{ display: 'grid', gap: 10 }}>
-              {blocks.length === 0 ? (
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>아직 블록이 없습니다. 위 버튼으로 추가하세요.</div>
-              ) : null}
-              {blocks.map((b, i) => (
-                <div
-                  key={i}
-                  style={{
-                    border: '1px solid rgba(255,255,255,0.10)',
-                    borderRadius: 12,
-                    padding: 12,
-                    background: 'rgba(255,255,255,0.03)',
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (i <= 0) return
-                        setBlocks(prev => {
-                          const next = [...prev]
-                          const tmp = next[i - 1]
-                          next[i - 1] = next[i]
-                          next[i] = tmp
-                          return next
-                        })
-                        mark('detail', true)
-                      }}
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: 10,
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        background: 'rgba(255,255,255,0.06)',
-                        color: 'rgba(255,255,255,0.85)',
-                        cursor: i <= 0 ? 'not-allowed' : 'pointer',
-                        opacity: i <= 0 ? 0.4 : 1,
-                      }}
-                    >
-                      ↑
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (i >= blocks.length - 1) return
-                        setBlocks(prev => {
-                          const next = [...prev]
-                          const tmp = next[i + 1]
-                          next[i + 1] = next[i]
-                          next[i] = tmp
-                          return next
-                        })
-                        mark('detail', true)
-                      }}
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: 10,
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        background: 'rgba(255,255,255,0.06)',
-                        color: 'rgba(255,255,255,0.85)',
-                        cursor: i >= blocks.length - 1 ? 'not-allowed' : 'pointer',
-                        opacity: i >= blocks.length - 1 ? 0.4 : 1,
-                      }}
-                    >
-                      ↓
-                    </button>
-                    <div style={{ marginLeft: 'auto' }} />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBlocks(prev => prev.filter((_, j) => j !== i))
-                        mark('detail', true)
-                      }}
-                      style={{
-                        width: 30,
-                        height: 30,
-                        borderRadius: 10,
-                        border: 'none',
-                        background: 'rgba(0,0,0,0.65)',
-                        color: '#fff',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      ×
-                    </button>
-                  </div>
-
-                  {b?.type === 'image' ? (
-                    <img src={String(b?.url || '')} alt="" style={{ width: '100%', height: 'auto', borderRadius: 10, display: 'block', border: '1px solid rgba(255,255,255,0.08)' }} />
-                  ) : b?.type === 'video' ? (
-                    <video src={String(b?.url || '')} controls playsInline muted style={{ width: '100%', borderRadius: 10, display: 'block', border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(0,0,0,0.2)' }} />
-                  ) : b?.type === 'divider' ? (
-                    <hr style={{ border: 'none', borderTop: '1px solid rgba(255,255,255,0.12)' }} />
-                  ) : (
-                    <textarea
-                      value={String(b?.content || '')}
-                      onChange={e => {
-                        const v = e.target.value
-                        setBlocks(prev => prev.map((x, j) => (j === i ? { ...x, content: v } : x)))
-                        mark('detail', true)
-                      }}
-                      placeholder="텍스트를 입력하세요"
-                      style={{
-                        width: '100%',
-                        minHeight: 120,
-                        background: 'rgba(255,255,255,0.06)',
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        borderRadius: 10,
-                        padding: '10px 12px',
-                        color: '#fff',
-                        fontSize: 13,
-                        resize: 'vertical',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
 
             <button
               type="button"

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { ReviewForm } from '@/components/reviews/ReviewForm'
+import '@toast-ui/editor/dist/toastui-editor-viewer.css'
 
 const GOLD = '#C9A96E'
 
@@ -584,7 +585,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           </div>
         )}
 
-        {detailSections.map((block: any, i: number) => {
+        {!detailHtml &&
+          detailSections.map((block: any, i: number) => {
           if (block?.type === 'image') {
             return <img key={i} src={String(block?.url || '')} style={{ width: '100%', display: 'block', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', marginBottom: 12 }} alt="" />
           }
@@ -606,17 +608,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
         {detailHtml ? (
           <div
-            style={{
-              marginBottom: 12,
-              padding: '12px 14px',
-              borderRadius: 12,
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              color: 'rgba(255,255,255,0.85)',
-              fontSize: 13,
-              lineHeight: 1.7,
-            }}
+            className="toastui-editor-contents"
             dangerouslySetInnerHTML={{ __html: detailHtml }}
+            style={{ padding: '0 18px', color: '#ccc', marginBottom: 12 }}
           />
         ) : null}
         {!detailHtml && detailContentText ? (
