@@ -74,6 +74,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [activeThumb, setActiveThumb] = useState(0)
   const [loginSheetOpen, setLoginSheetOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
+  const [shareRefUserId, setShareRefUserId] = useState<string | null | undefined>(undefined)
   const [myProfileSkinType, setMyProfileSkinType] = useState<string | null>(null)
   const paymentResumeOnce = useRef(false)
   const reviewSectionRef = useRef<HTMLDivElement | null>(null)
@@ -233,6 +234,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     return () => { cancelled = true }
   }, [product.id, product.skin_types, supabase])
 
+  useEffect(() => {
+    if (!shareOpen) return
+    setShareRefUserId(undefined)
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      setShareRefUserId(session?.user?.id ?? null)
+    })
+  }, [shareOpen, supabase])
+
   const brand = product.brands?.name || 'AURAN'
   const name = product.name ?? '제품명'
   const seoDesc = product.description ?? ''
@@ -259,6 +268,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const expectedPurchasePts = Math.floor((price * pointRate) / 100)
   const detailHtml = (product as any).detail_html ? String((product as any).detail_html) : ''
   const total = (price * qty).toLocaleString() + '원'
+  const shareLinkWithRef =
+    typeof shareRefUserId === 'string' && shareRefUserId && typeof window !== 'undefined'
+      ? (() => {
+          const u = new URL(window.location.href)
+          u.searchParams.set('ref', shareRefUserId)
+          return u.toString()
+        })()
+      : ''
 
   // 리뷰 통계
   let reviewListAvg = 0
@@ -729,42 +746,63 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               </div>
             </div>
 
-            {/* 링크 복사 */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 10, padding: '10px 12px', marginBottom: 16 }}>
-              <div style={{ flex: 1, fontSize: 11, color: '#B09AD0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {typeof window !== 'undefined' ? window.location.href : ''}
-              </div>
-              <button onClick={() => {
-                navigator.clipboard.writeText(typeof window !== 'undefined' ? window.location.href : '')
-                alert('링크가 복사됐어요!')
-              }} style={{ background: '#7B5EA7', border: 'none', color: '#fff', fontSize: 11, padding: '6px 14px', borderRadius: 20, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' }}>
-                링크 복사
-              </button>
-            </div>
-
-            {/* 공유 채널 */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
-              {[
-                { label: '카카오톡', bg: '#FEE500', mark: 'K', markColor: '#000', action: () => { window.open(`https://sharer.kakao.com/talk/friends/picker/link?url=${encodeURIComponent(window.location.href)}`) } },
-                { label: '인스타', bg: '#E1306C', mark: 'I', markColor: '#fff', action: () => { navigator.clipboard.writeText(window.location.href); alert('링크 복사됐어요! 인스타에 붙여넣기 해주세요') } },
-                { label: '페이스북', bg: '#1877F2', mark: 'f', markColor: '#fff', action: () => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`) } },
-                { label: '문자', bg: '#2a2520', mark: '문', markColor: '#fff', action: () => { window.open(`sms:?body=${encodeURIComponent(name + ' ' + window.location.href)}`) } },
-              ].map(ch => (
-                <div key={ch.label} onClick={ch.action} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: ch.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 500, color: ch.markColor }}>{ch.mark}</div>
-                  <span style={{ fontSize: 10, color: '#888' }}>{ch.label}</span>
+            {shareRefUserId === null ? (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
+                <div style={{ fontSize: 14, color: '#e8e4dc', marginBottom: 8 }}>
+                  로그인하면 추천 링크가 생성돼요
                 </div>
-              ))}
-            </div>
-
-            {/* 적립 안내 */}
-            <div style={{ background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 12, padding: '12px 14px' }}>
-              <div style={{ fontSize: 12, color: '#B09AD0', marginBottom: 6 }}>🍞 공유 적립 안내</div>
-              <div style={{ fontSize: 11, color: '#888', lineHeight: 1.7 }}>
-                친구가 가입하면 친구 <span style={{ color: '#C9A96E' }}>+10,000T</span> · 나 <span style={{ color: '#C9A96E' }}>+1,000T</span><br />
-                친구가 5만원↑ 첫구매 확정하면 나 <span style={{ color: '#C9A96E' }}>+5,000T</span> 추가 적립
+                <div style={{ fontSize: 12, color: '#888', lineHeight: 1.7, marginBottom: 16 }}>
+                  친구 가입시 나 <span style={{ color: '#C9A96E' }}>+1,000T</span><br />
+                  친구 첫구매 5만원↑ 확정시 나 <span style={{ color: '#C9A96E' }}>+5,000T</span>
+                </div>
+                <button onClick={() => void supabase.auth.signInWithOAuth({
+                  provider: 'kakao',
+                  options: { redirectTo: typeof window !== 'undefined' ? window.location.href : undefined }
+                })} style={{ width: '100%', padding: '14px', borderRadius: 12, border: 'none', background: '#FEE500', color: '#191600', fontSize: 15, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  카카오 로그인
+                </button>
               </div>
-            </div>
+            ) : shareRefUserId ? (
+              <>
+                {/* 링크 복사 */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 10, padding: '10px 12px', marginBottom: 16 }}>
+                  <div style={{ flex: 1, fontSize: 11, color: '#B09AD0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {shareLinkWithRef}
+                  </div>
+                  <button onClick={() => {
+                    navigator.clipboard.writeText(shareLinkWithRef)
+                    alert('링크가 복사됐어요!')
+                  }} style={{ background: '#7B5EA7', border: 'none', color: '#fff', fontSize: 11, padding: '6px 14px', borderRadius: 20, cursor: 'pointer', flexShrink: 0, fontFamily: 'inherit' }}>
+                    링크 복사
+                  </button>
+                </div>
+
+                {/* 공유 채널 */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 16 }}>
+                  {[
+                    { label: '카카오톡', bg: '#FEE500', mark: 'K', markColor: '#000', action: () => { window.open(`https://sharer.kakao.com/talk/friends/picker/link?url=${encodeURIComponent(shareLinkWithRef)}`) } },
+                    { label: '인스타', bg: '#E1306C', mark: 'I', markColor: '#fff', action: () => { navigator.clipboard.writeText(shareLinkWithRef); alert('링크 복사됐어요! 인스타에 붙여넣기 해주세요') } },
+                    { label: '페이스북', bg: '#1877F2', mark: 'f', markColor: '#fff', action: () => { window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareLinkWithRef)}`) } },
+                    { label: '문자', bg: '#2a2520', mark: '문', markColor: '#fff', action: () => { window.open(`sms:?body=${encodeURIComponent(name + ' ' + shareLinkWithRef)}`) } },
+                  ].map(ch => (
+                    <div key={ch.label} onClick={ch.action} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+                      <div style={{ width: 48, height: 48, borderRadius: '50%', background: ch.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 500, color: ch.markColor }}>{ch.mark}</div>
+                      <span style={{ fontSize: 10, color: '#888' }}>{ch.label}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 적립 안내 */}
+                <div style={{ background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 12, padding: '12px 14px' }}>
+                  <div style={{ fontSize: 12, color: '#B09AD0', marginBottom: 6 }}>🍞 공유 적립 안내</div>
+                  <div style={{ fontSize: 11, color: '#888', lineHeight: 1.7 }}>
+                    친구가 가입하면 친구 <span style={{ color: '#C9A96E' }}>+10,000T</span> · 나 <span style={{ color: '#C9A96E' }}>+1,000T</span><br />
+                    친구가 5만원↑ 첫구매 확정하면 나 <span style={{ color: '#C9A96E' }}>+5,000T</span> 추가 적립
+                  </div>
+                </div>
+              </>
+            ) : null}
           </div>
         </div>
       )}
