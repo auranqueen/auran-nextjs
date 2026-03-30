@@ -923,15 +923,6 @@ export default function CustomerHomePage() {
         </div>
       </div>
 
-      {/* ── 리뷰 작성 유도 ── */}
-      <div style={{ margin: '10px 16px 0', padding: '12px 14px', background: 'rgba(201,169,110,0.05)', border: '1px solid rgba(201,169,110,0.15)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', lineHeight: 1.6 }}>
-          내 리뷰 사진·영상 올리면<br/>
-          <span style={{ color: GOLD }}>+50P 즉시 적립</span> · 일촌들도 볼 수 있어요
-        </div>
-        <div onClick={() => router.push('/reviews/write')} style={{ padding: '8px 14px', background: GOLD, borderRadius: '8px', fontSize: '11px', color: BG, cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0, marginLeft: '10px' }}>✍️ 리뷰 작성</div>
-      </div>
-
       {/* ── 롤링 리뷰 ── */}
       <div style={{ margin: '16px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
