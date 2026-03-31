@@ -34,7 +34,7 @@ export default function MyPage() {
         if (name) setUserName(name)
         supabase
           .from('profiles')
-          .select('grade, full_name, username, phone, birth_date, skin_type, skin_concerns, menstrual_cycle, drink_frequency, exercise_frequency, preferred_brands, special_dates')
+          .select('grade, full_name, username, avatar_url, phone, birth_date, skin_type, skin_concerns, menstrual_cycle, drink_frequency, exercise_frequency, preferred_brands, special_dates')
           .eq('auth_id', data.user.id)
           .single()
           .then(async ({ data: profile }) => {
@@ -157,7 +157,23 @@ export default function MyPage() {
 
       {/* 프로필 */}
       <div style={{ padding: '20px 20px 0', display: 'flex', alignItems: 'center', gap: '14px' }}>
-        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', border: `2px solid rgba(201,169,110,0.3)`, flexShrink: 0 }}>👩</div>
+        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', border: `2px solid rgba(201,169,110,0.3)`, flexShrink: 0, overflow: 'hidden' }}>
+          {profileData?.avatar_url ? (
+            <img
+              src={`${profileData.avatar_url}?t=${Date.now()}`}
+              alt="프로필"
+              style={{
+                width: '60px',
+                height: '60px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '2px solid rgba(123,94,167,0.3)'
+              }}
+            />
+          ) : (
+            <span style={{ fontSize: '28px' }}>👩</span>
+          )}
+        </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '18px', fontWeight: 400, marginBottom: '3px' }}>{userName}님</div>
           <div

@@ -74,13 +74,13 @@ export default function MyProfilePage() {
         return
       }
       setAuthId(user.id)
-      const { data: profile } = await supabase.from('profiles').select('*').eq('auth_id', user.id).single()
+      const { data: profile } = await supabase.from('profiles').select('*, avatar_url').eq('auth_id', user.id).single()
       setFullName(String(profile?.full_name ?? ''))
       setUsername(String(profile?.username ?? ''))
       setEmail(String(profile?.email ?? user.email ?? ''))
       setPhone(String(profile?.phone ?? ''))
       setBirthDate(String(profile?.birth_date ?? '').slice(0, 10))
-      setAvatarUrl(String(profile?.avatar_url ?? ''))
+      setAvatarUrl(profile?.avatar_url || '')
       setSkinType(String(profile?.skin_type ?? ''))
       setSkinConcerns(Array.isArray(profile?.skin_concerns) ? (profile?.skin_concerns as string[]) : [])
       setAllergyIngredients(Array.isArray(profile?.allergy_ingredients) ? (profile?.allergy_ingredients as string[]) : [])
@@ -163,23 +163,29 @@ export default function MyProfilePage() {
     e.target.value = ''
     if (!file || !authId) return
     setUploading(true)
-    // NOTE: 'avatars' 버킷은 Supabase 대시보드에서 public 설정으로 수동 생성/확인 필요
+    // Supabase 대시보드에서 avatars 버킷 생성 필요
     const ext = (file.name.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '') || 'jpg'
-    const path = `${authId}/${Date.now()}.${ext}`
-    const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true, cacheControl: '3600' })
+    const filePath = `avatars/${authId}_${Date.now()}.${ext}`
+    const { error: upErr } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true, cacheControl: '3600' })
     if (upErr) {
       setUploading(false)
-      alert(upErr.message)
+      alert('사진 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.')
       return
     }
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from('avatars').getPublicUrl(path)
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
+    const publicUrl = urlData.publicUrl
     if (publicUrl) {
-      const { error: dbErr } = await supabase.from('profiles').update({ avatar_url: publicUrl } as any).eq('auth_id', authId)
+      const { data: auth } = await supabase.auth.getUser()
+      const user = auth.user
+      if (!user) {
+        setUploading(false)
+        alert('사진 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.')
+        return
+      }
+      const { error: dbErr } = await supabase.from('profiles').update({ avatar_url: publicUrl } as any).eq('auth_id', user.id)
       if (dbErr) {
         setUploading(false)
-        alert(dbErr.message)
+        alert('사진 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.')
         return
       }
       setAvatarUrl(`${publicUrl}?t=${Date.now()}`)
@@ -281,7 +287,21 @@ export default function MyProfilePage() {
                 background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)',
               }}
             >
-              {avatarUrl ? <img src={avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 28 }}>👩</span>}
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="프로필"
+                  style={{
+                    width: '60px',
+                    height: '60px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '2px solid rgba(123,94,167,0.4)',
+                  }}
+                />
+              ) : (
+                <span style={{ fontSize: '28px' }}>👩</span>
+              )}
             </button>
           </div>
           {uploading ? <div style={{ textAlign: 'center', marginTop: 8, fontSize: 11, color: '#9b7ec8' }}>업로드 중...</div> : null}
