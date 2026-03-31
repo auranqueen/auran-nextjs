@@ -20,6 +20,8 @@ export default function MyPage() {
   const [grade, setGrade] = useState('')
   const [point, setPoint] = useState(0)
   const [chargeBalance, setChargeBalance] = useState(0)
+  const [pointHistory, setPointHistory] = useState<any[]>([])
+  const [expiringPoint, setExpiringPoint] = useState(0)
   const [orders, setOrders] = useState<any[]>([])
   const [coupons, setCoupons] = useState<any[]>([])
   const [refills, setRefills] = useState<any[]>([])
@@ -40,6 +42,24 @@ export default function MyPage() {
             setChargeBalance(data.charge_balance || 0)
           }
         })
+        supabase
+          .from('point_transactions')
+          .select('amount, type, description, created_at')
+          .eq('user_id', data.user.id)
+          .order('created_at', { ascending: false })
+          .limit(5)
+          .then(({ data }) => {
+            setPointHistory(data || [])
+          })
+        supabase
+          .from('point_transactions')
+          .select('amount')
+          .eq('user_id', data.user.id)
+          .eq('type', 'expire')
+          .then(({ data }) => {
+            const total = (data || []).reduce((sum: number, row: any) => sum + Math.abs(Number(row.amount || 0)), 0)
+            setExpiringPoint(total)
+          })
         supabase
           .from('profiles')
           .select('grade, full_name, username, avatar_url, phone, birth_date, skin_type, skin_concerns, menstrual_cycle, drink_frequency, exercise_frequency, preferred_brands, special_dates')
@@ -98,6 +118,8 @@ export default function MyPage() {
         setAvatarUrl('')
         setPoint(0)
         setChargeBalance(0)
+        setPointHistory([])
+        setExpiringPoint(0)
       }
     })
     // TODO: coupons 테이블에서 사용 가능한 쿠폰 조회
@@ -261,32 +283,58 @@ export default function MyPage() {
       )}
 
       {/* AURAN POINT */}
-      <div onClick={() => router.push('/wallet')} style={{ margin: '14px 16px 0', background: 'linear-gradient(135deg,rgba(201,169,110,0.12),rgba(201,169,110,0.06))', border: '1px solid rgba(201,169,110,0.25)', borderRadius: '16px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <span style={{ fontSize: '22px' }}>✨</span>
+      <div style={{ margin: '14px 16px 0', background: 'rgba(123,94,167,0.12)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: '18px', padding: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
-            <div style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_MUTED, marginBottom: '2px', letterSpacing: '1px' }}>AURAN POINT</div>
-            <div style={{ fontSize: '22px', fontWeight: 400 }}>
-              <em style={{ color: GOLD, fontStyle: 'normal' }}>{point > 0 ? point.toLocaleString() : '8,888'}P</em>
-            </div>
-            <div style={{ fontSize: 11, color: '#9b7ec8', marginTop: 4 }}>
-              AURAN PAY ₩{(chargeBalance || 0).toLocaleString()}
-            </div>
+            <div style={{ fontSize: '10px', color: 'rgba(196,167,231,0.7)' }}>🍞 토스트 P</div>
+            <div style={{ fontSize: '22px', color: '#c4a7e7' }}>{point.toLocaleString()}P</div>
+          </div>
+          <div>
+            <div style={{ fontSize: '10px', color: 'rgba(196,167,231,0.7)' }}>💳 AURAN PAY</div>
+            <div style={{ fontSize: '22px', color: '#9b7ec8' }}>₩{chargeBalance.toLocaleString()}</div>
           </div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: '10px', color: TEXT_MUTED, marginBottom: '4px' }}>충전하기</div>
-          <div style={{ fontSize: '20px', color: 'rgba(201,169,110,0.35)' }}>›</div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button
+            onClick={() => router.push('/wallet')}
+            style={{ background: 'rgba(123,94,167,0.3)', border: '1px solid rgba(123,94,167,0.5)', color: '#c4a7e7', borderRadius: '10px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer' }}
+          >
+            충전하기
+          </button>
+          <button
+            onClick={() => router.push('/my/point')}
+            style={{ background: 'transparent', border: '1px solid rgba(196,167,231,0.2)', color: 'rgba(196,167,231,0.6)', borderRadius: '10px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer' }}
+          >
+            사용내역
+          </button>
         </div>
+        {expiringPoint > 0 ? (
+          <div style={{ marginTop: 8, fontSize: '10px', color: 'rgba(255,180,80,0.8)' }}>
+            ⚠️ {expiringPoint.toLocaleString()} P 12월 31일 소멸 예정
+          </div>
+        ) : null}
       </div>
-      <div style={{ margin: '8px 16px 0', padding: '0 4px' }}>
-        <div style={{ fontSize: '10px', color: TEXT_MUTED, marginBottom: '6px' }}>
-          {nextG ? `다음 등급(${nextG})까지 ${remain.toLocaleString()}원` : '최상위 등급입니다'}
+
+      {pointHistory.length > 0 ? (
+        <div style={{ margin: '10px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '12px 14px' }}>
+          {pointHistory.map((h, i) => (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, alignItems: 'center', padding: i === 0 ? '0 0 8px' : '8px 0', borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.06)' }}>
+              <div>
+                <div style={{ fontSize: '12px' }}>{h.description || '내역'}</div>
+                <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)' }}>
+                  {h.created_at ? `${String(new Date(h.created_at).getMonth() + 1).padStart(2, '0')}.${String(new Date(h.created_at).getDate()).padStart(2, '0')}` : ''}
+                </div>
+              </div>
+              <div style={{ fontSize: '12px', color: Number(h.amount) > 0 ? '#6dba6d' : 'rgba(220,80,80,0.8)' }}>
+                {Number(h.amount) > 0 ? `+${Number(h.amount).toLocaleString()}P` : `${Number(h.amount).toLocaleString()}P`}
+              </div>
+            </div>
+          ))}
+          <div onClick={() => router.push('/my/point')} style={{ marginTop: 8, fontSize: '11px', color: '#7B5EA7', cursor: 'pointer' }}>
+            전체 내역 보기 →
+          </div>
         </div>
-        <div style={{ width: '100%', height: '5px', borderRadius: '999px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
-          <div style={{ width: `${prog}%`, height: '100%', background: '#7B5EA7' }} />
-        </div>
-      </div>
+      ) : null}
 
       {/* 소진 알림 */}
       {(refills.length > 0 || true) && (
