@@ -30,7 +30,7 @@ export default function MyWorldPage() {
   const [routineChecked, setRoutineChecked] = useState<Record<string, boolean>>({})
   const [showCustomize, setShowCustomize] = useState(false)
   const [myworldNickname, setMyworldNickname] = useState('')
-  const [myworldTheme, setMyworldTheme] = useState('💜 보라빛 드림')
+  const [selectedTheme, setSelectedTheme] = useState('💜 보라빛 드림')
   const [myworldBio, setMyworldBio] = useState('')
 
   useEffect(() => {
@@ -47,12 +47,12 @@ export default function MyWorldPage() {
 
       const { data: p } = await supabase
         .from('profiles')
-        .select('full_name, username, avatar_url, grade, skin_type')
+        .select('full_name, username, avatar_url, grade, skin_type, myworld_nickname, myworld_theme, myworld_bio')
         .eq('auth_id', auth.user.id)
         .maybeSingle()
       setProfile(p || null)
-      setMyworldNickname(String((p as any)?.myworld_nickname || ''))
-      setMyworldTheme(String((p as any)?.myworld_theme || '💜 보라빛 드림'))
+      if ((p as any)?.myworld_nickname) setMyworldNickname(String((p as any).myworld_nickname))
+      if ((p as any)?.myworld_theme) setSelectedTheme(String((p as any).myworld_theme))
       setMyworldBio(String((p as any)?.myworld_bio || ''))
 
       let deliveredRows: any[] = []
@@ -205,14 +205,30 @@ export default function MyWorldPage() {
       : bgmTab === 'night'
         ? 'night+skincare+routine+relaxing+music'
         : 'face+mask+relaxing+music+15min'
-  const leafDurations = useMemo(() => [0, 1, 2, 3, 4].map(() => 10 + Math.floor(Math.random() * 6)), [])
+  const particles = useMemo(() => {
+    if (daysSinceRoutine < 1) return []
+    const count = daysSinceRoutine < 3 ? 5 : daysSinceRoutine < 5 ? 8 : daysSinceRoutine < 7 ? 12 : 16
+    return Array.from({ length: count }, (_, i) => ({
+      id: i,
+      emoji: daysSinceRoutine < 3 ? '·' : daysSinceRoutine < 5 ? '🌸' : daysSinceRoutine < 7 ? '🍂' : '❄️',
+      size: [10, 12, 14, 16, 18, 20][Math.floor(Math.random() * 6)],
+      left: Math.random() * 90 + 5,
+      delay: Math.random() * 8,
+      duration: 10 + Math.random() * 8,
+      opacity: 0.4 + Math.random() * 0.5,
+      swayAmount: Math.random() * 20 - 10,
+    }))
+  }, [daysSinceRoutine])
 
   return (
     <div style={{ background: BG, minHeight: '100vh', maxWidth: 390, margin: '0 auto', color: '#fff', paddingBottom: 96, fontWeight: 400 }}>
       <style>{`
-        @keyframes falling {
-          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-          100% { transform: translateY(240px) rotate(360deg); opacity: 0; }
+        @keyframes snowfall {
+          0% { transform: translateY(-20px) translateX(0px); opacity: 0; }
+          10% { opacity: var(--opacity); }
+          50% { transform: translateY(50%) translateX(var(--sway)); }
+          90% { opacity: var(--opacity); }
+          100% { transform: translateY(110%) translateX(0px); opacity: 0; }
         }
         @keyframes twinkle {
           0% { opacity: 0.2; transform: scale(0.9); }
@@ -287,14 +303,31 @@ export default function MyWorldPage() {
 
       {activeTab === 'room' ? (
         <>
-          <div style={{ background: 'rgba(123,94,167,0.05)', border: '1px solid rgba(123,94,167,0.15)', borderRadius: 16, margin: '0 16px', minHeight: 220, position: 'relative', overflow: 'hidden', padding: 20, filter: daysSinceRoutine >= 14 ? 'grayscale(0.5)' : 'none' }}>
+          <div style={{ background: todayDone ? 'rgba(123,94,167,0.09)' : 'rgba(123,94,167,0.05)', border: '1px solid rgba(123,94,167,0.15)', borderRadius: 16, margin: '0 16px', minHeight: 220, position: 'relative', overflow: 'hidden', padding: 20, filter: daysSinceRoutine >= 14 ? 'grayscale(60%)' : daysSinceRoutine >= 7 ? 'grayscale(30%)' : 'none' }}>
             <div style={{ position: 'absolute', top: 10, left: 12, fontSize: 9, color: 'rgba(123,94,167,0.6)' }}>Lv.{roomLevel} · 다음 레벨까지 제품 {Math.max(0, toNext)}개</div>
-            {daysSinceRoutine >= 1 ? <div style={{ position: 'absolute', top: 26, left: 14, fontSize: 8, color: 'rgba(255,255,255,0.25)' }}>• • •</div> : null}
-            {daysSinceRoutine >= 3 ? <div style={{ position: 'absolute', top: 18, right: 14, fontSize: 12 }}>🌧️</div> : null}
-            {daysSinceRoutine >= 5 ? [0, 1, 2].map((i) => <div key={`leaf-${i}`} style={{ position: 'absolute', left: `${20 + i * 25}%`, top: -10, fontSize: 12, animation: `falling ${leafDurations[i]}s ease-in infinite` }}>🍂</div>) : null}
-            {daysSinceRoutine >= 7 ? [0, 1].map((i) => <div key={`leaf2-${i}`} style={{ position: 'absolute', left: `${60 + i * 15}%`, top: -10, fontSize: 12, animation: `falling ${leafDurations[i + 3]}s ease-in infinite` }}>🍂</div>) : null}
-            {daysSinceRoutine >= 7 ? <div style={{ position: 'absolute', top: 8, left: 8, fontSize: 12 }}>🕸️</div> : null}
-            {daysSinceRoutine >= 14 ? <div style={{ position: 'absolute', top: 40, left: 14, fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>오래됐네요 😢</div> : null}
+            {!todayDone
+              ? particles.map((particle) => (
+                  <div
+                    key={`particle-${particle.id}`}
+                    style={{
+                      position: 'absolute',
+                      left: `${particle.left}%`,
+                      top: -20,
+                      fontSize: `${particle.size}px`,
+                      opacity: particle.opacity,
+                      animation: `snowfall ${particle.duration}s ease-in-out ${particle.delay}s infinite`,
+                      pointerEvents: 'none',
+                      zIndex: 2,
+                      ['--opacity' as any]: particle.opacity,
+                      ['--sway' as any]: `${particle.swayAmount}px`,
+                    }}
+                  >
+                    {particle.emoji}
+                  </div>
+                ))
+              : null}
+            {daysSinceRoutine >= 7 ? <div style={{ position: 'absolute', top: 40, left: 14, fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>오래됐네요 😢</div> : null}
+            {daysSinceRoutine >= 14 ? <div style={{ position: 'absolute', top: 58, left: 14, fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>피부가 그리워하고 있어요</div> : null}
             {todayDone ? [0, 1, 2].map((i) => <div key={`star-${i}`} style={{ position: 'absolute', left: `${35 + i * 15}%`, top: `${35 + i * 9}px`, fontSize: 12, animation: 'twinkle 1.2s ease-in-out infinite' }}>✨</div>) : null}
 
             <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', fontSize: 36 }}>🛏️</div>
@@ -547,11 +580,11 @@ export default function MyWorldPage() {
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>방 테마</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
               {['💜 보라빛 드림', '🤍 미니멀 모던', '🌸 로맨틱 봄', '🗼 파리지앵'].map((theme) => {
-                const selected = myworldTheme === theme
+                const selected = selectedTheme === theme
                 return (
                   <button
                     key={theme}
-                    onClick={() => setMyworldTheme(theme)}
+                    onClick={() => setSelectedTheme(theme)}
                     style={{
                       border: selected ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.1)',
                       background: selected ? 'rgba(123,94,167,0.2)' : 'transparent',
@@ -580,7 +613,7 @@ export default function MyWorldPage() {
             <button
               onClick={async () => {
                 if (!user?.id) return
-                const payload = { myworld_nickname: myworldNickname.trim() || null, myworld_theme: myworldTheme, myworld_bio: myworldBio.trim() || null }
+                const payload = { myworld_nickname: myworldNickname.trim() || null, myworld_theme: selectedTheme, myworld_bio: myworldBio.trim() || null }
                 const { error } = await supabase.from('profiles').update(payload).eq('auth_id', user.id)
                 if (error) {
                   await supabase.from('profiles').update({ myworld_nickname: myworldNickname.trim() || null }).eq('auth_id', user.id)
