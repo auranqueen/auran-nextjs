@@ -28,6 +28,10 @@ export default function MyWorldPage() {
   const [guestbookInput, setGuestbookInput] = useState('')
   const [bgmTab, setBgmTab] = useState<'morning' | 'night' | 'pack'>('morning')
   const [routineChecked, setRoutineChecked] = useState<Record<string, boolean>>({})
+  const [showCustomize, setShowCustomize] = useState(false)
+  const [myworldNickname, setMyworldNickname] = useState('')
+  const [myworldTheme, setMyworldTheme] = useState('💜 보라빛 드림')
+  const [myworldBio, setMyworldBio] = useState('')
 
   useEffect(() => {
     if (!toast) return
@@ -47,6 +51,9 @@ export default function MyWorldPage() {
         .eq('auth_id', auth.user.id)
         .maybeSingle()
       setProfile(p || null)
+      setMyworldNickname(String((p as any)?.myworld_nickname || ''))
+      setMyworldTheme(String((p as any)?.myworld_theme || '💜 보라빛 드림'))
+      setMyworldBio(String((p as any)?.myworld_bio || ''))
 
       let deliveredRows: any[] = []
       const { data: dOrders } = await supabase
@@ -198,6 +205,7 @@ export default function MyWorldPage() {
       : bgmTab === 'night'
         ? 'night+skincare+routine+relaxing+music'
         : 'face+mask+relaxing+music+15min'
+  const leafDurations = useMemo(() => [0, 1, 2, 3, 4].map(() => 10 + Math.floor(Math.random() * 6)), [])
 
   return (
     <div style={{ background: BG, minHeight: '100vh', maxWidth: 390, margin: '0 auto', color: '#fff', paddingBottom: 96, fontWeight: 400 }}>
@@ -228,11 +236,11 @@ export default function MyWorldPage() {
           )}
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 16, color: '#e8e0f5' }}>{profile?.username || profile?.full_name || '오랜님'}</div>
+          <div style={{ fontSize: 16, color: '#e8e0f5' }}>{myworldNickname || profile?.username || profile?.full_name || '나의 공간'}</div>
           <div style={{ display: 'inline-block', marginTop: 2, padding: '2px 8px', borderRadius: 999, background: 'rgba(123,94,167,0.2)', color: '#c4a7e7', fontSize: 10 }}>{profile?.grade || 'PETAL'}</div>
           <div style={{ fontSize: 10, color: 'rgba(196,167,231,0.5)', marginTop: 4 }}>일촌 0명 · 방명록 {guestbook.length}개</div>
         </div>
-        <button style={{ border: '1px solid rgba(123,94,167,0.4)', color: '#9b7ec8', fontSize: 11, background: 'transparent', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}>꾸미기 ✏️</button>
+        <button onClick={() => setShowCustomize(true)} style={{ border: '1px solid rgba(123,94,167,0.4)', color: '#9b7ec8', fontSize: 11, background: 'transparent', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}>꾸미기 ✏️</button>
       </div>
 
       <div style={{ background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.15)', borderRadius: 12, padding: '10px 14px', margin: '10px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
@@ -282,12 +290,12 @@ export default function MyWorldPage() {
           <div style={{ background: 'rgba(123,94,167,0.05)', border: '1px solid rgba(123,94,167,0.15)', borderRadius: 16, margin: '0 16px', minHeight: 220, position: 'relative', overflow: 'hidden', padding: 20, filter: daysSinceRoutine >= 14 ? 'grayscale(0.5)' : 'none' }}>
             <div style={{ position: 'absolute', top: 10, left: 12, fontSize: 9, color: 'rgba(123,94,167,0.6)' }}>Lv.{roomLevel} · 다음 레벨까지 제품 {Math.max(0, toNext)}개</div>
             {daysSinceRoutine >= 1 ? <div style={{ position: 'absolute', top: 26, left: 14, fontSize: 8, color: 'rgba(255,255,255,0.25)' }}>• • •</div> : null}
-            {daysSinceRoutine >= 3 ? <div style={{ position: 'absolute', top: 18, right: 14, fontSize: 18 }}>🌧️</div> : null}
-            {daysSinceRoutine >= 5 ? [0, 1, 2].map((i) => <div key={`leaf-${i}`} style={{ position: 'absolute', left: `${20 + i * 25}%`, top: -10, fontSize: 16, animation: `falling ${3 + i}s ease-in infinite` }}>🍂</div>) : null}
-            {daysSinceRoutine >= 7 ? [0, 1].map((i) => <div key={`leaf2-${i}`} style={{ position: 'absolute', left: `${60 + i * 15}%`, top: -10, fontSize: 16, animation: `falling ${4 + i}s ease-in infinite` }}>🍂</div>) : null}
-            {daysSinceRoutine >= 7 ? <div style={{ position: 'absolute', top: 8, left: 8, fontSize: 16 }}>🕸️</div> : null}
+            {daysSinceRoutine >= 3 ? <div style={{ position: 'absolute', top: 18, right: 14, fontSize: 12 }}>🌧️</div> : null}
+            {daysSinceRoutine >= 5 ? [0, 1, 2].map((i) => <div key={`leaf-${i}`} style={{ position: 'absolute', left: `${20 + i * 25}%`, top: -10, fontSize: 12, animation: `falling ${leafDurations[i]}s ease-in infinite` }}>🍂</div>) : null}
+            {daysSinceRoutine >= 7 ? [0, 1].map((i) => <div key={`leaf2-${i}`} style={{ position: 'absolute', left: `${60 + i * 15}%`, top: -10, fontSize: 12, animation: `falling ${leafDurations[i + 3]}s ease-in infinite` }}>🍂</div>) : null}
+            {daysSinceRoutine >= 7 ? <div style={{ position: 'absolute', top: 8, left: 8, fontSize: 12 }}>🕸️</div> : null}
             {daysSinceRoutine >= 14 ? <div style={{ position: 'absolute', top: 40, left: 14, fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>오래됐네요 😢</div> : null}
-            {todayDone ? [0, 1, 2].map((i) => <div key={`star-${i}`} style={{ position: 'absolute', left: `${35 + i * 15}%`, top: `${35 + i * 9}px`, fontSize: 14, animation: 'twinkle 1.2s ease-in-out infinite' }}>✨</div>) : null}
+            {todayDone ? [0, 1, 2].map((i) => <div key={`star-${i}`} style={{ position: 'absolute', left: `${35 + i * 15}%`, top: `${35 + i * 9}px`, fontSize: 12, animation: 'twinkle 1.2s ease-in-out infinite' }}>✨</div>) : null}
 
             <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', fontSize: 36 }}>🛏️</div>
             {roomLevel >= 2 ? <div style={{ position: 'absolute', bottom: 20, right: 20, fontSize: 32 }}>🪞</div> : null}
@@ -513,6 +521,78 @@ export default function MyWorldPage() {
       {toast ? (
         <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 100, background: 'rgba(123,94,167,0.9)', color: '#fff', borderRadius: 20, padding: '10px 20px', fontSize: 12, zIndex: 60 }}>
           {toast}
+        </div>
+      ) : null}
+      {showCustomize ? (
+        <div
+          onClick={() => setShowCustomize(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: '#1a1228', border: '1px solid rgba(123,94,167,0.4)', borderTop: '2px solid #7B5EA7', borderRadius: 16, padding: 24, width: '90%', maxWidth: 380, position: 'relative' }}
+          >
+            <button onClick={() => setShowCustomize(false)} style={{ position: 'absolute', top: 10, right: 10, background: 'transparent', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 16, cursor: 'pointer' }}>×</button>
+            <div style={{ fontSize: 15, color: '#c4a7e7', marginBottom: 12 }}>✏️ 마이월드 꾸미기</div>
+
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>마이월드 닉네임</div>
+            <input
+              value={myworldNickname}
+              onChange={(e) => setMyworldNickname(e.target.value)}
+              placeholder="달빛언니, 피부요정..."
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13, width: '100%', boxSizing: 'border-box' }}
+            />
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 4, marginBottom: 10 }}>마이페이지 이름과 다르게 설정할 수 있어요</div>
+
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>방 테마</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 10 }}>
+              {['💜 보라빛 드림', '🤍 미니멀 모던', '🌸 로맨틱 봄', '🗼 파리지앵'].map((theme) => {
+                const selected = myworldTheme === theme
+                return (
+                  <button
+                    key={theme}
+                    onClick={() => setMyworldTheme(theme)}
+                    style={{
+                      border: selected ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.1)',
+                      background: selected ? 'rgba(123,94,167,0.2)' : 'transparent',
+                      color: selected ? '#c4a7e7' : 'rgba(255,255,255,0.4)',
+                      borderRadius: 10,
+                      padding: '8px 6px',
+                      fontSize: 11,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {theme}
+                  </button>
+                )
+              })}
+            </div>
+
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>나의 스킨케어 철학</div>
+            <textarea
+              rows={2}
+              value={myworldBio}
+              onChange={(e) => setMyworldBio(e.target.value)}
+              placeholder="예) 매일 루틴으로 빛나는 피부 💜"
+              style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13, marginBottom: 12, resize: 'none' }}
+            />
+
+            <button
+              onClick={async () => {
+                if (!user?.id) return
+                const payload = { myworld_nickname: myworldNickname.trim() || null, myworld_theme: myworldTheme, myworld_bio: myworldBio.trim() || null }
+                const { error } = await supabase.from('profiles').update(payload).eq('auth_id', user.id)
+                if (error) {
+                  await supabase.from('profiles').update({ myworld_nickname: myworldNickname.trim() || null }).eq('auth_id', user.id)
+                }
+                setToast('저장됐어요 💜')
+                setShowCustomize(false)
+              }}
+              style={{ background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 12, padding: 12, width: '100%', fontSize: 13, cursor: 'pointer' }}
+            >
+              저장
+            </button>
+          </div>
         </div>
       ) : null}
     </div>
