@@ -90,6 +90,12 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   const [msg, setMsg] = useState('')
 
   const [brands, setBrands] = useState<{ id: string; name: string }[]>([])
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
+  const [categoryId, setCategoryId] = useState('')
+  const [showNewBrand, setShowNewBrand] = useState(false)
+  const [newBrandName, setNewBrandName] = useState('')
+  const [showNewCategory, setShowNewCategory] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
 
   const [name, setName] = useState('')
   const [shortDesc, setShortDesc] = useState('')
@@ -143,6 +149,14 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   }, [supabase])
 
   useEffect(() => {
+    supabase
+      .from('categories')
+      .select('id,name')
+      .order('name')
+      .then(({ data }) => setCategories((data || []) as { id: string; name: string }[]))
+  }, [supabase])
+
+  useEffect(() => {
     if (!editId) setIsFlashSaleState(productKind === 'event')
   }, [productKind, editId])
 
@@ -168,6 +182,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       setShortDesc(String(p.description || ''))
       setKeywords(String(p.tag || ''))
       setBrandId(p.brand_id ? String(p.brand_id) : '')
+      setCategoryId(p.category_id ? String(p.category_id) : '')
       const cat = String(p.category || '')
       setOrigin((ORIGINS as readonly string[]).includes(cat) ? (cat as (typeof ORIGINS)[number]) : '기타')
       setManufacturer(String(p.ingredient || ''))
@@ -360,6 +375,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
 
     return {
       brand_id: brandId || null,
+      category_id: categoryId || null,
       name: nameTrim || '이름 없음',
       description: shortDesc.trim() || null,
       tag: keywords.trim() || null,
@@ -409,6 +425,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       if (!pid) {
         const insertRow = {
           brand_id: brandId,
+          category_id: categoryId || null,
           name: name.trim().slice(0, 100) || '신규 상품',
           description: shortDesc.trim() || null,
           tag: keywords.trim() || null,
@@ -517,18 +534,108 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
           </label>
           <label style={{ display: 'grid', gap: 6 }}>
             <span style={labelStyle}>브랜드</span>
-            <select
-              value={brandId}
-              onChange={e => setBrandId(e.target.value)}
-              style={{ ...inputStyle, background: '#121212' }}
-            >
-              <option value="">— 선택 —</option>
-              {brands.map(b => (
-                <option key={b.id} value={b.id} style={{ background: '#1a1a1a' }}>
-                  {b.name}
-                </option>
-              ))}
-            </select>
+            <div style={{ display: 'grid', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
+                <select
+                  value={brandId}
+                  onChange={e => setBrandId(e.target.value)}
+                  style={{ ...inputStyle, background: '#121212' }}
+                >
+                  <option value="">— 선택 —</option>
+                  {brands.map(b => (
+                    <option key={b.id} value={b.id} style={{ background: '#1a1a1a' }}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowNewBrand(v => !v)}
+                  style={{ borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 12, padding: '0 12px', cursor: 'pointer' }}
+                >
+                  + 새 브랜드
+                </button>
+              </div>
+              {showNewBrand ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
+                  <input
+                    value={newBrandName}
+                    onChange={e => setNewBrandName(e.target.value)}
+                    placeholder="브랜드명 입력"
+                    style={inputStyle}
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const nm = newBrandName.trim()
+                      if (!nm) return
+                      const { data, error } = await supabase.from('brands').insert({ name: nm, status: 'active' } as any).select('id,name').single()
+                      if (error) {
+                        setMsg(error.message)
+                        return
+                      }
+                      if (data) {
+                        setBrands(prev => [...prev, data as { id: string; name: string }].sort((a, b) => a.name.localeCompare(b.name)))
+                        setBrandId((data as { id: string }).id)
+                        setNewBrandName('')
+                        setShowNewBrand(false)
+                      }
+                    }}
+                    style={{ borderRadius: 10, border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.2)', color: '#c9a84c', fontSize: 12, padding: '0 12px', cursor: 'pointer', fontWeight: 800 }}
+                  >
+                    등록
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          </label>
+          <label style={{ display: 'grid', gap: 6 }}>
+            <span style={labelStyle}>카테고리</span>
+            <div style={{ display: 'grid', gap: 8 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
+                <select value={categoryId} onChange={e => setCategoryId(e.target.value)} style={{ ...inputStyle, background: '#121212' }}>
+                  <option value="">— 선택 —</option>
+                  {categories.map(c => (
+                    <option key={c.id} value={c.id} style={{ background: '#1a1a1a' }}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowNewCategory(v => !v)}
+                  style={{ borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 12, padding: '0 12px', cursor: 'pointer' }}
+                >
+                  + 새 카테고리
+                </button>
+              </div>
+              {showNewCategory ? (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
+                  <input value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="카테고리명 입력" style={inputStyle} />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const nm = newCategoryName.trim()
+                      if (!nm) return
+                      const { data, error } = await supabase.from('categories').insert({ name: nm } as any).select('id,name').single()
+                      if (error) {
+                        setMsg(error.message)
+                        return
+                      }
+                      if (data) {
+                        setCategories(prev => [...prev, data as { id: string; name: string }].sort((a, b) => a.name.localeCompare(b.name)))
+                        setCategoryId((data as { id: string }).id)
+                        setNewCategoryName('')
+                        setShowNewCategory(false)
+                      }
+                    }}
+                    style={{ borderRadius: 10, border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.2)', color: '#c9a84c', fontSize: 12, padding: '0 12px', cursor: 'pointer', fontWeight: 800 }}
+                  >
+                    등록
+                  </button>
+                </div>
+              ) : null}
+            </div>
           </label>
           <label style={{ display: 'grid', gap: 6 }}>
             <span style={labelStyle}>원산지</span>

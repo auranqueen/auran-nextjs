@@ -29,6 +29,7 @@ function AdminProductRow({
   onReject,
   onRestoreTrash,
   onDeleteTrash,
+  onSoftDelete,
   onClick,
   onToggleVisibility,
   toggleBusyId,
@@ -42,6 +43,7 @@ function AdminProductRow({
   onReject: (id: string) => void
   onRestoreTrash: (id: string) => void
   onDeleteTrash: (id: string) => void
+  onSoftDelete: (id: string) => void
   onClick: () => void
   onToggleVisibility: (id: string, next: 'active' | 'discontinued') => void
   toggleBusyId: string | null
@@ -143,6 +145,16 @@ function AdminProductRow({
         {tab === 'pending' ? (
           <>
             <button
+              onClick={onClick}
+              style={{
+                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 8, padding: '5px 14px', color: '#fff',
+                fontSize: 12, cursor: 'pointer',
+              }}
+            >
+              수정
+            </button>
+            <button
               onClick={() => onApprove(p.id)}
               disabled={busyId === p.id}
               style={{
@@ -165,19 +177,53 @@ function AdminProductRow({
             >
               거절
             </button>
+            <button
+              onClick={() => onSoftDelete(p.id)}
+              disabled={busyId === p.id}
+              style={{
+                background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.45)',
+                borderRadius: 8, padding: '5px 14px', color: '#ef5350',
+                fontSize: 12, fontWeight: 800, cursor: 'pointer', opacity: busyId === p.id ? 0.5 : 1,
+              }}
+            >
+              삭제
+            </button>
           </>
         ) : tab === 'rejected' ? (
-          <button
-            onClick={() => onApprove(p.id)}
-            disabled={busyId === p.id}
-            style={{
-              background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
-              borderRadius: 8, padding: '5px 14px', color: '#fff',
-              fontSize: 12, cursor: 'pointer',
-            }}
-          >
-            다시 승인
-          </button>
+          <>
+            <button
+              onClick={onClick}
+              style={{
+                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 8, padding: '5px 14px', color: '#fff',
+                fontSize: 12, cursor: 'pointer',
+              }}
+            >
+              수정
+            </button>
+            <button
+              onClick={() => onApprove(p.id)}
+              disabled={busyId === p.id}
+              style={{
+                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 8, padding: '5px 14px', color: '#fff',
+                fontSize: 12, cursor: 'pointer',
+              }}
+            >
+              다시 승인
+            </button>
+            <button
+              onClick={() => onSoftDelete(p.id)}
+              disabled={busyId === p.id}
+              style={{
+                background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.45)',
+                borderRadius: 8, padding: '5px 14px', color: '#ef5350',
+                fontSize: 12, fontWeight: 800, cursor: 'pointer', opacity: busyId === p.id ? 0.5 : 1,
+              }}
+            >
+              삭제
+            </button>
+          </>
         ) : tab === 'trash' ? (
           <>
             <button
@@ -214,7 +260,42 @@ function AdminProductRow({
               영구삭제
             </button>
           </>
-        ) : null}
+        ) : (
+          <>
+            <button
+              onClick={onClick}
+              style={{
+                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 8, padding: '5px 14px', color: '#fff',
+                fontSize: 12, cursor: 'pointer',
+              }}
+            >
+              수정
+            </button>
+            <button
+              onClick={() => onSoftDelete(p.id)}
+              disabled={busyId === p.id}
+              style={{
+                background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.45)',
+                borderRadius: 8, padding: '5px 14px', color: '#ef5350',
+                fontSize: 12, fontWeight: 800, cursor: 'pointer', opacity: busyId === p.id ? 0.5 : 1,
+              }}
+            >
+              삭제
+            </button>
+            <button
+              onClick={() => onToggleVisibility(p.id, 'discontinued')}
+              disabled={busyId === p.id || p.status !== 'active'}
+              style={{
+                background: 'rgba(229,57,53,0.15)', border: '1px solid rgba(229,57,53,0.4)',
+                borderRadius: 8, padding: '5px 14px', color: '#e57373',
+                fontSize: 12, cursor: 'pointer', opacity: busyId === p.id || p.status !== 'active' ? 0.5 : 1,
+              }}
+            >
+              숨김
+            </button>
+          </>
+        )}
       </div>
     </div>
   )
@@ -237,6 +318,8 @@ export default function AdminMarketingProductsClient() {
   const [trashEmptyBusy, setTrashEmptyBusy] = useState(false)
   const [q, setQ] = useState('')
   const [brandQ, setBrandQ] = useState('all')
+  const [appliedQ, setAppliedQ] = useState('')
+  const [appliedBrandQ, setAppliedBrandQ] = useState('all')
   const [listFilter, setListFilter] = useState<'all' | 'no_price' | 'with_price'>('all')
   const [brandOptionsFromDb, setBrandOptionsFromDb] = useState<string[] | null>(null)
   const [brandsWithId, setBrandsWithId] = useState<{ id: string; name: string }[]>([])
@@ -358,8 +441,8 @@ export default function AdminMarketingProductsClient() {
 
   const filteredRows = useMemo(() =>
     mappedRows.filter(r => {
-      const matchQ = !q || r.name?.toLowerCase().includes(q.toLowerCase()) || r.brandName?.toLowerCase().includes(q.toLowerCase())
-      const matchB = brandQ === 'all' || r.brandName === brandQ
+      const matchQ = !appliedQ || r.name?.toLowerCase().includes(appliedQ.toLowerCase()) || r.brandName?.toLowerCase().includes(appliedQ.toLowerCase())
+      const matchB = appliedBrandQ === 'all' || r.brandName === appliedBrandQ
       const matchP = listFilter === 'all'
         ? true
         : listFilter === 'no_price'
@@ -367,7 +450,7 @@ export default function AdminMarketingProductsClient() {
           : !isMissingPrice(r)
       return matchQ && matchB && matchP
     }),
-    [brandQ, listFilter, mappedRows, q]
+    [appliedBrandQ, appliedQ, listFilter, mappedRows]
   )
 
   const toggleSelect = (id: string) => {
@@ -476,13 +559,13 @@ export default function AdminMarketingProductsClient() {
   const moveSelectedToTrash = async () => {
     if (selectedIds.size === 0) return
     const ids = Array.from(selectedIds)
-    const msg = `선택한 ${ids.length}개 제품을 휴지통으로 이동합니다.\n휴지통에서 30일 후 자동 영구삭제됩니다.`
+    const msg = `선택한 ${ids.length}개 제품을 삭제할까요?`
     if (!window.confirm(msg)) return
     setBulkTrashBusy(true)
     const nowIso = new Date().toISOString()
     const { error } = await supabase
       .from('products')
-      .update({ status: 'discontinued', deleted_at: nowIso })
+      .update({ status: 'deleted', deleted_at: nowIso })
       .in('id', ids)
     if (error) {
       setToast(error.message || '휴지통 이동 실패')
@@ -493,6 +576,39 @@ export default function AdminMarketingProductsClient() {
     await fetchRows()
     setBulkTrashBusy(false)
     setToast(`✅ 선택 ${ids.length}건을 휴지통으로 이동했습니다`)
+  }
+
+  const deleteOneSoft = async (id: string) => {
+    const ok = window.confirm('선택한 1개 제품을 삭제할까요?')
+    if (!ok) return
+    setBusyId(id)
+    const nowIso = new Date().toISOString()
+    const { error } = await supabase.from('products').update({ status: 'deleted', deleted_at: nowIso }).eq('id', id)
+    setBusyId(null)
+    if (error) {
+      setToast('삭제 실패: ' + error.message)
+      return
+    }
+    await fetchRows()
+    setToast('✅ 삭제되었습니다')
+  }
+
+  const deleteAllPending = async () => {
+    if (!window.confirm(`선택한 ${counts.pending}개 제품을 삭제할까요?`)) return
+    setBulkTrashBusy(true)
+    const nowIso = new Date().toISOString()
+    const { error } = await supabase
+      .from('products')
+      .update({ status: 'deleted', deleted_at: nowIso })
+      .eq('status', 'pending')
+      .is('deleted_at', null)
+    setBulkTrashBusy(false)
+    if (error) {
+      setToast('삭제 실패: ' + error.message)
+      return
+    }
+    await fetchRows()
+    setToast(`✅ PENDING ${counts.pending}건 삭제 완료`)
   }
 
   const restoreOneFromTrash = async (id: string) => {
@@ -591,6 +707,7 @@ export default function AdminMarketingProductsClient() {
           </div>
         </div>
         {tab === 'pending' && counts.pending > 0 && (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={() => void bulkApprove()}
@@ -610,6 +727,25 @@ export default function AdminMarketingProductsClient() {
           >
             {bulkBusy ? '처리 중...' : `⚡ PENDING 전체 승인 (${counts.pending})`}
           </button>
+          <button
+            type="button"
+            onClick={() => void deleteAllPending()}
+            disabled={bulkTrashBusy}
+            style={{
+              background: 'rgba(239,83,80,0.15)',
+              border: '1px solid rgba(239,83,80,0.45)',
+              borderRadius: 12,
+              padding: '12px 18px',
+              color: '#ef5350',
+              fontSize: 13,
+              fontWeight: 900,
+              cursor: 'pointer',
+              opacity: bulkTrashBusy ? 0.65 : 1,
+            }}
+          >
+            {bulkTrashBusy ? '처리 중...' : `⚠️ PENDING 전체 삭제 (${counts.pending}개)`}
+          </button>
+          </div>
         )}
       </div>
 
@@ -652,7 +788,7 @@ export default function AdminMarketingProductsClient() {
                 borderRadius: 10, padding: '8px 12px', color: '#ef5350', fontSize: 12, fontWeight: 900, cursor: 'pointer',
               }}
             >
-              {bulkTrashBusy ? '처리 중...' : '휴지통으로 이동'}
+              {bulkTrashBusy ? '처리 중...' : '🗑 선택 삭제'}
             </button>
           </>
         )}
@@ -702,6 +838,12 @@ export default function AdminMarketingProductsClient() {
         <input
           value={q}
           onChange={e => setQ(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              setAppliedQ(q)
+              setAppliedBrandQ(brandQ)
+            }
+          }}
           placeholder="검색: 제품명 / 브랜드"
           style={{
             flex: 1, minWidth: 160, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
@@ -711,6 +853,12 @@ export default function AdminMarketingProductsClient() {
         <select
           value={brandQ}
           onChange={e => setBrandQ(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              setAppliedQ(q)
+              setAppliedBrandQ(brandQ)
+            }
+          }}
           style={{
             background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
             borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 13, minWidth: 120,
@@ -722,6 +870,16 @@ export default function AdminMarketingProductsClient() {
             </option>
           ))}
         </select>
+        <button
+          type="button"
+          onClick={() => { setAppliedQ(q); setAppliedBrandQ(brandQ) }}
+          style={{
+            background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 10, padding: '10px 14px', color: '#fff', fontSize: 12, cursor: 'pointer',
+          }}
+        >
+          🔍 검색
+        </button>
         <select
           value={listFilter}
           onChange={e => setListFilter(e.target.value as 'all' | 'no_price' | 'with_price')}
@@ -734,9 +892,9 @@ export default function AdminMarketingProductsClient() {
           <option value="no_price" style={{ background: '#1a1a1a' }}>가격 없음만</option>
           <option value="with_price" style={{ background: '#1a1a1a' }}>가격 있음만</option>
         </select>
-        {(q || brandQ !== 'all' || listFilter !== 'all') && (
+        {(q || brandQ !== 'all' || appliedQ || appliedBrandQ !== 'all' || listFilter !== 'all') && (
           <button
-            onClick={() => { setQ(''); setBrandQ('all'); setListFilter('all') }}
+            onClick={() => { setQ(''); setBrandQ('all'); setAppliedQ(''); setAppliedBrandQ('all'); setListFilter('all') }}
             style={{
               background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
               borderRadius: 10, padding: '10px 14px', color: 'rgba(255,255,255,0.55)',
@@ -766,6 +924,7 @@ export default function AdminMarketingProductsClient() {
               onReject={rejectOne}
               onRestoreTrash={restoreOneFromTrash}
               onDeleteTrash={deleteOneFromTrash}
+              onSoftDelete={deleteOneSoft}
               onClick={() => setSelectedProduct(p)}
               onToggleVisibility={toggleVisibility}
               toggleBusyId={toggleBusyId}
