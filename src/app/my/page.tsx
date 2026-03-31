@@ -25,6 +25,7 @@ export default function MyPage() {
   const [tracker, setTracker] = useState({ water: 6, uv: 3, sleep: 7.5, routine: 75 })
   const [completion, setCompletion] = useState(0)
   const [profileData, setProfileData] = useState<any>(null)
+  const [avatarUrl, setAvatarUrl] = useState('')
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -87,6 +88,7 @@ export default function MyPage() {
         setGrade('PETAL')
         setCompletion(0)
         setProfileData(null)
+        setAvatarUrl('')
       }
     })
     // TODO: user_wallets 테이블에서 포인트 조회
@@ -158,10 +160,13 @@ export default function MyPage() {
       {/* 프로필 */}
       <div style={{ padding: '20px 20px 0', display: 'flex', alignItems: 'center', gap: '14px' }}>
         <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', border: `2px solid rgba(201,169,110,0.3)`, flexShrink: 0, overflow: 'hidden' }}>
-          {profileData?.avatar_url ? (
+          {avatarUrl ? (
             <img
-              src={`${profileData.avatar_url}?t=${Date.now()}`}
+              src={avatarUrl}
               alt="프로필"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none'
+              }}
               style={{
                 width: '60px',
                 height: '60px',

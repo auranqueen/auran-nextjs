@@ -94,7 +94,11 @@ export default function MyProfilePage() {
         setBirthMonth('')
         setBirthDay('')
       }
-      setAvatarUrl(profile?.avatar_url || '')
+      if (profile?.avatar_url) {
+        setAvatarUrl(profile.avatar_url)
+      } else {
+        setAvatarUrl('')
+      }
       setSkinType(String(profile?.skin_type ?? ''))
       setSkinConcerns(Array.isArray(profile?.skin_concerns) ? (profile?.skin_concerns as string[]) : [])
       setAllergyIngredients(Array.isArray(profile?.allergy_ingredients) ? (profile?.allergy_ingredients as string[]) : [])
@@ -318,6 +322,9 @@ export default function MyProfilePage() {
                 <img
                   src={avatarUrl}
                   alt="프로필"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = 'none'
+                  }}
                   style={{
                     width: '60px',
                     height: '60px',
