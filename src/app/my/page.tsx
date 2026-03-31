@@ -17,6 +17,7 @@ export default function MyPage() {
 
   const [user, setUser] = useState<any>(null)
   const [userName, setUserName] = useState('유미')
+  const [grade, setGrade] = useState('')
   const [point, setPoint] = useState(0)
   const [orders, setOrders] = useState<any[]>([])
   const [coupons, setCoupons] = useState<any[]>([])
@@ -30,6 +31,16 @@ export default function MyPage() {
         const name = data.user.user_metadata?.full_name || data.user.user_metadata?.name
         if (name) setUserName(name)
         supabase
+          .from('profiles')
+          .select('grade, full_name, username')
+          .eq('auth_id', data.user.id)
+          .single()
+          .then(({ data: profile }) => {
+            setGrade(profile?.grade || 'PETAL')
+            const pName = profile?.full_name || profile?.username
+            if (pName) setUserName(pName)
+          })
+        supabase
           .from('orders')
           .select('*, order_items(*, products(*, brands(name)))')
           .eq('customer_id', data.user.id)
@@ -40,6 +51,7 @@ export default function MyPage() {
           })
       } else {
         setOrders([])
+        setGrade('PETAL')
       }
     })
     // TODO: user_wallets 테이블에서 포인트 조회
@@ -68,6 +80,16 @@ export default function MyPage() {
     { icon: '📞', label: '고객센터', path: '/my/support', badge: 0 },
   ]
 
+  const gradeOrder = ['PETAL', 'BLOOM', 'VELVET', 'LUMIÈRE', 'REINE', 'NOIR', 'CÉLESTE']
+  const gradeThreshold = [0, 300000, 1000000, 3000000, 6000000, 10000000, 20000000]
+  const g = gradeOrder.includes(grade) ? grade : 'PETAL'
+  const gi = gradeOrder.indexOf(g)
+  const nextG = gi >= 0 && gi < gradeOrder.length - 1 ? gradeOrder[gi + 1] : ''
+  const curBase = gi >= 0 ? gradeThreshold[gi] : 0
+  const nextBase = gi >= 0 && gi < gradeThreshold.length - 1 ? gradeThreshold[gi + 1] : gradeThreshold[gradeThreshold.length - 1]
+  const remain = nextG ? Math.max(0, nextBase - point) : 0
+  const prog = nextG ? Math.max(0, Math.min(100, ((point - curBase) / Math.max(1, nextBase - curBase)) * 100)) : 100
+
   return (
     <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 300, color: '#fff', paddingBottom: '96px' }}>
 
@@ -85,6 +107,52 @@ export default function MyPage() {
         <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', border: `2px solid rgba(201,169,110,0.3)`, flexShrink: 0 }}>👩</div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '18px', fontWeight: 400, marginBottom: '3px' }}>{userName}님</div>
+          <div
+            style={{
+              display: 'inline-block',
+              marginBottom: '4px',
+              padding: '2px 9px',
+              borderRadius: '999px',
+              fontSize: '10px',
+              fontFamily: 'monospace',
+              background:
+                g === 'CÉLESTE'
+                  ? 'rgba(201,169,110,0.25)'
+                  : g === 'NOIR'
+                    ? 'rgba(255,255,255,0.08)'
+                    : g === 'REINE'
+                      ? 'rgba(201,169,110,0.15)'
+                      : g === 'LUMIÈRE'
+                        ? 'rgba(123,94,167,0.2)'
+                        : g === 'VELVET'
+                          ? 'rgba(80,120,220,0.15)'
+                          : g === 'BLOOM'
+                            ? 'rgba(80,180,80,0.15)'
+                            : 'rgba(180,180,180,0.15)',
+              color:
+                g === 'CÉLESTE'
+                  ? '#C9A96E'
+                  : g === 'NOIR'
+                    ? '#fff'
+                    : g === 'REINE'
+                      ? '#C9A96E'
+                      : g === 'LUMIÈRE'
+                        ? '#9b7ec8'
+                        : g === 'VELVET'
+                          ? '#7090dd'
+                          : g === 'BLOOM'
+                            ? '#6dba6d'
+                            : '#aaa',
+              border:
+                g === 'CÉLESTE'
+                  ? '1px solid rgba(201,169,110,0.4)'
+                  : g === 'NOIR'
+                    ? '1px solid rgba(255,255,255,0.2)'
+                    : 'none',
+            }}
+          >
+            {g}
+          </div>
           <div style={{ fontSize: '10px', color: TEXT_MUTED, fontFamily: 'monospace' }}>{user?.email}</div>
           <div onClick={() => router.push('/myworld')} style={{ display: 'inline-block', marginTop: '6px', padding: '3px 10px', background: 'rgba(201,169,110,0.1)', border: '1px solid rgba(201,169,110,0.25)', borderRadius: '20px', fontSize: '10px', color: GOLD, cursor: 'pointer' }}>🌍 MY WORLD 보기 ›</div>
         </div>
@@ -107,35 +175,12 @@ export default function MyPage() {
           <div style={{ fontSize: '20px', color: 'rgba(201,169,110,0.35)' }}>›</div>
         </div>
       </div>
-
-      {/* BEAUTY TRACKER */}
-      <div style={{ margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '18px', padding: '14px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <span style={{ fontSize: '10px', fontFamily: 'monospace', letterSpacing: '1.5px', color: TEXT_MUTED }}>BEAUTY TRACKER</span>
-          <span style={{ fontSize: '9px', color: TEXT_DIM, fontFamily: 'monospace' }}>
-            {new Date().toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })}
-          </span>
+      <div style={{ margin: '8px 16px 0', padding: '0 4px' }}>
+        <div style={{ fontSize: '10px', color: TEXT_MUTED, marginBottom: '6px' }}>
+          {nextG ? `다음 등급(${nextG})까지 ${remain.toLocaleString()}원` : '최상위 등급입니다'}
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {[
-            { icon: '💧', val: `${tracker.water}`, unit: '/8', label: '수분 섭취', pct: (tracker.water / 8) * 100, color: '#6ab0e0' },
-            { icon: '🌞', val: `UV`, unit: `${tracker.uv}`, label: '자외선', pct: tracker.uv * 20, color: '#f0c040' },
-            { icon: '😴', val: `${tracker.sleep}`, unit: 'h', label: '수면', pct: (tracker.sleep / 10) * 100, color: '#a080e0' },
-            { icon: '🧴', val: `${tracker.routine}`, unit: '%', label: '루틴', pct: tracker.routine, color: GOLD },
-          ].map((item, i) => (
-            <div key={i} style={{ flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '10px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-              <span style={{ fontSize: '18px' }}>{item.icon}</span>
-              <span style={{ fontSize: '13px', fontWeight: 400 }}>{item.val}<span style={{ fontSize: '9px', fontWeight: 300 }}>{item.unit}</span></span>
-              <span style={{ fontSize: '9px', color: TEXT_MUTED, textAlign: 'center' }}>{item.label}</span>
-              <div style={{ width: '100%', height: '2px', borderRadius: '2px', background: 'rgba(255,255,255,0.08)' }}>
-                <div style={{ height: '100%', width: `${item.pct}%`, background: item.color, borderRadius: '2px' }} />
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{ marginTop: '10px', fontSize: '9px', color: TEXT_DIM, textAlign: 'center' }}>
-          {/* TODO: user_daily_tracker 테이블 연동 */}
-          탭하여 오늘 기록 업데이트
+        <div style={{ width: '100%', height: '5px', borderRadius: '999px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+          <div style={{ width: `${prog}%`, height: '100%', background: '#7B5EA7' }} />
         </div>
       </div>
 
@@ -262,6 +307,37 @@ export default function MyPage() {
               </div>
             ))
           })()}
+        </div>
+      </div>
+
+      {/* BEAUTY TRACKER */}
+      <div style={{ margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '18px', padding: '14px 16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <span style={{ fontSize: '10px', fontFamily: 'monospace', letterSpacing: '1.5px', color: TEXT_MUTED }}>BEAUTY TRACKER</span>
+          <span style={{ fontSize: '9px', color: TEXT_DIM, fontFamily: 'monospace' }}>
+            {new Date().toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })}
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {[
+            { icon: '💧', val: `${tracker.water}`, unit: '/8', label: '수분 섭취', pct: (tracker.water / 8) * 100, color: '#6ab0e0' },
+            { icon: '🌞', val: `UV`, unit: `${tracker.uv}`, label: '자외선', pct: tracker.uv * 20, color: '#f0c040' },
+            { icon: '😴', val: `${tracker.sleep}`, unit: 'h', label: '수면', pct: (tracker.sleep / 10) * 100, color: '#a080e0' },
+            { icon: '🧴', val: `${tracker.routine}`, unit: '%', label: '루틴', pct: tracker.routine, color: GOLD },
+          ].map((item, i) => (
+            <div key={i} style={{ flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '10px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+              <span style={{ fontSize: '18px' }}>{item.icon}</span>
+              <span style={{ fontSize: '13px', fontWeight: 400 }}>{item.val}<span style={{ fontSize: '9px', fontWeight: 300 }}>{item.unit}</span></span>
+              <span style={{ fontSize: '9px', color: TEXT_MUTED, textAlign: 'center' }}>{item.label}</span>
+              <div style={{ width: '100%', height: '2px', borderRadius: '2px', background: 'rgba(255,255,255,0.08)' }}>
+                <div style={{ height: '100%', width: `${item.pct}%`, background: item.color, borderRadius: '2px' }} />
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ marginTop: '10px', fontSize: '9px', color: TEXT_DIM, textAlign: 'center' }}>
+          {/* TODO: user_daily_tracker 테이블 연동 */}
+          탭하여 오늘 기록 업데이트
         </div>
       </div>
 
