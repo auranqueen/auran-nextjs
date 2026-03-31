@@ -25,6 +25,7 @@ export default function MyWorldPage() {
   const [mood, setMood] = useState('😊 좋음')
   const [skinStatus, setSkinStatus] = useState('💧 촉촉')
   const [diaryMemo, setDiaryMemo] = useState('')
+  const [videoFeedText, setVideoFeedText] = useState('')
   const [mediaFiles, setMediaFiles] = useState<File[]>([])
   const [mediaPreview, setMediaPreview] = useState<string[]>([])
   const [isPublic, setIsPublic] = useState(true)
@@ -220,26 +221,32 @@ export default function MyWorldPage() {
   const onSaveDiary = async () => {
     const nowIso = new Date().toISOString()
     let mediaUrls: string[] = []
+    const hasVideo = mediaFiles.some((f) => f?.type?.startsWith('video'))
     if (user?.id && mediaFiles.length > 0) {
-      const uploads = await Promise.all(
-        mediaFiles.map(async (file, index) => {
-          const path = `diary/${user.id}/${Date.now()}_${index}_${file.name}`
-          const { error } = await supabase.storage.from('skin-diary').upload(path, file, { upsert: true })
-          if (error) return ''
-          const { data } = supabase.storage.from('skin-diary').getPublicUrl(path)
-          return data?.publicUrl || ''
-        })
-      )
-      mediaUrls = uploads.filter(Boolean)
+      try {
+        const uploads = await Promise.all(
+          mediaFiles.map(async (file, index) => {
+            const path = `diary/${user.id}/${Date.now()}_${index}_${file.name}`
+            const { error } = await supabase.storage.from('skin-diary').upload(path, file, { upsert: true })
+            if (error) return ''
+            const { data } = supabase.storage.from('skin-diary').getPublicUrl(path)
+            return data?.publicUrl || ''
+          })
+        )
+        mediaUrls = uploads.filter(Boolean)
+      } catch {
+        mediaUrls = []
+      }
     }
     if (user?.id) {
+      const memoToSave = hasVideo ? videoFeedText : diaryMemo
       const { data: inserted } = await supabase
         .from('skin_diary')
         .insert({
           user_id: user.id,
           mood,
           skin_status: skinStatus,
-          memo: diaryMemo,
+          memo: memoToSave,
           media_urls: mediaUrls,
           is_public: isPublic,
           recorded_at: nowIso,
@@ -252,7 +259,7 @@ export default function MyWorldPage() {
           user_id: user.id,
           mood,
           skin_status: skinStatus,
-          memo: diaryMemo,
+          memo: memoToSave,
           media_urls: mediaUrls,
           is_public: isPublic,
           recorded_at: nowIso,
@@ -262,6 +269,7 @@ export default function MyWorldPage() {
     setMood('😊 좋음')
     setSkinStatus('💧 촉촉')
     setDiaryMemo('')
+    setVideoFeedText('')
     setMediaFiles([])
     setMediaPreview([])
     setIsPublic(true)
@@ -549,6 +557,15 @@ export default function MyWorldPage() {
                 ))}
               </div>
             ) : null}
+            {mediaFiles.some((f) => f?.type?.startsWith('video')) ? (
+              <textarea
+                value={videoFeedText}
+                onChange={(e) => setVideoFeedText(e.target.value)}
+                placeholder={'영상에 대한 이야기를 남겨보세요...\n루틴 설명, 제품 후기, 오늘의 피부 이야기 💜'}
+                rows={3}
+                style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, padding: 10, color: '#fff', fontSize: 13, marginBottom: 8 }}
+              />
+            ) : null}
             <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 8 }}>
               {moodOptions.map((m) => (
                 <button key={m} onClick={() => setMood(m)} style={{ border: mood === m ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.1)', background: mood === m ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.03)', color: '#fff', borderRadius: 8, padding: '6px 8px', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}>{m}</button>
@@ -579,23 +596,52 @@ export default function MyWorldPage() {
                     <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👩</div>
                     <div>
                       <div style={{ fontSize: 12 }}>{myworldNickname || profile?.username || profile?.full_name || '나의 공간'}</div>
-                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>{new Date(d?.recorded_at || '').toLocaleString('ko-KR')}</div>
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>
+                        {new Date(d?.recorded_at || '').toLocaleDateString('ko-KR', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}{' '}
+                        {new Date(d?.recorded_at || '').toLocaleTimeString('ko-KR', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </div>
                     </div>
                   </div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{d?.is_public === false ? '🔒' : '🌍'}</div>
                 </div>
                 {Array.isArray(d?.media_urls) && d.media_urls.length > 0 ? (
-                  <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '0 12px 10px' }}>
-                    {d.media_urls.map((url: string, idx: number) => (
-                      <div key={idx} style={{ minWidth: 220, maxWidth: 220 }}>
-                        {/\.(mp4|webm|mov)$/i.test(url) ? (
-                          <video src={url} controls autoPlay muted style={{ width: '100%' }} />
-                        ) : (
-                          <img src={url} alt="" style={{ width: '100%', display: 'block' }} />
-                        )}
+                  (() => {
+                    const urls = d.media_urls as string[]
+                    const isVideoUrl = (url: string) => /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(url)
+                    if (urls.length === 1) {
+                      const url = urls[0]
+                      if (isVideoUrl(url)) {
+                        return (
+                          <div style={{ padding: '0 0 10px' }}>
+                            <video src={url} controls playsInline muted style={{ width: '100%', aspectRatio: '9/16', objectFit: 'cover', borderRadius: '12px 12px 0 0', display: 'block' }} />
+                          </div>
+                        )
+                      }
+                      return (
+                        <div style={{ padding: '0 0 10px' }}>
+                          <img src={url} alt="" style={{ width: '100%', aspectRatio: '4/5', objectFit: 'cover', borderRadius: '12px 12px 0 0', display: 'block' }} />
+                        </div>
+                      )
+                    }
+                    return (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2, padding: '0 0 10px' }}>
+                        {urls.map((url, idx) => (
+                          isVideoUrl(url) ? (
+                            <video key={idx} src={url} controls playsInline muted style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', display: 'block' }} />
+                          ) : (
+                            <img key={idx} src={url} alt="" style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', display: 'block' }} />
+                          )
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    )
+                  })()
                 ) : null}
                 <div style={{ padding: '0 12px 10px' }}>
                   <div style={{ fontSize: 12 }}>{d?.mood || ''} · {d?.skin_status || ''}</div>
