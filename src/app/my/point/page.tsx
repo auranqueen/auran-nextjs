@@ -10,12 +10,6 @@ const CARD_BG = 'rgba(255,255,255,0.03)'
 const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
 const TEXT_MUTED = 'rgba(255,255,255,0.5)'
 
-type WalletRow = {
-  balance: number | null
-  total_earned: number | null
-  total_used: number | null
-}
-
 type TransactionRow = {
   id: string
   amount: number
@@ -28,7 +22,7 @@ export default function MyPointPage() {
   const router = useRouter()
   const supabase = createClient()
   const [tab, setTab] = useState<'전체' | '적립' | '지출' | '충전내역'>('전체')
-  const [wallet, setWallet] = useState<WalletRow | null>(null)
+  const [point, setPoint] = useState(0)
   const [rows, setRows] = useState<TransactionRow[]>([])
   const [chargeRows, setChargeRows] = useState<any[]>([])
   const [chargeUseRows, setChargeUseRows] = useState<any[]>([])
@@ -43,17 +37,11 @@ export default function MyPointPage() {
 
       const { data: userRow } = await supabase
         .from('users')
-        .select('id, charge_balance')
+        .select('points, charge_balance')
         .eq('auth_id', user.id)
         .single()
+      setPoint(Number(userRow?.points || 0))
       setChargeBalance(Number(userRow?.charge_balance || 0))
-
-      const { data: walletData } = await supabase
-        .from('user_wallets')
-        .select('balance, total_earned, total_used')
-        .eq('user_id', user.id)
-        .single()
-      setWallet((walletData as WalletRow) || null)
 
       const { data: txData } = await supabase
         .from('point_transactions')
@@ -117,26 +105,39 @@ export default function MyPointPage() {
     <div style={{ background: BG, minHeight: '100vh', maxWidth: 390, margin: '0 auto', color: '#fff', paddingBottom: 24 }}>
       <header style={{ position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'rgba(13,11,9,0.95)', borderBottom: CARD_BORDER }}>
         <button onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: '#fff', fontSize: 18, cursor: 'pointer' }}>←</button>
-        <div style={{ fontSize: 16, fontWeight: 600 }}>오랜 토스트 T</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 17, fontWeight: 400 }}>토스트 · AURAN PAY 내역</div>
+          <div style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,255,255,0.3)' }}>적립, 사용, 충전 내역을 확인해요</div>
+        </div>
+        <button
+          onClick={() => router.push('/wallet')}
+          style={{ fontSize: 11, fontWeight: 400, border: '1px solid rgba(201,169,110,0.3)', color: '#C9A96E', padding: '6px 12px', borderRadius: 8, background: 'transparent', cursor: 'pointer' }}
+        >
+          💳 충전
+        </button>
       </header>
 
       <div style={{ padding: 16 }}>
         <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 14, marginBottom: 10 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: chargeBalance > 0 ? '1fr 1fr' : '1fr', gap: 10 }}>
             <div>
-              <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 8 }}>토스트 잔액</div>
-              <div style={{ fontSize: 28, color: GOLD, fontWeight: 600 }}>{Number(wallet?.balance || 0).toLocaleString()}T</div>
+              <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 8 }}>토스트 잔액</div>
+              <div style={{ fontSize: 18, color: '#c4a7e7', fontWeight: 400 }}>{Number(point || 0).toLocaleString()}T</div>
             </div>
-            <div>
-              <div style={{ fontSize: 11, color: '#9b7ec8', marginBottom: 8 }}>AURAN PAY</div>
-              <div style={{ fontSize: 28, color: '#9b7ec8', fontWeight: 600 }}>₩{Number(chargeBalance || 0).toLocaleString()}</div>
-            </div>
+            {chargeBalance > 0 ? (
+              <div>
+                <div style={{ fontSize: 10, color: '#9b7ec8', marginBottom: 8 }}>AURAN PAY</div>
+                <div style={{ fontSize: 18, color: '#9b7ec8', fontWeight: 400 }}>₩{Number(chargeBalance || 0).toLocaleString()}</div>
+              </div>
+            ) : null}
           </div>
         </section>
 
-        <section style={{ background: 'rgba(123,94,167,0.14)', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 12, padding: '10px 12px', fontSize: 12, color: '#c7b0ea', marginBottom: 10 }}>
-          {expiring.toLocaleString()}T가 12월 31일 소멸 예정이에요
-        </section>
+        {expiring > 0 ? (
+          <section style={{ background: 'rgba(123,94,167,0.14)', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 12, padding: '10px 12px', fontSize: 12, color: '#c7b0ea', marginBottom: 10 }}>
+            {expiring.toLocaleString()}T가 12월 31일 소멸 예정이에요
+          </section>
+        ) : null}
 
         <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 14 }}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
@@ -159,18 +160,24 @@ export default function MyPointPage() {
             ))}
           </div>
 
-          {filteredRows.map((row: any, idx: number) => (
-            <div key={idx} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '10px 0' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <span>{row.icon}</span>
-                <span style={{ fontSize: 12 }}>{row.desc}</span>
-                <span style={{ fontSize: 12, color: row.amountColor }}>{row.amountText}</span>
-              </div>
-              <div style={{ fontSize: 10, color: TEXT_MUTED }}>
-                {new Date(row.created_at).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace(' ', '')}
-              </div>
+          {filteredRows.length === 0 ? (
+            <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '32px 0' }}>
+              아직 내역이 없어요 💜
             </div>
-          ))}
+          ) : (
+            filteredRows.map((row: any, idx: number) => (
+              <div key={idx} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '10px 0' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span>{row.icon}</span>
+                  <span style={{ fontSize: 12 }}>{row.desc}</span>
+                  <span style={{ fontSize: 12, color: row.amountColor }}>{row.amountText}</span>
+                </div>
+                <div style={{ fontSize: 10, color: TEXT_MUTED }}>
+                  {new Date(row.created_at).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace(' ', '')}
+                </div>
+              </div>
+            ))
+          )}
         </section>
       </div>
     </div>
