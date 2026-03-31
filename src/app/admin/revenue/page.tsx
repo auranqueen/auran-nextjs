@@ -21,6 +21,8 @@ export default function AdminRevenuePage() {
   const [dateFocusFrom, setDateFocusFrom] = useState(false)
   const [dateFocusTo, setDateFocusTo] = useState(false)
   const [churnOpen, setChurnOpen] = useState(false)
+  const [customerFilterDraft, setCustomerFilterDraft] = useState('amount_top')
+  const [customerFilter, setCustomerFilter] = useState('amount_top')
 
   useEffect(() => {
     const t = new Date()
@@ -235,6 +237,86 @@ export default function AdminRevenuePage() {
       churnList,
     }
   }, [orders])
+
+  const customerSearchResult = useMemo(() => {
+    type Row = {
+      id: string
+      n: number
+      totalAmt: number
+      coupon: number
+      toast: number
+      final: number
+      lastAt: number
+      firstAt: number
+    }
+    const agg = new Map<string, Row>()
+    for (const o of orders) {
+      const cid = String(o.customer_id ?? '').trim()
+      if (!cid) continue
+      const ta = Number(o.total_amount ?? 0) || 0
+      const cd = Number(o.coupon_discount ?? 0) || 0
+      const pt = Number(o.point_used ?? 0) || 0
+      const fa = Number(o.final_amount ?? 0) || 0
+      const t = o.ordered_at ? new Date(o.ordered_at).getTime() : 0
+      let x = agg.get(cid)
+      if (!x) {
+        x = { id: cid, n: 0, totalAmt: 0, coupon: 0, toast: 0, final: 0, lastAt: 0, firstAt: t || Number.POSITIVE_INFINITY }
+      }
+      x.n++
+      x.totalAmt += ta
+      x.coupon += cd
+      x.toast += pt
+      x.final += fa
+      if (t > x.lastAt) x.lastAt = t
+      if (t > 0 && t < x.firstAt) x.firstAt = t
+      agg.set(cid, x)
+    }
+    const allRows: Row[] = []
+    for (const x of Array.from(agg.values())) {
+      if (x.firstAt === Number.POSITIVE_INFINITY) x.firstAt = 0
+      allRows.push(x)
+    }
+    const now = Date.now()
+    const d90 = 90 * 24 * 60 * 60 * 1000
+    const d30 = 30 * 24 * 60 * 60 * 1000
+    const isChurn = (r: Row) => r.lastAt > 0 && now - r.lastAt >= d90
+    const mark = (r: Row) => {
+      let em = ''
+      if (isChurn(r)) em += '🔴'
+      if (r.n >= 2) em += '🔄'
+      else if (r.n === 1) em += '🆕'
+      return em
+    }
+    let filtered = allRows.slice()
+    if (customerFilter === 'repurchase') filtered = filtered.filter((r) => r.n >= 2)
+    if (customerFilter === 'single') filtered = filtered.filter((r) => r.n === 1)
+    if (customerFilter === 'churn90') filtered = filtered.filter((r) => isChurn(r))
+    if (customerFilter === 'new30') filtered = filtered.filter((r) => r.firstAt > 0 && now - r.firstAt <= d30)
+    let sorted = filtered.slice()
+    if (customerFilter === 'amount_top') sorted.sort((a, b) => b.final - a.final)
+    else if (customerFilter === 'order_cnt_top') sorted.sort((a, b) => b.n - a.n || b.final - a.final)
+    else if (customerFilter === 'recent') sorted.sort((a, b) => b.lastAt - a.lastAt)
+    else if (customerFilter === 'churn90') sorted.sort((a, b) => a.lastAt - b.lastAt)
+    else if (customerFilter === 'repurchase') sorted.sort((a, b) => b.final - a.final)
+    else if (customerFilter === 'single') sorted.sort((a, b) => b.final - a.final)
+    else if (customerFilter === 'toast_top') sorted.sort((a, b) => b.toast - a.toast || b.final - a.final)
+    else if (customerFilter === 'coupon_top') sorted.sort((a, b) => b.coupon - a.coupon || b.final - a.final)
+    else if (customerFilter === 'new30') sorted.sort((a, b) => b.firstAt - a.firstAt)
+    const top = sorted.slice(0, 20)
+    const cnt = top.length
+    const sumFinal = top.reduce((s, r) => s + r.final, 0)
+    const sumN = top.reduce((s, r) => s + r.n, 0)
+    return {
+      top,
+      mark,
+      kpi: {
+        cnt,
+        avgBuy: cnt > 0 ? sumFinal / cnt : 0,
+        avgOrders: cnt > 0 ? sumN / cnt : 0,
+        totalContrib: sumFinal,
+      },
+    }
+  }, [orders, customerFilter])
 
   const inflow = useMemo(() => {
     const pm = new Map<string, { id: string; n: number; sales: number; comm: number }>()
@@ -572,19 +654,110 @@ export default function AdminRevenuePage() {
           {tab === '고객분석' ? (
             <>
               <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
-                <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 8 }}>재구매율</div>
+                <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 8 }}>고객 검색</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                  <select
+                    value={customerFilterDraft}
+                    onChange={(e) => setCustomerFilterDraft(e.target.value)}
+                    style={{ minWidth: 260, maxWidth: '100%', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontSize: 12, padding: '8px 10px', outline: 'none' }}
+                  >
+                    <option value="amount_top">구매금액 TOP (실결제 합계 높은 순)</option>
+                    <option value="order_cnt_top">주문횟수 TOP (주문 많은 순)</option>
+                    <option value="recent">최근 구매순 (ordered_at 최신순)</option>
+                    <option value="churn90">90일 미구매 (이탈 위험)</option>
+                    <option value="repurchase">재구매 고객 (2회 이상)</option>
+                    <option value="single">1회 구매 고객 (단구매)</option>
+                    <option value="toast_top">토스트 많이 쓴 고객 (point_used 합계)</option>
+                    <option value="coupon_top">쿠폰 많이 쓴 고객 (coupon_discount 합계)</option>
+                    <option value="new30">신규 고객 (최근 30일 첫구매)</option>
+                  </select>
+                  <button type="button" className="btn btn-bl" onClick={() => setCustomerFilter(customerFilterDraft)}>
+                    🔍 검색
+                  </button>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 8 }}>
+                <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderTop: '2px solid var(--gold)', borderRadius: 10, padding: 12 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>총 해당 고객 수</div>
+                  <div className="mono" style={{ marginTop: 6, color: 'var(--gold)', fontWeight: 800, fontSize: 16 }}>
+                    {customerSearchResult.kpi.cnt.toLocaleString()}명
+                  </div>
+                </div>
+                <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderTop: '2px solid var(--gold)', borderRadius: 10, padding: 12 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>평균 구매액</div>
+                  <div className="mono" style={{ marginTop: 6, color: 'var(--gold)', fontWeight: 800, fontSize: 16 }}>
+                    ₩{Math.round(customerSearchResult.kpi.avgBuy).toLocaleString()}
+                  </div>
+                </div>
+                <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderTop: '2px solid var(--gold)', borderRadius: 10, padding: 12 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>평균 주문횟수</div>
+                  <div className="mono" style={{ marginTop: 6, color: 'var(--gold)', fontWeight: 800, fontSize: 16 }}>
+                    {customerSearchResult.kpi.avgOrders.toFixed(1)}회
+                  </div>
+                </div>
+                <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderTop: '2px solid var(--gold)', borderRadius: 10, padding: 12 }}>
+                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>총 매출 기여</div>
+                  <div className="mono" style={{ marginTop: 6, color: 'var(--gold)', fontWeight: 800, fontSize: 16 }}>
+                    ₩{Math.round(customerSearchResult.kpi.totalContrib).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+              <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
+                <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 8 }}>고객 순위 TOP 20</div>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>순위</th>
+                      <th>표시</th>
+                      <th>고객ID</th>
+                      <th>총주문수</th>
+                      <th>정가합계</th>
+                      <th>쿠폰할인</th>
+                      <th>토스트사용</th>
+                      <th>실결제합계</th>
+                      <th>마지막구매일</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {customerSearchResult.top.map((r, i) => (
+                      <tr key={r.id}>
+                        <td className="mono">{i + 1}</td>
+                        <td style={{ fontSize: 14 }}>{customerSearchResult.mark(r)}</td>
+                        <td className="mono">{r.id.slice(0, 8)}</td>
+                        <td className="mono">{r.n.toLocaleString()}</td>
+                        <td className="mono">₩{Math.round(r.totalAmt).toLocaleString()}</td>
+                        <td className="mono">₩{Math.round(r.coupon).toLocaleString()}</td>
+                        <td className="mono">{Math.round(r.toast).toLocaleString()}T</td>
+                        <td className="mono" style={{ color: 'var(--gold)', fontWeight: 700 }}>
+                          ₩{Math.round(r.final).toLocaleString()}
+                        </td>
+                        <td className="mono">{r.lastAt ? new Date(r.lastAt).toLocaleString('ko-KR') : '—'}</td>
+                      </tr>
+                    ))}
+                    {customerSearchResult.top.length === 0 ? (
+                      <tr>
+                        <td colSpan={9}>데이터 없음</td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
+              <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
+                <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 8 }}>재구매율 (전체 구매 고객)</div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8 }}>
                   <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: 10 }}>
-                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>1회 고객</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>1회</div>
                     <div className="mono" style={{ marginTop: 4, color: 'var(--gold)' }}>{customer.one.toLocaleString()}명 ({customer.oneP.toFixed(1)}%)</div>
                   </div>
                   <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: 10 }}>
-                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>2회 고객</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>2회</div>
                     <div className="mono" style={{ marginTop: 4, color: 'var(--gold)' }}>{customer.two.toLocaleString()}명 ({customer.twoP.toFixed(1)}%)</div>
                   </div>
                   <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: 10 }}>
-                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>3회 이상 고객</div>
-                    <div className="mono" style={{ marginTop: 4, color: 'var(--gold)' }}>{customer.three.toLocaleString()}명 ({customer.threeP.toFixed(1)}%)</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>3회 이상</div>
+                    <div className="mono" style={{ marginTop: 4, color: 'var(--gold)', fontWeight: 900, fontSize: 15 }}>
+                      {customer.three.toLocaleString()}명 ({customer.threeP.toFixed(1)}%)
+                    </div>
                   </div>
                 </div>
               </div>
