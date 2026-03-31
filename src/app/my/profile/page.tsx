@@ -637,7 +637,7 @@ export default function MyProfilePage() {
           ) : null}
         </section>
 
-        <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: '10px 14px 14px', marginBottom: 12 }}>
+        <section id="notify" style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: '10px 14px 14px', marginBottom: 12 }}>
           <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4, color: GOLD }}>알림 설정</div>
           {toggleRow('카카오 알림톡 수신', kakaoNotify, setKakaoNotify)}
           {toggleRow('이메일 수신', emailNotify, setEmailNotify)}

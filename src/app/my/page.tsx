@@ -404,7 +404,7 @@ export default function MyPage() {
           <>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
             <span style={{ fontSize: '11px', fontWeight: 400, color: 'rgba(220,150,80,0.9)' }}>🔔 이 제품들 곧 떨어져요!</span>
-            <span style={{ fontSize: '10px', color: 'rgba(201,169,110,0.7)', cursor: 'pointer' }}>자동알림 설정 ›</span>
+            <span onClick={() => router.push('/my/profile#notify')} style={{ fontSize: '10px', color: 'rgba(201,169,110,0.7)', cursor: 'pointer' }}>자동알림 설정 ›</span>
           </div>
           {refills.map((item, i) => (
             <div key={`${item.order_id}-${item.product_id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: i < refills.length - 1 ? '10px' : 0 }}>
