@@ -287,23 +287,23 @@ export default function MyPage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: '10px', color: 'rgba(196,167,231,0.7)' }}>🍞 토스트 P</div>
-            <div style={{ fontSize: '22px', color: '#c4a7e7' }}>{point.toLocaleString()}P</div>
+            <div style={{ fontSize: '22px', color: '#c4a7e7' }}>{point.toLocaleString()}T</div>
           </div>
           <div>
             <div style={{ fontSize: '10px', color: 'rgba(196,167,231,0.7)' }}>💳 AURAN PAY</div>
             <div style={{ fontSize: '22px', color: '#9b7ec8' }}>₩{chargeBalance.toLocaleString()}</div>
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div style={{ display: 'flex', gap: 8, width: '100%', marginTop: 12 }}>
           <button
             onClick={() => router.push('/wallet')}
-            style={{ background: 'rgba(123,94,167,0.3)', border: '1px solid rgba(123,94,167,0.5)', color: '#c4a7e7', borderRadius: '10px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer' }}
+            style={{ background: 'rgba(123,94,167,0.3)', border: '1px solid rgba(123,94,167,0.5)', color: '#c4a7e7', borderRadius: '10px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', flex: 1, textAlign: 'center', justifyContent: 'center' }}
           >
             충전하기
           </button>
           <button
             onClick={() => router.push('/my/point')}
-            style={{ background: 'transparent', border: '1px solid rgba(196,167,231,0.2)', color: 'rgba(196,167,231,0.6)', borderRadius: '10px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer' }}
+            style={{ background: 'transparent', border: '1px solid rgba(196,167,231,0.2)', color: 'rgba(196,167,231,0.6)', borderRadius: '10px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', flex: 1, textAlign: 'center', justifyContent: 'center' }}
           >
             사용내역
           </button>
