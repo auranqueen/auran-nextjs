@@ -239,7 +239,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsSuperAdmin((session?.user as any)?.raw_app_meta_data?.role === 'super_admin')
+      const user = session?.user as any
+      const role = user?.app_metadata?.role ?? user?.raw_app_meta_data?.role ?? ''
+      setIsSuperAdmin(role === 'super_admin')
     })
   }, [supabase])
 
