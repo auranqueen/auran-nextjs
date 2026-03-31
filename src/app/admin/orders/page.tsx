@@ -33,7 +33,7 @@ export default function AdminOrdersPage() {
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<OrderRow[]>([])
-  const [tab, setTab] = useState<TabKey>('전체')
+  const [tab, setTab] = useState<TabKey>('주문확인')
 
   const [modalId, setModalId] = useState<string | null>(null)
   const [modalCourier, setModalCourier] = useState('CJ대한통운')
@@ -85,7 +85,10 @@ export default function AdminOrdersPage() {
 
   const filtered = useMemo(() => {
     return (rows || []).filter((r) => {
-      if (tab === '전체') return true
+      if (tab === '전체')
+        return (
+          r.status === '주문확인' || r.status === '발송준비' || r.status === '배송중' || r.status === '취소' || r.status === '환불'
+        )
       if (tab === '취소/환불') return r.status === '취소' || r.status === '환불'
       return r.status === tab
     })
@@ -206,7 +209,7 @@ export default function AdminOrdersPage() {
       setModalId(null)
       setShipBulkIds(null)
       setSelectedIds(new Set())
-      setTab((t) => (t === '주문확인' || t === '발송준비' ? '배송중' : t))
+      setTab('배송중')
       setToastMsg(`${idList.length}건 처리됐습니다`)
       window.setTimeout(() => setToastMsg(''), 2500)
     } finally {
@@ -221,6 +224,7 @@ export default function AdminOrdersPage() {
       return
     }
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: '배송완료', delivered_at: new Date().toISOString() } : r)))
+    setTab('배송완료')
   }
 
   const moveToPrep = async (id: string) => {
@@ -246,6 +250,7 @@ export default function AdminOrdersPage() {
     const idSet = new Set(ids)
     setRows((prev) => prev.map((r) => (idSet.has(r.id) ? { ...r, status: '발송준비' } : r)))
     setSelectedIds(new Set())
+    setTab('발송준비')
     setToastMsg(`${ids.length}건 처리됐습니다`)
     window.setTimeout(() => setToastMsg(''), 2500)
   }
