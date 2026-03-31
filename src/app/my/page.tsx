@@ -25,6 +25,7 @@ export default function MyPage() {
   const [orders, setOrders] = useState<any[]>([])
   const [coupons, setCoupons] = useState<any[]>([])
   const [refills, setRefills] = useState<any[]>([])
+  const [recentOrdersForRefill, setRecentOrdersForRefill] = useState<any[]>([])
   const [tracker, setTracker] = useState({ water: 6, uv: 3, sleep: 7.5, routine: 75 })
   const [completion, setCompletion] = useState(0)
   const [profileData, setProfileData] = useState<any>(null)
@@ -112,13 +113,13 @@ export default function MyPage() {
           })
         supabase
           .from('orders')
-          .select('id, items, delivered_at')
+          .select('id, items, status, tracking_no, courier, ordered_at, delivered_at')
           .eq('customer_id', data.user.id)
-          .eq('status', '배송완료')
-          .order('delivered_at', { ascending: false })
-          .limit(5)
-          .then(async ({ data: deliveredOrders }) => {
-            const rows = deliveredOrders || []
+          .order('ordered_at', { ascending: false })
+          .limit(3)
+          .then(async ({ data: recentOrders }) => {
+            const rows = recentOrders || []
+            setRecentOrdersForRefill(rows)
             const parsed: { order_id: string; product_id: string; delivered_at: string; fallback_name: string }[] = []
             const uniqueIds = new Set<string>()
             rows.forEach((o: any) => {
@@ -162,6 +163,7 @@ export default function MyPage() {
                 avg_usage_days: avgDays > 0 ? avgDays : 60,
                 started_at: tracking?.started_at ? String(tracking.started_at) : '',
                 delivered_at: row.delivered_at,
+                status: String((rows.find((r: any) => String(r.id) === row.order_id)?.status as string) || ''),
               }
             })
             setRefills(merged)
@@ -176,6 +178,7 @@ export default function MyPage() {
         setChargeBalance(0)
         setPointHistory([])
         setExpiringPoint(0)
+        setRecentOrdersForRefill([])
       }
     })
     // TODO: coupons 테이블에서 사용 가능한 쿠폰 조회
@@ -389,18 +392,36 @@ export default function MyPage() {
       ) : null}
 
       {/* 소진 알림 */}
-      {refills.length > 0 && (
-        <div style={{ margin: '12px 16px 0', background: 'rgba(220,100,40,0.08)', border: '1px solid rgba(220,120,60,0.2)', borderRadius: '16px', padding: '14px 16px' }}>
+      <div style={{ margin: '12px 16px 0', background: 'rgba(220,100,40,0.08)', border: '1px solid rgba(220,120,60,0.2)', borderRadius: '16px', padding: '14px 16px' }}>
+        {recentOrdersForRefill.length === 0 ? (
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, padding: 16, textAlign: 'center' }}>
+            <div style={{ fontSize: 24, marginBottom: 8 }}>🛍️</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>아직 구매한 제품이 없어요</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>나에게 맞는 제품을 찾아보세요</div>
+            <div onClick={() => router.push('/products')} style={{ color: '#7B5EA7', fontSize: 11, marginTop: 10, cursor: 'pointer' }}>[제품 보러가기 →]</div>
+          </div>
+        ) : (
+          <>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
             <span style={{ fontSize: '11px', fontWeight: 400, color: 'rgba(220,150,80,0.9)' }}>🔔 이 제품들 곧 떨어져요!</span>
             <span style={{ fontSize: '10px', color: 'rgba(201,169,110,0.7)', cursor: 'pointer' }}>자동알림 설정 ›</span>
           </div>
           {refills.map((item, i) => (
             <div key={`${item.order_id}-${item.product_id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: i < refills.length - 1 ? '10px' : 0 }}>
-              <span style={{ fontSize: '22px' }}>🧴</span>
+              <span style={{ fontSize: '22px' }}>{item.status === '배송중' ? '🚚' : item.status === '주문확인' || item.status === '발송준비' ? '📦' : '🧴'}</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '12px', fontWeight: 400, marginBottom: '3px' }}>{item.name}</div>
-                {!item.started_at ? (
+                {item.status === '주문확인' || item.status === '발송준비' ? (
+                  <div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>제품을 준비 중이에요</div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{item.name}</div>
+                  </div>
+                ) : item.status === '배송중' ? (
+                  <div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>곧 도착해요!</div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>도착하면 사용 시작 버튼이 생겨요</div>
+                  </div>
+                ) : !item.started_at ? (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
                     <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>배송완료</span>
                     <button
@@ -450,7 +471,7 @@ export default function MyPage() {
                   </div>
                 )}
               </div>
-              {item.started_at ? (
+              {item.started_at && item.status !== '주문확인' && item.status !== '발송준비' && item.status !== '배송중' ? (
                 <div
                   onClick={() => router.push(`/products/${item.product_id}`)}
                   style={{
@@ -477,8 +498,9 @@ export default function MyPage() {
               ) : null}
             </div>
           ))}
-        </div>
-      )}
+          </>
+        )}
+      </div>
 
       {/* 구매 히스토리 */}
       <div style={{ padding: '16px 16px 0' }}>
