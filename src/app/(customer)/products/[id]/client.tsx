@@ -75,6 +75,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     { id: string; name: string; retail_price: number; thumb_img?: string | null; storage_thumb_url?: string | null; brands?: { name?: string } | null }[]
   >([])
   const [aiRecommendLine, setAiRecommendLine] = useState<string | null>(null)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
 
   const fetchReviews = async () => {
     setReviewsLoading(true)
@@ -235,6 +237,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     })
   }, [shareOpen, supabase])
 
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsSuperAdmin((session?.user as any)?.raw_app_meta_data?.role === 'super_admin')
+    })
+  }, [supabase])
+
   const brand = product.brands?.name || 'AURAN'
   const name = product.name ?? '제품명'
   const seoDesc = product.description ?? ''
@@ -326,6 +334,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     : activeThumb > maxThumbs.length ? galleryImgs[activeThumb - maxThumbs.length - 1] || thumbUrl
     : thumbUrl
 
+  const showEditChrome = isSuperAdmin && isEditMode
+
   return (
     <div style={wrap}>
       {/* 탑바 */}
@@ -380,9 +390,23 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
         {/* 썸네일 스트립 */}
         <div style={{ display: 'flex', gap: 6, padding: '8px 10px', background: '#0a0807', overflowX: 'auto' }}>
-          <div onClick={() => setActiveThumb(0)} onMouseEnter={() => setActiveThumb(0)}
-            style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === 0 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-            {thumbUrl ? <img src={thumbUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ fontSize: 26 }}>🧴</div>}
+          <div
+            data-edit-field="storage_thumb_url"
+            style={{
+              position: showEditChrome ? 'relative' : undefined,
+              flexShrink: 0,
+              outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+              outlineOffset: showEditChrome ? 2 : undefined,
+              borderRadius: showEditChrome ? 8 : undefined,
+            }}
+          >
+            {showEditChrome ? (
+              <span style={{ position: 'absolute', top: 2, right: 2, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
+            ) : null}
+            <div onClick={() => setActiveThumb(0)} onMouseEnter={() => setActiveThumb(0)}
+              style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === 0 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+              {thumbUrl ? <img src={thumbUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ fontSize: 26 }}>🧴</div>}
+            </div>
           </div>
           {maxThumbs.map((url, i) => (
             <div key={i} onClick={() => setActiveThumb(i + 1)} onMouseEnter={() => setActiveThumb(i + 1)}
@@ -418,8 +442,36 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             {aiRecommendLine}
           </div>
         ) : null}
-        <div style={{ fontSize: 20, lineHeight: 1.4, marginBottom: 5, color: '#e8e4dc' }}>{name}</div>
-        <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6, marginBottom: 10 }}>{seoDesc}</div>
+        <div
+          data-edit-field="name"
+          style={{
+            position: showEditChrome ? 'relative' : undefined,
+            fontSize: 20, lineHeight: 1.4, marginBottom: 5, color: '#e8e4dc',
+            outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+            outlineOffset: showEditChrome ? 2 : undefined,
+            borderRadius: showEditChrome ? 4 : undefined,
+          }}
+        >
+          {showEditChrome ? (
+            <span style={{ position: 'absolute', top: 0, right: 0, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
+          ) : null}
+          {name}
+        </div>
+        <div
+          data-edit-field="description"
+          style={{
+            position: showEditChrome ? 'relative' : undefined,
+            fontSize: 12, color: '#888', lineHeight: 1.6, marginBottom: 10,
+            outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+            outlineOffset: showEditChrome ? 2 : undefined,
+            borderRadius: showEditChrome ? 4 : undefined,
+          }}
+        >
+          {showEditChrome ? (
+            <span style={{ position: 'absolute', top: 0, right: 0, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
+          ) : null}
+          {seoDesc}
+        </div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
           <div style={{ fontSize: 28, color: GOLD }}>{hasValidPrice ? `${price.toLocaleString()}원` : '가격문의'}</div>
           {discount > 0 && <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{origPrice.toLocaleString()}원</div>}
@@ -585,15 +637,41 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
         {/* 브랜드 상세이미지 (Toast UI 에디터 작성 내용) */}
         {detailHtml ? (
-          <div className="toastui-editor-contents" dangerouslySetInnerHTML={{ __html: detailHtml }}
-            style={{ padding: '16px 0', color: '#ccc', marginBottom: 12 }} />
+          <div
+            data-edit-field="detail_content"
+            style={{
+              position: showEditChrome ? 'relative' : undefined,
+              padding: showEditChrome ? '2px' : undefined,
+              marginBottom: 12,
+              outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+              outlineOffset: showEditChrome ? 2 : undefined,
+              borderRadius: showEditChrome ? 4 : undefined,
+            }}
+          >
+            {showEditChrome ? (
+              <span style={{ position: 'absolute', top: 4, right: 4, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
+            ) : null}
+            <div className="toastui-editor-contents" dangerouslySetInnerHTML={{ __html: detailHtml }}
+              style={{ padding: '16px 0', color: '#ccc', marginBottom: 0 }} />
+          </div>
         ) : null}
 
         {/* KEY INGREDIENTS */}
         {keyIngredientsText ? (
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, marginBottom: 12 }}>KEY INGREDIENTS</div>
-            <div style={{ fontSize: 13, lineHeight: 1.75, color: '#bbb', whiteSpace: 'pre-wrap', background: '#1a1610', border: '1px solid #252018', borderRadius: 12, padding: '14px 12px' }}>
+            <div
+              data-edit-field="key_ingredients"
+              style={{
+                position: showEditChrome ? 'relative' : undefined,
+                fontSize: 13, lineHeight: 1.75, color: '#bbb', whiteSpace: 'pre-wrap', background: '#1a1610', border: '1px solid #252018', borderRadius: 12, padding: '14px 12px',
+                outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+                outlineOffset: showEditChrome ? 2 : undefined,
+              }}
+            >
+              {showEditChrome ? (
+                <span style={{ position: 'absolute', top: 8, right: 8, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
+              ) : null}
               {keyIngredientsText}
             </div>
           </div>
@@ -770,6 +848,35 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           </div>
         </div>
       )}
+
+      {isSuperAdmin ? (
+        <button
+          type="button"
+          onClick={() => setIsEditMode(v => !v)}
+          style={{
+            position: 'fixed',
+            right: 16,
+            bottom: 88,
+            width: 52,
+            height: 52,
+            borderRadius: '50%',
+            background: '#7B5EA7',
+            border: 'none',
+            color: '#fff',
+            fontSize: 20,
+            cursor: 'pointer',
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontFamily: 'inherit',
+            padding: 0,
+            lineHeight: 1,
+          }}
+        >
+          {isEditMode ? '✕' : '✏️'}
+        </button>
+      ) : null}
     </div>
   )
 }
