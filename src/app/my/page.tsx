@@ -174,6 +174,52 @@ export default function MyPage() {
           <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>📋 구매 히스토리</span>
           <span onClick={() => router.push('/my/orders')} style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체보기 ›</span>
         </div>
+        {orders.some((o: any) => o.status === '배송중') ? (
+          <div style={{ marginBottom: 10 }}>
+            {orders
+              .filter((o: any) => o.status === '배송중')
+              .map((order: any) => {
+                const trk = String(order.tracking_no || '').trim()
+                const cr = String(order.courier || '').trim()
+                let href = ''
+                if (trk) {
+                  if (cr.includes('CJ') || cr.includes('대한통운')) href = `https://www.cjlogistics.com/ko/tool/parcel/tracking?gnbInvcNo=${encodeURIComponent(trk)}`
+                  else if (cr.includes('한진')) href = `https://www.hanjin.com/kor/CMS/DeliveryMgr/WaybillSch.do?mCode=MN038&schLang=KR&wblnumText2=${encodeURIComponent(trk)}`
+                  else if (cr.includes('롯데')) href = `https://www.lotteglogis.com/open/tracking?invno=${encodeURIComponent(trk)}`
+                  else if (cr.includes('우체국')) href = `https://service.epost.go.kr/trace.RetrieveDomRigiTraceList.comm?sid1=${encodeURIComponent(trk)}`
+                  else if (cr.includes('로젠')) href = `https://www.ilogen.com/m/personal/trace/${encodeURIComponent(trk)}`
+                  else href = `https://www.cjlogistics.com/ko/tool/parcel/tracking?gnbInvcNo=${encodeURIComponent(trk)}`
+                }
+                return (
+                  <div key={order.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6, padding: '8px 10px', background: CARD_BG, border: CARD_BORDER, borderRadius: 10 }}>
+                    <span style={{ fontSize: 10, fontFamily: 'monospace', color: TEXT_MUTED }}>{order.order_no}</span>
+                    <button
+                      type="button"
+                      disabled={!trk}
+                      onClick={() => {
+                        if (!trk) return
+                        window.open(href, '_blank', 'noopener,noreferrer')
+                      }}
+                      style={{
+                        padding: '6px 10px',
+                        fontSize: 9,
+                        borderRadius: 8,
+                        border: '1px solid #7B5EA7',
+                        color: '#7B5EA7',
+                        background: 'transparent',
+                        cursor: trk ? 'pointer' : 'not-allowed',
+                        opacity: trk ? 1 : 0.5,
+                        fontFamily: 'inherit',
+                        flexShrink: 0,
+                      }}
+                    >
+                      🚚 배송조회
+                    </button>
+                  </div>
+                )
+              })}
+          </div>
+        ) : null}
         <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '4px' }}>
           {(() => {
             const historyItems: { productId: string; name: string; thumb: string; brand: string; date: string }[] = []

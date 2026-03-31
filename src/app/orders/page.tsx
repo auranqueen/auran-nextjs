@@ -37,7 +37,7 @@ export default function OrdersPage() {
       }
       const { data } = await supabase
         .from('orders')
-        .select('id,order_no,status,final_amount,ordered_at,gift_receiver_id,order_items(product_name,quantity)')
+        .select('id,order_no,status,final_amount,ordered_at,gift_receiver_id,tracking_no,courier,order_items(product_name,quantity)')
         .eq('customer_id', profile.id)
         .order('ordered_at', { ascending: false })
         .limit(20)
@@ -95,6 +95,48 @@ export default function OrdersPage() {
                   <div style={{ fontSize: 11, color: 'var(--text3)' }}>{o.ordered_at ? new Date(o.ordered_at).toLocaleDateString('ko-KR') : ''}</div>
                   <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, fontWeight: 800, color: '#fff' }}>₩{(o.final_amount || 0).toLocaleString()}</div>
                 </div>
+                {o.status === '배송중' ? (
+                  <div style={{ marginTop: 10 }}>
+                    {(() => {
+                      const trk = String(o.tracking_no || '').trim()
+                      const cr = String(o.courier || '').trim()
+                      let href = ''
+                      if (trk) {
+                        if (cr.includes('CJ') || cr.includes('대한통운')) href = `https://www.cjlogistics.com/ko/tool/parcel/tracking?gnbInvcNo=${encodeURIComponent(trk)}`
+                        else if (cr.includes('한진')) href = `https://www.hanjin.com/kor/CMS/DeliveryMgr/WaybillSch.do?mCode=MN038&schLang=KR&wblnumText2=${encodeURIComponent(trk)}`
+                        else if (cr.includes('롯데')) href = `https://www.lotteglogis.com/open/tracking?invno=${encodeURIComponent(trk)}`
+                        else if (cr.includes('우체국')) href = `https://service.epost.go.kr/trace.RetrieveDomRigiTraceList.comm?sid1=${encodeURIComponent(trk)}`
+                        else if (cr.includes('로젠')) href = `https://www.ilogen.com/m/personal/trace/${encodeURIComponent(trk)}`
+                        else href = `https://www.cjlogistics.com/ko/tool/parcel/tracking?gnbInvcNo=${encodeURIComponent(trk)}`
+                      }
+                      return (
+                        <button
+                          type="button"
+                          disabled={!trk}
+                          onClick={() => {
+                            if (!trk) return
+                            window.open(href, '_blank', 'noopener,noreferrer')
+                          }}
+                          style={{
+                            width: '100%',
+                            padding: '8px 10px',
+                            fontSize: 12,
+                            borderRadius: 10,
+                            border: '1px solid #7B5EA7',
+                            color: '#7B5EA7',
+                            background: 'transparent',
+                            cursor: trk ? 'pointer' : 'not-allowed',
+                            opacity: trk ? 1 : 0.5,
+                            fontFamily: 'inherit',
+                            fontWeight: 600,
+                          }}
+                        >
+                          🚚 배송조회
+                        </button>
+                      )
+                    })()}
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
