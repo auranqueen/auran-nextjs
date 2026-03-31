@@ -54,6 +54,8 @@ export default function AdminOrdersPage() {
   const [memoDraft, setMemoDraft] = useState('')
   const [memoSaving, setMemoSaving] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
+  const [shipBulkIds, setShipBulkIds] = useState<string[] | null>(null)
 
   const current = useMemo(() => rows.find((r) => r.id === modalId) || null, [modalId, rows])
   const memoOrder = useMemo(() => rows.find((r) => r.id === memoDetailId) || null, [memoDetailId, rows])
@@ -105,7 +107,8 @@ export default function AdminOrdersPage() {
     return { n, sumTotal, sumCoupon, sumToast, sumFinal }
   }, [filtered])
 
-  const openShipModal = (o: OrderRow) => {
+  const openShipModal = (o: OrderRow, bulkTargetIds?: string[] | null) => {
+    setShipBulkIds(bulkTargetIds && bulkTargetIds.length ? bulkTargetIds : null)
     setModalId(o.id)
     setModalCourier(o.courier || 'CJ대한통운')
     setModalTracking((o.tracking_no || '').trim())
@@ -140,7 +143,9 @@ export default function AdminOrdersPage() {
   }
 
   const shipFromModal = async () => {
-    if (!modalId || !current) return
+    const idList = shipBulkIds && shipBulkIds.length ? shipBulkIds : modalId ? [modalId] : []
+    const firstRow = idList.length ? rows.find((r) => r.id === idList[0]) : null
+    if (!idList.length || !firstRow) return
     if (!modalTracking.trim()) {
       alert('운송장 번호를 입력해주세요')
       return
@@ -152,7 +157,6 @@ export default function AdminOrdersPage() {
     let extraMsg = ''
     if (giftCheck && giftText.trim()) extraMsg += `\n\n[증정] ${giftText.trim()}`
     if (cardCheck && cardText.trim()) extraMsg += `\n\n[선물 카드] ${cardText.trim()}`
-    const notifyBody = modalMsg + extraMsg
     const notesPayload = [
       internalMemo.trim(),
       giftCheck && giftText.trim() ? `[증정] ${giftText.trim()}` : '',
@@ -171,24 +175,40 @@ export default function AdminOrdersPage() {
             shipped_at: now,
             admin_order_notes: notesPayload,
           } as any)
-          .eq('id', modalId)
+          .in('id', idList)
       ).error
       if (err) {
-        const r2 = await supabase.from('orders').update({ status: '배송중', tracking_no: tracking, courier, shipped_at: now }).eq('id', modalId)
+        const r2 = await supabase.from('orders').update({ status: '배송중', tracking_no: tracking, courier, shipped_at: now }).in('id', idList)
         err = r2.error
         if (err) {
           alert(err.message)
           return
         }
       }
-      await tryNotifyCustomer(current.customer_id, '🚚 발송 안내', notifyBody.replace('(입력 후 자동 반영)', tracking))
+      const idSet = new Set(idList)
+      for (const rid of idList) {
+        const ro = rows.find((r) => r.id === rid)
+        if (!ro) continue
+        const notifyBody =
+          `[AURAN] 주문이 발송됐습니다.\n` +
+          `운송장번호: ${tracking}\n` +
+          `주문번호: ${ro.order_no}\n\n` +
+          `배송조회: https://auran.kr/track/\n` +
+          `문의: support@auran.kr` +
+          extraMsg
+        await tryNotifyCustomer(ro.customer_id, '🚚 발송 안내', notifyBody)
+      }
       setRows((prev) =>
         prev.map((r) =>
-          r.id === modalId ? { ...r, status: '배송중', tracking_no: tracking, courier, shipped_at: now, admin_order_notes: notesPayload } : r
+          idSet.has(r.id) ? { ...r, status: '배송중', tracking_no: tracking, courier, shipped_at: now, admin_order_notes: notesPayload } : r
         )
       )
       setModalId(null)
+      setShipBulkIds(null)
+      setSelectedIds(new Set())
       setTab((t) => (t === '주문확인' || t === '발송준비' ? '배송중' : t))
+      setToastMsg(`${idList.length}건 처리됐습니다`)
+      window.setTimeout(() => setToastMsg(''), 2500)
     } finally {
       setModalSaving(false)
     }
@@ -210,6 +230,24 @@ export default function AdminOrdersPage() {
       return
     }
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: '발송준비' } : r)))
+  }
+
+  const bulkMoveToPrep = async () => {
+    const ids = Array.from(selectedIds).filter((id) => rows.some((r) => r.id === id && r.status === '주문확인'))
+    if (!ids.length) {
+      alert('주문확인 상태인 주문을 선택해주세요')
+      return
+    }
+    const { error } = await supabase.from('orders').update({ status: '발송준비' }).in('id', ids)
+    if (error) {
+      alert(error.message)
+      return
+    }
+    const idSet = new Set(ids)
+    setRows((prev) => prev.map((r) => (idSet.has(r.id) ? { ...r, status: '발송준비' } : r)))
+    setSelectedIds(new Set())
+    setToastMsg(`${ids.length}건 처리됐습니다`)
+    window.setTimeout(() => setToastMsg(''), 2500)
   }
 
   const downloadCsv = () => {
@@ -450,12 +488,69 @@ export default function AdminOrdersPage() {
           ) : null}
         </div>
 
+        {selectedIds.size > 0 ? (
+          <div
+            style={{
+              padding: '10px 14px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              gap: 10,
+              borderBottom: '1px solid var(--border)',
+              background: 'rgba(201,168,76,.06)',
+            }}
+          >
+            <span style={{ fontSize: 12, color: 'var(--text2)', fontWeight: 700 }}>{selectedIds.size}건 선택됨</span>
+            <button type="button" className="btn btn-bl" onClick={() => void bulkMoveToPrep()}>
+              📦 일괄 발송준비
+            </button>
+            <button
+              type="button"
+              className="btn btn-gr"
+              onClick={() => {
+                const prepIds = Array.from(selectedIds).filter((id) => rows.some((r) => r.id === id && r.status === '발송준비'))
+                if (!prepIds.length) {
+                  alert('발송준비 상태인 주문을 선택해주세요')
+                  return
+                }
+                const o = rows.find((r) => r.id === prepIds[0])
+                if (!o) return
+                openShipModal(o, prepIds)
+              }}
+            >
+              ✅ 일괄 발송완료
+            </button>
+            <button type="button" className="btn btn-gy" onClick={() => setSelectedIds(new Set())}>
+              ❌ 선택 해제
+            </button>
+          </div>
+        ) : null}
+
         {loading ? (
           <div style={{ padding: 16, color: 'var(--text3)', fontSize: 12 }}>불러오는 중...</div>
         ) : (
           <table>
             <thead>
               <tr>
+                <th style={{ width: 36 }}>
+                  <input
+                    type="checkbox"
+                    checked={filtered.length > 0 && filtered.every((r) => selectedIds.has(r.id))}
+                    onChange={() => {
+                      const fids = filtered.map((r) => r.id)
+                      setSelectedIds((prev) => {
+                        const next = new Set(prev)
+                        const allOn = fids.length > 0 && fids.every((id) => next.has(id))
+                        if (allOn) {
+                          fids.forEach((id) => next.delete(id))
+                        } else {
+                          fids.forEach((id) => next.add(id))
+                        }
+                        return next
+                      })
+                    }}
+                  />
+                </th>
                 <th>주문번호</th>
                 <th>상태</th>
                 <th>결제수단</th>
@@ -515,6 +610,20 @@ export default function AdminOrdersPage() {
                           : 'b b-gy'
                 return (
                   <tr key={o.id} style={{ background: stale ? 'rgba(255,80,80,0.07)' : undefined }}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(o.id)}
+                        onChange={() => {
+                          setSelectedIds((prev) => {
+                            const next = new Set(prev)
+                            if (next.has(o.id)) next.delete(o.id)
+                            else next.add(o.id)
+                            return next
+                          })
+                        }}
+                      />
+                    </td>
                     <td className="mono">
                       {stale ? (
                         <span title="주문 후 3일 이상 미발송" style={{ marginRight: 2 }}>
@@ -571,7 +680,7 @@ export default function AdminOrdersPage() {
               })}
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={10} style={{ color: 'var(--text3)' }}>
+                  <td colSpan={11} style={{ color: 'var(--text3)' }}>
                     주문이 없습니다.
                   </td>
                 </tr>
@@ -601,7 +710,10 @@ export default function AdminOrdersPage() {
 
       {modalId && current && (
         <div
-          onClick={() => setModalId(null)}
+          onClick={() => {
+            setModalId(null)
+            setShipBulkIds(null)
+          }}
           style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <div
@@ -613,9 +725,17 @@ export default function AdminOrdersPage() {
                 <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>🚚 발송 처리</div>
                 <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 3 }} className="mono">
                   {current.order_no}
+                  {shipBulkIds && shipBulkIds.length > 1 ? ` · 외 ${shipBulkIds.length - 1}건 동일 송장` : ''}
                 </div>
               </div>
-              <button type="button" onClick={() => setModalId(null)} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 19, cursor: 'pointer' }}>
+              <button
+                type="button"
+                onClick={() => {
+                  setModalId(null)
+                  setShipBulkIds(null)
+                }}
+                style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 19, cursor: 'pointer' }}
+              >
                 ×
               </button>
             </div>
@@ -717,7 +837,14 @@ export default function AdminOrdersPage() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18, paddingTop: 14, borderTop: '1px solid var(--border)' }}>
-              <button type="button" className="btn btn-gy" onClick={() => setModalId(null)}>
+              <button
+                type="button"
+                className="btn btn-gy"
+                onClick={() => {
+                  setModalId(null)
+                  setShipBulkIds(null)
+                }}
+              >
                 취소
               </button>
               <button
