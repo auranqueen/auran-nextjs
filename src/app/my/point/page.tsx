@@ -27,9 +27,12 @@ type TransactionRow = {
 export default function MyPointPage() {
   const router = useRouter()
   const supabase = createClient()
-  const [tab, setTab] = useState<'전체' | '적립' | '사용'>('전체')
+  const [tab, setTab] = useState<'전체' | '적립' | '지출' | '충전내역'>('전체')
   const [wallet, setWallet] = useState<WalletRow | null>(null)
   const [rows, setRows] = useState<TransactionRow[]>([])
+  const [chargeRows, setChargeRows] = useState<any[]>([])
+  const [chargeUseRows, setChargeUseRows] = useState<any[]>([])
+  const [chargeBalance, setChargeBalance] = useState(0)
   const [expiring, setExpiring] = useState(0)
 
   useEffect(() => {
@@ -37,6 +40,13 @@ export default function MyPointPage() {
       const { data } = await supabase.auth.getUser()
       const user = data.user
       if (!user) return
+
+      const { data: userRow } = await supabase
+        .from('users')
+        .select('id, charge_balance')
+        .eq('auth_id', user.id)
+        .single()
+      setChargeBalance(Number(userRow?.charge_balance || 0))
 
       const { data: walletData } = await supabase
         .from('user_wallets')
@@ -53,6 +63,25 @@ export default function MyPointPage() {
         .limit(50)
       setRows((txData as TransactionRow[]) || [])
 
+      const { data: payData } = await supabase
+        .from('payment_intents')
+        .select('amount, created_at')
+        .eq('user_id', user.id)
+        .eq('kind', 'charge')
+        .eq('status', 'paid')
+        .order('created_at', { ascending: false })
+        .limit(50)
+      setChargeRows(payData || [])
+
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('charge_used, created_at')
+        .eq('customer_id', user.id)
+        .gt('charge_used', 0)
+        .order('created_at', { ascending: false })
+        .limit(50)
+      setChargeUseRows(orderData || [])
+
       const { data: expireRows } = await supabase
         .from('point_transactions')
         .select('amount, type, description, created_at')
@@ -65,34 +94,45 @@ export default function MyPointPage() {
   }, [supabase])
 
   const filteredRows = useMemo(() => {
-    if (tab === '전체') return rows
-    if (tab === '적립') return rows.filter((r) => Number(r.amount) > 0)
-    return rows.filter((r) => Number(r.amount) < 0)
-  }, [rows, tab])
+    const pointEarn = rows
+      .filter((r) => Number(r.amount) > 0)
+      .map((r) => ({ icon: '🍞', desc: r.description || '토스트 적립', amountText: `+${Math.abs(Number(r.amount)).toLocaleString()}T`, amountColor: '#6dba6d', created_at: r.created_at }))
+    const pointSpend = rows
+      .filter((r) => Number(r.amount) < 0)
+      .map((r) => ({ icon: '🍞', desc: '토스트 사용', amountText: `-${Math.abs(Number(r.amount)).toLocaleString()}T`, amountColor: 'rgba(220,80,80,0.8)', created_at: r.created_at }))
+    const chargeEarn = chargeRows
+      .map((r: any) => ({ icon: '💳', desc: 'AURAN PAY 충전', amountText: `+₩${Math.abs(Number(r.amount || 0)).toLocaleString()}`, amountColor: '#9b7ec8', created_at: r.created_at }))
+    const chargeSpend = chargeUseRows
+      .map((r: any) => ({ icon: '💳', desc: 'AURAN PAY 사용', amountText: `-₩${Math.abs(Number(r.charge_used || 0)).toLocaleString()}`, amountColor: 'rgba(220,80,80,0.8)', created_at: r.created_at }))
+
+    if (tab === '적립') return pointEarn
+    if (tab === '지출') return pointSpend
+    if (tab === '충전내역') {
+      return [...chargeEarn, ...chargeSpend].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    }
+    return [...chargeEarn, ...chargeSpend, ...pointEarn, ...pointSpend].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+  }, [rows, chargeRows, chargeUseRows, tab])
 
   return (
     <div style={{ background: BG, minHeight: '100vh', maxWidth: 390, margin: '0 auto', color: '#fff', paddingBottom: 24 }}>
       <header style={{ position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'rgba(13,11,9,0.95)', borderBottom: CARD_BORDER }}>
         <button onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: '#fff', fontSize: 18, cursor: 'pointer' }}>←</button>
-        <div style={{ fontSize: 16, fontWeight: 600 }}>AURAN POINT</div>
+        <div style={{ fontSize: 16, fontWeight: 600 }}>오랜 토스트 T</div>
       </header>
 
       <div style={{ padding: 16 }}>
         <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 14, marginBottom: 10 }}>
-          <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 8 }}>포인트 잔액</div>
-          <div style={{ fontSize: 34, color: GOLD, fontWeight: 600, marginBottom: 10 }}>{Number(wallet?.balance || 0).toLocaleString()}T</div>
-          <div style={{ display: 'flex', gap: 14, fontSize: 12, color: TEXT_MUTED }}>
-            <span>총 적립 {Number(wallet?.total_earned || 0).toLocaleString()}T</span>
-            <span>총 사용 {Number(wallet?.total_used || 0).toLocaleString()}T</span>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div>
+              <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 8 }}>토스트 잔액</div>
+              <div style={{ fontSize: 28, color: GOLD, fontWeight: 600 }}>{Number(wallet?.balance || 0).toLocaleString()}T</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11, color: '#9b7ec8', marginBottom: 8 }}>AURAN PAY</div>
+              <div style={{ fontSize: 28, color: '#9b7ec8', fontWeight: 600 }}>₩{Number(chargeBalance || 0).toLocaleString()}</div>
+            </div>
           </div>
         </section>
-
-        <button
-          onClick={() => router.push('/wallet')}
-          style={{ width: '100%', border: 'none', borderRadius: 12, background: 'linear-gradient(135deg,#C9A96E,#E1C38F)', color: '#0D0B09', fontWeight: 700, padding: '12px 0', marginBottom: 10, cursor: 'pointer' }}
-        >
-          충전하기
-        </button>
 
         <section style={{ background: 'rgba(123,94,167,0.14)', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 12, padding: '10px 12px', fontSize: 12, color: '#c7b0ea', marginBottom: 10 }}>
           {expiring.toLocaleString()}T가 12월 31일 소멸 예정이에요
@@ -100,7 +140,7 @@ export default function MyPointPage() {
 
         <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 14 }}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            {(['전체', '적립', '사용'] as const).map((t) => (
+            {(['전체', '적립', '지출', '충전내역'] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -119,15 +159,16 @@ export default function MyPointPage() {
             ))}
           </div>
 
-          {filteredRows.map((row) => (
-            <div key={row.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '10px 0' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                <span style={{ fontSize: 12 }}>{row.description || row.type || '포인트 내역'}</span>
-                <span style={{ fontSize: 12, color: row.amount > 0 ? '#7fd08f' : '#ef9a9a' }}>
-                  {row.amount > 0 ? `+${Math.abs(row.amount).toLocaleString()}` : `-${Math.abs(row.amount).toLocaleString()}`} T
-                </span>
+          {filteredRows.map((row: any, idx: number) => (
+            <div key={idx} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '10px 0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span>{row.icon}</span>
+                <span style={{ fontSize: 12 }}>{row.desc}</span>
+                <span style={{ fontSize: 12, color: row.amountColor }}>{row.amountText}</span>
               </div>
-              <div style={{ fontSize: 10, color: TEXT_MUTED }}>{new Date(row.created_at).toLocaleString('ko-KR')}</div>
+              <div style={{ fontSize: 10, color: TEXT_MUTED }}>
+                {new Date(row.created_at).toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' }).replace(' ', '')}
+              </div>
             </div>
           ))}
         </section>
