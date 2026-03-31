@@ -23,6 +23,7 @@ export default function AdminRevenuePage() {
   const [churnOpen, setChurnOpen] = useState(false)
   const [customerFilterDraft, setCustomerFilterDraft] = useState('amount_top')
   const [customerFilter, setCustomerFilter] = useState('amount_top')
+  const [customerPanelId, setCustomerPanelId] = useState<string | null>(null)
 
   useEffect(() => {
     const t = new Date()
@@ -317,6 +318,18 @@ export default function AdminRevenuePage() {
       },
     }
   }, [orders, customerFilter])
+
+  const customerPanelOrders = useMemo(() => {
+    if (!customerPanelId) return []
+    return orders
+      .filter((o) => String(o.customer_id ?? '') === customerPanelId)
+      .slice()
+      .sort((a, b) => {
+        const ta = a.ordered_at ? new Date(a.ordered_at).getTime() : 0
+        const tb = b.ordered_at ? new Date(b.ordered_at).getTime() : 0
+        return tb - ta
+      })
+  }, [orders, customerPanelId])
 
   const inflow = useMemo(() => {
     const pm = new Map<string, { id: string; n: number; sales: number; comm: number }>()
@@ -720,7 +733,7 @@ export default function AdminRevenuePage() {
                   </thead>
                   <tbody>
                     {customerSearchResult.top.map((r, i) => (
-                      <tr key={r.id}>
+                      <tr key={r.id} onClick={() => setCustomerPanelId(r.id)} style={{ cursor: 'pointer' }}>
                         <td className="mono">{i + 1}</td>
                         <td style={{ fontSize: 14 }}>{customerSearchResult.mark(r)}</td>
                         <td className="mono">{r.id.slice(0, 8)}</td>
@@ -888,6 +901,138 @@ export default function AdminRevenuePage() {
                 </div>
               ))}
               {customer.churnList.length === 0 ? <div style={{ fontSize: 12, color: 'var(--text3)' }}>없음</div> : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {customerPanelId ? (
+        <div
+          onClick={() => setCustomerPanelId(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(0,0,0,.45)' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              position: 'fixed',
+              right: 0,
+              top: 0,
+              height: '100vh',
+              width: 380,
+              background: 'var(--bg2)',
+              borderLeft: '1px solid var(--border2)',
+              borderTop: '2px solid var(--gold)',
+              zIndex: 51,
+              overflowY: 'auto',
+              padding: 24,
+              boxSizing: 'border-box',
+            }}
+          >
+            <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>고객 구매 히스토리</div>
+            <div className="mono" style={{ marginTop: 8, fontSize: 12, color: 'var(--gold)' }}>
+              고객ID {customerPanelId.slice(0, 8)}
+            </div>
+            <div className="mono" style={{ marginTop: 8, fontSize: 10, color: 'var(--text3)' }}>
+              첫 구매일 {customerPanelOrders.length ? new Date(customerPanelOrders[customerPanelOrders.length - 1].ordered_at).toLocaleString('ko-KR') : '-'}
+            </div>
+            <div className="mono" style={{ marginTop: 3, fontSize: 10, color: 'var(--text3)' }}>
+              마지막 구매일 {customerPanelOrders.length ? new Date(customerPanelOrders[0].ordered_at).toLocaleString('ko-KR') : '-'}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8, marginTop: 14 }}>
+              <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: 9 }}>
+                <div style={{ fontSize: 10, color: 'var(--text3)' }}>총 주문</div>
+                <div className="mono" style={{ marginTop: 4, color: 'var(--text)' }}>
+                  {customerPanelOrders.length.toLocaleString()}건
+                </div>
+              </div>
+              <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: 9 }}>
+                <div style={{ fontSize: 10, color: 'var(--text3)' }}>정가 합계</div>
+                <div className="mono" style={{ marginTop: 4, color: 'var(--text)' }}>
+                  ₩{customerPanelOrders.reduce((s, o) => s + (Number(o.total_amount ?? 0) || 0), 0).toLocaleString()}
+                </div>
+              </div>
+              <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: 9 }}>
+                <div style={{ fontSize: 10, color: 'var(--text3)' }}>쿠폰 할인 합계</div>
+                <div className="mono" style={{ marginTop: 4, color: 'var(--text)' }}>
+                  ₩{customerPanelOrders.reduce((s, o) => s + (Number(o.coupon_discount ?? 0) || 0), 0).toLocaleString()}
+                </div>
+              </div>
+              <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: 9 }}>
+                <div style={{ fontSize: 10, color: 'var(--text3)' }}>토스트 사용 합계</div>
+                <div className="mono" style={{ marginTop: 4, color: 'var(--text)' }}>
+                  {customerPanelOrders.reduce((s, o) => s + (Number(o.point_used ?? 0) || 0), 0).toLocaleString()}T
+                </div>
+              </div>
+              <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: 9 }}>
+                <div style={{ fontSize: 10, color: 'var(--text3)' }}>실결제 합계</div>
+                <div className="mono" style={{ marginTop: 4, color: 'var(--gold)', fontWeight: 700 }}>
+                  ₩{customerPanelOrders.reduce((s, o) => s + (Number(o.final_amount ?? 0) || 0), 0).toLocaleString()}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 16 }}>
+              <table>
+                <thead>
+                  <tr>
+                    <th>주문번호</th>
+                    <th>상태</th>
+                    <th>실결제</th>
+                    <th>주문일</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {customerPanelOrders.map((o) => (
+                    <tr key={o.id}>
+                      <td
+                        className="mono"
+                        style={{ cursor: 'pointer' }}
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(String(o.order_no ?? ''))
+                          } catch {}
+                        }}
+                      >
+                        {o.order_no}
+                      </td>
+                      <td>
+                        <span
+                          className={
+                            o.status === '배송완료'
+                              ? 'b b-gd'
+                              : o.status === '배송중'
+                                ? 'b b-pu'
+                                : o.status === '발송준비'
+                                  ? 'b b-bl'
+                                  : o.status === '취소' || o.status === '환불' || o.status === '취소/환불'
+                                    ? 'b b-re'
+                                    : 'b b-gy'
+                          }
+                        >
+                          {o.status}
+                        </span>
+                      </td>
+                      <td className="mono">₩{Number(o.final_amount ?? 0).toLocaleString()}</td>
+                      <td className="mono">{o.ordered_at ? new Date(o.ordered_at).toLocaleString('ko-KR') : '—'}</td>
+                    </tr>
+                  ))}
+                  {customerPanelOrders.length === 0 ? (
+                    <tr>
+                      <td colSpan={4}>주문 없음</td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ marginTop: 16, display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button type="button" className="btn btn-bl" onClick={() => (window.location.href = '/admin/coupons')}>
+                ✉️ 쿠폰 발송
+              </button>
+              <button type="button" className="btn btn-gy" onClick={() => setCustomerPanelId(null)}>
+                닫기
+              </button>
             </div>
           </div>
         </div>
