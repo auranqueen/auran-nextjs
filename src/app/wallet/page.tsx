@@ -294,9 +294,6 @@ function WalletPageInner() {
                       return
                     }
 
-                    const ok = window.confirm(`${amt.toLocaleString()}원을 충전하시겠습니까?`)
-                    if (!ok) return
-
                     setCharging(true)
                     try {
                       const res = await fetch('/api/payments/payapp/create', {
