@@ -526,7 +526,51 @@ export default function MyPage() {
                 }
                 return (
                   <div key={order.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 6, padding: '8px 10px', background: CARD_BG, border: CARD_BORDER, borderRadius: 10 }}>
-                    <span style={{ fontSize: 10, fontFamily: 'monospace', color: TEXT_MUTED }}>{order.order_no}</span>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {(() => {
+                          let names: string[] = []
+                          const itemsRaw = order.items
+                          if (Array.isArray(itemsRaw)) {
+                            names = itemsRaw
+                              .map((it: any) => String(it?.name || it?.product_name || '').trim())
+                              .filter(Boolean)
+                          } else if (typeof itemsRaw === 'string') {
+                            try {
+                              const parsed = JSON.parse(itemsRaw)
+                              if (Array.isArray(parsed)) {
+                                names = parsed
+                                  .map((it: any) => String(it?.name || it?.product_name || '').trim())
+                                  .filter(Boolean)
+                              }
+                            } catch {
+                              names = []
+                            }
+                          }
+                          if (names.length === 0 && Array.isArray(order.order_items)) {
+                            names = order.order_items
+                              .map((oi: any) => String(oi?.products?.name || '').trim())
+                              .filter(Boolean)
+                          }
+                          if (names.length === 0) return order.order_no || '주문'
+                          return names.length > 1 ? `${names[0]} 외 ${names.length - 1}개` : names[0]
+                        })()}
+                      </div>
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace', marginBottom: 2 }}>
+                        {order.order_no || '-'}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>
+                          {order.created_at ? new Date(order.created_at).toLocaleDateString('ko-KR') : '-'}
+                        </span>
+                        <span style={{ fontSize: 9, color: '#7B5EA7', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 999, padding: '1px 6px' }}>
+                          {order.status || '주문확인'}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 12, color: '#C9A96E' }}>
+                        {(Number(order.final_amount || order.total_amount || 0)).toLocaleString()}원
+                      </div>
+                    </div>
                     <button
                       type="button"
                       disabled={!trk}
