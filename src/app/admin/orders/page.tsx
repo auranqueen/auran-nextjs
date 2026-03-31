@@ -61,7 +61,12 @@ export default function AdminOrdersPage() {
   const [shipBulkIds, setShipBulkIds] = useState<string[] | null>(null)
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
-  const [searchQ, setSearchQ] = useState('')
+  const [searchCat, setSearchCat] = useState('')
+  const [searchText, setSearchText] = useState('')
+  const [searchPayPick, setSearchPayPick] = useState('')
+  const [searchStatusPick, setSearchStatusPick] = useState('')
+  const [searchAmountPick, setSearchAmountPick] = useState('')
+  const [appliedSearch, setAppliedSearch] = useState<{ t: string; v?: string }>({ t: 'none' })
   const [historyCustomerId, setHistoryCustomerId] = useState<string | null>(null)
 
   const current = useMemo(() => rows.find((r) => r.id === modalId) || null, [modalId, rows])
@@ -110,16 +115,36 @@ export default function AdminOrdersPage() {
       const t1 = new Date(dateTo + 'T23:59:59.999').getTime()
       list = list.filter((r) => r.ordered_at && new Date(r.ordered_at).getTime() <= t1)
     }
-    const q = searchQ.trim().toLowerCase()
-    if (q) {
-      list = list.filter((r) => {
-        const pay = String((r as any).payment_method ?? '').toLowerCase()
-        const cid = String(r.customer_id ?? '').toLowerCase()
-        return String(r.order_no).toLowerCase().includes(q) || cid.includes(q) || pay.includes(q)
-      })
+    if (appliedSearch.t !== 'none' && appliedSearch.v) {
+      const v = appliedSearch.v
+      if (appliedSearch.t === 'order_no') {
+        const q = v.toLowerCase()
+        list = list.filter((r) => String(r.order_no).toLowerCase().includes(q))
+      } else if (appliedSearch.t === 'customer_id') {
+        const q = v.toLowerCase()
+        list = list.filter((r) => String(r.customer_id ?? '').toLowerCase().includes(q))
+      } else if (appliedSearch.t === 'payment') {
+        list = list.filter((r) => {
+          const pay = String((r as any).payment_method ?? '')
+          if (v === '카드') return /카드|card/i.test(pay)
+          if (v === '무통장') return /무통장|무통|입금|bank|transfer/i.test(pay)
+          if (v === '토스트페이') return /토스트|toast/i.test(pay)
+          return false
+        })
+      } else if (appliedSearch.t === 'status') {
+        list = list.filter((r) => r.status === v)
+      } else if (appliedSearch.t === 'amount') {
+        list = list.filter((r) => {
+          const fa = Number(r.final_amount ?? 0) || 0
+          if (v === '3만원대') return fa >= 30000 && fa < 40000
+          if (v === '5만원대') return fa >= 50000 && fa < 60000
+          if (v === '10만 이상') return fa >= 100000
+          return false
+        })
+      }
     }
     return list
-  }, [rows, tab, dateFrom, dateTo, searchQ])
+  }, [rows, tab, dateFrom, dateTo, appliedSearch])
 
   const stats = useMemo(() => {
     let n = 0
@@ -444,14 +469,150 @@ export default function AdminOrdersPage() {
               이번달
             </button>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <span style={{ fontSize: 10, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace" }}>통합검색</span>
-            <input
-              value={searchQ}
-              onChange={(e) => setSearchQ(e.target.value)}
-              placeholder="주문번호 · 고객ID · 결제수단"
-              style={{ flex: 1, minWidth: 200, maxWidth: 420, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 12, padding: '8px 10px', outline: 'none' }}
-            />
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+              <select
+                value={searchCat}
+                onChange={(e) => {
+                  setSearchCat(e.target.value)
+                  setSearchPayPick('')
+                  setSearchStatusPick('')
+                  setSearchAmountPick('')
+                  setSearchText('')
+                }}
+                style={{ minWidth: 160, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 12, padding: '8px 10px', outline: 'none' }}
+              >
+                <option value="">검색 카테고리</option>
+                <option value="order_no">주문번호</option>
+                <option value="customer_id">고객ID</option>
+                <option value="payment">결제수단 (카드 / 무통장 / 토스트페이)</option>
+                <option value="status">주문상태 (주문확인 / 발송준비 / 배송중 / 배송완료 / 취소 / 환불)</option>
+                <option value="amount">금액대 (3만원대 / 5만원대 / 10만원 이상)</option>
+              </select>
+              {searchCat === 'order_no' || searchCat === 'customer_id' ? (
+                <>
+                  <input
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    placeholder={searchCat === 'order_no' ? '주문번호' : '고객ID'}
+                    style={{ flex: 1, minWidth: 160, maxWidth: 360, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 12, padding: '8px 10px', outline: 'none' }}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-bl"
+                    onClick={() => {
+                      if (!searchCat || !searchText.trim()) return
+                      setAppliedSearch({ t: searchCat, v: searchText.trim() })
+                    }}
+                  >
+                    🔍 검색
+                  </button>
+                </>
+              ) : null}
+              {searchCat === 'payment' ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {(['카드', '무통장', '토스트페이'] as const).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      className="btn"
+                      onClick={() => setSearchPayPick(p)}
+                      style={{
+                        border: searchPayPick === p ? '1px solid var(--gold)' : '1px solid var(--border)',
+                        color: searchPayPick === p ? 'var(--gold)' : 'var(--text2)',
+                        background: searchPayPick === p ? 'rgba(201,168,76,.12)' : 'var(--bg3)',
+                        fontSize: 11,
+                      }}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {searchCat === 'status' ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {['주문확인', '발송준비', '배송중', '배송완료', '취소', '환불'].map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      className="btn"
+                      onClick={() => setSearchStatusPick(s)}
+                      style={{
+                        border: searchStatusPick === s ? '1px solid var(--gold)' : '1px solid var(--border)',
+                        color: searchStatusPick === s ? 'var(--gold)' : 'var(--text2)',
+                        background: searchStatusPick === s ? 'rgba(201,168,76,.12)' : 'var(--bg3)',
+                        fontSize: 11,
+                      }}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              {searchCat === 'amount' ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {(['3만원대', '5만원대', '10만 이상'] as const).map((a) => (
+                    <button
+                      key={a}
+                      type="button"
+                      className="btn"
+                      onClick={() => setSearchAmountPick(a)}
+                      style={{
+                        border: searchAmountPick === a ? '1px solid var(--gold)' : '1px solid var(--border)',
+                        color: searchAmountPick === a ? 'var(--gold)' : 'var(--text2)',
+                        background: searchAmountPick === a ? 'rgba(201,168,76,.12)' : 'var(--bg3)',
+                        fontSize: 11,
+                      }}
+                    >
+                      {a}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              <button
+                type="button"
+                className="btn btn-gr"
+                onClick={() => {
+                  if (!searchCat) return
+                  if (searchCat === 'order_no' || searchCat === 'customer_id') {
+                    if (!searchText.trim()) return
+                    setAppliedSearch({ t: searchCat, v: searchText.trim() })
+                    return
+                  }
+                  if (searchCat === 'payment') {
+                    if (!searchPayPick) return
+                    setAppliedSearch({ t: 'payment', v: searchPayPick })
+                    return
+                  }
+                  if (searchCat === 'status') {
+                    if (!searchStatusPick) return
+                    setAppliedSearch({ t: 'status', v: searchStatusPick })
+                    return
+                  }
+                  if (searchCat === 'amount') {
+                    if (!searchAmountPick) return
+                    setAppliedSearch({ t: 'amount', v: searchAmountPick })
+                  }
+                }}
+              >
+                검색
+              </button>
+              <button
+                type="button"
+                className="btn btn-gy"
+                onClick={() => {
+                  setSearchCat('')
+                  setSearchText('')
+                  setSearchPayPick('')
+                  setSearchStatusPick('')
+                  setSearchAmountPick('')
+                  setAppliedSearch({ t: 'none' })
+                }}
+              >
+                초기화
+              </button>
+            </div>
           </div>
         </div>
         <div style={{ padding: '10px 14px 14px', display: 'flex', flexWrap: 'wrap', gap: 8, borderBottom: '1px solid var(--border)' }}>
@@ -467,7 +628,7 @@ export default function AdminOrdersPage() {
                 background: tab === t ? 'rgba(201,168,76,.12)' : 'var(--bg3)',
               }}
             >
-              {t === '배송완료' ? '발송완료' : t}
+              {t}
             </button>
           ))}
         </div>
