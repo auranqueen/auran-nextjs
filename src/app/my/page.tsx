@@ -22,6 +22,7 @@ export default function MyPage() {
   const [chargeBalance, setChargeBalance] = useState(0)
   const [pointHistory, setPointHistory] = useState<any[]>([])
   const [expiringPoint, setExpiringPoint] = useState(0)
+  const [friendFeed, setFriendFeed] = useState<any[]>([])
   const [orders, setOrders] = useState<any[]>([])
   const [coupons, setCoupons] = useState<any[]>([])
   const [refills, setRefills] = useState<any[]>([])
@@ -112,6 +113,26 @@ export default function MyPage() {
             if (ord) setOrders(ord)
           })
         supabase
+          .from('friend_activities')
+          .select('*')
+          .eq('user_id', data.user.id)
+          .limit(3)
+          .then(({ data: activities, error: activitiesError }) => {
+            if (!activitiesError && Array.isArray(activities) && activities.length > 0) {
+              setFriendFeed(activities)
+              return
+            }
+            supabase
+              .from('friendships')
+              .select('*')
+              .eq('user_id', data.user.id)
+              .limit(3)
+              .then(({ data: friendships, error: friendshipsError }) => {
+                if (!friendshipsError && Array.isArray(friendships)) setFriendFeed(friendships)
+                else setFriendFeed([])
+              })
+          })
+        supabase
           .from('orders')
           .select('id, items, status, tracking_no, courier, ordered_at, delivered_at')
           .eq('customer_id', data.user.id)
@@ -178,6 +199,7 @@ export default function MyPage() {
         setChargeBalance(0)
         setPointHistory([])
         setExpiringPoint(0)
+        setFriendFeed([])
         setRecentOrdersForRefill([])
       }
     })
@@ -680,25 +702,40 @@ export default function MyPage() {
           <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>👥 일촌들의 추천</span>
           <span onClick={() => router.push('/myworld')} style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>MY WORLD ›</span>
         </div>
-        {/* TODO: friend_activities 테이블 연동 */}
-        <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '12px 14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>🌺</div>
-            <div style={{ flex: 1, fontSize: '11px', fontWeight: 400 }}>소미님</div>
-            <span style={{ fontSize: '9px', color: TEXT_DIM }}>방금</span>
-          </div>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '8px' }}>
-            <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>🧴</div>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, flex: 1 }}>
-              &ldquo;MESS CREAM 3번째 재구매! 건성 피부에 진짜 최고 💧&rdquo;
+        {friendFeed.length > 0 ? (
+          <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '12px 14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>🌺</div>
+              <div style={{ flex: 1, fontSize: '11px', fontWeight: 400 }}>{String(friendFeed[0]?.friend_name || friendFeed[0]?.name || '일촌')}</div>
+              <span style={{ fontSize: '9px', color: TEXT_DIM }}>방금</span>
+            </div>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '8px' }}>
+              <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px' }}>🧴</div>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, flex: 1 }}>
+                {String(friendFeed[0]?.message || friendFeed[0]?.content || '일촌 추천이 도착했어요 💜')}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '6px' }}>
+              <div style={{ flex: 1, padding: '6px 0', background: 'rgba(255,100,100,0.1)', border: '1px solid rgba(255,100,100,0.2)', borderRadius: '8px', fontSize: '10px', color: 'rgba(255,120,120,0.8)', textAlign: 'center', cursor: 'pointer' }}>❤️ 공감</div>
+              <div onClick={() => router.push('/products')} style={{ flex: 1, padding: '6px 0', background: 'rgba(201,169,110,0.1)', border: '1px solid rgba(201,169,110,0.25)', borderRadius: '8px', fontSize: '10px', color: GOLD, textAlign: 'center', cursor: 'pointer' }}>나도 구매</div>
+              <div style={{ flex: 1, padding: '6px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '8px', fontSize: '10px', color: TEXT_MUTED, textAlign: 'center', cursor: 'pointer' }}>공유</div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <div style={{ flex: 1, padding: '6px 0', background: 'rgba(255,100,100,0.1)', border: '1px solid rgba(255,100,100,0.2)', borderRadius: '8px', fontSize: '10px', color: 'rgba(255,120,120,0.8)', textAlign: 'center', cursor: 'pointer' }}>❤️ 공감 12</div>
-            <div onClick={() => router.push('/products')} style={{ flex: 1, padding: '6px 0', background: 'rgba(201,169,110,0.1)', border: '1px solid rgba(201,169,110,0.25)', borderRadius: '8px', fontSize: '10px', color: GOLD, textAlign: 'center', cursor: 'pointer' }}>나도 구매</div>
-            <div style={{ flex: 1, padding: '6px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '8px', fontSize: '10px', color: TEXT_MUTED, textAlign: 'center', cursor: 'pointer' }}>공유</div>
+        ) : (
+          <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '18px 14px', textAlign: 'center' }}>
+            <div style={{ fontSize: 28, marginBottom: 8 }}>💜</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center' }}>아직 일촌이 없어요</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', lineHeight: 1.7, whiteSpace: 'pre-line', marginTop: 6 }}>
+              {'마이월드에서 일촌을 맺으면\n친구들의 추천이 여기에 떠요 ✨'}
+            </div>
+            <button
+              onClick={() => router.push('/myworld')}
+              style={{ background: 'transparent', border: '1px solid rgba(123,94,167,0.3)', color: '#7B5EA7', borderRadius: 10, padding: '8px 20px', fontSize: 11, marginTop: 12, cursor: 'pointer' }}
+            >
+              마이월드 가기 →
+            </button>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 메뉴 리스트 */}
