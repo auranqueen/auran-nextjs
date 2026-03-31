@@ -163,6 +163,7 @@ export default function MyProfilePage() {
     e.target.value = ''
     if (!file || !authId) return
     setUploading(true)
+    // NOTE: 'avatars' 버킷은 Supabase 대시보드에서 public 설정으로 수동 생성/확인 필요
     const ext = (file.name.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '') || 'jpg'
     const path = `${authId}/${Date.now()}.${ext}`
     const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true, cacheControl: '3600' })
@@ -171,16 +172,17 @@ export default function MyProfilePage() {
       alert(upErr.message)
       return
     }
-    const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path)
-    const url = pub?.publicUrl || ''
-    if (url) {
-      const { error: dbErr } = await supabase.from('profiles').update({ avatar_url: url } as any).eq('auth_id', authId)
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from('avatars').getPublicUrl(path)
+    if (publicUrl) {
+      const { error: dbErr } = await supabase.from('profiles').update({ avatar_url: publicUrl } as any).eq('auth_id', authId)
       if (dbErr) {
         setUploading(false)
         alert(dbErr.message)
         return
       }
-      setAvatarUrl(url)
+      setAvatarUrl(`${publicUrl}?t=${Date.now()}`)
     }
     setUploading(false)
   }
