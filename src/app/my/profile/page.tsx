@@ -37,6 +37,9 @@ export default function MyProfilePage() {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
   const [birthDate, setBirthDate] = useState('')
+  const [birthYear, setBirthYear] = useState('')
+  const [birthMonth, setBirthMonth] = useState('')
+  const [birthDay, setBirthDay] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
 
   const [skinType, setSkinType] = useState('')
@@ -80,6 +83,17 @@ export default function MyProfilePage() {
       setEmail(String(profile?.email ?? user.email ?? ''))
       setPhone(String(profile?.phone ?? ''))
       setBirthDate(String(profile?.birth_date ?? '').slice(0, 10))
+      if (profile?.birth_date) {
+        const bd = String(profile.birth_date).slice(0, 10)
+        const [y, m, d] = bd.split('-')
+        setBirthYear(y || '')
+        setBirthMonth(String(Number(m || '0')) || '')
+        setBirthDay(String(Number(d || '0')) || '')
+      } else {
+        setBirthYear('')
+        setBirthMonth('')
+        setBirthDay('')
+      }
       setAvatarUrl(profile?.avatar_url || '')
       setSkinType(String(profile?.skin_type ?? ''))
       setSkinConcerns(Array.isArray(profile?.skin_concerns) ? (profile?.skin_concerns as string[]) : [])
@@ -114,6 +128,12 @@ export default function MyProfilePage() {
     }
     void run()
   }, [supabase])
+
+  useEffect(() => {
+    if (birthYear && birthMonth && birthDay) {
+      setBirthDate(`${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`)
+    }
+  }, [birthYear, birthMonth, birthDay])
 
   const persist = async () => {
     if (!authId) return
@@ -225,6 +245,13 @@ export default function MyProfilePage() {
       </button>
     </div>
   )
+  const yearOptions = Array.from({ length: 2010 - 1940 + 1 }, (_, i) => String(2010 - i))
+  const monthOptions = Array.from({ length: 12 }, (_, i) => String(i + 1))
+  const selectedYear = Number(birthYear || '0')
+  const selectedMonth = Number(birthMonth || '0')
+  const isLeap = selectedYear > 0 && ((selectedYear % 4 === 0 && selectedYear % 100 !== 0) || selectedYear % 400 === 0)
+  const daysInMonth = selectedMonth === 2 ? (isLeap ? 29 : 28) : [4, 6, 9, 11].includes(selectedMonth) ? 30 : 31
+  const dayOptions = selectedMonth ? Array.from({ length: daysInMonth }, (_, i) => String(i + 1)) : []
 
   return (
     <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", color: '#fff', paddingBottom: 100 }}>
@@ -328,27 +355,64 @@ export default function MyProfilePage() {
             </div>
             <div>
               <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 4 }}>생년월일</div>
-              <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: '#7B5EA7', pointerEvents: 'none' }}>📅</span>
-                <input
-                  type="date"
-                  className="profile-date"
-                  value={birthDate}
-                  onChange={(e) => setBirthDate(e.target.value)}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+                <select
+                  value={birthYear}
+                  onChange={(e) => setBirthYear(e.target.value)}
                   style={{
-                    boxSizing: 'border-box',
                     width: '100%',
                     background: 'rgba(255,255,255,0.08)',
-                    color: '#ffffff',
-                    border: '1px solid #7B5EA7',
-                    colorScheme: 'dark',
-                    padding: '12px 14px 12px 40px',
-                    paddingLeft: 40,
+                    border: birthYear ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.3)',
                     borderRadius: 10,
-                    fontSize: 14,
+                    padding: '12px 10px',
+                    color: '#ffffff',
+                    fontSize: 13,
                     outline: 'none',
                   }}
-                />
+                >
+                  <option value="" style={{ color: '#111' }}>년도</option>
+                  {yearOptions.map((y) => (
+                    <option key={y} value={y} style={{ color: '#111' }}>{y}년</option>
+                  ))}
+                </select>
+                <select
+                  value={birthMonth}
+                  onChange={(e) => setBirthMonth(e.target.value)}
+                  style={{
+                    width: '100%',
+                    background: 'rgba(255,255,255,0.08)',
+                    border: birthMonth ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.3)',
+                    borderRadius: 10,
+                    padding: '12px 10px',
+                    color: '#ffffff',
+                    fontSize: 13,
+                    outline: 'none',
+                  }}
+                >
+                  <option value="" style={{ color: '#111' }}>월</option>
+                  {monthOptions.map((m) => (
+                    <option key={m} value={m} style={{ color: '#111' }}>{m}월</option>
+                  ))}
+                </select>
+                <select
+                  value={birthDay}
+                  onChange={(e) => setBirthDay(e.target.value)}
+                  style={{
+                    width: '100%',
+                    background: 'rgba(255,255,255,0.08)',
+                    border: birthDay ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.3)',
+                    borderRadius: 10,
+                    padding: '12px 10px',
+                    color: '#ffffff',
+                    fontSize: 13,
+                    outline: 'none',
+                  }}
+                >
+                  <option value="" style={{ color: '#111' }}>일</option>
+                  {dayOptions.map((d) => (
+                    <option key={d} value={d} style={{ color: '#111' }}>{d}일</option>
+                  ))}
+                </select>
               </div>
               <div style={{ marginTop: 6, fontSize: 11, color: '#7B5EA7' }}>🎁 생일을 입력하면 생일 쿠폰 + 특별 선물 + 생일 테마가 자동으로 준비돼요</div>
             </div>
