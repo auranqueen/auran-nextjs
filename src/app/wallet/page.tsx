@@ -25,8 +25,6 @@ function WalletPageInner() {
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false)
   const paymentSuccessHandled = useRef(false)
   const { getSettingNum } = useAdminSettings()
-  const toastRate = getSettingNum('toast', 'exchange_rate', 100)
-  const pointMaxUsageRate = getSettingNum('toast', 'point_max_usage_rate', 20)
 
   const fetchProfile = async (authUserId: string) => {
     console.log('authUserId:', authUserId)
@@ -126,23 +124,20 @@ function WalletPageInner() {
           <>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
               <div style={{ background: 'rgba(201,168,76,0.10)', border: '1px solid rgba(201,168,76,0.25)', borderRadius: 14, padding: '14px 14px' }}>
-                <div style={{ fontSize: 10, color: 'rgba(201,168,76,0.65)', marginBottom: 6 }}>보유 포인트</div>
-                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: 'var(--gold)' }}>{(profile.points || 0).toLocaleString()}P</div>
+                <div style={{ fontSize: 10, color: 'rgba(201,168,76,0.65)', marginBottom: 6 }}>보유 토스트</div>
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: 'var(--gold)' }}>{(profile.points || 0).toLocaleString()}T</div>
               </div>
               <div style={{ background: 'rgba(123,94,167,0.10)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 14, padding: '14px 14px' }}>
                 <div style={{ fontSize: 10, color: 'rgba(155,126,200,0.65)', marginBottom: 6 }}>AURAN PAY</div>
                 <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: '#9b7ec8' }}>
-                  {Math.floor((profile.charge_balance || 0) / Math.max(1, toastRate)).toLocaleString()}T
-                </div>
-                <div style={{ fontSize: 10, color: 'rgba(155,126,200,0.65)', marginTop: 4 }}>
-                  ₩{(profile.charge_balance || 0).toLocaleString()}
+                  {(profile.charge_balance || 0).toLocaleString()}A
                 </div>
               </div>
             </div>
             {hasPin === false && (
               <div style={{ marginBottom: 14, padding: 12, background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 12 }}>
                 <p style={{ fontSize: 12, color: 'var(--text)', marginBottom: 8 }}>🔐 충전·정산을 위해 결제 PIN을 설정해주세요.</p>
-                <button onClick={() => router.push('/auth/set-pin')} style={{ padding: '8px 14px', background: '#c9a84c', border: 'none', borderRadius: 8, color: '#0a0a0a', fontWeight: 600, fontSize: 13 }}>PIN 설정하기</button>
+                <button onClick={() => router.push('/auth/set-pin?redirect=/wallet')} style={{ padding: '8px 14px', background: '#c9a84c', border: 'none', borderRadius: 8, color: '#0a0a0a', fontWeight: 600, fontSize: 13 }}>PIN 설정하기</button>
               </div>
             )}
             {hasPin === true && (
@@ -341,7 +336,7 @@ function WalletPageInner() {
               </div>
             )}
             <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: -8 }}>
-              {`✨ 포인트는 결제 시 최대 ${pointMaxUsageRate}%까지 보조 사용 가능`}
+              ✨ 토스트는 제품 결제 시 최대 50%까지 사용 가능해요
             </div>
           </>
         )}

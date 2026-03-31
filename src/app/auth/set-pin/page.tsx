@@ -7,6 +7,7 @@ const GOLD = '#c9a84c'
 
 export default function SetPinPage() {
   const router = useRouter()
+  const redirect = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('redirect') : null
   const [step, setStep] = useState<'first' | 'confirm'>('first')
   const [firstPin, setFirstPin] = useState('')
   const [pin, setPin] = useState('')
@@ -47,9 +48,10 @@ export default function SetPinPage() {
       if (!res.ok) throw new Error(data.error || '저장 실패')
       // 성공 시 바로 이동 (finally 재렌더 전에). 절대 경로 + href로 이동 확실히
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
-      const target = origin ? `${origin}/home` : '/home'
+      const target = redirect || '/home'
+      const to = origin ? `${origin}${target}` : target
       setTimeout(() => {
-        window.location.href = target
+        window.location.href = to
       }, 0)
       return
     } catch (e: any) {
@@ -57,7 +59,7 @@ export default function SetPinPage() {
     } finally {
       setLoading(false)
     }
-  }, [pin, firstPin, router])
+  }, [pin, firstPin, router, redirect])
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', padding: 24 }}>
