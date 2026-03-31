@@ -101,6 +101,8 @@ export default function CustomerHomePage() {
   const [noticeLoading, setNoticeLoading] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [motivationProfile, setMotivationProfile] = useState<any>(null)
+  const [motivationIdx, setMotivationIdx] = useState(0)
+  const [touchStartX, setTouchStartX] = useState<number | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -304,8 +306,20 @@ export default function CustomerHomePage() {
   motivationMsgs.push({ icon: '💜', text: '오늘의 루틴이\n내일의 자신감이에요' })
   motivationMsgs.push({ icon: '✨', text: '빛나는 피부는\n매일의 선택으로 만들어져요' })
   motivationMsgs.push({ icon: '🌙', text: '관리하는 사람은 달라요\n오늘도 함께해요' })
-  const motivationRandomIdx = Math.floor(Math.random() * Math.min(motivationMsgs.length, 3))
-  const motivationMsg = motivationMsgs[motivationRandomIdx] || motivationMsgs[0]
+  const motivationCarousel = motivationMsgs.slice(0, 3)
+  const motivationMsg = motivationCarousel[motivationIdx % Math.max(1, motivationCarousel.length)] || motivationCarousel[0]
+
+  useEffect(() => {
+    if (motivationCarousel.length <= 1) return
+    const id = setInterval(() => {
+      setMotivationIdx((prev) => (prev + 1) % motivationCarousel.length)
+    }, 5000)
+    return () => clearInterval(id)
+  }, [motivationCarousel.length])
+
+  useEffect(() => {
+    if (motivationIdx >= motivationCarousel.length) setMotivationIdx(0)
+  }, [motivationCarousel.length, motivationIdx])
 
   return (
     <div style={{
@@ -769,6 +783,15 @@ export default function CustomerHomePage() {
       </div>
       <div
         onClick={() => router.push('/my/skin-analysis')}
+        onTouchStart={(e) => setTouchStartX(e.touches[0]?.clientX ?? null)}
+        onTouchEnd={(e) => {
+          if (touchStartX === null || motivationCarousel.length <= 1) return
+          const endX = e.changedTouches[0]?.clientX ?? touchStartX
+          const diff = touchStartX - endX
+          if (Math.abs(diff) < 40) return
+          if (diff > 0) setMotivationIdx((prev) => (prev + 1) % motivationCarousel.length)
+          else setMotivationIdx((prev) => (prev - 1 + motivationCarousel.length) % motivationCarousel.length)
+        }}
         style={{
           margin: '12px 16px 0',
           background: 'rgba(123,94,167,0.08)',
@@ -788,6 +811,27 @@ export default function CustomerHomePage() {
           </div>
           <div style={{ fontSize: '10px', color: '#7B5EA7', marginTop: '4px' }}>
             오늘 루틴 체크하기 →
+          </div>
+          <div style={{ marginTop: '6px', display: 'flex', gap: '6px' }}>
+            {motivationCarousel.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setMotivationIdx(i)
+                }}
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  border: 'none',
+                  padding: 0,
+                  cursor: 'pointer',
+                  background: i === (motivationIdx % Math.max(1, motivationCarousel.length)) ? '#7B5EA7' : 'rgba(123,94,167,0.25)',
+                }}
+              />
+            ))}
           </div>
         </div>
       </div>
