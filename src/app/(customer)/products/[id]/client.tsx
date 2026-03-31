@@ -3,6 +3,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import '@toast-ui/editor/dist/toastui-editor-viewer.css'
+import { Editor } from '@toast-ui/react-editor'
+import '@toast-ui/editor/dist/toastui-editor.css'
+import '@toast-ui/editor/dist/i18n/ko-kr'
 
 const GOLD = '#C9A96E'
 
@@ -77,6 +80,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [aiRecommendLine, setAiRecommendLine] = useState<string | null>(null)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
+  const [editingField, setEditingField] = useState<{ field: string; label: string; currentValue: string } | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+  const [editDraft, setEditDraft] = useState('')
+  const [thumbPick, setThumbPick] = useState<File | null>(null)
+  const [thumbPreviewUrl, setThumbPreviewUrl] = useState('')
+  const thumbFileInputRef = useRef<HTMLInputElement | null>(null)
+  const detailEditorRef = useRef<any>(null)
 
   const fetchReviews = async () => {
     setReviewsLoading(true)
@@ -245,6 +256,27 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     })
   }, [supabase])
 
+  useEffect(() => {
+    if (editingField?.field === 'storage_thumb_url') {
+      setThumbPick(null)
+      setThumbPreviewUrl(editingField.currentValue)
+    }
+  }, [editingField])
+
+  useEffect(() => {
+    if (!thumbPick) return
+    const u = URL.createObjectURL(thumbPick)
+    setThumbPreviewUrl(u)
+    return () => { URL.revokeObjectURL(u) }
+  }, [thumbPick])
+
+  useEffect(() => {
+    if (editingField) {
+      setEditDraft(editingField.currentValue)
+      setEditError(null)
+    }
+  }, [editingField])
+
   const brand = product.brands?.name || 'AURAN'
   const name = product.name ?? '제품명'
   const seoDesc = product.description ?? ''
@@ -269,7 +301,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const pointRateRaw = Number((product as any).earn_points_percent ?? (product as any).earn_points ?? 0)
   const pointRate = Number.isFinite(pointRateRaw) && pointRateRaw > 0 ? Math.min(100, Math.max(0, pointRateRaw)) : 1
   const expectedPurchasePts = Math.floor((price * pointRate) / 100)
-  const detailHtml = (product as any).detail_html ? String((product as any).detail_html) : ''
+  const detailHtml = ((product as any).detail_html || (product as any).detail_content) ? String((product as any).detail_html || (product as any).detail_content || '') : ''
   const total = (price * qty).toLocaleString() + '원'
   const shareLinkWithRef =
     typeof window !== 'undefined'
@@ -394,12 +426,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         <div style={{ display: 'flex', gap: 6, padding: '8px 10px', background: '#0a0807', overflowX: 'auto' }}>
           <div
             data-edit-field="storage_thumb_url"
+            onClick={isEditMode ? (e) => { e.stopPropagation(); setEditingField({ field: 'storage_thumb_url', label: '썸네일 이미지 수정', currentValue: thumbUrl }) } : undefined}
             style={{
               position: showEditChrome ? 'relative' : undefined,
               flexShrink: 0,
               outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
               outlineOffset: showEditChrome ? 2 : undefined,
               borderRadius: showEditChrome ? 8 : undefined,
+              cursor: isEditMode ? 'pointer' : undefined,
             }}
           >
             {showEditChrome ? (
@@ -446,12 +480,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         ) : null}
         <div
           data-edit-field="name"
+          onClick={isEditMode ? (e) => { e.stopPropagation(); setEditingField({ field: 'name', label: '상품명 수정', currentValue: name }) } : undefined}
           style={{
             position: showEditChrome ? 'relative' : undefined,
             fontSize: 20, lineHeight: 1.4, marginBottom: 5, color: '#e8e4dc',
             outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
             outlineOffset: showEditChrome ? 2 : undefined,
             borderRadius: showEditChrome ? 4 : undefined,
+            cursor: isEditMode ? 'pointer' : undefined,
           }}
         >
           {showEditChrome ? (
@@ -461,12 +497,14 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         </div>
         <div
           data-edit-field="description"
+          onClick={isEditMode ? (e) => { e.stopPropagation(); setEditingField({ field: 'description', label: '상품 설명 수정', currentValue: seoDesc }) } : undefined}
           style={{
             position: showEditChrome ? 'relative' : undefined,
             fontSize: 12, color: '#888', lineHeight: 1.6, marginBottom: 10,
             outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
             outlineOffset: showEditChrome ? 2 : undefined,
             borderRadius: showEditChrome ? 4 : undefined,
+            cursor: isEditMode ? 'pointer' : undefined,
           }}
         >
           {showEditChrome ? (
@@ -638,9 +676,10 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         </div>
 
         {/* 브랜드 상세이미지 (Toast UI 에디터 작성 내용) */}
-        {detailHtml ? (
+        {detailHtml || showEditChrome ? (
           <div
             data-edit-field="detail_content"
+            onClick={isEditMode ? (e) => { e.stopPropagation(); setEditingField({ field: 'detail_content', label: '상세 본문 수정', currentValue: detailHtml }) } : undefined}
             style={{
               position: showEditChrome ? 'relative' : undefined,
               padding: showEditChrome ? '2px' : undefined,
@@ -648,33 +687,40 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
               outlineOffset: showEditChrome ? 2 : undefined,
               borderRadius: showEditChrome ? 4 : undefined,
+              cursor: isEditMode ? 'pointer' : undefined,
             }}
           >
             {showEditChrome ? (
               <span style={{ position: 'absolute', top: 4, right: 4, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
             ) : null}
-            <div className="toastui-editor-contents" dangerouslySetInnerHTML={{ __html: detailHtml }}
-              style={{ padding: '16px 0', color: '#ccc', marginBottom: 0 }} />
+            {detailHtml ? (
+              <div className="toastui-editor-contents" dangerouslySetInnerHTML={{ __html: detailHtml }}
+                style={{ padding: '16px 0', color: '#ccc', marginBottom: 0 }} />
+            ) : (
+              <div style={{ padding: '16px 0', color: '#666', fontSize: 12, marginBottom: 0 }}>상세 본문이 비어 있어요</div>
+            )}
           </div>
         ) : null}
 
         {/* KEY INGREDIENTS */}
-        {keyIngredientsText ? (
+        {keyIngredientsText || showEditChrome ? (
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, marginBottom: 12 }}>KEY INGREDIENTS</div>
             <div
               data-edit-field="key_ingredients"
+              onClick={isEditMode ? (e) => { e.stopPropagation(); setEditingField({ field: 'key_ingredients', label: '주요 성분 수정', currentValue: String(product.key_ingredients ?? '') }) } : undefined}
               style={{
                 position: showEditChrome ? 'relative' : undefined,
                 fontSize: 13, lineHeight: 1.75, color: '#bbb', whiteSpace: 'pre-wrap', background: '#1a1610', border: '1px solid #252018', borderRadius: 12, padding: '14px 12px',
                 outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
                 outlineOffset: showEditChrome ? 2 : undefined,
+                cursor: isEditMode ? 'pointer' : undefined,
               }}
             >
               {showEditChrome ? (
                 <span style={{ position: 'absolute', top: 8, right: 8, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
               ) : null}
-              {keyIngredientsText}
+              {keyIngredientsText || (showEditChrome ? '주요 성분이 비어 있어요' : '')}
             </div>
           </div>
         ) : null}
@@ -850,6 +896,155 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           </div>
         </div>
       )}
+
+      {editingField !== null ? (
+        <>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100 }} />
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, maxWidth: 430, margin: '0 auto', background: '#1a1610', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, zIndex: 101, maxHeight: '90vh', overflowY: 'auto' }}>
+            {editError ? (
+              <div style={{ color: '#e05050', fontSize: 12, marginBottom: 10 }}>{editError}</div>
+            ) : null}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ fontSize: 15, color: '#e8e4dc' }}>{editingField.label}</div>
+              <button type="button" onClick={() => setEditingField(null)} style={{ fontSize: 20, color: '#666', cursor: 'pointer', background: 'none', border: 'none', padding: 0, lineHeight: 1 }}>✕</button>
+            </div>
+            {editingField.field === 'name' || editingField.field === 'description' || editingField.field === 'key_ingredients' ? (
+              <textarea
+                value={editDraft}
+                onChange={(e) => setEditDraft(e.target.value)}
+                style={{
+                  width: '100%',
+                  minHeight: 100,
+                  background: '#0d0b09',
+                  color: '#e8e4dc',
+                  border: '1px solid #2a2520',
+                  borderRadius: 10,
+                  padding: 10,
+                  fontSize: 13,
+                  fontFamily: 'inherit',
+                  resize: 'vertical' as const,
+                  boxSizing: 'border-box',
+                }}
+              />
+            ) : null}
+            {editingField.field === 'detail_content' ? (
+              <div style={{ width: '100%', minWidth: 0, overflowX: 'hidden' }}>
+                <Editor
+                  key={`detail-edit-${product.id}-${editingField.currentValue.length}`}
+                  ref={detailEditorRef}
+                  initialValue={editingField.currentValue}
+                  initialEditType="wysiwyg"
+                  hideModeSwitch
+                  height="300px"
+                  theme="dark"
+                  language="ko-KR"
+                />
+              </div>
+            ) : null}
+            {editingField.field === 'storage_thumb_url' ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, flexWrap: 'wrap' as const }}>
+                {thumbPreviewUrl ? (
+                  <img src={thumbPreviewUrl} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ width: 44, height: 44, borderRadius: 8, background: '#1e1a14' }} />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={thumbFileInputRef}
+                  onChange={(e) => {
+                    const f = e.target.files?.[0]
+                    if (f) setThumbPick(f)
+                  }}
+                  style={{ fontSize: 12, color: '#aaa', maxWidth: '100%' }}
+                />
+              </div>
+            ) : null}
+            <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+              <button
+                type="button"
+                onClick={() => setEditingField(null)}
+                style={{
+                  flex: 1,
+                  border: '1px solid #444',
+                  background: 'transparent',
+                  color: '#aaa',
+                  padding: 13,
+                  borderRadius: 10,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => {
+                  void (async () => {
+                    if (!editingField) return
+                    setIsSaving(true)
+                    setEditError(null)
+                    try {
+                      let value = ''
+                      if (editingField.field === 'storage_thumb_url') {
+                        const file = thumbPick || thumbFileInputRef.current?.files?.[0]
+                        if (!file) {
+                          setEditError('파일을 선택해주세요')
+                          setIsSaving(false)
+                          return
+                        }
+                        const safeExt = String(file.name.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '') || 'jpg'
+                        const path = `thumb/${product.id}_${Date.now()}.${safeExt}`
+                        const { error: upErr } = await supabase.storage.from('products').upload(path, file, { upsert: true })
+                        if (upErr) {
+                          setEditError(upErr.message || '업로드 실패')
+                          setIsSaving(false)
+                          return
+                        }
+                        const { data: pub } = supabase.storage.from('products').getPublicUrl(path)
+                        value = pub.publicUrl
+                      } else if (editingField.field === 'detail_content') {
+                        const inst = detailEditorRef.current?.getInstance?.()
+                        value = inst?.getHTML?.() || ''
+                      } else {
+                        value = editDraft
+                      }
+                      const { error } = await supabase.from('products').update({ [editingField.field]: value }).eq('id', product.id)
+                      if (error) {
+                        setEditError(error.message || '저장 실패')
+                        setIsSaving(false)
+                        return
+                      }
+                      setEditingField(null)
+                      setIsSaving(false)
+                      router.refresh()
+                    } catch (e: any) {
+                      setEditError(e?.message || '저장 실패')
+                      setIsSaving(false)
+                    }
+                  })()
+                }}
+                style={{
+                  flex: 1,
+                  border: 'none',
+                  background: '#7B5EA7',
+                  color: '#fff',
+                  padding: 13,
+                  borderRadius: 10,
+                  fontSize: 13,
+                  cursor: isSaving ? 'default' : 'pointer',
+                  fontFamily: 'inherit',
+                  opacity: isSaving ? 0.75 : 1,
+                }}
+              >
+                {isSaving ? '저장 중...' : '저장'}
+              </button>
+            </div>
+          </div>
+        </>
+      ) : null}
 
       {isSuperAdmin ? (
         <button
