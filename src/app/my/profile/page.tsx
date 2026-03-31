@@ -54,6 +54,8 @@ export default function MyProfilePage() {
   const [stressLevel, setStressLevel] = useState('')
 
   const [preferredBrands, setPreferredBrands] = useState<string[]>([])
+  const [brands, setBrands] = useState<{ id: string; name: string }[]>([])
+  const [brandsLoading, setBrandsLoading] = useState(true)
 
   const [kakaoNotify, setKakaoNotify] = useState(true)
   const [emailNotify, setEmailNotify] = useState(true)
@@ -101,6 +103,13 @@ export default function MyProfilePage() {
       setNotifySale(profile?.notify_sale !== false)
       setNotifyBirthday(profile?.notify_birthday !== false)
       setSpecialDates(Array.isArray(profile?.special_dates) ? (profile?.special_dates as { label: string; date: string; notify_days: number }[]) : [])
+      const { data: brandData, error: brandError } = await supabase.from('brands').select('id, name').eq('status', 'active').order('name')
+      if (brandData) setBrands(brandData as { id: string; name: string }[])
+      if (brandError) {
+        const { data: fallbackBrandData } = await supabase.from('brands').select('id, name').order('name')
+        if (fallbackBrandData) setBrands(fallbackBrandData as { id: string; name: string }[])
+      }
+      setBrandsLoading(false)
       setLoading(false)
     }
     void run()
@@ -175,21 +184,6 @@ export default function MyProfilePage() {
     }
     setUploading(false)
   }
-
-  const brands = [
-    'CIVASAN',
-    'GERNETIC',
-    'THALAC',
-    'SHOPBELLE',
-    'LA MER',
-    'SK-II',
-    '설화수',
-    '헤라',
-    '후',
-    '이니스프리',
-    '아모레',
-    'LG생활건강',
-  ]
 
   const toggleRow = (label: string, value: boolean, set: (v: boolean) => void) => (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -522,35 +516,32 @@ export default function MyProfilePage() {
 
         <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 12 }}>
           <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: GOLD }}>선호 브랜드</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            {brands.map((b) => {
-              const on = preferredBrands.includes(b)
-              return (
-                <label
-                  key={b}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '8px 10px',
-                    borderRadius: 8,
-                    border: on ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.1)',
-                    background: on ? 'rgba(123,94,167,0.15)' : 'rgba(255,255,255,0.03)',
-                    fontSize: 11,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={on}
-                    onChange={() => setPreferredBrands((p) => (p.includes(b) ? p.filter((v) => v !== b) : [...p, b]))}
-                    style={{ accentColor: '#7B5EA7' }}
-                  />
-                  {b}
-                </label>
-              )
-            })}
-          </div>
+          {brandsLoading ? <div style={{ fontSize: 11, color: TEXT_MUTED }}>브랜드 불러오는 중...</div> : null}
+          {!brandsLoading && !brands.length ? <div style={{ fontSize: 11, color: TEXT_MUTED }}>등록된 브랜드가 없습니다</div> : null}
+          {!!brands.length ? (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {brands.map((brand) => {
+                const on = preferredBrands.includes(brand.name)
+                return (
+                  <div
+                    key={brand.id}
+                    onClick={() => setPreferredBrands((p) => (p.includes(brand.name) ? p.filter((v) => v !== brand.name) : [...p, brand.name]))}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: 8,
+                      border: on ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.1)',
+                      background: on ? 'rgba(123,94,167,0.15)' : 'rgba(255,255,255,0.03)',
+                      color: on ? '#9b7ec8' : 'rgba(255,255,255,0.6)',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {brand.name}
+                  </div>
+                )
+              })}
+            </div>
+          ) : null}
         </section>
 
         <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: '10px 14px 14px', marginBottom: 12 }}>
