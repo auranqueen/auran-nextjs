@@ -84,8 +84,12 @@ export async function POST(req: NextRequest) {
   const linkval = mustEnv('PAYAPP_LINKVAL')
   const feedbackurl = mustEnv('PAYAPP_FEEDBACK_URL')
 
-  const recvphone = (p.phone || '').replaceAll('-', '').trim()
-  if (!recvphone) return NextResponse.json({ ok: false, error: 'missing_phone' }, { status: 400 })
+  const phone =
+    p?.phone ||
+    user?.user_metadata?.phone ||
+    user?.user_metadata?.kakao_account?.phone_number ||
+    '01000000000'
+  const recvphone = String(phone).replaceAll('-', '').trim() || '01000000000'
 
   // Create local intent first (pending)
   const { data: intent, error: ierr } = await supabase
