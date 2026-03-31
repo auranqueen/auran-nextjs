@@ -15,13 +15,22 @@ export default function AdminRevenuePage() {
   const [orders, setOrders] = useState<any[]>([])
   const [userCoupons, setUserCoupons] = useState<any[]>([])
   const [productQuery, setProductQuery] = useState('')
+  const [productSearchDraft, setProductSearchDraft] = useState('')
+  const [dateFromDraft, setDateFromDraft] = useState('')
+  const [dateToDraft, setDateToDraft] = useState('')
+  const [dateFocusFrom, setDateFocusFrom] = useState(false)
+  const [dateFocusTo, setDateFocusTo] = useState(false)
   const [churnOpen, setChurnOpen] = useState(false)
 
   useEffect(() => {
     const t = new Date()
     const first = new Date(t.getFullYear(), t.getMonth(), 1)
-    setFromDate(first.toISOString().slice(0, 10))
-    setToDate(t.toISOString().slice(0, 10))
+    const f = first.toISOString().slice(0, 10)
+    const e = t.toISOString().slice(0, 10)
+    setFromDate(f)
+    setToDate(e)
+    setDateFromDraft(f)
+    setDateToDraft(e)
   }, [])
 
   useEffect(() => {
@@ -305,12 +314,15 @@ export default function AdminRevenuePage() {
               } else if (p === '올해') {
                 setFromDate(`${t.getFullYear()}-01-01`)
                 setToDate(`${t.getFullYear()}-12-31`)
+              } else if (p === '날짜지정') {
+                setDateFromDraft(fromDate)
+                setDateToDraft(toDate)
               }
             }}
             style={{
-              border: period === p ? '1px solid var(--gold)' : '1px solid var(--border)',
-              color: period === p ? 'var(--gold)' : 'var(--text2)',
-              background: period === p ? 'rgba(201,168,76,.12)' : 'var(--bg3)',
+              border: period === p ? '1px solid #7B5EA7' : '1px solid var(--border)',
+              color: period === p ? '#7B5EA7' : 'var(--text2)',
+              background: period === p ? 'rgba(123,94,167,0.14)' : 'var(--bg3)',
             }}
           >
             {p}
@@ -318,20 +330,63 @@ export default function AdminRevenuePage() {
         ))}
       </div>
       {period === '날짜지정' ? (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+          <span style={{ fontSize: 18, lineHeight: 1, color: '#7B5EA7' }} aria-hidden>
+            📅
+          </span>
           <input
             type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-            style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 11, padding: '6px 8px' }}
+            value={dateFromDraft}
+            onChange={(e) => setDateFromDraft(e.target.value)}
+            onFocus={() => setDateFocusFrom(true)}
+            onBlur={() => setDateFocusFrom(false)}
+            style={{
+              background: 'var(--bg3)',
+              border: dateFocusFrom ? '1px solid #A78BFA' : '1px solid #7B5EA7',
+              borderRadius: 8,
+              color: 'var(--text)',
+              fontSize: 12,
+              padding: '8px 12px',
+              outline: 'none',
+              boxShadow: dateFocusFrom ? '0 0 0 2px rgba(123,94,167,0.35)' : 'none',
+            }}
           />
-          <span style={{ fontSize: 11, color: 'var(--text3)' }}>~</span>
+          <span style={{ fontSize: 12, color: 'var(--text3)' }}>~</span>
           <input
             type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-            style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 11, padding: '6px 8px' }}
+            value={dateToDraft}
+            onChange={(e) => setDateToDraft(e.target.value)}
+            onFocus={() => setDateFocusTo(true)}
+            onBlur={() => setDateFocusTo(false)}
+            style={{
+              background: 'var(--bg3)',
+              border: dateFocusTo ? '1px solid #A78BFA' : '1px solid #7B5EA7',
+              borderRadius: 8,
+              color: 'var(--text)',
+              fontSize: 12,
+              padding: '8px 12px',
+              outline: 'none',
+              boxShadow: dateFocusTo ? '0 0 0 2px rgba(123,94,167,0.35)' : 'none',
+            }}
           />
+          <button
+            type="button"
+            className="btn"
+            onClick={() => {
+              setFromDate(dateFromDraft)
+              setToDate(dateToDraft)
+            }}
+            style={{
+              background: '#7B5EA7',
+              color: '#fff',
+              border: '1px solid #7B5EA7',
+              fontWeight: 600,
+              padding: '8px 16px',
+              borderRadius: 8,
+            }}
+          >
+            조회
+          </button>
         </div>
       ) : null}
 
@@ -446,12 +501,20 @@ export default function AdminRevenuePage() {
             <>
               <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
                 <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 8 }}>제품 검색</div>
-                <input
-                  value={productQuery}
-                  onChange={(e) => setProductQuery(e.target.value)}
-                  placeholder="제품명 검색"
-                  style={{ width: '100%', maxWidth: 360, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontSize: 12, padding: '8px 10px', outline: 'none' }}
-                />
+                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                  <input
+                    value={productSearchDraft}
+                    onChange={(e) => setProductSearchDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') setProductQuery(productSearchDraft.trim())
+                    }}
+                    placeholder="제품명 검색"
+                    style={{ flex: '1 1 200px', minWidth: 160, maxWidth: 360, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontSize: 12, padding: '8px 10px', outline: 'none' }}
+                  />
+                  <button type="button" className="btn btn-bl" onClick={() => setProductQuery(productSearchDraft.trim())}>
+                    🔍 검색
+                  </button>
+                </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 8, marginTop: 10 }}>
                   <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: 10 }}>
                     <div style={{ fontSize: 11, color: 'var(--text3)' }}>총 판매량</div>
