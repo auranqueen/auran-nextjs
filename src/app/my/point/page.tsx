@@ -21,13 +21,13 @@ type TransactionRow = {
 export default function MyPointPage() {
   const router = useRouter()
   const supabase = createClient()
-  const [tab, setTab] = useState<'전체' | '적립' | '지출' | '충전내역'>('전체')
+  const [tab, setTab] = useState<'전체' | '들어온 돈' | '나간 돈'>('전체')
   const [point, setPoint] = useState(0)
   const [rows, setRows] = useState<TransactionRow[]>([])
   const [chargeRows, setChargeRows] = useState<any[]>([])
   const [chargeUseRows, setChargeUseRows] = useState<any[]>([])
   const [chargeBalance, setChargeBalance] = useState(0)
-  const [expiring, setExpiring] = useState(0)
+  const [expiringPoints, setExpiringPoints] = useState(0)
 
   useEffect(() => {
     const run = async () => {
@@ -76,7 +76,7 @@ export default function MyPointPage() {
         .eq('user_id', user.id)
         .or('type.eq.expire,description.ilike.%소멸%')
       const expiringAmount = ((expireRows as { amount: number }[] | null) || []).reduce((sum, r) => sum + Math.abs(Number(r.amount || 0)), 0)
-      setExpiring(expiringAmount)
+      setExpiringPoints(expiringAmount)
     }
     run()
   }, [supabase])
@@ -93,13 +93,15 @@ export default function MyPointPage() {
     const chargeSpend = chargeUseRows
       .map((r: any) => ({ icon: '💳', desc: 'AURAN PAY 사용', amountText: `-₩${Math.abs(Number(r.charge_used || 0)).toLocaleString()}`, amountColor: 'rgba(220,80,80,0.8)', created_at: r.created_at }))
 
-    if (tab === '적립') return pointEarn
-    if (tab === '지출') return pointSpend
-    if (tab === '충전내역') {
-      return [...chargeEarn, ...chargeSpend].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    if (tab === '들어온 돈') {
+      return [...pointEarn, ...chargeEarn.map((r: any) => ({ ...r, amountColor: '#6dba6d' }))].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     }
+    if (tab === '나간 돈') return [...pointSpend, ...chargeSpend].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     return [...chargeEarn, ...chargeSpend, ...pointEarn, ...pointSpend].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   }, [rows, chargeRows, chargeUseRows, tab])
+
+  const now = new Date()
+  const isDecember = now.getMonth() === 11
 
   return (
     <div style={{ background: BG, minHeight: '100vh', maxWidth: 390, margin: '0 auto', color: '#fff', paddingBottom: 24 }}>
@@ -133,15 +135,15 @@ export default function MyPointPage() {
           </div>
         </section>
 
-        {expiring > 0 ? (
+        {isDecember && expiringPoints > 0 ? (
           <section style={{ background: 'rgba(123,94,167,0.14)', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 12, padding: '10px 12px', fontSize: 12, color: '#c7b0ea', marginBottom: 10 }}>
-            {expiring.toLocaleString()}T가 12월 31일 소멸 예정이에요
+            {expiringPoints.toLocaleString()}T가 12월 31일 소멸 예정이에요
           </section>
         ) : null}
 
         <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 14 }}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            {(['전체', '적립', '지출', '충전내역'] as const).map((t) => (
+            {(['전체', '들어온 돈', '나간 돈'] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
