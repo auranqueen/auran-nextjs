@@ -45,6 +45,10 @@ export default function MyWorldPage() {
   const [myworldNickname, setMyworldNickname] = useState('')
   const [selectedTheme, setSelectedTheme] = useState('💜 보라빛 드림')
   const [myworldBio, setMyworldBio] = useState('')
+  const [minimiSrc, setMinimiSrc] = useState('')
+  const [minimiProgress, setMinimiProgress] = useState(0)
+  const [minimiForward, setMinimiForward] = useState(true)
+  const [minimiSpeechIndex, setMinimiSpeechIndex] = useState(0)
 
   useEffect(() => {
     if (!toast) return
@@ -55,6 +59,36 @@ export default function MyWorldPage() {
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setMinimiProgress((prev) => {
+        const step = 0.03
+        if (minimiForward) {
+          const next = prev + step
+          if (next >= 1) {
+            setMinimiForward(false)
+            return 1
+          }
+          return next
+        }
+        const next = prev - step
+        if (next <= 0) {
+          setMinimiForward(true)
+          return 0
+        }
+        return next
+      })
+    }, 140)
+    return () => clearInterval(t)
+  }, [minimiForward])
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setMinimiSpeechIndex((p) => p + 1)
+    }, 5000)
+    return () => clearInterval(t)
   }, [])
 
   useEffect(() => {
@@ -166,6 +200,15 @@ export default function MyWorldPage() {
   const latestRoutineDate = routineLogs[0]?.completed_at ? new Date(routineLogs[0].completed_at) : null
   const daysSinceRoutine = latestRoutineDate ? Math.floor((Date.now() - latestRoutineDate.getTime()) / 86400000) : 999
   const todayDone = latestRoutineDate ? latestRoutineDate.toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10) : false
+  const minimiTalkLevel = daysSinceRoutine >= 5 ? 1 : roomLevel >= 4 ? 3 : 2
+  const minimiMentGroups: Record<number, string[]> = {
+    1: ['루틴 해줘요~ 🥺', '낙엽이 쌓여요 🍂', '저 좀 추워요...'],
+    2: ['오늘도 루틴 완료! ✨', '피부 좋아지고 있어요 💜', '같이 빛나요~'],
+    3: ['궁전이 됐어요 👑', '오늘 피부 최고예요 ✨', '어머 손님이다~ 💜'],
+  }
+  const minimiMent = minimiMentGroups[minimiTalkLevel][minimiSpeechIndex % minimiMentGroups[minimiTalkLevel].length]
+  const minimiLeft = 20 + minimiProgress * 290
+  const minimiBottom = 26 + minimiProgress * 10
 
   const moodGroups = [
     { label: '신체/호르몬', items: ['🩸 생리중', '😣 생리전 예민', '😪 수면부족', '🍺 어젯밤 음주', '💊 약 복용중', '🏃 운동후'] },
@@ -490,6 +533,20 @@ export default function MyWorldPage() {
             {roomLevel >= 3 ? <div style={{ position: 'absolute', top: 20, right: 20, fontSize: 24 }}>💡</div> : null}
             {roomLevel >= 4 ? <div style={{ position: 'absolute', bottom: 20, left: 20, fontSize: 28 }}>🌿</div> : null}
             {roomLevel >= 5 ? <div style={{ position: 'absolute', bottom: 20, left: 30, fontSize: 36 }}>🛋️</div> : null}
+            <div style={{ position: 'absolute', left: minimiLeft, bottom: minimiBottom, zIndex: 4 }}>
+              <div style={{ transform: minimiForward ? 'scaleX(1)' : 'scaleX(-1)', transformOrigin: 'center bottom' }}>
+                {minimiSrc ? (
+                  <img src={minimiSrc} alt="minimi" style={{ width: 36, height: 42, objectFit: 'contain', display: 'block' }} />
+                ) : (
+                  <div style={{ width: 36, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
+                    🧍‍♀️
+                  </div>
+                )}
+              </div>
+            </div>
+            <div style={{ position: 'absolute', left: minimiLeft - 30, bottom: minimiBottom + 48, zIndex: 5, minWidth: 96, maxWidth: 140, background: 'rgba(255,255,255,0.92)', color: '#2a2338', borderRadius: 12, padding: '6px 8px', fontSize: 10, lineHeight: 1.35, textAlign: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }}>
+              {minimiMent}
+            </div>
             <div style={{ position: 'absolute', bottom: 10, right: 12, fontSize: 11, color: '#c4a7e7' }}>오늘 피부점수 78 ✨</div>
           </div>
 
