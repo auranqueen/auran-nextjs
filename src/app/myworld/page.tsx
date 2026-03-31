@@ -22,8 +22,8 @@ export default function MyWorldPage() {
   const [activeTab, setActiveTab] = useState<'room' | 'diary' | 'routine' | 'guestbook'>('room')
   const [isPlaying, setIsPlaying] = useState(false)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
-  const [mood, setMood] = useState('😊 좋음')
-  const [skinStatus, setSkinStatus] = useState('💧 촉촉')
+  const [selectedMoods, setSelectedMoods] = useState<string[]>([])
+  const [selectedSkinStatuses, setSelectedSkinStatuses] = useState<string[]>([])
   const [diaryMemo, setDiaryMemo] = useState('')
   const [videoFeedText, setVideoFeedText] = useState('')
   const [mediaFiles, setMediaFiles] = useState<File[]>([])
@@ -167,8 +167,15 @@ export default function MyWorldPage() {
   const daysSinceRoutine = latestRoutineDate ? Math.floor((Date.now() - latestRoutineDate.getTime()) / 86400000) : 999
   const todayDone = latestRoutineDate ? latestRoutineDate.toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10) : false
 
-  const moodOptions = ['😊 좋음', '😐 보통', '😔 별로', '😣 힘듦']
-  const skinOptions = ['💧 촉촉', '🌟 맑음', '😓 번들', '🔴 트러블', '💨 당김']
+  const moodGroups = [
+    { label: '신체/호르몬', items: ['🩸 생리중', '😣 생리전 예민', '😪 수면부족', '🍺 어젯밤 음주', '💊 약 복용중', '🏃 운동후'] },
+    { label: '감정/멘탈', items: ['😤 스트레스MAX', '😢 울었어요', '😊 설레는날', '🎉 특별한날', '😴 너무피곤해', '🧘 마음평온'] },
+    { label: '환경', items: ['☀️ 야외활동많음', '✈️ 여행중', '🏢 에어컨오래씀', '😷 마스크오래씀', '🌫️ 미세먼지심함'] },
+  ]
+  const skinStatusGroups = [
+    { label: '좋은 상태', items: ['✨ 오늘빛남', '💧 촉촉', '🌟 맑음'] },
+    { label: '안좋은 상태', items: ['😤 화장뜸', '🌫️ 칙칙함', '🔵 붓기', '😴 다크서클', '🍎 홍조', '🕳️ 모공넓어짐', '💥 블랙헤드', '🤕 각질', '😓 번들거림', '🔴 트러블', '💨 당김'] },
+  ]
   const morningItems = ['세안', '토너', '세럼', '크림', '선크림']
   const eveningItems = ['클렌징', '세안', '토너', '세럼', '크림']
   const totalRoutine = morningItems.length + eveningItems.length
@@ -218,6 +225,14 @@ export default function MyWorldPage() {
     setMediaPreview((prev) => prev.filter((_, i) => i !== idx))
   }
 
+  const toggleMood = (value: string) => {
+    setSelectedMoods((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]))
+  }
+
+  const toggleSkinStatus = (value: string) => {
+    setSelectedSkinStatuses((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]))
+  }
+
   const onSaveDiary = async () => {
     const nowIso = new Date().toISOString()
     let mediaUrls: string[] = []
@@ -226,7 +241,7 @@ export default function MyWorldPage() {
       try {
         const uploads = await Promise.all(
           mediaFiles.map(async (file, index) => {
-            const path = `diary/${user.id}/${Date.now()}_${index}_${file.name}`
+            const path = `diary/${user.id}/${Date.now()}_${index}`
             const { error } = await supabase.storage.from('skin-diary').upload(path, file, { upsert: true })
             if (error) return ''
             const { data } = supabase.storage.from('skin-diary').getPublicUrl(path)
@@ -244,8 +259,8 @@ export default function MyWorldPage() {
         .from('skin_diary')
         .insert({
           user_id: user.id,
-          mood,
-          skin_status: skinStatus,
+          mood: selectedMoods.join(','),
+          skin_status: selectedSkinStatuses.join(','),
           memo: memoToSave,
           media_urls: mediaUrls,
           is_public: isPublic,
@@ -257,8 +272,8 @@ export default function MyWorldPage() {
         inserted || {
           id: `${Date.now()}`,
           user_id: user.id,
-          mood,
-          skin_status: skinStatus,
+          mood: selectedMoods.join(','),
+          skin_status: selectedSkinStatuses.join(','),
           memo: memoToSave,
           media_urls: mediaUrls,
           is_public: isPublic,
@@ -266,8 +281,8 @@ export default function MyWorldPage() {
         }
       setSkinDiary((prev) => [newEntry, ...prev].slice(0, 7))
     }
-    setMood('😊 좋음')
-    setSkinStatus('💧 촉촉')
+    setSelectedMoods([])
+    setSelectedSkinStatuses([])
     setDiaryMemo('')
     setVideoFeedText('')
     setMediaFiles([])
@@ -369,6 +384,11 @@ export default function MyWorldPage() {
           0% { opacity: 0.2; transform: scale(0.9); }
           50% { opacity: 1; transform: scale(1.1); }
           100% { opacity: 0.2; transform: scale(0.9); }
+        }
+        @keyframes heartPop {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.3); }
+          100% { transform: scale(1); }
         }
       `}</style>
 
@@ -524,9 +544,9 @@ export default function MyWorldPage() {
 
       {activeTab === 'diary' ? (
         <div style={{ margin: '12px 16px 0' }}>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'right', marginBottom: 8 }}>
-            <div>{now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}</div>
-            <div>{now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'right', marginBottom: 8 }}>
+            <div>{now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}</div>
+            <div>{now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
           </div>
           <div style={{ background: 'rgba(123,94,167,0.06)', border: '1px solid rgba(123,94,167,0.18)', borderRadius: 14, padding: 14 }}>
             <input
@@ -566,16 +586,64 @@ export default function MyWorldPage() {
                 style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, padding: 10, color: '#fff', fontSize: 13, marginBottom: 8 }}
               />
             ) : null}
-            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 8 }}>
-              {moodOptions.map((m) => (
-                <button key={m} onClick={() => setMood(m)} style={{ border: mood === m ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.1)', background: mood === m ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.03)', color: '#fff', borderRadius: 8, padding: '6px 8px', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}>{m}</button>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 8 }}>
-              {skinOptions.map((s) => (
-                <button key={s} onClick={() => setSkinStatus(s)} style={{ border: skinStatus === s ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.1)', background: skinStatus === s ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.03)', color: '#fff', borderRadius: 8, padding: '6px 8px', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}>{s}</button>
-              ))}
-            </div>
+            <div style={{ fontSize: 12, color: 'rgba(196,167,231,0.8)', marginBottom: 4 }}>오늘 기분이 어때요? 💜</div>
+            {moodGroups.map((group) => (
+              <div key={group.label} style={{ marginBottom: 6 }}>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginBottom: 6, marginTop: 10 }}>{group.label}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                  {group.items.map((m) => {
+                    const selected = selectedMoods.includes(m)
+                    return (
+                      <button
+                        key={m}
+                        onClick={() => toggleMood(m)}
+                        style={{
+                          fontSize: 11,
+                          padding: '5px 10px',
+                          borderRadius: 20,
+                          border: selected ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.2)',
+                          background: selected ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.03)',
+                          color: selected ? '#c4a7e7' : 'rgba(255,255,255,0.5)',
+                          margin: 3,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {m}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+            <div style={{ fontSize: 12, color: 'rgba(196,167,231,0.8)', marginTop: 8, marginBottom: 4 }}>오늘 피부는 어때요? 🧴</div>
+            {skinStatusGroups.map((group) => (
+              <div key={group.label} style={{ marginBottom: 6 }}>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginBottom: 6, marginTop: 10 }}>{group.label}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+                  {group.items.map((s) => {
+                    const selected = selectedSkinStatuses.includes(s)
+                    return (
+                      <button
+                        key={s}
+                        onClick={() => toggleSkinStatus(s)}
+                        style={{
+                          fontSize: 11,
+                          padding: '5px 10px',
+                          borderRadius: 20,
+                          border: selected ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.2)',
+                          background: selected ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.03)',
+                          color: selected ? '#c4a7e7' : 'rgba(255,255,255,0.5)',
+                          margin: 3,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {s}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
             <textarea value={diaryMemo} onChange={(e) => setDiaryMemo(e.target.value)} placeholder="오늘 피부 한줄 기록..." rows={3} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, padding: 10, color: '#fff', fontSize: 13, marginBottom: 8 }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button
@@ -599,12 +667,13 @@ export default function MyWorldPage() {
                       <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', fontFamily: 'monospace' }}>
                         {new Date(d?.recorded_at || '').toLocaleDateString('ko-KR', {
                           year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
                         })}{' '}
                         {new Date(d?.recorded_at || '').toLocaleTimeString('ko-KR', {
                           hour: '2-digit',
                           minute: '2-digit',
+                          second: '2-digit',
                         })}
                       </div>
                     </div>
@@ -644,11 +713,12 @@ export default function MyWorldPage() {
                   })()
                 ) : null}
                 <div style={{ padding: '0 12px 10px' }}>
-                  <div style={{ fontSize: 12 }}>{d?.mood || ''} · {d?.skin_status || ''}</div>
+                  <div style={{ fontSize: 12 }}>{String(d?.mood || '').split(',').filter(Boolean).join(' ') || ''}</div>
+                  <div style={{ fontSize: 12, marginTop: 2 }}>{String(d?.skin_status || '').split(',').filter(Boolean).join(' ') || ''}</div>
                   <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>{d?.memo || ''}</div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px 12px', fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
-                  <button onClick={() => toggleLike(String(d.id))} style={{ border: 'none', background: 'transparent', color: likedMap[String(d.id)] ? '#ff6b7a' : '#fff', cursor: 'pointer', fontSize: 11, padding: 0 }}>
+                  <button onClick={() => toggleLike(String(d.id))} style={{ border: 'none', background: 'transparent', color: likedMap[String(d.id)] ? '#ff6b7a' : '#fff', cursor: 'pointer', fontSize: 11, padding: 0, animation: likedMap[String(d.id)] ? 'heartPop 0.24s ease-in-out' : 'none' }}>
                     {likedMap[String(d.id)] ? '❤️' : '🤍'} 좋아요 {likeCountMap[String(d.id)] || 0}
                   </button>
                   <button onClick={() => toggleComments(String(d.id))} style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 11, padding: 0 }}>
