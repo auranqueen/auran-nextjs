@@ -100,9 +100,23 @@ export default function CustomerHomePage() {
   const [notices, setNotices] = useState<any[]>([])
   const [noticeLoading, setNoticeLoading] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
+  const [motivationProfile, setMotivationProfile] = useState<any>(null)
 
   useEffect(() => {
     const supabase = createClient()
+    const loadMotivationProfile = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) return
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade')
+        .eq('auth_id', user.id)
+        .single()
+      if (profile) setMotivationProfile(profile)
+    }
+    void loadMotivationProfile()
 
     supabase.from('skin_concerns').select('*').order('sort_order').then(({ data }) => {
       if (data && data.length > 0) setConcerns(data)
@@ -276,6 +290,22 @@ export default function CustomerHomePage() {
   const today = new Date().toLocaleDateString('ko-KR', {
     year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
   })
+  const motivationMsgs: { icon: string; text: string }[] = []
+  if (motivationProfile?.body_status?.includes('갱년기')) motivationMsgs.push({ icon: '💜', text: '갱년기 피부 이길 수 있어요\n오늘 루틴이 방패예요' })
+  if (motivationProfile?.body_status?.includes('임신중')) motivationMsgs.push({ icon: '🤱', text: '소중한 시기, 피부도 함께 지켜요\n순한 성분으로 안전하게' })
+  if (motivationProfile?.skin_concerns?.includes('트러블')) motivationMsgs.push({ icon: '✨', text: '트러블 없는 피부까지\n오늘 루틴 하나가 쌓여요' })
+  if (motivationProfile?.skin_concerns?.includes('탄력')) motivationMsgs.push({ icon: '🌟', text: '10년 전 피부로 돌아가는 중\n오늘도 한 걸음' })
+  if (motivationProfile?.skin_concerns?.includes('색소침착')) motivationMsgs.push({ icon: '☀️', text: '맑고 균일한 피부톤까지\n꾸준함이 답이에요' })
+  if (motivationProfile?.skin_concerns?.includes('주름')) motivationMsgs.push({ icon: '💎', text: '나이보다 어려 보이는 피부\n오늘 루틴이 만들어요' })
+  if (motivationProfile?.stress_level === '높음' || motivationProfile?.stress_level === '매우높음') motivationMsgs.push({ icon: '🧘', text: '스트레스받은 날일수록\n루틴이 피부 지켜줘요' })
+  if (motivationProfile?.exercise_frequency === '매일') motivationMsgs.push({ icon: '💪', text: '운동하는 몸처럼\n피부도 단련되고 있어요' })
+  if (motivationProfile?.skin_type === '건성') motivationMsgs.push({ icon: '💧', text: '건성 피부의 핵심은 수분\n오늘도 촉촉하게' })
+  if (motivationProfile?.skin_type === '지성') motivationMsgs.push({ icon: '🌿', text: '피지 조절의 비결은 꾸준함\n오늘 루틴 빠지지 마요' })
+  motivationMsgs.push({ icon: '💜', text: '오늘의 루틴이\n내일의 자신감이에요' })
+  motivationMsgs.push({ icon: '✨', text: '빛나는 피부는\n매일의 선택으로 만들어져요' })
+  motivationMsgs.push({ icon: '🌙', text: '관리하는 사람은 달라요\n오늘도 함께해요' })
+  const motivationRandomIdx = Math.floor(Math.random() * Math.min(motivationMsgs.length, 3))
+  const motivationMsg = motivationMsgs[motivationRandomIdx] || motivationMsgs[0]
 
   return (
     <div style={{
@@ -736,6 +766,30 @@ export default function CustomerHomePage() {
           position: 'absolute', right: '16px', top: '50%',
           transform: 'translateY(-50%)', fontSize: '56px', opacity: 0.85,
         }}>🌸</div>
+      </div>
+      <div
+        onClick={() => router.push('/my/skin-analysis')}
+        style={{
+          margin: '12px 16px 0',
+          background: 'rgba(123,94,167,0.08)',
+          border: '1px solid rgba(123,94,167,0.2)',
+          borderRadius: '14px',
+          padding: '14px 16px',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}
+      >
+        <span style={{ fontSize: '28px' }}>{motivationMsg.icon}</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, whiteSpace: 'pre-line' }}>
+            {motivationMsg.text}
+          </div>
+          <div style={{ fontSize: '10px', color: '#7B5EA7', marginTop: '4px' }}>
+            오늘 루틴 체크하기 →
+          </div>
+        </div>
       </div>
 
       {/* ── DUCHESS.KR 구분선 ── */}
