@@ -329,7 +329,7 @@ export default function AdminOrdersPage() {
                 background: tab === t ? 'rgba(201,168,76,.12)' : 'var(--bg3)',
               }}
             >
-              {t}
+              {t === '배송완료' ? '발송완료' : t}
             </button>
           ))}
         </div>
@@ -551,7 +551,7 @@ export default function AdminOrdersPage() {
                         ) : null}
                         {o.status === '배송중' ? (
                           <button type="button" className="btn btn-gd" onClick={() => void markDelivered(o.id)}>
-                            ✅ 배송완료
+                            ✅ 발송완료
                           </button>
                         ) : null}
                         <button
