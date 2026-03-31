@@ -47,7 +47,7 @@ export default function MyWishlistPage() {
         setTableMissing(true)
         setRows([])
       } else {
-        setRows((list as WishlistRow[]) || [])
+        setRows((list as unknown as WishlistRow[]) || [])
       }
       setLoading(false)
     }
