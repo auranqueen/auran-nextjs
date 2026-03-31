@@ -21,10 +21,11 @@ type OrderRow = {
   shipped_at?: string | null
   customer_id?: string | null
   admin_order_notes?: string | null
+  customer_memo?: string | null
 }
 
 const SELECT_FULL =
-  'id, order_no, status, total_amount, final_amount, coupon_discount, points_used, payment_method, tracking_no, courier, ordered_at, shipped_at, admin_order_notes, customer_id'
+  'id, order_no, status, total_amount, final_amount, coupon_discount, points_used, payment_method, tracking_no, courier, ordered_at, shipped_at, admin_order_notes, customer_id, customer_memo'
 const SELECT_FALLBACK =
   'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, customer_id'
 
@@ -49,8 +50,13 @@ export default function AdminOrdersPage() {
   const [bulkResult, setBulkResult] = useState<string | null>(null)
   const [bulkBusy, setBulkBusy] = useState(false)
   const [bulkFileKey, setBulkFileKey] = useState(0)
+  const [memoDetailId, setMemoDetailId] = useState<string | null>(null)
+  const [memoDraft, setMemoDraft] = useState('')
+  const [memoSaving, setMemoSaving] = useState(false)
+  const [toastMsg, setToastMsg] = useState('')
 
   const current = useMemo(() => rows.find((r) => r.id === modalId) || null, [modalId, rows])
+  const memoOrder = useMemo(() => rows.find((r) => r.id === memoDetailId) || null, [memoDetailId, rows])
 
   useEffect(() => {
     const run = async () => {
@@ -182,6 +188,7 @@ export default function AdminOrdersPage() {
         )
       )
       setModalId(null)
+      setTab((t) => (t === '주문확인' || t === '발송준비' ? '배송중' : t))
     } finally {
       setModalSaving(false)
     }
@@ -194,6 +201,15 @@ export default function AdminOrdersPage() {
       return
     }
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: '배송완료', delivered_at: new Date().toISOString() } : r)))
+  }
+
+  const moveToPrep = async (id: string) => {
+    const { error } = await supabase.from('orders').update({ status: '발송준비' }).eq('id', id)
+    if (error) {
+      alert(error.message)
+      return
+    }
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: '발송준비' } : r)))
   }
 
   const downloadCsv = () => {
@@ -523,7 +539,12 @@ export default function AdminOrdersPage() {
                     </td>
                     <td>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        {o.status === '주문확인' || o.status === '발송준비' ? (
+                        {o.status === '주문확인' ? (
+                          <button type="button" className="btn btn-bl" onClick={() => void moveToPrep(o.id)}>
+                            📦 발송준비로
+                          </button>
+                        ) : null}
+                        {o.status === '발송준비' ? (
                           <button type="button" className="btn btn-gr" onClick={() => openShipModal(o)}>
                             🚚 발송처리
                           </button>
@@ -533,6 +554,16 @@ export default function AdminOrdersPage() {
                             ✅ 배송완료
                           </button>
                         ) : null}
+                        <button
+                          type="button"
+                          className="btn btn-gy"
+                          onClick={() => {
+                            setMemoDetailId(o.id)
+                            setMemoDraft(String((o as any).admin_order_notes || ''))
+                          }}
+                        >
+                          📋
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -710,6 +741,109 @@ export default function AdminOrdersPage() {
           </div>
         </div>
       )}
+
+      {memoDetailId && memoOrder && (
+        <div
+          onClick={() => setMemoDetailId(null)}
+          style={{ position: 'fixed', inset: 0, zIndex: 105, background: 'rgba(0,0,0,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: 'var(--bg2)', border: '1px solid var(--border2)', borderTop: '2px solid var(--gold)', borderRadius: 14, padding: 26, minWidth: 420, maxWidth: 520, width: '90%', maxHeight: '85vh', overflowY: 'auto' }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>📋 주문 메모</div>
+                <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 3 }} className="mono">
+                  {memoOrder.order_no}
+                </div>
+              </div>
+              <button type="button" onClick={() => setMemoDetailId(null)} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 19, cursor: 'pointer' }}>
+                ×
+              </button>
+            </div>
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>고객 메모</div>
+              <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5, padding: '10px 11px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 7, minHeight: 44 }}>
+                {String((memoOrder as any).customer_memo || '').trim() || '-'}
+              </div>
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>본사 내부 메모</div>
+              <textarea
+                value={memoDraft}
+                onChange={(e) => setMemoDraft(e.target.value)}
+                rows={5}
+                style={{
+                  width: '100%',
+                  background: 'var(--bg3)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 7,
+                  color: 'var(--text)',
+                  fontSize: 11,
+                  padding: '10px 11px',
+                  outline: 'none',
+                  lineHeight: 1.6,
+                  resize: 'vertical',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
+              <button type="button" className="btn btn-gy" onClick={() => setMemoDetailId(null)}>
+                닫기
+              </button>
+              <button
+                type="button"
+                className="btn btn-gr"
+                disabled={memoSaving}
+                style={{ opacity: memoSaving ? 0.7 : 1 }}
+                onClick={() => {
+                  void (async () => {
+                    if (!memoDetailId) return
+                    setMemoSaving(true)
+                    try {
+                      const { error } = await supabase.from('orders').update({ admin_order_notes: memoDraft } as any).eq('id', memoDetailId)
+                      if (error) {
+                        alert(error.message)
+                        return
+                      }
+                      setRows((prev) => prev.map((r) => (r.id === memoDetailId ? { ...r, admin_order_notes: memoDraft } : r)))
+                      setToastMsg('저장됐습니다')
+                      window.setTimeout(() => setToastMsg(''), 2500)
+                    } finally {
+                      setMemoSaving(false)
+                    }
+                  })()
+                }}
+              >
+                {memoSaving ? '저장 중...' : '메모 저장'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toastMsg ? (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 200,
+            padding: '12px 20px',
+            background: 'rgba(201,168,76,0.95)',
+            color: 'var(--bg)',
+            fontSize: 13,
+            fontWeight: 700,
+            borderRadius: 10,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.35)',
+          }}
+        >
+          {toastMsg}
+        </div>
+      ) : null}
     </div>
   )
 }
