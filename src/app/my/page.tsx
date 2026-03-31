@@ -110,6 +110,62 @@ export default function MyPage() {
           .then(({ data: ord }) => {
             if (ord) setOrders(ord)
           })
+        supabase
+          .from('orders')
+          .select('id, items, delivered_at')
+          .eq('customer_id', data.user.id)
+          .eq('status', '배송완료')
+          .order('delivered_at', { ascending: false })
+          .limit(5)
+          .then(async ({ data: deliveredOrders }) => {
+            const rows = deliveredOrders || []
+            const parsed: { order_id: string; product_id: string; delivered_at: string; fallback_name: string }[] = []
+            const uniqueIds = new Set<string>()
+            rows.forEach((o: any) => {
+              const items = Array.isArray(o.items) ? o.items : []
+              items.forEach((it: any) => {
+                const pid = String(it?.product_id || it?.id || it?.productId || '').trim()
+                if (!pid) return
+                parsed.push({
+                  order_id: String(o.id),
+                  product_id: pid,
+                  delivered_at: String(o.delivered_at || ''),
+                  fallback_name: String(it?.product_name || it?.name || '제품'),
+                })
+                uniqueIds.add(pid)
+              })
+            })
+            if (parsed.length === 0) {
+              setRefills([])
+              return
+            }
+            const ids = Array.from(uniqueIds)
+            const { data: productRows } = await supabase
+              .from('products')
+              .select('id, name, avg_usage_days')
+              .in('id', ids)
+            const { data: trackingRows } = await supabase
+              .from('product_usage_tracking')
+              .select('product_id, order_id, started_at, avg_usage_days')
+              .eq('user_id', data.user.id)
+              .in('product_id', ids)
+            const productMap = new Map((productRows || []).map((p: any) => [String(p.id), p]))
+            const trackingMap = new Map((trackingRows || []).map((t: any) => [`${String(t.order_id)}:${String(t.product_id)}`, t]))
+            const merged = parsed.map((row) => {
+              const product = productMap.get(row.product_id)
+              const tracking = trackingMap.get(`${row.order_id}:${row.product_id}`)
+              const avgDays = Number(tracking?.avg_usage_days || product?.avg_usage_days || 60)
+              return {
+                order_id: row.order_id,
+                product_id: row.product_id,
+                name: String(product?.name || row.fallback_name || '제품'),
+                avg_usage_days: avgDays > 0 ? avgDays : 60,
+                started_at: tracking?.started_at ? String(tracking.started_at) : '',
+                delivered_at: row.delivered_at,
+              }
+            })
+            setRefills(merged)
+          })
       } else {
         setOrders([])
         setGrade('PETAL')
@@ -125,10 +181,6 @@ export default function MyPage() {
     // TODO: coupons 테이블에서 사용 가능한 쿠폰 조회
     supabase.from('user_coupons').select('*, coupons(*)').eq('is_used', false).then(({ data }) => {
       if (data) setCoupons(data)
-    })
-    // TODO: refill_alerts 테이블
-    supabase.from('refill_alerts').select('*, products(*)').then(({ data }) => {
-      if (data) setRefills(data)
     })
     // TODO: user_daily_tracker 테이블
   }, [])
@@ -337,29 +389,92 @@ export default function MyPage() {
       ) : null}
 
       {/* 소진 알림 */}
-      {(refills.length > 0 || true) && (
+      {refills.length > 0 && (
         <div style={{ margin: '12px 16px 0', background: 'rgba(220,100,40,0.08)', border: '1px solid rgba(220,120,60,0.2)', borderRadius: '16px', padding: '14px 16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px' }}>
             <span style={{ fontSize: '11px', fontWeight: 400, color: 'rgba(220,150,80,0.9)' }}>🔔 이 제품들 곧 떨어져요!</span>
             <span style={{ fontSize: '10px', color: 'rgba(201,169,110,0.7)', cursor: 'pointer' }}>자동알림 설정 ›</span>
           </div>
-          {/* TODO: refill_alerts 테이블에서 user_id 기준 조회 */}
-          {[
-            { icon: '🧴', name: 'CIVASAN MESS CREAM', pct: 20 },
-            { icon: '🌿', name: 'GERNETIC 바이오 세럼', pct: 35 },
-          ].map((item, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: i === 0 ? '8px' : 0 }}>
-              <span style={{ fontSize: '22px' }}>{item.icon}</span>
+          {refills.map((item, i) => (
+            <div key={`${item.order_id}-${item.product_id}`} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: i < refills.length - 1 ? '10px' : 0 }}>
+              <span style={{ fontSize: '22px' }}>🧴</span>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: '12px', fontWeight: 400, marginBottom: '3px' }}>{item.name}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
-                    <div style={{ height: '100%', width: `${item.pct}%`, background: i === 0 ? 'linear-gradient(90deg,#E07030,#C05020)' : 'linear-gradient(90deg,#E0A030,#C08020)', borderRadius: '2px' }} />
+                {!item.started_at ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>배송완료</span>
+                    <button
+                      onClick={async () => {
+                        if (!user?.id) return
+                        const startedAt = new Date().toISOString()
+                        await supabase.from('product_usage_tracking').insert({
+                          user_id: user.id,
+                          product_id: item.product_id,
+                          order_id: item.order_id,
+                          started_at: startedAt,
+                          avg_usage_days: item.avg_usage_days,
+                        })
+                        setRefills((prev) => prev.map((r) => (r.order_id === item.order_id && r.product_id === item.product_id ? { ...r, started_at: startedAt } : r)))
+                      }}
+                      style={{ padding: '5px 10px', background: 'rgba(123,94,167,0.16)', border: '1px solid rgba(123,94,167,0.35)', borderRadius: '8px', fontSize: '10px', color: '#b79ce8', cursor: 'pointer' }}
+                    >
+                      사용 시작 🧴
+                    </button>
                   </div>
-                  <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{item.pct}% 남음</span>
-                </div>
+                ) : (
+                  <div>
+                    {(() => {
+                      const start = new Date(item.started_at)
+                      const now = new Date()
+                      const elapsed = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+                      const pct = Math.min(Math.round((elapsed / Math.max(1, Number(item.avg_usage_days || 60))) * 100), 100)
+                      const remaining = Math.max(Number(item.avg_usage_days || 60) - elapsed, 0)
+                      const barColor = pct < 50 ? '#7B5EA7' : pct < 80 ? '#C9A96E' : pct < 100 ? '#E07830' : '#C9A96E'
+                      return (
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
+                              <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: '2px' }} />
+                            </div>
+                            <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{pct}%</span>
+                          </div>
+                          {pct < 50 ? <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>D-{remaining}일 남았어요</div> : null}
+                          {pct >= 50 && pct < 80 ? <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 4 }}>절반 넘게 사용하셨어요</div> : null}
+                          {pct >= 50 && pct < 80 ? <div style={{ fontSize: 10, color: 'rgba(201,169,110,0.9)', marginTop: 2 }}>슬슬 다음 {item.name} 준비할 때예요 💜</div> : null}
+                          {pct >= 80 && pct < 100 ? <div style={{ fontSize: 11, color: '#E07830', marginTop: 4 }}>거의 다 쓰셨어요! D-{remaining}일</div> : null}
+                          {pct >= 80 && pct < 100 ? <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>오늘 주문하면 딱 맞게 도착해요</div> : null}
+                          {pct >= 100 ? <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 4 }}>다 쓰셨나요? 피부가 기다리고 있어요 🧴</div> : null}
+                        </div>
+                      )
+                    })()}
+                  </div>
+                )}
               </div>
-              <div onClick={() => router.push('/products?brand=CIVASAN')} style={{ padding: '5px 10px', background: 'rgba(220,150,60,0.15)', border: '1px solid rgba(220,150,60,0.3)', borderRadius: '8px', fontSize: '10px', color: '#E09040', cursor: 'pointer' }}>재구매</div>
+              {item.started_at ? (
+                <div
+                  onClick={() => router.push(`/products/${item.product_id}`)}
+                  style={{
+                    padding: '5px 10px',
+                    background: 'rgba(220,150,60,0.15)',
+                    border:
+                      (() => {
+                        const start = new Date(item.started_at)
+                        const now = new Date()
+                        const elapsed = Math.floor((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))
+                        const pct = Math.min(Math.round((elapsed / Math.max(1, Number(item.avg_usage_days || 60))) * 100), 100)
+                        if (pct >= 100) return '1px solid #C9A96E'
+                        if (pct >= 80) return '1px solid #E07830'
+                        return '1px solid rgba(220,150,60,0.3)'
+                      })(),
+                    borderRadius: '8px',
+                    fontSize: '10px',
+                    color: '#E09040',
+                    cursor: 'pointer',
+                  }}
+                >
+                  재구매
+                </div>
+              ) : null}
             </div>
           ))}
         </div>

@@ -109,6 +109,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
 
   const [retailPrice, setRetailPrice] = useState('')
   const [salePrice, setSalePrice] = useState('')
+  const [avgUsageDays, setAvgUsageDays] = useState('')
   const [qtyUi, setQtyUi] = useState<QtyUi>('unlimited')
   const [stockInput, setStockInput] = useState('0')
   const [timesaleStart, setTimesaleStart] = useState('')
@@ -194,6 +195,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
 
       setRetailPrice(String(p.retail_price ?? ''))
       setSalePrice(p.sale_price != null && p.sale_price !== '' ? String(p.sale_price) : '')
+      setAvgUsageDays(p.avg_usage_days != null && p.avg_usage_days !== '' ? String(p.avg_usage_days) : '')
 
       const ts = !!p.is_timesale
       setTimesaleStart(
@@ -391,6 +393,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       earn_points: earnPoints,
       earn_points_percent: earnPointsPercent,
       share_points: sharePts,
+      avg_usage_days: avgUsageDays.trim() === '' ? null : Math.max(1, Math.min(365, Math.floor(Number(avgUsageDays) || 0))),
       review_points_text: rText,
       review_points_photo: rPhoto,
       review_points_video: rVideo,
@@ -434,6 +437,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
           status: 'pending' as const,
           stock: 0,
           retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)),
+          avg_usage_days: avgUsageDays.trim() === '' ? null : Math.max(1, Math.min(365, Math.floor(Number(avgUsageDays) || 0))),
           thumb_img: null,
           is_flash_sale: isFlashSaleState,
           created_at: new Date().toISOString(),
@@ -718,6 +722,18 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
             <input
               value={salePrice}
               onChange={e => setSalePrice(e.target.value.replace(/[^0-9.]/g, ''))}
+              style={inputStyle}
+            />
+          </label>
+          <label style={{ display: 'grid', gap: 6 }}>
+            <span style={labelStyle}>평균 소진 기간 (일)</span>
+            <input
+              type="number"
+              min={1}
+              max={365}
+              placeholder="60"
+              value={avgUsageDays}
+              onChange={e => setAvgUsageDays(e.target.value.replace(/[^0-9]/g, ''))}
               style={inputStyle}
             />
           </label>
