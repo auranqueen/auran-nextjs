@@ -68,6 +68,36 @@ export default function AdminOrdersPage() {
   const [searchAmountPick, setSearchAmountPick] = useState('')
   const [appliedSearch, setAppliedSearch] = useState<{ t: string; v?: string }>({ t: 'none' })
   const [historyCustomerId, setHistoryCustomerId] = useState<string | null>(null)
+  const [printOpen, setPrintOpen] = useState(false)
+  const [printPreviewMode, setPrintPreviewMode] = useState(false)
+  const [printPeriodTab, setPrintPeriodTab] = useState<'오늘' | '이번주' | '이번달' | '연도별' | '날짜지정'>('이번달')
+  const [printYear, setPrintYear] = useState(2026)
+  const [printDf, setPrintDf] = useState('')
+  const [printDt, setPrintDt] = useState('')
+  const [printScope, setPrintScope] = useState<'tab' | 'all' | 'pick'>('tab')
+  const [printPick, setPrintPick] = useState<Record<string, boolean>>({
+    주문확인: true,
+    발송준비: true,
+    배송중: true,
+    배송완료: true,
+    취소: true,
+    환불: true,
+  })
+  const [printCol, setPrintCol] = useState({
+    order_no: true,
+    customer: true,
+    status: true,
+    pay: true,
+    total: true,
+    coupon: true,
+    toast: true,
+    final: true,
+    tracking: true,
+    ordered: true,
+    adminMemo: false,
+    customerMemo: false,
+  })
+  const [printIncludeStats, setPrintIncludeStats] = useState(true)
 
   const current = useMemo(() => rows.find((r) => r.id === modalId) || null, [modalId, rows])
   const memoOrder = useMemo(() => rows.find((r) => r.id === memoDetailId) || null, [memoDetailId, rows])
@@ -209,6 +239,56 @@ export default function AdminOrdersPage() {
     const cid = String(r.customer_id ?? '')
     return cid ? cid.slice(0, 8) : '—'
   }, [historyCustomerId, rows])
+
+  const printRows = useMemo(() => {
+    let list = rows || []
+    if (printDf) {
+      const t0 = new Date(printDf + 'T00:00:00').getTime()
+      list = list.filter((r) => r.ordered_at && new Date(r.ordered_at).getTime() >= t0)
+    }
+    if (printDt) {
+      const t1 = new Date(printDt + 'T23:59:59.999').getTime()
+      list = list.filter((r) => r.ordered_at && new Date(r.ordered_at).getTime() <= t1)
+    }
+    if (printScope === 'tab') {
+      if (tab === '전체') {
+        /* no-op */
+      } else if (tab === '취소/환불') {
+        list = list.filter((r) => r.status === '취소' || r.status === '환불' || r.status === '취소/환불')
+      } else {
+        list = list.filter((r) => r.status === tab)
+      }
+    } else if (printScope === 'pick') {
+      list = list.filter((r) => {
+        const st = r.status
+        if (st === '취소/환불') return printPick['취소'] || printPick['환불']
+        return !!printPick[st]
+      })
+    }
+    return list
+      .slice()
+      .sort((a, b) => {
+        const ta = a.ordered_at ? new Date(a.ordered_at).getTime() : 0
+        const tb = b.ordered_at ? new Date(b.ordered_at).getTime() : 0
+        return tb - ta
+      })
+  }, [rows, printDf, printDt, printScope, printPick, tab])
+
+  const printStats = useMemo(() => {
+    let n = 0
+    let sumTotal = 0
+    let sumCoupon = 0
+    let sumToast = 0
+    let sumFinal = 0
+    for (const r of printRows) {
+      n++
+      sumTotal += Number(r.total_amount ?? 0) || 0
+      sumCoupon += Number(r.coupon_discount ?? 0) || 0
+      sumToast += Number((r as any).points_used ?? r.point_used ?? 0) || 0
+      sumFinal += Number(r.final_amount ?? 0) || 0
+    }
+    return { n, sumTotal, sumCoupon, sumToast, sumFinal }
+  }, [printRows])
 
   const openShipModal = (o: OrderRow, bulkTargetIds?: string[] | null) => {
     setShipBulkIds(bulkTargetIds && bulkTargetIds.length ? bulkTargetIds : null)
@@ -394,6 +474,66 @@ export default function AdminOrdersPage() {
     URL.revokeObjectURL(a.href)
   }
 
+  const downloadPrintCsv = () => {
+    const esc = (s: string) => `"${String(s).replace(/"/g, '""')}"`
+    const hdrs: string[] = []
+    if (printCol.order_no) hdrs.push('주문번호')
+    if (printCol.customer) hdrs.push('고객명')
+    if (printCol.status) hdrs.push('주문상태')
+    if (printCol.pay) hdrs.push('결제수단')
+    if (printCol.total) hdrs.push('정가')
+    if (printCol.coupon) hdrs.push('쿠폰할인')
+    if (printCol.toast) hdrs.push('토스트사용')
+    if (printCol.final) hdrs.push('실결제')
+    if (printCol.tracking) hdrs.push('운송장번호')
+    if (printCol.ordered) hdrs.push('주문일')
+    if (printCol.adminMemo) hdrs.push('본사메모')
+    if (printCol.customerMemo) hdrs.push('고객메모')
+    const lines = [
+      hdrs.join(','),
+      ...printRows.map((r) => {
+        const prT = (r as any).profiles
+        const pTop = Array.isArray(prT) ? prT[0] : prT
+        const uEmb = (r as any).users
+        const uOne = Array.isArray(uEmb) ? uEmb[0] : uEmb
+        const prN = uOne?.profiles
+        const prof = (Array.isArray(prN) ? prN[0] : prN) || pTop
+        const em0 = String(prof?.email ?? '').trim()
+        const custDisp =
+          String(prof?.username ?? '').trim() ||
+          (em0.indexOf('@') > 0 ? em0.slice(0, em0.indexOf('@')) : em0) ||
+          (r.customer_id ? String(r.customer_id).slice(0, 8) : '—')
+        const pay = String((r as any).payment_method ?? '').trim() || '-'
+        const ta = Number(r.total_amount ?? 0) || 0
+        const cd = Number(r.coupon_discount ?? 0) || 0
+        const pt = Number((r as any).points_used ?? r.point_used ?? 0) || 0
+        const fa = Number(r.final_amount ?? 0) || 0
+        const dt = r.ordered_at ? new Date(r.ordered_at).toLocaleString('ko-KR') : ''
+        const track = `${r.courier || ''} ${r.tracking_no || ''}`.trim()
+        const cells: string[] = []
+        if (printCol.order_no) cells.push(esc(r.order_no))
+        if (printCol.customer) cells.push(esc(custDisp))
+        if (printCol.status) cells.push(esc(r.status))
+        if (printCol.pay) cells.push(esc(pay))
+        if (printCol.total) cells.push(String(ta))
+        if (printCol.coupon) cells.push(String(cd))
+        if (printCol.toast) cells.push(String(pt))
+        if (printCol.final) cells.push(String(fa))
+        if (printCol.tracking) cells.push(esc(track))
+        if (printCol.ordered) cells.push(esc(dt))
+        if (printCol.adminMemo) cells.push(esc(String((r as any).admin_order_notes || '').trim()))
+        if (printCol.customerMemo) cells.push(esc(String((r as any).customer_memo || '').trim()))
+        return cells.join(',')
+      }),
+    ]
+    const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `orders_print_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
   const applyBulkTracking = async () => {
     if (!bulkPreview.length) return
     setBulkBusy(true)
@@ -455,6 +595,22 @@ export default function AdminOrdersPage() {
           <div className="card-acts">
             <button type="button" className="btn btn-bl" onClick={downloadCsv}>
               ⬇ CSV 다운로드
+            </button>
+            <button
+              type="button"
+              className="btn btn-bl"
+              onClick={() => {
+                setPrintOpen(true)
+                setPrintPreviewMode(false)
+                const t = new Date()
+                const first = new Date(t.getFullYear(), t.getMonth(), 1)
+                setPrintPeriodTab('이번달')
+                setPrintDf(first.toISOString().slice(0, 10))
+                setPrintDt(t.toISOString().slice(0, 10))
+                setPrintYear(t.getFullYear())
+              }}
+            >
+              🖨️ 출력
             </button>
             <button type="button" className="btn btn-bl" onClick={downloadCjCsv}>
               📦 CJ송장 양식 다운
@@ -1444,6 +1600,322 @@ export default function AdminOrdersPage() {
               ))}
             </div>
           </div>
+        </div>
+      ) : null}
+
+      {printOpen ? (
+        <div
+          onClick={() => {
+            setPrintOpen(false)
+            setPrintPreviewMode(false)
+          }}
+          style={{ position: 'fixed', inset: 0, zIndex: 140, background: 'rgba(0,0,0,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+        >
+          <style
+            dangerouslySetInnerHTML={{
+              __html: `@media print { body * { visibility: hidden !important; } #print-area, #print-area * { visibility: visible !important; } #print-area { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; background: #fff !important; color: #000 !important; } .print-hide { display: none !important; } }`,
+            }}
+          />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'var(--bg2)',
+              border: '1px solid var(--border2)',
+              borderTop: '2px solid var(--gold)',
+              borderRadius: 14,
+              padding: 22,
+              minWidth: 360,
+              maxWidth: 560,
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              display: printPreviewMode ? 'none' : 'block',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>🖨️ 출력 설정</div>
+              <button
+                type="button"
+                onClick={() => {
+                  setPrintOpen(false)
+                  setPrintPreviewMode(false)
+                }}
+                style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 20, cursor: 'pointer' }}
+              >
+                ×
+              </button>
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8 }}>기간 선택</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+              {(['오늘', '이번주', '이번달', '연도별', '날짜지정'] as const).map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  className="btn"
+                  onClick={() => {
+                    setPrintPeriodTab(p)
+                    const t = new Date()
+                    if (p === '오늘') {
+                      const s = t.toISOString().slice(0, 10)
+                      setPrintDf(s)
+                      setPrintDt(s)
+                    } else if (p === '이번주') {
+                      const wd = (t.getDay() + 6) % 7
+                      const mon = new Date(t.getFullYear(), t.getMonth(), t.getDate() - wd)
+                      setPrintDf(mon.toISOString().slice(0, 10))
+                      setPrintDt(t.toISOString().slice(0, 10))
+                    } else if (p === '이번달') {
+                      const first = new Date(t.getFullYear(), t.getMonth(), 1)
+                      setPrintDf(first.toISOString().slice(0, 10))
+                      setPrintDt(t.toISOString().slice(0, 10))
+                    } else if (p === '연도별') {
+                      const y = printYear
+                      setPrintDf(`${y}-01-01`)
+                      setPrintDt(`${y}-12-31`)
+                    }
+                  }}
+                  style={{
+                    border: printPeriodTab === p ? '1px solid var(--gold)' : '1px solid var(--border)',
+                    color: printPeriodTab === p ? 'var(--gold)' : 'var(--text2)',
+                    background: printPeriodTab === p ? 'rgba(201,168,76,.12)' : 'var(--bg3)',
+                    fontSize: 11,
+                  }}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+            {printPeriodTab === '연도별' ? (
+              <div style={{ marginBottom: 10 }}>
+                <span style={{ fontSize: 11, color: 'var(--text3)', marginRight: 8 }}>연도</span>
+                <select
+                  value={printYear}
+                  onChange={(e) => {
+                    const y = Number(e.target.value)
+                    setPrintYear(y)
+                    setPrintPeriodTab('연도별')
+                    setPrintDf(`${y}-01-01`)
+                    setPrintDt(`${y}-12-31`)
+                  }}
+                  style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 12, padding: '6px 10px' }}
+                >
+                  <option value={2024}>2024</option>
+                  <option value={2025}>2025</option>
+                  <option value={2026}>2026</option>
+                </select>
+              </div>
+            ) : null}
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <input
+                type="date"
+                value={printDf}
+                onChange={(e) => {
+                  setPrintDf(e.target.value)
+                  setPrintPeriodTab('날짜지정')
+                }}
+                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 11, padding: '6px 8px' }}
+              />
+              <span style={{ fontSize: 11, color: 'var(--text3)' }}>~</span>
+              <input
+                type="date"
+                value={printDt}
+                onChange={(e) => {
+                  setPrintDt(e.target.value)
+                  setPrintPeriodTab('날짜지정')
+                }}
+                style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 11, padding: '6px 8px' }}
+              />
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 6 }}>출력 범위</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+              <label style={{ fontSize: 12, color: 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input type="radio" checked={printScope === 'tab'} onChange={() => setPrintScope('tab')} />
+                현재 탭 기준 ({tab})
+              </label>
+              <label style={{ fontSize: 12, color: 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input type="radio" checked={printScope === 'all'} onChange={() => setPrintScope('all')} />
+                전체 상태
+              </label>
+              <label style={{ fontSize: 12, color: 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <input type="radio" checked={printScope === 'pick'} onChange={() => setPrintScope('pick')} />
+                상태 다중 선택
+              </label>
+              {printScope === 'pick' ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingLeft: 22 }}>
+                  {['주문확인', '발송준비', '배송중', '배송완료', '취소', '환불'].map((st) => (
+                    <label key={st} style={{ fontSize: 11, color: 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <input
+                        type="checkbox"
+                        checked={!!printPick[st]}
+                        onChange={() => setPrintPick((prev) => ({ ...prev, [st]: !prev[st] }))}
+                      />
+                      {st}
+                    </label>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 6 }}>출력 항목</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 12 }}>
+              {(
+                [
+                  ['order_no', '주문번호'],
+                  ['customer', '고객명'],
+                  ['status', '주문상태'],
+                  ['pay', '결제수단'],
+                  ['total', '정가'],
+                  ['coupon', '쿠폰할인'],
+                  ['toast', '토스트사용'],
+                  ['final', '실결제'],
+                  ['tracking', '운송장번호'],
+                  ['ordered', '주문일'],
+                  ['adminMemo', '본사메모'],
+                  ['customerMemo', '고객메모'],
+                ] as [keyof typeof printCol, string][]
+              ).map(([k, lab]) => (
+                <label key={k} style={{ fontSize: 11, color: 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <input
+                    type="checkbox"
+                    checked={printCol[k]}
+                    onChange={() => setPrintCol((prev) => ({ ...prev, [k]: !prev[k] }))}
+                  />
+                  {lab}
+                </label>
+              ))}
+            </div>
+            <label style={{ fontSize: 12, color: 'var(--text2)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
+              <input type="checkbox" checked={printIncludeStats} onChange={(e) => setPrintIncludeStats(e.target.checked)} />
+              합계 통계 포함 (총 N건, 실결제 합계 등)
+            </label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end', paddingTop: 8, borderTop: '1px solid var(--border)' }}>
+              <button type="button" className="btn btn-bl" onClick={() => setPrintPreviewMode(true)}>
+                미리보기
+              </button>
+              <button type="button" className="btn btn-gy" onClick={() => downloadPrintCsv()}>
+                CSV 다운로드
+              </button>
+              <button
+                type="button"
+                className="btn btn-gr"
+                onClick={() => {
+                  setPrintPreviewMode(true)
+                  window.setTimeout(() => window.print(), 400)
+                }}
+              >
+                🖨️ 인쇄
+              </button>
+            </div>
+          </div>
+          {printPreviewMode ? (
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                zIndex: 141,
+                background: 'rgba(0,0,0,.75)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 16,
+                overflow: 'auto',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ width: 'min(900px, 100%)', maxHeight: '92vh', overflow: 'auto' }}>
+                <div id="print-area" style={{ background: '#fff', color: '#000', padding: 24, fontFamily: 'system-ui, sans-serif' }}>
+                  <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: 2, marginBottom: 12 }}>AURAN</div>
+                  <div style={{ fontSize: 12, marginBottom: 4 }}>
+                    출력일시:{' '}
+                    {new Date().toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: 'numeric', minute: '2-digit', hour12: true })}
+                  </div>
+                  <div style={{ fontSize: 12, marginBottom: 4 }}>
+                    조회기간: {printDf || '—'} ~ {printDt || '—'}
+                  </div>
+                  <div style={{ fontSize: 12, marginBottom: 14 }}>총 {printStats.n}건</div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10, color: '#000' }}>
+                    <thead>
+                      <tr>
+                        {printCol.order_no ? <th style={{ border: '1px solid #000', padding: 6, background: '#f5f5f5' }}>주문번호</th> : null}
+                        {printCol.customer ? <th style={{ border: '1px solid #000', padding: 6, background: '#f5f5f5' }}>고객명</th> : null}
+                        {printCol.status ? <th style={{ border: '1px solid #000', padding: 6, background: '#f5f5f5' }}>주문상태</th> : null}
+                        {printCol.pay ? <th style={{ border: '1px solid #000', padding: 6, background: '#f5f5f5' }}>결제수단</th> : null}
+                        {printCol.total ? <th style={{ border: '1px solid #000', padding: 6, background: '#f5f5f5' }}>정가</th> : null}
+                        {printCol.coupon ? <th style={{ border: '1px solid #000', padding: 6, background: '#f5f5f5' }}>쿠폰할인</th> : null}
+                        {printCol.toast ? <th style={{ border: '1px solid #000', padding: 6, background: '#f5f5f5' }}>토스트</th> : null}
+                        {printCol.final ? <th style={{ border: '1px solid #000', padding: 6, background: '#f5f5f5' }}>실결제</th> : null}
+                        {printCol.tracking ? <th style={{ border: '1px solid #000', padding: 6, background: '#f5f5f5' }}>운송장번호</th> : null}
+                        {printCol.ordered ? <th style={{ border: '1px solid #000', padding: 6, background: '#f5f5f5' }}>주문일</th> : null}
+                        {printCol.adminMemo ? <th style={{ border: '1px solid #000', padding: 6, background: '#f5f5f5' }}>본사메모</th> : null}
+                        {printCol.customerMemo ? <th style={{ border: '1px solid #000', padding: 6, background: '#f5f5f5' }}>고객메모</th> : null}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {printRows.map((o) => {
+                        const prT = (o as any).profiles
+                        const pTop = Array.isArray(prT) ? prT[0] : prT
+                        const uEmb = (o as any).users
+                        const uOne = Array.isArray(uEmb) ? uEmb[0] : uEmb
+                        const prN = uOne?.profiles
+                        const prof = (Array.isArray(prN) ? prN[0] : prN) || pTop
+                        const em0 = String(prof?.email ?? '').trim()
+                        const custDisp =
+                          String(prof?.username ?? '').trim() ||
+                          (em0.indexOf('@') > 0 ? em0.slice(0, em0.indexOf('@')) : em0) ||
+                          (o.customer_id ? String(o.customer_id).slice(0, 8) : '—')
+                        const pay = String((o as any).payment_method ?? '').trim() || '-'
+                        const ta = Number(o.total_amount ?? 0) || 0
+                        const cd = Number(o.coupon_discount ?? 0) || 0
+                        const pt = Number((o as any).points_used ?? o.point_used ?? 0) || 0
+                        const fa = Number(o.final_amount ?? 0) || 0
+                        const dt = o.ordered_at ? new Date(o.ordered_at).toLocaleString('ko-KR') : '—'
+                        const track = `${o.courier || ''} ${o.tracking_no || ''}`.trim()
+                        return (
+                          <tr key={o.id}>
+                            {printCol.order_no ? <td style={{ border: '1px solid #000', padding: 5 }}>{o.order_no}</td> : null}
+                            {printCol.customer ? <td style={{ border: '1px solid #000', padding: 5 }}>{custDisp}</td> : null}
+                            {printCol.status ? <td style={{ border: '1px solid #000', padding: 5 }}>{o.status}</td> : null}
+                            {printCol.pay ? <td style={{ border: '1px solid #000', padding: 5 }}>{pay}</td> : null}
+                            {printCol.total ? <td style={{ border: '1px solid #000', padding: 5 }}>₩{ta.toLocaleString()}</td> : null}
+                            {printCol.coupon ? <td style={{ border: '1px solid #000', padding: 5 }}>₩{cd.toLocaleString()}</td> : null}
+                            {printCol.toast ? <td style={{ border: '1px solid #000', padding: 5 }}>{pt.toLocaleString()}T</td> : null}
+                            {printCol.final ? <td style={{ border: '1px solid #000', padding: 5 }}>₩{fa.toLocaleString()}</td> : null}
+                            {printCol.tracking ? <td style={{ border: '1px solid #000', padding: 5 }}>{track || '—'}</td> : null}
+                            {printCol.ordered ? <td style={{ border: '1px solid #000', padding: 5 }}>{dt}</td> : null}
+                            {printCol.adminMemo ? (
+                              <td style={{ border: '1px solid #000', padding: 5, maxWidth: 140, wordBreak: 'break-all' }}>{String((o as any).admin_order_notes || '').trim() || '—'}</td>
+                            ) : null}
+                            {printCol.customerMemo ? (
+                              <td style={{ border: '1px solid #000', padding: 5, maxWidth: 140, wordBreak: 'break-all' }}>{String((o as any).customer_memo || '').trim() || '—'}</td>
+                            ) : null}
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                  {printIncludeStats ? (
+                    <div style={{ marginTop: 16, fontSize: 11, lineHeight: 1.7, borderTop: '1px solid #000', paddingTop: 10 }}>
+                      총 주문 {printStats.n}건 | 정가 합계 ₩{printStats.sumTotal.toLocaleString()} | 쿠폰할인 ₩{printStats.sumCoupon.toLocaleString()} | 토스트 {printStats.sumToast.toLocaleString()}T | 실결제 합계 ₩
+                      {printStats.sumFinal.toLocaleString()}
+                    </div>
+                  ) : null}
+                </div>
+                <div
+                  className="print-hide"
+                  style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 14, justifyContent: 'flex-end', background: 'var(--bg2)', padding: 12, borderRadius: 8 }}
+                >
+                  <button type="button" className="btn btn-gy" onClick={() => setPrintPreviewMode(false)}>
+                    ← 설정으로
+                  </button>
+                  <button type="button" className="btn btn-gr" onClick={() => window.print()}>
+                    🖨️ 인쇄
+                  </button>
+                  <button type="button" className="btn btn-bl" onClick={() => downloadPrintCsv()}>
+                    CSV 다운로드
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
 
