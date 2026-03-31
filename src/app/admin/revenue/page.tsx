@@ -43,7 +43,7 @@ export default function AdminRevenuePage() {
       let data: any[] | null = null
       let r1 = await supabase
         .from('orders')
-        .select('id, order_no, customer_id, status, total_amount, point_used, charge_used, coupon_discount, final_amount, earn_points, items, partner_id, owner_id, partner_commission, owner_commission, ordered_at, shipped_at, delivered_at')
+        .select('id, order_no, customer_id, status, total_amount, point_used, charge_used, coupon_discount, final_amount, earn_points, items, partner_id, owner_id, partner_commission, owner_commission, ordered_at, shipped_at, delivered_at, profiles(grade, email, username, full_name)')
         .gte('ordered_at', `${fromDate}T00:00:00`)
         .lte('ordered_at', `${toDate}T23:59:59.999`)
         .not('status', 'in', '("취소","환불")')
@@ -242,6 +242,8 @@ export default function AdminRevenuePage() {
   const customerSearchResult = useMemo(() => {
     type Row = {
       id: string
+      display: string
+      grade: string
       n: number
       totalAmt: number
       coupon: number
@@ -259,10 +261,17 @@ export default function AdminRevenuePage() {
       const pt = Number(o.point_used ?? 0) || 0
       const fa = Number(o.final_amount ?? 0) || 0
       const t = o.ordered_at ? new Date(o.ordered_at).getTime() : 0
+      const pr = Array.isArray((o as any).profiles) ? (o as any).profiles[0] : (o as any).profiles
+      const un = String(pr?.username ?? '').trim()
+      const em = String(pr?.email ?? '').trim()
+      const display = un || (em.includes('@') ? em.split('@')[0] : em) || cid.slice(0, 8)
+      const grade = String(pr?.grade ?? '').trim()
       let x = agg.get(cid)
       if (!x) {
-        x = { id: cid, n: 0, totalAmt: 0, coupon: 0, toast: 0, final: 0, lastAt: 0, firstAt: t || Number.POSITIVE_INFINITY }
+        x = { id: cid, display, grade, n: 0, totalAmt: 0, coupon: 0, toast: 0, final: 0, lastAt: 0, firstAt: t || Number.POSITIVE_INFINITY }
       }
+      if (!x.display && display) x.display = display
+      if (!x.grade && grade) x.grade = grade
       x.n++
       x.totalAmt += ta
       x.coupon += cd
@@ -293,6 +302,8 @@ export default function AdminRevenuePage() {
     if (customerFilter === 'single') filtered = filtered.filter((r) => r.n === 1)
     if (customerFilter === 'churn90') filtered = filtered.filter((r) => isChurn(r))
     if (customerFilter === 'new30') filtered = filtered.filter((r) => r.firstAt > 0 && now - r.firstAt <= d30)
+    if (customerFilter === 'vip_lumiere_up') filtered = filtered.filter((r) => ['LUMIÈRE', 'REINE', 'NOIR', 'CÉLESTE'].includes(r.grade))
+    if (customerFilter === 'top_noir_celeste') filtered = filtered.filter((r) => ['NOIR', 'CÉLESTE'].includes(r.grade))
     let sorted = filtered.slice()
     if (customerFilter === 'amount_top') sorted.sort((a, b) => b.final - a.final)
     else if (customerFilter === 'order_cnt_top') sorted.sort((a, b) => b.n - a.n || b.final - a.final)
@@ -303,6 +314,8 @@ export default function AdminRevenuePage() {
     else if (customerFilter === 'toast_top') sorted.sort((a, b) => b.toast - a.toast || b.final - a.final)
     else if (customerFilter === 'coupon_top') sorted.sort((a, b) => b.coupon - a.coupon || b.final - a.final)
     else if (customerFilter === 'new30') sorted.sort((a, b) => b.firstAt - a.firstAt)
+    else if (customerFilter === 'vip_lumiere_up') sorted.sort((a, b) => b.final - a.final)
+    else if (customerFilter === 'top_noir_celeste') sorted.sort((a, b) => b.final - a.final)
     const top = sorted.slice(0, 20)
     const cnt = top.length
     const sumFinal = top.reduce((s, r) => s + r.final, 0)
@@ -330,6 +343,27 @@ export default function AdminRevenuePage() {
         return tb - ta
       })
   }, [orders, customerPanelId])
+
+  const customerPanelMeta = useMemo(() => {
+    if (!customerPanelId) return { display: '-', grade: '-', firstAt: 0, lastAt: 0 }
+    let display = customerPanelId.slice(0, 8)
+    let grade = '-'
+    let firstAt = 0
+    let lastAt = 0
+    for (const o of customerPanelOrders) {
+      const pr = Array.isArray((o as any).profiles) ? (o as any).profiles[0] : (o as any).profiles
+      const un = String(pr?.username ?? '').trim()
+      const em = String(pr?.email ?? '').trim()
+      const d = un || (em.includes('@') ? em.split('@')[0] : em) || customerPanelId.slice(0, 8)
+      const g = String(pr?.grade ?? '').trim()
+      if (d && display === customerPanelId.slice(0, 8)) display = d
+      if (g && grade === '-') grade = g
+      const t = o.ordered_at ? new Date(o.ordered_at).getTime() : 0
+      if (t > lastAt) lastAt = t
+      if (t > 0 && (firstAt === 0 || t < firstAt)) firstAt = t
+    }
+    return { display, grade, firstAt, lastAt }
+  }, [customerPanelId, customerPanelOrders])
 
   const inflow = useMemo(() => {
     const pm = new Map<string, { id: string; n: number; sales: number; comm: number }>()
@@ -683,6 +717,8 @@ export default function AdminRevenuePage() {
                     <option value="toast_top">토스트 많이 쓴 고객 (point_used 합계)</option>
                     <option value="coupon_top">쿠폰 많이 쓴 고객 (coupon_discount 합계)</option>
                     <option value="new30">신규 고객 (최근 30일 첫구매)</option>
+                    <option value="vip_lumiere_up">LUMIÈRE 이상 VIP 고객</option>
+                    <option value="top_noir_celeste">NOIR/CÉLESTE 최상위 고객</option>
                   </select>
                   <button type="button" className="btn btn-bl" onClick={() => setCustomerFilter(customerFilterDraft)}>
                     🔍 검색
@@ -721,12 +757,12 @@ export default function AdminRevenuePage() {
                   <thead>
                     <tr>
                       <th>순위</th>
-                      <th>표시</th>
-                      <th>고객ID</th>
+                      <th>고객명</th>
+                      <th>등급</th>
                       <th>총주문수</th>
                       <th>정가합계</th>
                       <th>쿠폰할인</th>
-                      <th>토스트사용</th>
+                      <th>토스트</th>
                       <th>실결제합계</th>
                       <th>마지막구매일</th>
                     </tr>
@@ -735,8 +771,51 @@ export default function AdminRevenuePage() {
                     {customerSearchResult.top.map((r, i) => (
                       <tr key={r.id} onClick={() => setCustomerPanelId(r.id)} style={{ cursor: 'pointer' }}>
                         <td className="mono">{i + 1}</td>
-                        <td style={{ fontSize: 14 }}>{customerSearchResult.mark(r)}</td>
-                        <td className="mono">{r.id.slice(0, 8)}</td>
+                        <td className="mono">
+                          {r.display} <span style={{ fontSize: 14 }}>{customerSearchResult.mark(r)}</span>
+                        </td>
+                        <td>
+                          <span
+                            className="mono"
+                            style={{
+                              display: 'inline-block',
+                              padding: '2px 7px',
+                              borderRadius: 999,
+                              fontSize: 10,
+                              border: '1px solid var(--border)',
+                              background:
+                                r.grade === 'CÉLESTE'
+                                  ? 'var(--gold)'
+                                  : r.grade === 'NOIR'
+                                    ? '#111'
+                                    : r.grade === 'REINE'
+                                      ? 'rgba(201,168,76,.2)'
+                                      : r.grade === 'LUMIÈRE'
+                                        ? 'rgba(123,94,167,.25)'
+                                        : r.grade === 'VELVET'
+                                          ? 'rgba(80,120,255,.25)'
+                                          : r.grade === 'BLOOM'
+                                            ? 'rgba(70,150,90,.25)'
+                                            : 'rgba(255,255,255,.12)',
+                              color:
+                                r.grade === 'CÉLESTE'
+                                  ? '#111'
+                                  : r.grade === 'NOIR'
+                                    ? 'var(--gold)'
+                                    : r.grade === 'REINE'
+                                      ? 'var(--gold)'
+                                      : r.grade === 'LUMIÈRE'
+                                        ? '#B79CE7'
+                                        : r.grade === 'VELVET'
+                                          ? '#9DB5FF'
+                                          : r.grade === 'BLOOM'
+                                            ? '#9AE0AB'
+                                            : 'var(--text2)',
+                            }}
+                          >
+                            {r.grade || '-'}
+                          </span>
+                        </td>
                         <td className="mono">{r.n.toLocaleString()}</td>
                         <td className="mono">₩{Math.round(r.totalAmt).toLocaleString()}</td>
                         <td className="mono">₩{Math.round(r.coupon).toLocaleString()}</td>
@@ -930,13 +1009,55 @@ export default function AdminRevenuePage() {
           >
             <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>고객 구매 히스토리</div>
             <div className="mono" style={{ marginTop: 8, fontSize: 12, color: 'var(--gold)' }}>
-              고객ID {customerPanelId.slice(0, 8)}
+              고객ID {customerPanelId.slice(0, 8)} · {customerPanelMeta.display}
+            </div>
+            <div style={{ marginTop: 8 }}>
+              <span
+                className="mono"
+                style={{
+                  display: 'inline-block',
+                  padding: '5px 11px',
+                  borderRadius: 999,
+                  fontSize: 12,
+                  border: '1px solid var(--border)',
+                  background:
+                    customerPanelMeta.grade === 'CÉLESTE'
+                      ? 'var(--gold)'
+                      : customerPanelMeta.grade === 'NOIR'
+                        ? '#111'
+                        : customerPanelMeta.grade === 'REINE'
+                          ? 'rgba(201,168,76,.2)'
+                          : customerPanelMeta.grade === 'LUMIÈRE'
+                            ? 'rgba(123,94,167,.25)'
+                            : customerPanelMeta.grade === 'VELVET'
+                              ? 'rgba(80,120,255,.25)'
+                              : customerPanelMeta.grade === 'BLOOM'
+                                ? 'rgba(70,150,90,.25)'
+                                : 'rgba(255,255,255,.12)',
+                  color:
+                    customerPanelMeta.grade === 'CÉLESTE'
+                      ? '#111'
+                      : customerPanelMeta.grade === 'NOIR'
+                        ? 'var(--gold)'
+                        : customerPanelMeta.grade === 'REINE'
+                          ? 'var(--gold)'
+                          : customerPanelMeta.grade === 'LUMIÈRE'
+                            ? '#B79CE7'
+                            : customerPanelMeta.grade === 'VELVET'
+                              ? '#9DB5FF'
+                              : customerPanelMeta.grade === 'BLOOM'
+                                ? '#9AE0AB'
+                                : 'var(--text2)',
+                }}
+              >
+                {customerPanelMeta.grade || '-'}
+              </span>
             </div>
             <div className="mono" style={{ marginTop: 8, fontSize: 10, color: 'var(--text3)' }}>
-              첫 구매일 {customerPanelOrders.length ? new Date(customerPanelOrders[customerPanelOrders.length - 1].ordered_at).toLocaleString('ko-KR') : '-'}
+              첫 구매일 {customerPanelMeta.firstAt ? new Date(customerPanelMeta.firstAt).toLocaleString('ko-KR') : '-'}
             </div>
             <div className="mono" style={{ marginTop: 3, fontSize: 10, color: 'var(--text3)' }}>
-              마지막 구매일 {customerPanelOrders.length ? new Date(customerPanelOrders[0].ordered_at).toLocaleString('ko-KR') : '-'}
+              마지막 구매일 {customerPanelMeta.lastAt ? new Date(customerPanelMeta.lastAt).toLocaleString('ko-KR') : '-'}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 8, marginTop: 14 }}>
