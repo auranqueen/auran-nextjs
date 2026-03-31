@@ -29,8 +29,23 @@ function WalletPageInner() {
   const pointMaxUsageRate = getSettingNum('toast', 'point_max_usage_rate', 20)
 
   const fetchProfile = async (authUserId: string) => {
+    console.log('authUserId:', authUserId)
     const { data: p } = await supabase.from('users').select('id,points,charge_balance').eq('auth_id', authUserId).single()
-    if (p) setProfile(p)
+    console.log('profile data:', p)
+    if (p) {
+      setProfile(p)
+      return
+    }
+    const { data: profileFallback } = await supabase.from('profiles').select('id, points, charge_balance').eq('auth_id', authUserId).single()
+    if (profileFallback) {
+      setProfile({
+        id: profileFallback.id || authUserId,
+        points: profileFallback.points || 0,
+        charge_balance: profileFallback.charge_balance || 0,
+      })
+      return
+    }
+    setProfile({ id: authUserId, points: 0, charge_balance: 0 })
   }
 
   useEffect(() => {
@@ -96,7 +111,7 @@ function WalletPageInner() {
 
   return (
     <div style={{ height: '100dvh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-      <DashboardHeader title="내 지갑" right={<CustomerHeaderRight />} />
+      <DashboardHeader title="AURAN PAY" right={<CustomerHeaderRight />} />
       <div style={{ padding: '18px 18px 0', flex: 1, overflowY: 'auto', paddingBottom: 220, scrollPaddingBottom: 220 }}>
         {showPaymentSuccess && (
           <div style={{ marginBottom: 14, padding: 14, background: 'rgba(76,173,126,0.2)', border: '1px solid rgba(76,173,126,0.5)', borderRadius: 12, color: '#4cad7e', fontSize: 13, fontWeight: 600 }}>
