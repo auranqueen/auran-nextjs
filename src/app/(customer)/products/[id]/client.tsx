@@ -84,7 +84,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [isSaving, setIsSaving] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState('')
-  const [thumbPick, setThumbPick] = useState<File | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [thumbPreviewUrl, setThumbPreviewUrl] = useState('')
   const thumbFileInputRef = useRef<HTMLInputElement | null>(null)
   const detailEditorRef = useRef<any>(null)
@@ -258,17 +258,21 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   useEffect(() => {
     if (editingField?.field === 'storage_thumb_url') {
-      setThumbPick(null)
+      setSelectedFile(null)
       setThumbPreviewUrl(editingField.currentValue)
     }
   }, [editingField])
 
   useEffect(() => {
-    if (!thumbPick) return
-    const u = URL.createObjectURL(thumbPick)
+    if (editingField === null) setSelectedFile(null)
+  }, [editingField])
+
+  useEffect(() => {
+    if (!selectedFile) return
+    const u = URL.createObjectURL(selectedFile)
     setThumbPreviewUrl(u)
     return () => { URL.revokeObjectURL(u) }
-  }, [thumbPick])
+  }, [selectedFile])
 
   useEffect(() => {
     if (editingField) {
@@ -942,22 +946,47 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               </div>
             ) : null}
             {editingField.field === 'storage_thumb_url' ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, flexWrap: 'wrap' as const }}>
-                {thumbPreviewUrl ? (
-                  <img src={thumbPreviewUrl} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }} />
-                ) : (
-                  <div style={{ width: 44, height: 44, borderRadius: 8, background: '#1e1a14' }} />
-                )}
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                  {thumbPreviewUrl ? (
+                    <img src={thumbPreviewUrl} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ fontSize: 36, lineHeight: 1 }}>🧴</div>
+                  )}
+                </div>
                 <input
                   type="file"
                   accept="image/*"
                   ref={thumbFileInputRef}
                   onChange={(e) => {
-                    const f = e.target.files?.[0]
-                    if (f) setThumbPick(f)
+                    const file = e.target.files?.[0]
+                    if (file) setSelectedFile(file)
                   }}
-                  style={{ fontSize: 12, color: '#aaa', maxWidth: '100%' }}
+                  style={{ display: 'none' }}
                 />
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => thumbFileInputRef.current?.click()}
+                    style={{
+                      fontSize: 13,
+                      color: '#e8e4dc',
+                      background: '#2a2520',
+                      border: '1px solid #3a3020',
+                      borderRadius: 10,
+                      padding: '10px 16px',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    📁 사진 선택하기
+                  </button>
+                </div>
+                {selectedFile ? (
+                  <div style={{ fontSize: 12, color: '#888', textAlign: 'center' }}>
+                    선택됨: {selectedFile.name}
+                  </div>
+                ) : null}
               </div>
             ) : null}
             <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
@@ -989,7 +1018,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                     try {
                       let value = ''
                       if (editingField.field === 'storage_thumb_url') {
-                        const file = thumbPick || thumbFileInputRef.current?.files?.[0]
+                        const file = selectedFile
                         if (!file) {
                           setEditError('파일을 선택해주세요')
                           setIsSaving(false)
