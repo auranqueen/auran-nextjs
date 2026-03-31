@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -21,13 +21,25 @@ export default function MyWorldPage() {
   const [guestbook, setGuestbook] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'room' | 'diary' | 'routine' | 'guestbook'>('room')
   const [isPlaying, setIsPlaying] = useState(false)
-  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [mood, setMood] = useState('😊 좋음')
   const [skinStatus, setSkinStatus] = useState('💧 촉촉')
   const [diaryMemo, setDiaryMemo] = useState('')
+  const [mediaFiles, setMediaFiles] = useState<File[]>([])
+  const [mediaPreview, setMediaPreview] = useState<string[]>([])
+  const [isPublic, setIsPublic] = useState(true)
+  const [now, setNow] = useState(new Date())
+  const [likedMap, setLikedMap] = useState<Record<string, boolean>>({})
+  const [likeCountMap, setLikeCountMap] = useState<Record<string, number>>({})
+  const [commentCountMap, setCommentCountMap] = useState<Record<string, number>>({})
+  const [shareOpenId, setShareOpenId] = useState<string>('')
+  const [commentOpenId, setCommentOpenId] = useState<string>('')
+  const [commentsMap, setCommentsMap] = useState<Record<string, any[]>>({})
+  const [commentInputMap, setCommentInputMap] = useState<Record<string, string>>({})
   const [guestbookInput, setGuestbookInput] = useState('')
   const [bgmTab, setBgmTab] = useState<'morning' | 'night' | 'pack'>('morning')
   const [routineChecked, setRoutineChecked] = useState<Record<string, boolean>>({})
+  const mediaInputRef = useRef<HTMLInputElement | null>(null)
   const [showCustomize, setShowCustomize] = useState(false)
   const [myworldNickname, setMyworldNickname] = useState('')
   const [selectedTheme, setSelectedTheme] = useState('💜 보라빛 드림')
@@ -38,6 +50,11 @@ export default function MyWorldPage() {
     const t = setTimeout(() => setToast(''), 2000)
     return () => clearTimeout(t)
   }, [toast])
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     const run = async () => {
@@ -108,7 +125,28 @@ export default function MyWorldPage() {
         .eq('user_id', auth.user.id)
         .order('recorded_at', { ascending: false })
         .limit(7)
-      setSkinDiary(Array.isArray(diaryRows) ? diaryRows : [])
+      const diaryList = Array.isArray(diaryRows) ? diaryRows : []
+      setSkinDiary(diaryList)
+      if (diaryList.length > 0) {
+        const ids = diaryList.map((d: any) => d.id).filter(Boolean)
+        const { data: likes } = await supabase.from('skin_diary_likes').select('diary_id,user_id').in('diary_id', ids)
+        const { data: comments } = await supabase.from('skin_diary_comments').select('id,diary_id').in('diary_id', ids)
+        const nextLiked: Record<string, boolean> = {}
+        const nextLikeCount: Record<string, number> = {}
+        const nextCommentCount: Record<string, number> = {}
+        ;(likes || []).forEach((l: any) => {
+          const did = String(l.diary_id)
+          nextLikeCount[did] = (nextLikeCount[did] || 0) + 1
+          if (String(l.user_id) === String(auth.user.id)) nextLiked[did] = true
+        })
+        ;(comments || []).forEach((c: any) => {
+          const did = String(c.diary_id)
+          nextCommentCount[did] = (nextCommentCount[did] || 0) + 1
+        })
+        setLikedMap(nextLiked)
+        setLikeCountMap(nextLikeCount)
+        setCommentCountMap(nextCommentCount)
+      }
 
       const { data: guestRows } = await supabase
         .from('guestbook')
@@ -167,18 +205,107 @@ export default function MyWorldPage() {
     }
   }
 
+  const onPickMedia = (files: FileList | null) => {
+    if (!files) return
+    const picked = Array.from(files).slice(0, 5)
+    setMediaFiles(picked)
+    setMediaPreview(picked.map((f) => URL.createObjectURL(f)))
+  }
+
+  const removeMedia = (idx: number) => {
+    setMediaFiles((prev) => prev.filter((_, i) => i !== idx))
+    setMediaPreview((prev) => prev.filter((_, i) => i !== idx))
+  }
+
   const onSaveDiary = async () => {
-    if (user?.id) {
-      await supabase.from('skin_diary').insert({
-        user_id: user.id,
-        mood,
-        skin_status: skinStatus,
-        memo: diaryMemo,
-        recorded_at: new Date().toISOString(),
-      })
+    const nowIso = new Date().toISOString()
+    let mediaUrls: string[] = []
+    if (user?.id && mediaFiles.length > 0) {
+      const uploads = await Promise.all(
+        mediaFiles.map(async (file, index) => {
+          const path = `diary/${user.id}/${Date.now()}_${index}_${file.name}`
+          const { error } = await supabase.storage.from('skin-diary').upload(path, file, { upsert: true })
+          if (error) return ''
+          const { data } = supabase.storage.from('skin-diary').getPublicUrl(path)
+          return data?.publicUrl || ''
+        })
+      )
+      mediaUrls = uploads.filter(Boolean)
     }
-    setToast('기록됐어요 💜')
+    if (user?.id) {
+      const { data: inserted } = await supabase
+        .from('skin_diary')
+        .insert({
+          user_id: user.id,
+          mood,
+          skin_status: skinStatus,
+          memo: diaryMemo,
+          media_urls: mediaUrls,
+          is_public: isPublic,
+          recorded_at: nowIso,
+        })
+        .select('*')
+        .maybeSingle()
+      const newEntry =
+        inserted || {
+          id: `${Date.now()}`,
+          user_id: user.id,
+          mood,
+          skin_status: skinStatus,
+          memo: diaryMemo,
+          media_urls: mediaUrls,
+          is_public: isPublic,
+          recorded_at: nowIso,
+        }
+      setSkinDiary((prev) => [newEntry, ...prev].slice(0, 7))
+    }
+    setMood('😊 좋음')
+    setSkinStatus('💧 촉촉')
     setDiaryMemo('')
+    setMediaFiles([])
+    setMediaPreview([])
+    setIsPublic(true)
+    setToast('기록됐어요 💜')
+  }
+
+  const toggleLike = async (diaryId: string) => {
+    if (!user?.id) return
+    const liked = !!likedMap[diaryId]
+    if (liked) {
+      await supabase.from('skin_diary_likes').delete().eq('diary_id', diaryId).eq('user_id', user.id)
+      setLikedMap((p) => ({ ...p, [diaryId]: false }))
+      setLikeCountMap((p) => ({ ...p, [diaryId]: Math.max((p[diaryId] || 1) - 1, 0) }))
+    } else {
+      await supabase.from('skin_diary_likes').insert({ diary_id: diaryId, user_id: user.id, created_at: new Date().toISOString() })
+      setLikedMap((p) => ({ ...p, [diaryId]: true }))
+      setLikeCountMap((p) => ({ ...p, [diaryId]: (p[diaryId] || 0) + 1 }))
+    }
+  }
+
+  const toggleComments = async (diaryId: string) => {
+    if (commentOpenId === diaryId) {
+      setCommentOpenId('')
+      return
+    }
+    setCommentOpenId(diaryId)
+    if (!commentsMap[diaryId]) {
+      const { data } = await supabase
+        .from('skin_diary_comments')
+        .select('*')
+        .eq('diary_id', diaryId)
+        .order('created_at', { ascending: true })
+      setCommentsMap((p) => ({ ...p, [diaryId]: data || [] }))
+    }
+  }
+
+  const addComment = async (diaryId: string) => {
+    const msg = String(commentInputMap[diaryId] || '').trim()
+    if (!msg || !user?.id) return
+    const row = { diary_id: diaryId, user_id: user.id, message: msg, created_at: new Date().toISOString() }
+    await supabase.from('skin_diary_comments').insert(row)
+    setCommentsMap((p) => ({ ...p, [diaryId]: [...(p[diaryId] || []), row] }))
+    setCommentInputMap((p) => ({ ...p, [diaryId]: '' }))
+    setCommentCountMap((p) => ({ ...p, [diaryId]: (p[diaryId] || 0) + 1 }))
   }
 
   const onWriteGuestbook = async () => {
@@ -355,28 +482,73 @@ export default function MyWorldPage() {
           </div>
 
           <div style={{ margin: '12px 16px 0' }}>
-            <button onClick={() => setDrawerOpen((p) => !p)} style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'rgba(123,94,167,0.08)', color: '#c4a7e7', borderRadius: 10, padding: '8px 12px', fontSize: 11, cursor: 'pointer' }}>🗄️ 서랍 열기</button>
+            <button onClick={() => setIsDrawerOpen((p) => !p)} style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'rgba(123,94,167,0.08)', color: '#c4a7e7', borderRadius: 10, padding: '8px 12px', fontSize: 11, cursor: 'pointer' }}>🗄️ 서랍 열기</button>
           </div>
-          {drawerOpen ? (
-            <div style={{ margin: '10px 16px 0', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+          <div style={{ margin: '10px 16px 0', maxHeight: isDrawerOpen ? 500 : 0, transition: 'max-height 0.4s ease', overflow: 'hidden' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
               {vanityItems.map((v: any) => (
                 <div key={`drawer-${v.id}`} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 8 }}>
                   <div style={{ height: 56, borderRadius: 8, background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                     {v.thumb ? <img src={v.thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span>🧴</span>}
                   </div>
                   <div style={{ fontSize: 9, marginTop: 4, color: 'rgba(255,255,255,0.75)' }}>{v.name}</div>
-                  <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.35)' }}>{v.purchasedAt ? String(v.purchasedAt).slice(0, 10) : ''}</div>
+                  <button
+                    onClick={() => {
+                      setDiaryMemo((prev) => `${prev}${prev ? ' ' : ''}#${v.name}`)
+                      setActiveTab('diary')
+                      setToast(`#${v.name} 추가됐어요 💜`)
+                    }}
+                    style={{ marginTop: 4, border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '4px 0', width: '100%', fontSize: 9, cursor: 'pointer' }}
+                  >
+                    써요 💜
+                  </button>
                 </div>
               ))}
+              {vanityItems.length === 0 ? (
+                <div style={{ gridColumn: '1 / -1', textAlign: 'center', fontSize: 11, color: 'rgba(255,255,255,0.35)', padding: 10 }}>
+                  구매한 제품이 없어요 🧴
+                </div>
+              ) : null}
             </div>
-          ) : null}
+          </div>
         </>
       ) : null}
 
       {activeTab === 'diary' ? (
         <div style={{ margin: '12px 16px 0' }}>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'right', marginBottom: 8 }}>
+            <div>{now.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}</div>
+            <div>{now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</div>
+          </div>
           <div style={{ background: 'rgba(123,94,167,0.06)', border: '1px solid rgba(123,94,167,0.18)', borderRadius: 14, padding: 14 }}>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>{new Date().toLocaleDateString('ko-KR')}</div>
+            <input
+              ref={mediaInputRef}
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              onChange={(e) => onPickMedia(e.target.files)}
+              style={{ display: 'none' }}
+            />
+            <div
+              onClick={() => mediaInputRef.current?.click()}
+              style={{ background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(123,94,167,0.4)', borderRadius: 12, padding: 16, textAlign: 'center', cursor: 'pointer', marginBottom: 10 }}
+            >
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>📸 사진/영상 추가</div>
+            </div>
+            {mediaPreview.length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 10 }}>
+                {mediaPreview.map((url, idx) => (
+                  <div key={idx} style={{ width: '100%', aspectRatio: '1', position: 'relative', borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.06)' }}>
+                    {mediaFiles[idx]?.type?.startsWith('video') ? (
+                      <video src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} muted />
+                    ) : (
+                      <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    )}
+                    <button onClick={(e) => { e.stopPropagation(); removeMedia(idx) }} style={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.6)', color: '#fff', fontSize: 10, cursor: 'pointer' }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             <div style={{ display: 'flex', gap: 6, overflowX: 'auto', marginBottom: 8 }}>
               {moodOptions.map((m) => (
                 <button key={m} onClick={() => setMood(m)} style={{ border: mood === m ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.1)', background: mood === m ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.03)', color: '#fff', borderRadius: 8, padding: '6px 8px', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}>{m}</button>
@@ -388,15 +560,97 @@ export default function MyWorldPage() {
               ))}
             </div>
             <textarea value={diaryMemo} onChange={(e) => setDiaryMemo(e.target.value)} placeholder="오늘 피부 한줄 기록..." rows={3} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, padding: 10, color: '#fff', fontSize: 13, marginBottom: 8 }} />
-            <button onClick={onSaveDiary} style={{ background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 10, padding: 12, fontSize: 13, width: '100%', cursor: 'pointer' }}>기록하기 💜</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button
+                onClick={() => setIsPublic((p) => !p)}
+                style={{ border: '1px solid rgba(123,94,167,0.25)', background: 'transparent', color: isPublic ? '#7B5EA7' : 'rgba(255,255,255,0.3)', borderRadius: 10, padding: '10px 12px', fontSize: 11, cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
+                {isPublic ? '🌍 공개' : '🔒 비공개'}
+              </button>
+              <button onClick={onSaveDiary} style={{ background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 10, padding: 12, fontSize: 13, width: '100%', cursor: 'pointer' }}>기록하기 💜</button>
+            </div>
           </div>
 
-          <div style={{ marginTop: 12, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 14, padding: 12 }}>
+          <div style={{ marginTop: 12 }}>
             {skinDiary.length > 0 ? skinDiary.map((d: any, i: number) => (
-              <div key={i} style={{ padding: '8px 0', borderTop: i === 0 ? 'none' : '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>{String(d?.recorded_at || '').slice(0, 10)}</div>
-                <div style={{ fontSize: 12 }}>{d?.mood || ''} · {d?.skin_status || ''}</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>{d?.memo || ''}</div>
+              <div key={i} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 16, marginBottom: 12, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>👩</div>
+                    <div>
+                      <div style={{ fontSize: 12 }}>{myworldNickname || profile?.username || profile?.full_name || '나의 공간'}</div>
+                      <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>{new Date(d?.recorded_at || '').toLocaleString('ko-KR')}</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>{d?.is_public === false ? '🔒' : '🌍'}</div>
+                </div>
+                {Array.isArray(d?.media_urls) && d.media_urls.length > 0 ? (
+                  <div style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '0 12px 10px' }}>
+                    {d.media_urls.map((url: string, idx: number) => (
+                      <div key={idx} style={{ minWidth: 220, maxWidth: 220 }}>
+                        {/\.(mp4|webm|mov)$/i.test(url) ? (
+                          <video src={url} controls autoPlay muted style={{ width: '100%' }} />
+                        ) : (
+                          <img src={url} alt="" style={{ width: '100%', display: 'block' }} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                <div style={{ padding: '0 12px 10px' }}>
+                  <div style={{ fontSize: 12 }}>{d?.mood || ''} · {d?.skin_status || ''}</div>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', marginTop: 4 }}>{d?.memo || ''}</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px 12px', fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
+                  <button onClick={() => toggleLike(String(d.id))} style={{ border: 'none', background: 'transparent', color: likedMap[String(d.id)] ? '#ff6b7a' : '#fff', cursor: 'pointer', fontSize: 11, padding: 0 }}>
+                    {likedMap[String(d.id)] ? '❤️' : '🤍'} 좋아요 {likeCountMap[String(d.id)] || 0}
+                  </button>
+                  <button onClick={() => toggleComments(String(d.id))} style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 11, padding: 0 }}>
+                    💬 댓글 {commentCountMap[String(d.id)] || 0}
+                  </button>
+                  <button onClick={() => setShareOpenId((p) => (p === String(d.id) ? '' : String(d.id)))} style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.7)', cursor: 'pointer', fontSize: 11, padding: 0 }}>
+                    🔗 공유
+                  </button>
+                  <span>🔖 저장</span>
+                </div>
+                {shareOpenId === String(d.id) ? (
+                  <div style={{ display: 'flex', gap: 6, padding: '0 12px 12px' }}>
+                    <button
+                      onClick={async () => {
+                        const link = `https://auran.kr/myworld/${user?.id || ''}/diary/${d.id}`
+                        try {
+                          await navigator.clipboard.writeText(link)
+                          setToast('링크가 복사됐어요 💜')
+                        } catch {
+                          setToast('링크 복사 실패')
+                        }
+                      }}
+                      style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '6px 8px', fontSize: 10, cursor: 'pointer' }}
+                    >
+                      📋 링크 복사
+                    </button>
+                    <button style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '6px 8px', fontSize: 10, cursor: 'pointer' }}>💬 카카오</button>
+                    <button style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '6px 8px', fontSize: 10, cursor: 'pointer' }}>📷 인스타</button>
+                  </div>
+                ) : null}
+                {commentOpenId === String(d.id) ? (
+                  <div style={{ padding: '0 12px 12px' }}>
+                    <div style={{ display: 'grid', gap: 6, marginBottom: 6 }}>
+                      {(commentsMap[String(d.id)] || []).map((c: any, ci: number) => (
+                        <div key={ci} style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>• {String(c?.message || '')}</div>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <input
+                        value={commentInputMap[String(d.id)] || ''}
+                        onChange={(e) => setCommentInputMap((p) => ({ ...p, [String(d.id)]: e.target.value }))}
+                        placeholder="댓글을 입력하세요"
+                        style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 11 }}
+                      />
+                      <button onClick={() => addComment(String(d.id))} style={{ border: 'none', background: '#7B5EA7', color: '#fff', borderRadius: 8, padding: '8px 10px', fontSize: 11, cursor: 'pointer' }}>등록</button>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             )) : (
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', whiteSpace: 'pre-line', textAlign: 'center' }}>
