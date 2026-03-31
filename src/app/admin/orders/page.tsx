@@ -26,7 +26,7 @@ type OrderRow = {
 }
 
 const SELECT_FULL =
-  'id, order_no, status, total_amount, final_amount, coupon_discount, points_used, payment_method, tracking_no, courier, ordered_at, shipped_at, admin_order_notes, customer_id, customer_memo, users!orders_customer_id_fkey(customer_grade)'
+  'id, order_no, status, total_amount, final_amount, coupon_discount, points_used, payment_method, tracking_no, courier, ordered_at, shipped_at, admin_order_notes, customer_id, customer_memo, users!orders_customer_id_fkey(customer_grade, profiles(full_name, username, email, grade))'
 const SELECT_FULL_NOUSER =
   'id, order_no, status, total_amount, final_amount, coupon_discount, points_used, payment_method, tracking_no, courier, ordered_at, shipped_at, admin_order_notes, customer_id, customer_memo'
 const SELECT_FALLBACK =
@@ -173,6 +173,42 @@ export default function AdminOrdersPage() {
         return ta - tb
       })
   }, [rows, historyCustomerId])
+
+  const historyStats = useMemo(() => {
+    let n = 0
+    let sumTotal = 0
+    let sumCoupon = 0
+    let sumToast = 0
+    let sumFinal = 0
+    for (const r of historyOrders) {
+      n++
+      sumTotal += Number(r.total_amount ?? 0) || 0
+      sumCoupon += Number(r.coupon_discount ?? 0) || 0
+      sumToast += Number((r as any).points_used ?? r.point_used ?? 0) || 0
+      sumFinal += Number(r.final_amount ?? 0) || 0
+    }
+    return { n, sumTotal, sumCoupon, sumToast, sumFinal }
+  }, [historyOrders])
+
+  const historyHeaderDisplay = useMemo(() => {
+    if (!historyCustomerId) return ''
+    const r = rows.find((x) => x.customer_id === historyCustomerId)
+    if (!r) return String(historyCustomerId).slice(0, 8)
+    const prT = (r as any).profiles
+    const pTop = Array.isArray(prT) ? prT[0] : prT
+    const uEmb = (r as any).users
+    const uOne = Array.isArray(uEmb) ? uEmb[0] : uEmb
+    const prN = uOne?.profiles
+    const prof = (Array.isArray(prN) ? prN[0] : prN) || pTop
+    const un = String(prof?.username ?? '').trim()
+    if (un) return un
+    const em = String(prof?.email ?? '').trim()
+    const at = em.indexOf('@')
+    if (at > 0) return em.slice(0, at)
+    if (em) return em
+    const cid = String(r.customer_id ?? '')
+    return cid ? cid.slice(0, 8) : '—'
+  }, [historyCustomerId, rows])
 
   const openShipModal = (o: OrderRow, bulkTargetIds?: string[] | null) => {
     setShipBulkIds(bulkTargetIds && bulkTargetIds.length ? bulkTargetIds : null)
@@ -877,10 +913,19 @@ export default function AdminOrdersPage() {
                         : st === '취소' || st === '환불' || st === '취소/환불'
                           ? 'b b-re'
                           : 'b b-gy'
+                const prT = (o as any).profiles
+                const pTop = Array.isArray(prT) ? prT[0] : prT
                 const uEmb = (o as any).users
                 const uOne = Array.isArray(uEmb) ? uEmb[0] : uEmb
-                const ug = String(uOne?.customer_grade ?? (o as any).profiles?.grade ?? '').trim()
+                const prN = uOne?.profiles
+                const prof = (Array.isArray(prN) ? prN[0] : prN) || pTop
+                const ug = String(uOne?.customer_grade ?? prof?.grade ?? (o as any).profiles?.grade ?? '').trim()
                 const isVip = ug === 'NOIR' || ug === 'CÉLESTE' || ug === 'CELESTE'
+                const em0 = String(prof?.email ?? '').trim()
+                const custDisp =
+                  String(prof?.username ?? '').trim() ||
+                  (em0.indexOf('@') > 0 ? em0.slice(0, em0.indexOf('@')) : em0) ||
+                  (o.customer_id ? String(o.customer_id).slice(0, 8) : '—')
                 return (
                   <tr key={o.id} style={{ background: rowWarn ? 'rgba(255,80,80,0.07)' : undefined }}>
                     <td>
@@ -909,7 +954,7 @@ export default function AdminOrdersPage() {
                           }}
                           style={{ color: 'var(--gold)', cursor: 'pointer', wordBreak: 'break-all' }}
                         >
-                          {o.customer_id}
+                          {custDisp}
                         </span>
                       ) : (
                         '—'
@@ -1172,11 +1217,11 @@ export default function AdminOrdersPage() {
       {memoDetailId && memoOrder && (
         <div
           onClick={() => setMemoDetailId(null)}
-          style={{ position: 'fixed', inset: 0, zIndex: 105, background: 'rgba(0,0,0,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{ position: 'fixed', inset: 0, zIndex: 130, background: 'rgba(0,0,0,.72)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{ background: 'var(--bg2)', border: '1px solid var(--border2)', borderTop: '2px solid var(--gold)', borderRadius: 14, padding: 26, minWidth: 420, maxWidth: 520, width: '90%', maxHeight: '85vh', overflowY: 'auto' }}
+            style={{ background: 'var(--bg2)', border: '1px solid var(--border2)', borderTop: '2px solid var(--gold)', borderRadius: 14, padding: 26, minWidth: 420, maxWidth: 560, width: '90%', maxHeight: '85vh', overflowY: 'auto' }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div>
@@ -1184,18 +1229,53 @@ export default function AdminOrdersPage() {
                 <div style={{ fontSize: 10.5, color: 'var(--text3)', marginTop: 3 }} className="mono">
                   {memoOrder.order_no}
                 </div>
+                <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 8 }}>
+                  <span className={memoOrder.status === '배송완료' ? 'b b-gd' : memoOrder.status === '배송중' ? 'b b-pu' : memoOrder.status === '발송준비' ? 'b b-bl' : memoOrder.status === '취소' || memoOrder.status === '환불' || memoOrder.status === '취소/환불' ? 'b b-re' : 'b b-gy'}>{memoOrder.status}</span>
+                  {' · '}
+                  {String((memoOrder as any).payment_method ?? '').trim() || '—'}
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--text2)', marginTop: 10, lineHeight: 1.7 }}>
+                  정가 ₩{Number(memoOrder.total_amount ?? 0).toLocaleString()} → 쿠폰할인 -₩{Number(memoOrder.coupon_discount ?? 0).toLocaleString()} → 토스트 -{Number((memoOrder as any).points_used ?? memoOrder.point_used ?? 0).toLocaleString()}T → 실결제{' '}
+                  <span style={{ color: 'var(--gold)', fontWeight: 700 }}>₩{Number(memoOrder.final_amount ?? 0).toLocaleString()}</span>
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>운송장</div>
+                  <div style={{ fontSize: 12, color: 'var(--text2)' }}>
+                    {(() => {
+                      const trk = String(memoOrder.tracking_no || '').trim()
+                      const cr = String(memoOrder.courier || '').trim()
+                      let trackHref = ''
+                      if (trk) {
+                        if (cr.includes('CJ') || cr.includes('대한통운')) trackHref = `https://www.cjlogistics.com/ko/tool/parcel/tracking?gnbInvcNo=${encodeURIComponent(trk)}`
+                        else if (cr.includes('한진')) trackHref = `https://www.hanjin.com/kor/CMS/DeliveryMgr/WaybillSch.do?mCode=MN038&schLang=KR&wblnumText2=${encodeURIComponent(trk)}`
+                        else if (cr.includes('롯데')) trackHref = `https://www.lotteglogis.com/open/tracking?invno=${encodeURIComponent(trk)}`
+                        else if (cr.includes('우체국')) trackHref = `https://service.epost.go.kr/trace.RetrieveDomRigiTraceList.comm?sid1=${encodeURIComponent(trk)}`
+                        else if (cr.includes('로젠')) trackHref = `https://www.ilogen.com/m/personal/trace/${encodeURIComponent(trk)}`
+                      }
+                      if (memoOrder.status === '배송중' || memoOrder.status === '배송완료') {
+                        return (
+                          <span className="mono" style={{ fontSize: 11 }}>
+                            {(memoOrder.courier || '-') + ' · '}
+                            {trackHref ? (
+                              <a href={trackHref} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>
+                                {trk}
+                              </a>
+                            ) : (
+                              trk || '-'
+                            )}
+                          </span>
+                        )
+                      }
+                      return <span style={{ color: 'var(--text3)' }}>—</span>
+                    })()}
+                  </div>
+                </div>
               </div>
               <button type="button" onClick={() => setMemoDetailId(null)} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 19, cursor: 'pointer' }}>
                 ×
               </button>
             </div>
             <div style={{ marginTop: 14 }}>
-              <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>고객 메모</div>
-              <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5, padding: '10px 11px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 7, minHeight: 44 }}>
-                {String((memoOrder as any).customer_memo || '').trim() || '-'}
-              </div>
-            </div>
-            <div style={{ marginTop: 12 }}>
               <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>본사 내부 메모</div>
               <textarea
                 value={memoDraft}
@@ -1215,6 +1295,12 @@ export default function AdminOrdersPage() {
                   boxSizing: 'border-box',
                 }}
               />
+            </div>
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4, fontFamily: "'JetBrains Mono', monospace" }}>고객 메모</div>
+              <div style={{ fontSize: 12, color: 'var(--text2)', lineHeight: 1.5, padding: '10px 11px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 7, minHeight: 44 }}>
+                {String((memoOrder as any).customer_memo || '').trim() || '-'}
+              </div>
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--border)' }}>
               <button type="button" className="btn btn-gy" onClick={() => setMemoDetailId(null)}>
@@ -1278,6 +1364,7 @@ export default function AdminOrdersPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
               <div>
                 <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>고객 주문 히스토리</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', marginTop: 6 }}>{historyHeaderDisplay}</div>
                 <div className="mono" style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4, wordBreak: 'break-all' }}>
                   {historyCustomerId}
                 </div>
@@ -1286,11 +1373,35 @@ export default function AdminOrdersPage() {
                 ×
               </button>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 12, lineHeight: 1.6 }}>
-              총 주문 {historyOrders.length}건 · 총 결제 ₩
-              {historyOrders.reduce((s, r) => s + (Number(r.final_amount) || 0), 0).toLocaleString()}
-              <br />
-              재구매 {Math.max(0, historyOrders.length - 1)}회
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+              <div style={{ flex: '1 1 120px', padding: '10px 10px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11 }}>
+                <div style={{ color: 'var(--text3)', fontSize: 10, marginBottom: 4 }}>총 주문</div>
+                <div style={{ fontWeight: 700, color: 'var(--text)' }}>{historyStats.n}건</div>
+              </div>
+              <div style={{ flex: '1 1 120px', padding: '10px 10px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11 }}>
+                <div style={{ color: 'var(--text3)', fontSize: 10, marginBottom: 4 }}>정가 합계</div>
+                <div className="mono" style={{ fontWeight: 700, color: 'var(--text)' }}>
+                  ₩{historyStats.sumTotal.toLocaleString()}
+                </div>
+              </div>
+              <div style={{ flex: '1 1 120px', padding: '10px 10px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11 }}>
+                <div style={{ color: 'var(--text3)', fontSize: 10, marginBottom: 4 }}>쿠폰 할인 합계</div>
+                <div className="mono" style={{ fontWeight: 700, color: 'var(--text)' }}>
+                  ₩{historyStats.sumCoupon.toLocaleString()}
+                </div>
+              </div>
+              <div style={{ flex: '1 1 120px', padding: '10px 10px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11 }}>
+                <div style={{ color: 'var(--text3)', fontSize: 10, marginBottom: 4 }}>토스트 사용 합계</div>
+                <div className="mono" style={{ fontWeight: 700, color: 'var(--text)' }}>
+                  {historyStats.sumToast.toLocaleString()}T
+                </div>
+              </div>
+              <div style={{ flex: '1 1 120px', padding: '10px 10px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, fontSize: 11 }}>
+                <div style={{ color: 'var(--text3)', fontSize: 10, marginBottom: 4 }}>실결제 합계</div>
+                <div className="mono" style={{ fontWeight: 700, color: 'var(--gold)' }}>
+                  ₩{historyStats.sumFinal.toLocaleString()}
+                </div>
+              </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {historyOrders.length === 0 ? (
@@ -1299,12 +1410,25 @@ export default function AdminOrdersPage() {
               {historyOrders.map((h) => (
                 <div
                   key={h.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    setMemoDetailId(h.id)
+                    setMemoDraft(String((h as any).admin_order_notes || ''))
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setMemoDetailId(h.id)
+                      setMemoDraft(String((h as any).admin_order_notes || ''))
+                    }
+                  }}
                   style={{
                     padding: '10px 10px',
                     background: 'var(--bg3)',
                     border: '1px solid var(--border)',
                     borderRadius: 8,
                     fontSize: 11,
+                    cursor: 'pointer',
                   }}
                 >
                   <div className="mono" style={{ color: 'var(--gold)', marginBottom: 4 }}>
