@@ -23,6 +23,8 @@ export default function MyPage() {
   const [coupons, setCoupons] = useState<any[]>([])
   const [refills, setRefills] = useState<any[]>([])
   const [tracker, setTracker] = useState({ water: 6, uv: 3, sleep: 7.5, routine: 75 })
+  const [completion, setCompletion] = useState(0)
+  const [profileData, setProfileData] = useState<any>(null)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -32,13 +34,44 @@ export default function MyPage() {
         if (name) setUserName(name)
         supabase
           .from('profiles')
-          .select('grade, full_name, username')
+          .select('grade, full_name, username, phone, birth_date, skin_type, skin_concerns, menstrual_cycle, drink_frequency, exercise_frequency, preferred_brands, special_dates')
           .eq('auth_id', data.user.id)
           .single()
-          .then(({ data: profile }) => {
+          .then(async ({ data: profile }) => {
             setGrade(profile?.grade || 'PETAL')
             const pName = profile?.full_name || profile?.username
             if (pName) setUserName(pName)
+            setProfileData(profile || null)
+            const checks = [
+              !!profile?.full_name,
+              !!profile?.phone,
+              !!profile?.birth_date,
+              !!profile?.skin_type,
+              profile?.skin_concerns?.length > 0,
+              !!profile?.menstrual_cycle,
+              !!profile?.drink_frequency,
+              !!profile?.exercise_frequency,
+              profile?.preferred_brands?.length > 0,
+              profile?.special_dates?.length > 0,
+            ]
+            const done = Math.round((checks.filter(Boolean).length / checks.length) * 100)
+            setCompletion(done)
+            if (done === 100) {
+              const { data: alreadyBonus } = await supabase
+                .from('point_transactions')
+                .select('id')
+                .eq('user_id', data.user.id)
+                .eq('type', 'profile_complete')
+                .limit(1)
+              if (!alreadyBonus || alreadyBonus.length === 0) {
+                await supabase.from('point_transactions').insert({
+                  user_id: data.user.id,
+                  amount: 1000,
+                  type: 'profile_complete',
+                  description: '프로필 완성 보너스',
+                })
+              }
+            }
           })
         supabase
           .from('orders')
@@ -52,6 +85,8 @@ export default function MyPage() {
       } else {
         setOrders([])
         setGrade('PETAL')
+        setCompletion(0)
+        setProfileData(null)
       }
     })
     // TODO: user_wallets 테이블에서 포인트 조회
@@ -89,6 +124,24 @@ export default function MyPage() {
   const nextBase = gi >= 0 && gi < gradeThreshold.length - 1 ? gradeThreshold[gi + 1] : gradeThreshold[gradeThreshold.length - 1]
   const remain = nextG ? Math.max(0, nextBase - point) : 0
   const prog = nextG ? Math.max(0, Math.min(100, ((point - curBase) / Math.max(1, nextBase - curBase)) * 100)) : 100
+  const completionGuide =
+    completion < 30
+      ? '💜 프로필을 채우면 나만의 피부 주치의가 시작돼요'
+      : completion < 60
+        ? '🧴 피부타입과 라이프스타일을 알면 딱 맞는 제품을 추천해드려요'
+        : completion < 80
+          ? '🎁 생일·기념일을 등록하면 깜짝 선물과 특별 쿠폰이 준비돼요'
+          : completion < 100
+            ? '✨ 조금만 더! 완성하면 1,000T + 맞춤 추천이 시작돼요'
+            : ''
+  const incompleteHints = [
+    !profileData?.skin_type ? '· 피부타입을 선택해주세요' : '',
+    !profileData?.birth_date ? '· 생년월일을 입력해주세요' : '',
+    !profileData?.phone ? '· 전화번호를 입력해주세요' : '',
+    !profileData?.menstrual_cycle ? '· 생리 주기 정보를 입력해주세요' : '',
+    !(profileData?.preferred_brands?.length > 0) ? '· 선호 브랜드를 선택해주세요' : '',
+    !(profileData?.special_dates?.length > 0) ? '· 기념일을 1개 이상 등록해주세요' : '',
+  ].filter(Boolean).slice(0, 2)
 
   return (
     <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 300, color: '#fff', paddingBottom: '96px' }}>
@@ -158,6 +211,28 @@ export default function MyPage() {
         </div>
         <div onClick={() => router.push('/my/profile')} style={{ fontSize: '11px', color: TEXT_DIM, cursor: 'pointer' }}>편집 ›</div>
       </div>
+
+      {completion < 100 ? (
+        <div onClick={() => router.push('/my/profile')} style={{ margin: '10px 16px 0', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 14, padding: '14px 16px', cursor: 'pointer' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>프로필 완성도 {completion}%</div>
+            <div style={{ fontSize: 11, color: GOLD }}>완성 시 3,000T →</div>
+          </div>
+          <div style={{ width: '100%', height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+            <div style={{ width: `${completion}%`, height: 6, borderRadius: 3, background: '#7B5EA7' }} />
+          </div>
+          <div style={{ marginTop: 8, fontSize: 11, color: '#b79ce8' }}>{completionGuide}</div>
+          {incompleteHints.map((hint, i) => (
+            <div key={i} style={{ marginTop: i === 0 ? 6 : 2, fontSize: 10, color: 'rgba(123,94,167,0.8)' }}>
+              {hint}
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ margin: '10px 16px 0', background: 'rgba(123,94,167,0.12)', border: '1px solid #7B5EA7', borderRadius: 14, padding: '14px 16px', fontSize: 12, color: '#c7b0ea' }}>
+          ✅ 프로필 완성! 맞춤 추천이 활성화됐어요 💜
+        </div>
+      )}
 
       {/* AURAN POINT */}
       <div onClick={() => router.push('/my/point')} style={{ margin: '14px 16px 0', background: 'linear-gradient(135deg,rgba(201,169,110,0.12),rgba(201,169,110,0.06))', border: '1px solid rgba(201,169,110,0.25)', borderRadius: '16px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
