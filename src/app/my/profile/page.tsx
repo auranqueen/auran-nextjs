@@ -60,6 +60,7 @@ export default function MyProfilePage() {
   const [notifyRestock, setNotifyRestock] = useState(true)
   const [notifySale, setNotifySale] = useState(true)
   const [notifyBirthday, setNotifyBirthday] = useState(true)
+  const [specialDates, setSpecialDates] = useState<{ label: string; date: string; notify_days: number }[]>([])
 
   useEffect(() => {
     const run = async () => {
@@ -99,6 +100,7 @@ export default function MyProfilePage() {
       setNotifyRestock(profile?.notify_restock !== false)
       setNotifySale(profile?.notify_sale !== false)
       setNotifyBirthday(profile?.notify_birthday !== false)
+      setSpecialDates(Array.isArray(profile?.special_dates) ? (profile?.special_dates as { label: string; date: string; notify_days: number }[]) : [])
       setLoading(false)
     }
     void run()
@@ -132,6 +134,7 @@ export default function MyProfilePage() {
         notify_restock: notifyRestock,
         notify_sale: notifySale,
         notify_birthday: notifyBirthday,
+        special_dates: specialDates,
       } as any)
       .eq('auth_id', authId)
     setSaving(false)
@@ -309,28 +312,113 @@ export default function MyProfilePage() {
             </div>
             <div>
               <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 4 }}>생년월일</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 18, color: '#7B5EA7' }}>📅</span>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 18, color: '#7B5EA7', pointerEvents: 'none' }}>📅</span>
                 <input
                   type="date"
                   className="profile-date"
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
                   style={{
-                    flex: 1,
                     boxSizing: 'border-box',
+                    width: '100%',
                     background: 'rgba(255,255,255,0.08)',
                     color: '#ffffff',
-                    border: '1px solid rgba(255,255,255,0.15)',
-                    padding: '12px 14px',
+                    border: '1px solid #7B5EA7',
+                    colorScheme: 'dark',
+                    padding: '12px 14px 12px 40px',
+                    paddingLeft: 40,
                     borderRadius: 10,
                     fontSize: 14,
                     outline: 'none',
                   }}
                 />
               </div>
+              <div style={{ marginTop: 6, fontSize: 11, color: '#7B5EA7' }}>🎁 생일을 입력하면 생일 쿠폰 + 특별 선물 + 생일 테마가 자동으로 준비돼요</div>
             </div>
           </div>
+        </section>
+
+        <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 12 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: GOLD }}>🗓 특별한 날 (D-day 관리)</div>
+          <div style={{ fontSize: 11, color: '#b79ce8', marginBottom: 10 }}>중요한 날 N일 전에 미리 알려드려요 💜</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+            {['결혼기념일', '자녀생일', '부모님생일', '시술예약일', '여행출발일'].map((label) => (
+              <button
+                key={label}
+                type="button"
+                className="btn"
+                style={selBtn(false)}
+                onClick={() => {
+                  setSpecialDates((prev) => {
+                    if (!prev.length) return [{ label, date: '', notify_days: 7 }]
+                    const emptyIdx = prev.findIndex((x) => !x.label.trim())
+                    if (emptyIdx >= 0) return prev.map((x, i) => (i === emptyIdx ? { ...x, label } : x))
+                    return prev.map((x, i) => (i === 0 ? { ...x, label } : x))
+                  })
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {specialDates.map((item, i) => (
+              <div key={i} style={{ background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, padding: 12 }}>
+                <div style={{ display: 'grid', gap: 8 }}>
+                  <input
+                    value={item.label}
+                    placeholder="예: 결혼기념일, 딸 생일"
+                    onChange={(e) => setSpecialDates((prev) => prev.map((x, idx) => (idx === i ? { ...x, label: e.target.value } : x)))}
+                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, color: '#fff', fontSize: 12, padding: '9px 10px', outline: 'none' }}
+                  />
+                  <input
+                    type="date"
+                    className="profile-date"
+                    value={item.date ? `${new Date().getFullYear()}-${item.date}` : ''}
+                    onChange={(e) => {
+                      const mmdd = e.target.value ? e.target.value.slice(5, 10) : ''
+                      setSpecialDates((prev) => prev.map((x, idx) => (idx === i ? { ...x, date: mmdd } : x)))
+                    }}
+                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid #7B5EA7', borderRadius: 8, colorScheme: 'dark', fontSize: 12, padding: '9px 10px', outline: 'none' }}
+                  />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8, alignItems: 'center' }}>
+                    <select
+                      value={item.notify_days}
+                      onChange={(e) => setSpecialDates((prev) => prev.map((x, idx) => (idx === i ? { ...x, notify_days: Number(e.target.value) } : x)))}
+                      style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, fontSize: 12, padding: '9px 10px', outline: 'none' }}
+                    >
+                      {[1, 3, 7, 14, 30].map((d) => (
+                        <option key={d} value={d} style={{ color: '#111' }}>
+                          {d}일 전
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="btn"
+                      onClick={() => setSpecialDates((prev) => prev.filter((_, idx) => idx !== i))}
+                      style={{ border: '1px solid rgba(255,80,80,0.5)', color: '#ff7b7b', background: 'rgba(255,80,80,0.08)', fontSize: 12 }}
+                    >
+                      X
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="btn"
+            disabled={specialDates.length >= 10}
+            onClick={() => {
+              if (specialDates.length >= 10) return
+              setSpecialDates((prev) => [...prev, { label: '', date: '', notify_days: 7 }])
+            }}
+            style={{ marginTop: 10, width: '100%', border: '1px dashed #7B5EA7', color: '#9b7ec8', background: 'rgba(123,94,167,0.08)' }}
+          >
+            + 기념일 추가
+          </button>
         </section>
 
         <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 12 }}>
