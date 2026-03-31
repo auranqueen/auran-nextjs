@@ -19,6 +19,7 @@ export default function MyPage() {
   const [userName, setUserName] = useState('유미')
   const [grade, setGrade] = useState('')
   const [point, setPoint] = useState(0)
+  const [chargeBalance, setChargeBalance] = useState(0)
   const [orders, setOrders] = useState<any[]>([])
   const [coupons, setCoupons] = useState<any[]>([])
   const [refills, setRefills] = useState<any[]>([])
@@ -33,6 +34,12 @@ export default function MyPage() {
         setUser(data.user)
         const name = data.user.user_metadata?.full_name || data.user.user_metadata?.name
         if (name) setUserName(name)
+        supabase.from('users').select('id, points, charge_balance').eq('auth_id', data.user.id).single().then(({ data }) => {
+          if (data) {
+            setPoint(data.points || 0)
+            setChargeBalance(data.charge_balance || 0)
+          }
+        })
         supabase
           .from('profiles')
           .select('grade, full_name, username, avatar_url, phone, birth_date, skin_type, skin_concerns, menstrual_cycle, drink_frequency, exercise_frequency, preferred_brands, special_dates')
@@ -89,11 +96,9 @@ export default function MyPage() {
         setCompletion(0)
         setProfileData(null)
         setAvatarUrl('')
+        setPoint(0)
+        setChargeBalance(0)
       }
-    })
-    // TODO: user_wallets 테이블에서 포인트 조회
-    supabase.from('user_wallets').select('balance').single().then(({ data }) => {
-      if (data) setPoint(data.balance)
     })
     // TODO: coupons 테이블에서 사용 가능한 쿠폰 조회
     supabase.from('user_coupons').select('*, coupons(*)').eq('is_used', false).then(({ data }) => {
@@ -256,13 +261,16 @@ export default function MyPage() {
       )}
 
       {/* AURAN POINT */}
-      <div onClick={() => router.push('/my/point')} style={{ margin: '14px 16px 0', background: 'linear-gradient(135deg,rgba(201,169,110,0.12),rgba(201,169,110,0.06))', border: '1px solid rgba(201,169,110,0.25)', borderRadius: '16px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+      <div onClick={() => router.push('/wallet')} style={{ margin: '14px 16px 0', background: 'linear-gradient(135deg,rgba(201,169,110,0.12),rgba(201,169,110,0.06))', border: '1px solid rgba(201,169,110,0.25)', borderRadius: '16px', padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '22px' }}>✨</span>
           <div>
             <div style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_MUTED, marginBottom: '2px', letterSpacing: '1px' }}>AURAN POINT</div>
             <div style={{ fontSize: '22px', fontWeight: 400 }}>
               <em style={{ color: GOLD, fontStyle: 'normal' }}>{point > 0 ? point.toLocaleString() : '8,888'}P</em>
+            </div>
+            <div style={{ fontSize: 11, color: '#9b7ec8', marginTop: 4 }}>
+              AURAN PAY ₩{(chargeBalance || 0).toLocaleString()}
             </div>
           </div>
         </div>

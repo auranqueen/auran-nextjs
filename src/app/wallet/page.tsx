@@ -100,7 +100,7 @@ function WalletPageInner() {
       <div style={{ padding: '18px 18px 0', flex: 1, overflowY: 'auto', paddingBottom: 220, scrollPaddingBottom: 220 }}>
         {showPaymentSuccess && (
           <div style={{ marginBottom: 14, padding: 14, background: 'rgba(76,173,126,0.2)', border: '1px solid rgba(76,173,126,0.5)', borderRadius: 12, color: '#4cad7e', fontSize: 13, fontWeight: 600 }}>
-            ✓ 토스트가 구워졌어요! 🍞 잔액 반영까지 잠시만 기다려 주세요.
+            ✓ AURAN PAY 충전 완료! 잔액 반영까지 잠시만 기다려 주세요.
           </div>
         )}
         {loading ? (
@@ -114,12 +114,12 @@ function WalletPageInner() {
                 <div style={{ fontSize: 10, color: 'rgba(201,168,76,0.65)', marginBottom: 6 }}>보유 포인트</div>
                 <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: 'var(--gold)' }}>{(profile.points || 0).toLocaleString()}P</div>
               </div>
-              <div style={{ background: 'rgba(76,173,126,0.10)', border: '1px solid rgba(76,173,126,0.25)', borderRadius: 14, padding: '14px 14px' }}>
-                <div style={{ fontSize: 10, color: 'rgba(76,173,126,0.65)', marginBottom: 6 }}>🍞 토스트</div>
-                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: '#4cad7e' }}>
+              <div style={{ background: 'rgba(123,94,167,0.10)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 14, padding: '14px 14px' }}>
+                <div style={{ fontSize: 10, color: 'rgba(155,126,200,0.65)', marginBottom: 6 }}>AURAN PAY</div>
+                <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 20, fontWeight: 800, color: '#9b7ec8' }}>
                   {Math.floor((profile.charge_balance || 0) / Math.max(1, toastRate)).toLocaleString()}T
                 </div>
-                <div style={{ fontSize: 10, color: 'rgba(76,173,126,0.65)', marginTop: 4 }}>
+                <div style={{ fontSize: 10, color: 'rgba(155,126,200,0.65)', marginTop: 4 }}>
                   ₩{(profile.charge_balance || 0).toLocaleString()}
                 </div>
               </div>
@@ -144,8 +144,8 @@ function WalletPageInner() {
                   }}
                 >
                   {[
-                    { key: 'preset', label: '토스트 굽기 🍞' },
-                    { key: 'custom', label: '직접 굽기' },
+                    { key: 'preset', label: 'AURAN PAY 충전' },
+                    { key: 'custom', label: '직접 입력' },
                   ].map(t => {
                     const active = chargeMode === t.key
                     return (
@@ -172,7 +172,7 @@ function WalletPageInner() {
                   })}
                 </div>
                 <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.5, padding: '0 2px' }}>
-                  <strong style={{ color: 'rgba(255,255,255,0.55)' }}>충전하기</strong> — 토스트 굽기는 결제 금액만큼 지갑에 충전하는 단계예요. 충전된 금액은 주문 결제 시 토스트로 사용돼요.
+                  AURAN PAY를 충전하면 제품 구매 시 바로 사용할 수 있어요. 충전 금액은 결제 즉시 잔액에 반영됩니다.
                 </div>
 
                 {/* 방식 A: 고정 금액 버튼 */}
@@ -320,7 +320,7 @@ function WalletPageInner() {
                       opacity: charging ? 0.7 : 1,
                     }}
                   >
-                    {charging ? '결제창 여는 중...' : '토스트 굽기 🍞'}
+                    {charging ? '결제창 여는 중...' : 'AURAN PAY 충전하기'}
                   </button>
                 </PaymentAuthGuard>
               </div>

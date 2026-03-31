@@ -88,7 +88,7 @@ export default function MyPointPage() {
         </section>
 
         <button
-          onClick={() => router.push('/charge')}
+          onClick={() => router.push('/wallet')}
           style={{ width: '100%', border: 'none', borderRadius: 12, background: 'linear-gradient(135deg,#C9A96E,#E1C38F)', color: '#0D0B09', fontWeight: 700, padding: '12px 0', marginBottom: 10, cursor: 'pointer' }}
         >
           충전하기
