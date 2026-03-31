@@ -22,9 +22,12 @@ type OrderRow = {
   customer_id?: string | null
   admin_order_notes?: string | null
   customer_memo?: string | null
+  users?: { customer_grade?: string | null } | null
 }
 
 const SELECT_FULL =
+  'id, order_no, status, total_amount, final_amount, coupon_discount, points_used, payment_method, tracking_no, courier, ordered_at, shipped_at, admin_order_notes, customer_id, customer_memo, users!orders_customer_id_fkey(customer_grade)'
+const SELECT_FULL_NOUSER =
   'id, order_no, status, total_amount, final_amount, coupon_discount, points_used, payment_method, tracking_no, courier, ordered_at, shipped_at, admin_order_notes, customer_id, customer_memo'
 const SELECT_FALLBACK =
   'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, customer_id'
@@ -56,6 +59,10 @@ export default function AdminOrdersPage() {
   const [toastMsg, setToastMsg] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const [shipBulkIds, setShipBulkIds] = useState<string[] | null>(null)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [searchQ, setSearchQ] = useState('')
+  const [historyCustomerId, setHistoryCustomerId] = useState<string | null>(null)
 
   const current = useMemo(() => rows.find((r) => r.id === modalId) || null, [modalId, rows])
   const memoOrder = useMemo(() => rows.find((r) => r.id === memoDetailId) || null, [memoDetailId, rows])
@@ -67,6 +74,11 @@ export default function AdminOrdersPage() {
       const r1 = await supabase.from('orders').select(SELECT_FULL).order('ordered_at', { ascending: false }).limit(500)
       let fetchError = r1.error
       data = (r1.data as OrderRow[] | null) ?? null
+      if (fetchError) {
+        const r1b = await supabase.from('orders').select(SELECT_FULL_NOUSER).order('ordered_at', { ascending: false }).limit(500)
+        data = (r1b.data as OrderRow[] | null) ?? null
+        fetchError = r1b.error
+      }
       if (fetchError) {
         const r2 = await supabase.from('orders').select(SELECT_FALLBACK).order('ordered_at', { ascending: false }).limit(500)
         data = (r2.data as OrderRow[] | null) ?? null
@@ -84,15 +96,30 @@ export default function AdminOrdersPage() {
   }, [supabase])
 
   const filtered = useMemo(() => {
-    return (rows || []).filter((r) => {
-      if (tab === '전체')
-        return (
-          r.status === '주문확인' || r.status === '발송준비' || r.status === '배송중' || r.status === '취소' || r.status === '환불'
-        )
-      if (tab === '취소/환불') return r.status === '취소' || r.status === '환불'
+    let list = rows || []
+    list = list.filter((r) => {
+      if (tab === '전체') return true
+      if (tab === '취소/환불') return r.status === '취소' || r.status === '환불' || r.status === '취소/환불'
       return r.status === tab
     })
-  }, [rows, tab])
+    if (dateFrom) {
+      const t0 = new Date(dateFrom + 'T00:00:00').getTime()
+      list = list.filter((r) => r.ordered_at && new Date(r.ordered_at).getTime() >= t0)
+    }
+    if (dateTo) {
+      const t1 = new Date(dateTo + 'T23:59:59.999').getTime()
+      list = list.filter((r) => r.ordered_at && new Date(r.ordered_at).getTime() <= t1)
+    }
+    const q = searchQ.trim().toLowerCase()
+    if (q) {
+      list = list.filter((r) => {
+        const pay = String((r as any).payment_method ?? '').toLowerCase()
+        const cid = String(r.customer_id ?? '').toLowerCase()
+        return String(r.order_no).toLowerCase().includes(q) || cid.includes(q) || pay.includes(q)
+      })
+    }
+    return list
+  }, [rows, tab, dateFrom, dateTo, searchQ])
 
   const stats = useMemo(() => {
     let n = 0
@@ -109,6 +136,18 @@ export default function AdminOrdersPage() {
     }
     return { n, sumTotal, sumCoupon, sumToast, sumFinal }
   }, [filtered])
+
+  const historyOrders = useMemo(() => {
+    if (!historyCustomerId) return []
+    return (rows || [])
+      .filter((r) => r.customer_id === historyCustomerId)
+      .slice()
+      .sort((a, b) => {
+        const ta = a.ordered_at ? new Date(a.ordered_at).getTime() : 0
+        const tb = b.ordered_at ? new Date(b.ordered_at).getTime() : 0
+        return ta - tb
+      })
+  }, [rows, historyCustomerId])
 
   const openShipModal = (o: OrderRow, bulkTargetIds?: string[] | null) => {
     setShipBulkIds(bulkTargetIds && bulkTargetIds.length ? bulkTargetIds : null)
@@ -234,6 +273,7 @@ export default function AdminOrdersPage() {
       return
     }
     setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: '발송준비' } : r)))
+    setTab('발송준비')
   }
 
   const bulkMoveToPrep = async () => {
@@ -337,10 +377,11 @@ export default function AdminOrdersPage() {
       )
     }
     setBulkResult(`처리 완료: 성공 ${ok}건 / 실패 ${fail}건`)
+    if (ok > 0) setTab('배송중')
     setBulkBusy(false)
   }
 
-  const tabs: TabKey[] = ['전체', '주문확인', '발송준비', '배송중', '배송완료', '취소/환불']
+  const tabs: TabKey[] = ['주문확인', '발송준비', '배송중', '배송완료', '취소/환불', '전체']
 
   return (
     <div>
@@ -357,6 +398,60 @@ export default function AdminOrdersPage() {
             <button type="button" className="btn btn-bl" onClick={downloadCjCsv}>
               📦 CJ송장 양식 다운
             </button>
+          </div>
+        </div>
+        <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 10, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace" }}>주문일</span>
+            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 11, padding: '6px 8px' }} />
+            <span style={{ fontSize: 11, color: 'var(--text3)' }}>~</span>
+            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 11, padding: '6px 8px' }} />
+            <button
+              type="button"
+              className="btn btn-gy"
+              onClick={() => {
+                const t = new Date()
+                const s = t.toISOString().slice(0, 10)
+                setDateFrom(s)
+                setDateTo(s)
+              }}
+            >
+              오늘
+            </button>
+            <button
+              type="button"
+              className="btn btn-gy"
+              onClick={() => {
+                const t = new Date()
+                const wd = (t.getDay() + 6) % 7
+                const mon = new Date(t.getFullYear(), t.getMonth(), t.getDate() - wd)
+                setDateFrom(mon.toISOString().slice(0, 10))
+                setDateTo(t.toISOString().slice(0, 10))
+              }}
+            >
+              이번주
+            </button>
+            <button
+              type="button"
+              className="btn btn-gy"
+              onClick={() => {
+                const t = new Date()
+                const first = new Date(t.getFullYear(), t.getMonth(), 1)
+                setDateFrom(first.toISOString().slice(0, 10))
+                setDateTo(t.toISOString().slice(0, 10))
+              }}
+            >
+              이번달
+            </button>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontSize: 10, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace" }}>통합검색</span>
+            <input
+              value={searchQ}
+              onChange={(e) => setSearchQ(e.target.value)}
+              placeholder="주문번호 · 고객ID · 결제수단"
+              style={{ flex: 1, minWidth: 200, maxWidth: 420, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 12, padding: '8px 10px', outline: 'none' }}
+            />
           </div>
         </div>
         <div style={{ padding: '10px 14px 14px', display: 'flex', flexWrap: 'wrap', gap: 8, borderBottom: '1px solid var(--border)' }}>
@@ -377,7 +472,7 @@ export default function AdminOrdersPage() {
           ))}
         </div>
 
-        <div style={{ padding: '0 14px 12px', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ padding: '0 14px 12px', borderBottom: '1px solid var(--border)', display: tab === '발송준비' ? 'block' : 'none' }}>
           <button
             type="button"
             className="btn btn-bl"
@@ -556,6 +651,8 @@ export default function AdminOrdersPage() {
                     }}
                   />
                 </th>
+                <th style={{ width: 28 }}>VIP</th>
+                <th>고객ID</th>
                 <th>주문번호</th>
                 <th>상태</th>
                 <th>결제수단</th>
@@ -598,10 +695,16 @@ export default function AdminOrdersPage() {
                   ) : (
                     <span style={{ color: 'var(--text3)' }}>—</span>
                   )
-                const stale =
-                  (o.status === '주문확인' || o.status === '발송준비') &&
+                const staleOrder =
+                  o.status === '주문확인' &&
                   !!o.ordered_at &&
                   Date.now() - new Date(o.ordered_at).getTime() >= 3 * 24 * 60 * 60 * 1000
+                const shipRef = o.shipped_at || o.ordered_at || ''
+                const shipLate =
+                  o.status === '배송중' &&
+                  !!shipRef &&
+                  Date.now() - new Date(shipRef).getTime() >= 7 * 24 * 60 * 60 * 1000
+                const rowWarn = staleOrder || shipLate
                 const st = o.status
                 const stCls =
                   st === '배송완료'
@@ -610,11 +713,15 @@ export default function AdminOrdersPage() {
                       ? 'b b-pu'
                       : st === '발송준비'
                         ? 'b b-bl'
-                        : st === '취소' || st === '환불'
+                        : st === '취소' || st === '환불' || st === '취소/환불'
                           ? 'b b-re'
                           : 'b b-gy'
+                const uEmb = (o as any).users
+                const uOne = Array.isArray(uEmb) ? uEmb[0] : uEmb
+                const ug = String(uOne?.customer_grade ?? (o as any).profiles?.grade ?? '').trim()
+                const isVip = ug === 'NOIR' || ug === 'CÉLESTE' || ug === 'CELESTE'
                 return (
-                  <tr key={o.id} style={{ background: stale ? 'rgba(255,80,80,0.07)' : undefined }}>
+                  <tr key={o.id} style={{ background: rowWarn ? 'rgba(255,80,80,0.07)' : undefined }}>
                     <td>
                       <input
                         type="checkbox"
@@ -629,9 +736,36 @@ export default function AdminOrdersPage() {
                         }}
                       />
                     </td>
+                    <td style={{ textAlign: 'center', fontSize: 14 }}>{isVip ? '💜' : ''}</td>
+                    <td className="mono" style={{ fontSize: 9, maxWidth: 120 }}>
+                      {o.customer_id ? (
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setHistoryCustomerId(o.customer_id!)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') setHistoryCustomerId(o.customer_id!)
+                          }}
+                          style={{ color: 'var(--gold)', cursor: 'pointer', wordBreak: 'break-all' }}
+                        >
+                          {o.customer_id}
+                        </span>
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td className="mono">
-                      {stale ? (
-                        <span title="주문 후 3일 이상 미발송" style={{ marginRight: 2 }}>
+                      {rowWarn ? (
+                        <span
+                          title={
+                            staleOrder && shipLate
+                              ? '주문확인 3일+ · 배송중 7일+'
+                              : staleOrder
+                                ? '주문확인 3일 이상 경과'
+                                : '배송중 7일 이상 경과'
+                          }
+                          style={{ marginRight: 2 }}
+                        >
                           🔴
                         </span>
                       ) : null}
@@ -685,7 +819,7 @@ export default function AdminOrdersPage() {
               })}
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={11} style={{ color: 'var(--text3)' }}>
+                  <td colSpan={13} style={{ color: 'var(--text3)' }}>
                     주문이 없습니다.
                   </td>
                 </tr>
@@ -955,6 +1089,78 @@ export default function AdminOrdersPage() {
           </div>
         </div>
       )}
+
+      {historyCustomerId ? (
+        <div
+          onClick={() => setHistoryCustomerId(null)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 125,
+            background: 'rgba(0,0,0,.45)',
+            display: 'flex',
+            justifyContent: 'flex-end',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: 'min(400px, 100vw)',
+              height: '100%',
+              background: 'var(--bg2)',
+              borderLeft: '1px solid var(--border)',
+              overflowY: 'auto',
+              padding: '18px 16px',
+              boxSizing: 'border-box',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>고객 주문 히스토리</div>
+                <div className="mono" style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4, wordBreak: 'break-all' }}>
+                  {historyCustomerId}
+                </div>
+              </div>
+              <button type="button" onClick={() => setHistoryCustomerId(null)} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 20, cursor: 'pointer' }}>
+                ×
+              </button>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 12, lineHeight: 1.6 }}>
+              총 주문 {historyOrders.length}건 · 총 결제 ₩
+              {historyOrders.reduce((s, r) => s + (Number(r.final_amount) || 0), 0).toLocaleString()}
+              <br />
+              재구매 {Math.max(0, historyOrders.length - 1)}회
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {historyOrders.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--text3)' }}>최근 500건 로드 범위에 해당 고객 주문이 없습니다.</div>
+              ) : null}
+              {historyOrders.map((h) => (
+                <div
+                  key={h.id}
+                  style={{
+                    padding: '10px 10px',
+                    background: 'var(--bg3)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 8,
+                    fontSize: 11,
+                  }}
+                >
+                  <div className="mono" style={{ color: 'var(--gold)', marginBottom: 4 }}>
+                    {h.order_no}
+                  </div>
+                  <div style={{ color: 'var(--text2)' }}>
+                    {h.status} · ₩{Number(h.final_amount ?? 0).toLocaleString()}
+                  </div>
+                  <div className="mono" style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>
+                    {h.ordered_at ? new Date(h.ordered_at).toLocaleString('ko-KR') : '—'}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {toastMsg ? (
         <div
