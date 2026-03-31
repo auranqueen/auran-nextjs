@@ -228,7 +228,7 @@ export default function AdminChrome({ adminName, roleCounts, pendingShipCount = 
                         key={it.href}
                         href={it.href}
                         style={{
-                          display: 'flex',
+                          display: it.href === '/admin/shipping' ? 'none' : 'flex',
                           alignItems: 'center',
                           gap: 9,
                           padding: '8px 16px 8px 18px',
