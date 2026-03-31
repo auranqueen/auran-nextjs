@@ -44,6 +44,11 @@ export default function AdminOrdersPage() {
   const [cardCheck, setCardCheck] = useState(false)
   const [cardText, setCardText] = useState('')
   const [internalMemo, setInternalMemo] = useState('')
+  const [bulkOpen, setBulkOpen] = useState(false)
+  const [bulkPreview, setBulkPreview] = useState<{ order_no: string; courier: string; tracking_no: string }[]>([])
+  const [bulkResult, setBulkResult] = useState<string | null>(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
+  const [bulkFileKey, setBulkFileKey] = useState(0)
 
   const current = useMemo(() => rows.find((r) => r.id === modalId) || null, [modalId, rows])
 
@@ -214,6 +219,68 @@ export default function AdminOrdersPage() {
     URL.revokeObjectURL(a.href)
   }
 
+  const downloadCjCsv = () => {
+    const esc = (s: string) => `"${String(s).replace(/"/g, '""')}"`
+    const cjRows = filtered.filter((r) => r.status === '주문확인' || r.status === '발송준비')
+    const lines = [
+      ['받는분', '받는분전화번호', '받는분주소', '품명', '수량', '주문번호', '고객메모'].join(','),
+      ...cjRows.map((r) => [esc('-'), esc('-'), esc('-'), esc('AURAN 주문'), '1', esc(r.order_no), esc('-')].join(',')),
+    ]
+    const blob = new Blob(['\ufeff' + lines.join('\n')], { type: 'text/csv;charset=utf-8' })
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(blob)
+    a.download = `cj_songjang_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(a.href)
+  }
+
+  const applyBulkTracking = async () => {
+    if (!bulkPreview.length) return
+    setBulkBusy(true)
+    setBulkResult(null)
+    let ok = 0
+    let fail = 0
+    const now = new Date().toISOString()
+    const updates: { id: string; tracking: string; courier: string }[] = []
+    for (const row of bulkPreview) {
+      const o = rows.find((r) => String(r.order_no).trim() === String(row.order_no).trim())
+      if (!o) {
+        fail++
+        continue
+      }
+      const courier = (row.courier || '').trim() || 'CJ대한통운'
+      const tracking = String(row.tracking_no).trim()
+      if (!tracking) {
+        fail++
+        continue
+      }
+      const { error } = await supabase.from('orders').update({ status: '배송중', tracking_no: tracking, courier, shipped_at: now }).eq('id', o.id)
+      if (error) {
+        fail++
+        continue
+      }
+      const body =
+        `[AURAN] 주문이 발송됐습니다.\n` +
+        `운송장번호: ${tracking}\n` +
+        `주문번호: ${o.order_no}\n\n` +
+        `배송조회: https://auran.kr/track/\n` +
+        `문의: support@auran.kr`
+      await tryNotifyCustomer(o.customer_id, '🚚 발송 안내', body)
+      ok++
+      updates.push({ id: o.id, tracking, courier })
+    }
+    if (updates.length) {
+      setRows((prev) =>
+        prev.map((r) => {
+          const u = updates.find((x) => x.id === r.id)
+          return u ? { ...r, status: '배송중', tracking_no: u.tracking, courier: u.courier, shipped_at: now } : r
+        })
+      )
+    }
+    setBulkResult(`처리 완료: 성공 ${ok}건 / 실패 ${fail}건`)
+    setBulkBusy(false)
+  }
+
   const tabs: TabKey[] = ['전체', '주문확인', '발송준비', '배송중', '배송완료', '취소/환불']
 
   return (
@@ -227,6 +294,9 @@ export default function AdminOrdersPage() {
           <div className="card-acts">
             <button type="button" className="btn btn-bl" onClick={downloadCsv}>
               ⬇ CSV 다운로드
+            </button>
+            <button type="button" className="btn btn-bl" onClick={downloadCjCsv}>
+              📦 CJ송장 양식 다운
             </button>
           </div>
         </div>
@@ -246,6 +316,122 @@ export default function AdminOrdersPage() {
               {t}
             </button>
           ))}
+        </div>
+
+        <div style={{ padding: '0 14px 12px', borderBottom: '1px solid var(--border)' }}>
+          <button
+            type="button"
+            className="btn btn-bl"
+            onClick={() => {
+              setBulkOpen((v) => !v)
+              if (bulkOpen) {
+                setBulkPreview([])
+                setBulkResult(null)
+              }
+            }}
+          >
+            📥 송장 일괄 업로드
+          </button>
+          {bulkOpen ? (
+            <div style={{ marginTop: 12, padding: 12, background: 'var(--bg3)', borderRadius: 8, border: '1px solid var(--border)' }}>
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8 }}>CSV: 주문번호, 택배사, 송장번호 (첫 행 헤더)</div>
+              <input
+                key={bulkFileKey}
+                type="file"
+                accept=".csv,text/csv"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  setBulkFileKey((k) => k + 1)
+                  if (!f) return
+                  const reader = new FileReader()
+                  reader.onload = () => {
+                    const text = String(reader.result || '').replace(/^\uFEFF/, '')
+                    const rawLines = text.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.length > 0)
+                    if (rawLines.length < 2) {
+                      setBulkPreview([])
+                      setBulkResult('파일에 데이터가 없습니다.')
+                      return
+                    }
+                    const parseLine = (line: string) => {
+                      const cells: string[] = []
+                      let c = ''
+                      let q = false
+                      for (let i = 0; i < line.length; i++) {
+                        const ch = line[i]
+                        if (ch === '"') {
+                          q = !q
+                          continue
+                        }
+                        if (ch === ',' && !q) {
+                          cells.push(c.trim())
+                          c = ''
+                          continue
+                        }
+                        c += ch
+                      }
+                      cells.push(c.trim())
+                      return cells.map((x) => x.replace(/^"(.*)"$/, '$1'))
+                    }
+                    const head = parseLine(rawLines[0])
+                    const iNo = head.findIndex((h) => h.includes('주문번호'))
+                    const iCr = head.findIndex((h) => h.includes('택배'))
+                    const iTr = head.findIndex((h) => h.includes('송장'))
+                    if (iNo < 0 || iCr < 0 || iTr < 0) {
+                      setBulkPreview([])
+                      setBulkResult('헤더에 주문번호, 택배사, 송장번호 컬럼이 필요합니다.')
+                      return
+                    }
+                    const out: { order_no: string; courier: string; tracking_no: string }[] = []
+                    for (let li = 1; li < rawLines.length; li++) {
+                      const cells = parseLine(rawLines[li])
+                      if (cells.length < Math.max(iNo, iCr, iTr) + 1) continue
+                      const order_no = (cells[iNo] || '').trim()
+                      const courier = (cells[iCr] || '').trim()
+                      const tracking_no = (cells[iTr] || '').trim()
+                      if (!order_no || !tracking_no) continue
+                      out.push({ order_no, courier, tracking_no })
+                    }
+                    setBulkPreview(out)
+                    setBulkResult(out.length ? `미리보기 ${out.length}건` : '유효한 행이 없습니다.')
+                  }
+                  reader.readAsText(f, 'UTF-8')
+                }}
+                style={{ fontSize: 11, color: 'var(--text2)' }}
+              />
+              {bulkPreview.length > 0 ? (
+                <div style={{ marginTop: 10, maxHeight: 220, overflow: 'auto' }}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>주문번호</th>
+                        <th>택배사</th>
+                        <th>송장번호</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bulkPreview.map((b, i) => (
+                        <tr key={i}>
+                          <td className="mono" style={{ fontSize: 10 }}>
+                            {b.order_no}
+                          </td>
+                          <td style={{ fontSize: 10 }}>{b.courier}</td>
+                          <td className="mono" style={{ fontSize: 10 }}>
+                            {b.tracking_no}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : null}
+              <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                <button type="button" className="btn btn-gr" disabled={bulkBusy || !bulkPreview.length} onClick={() => void applyBulkTracking()}>
+                  {bulkBusy ? '처리 중...' : '일괄 적용'}
+                </button>
+                {bulkResult ? <span style={{ fontSize: 11, color: 'var(--text2)' }}>{bulkResult}</span> : null}
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {loading ? (
@@ -271,14 +457,35 @@ export default function AdminOrdersPage() {
                 const pay = String((o as any).payment_method ?? '').trim() || '-'
                 const cd = Number(o.coupon_discount ?? 0) || 0
                 const toastPts = Number((o as any).points_used ?? o.point_used ?? 0) || 0
+                const trk = String(o.tracking_no || '').trim()
+                const cr = String(o.courier || '').trim()
+                let trackHref = ''
+                if (trk) {
+                  if (cr.includes('CJ') || cr.includes('대한통운')) trackHref = `https://www.cjlogistics.com/ko/tool/parcel/tracking?gnbInvcNo=${encodeURIComponent(trk)}`
+                  else if (cr.includes('한진')) trackHref = `https://www.hanjin.com/kor/CMS/DeliveryMgr/WaybillSch.do?mCode=MN038&schLang=KR&wblnumText2=${encodeURIComponent(trk)}`
+                  else if (cr.includes('롯데')) trackHref = `https://www.lotteglogis.com/open/tracking?invno=${encodeURIComponent(trk)}`
+                  else if (cr.includes('우체국')) trackHref = `https://service.epost.go.kr/trace.RetrieveDomRigiTraceList.comm?sid1=${encodeURIComponent(trk)}`
+                  else if (cr.includes('로젠')) trackHref = `https://www.ilogen.com/m/personal/trace/${encodeURIComponent(trk)}`
+                }
                 const trackCell =
                   o.status === '배송중' || o.status === '배송완료' ? (
                     <span className="mono" style={{ fontSize: 10 }}>
-                      {(o.courier || '-') + ' · ' + (o.tracking_no || '-')}
+                      {(o.courier || '-') + ' · '}
+                      {trackHref ? (
+                        <a href={trackHref} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold)', textDecoration: 'underline' }}>
+                          {trk}
+                        </a>
+                      ) : (
+                        trk || '-'
+                      )}
                     </span>
                   ) : (
                     <span style={{ color: 'var(--text3)' }}>—</span>
                   )
+                const stale =
+                  (o.status === '주문확인' || o.status === '발송준비') &&
+                  !!o.ordered_at &&
+                  Date.now() - new Date(o.ordered_at).getTime() >= 3 * 24 * 60 * 60 * 1000
                 const st = o.status
                 const stCls =
                   st === '배송완료'
@@ -291,8 +498,15 @@ export default function AdminOrdersPage() {
                           ? 'b b-re'
                           : 'b b-gy'
                 return (
-                  <tr key={o.id}>
-                    <td className="mono">{o.order_no}</td>
+                  <tr key={o.id} style={{ background: stale ? 'rgba(255,80,80,0.07)' : undefined }}>
+                    <td className="mono">
+                      {stale ? (
+                        <span title="주문 후 3일 이상 미발송" style={{ marginRight: 2 }}>
+                          🔴
+                        </span>
+                      ) : null}
+                      {o.order_no}
+                    </td>
                     <td>
                       <span className={stCls}>{o.status}</span>
                     </td>
