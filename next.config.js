@@ -26,9 +26,7 @@ const nextConfig = {
     ],
   },
   async redirects() {
-    return [
-      { source: '/community', destination: '/diary', permanent: true },
-    ]
+    return []
   },
   async rewrites() {
     return [
