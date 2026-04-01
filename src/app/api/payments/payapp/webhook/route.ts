@@ -93,6 +93,50 @@ export async function POST(req: NextRequest) {
         .update({ status: 'paid', paid_at: data.pay_date || new Date().toISOString(), updated_at: new Date().toISOString() })
         .eq('id', intent.id)
 
+      // 원장님 구독 결제: owner_subscriptions + profiles 반영
+      if (intent.kind === 'owner_subscription' && intent.user_id && intent.target_id) {
+        const client = tryCreateServiceClient() || supabase
+        let payload: { owner_id?: string; plan?: string; plan_name?: string; mode?: string; monthly_price?: number } = {}
+        try {
+          payload = JSON.parse(String(intent.target_id))
+        } catch {
+          payload = {}
+        }
+        const ownerId = String(payload.owner_id || intent.user_id)
+        const planSlug = String(payload.plan || 'owner_plan')
+        const planName = String(payload.plan_name || planSlug)
+        const ownerMode = String(payload.mode || 'auran')
+        const monthlyPrice = Number(payload.monthly_price ?? intent.amount ?? 0)
+        const expiresAt = new Date()
+        expiresAt.setMonth(expiresAt.getMonth() + 1)
+
+        await client.from('owner_subscriptions').insert({
+          owner_id: ownerId,
+          plan: planSlug,
+          started_at: new Date().toISOString(),
+          expires_at: expiresAt.toISOString(),
+          monthly_price: monthlyPrice,
+          status: 'active',
+        } as any)
+
+        const { data: urow } = await client.from('users').select('auth_id').eq('id', ownerId).maybeSingle()
+        if (urow?.auth_id) {
+          await client
+            .from('profiles')
+            .update({ owner_subscription_plan: planSlug, owner_mode: ownerMode } as any)
+            .eq('auth_id', urow.auth_id)
+        }
+
+        await client.from('notifications').insert({
+          user_id: ownerId,
+          type: 'promo',
+          title: '구독이 시작됐어요 💜',
+          body: `${planName} 구독을 시작했어요`,
+          icon: '💜',
+          is_read: false,
+        } as any)
+      }
+
       // domain apply: charge => increase charge_balance + 5% 포인트 적립 + 알림
       if (intent.kind === 'charge' && intent.user_id) {
         const amount = Number(intent.amount || 0)
