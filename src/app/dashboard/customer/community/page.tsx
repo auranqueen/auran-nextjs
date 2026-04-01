@@ -13,7 +13,7 @@ const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
 const TEXT_MUTED = 'rgba(255,255,255,0.4)'
 const TEXT_DIM = 'rgba(255,255,255,0.25)'
 
-type TabId = 'all' | 'hot' | 'skin' | 'review' | 'salon' | 'routine' | 'qa' | 'contest'
+type TabId = 'all' | 'hot' | 'skin' | 'review' | 'salon' | 'routine' | 'qa' | 'menopause' | 'contest'
 
 type Post = {
   id: string
@@ -26,6 +26,11 @@ type Post = {
   likes: number | null
   views: number | null
   created_at: string
+  skin_type?: string | null
+  is_expert_answered?: boolean | null
+  product_tags?: string[] | null
+  _u?: { name?: string | null; avatar_url?: string | null; customer_grade?: string | null; auth_id?: string | null } | null
+  _p?: { username?: string | null; full_name?: string | null; grade?: string | null; avatar_url?: string | null } | null
 }
 
 const TABS: { id: TabId; label: string }[] = [
@@ -36,6 +41,7 @@ const TABS: { id: TabId; label: string }[] = [
   { id: 'salon', label: '살롱후기' },
   { id: 'routine', label: '스킨루틴' },
   { id: 'qa', label: 'Q&A' },
+  { id: 'menopause', label: '갱년기' },
   { id: 'contest', label: '컨테스트' },
 ]
 
@@ -67,6 +73,7 @@ export default function CustomerCommunityPage() {
   const [contestBusy, setContestBusy] = useState<string | null>(null)
   const [chargeModal, setChargeModal] = useState(false)
   const [votedContest, setVotedContest] = useState(false)
+  const [skinFilter, setSkinFilter] = useState<'' | '건성' | '지성' | '복합성' | '민감성'>('')
 
   const activeLabel = useMemo(() => TABS.find((t) => t.id === tab)?.label ?? '커뮤니티', [tab])
 
@@ -141,7 +148,9 @@ export default function CustomerCommunityPage() {
         data: { user },
       } = await supabase.auth.getUser()
 
-      let query = supabase.from('posts').select('id,user_id,category,title,content,image_urls,hashtags,likes,views,created_at')
+      let query = supabase
+        .from('posts')
+        .select('id,user_id,category,title,content,image_urls,hashtags,likes,views,created_at,skin_type,is_expert_answered,product_tags')
 
       if (tab === 'hot') {
         query = query.order('likes', { ascending: false }).order('views', { ascending: false }).limit(10)
@@ -153,13 +162,33 @@ export default function CustomerCommunityPage() {
         query = query.eq('category', tab)
       }
 
+      if (skinFilter) {
+        query = query.eq('skin_type', skinFilter)
+      }
+
       const tag = q.trim().replace(/^#/, '')
       if (tag) {
         query = query.contains('hashtags', [tag])
       }
 
       const { data } = await query
-      const list = (data || []) as Post[]
+      let list = (data || []) as Post[]
+      const uidSet = Array.from(new Set(list.map((p) => p.user_id).filter(Boolean)))
+      if (uidSet.length > 0) {
+        const { data: us } = await supabase.from('users').select('id,name,avatar_url,customer_grade,auth_id').in('id', uidSet)
+        const umap = Object.fromEntries((us || []).map((u: any) => [u.id, u]))
+        const aids = Array.from(new Set((us || []).map((u: any) => u.auth_id).filter(Boolean)))
+        let pmap: Record<string, any> = {}
+        if (aids.length > 0) {
+          const { data: profs } = await supabase.from('profiles').select('auth_id,username,grade,avatar_url,full_name').in('auth_id', aids)
+          pmap = Object.fromEntries((profs || []).map((pr: any) => [pr.auth_id, pr]))
+        }
+        list = list.map((p) => {
+          const u = umap[p.user_id]
+          const pr = u?.auth_id ? pmap[u.auth_id] : null
+          return { ...p, _u: u, _p: pr }
+        })
+      }
       setPosts(list)
 
       if (!user || list.length === 0) {
@@ -179,7 +208,7 @@ export default function CustomerCommunityPage() {
       setLoading(false)
     }
     run()
-  }, [q, supabase, tab])
+  }, [q, supabase, tab, skinFilter])
 
   const onVote = async (entryId: string) => {
     if (!contestRow?.id) return
@@ -387,6 +416,34 @@ export default function CustomerCommunityPage() {
             )
           })}
         </div>
+
+        {tab !== 'contest' ? (
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', paddingBottom: 8 }}>
+            {(['전체', '건성', '지성', '복합성', '민감성'] as const).map((label) => {
+              const val = label === '전체' ? '' : label
+              const active = skinFilter === val
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setSkinFilter(val as typeof skinFilter)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 999,
+                    background: active ? 'rgba(123,94,167,0.18)' : CARD_BG,
+                    border: `1px solid ${active ? 'rgba(123,94,167,0.35)' : 'rgba(255,255,255,0.07)'}`,
+                    color: active ? '#e8d6ff' : TEXT_MUTED,
+                    fontSize: 11,
+                    fontWeight: active ? 600 : 400,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        ) : null}
       </div>
 
       {/* 콘텐츠 */}
@@ -469,6 +526,30 @@ export default function CustomerCommunityPage() {
               </>
             )}
           </div>
+        ) : posts.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '28px 12px 40px' }}>
+            <div style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.65, marginBottom: 18 }}>
+              아직 글이 없어요
+              <br />
+              첫 번째 글을 써보세요 💜
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard/customer/community/new')}
+              style={{
+                padding: '10px 22px',
+                borderRadius: 999,
+                border: 'none',
+                background: '#7B5EA7',
+                color: '#fff',
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              글 쓰기
+            </button>
+          </div>
         ) : tab === 'hot' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {posts.map((p, idx) => (
@@ -501,6 +582,36 @@ export default function CustomerCommunityPage() {
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</div>
+                  <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                    {p.is_expert_answered ? (
+                      <span
+                        style={{
+                          fontSize: 9,
+                          padding: '2px 8px',
+                          borderRadius: 999,
+                          background: 'rgba(201,169,110,0.15)',
+                          color: GOLD,
+                          fontWeight: 600,
+                        }}
+                      >
+                        👩‍⚕️ 전문가답변
+                      </span>
+                    ) : null}
+                    {p._p?.grade || p._u?.customer_grade ? (
+                      <span
+                        style={{
+                          fontSize: 9,
+                          padding: '2px 8px',
+                          borderRadius: 999,
+                          background: 'rgba(123,94,167,0.2)',
+                          color: '#e8d6ff',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {p._p?.grade || p._u?.customer_grade}
+                      </span>
+                    ) : null}
+                  </div>
                   <div style={{ marginTop: 6, display: 'flex', gap: 10, fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>
                     <span>조회 {(p.views || 0).toLocaleString()}</span>
                     <span>좋아요 {(p.likes || 0).toLocaleString()}</span>
@@ -536,7 +647,19 @@ export default function CustomerCommunityPage() {
                     }}
                   >
                     {hasImg ? (
-                      <div style={{ width: '100%', aspectRatio: '1 / 1', background: `url(${p.image_urls![0]}) center/cover no-repeat` }} />
+                      <>
+                        <div style={{ width: '100%', aspectRatio: '1 / 1', background: `url(${p.image_urls![0]}) center/cover no-repeat` }} />
+                        <div style={{ padding: '6px 8px 0', display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                          {p.is_expert_answered ? (
+                            <span style={{ fontSize: 8, padding: '2px 6px', borderRadius: 999, background: 'rgba(201,169,110,0.15)', color: GOLD, fontWeight: 600 }}>👩‍⚕️ 전문가답변</span>
+                          ) : null}
+                          {p._p?.grade || p._u?.customer_grade ? (
+                            <span style={{ fontSize: 8, padding: '2px 6px', borderRadius: 999, background: 'rgba(123,94,167,0.2)', color: '#e8d6ff', fontWeight: 600 }}>
+                              {p._p?.grade || p._u?.customer_grade}
+                            </span>
+                          ) : null}
+                        </div>
+                      </>
                     ) : (
                       <div style={{ padding: '12px 12px', height: 140, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                         <div style={{ fontSize: 12, fontWeight: 900, color: '#fff', marginBottom: 8, lineHeight: 1.35 }}>{p.title}</div>
@@ -622,8 +745,20 @@ export default function CustomerCommunityPage() {
                       </span>
                     ))}
                   </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginBottom: 6 }}>
+                    {p.is_expert_answered ? (
+                      <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 999, background: 'rgba(201,169,110,0.15)', color: GOLD, fontWeight: 600 }}>👩‍⚕️ 전문가답변</span>
+                    ) : null}
+                    {p._p?.grade || p._u?.customer_grade ? (
+                      <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 999, background: 'rgba(123,94,167,0.2)', color: '#e8d6ff', fontWeight: 600 }}>
+                        {p._p?.grade || p._u?.customer_grade}
+                      </span>
+                    ) : null}
+                  </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>
-                    <div>작성자 {p.user_id?.slice(0, 6) || '-'}</div>
+                    <div>
+                      작성자 {p._p?.username || p._p?.full_name || p._u?.name || p.user_id?.slice(0, 6) || '-'}
+                    </div>
                     <div>{p.created_at ? new Date(p.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}</div>
                   </div>
                 </button>
