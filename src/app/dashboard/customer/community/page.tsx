@@ -33,6 +33,8 @@ type Post = {
   _u?: { name?: string | null; avatar_url?: string | null; customer_grade?: string | null; auth_id?: string | null } | null
   _p?: { username?: string | null; full_name?: string | null; grade?: string | null; avatar_url?: string | null } | null
 }
+type TaggedProduct = { id: string; name: string; price: number; thumbnail_url: string | null }
+type GiftTarget = { userId: string; authId: string; name: string; grade: string | null; avatarUrl: string | null }
 
 const TABS: { id: TabId; label: string }[] = [
   { id: 'all', label: '전체' },
@@ -75,6 +77,18 @@ export default function CustomerCommunityPage() {
   const [chargeModal, setChargeModal] = useState(false)
   const [votedContest, setVotedContest] = useState(false)
   const [skinFilter, setSkinFilter] = useState<'' | '건성' | '지성' | '복합성' | '민감성'>('')
+  const [taggedProductsByPost, setTaggedProductsByPost] = useState<Record<string, TaggedProduct[]>>({})
+  const [toast, setToast] = useState('')
+  const [giftModal, setGiftModal] = useState<{ open: boolean; productId: string; productName: string; productPrice: number }>({
+    open: false,
+    productId: '',
+    productName: '',
+    productPrice: 0,
+  })
+  const [giftTargets, setGiftTargets] = useState<GiftTarget[]>([])
+  const [giftTargetId, setGiftTargetId] = useState('')
+  const [giftMessage, setGiftMessage] = useState('')
+  const [giftBusy, setGiftBusy] = useState(false)
 
   const activeLabel = useMemo(() => TABS.find((t) => t.id === tab)?.label ?? '커뮤니티', [tab])
 
@@ -136,6 +150,12 @@ export default function CustomerCommunityPage() {
   }, [tab])
 
   useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(''), 2200)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  useEffect(() => {
     const run = async () => {
       if (tab === 'contest') {
         setPosts([])
@@ -190,6 +210,41 @@ export default function CustomerCommunityPage() {
           return { ...p, _u: u, _p: pr }
         })
       }
+      const tagMap: Record<string, TaggedProduct[]> = {}
+      const allPids = Array.from(
+        new Set(
+          list
+            .flatMap((p) => (Array.isArray(p.product_tags) ? p.product_tags : []))
+            .filter((id): id is string => typeof id === 'string' && id.length > 0)
+        )
+      )
+      if (allPids.length > 0) {
+        let productRows: any[] = []
+        const { data: rowsA } = await supabase.from('products').select('id,name,price,thumbnail_url').in('id', allPids)
+        if (rowsA && rowsA.length > 0) {
+          productRows = rowsA
+        } else {
+          const { data: rowsB } = await supabase.from('products').select('id,name,retail_price,thumb_img').in('id', allPids)
+          productRows = rowsB || []
+        }
+        const pMap = Object.fromEntries(
+          (productRows || []).map((r: any) => [
+            r.id,
+            {
+              id: String(r.id),
+              name: String(r.name || '제품'),
+              price: Number(r.price ?? r.retail_price ?? 0),
+              thumbnail_url: (r.thumbnail_url || r.thumb_img || null) as string | null,
+            } as TaggedProduct,
+          ])
+        )
+        list.forEach((post) => {
+          const pids = (post.product_tags || []).filter(Boolean) as string[]
+          if (!pids.length) return
+          tagMap[post.id] = pids.map((pid) => pMap[pid]).filter(Boolean)
+        })
+      }
+      setTaggedProductsByPost(tagMap)
       setPosts(list)
 
       if (!user || list.length === 0) {
@@ -210,6 +265,96 @@ export default function CustomerCommunityPage() {
     }
     run()
   }, [q, supabase, tab, skinFilter])
+
+  const addToCart = async (productId: string) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      router.push('/login?role=customer')
+      return
+    }
+    try {
+      await supabase.from('carts').insert({ user_id: user.id, product_id: productId, quantity: 1 } as any)
+      setToast('장바구니에 담겼어요 🛒')
+    } catch {
+      // cart table not exists or duplicated row: ignore
+    }
+  }
+
+  const openGiftModal = async (p: TaggedProduct) => {
+    setGiftModal({ open: true, productId: p.id, productName: p.name, productPrice: p.price })
+    setGiftTargetId('')
+    setGiftMessage('')
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      setGiftTargets([])
+      return
+    }
+    const { data: me } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+    if (!me?.id) {
+      setGiftTargets([])
+      return
+    }
+    const { data: rows } = await supabase.from('follows').select('following_id').eq('follower_id', me.id)
+    const ids = (rows || []).map((r: any) => r.following_id).filter(Boolean)
+    if (!ids.length) {
+      setGiftTargets([])
+      return
+    }
+    const { data: us } = await supabase.from('users').select('id,auth_id,name,avatar_url,customer_grade').in('id', ids)
+    setGiftTargets(
+      (us || []).map((u: any) => ({
+        userId: String(u.id),
+        authId: String(u.auth_id || ''),
+        name: String(u.name || '회원'),
+        grade: u.customer_grade || null,
+        avatarUrl: u.avatar_url || null,
+      }))
+    )
+  }
+
+  const submitGift = async () => {
+    if (!giftModal.productId || !giftTargetId || giftBusy) return
+    const target = giftTargets.find((x) => x.userId === giftTargetId)
+    if (!target?.authId) return
+    setGiftBusy(true)
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/login?role=customer')
+        return
+      }
+      const { data: me } = await supabase.from('users').select('id,points,name').eq('auth_id', user.id).maybeSingle()
+      if (!me?.id) return
+      const price = Math.max(0, Math.floor(Number(giftModal.productPrice || 0)))
+      if (Number(me.points || 0) < price) {
+        setToast('충전 후 선물하세요 💜')
+        return
+      }
+      await supabase.from('point_transactions').insert({ user_id: user.id, amount: -price, type: 'gift_sent', description: giftModal.productName } as any)
+      await supabase.from('point_transactions').insert({ user_id: target.authId, amount: price, type: 'gift_received', description: giftModal.productName } as any)
+      await supabase.from('users').update({ points: Number(me.points || 0) - price }).eq('id', me.id)
+      const { data: targetUser } = await supabase.from('users').select('points').eq('id', target.userId).maybeSingle()
+      await supabase.from('users').update({ points: Number(targetUser?.points || 0) + price }).eq('id', target.userId)
+      await supabase.from('notifications').insert({
+        user_id: target.userId,
+        type: 'promo',
+        title: `${String(me.name || '회원')}님이 선물을 보냈어요 🎁`,
+        body: `${giftModal.productName} · ${giftMessage.trim() || '마음을 담아 보냈어요 💜'}`,
+        icon: '🎁',
+        is_read: false,
+      } as any)
+      setToast('선물했어요 🎁 +토스트 적립됐어요')
+      setGiftModal({ open: false, productId: '', productName: '', productPrice: 0 })
+    } finally {
+      setGiftBusy(false)
+    }
+  }
 
   const onVote = async (entryId: string) => {
     if (!contestRow?.id) return
@@ -555,22 +700,11 @@ export default function CustomerCommunityPage() {
         ) : tab === 'hot' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {posts.map((p, idx) => (
-              <button
-                key={p.id}
-                onClick={() => router.push(`/dashboard/customer/community/${p.id}`)}
-                style={{
-                  width: '100%',
-                  textAlign: 'left',
-                  background: CARD_BG,
-                  border: CARD_BORDER,
-                  borderRadius: 16,
-                  padding: '12px 12px',
-                  display: 'flex',
-                  gap: 12,
-                  alignItems: 'center',
-                  cursor: 'pointer',
-                }}
-              >
+              <div key={p.id} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: '12px 12px' }}>
+                <button
+                  onClick={() => router.push(`/dashboard/customer/community/${p.id}`)}
+                  style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', display: 'flex', gap: 12, alignItems: 'center', cursor: 'pointer', padding: 0 }}
+                >
                 <div style={{ width: 24, textAlign: 'center', fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 900, color: GOLD }}>{idx + 1}</div>
                 <div
                   style={{
@@ -635,7 +769,25 @@ export default function CustomerCommunityPage() {
                   </div>
                 </div>
                 <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: 18 }}>›</div>
-              </button>
+                </button>
+                {Array.isArray(taggedProductsByPost[p.id]) && taggedProductsByPost[p.id].length > 0 ? (
+                  <div style={{ marginTop: 10, display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none' as const }}>
+                    {taggedProductsByPost[p.id].map((tp) => (
+                      <div key={tp.id} style={{ flexShrink: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 8, display: 'flex', gap: 8, alignItems: 'center', minWidth: 210 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.06)' }}>
+                          {tp.thumbnail_url ? <img src={tp.thumbnail_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 10, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tp.name}</div>
+                          <div style={{ fontSize: 10, color: '#C9A96E', marginTop: 2 }}>{Number(tp.price || 0).toLocaleString()}T</div>
+                        </div>
+                        <button type="button" onClick={() => void addToCart(tp.id)} style={{ fontSize: 9, background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', color: '#C9A96E', borderRadius: 20, padding: '3px 8px', cursor: 'pointer' }}>🛒 담기</button>
+                        <button type="button" onClick={() => void openGiftModal(tp)} style={{ fontSize: 9, background: 'rgba(123,94,167,0.15)', border: '1px solid rgba(123,94,167,0.3)', color: '#c4a7e7', borderRadius: 20, padding: '3px 8px', cursor: 'pointer' }}>🎁 선물</button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             ))}
           </div>
         ) : tab === 'all' ? (
@@ -723,6 +875,23 @@ export default function CustomerCommunityPage() {
                       🔖
                     </button>
                   </div>
+                  {Array.isArray(taggedProductsByPost[p.id]) && taggedProductsByPost[p.id].length > 0 ? (
+                    <div style={{ padding: '0 10px 10px', display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none' as const }}>
+                      {taggedProductsByPost[p.id].map((tp) => (
+                        <div key={tp.id} style={{ flexShrink: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 8, display: 'flex', gap: 8, alignItems: 'center', minWidth: 210 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.06)' }}>
+                            {tp.thumbnail_url ? <img src={tp.thumbnail_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 10, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tp.name}</div>
+                            <div style={{ fontSize: 10, color: '#C9A96E', marginTop: 2 }}>{Number(tp.price || 0).toLocaleString()}T</div>
+                          </div>
+                          <button type="button" onClick={() => void addToCart(tp.id)} style={{ fontSize: 9, background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', color: '#C9A96E', borderRadius: 20, padding: '3px 8px', cursor: 'pointer' }}>🛒 담기</button>
+                          <button type="button" onClick={() => void openGiftModal(tp)} style={{ fontSize: 9, background: 'rgba(123,94,167,0.15)', border: '1px solid rgba(123,94,167,0.3)', color: '#c4a7e7', borderRadius: 20, padding: '3px 8px', cursor: 'pointer' }}>🎁 선물</button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               )
             })}
@@ -732,19 +901,8 @@ export default function CustomerCommunityPage() {
             {posts.map((p) => {
               const tags = (p.hashtags || []).slice(0, 4)
               return (
-                <button
-                  key={p.id}
-                  onClick={() => router.push(`/dashboard/customer/community/${p.id}`)}
-                  style={{
-                    width: '100%',
-                    textAlign: 'left',
-                    background: CARD_BG,
-                    border: CARD_BORDER,
-                    borderRadius: 16,
-                    padding: '14px 14px',
-                    cursor: 'pointer',
-                  }}
-                >
+                <div key={p.id} style={{ width: '100%', textAlign: 'left', background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: '14px 14px' }}>
+                  <button onClick={() => router.push(`/dashboard/customer/community/${p.id}`)} style={{ width: '100%', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 900, color: '#fff', marginBottom: 8, lineHeight: 1.35 }}>{p.title}</div>
                   <div
                     style={{
@@ -808,7 +966,25 @@ export default function CustomerCommunityPage() {
                     </div>
                     <div>{p.created_at ? new Date(p.created_at).toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''}</div>
                   </div>
-                </button>
+                  </button>
+                  {Array.isArray(taggedProductsByPost[p.id]) && taggedProductsByPost[p.id].length > 0 ? (
+                    <div style={{ marginTop: 10, display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none' as const }}>
+                      {taggedProductsByPost[p.id].map((tp) => (
+                        <div key={tp.id} style={{ flexShrink: 0, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 8, display: 'flex', gap: 8, alignItems: 'center', minWidth: 210 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.06)' }}>
+                            {tp.thumbnail_url ? <img src={tp.thumbnail_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 10, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tp.name}</div>
+                            <div style={{ fontSize: 10, color: '#C9A96E', marginTop: 2 }}>{Number(tp.price || 0).toLocaleString()}T</div>
+                          </div>
+                          <button type="button" onClick={() => void addToCart(tp.id)} style={{ fontSize: 9, background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', color: '#C9A96E', borderRadius: 20, padding: '3px 8px', cursor: 'pointer' }}>🛒 담기</button>
+                          <button type="button" onClick={() => void openGiftModal(tp)} style={{ fontSize: 9, background: 'rgba(123,94,167,0.15)', border: '1px solid rgba(123,94,167,0.3)', color: '#c4a7e7', borderRadius: 20, padding: '3px 8px', cursor: 'pointer' }}>🎁 선물</button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
               )
             })}
           </div>
@@ -853,6 +1029,51 @@ export default function CustomerCommunityPage() {
         </>
       ) : null}
 
+      {giftModal.open ? (
+        <>
+          <div onClick={() => setGiftModal({ open: false, productId: '', productName: '', productPrice: 0 })} style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.7)' }} />
+          <div style={{ position: 'fixed', inset: 0, zIndex: 101, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: '#1a1228', border: '1px solid rgba(123,94,167,0.4)', borderRadius: 20, padding: 20, width: '90%', maxWidth: 340 }}>
+              <div style={{ fontSize: 16, color: '#fff', fontWeight: 700, marginBottom: 10 }}>🎁 선물하기</div>
+              <div style={{ fontSize: 12, color: '#fff' }}>{giftModal.productName}</div>
+              <div style={{ fontSize: 12, color: '#C9A96E', marginTop: 4 }}>{Number(giftModal.productPrice || 0).toLocaleString()}T</div>
+              <div style={{ fontSize: 12, color: '#c4a7e7', marginTop: 14, marginBottom: 8 }}>누구한테 선물할까요? 💜</div>
+              {giftTargets.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 170, overflowY: 'auto' }}>
+                  {giftTargets.map((u) => {
+                    const active = giftTargetId === u.userId
+                    return (
+                      <button key={u.userId} type="button" onClick={() => setGiftTargetId(u.userId)} style={{ border: active ? '1px solid rgba(123,94,167,0.7)' : '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 999, overflow: 'hidden', background: 'rgba(255,255,255,0.07)' }}>{u.avatarUrl ? <img src={u.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}</div>
+                        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                          <div style={{ fontSize: 12, color: '#fff' }}>{u.name}</div>
+                          {u.grade ? <div style={{ fontSize: 10, color: '#c4a7e7', marginTop: 2 }}>{u.grade}</div> : null}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, marginBottom: 8 }}>
+                  아직 일촌이 없어요
+                  <br />
+                  일촌을 맺어보세요 💜
+                  <div>
+                    <button type="button" onClick={() => router.push('/community')} style={{ marginTop: 8, border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '5px 10px', fontSize: 10, cursor: 'pointer' }}>
+                      일촌 찾기
+                    </button>
+                  </div>
+                </div>
+              )}
+              <textarea value={giftMessage} onChange={(e) => setGiftMessage(e.target.value)} placeholder="따뜻한 메시지를 남겨보세요 🌸" rows={2} style={{ width: '100%', boxSizing: 'border-box', marginTop: 10, borderRadius: 10, border: '1px solid rgba(123,94,167,0.25)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontSize: 12, padding: '8px 10px', resize: 'none' }} />
+              <button type="button" disabled={giftBusy || !giftTargetId} onClick={() => void submitGift()} style={{ marginTop: 10, width: '100%', border: 'none', background: '#7B5EA7', color: '#fff', borderRadius: 10, padding: '10px 0', fontSize: 12, cursor: giftTargetId ? 'pointer' : 'default', opacity: giftTargetId ? 1 : 0.6 }}>
+                선물하기 🎁
+              </button>
+            </div>
+          </div>
+        </>
+      ) : null}
+
       {tab !== 'contest' ? (
         <button
           type="button"
@@ -876,6 +1097,12 @@ export default function CustomerCommunityPage() {
         >
           ✏️
         </button>
+      ) : null}
+
+      {toast ? (
+        <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 104, zIndex: 220, background: 'rgba(30,25,35,0.95)', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 12, padding: '10px 14px', color: '#fff', fontSize: 12 }}>
+          {toast}
+        </div>
       ) : null}
 
       <DashboardBottomNav role="customer" />

@@ -40,7 +40,17 @@ type CommentRow = {
   profiles?: { username?: string | null; avatar_url?: string | null; grade?: string | null; full_name?: string | null } | null
 }
 
-type ProductRow = { id: string; name: string; thumb_img?: string | null; retail_price?: number | null }
+type ProductRow = {
+  id: string
+  name: string
+  thumb_img?: string | null
+  retail_price?: number | null
+  thumbnail_url?: string | null
+  price?: number | null
+  brand_id?: string | null
+  brand_name?: string | null
+}
+type GiftTarget = { userId: string; authId: string; name: string; grade: string | null; avatarUrl: string | null }
 
 function isVideoUrl(url: string) {
   return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url)
@@ -78,6 +88,16 @@ export default function CommunityPostDetailPage() {
   const [commentText, setCommentText] = useState('')
   const [likeCount, setLikeCount] = useState(0)
   const [toast, setToast] = useState('')
+  const [giftModal, setGiftModal] = useState<{ open: boolean; productId: string; productName: string; productPrice: number }>({
+    open: false,
+    productId: '',
+    productName: '',
+    productPrice: 0,
+  })
+  const [giftTargets, setGiftTargets] = useState<GiftTarget[]>([])
+  const [giftTargetId, setGiftTargetId] = useState('')
+  const [giftMessage, setGiftMessage] = useState('')
+  const [giftBusy, setGiftBusy] = useState(false)
 
   const tags = useMemo(() => (post?.hashtags || []).slice(0, 20), [post?.hashtags])
   const mediaUrls = useMemo(() => post?.image_urls || [], [post?.image_urls])
@@ -134,8 +154,21 @@ export default function CommunityPostDetailPage() {
 
     const pids = (p.product_tags || []).filter(Boolean) as string[]
     if (pids.length) {
-      const { data: prods } = await supabase.from('products').select('id,name,thumb_img,retail_price').in('id', pids)
-      setTaggedProducts((prods || []) as ProductRow[])
+      const { data: prods } = await supabase.from('products').select('id,name,thumb_img,retail_price,thumbnail_url,price,brand_id').in('id', pids)
+      const rows = ((prods || []) as ProductRow[]).map((r) => ({
+        ...r,
+        price: Number(r.price ?? r.retail_price ?? 0),
+        thumb_img: r.thumb_img || r.thumbnail_url || null,
+      }))
+      const bIds = Array.from(new Set(rows.map((r) => r.brand_id).filter(Boolean))) as string[]
+      if (bIds.length > 0) {
+        const { data: bs } = await supabase.from('brands').select('id,name').in('id', bIds)
+        const bMap = Object.fromEntries((bs || []).map((b: any) => [b.id, b.name]))
+        rows.forEach((r) => {
+          r.brand_name = r.brand_id ? bMap[r.brand_id] || null : null
+        })
+      }
+      setTaggedProducts(rows)
     } else {
       setTaggedProducts([])
     }
@@ -270,6 +303,96 @@ export default function CommunityPostDetailPage() {
     setCommentText('')
   }
 
+  const addToCart = async (productId: string) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      router.push('/login?role=customer')
+      return
+    }
+    try {
+      await supabase.from('carts').insert({ user_id: user.id, product_id: productId, quantity: 1 } as any)
+      setToast('장바구니에 담겼어요 🛒')
+    } catch {
+      // ignore
+    }
+  }
+
+  const openGiftModal = async (p: ProductRow) => {
+    setGiftModal({ open: true, productId: p.id, productName: p.name, productPrice: Number(p.price ?? p.retail_price ?? 0) })
+    setGiftTargetId('')
+    setGiftMessage('')
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) {
+      setGiftTargets([])
+      return
+    }
+    const { data: me } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+    if (!me?.id) {
+      setGiftTargets([])
+      return
+    }
+    const { data: rows } = await supabase.from('follows').select('following_id').eq('follower_id', me.id)
+    const ids = (rows || []).map((r: any) => r.following_id).filter(Boolean)
+    if (!ids.length) {
+      setGiftTargets([])
+      return
+    }
+    const { data: us } = await supabase.from('users').select('id,auth_id,name,avatar_url,customer_grade').in('id', ids)
+    setGiftTargets(
+      (us || []).map((u: any) => ({
+        userId: String(u.id),
+        authId: String(u.auth_id || ''),
+        name: String(u.name || '회원'),
+        grade: u.customer_grade || null,
+        avatarUrl: u.avatar_url || null,
+      }))
+    )
+  }
+
+  const submitGift = async () => {
+    if (!giftModal.productId || !giftTargetId || giftBusy) return
+    const target = giftTargets.find((x) => x.userId === giftTargetId)
+    if (!target?.authId) return
+    setGiftBusy(true)
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/login?role=customer')
+        return
+      }
+      const { data: me } = await supabase.from('users').select('id,points,name').eq('auth_id', user.id).maybeSingle()
+      if (!me?.id) return
+      const price = Math.max(0, Math.floor(Number(giftModal.productPrice || 0)))
+      if (Number(me.points || 0) < price) {
+        setToast('충전 후 선물하세요 💜')
+        return
+      }
+      await supabase.from('point_transactions').insert({ user_id: user.id, amount: -price, type: 'gift_sent', description: giftModal.productName } as any)
+      await supabase.from('point_transactions').insert({ user_id: target.authId, amount: price, type: 'gift_received', description: giftModal.productName } as any)
+      await supabase.from('users').update({ points: Number(me.points || 0) - price }).eq('id', me.id)
+      const { data: targetUser } = await supabase.from('users').select('points').eq('id', target.userId).maybeSingle()
+      await supabase.from('users').update({ points: Number(targetUser?.points || 0) + price }).eq('id', target.userId)
+      await supabase.from('notifications').insert({
+        user_id: target.userId,
+        type: 'promo',
+        title: `${String(me.name || '회원')}님이 선물을 보냈어요 🎁`,
+        body: `${giftModal.productName} · ${giftMessage.trim() || '마음을 담아 보냈어요 💜'}`,
+        icon: '🎁',
+        is_read: false,
+      } as any)
+      setToast('선물했어요 🎁 +토스트 적립됐어요')
+      setGiftModal({ open: false, productId: '', productName: '', productPrice: 0 })
+    } finally {
+      setGiftBusy(false)
+    }
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: BG, maxWidth: 390, margin: '0 auto', paddingBottom: 180 }}>
       <div style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(13,11,9,0.94)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -380,38 +503,45 @@ export default function CommunityPostDetailPage() {
                       key={pr.id}
                       style={{
                         display: 'flex',
-                        gap: 10,
+                        gap: 12,
                         alignItems: 'center',
-                        padding: 10,
-                        borderRadius: 12,
-                        background: CARD_BG,
-                        border: CARD_BORDER,
+                        padding: 12,
+                        borderRadius: 14,
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid rgba(255,255,255,0.07)',
                       }}
                     >
-                      <div style={{ width: 48, height: 48, borderRadius: 10, overflow: 'hidden', background: 'rgba(255,255,255,0.05)', flexShrink: 0 }}>
+                      <div style={{ width: 60, height: 60, borderRadius: 10, overflow: 'hidden', background: 'rgba(255,255,255,0.05)', flexShrink: 0 }}>
                         {pr.thumb_img ? <img src={pr.thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 12, color: '#fff', fontWeight: 600 }}>{pr.name}</div>
-                        <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 4 }}>{Number(pr.retail_price || 0).toLocaleString()}원</div>
+                        <div style={{ fontSize: 13, color: '#fff', fontWeight: 600 }}>{pr.name}</div>
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 3 }}>{pr.brand_name || '-'}</div>
+                        <div style={{ fontSize: 13, color: '#C9A96E', marginTop: 4 }}>{Number(pr.price || pr.retail_price || 0).toLocaleString()}T</div>
+                        <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                          <button
+                            type="button"
+                            onClick={() => router.push(`/products/${pr.id}`)}
+                            style={{ padding: '7px 10px', borderRadius: 10, border: 'none', background: PURPLE, color: '#fff', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+                          >
+                            구매하기
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void addToCart(pr.id)}
+                            style={{ padding: '7px 10px', borderRadius: 10, border: '1px solid rgba(201,169,110,0.3)', background: 'rgba(201,169,110,0.15)', color: '#C9A96E', fontSize: 11, cursor: 'pointer' }}
+                          >
+                            담기 🛒
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void openGiftModal(pr)}
+                            style={{ padding: '7px 10px', borderRadius: 10, border: '1px solid rgba(123,94,167,0.3)', background: 'rgba(123,94,167,0.15)', color: '#c4a7e7', fontSize: 11, cursor: 'pointer' }}
+                          >
+                            선물 🎁
+                          </button>
+                        </div>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => router.push(`/products/${pr.id}`)}
-                        style={{
-                          flexShrink: 0,
-                          padding: '8px 12px',
-                          borderRadius: 10,
-                          border: 'none',
-                          background: PURPLE,
-                          color: '#fff',
-                          fontSize: 11,
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        구매하기
-                      </button>
                     </div>
                   ))}
                 </div>
@@ -558,6 +688,51 @@ export default function CommunityPostDetailPage() {
       ) : null}
 
       <DashboardBottomNav role="customer" />
+
+      {giftModal.open ? (
+        <>
+          <div onClick={() => setGiftModal({ open: false, productId: '', productName: '', productPrice: 0 })} style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.7)' }} />
+          <div style={{ position: 'fixed', inset: 0, zIndex: 101, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ background: '#1a1228', border: '1px solid rgba(123,94,167,0.4)', borderRadius: 20, padding: 20, width: '90%', maxWidth: 340 }}>
+              <div style={{ fontSize: 16, color: '#fff', fontWeight: 700, marginBottom: 10 }}>🎁 선물하기</div>
+              <div style={{ fontSize: 12, color: '#fff' }}>{giftModal.productName}</div>
+              <div style={{ fontSize: 12, color: '#C9A96E', marginTop: 4 }}>{Number(giftModal.productPrice || 0).toLocaleString()}T</div>
+              <div style={{ fontSize: 12, color: '#c4a7e7', marginTop: 14, marginBottom: 8 }}>누구한테 선물할까요? 💜</div>
+              {giftTargets.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 170, overflowY: 'auto' }}>
+                  {giftTargets.map((u) => {
+                    const active = giftTargetId === u.userId
+                    return (
+                      <button key={u.userId} type="button" onClick={() => setGiftTargetId(u.userId)} style={{ border: active ? '1px solid rgba(123,94,167,0.7)' : '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)', borderRadius: 10, padding: '8px 10px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 999, overflow: 'hidden', background: 'rgba(255,255,255,0.07)' }}>{u.avatarUrl ? <img src={u.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}</div>
+                        <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                          <div style={{ fontSize: 12, color: '#fff' }}>{u.name}</div>
+                          {u.grade ? <div style={{ fontSize: 10, color: '#c4a7e7', marginTop: 2 }}>{u.grade}</div> : null}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', lineHeight: 1.5, marginBottom: 8 }}>
+                  아직 일촌이 없어요
+                  <br />
+                  일촌을 맺어보세요 💜
+                  <div>
+                    <button type="button" onClick={() => router.push('/community')} style={{ marginTop: 8, border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '5px 10px', fontSize: 10, cursor: 'pointer' }}>
+                      일촌 찾기
+                    </button>
+                  </div>
+                </div>
+              )}
+              <textarea value={giftMessage} onChange={(e) => setGiftMessage(e.target.value)} placeholder="따뜻한 메시지를 남겨보세요 🌸" rows={2} style={{ width: '100%', boxSizing: 'border-box', marginTop: 10, borderRadius: 10, border: '1px solid rgba(123,94,167,0.25)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontSize: 12, padding: '8px 10px', resize: 'none' }} />
+              <button type="button" disabled={giftBusy || !giftTargetId} onClick={() => void submitGift()} style={{ marginTop: 10, width: '100%', border: 'none', background: '#7B5EA7', color: '#fff', borderRadius: 10, padding: '10px 0', fontSize: 12, cursor: giftTargetId ? 'pointer' : 'default', opacity: giftTargetId ? 1 : 0.6 }}>
+                선물하기 🎁
+              </button>
+            </div>
+          </div>
+        </>
+      ) : null}
 
       {toast ? (
         <div
