@@ -46,8 +46,6 @@ export default function MyWorldPage() {
   const [selectedTheme, setSelectedTheme] = useState('💜 보라빛 드림')
   const [myworldBio, setMyworldBio] = useState('')
   const [minimiSrc, setMinimiSrc] = useState('')
-  const [minimiProgress, setMinimiProgress] = useState(0)
-  const [minimiForward, setMinimiForward] = useState(true)
   const [minimiSpeechIndex, setMinimiSpeechIndex] = useState(0)
 
   useEffect(() => {
@@ -60,29 +58,6 @@ export default function MyWorldPage() {
     const timer = setInterval(() => setNow(new Date()), 1000)
     return () => clearInterval(timer)
   }, [])
-
-  useEffect(() => {
-    const t = setInterval(() => {
-      setMinimiProgress((prev) => {
-        const step = 0.03
-        if (minimiForward) {
-          const next = prev + step
-          if (next >= 1) {
-            setMinimiForward(false)
-            return 1
-          }
-          return next
-        }
-        const next = prev - step
-        if (next <= 0) {
-          setMinimiForward(true)
-          return 0
-        }
-        return next
-      })
-    }, 140)
-    return () => clearInterval(t)
-  }, [minimiForward])
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -207,8 +182,6 @@ export default function MyWorldPage() {
     3: ['궁전이 됐어요 👑', '오늘 피부 최고예요 ✨', '어머 손님이다~ 💜'],
   }
   const minimiMent = minimiMentGroups[minimiTalkLevel][minimiSpeechIndex % minimiMentGroups[minimiTalkLevel].length]
-  const minimiLeft = 20 + minimiProgress * 290
-  const minimiBottom = 26 + minimiProgress * 10
 
   const moodGroups = [
     { label: '신체/호르몬', items: ['🩸 생리중', '😣 생리전 예민', '😪 수면부족', '🍺 어젯밤 음주', '💊 약 복용중', '🏃 운동후'] },
@@ -433,6 +406,47 @@ export default function MyWorldPage() {
           50% { transform: scale(1.3); }
           100% { transform: scale(1); }
         }
+        @keyframes walkFlip {
+          0% { transform: translate(100px, 192px) scaleX(1); }
+          44% { transform: translate(195px, 182px) scaleX(1); }
+          50% { transform: translate(195px, 182px) scaleX(-1); }
+          94% { transform: translate(100px, 192px) scaleX(-1); }
+          100% { transform: translate(100px, 192px) scaleX(1); }
+        }
+        @keyframes walkFlipReverse {
+          0% { transform: translate(100px, 192px) scaleX(1); }
+          44% { transform: translate(195px, 182px) scaleX(1); }
+          50% { transform: translate(195px, 182px) scaleX(1); }
+          94% { transform: translate(100px, 192px) scaleX(1); }
+          100% { transform: translate(100px, 192px) scaleX(1); }
+        }
+        .myworld-skincare-room .mini-body {
+          position: absolute;
+          left: 0;
+          top: 0;
+          z-index: 4;
+          transform-origin: center bottom;
+          animation: walkFlip 11s linear infinite;
+        }
+        .myworld-skincare-room .bubble-fix {
+          position: absolute;
+          left: 0;
+          top: 0;
+          z-index: 5;
+          transform-origin: center bottom;
+          animation: walkFlipReverse 11s linear infinite;
+        }
+        .myworld-skincare-room .myworld-room-floor {
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 36%;
+          background-color: #e8e0f5;
+          background-image: repeating-conic-gradient(#ddd5ee 0% 25%, #e8e0f5 0% 50%);
+          background-size: 22px 22px;
+          border-top: 2px solid #9b7ec8;
+        }
       `}</style>
 
       <header style={{ position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(13,11,9,0.96)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -501,8 +515,64 @@ export default function MyWorldPage() {
 
       {activeTab === 'room' ? (
         <>
-          <div style={{ background: todayDone ? 'rgba(123,94,167,0.09)' : 'rgba(123,94,167,0.05)', border: '1px solid rgba(123,94,167,0.15)', borderRadius: 16, margin: '0 16px', minHeight: 220, position: 'relative', overflow: 'hidden', padding: 20, filter: daysSinceRoutine >= 14 ? 'grayscale(60%)' : daysSinceRoutine >= 7 ? 'grayscale(30%)' : 'none' }}>
-            <div style={{ position: 'absolute', top: 10, left: 12, fontSize: 9, color: 'rgba(123,94,167,0.6)' }}>Lv.{roomLevel} · 다음 레벨까지 제품 {Math.max(0, toNext)}개</div>
+          <div
+            className="myworld-skincare-room"
+            style={{
+              border: '1px solid rgba(155,126,200,0.45)',
+              borderRadius: 16,
+              margin: '0 16px',
+              minHeight: 260,
+              position: 'relative',
+              overflow: 'hidden',
+              padding: 20,
+              filter: daysSinceRoutine >= 14 ? 'grayscale(60%)' : daysSinceRoutine >= 7 ? 'grayscale(30%)' : 'none',
+              background: '#f5f0ff',
+            }}
+          >
+            <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+              <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '24%', background: '#f0ebff', borderBottom: '1px solid #9b7ec8' }} />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: '18%',
+                  width: '38%',
+                  bottom: '36%',
+                  background: '#ede8f8',
+                  clipPath: 'polygon(0 0, 100% 12%, 100% 100%, 0 100%)',
+                  borderRight: '2px solid #9b7ec8',
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '22%',
+                  right: 0,
+                  top: '24%',
+                  bottom: '36%',
+                  background: '#f5f0ff',
+                  boxShadow: 'inset 0 0 0 1px #9b7ec8',
+                }}
+              />
+              <div className="myworld-room-floor" />
+              <div
+                style={{
+                  position: 'absolute',
+                  left: '14%',
+                  right: '14%',
+                  bottom: '10%',
+                  height: '20%',
+                  background: 'rgba(180,150,220,0.2)',
+                  borderRadius: 10,
+                  border: '1px solid #9b7ec8',
+                  zIndex: 1,
+                }}
+              />
+            </div>
+            {todayDone ? (
+              <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'rgba(123,94,167,0.08)', pointerEvents: 'none' }} />
+            ) : null}
+            <div style={{ position: 'absolute', top: 10, left: 12, fontSize: 9, color: '#6b5488', zIndex: 2 }}>Lv.{roomLevel} · 다음 레벨까지 제품 {Math.max(0, toNext)}개</div>
             {!todayDone
               ? particles.map((particle) => (
                   <div
@@ -524,17 +594,17 @@ export default function MyWorldPage() {
                   </div>
                 ))
               : null}
-            {daysSinceRoutine >= 7 ? <div style={{ position: 'absolute', top: 40, left: 14, fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>오래됐네요 😢</div> : null}
-            {daysSinceRoutine >= 14 ? <div style={{ position: 'absolute', top: 58, left: 14, fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>피부가 그리워하고 있어요</div> : null}
+            {daysSinceRoutine >= 7 ? <div style={{ position: 'absolute', top: 40, left: 14, fontSize: 12, color: 'rgba(90,70,120,0.75)', zIndex: 2 }}>오래됐네요 😢</div> : null}
+            {daysSinceRoutine >= 14 ? <div style={{ position: 'absolute', top: 58, left: 14, fontSize: 12, color: 'rgba(90,70,120,0.75)', zIndex: 2 }}>피부가 그리워하고 있어요</div> : null}
             {todayDone ? [0, 1, 2].map((i) => <div key={`star-${i}`} style={{ position: 'absolute', left: `${35 + i * 15}%`, top: `${35 + i * 9}px`, fontSize: 12, animation: 'twinkle 1.2s ease-in-out infinite' }}>✨</div>) : null}
 
-            <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', fontSize: 36 }}>🛏️</div>
-            {roomLevel >= 2 ? <div style={{ position: 'absolute', bottom: 20, right: 20, fontSize: 32 }}>🪞</div> : null}
-            {roomLevel >= 3 ? <div style={{ position: 'absolute', top: 20, right: 20, fontSize: 24 }}>💡</div> : null}
-            {roomLevel >= 4 ? <div style={{ position: 'absolute', bottom: 20, left: 20, fontSize: 28 }}>🌿</div> : null}
-            {roomLevel >= 5 ? <div style={{ position: 'absolute', bottom: 20, left: 30, fontSize: 36 }}>🛋️</div> : null}
-            <div style={{ position: 'absolute', left: minimiLeft, bottom: minimiBottom, zIndex: 4 }}>
-              <div style={{ transform: minimiForward ? 'scaleX(1)' : 'scaleX(-1)', transformOrigin: 'center bottom' }}>
+            <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', fontSize: 36, zIndex: 2 }}>🛏️</div>
+            {roomLevel >= 2 ? <div style={{ position: 'absolute', bottom: 20, right: 20, fontSize: 32, zIndex: 2 }}>🪞</div> : null}
+            {roomLevel >= 3 ? <div style={{ position: 'absolute', top: 20, right: 20, fontSize: 24, zIndex: 2 }}>💡</div> : null}
+            {roomLevel >= 4 ? <div style={{ position: 'absolute', bottom: 20, left: 20, fontSize: 28, zIndex: 2 }}>🌿</div> : null}
+            {roomLevel >= 5 ? <div style={{ position: 'absolute', bottom: 20, left: 30, fontSize: 36, zIndex: 2 }}>🛋️</div> : null}
+            <div style={{ position: 'absolute', inset: 0, zIndex: 4, pointerEvents: 'none' }}>
+              <div className="mini-body">
                 {minimiSrc ? (
                   <img src={minimiSrc} alt="minimi" style={{ width: 36, height: 42, objectFit: 'contain', display: 'block' }} />
                 ) : (
@@ -543,11 +613,28 @@ export default function MyWorldPage() {
                   </div>
                 )}
               </div>
+              <div className="bubble-fix">
+                <div
+                  style={{
+                    transform: 'translate(-28px, -54px)',
+                    minWidth: 96,
+                    maxWidth: 140,
+                    background: 'rgba(255,255,255,0.92)',
+                    color: '#2a2338',
+                    borderRadius: 12,
+                    padding: '6px 8px',
+                    fontSize: 10,
+                    lineHeight: 1.35,
+                    textAlign: 'center',
+                    boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
+                    border: '1px solid #9b7ec8',
+                  }}
+                >
+                  {minimiMent}
+                </div>
+              </div>
             </div>
-            <div style={{ position: 'absolute', left: minimiLeft - 30, bottom: minimiBottom + 48, zIndex: 5, minWidth: 96, maxWidth: 140, background: 'rgba(255,255,255,0.92)', color: '#2a2338', borderRadius: 12, padding: '6px 8px', fontSize: 10, lineHeight: 1.35, textAlign: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.18)' }}>
-              {minimiMent}
-            </div>
-            <div style={{ position: 'absolute', bottom: 10, right: 12, fontSize: 11, color: '#c4a7e7' }}>오늘 피부점수 78 ✨</div>
+            <div style={{ position: 'absolute', bottom: 10, right: 12, fontSize: 11, color: '#6b4f9e', zIndex: 2 }}>오늘 피부점수 78 ✨</div>
           </div>
 
           <div style={{ margin: '14px 16px 0', fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>🪞 내 화장대</div>
