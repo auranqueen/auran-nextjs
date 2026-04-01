@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { applyReviewLikeReward } from '@/lib/community/reviewLikeReward'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 
 const GOLD = '#C9A96E'
@@ -200,7 +201,8 @@ export default function CommunityPostDetailPage() {
       void (async () => {
         try {
           if (next) {
-            await supabase.from('post_likes').insert({ post_id: postId, user_id: user.id })
+            const { error: insE } = await supabase.from('post_likes').insert({ post_id: postId, user_id: user.id })
+            if (!insE) void applyReviewLikeReward(supabase, postId, user.id)
           } else {
             await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
           }

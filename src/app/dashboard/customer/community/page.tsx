@@ -4,6 +4,7 @@ import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import DashboardHeader from '@/components/DashboardHeader'
 import { createClient } from '@/lib/supabase/client'
+import { applyReviewLikeReward } from '@/lib/community/reviewLikeReward'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -290,7 +291,8 @@ export default function CustomerCommunityPage() {
       if (has) {
         await supabase.from('post_likes').delete().eq('post_id', postId).eq('user_id', user.id)
       } else {
-        await supabase.from('post_likes').insert({ post_id: postId, user_id: user.id })
+        const { error: insE } = await supabase.from('post_likes').insert({ post_id: postId, user_id: user.id })
+        if (!insE) void applyReviewLikeReward(supabase, postId, user.id)
       }
     } catch {
       // ignore
@@ -611,6 +613,21 @@ export default function CustomerCommunityPage() {
                         {p._p?.grade || p._u?.customer_grade}
                       </span>
                     ) : null}
+                    {p.category === 'review' && Array.isArray(p.product_tags) && p.product_tags.length > 0 ? (
+                      <span
+                        style={{
+                          fontSize: 9,
+                          padding: '2px 8px',
+                          borderRadius: 20,
+                          background: 'rgba(201,169,110,0.15)',
+                          border: '1px solid rgba(201,169,110,0.3)',
+                          color: '#C9A96E',
+                          fontWeight: 600,
+                        }}
+                      >
+                        ✅ 구매 인증 리뷰
+                      </span>
+                    ) : null}
                   </div>
                   <div style={{ marginTop: 6, display: 'flex', gap: 10, fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>
                     <span>조회 {(p.views || 0).toLocaleString()}</span>
@@ -656,6 +673,21 @@ export default function CustomerCommunityPage() {
                           {p._p?.grade || p._u?.customer_grade ? (
                             <span style={{ fontSize: 8, padding: '2px 6px', borderRadius: 999, background: 'rgba(123,94,167,0.2)', color: '#e8d6ff', fontWeight: 600 }}>
                               {p._p?.grade || p._u?.customer_grade}
+                            </span>
+                          ) : null}
+                          {p.category === 'review' && Array.isArray(p.product_tags) && p.product_tags.length > 0 ? (
+                            <span
+                              style={{
+                                fontSize: 8,
+                                padding: '2px 6px',
+                                borderRadius: 20,
+                                background: 'rgba(201,169,110,0.15)',
+                                border: '1px solid rgba(201,169,110,0.3)',
+                                color: '#C9A96E',
+                                fontWeight: 600,
+                              }}
+                            >
+                              ✅ 구매 인증 리뷰
                             </span>
                           ) : null}
                         </div>
@@ -752,6 +784,21 @@ export default function CustomerCommunityPage() {
                     {p._p?.grade || p._u?.customer_grade ? (
                       <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 999, background: 'rgba(123,94,167,0.2)', color: '#e8d6ff', fontWeight: 600 }}>
                         {p._p?.grade || p._u?.customer_grade}
+                      </span>
+                    ) : null}
+                    {p.category === 'review' && Array.isArray(p.product_tags) && p.product_tags.length > 0 ? (
+                      <span
+                        style={{
+                          fontSize: 9,
+                          padding: '2px 8px',
+                          borderRadius: 20,
+                          background: 'rgba(201,169,110,0.15)',
+                          border: '1px solid rgba(201,169,110,0.3)',
+                          color: '#C9A96E',
+                          fontWeight: 600,
+                        }}
+                      >
+                        ✅ 구매 인증 리뷰
                       </span>
                     ) : null}
                   </div>

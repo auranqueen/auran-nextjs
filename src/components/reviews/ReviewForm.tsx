@@ -43,6 +43,22 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
   const [selectedSkinType, setSelectedSkinType] = useState<string | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null)
   const [selectedEffects, setSelectedEffects] = useState<string[]>([])
+  const [isShared, setIsShared] = useState(false)
+  const [shareLikeReward, setShareLikeReward] = useState(0)
+  const [shareFollowReward, setShareFollowReward] = useState(0)
+
+  useEffect(() => {
+    const loadShareRewards = async () => {
+      const { data } = await supabase.from('admin_settings').select('key,value').eq('category', 'review').in('key', ['review_share_like_reward', 'review_share_follower_reward'])
+      const m: Record<string, string> = {}
+      ;(data || []).forEach((r: { key: string; value: string | null }) => {
+        m[r.key] = String(r.value ?? '')
+      })
+      setShareLikeReward(Math.max(0, Math.floor(Number(m.review_share_like_reward ?? 0))))
+      setShareFollowReward(Math.max(0, Math.floor(Number(m.review_share_follower_reward ?? 0))))
+    }
+    void loadShareRewards()
+  }, [supabase])
 
   useEffect(() => {
     const loadToastSettings = async () => {
@@ -77,6 +93,7 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
       setSelectedSkinType(null)
       setSelectedPeriod(null)
       setSelectedEffects([])
+      setIsShared(false)
     }
   }, [initialReview])
 
@@ -131,19 +148,74 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
         setToastMsg('리뷰가 수정됐어요! 🎉')
       } else {
         const { data: profile } = await supabase.from('profiles').select('skin_type').eq('auth_id', userId).maybeSingle()
-        const { error: insertError } = await supabase.from('reviews').insert({
-          target_id: productId, author_id: userId, review_type: reviewType,
-          rating, content: content.trim(), images: mergedImages, helpful_concerns: helpfulConcerns,
-          skin_type: selectedSkinType || (profile as any)?.skin_type || null,
-          usage_period: selectedPeriod || null,
-          effect_tags: selectedEffects.length > 0 ? selectedEffects : null,
-          status: '게시', is_best: false, helpful_count: 0,
-        })
+        const { data: uRow } = await supabase.from('users').select('id').eq('auth_id', userId).maybeSingle()
+        if (!uRow?.id) {
+          setToastMsg('회원 정보를 확인할 수 없어요')
+          setTimeout(() => setToastMsg(''), 1800)
+          setSubmitting(false)
+          return
+        }
+        const { data: prod } = await supabase.from('products').select('name, brand_id').eq('id', productId).maybeSingle()
+        const pname = String((prod as any)?.name || '제품').trim() || '제품'
+        let bname = ''
+        if ((prod as any)?.brand_id) {
+          const { data: br } = await supabase.from('brands').select('name').eq('id', (prod as any).brand_id).maybeSingle()
+          bname = String((br as any)?.name || '').trim()
+        }
+
+        const { data: inserted, error: insertError } = await supabase
+          .from('reviews')
+          .insert({
+            target_id: productId,
+            author_id: userId,
+            review_type: reviewType,
+            rating,
+            content: content.trim(),
+            images: mergedImages,
+            helpful_concerns: helpfulConcerns,
+            skin_type: selectedSkinType || (profile as any)?.skin_type || null,
+            usage_period: selectedPeriod || null,
+            effect_tags: selectedEffects.length > 0 ? selectedEffects : null,
+            status: '게시',
+            is_best: false,
+            helpful_count: 0,
+            is_shared_community: isShared,
+          } as any)
+          .select('id')
+          .single()
         if (insertError) throw insertError
-        setToastMsg('리뷰가 등록됐어요! 🎉')
+
+        if (isShared && inserted?.id) {
+          const tags = [pname, bname, '구매인증리뷰'].filter((t) => t.length > 0)
+          const { data: postRow, error: postErr } = await supabase
+            .from('posts')
+            .insert({
+              user_id: uRow.id,
+              category: 'review',
+              title: `${pname} 리뷰`,
+              content: content.trim(),
+              image_urls: mergedImages.length ? mergedImages : null,
+              hashtags: tags,
+              product_tags: [productId],
+              likes: 0,
+              views: 0,
+              skin_type: selectedSkinType || (profile as any)?.skin_type || null,
+              is_public: true,
+              created_at: new Date().toISOString(),
+            } as any)
+            .select('id')
+            .single()
+          if (!postErr && postRow?.id) {
+            await supabase.from('reviews').update({ community_post_id: postRow.id } as any).eq('id', inserted.id)
+          }
+        }
+
+        setToastMsg(
+          isShared ? '리뷰가 커뮤니티에 공유됐어요! 🎉\n일촌들이 볼 수 있어요 💜' : '리뷰가 등록됐어요 💜'
+        )
       }
       setRating(0); setContent(''); setHelpfulConcerns([]); setFiles([]); setPreviewUrls([])
-      setSelectedSkinType(null); setSelectedPeriod(null); setSelectedEffects([])
+      setSelectedSkinType(null); setSelectedPeriod(null); setSelectedEffects([]); setIsShared(false)
       onSuccess()
       setTimeout(() => setToastMsg(''), 1800)
     } catch {
@@ -234,11 +306,97 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
         </div>
       </div>
 
+      {!initialReview?.id ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setIsShared((v) => !v)}
+            style={{
+              width: '100%',
+              textAlign: 'left',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 12,
+              marginBottom: 10,
+              padding: 14,
+              borderRadius: 14,
+              border: isShared ? '1px solid rgba(123,94,167,0.4)' : '1px solid rgba(255,255,255,0.08)',
+              background: isShared ? 'rgba(123,94,167,0.08)' : 'rgba(255,255,255,0.03)',
+              cursor: 'pointer',
+              boxSizing: 'border-box' as const,
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, color: isShared ? '#c4a7e7' : '#fff' }}>
+                {isShared ? '💜 일촌들한테 자랑할게요' : '🔒 나만 볼게요'}
+              </div>
+              <div style={{ fontSize: 11, color: isShared ? 'rgba(196,167,231,0.6)' : 'rgba(255,255,255,0.4)', marginTop: 4 }}>
+                {isShared ? '리뷰가 커뮤니티에 올라가요!' : '공개하면 좋아요도 받고 일촌도 생겨요 💜'}
+              </div>
+            </div>
+            <div
+              style={{
+                width: 44,
+                height: 26,
+                borderRadius: 999,
+                background: isShared ? PURPLE : 'rgba(255,255,255,0.15)',
+                position: 'relative',
+                flexShrink: 0,
+                transition: 'background 0.2s',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 3,
+                  left: isShared ? 22 : 3,
+                  width: 20,
+                  height: 20,
+                  borderRadius: 999,
+                  background: '#fff',
+                  transition: 'left 0.2s',
+                }}
+              />
+            </div>
+          </button>
+          <div
+            style={{
+              maxHeight: isShared ? 200 : 0,
+              opacity: isShared ? 1 : 0,
+              overflow: 'hidden',
+              transition: 'max-height 0.35s ease, opacity 0.25s ease',
+              marginBottom: isShared ? 12 : 0,
+            }}
+          >
+            <div
+              style={{
+                background: 'rgba(123,94,167,0.06)',
+                border: '1px solid rgba(123,94,167,0.15)',
+                borderRadius: 12,
+                padding: '12px 14px',
+              }}
+            >
+              <div style={{ fontSize: 11, color: 'rgba(196,167,231,0.8)', marginBottom: 6 }}>
+                ❤️ 좋아요 받으면 +{shareLikeReward}T 적립
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(196,167,231,0.8)', marginBottom: 6 }}>💬 댓글로 피부 고민 나눠요</div>
+              <div style={{ fontSize: 11, color: 'rgba(196,167,231,0.8)', marginBottom: 6 }}>
+                👯 팔로워 생기면 +{shareFollowReward}T 적립
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(196,167,231,0.8)', marginBottom: 6 }}>🏆 인기 리뷰되면 이달의 리뷰어!</div>
+            </div>
+          </div>
+        </>
+      ) : null}
+
       <button type="button" onClick={submit} disabled={!canSubmit}
         style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: 'none', background: PURPLE, color: '#fff', fontSize: 15, cursor: canSubmit ? 'pointer' : 'not-allowed', opacity: canSubmit ? 1 : 0.6 }}>
         리뷰 등록하기
       </button>
-      {toastMsg ? <div style={{ marginTop: 10, color: '#fff', fontSize: 12 }}>{toastMsg}</div> : null}
+      {toastMsg ? (
+        <div style={{ marginTop: 10, color: '#fff', fontSize: 12, whiteSpace: 'pre-line' as const }}>{toastMsg}</div>
+      ) : null}
     </div>
   )
 }
