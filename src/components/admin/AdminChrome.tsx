@@ -54,6 +54,7 @@ const MENU = [
       { label: '이벤트·공구 생성', href: '/admin/marketing/events', icon: '🎉' },
       { label: '공지·푸시 발송', href: '/admin/marketing/push', icon: '📢' },
       { label: '제품 관리', href: '/admin/marketing/products', icon: '🧴' },
+      { label: '🏆 컨테스트', href: '/admin/marketing/contests', icon: '🏆' },
       { label: '쿠폰 관리', href: '/admin/coupons', icon: '🎫' },
     ],
   },
@@ -93,6 +94,7 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/logs')) return '로그인 기록'
   if (path.startsWith('/admin/privacy')) return '개인정보 접근 로그'
   if (path.startsWith('/admin/coupons')) return '쿠폰 관리'
+  if (path.startsWith('/admin/marketing/contests')) return '컨테스트 관리'
   return 'Admin Console'
 }
 
