@@ -1,76 +1,60 @@
 'use client'
 
 /*
- * Supabase SQL Editor에서 테이블이 없을 때 실행:
+ * Supabase SQL Editor에서 테이블/컬럼이 없을 때 실행 (요약):
  *
  * create extension if not exists "pgcrypto";
  *
- * create table public.contests (
- *   id uuid primary key default gen_random_uuid(),
- *   title text not null,
- *   theme text not null default '특별',
- *   start_at timestamptz not null,
- *   end_at timestamptz not null,
- *   vote_mode text not null default 'toast',
- *   toast_per_vote integer not null default 1,
- *   max_entries integer not null default 50,
- *   prize_1st_type text,
- *   prize_1st_value integer not null default 0,
- *   prize_2nd_toast integer not null default 0,
- *   prize_3rd_toast integer not null default 0,
- *   aur_exclusive boolean not null default false,
- *   eligibility text not null default 'creators_only',
- *   is_public boolean not null default true,
- *   awards_processed boolean not null default false,
- *   created_at timestamptz not null default now()
- * );
+ * alter table public.contests add column if not exists status text default 'scheduled';
+ * alter table public.contests add column if not exists winner_entry_id uuid references public.contest_entries(id);
+ * alter table public.contests add column if not exists winner_selected_at timestamptz;
  *
- * create table public.contest_entries (
+ * create table if not exists public.contest_voter_coupons (
  *   id uuid primary key default gen_random_uuid(),
  *   contest_id uuid not null references public.contests(id) on delete cascade,
- *   user_id uuid references public.users(id) on delete set null,
- *   media_url text,
- *   artist_name text,
- *   status text not null default '심사중',
- *   rank_place smallint,
- *   vote_count integer not null default 0,
- *   toast_burned bigint not null default 0,
- *   submitted_at timestamptz not null default now()
+ *   user_id uuid not null references public.users(id) on delete cascade,
+ *   entry_id uuid references public.contest_entries(id) on delete set null,
+ *   discount_rate text not null default '50',
+ *   expires_at timestamptz not null,
+ *   created_at timestamptz not null default now(),
+ *   unique (contest_id, user_id)
  * );
- * create index contest_entries_contest_id_idx on public.contest_entries(contest_id);
  *
- * create table public.contest_votes (
- *   id uuid primary key default gen_random_uuid(),
- *   contest_id uuid not null references public.contests(id) on delete cascade,
- *   entry_id uuid not null references public.contest_entries(id) on delete cascade,
- *   voter_user_id uuid references public.users(id) on delete set null,
- *   votes_count integer not null default 1,
- *   toast_spent integer not null default 0,
- *   voter_grade text,
- *   created_at timestamptz not null default now()
- * );
- * create index contest_votes_contest_id_idx on public.contest_votes(contest_id);
- * create index contest_votes_entry_id_idx on public.contest_votes(entry_id);
- * create index contest_votes_created_at_idx on public.contest_votes(created_at);
+ * alter table public.contest_entries add column if not exists title text;
  *
- * create table public.myworld_site_config (
- *   id smallint primary key default 1 check (id = 1),
- *   myworld_default_bg text,
- *   updated_at timestamptz default now()
- * );
- * insert into public.myworld_site_config (id) values (1) on conflict (id) do nothing;
+ * -- admin_settings (contest 카테고리) 예시 시드
+ * insert into public.admin_settings (category, key, value) values
+ *   ('contest','contest_vote_cost','10'),
+ *   ('contest','contest_voter_discount','50'),
+ *   ('contest','contest_subscription_price','300'),
+ *   ('contest','contest_prize_1st','50000'),
+ *   ('contest','contest_prize_2nd','30000'),
+ *   ('contest','contest_prize_3rd','10000'),
+ *   ('contest','contest_store_price_default','1000'),
+ *   ('contest','contest_max_entries','100'),
+ *   ('contest','contest_min_prize','1000'),
+ *   ('contest','contest_winner_brand_id','')
+ * on conflict (category, key) do nothing;
  *
- * alter table public.contest_entries enable row level security;
- * alter table public.contest_votes enable row level security;
- * alter table public.contests enable row level security;
- * alter table public.myworld_site_config enable row level security;
- * -- RLS 정책은 서비스/관리자 역할에 맞게 별도 설정
+ * (기존 contests / contest_entries / contest_votes / myworld_site_config 정의는 이전 마이그레이션 참고)
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 type ListTab = 'active' | 'upcoming' | 'ended' | 'all'
+
+const SETTING_KEYS = [
+  { key: 'contest_vote_cost', label: '투표 1표당 토스트 비용', fallback: '10' },
+  { key: 'contest_voter_discount', label: '투표 참여자 할인율 %', fallback: '50' },
+  { key: 'contest_subscription_price', label: '월 구독 패스 가격 T', fallback: '300' },
+  { key: 'contest_prize_1st', label: '1등 상금 원', fallback: '50000' },
+  { key: 'contest_prize_2nd', label: '2등 상금 원', fallback: '30000' },
+  { key: 'contest_prize_3rd', label: '3등 상금 원', fallback: '10000' },
+  { key: 'contest_store_price_default', label: '스토어 기본 정가 T', fallback: '1000' },
+  { key: 'contest_max_entries', label: '최대 참여 작품 수', fallback: '100' },
+  { key: 'contest_min_prize', label: '작가 최소 상금 원', fallback: '1000' },
+] as const
 
 function contestPhase(c: { start_at: string; end_at: string }, now: Date): '진행중' | '예정' | '종료' {
   const s = new Date(c.start_at).getTime()
@@ -101,12 +85,14 @@ export default function AdminMarketingContestsPage() {
   const supabase = createClient()
   const [now, setNow] = useState(() => new Date())
   const [loadErr, setLoadErr] = useState<string | null>(null)
+  const [settings, setSettings] = useState<Record<string, string>>({})
   const [contests, setContests] = useState<any[]>([])
   const [contestAgg, setContestAgg] = useState<Record<string, { entries: number; voteCount: number; toastSum: number }>>({})
   const [kpi, setKpi] = useState({ active: 0, entries: 0, votes: 0, toastTotal: 0, toastMonth: 0 })
   const [listTab, setListTab] = useState<ListTab>('active')
   const [toast, setToast] = useState('')
   const [modalOpen, setModalOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const [fTitle, setFTitle] = useState('')
@@ -115,7 +101,7 @@ export default function AdminMarketingContestsPage() {
   const [fEnd, setFEnd] = useState('')
   const [fVoteMode, setFVoteMode] = useState<'toast' | 'free' | 'auction'>('toast')
   const [fToastN, setFToastN] = useState(1)
-  const [fMaxEntries, setFMaxEntries] = useState(50)
+  const [fMaxEntries, setFMaxEntries] = useState(100)
   const [fP1Type, setFP1Type] = useState<'toast' | 'cash'>('toast')
   const [fP1Val, setFP1Val] = useState(0)
   const [fP2, setFP2] = useState(0)
@@ -129,10 +115,37 @@ export default function AdminMarketingContestsPage() {
   const [votes, setVotes] = useState<any[]>([])
   const [busyEntry, setBusyEntry] = useState<string | null>(null)
   const [awarding, setAwarding] = useState(false)
+  const [selectedWinnerEntryId, setSelectedWinnerEntryId] = useState('')
+
+  const getSetting = useCallback((key: string, fallback: string) => settings[key] ?? fallback, [settings])
 
   const showToast = (m: string) => {
     setToast(m)
     setTimeout(() => setToast(''), 2800)
+  }
+
+  const loadSettings = useCallback(async () => {
+    const { data, error } = await supabase.from('admin_settings').select('key, value').eq('category', 'contest')
+    if (error) return
+    const m: Record<string, string> = {}
+    ;(data || []).forEach((r: { key: string; value: string | null }) => {
+      m[r.key] = String(r.value ?? '')
+    })
+    setSettings(m)
+  }, [supabase])
+
+  const persistSetting = async (key: string, value: string) => {
+    setSettings((prev) => ({ ...prev, [key]: value }))
+    const { error } = await supabase.from('admin_settings').upsert(
+      { category: 'contest', key, value },
+      { onConflict: 'category,key' }
+    )
+    if (error) {
+      showToast(error.message)
+      return
+    }
+    showToast('저장됐어요 ✅')
+    await loadSettings()
   }
 
   const refreshAll = useCallback(async () => {
@@ -141,13 +154,13 @@ export default function AdminMarketingContestsPage() {
     monthStart.setDate(1)
     monthStart.setHours(0, 0, 0, 0)
 
-    const [cRes, eRes, vRes, vmRes, entListRes, voteListRes] = await Promise.all([
+    const [cRes, activeRes, eRes, vCountRes, voteRowsRes, voteMonthRes] = await Promise.all([
       supabase.from('contests').select('*').order('start_at', { ascending: false }),
+      supabase.from('contests').select('id', { count: 'exact', head: true }).eq('status', 'active'),
       supabase.from('contest_entries').select('id', { count: 'exact', head: true }),
-      supabase.from('contest_votes').select('toast_spent, votes_count', { count: 'exact' }),
-      supabase.from('contest_votes').select('toast_spent').gte('created_at', monthStart.toISOString()),
-      supabase.from('contest_entries').select('contest_id, vote_count, toast_burned'),
+      supabase.from('contest_votes').select('id', { count: 'exact', head: true }),
       supabase.from('contest_votes').select('contest_id, toast_spent, votes_count'),
+      supabase.from('contest_votes').select('toast_spent').gte('created_at', monthStart.toISOString()),
     ])
 
     if (cRes.error && (cRes.error as any).code === '42P01') {
@@ -161,43 +174,52 @@ export default function AdminMarketingContestsPage() {
 
     const list = cRes.data || []
     setContests(list)
+    const entListRes = await supabase.from('contest_entries').select('contest_id, vote_count, toast_burned')
     const agg: Record<string, { entries: number; voteCount: number; toastSum: number }> = {}
     ;(entListRes.data || []).forEach((row: any) => {
       const cid = String(row.contest_id)
       if (!agg[cid]) agg[cid] = { entries: 0, voteCount: 0, toastSum: 0 }
       agg[cid].entries += 1
     })
-    ;(voteListRes.data || []).forEach((row: any) => {
+    ;(voteRowsRes.data || []).forEach((row: any) => {
       const cid = String(row.contest_id)
       if (!agg[cid]) agg[cid] = { entries: 0, voteCount: 0, toastSum: 0 }
       agg[cid].voteCount += Number(row.votes_count || 0)
       agg[cid].toastSum += Number(row.toast_spent || 0)
     })
     setContestAgg(agg)
-    const n = new Date()
-    const active = list.filter((c) => contestPhase(c, n) === '진행중').length
+
+    let activeNum = typeof activeRes.count === 'number' ? activeRes.count : 0
+    if (activeRes.error) {
+      activeNum = list.filter((c) => c.status === 'active').length
+    }
+
     const entriesCount = typeof eRes.count === 'number' ? eRes.count : 0
+    const votesRowCount = typeof vCountRes.count === 'number' ? vCountRes.count : 0
+
     let toastTotal = 0
-    let votesCount = 0
-    const voteRowsForSum = voteListRes.data && !voteListRes.error ? voteListRes.data : vRes.data || []
-    voteRowsForSum.forEach((row: any) => {
+    ;(voteRowsRes.data || []).forEach((row: any) => {
       toastTotal += Number(row.toast_spent || 0)
-      votesCount += Number(row.votes_count || 0)
     })
     let toastMonth = 0
-    if (!vmRes.error && vmRes.data) {
-      vmRes.data.forEach((row: any) => {
+    if (!voteMonthRes.error && voteMonthRes.data) {
+      voteMonthRes.data.forEach((row: any) => {
         toastMonth += Number(row.toast_spent || 0)
       })
     }
+
     setKpi({
-      active,
+      active: activeNum,
       entries: entriesCount,
-      votes: votesCount,
+      votes: votesRowCount,
       toastTotal,
       toastMonth,
     })
   }, [supabase])
+
+  useEffect(() => {
+    loadSettings()
+  }, [loadSettings])
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 30000)
@@ -207,6 +229,15 @@ export default function AdminMarketingContestsPage() {
   useEffect(() => {
     refreshAll()
   }, [refreshAll])
+
+  useEffect(() => {
+    if (!modalOpen) return
+    setFToastN(Number(getSetting('contest_vote_cost', '10')) || 10)
+    setFMaxEntries(Number(getSetting('contest_max_entries', '100')) || 100)
+    setFP1Val(Number(getSetting('contest_prize_1st', '50000')) || 0)
+    setFP2(Number(getSetting('contest_prize_2nd', '30000')) || 0)
+    setFP3(Number(getSetting('contest_prize_3rd', '10000')) || 0)
+  }, [modalOpen, getSetting])
 
   const loadPanel = useCallback(
     async (cid: string) => {
@@ -234,6 +265,10 @@ export default function AdminMarketingContestsPage() {
     const iv = setInterval(() => loadPanel(manageId), 5000)
     return () => clearInterval(iv)
   }, [manageId, loadPanel])
+
+  useEffect(() => {
+    setSelectedWinnerEntryId('')
+  }, [manageId])
 
   const filteredContests = useMemo(() => {
     return contests.filter((c) => {
@@ -265,6 +300,8 @@ export default function AdminMarketingContestsPage() {
   }, [entries, votes])
 
   const maxRankVotes = useMemo(() => Math.max(1, ...rankSorted.map((r) => r.agg.votes)), [rankSorted])
+
+  const entryDisplayName = (e: any) => String(e?.title || e?.artist_name || '작품').slice(0, 32)
 
   const hourBuckets = useMemo(() => {
     const h = Array(24).fill(0)
@@ -304,12 +341,12 @@ export default function AdminMarketingContestsPage() {
     setFStart('')
     setFEnd('')
     setFVoteMode('toast')
-    setFToastN(1)
-    setFMaxEntries(50)
+    setFToastN(Number(getSetting('contest_vote_cost', '10')) || 10)
+    setFMaxEntries(Number(getSetting('contest_max_entries', '100')) || 100)
     setFP1Type('toast')
-    setFP1Val(0)
-    setFP2(0)
-    setFP3(0)
+    setFP1Val(Number(getSetting('contest_prize_1st', '50000')) || 0)
+    setFP2(Number(getSetting('contest_prize_2nd', '30000')) || 0)
+    setFP3(Number(getSetting('contest_prize_3rd', '10000')) || 0)
     setFAur(false)
     setFElig('creators_only')
     setFPublic(true)
@@ -321,6 +358,10 @@ export default function AdminMarketingContestsPage() {
       return
     }
     setSaving(true)
+    const s = new Date(fStart).getTime()
+    const e = new Date(fEnd).getTime()
+    const t = Date.now()
+    const derivedStatus = t < s ? 'scheduled' : t > e ? 'completed' : 'active'
     const row = {
       title: fTitle.trim(),
       theme: fTheme,
@@ -337,6 +378,7 @@ export default function AdminMarketingContestsPage() {
       eligibility: fElig,
       is_public: fPublic,
       awards_processed: false,
+      status: derivedStatus,
     }
     const { error } = await supabase.from('contests').insert(row as any)
     setSaving(false)
@@ -369,75 +411,126 @@ export default function AdminMarketingContestsPage() {
     else if (manageId) loadPanel(manageId)
   }
 
-  const processAwards = async () => {
-    if (!manageContest || !manageId) return
-    if (manageContest.awards_processed) {
-      showToast('이미 수상 처리됨')
+  const processWinner = async () => {
+    if (!manageContest || !manageId || !selectedWinnerEntryId) {
+      showToast('당선 작품을 선택하세요')
       return
     }
-    const ranked = entries.filter((e) => e.rank_place === 1 || e.rank_place === 2 || e.rank_place === 3)
-    if (ranked.length === 0) {
-      showToast('1~3등(rank_place)을 먼저 지정하세요')
+    if (manageContest.status === 'completed') {
+      showToast('이미 완료된 컨테스트입니다')
       return
     }
+    const entry = entries.find((x) => String(x.id) === String(selectedWinnerEntryId))
+    if (!entry?.user_id) {
+      showToast('작품에 작가(user_id)가 없습니다')
+      return
+    }
+    const prize1st = Number(getSetting('contest_prize_1st', '50000'))
+    const minPrize = Number(getSetting('contest_min_prize', '1000'))
+    if (prize1st < minPrize) {
+      showToast(`1등 상금은 최소 ${minPrize} 이상이어야 합니다 (설정: contest_min_prize)`)
+      return
+    }
+    const brandId = String(getSetting('contest_winner_brand_id', '') || '').trim()
+    if (!brandId) {
+      showToast('당선작 상품 등록을 위해 설정의 contest_winner_brand_id 를 입력하세요')
+      return
+    }
+
     setAwarding(true)
-    const titleBase = manageContest.title || '컨테스트'
+    const nowIso = new Date().toISOString()
+    const exp = new Date()
+    exp.setDate(exp.getDate() + 30)
+    const discountRate = getSetting('contest_voter_discount', '50')
+    const storePrice = Number(getSetting('contest_store_price_default', '1000')) || 0
+    const workTitle = entryDisplayName(entry)
+
     try {
-      for (const en of ranked) {
-        const profileUserId = en.user_id
-        if (!profileUserId) continue
-        const { data: urow } = await supabase.from('users').select('auth_id').eq('id', profileUserId).maybeSingle()
-        const authUid = urow?.auth_id ? String(urow.auth_id) : String(profileUserId)
-        const r = Number(en.rank_place)
-        let toastAmt = 0
-        if (r === 1 && manageContest.prize_1st_type === 'toast') toastAmt = Number(manageContest.prize_1st_value || 0)
-        if (r === 2) toastAmt = Number(manageContest.prize_2nd_toast || 0)
-        if (r === 3) toastAmt = Number(manageContest.prize_3rd_toast || 0)
-        if (toastAmt > 0) {
-          await supabase.from('point_transactions').insert({
-            user_id: authUid,
-            amount: toastAmt,
-            type: 'contest_prize',
-            description: `${titleBase} ${r}등 상금(토스트)`,
-          })
-          const { data: curPts } = await supabase.from('users').select('points').eq('id', profileUserId).maybeSingle()
-          const nextPts = Number(curPts?.points || 0) + toastAmt
-          await supabase.from('users').update({ points: nextPts }).eq('id', profileUserId)
-        }
-        if (r === 1 && manageContest.prize_1st_type === 'cash' && Number(manageContest.prize_1st_value || 0) > 0) {
-          await supabase.from('notifications').insert({
-            user_id: authUid,
-            type: 'contest',
-            title: '🏆 컨테스트 수상',
-            body: `${titleBase} 1등 현금 ${Number(manageContest.prize_1st_value).toLocaleString()}원 — 관리자 지급 안내`,
-            icon: '🏆',
-            is_read: false,
-            created_at: new Date().toISOString(),
-          })
-        } else {
-          await supabase.from('notifications').insert({
-            user_id: authUid,
-            type: 'contest',
-            title: '🏆 컨테스트 수상',
-            body: `${titleBase}에서 ${r}등으로 선정되었습니다.`,
-            icon: '🏆',
-            is_read: false,
-            created_at: new Date().toISOString(),
-          })
-        }
+      const { error: cuErr } = await supabase
+        .from('contests')
+        .update({
+          winner_entry_id: selectedWinnerEntryId,
+          winner_selected_at: nowIso,
+          status: 'completed',
+          awards_processed: true,
+        })
+        .eq('id', manageId)
+      if (cuErr) {
+        showToast(cuErr.message)
+        return
       }
-      const first = ranked.find((e) => Number(e.rank_place) === 1)
-      if (manageContest.aur_exclusive && first?.media_url) {
-        await supabase.from('myworld_site_config').upsert({
-          id: 1,
-          myworld_default_bg: String(first.media_url),
-          updated_at: new Date().toISOString(),
+
+      const { data: authorRow } = await supabase.from('users').select('auth_id').eq('id', entry.user_id).maybeSingle()
+      const authUid = authorRow?.auth_id ? String(authorRow.auth_id) : String(entry.user_id)
+
+      const { error: ptErr } = await supabase.from('point_transactions').insert({
+        user_id: authUid,
+        amount: prize1st,
+        type: 'contest_prize',
+        description: '컨테스트 상금',
+      })
+      if (ptErr) showToast(ptErr.message)
+      else {
+        const { data: curPts } = await supabase.from('users').select('points').eq('id', entry.user_id).maybeSingle()
+        const nextPts = Number(curPts?.points || 0) + prize1st
+        await supabase.from('users').update({ points: nextPts }).eq('id', entry.user_id)
+      }
+
+      const voterIds = Array.from(new Set(votes.map((v) => v.voter_user_id).filter(Boolean))) as string[]
+      const couponRows = voterIds.map((uid) => ({
+        contest_id: manageId,
+        user_id: uid,
+        entry_id: selectedWinnerEntryId,
+        discount_rate: discountRate,
+        expires_at: exp.toISOString(),
+      }))
+      if (couponRows.length > 0) {
+        const { error: cpErr } = await supabase.from('contest_voter_coupons').insert(couponRows as any)
+        if (cpErr) showToast(`쿠폰 일부 실패: ${cpErr.message}`)
+      }
+
+      const notifBody = '투표하신 작품이 당선됐어요! 반값 쿠폰을 드렸어요 🏆'
+      for (const uid of voterIds) {
+        const { data: vr } = await supabase.from('users').select('auth_id').eq('id', uid).maybeSingle()
+        const nuid = vr?.auth_id ? String(vr.auth_id) : String(uid)
+        await supabase.from('notifications').insert({
+          user_id: nuid,
+          type: 'contest',
+          title: '🏆 컨테스트',
+          body: notifBody,
+          icon: '🏆',
+          is_read: false,
+          created_at: nowIso,
         })
       }
-      await supabase.from('contests').update({ awards_processed: true }).eq('id', manageId)
-      showToast('수상 처리 완료')
+
+      const { error: prErr } = await supabase.from('products').insert({
+        brand_id: brandId,
+        name: `${workTitle} (컨테스트 당선작)`,
+        retail_price: storePrice,
+        category: 'myworld_item',
+        thumb_img: entry.media_url || null,
+        storage_thumb_url: entry.media_url || null,
+        status: 'active',
+        stock: 9999,
+        description: null,
+        created_at: nowIso,
+        updated_at: nowIso,
+      } as any)
+      if (prErr) showToast(`제품 등록: ${prErr.message}`)
+
+      if (manageContest.aur_exclusive && entry.media_url) {
+        await supabase.from('myworld_site_config').upsert({
+          id: 1,
+          myworld_default_bg: String(entry.media_url),
+          updated_at: nowIso,
+        })
+      }
+
+      showToast('당선 처리 완료')
       refreshAll()
       loadPanel(manageId)
+      setSelectedWinnerEntryId('')
     } finally {
       setAwarding(false)
     }
@@ -455,38 +548,45 @@ export default function AdminMarketingContestsPage() {
     outline: 'none',
   }
 
+  const storeDefaultHint = getSetting('contest_store_price_default', '1000')
+
   return (
     <div className="admin-contests-page" style={{ maxWidth: 1100 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18, flexWrap: 'wrap', gap: 10 }}>
         <div>
           <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>🏆 컨테스트 관리</div>
-          <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>MARKETING · 진행 현황 · 심사 · 수상</div>
+          <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>MARKETING · 설정값 DB · 심사 · 당선</div>
         </div>
-        <button type="button" className="btn btn-gd" onClick={() => setModalOpen(true)}>
-          ＋ 컨테스트 생성
-        </button>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button type="button" className="btn btn-gy" onClick={() => setSettingsOpen(true)}>
+            ⚙️ 설정
+          </button>
+          <button type="button" className="btn btn-gd" onClick={() => setModalOpen(true)}>
+            ＋ 컨테스트 생성
+          </button>
+        </div>
       </div>
 
       {loadErr ? <div className="alert alert-warn">{loadErr}</div> : null}
 
       <div className="sg sg-4" style={{ marginBottom: 20 }}>
         {[
-          { k: '진행 중', v: kpi.active, sub: '컨테스트', c: 'var(--green)' },
-          { k: '총 참여 작품', v: kpi.entries, sub: 'contest_entries', c: 'var(--blue)' },
-          { k: '총 투표 수', v: kpi.votes.toLocaleString(), sub: `누적 토스트 소각 ${kpi.toastTotal.toLocaleString()}T`, c: 'var(--purple)' },
+          { k: '진행중 (status=active)', v: kpi.active, sub: 'contests', c: 'var(--green)' },
+          { k: '총 출품작', v: kpi.entries, sub: 'contest_entries count', c: 'var(--blue)' },
+          { k: '총 투표수', v: kpi.votes, sub: 'contest_votes count', c: 'var(--purple)' },
           { k: '이달 토스트 소각', v: kpi.toastMonth.toLocaleString(), sub: 'Σ toast_spent (당월)', c: 'var(--gold)' },
         ].map((x) => (
           <div key={x.k} className="sc">
             <div className="lbl">{x.k}</div>
             <div className="val" style={{ color: x.c }}>
-              {x.v}
+              {typeof x.v === 'number' ? x.v.toLocaleString() : x.v}
             </div>
             <div className="sub dim">{x.sub}</div>
           </div>
         ))}
       </div>
       <div className="sc" style={{ marginBottom: 16 }}>
-        <div className="lbl">전체 누적 토스트 소각 (투표)</div>
+        <div className="lbl">전체 누적 토스트 소각</div>
         <div className="val" style={{ color: 'var(--gold2)' }}>
           {kpi.toastTotal.toLocaleString()}
         </div>
@@ -533,6 +633,7 @@ export default function AdminMarketingContestsPage() {
                     <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
                       <span className="b b-pu">{dDayLabel(c, now)}</span>
                       <span className={phase === '진행중' ? 'b b-gr' : phase === '예정' ? 'b b-bl' : 'b b-gy'}>{phase}</span>
+                      {c.status ? <span className="b b-tl">DB:{String(c.status)}</span> : null}
                       <span className="b b-gy">투표: {c.vote_mode === 'toast' ? '토스트' : c.vote_mode === 'free' ? '무료' : '경매'}</span>
                       {c.is_public === false ? <span className="b b-re">비공개</span> : <span className="b b-gr">공개</span>}
                     </div>
@@ -573,6 +674,59 @@ export default function AdminMarketingContestsPage() {
         )}
       </div>
 
+      {settingsOpen ? (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+          onClick={() => setSettingsOpen(false)}
+        >
+          <div
+            className="card"
+            style={{ width: '100%', maxWidth: 440, maxHeight: '90vh', overflowY: 'auto', padding: 20 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="card-title" style={{ marginBottom: 8 }}>
+              컨테스트 설정값
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 14 }}>변경 즉시 반영됩니다. 배포 불필요.</div>
+            {SETTING_KEYS.map(({ key, label, fallback }) => (
+              <div key={key} style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 10, color: 'var(--text3)', display: 'block', marginBottom: 4 }}>{label}</label>
+                <input
+                  type="number"
+                  style={inp}
+                  value={getSetting(key, fallback)}
+                  onChange={(e) => setSettings((p) => ({ ...p, [key]: e.target.value }))}
+                  onBlur={(e) => persistSetting(key, e.target.value)}
+                />
+              </div>
+            ))}
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 10, color: 'var(--text3)', display: 'block', marginBottom: 4 }}>당선작 등록 브랜드 ID (UUID)</label>
+              <input
+                type="text"
+                style={inp}
+                value={getSetting('contest_winner_brand_id', '')}
+                onChange={(e) => setSettings((p) => ({ ...p, contest_winner_brand_id: e.target.value }))}
+                onBlur={(e) => persistSetting('contest_winner_brand_id', e.target.value.trim())}
+                placeholder="products.brand_id"
+              />
+            </div>
+            <button type="button" className="btn btn-gy" onClick={() => setSettingsOpen(false)}>
+              닫기
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {modalOpen ? (
         <div
           style={{
@@ -594,6 +748,9 @@ export default function AdminMarketingContestsPage() {
           >
             <div className="card-title" style={{ marginBottom: 14 }}>
               새 컨테스트
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 10 }}>
+              당선 시 스토어 정가(설정): {storeDefaultHint} T · 최대 참여(설정 기본): {getSetting('contest_max_entries', '100')}
             </div>
             <label style={{ fontSize: 10, color: 'var(--text3)' }}>컨테스트명</label>
             <input style={{ ...inp, marginBottom: 10 }} value={fTitle} onChange={(e) => setFTitle(e.target.value)} placeholder="제목" />
@@ -627,7 +784,7 @@ export default function AdminMarketingContestsPage() {
                   style={{ ...inp, marginLeft: 22 }}
                   value={fToastN}
                   onChange={(e) => setFToastN(Number(e.target.value))}
-                  placeholder="N"
+                  placeholder={getSetting('contest_vote_cost', '10')}
                 />
               ) : null}
               <label style={{ fontSize: 11, color: 'var(--text2)', display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -645,12 +802,12 @@ export default function AdminMarketingContestsPage() {
                 <option value="toast">1등: 토스트</option>
                 <option value="cash">1등: 현금(원)</option>
               </select>
-              <input type="number" min={0} style={inp} value={fP1Val} onChange={(e) => setFP1Val(Number(e.target.value))} placeholder="N" />
+              <input type="number" min={0} style={inp} value={fP1Val} onChange={(e) => setFP1Val(Number(e.target.value))} placeholder={getSetting('contest_prize_1st', '50000')} />
             </div>
             <label style={{ fontSize: 10, color: 'var(--text3)' }}>2등 토스트</label>
-            <input type="number" min={0} style={{ ...inp, marginBottom: 8 }} value={fP2} onChange={(e) => setFP2(Number(e.target.value))} />
+            <input type="number" min={0} style={{ ...inp, marginBottom: 8 }} value={fP2} onChange={(e) => setFP2(Number(e.target.value))} placeholder={getSetting('contest_prize_2nd', '30000')} />
             <label style={{ fontSize: 10, color: 'var(--text3)' }}>3등 토스트</label>
-            <input type="number" min={0} style={{ ...inp, marginBottom: 10 }} value={fP3} onChange={(e) => setFP3(Number(e.target.value))} />
+            <input type="number" min={0} style={{ ...inp, marginBottom: 10 }} value={fP3} onChange={(e) => setFP3(Number(e.target.value))} placeholder={getSetting('contest_prize_3rd', '10000')} />
             <label style={{ fontSize: 11, color: 'var(--text2)', display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
               <input type="checkbox" checked={fAur} onChange={(e) => setFAur(e.target.checked)} />
               AURAN 독점 구매 (ON 시 1등 작품 → 전 고객 기본 배경)
@@ -721,7 +878,7 @@ export default function AdminMarketingContestsPage() {
                     {en.media_url ? <img src={en.media_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
                   </div>
                   <div>
-                    <div style={{ fontSize: 11, fontWeight: 600 }}>{en.artist_name || '작가'}</div>
+                    <div style={{ fontSize: 11, fontWeight: 600 }}>{entryDisplayName(en)}</div>
                     <div style={{ fontSize: 9, color: 'var(--text3)' }}>{new Date(en.submitted_at).toLocaleString('ko-KR')}</div>
                     <div style={{ fontSize: 9, marginTop: 4 }}>
                       투표 {en.vote_count} · 토스트 {Number(en.toast_burned || 0).toLocaleString()} · {en.status}
@@ -756,43 +913,52 @@ export default function AdminMarketingContestsPage() {
             )}
           </div>
 
-          <button type="button" className="btn btn-gd" style={{ width: '100%', marginBottom: 14 }} disabled={awarding} onClick={processAwards}>
-            {awarding ? '처리 중…' : '수상 처리 (상금·알림·기본배경)'}
+          <div style={{ marginBottom: 10 }}>
+            <label style={{ fontSize: 10, color: 'var(--text3)', display: 'block', marginBottom: 4 }}>당선 작품 (수상 처리 시 반영)</label>
+            <select
+              style={inp}
+              value={selectedWinnerEntryId}
+              onChange={(e) => setSelectedWinnerEntryId(e.target.value)}
+            >
+              <option value="">선택하세요</option>
+              {entries.map((en) => (
+                <option key={en.id} value={en.id}>
+                  {entryDisplayName(en)} · {String(en.id).slice(0, 8)}…
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            className="btn btn-gd"
+            style={{ width: '100%', marginBottom: 14 }}
+            disabled={awarding || manageContest.status === 'completed'}
+            onClick={processWinner}
+          >
+            {awarding ? '처리 중…' : '수상 처리'}
           </button>
 
           <div className="card" style={{ padding: 12, marginBottom: 12 }}>
             <div className="card-title" style={{ fontSize: 12 }}>
               투표 현황 (5초 갱신)
             </div>
-            {rankSorted.slice(0, 8).map(({ e, agg }) => (
-              <div key={e.id} className="bar-row">
-                <div className="bar-label" style={{ width: 100, textAlign: 'left' }}>
-                  {(e.artist_name || '').slice(0, 6)}
+            {rankSorted.map(({ e, agg }) => (
+              <div key={e.id} style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 10, color: 'var(--text2)', marginBottom: 4 }}>
+                  {entryDisplayName(e)} · 투표 {agg.votes} · 소각토스트 {agg.toast.toLocaleString()}
                 </div>
-                <div className="bar-track">
+                <div className="bar-track" style={{ height: 10 }}>
                   <div
                     className="bar-fill"
-                    style={{ width: `${(agg.votes / maxRankVotes) * 100}%`, background: 'linear-gradient(90deg,var(--purple),var(--gold))' }}
+                    style={{
+                      width: `${(agg.votes / maxRankVotes) * 100}%`,
+                      background: 'linear-gradient(90deg,#6b4f9e,#9568d4,#c9a84c)',
+                    }}
                   />
                 </div>
-                <div className="bar-val">{agg.votes}</div>
               </div>
             ))}
-            <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 8 }}>토스트 소각 막대 (투표 대비)</div>
-            {rankSorted.slice(0, 8).map(({ e, agg }) => {
-              const mt = Math.max(1, ...rankSorted.map((r) => r.agg.toast))
-              return (
-                <div key={`t-${e.id}`} className="bar-row">
-                  <div className="bar-label" style={{ width: 100, textAlign: 'left' }}>
-                    {(e.artist_name || '').slice(0, 6)}
-                  </div>
-                  <div className="bar-track">
-                    <div className="bar-fill" style={{ width: `${(agg.toast / mt) * 100}%`, background: 'var(--gold)' }} />
-                  </div>
-                  <div className="bar-val">{agg.toast}</div>
-                </div>
-              )
-            })}
           </div>
 
           <div className="card" style={{ padding: 12 }}>
