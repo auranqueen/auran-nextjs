@@ -101,14 +101,19 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
         {/* 빠른 메뉴 */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
           {[
-            { icon: '📅', label: '예약 관리', color: 'rgba(191,95,144,0.1)', border: 'rgba(191,95,144,0.3)', tc: '#bf5f90' },
-            { icon: '👥', label: '고객 관리', color: 'rgba(74,141,192,0.1)', border: 'rgba(74,141,192,0.3)', tc: '#4a8dc0' },
-            { icon: '🏪', label: '스토어', color: 'rgba(149,104,212,0.1)', border: 'rgba(149,104,212,0.3)', tc: '#9568d4' },
-            { icon: '🖊️', label: '샵 편집', color: 'rgba(76,173,126,0.08)', border: 'rgba(76,173,126,0.25)', tc: '#4cad7e' },
-            { icon: '📊', label: '매출 리포트', color: 'rgba(240,160,80,0.08)', border: 'rgba(240,160,80,0.25)', tc: '#f0a050' },
-            { icon: '💳', label: '구독 관리', color: 'rgba(191,95,144,0.08)', border: 'rgba(191,95,144,0.2)', tc: '#bf5f90' },
+            { icon: '📅', label: '예약 관리', color: 'rgba(191,95,144,0.1)', border: 'rgba(191,95,144,0.3)', tc: '#bf5f90', href: '/dashboard/owner/bookings' },
+            { icon: '👥', label: '고객 관리', color: 'rgba(74,141,192,0.1)', border: 'rgba(74,141,192,0.3)', tc: '#4a8dc0', href: '/dashboard/owner/customers' },
+            { icon: '🏪', label: '스토어', color: 'rgba(149,104,212,0.1)', border: 'rgba(149,104,212,0.3)', tc: '#9568d4', href: '/dashboard/owner/store' },
+            { icon: '🖊️', label: '샵 편집', color: 'rgba(76,173,126,0.08)', border: 'rgba(76,173,126,0.25)', tc: '#4cad7e', href: '/dashboard/owner/edit' },
+            { icon: '📊', label: '매출 리포트', color: 'rgba(240,160,80,0.08)', border: 'rgba(240,160,80,0.25)', tc: '#f0a050', href: '/dashboard/owner/revenue' },
+            { icon: '💳', label: '구독 관리', color: 'rgba(191,95,144,0.08)', border: 'rgba(191,95,144,0.2)', tc: '#bf5f90', href: '/dashboard/owner/subscription' },
           ].map(m => (
-            <button key={m.label} style={{ background: m.color, border: `1px solid ${m.border}`, borderRadius: 13, padding: '13px 12px', textAlign: 'left' }}>
+            <button
+              key={m.label}
+              type="button"
+              onClick={() => router.push(m.href)}
+              style={{ background: m.color, border: `1px solid ${m.border}`, borderRadius: 13, padding: '13px 12px', textAlign: 'left', cursor: 'pointer' }}
+            >
               <div style={{ fontSize: 22, marginBottom: 6 }}>{m.icon}</div>
               <div style={{ fontSize: 12, fontWeight: 700, color: m.tc }}>{m.label}</div>
             </button>
@@ -153,7 +158,13 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
           <div style={{ marginTop: 16, background: 'rgba(191,95,144,0.06)', border: '1px solid rgba(191,95,144,0.2)', borderRadius: 13, padding: '13px 15px' }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#bf5f90', marginBottom: 6 }}>⭐ PRO 업그레이드</div>
             <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.7 }}>PRO 구독 시 스토어 SILVER 등급 + 판매 수수료 20% 혜택</div>
-            <button style={{ marginTop: 10, width: '100%', padding: '10px', background: 'rgba(191,95,144,0.15)', border: '1px solid rgba(191,95,144,0.35)', borderRadius: 9, color: '#bf5f90', fontSize: 12, fontWeight: 700 }}>₩29,000/월 PRO 시작하기</button>
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard/owner/subscription')}
+              style={{ marginTop: 10, width: '100%', padding: '10px', background: 'rgba(191,95,144,0.15)', border: '1px solid rgba(191,95,144,0.35)', borderRadius: 9, color: '#bf5f90', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+            >
+              ₩29,000/월 PRO 시작하기
+            </button>
           </div>
         )}
       </div>
