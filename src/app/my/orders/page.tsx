@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { confirmOrderById } from '@/lib/orders/confirmOrder'
 
 const BG = '#0D0B09'
 const GOLD = '#C9A96E'
@@ -21,6 +22,10 @@ type OrderRow = {
   tracking_no: string | null
   courier: string | null
   ordered_at: string | null
+  delivered_at?: string | null
+  confirmed_at?: string | null
+  auto_confirm_at?: string | null
+  referrer_user_id?: string | null
   items: any
 }
 
@@ -49,6 +54,15 @@ export default function MyOrdersPage() {
   const [tab, setTab] = useState<(typeof tabs)[number]>('전체')
   const [orders, setOrders] = useState<OrderRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState('')
+  const [autoConfirmDays, setAutoConfirmDays] = useState(7)
+  const [reviewPromptOrderId, setReviewPromptOrderId] = useState('')
+
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(''), 2200)
+    return () => clearTimeout(t)
+  }, [toast])
 
   useEffect(() => {
     const run = async () => {
@@ -58,16 +72,62 @@ export default function MyOrdersPage() {
         setLoading(false)
         return
       }
+      const { data: autoRow } = await supabase.from('admin_settings').select('value').eq('category', 'order').eq('key', 'auto_confirm_days').maybeSingle()
+      setAutoConfirmDays(Math.max(1, Math.floor(Number((autoRow as { value?: string } | null)?.value ?? 7))))
       const { data: rows } = await supabase
         .from('orders')
-        .select('id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, items')
+        .select('id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, delivered_at, confirmed_at, auto_confirm_at, referrer_user_id, items')
         .eq('customer_id', user.id)
         .order('ordered_at', { ascending: false })
-      setOrders((rows as OrderRow[]) || [])
+      const nextRows = (rows as OrderRow[]) || []
+      setOrders(nextRows)
+
+      const { data: me } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+      if (me?.id) {
+        for (const o of nextRows) {
+          if (!String(o.status || '').includes('배송완료')) continue
+          const base = new Date(o.delivered_at || o.ordered_at || '').getTime()
+          if (!base) continue
+          const day = Math.floor((Date.now() - base) / 86400000)
+          const key = `order:${o.id}`
+          const entries =
+            day >= 6
+              ? [{ t: '내일 자동확정 돼요 ⏰', b: `${key} 지금 확정하고 토스트 받아요` }]
+              : day >= 3
+                ? [{ t: '구매확정 잊지 마세요 🥺', b: `${key} D-4 남았어요! 확정하면 토스트 드려요` }]
+                : day >= 1
+                  ? [{ t: '📦 상품 잘 받으셨나요?', b: `${key} 구매확정하면 토스트 적립돼요 💜` }]
+                  : []
+          for (const e of entries) {
+            const { data: exists } = await supabase.from('notifications').select('id').eq('user_id', me.id).eq('title', e.t).eq('body', e.b).limit(1)
+            if (!exists || exists.length === 0) {
+              await supabase.from('notifications').insert({ user_id: me.id, type: 'promo', title: e.t, body: e.b, icon: '📦', is_read: false } as any)
+            }
+          }
+        }
+      }
       setLoading(false)
     }
     run()
   }, [supabase])
+
+  const confirmOrder = async (orderId: string) => {
+    const res = await confirmOrderById(supabase as any, orderId)
+    if (!res.ok) return
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId
+          ? {
+              ...o,
+              status: '구매확정',
+              confirmed_at: new Date().toISOString(),
+            }
+          : o
+      )
+    )
+    setToast('구매확정 완료! 토스트 적립됐어요 ✨')
+    setReviewPromptOrderId(orderId)
+  }
 
   const filtered = useMemo(() => {
     if (tab === '전체') return orders
@@ -145,10 +205,41 @@ export default function MyOrdersPage() {
                   🚚 배송조회
                 </button>
               ) : null}
+              {status.includes('배송완료') ? (
+                <div style={{ marginTop: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => void confirmOrder(order.id)}
+                    style={{ width: '100%', border: 'none', background: '#7B5EA7', color: '#fff', borderRadius: 12, padding: 10, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    구매확정하기 💜
+                  </button>
+                  <div style={{ marginTop: 6, fontSize: 10, color: 'rgba(255,255,255,0.4)', whiteSpace: 'pre-line' as const }}>
+                    {`확정하면 토스트 적립돼요 ✨\n${(() => {
+                      const base = new Date(order.delivered_at || order.ordered_at || '').getTime()
+                      const remain = Math.max(0, autoConfirmDays - Math.floor((Date.now() - base) / 86400000))
+                      return `D-${remain}일 후 자동확정`
+                    })()}`}
+                  </div>
+                </div>
+              ) : null}
+              {reviewPromptOrderId === order.id ? (
+                <div style={{ marginTop: 10, background: 'rgba(123,94,167,0.12)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 10, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 11, color: '#c4a7e7', marginBottom: 8 }}>리뷰 작성하면 +50T 추가 적립!</div>
+                  <button type="button" onClick={() => router.push('/my/reviews/new')} style={{ border: 'none', background: '#7B5EA7', color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}>
+                    리뷰 쓰기
+                  </button>
+                </div>
+              ) : null}
             </div>
           )
         })}
       </div>
+      {toast ? (
+        <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 24, background: 'rgba(123,94,167,0.95)', color: '#fff', borderRadius: 10, padding: '10px 14px', fontSize: 12, zIndex: 60 }}>
+          {toast}
+        </div>
+      ) : null}
     </div>
   )
 }

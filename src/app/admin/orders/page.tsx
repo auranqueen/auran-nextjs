@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { confirmOrderById } from '@/lib/orders/confirmOrder'
 
 type TabKey = '전체' | '주문확인' | '발송준비' | '배송중' | '배송완료' | '취소/환불'
 
@@ -19,6 +20,9 @@ type OrderRow = {
   courier?: string | null
   ordered_at?: string | null
   shipped_at?: string | null
+  delivered_at?: string | null
+  confirmed_at?: string | null
+  auto_confirm_at?: string | null
   customer_id?: string | null
   admin_order_notes?: string | null
   customer_memo?: string | null
@@ -26,11 +30,11 @@ type OrderRow = {
 }
 
 const SELECT_FULL =
-  'id, order_no, status, total_amount, final_amount, coupon_discount, points_used, payment_method, tracking_no, courier, ordered_at, shipped_at, admin_order_notes, customer_id, customer_memo, users!orders_customer_id_fkey(customer_grade, profiles(full_name, username, email, grade))'
+  'id, order_no, status, total_amount, final_amount, coupon_discount, points_used, payment_method, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, admin_order_notes, customer_id, customer_memo, users!orders_customer_id_fkey(customer_grade, profiles(full_name, username, email, grade))'
 const SELECT_FULL_NOUSER =
-  'id, order_no, status, total_amount, final_amount, coupon_discount, points_used, payment_method, tracking_no, courier, ordered_at, shipped_at, admin_order_notes, customer_id, customer_memo'
+  'id, order_no, status, total_amount, final_amount, coupon_discount, points_used, payment_method, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, admin_order_notes, customer_id, customer_memo'
 const SELECT_FALLBACK =
-  'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, customer_id'
+  'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, customer_id'
 
 export default function AdminOrdersPage() {
   const supabase = createClient()
@@ -57,6 +61,7 @@ export default function AdminOrdersPage() {
   const [memoDraft, setMemoDraft] = useState('')
   const [memoSaving, setMemoSaving] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
+  const [autoConfirmDays, setAutoConfirmDays] = useState(7)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const [shipBulkIds, setShipBulkIds] = useState<string[] | null>(null)
   const [dateFrom, setDateFrom] = useState('')
@@ -125,6 +130,8 @@ export default function AdminOrdersPage() {
       } else {
         setRows(data || [])
       }
+      const { data: autoRow } = await supabase.from('admin_settings').select('value').eq('category', 'order').eq('key', 'auto_confirm_days').maybeSingle()
+      setAutoConfirmDays(Math.max(1, Math.floor(Number((autoRow as { value?: string } | null)?.value ?? 7))))
       setLoading(false)
     }
     void run()
@@ -398,12 +405,14 @@ export default function AdminOrdersPage() {
   }
 
   const markDelivered = async (id: string) => {
-    const { error } = await supabase.from('orders').update({ status: '배송완료', delivered_at: new Date().toISOString() }).eq('id', id)
+    const deliveredAt = new Date().toISOString()
+    const autoAt = new Date(Date.now() + autoConfirmDays * 86400000).toISOString()
+    const { error } = await supabase.from('orders').update({ status: '배송완료', delivered_at: deliveredAt, auto_confirm_at: autoAt } as any).eq('id', id)
     if (error) {
       alert(error.message)
       return
     }
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: '배송완료', delivered_at: new Date().toISOString() } : r)))
+    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: '배송완료', delivered_at: deliveredAt, auto_confirm_at: autoAt } : r)))
     setTab('배송완료')
   }
 
@@ -433,6 +442,29 @@ export default function AdminOrdersPage() {
     setSelectedIds(new Set())
     setTab('발송준비')
     setToastMsg(`${ids.length}건 처리됐습니다`)
+    window.setTimeout(() => setToastMsg(''), 2500)
+  }
+
+  const bulkAutoConfirm = async () => {
+    const targets = rows.filter((r) => {
+      if (r.status !== '배송완료') return false
+      const base = new Date(r.delivered_at || r.shipped_at || r.ordered_at || '').getTime()
+      if (!base) return false
+      const remain = autoConfirmDays - Math.floor((Date.now() - base) / 86400000)
+      return remain <= 0
+    })
+    if (!targets.length) {
+      setToastMsg('자동확정 대상이 없습니다')
+      window.setTimeout(() => setToastMsg(''), 2000)
+      return
+    }
+    for (const t of targets) {
+      await confirmOrderById(supabase as any, t.id)
+    }
+    setRows((prev) =>
+      prev.map((r) => (targets.some((t) => t.id === r.id) ? { ...r, status: '구매확정', confirmed_at: new Date().toISOString() } : r))
+    )
+    setToastMsg(`${targets.length}건 자동확정 처리`)
     window.setTimeout(() => setToastMsg(''), 2500)
   }
 
@@ -615,6 +647,11 @@ export default function AdminOrdersPage() {
             <button type="button" className="btn btn-bl" onClick={downloadCjCsv}>
               📦 CJ송장 양식 다운
             </button>
+            {tab === '배송완료' ? (
+              <button type="button" className="btn btn-gr" onClick={() => void bulkAutoConfirm()}>
+                D-0 자동확정 처리
+              </button>
+            ) : null}
           </div>
         </div>
         <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1135,6 +1172,36 @@ export default function AdminOrdersPage() {
                     </td>
                     <td>
                       <span className={stCls}>{o.status}</span>
+                      {o.status === '배송완료' ? (
+                        <span
+                          style={{
+                            marginLeft: 6,
+                            fontSize: 10,
+                            padding: '2px 6px',
+                            borderRadius: 999,
+                            background: (() => {
+                              const base = new Date(o.delivered_at || o.shipped_at || o.ordered_at || '').getTime()
+                              const remain = autoConfirmDays - Math.floor((Date.now() - base) / 86400000)
+                              if (remain <= 3) return 'rgba(255,100,100,0.2)'
+                              if (remain <= 6) return 'rgba(201,169,110,0.2)'
+                              return 'rgba(255,255,255,0.12)'
+                            })(),
+                            color: (() => {
+                              const base = new Date(o.delivered_at || o.shipped_at || o.ordered_at || '').getTime()
+                              const remain = autoConfirmDays - Math.floor((Date.now() - base) / 86400000)
+                              if (remain <= 3) return '#ff9d9d'
+                              if (remain <= 6) return '#C9A96E'
+                              return 'rgba(255,255,255,0.7)'
+                            })(),
+                          }}
+                        >
+                          {(() => {
+                            const base = new Date(o.delivered_at || o.shipped_at || o.ordered_at || '').getTime()
+                            const remain = autoConfirmDays - Math.floor((Date.now() - base) / 86400000)
+                            return `D-${Math.max(0, remain)}`
+                          })()}
+                        </span>
+                      ) : null}
                     </td>
                     <td style={{ fontSize: 11 }}>{pay}</td>
                     <td className="mono">₩{Number(o.total_amount ?? 0).toLocaleString()}</td>

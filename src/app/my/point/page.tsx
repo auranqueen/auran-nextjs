@@ -21,13 +21,15 @@ type TransactionRow = {
 export default function MyPointPage() {
   const router = useRouter()
   const supabase = createClient()
-  const [tab, setTab] = useState<'전체' | '들어온 돈' | '나간 돈'>('전체')
+  const [tab, setTab] = useState<'전체' | '들어온 돈' | '나간 돈' | '부채 내역'>('전체')
   const [point, setPoint] = useState(0)
   const [rows, setRows] = useState<TransactionRow[]>([])
   const [chargeRows, setChargeRows] = useState<any[]>([])
   const [chargeUseRows, setChargeUseRows] = useState<any[]>([])
   const [chargeBalance, setChargeBalance] = useState(0)
   const [expiringPoints, setExpiringPoints] = useState(0)
+  const [debtRows, setDebtRows] = useState<any[]>([])
+  const [totalDebt, setTotalDebt] = useState(0)
 
   useEffect(() => {
     const run = async () => {
@@ -77,6 +79,18 @@ export default function MyPointPage() {
         .or('type.eq.expire,description.ilike.%소멸%')
       const expiringAmount = ((expireRows as { amount: number }[] | null) || []).reduce((sum, r) => sum + Math.abs(Number(r.amount || 0)), 0)
       setExpiringPoints(expiringAmount)
+
+      const { data: debts } = await supabase
+        .from('point_debts')
+        .select('id, amount, cleared_amount, reason, status, expires_at, created_at')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      setDebtRows(debts || [])
+      setTotalDebt(
+        ((debts as any[]) || [])
+          .filter((d) => String(d.status || '') === 'pending')
+          .reduce((sum, d) => sum + Math.max(0, Number(d.amount || 0) - Number(d.cleared_amount || 0)), 0)
+      )
     }
     run()
   }, [supabase])
@@ -141,9 +155,16 @@ export default function MyPointPage() {
           </section>
         ) : null}
 
+        {totalDebt > 0 ? (
+          <section style={{ background: 'rgba(255,100,100,0.08)', border: '1px solid rgba(255,100,100,0.2)', borderRadius: 12, padding: 12, marginBottom: 10 }}>
+            <div style={{ fontSize: 12, color: '#ffb7b7' }}>⚠️ 반품 부채 {totalDebt.toLocaleString()}T</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 4 }}>다음 적립 시 자동 차감돼요</div>
+          </section>
+        ) : null}
+
         <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 14 }}>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
-            {(['전체', '들어온 돈', '나간 돈'] as const).map((t) => (
+            {(['전체', '들어온 돈', '나간 돈', '부채 내역'] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -162,7 +183,24 @@ export default function MyPointPage() {
             ))}
           </div>
 
-          {filteredRows.length === 0 ? (
+          {tab === '부채 내역' ? (
+            debtRows.length === 0 ? (
+              <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '32px 0' }}>부채 내역이 없어요</div>
+            ) : (
+              debtRows.map((d: any) => {
+                const remain = Math.max(0, Number(d.amount || 0) - Number(d.cleared_amount || 0))
+                return (
+                  <div key={d.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '10px 0' }}>
+                    <div style={{ fontSize: 12, color: '#fff' }}>{String(d.reason || '반품 토스트 부채')}</div>
+                    <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 4 }}>
+                      금액 {Number(d.amount || 0).toLocaleString()}T · 상환 {Number(d.cleared_amount || 0).toLocaleString()}T · 잔여 {remain.toLocaleString()}T
+                    </div>
+                    <div style={{ fontSize: 10, color: TEXT_MUTED, marginTop: 3 }}>만료일 {d.expires_at ? new Date(d.expires_at).toLocaleDateString('ko-KR') : '-'}</div>
+                  </div>
+                )
+              })
+            )
+          ) : filteredRows.length === 0 ? (
             <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '32px 0' }}>
               아직 내역이 없어요 💜
             </div>
