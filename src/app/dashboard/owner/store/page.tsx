@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
+import OwnerCouponProductTargetFields from '@/components/owner-store/OwnerCouponProductTargetFields'
 
 const BG = '#0D0B09'
 
@@ -92,6 +93,7 @@ export default function OwnerStorePage() {
   const [cpStart, setCpStart] = useState('')
   const [cpEnd, setCpEnd] = useState('')
   const [cpTarget, setCpTarget] = useState<'all' | 'product'>('all')
+  const [cpSelectedProductIds, setCpSelectedProductIds] = useState<string[]>([])
 
   const [platformFeeRate, setPlatformFeeRate] = useState(8)
   const [settlementDay, setSettlementDay] = useState(25)
@@ -727,7 +729,10 @@ export default function OwnerStorePage() {
           <div>
             <button
               type="button"
-              onClick={() => setCouponModal(true)}
+              onClick={() => {
+                setCpSelectedProductIds([])
+                setCouponModal(true)
+              }}
               style={{ width: '100%', marginBottom: 12, border: 'none', borderRadius: 12, background: '#7B5EA7', color: '#fff', padding: '10px 0', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
             >
               + 쿠폰 생성
@@ -1004,12 +1009,13 @@ export default function OwnerStorePage() {
               <input type="date" value={cpStart} onChange={(e) => setCpStart(e.target.value)} style={{ flex: 1, borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', color: '#fff', padding: 8, fontSize: 11 }} />
               <input type="date" value={cpEnd} onChange={(e) => setCpEnd(e.target.value)} style={{ flex: 1, borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.04)', color: '#fff', padding: 8, fontSize: 11 }} />
             </div>
-            <label style={{ display: 'block', fontSize: 11, marginTop: 10 }}>
-              <input type="radio" checked={cpTarget === 'all'} onChange={() => setCpTarget('all')} /> 전체 제품
-            </label>
-            <label style={{ display: 'block', fontSize: 11 }}>
-              <input type="radio" checked={cpTarget === 'product'} onChange={() => setCpTarget('product')} /> 특정 제품 선택 (추후 연결)
-            </label>
+            <OwnerCouponProductTargetFields
+              products={products.map((p) => ({ id: String(p.id), name: String(p.name || ''), thumbnail_url: p.thumbnail_url }))}
+              target={cpTarget}
+              onTargetChange={setCpTarget}
+              selectedProductIds={cpSelectedProductIds}
+              onSelectedProductIdsChange={setCpSelectedProductIds}
+            />
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
               <button type="button" onClick={() => setCouponModal(false)} style={{ flex: 1, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: '#fff', borderRadius: 10, padding: '10px 0', cursor: 'pointer' }}>
                 닫기

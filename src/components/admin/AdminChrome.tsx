@@ -45,6 +45,7 @@ const MENU = [
     items: [
       { label: '추천 매핑', href: '/admin/mapping', icon: '🧩' },
       { label: '충전 플랜', href: '/admin/charge', icon: '💳' },
+      { label: '구독 관리', href: '/admin/subscriptions', icon: '🪪' },
       { label: '초대 링크', href: '/admin/invite', icon: '🔗' },
     ],
   },
@@ -85,6 +86,7 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/settlement')) return '정산 일괄 처리'
   if (path.startsWith('/admin/mapping')) return '추천 매핑'
   if (path.startsWith('/admin/charge')) return '충전 플랜'
+  if (path.startsWith('/admin/subscriptions')) return '구독 관리'
   if (path.startsWith('/admin/invite')) return '초대 링크'
   if (path.startsWith('/admin/settings/points')) return '포인트 설정'
   if (path.startsWith('/admin/settings/commission')) return '수수료·추천 설정'
