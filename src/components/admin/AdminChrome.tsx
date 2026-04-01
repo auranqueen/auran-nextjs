@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
 
@@ -39,6 +39,10 @@ const MENU = [
       { label: '정산 일괄 처리', href: '/admin/settlement', icon: '💰' },
       { label: '매출 분석', href: '/admin/revenue', icon: '📈' },
     ],
+  },
+  {
+    section: 'COMMISSION',
+    items: [{ label: '커미션관리', href: '/admin/commissions', icon: '💰', badgeKey: 'commission' as const }],
   },
   {
     section: 'SETTINGS+',
@@ -97,6 +101,7 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/privacy')) return '개인정보 접근 로그'
   if (path.startsWith('/admin/coupons')) return '쿠폰 관리'
   if (path.startsWith('/admin/marketing/contests')) return '컨테스트 관리'
+  if (path.startsWith('/admin/commissions')) return '커미션 관리'
   return 'Admin Console'
 }
 
@@ -105,8 +110,24 @@ export default function AdminChrome({ adminName, roleCounts, pendingShipCount = 
   const router = useRouter()
   const supabase = createClient()
   const [q, setQ] = useState('')
+  const [commissionPending, setCommissionPending] = useState(0)
 
   const title = useMemo(() => pageTitleByPath(pathname), [pathname])
+
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      const [{ count: a }, { count: b }] = await Promise.all([
+        supabase.from('partner_commissions' as any).select('*', { count: 'exact', head: true }).eq('status', 'confirmed'),
+        supabase.from('owner_commissions' as any).select('*', { count: 'exact', head: true }).eq('status', 'confirmed'),
+      ])
+      if (!cancelled) setCommissionPending((a || 0) + (b || 0))
+    }
+    void run()
+    return () => {
+      cancelled = true
+    }
+  }, [supabase])
 
   const goSearch = () => {
     const s = q.trim()
@@ -225,6 +246,26 @@ export default function AdminChrome({ adminName, roleCounts, pendingShipCount = 
                           }}
                         >
                           {pendingShipCount}
+                        </span>
+                      ) : 'badgeKey' in it && it.badgeKey === 'commission' && commissionPending > 0 ? (
+                        <span
+                          style={{
+                            position: 'absolute',
+                            right: 10,
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'var(--gold)',
+                            color: '#0a0c0f',
+                            fontSize: 8,
+                            fontWeight: 700,
+                            fontFamily: "'JetBrains Mono', monospace",
+                            borderRadius: 9,
+                            padding: '1px 5px',
+                            minWidth: 16,
+                            textAlign: 'center',
+                          }}
+                        >
+                          {commissionPending}
                         </span>
                       ) : null
                     return (

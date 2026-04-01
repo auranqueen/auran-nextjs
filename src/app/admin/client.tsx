@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
+import { cancelCommissionsForRefundOrder } from '@/lib/orders/applyOrderCommissions'
 
 type Tab = 'dashboard' | 'shipping' | 'brands' | 'members' | 'settlement' | 'refund' | 'logs'
 
@@ -58,8 +59,14 @@ export default function AdminClient({ profile, stats, pendingOrders, pendingBran
   }
 
   async function approveRefund(refundId: string) {
+    const { data: refRow } = await supabase.from('refunds').select('order_id').eq('id', refundId).maybeSingle()
     const { error } = await supabase.from('refunds').update({ status: '완료', approved_by: profile.id, approved_at: new Date().toISOString() }).eq('id', refundId)
-    if (!error) { showToast('✅ 환불 완료 처리됨'); router.refresh() }
+    if (!error) {
+      const oid = (refRow as { order_id?: string } | null)?.order_id
+      if (oid) await cancelCommissionsForRefundOrder(supabase as any, oid)
+      showToast('✅ 환불 완료 처리됨')
+      router.refresh()
+    }
   }
 
   const badge = (text: string, color: string) => (

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { applyCommissionsAfterOrderConfirm } from '@/lib/orders/applyOrderCommissions'
 
 type ConfirmResult = {
   ok: boolean
@@ -154,6 +155,8 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
       }
     }
   }
+
+  await applyCommissionsAfterOrderConfirm(supabase, orderId)
 
   return { ok: true, rewardAmount, shareAmount, autoConfirmDays }
 }
