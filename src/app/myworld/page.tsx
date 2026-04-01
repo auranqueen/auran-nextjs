@@ -50,6 +50,7 @@ export default function MyWorldPage() {
   const [roomContest, setRoomContest] = useState<any>(null)
   const [mwShopItems, setMwShopItems] = useState<any[]>([])
   const [mwVotedActive, setMwVotedActive] = useState(false)
+  const [mwVoterDiscountPct, setMwVoterDiscountPct] = useState(50)
   const [mwShopBusy, setMwShopBusy] = useState<string | null>(null)
 
   useEffect(() => {
@@ -65,6 +66,14 @@ export default function MyWorldPage() {
         .limit(1)
         .maybeSingle()
       setRoomContest(c || null)
+      const { data: discRow } = await supabase
+        .from('admin_settings')
+        .select('value')
+        .eq('category', 'contest')
+        .eq('key', 'contest_voter_discount')
+        .maybeSingle()
+      const d = Number((discRow as { value?: string } | null)?.value ?? '50')
+      setMwVoterDiscountPct(Number.isFinite(d) && d >= 0 && d <= 100 ? d : 50)
       const { data: prods } = await supabase.from('products').select('*').eq('category', 'myworld_item').eq('status', 'active').limit(24)
       setMwShopItems(prods || [])
       const { data: auth } = await supabase.auth.getUser()
@@ -252,7 +261,8 @@ export default function MyWorldPage() {
       return
     }
     const base = Number(p.retail_price || 0)
-    const pay = mwVotedActive ? Math.max(1, Math.ceil(base * 0.5)) : base
+    const factor = 1 - mwVoterDiscountPct / 100
+    const pay = mwVotedActive ? Math.max(1, Math.ceil(base * factor)) : base
     if (pay <= 0) {
       setToast('가격 정보가 없어요')
       return
@@ -788,7 +798,8 @@ export default function MyWorldPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 12 }}>
               {mwShopItems.map((p: any) => {
                 const base = Number(p.retail_price || 0)
-                const pay = mwVotedActive ? Math.max(1, Math.ceil(base * 0.5)) : base
+                const factor = 1 - mwVoterDiscountPct / 100
+                const pay = mwVotedActive ? Math.max(1, Math.ceil(base * factor)) : base
                 const thumb = p.storage_thumb_url || p.thumb_img || ''
                 return (
                   <div key={`mwshop-${p.id}`} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 8 }}>
