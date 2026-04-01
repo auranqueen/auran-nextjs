@@ -1,4 +1,47 @@
 'use client'
+
+/*
+-- 아래 SQL을 Supabase SQL Editor에서 실행하세요:
+-- Supabase cron job 또는
+-- 매일 자정 실행 권장
+--
+-- 이 프로젝트 notifications 테이블은 message 대신 body, icon, is_read 등을 사용하고
+-- user_id는 public.users.id 입니다. 실행 전 컬럼명·수신자 id를 스키마에 맞게 조정하세요.
+
+CREATE OR REPLACE FUNCTION check_subscription_expiry()
+RETURNS void AS $$
+DECLARE
+  rec RECORD;
+  days_left integer;
+BEGIN
+  FOR rec IN
+    SELECT os.*, p.auth_id
+    FROM owner_subscriptions os
+    JOIN profiles p ON p.id::text = os.owner_id::text
+    WHERE os.status = 'active'
+    AND os.expires_at BETWEEN now() AND now() + interval '10 days'
+  LOOP
+    days_left := CEIL(EXTRACT(EPOCH FROM (rec.expires_at - now())) / 86400);
+
+    IF days_left IN (10, 7, 3, 1) THEN
+      INSERT INTO notifications (user_id, title, message, type)
+      VALUES (
+        rec.auth_id,
+        '구독 만료 ' || days_left || '일 전이에요 ⏰',
+        CASE days_left
+          WHEN 10 THEN '지금 갱신하면 끊김 없이 사용할 수 있어요 💜'
+          WHEN 7  THEN '차트/처방전이 중단될 수 있어요. 지금 갱신하세요!'
+          WHEN 3  THEN '⚠️ 3일 후 구독이 만료돼요. 지금 바로 갱신하세요!'
+          WHEN 1  THEN '내일 구독이 만료돼요 😢 갱신하면 바로 복구돼요 💜'
+        END,
+        'subscription_expiry'
+      );
+    END IF;
+  END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+*/
+
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -21,6 +64,41 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
 
   const plan = profile.plan || 'basic'
   const grade = profile.store_grade || 'none'
+
+  const [activeSub, setActiveSub] = useState<any | null>(null)
+  const [ownerMode, setOwnerMode] = useState<string | null>(null)
+  const [subReady, setSubReady] = useState(false)
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const { data: subs } = await supabase
+          .from('owner_subscriptions')
+          .select('*')
+          .eq('owner_id', profile.id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1)
+        setActiveSub(((subs as any[]) || [])[0] ?? null)
+
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        if (user) {
+          const { data: prof } = await supabase.from('profiles').select('owner_mode').eq('auth_id', user.id).maybeSingle()
+          setOwnerMode((prof as any)?.owner_mode ?? null)
+        } else {
+          setOwnerMode(null)
+        }
+      } catch {
+        setActiveSub(null)
+        setOwnerMode(null)
+      } finally {
+        setSubReady(true)
+      }
+    }
+    void run()
+  }, [profile.id, supabase])
 
   useEffect(() => {
     const run = async () => {
@@ -55,6 +133,20 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
     return `${Math.floor(h / 24)}일 경과`
   }
 
+  const seoulDateKey = (d: Date) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
+  const subPlanSlug = String(activeSub?.plan || '').toLowerCase()
+  const looksLikeAnnualSub = /year|annual|연간|12m|yr/.test(subPlanSlug)
+  const expiryMs = activeSub?.expires_at ? new Date(activeSub.expires_at).getTime() : NaN
+  const daysLeft =
+    activeSub?.expires_at && Number.isFinite(expiryMs) ? Math.ceil((expiryMs - Date.now()) / 86400000) : null
+  const expiryToday =
+    activeSub?.expires_at && Number.isFinite(expiryMs) ? seoulDateKey(new Date(activeSub.expires_at)) === seoulDateKey(new Date()) : false
+  const showExpirySoon = daysLeft !== null && daysLeft >= 1 && daysLeft <= 7
+  const showExpiryToday = daysLeft !== null && (daysLeft <= 0 || expiryToday)
+  const showIndependentStoreBtn =
+    !!activeSub && (ownerMode === 'independent' || ownerMode === 'both')
+  const showAnnualPromoBanner = !!activeSub && !looksLikeAnnualSub && !showExpiryToday && !showExpirySoon
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
       {/* 히어로 */}
@@ -79,6 +171,139 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
           ))}
         </div>
       </div>
+
+      {subReady ? (
+        <div style={{ margin: '12px 16px 0' }}>
+          {!activeSub ? (
+            <div
+              style={{
+                background: 'rgba(201,169,110,0.1)',
+                border: '1px solid rgba(201,169,110,0.3)',
+                borderRadius: 12,
+                padding: 12,
+              }}
+            >
+              <div style={{ fontSize: 12, color: '#C9A96E' }}>구독 플랜을 선택하고 시작해보세요 💜</div>
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard/owner/subscription')}
+                style={{
+                  marginTop: 10,
+                  border: 'none',
+                  background: 'transparent',
+                  color: '#C9A96E',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  padding: 0,
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                }}
+              >
+                플랜 보기 →
+              </button>
+            </div>
+          ) : showExpiryToday ? (
+            <div
+              style={{
+                background: 'rgba(255,100,100,0.08)',
+                border: '1px solid rgba(255,100,100,0.2)',
+                borderRadius: 12,
+                padding: 12,
+              }}
+            >
+              <div style={{ fontSize: 12, color: '#ff6b6b', lineHeight: 1.55, fontWeight: 700 }}>
+                오늘 구독이 만료돼요 😢
+                <br />
+                갱신하면 바로 복구돼요 💜
+              </div>
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard/owner/subscription')}
+                style={{
+                  marginTop: 10,
+                  width: '100%',
+                  border: 'none',
+                  borderRadius: 10,
+                  background: '#ff6b6b',
+                  color: '#fff',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  padding: '10px 0',
+                  cursor: 'pointer',
+                }}
+              >
+                지금 갱신하기
+              </button>
+            </div>
+          ) : showExpirySoon ? (
+            <div
+              style={{
+                background: 'rgba(255,100,100,0.08)',
+                border: '1px solid rgba(255,100,100,0.2)',
+                borderRadius: 12,
+                padding: 12,
+              }}
+            >
+              <div style={{ fontSize: 12, color: '#ff6b6b' }}>⚠️ 구독이 {daysLeft}일 후 만료돼요</div>
+              <button
+                type="button"
+                onClick={() => router.push('/dashboard/owner/subscription')}
+                style={{
+                  marginTop: 10,
+                  width: '100%',
+                  borderRadius: 10,
+                  background: 'rgba(255,107,107,0.25)',
+                  color: '#ff6b6b',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  padding: '10px 0',
+                  cursor: 'pointer',
+                  border: '1px solid rgba(255,100,100,0.35)',
+                }}
+              >
+                지금 갱신하기
+              </button>
+            </div>
+          ) : null}
+          {activeSub && showIndependentStoreBtn ? (
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard/owner/store')}
+              style={{
+                marginTop: 10,
+                width: '100%',
+                borderRadius: 12,
+                border: '1px solid rgba(149,104,212,0.45)',
+                background: 'rgba(149,104,212,0.12)',
+                color: '#c4a7e7',
+                fontSize: 12,
+                fontWeight: 700,
+                padding: '11px 12px',
+                cursor: 'pointer',
+              }}
+            >
+              내 스토어 관리 →
+            </button>
+          ) : null}
+          {showAnnualPromoBanner ? (
+            <button
+              type="button"
+              onClick={() => router.push('/dashboard/owner/subscription')}
+              style={{
+                marginTop: 10,
+                width: '100%',
+                textAlign: 'left',
+                border: 'none',
+                background: 'transparent',
+                padding: '4px 0 0',
+                cursor: 'pointer',
+              }}
+            >
+              <span style={{ fontSize: 11, color: 'rgba(196,167,231,0.7)' }}>연간 구독하면 2개월 무료! 💜</span>
+            </button>
+          ) : null}
+        </div>
+      ) : null}
 
       <div style={{ padding: '18px 18px 0' }}>
         {/* 오늘 예약 */}
