@@ -54,6 +54,10 @@ const MENU = [
     ],
   },
   {
+    section: 'CONTENT',
+    items: [{ label: '매거진', href: '/admin/magazine', icon: '📖' }],
+  },
+  {
     section: 'MARKETING',
     items: [
       { label: '이벤트·공구 생성', href: '/admin/marketing/events', icon: '🎉' },
@@ -102,6 +106,7 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/coupons')) return '쿠폰 관리'
   if (path.startsWith('/admin/marketing/contests')) return '컨테스트 관리'
   if (path.startsWith('/admin/commissions')) return '커미션 관리'
+  if (path.startsWith('/admin/magazine')) return '매거진 관리'
   return 'Admin Console'
 }
 
