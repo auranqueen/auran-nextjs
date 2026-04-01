@@ -1,4 +1,5 @@
 'use client'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
@@ -11,6 +12,7 @@ const GRADE_COLORS: Record<string, string> = { none: 'var(--text3)', basic: '#4a
 export default function OwnerDashClient({ profile, salon, todayBookings }: { profile: any; salon: any; todayBookings: any[] }) {
   const router = useRouter()
   const supabase = createClient()
+  const [csRows, setCsRows] = useState<any[]>([])
   async function logout() {
     await supabase.auth.signOut()
     localStorage.removeItem(POSITION_STORAGE_KEY)
@@ -19,6 +21,39 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
 
   const plan = profile.plan || 'basic'
   const grade = profile.store_grade || 'none'
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const { data: orderRows } = await supabase.from('orders').select('id').eq('owner_id', profile.id).order('created_at', { ascending: false }).limit(200)
+        const orderIds = ((orderRows as any[]) || []).map((r) => r.id).filter(Boolean)
+        if (!orderIds.length) {
+          setCsRows([])
+          return
+        }
+        const { data } = await supabase
+          .from('cs_requests')
+          .select('*, orders(*, profiles(username, grade))')
+          .in('order_id', orderIds)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false })
+          .limit(5)
+        setCsRows((data as any[]) || [])
+      } catch {
+        setCsRows([])
+      }
+    }
+    void run()
+  }, [profile.id, supabase])
+
+  const elapsedText = (createdAt: string) => {
+    const ms = Date.now() - new Date(createdAt || '').getTime()
+    if (!Number.isFinite(ms) || ms < 0) return '-'
+    const h = Math.floor(ms / 3600000)
+    if (h < 1) return '방금 전'
+    if (h < 24) return `${h}시간 경과`
+    return `${Math.floor(h / 24)}일 경과`
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
@@ -78,6 +113,39 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
               <div style={{ fontSize: 12, fontWeight: 700, color: m.tc }}>{m.label}</div>
             </button>
           ))}
+        </div>
+
+        <div style={{ marginTop: 16, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 13, padding: '13px 15px' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>📋 고객 CS 현황</div>
+          {csRows.length === 0 ? (
+            <div style={{ fontSize: 12, color: 'var(--text3)' }}>소속 고객 CS 요청이 없어요 ✅</div>
+          ) : (
+            csRows.map((r) => {
+              const o = (r as any).orders
+              const p = (o as any)?.profiles
+              const customerName = String(p?.username || o?.customer_name || '고객')
+              const grade = String(p?.grade || '').trim()
+              const csType = String((r as any).type || (r as any).cs_type || 'CS')
+              const reason = String((r as any).reason || '-')
+              const status = String((r as any).status || 'pending')
+              return (
+                <div key={r.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '10px 0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontSize: 12, color: '#fff' }}>
+                      {customerName}
+                      {grade ? <span style={{ marginLeft: 6, fontSize: 10, padding: '2px 8px', borderRadius: 999, background: 'rgba(123,94,167,0.2)', color: '#e8d6ff' }}>{grade}</span> : null}
+                    </div>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 999, background: 'rgba(201,169,110,0.15)', color: '#C9A96E' }}>{status}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: '#c4a7e7', marginTop: 4 }}>{csType}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{reason}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>
+                    접수일 {r.created_at ? new Date(r.created_at).toLocaleDateString('ko-KR') : '-'} · {elapsedText(String(r.created_at || ''))}
+                  </div>
+                </div>
+              )
+            })
+          )}
         </div>
 
         {/* 구독 안내 */}

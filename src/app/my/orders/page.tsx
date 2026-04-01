@@ -27,6 +27,7 @@ type OrderRow = {
   auto_confirm_at?: string | null
   referrer_user_id?: string | null
   items: any
+  _cs?: any | null
 }
 
 const tabs = ['전체', '배송중', '배송완료', '취소/환불'] as const
@@ -80,7 +81,21 @@ export default function MyOrdersPage() {
         .eq('customer_id', user.id)
         .order('ordered_at', { ascending: false })
       const nextRows = (rows as OrderRow[]) || []
-      setOrders(nextRows)
+      const ids = nextRows.map((o) => o.id).filter(Boolean)
+      let csMap: Record<string, any> = {}
+      if (ids.length > 0) {
+        try {
+          const { data: csRows } = await supabase
+            .from('cs_requests')
+            .select('*')
+            .in('order_id', ids)
+            .order('created_at', { ascending: false })
+          csMap = Object.fromEntries(((csRows as any[]) || []).map((r) => [r.order_id, r]))
+        } catch {
+          csMap = {}
+        }
+      }
+      setOrders(nextRows.map((o) => ({ ...o, _cs: csMap[o.id] || null })))
 
       const { data: me } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
       if (me?.id) {
@@ -195,6 +210,48 @@ export default function MyOrdersPage() {
               {names.length > 0 ? (
                 <div style={{ marginTop: 8, fontSize: 11, color: TEXT_MUTED }}>
                   제품: {names.join(', ')}
+                </div>
+              ) : null}
+              {order._cs ? (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 10, display: 'inline-block', padding: '3px 8px', borderRadius: 999, background: 'rgba(123,94,167,0.2)', color: '#c4a7e7' }}>
+                    📋 {String(order._cs.type || order._cs.cs_type || 'CS')} {String(order._cs.status || 'pending')}
+                  </div>
+                  <div style={{ marginTop: 5, fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+                    {(() => {
+                      const s = String(order._cs.status || 'pending')
+                      if (s === 'pending') return '접수 완료 · 검토 중이에요'
+                      if (s === 'approved') return '승인됐어요 · 처리 중이에요'
+                      if (s === 'held') return '추가 확인 중이에요 · 곧 연락드려요'
+                      if (s === 'rejected') return '처리가 어려워요 · 고객센터 문의'
+                      if (s === 'completed') return '처리 완료됐어요 ✅'
+                      return ''
+                    })()}
+                  </div>
+                  {order._cs.pickup_tracking_no || order._cs.pickup_tracking ? (
+                    <div style={{ marginTop: 5, fontSize: 10, color: 'rgba(255,255,255,0.55)' }}>
+                      회수 송장: {String(order._cs.pickup_tracking_no || order._cs.pickup_tracking)} ({String(order._cs.pickup_courier || order._cs.pickup_carrier || '-')})
+                      <button
+                        type="button"
+                        onClick={() => window.open(getTrackingUrl(String(order._cs.pickup_courier || order._cs.pickup_carrier || ''), String(order._cs.pickup_tracking_no || order._cs.pickup_tracking || '')), '_blank', 'noopener,noreferrer')}
+                        style={{ marginLeft: 8, border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '3px 8px', fontSize: 10, cursor: 'pointer' }}
+                      >
+                        배송조회
+                      </button>
+                    </div>
+                  ) : null}
+                  {order._cs.reship_tracking_no || order._cs.reship_tracking ? (
+                    <div style={{ marginTop: 5, fontSize: 10, color: 'rgba(255,255,255,0.55)' }}>
+                      재발송 중: {String(order._cs.reship_tracking_no || order._cs.reship_tracking)} ({String(order._cs.reship_courier || order._cs.reship_carrier || '-')})
+                      <button
+                        type="button"
+                        onClick={() => window.open(getTrackingUrl(String(order._cs.reship_courier || order._cs.reship_carrier || ''), String(order._cs.reship_tracking_no || order._cs.reship_tracking || '')), '_blank', 'noopener,noreferrer')}
+                        style={{ marginLeft: 8, border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '3px 8px', fontSize: 10, cursor: 'pointer' }}
+                      >
+                        배송조회
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
               {status.includes('배송중') && order.tracking_no ? (

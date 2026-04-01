@@ -1,4 +1,5 @@
 'use client'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
@@ -8,6 +9,7 @@ import DashboardBottomNav from '@/components/DashboardBottomNav'
 export default function PartnerDashClient({ profile }: { profile: any }) {
   const router = useRouter()
   const supabase = createClient()
+  const [csRows, setCsRows] = useState<any[]>([])
   const myLink = `${typeof window !== 'undefined' ? window.location.origin : 'https://auran.kr'}/join/customer?ref=${profile.referral_code || 'XXXXXX'}`
 
   async function logout() {
@@ -18,6 +20,47 @@ export default function PartnerDashClient({ profile }: { profile: any }) {
 
   const gradeColors: Record<string, string> = { rookie: '#9568d4', silver: '#aab8c8', gold: '#c9a84c', platinum: '#e8c870' }
   const grade = profile.partner_grade || 'rookie'
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const { data: orderRows } = await supabase
+          .from('orders')
+          .select('id, customer_id, share_toast_amount')
+          .eq('referrer_user_id', profile.auth_id)
+          .order('created_at', { ascending: false })
+          .limit(200)
+        const orderIds = ((orderRows as any[]) || []).map((o) => o.id).filter(Boolean)
+        const orderMap = Object.fromEntries(((orderRows as any[]) || []).map((o) => [o.id, o]))
+        if (!orderIds.length) {
+          setCsRows([])
+          return
+        }
+        const { data: cs } = await supabase
+          .from('cs_requests')
+          .select('*')
+          .in('order_id', orderIds)
+          .order('created_at', { ascending: false })
+          .limit(5)
+        const customerAuthIds = Array.from(new Set(((orderRows as any[]) || []).map((o) => o.customer_id).filter(Boolean)))
+        let nameMap: Record<string, string> = {}
+        if (customerAuthIds.length) {
+          const { data: profs } = await supabase.from('profiles').select('auth_id, username, full_name').in('auth_id', customerAuthIds)
+          nameMap = Object.fromEntries(((profs as any[]) || []).map((p) => [p.auth_id, p.username || p.full_name || '고객']))
+        }
+        setCsRows(
+          ((cs as any[]) || []).map((r) => ({
+            ...r,
+            _customerName: nameMap[String(orderMap[r.order_id]?.customer_id || '')] || '고객',
+            _shareToRecover: Number(orderMap[r.order_id]?.share_toast_amount || 0),
+          }))
+        )
+      } catch {
+        setCsRows([])
+      }
+    }
+    void run()
+  }, [profile.auth_id, supabase])
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
@@ -78,6 +121,28 @@ export default function PartnerDashClient({ profile }: { profile: any }) {
               </div>
             </div>
           ))}
+        </div>
+
+        <div style={{ marginTop: 16, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 13, padding: '13px 15px' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>📋 추천 고객 CS 현황</div>
+          {csRows.length === 0 ? (
+            <div style={{ fontSize: 12, color: 'var(--text3)' }}>추천 고객 CS 요청이 없어요 ✅</div>
+          ) : (
+            csRows.map((r) => {
+              const csType = String((r as any).type || (r as any).cs_type || 'CS')
+              const status = String((r as any).status || 'pending')
+              return (
+                <div key={r.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)', padding: '10px 0' }}>
+                  <div style={{ fontSize: 12, color: '#fff' }}>{String((r as any)._customerName || '고객')}</div>
+                  <div style={{ fontSize: 11, color: '#c4a7e7', marginTop: 4 }}>{csType}</div>
+                  <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 3 }}>
+                    접수일 {r.created_at ? new Date(r.created_at).toLocaleDateString('ko-KR') : '-'} · 공유토스트 회수 예정 {Number((r as any)._shareToRecover || 0).toLocaleString()}T
+                  </div>
+                  <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 2 }}>상태: {status}</div>
+                </div>
+              )
+            })
+          )}
         </div>
       </div>
       <DashboardBottomNav role="partner" />
