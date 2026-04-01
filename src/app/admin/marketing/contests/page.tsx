@@ -9,8 +9,8 @@
  *   id uuid primary key default gen_random_uuid(),
  *   title text not null,
  *   theme text not null default '특별',
- *   starts_at timestamptz not null,
- *   ends_at timestamptz not null,
+ *   start_at timestamptz not null,
+ *   end_at timestamptz not null,
  *   vote_mode text not null default 'toast',
  *   toast_per_vote integer not null default 1,
  *   max_entries integer not null default 50,
@@ -72,19 +72,19 @@ import { createClient } from '@/lib/supabase/client'
 
 type ListTab = 'active' | 'upcoming' | 'ended' | 'all'
 
-function contestPhase(c: { starts_at: string; ends_at: string }, now: Date): '진행중' | '예정' | '종료' {
-  const s = new Date(c.starts_at).getTime()
-  const e = new Date(c.ends_at).getTime()
+function contestPhase(c: { start_at: string; end_at: string }, now: Date): '진행중' | '예정' | '종료' {
+  const s = new Date(c.start_at).getTime()
+  const e = new Date(c.end_at).getTime()
   const t = now.getTime()
   if (t < s) return '예정'
   if (t > e) return '종료'
   return '진행중'
 }
 
-function dDayLabel(c: { starts_at: string; ends_at: string }, now: Date): string {
+function dDayLabel(c: { start_at: string; end_at: string }, now: Date): string {
   const phase = contestPhase(c, now)
-  const end = new Date(c.ends_at)
-  const start = new Date(c.starts_at)
+  const end = new Date(c.end_at)
+  const start = new Date(c.start_at)
   const t = now.getTime()
   if (phase === '예정') {
     const d = Math.ceil((start.getTime() - t) / 86400000)
@@ -142,7 +142,7 @@ export default function AdminMarketingContestsPage() {
     monthStart.setHours(0, 0, 0, 0)
 
     const [cRes, eRes, vRes, vmRes, entListRes, voteListRes] = await Promise.all([
-      supabase.from('contests').select('*').order('starts_at', { ascending: false }),
+      supabase.from('contests').select('*').order('start_at', { ascending: false }),
       supabase.from('contest_entries').select('id', { count: 'exact', head: true }),
       supabase.from('contest_votes').select('toast_spent, votes_count', { count: 'exact' }),
       supabase.from('contest_votes').select('toast_spent').gte('created_at', monthStart.toISOString()),
@@ -324,8 +324,8 @@ export default function AdminMarketingContestsPage() {
     const row = {
       title: fTitle.trim(),
       theme: fTheme,
-      starts_at: new Date(fStart).toISOString(),
-      ends_at: new Date(fEnd).toISOString(),
+      start_at: new Date(fStart).toISOString(),
+      end_at: new Date(fEnd).toISOString(),
       vote_mode: fVoteMode,
       toast_per_vote: fVoteMode === 'toast' ? Math.max(1, fToastN) : 0,
       max_entries: Math.max(1, fMaxEntries),
@@ -528,7 +528,7 @@ export default function AdminMarketingContestsPage() {
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>{c.title}</div>
                     <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>
-                      테마 {c.theme} · {new Date(c.starts_at).toLocaleDateString('ko-KR')} ~ {new Date(c.ends_at).toLocaleDateString('ko-KR')}
+                      테마 {c.theme} · {new Date(c.start_at).toLocaleDateString('ko-KR')} ~ {new Date(c.end_at).toLocaleDateString('ko-KR')}
                     </div>
                     <div style={{ display: 'flex', gap: 6, marginTop: 8, flexWrap: 'wrap' }}>
                       <span className="b b-pu">{dDayLabel(c, now)}</span>
