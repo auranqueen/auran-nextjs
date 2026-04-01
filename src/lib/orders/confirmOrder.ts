@@ -36,7 +36,7 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
 
   const { data: order } = await supabase
     .from('orders')
-    .select('id,status,customer_id,items,referrer_user_id,share_toast_paid')
+    .select('id,status,customer_id,items,referrer_user_id,share_toast_paid,prescription_owner_id,final_amount')
     .eq('id', orderId)
     .maybeSingle()
   if (!order?.id) return { ok: false, rewardAmount: 0, shareAmount: 0, autoConfirmDays }
@@ -116,6 +116,42 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
         icon: '💜',
         is_read: false,
       } as any)
+    }
+  }
+
+  const prescriptionOwnerAuthId = String((order as any).prescription_owner_id || '')
+  if (prescriptionOwnerAuthId) {
+    const { data: rateRow } = await supabase
+      .from('admin_settings')
+      .select('value')
+      .eq('category', 'owner')
+      .eq('key', 'owner_commission_rate')
+      .maybeSingle()
+    const rate = Math.max(0, Number((rateRow as { value?: string } | null)?.value ?? 8))
+    const commission = Math.floor(Number((order as any).final_amount || 0) * (rate / 100))
+    if (commission > 0) {
+      await insertPointTx(supabase, {
+        user_id: prescriptionOwnerAuthId,
+        amount: commission,
+        type: 'prescription_commission',
+        description: '처방전 추천 커미션',
+        order_id: orderId,
+        status: 'confirmed',
+      })
+      await addUserPointsByAuth(supabase, prescriptionOwnerAuthId, commission)
+      const { data: ownerUser } = await supabase.from('users').select('id').eq('auth_id', prescriptionOwnerAuthId).maybeSingle()
+      if (ownerUser?.id) {
+        const { data: buyer } = await supabase.from('users').select('name').eq('auth_id', buyerAuthId).maybeSingle()
+        const buyerName = String((buyer as any)?.name || '고객')
+        await supabase.from('notifications').insert({
+          user_id: ownerUser.id,
+          type: 'promo',
+          title: '처방전 커미션 적립됐어요 💜',
+          body: `${buyerName}님이 추천 제품 구매확정!\n+${commission}T 적립됐어요`,
+          icon: '💜',
+          is_read: false,
+        } as any)
+      }
     }
   }
 

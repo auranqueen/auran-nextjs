@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
 
-  const { product_id, quantity } = await req.json()
+  const { product_id, quantity, prescription_owner_id } = await req.json()
 
   const { data: product } = await supabase
     .from('products')
@@ -26,6 +26,7 @@ export async function POST(req: NextRequest) {
       total_amount: totalAmount,
       final_amount: totalAmount,
       status: '주문확인',
+      prescription_owner_id: prescription_owner_id || null,
       order_no: `ORD-${Date.now()}`,
       items: JSON.stringify([{
         product_id: product.id,

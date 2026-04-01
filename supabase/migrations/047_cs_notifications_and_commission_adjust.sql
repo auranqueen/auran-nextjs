@@ -16,7 +16,7 @@ DECLARE
   v_cnt int := 0;
   v_admin record;
 BEGIN
-  v_cs_type := COALESCE(NEW.type, NEW.cs_type, 'CS');
+  v_cs_type := COALESCE(to_jsonb(NEW)->>'type', to_jsonb(NEW)->>'cs_type', 'CS');
 
   SELECT id, customer_id, owner_id, referrer_user_id, owner_commission
   INTO v_order

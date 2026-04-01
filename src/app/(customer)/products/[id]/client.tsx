@@ -104,10 +104,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   }
 
   const executeBuy = async () => {
+    const qsOwner = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('prescription_owner_id') : null
+    const localOwner = typeof window !== 'undefined' ? localStorage.getItem('prescription_owner_id') : null
+    const prescriptionOwnerId = qsOwner || localOwner || null
     const res = await fetch(`${window.location.origin}/api/payment/request`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_id: product.id, quantity: qty })
+      body: JSON.stringify({ product_id: product.id, quantity: qty, prescription_owner_id: prescriptionOwnerId })
     })
     const data = await res.json()
     if (data.payUrl) {
