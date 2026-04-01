@@ -103,6 +103,7 @@ export default function CustomerHomePage() {
   const [motivationProfile, setMotivationProfile] = useState<any>(null)
   const [motivationIdx, setMotivationIdx] = useState(0)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
+  const [homeContestBanner, setHomeContestBanner] = useState<any>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -186,6 +187,18 @@ export default function CustomerHomePage() {
     supabase.from('salons').select('*').limit(3).then(({ data }) => {
       if (data && data.length > 0) setSalons(data)
     })
+
+    const iso = new Date().toISOString()
+    supabase
+      .from('contests')
+      .select('*')
+      .eq('is_public', true)
+      .eq('status', 'active')
+      .lte('start_at', iso)
+      .gte('end_at', iso)
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => setHomeContestBanner(data || null))
 
     setLoading(false)
   }, [])
@@ -745,6 +758,62 @@ export default function CustomerHomePage() {
           </div>
         ))}
       </div>
+
+      {homeContestBanner ? (
+        <div
+          style={{
+            margin: '12px 16px 0',
+            borderRadius: 18,
+            overflow: 'hidden',
+            background: 'linear-gradient(135deg, rgba(123,94,167,0.2), rgba(201,169,110,0.1))',
+            border: '1px solid rgba(123,94,167,0.3)',
+            padding: '16px 18px',
+            position: 'relative',
+          }}
+        >
+          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', marginBottom: 6 }}>🏆 이달의 케어룸 컨테스트</div>
+          <div style={{ fontSize: 15, fontWeight: 500, color: '#fff', lineHeight: 1.45, marginBottom: 6 }}>{homeContestBanner.title}</div>
+          <div style={{ fontSize: 12, color: '#c4a7e7', marginBottom: 10 }}>투표하면 반값 혜택!</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+            <span
+              style={{
+                fontSize: 10,
+                padding: '4px 10px',
+                borderRadius: 999,
+                background: 'rgba(123,94,167,0.25)',
+                border: '1px solid rgba(123,94,167,0.45)',
+                color: '#e8d6ff',
+                fontFamily: 'monospace',
+              }}
+            >
+              {(() => {
+                const e = new Date(homeContestBanner.end_at)
+                const endDay = new Date(e.getFullYear(), e.getMonth(), e.getDate()).getTime()
+                const t = new Date()
+                const today = new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime()
+                const n = Math.ceil((endDay - today) / 86400000)
+                return n <= 0 ? 'D-DAY' : `D-${n}일`
+              })()}
+            </span>
+            <button
+              type="button"
+              onClick={() => router.push('/community?tab=contest')}
+              style={{
+                border: 'none',
+                borderRadius: 999,
+                padding: '8px 16px',
+                background: '#7B5EA7',
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              지금 투표하기
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {/* ── 히어로 배너 ── */}
       <div style={{

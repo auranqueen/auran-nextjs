@@ -47,6 +47,39 @@ export default function MyWorldPage() {
   const [myworldBio, setMyworldBio] = useState('')
   const [minimiSrc, setMinimiSrc] = useState('')
   const [minimiSpeechIndex, setMinimiSpeechIndex] = useState(0)
+  const [roomContest, setRoomContest] = useState<any>(null)
+  const [mwShopItems, setMwShopItems] = useState<any[]>([])
+  const [mwVotedActive, setMwVotedActive] = useState(false)
+  const [mwShopBusy, setMwShopBusy] = useState<string | null>(null)
+
+  useEffect(() => {
+    const run = async () => {
+      const iso = new Date().toISOString()
+      const { data: c } = await supabase
+        .from('contests')
+        .select('*')
+        .eq('is_public', true)
+        .eq('status', 'active')
+        .lte('start_at', iso)
+        .gte('end_at', iso)
+        .limit(1)
+        .maybeSingle()
+      setRoomContest(c || null)
+      const { data: prods } = await supabase.from('products').select('*').eq('category', 'myworld_item').eq('status', 'active').limit(24)
+      setMwShopItems(prods || [])
+      const { data: auth } = await supabase.auth.getUser()
+      if (auth.user && c?.id) {
+        const { data: ur } = await supabase.from('users').select('id').eq('auth_id', auth.user.id).maybeSingle()
+        if (ur?.id) {
+          const { data: v } = await supabase.from('contest_votes').select('id').eq('contest_id', c.id).eq('voter_user_id', ur.id).limit(1)
+          setMwVotedActive(!!(v && v.length > 0))
+        } else setMwVotedActive(false)
+      } else setMwVotedActive(false)
+    }
+    void run()
+    const iv = setInterval(() => void run(), 15000)
+    return () => clearInterval(iv)
+  }, [supabase])
 
   useEffect(() => {
     if (!toast) return
@@ -197,6 +230,58 @@ export default function MyWorldPage() {
   const totalRoutine = morningItems.length + eveningItems.length
   const doneRoutine = Object.values(routineChecked).filter(Boolean).length
   const routinePct = Math.round((doneRoutine / totalRoutine) * 100)
+
+  const contestRoomDDay = (endAt: string) => {
+    const e = new Date(endAt)
+    const endDay = new Date(e.getFullYear(), e.getMonth(), e.getDate()).getTime()
+    const t = new Date()
+    const today = new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime()
+    const n = Math.ceil((endDay - today) / 86400000)
+    return n <= 0 ? 'D-DAY' : `D-${n}`
+  }
+
+  const buyMyworldItem = async (p: any) => {
+    const { data: auth } = await supabase.auth.getUser()
+    if (!auth.user) {
+      router.push('/login?role=customer')
+      return
+    }
+    const { data: urow } = await supabase.from('users').select('id, points').eq('auth_id', auth.user.id).maybeSingle()
+    if (!urow?.id) {
+      setToast('회원 정보를 확인할 수 없어요')
+      return
+    }
+    const base = Number(p.retail_price || 0)
+    const pay = mwVotedActive ? Math.max(1, Math.ceil(base * 0.5)) : base
+    if (pay <= 0) {
+      setToast('가격 정보가 없어요')
+      return
+    }
+    if (Number(urow.points || 0) < pay) {
+      setToast('토스트가 부족해요 💜')
+      return
+    }
+    setMwShopBusy(String(p.id))
+    try {
+      const nextPts = Number(urow.points || 0) - pay
+      const { error: ptE } = await supabase.from('point_transactions').insert({
+        user_id: auth.user.id,
+        amount: -pay,
+        type: 'myworld_item',
+        description: String(p.name || '마이월드 아이템'),
+      })
+      if (ptE) {
+        setToast(ptE.message)
+        return
+      }
+      await supabase.from('users').update({ points: nextPts }).eq('id', urow.id)
+      await supabase.from('profiles').update({ myworld_theme: String(p.name || '') }).eq('auth_id', auth.user.id)
+      setSelectedTheme(String(p.name || ''))
+      setToast('구매 완료! 테마가 적용됐어요 💜')
+    } finally {
+      setMwShopBusy(null)
+    }
+  }
 
   const streakDays = useMemo(() => {
     const set = new Set<string>()
@@ -637,6 +722,48 @@ export default function MyWorldPage() {
             <div style={{ position: 'absolute', bottom: 10, right: 12, fontSize: 11, color: '#6b4f9e', zIndex: 2 }}>오늘 피부점수 78 ✨</div>
           </div>
 
+          {roomContest ? (
+            <div
+              style={{
+                margin: '12px 16px 0',
+                background: 'rgba(123,94,167,0.08)',
+                border: '1px solid rgba(123,94,167,0.2)',
+                borderRadius: 12,
+                padding: '10px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 10,
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 11, color: '#c4a7e7', marginBottom: 4 }}>✨ 새 배경 투표 중이에요</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', lineHeight: 1.35 }}>{roomContest.title}</div>
+                <div style={{ marginTop: 6, display: 'inline-block', fontSize: 9, padding: '2px 8px', borderRadius: 999, background: 'rgba(123,94,167,0.2)', color: '#e8d6ff' }}>
+                  {contestRoomDDay(roomContest.end_at)}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => router.push('/community?tab=contest')}
+                style={{
+                  flexShrink: 0,
+                  border: 'none',
+                  borderRadius: 999,
+                  padding: '8px 14px',
+                  background: '#7B5EA7',
+                  color: '#fff',
+                  fontSize: 11,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                투표하기
+              </button>
+            </div>
+          ) : null}
+
           <div style={{ margin: '14px 16px 0', fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>🪞 내 화장대</div>
           <div style={{ margin: '8px 16px 0', display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none' }}>
             {vanityItems.length > 0 ? vanityItems.map((v: any) => (
@@ -656,7 +783,47 @@ export default function MyWorldPage() {
           <div style={{ margin: '12px 16px 0' }}>
             <button onClick={() => setIsDrawerOpen((p) => !p)} style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'rgba(123,94,167,0.08)', color: '#c4a7e7', borderRadius: 10, padding: '8px 12px', fontSize: 11, cursor: 'pointer' }}>🗄️ 서랍 열기</button>
           </div>
-          <div style={{ margin: '10px 16px 0', maxHeight: isDrawerOpen ? 500 : 0, transition: 'max-height 0.4s ease', overflow: 'hidden' }}>
+          <div style={{ margin: '10px 16px 0', maxHeight: isDrawerOpen ? 900 : 0, transition: 'max-height 0.4s ease', overflow: 'hidden' }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>🛍️ 당선 배경 아이템 (토스트)</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 12 }}>
+              {mwShopItems.map((p: any) => {
+                const base = Number(p.retail_price || 0)
+                const pay = mwVotedActive ? Math.max(1, Math.ceil(base * 0.5)) : base
+                const thumb = p.storage_thumb_url || p.thumb_img || ''
+                return (
+                  <div key={`mwshop-${p.id}`} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 8 }}>
+                    <div style={{ height: 56, borderRadius: 8, background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                      {thumb ? <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span>🖼️</span>}
+                    </div>
+                    <div style={{ fontSize: 9, marginTop: 4, color: 'rgba(255,255,255,0.75)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
+                    <div style={{ fontSize: 9, marginTop: 2, color: mwVotedActive ? '#9b7ec8' : 'rgba(255,255,255,0.5)' }}>
+                      {pay.toLocaleString()}T{mwVotedActive && base !== pay ? <span style={{ textDecoration: 'line-through', marginLeft: 4, opacity: 0.6 }}>{base}T</span> : null}
+                    </div>
+                    <button
+                      type="button"
+                      disabled={mwShopBusy === String(p.id)}
+                      onClick={() => buyMyworldItem(p)}
+                      style={{
+                        marginTop: 4,
+                        border: '1px solid rgba(123,94,167,0.35)',
+                        background: 'rgba(123,94,167,0.12)',
+                        color: '#c4a7e7',
+                        borderRadius: 8,
+                        padding: '4px 0',
+                        width: '100%',
+                        fontSize: 9,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {mwShopBusy === String(p.id) ? '…' : '구매하기'}
+                    </button>
+                  </div>
+                )
+              })}
+              {mwShopItems.length === 0 ? (
+                <div style={{ gridColumn: '1 / -1', fontSize: 10, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: 8 }}>등록된 아이템이 없어요</div>
+              ) : null}
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
               {vanityItems.map((v: any) => (
                 <div key={`drawer-${v.id}`} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 8 }}>

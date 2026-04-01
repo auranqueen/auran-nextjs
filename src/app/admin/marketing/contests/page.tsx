@@ -489,24 +489,59 @@ export default function AdminMarketingContestsPage() {
         if (cpErr) showToast(`쿠폰 일부 실패: ${cpErr.message}`)
       }
 
-      const notifBody = '투표하신 작품이 당선됐어요! 반값 쿠폰을 드렸어요 🏆'
-      for (const uid of voterIds) {
-        const { data: vr } = await supabase.from('users').select('auth_id').eq('id', uid).maybeSingle()
-        const nuid = vr?.auth_id ? String(vr.auth_id) : String(uid)
-        await supabase.from('notifications').insert({
-          user_id: nuid,
-          type: 'contest',
-          title: '🏆 컨테스트',
-          body: notifBody,
-          icon: '🏆',
-          is_read: false,
-          created_at: nowIso,
-        })
+      const voterSet = new Set(voterIds)
+      const voterNotifRows = voterIds.map((uid) => ({
+        user_id: uid,
+        type: 'contest',
+        title: '🏆 컨테스트',
+        body: `투표하신 작품이 당선됐어요! 🎉 ${discountRate}% 할인 쿠폰 지급됐어요`,
+        icon: '🏆',
+        is_read: false,
+        link: '/community?tab=contest',
+        created_at: nowIso,
+      }))
+      if (voterNotifRows.length > 0) {
+        const { error: vnErr } = await supabase.from('notifications').insert(voterNotifRows as any)
+        if (vnErr) showToast(`투표자 알림: ${vnErr.message}`)
+      }
+
+      const PAGE = 200
+      let start = 0
+      for (;;) {
+        const { data: batch, error: ubErr } = await supabase
+          .from('users')
+          .select('id')
+          .not('auth_id', 'is', null)
+          .order('id')
+          .range(start, start + PAGE - 1)
+        if (ubErr) {
+          showToast(`비투표자 목록: ${ubErr.message}`)
+          break
+        }
+        if (!batch?.length) break
+        const nonVoterNotifs = batch
+          .filter((u) => u?.id && !voterSet.has(String(u.id)))
+          .map((u) => ({
+            user_id: String(u.id),
+            type: 'contest',
+            title: '🏆 컨테스트',
+            body: '이달의 당선작이 발표됐어요 🏆 지금 구매하세요',
+            icon: '🏆',
+            is_read: false,
+            link: '/myworld',
+            created_at: nowIso,
+          }))
+        if (nonVoterNotifs.length > 0) {
+          const { error: nnErr } = await supabase.from('notifications').insert(nonVoterNotifs as any)
+          if (nnErr) showToast(`비투표자 알림: ${nnErr.message}`)
+        }
+        if (batch.length < PAGE) break
+        start += PAGE
       }
 
       const { error: prErr } = await supabase.from('products').insert({
         brand_id: brandId,
-        name: `${workTitle} (컨테스트 당선작)`,
+        name: `${workTitle} (당선작)`,
         retail_price: storePrice,
         category: 'myworld_item',
         thumb_img: entry.media_url || null,
