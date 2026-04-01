@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useUserProfile } from '@/hooks/useUserProfile'
+import { useRouter } from 'next/navigation'
 
 type ReviewFormProps = {
   productId: string
@@ -28,8 +29,19 @@ const CONCERNS = [
 const USAGE_PERIODS = ['1주일', '1달', '3달 이상']
 const EFFECT_TAGS = ['촉촉해요', '진정돼요', '흡수빨라요', '끈적임없어요', '자극없어요', '탄력있어요']
 
+function toKoreanSkinType(raw: string | null | undefined) {
+  const v = String(raw || '').trim()
+  if (v === 'dry') return '건성'
+  if (v === 'oily') return '지성'
+  if (v === 'combination') return '복합성'
+  if (v === 'sensitive') return '민감성'
+  if (v === 'normal') return '정상'
+  return v
+}
+
 export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormProps) {
   const supabase = createClient()
+  const router = useRouter()
   const { profile } = useUserProfile()
   const [rating, setRating] = useState(0)
   const [content, setContent] = useState('')
@@ -47,10 +59,6 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
   const [shareLikeReward, setShareLikeReward] = useState(0)
   const [shareFollowReward, setShareFollowReward] = useState(0)
   const [hideSkinTypeGuide, setHideSkinTypeGuide] = useState(false)
-
-  useEffect(() => {
-    setHideSkinTypeGuide(localStorage.getItem('hide_skin_type_guide_review') === '1')
-  }, [])
 
   useEffect(() => {
     const loadShareRewards = async () => {
@@ -260,6 +268,71 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
       </div>
 
       {/* 텍스트 */}
+      {profile?.skin_type ? (
+        <div
+          style={{
+            marginBottom: 10,
+            background: 'rgba(123,94,167,0.06)',
+            border: '1px solid rgba(123,94,167,0.2)',
+            borderRadius: 12,
+            padding: '10px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <div style={{ fontSize: 14, lineHeight: 1 }}>✨</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, color: '#c4a7e7' }}>{toKoreanSkinType(profile.skin_type)} 피부로 작성돼요</div>
+            <div style={{ fontSize: 10, color: 'rgba(196,167,231,0.5)', marginTop: 2 }}>내 피부타입이 자동 적용돼요</div>
+            {Array.isArray(profile.skin_concerns) && profile.skin_concerns.length > 0 ? (
+              <div style={{ fontSize: 10, color: 'rgba(196,167,231,0.4)', marginTop: 2 }}>고민: {profile.skin_concerns.join(' · ')}</div>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push('/my/profile')}
+            style={{ fontSize: 10, color: 'rgba(196,167,231,0.4)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 20, padding: '3px 8px', background: 'transparent', cursor: 'pointer' }}
+          >
+            변경
+          </button>
+        </div>
+      ) : !hideSkinTypeGuide ? (
+        <div
+          style={{
+            marginBottom: 10,
+            background: 'rgba(123,94,167,0.08)',
+            border: '1px solid rgba(123,94,167,0.2)',
+            borderRadius: 12,
+            padding: '10px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+          }}
+        >
+          <div style={{ fontSize: 11, color: '#c4a7e7', lineHeight: 1.4 }}>피부타입 설정하면 더 정확한 추천 받아요 💜</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button
+              type="button"
+              onClick={() => router.push('/my/profile')}
+              style={{ border: '1px solid rgba(123,94,167,0.4)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '5px 8px', fontSize: 10, cursor: 'pointer', fontWeight: 500 }}
+            >
+              설정하기
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                localStorage.setItem('hide_skintype_banner', 'true')
+                setHideSkinTypeGuide(true)
+              }}
+              style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 14, cursor: 'pointer', lineHeight: 1 }}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      ) : null}
       <textarea placeholder="솔직한 리뷰를 남겨주세요 (최소 10자)" value={content} onChange={e => setContent(e.target.value)} rows={5}
         style={{ width: '100%', padding: 12, borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 13, resize: 'vertical', marginBottom: 10, boxSizing: 'border-box' }} />
 
@@ -381,42 +454,6 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
             </div>
           </div>
         </>
-      ) : null}
-
-      {!profile?.skin_type && !hideSkinTypeGuide ? (
-        <div
-          style={{
-            marginBottom: 12,
-            background: 'rgba(123,94,167,0.08)',
-            border: '1px solid rgba(123,94,167,0.2)',
-            borderRadius: 12,
-            padding: '10px 12px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 8,
-          }}
-        >
-          <div style={{ fontSize: 11, color: '#c4a7e7', lineHeight: 1.4 }}>피부타입 설정하면 더 정확한 추천 받아요 💜</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <a
-              href="/my/profile"
-              style={{ border: '1px solid rgba(123,94,167,0.4)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '5px 8px', fontSize: 10, cursor: 'pointer', fontWeight: 500, textDecoration: 'none' }}
-            >
-              설정하기
-            </a>
-            <button
-              type="button"
-              onClick={() => {
-                localStorage.setItem('hide_skin_type_guide_review', '1')
-                setHideSkinTypeGuide(true)
-              }}
-              style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 14, cursor: 'pointer', lineHeight: 1 }}
-            >
-              ×
-            </button>
-          </div>
-        </div>
       ) : null}
 
       <button type="button" onClick={submit} disabled={!canSubmit}

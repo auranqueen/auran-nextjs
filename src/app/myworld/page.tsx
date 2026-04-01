@@ -9,6 +9,16 @@ const BG = '#0D0B09'
 const GOLD = '#C9A96E'
 const PURPLE = '#7B5EA7'
 
+function toKoreanSkinType(raw: string | null | undefined) {
+  const v = String(raw || '').trim()
+  if (v === 'dry') return '건성'
+  if (v === 'oily') return '지성'
+  if (v === 'combination') return '복합성'
+  if (v === 'sensitive') return '민감성'
+  if (v === 'normal') return '정상'
+  return v
+}
+
 export default function MyWorldPage() {
   const router = useRouter()
   const supabase = createClient()
@@ -55,10 +65,6 @@ export default function MyWorldPage() {
   const [mwVoterDiscountPct, setMwVoterDiscountPct] = useState(50)
   const [mwShopBusy, setMwShopBusy] = useState<string | null>(null)
   const [hideSkinTypeGuide, setHideSkinTypeGuide] = useState(false)
-
-  useEffect(() => {
-    setHideSkinTypeGuide(localStorage.getItem('hide_skin_type_guide_myworld') === '1')
-  }, [])
 
   useEffect(() => {
     const run = async () => {
@@ -875,42 +881,6 @@ export default function MyWorldPage() {
 
       {activeTab === 'diary' ? (
         <div style={{ margin: '12px 16px 0' }}>
-          {!userProfile?.skin_type && !hideSkinTypeGuide ? (
-            <div
-              style={{
-                marginBottom: 10,
-                background: 'rgba(123,94,167,0.08)',
-                border: '1px solid rgba(123,94,167,0.2)',
-                borderRadius: 12,
-                padding: '10px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 8,
-              }}
-            >
-              <div style={{ fontSize: 11, color: '#c4a7e7', lineHeight: 1.4 }}>피부타입 설정하면 더 정확한 추천 받아요 💜</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <button
-                  type="button"
-                  onClick={() => router.push('/my/profile')}
-                  style={{ border: '1px solid rgba(123,94,167,0.4)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '5px 8px', fontSize: 10, cursor: 'pointer', fontWeight: 500 }}
-                >
-                  설정하기
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    localStorage.setItem('hide_skin_type_guide_myworld', '1')
-                    setHideSkinTypeGuide(true)
-                  }}
-                  style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 14, cursor: 'pointer', lineHeight: 1 }}
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-          ) : null}
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'right', marginBottom: 8 }}>
             <div>{now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}</div>
             <div>{now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>
@@ -952,6 +922,71 @@ export default function MyWorldPage() {
                 rows={3}
                 style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, padding: 10, color: '#fff', fontSize: 13, marginBottom: 8 }}
               />
+            ) : null}
+            {userProfile?.skin_type ? (
+              <div
+                style={{
+                  marginBottom: 8,
+                  background: 'rgba(123,94,167,0.06)',
+                  border: '1px solid rgba(123,94,167,0.2)',
+                  borderRadius: 12,
+                  padding: '10px 14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                }}
+              >
+                <div style={{ fontSize: 14, lineHeight: 1 }}>✨</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 12, color: '#c4a7e7' }}>{toKoreanSkinType(userProfile.skin_type)} 피부로 작성돼요</div>
+                  <div style={{ fontSize: 10, color: 'rgba(196,167,231,0.5)', marginTop: 2 }}>내 피부타입이 자동 적용돼요</div>
+                  {Array.isArray(userProfile.skin_concerns) && userProfile.skin_concerns.length > 0 ? (
+                    <div style={{ fontSize: 10, color: 'rgba(196,167,231,0.4)', marginTop: 2 }}>고민: {userProfile.skin_concerns.join(' · ')}</div>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => router.push('/my/profile')}
+                  style={{ fontSize: 10, color: 'rgba(196,167,231,0.4)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 20, padding: '3px 8px', background: 'transparent', cursor: 'pointer' }}
+                >
+                  변경
+                </button>
+              </div>
+            ) : !hideSkinTypeGuide ? (
+              <div
+                style={{
+                  marginBottom: 8,
+                  background: 'rgba(123,94,167,0.08)',
+                  border: '1px solid rgba(123,94,167,0.2)',
+                  borderRadius: 12,
+                  padding: '10px 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 8,
+                }}
+              >
+                <div style={{ fontSize: 11, color: '#c4a7e7', lineHeight: 1.4 }}>피부타입 설정하면 더 정확한 추천 받아요 💜</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <button
+                    type="button"
+                    onClick={() => router.push('/my/profile')}
+                    style={{ border: '1px solid rgba(123,94,167,0.4)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '5px 8px', fontSize: 10, cursor: 'pointer', fontWeight: 500 }}
+                  >
+                    설정하기
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      localStorage.setItem('hide_skintype_banner', 'true')
+                      setHideSkinTypeGuide(true)
+                    }}
+                    style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 14, cursor: 'pointer', lineHeight: 1 }}
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
             ) : null}
             <div style={{ fontSize: 12, color: 'rgba(196,167,231,0.8)', marginBottom: 4 }}>오늘 기분이 어때요? 💜</div>
             {moodGroups.map((group) => (

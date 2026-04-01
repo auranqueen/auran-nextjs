@@ -40,6 +40,16 @@ function isVideoFile(f: File) {
   return f.type.startsWith('video/')
 }
 
+function toKoreanSkinType(raw: string | null | undefined) {
+  const v = String(raw || '').trim()
+  if (v === 'dry') return '건성'
+  if (v === 'oily') return '지성'
+  if (v === 'combination') return '복합성'
+  if (v === 'sensitive') return '민감성'
+  if (v === 'normal') return '정상'
+  return v
+}
+
 export default function CommunityNewPostPage() {
   const supabase = createClient()
   const router = useRouter()
@@ -63,10 +73,6 @@ export default function CommunityNewPostPage() {
   const [authUserId, setAuthUserId] = useState<string | null>(null)
   const [internalUserId, setInternalUserId] = useState<string | null>(null)
   const [hideSkinTypeGuide, setHideSkinTypeGuide] = useState(false)
-
-  useEffect(() => {
-    setHideSkinTypeGuide(localStorage.getItem('hide_skin_type_guide_community_new') === '1')
-  }, [])
 
   useEffect(() => {
     return () => {
@@ -275,7 +281,36 @@ export default function CommunityNewPostPage() {
           })}
         </div>
 
-        {!profile?.skin_type && !hideSkinTypeGuide ? (
+        {profile?.skin_type ? (
+          <div
+            style={{
+              marginTop: 16,
+              background: 'rgba(123,94,167,0.06)',
+              border: '1px solid rgba(123,94,167,0.2)',
+              borderRadius: 12,
+              padding: '10px 14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
+            <div style={{ fontSize: 14, lineHeight: 1 }}>✨</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: '#c4a7e7' }}>{toKoreanSkinType(profile.skin_type)} 피부로 작성돼요</div>
+              <div style={{ fontSize: 10, color: 'rgba(196,167,231,0.5)', marginTop: 2 }}>내 피부타입이 자동 적용돼요</div>
+              {Array.isArray(profile.skin_concerns) && profile.skin_concerns.length > 0 ? (
+                <div style={{ fontSize: 10, color: 'rgba(196,167,231,0.4)', marginTop: 2 }}>고민: {profile.skin_concerns.join(' · ')}</div>
+              ) : null}
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push('/my/profile')}
+              style={{ fontSize: 10, color: 'rgba(196,167,231,0.4)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 20, padding: '3px 8px', background: 'transparent', cursor: 'pointer' }}
+            >
+              변경
+            </button>
+          </div>
+        ) : !hideSkinTypeGuide ? (
           <div
             style={{
               marginTop: 16,
@@ -301,7 +336,7 @@ export default function CommunityNewPostPage() {
               <button
                 type="button"
                 onClick={() => {
-                  localStorage.setItem('hide_skin_type_guide_community_new', '1')
+                  localStorage.setItem('hide_skintype_banner', 'true')
                   setHideSkinTypeGuide(true)
                 }}
                 style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 14, cursor: 'pointer', lineHeight: 1 }}
