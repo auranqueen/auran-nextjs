@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 const BG = '#0D0B09'
 const CARD_BG = 'rgba(255,255,255,0.03)'
@@ -21,10 +22,6 @@ const CATEGORIES: { id: CategoryId; label: string }[] = [
   { id: 'qa', label: 'Q&A' },
   { id: 'menopause', label: '갱년기' },
 ]
-
-const SKIN_TYPES = ['건성', '지성', '복합성', '민감성', '정상'] as const
-
-type SkinType = (typeof SKIN_TYPES)[number] | ''
 
 type MediaItem = {
   id: string
@@ -47,9 +44,9 @@ export default function CommunityNewPostPage() {
   const supabase = createClient()
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement | null>(null)
+  const { profile } = useUserProfile()
 
   const [category, setCategory] = useState<CategoryId>('skin')
-  const [skinType, setSkinType] = useState<SkinType>('')
   const [media, setMedia] = useState<MediaItem[]>([])
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
@@ -65,6 +62,11 @@ export default function CommunityNewPostPage() {
   const [toast, setToast] = useState('')
   const [authUserId, setAuthUserId] = useState<string | null>(null)
   const [internalUserId, setInternalUserId] = useState<string | null>(null)
+  const [hideSkinTypeGuide, setHideSkinTypeGuide] = useState(false)
+
+  useEffect(() => {
+    setHideSkinTypeGuide(localStorage.getItem('hide_skin_type_guide_community_new') === '1')
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -213,7 +215,7 @@ export default function CommunityNewPostPage() {
       const { error } = await supabase.from('posts').insert({
         user_id: internalUserId,
         category,
-        skin_type: skinType || null,
+        skin_type: profile?.skin_type || null,
         title: title.trim(),
         content: content.trim(),
         image_urls: image_urls.length ? image_urls : null,
@@ -273,31 +275,42 @@ export default function CommunityNewPostPage() {
           })}
         </div>
 
-        <div style={{ fontSize: 11, color: TEXT_MUTED, margin: '16px 0 8px', fontWeight: 500 }}>피부타입 (선택)</div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {SKIN_TYPES.map((s) => {
-            const active = skinType === s
-            return (
+        {!profile?.skin_type && !hideSkinTypeGuide ? (
+          <div
+            style={{
+              marginTop: 16,
+              background: 'rgba(123,94,167,0.08)',
+              border: '1px solid rgba(123,94,167,0.2)',
+              borderRadius: 12,
+              padding: '10px 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 8,
+            }}
+          >
+            <div style={{ fontSize: 11, color: '#c4a7e7', lineHeight: 1.4 }}>피부타입 설정하면 더 정확한 추천 받아요 💜</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <button
-                key={s}
                 type="button"
-                onClick={() => setSkinType(active ? '' : s)}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: 999,
-                  border: `1px solid ${active ? 'rgba(201,169,110,0.45)' : 'rgba(255,255,255,0.08)'}`,
-                  background: active ? 'rgba(201,169,110,0.12)' : CARD_BG,
-                  color: active ? GOLD : TEXT_MUTED,
-                  fontSize: 11,
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                }}
+                onClick={() => router.push('/my/profile')}
+                style={{ border: '1px solid rgba(123,94,167,0.4)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '5px 8px', fontSize: 10, cursor: 'pointer', fontWeight: 500 }}
               >
-                {s}
+                설정하기
               </button>
-            )
-          })}
-        </div>
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.setItem('hide_skin_type_guide_community_new', '1')
+                  setHideSkinTypeGuide(true)
+                }}
+                style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 14, cursor: 'pointer', lineHeight: 1 }}
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        ) : null}
 
         <div style={{ marginTop: 16 }}>
           <input ref={fileRef} type="file" accept="image/*,video/*" multiple style={{ display: 'none' }} onChange={(e) => onFiles(e.target.files)} />

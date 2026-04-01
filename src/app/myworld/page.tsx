@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 const BG = '#0D0B09'
 const GOLD = '#C9A96E'
@@ -11,6 +12,7 @@ const PURPLE = '#7B5EA7'
 export default function MyWorldPage() {
   const router = useRouter()
   const supabase = createClient()
+  const { profile: userProfile } = useUserProfile()
   const [toast, setToast] = useState('')
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
@@ -52,6 +54,11 @@ export default function MyWorldPage() {
   const [mwVotedActive, setMwVotedActive] = useState(false)
   const [mwVoterDiscountPct, setMwVoterDiscountPct] = useState(50)
   const [mwShopBusy, setMwShopBusy] = useState<string | null>(null)
+  const [hideSkinTypeGuide, setHideSkinTypeGuide] = useState(false)
+
+  useEffect(() => {
+    setHideSkinTypeGuide(localStorage.getItem('hide_skin_type_guide_myworld') === '1')
+  }, [])
 
   useEffect(() => {
     const run = async () => {
@@ -370,6 +377,7 @@ export default function MyWorldPage() {
         .from('skin_diary')
         .insert({
           user_id: user.id,
+          skin_type: userProfile?.skin_type || null,
           mood: selectedMoods.join(','),
           skin_status: selectedSkinStatuses.join(','),
           memo: memoToSave,
@@ -383,6 +391,7 @@ export default function MyWorldPage() {
         inserted || {
           id: `${Date.now()}`,
           user_id: user.id,
+          skin_type: userProfile?.skin_type || null,
           mood: selectedMoods.join(','),
           skin_status: selectedSkinStatuses.join(','),
           memo: memoToSave,
@@ -866,6 +875,42 @@ export default function MyWorldPage() {
 
       {activeTab === 'diary' ? (
         <div style={{ margin: '12px 16px 0' }}>
+          {!userProfile?.skin_type && !hideSkinTypeGuide ? (
+            <div
+              style={{
+                marginBottom: 10,
+                background: 'rgba(123,94,167,0.08)',
+                border: '1px solid rgba(123,94,167,0.2)',
+                borderRadius: 12,
+                padding: '10px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 8,
+              }}
+            >
+              <div style={{ fontSize: 11, color: '#c4a7e7', lineHeight: 1.4 }}>피부타입 설정하면 더 정확한 추천 받아요 💜</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => router.push('/my/profile')}
+                  style={{ border: '1px solid rgba(123,94,167,0.4)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '5px 8px', fontSize: 10, cursor: 'pointer', fontWeight: 500 }}
+                >
+                  설정하기
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.setItem('hide_skin_type_guide_myworld', '1')
+                    setHideSkinTypeGuide(true)
+                  }}
+                  style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 14, cursor: 'pointer', lineHeight: 1 }}
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          ) : null}
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'right', marginBottom: 8 }}>
             <div>{now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' })}</div>
             <div>{now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</div>

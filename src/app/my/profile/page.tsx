@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -175,7 +175,7 @@ export default function MyProfilePage() {
       alert(error.message)
       return
     }
-    setToast('프로필이 저장됐습니다 💜')
+    setToast(profileCompletion === 100 ? '완성도 100% 달성! +3000T 💜' : '프로필이 저장됐습니다 💜')
     window.setTimeout(() => {
       setToast('')
       router.back()
@@ -256,6 +256,46 @@ export default function MyProfilePage() {
   const isLeap = selectedYear > 0 && ((selectedYear % 4 === 0 && selectedYear % 100 !== 0) || selectedYear % 400 === 0)
   const daysInMonth = selectedMonth === 2 ? (isLeap ? 29 : 28) : [4, 6, 9, 11].includes(selectedMonth) ? 30 : 31
   const dayOptions = selectedMonth ? Array.from({ length: daysInMonth }, (_, i) => String(i + 1)) : []
+  const profileCompletion = useMemo(() => {
+    let score = 0
+    if (skinType.trim()) score += 20
+    if (skinConcerns.length > 0) score += 15
+    if (menstrualCycle.trim()) score += 10
+    if (bodyStatus.length > 0) score += 10
+    if (Number.isFinite(sleepHours)) score += 10
+    if (drinkFrequency.trim()) score += 10
+    if (exerciseFrequency.trim()) score += 10
+    if (allergyIngredients.length > 0) score += 10
+    if (preferredBrands.length > 0) score += 5
+    return Math.min(100, score)
+  }, [skinType, skinConcerns, menstrualCycle, bodyStatus, sleepHours, drinkFrequency, exerciseFrequency, allergyIngredients, preferredBrands])
+  const profileGuideText =
+    profileCompletion <= 30
+      ? '아직 피부가 낯선가요? 🥺\n조금만 알려주면\n딱 맞는 제품 찾아드려요 💜'
+      : profileCompletion <= 60
+        ? '절반 왔어요! 🌱\n조금만 더 알려주면\n추천이 2배 정확해져요 ✨'
+        : profileCompletion <= 80
+          ? '거의 다 왔어요! 💜\n세밀한 정보가 쌓일수록\n피부 주치의가 더 똑똑해져요'
+          : profileCompletion < 100
+            ? '피부 주치의 완성 직전이에요 👑\n마지막 정보만 채워주세요!'
+            : '완벽한 피부 프로파일이에요 ✨\nAURAN이 누구보다\n내 피부를 잘 알아요 💜'
+  const scrollToMissing = () => {
+    if (!skinType.trim() || skinConcerns.length === 0 || allergyIngredients.length === 0) {
+      document.getElementById('profile-skin-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    if (!menstrualCycle.trim() || bodyStatus.length === 0) {
+      document.getElementById('profile-detail-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    if (!drinkFrequency.trim() || !exerciseFrequency.trim()) {
+      document.getElementById('profile-lifestyle-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    if (preferredBrands.length === 0) {
+      document.getElementById('profile-brand-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
 
   return (
     <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", color: '#fff', paddingBottom: 100 }}>
@@ -341,7 +381,25 @@ export default function MyProfilePage() {
           {uploading ? <div style={{ textAlign: 'center', marginTop: 8, fontSize: 11, color: '#9b7ec8' }}>업로드 중...</div> : null}
         </div>
 
-        <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 12 }}>
+        <section style={{ background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 16, padding: 16, marginBottom: 12 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10 }}>내 피부 프로파일 완성도</div>
+          <div style={{ width: '100%', height: 8, borderRadius: 999, background: 'rgba(255,255,255,0.12)', overflow: 'hidden' }}>
+            <div style={{ width: `${profileCompletion}%`, height: 8, borderRadius: 999, background: '#7B5EA7' }} />
+          </div>
+          <div style={{ fontSize: 11, color: '#c4a7e7', marginTop: 8, fontWeight: 700 }}>{profileCompletion}%</div>
+          <div style={{ marginTop: 8, fontSize: 12, color: 'rgba(255,255,255,0.88)', whiteSpace: 'pre-line', lineHeight: 1.5 }}>{profileGuideText}</div>
+          {profileCompletion < 100 ? (
+            <button
+              type="button"
+              onClick={scrollToMissing}
+              style={{ marginTop: 10, border: '1px solid rgba(123,94,167,0.4)', background: 'transparent', color: '#c4a7e7', borderRadius: 10, padding: '8px 10px', fontSize: 11, cursor: 'pointer', fontWeight: 600 }}
+            >
+              지금 채우기 →
+            </button>
+          ) : null}
+        </section>
+
+        <section id="profile-skin-section" style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 12 }}>
           <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: GOLD }}>기본 정보</div>
           <div style={{ display: 'grid', gap: 10 }}>
             <div>
@@ -426,7 +484,7 @@ export default function MyProfilePage() {
           </div>
         </section>
 
-        <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 12 }}>
+        <section id="profile-detail-section" style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 12 }}>
           <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6, color: GOLD }}>🗓 특별한 날 (D-day 관리)</div>
           <div style={{ fontSize: 11, color: '#b79ce8', marginBottom: 10 }}>중요한 날 N일 전에 미리 알려드려요 💜</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
@@ -508,7 +566,7 @@ export default function MyProfilePage() {
           </button>
         </section>
 
-        <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 12 }}>
+        <section id="profile-lifestyle-section" style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 12 }}>
           <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: GOLD }}>피부 정보</div>
           <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 6 }}>피부타입</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
@@ -542,7 +600,7 @@ export default function MyProfilePage() {
           </div>
         </section>
 
-        <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 12 }}>
+        <section id="profile-brand-section" style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 12 }}>
           <div style={{ fontSize: 11, color: '#b79ce8', marginBottom: 10, lineHeight: 1.5 }}>피부 맞춤 추천을 위한 정보예요 💜</div>
           <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 6 }}>생리 주기</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>

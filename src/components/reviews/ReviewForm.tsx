@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { useUserProfile } from '@/hooks/useUserProfile'
 
 type ReviewFormProps = {
   productId: string
@@ -24,12 +25,12 @@ const CONCERNS = [
   '향이 좋아요', '지속력 좋아요', '피부톤 개선',
   '탄력 향상', '자극 없어요', '재구매 의사',
 ]
-const SKIN_TYPES = ['건성', '지성', '복합성', '민감성', '트러블성']
 const USAGE_PERIODS = ['1주일', '1달', '3달 이상']
 const EFFECT_TAGS = ['촉촉해요', '진정돼요', '흡수빨라요', '끈적임없어요', '자극없어요', '탄력있어요']
 
 export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormProps) {
   const supabase = createClient()
+  const { profile } = useUserProfile()
   const [rating, setRating] = useState(0)
   const [content, setContent] = useState('')
   const [helpfulConcerns, setHelpfulConcerns] = useState<string[]>([])
@@ -40,12 +41,16 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
   const [textToast, setTextToast] = useState(100)
   const [photoToast, setPhotoToast] = useState(300)
   const [videoToast, setVideoToast] = useState(500)
-  const [selectedSkinType, setSelectedSkinType] = useState<string | null>(null)
   const [selectedPeriod, setSelectedPeriod] = useState<string | null>(null)
   const [selectedEffects, setSelectedEffects] = useState<string[]>([])
   const [isShared, setIsShared] = useState(false)
   const [shareLikeReward, setShareLikeReward] = useState(0)
   const [shareFollowReward, setShareFollowReward] = useState(0)
+  const [hideSkinTypeGuide, setHideSkinTypeGuide] = useState(false)
+
+  useEffect(() => {
+    setHideSkinTypeGuide(localStorage.getItem('hide_skin_type_guide_review') === '1')
+  }, [])
 
   useEffect(() => {
     const loadShareRewards = async () => {
@@ -90,7 +95,6 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
       setHelpfulConcerns([])
       setPreviewUrls([])
       setFiles([])
-      setSelectedSkinType(null)
       setSelectedPeriod(null)
       setSelectedEffects([])
       setIsShared(false)
@@ -147,7 +151,6 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
         if (updateError) throw updateError
         setToastMsg('리뷰가 수정됐어요! 🎉')
       } else {
-        const { data: profile } = await supabase.from('profiles').select('skin_type').eq('auth_id', userId).maybeSingle()
         const { data: uRow } = await supabase.from('users').select('id').eq('auth_id', userId).maybeSingle()
         if (!uRow?.id) {
           setToastMsg('회원 정보를 확인할 수 없어요')
@@ -173,7 +176,7 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
             content: content.trim(),
             images: mergedImages,
             helpful_concerns: helpfulConcerns,
-            skin_type: selectedSkinType || (profile as any)?.skin_type || null,
+            skin_type: profile?.skin_type || null,
             usage_period: selectedPeriod || null,
             effect_tags: selectedEffects.length > 0 ? selectedEffects : null,
             status: '게시',
@@ -199,7 +202,7 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
               product_tags: [productId],
               likes: 0,
               views: 0,
-              skin_type: selectedSkinType || (profile as any)?.skin_type || null,
+              skin_type: profile?.skin_type || null,
               is_public: true,
               created_at: new Date().toISOString(),
             } as any)
@@ -215,7 +218,7 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
         )
       }
       setRating(0); setContent(''); setHelpfulConcerns([]); setFiles([]); setPreviewUrls([])
-      setSelectedSkinType(null); setSelectedPeriod(null); setSelectedEffects([]); setIsShared(false)
+      setSelectedPeriod(null); setSelectedEffects([]); setIsShared(false)
       onSuccess()
       setTimeout(() => setToastMsg(''), 1800)
     } catch {
@@ -271,16 +274,6 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
       {/* 추가 선택 +50T */}
       <div style={{ background: 'rgba(201,169,110,0.06)', border: '1px solid rgba(201,169,110,0.2)', borderRadius: 12, padding: '12px 14px', marginBottom: 12 }}>
         <div style={{ fontSize: 11, color: GOLD, marginBottom: 10 }}>아래 선택 시 +50T 추가 적립</div>
-
-        <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>내 피부타입</div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 12 }}>
-          {SKIN_TYPES.map(st => (
-            <button key={st} type="button" onClick={() => setSelectedSkinType(prev => prev === st ? null : st)}
-              style={{ padding: '6px 12px', borderRadius: 20, border: `1px solid ${selectedSkinType === st ? GOLD : 'rgba(255,255,255,0.12)'}`, background: selectedSkinType === st ? 'rgba(201,169,110,0.15)' : 'rgba(255,255,255,0.05)', color: selectedSkinType === st ? GOLD : '#aaa', fontSize: 12, cursor: 'pointer' }}>
-              {st}
-            </button>
-          ))}
-        </div>
 
         <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>사용기간</div>
         <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
@@ -388,6 +381,42 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
             </div>
           </div>
         </>
+      ) : null}
+
+      {!profile?.skin_type && !hideSkinTypeGuide ? (
+        <div
+          style={{
+            marginBottom: 12,
+            background: 'rgba(123,94,167,0.08)',
+            border: '1px solid rgba(123,94,167,0.2)',
+            borderRadius: 12,
+            padding: '10px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+          }}
+        >
+          <div style={{ fontSize: 11, color: '#c4a7e7', lineHeight: 1.4 }}>피부타입 설정하면 더 정확한 추천 받아요 💜</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <a
+              href="/my/profile"
+              style={{ border: '1px solid rgba(123,94,167,0.4)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '5px 8px', fontSize: 10, cursor: 'pointer', fontWeight: 500, textDecoration: 'none' }}
+            >
+              설정하기
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                localStorage.setItem('hide_skin_type_guide_review', '1')
+                setHideSkinTypeGuide(true)
+              }}
+              style={{ border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 14, cursor: 'pointer', lineHeight: 1 }}
+            >
+              ×
+            </button>
+          </div>
+        </div>
       ) : null}
 
       <button type="button" onClick={submit} disabled={!canSubmit}
