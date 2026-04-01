@@ -736,6 +736,8 @@ export default function CustomerHomePage() {
           { icon: '🌍', title: 'MY WORLD', desc: '나만의 미니홈피', badge: 'MY', path: '/my-world', bg: 'linear-gradient(135deg,rgba(60,120,220,0.15),rgba(40,80,180,0.1))' },
           { icon: '💬', title: '커뮤니티', desc: '피부 타입별 소통', badge: 'NEW', path: '/community', bg: 'linear-gradient(135deg,rgba(220,60,60,0.1),rgba(180,40,40,0.08))', badgeColor: '#E04030' },
           { icon: '💆', title: '살롱예약', desc: '전문 관리샵 예약', badge: '근처', path: '/salon', bg: 'linear-gradient(135deg,rgba(60,180,120,0.12),rgba(40,140,90,0.08))' },
+          { icon: '📖', title: '매거진', desc: '피부 케어 콘텐츠', badge: null, path: '/magazine', bg: 'linear-gradient(135deg,rgba(196,167,231,0.14),rgba(90,70,130,0.08))' },
+          { icon: '🏆', title: '컨테스트', desc: '투표하고 혜택받기', badge: 'HOT', path: '/community?tab=contest', bg: 'linear-gradient(135deg,rgba(123,94,167,0.18),rgba(201,169,110,0.1))', badgeColor: '#E04030' },
         ].map((f, i) => (
           <div
             key={i}
@@ -746,12 +748,14 @@ export default function CustomerHomePage() {
               cursor: 'pointer', position: 'relative',
             }}
           >
-            <div style={{
-              position: 'absolute', top: '10px', right: '10px',
-              background: f.badgeColor || 'rgba(201,169,110,0.2)',
-              color: f.badgeColor ? '#fff' : GOLD,
-              fontSize: '9px', padding: '2px 7px', borderRadius: '6px',
-            }}>{f.badge}</div>
+            {f.badge ? (
+              <div style={{
+                position: 'absolute', top: '10px', right: '10px',
+                background: f.badgeColor || 'rgba(201,169,110,0.2)',
+                color: f.badgeColor ? '#fff' : GOLD,
+                fontSize: '9px', padding: '2px 7px', borderRadius: '6px',
+              }}>{f.badge}</div>
+            ) : null}
             <span style={{ fontSize: '28px', display: 'block', marginBottom: '8px' }}>{f.icon}</span>
             <div style={{ fontSize: '13px', fontWeight: 400, marginBottom: '3px' }}>{f.title}</div>
             <div style={{ fontSize: '10px', color: TEXT_MUTED }}>{f.desc}</div>
@@ -1460,9 +1464,9 @@ export default function CustomerHomePage() {
           <span style={{ fontSize: '22px' }}>🔬</span>
           <span style={{ fontSize: '8px', fontWeight: 400, color: BG, fontFamily: 'monospace', letterSpacing: '0.5px' }}>AI</span>
         </div>
-        <div onClick={() => router.push('/salon')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '22px' }}>📅</span>
-          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM, letterSpacing: '1px' }}>BOOK</span>
+        <div onClick={() => router.push('/community')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
+          <span style={{ fontSize: '22px' }}>💬</span>
+          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM, letterSpacing: '1px' }}>커뮤니티</span>
         </div>
         <div onClick={() => router.push('/my')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
           <span style={{ fontSize: '22px' }}>👤</span>
