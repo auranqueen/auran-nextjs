@@ -15,13 +15,14 @@ type FlatRow = Cat & { depth: number }
 
 export default function AdminCategoriesPage() {
   const supabase = createClient()
+  const [committedRows, setCommittedRows] = useState<Cat[]>([])
   const [rows, setRows] = useState<Cat[]>([])
   const [loading, setLoading] = useState(true)
+  const [applying, setApplying] = useState(false)
   const [toast, setToast] = useState('')
   const [sheet, setSheet] = useState<Cat | null>(null)
   const [sheetName, setSheetName] = useState('')
   const [sheetSort, setSheetSort] = useState('0')
-  const [savingSheet, setSavingSheet] = useState(false)
 
   const loadRows = useCallback(async () => {
     const { data, error } = await supabase
@@ -31,10 +32,13 @@ export default function AdminCategoriesPage() {
       .order('name', { ascending: true })
     if (error) {
       setToast(error.message)
+      setCommittedRows([])
       setRows([])
       return
     }
-    setRows((data || []) as Cat[])
+    const list = (data || []) as Cat[]
+    setCommittedRows(list)
+    setRows(list)
   }, [supabase])
 
   useEffect(() => {
@@ -93,67 +97,62 @@ export default function AdminCategoriesPage() {
     setSheetSort('0')
   }
 
-  const saveSheet = async () => {
+  const confirmSheet = () => {
     if (!sheet) return
-    setSavingSheet(true)
-    try {
-      const so = Math.floor(Number(sheetSort) || 0)
-      const { error } = await supabase
-        .from('categories')
-        .update({ name: sheetName.trim() || '이름 없음', sort_order: so } as any)
-        .eq('id', sheet.id)
-      if (error) throw error
-      showToast('저장됨')
-      closeSheet()
-      await loadRows()
-    } catch (e: unknown) {
-      setToast(e instanceof Error ? e.message : '저장 실패')
-    } finally {
-      setSavingSheet(false)
-    }
+    const so = Math.floor(Number(sheetSort) || 0)
+    const nm = sheetName.trim() || '이름 없음'
+    setRows(prev => prev.map(r => (r.id === sheet.id ? { ...r, name: nm, sort_order: so } : r)))
+    closeSheet()
   }
 
-  const addRoot = async () => {
+  const deleteSheetSubtree = () => {
+    if (!sheet) return
+    const root = sheet.id
+    const ids = new Set<string>([root])
+    let grow = true
+    while (grow) {
+      grow = false
+      for (const r of rows) {
+        const pid = r.parent_id == null || r.parent_id === '' ? '' : String(r.parent_id)
+        if (pid && ids.has(pid) && !ids.has(r.id)) {
+          ids.add(r.id)
+          grow = true
+        }
+      }
+    }
+    setRows(prev => prev.filter(r => !ids.has(r.id)))
+    closeSheet()
+  }
+
+  const addRoot = () => {
     const siblings = rows.filter(r => r.parent_id == null || r.parent_id === '')
     const maxSort = siblings.reduce((m, r) => Math.max(m, r.sort_order ?? 0), -1)
-    const { error } = await supabase
-      .from('categories')
-      .insert({
-        name: '새 대분류',
-        parent_id: null,
-        level: 1,
-        sort_order: maxSort + 1,
-      } as any)
-    if (error) {
-      setToast(error.message)
-      return
-    }
-    showToast('대분류 추가됨')
-    await loadRows()
+    const id = crypto.randomUUID()
+    setRows(prev => [
+      ...prev,
+      { id, name: '새 대분류', parent_id: null, level: 1, sort_order: maxSort + 1 },
+    ])
   }
 
-  const addChild = async (parent: Cat) => {
+  const addChild = (parent: Cat) => {
     if ((parent.level ?? 1) >= 5) return
     const siblings = rows.filter(r => String(r.parent_id || '') === String(parent.id))
     const maxSort = siblings.reduce((m, r) => Math.max(m, r.sort_order ?? 0), -1)
     const nextLevel = (parent.level ?? 1) + 1
-    const { error } = await supabase
-      .from('categories')
-      .insert({
+    const id = crypto.randomUUID()
+    setRows(prev => [
+      ...prev,
+      {
+        id,
         name: '새 하위',
         parent_id: parent.id,
         level: nextLevel,
         sort_order: maxSort + 1,
-      } as any)
-    if (error) {
-      setToast(error.message)
-      return
-    }
-    showToast('하위 카테고리 추가됨')
-    await loadRows()
+      },
+    ])
   }
 
-  const moveRow = async (c: Cat, dir: -1 | 1) => {
+  const moveRow = (c: Cat, dir: -1 | 1) => {
     const pid = c.parent_id == null || c.parent_id === '' ? null : String(c.parent_id)
     const siblings = rows
       .filter(r => {
@@ -173,26 +172,84 @@ export default function AdminCategoriesPage() {
     const b = siblings[j]
     const sa = a.sort_order ?? i
     const sb = b.sort_order ?? j
-    const { error: e1 } = await supabase.from('categories').update({ sort_order: sb } as any).eq('id', a.id)
-    if (e1) {
-      setToast(e1.message)
-      return
+    setRows(prev =>
+      prev.map(r => {
+        if (r.id === a.id) return { ...r, sort_order: sb }
+        if (r.id === b.id) return { ...r, sort_order: sa }
+        return r
+      })
+    )
+  }
+
+  const applyDraft = async () => {
+    if (applying) return
+    setApplying(true)
+    try {
+      const serverById = new Map(committedRows.map(r => [r.id, r]))
+      const draftById = new Map(rows.map(r => [r.id, r]))
+
+      const pidEq = (a: string | null | undefined, b: string | null | undefined) =>
+        (a == null || a === '' ? '' : String(a)) === (b == null || b === '' ? '' : String(b))
+
+      const toDelete = committedRows
+        .filter(cr => !draftById.has(cr.id))
+        .sort((a, b) => (b.level ?? 0) - (a.level ?? 0))
+      for (const r of toDelete) {
+        const { error } = await supabase.from('categories').delete().eq('id', r.id)
+        if (error) throw new Error(error.message)
+      }
+
+      const toInsert = rows.filter(dr => !serverById.has(dr.id)).sort((a, b) => (a.level ?? 0) - (b.level ?? 0))
+      for (const r of toInsert) {
+        const { error } = await supabase.from('categories').insert({
+          id: r.id,
+          name: r.name,
+          parent_id: r.parent_id,
+          level: r.level,
+          sort_order: r.sort_order ?? 0,
+        } as any)
+        if (error) throw new Error(error.message)
+      }
+
+      for (const r of rows) {
+        if (!serverById.has(r.id)) continue
+        const prev = serverById.get(r.id)!
+        if (
+          prev.name === r.name &&
+          (prev.sort_order ?? 0) === (r.sort_order ?? 0) &&
+          pidEq(prev.parent_id, r.parent_id) &&
+          (prev.level ?? 0) === (r.level ?? 0)
+        ) {
+          continue
+        }
+        const { error } = await supabase
+          .from('categories')
+          .update({
+            name: r.name,
+            sort_order: r.sort_order ?? 0,
+            parent_id: r.parent_id,
+            level: r.level,
+          } as any)
+          .eq('id', r.id)
+        if (error) throw new Error(error.message)
+      }
+
+      await loadRows()
+      showToast('적용되었습니다')
+    } catch (e: unknown) {
+      setToast(e instanceof Error ? e.message : '적용 실패')
+    } finally {
+      setApplying(false)
     }
-    const { error: e2 } = await supabase.from('categories').update({ sort_order: sa } as any).eq('id', b.id)
-    if (e2) {
-      setToast(e2.message)
-      return
-    }
-    showToast('순서 변경됨')
-    await loadRows()
   }
 
   return (
-    <div style={{ padding: '18px 16px 80px', maxWidth: 720, margin: '0 auto' }}>
+    <div style={{ padding: '18px 16px 100px', maxWidth: 720, margin: '0 auto' }}>
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>카테고리 관리</div>
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 6, lineHeight: 1.5 }}>
-          대 → 중 → 소 → 세부 → 스킨태그 (5단계) · 노드를 눌러 이름·순서 수정 · ↑↓로 형제 간 순서 변경
+          대 → 중 → 소 → 세부 → 스킨태그 (5단계) · 수정·추가·삭제·순서 변경 후 하단{' '}
+          <span style={{ color: '#c9a84c', fontWeight: 800 }}>적용</span>을 눌러 DB에 반영합니다
         </div>
       </div>
 
@@ -214,7 +271,8 @@ export default function AdminCategoriesPage() {
 
       <button
         type="button"
-        onClick={() => void addRoot()}
+        onClick={() => addRoot()}
+        disabled={applying}
         style={{
           marginBottom: 14,
           width: '100%',
@@ -225,7 +283,8 @@ export default function AdminCategoriesPage() {
           color: '#c9a84c',
           fontSize: 13,
           fontWeight: 800,
-          cursor: 'pointer',
+          cursor: applying ? 'not-allowed' : 'pointer',
+          opacity: applying ? 0.55 : 1,
         }}
       >
         + 최상위(대분류) 추가
@@ -254,7 +313,8 @@ export default function AdminCategoriesPage() {
             >
               <button
                 type="button"
-                onClick={() => openSheet(row)}
+                onClick={() => !applying && openSheet(row)}
+                disabled={applying}
                 style={{
                   flex: 1,
                   minWidth: 120,
@@ -264,7 +324,8 @@ export default function AdminCategoriesPage() {
                   color: '#fff',
                   fontSize: 13,
                   fontWeight: 700,
-                  cursor: 'pointer',
+                  cursor: applying ? 'not-allowed' : 'pointer',
+                  opacity: applying ? 0.55 : 1,
                   padding: '4px 0',
                 }}
               >
@@ -274,7 +335,8 @@ export default function AdminCategoriesPage() {
               <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
                 <button
                   type="button"
-                  onClick={() => void moveRow(row, -1)}
+                  onClick={() => moveRow(row, -1)}
+                  disabled={applying}
                   style={{
                     width: 36,
                     height: 34,
@@ -283,14 +345,16 @@ export default function AdminCategoriesPage() {
                     background: 'rgba(255,255,255,0.06)',
                     color: '#fff',
                     fontSize: 14,
-                    cursor: 'pointer',
+                    cursor: applying ? 'not-allowed' : 'pointer',
+                    opacity: applying ? 0.55 : 1,
                   }}
                 >
                   ↑
                 </button>
                 <button
                   type="button"
-                  onClick={() => void moveRow(row, 1)}
+                  onClick={() => moveRow(row, 1)}
+                  disabled={applying}
                   style={{
                     width: 36,
                     height: 34,
@@ -299,7 +363,8 @@ export default function AdminCategoriesPage() {
                     background: 'rgba(255,255,255,0.06)',
                     color: '#fff',
                     fontSize: 14,
-                    cursor: 'pointer',
+                    cursor: applying ? 'not-allowed' : 'pointer',
+                    opacity: applying ? 0.55 : 1,
                   }}
                 >
                   ↓
@@ -307,7 +372,8 @@ export default function AdminCategoriesPage() {
                 {(row.level ?? 1) < 5 ? (
                   <button
                     type="button"
-                    onClick={() => void addChild(row)}
+                    onClick={() => addChild(row)}
+                    disabled={applying}
                     style={{
                       padding: '8px 10px',
                       borderRadius: 10,
@@ -316,7 +382,8 @@ export default function AdminCategoriesPage() {
                       color: '#7dce9a',
                       fontSize: 11,
                       fontWeight: 800,
-                      cursor: 'pointer',
+                      cursor: applying ? 'not-allowed' : 'pointer',
+                      opacity: applying ? 0.55 : 1,
                       whiteSpace: 'nowrap',
                     }}
                   >
@@ -412,6 +479,24 @@ export default function AdminCategoriesPage() {
                 }}
               />
             </label>
+            <button
+              type="button"
+              onClick={deleteSheetSubtree}
+              style={{
+                width: '100%',
+                marginBottom: 12,
+                padding: '12px 12px',
+                borderRadius: 12,
+                border: '1px solid rgba(239,83,80,0.45)',
+                background: 'rgba(239,83,80,0.12)',
+                color: '#ef9a9a',
+                fontSize: 13,
+                fontWeight: 800,
+                cursor: 'pointer',
+              }}
+            >
+              삭제 (하위 포함)
+            </button>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               <button
                 type="button"
@@ -431,8 +516,7 @@ export default function AdminCategoriesPage() {
               </button>
               <button
                 type="button"
-                disabled={savingSheet}
-                onClick={() => void saveSheet()}
+                onClick={() => confirmSheet()}
                 style={{
                   padding: '14px 12px',
                   borderRadius: 12,
@@ -442,15 +526,50 @@ export default function AdminCategoriesPage() {
                   fontSize: 14,
                   fontWeight: 800,
                   cursor: 'pointer',
-                  opacity: savingSheet ? 0.65 : 1,
                 }}
               >
-                {savingSheet ? '저장 중…' : '저장'}
+                확인
               </button>
             </div>
           </div>
         </div>
       ) : null}
+
+      <div
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 80,
+          padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))',
+          background: 'linear-gradient(180deg, transparent, rgba(10,10,10,0.97) 28%)',
+          borderTop: '1px solid rgba(201,168,76,0.25)',
+          maxWidth: 720,
+          margin: '0 auto',
+          boxSizing: 'border-box',
+        }}
+      >
+        <button
+          type="button"
+          disabled={applying || loading}
+          onClick={() => void applyDraft()}
+          style={{
+            width: '100%',
+            padding: '14px 16px',
+            borderRadius: 14,
+            border: '1px solid rgba(201,168,76,0.55)',
+            background: applying ? 'rgba(201,168,76,0.12)' : 'rgba(201,168,76,0.28)',
+            color: '#c9a84c',
+            fontSize: 15,
+            fontWeight: 900,
+            cursor: applying || loading ? 'not-allowed' : 'pointer',
+            opacity: applying || loading ? 0.65 : 1,
+          }}
+        >
+          {applying ? '적용 중…' : '적용 (DB 저장)'}
+        </button>
+      </div>
     </div>
   )
 }
