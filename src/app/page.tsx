@@ -1972,7 +1972,7 @@ AURAN이 내 피부 패턴을
                                     aria-hidden
                                     style={{
                                       position: 'absolute',
-                                      top: -8,
+                                      top: 0,
                                       left: '50%',
                                       transform: 'translateX(-50%)',
                                       pointerEvents: 'none',
@@ -1996,7 +1996,7 @@ AURAN이 내 피부 패턴을
                                     style={{
                                       position: 'absolute',
                                       top: '50%',
-                                      right: -8,
+                                      right: 0,
                                       transform: 'translateY(-50%)',
                                       pointerEvents: 'none',
                                     }}
@@ -2018,7 +2018,7 @@ AURAN이 내 피부 패턴을
                                     aria-hidden
                                     style={{
                                       position: 'absolute',
-                                      bottom: -8,
+                                      bottom: 0,
                                       left: '50%',
                                       transform: 'translateX(-50%)',
                                       pointerEvents: 'none',
@@ -2042,7 +2042,7 @@ AURAN이 내 피부 패턴을
                                     style={{
                                       position: 'absolute',
                                       top: '50%',
-                                      left: -8,
+                                      left: 0,
                                       transform: 'translateY(-50%)',
                                       pointerEvents: 'none',
                                     }}
