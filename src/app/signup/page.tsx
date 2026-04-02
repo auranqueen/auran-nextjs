@@ -28,6 +28,7 @@ function SignupForm() {
   const [dueDate, setDueDate] = useState('')
   const [deliveryDate, setDeliveryDate] = useState('')
   const [isBreastfeeding, setIsBreastfeeding] = useState(false)
+  const [cycleType, setCycleType] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const { getSettingNum } = useAdminSettings()
@@ -96,6 +97,12 @@ function SignupForm() {
             updated_at: new Date().toISOString(),
           }
           await supabase.from('hormone_cycle').upsert(payload, { onConflict: 'auth_id' })
+          if (cycleType) {
+            await supabase.from('profiles').upsert(
+              { auth_id: authData.user.id, email: form.email, cycle_type: cycleType } as any,
+              { onConflict: 'auth_id' }
+            )
+          }
         } catch {}
         // 이메일 인증 필요 시 세션이 없음 → 인증 대기 화면으로
         router.push(`/auth/verify-email?email=${encodeURIComponent(form.email)}&role=${encodeURIComponent(role)}`)
@@ -150,6 +157,12 @@ function SignupForm() {
         const { error: hcErr } = await supabase.from('hormone_cycle').upsert(payload, { onConflict: 'auth_id' })
         if (hcErr) {
           await supabase.from('hormone_cycle').insert(payload)
+        }
+        if (cycleType) {
+          await supabase.from('profiles').upsert(
+            { auth_id: authData.user.id, email: form.email, cycle_type: cycleType } as any,
+            { onConflict: 'auth_id' }
+          )
         }
       }
       setStep(4)
@@ -274,6 +287,35 @@ function SignupForm() {
           <div>
             <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 20, color: 'var(--text)', marginBottom: 6 }}>온보딩 트랙 선택</div>
             <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 18 }}>맞춤 추천 정확도를 높이기 위한 마지막 단계예요</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8 }}>나의 라이프 사이클</div>
+            <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
+              {(
+                [
+                  ['menstrual', '🔮 생리 중이에요'],
+                  ['menopause', '🌸 폐경했어요'],
+                  ['pregnancy', '🤰 임신 중 / 출산했어요'],
+                  ['male', '👨 남성이에요'],
+                ] as const
+              ).map(([k, lab]) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setCycleType(k)}
+                  style={{
+                    textAlign: 'left',
+                    padding: '11px 12px',
+                    borderRadius: 10,
+                    border: cycleType === k ? '1px solid #7B5EA7' : '1px solid var(--border)',
+                    background: cycleType === k ? 'rgba(123,94,167,0.2)' : 'var(--bg3)',
+                    color: 'var(--text)',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {lab}
+                </button>
+              ))}
+            </div>
             <div style={{ display: 'grid', gap: 8 }}>
               {([
                 ['general', '생리 중인 여성'],
@@ -326,6 +368,10 @@ function SignupForm() {
             {error && <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(217,79,79,0.1)', border: '1px solid rgba(217,79,79,0.3)', borderRadius: 8, fontSize: 12, color: '#e08080' }}>{error}</div>}
             <button
               onClick={() => {
+                if (!cycleType) {
+                  setError('라이프 사이클을 선택해주세요')
+                  return
+                }
                 if ((track === 'general' || track === 'menopause_peri') && !lastPeriodDate) {
                   setError('마지막 생리 시작일을 입력해주세요')
                   return

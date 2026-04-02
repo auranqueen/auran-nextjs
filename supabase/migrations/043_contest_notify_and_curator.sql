@@ -57,6 +57,9 @@ ALTER TABLE public.profiles
 ALTER TABLE public.profiles
   ADD COLUMN IF NOT EXISTS curator_score integer NOT NULL DEFAULT 0;
 
+ALTER TABLE public.profiles
+  ADD COLUMN IF NOT EXISTS cycle_type text;
+
 CREATE OR REPLACE FUNCTION public.refresh_monthly_curator_badges()
 RETURNS void
 LANGUAGE plpgsql

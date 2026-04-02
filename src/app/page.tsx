@@ -71,6 +71,21 @@ const FALLBACK_HISTORY = [
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
 
+const CHECKIN_CYCLE_MENOPAUSE = [
+  { id: 'cycle-type-m-0', emoji: '', label: '열감', sort_order: 0, is_active: true },
+  { id: 'cycle-type-m-1', emoji: '', label: '수면', sort_order: 1, is_active: true },
+  { id: 'cycle-type-m-2', emoji: '', label: '감정기복', sort_order: 2, is_active: true },
+  { id: 'cycle-type-m-3', emoji: '', label: '관절', sort_order: 3, is_active: true },
+  { id: 'cycle-type-m-4', emoji: '', label: '컨디션', sort_order: 4, is_active: true },
+]
+const CHECKIN_CYCLE_PREGNANCY = [
+  { id: 'cycle-type-p-0', emoji: '', label: '트러블', sort_order: 0, is_active: true },
+  { id: 'cycle-type-p-1', emoji: '', label: '붓기', sort_order: 1, is_active: true },
+  { id: 'cycle-type-p-2', emoji: '', label: '건조', sort_order: 2, is_active: true },
+  { id: 'cycle-type-p-3', emoji: '', label: '민감', sort_order: 3, is_active: true },
+  { id: 'cycle-type-p-4', emoji: '', label: '컨디션', sort_order: 4, is_active: true },
+]
+
 export default function CustomerHomePage() {
   const router = useRouter()
   const supabase = createClient()
@@ -108,6 +123,7 @@ export default function CustomerHomePage() {
   const [noticeLoading, setNoticeLoading] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [motivationProfile, setMotivationProfile] = useState<any>(null)
+  const [profileCycleType, setProfileCycleType] = useState<string | null>(null)
   const [motivationIdx, setMotivationIdx] = useState(0)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
   const [homeContestBanner, setHomeContestBanner] = useState<any>(null)
@@ -184,10 +200,15 @@ export default function CustomerHomePage() {
       if (!user) return
       const { data: profile } = await supabase
         .from('profiles')
-        .select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade')
+        .select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type')
         .eq('auth_id', user.id)
         .single()
-      if (profile) setMotivationProfile(profile)
+      if (profile) {
+        setMotivationProfile(profile)
+        setProfileCycleType((profile as any).cycle_type != null ? String((profile as any).cycle_type) : null)
+      } else {
+        setProfileCycleType(null)
+      }
       try {
         const { data: hc } = await supabase
           .from('hormone_cycle')
@@ -665,16 +686,22 @@ export default function CustomerHomePage() {
   const checkinSorted = checkinOptions
     .filter((r: any) => r.is_active !== false)
     .sort((a: any, b: any) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
-  const displayCheckinTabs = checkinSorted
+  const homeCheckinSorted =
+    profileCycleType === 'menopause'
+      ? CHECKIN_CYCLE_MENOPAUSE
+      : profileCycleType === 'pregnancy' || profileCycleType === 'postpartum'
+        ? CHECKIN_CYCLE_PREGNANCY
+        : checkinSorted
+  const displayCheckinTabs = homeCheckinSorted
   const selectedCheckinOpt =
-    checkinSorted.length > 0
-      ? checkinSorted.find((c: any) => String(c.id) === String(checkInTab)) || checkinSorted[0]
+    homeCheckinSorted.length > 0
+      ? homeCheckinSorted.find((c: any) => String(c.id) === String(checkInTab)) || homeCheckinSorted[0]
       : null
   const skinRecList = useMemo(() => {
     let skinRecPool: any[] = products.length > 0 ? [...products] : []
     const sel =
-      checkinSorted.length > 0
-        ? checkinSorted.find((c: any) => String(c.id) === String(checkInTab)) || checkinSorted[0]
+      homeCheckinSorted.length > 0
+        ? homeCheckinSorted.find((c: any) => String(c.id) === String(checkInTab)) || homeCheckinSorted[0]
         : null
     if (sel && skinRecPool.length > 0) {
       const idsRaw = sel.recommend_product_ids ?? sel.product_ids ?? sel.recommended_product_ids
@@ -719,12 +746,12 @@ export default function CustomerHomePage() {
     }
     const pl = products.length > 0 ? products : FALLBACK_PRODUCTS
     return skinRecPool.length > 0 ? skinRecPool : pl
-  }, [checkInTab, checkinOptions, products, hormoneTrack])
+  }, [checkInTab, homeCheckinSorted, products, hormoneTrack])
 
   useEffect(() => {
     if (!myUserId || !checkInTab) return
     const opt =
-      checkinSorted.find((c: any) => String(c.id) === String(checkInTab)) ||
+      homeCheckinSorted.find((c: any) => String(c.id) === String(checkInTab)) ||
       displayCheckinTabs.find((c: any) => String(c.id) === String(checkInTab))
     const condition =
       `${(opt as any)?.emoji || ''}${(opt as any)?.label || ''}`.trim() ||
@@ -741,7 +768,7 @@ export default function CustomerHomePage() {
       checkin_condition: condition,
       recommended_products: ids,
     })
-  }, [checkInTab, myUserId, hormoneCycle, hormoneTrack, skinRecList, supabase, checkinSorted, displayCheckinTabs])
+  }, [checkInTab, myUserId, hormoneCycle, hormoneTrack, skinRecList, supabase, homeCheckinSorted, displayCheckinTabs])
 
   const logProductNav = (p: any) => {
     if (!myUserId || !p?.id) return
@@ -775,7 +802,51 @@ export default function CustomerHomePage() {
         ''
     ).trim() || careBannerLine
   const hiddenCalendarTracks = ['menopause_post', 'male', 'male_menopause']
-  const showSkinCalendar = !hiddenCalendarTracks.includes(String(hormoneTrack || ''))
+  const homeCalendarKind =
+    profileCycleType === 'menopause'
+      ? 'menopause'
+      : profileCycleType === 'pregnancy' || profileCycleType === 'postpartum'
+        ? 'pregnancy'
+        : 'menstrual'
+  const showSkinCalendar =
+    profileCycleType === 'male'
+      ? false
+      : profileCycleType === 'menopause' || profileCycleType === 'pregnancy' || profileCycleType === 'postpartum'
+        ? true
+        : !hiddenCalendarTracks.includes(String(hormoneTrack || ''))
+  const calendarTitleStr =
+    homeCalendarKind === 'menopause'
+      ? '🌸 호르몬 캘린더'
+      : homeCalendarKind === 'pregnancy'
+        ? '🤰 임신 캘린더'
+        : '🔮 마법 캘린더'
+  const calendarTipText =
+    homeCalendarKind === 'menopause'
+      ? `💜 폐경 후에도 호르몬 변화로
+피부가 매일 달라져요.
+매일 컨디션을 기록하면
+AURAN이 내 피부 패턴을
+파악해드려요 🌸`
+      : homeCalendarKind === 'pregnancy'
+        ? `💜 임신·출산 후 피부는
+호르몬 변화로 빠르게 달라져요.
+매일 기록하면 안전한 성분의
+제품을 먼저 추천해드려요 🤰`
+        : `💜 마법(생리) 기록은 캘린더에서 해요
+
+📍 기록하는 방법
+날짜를 클릭하면 생리 시작·끝을
+직접 기록할 수 있어요.
+예정일보다 빨리 시작했거나
+늦어지는 경우에도 캘린더에서
+원하는 날짜를 눌러 기록하면 돼요 🔮
+
+✨ 왜 기록해야 하나요?
+생리 주기에 따라 피부가 매주 달라져요.
+기록이 쌓일수록 AURAN이 내 피부 패턴을
+정확하게 파악해서 딱 맞는 케어를
+먼저 알려드려요.
+내 피부를 가장 잘 아는 앱이 되는 비결이에요 💜`
   const hasHormoneCycleData = Boolean(
     hormoneCycle &&
       ((hormoneCycle as any).track ||
@@ -786,6 +857,7 @@ export default function CustomerHomePage() {
   )
   const isPeriTrack = hormoneTrack === 'menopause_peri'
   const isPregnancyTrack = hormoneTrack === 'pregnant' || hormoneTrack === 'postpartum'
+  const calPhaseNeutral = isPeriTrack || homeCalendarKind !== 'menstrual'
   const hasCycleBase = Boolean(hormoneCycle?.last_period_date)
   const cycleRowByDate = useMemo(() => {
     const m: Record<string, any> = {}
@@ -1414,13 +1486,13 @@ export default function CustomerHomePage() {
                     fontWeight: on ? 600 : 400,
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
-                    outline: showHomeEditChrome && checkinSorted.length > 0 ? '1px dashed rgba(123,94,167,0.4)' : undefined,
+                    outline: showHomeEditChrome && checkinSorted.length > 0 && homeCalendarKind === 'menstrual' ? '1px dashed rgba(123,94,167,0.4)' : undefined,
                     fontFamily: 'inherit',
                   }}
                 >
                   {tabLabel}
                 </button>
-                {showHomeEditChrome && checkinSorted.length > 0 ? (
+                {showHomeEditChrome && checkinSorted.length > 0 && homeCalendarKind === 'menstrual' ? (
                   <button
                     type="button"
                     aria-label="체크인 편집"
@@ -1684,7 +1756,7 @@ export default function CustomerHomePage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.78)' }}>🔮 마법 캘린더</div>
+                <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.78)' }}>{calendarTitleStr}</div>
                 <button
                   type="button"
                   onClick={() => setPeriodTipOpen(o => !o)}
@@ -1725,21 +1797,7 @@ export default function CustomerHomePage() {
                   whiteSpace: 'pre-wrap',
                 }}
               >
-                {`💜 마법(생리) 기록은 캘린더에서 해요
-
-📍 기록하는 방법
-날짜를 클릭하면 생리 시작·끝을
-직접 기록할 수 있어요.
-예정일보다 빨리 시작했거나
-늦어지는 경우에도 캘린더에서
-원하는 날짜를 눌러 기록하면 돼요 🔮
-
-✨ 왜 기록해야 하나요?
-생리 주기에 따라 피부가 매주 달라져요.
-기록이 쌓일수록 AURAN이 내 피부 패턴을
-정확하게 파악해서 딱 맞는 케어를
-먼저 알려드려요.
-내 피부를 가장 잘 아는 앱이 되는 비결이에요 💜`}
+                {calendarTipText}
               </div>
             ) : null}
           </div>
@@ -1780,8 +1838,8 @@ export default function CustomerHomePage() {
                 <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
                   {monthCalendarDays.map((d) => {
                     const row = cycleRowByDate[d.iso]
-                    const phase = isPeriTrack ? '' : getPhaseByDate(d.iso)
-                    const bg = isPeriTrack ? 'rgba(255,255,255,0.03)' : phaseColor(phase)
+                    const phase = calPhaseNeutral ? '' : getPhaseByDate(d.iso)
+                    const bg = calPhaseNeutral ? 'rgba(255,255,255,0.03)' : phaseColor(phase)
                     const hasCheckin = Boolean(row?.checkin_condition)
                     return (
                       <button
@@ -1806,7 +1864,7 @@ export default function CustomerHomePage() {
                           padding: '7px 0 6px',
                           cursor: 'pointer',
                           fontFamily: 'inherit',
-                          opacity: isPeriTrack && !hasCheckin ? 0.45 : 1,
+                          opacity: calPhaseNeutral && !hasCheckin ? 0.45 : 1,
                         }}
                       >
                         <div style={{ fontSize: 10, opacity: 0.85 }}>{d.day}</div>
@@ -1830,8 +1888,8 @@ export default function CustomerHomePage() {
                     }
                     const { iso, day } = slot
                     const row = cycleRowByDate[iso]
-                    const phase = isPeriTrack ? '' : getPhaseByDate(iso)
-                    const hormoneBg = isPeriTrack
+                    const phase = calPhaseNeutral ? '' : getPhaseByDate(iso)
+                    const hormoneBg = calPhaseNeutral
                       ? 'rgba(255,255,255,0.04)'
                       : phase === '여포기'
                         ? 'rgba(201,169,110,0.28)'
@@ -1852,7 +1910,7 @@ export default function CustomerHomePage() {
                             : cc.includes('좋음')
                               ? '#5cb88a'
                               : 'rgba(255,255,255,0.25)'
-                    const periodMark = !isPeriTrack && !isPregnancyTrack && phase === '생리기'
+                    const periodMark = homeCalendarKind === 'menstrual' && !isPeriTrack && !isPregnancyTrack && phase === '생리기'
                     const sel = calendarPickDate === iso
                     return (
                       <button
@@ -1971,9 +2029,9 @@ export default function CustomerHomePage() {
                 </div>
               ) : null}
               <div style={{ marginTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.82)' }}>
-                {isPregnancyTrack
-                  ? `${pregnancyWeekText} - 순한 성분 중심 케어를 추천해요`
-                  : isPeriTrack
+                {homeCalendarKind === 'pregnancy' || isPregnancyTrack
+                  ? `${pregnancyWeekText || '임신·출산 케어'} - 순한 성분 중심 케어를 추천해요`
+                  : homeCalendarKind === 'menopause' || isPeriTrack
                     ? (selectedCycleRow?.checkin_condition
                       ? `체크인 기록 - ${String(selectedCycleRow.checkin_condition)}`
                       : '선택한 날짜에 체크인 기록이 없어요')
@@ -2013,7 +2071,7 @@ export default function CustomerHomePage() {
                     <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.88)', marginBottom: 14 }}>이 날 기록</div>
                     <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>체크인 컨디션</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-                      {checkinSorted.map((t: any) => {
+                      {homeCheckinSorted.map((t: any) => {
                         const lab = `${t.emoji ?? ''}${t.label ?? ''}`
                         const on = calSheetConditionStr === lab
                         return (
@@ -2038,7 +2096,7 @@ export default function CustomerHomePage() {
                         )
                       })}
                     </div>
-                    {!isPregnancyTrack ? (
+                    {homeCalendarKind === 'menstrual' ? (
                       <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
                         <button
                           type="button"
