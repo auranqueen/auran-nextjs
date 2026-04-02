@@ -86,6 +86,20 @@ const CHECKIN_CYCLE_PREGNANCY = [
   { id: 'cycle-type-p-4', emoji: '', label: '컨디션', sort_order: 4, is_active: true },
 ]
 
+const CALENDAR_SHEET_CONDITION_LABELS = [
+  '열감',
+  '건조',
+  '트러블',
+  '붓기',
+  '민감',
+  '맑음',
+  '칙칙함',
+  '각질',
+  '번들거림',
+  '탄력저하',
+  '좋음',
+]
+
 export default function CustomerHomePage() {
   const router = useRouter()
   const supabase = createClient()
@@ -162,6 +176,7 @@ export default function CustomerHomePage() {
   const [calSheetNote, setCalSheetNote] = useState('')
   const [calSheetRoutine, setCalSheetRoutine] = useState(false)
   const [calSheetConditionStr, setCalSheetConditionStr] = useState('')
+  const [calSheetConditionPick, setCalSheetConditionPick] = useState<string[]>([])
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [homeEditMode, setHomeEditMode] = useState(false)
   const [homeEditSheet, setHomeEditSheet] = useState<{
@@ -1849,7 +1864,10 @@ AURAN이 내 피부 패턴을
                           setCalendarPickDate(d.iso)
                           setCalSheetIso(d.iso)
                           const cr = cycleRowByDate[d.iso]
-                          setCalSheetConditionStr(String(cr?.checkin_condition || ''))
+                          const rawC = String(cr?.checkin_condition || '').trim()
+                          setCalSheetConditionStr(rawC)
+                          const pcs = rawC ? rawC.split(' / ').map(s => s.trim()).filter(Boolean) : []
+                          setCalSheetConditionPick(pcs.filter(s => CALENDAR_SHEET_CONDITION_LABELS.includes(s)))
                           const dr = skinDailyByDate[d.iso]
                           setCalSheetNote(String(dr?.note || ''))
                           setCalSheetRoutine(!!dr?.routine_completed)
@@ -1920,7 +1938,10 @@ AURAN이 내 피부 패턴을
                           setCalendarPickDate(iso)
                           setCalSheetIso(iso)
                           const cr = cycleRowByDate[iso]
-                          setCalSheetConditionStr(String(cr?.checkin_condition || ''))
+                          const rawC = String(cr?.checkin_condition || '').trim()
+                          setCalSheetConditionStr(rawC)
+                          const pcs = rawC ? rawC.split(' / ').map(s => s.trim()).filter(Boolean) : []
+                          setCalSheetConditionPick(pcs.filter(s => CALENDAR_SHEET_CONDITION_LABELS.includes(s)))
                           const dr = skinDailyByDate[iso]
                           setCalSheetNote(String(dr?.note || ''))
                           setCalSheetRoutine(!!dr?.routine_completed)
@@ -2071,20 +2092,23 @@ AURAN이 내 피부 패턴을
                     <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.88)', marginBottom: 14 }}>이 날 기록</div>
                     <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>체크인 컨디션</div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-                      {homeCheckinSorted.map((t: any) => {
-                        const lab = `${t.emoji ?? ''}${t.label ?? ''}`
-                        const on = calSheetConditionStr === lab
+                      {CALENDAR_SHEET_CONDITION_LABELS.map(lab => {
+                        const on = calSheetConditionPick.includes(lab)
                         return (
                           <button
-                            key={String(t.id)}
+                            key={lab}
                             type="button"
-                            onClick={() => setCalSheetConditionStr(lab)}
+                            onClick={() =>
+                              setCalSheetConditionPick(prev =>
+                                prev.includes(lab) ? prev.filter(x => x !== lab) : [...prev, lab]
+                              )
+                            }
                             style={{
                               padding: '6px 10px',
                               borderRadius: 999,
-                              border: on ? '1px solid rgba(168, 130, 220, 0.65)' : '1px solid rgba(255,255,255,0.12)',
-                              background: on ? 'rgba(123, 94, 167, 0.35)' : 'rgba(255,255,255,0.04)',
-                              color: on ? '#e8d9ff' : 'rgba(255,255,255,0.75)',
+                              border: on ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.12)',
+                              background: on ? '#7B5EA7' : 'rgba(255,255,255,0.04)',
+                              color: on ? '#fff' : 'rgba(255,255,255,0.75)',
                               fontSize: 11,
                               fontWeight: 400,
                               cursor: 'pointer',
@@ -2215,54 +2239,28 @@ AURAN이 내 피부 패턴을
                         boxSizing: 'border-box',
                       }}
                     />
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>루틴 완료</span>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={calSheetRoutine}
-                        onClick={() => setCalSheetRoutine(v => !v)}
-                        style={{
-                          width: 44,
-                          height: 26,
-                          borderRadius: 999,
-                          border: 'none',
-                          background: calSheetRoutine ? '#7B5EA7' : 'rgba(255,255,255,0.15)',
-                          cursor: 'pointer',
-                          position: 'relative',
-                          padding: 0,
-                        }}
-                      >
-                        <span
-                          style={{
-                            position: 'absolute',
-                            top: 3,
-                            left: calSheetRoutine ? 22 : 3,
-                            width: 20,
-                            height: 20,
-                            borderRadius: 999,
-                            background: '#fff',
-                            transition: 'left 0.15s ease',
-                          }}
-                        />
-                      </button>
-                    </div>
                     <button
                       type="button"
                       onClick={async () => {
-                        if (!myUserId) return
+                        const { data: auth } = await supabase.auth.getUser()
+                        const uid = auth.user?.id || myUserId
+                        if (!uid) {
+                          setHomeToast('로그인 후 이용해 주세요')
+                          return
+                        }
                         const calc = calcHormoneBriefing(
                           { ...(hormoneCycle || {}), track: hormoneTrack },
                           new Date(`${calSheetIso}T12:00:00+09:00`)
                         )
                         const ids = skinRecList.slice(0, 16).map((p: any) => String(p.id)).filter(Boolean)
+                        const condJoined = calSheetConditionPick.join(' / ')
                         const { error: aErr } = await supabase.from('skin_cycle_analysis').upsert(
                           {
-                            auth_id: myUserId,
+                            auth_id: uid,
                             record_date: calSheetIso,
                             cycle_day: calc.cycleDay,
                             hormone_stage: calc.phase,
-                            checkin_condition: calSheetConditionStr,
+                            checkin_condition: condJoined,
                             recommended_products: ids,
                             updated_at: new Date().toISOString(),
                           } as any,
@@ -2274,7 +2272,7 @@ AURAN이 내 피부 패턴을
                         }
                         const { error: dErr } = await supabase.from('skin_cycle_daily').upsert(
                           {
-                            auth_id: myUserId,
+                            auth_id: uid,
                             record_date: calSheetIso,
                             note: calSheetNote.trim() || null,
                             routine_completed: calSheetRoutine,
@@ -2295,7 +2293,7 @@ AURAN이 내 피부 패턴을
                         const { data: ar } = await supabase
                           .from('skin_cycle_analysis')
                           .select('record_date,hormone_stage,checkin_condition')
-                          .eq('auth_id', myUserId)
+                          .eq('auth_id', uid)
                           .gte('record_date', yearStart)
                           .lte('record_date', yearEnd)
                           .order('record_date', { ascending: true })
@@ -2303,10 +2301,11 @@ AURAN이 내 피부 패턴을
                         const { data: dr } = await supabase
                           .from('skin_cycle_daily')
                           .select('record_date,note,routine_completed')
-                          .eq('auth_id', myUserId)
+                          .eq('auth_id', uid)
                           .gte('record_date', yearStart)
                           .lte('record_date', yearEnd)
                         setSkinDailyRows(dr || [])
+                        setCalSheetConditionStr(condJoined)
                         setHomeToast('저장했어요')
                         setCalSheetOpen(false)
                       }}
