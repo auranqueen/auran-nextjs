@@ -1,9 +1,10 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { NotificationPanel } from '@/components/notifications/NotificationPanel'
+import { useCart } from '@/context/CartContext'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
@@ -69,6 +70,8 @@ const FALLBACK_HISTORY = [
 export default function CustomerHomePage() {
   const router = useRouter()
   const supabase = createClient()
+  const cart = useCart()
+  const routineMoreRef = useRef<HTMLDivElement | null>(null)
 
   const [userName, setUserName] = useState('유미')
   const [selectedConcern, setSelectedConcern] = useState(0)
@@ -105,6 +108,43 @@ export default function CustomerHomePage() {
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
   const [homeContestBanner, setHomeContestBanner] = useState<any>(null)
   const [checkInTab, setCheckInTab] = useState<string | null>(null)
+  const [checkinOptions, setCheckinOptions] = useState<any[]>([])
+  const [routineSteps, setRoutineSteps] = useState<any[]>([])
+  const [hormoneMainLine, setHormoneMainLine] = useState('유미님, 지금 여포기 8일차예요 ✨ 황금기 시작이에요')
+  const [hormoneSubLine, setHormoneSubLine] = useState('오늘의 피부 사이클')
+  const [careBannerLine, setCareBannerLine] = useState('오늘은 미백앰플 집중투입 타이밍이에요 →')
+  const [routineExpanded, setRoutineExpanded] = useState(false)
+  const [routineMentorOpen, setRoutineMentorOpen] = useState(false)
+  const [routineStepPick, setRoutineStepPick] = useState<Record<string, boolean>>({})
+  const [homeToast, setHomeToast] = useState('')
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [homeEditMode, setHomeEditMode] = useState(false)
+  const [homeEditSheet, setHomeEditSheet] = useState<{
+    kind: 'checkin' | 'routine' | 'hormone_main' | 'hormone_sub' | 'care_banner' | 'product_card' | 'timesale' | 'notice_row'
+    id?: string
+    label: string
+    draft: string
+    draft2?: string
+    draft3?: string
+    draft4?: string
+    draftNum?: number
+    draftBool?: boolean
+    extra?: any
+  } | null>(null)
+  const [homeEditSaving, setHomeEditSaving] = useState(false)
+  const [sheetFields, setSheetFields] = useState({ d: '', d2: '', d3: '', d4: '', n: 0, b: true })
+
+  useEffect(() => {
+    if (!homeEditSheet) return
+    setSheetFields({
+      d: homeEditSheet.draft,
+      d2: homeEditSheet.draft2 ?? '',
+      d3: homeEditSheet.draft3 ?? '',
+      d4: homeEditSheet.draft4 ?? '',
+      n: homeEditSheet.draftNum ?? 0,
+      b: homeEditSheet.draftBool !== false,
+    })
+  }, [homeEditSheet])
 
   useEffect(() => {
     const supabase = createClient()
@@ -126,9 +166,40 @@ export default function CustomerHomePage() {
       if (data && data.length > 0) setConcerns(data)
     })
 
-    supabase.from('products').select('*').limit(8).then(({ data }) => {
-      if (data && data.length > 0) setProducts(data)
-    })
+    void (async () => {
+      try {
+        const { data: chk } = await supabase.from('checkin_options').select('*').eq('is_active', true).order('sort_order', { ascending: true })
+        if (chk && chk.length > 0) setCheckinOptions(chk)
+      } catch { /* 테이블 없음 등 */ }
+      try {
+        const { data: rst } = await supabase.from('routine_steps').select('*').eq('is_active', true).order('step_order', { ascending: true })
+        if (rst && rst.length > 0) setRoutineSteps(rst)
+      } catch { /* */ }
+      try {
+        const { data: skinUi } = await supabase.from('admin_settings').select('key,value,label').eq('category', 'home_skin_ui')
+        ;(skinUi || []).forEach((row: any) => {
+          if (row.key === 'hormone_main' && (row.label || row.value)) setHormoneMainLine(String(row.label || row.value))
+          if (row.key === 'hormone_sub' && (row.label || row.value)) setHormoneSubLine(String(row.label || row.value))
+          if (row.key === 'care_banner' && (row.label || row.value)) setCareBannerLine(String(row.label || row.value))
+        })
+      } catch { /* */ }
+      const selFull =
+        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, brands(name), categories(name)'
+      const selNoCat =
+        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, brands(name)'
+      let res: { error: unknown; data: any[] | null } = await supabase.from('products').select(selFull).eq('is_active', true).limit(80)
+      if (res.error) res = await supabase.from('products').select(selNoCat).eq('is_active', true).limit(80)
+      if (res.error || !res.data?.length) {
+        res = await supabase.from('products').select(selFull).limit(80)
+      }
+      if (res.error) res = await supabase.from('products').select(selNoCat).limit(80)
+      if (res.error || !res.data?.length) {
+        const fb = await supabase.from('products').select('*').limit(8)
+        if (fb.data && fb.data.length > 0) setProducts(fb.data)
+      } else if (res.data && res.data.length > 0) {
+        setProducts(res.data)
+      }
+    })()
 
     supabase.from('products').select('*').order('created_at', { ascending: false }).limit(6).then(({ data }) => {
       if (data && data.length > 0) setNewProducts(data)
@@ -157,6 +228,8 @@ export default function CustomerHomePage() {
             id: p.id,
             disc,
             orig,
+            timesale_ends_at: p.timesale_ends_at,
+            sale_price: sale,
             brand: p.brands?.name || null,
             product: {
               id: p.id,
@@ -334,6 +407,101 @@ export default function CustomerHomePage() {
   useEffect(() => {
     if (motivationIdx >= motivationCarousel.length) setMotivationIdx(0)
   }, [motivationCarousel.length, motivationIdx])
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user as any
+      const role = user?.app_metadata?.role ?? user?.raw_app_meta_data?.role ?? ''
+      setIsSuperAdmin(role === 'super_admin')
+    })
+  }, [supabase])
+
+  useEffect(() => {
+    if (checkinOptions.length > 0) {
+      const ids = checkinOptions.map((c: any) => String(c.id))
+      if (checkInTab == null || !ids.includes(String(checkInTab))) {
+        setCheckInTab(String(checkinOptions[0].id))
+      }
+    }
+  }, [checkinOptions, checkInTab])
+
+  useEffect(() => {
+    if (checkinOptions.length === 0 && checkInTab == null) setCheckInTab('heat')
+  }, [checkinOptions.length, checkInTab])
+
+  useEffect(() => {
+    if (!homeToast) return
+    const t = setTimeout(() => setHomeToast(''), 2400)
+    return () => clearTimeout(t)
+  }, [homeToast])
+
+  useEffect(() => {
+    const next: Record<string, boolean> = {}
+    routineSteps.forEach((s: any) => {
+      if (s?.id != null) next[String(s.id)] = true
+    })
+    setRoutineStepPick(next)
+  }, [routineSteps])
+
+  const checkinSorted = checkinOptions
+    .filter((r: any) => r.is_active !== false)
+    .sort((a: any, b: any) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
+  const displayCheckinTabs =
+    checkinSorted.length > 0
+      ? checkinSorted
+      : [
+          { id: 'heat', emoji: '🔥', label: '열감' },
+          { id: 'dry', emoji: '💧', label: '건조' },
+          { id: 'trouble', emoji: '😤', label: '트러블' },
+          { id: 'swell', emoji: '🌊', label: '붓기' },
+          { id: 'good', emoji: '✨', label: '좋아요' },
+        ]
+  const selectedCheckinOpt =
+    checkinSorted.length > 0
+      ? checkinSorted.find((c: any) => String(c.id) === String(checkInTab)) || checkinSorted[0]
+      : null
+  let skinRecPool: any[] = products.length > 0 ? [...products] : []
+  if (selectedCheckinOpt && skinRecPool.length > 0) {
+    const idsRaw =
+      selectedCheckinOpt.recommend_product_ids ??
+      selectedCheckinOpt.product_ids ??
+      selectedCheckinOpt.recommended_product_ids
+    let idList: string[] = []
+    if (Array.isArray(idsRaw)) idList = idsRaw.map((x: any) => String(x)).filter(Boolean)
+    else if (typeof idsRaw === 'string' && idsRaw.trim()) {
+      try {
+        const p = JSON.parse(idsRaw)
+        if (Array.isArray(p)) idList = p.map((x: any) => String(x)).filter(Boolean)
+      } catch { /* ignore */ }
+    }
+    if (idList.length > 0) {
+      const set = new Set(idList)
+      const filtered = skinRecPool.filter((p: any) => set.has(String(p.id)))
+      if (filtered.length > 0) skinRecPool = filtered
+    } else {
+      const lt = String(
+        selectedCheckinOpt.linked_tag ??
+          selectedCheckinOpt.connection_tag ??
+          selectedCheckinOpt.tag_link ??
+          ''
+      ).trim()
+      if (lt) {
+        const ll = lt.toLowerCase()
+        const filtered = skinRecPool.filter((p: any) => {
+          const tag = String(p.tag || '').toLowerCase()
+          const qm = Array.isArray(p.quiz_match) ? p.quiz_match.map((x: any) => String(x).toLowerCase()).join(' ') : ''
+          return tag.includes(ll) || qm.includes(ll)
+        })
+        if (filtered.length > 0) skinRecPool = filtered
+      }
+    }
+  }
+  const skinRecList = skinRecPool.length > 0 ? skinRecPool : productList
+  const productById: Record<string, any> = {}
+  products.forEach((p: any) => {
+    if (p?.id) productById[String(p.id)] = p
+  })
+  const showHomeEditChrome = isSuperAdmin && homeEditMode
 
   return (
     <div style={{
@@ -613,7 +781,29 @@ export default function CustomerHomePage() {
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', padding: '10px 4px' }}>공지사항이 없어요</div>
               ) : (
                 notices.map((n: any) => (
-                  <div key={n.id} style={{ padding: '10px 4px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                  <div
+                    key={n.id}
+                    onClick={() => {
+                      if (!showHomeEditChrome) return
+                      setHomeEditSheet({
+                        kind: 'notice_row',
+                        id: String(n.id),
+                        label: '공지 편집',
+                        draft: String(n.title ?? ''),
+                        draft2: String(n.body ?? n.content ?? ''),
+                        draft3: String(n.link_url ?? n.url ?? ''),
+                        draftBool: !!n.is_important,
+                        extra: n,
+                      })
+                    }}
+                    style={{
+                      padding: '10px 4px',
+                      borderBottom: '1px solid rgba(255,255,255,0.08)',
+                      cursor: showHomeEditChrome ? 'pointer' : undefined,
+                      outline: showHomeEditChrome ? '1px dashed rgba(123,94,167,0.35)' : undefined,
+                      borderRadius: 6,
+                    }}
+                  >
                     {n.is_important ? (
                       <div style={{ display: 'inline-block', background: '#7B5EA7', color: '#fff', borderRadius: 10, padding: '2px 8px', fontSize: 10, marginBottom: 6 }}>중요</div>
                     ) : null}
@@ -626,90 +816,6 @@ export default function CustomerHomePage() {
           </div>
         </>
       ) : null}
-
-      {/* ── 호르몬 브리핑 · 오늘 체크인 · 케어 액션 (더미 UI) ── */}
-      <div style={{ padding: '12px 16px 0' }}>
-        <div
-          style={{
-            borderRadius: 16,
-            padding: '16px 16px 14px',
-            background: 'linear-gradient(145deg, #1a0f28 0%, #251538 45%, #1e1430 100%)',
-            border: '1px solid rgba(123, 94, 167, 0.35)',
-            boxShadow: '0 8px 28px rgba(0,0,0,0.35)',
-          }}
-        >
-          <div style={{ fontSize: 10, color: 'rgba(196, 170, 230, 0.75)', marginBottom: 8, letterSpacing: '0.02em' }}>
-            오늘의 피부 사이클
-          </div>
-          <div style={{ fontSize: 15, fontWeight: 500, color: '#f3ecff', lineHeight: 1.55 }}>
-            유미님, 지금 여포기 8일차예요 ✨ 황금기 시작이에요 — 미백관리 지금이에요
-          </div>
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            flexWrap: 'nowrap',
-            gap: 8,
-            marginTop: 12,
-            overflowX: 'auto',
-            WebkitOverflowScrolling: 'touch',
-            paddingBottom: 4,
-            scrollbarWidth: 'none',
-          }}
-        >
-          {[
-            { id: 'heat', label: '🔥열감' },
-            { id: 'dry', label: '💧건조' },
-            { id: 'trouble', label: '😤트러블' },
-            { id: 'swell', label: '🌊붓기' },
-            { id: 'good', label: '✨좋아요' },
-          ].map(t => {
-            const on = checkInTab === t.id
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setCheckInTab(on ? null : t.id)}
-                style={{
-                  flexShrink: 0,
-                  padding: '8px 12px',
-                  borderRadius: 999,
-                  border: on ? '1px solid rgba(168, 130, 220, 0.65)' : '1px solid rgba(255,255,255,0.1)',
-                  background: on ? 'rgba(123, 94, 167, 0.35)' : 'rgba(255,255,255,0.04)',
-                  color: on ? '#e8d9ff' : 'rgba(255,255,255,0.75)',
-                  fontSize: 12,
-                  fontWeight: on ? 600 : 400,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {t.label}
-              </button>
-            )
-          })}
-        </div>
-
-        <a
-          href="#"
-          onClick={e => e.preventDefault()}
-          style={{
-            display: 'block',
-            marginTop: 12,
-            padding: '14px 16px',
-            borderRadius: 14,
-            textDecoration: 'none',
-            background: 'linear-gradient(90deg, rgba(201,169,110,0.22) 0%, rgba(201,169,110,0.12) 100%)',
-            border: '1px solid rgba(201,169,110,0.45)',
-            color: GOLD,
-            fontSize: 14,
-            fontWeight: 600,
-            boxShadow: '0 4px 18px rgba(201,169,110,0.12)',
-          }}
-        >
-          오늘은 미백앰플 집중투입 타이밍이에요 →
-        </a>
-      </div>
 
       {/* ── 인사말 ── */}
       <div style={{
@@ -766,52 +872,503 @@ export default function CustomerHomePage() {
         <span style={{ fontSize: '13px', color: TEXT_MUTED }}>›</span>
       </div>
 
+      {/* ── 호르몬 브리핑 · 오늘 체크인 · 케어 액션 (TODAY&apos;S SKIN 바로 아래) ── */}
+      <div style={{ padding: '12px 16px 0' }}>
+        <div
+          onClick={
+            showHomeEditChrome
+              ? e => {
+                  e.stopPropagation()
+                  setHomeEditSheet({
+                    kind: 'hormone_main',
+                    label: '호르몬 브리핑 (메인)',
+                    draft: hormoneMainLine,
+                    draft2: hormoneSubLine,
+                  })
+                }
+              : undefined
+          }
+          style={{
+            borderRadius: 16,
+            padding: '16px 16px 14px',
+            background: 'linear-gradient(145deg, #1a0f28 0%, #251538 45%, #1e1430 100%)',
+            border: showHomeEditChrome ? '1px dashed rgba(168, 130, 220, 0.55)' : '1px solid rgba(123, 94, 167, 0.35)',
+            boxShadow: '0 8px 28px rgba(0,0,0,0.35)',
+            cursor: showHomeEditChrome ? 'pointer' : undefined,
+            position: 'relative',
+          }}
+        >
+          {showHomeEditChrome ? (
+            <span style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 6px' }}>✏️</span>
+          ) : null}
+          <div
+            onClick={
+              showHomeEditChrome
+                ? e => {
+                    e.stopPropagation()
+                    setHomeEditSheet({
+                      kind: 'hormone_sub',
+                      label: '호르몬 브리핑 (서브)',
+                      draft: hormoneSubLine,
+                    })
+                  }
+                : undefined
+            }
+            style={{ fontSize: 10, color: 'rgba(196, 170, 230, 0.75)', marginBottom: 8, letterSpacing: '0.02em' }}
+          >
+            {hormoneSubLine}
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 500, color: '#f3ecff', lineHeight: 1.55 }}>{hormoneMainLine}</div>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'nowrap',
+            gap: 8,
+            marginTop: 12,
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            paddingBottom: 4,
+            scrollbarWidth: 'none',
+          }}
+        >
+          {displayCheckinTabs.map((t: any) => {
+            const tid = String(t.id)
+            const on = checkInTab === tid
+            const tabLabel = `${t.emoji ?? ''}${t.label ?? ''}`
+            return (
+              <div key={tid} style={{ position: 'relative', flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={() => setCheckInTab(on ? null : tid)}
+                  style={{
+                    flexShrink: 0,
+                    padding: '8px 12px',
+                    borderRadius: 999,
+                    border: on ? '1px solid rgba(168, 130, 220, 0.65)' : '1px solid rgba(255,255,255,0.1)',
+                    background: on ? 'rgba(123, 94, 167, 0.35)' : 'rgba(255,255,255,0.04)',
+                    color: on ? '#e8d9ff' : 'rgba(255,255,255,0.75)',
+                    fontSize: 12,
+                    fontWeight: on ? 600 : 400,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    outline: showHomeEditChrome && checkinSorted.length > 0 ? '1px dashed rgba(123,94,167,0.4)' : undefined,
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {tabLabel}
+                </button>
+                {showHomeEditChrome && checkinSorted.length > 0 ? (
+                  <button
+                    type="button"
+                    aria-label="체크인 편집"
+                    onClick={e => {
+                      e.stopPropagation()
+                      setHomeEditSheet({
+                        kind: 'checkin',
+                        id: String(t.id),
+                        label: '체크인 항목 편집',
+                        draft: String(t.emoji ?? ''),
+                        draft2: String(t.label ?? ''),
+                        draft3: String(t.linked_tag ?? t.connection_tag ?? t.tag_link ?? ''),
+                        draft4: String(t.recommend_copy ?? t.recommendation_ment ?? t.recommend_ment ?? ''),
+                        draftNum: Number(t.sort_order ?? 0),
+                        draftBool: t.is_active !== false,
+                        extra: t,
+                      })
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: -6,
+                      right: -4,
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      border: 'none',
+                      background: '#7B5EA7',
+                      color: '#fff',
+                      fontSize: 10,
+                      cursor: 'pointer',
+                      padding: 0,
+                      lineHeight: 1,
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    ✏️
+                  </button>
+                ) : null}
+              </div>
+            )
+          })}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            if (showHomeEditChrome) {
+              setHomeEditSheet({ kind: 'care_banner', label: '케어 액션 배너', draft: careBannerLine })
+              return
+            }
+            routineMoreRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          }}
+          style={{
+            display: 'block',
+            width: '100%',
+            marginTop: 12,
+            padding: '14px 16px',
+            borderRadius: 14,
+            textAlign: 'left',
+            background: 'linear-gradient(90deg, rgba(201,169,110,0.22) 0%, rgba(201,169,110,0.12) 100%)',
+            border: showHomeEditChrome ? '1px dashed rgba(201,169,110,0.65)' : '1px solid rgba(201,169,110,0.45)',
+            color: GOLD,
+            fontSize: 14,
+            fontWeight: 600,
+            boxShadow: '0 4px 18px rgba(201,169,110,0.12)',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          {careBannerLine}
+        </button>
+      </div>
+
       {/* ── 내 피부 맞춤 추천 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>내 피부 맞춤 추천</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>더보기 ›</span>
+          <span
+            role="button"
+            tabIndex={0}
+            onKeyDown={e => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                setRoutineExpanded(true)
+                setRoutineMentorOpen(true)
+                setTimeout(() => routineMoreRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
+              }
+            }}
+            onClick={() => {
+              setRoutineExpanded(true)
+              setRoutineMentorOpen(true)
+              setTimeout(() => routineMoreRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
+            }}
+            style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}
+          >
+            더보기 ›
+          </span>
         </div>
+        {selectedCheckinOpt && (selectedCheckinOpt.recommend_copy || selectedCheckinOpt.recommendation_ment || selectedCheckinOpt.recommend_ment) ? (
+          <div style={{ fontSize: 11, color: 'rgba(196,170,230,0.85)', marginBottom: 8, lineHeight: 1.5 }}>
+            {String(selectedCheckinOpt.recommend_copy || selectedCheckinOpt.recommendation_ment || selectedCheckinOpt.recommend_ment)}
+          </div>
+        ) : null}
       </div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
         {loading ? Array.from({ length: 4 }).map((_, i) => (
           <div key={i} style={{ minWidth: '130px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, height: '200px', animation: 'pulse 1.2s ease-in-out infinite', flexShrink: 0 }} />
-        )) : productList.slice(0, 4).map((p: any, i: number) => (
-          <div
-            key={i}
-            onClick={() => router.push(`/products/${p.id}`)}
-            style={{
-              minWidth: '130px', background: CARD_BG, border: CARD_BORDER,
-              borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0,
-            }}
-          >
-            <div style={{
-              width: 120,
-              height: 120,
-              margin: '0 auto',
-              overflow: 'hidden',
-              borderRadius: 12,
-              flexShrink: 0,
-              background: 'linear-gradient(135deg,#1a1510,#2a2015)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '34px', position: 'relative',
-            }}>
-              {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (p.icon || '🧴')}
-              {p.badge && (
-                <div style={{
-                  position: 'absolute', top: '5px', left: '5px',
-                  background: 'rgba(201,169,110,0.85)', color: BG,
-                  fontSize: '8px', padding: '2px 5px', borderRadius: '4px',
-                }}>{p.badge}</div>
-              )}
+        )) : skinRecList.slice(0, 4).map((p: any, i: number) => {
+          const thumb = p.storage_thumb_url || p.thumb_img
+          const brandName = p.brands?.name || p.brand
+          const catName = p.categories?.name || ''
+          const priceShow = p.is_timesale ? (p.sale_price ?? p.retail_price) : p.retail_price
+          return (
+            <div
+              key={p.id ?? i}
+              onClick={() => router.push(`/products/${p.id}`)}
+              style={{
+                minWidth: '130px', background: CARD_BG, border: CARD_BORDER,
+                borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0,
+              }}
+            >
+              <div style={{
+                width: 120,
+                height: 120,
+                margin: '0 auto',
+                overflow: 'hidden',
+                borderRadius: 12,
+                flexShrink: 0,
+                background: 'linear-gradient(135deg,#1a1510,#2a2015)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '34px', position: 'relative',
+              }}>
+                {thumb ? <img src={thumb} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (p.icon || '🧴')}
+                {p.badge && (
+                  <div style={{
+                    position: 'absolute', top: '5px', left: '5px',
+                    background: 'rgba(201,169,110,0.85)', color: BG,
+                    fontSize: '8px', padding: '2px 5px', borderRadius: '4px',
+                  }}>{p.badge}</div>
+                )}
+              </div>
+              <div style={{ padding: '8px 10px' }}>
+                <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.38)', marginBottom: 2 }}>
+                  {catName || p.tag || '맞춤'}
+                </div>
+                <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{brandName}</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '4px' }}>{p.name}</div>
+                <div
+                  onClick={e => {
+                    if (!showHomeEditChrome || !p.id) return
+                    e.stopPropagation()
+                    setHomeEditSheet({
+                      kind: 'product_card',
+                      id: String(p.id),
+                      label: '상품 가격·재고',
+                      draft: String(priceShow ?? ''),
+                      draft2: String(p.stock ?? ''),
+                      extra: p,
+                    })
+                  }}
+                  style={{
+                    fontSize: '12px',
+                    fontWeight: 400,
+                    outline: showHomeEditChrome ? '1px dashed rgba(123,94,167,0.45)' : undefined,
+                    borderRadius: 4,
+                  }}
+                >
+                  {(priceShow != null ? Number(priceShow).toLocaleString() : (p.price?.toLocaleString?.() ?? '0'))}원
+                </div>
+              </div>
             </div>
-            <div style={{ padding: '8px 10px' }}>
-              <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{p.brand}</div>
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '4px' }}>{p.name}</div>
-              <div style={{ fontSize: '12px', fontWeight: 400 }}>{(p.retail_price?.toLocaleString() ?? p.price?.toLocaleString())}원</div>
+          )
+        })}
+      </div>
+
+      <div ref={routineMoreRef} id="home-routine-more" style={{ padding: routineExpanded ? '12px 16px 0' : '0 16px', marginTop: routineExpanded ? 4 : 0 }}>
+        {routineExpanded ? (
+          <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: '14px 14px 16px' }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 10 }}>단계별 루틴</div>
+            {routineSteps.length === 0 ? (
+              <div style={{ fontSize: 11, color: TEXT_MUTED }}>등록된 루틴 단계가 없어요</div>
+            ) : (
+              routineSteps.map((step: any) => {
+                const sid = String(step.id ?? '')
+                const pid = step.product_id || step.representative_product_id
+                let rp = pid ? productById[String(pid)] : null
+                if (!rp && step.category_id) {
+                  rp = products.find((x: any) => String(x.category_id) === String(step.category_id)) || null
+                }
+                const stepTitle = step.step_name || step.title || step.name || '단계'
+                const thumb = rp ? (rp.storage_thumb_url || rp.thumb_img) : ''
+                const priceNum = rp ? Number(rp.is_timesale ? (rp.sale_price ?? rp.retail_price) : rp.retail_price) || 0 : 0
+                return (
+                  <div
+                    key={sid || stepTitle}
+                    style={{
+                      borderBottom: '1px solid rgba(255,255,255,0.06)',
+                      padding: '12px 0',
+                      display: 'flex',
+                      gap: 10,
+                      alignItems: 'flex-start',
+                    }}
+                  >
+                    <label style={{ display: 'flex', alignItems: 'center', paddingTop: 16, flexShrink: 0 }}>
+                      <input
+                        type="checkbox"
+                        checked={routineStepPick[sid] !== false}
+                        onChange={() =>
+                          setRoutineStepPick(prev => {
+                            const cur = prev[sid] !== false
+                            return { ...prev, [sid]: !cur }
+                          })
+                        }
+                      />
+                    </label>
+                    <div
+                      style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: 10,
+                        overflow: 'hidden',
+                        background: 'rgba(255,255,255,0.05)',
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 22,
+                      }}
+                    >
+                      {thumb ? <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🧴'}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 11, color: GOLD, marginBottom: 4 }}>{stepTitle}</div>
+                      {rp ? (
+                        <>
+                          <div style={{ fontSize: 12, color: '#fff', marginBottom: 4 }}>{rp.name}</div>
+                          <div style={{ fontSize: 11, color: TEXT_MUTED }}>{priceNum.toLocaleString()}원</div>
+                        </>
+                      ) : (
+                        <div style={{ fontSize: 11, color: TEXT_MUTED }}>대표 제품을 연결해 주세요</div>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
+                      {rp ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            cart.addToCart({
+                              product_id: String(rp.id),
+                              name: String(rp.name || ''),
+                              price: priceNum,
+                              thumb_img: String(thumb || ''),
+                              quantity: 1,
+                            })
+                            setHomeToast('장바구니에 담았어요')
+                          }}
+                          style={{
+                            padding: '6px 10px',
+                            borderRadius: 8,
+                            border: '1px solid rgba(123,94,167,0.35)',
+                            background: 'rgba(123,94,167,0.2)',
+                            color: '#e8d9ff',
+                            fontSize: 10,
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          담기
+                        </button>
+                      ) : null}
+                      {showHomeEditChrome ? (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setHomeEditSheet({
+                              kind: 'routine',
+                              id: sid,
+                              label: '루틴 단계',
+                              draft: String(stepTitle),
+                              draft2: String(step.description ?? ''),
+                              draft3: String(step.category_id ?? ''),
+                              draftBool: step.is_active !== false,
+                              extra: step,
+                            })
+                          }
+                          style={{
+                            padding: '4px 8px',
+                            fontSize: 9,
+                            borderRadius: 6,
+                            border: '1px dashed #7B5EA7',
+                            background: 'transparent',
+                            color: '#B09AD0',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          ✏️
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                )
+              })
+            )}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
+              <button
+                type="button"
+                onClick={() => {
+                  const lines: { rp: any; priceNum: number; thumb: string }[] = []
+                  routineSteps.forEach((step: any) => {
+                    if (!routineStepPick[String(step.id)]) return
+                    const pid = step.product_id || step.representative_product_id
+                    let rp = pid ? productById[String(pid)] : null
+                    if (!rp && step.category_id) {
+                      rp = products.find((x: any) => String(x.category_id) === String(step.category_id)) || null
+                    }
+                    if (!rp) return
+                    const thumb = rp.storage_thumb_url || rp.thumb_img || ''
+                    const priceNum = Number(rp.is_timesale ? (rp.sale_price ?? rp.retail_price) : rp.retail_price) || 0
+                    lines.push({ rp, priceNum, thumb: String(thumb) })
+                  })
+                  lines.forEach(({ rp, priceNum, thumb }) => {
+                    cart.addToCart({
+                      product_id: String(rp.id),
+                      name: String(rp.name || ''),
+                      price: priceNum,
+                      thumb_img: thumb,
+                      quantity: 1,
+                    })
+                  })
+                  setHomeToast(lines.length ? `선택 ${lines.length}개를 담았어요` : '담을 제품이 없어요')
+                }}
+                style={{
+                  padding: '12px',
+                  borderRadius: 10,
+                  border: `1px solid ${GOLD}`,
+                  background: 'rgba(201,169,110,0.12)',
+                  color: GOLD,
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                선택 담기
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  routineSteps.forEach((step: any) => {
+                    const pid = step.product_id || step.representative_product_id
+                    let rp = pid ? productById[String(pid)] : null
+                    if (!rp && step.category_id) {
+                      rp = products.find((x: any) => String(x.category_id) === String(step.category_id)) || null
+                    }
+                    if (!rp) return
+                    const thumb = rp.storage_thumb_url || rp.thumb_img || ''
+                    const priceNum = Number(rp.is_timesale ? (rp.sale_price ?? rp.retail_price) : rp.retail_price) || 0
+                    cart.addToCart({
+                      product_id: String(rp.id),
+                      name: String(rp.name || ''),
+                      price: priceNum,
+                      thumb_img: String(thumb || ''),
+                      quantity: 1,
+                    })
+                  })
+                  setHomeToast('루틴 제품을 한번에 담았어요')
+                }}
+                style={{
+                  padding: '12px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: '#7B5EA7',
+                  color: '#fff',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                한번에 담기
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const first = routineSteps[0]
+                  if (!first) return
+                  const pid = first.product_id || first.representative_product_id
+                  let rp = pid ? productById[String(pid)] : null
+                  if (!rp && first.category_id) {
+                    rp = products.find((x: any) => String(x.category_id) === String(first.category_id)) || null
+                  }
+                  if (rp?.id) router.push(`/products/${rp.id}`)
+                  else setHomeToast('바로구매할 제품이 없어요')
+                }}
+                style={{
+                  padding: '12px',
+                  borderRadius: 10,
+                  border: `1px solid rgba(255,255,255,0.12)`,
+                  background: 'rgba(255,255,255,0.06)',
+                  color: '#fff',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                바로구매
+              </button>
             </div>
           </div>
-        ))}
+        ) : null}
       </div>
 
       {/* ── 4대 기능 그리드 ── */}
@@ -1256,11 +1813,33 @@ export default function CustomerHomePage() {
                     fontSize: '28px', flexShrink: 0, position: 'relative',
                   }}>
                     {(item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (item.icon || '🧴'))}
-                    <div style={{
-                      position: 'absolute', top: '-4px', right: '-4px',
-                      background: '#E04030', borderRadius: '20px', padding: '2px 6px',
-                      fontSize: '9px', color: '#fff', border: `1.5px solid ${BG}`,
-                    }}>-{item.disc}%</div>
+                    <div
+                      onClick={e => {
+                        if (!showHomeEditChrome) return
+                        e.stopPropagation()
+                        const raw = item.timesale_ends_at
+                        const iso =
+                          raw && !Number.isNaN(new Date(raw).getTime())
+                            ? new Date(raw).toISOString().slice(0, 16)
+                            : new Date(Date.now() + 86400000).toISOString().slice(0, 16)
+                        setHomeEditSheet({
+                          kind: 'timesale',
+                          id: String(item.id),
+                          label: '타임세일 (할인율·마감)',
+                          draft: String(item.disc ?? 0),
+                          draft2: iso,
+                          draftNum: i,
+                          extra: item,
+                        })
+                      }}
+                      style={{
+                        position: 'absolute', top: '-4px', right: '-4px',
+                        background: '#E04030', borderRadius: '20px', padding: '2px 6px',
+                        fontSize: '9px', color: '#fff', border: `1.5px solid ${BG}`,
+                        cursor: showHomeEditChrome ? 'pointer' : undefined,
+                        outline: showHomeEditChrome ? '1px dashed rgba(255,255,255,0.5)' : undefined,
+                      }}
+                    >-{item.disc}%</div>
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>
@@ -1517,6 +2096,580 @@ export default function CustomerHomePage() {
           </div>
         </div>
       </div>
+
+      {routineMentorOpen ? (
+        <>
+          <div
+            onClick={() => setRoutineMentorOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 120 }}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              left: 20,
+              right: 20,
+              top: '20%',
+              maxWidth: 350,
+              margin: '0 auto',
+              background: '#1f1a26',
+              border: '1px solid rgba(123,94,167,0.35)',
+              borderRadius: 16,
+              padding: 18,
+              zIndex: 121,
+              maxHeight: '56vh',
+              overflowY: 'auto',
+            }}
+          >
+            <div style={{ fontSize: 14, color: '#fff', marginBottom: 10 }}>오늘의 루틴 추천</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.78)', whiteSpace: 'pre-wrap', lineHeight: 1.65 }}>
+              {routineSteps.map((s: any) => String(s.description || '').trim()).filter(Boolean).join('\n\n') ||
+                '루틴 단계에 설명을 등록하면 이곳에 멘트가 모여요.'}
+            </div>
+            <button
+              type="button"
+              onClick={() => setRoutineMentorOpen(false)}
+              style={{
+                marginTop: 14,
+                width: '100%',
+                padding: 12,
+                borderRadius: 10,
+                border: 'none',
+                background: '#7B5EA7',
+                color: '#fff',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                fontSize: 13,
+              }}
+            >
+              확인
+            </button>
+          </div>
+        </>
+      ) : null}
+
+      {homeEditSheet ? (
+        <>
+          <div
+            onClick={() => !homeEditSaving && setHomeEditSheet(null)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 130 }}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              maxWidth: 390,
+              margin: '0 auto',
+              background: '#1a1610',
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              padding: 20,
+              zIndex: 131,
+              maxHeight: '88vh',
+              overflowY: 'auto',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontSize: 15, color: '#fff' }}>{homeEditSheet.label}</div>
+              <button
+                type="button"
+                disabled={homeEditSaving}
+                onClick={() => setHomeEditSheet(null)}
+                style={{ border: 'none', background: 'none', color: '#888', fontSize: 20, cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+            {homeEditSheet.kind === 'checkin' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>이모지</label>
+                <input
+                  value={sheetFields.d}
+                  onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                />
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>라벨</label>
+                <input
+                  value={sheetFields.d2}
+                  onChange={e => setSheetFields(s => ({ ...s, d2: e.target.value }))}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                />
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>연결 태그</label>
+                <input
+                  value={sheetFields.d3}
+                  onChange={e => setSheetFields(s => ({ ...s, d3: e.target.value }))}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                />
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>추천 멘트</label>
+                <textarea
+                  value={sheetFields.d4}
+                  onChange={e => setSheetFields(s => ({ ...s, d4: e.target.value }))}
+                  rows={3}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff', resize: 'vertical' }}
+                />
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>순서</label>
+                <input
+                  type="number"
+                  value={sheetFields.n}
+                  onChange={e => setSheetFields(s => ({ ...s, n: Number(e.target.value) }))}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                />
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#ccc' }}>
+                  <input
+                    type="checkbox"
+                    checked={sheetFields.b}
+                    onChange={e => setSheetFields(s => ({ ...s, b: e.target.checked }))}
+                  />
+                  활성
+                </label>
+              </div>
+            ) : null}
+            {homeEditSheet.kind === 'routine' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>단계명</label>
+                <input
+                  value={sheetFields.d}
+                  onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                />
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>설명</label>
+                <textarea
+                  value={sheetFields.d2}
+                  onChange={e => setSheetFields(s => ({ ...s, d2: e.target.value }))}
+                  rows={3}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff', resize: 'vertical' }}
+                />
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>연결 카테고리 UUID</label>
+                <input
+                  value={sheetFields.d3}
+                  onChange={e => setSheetFields(s => ({ ...s, d3: e.target.value }))}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                />
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#ccc' }}>
+                  <input
+                    type="checkbox"
+                    checked={sheetFields.b}
+                    onChange={e => setSheetFields(s => ({ ...s, b: e.target.checked }))}
+                  />
+                  활성
+                </label>
+              </div>
+            ) : null}
+            {(homeEditSheet.kind === 'hormone_main' || homeEditSheet.kind === 'hormone_sub') ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {homeEditSheet.kind === 'hormone_main' ? (
+                  <>
+                    <label style={{ fontSize: 11, color: TEXT_MUTED }}>메인 문구</label>
+                    <textarea
+                      value={sheetFields.d}
+                      onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
+                      rows={3}
+                      style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff', resize: 'vertical' }}
+                    />
+                    <label style={{ fontSize: 11, color: TEXT_MUTED }}>서브 (오늘의 피부 사이클)</label>
+                    <input
+                      value={sheetFields.d2}
+                      onChange={e => setSheetFields(s => ({ ...s, d2: e.target.value }))}
+                      style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                    />
+                  </>
+                ) : (
+                  <>
+                    <label style={{ fontSize: 11, color: TEXT_MUTED }}>서브 문구</label>
+                    <input
+                      value={sheetFields.d}
+                      onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
+                      style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                    />
+                  </>
+                )}
+              </div>
+            ) : null}
+            {homeEditSheet.kind === 'care_banner' ? (
+              <textarea
+                value={sheetFields.d}
+                onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
+                rows={3}
+                style={{ width: '100%', padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff', resize: 'vertical' }}
+              />
+            ) : null}
+            {homeEditSheet.kind === 'product_card' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>판매가(원)</label>
+                <input
+                  type="number"
+                  value={sheetFields.d}
+                  onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                />
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>재고</label>
+                <input
+                  type="number"
+                  value={sheetFields.d2}
+                  onChange={e => setSheetFields(s => ({ ...s, d2: e.target.value }))}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                />
+              </div>
+            ) : null}
+            {homeEditSheet.kind === 'timesale' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>할인율 (%)</label>
+                <input
+                  type="number"
+                  value={sheetFields.d}
+                  onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                />
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>마감 (현지시간)</label>
+                <input
+                  type="datetime-local"
+                  value={sheetFields.d2}
+                  onChange={e => setSheetFields(s => ({ ...s, d2: e.target.value }))}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                />
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>노출 순서 (0=먼저)</label>
+                <input
+                  type="number"
+                  value={sheetFields.n}
+                  onChange={e => setSheetFields(s => ({ ...s, n: Number(e.target.value) }))}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                />
+              </div>
+            ) : null}
+            {homeEditSheet.kind === 'notice_row' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>제목</label>
+                <input
+                  value={sheetFields.d}
+                  onChange={e => setSheetFields(s => ({ ...s, d: e.target.value }))}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                />
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>본문</label>
+                <textarea
+                  value={sheetFields.d2}
+                  onChange={e => setSheetFields(s => ({ ...s, d2: e.target.value }))}
+                  rows={4}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff', resize: 'vertical' }}
+                />
+                <label style={{ fontSize: 11, color: TEXT_MUTED }}>링크 URL</label>
+                <input
+                  value={sheetFields.d3}
+                  onChange={e => setSheetFields(s => ({ ...s, d3: e.target.value }))}
+                  style={{ padding: 10, borderRadius: 8, border: '1px solid #333', background: '#0d0b09', color: '#fff' }}
+                />
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#ccc' }}>
+                  <input
+                    type="checkbox"
+                    checked={sheetFields.b}
+                    onChange={e => setSheetFields(s => ({ ...s, b: e.target.checked }))}
+                  />
+                  중요 공지
+                </label>
+              </div>
+            ) : null}
+            <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+              <button
+                type="button"
+                disabled={homeEditSaving}
+                onClick={() => setHomeEditSheet(null)}
+                style={{
+                  flex: 1,
+                  padding: 13,
+                  borderRadius: 10,
+                  border: '1px solid #444',
+                  background: 'transparent',
+                  color: '#aaa',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={homeEditSaving}
+                onClick={() => {
+                  void (async () => {
+                    if (!homeEditSheet) return
+                    setHomeEditSaving(true)
+                    try {
+                      const k = homeEditSheet.kind
+                      if (k === 'checkin' && homeEditSheet.id) {
+                        let err = (
+                          await supabase
+                            .from('checkin_options')
+                            .update({
+                              emoji: sheetFields.d,
+                              label: sheetFields.d2,
+                              linked_tag: sheetFields.d3,
+                              recommend_copy: sheetFields.d4,
+                              sort_order: sheetFields.n,
+                              is_active: sheetFields.b,
+                            })
+                            .eq('id', homeEditSheet.id)
+                        ).error
+                        if (err) {
+                          err = (
+                            await supabase
+                              .from('checkin_options')
+                              .update({
+                                emoji: sheetFields.d,
+                                label: sheetFields.d2,
+                                linked_tag: sheetFields.d3,
+                                recommendation_ment: sheetFields.d4,
+                                sort_order: sheetFields.n,
+                                is_active: sheetFields.b,
+                              })
+                              .eq('id', homeEditSheet.id)
+                          ).error
+                        }
+                        if (err) throw err
+                        const { data: chk } = await supabase
+                          .from('checkin_options')
+                          .select('*')
+                          .eq('is_active', true)
+                          .order('sort_order', { ascending: true })
+                        setCheckinOptions(chk || [])
+                      } else if (k === 'routine' && homeEditSheet.id) {
+                        let err = (
+                          await supabase
+                            .from('routine_steps')
+                            .update({
+                              step_name: sheetFields.d,
+                              description: sheetFields.d2,
+                              category_id: sheetFields.d3.trim() || null,
+                              is_active: sheetFields.b,
+                            })
+                            .eq('id', homeEditSheet.id)
+                        ).error
+                        if (err) {
+                          err = (
+                            await supabase
+                              .from('routine_steps')
+                              .update({
+                                title: sheetFields.d,
+                                description: sheetFields.d2,
+                                category_id: sheetFields.d3.trim() || null,
+                                is_active: sheetFields.b,
+                              })
+                              .eq('id', homeEditSheet.id)
+                          ).error
+                        }
+                        if (err) throw err
+                        const { data: rst } = await supabase
+                          .from('routine_steps')
+                          .select('*')
+                          .eq('is_active', true)
+                          .order('step_order', { ascending: true })
+                        setRoutineSteps(rst || [])
+                      } else if (k === 'hormone_main') {
+                        const up = async (key: string, val: string) =>
+                          supabase.from('admin_settings').upsert(
+                            { category: 'home_skin_ui', key, value: val, label: val, is_active: true, sort_order: 0 },
+                            { onConflict: 'category,key' }
+                          )
+                        let e = (await up('hormone_main', sheetFields.d)).error
+                        if (e) throw e
+                        e = (await up('hormone_sub', sheetFields.d2)).error
+                        if (e) throw e
+                        setHormoneMainLine(sheetFields.d)
+                        setHormoneSubLine(sheetFields.d2)
+                      } else if (k === 'hormone_sub') {
+                        const { error: e } = await supabase.from('admin_settings').upsert(
+                          { category: 'home_skin_ui', key: 'hormone_sub', value: sheetFields.d, label: sheetFields.d, is_active: true, sort_order: 0 },
+                          { onConflict: 'category,key' }
+                        )
+                        if (e) throw e
+                        setHormoneSubLine(sheetFields.d)
+                      } else if (k === 'care_banner') {
+                        const { error: e } = await supabase.from('admin_settings').upsert(
+                          { category: 'home_skin_ui', key: 'care_banner', value: sheetFields.d, label: sheetFields.d, is_active: true, sort_order: 1 },
+                          { onConflict: 'category,key' }
+                        )
+                        if (e) throw e
+                        setCareBannerLine(sheetFields.d)
+                      } else if (k === 'product_card' && homeEditSheet.id) {
+                        const { error: e } = await supabase
+                          .from('products')
+                          .update({
+                            retail_price: Math.max(0, Math.floor(Number(sheetFields.d) || 0)),
+                            stock: Math.max(0, Math.floor(Number(sheetFields.d2) || 0)),
+                          })
+                          .eq('id', homeEditSheet.id)
+                        if (e) throw e
+                        const sel =
+                          'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, brands(name), categories(name)'
+                        const selNoCat =
+                          'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, brands(name)'
+                        let res: { error: unknown; data: any[] | null } = await supabase.from('products').select(sel).eq('is_active', true).limit(80)
+                        if (res.error) res = await supabase.from('products').select(selNoCat).eq('is_active', true).limit(80)
+                        if (res.error || !res.data?.length) {
+                          res = await supabase.from('products').select(sel).limit(80)
+                        }
+                        if (res.error) res = await supabase.from('products').select(selNoCat).limit(80)
+                        if (res.data) setProducts(res.data)
+                      } else if (k === 'timesale' && homeEditSheet.id) {
+                        const orig = Number(homeEditSheet.extra?.orig ?? 0)
+                        const discPct = Math.min(95, Math.max(0, Math.floor(Number(sheetFields.d) || 0)))
+                        const sale = orig > 0 ? Math.max(0, Math.round(orig * (1 - discPct / 100))) : 0
+                        const endMs = new Date(sheetFields.d2).getTime()
+                        const endsIso = Number.isFinite(endMs) ? new Date(endMs).toISOString() : new Date(Date.now() + 86400000).toISOString()
+                        const { error: e } = await supabase
+                          .from('products')
+                          .update({
+                            sale_price: sale,
+                            timesale_ends_at: endsIso,
+                            is_timesale: true,
+                          })
+                          .eq('id', homeEditSheet.id)
+                        if (e) throw e
+                        supabase
+                          .from('products')
+                          .select('id, name, brand_id, retail_price, sale_price, thumb_img, storage_thumb_url, timesale_ends_at, brands(name)')
+                          .eq('is_timesale', true)
+                          .gt('timesale_ends_at', new Date().toISOString())
+                          .order('timesale_ends_at', { ascending: true })
+                          .limit(3)
+                          .then(({ data }) => {
+                            if (!data || data.length === 0) return
+                            const mapped = data.map((p: any) => {
+                              const o = Number(p.retail_price ?? 0)
+                              const s = Number(p.sale_price ?? 0)
+                              const d = o > 0 && s >= 0 ? Math.round(((o - s) / o) * 100) : 0
+                              return {
+                                id: p.id,
+                                disc: d,
+                                orig: o,
+                                timesale_ends_at: p.timesale_ends_at,
+                                sale_price: s,
+                                brand: p.brands?.name || null,
+                                product: {
+                                  id: p.id,
+                                  name: p.name,
+                                  retail_price: s,
+                                  thumb_img: p.storage_thumb_url || p.thumb_img || null,
+                                  brand: p.brands?.name || null,
+                                },
+                              }
+                            })
+                            setTimeSales(mapped)
+                            setTimers(
+                              mapped.map((it: any) => {
+                                const rawEnd = data.find((x: any) => x.id === it.id)?.timesale_ends_at
+                                const em = rawEnd ? new Date(rawEnd).getTime() : 0
+                                const diffMs = Math.max(0, em - Date.now())
+                                const h = Math.floor(diffMs / 3600000)
+                                const m = Math.floor((diffMs % 3600000) / 60000)
+                                const s = Math.floor((diffMs % 60000) / 1000)
+                                return { h, m, s }
+                              })
+                            )
+                          })
+                      } else if (k === 'notice_row' && homeEditSheet.id) {
+                        const { error: e } = await supabase
+                          .from('notices')
+                          .update({
+                            title: sheetFields.d,
+                            body: sheetFields.d2,
+                            link_url: sheetFields.d3.trim() || null,
+                            is_important: sheetFields.b,
+                          })
+                          .eq('id', homeEditSheet.id)
+                        if (e) {
+                          const e2 = await supabase
+                            .from('notices')
+                            .update({
+                              title: sheetFields.d,
+                              content: sheetFields.d2,
+                              url: sheetFields.d3.trim() || null,
+                              is_important: sheetFields.b,
+                            })
+                            .eq('id', homeEditSheet.id)
+                          if (e2.error) throw e2.error
+                        }
+                        const { data: noticeRows } = await supabase.from('notices').select('*').order('created_at', { ascending: false }).limit(20)
+                        setNotices(noticeRows || [])
+                      }
+                      setHomeEditSheet(null)
+                      setHomeToast('저장했어요')
+                    } catch (err: any) {
+                      setHomeToast(err?.message || '저장에 실패했어요')
+                    } finally {
+                      setHomeEditSaving(false)
+                    }
+                  })()
+                }}
+                style={{
+                  flex: 1,
+                  padding: 13,
+                  borderRadius: 10,
+                  border: 'none',
+                  background: '#7B5EA7',
+                  color: '#fff',
+                  cursor: homeEditSaving ? 'default' : 'pointer',
+                  fontFamily: 'inherit',
+                  opacity: homeEditSaving ? 0.75 : 1,
+                }}
+              >
+                {homeEditSaving ? '저장 중...' : '적용 · 저장'}
+              </button>
+            </div>
+          </div>
+        </>
+      ) : null}
+
+      {homeToast ? (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 96,
+            left: 16,
+            right: 16,
+            maxWidth: 360,
+            margin: '0 auto',
+            padding: '12px 14px',
+            borderRadius: 12,
+            background: 'rgba(30,26,20,0.96)',
+            border: '1px solid rgba(201,169,110,0.35)',
+            color: GOLD,
+            fontSize: 13,
+            textAlign: 'center',
+            zIndex: 140,
+          }}
+        >
+          {homeToast}
+        </div>
+      ) : null}
+
+      {isSuperAdmin ? (
+        <button
+          type="button"
+          onClick={() => setHomeEditMode(v => !v)}
+          style={{
+            position: 'fixed',
+            right: 16,
+            bottom: 88,
+            width: 52,
+            height: 52,
+            borderRadius: '50%',
+            background: '#7B5EA7',
+            border: 'none',
+            color: '#fff',
+            fontSize: 20,
+            cursor: 'pointer',
+            zIndex: 90,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontFamily: 'inherit',
+            padding: 0,
+            lineHeight: 1,
+          }}
+        >
+          {homeEditMode ? '✕' : '✏️'}
+        </button>
+      ) : null}
 
       {/* ── 푸터 ── */}
       <div style={{ margin: '20px 16px 0', padding: '20px 0', borderTop: '1px solid rgba(255,255,255,0.06)' }}>

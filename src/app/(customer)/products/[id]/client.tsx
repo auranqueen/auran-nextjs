@@ -49,6 +49,8 @@ interface Product {
   skin_concerns?: string[] | null
   unit_price?: number | string | null
   unit_type?: string | null
+  category_id?: string | null
+  tag?: string | null
 }
 
 export default function ProductDetailClient({ product }: { product: Product }) {
@@ -82,10 +84,17 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [aiRecommendLine, setAiRecommendLine] = useState<string | null>(null)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
-  const [editingField, setEditingField] = useState<{ field: string; label: string; currentValue: string } | null>(null)
+  const [editingField, setEditingField] = useState<{
+    field: string
+    label: string
+    currentValue: string
+    currentValue2?: string
+  } | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState('')
+  const [editDraft2, setEditDraft2] = useState('')
+  const [saveToast, setSaveToast] = useState('')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [thumbPreviewUrl, setThumbPreviewUrl] = useState('')
   const thumbFileInputRef = useRef<HTMLInputElement | null>(null)
@@ -282,9 +291,16 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   useEffect(() => {
     if (editingField) {
       setEditDraft(editingField.currentValue)
+      setEditDraft2(editingField.currentValue2 ?? '')
       setEditError(null)
     }
   }, [editingField])
+
+  useEffect(() => {
+    if (!saveToast) return
+    const t = setTimeout(() => setSaveToast(''), 2200)
+    return () => clearTimeout(t)
+  }, [saveToast])
 
   const brand = product.brands?.name || 'AURAN'
   const name = product.name ?? '제품명'
@@ -301,6 +317,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const matchPct = product.match_pct ?? ''
   const hasVideo = Boolean(String(product.video_url || '').trim()) || (product.has_video ?? false)
   const tags = product.tags ?? []
+  const tagLine = String((product as any).tag || '').trim() || (tags.length ? tags.join(', ') : '')
   const keyIngredientsText = String(product.key_ingredients ?? '').trim()
   const clinicalResultText = String(product.clinical_result ?? '').trim()
   const certificationLines = String(product.certifications ?? '').split('\n').map(s => s.trim()).filter(Boolean)
@@ -526,13 +543,110 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           <div style={{ fontSize: 28, color: GOLD }}>{hasValidPrice ? `${price.toLocaleString()}원` : '가격문의'}</div>
           {discount > 0 && <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{origPrice.toLocaleString()}원</div>}
         </div>
-        {String(product.unit_type || '').trim() &&
-        Number.isFinite(Number(product.unit_price)) &&
-        Number(product.unit_price) > 0 ? (
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 10 }}>
-            {String(product.unit_type).trim()} {Number(product.unit_price).toLocaleString()}원
+        {(String(product.unit_type || '').trim() &&
+          Number.isFinite(Number(product.unit_price)) &&
+          Number(product.unit_price) > 0) ||
+        showEditChrome ? (
+          <div
+            onClick={
+              isEditMode
+                ? e => {
+                    e.stopPropagation()
+                    setEditingField({
+                      field: 'unit_price_pair',
+                      label: '단위타입 · 단위가격',
+                      currentValue: String(product.unit_type ?? '').trim(),
+                      currentValue2: String(product.unit_price ?? ''),
+                    })
+                  }
+                : undefined
+            }
+            style={{
+              position: showEditChrome ? 'relative' : undefined,
+              fontSize: 11,
+              color: 'rgba(255,255,255,0.45)',
+              marginBottom: 10,
+              outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+              outlineOffset: showEditChrome ? 2 : undefined,
+              borderRadius: showEditChrome ? 4 : undefined,
+              cursor: isEditMode ? 'pointer' : undefined,
+            }}
+          >
+            {showEditChrome ? (
+              <span style={{ position: 'absolute', top: 0, right: 0, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
+            ) : null}
+            {String(product.unit_type || '').trim() &&
+            Number.isFinite(Number(product.unit_price)) &&
+            Number(product.unit_price) > 0 ? (
+              <>
+                {String(product.unit_type).trim()} {Number(product.unit_price).toLocaleString()}원
+              </>
+            ) : (
+              <span style={{ color: '#666' }}>단위가격 (편집)</span>
+            )}
           </div>
         ) : null}
+        {(product.category_id || showEditChrome) && (
+          <div
+            onClick={
+              isEditMode
+                ? e => {
+                    e.stopPropagation()
+                    setEditingField({
+                      field: 'category_id',
+                      label: '카테고리 (UUID)',
+                      currentValue: String(product.category_id ?? ''),
+                    })
+                  }
+                : undefined
+            }
+            style={{
+              position: showEditChrome ? 'relative' : undefined,
+              fontSize: 10,
+              color: 'rgba(255,255,255,0.38)',
+              marginBottom: 8,
+              outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+              outlineOffset: showEditChrome ? 2 : undefined,
+              cursor: isEditMode ? 'pointer' : undefined,
+            }}
+          >
+            {showEditChrome ? (
+              <span style={{ position: 'absolute', top: -2, right: 0, zIndex: 2, fontSize: 9, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '1px 4px', lineHeight: 1 }}>✏️</span>
+            ) : null}
+            카테고리 ID: {product.category_id || '—'}
+          </div>
+        )}
+        {(tagLine || showEditChrome) && (
+          <div
+            onClick={
+              isEditMode
+                ? e => {
+                    e.stopPropagation()
+                    setEditingField({
+                      field: 'tag',
+                      label: '태그 · 키워드',
+                      currentValue: tagLine,
+                    })
+                  }
+                : undefined
+            }
+            style={{
+              position: showEditChrome ? 'relative' : undefined,
+              fontSize: 10,
+              color: 'rgba(201,169,110,0.55)',
+              marginBottom: 10,
+              lineHeight: 1.5,
+              outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+              outlineOffset: showEditChrome ? 2 : undefined,
+              cursor: isEditMode ? 'pointer' : undefined,
+            }}
+          >
+            {showEditChrome ? (
+              <span style={{ position: 'absolute', top: -2, right: 0, zIndex: 2, fontSize: 9, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '1px 4px', lineHeight: 1 }}>✏️</span>
+            ) : null}
+            {tagLine || '태그 (편집)'}
+          </div>
+        )}
         {hasValidPrice ? (
           <div style={{ fontSize: 11, color: GOLD, marginBottom: 10 }}>이 상품 구매시 {expectedPurchasePts.toLocaleString()}P 적립</div>
         ) : null}
@@ -1002,6 +1116,87 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 ) : null}
               </div>
             ) : null}
+            {editingField.field === 'unit_price_pair' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>단위 타입</div>
+                  <input
+                    value={editDraft}
+                    onChange={e => setEditDraft(e.target.value)}
+                    placeholder="예: ml당"
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: 10,
+                      background: '#0d0b09',
+                      color: '#e8e4dc',
+                      border: '1px solid #2a2520',
+                      borderRadius: 10,
+                      fontSize: 13,
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>단위 가격</div>
+                  <input
+                    type="number"
+                    value={editDraft2}
+                    onChange={e => setEditDraft2(e.target.value)}
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      padding: 10,
+                      background: '#0d0b09',
+                      color: '#e8e4dc',
+                      border: '1px solid #2a2520',
+                      borderRadius: 10,
+                      fontSize: 13,
+                      fontFamily: 'inherit',
+                    }}
+                  />
+                </div>
+              </div>
+            ) : null}
+            {editingField.field === 'category_id' ? (
+              <input
+                value={editDraft}
+                onChange={e => setEditDraft(e.target.value)}
+                placeholder="카테고리 UUID"
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  padding: 10,
+                  background: '#0d0b09',
+                  color: '#e8e4dc',
+                  border: '1px solid #2a2520',
+                  borderRadius: 10,
+                  fontSize: 13,
+                  fontFamily: 'inherit',
+                }}
+              />
+            ) : null}
+            {editingField.field === 'tag' ? (
+              <textarea
+                value={editDraft}
+                onChange={e => setEditDraft(e.target.value)}
+                rows={3}
+                placeholder="쉼표로 구분하거나 한 줄로 입력"
+                style={{
+                  width: '100%',
+                  minHeight: 80,
+                  background: '#0d0b09',
+                  color: '#e8e4dc',
+                  border: '1px solid #2a2520',
+                  borderRadius: 10,
+                  padding: 10,
+                  fontSize: 13,
+                  fontFamily: 'inherit',
+                  resize: 'vertical' as const,
+                  boxSizing: 'border-box',
+                }}
+              />
+            ) : null}
             <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
               <button
                 type="button"
@@ -1053,14 +1248,40 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                       } else {
                         value = editDraft
                       }
-                      const { error } = await supabase.from('products').update({ [editingField.field]: value }).eq('id', product.id)
-                      if (error) {
-                        setEditError(error.message || '저장 실패')
+                      let saveError: { message?: string } | null = null
+                      if (editingField.field === 'unit_price_pair') {
+                        const r = await supabase
+                          .from('products')
+                          .update({
+                            unit_type: editDraft.trim() || null,
+                            unit_price: Math.max(0, Number(editDraft2) || 0),
+                          })
+                          .eq('id', product.id)
+                        saveError = r.error
+                      } else if (editingField.field === 'category_id') {
+                        const r = await supabase
+                          .from('products')
+                          .update({ category_id: editDraft.trim() || null })
+                          .eq('id', product.id)
+                        saveError = r.error
+                      } else if (editingField.field === 'tag') {
+                        const r = await supabase
+                          .from('products')
+                          .update({ tag: editDraft.trim() || null })
+                          .eq('id', product.id)
+                        saveError = r.error
+                      } else {
+                        const r = await supabase.from('products').update({ [editingField.field]: value }).eq('id', product.id)
+                        saveError = r.error
+                      }
+                      if (saveError) {
+                        setEditError(saveError.message || '저장 실패')
                         setIsSaving(false)
                         return
                       }
                       setEditingField(null)
                       setIsSaving(false)
+                      setSaveToast('저장했어요')
                       router.refresh()
                     } catch (e: any) {
                       setEditError(e?.message || '저장 실패')
@@ -1086,6 +1307,30 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             </div>
           </div>
         </>
+      ) : null}
+
+      {saveToast ? (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 200,
+            left: 16,
+            right: 16,
+            maxWidth: 400,
+            margin: '0 auto',
+            padding: '12px 14px',
+            borderRadius: 12,
+            background: 'rgba(30,26,20,0.96)',
+            border: `1px solid ${GOLD}55`,
+            color: GOLD,
+            fontSize: 13,
+            textAlign: 'center',
+            zIndex: 95,
+            fontFamily: 'inherit',
+          }}
+        >
+          {saveToast}
+        </div>
       ) : null}
 
       {isSuperAdmin ? (
