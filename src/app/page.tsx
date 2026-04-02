@@ -1898,83 +1898,76 @@ AURAN이 내 피부 패턴을
                 })}
               </div>
               {skinCalTab === 'TODAY' ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {(['A', 'B'] as const).map(starVariant => (
-                    <div key={starVariant}>
-                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>
-                        {starVariant === 'A' ? '옵션 A · 귀여운 ⭐' : '옵션 B · 보라 박스'}
-                      </div>
-                      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none', alignItems: 'flex-end' }}>
-                        {monthCalendarDays.map((d) => {
-                          const row = cycleRowByDate[d.iso]
-                          const phase = calPhaseNeutral ? '' : getPhaseByDate(d.iso)
-                          const baseBg = calPhaseNeutral ? 'rgba(255,255,255,0.03)' : phaseColor(phase)
-                          const hasCheckin = Boolean(row?.checkin_condition)
-                          const inPeriodPink = periodPinkSet.has(d.iso)
-                          const absOff = Math.abs(d.stripOff)
-                          const sc = absOff === 0 ? 1 : absOff === 1 ? 0.88 : absOff === 2 ? 0.78 : 0.68
-                          const bg = d.isToday
-                            ? 'linear-gradient(135deg, rgba(123,94,167,0.35), rgba(168,85,247,0.2))'
-                            : inPeriodPink
-                              ? 'rgba(224,120,152,0.25)'
-                              : baseBg
-                          const todayMinW =
-                            d.isToday && starVariant === 'A' ? 56 : d.isToday ? 52 : 42
-                          return (
-                            <button
-                              key={`${starVariant}-${d.iso}`}
-                              type="button"
-                              className={d.isToday ? 'home-cal-today-btn' : undefined}
-                              onClick={() => {
-                                setCalendarPickDate(d.iso)
-                                setCalSheetIso(d.iso)
-                                const cr = cycleRowByDate[d.iso]
-                                const rawC = String(cr?.checkin_condition || '').trim()
-                                setCalSheetConditionStr(rawC)
-                                const pcs = rawC ? rawC.split(' / ').map(s => s.trim()).filter(Boolean) : []
-                                setCalSheetConditionPick(pcs.filter(s => CALENDAR_SHEET_CONDITION_LABELS.includes(s)))
-                                const dr = skinDailyByDate[d.iso]
-                                setCalSheetNote(String(dr?.note || ''))
-                                setCalSheetRoutine(!!dr?.routine_completed)
-                                setCalSheetOpen(true)
-                              }}
-                              style={{
-                                minWidth: todayMinW,
-                                borderRadius: 10,
-                                border: d.isToday
-                                  ? '1px solid rgba(168,85,247,0.8)'
-                                  : hasCheckin
-                                    ? '1px solid rgba(201,169,110,0.55)'
-                                    : '1px solid rgba(255,255,255,0.12)',
-                                background: bg,
-                                color: d.isToday ? '#fff' : inPeriodPink ? '#e07898' : '#fff',
-                                padding: starVariant === 'A' && d.isToday ? '10px 0 8px' : '7px 0 6px',
-                                cursor: 'pointer',
-                                fontFamily: 'inherit',
-                                position: d.isToday ? 'relative' : undefined,
-                                opacity: calPhaseNeutral && !hasCheckin && !d.isToday ? 0.45 : 1,
-                                transform: `scale(${sc})`,
-                                transition: 'transform 0.2s ease',
-                                animation: d.isToday
-                                  ? 'todayPulse 2.5s ease-in-out infinite, todayGlow 3s ease-in-out infinite'
-                                  : undefined,
-                                boxSizing: 'border-box',
-                                pointerEvents: 'auto',
-                              }}
-                            >
-                              {d.isToday ? (
-                                <span
-                                  style={{
-                                    position: 'relative',
-                                    zIndex: 1,
-                                    display: 'inline-flex',
-                                    flexDirection: 'column',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    minHeight: starVariant === 'A' ? 44 : 22,
-                                    width: '100%',
-                                  }}
-                                >
+                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none', alignItems: 'flex-end' }}>
+                  {monthCalendarDays.map((d) => {
+                    const row = cycleRowByDate[d.iso]
+                    const phase = calPhaseNeutral ? '' : getPhaseByDate(d.iso)
+                    const baseBg = calPhaseNeutral ? 'rgba(255,255,255,0.03)' : phaseColor(phase)
+                    const hasCheckin = Boolean(row?.checkin_condition)
+                    const inPeriodPink = periodPinkSet.has(d.iso)
+                    const absOff = Math.abs(d.stripOff)
+                    const sc = absOff === 0 ? 1 : absOff === 1 ? 0.88 : absOff === 2 ? 0.78 : 0.68
+                    const bg = d.isToday
+                      ? 'linear-gradient(135deg, rgba(123,94,167,0.35), rgba(168,85,247,0.2))'
+                      : inPeriodPink
+                        ? 'rgba(224,120,152,0.25)'
+                        : baseBg
+                    const todayMinW = d.isToday ? 56 : 42
+                    return (
+                      <button
+                        key={d.iso}
+                        type="button"
+                        className={d.isToday ? 'home-cal-today-btn' : undefined}
+                        onClick={() => {
+                          setCalendarPickDate(d.iso)
+                          setCalSheetIso(d.iso)
+                          const cr = cycleRowByDate[d.iso]
+                          const rawC = String(cr?.checkin_condition || '').trim()
+                          setCalSheetConditionStr(rawC)
+                          const pcs = rawC ? rawC.split(' / ').map(s => s.trim()).filter(Boolean) : []
+                          setCalSheetConditionPick(pcs.filter(s => CALENDAR_SHEET_CONDITION_LABELS.includes(s)))
+                          const dr = skinDailyByDate[d.iso]
+                          setCalSheetNote(String(dr?.note || ''))
+                          setCalSheetRoutine(!!dr?.routine_completed)
+                          setCalSheetOpen(true)
+                        }}
+                        style={{
+                          minWidth: todayMinW,
+                          borderRadius: 10,
+                          border: d.isToday
+                            ? '1px solid rgba(168,85,247,0.8)'
+                            : hasCheckin
+                              ? '1px solid rgba(201,169,110,0.55)'
+                              : '1px solid rgba(255,255,255,0.12)',
+                          background: bg,
+                          color: d.isToday ? '#fff' : inPeriodPink ? '#e07898' : '#fff',
+                          padding: d.isToday ? '10px 0 8px' : '7px 0 6px',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          position: d.isToday ? 'relative' : undefined,
+                          opacity: calPhaseNeutral && !hasCheckin && !d.isToday ? 0.45 : 1,
+                          transform: `scale(${sc})`,
+                          transition: 'transform 0.2s ease',
+                          animation: d.isToday
+                            ? 'todayPulse 2.5s ease-in-out infinite, todayGlow 3s ease-in-out infinite'
+                            : undefined,
+                          boxSizing: 'border-box',
+                          pointerEvents: 'auto',
+                        }}
+                      >
+                        {d.isToday ? (
+                          <span
+                            style={{
+                              position: 'relative',
+                              zIndex: 1,
+                              display: 'inline-flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minHeight: 44,
+                              width: '100%',
+                            }}
+                          >
                                   <span
                                     aria-hidden
                                     style={{
@@ -2067,14 +2060,10 @@ AURAN이 내 피부 패턴을
                                       ✦
                                     </span>
                                   </span>
-                                  {starVariant === 'A' ? (
-                                    <>
-                                      <span style={{ fontSize: 24, lineHeight: 1 }}>⭐</span>
-                                      <span style={{ fontSize: 9, fontWeight: 400, marginTop: 2 }}>오늘</span>
-                                    </>
-                                  ) : (
-                                    <span style={{ fontSize: 11, fontWeight: 400, marginTop: 2 }}>오늘</span>
-                                  )}
+                                  <>
+                                    <span style={{ fontSize: 24, lineHeight: 1 }}>⭐</span>
+                                    <span style={{ fontSize: 9, fontWeight: 400, marginTop: 2 }}>오늘</span>
+                                  </>
                                 </span>
                               ) : (
                                 <div style={{ fontSize: 10, opacity: inPeriodPink ? 1 : 0.85 }}>{d.day}</div>
@@ -2082,9 +2071,6 @@ AURAN이 내 피부 패턴을
                             </button>
                           )
                         })}
-                      </div>
-                    </div>
-                  ))}
                 </div>
               ) : null}
               {skinCalTab === 'MONTHLY' ? (
