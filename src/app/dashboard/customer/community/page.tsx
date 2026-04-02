@@ -1,6 +1,5 @@
 'use client'
 
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import DashboardHeader from '@/components/DashboardHeader'
 import { createClient } from '@/lib/supabase/client'
@@ -1105,7 +1104,6 @@ export default function CustomerCommunityPage() {
         </div>
       ) : null}
 
-      <DashboardBottomNav role="customer" />
     </div>
   )
 }

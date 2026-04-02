@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { applyReviewLikeReward } from '@/lib/community/reviewLikeReward'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 
 const GOLD = '#C9A96E'
 const CARD_BG = 'rgba(255,255,255,0.03)'
@@ -686,8 +685,6 @@ export default function CommunityPostDetailPage() {
           </button>
         </div>
       ) : null}
-
-      <DashboardBottomNav role="customer" />
 
       {giftModal.open ? (
         <>

@@ -1,7 +1,6 @@
 'use client'
 
 import DashboardHeader from '@/components/DashboardHeader'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import AnalysisHubView from '@/components/ui/AnalysisHubView'
 import CustomerDashboardShell from '@/components/views/CustomerDashboardShell'
@@ -63,7 +62,6 @@ export default function AnalysisPage() {
           onStartAnalysis={() => router.push('/skin-analysis')}
         />
       </div>
-      <DashboardBottomNav role="customer" />
     </CustomerDashboardShell>
   )
 }

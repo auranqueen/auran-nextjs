@@ -360,7 +360,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const wrap: React.CSSProperties = {
     background: '#0d0b09', color: '#e8e4dc', maxWidth: 430,
     margin: '0 auto', minHeight: '100dvh', maxHeight: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any,
-    paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+    paddingBottom: 'calc(132px + env(safe-area-inset-bottom, 0px))',
     fontFamily: '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif',
   }
   const tag = (bg: string, color: string, border: string): React.CSSProperties => ({
@@ -812,7 +812,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       </div>
 
       {/* 3버튼 */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 8 }}>
+      <div style={{ position: 'fixed', bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 8 }}>
         <button style={{ flex: 1, background: '#1e1a14', border: 'none', color: '#aaa', fontSize: 13, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>🛒 담기</button>
         <button style={{ flex: 1, background: '#241e0e', border: 'none', color: GOLD, fontSize: 13, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>🎁 선물하기</button>
         <button onClick={() => void handleBuy()} style={{ flex: 2, background: `linear-gradient(135deg,${GOLD},#a07840)`, border: 'none', color: '#000', fontSize: 16, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>지금 구매</button>
@@ -1086,7 +1086,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           style={{
             position: 'fixed',
             right: 16,
-            bottom: 88,
+            bottom: 150,
             width: 52,
             height: 52,
             borderRadius: '50%',

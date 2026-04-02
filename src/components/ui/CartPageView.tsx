@@ -163,7 +163,7 @@ export default function CartPageView({
             position: 'fixed',
             left: '50%',
             transform: 'translateX(-50%)',
-            bottom: 72,
+            bottom: 'calc(76px + env(safe-area-inset-bottom, 0px))',
             width: '100%',
             maxWidth: 480,
             zIndex: 45,

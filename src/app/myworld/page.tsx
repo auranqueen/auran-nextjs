@@ -497,7 +497,7 @@ export default function MyWorldPage() {
   }, [daysSinceRoutine])
 
   return (
-    <div style={{ background: BG, minHeight: '100vh', maxWidth: 390, margin: '0 auto', color: '#fff', paddingBottom: 96, fontWeight: 400 }}>
+    <div style={{ background: BG, minHeight: '100vh', maxWidth: 390, margin: '0 auto', color: '#fff', paddingBottom: 0, fontWeight: 400 }}>
       <style>{`
         @keyframes snowfall {
           0% { transform: translateY(-20px) translateX(0px); opacity: 0; }
@@ -1299,29 +1299,6 @@ export default function MyWorldPage() {
           </button>
         </div>
       ) : null}
-
-      <nav style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '390px', height: '80px', background: 'rgba(13,11,9,0.96)', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-around', padding: '0 10px 16px', zIndex: 50 }}>
-        <div onClick={() => router.push('/')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '22px' }}>🏠</span>
-          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)', letterSpacing: '1px' }}>HOME</span>
-        </div>
-        <div onClick={() => router.push('/products')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '22px' }}>🛍</span>
-          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)', letterSpacing: '1px' }}>SHOP</span>
-        </div>
-        <div onClick={() => router.push('/skin-analysis')} style={{ width: '58px', height: '58px', borderRadius: '50%', background: 'linear-gradient(135deg,#C9A96E,#E8C88A)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '2px', boxShadow: '0 4px 24px rgba(201,169,110,0.5)', marginTop: '-22px', cursor: 'pointer', flexShrink: 0 }}>
-          <span style={{ fontSize: '22px' }}>🔬</span>
-          <span style={{ fontSize: '8px', color: BG, fontFamily: 'monospace' }}>AI</span>
-        </div>
-        <div onClick={() => router.push('/salon')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '22px' }}>📅</span>
-          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(255,255,255,0.25)', letterSpacing: '1px' }}>BOOK</span>
-        </div>
-        <div onClick={() => router.push('/my')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '22px' }}>👤</span>
-          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: GOLD, letterSpacing: '1px' }}>MY</span>
-        </div>
-      </nav>
 
       {toast ? (
         <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 100, background: 'rgba(123,94,167,0.9)', color: '#fff', borderRadius: 20, padding: '10px 20px', fontSize: 12, zIndex: 60 }}>

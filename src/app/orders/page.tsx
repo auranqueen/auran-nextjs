@@ -1,7 +1,6 @@
 'use client'
 
 import DashboardHeader from '@/components/DashboardHeader'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
@@ -142,7 +141,6 @@ export default function OrdersPage() {
           </div>
         )}
       </div>
-      <DashboardBottomNav role="customer" />
     </div>
   )
 }

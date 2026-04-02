@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 import DashboardHeader from '@/components/DashboardHeader'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import { createClient } from '@/lib/supabase/client'
@@ -616,7 +615,6 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
         </div>
       )}
 
-      <DashboardBottomNav role="customer" />
     </div>
   )
 }

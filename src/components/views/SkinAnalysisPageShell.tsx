@@ -2,7 +2,6 @@
 
 import type { ReactNode } from 'react'
 import DashboardHeader from '@/components/DashboardHeader'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 
 type Props = {
@@ -20,7 +19,7 @@ export default function SkinAnalysisPageShell({ progressSlot, errorSlot, toastSl
         background: 'linear-gradient(165deg, #12100e 0%, var(--bg) 38%, #0a0908 100%)',
         maxWidth: 480,
         margin: '0 auto',
-        paddingBottom: 110,
+        paddingBottom: 24,
         boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
       }}
     >
@@ -38,7 +37,6 @@ export default function SkinAnalysisPageShell({ progressSlot, errorSlot, toastSl
           {children}
         </div>
       </div>
-      <DashboardBottomNav role="customer" />
     </div>
   )
 }

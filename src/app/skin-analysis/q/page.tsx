@@ -536,7 +536,7 @@ function SkinAnalysisQPageContent() {
 
 export default function Page() {
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: BG }} />}>
       <SkinAnalysisQPageContent />
     </Suspense>
   )

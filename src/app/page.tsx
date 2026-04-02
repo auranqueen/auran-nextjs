@@ -87,7 +87,7 @@ export default function CustomerHomePage() {
   const [salons, setSalons] = useState<any[]>([])
   const [newProducts, setNewProducts] = useState<any[]>([])
   const [brands, setBrands] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
@@ -343,7 +343,7 @@ export default function CustomerHomePage() {
       fontFamily: "'Noto Sans KR', -apple-system, sans-serif",
       fontWeight: 300,
       color: '#fff',
-      paddingBottom: '96px',
+      paddingBottom: '0',
     }}>
       <style>{`@keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}`}</style>
 
@@ -1452,48 +1452,6 @@ export default function CustomerHomePage() {
           </div>
         </div>
       </div>
-
-      {/* ── 하단 네비게이션 ── */}
-      <nav style={{
-        position: 'fixed', bottom: 0,
-        left: '50%', transform: 'translateX(-50%)',
-        width: '390px', height: '80px',
-        background: 'rgba(13,11,9,0.96)',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-evenly',
-        padding: '6px max(18px, env(safe-area-inset-left, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-right, 0px))', zIndex: 50,
-        boxSizing: 'border-box',
-      }}>
-        <div onClick={() => router.push('/')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '44px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '22px' }}>🏠</span>
-          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: GOLD, letterSpacing: '1px' }}>HOME</span>
-        </div>
-        <div onClick={() => router.push('/products')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '44px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '22px' }}>🛍</span>
-          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM, letterSpacing: '1px' }}>SHOP</span>
-        </div>
-        <div
-          onClick={() => router.push('/skin-analysis')}
-          style={{
-            width: '58px', height: '58px', borderRadius: '50%',
-            background: 'linear-gradient(135deg,#C9A96E,#E8C88A)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-            gap: '2px', boxShadow: '0 4px 24px rgba(201,169,110,0.5)',
-            marginTop: '-22px', cursor: 'pointer', flexShrink: 0,
-          }}
-        >
-          <span style={{ fontSize: '22px' }}>🔬</span>
-          <span style={{ fontSize: '8px', fontWeight: 400, color: BG, fontFamily: 'monospace', letterSpacing: '0.5px' }}>AI</span>
-        </div>
-        <div onClick={() => router.push('/community')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '44px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '22px' }}>💬</span>
-          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM, letterSpacing: '1px' }}>커뮤니티</span>
-        </div>
-        <div onClick={() => router.push('/my')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '44px', cursor: 'pointer' }}>
-          <span style={{ fontSize: '22px' }}>👤</span>
-          <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM, letterSpacing: '1px' }}>MY</span>
-        </div>
-      </nav>
 
     </div>
   )

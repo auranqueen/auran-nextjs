@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import { useRouter } from 'next/navigation'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 import { createClient } from '@/lib/supabase/client'
 import { broadcastCartCountRefresh } from '@/lib/cartEvents'
 import { createNotification } from '@/lib/notifications/createNotification'
@@ -1238,7 +1237,6 @@ export default function CustomerDashboardClient({
         </div>
       )}
 
-      <DashboardBottomNav role="customer" />
     </div>
   )
 }

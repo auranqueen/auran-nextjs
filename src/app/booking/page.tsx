@@ -1,7 +1,6 @@
 'use client'
 
 import DashboardHeader from '@/components/DashboardHeader'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import BookingSalonListView from '@/components/ui/BookingSalonListView'
 import CustomerDashboardShell from '@/components/views/CustomerDashboardShell'
@@ -48,7 +47,6 @@ export default function BookingPage() {
         </div>
         <BookingSalonListView loading={loading} salons={salons} />
       </div>
-      <DashboardBottomNav role="customer" />
     </CustomerDashboardShell>
   )
 }

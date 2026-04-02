@@ -1,7 +1,6 @@
 'use client'
 
 import DashboardHeader from '@/components/DashboardHeader'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import PaymentAuthGuard from '@/components/PaymentAuthGuard'
 import { createClient } from '@/lib/supabase/client'
@@ -338,7 +337,6 @@ function WalletPageInner() {
           </>
         )}
       </div>
-      <DashboardBottomNav role="customer" />
     </div>
   )
 }

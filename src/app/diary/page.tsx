@@ -1,7 +1,6 @@
 'use client'
 
 import DashboardHeader from '@/components/DashboardHeader'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import DiaryPageView from '@/components/ui/DiaryPageView'
 import CustomerDashboardShell from '@/components/views/CustomerDashboardShell'
@@ -76,7 +75,6 @@ export default function DiaryPage() {
         onAdd={add}
         onRemove={remove}
       />
-      <DashboardBottomNav role="customer" />
     </CustomerDashboardShell>
   )
 }

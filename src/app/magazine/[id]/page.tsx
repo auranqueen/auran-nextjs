@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 
 const BG = '#0D0B09'
 
@@ -192,12 +191,11 @@ export default function MagazineDetailPage() {
 
   if (!row) {
     return (
-      <div style={{ minHeight: '100vh', background: BG, color: '#fff', maxWidth: 480, margin: '0 auto', padding: 24, paddingBottom: 110 }}>
+      <div style={{ minHeight: '100vh', background: BG, color: '#fff', maxWidth: 480, margin: '0 auto', padding: 24, paddingBottom: 0 }}>
         <p style={{ fontSize: 14 }}>글을 찾을 수 없어요</p>
         <button type="button" onClick={() => router.push('/magazine')} style={{ marginTop: 16, border: '1px solid rgba(196,167,231,0.4)', background: 'transparent', color: '#c4a7e7', padding: '10px 16px', borderRadius: 10, cursor: 'pointer' }}>
           목록으로
         </button>
-        <DashboardBottomNav role="customer" />
       </div>
     )
   }
@@ -205,7 +203,7 @@ export default function MagazineDetailPage() {
   const rt = readTimeMin(String(row.content || ''))
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: '#fff', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
+    <div style={{ minHeight: '100vh', background: BG, color: '#fff', maxWidth: 480, margin: '0 auto', paddingBottom: 0 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <button type="button" onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: '#fff', fontSize: 18, cursor: 'pointer', padding: 4 }}>
           ←
@@ -319,7 +317,6 @@ export default function MagazineDetailPage() {
         </div>
       ) : null}
 
-      <DashboardBottomNav role="customer" />
     </div>
   )
 }

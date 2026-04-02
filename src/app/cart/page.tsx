@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 import DashboardHeader from '@/components/DashboardHeader'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import CartPageView from '@/components/ui/CartPageView'
@@ -105,7 +104,7 @@ export default function CartPage() {
   }
 
   return (
-    <CustomerDashboardShell paddingBottom={200}>
+    <CustomerDashboardShell paddingBottom={124}>
       <DashboardHeader title="장바구니" right={<CustomerHeaderRight />} />
       <CartPageView
         toast={toast}
@@ -133,7 +132,6 @@ export default function CartPage() {
         onBuy={onBuyClick}
         onOpenGift={openGiftModal}
       />
-      <DashboardBottomNav role="customer" />
     </CustomerDashboardShell>
   )
 }

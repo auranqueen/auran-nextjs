@@ -1,7 +1,6 @@
 'use client'
 
 import ProductThumbnail from '@/components/ui/ProductThumbnail'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 import {
   computeCouponDiscount,
   isCouponApplicableForOrder,
@@ -318,7 +317,6 @@ export default function CheckoutPageView({
           </div>
         </div>
       )}
-      <DashboardBottomNav role="customer" />
     </>
   )
 }

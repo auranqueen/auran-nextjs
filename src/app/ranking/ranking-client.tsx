@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 import DashboardHeader from '@/components/DashboardHeader'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 
@@ -133,7 +132,6 @@ export default function RankingClient({
           마이월드로 돌아가기
         </button>
       </div>
-      <DashboardBottomNav role="customer" />
     </div>
   )
 }
