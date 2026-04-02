@@ -1094,7 +1094,7 @@ AURAN이 내 피부 패턴을
       color: '#fff',
       paddingBottom: '0',
     }}>
-      <style>{`@keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}@keyframes todayPulse{0%{box-shadow:0 0 8px rgba(123,94,167,0.5)}50%{box-shadow:0 0 20px rgba(123,94,167,0.8)}100%{box-shadow:0 0 8px rgba(123,94,167,0.5)}}@keyframes todayGlow{0%{box-shadow:0 0 8px rgba(123,94,167,0.5),0 0 16px rgba(123,94,167,0.3),0 0 28px rgba(123,94,167,0.15)}50%{box-shadow:0 0 14px rgba(123,94,167,0.8),0 0 28px rgba(123,94,167,0.5),0 0 45px rgba(123,94,167,0.25),0 0 60px rgba(168,85,247,0.15)}100%{box-shadow:0 0 8px rgba(123,94,167,0.5),0 0 16px rgba(123,94,167,0.3),0 0 28px rgba(123,94,167,0.15)}}@keyframes todayShimmer{0%{opacity:0.4;transform:scale(1)}50%{opacity:0.7;transform:scale(1.04)}100%{opacity:0.4;transform:scale(1)}}.home-cal-today-btn{position:relative;isolation:isolate;overflow:visible}.home-cal-today-btn::before{content:'';position:absolute;inset:-4px;border-radius:12px;background:radial-gradient(circle,rgba(168,85,247,0.25) 0%,rgba(123,94,167,0.1) 40%,transparent 70%);animation:todayShimmer 3s ease-in-out infinite;z-index:-1;pointer-events:none}`}</style>
+      <style>{`@keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}@keyframes todayPulse{0%{box-shadow:0 0 8px rgba(123,94,167,0.5)}50%{box-shadow:0 0 20px rgba(123,94,167,0.8)}100%{box-shadow:0 0 8px rgba(123,94,167,0.5)}}@keyframes todayGlow{0%{box-shadow:0 0 8px rgba(123,94,167,0.5),0 0 16px rgba(123,94,167,0.3),0 0 28px rgba(123,94,167,0.15)}50%{box-shadow:0 0 14px rgba(123,94,167,0.8),0 0 28px rgba(123,94,167,0.5),0 0 45px rgba(123,94,167,0.25),0 0 60px rgba(168,85,247,0.15)}100%{box-shadow:0 0 8px rgba(123,94,167,0.5),0 0 16px rgba(123,94,167,0.3),0 0 28px rgba(123,94,167,0.15)}}@keyframes todayShimmer{0%{opacity:0.4;transform:scale(1)}50%{opacity:0.7;transform:scale(1.04)}100%{opacity:0.4;transform:scale(1)}}@keyframes starTwinkle{0%{opacity:0.2;transform:scale(0.8)}50%{opacity:1;transform:scale(1.2)}100%{opacity:0.2;transform:scale(0.8)}}.home-cal-today-btn{position:relative;isolation:isolate;overflow:visible}.home-cal-today-btn::before{content:'';position:absolute;inset:-4px;border-radius:12px;background:radial-gradient(circle,rgba(168,85,247,0.25) 0%,rgba(123,94,167,0.1) 40%,transparent 70%);animation:todayShimmer 3s ease-in-out infinite;z-index:-1;pointer-events:none !important}`}</style>
 
       {/* ── 탑바 ── */}
       <header style={{
@@ -1898,69 +1898,189 @@ AURAN이 내 피부 패턴을
                 })}
               </div>
               {skinCalTab === 'TODAY' ? (
-                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none', alignItems: 'flex-end' }}>
-                  {monthCalendarDays.map((d) => {
-                    const row = cycleRowByDate[d.iso]
-                    const phase = calPhaseNeutral ? '' : getPhaseByDate(d.iso)
-                    const baseBg = calPhaseNeutral ? 'rgba(255,255,255,0.03)' : phaseColor(phase)
-                    const hasCheckin = Boolean(row?.checkin_condition)
-                    const inPeriodPink = periodPinkSet.has(d.iso)
-                    const absOff = Math.abs(d.stripOff)
-                    const sc = absOff === 0 ? 1 : absOff === 1 ? 0.88 : absOff === 2 ? 0.78 : 0.68
-                    const bg = d.isToday
-                      ? 'linear-gradient(135deg, rgba(123,94,167,0.35), rgba(168,85,247,0.2))'
-                      : inPeriodPink
-                        ? 'rgba(224,120,152,0.25)'
-                        : baseBg
-                    return (
-                      <button
-                        key={d.iso}
-                        type="button"
-                        className={d.isToday ? 'home-cal-today-btn' : undefined}
-                        onClick={() => {
-                          setCalendarPickDate(d.iso)
-                          setCalSheetIso(d.iso)
-                          const cr = cycleRowByDate[d.iso]
-                          const rawC = String(cr?.checkin_condition || '').trim()
-                          setCalSheetConditionStr(rawC)
-                          const pcs = rawC ? rawC.split(' / ').map(s => s.trim()).filter(Boolean) : []
-                          setCalSheetConditionPick(pcs.filter(s => CALENDAR_SHEET_CONDITION_LABELS.includes(s)))
-                          const dr = skinDailyByDate[d.iso]
-                          setCalSheetNote(String(dr?.note || ''))
-                          setCalSheetRoutine(!!dr?.routine_completed)
-                          setCalSheetOpen(true)
-                        }}
-                        style={{
-                          minWidth: d.isToday ? 52 : 42,
-                          borderRadius: 10,
-                          border: d.isToday
-                            ? '1px solid rgba(168,85,247,0.8)'
-                            : hasCheckin
-                              ? '1px solid rgba(201,169,110,0.55)'
-                              : '1px solid rgba(255,255,255,0.12)',
-                          background: bg,
-                          color: d.isToday ? '#fff' : inPeriodPink ? '#e07898' : '#fff',
-                          padding: '7px 0 6px',
-                          cursor: 'pointer',
-                          fontFamily: 'inherit',
-                          position: d.isToday ? 'relative' : undefined,
-                          opacity: calPhaseNeutral && !hasCheckin && !d.isToday ? 0.45 : 1,
-                          transform: `scale(${sc})`,
-                          transition: 'transform 0.2s ease',
-                          animation: d.isToday
-                            ? 'todayPulse 2.5s ease-in-out infinite, todayGlow 3s ease-in-out infinite'
-                            : undefined,
-                          boxSizing: 'border-box',
-                        }}
-                      >
-                        {d.isToday ? (
-                          <span style={{ position: 'relative', zIndex: 1, fontSize: 11, fontWeight: 400 }}>오늘</span>
-                        ) : (
-                          <div style={{ fontSize: 10, opacity: inPeriodPink ? 1 : 0.85 }}>{d.day}</div>
-                        )}
-                      </button>
-                    )
-                  })}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {(['A', 'B'] as const).map(starVariant => (
+                    <div key={starVariant}>
+                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>
+                        {starVariant === 'A' ? '옵션 A · 귀여운 ⭐' : '옵션 B · 보라 박스'}
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none', alignItems: 'flex-end' }}>
+                        {monthCalendarDays.map((d) => {
+                          const row = cycleRowByDate[d.iso]
+                          const phase = calPhaseNeutral ? '' : getPhaseByDate(d.iso)
+                          const baseBg = calPhaseNeutral ? 'rgba(255,255,255,0.03)' : phaseColor(phase)
+                          const hasCheckin = Boolean(row?.checkin_condition)
+                          const inPeriodPink = periodPinkSet.has(d.iso)
+                          const absOff = Math.abs(d.stripOff)
+                          const sc = absOff === 0 ? 1 : absOff === 1 ? 0.88 : absOff === 2 ? 0.78 : 0.68
+                          const bg = d.isToday
+                            ? 'linear-gradient(135deg, rgba(123,94,167,0.35), rgba(168,85,247,0.2))'
+                            : inPeriodPink
+                              ? 'rgba(224,120,152,0.25)'
+                              : baseBg
+                          const todayMinW =
+                            d.isToday && starVariant === 'A' ? 56 : d.isToday ? 52 : 42
+                          return (
+                            <button
+                              key={`${starVariant}-${d.iso}`}
+                              type="button"
+                              className={d.isToday ? 'home-cal-today-btn' : undefined}
+                              onClick={() => {
+                                setCalendarPickDate(d.iso)
+                                setCalSheetIso(d.iso)
+                                const cr = cycleRowByDate[d.iso]
+                                const rawC = String(cr?.checkin_condition || '').trim()
+                                setCalSheetConditionStr(rawC)
+                                const pcs = rawC ? rawC.split(' / ').map(s => s.trim()).filter(Boolean) : []
+                                setCalSheetConditionPick(pcs.filter(s => CALENDAR_SHEET_CONDITION_LABELS.includes(s)))
+                                const dr = skinDailyByDate[d.iso]
+                                setCalSheetNote(String(dr?.note || ''))
+                                setCalSheetRoutine(!!dr?.routine_completed)
+                                setCalSheetOpen(true)
+                              }}
+                              style={{
+                                minWidth: todayMinW,
+                                borderRadius: 10,
+                                border: d.isToday
+                                  ? '1px solid rgba(168,85,247,0.8)'
+                                  : hasCheckin
+                                    ? '1px solid rgba(201,169,110,0.55)'
+                                    : '1px solid rgba(255,255,255,0.12)',
+                                background: bg,
+                                color: d.isToday ? '#fff' : inPeriodPink ? '#e07898' : '#fff',
+                                padding: starVariant === 'A' && d.isToday ? '10px 0 8px' : '7px 0 6px',
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                                position: d.isToday ? 'relative' : undefined,
+                                opacity: calPhaseNeutral && !hasCheckin && !d.isToday ? 0.45 : 1,
+                                transform: `scale(${sc})`,
+                                transition: 'transform 0.2s ease',
+                                animation: d.isToday
+                                  ? 'todayPulse 2.5s ease-in-out infinite, todayGlow 3s ease-in-out infinite'
+                                  : undefined,
+                                boxSizing: 'border-box',
+                                pointerEvents: 'auto',
+                              }}
+                            >
+                              {d.isToday ? (
+                                <span
+                                  style={{
+                                    position: 'relative',
+                                    zIndex: 1,
+                                    display: 'inline-flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    minHeight: starVariant === 'A' ? 44 : 22,
+                                    width: '100%',
+                                  }}
+                                >
+                                  <span
+                                    aria-hidden
+                                    style={{
+                                      position: 'absolute',
+                                      top: -8,
+                                      left: '50%',
+                                      transform: 'translateX(-50%)',
+                                      pointerEvents: 'none',
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        display: 'block',
+                                        fontSize: 8,
+                                        color: 'rgba(255,220,100,0.9)',
+                                        animation: 'starTwinkle 2.4s ease-in-out infinite',
+                                        animationDelay: '0s',
+                                      }}
+                                    >
+                                      ✦
+                                    </span>
+                                  </span>
+                                  <span
+                                    aria-hidden
+                                    style={{
+                                      position: 'absolute',
+                                      top: '50%',
+                                      right: -8,
+                                      transform: 'translateY(-50%)',
+                                      pointerEvents: 'none',
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        display: 'block',
+                                        fontSize: 8,
+                                        color: 'rgba(255,220,100,0.9)',
+                                        animation: 'starTwinkle 2.4s ease-in-out infinite',
+                                        animationDelay: '0.6s',
+                                      }}
+                                    >
+                                      ✦
+                                    </span>
+                                  </span>
+                                  <span
+                                    aria-hidden
+                                    style={{
+                                      position: 'absolute',
+                                      bottom: -8,
+                                      left: '50%',
+                                      transform: 'translateX(-50%)',
+                                      pointerEvents: 'none',
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        display: 'block',
+                                        fontSize: 8,
+                                        color: 'rgba(255,220,100,0.9)',
+                                        animation: 'starTwinkle 2.4s ease-in-out infinite',
+                                        animationDelay: '1.2s',
+                                      }}
+                                    >
+                                      ✦
+                                    </span>
+                                  </span>
+                                  <span
+                                    aria-hidden
+                                    style={{
+                                      position: 'absolute',
+                                      top: '50%',
+                                      left: -8,
+                                      transform: 'translateY(-50%)',
+                                      pointerEvents: 'none',
+                                    }}
+                                  >
+                                    <span
+                                      style={{
+                                        display: 'block',
+                                        fontSize: 8,
+                                        color: 'rgba(255,220,100,0.9)',
+                                        animation: 'starTwinkle 2.4s ease-in-out infinite',
+                                        animationDelay: '1.8s',
+                                      }}
+                                    >
+                                      ✦
+                                    </span>
+                                  </span>
+                                  {starVariant === 'A' ? (
+                                    <>
+                                      <span style={{ fontSize: 24, lineHeight: 1 }}>⭐</span>
+                                      <span style={{ fontSize: 9, fontWeight: 400, marginTop: 2 }}>오늘</span>
+                                    </>
+                                  ) : (
+                                    <span style={{ fontSize: 11, fontWeight: 400, marginTop: 2 }}>오늘</span>
+                                  )}
+                                </span>
+                              ) : (
+                                <div style={{ fontSize: 10, opacity: inPeriodPink ? 1 : 0.85 }}>{d.day}</div>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ) : null}
               {skinCalTab === 'MONTHLY' ? (
