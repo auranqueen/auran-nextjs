@@ -45,7 +45,7 @@ export default function ProductDetailModal({
   product: any
   tab: 'pending' | 'active' | 'rejected'
   busyId: string | null
-  brands: { id: string; name: string }[]
+  brands: { id: string; name: string; origin_country?: string | null }[]
   onClose: () => void
   onApprove: (id: string) => void
   onReject: (id: string) => void

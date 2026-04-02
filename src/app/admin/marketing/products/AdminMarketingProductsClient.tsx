@@ -16,6 +16,8 @@ function isMissingPrice(p: { retail_price?: number | null }) {
   return Number(v) === 0
 }
 
+const BRAND_ORIGIN_OPTIONS = ['프랑스', '이탈리아', '독일', '스페인', '영국', '기타유럽', '한국', '일본', '기타'] as const
+
 // ───────────────────────────────────────────────
 // 제품 행
 // ───────────────────────────────────────────────
@@ -323,7 +325,7 @@ export default function AdminMarketingProductsClient() {
   const [listFilter, setListFilter] = useState<'all' | 'no_price' | 'with_price'>('all')
   const [onlyMissingUnitPrice, setOnlyMissingUnitPrice] = useState(false)
   const [brandOptionsFromDb, setBrandOptionsFromDb] = useState<string[] | null>(null)
-  const [brandsWithId, setBrandsWithId] = useState<{ id: string; name: string }[]>([])
+  const [brandsWithId, setBrandsWithId] = useState<{ id: string; name: string; origin_country?: string | null }[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const [toast, setToast] = useState('')
 
@@ -415,10 +417,10 @@ export default function AdminMarketingProductsClient() {
   useEffect(() => {
     supabase
       .from('brands')
-      .select('id,name')
+      .select('id,name,origin_country')
       .order('name')
       .then(({ data }) => {
-        const rows = (data || []) as { id: string; name: string }[]
+        const rows = (data || []) as { id: string; name: string; origin_country?: string | null }[]
         setBrandsWithId(rows)
         const names = rows.map(b => b.name).filter(Boolean)
         setBrandOptionsFromDb(names.length ? names : null)
@@ -818,6 +820,76 @@ export default function AdminMarketingProductsClient() {
             {t.label} ({counts[t.key]})
           </button>
         ))}
+      </div>
+
+      <div
+        style={{
+          marginBottom: 16,
+          padding: 14,
+          borderRadius: 14,
+          border: '1px solid rgba(255,255,255,0.1)',
+          background: 'rgba(255,255,255,0.03)',
+        }}
+      >
+        <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 10 }}>브랜드 원산지 (등록·수정)</div>
+        <div style={{ maxHeight: 220, overflowY: 'auto', display: 'grid', gap: 8 }}>
+          {brandsWithId.map(b => (
+            <div
+              key={b.id}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr minmax(140px,auto)',
+                gap: 10,
+                alignItems: 'center',
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 12,
+                  color: 'rgba(255,255,255,0.85)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {b.name}
+              </span>
+              <select
+                value={b.origin_country || ''}
+                onChange={async e => {
+                  const v = e.target.value
+                  const { error } = await supabase
+                    .from('brands')
+                    .update({ origin_country: v || null, updated_at: new Date().toISOString() } as any)
+                    .eq('id', b.id)
+                  if (error) {
+                    setToast(error.message)
+                    return
+                  }
+                  setBrandsWithId(prev => prev.map(x => (x.id === b.id ? { ...x, origin_country: v || null } : x)))
+                  setToast('브랜드 원산지 저장됨')
+                }}
+                style={{
+                  background: '#121212',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 10,
+                  padding: '8px 10px',
+                  color: '#fff',
+                  fontSize: 12,
+                }}
+              >
+                <option value="" style={{ background: '#1a1a1a' }}>
+                  — 미지정 —
+                </option>
+                {BRAND_ORIGIN_OPTIONS.map(o => (
+                  <option key={o} value={o} style={{ background: '#1a1a1a' }}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
       </div>
 
       {tab === 'trash' ? (

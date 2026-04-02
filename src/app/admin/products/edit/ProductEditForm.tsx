@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 const TABS = ['기본정보', '옵션정보', '가격및재고', '포인트설정', '배송비', '상품이미지'] as const
 
-const ORIGINS = ['프랑스', '이탈리아', '독일', '국산', '기타'] as const
+const ORIGINS = ['프랑스', '이탈리아', '독일', '스페인', '영국', '기타유럽', '한국', '일본', '기타'] as const
 const UNIT_TYPE_OPTIONS = ['ml당', 'g당', '100ml당', '100g당', '1개당'] as const
 
 type SaleUi = 'active' | 'sold_out' | 'discontinued' | 'paused'
@@ -90,11 +90,12 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
 
-  const [brands, setBrands] = useState<{ id: string; name: string }[]>([])
+  const [brands, setBrands] = useState<{ id: string; name: string; origin_country?: string | null }[]>([])
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
   const [categoryId, setCategoryId] = useState('')
   const [showNewBrand, setShowNewBrand] = useState(false)
   const [newBrandName, setNewBrandName] = useState('')
+  const [newBrandOriginCountry, setNewBrandOriginCountry] = useState('')
   const [showNewCategory, setShowNewCategory] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
 
@@ -102,7 +103,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   const [shortDesc, setShortDesc] = useState('')
   const [keywords, setKeywords] = useState('')
   const [brandId, setBrandId] = useState('')
-  const [origin, setOrigin] = useState<(typeof ORIGINS)[number]>('국산')
+  const [origin, setOrigin] = useState<(typeof ORIGINS)[number]>('한국')
   const [manufacturer, setManufacturer] = useState('')
   const [saleUi, setSaleUi] = useState<SaleUi>('active')
 
@@ -147,10 +148,20 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   useEffect(() => {
     supabase
       .from('brands')
-      .select('id,name')
+      .select('id,name,origin_country')
       .order('name')
-      .then(({ data }) => setBrands((data || []) as { id: string; name: string }[]))
+      .then(({ data }) => setBrands((data || []) as { id: string; name: string; origin_country?: string | null }[]))
   }, [supabase])
+
+  useEffect(() => {
+    if (!brandId) return
+    const b = brands.find(x => x.id === brandId)
+    const oc = String(b?.origin_country || '').trim()
+    if (oc) {
+      const normalized = (ORIGINS as readonly string[]).includes(oc) ? oc : '기타'
+      setOrigin(normalized as (typeof ORIGINS)[number])
+    }
+  }, [brandId, brands])
 
   useEffect(() => {
     supabase
@@ -187,7 +198,8 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       setKeywords(String(p.tag || ''))
       setBrandId(p.brand_id ? String(p.brand_id) : '')
       setCategoryId(p.category_id ? String(p.category_id) : '')
-      const cat = String(p.category || '')
+      const catRaw = String(p.category || '')
+      const cat = catRaw === '국산' ? '한국' : catRaw
       setOrigin((ORIGINS as readonly string[]).includes(cat) ? (cat as (typeof ORIGINS)[number]) : '기타')
       setManufacturer(String(p.ingredient || ''))
 
@@ -275,6 +287,9 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   )
 
   const labelStyle = { fontSize: 11, color: 'rgba(255,255,255,0.45)' }
+
+  const selectedBrandOc = brandId ? String(brands.find(b => b.id === brandId)?.origin_country || '').trim() : ''
+  const originLocked = Boolean(brandId && selectedBrandOc)
 
   const uploadToStorage = useCallback(
     async (file: File, path: string) => {
@@ -555,7 +570,16 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
                 <select
                   value={brandId}
-                  onChange={e => setBrandId(e.target.value)}
+                  onChange={e => {
+                    const id = e.target.value
+                    setBrandId(id)
+                    const nb = brands.find(x => x.id === id)
+                    const oc = String(nb?.origin_country || '').trim()
+                    if (oc) {
+                      const normalized = (ORIGINS as readonly string[]).includes(oc) ? oc : '기타'
+                      setOrigin(normalized as (typeof ORIGINS)[number])
+                    }
+                  }}
                   style={{ ...inputStyle, background: '#121212' }}
                 >
                   <option value="">— 선택 —</option>
@@ -574,34 +598,68 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
                 </button>
               </div>
               {showNewBrand ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
-                  <input
-                    value={newBrandName}
-                    onChange={e => setNewBrandName(e.target.value)}
-                    placeholder="브랜드명 입력"
-                    style={inputStyle}
-                  />
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      const nm = newBrandName.trim()
-                      if (!nm) return
-                      const { data, error } = await supabase.from('brands').insert({ name: nm, status: 'active' } as any).select('id,name').single()
-                      if (error) {
-                        setMsg(error.message)
-                        return
-                      }
-                      if (data) {
-                        setBrands(prev => [...prev, data as { id: string; name: string }].sort((a, b) => a.name.localeCompare(b.name)))
-                        setBrandId((data as { id: string }).id)
-                        setNewBrandName('')
-                        setShowNewBrand(false)
-                      }
-                    }}
+                <div style={{ display: 'grid', gap: 8 }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
+                    <input
+                      value={newBrandName}
+                      onChange={e => setNewBrandName(e.target.value)}
+                      placeholder="브랜드명 입력"
+                      style={inputStyle}
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const nm = newBrandName.trim()
+                        if (!nm) return
+                        const oc = newBrandOriginCountry.trim()
+                        if (!oc) {
+                          setMsg('새 브랜드 등록 시 원산지를 선택하세요')
+                          return
+                        }
+                        const { data, error } = await supabase
+                          .from('brands')
+                          .insert({ name: nm, status: 'active', origin_country: oc } as any)
+                          .select('id,name,origin_country')
+                          .single()
+                        if (error) {
+                          setMsg(error.message)
+                          return
+                        }
+                        if (data) {
+                          setBrands(prev =>
+                            [...prev, data as { id: string; name: string; origin_country?: string | null }].sort((a, b) =>
+                              a.name.localeCompare(b.name)
+                            )
+                          )
+                          setBrandId((data as { id: string }).id)
+                          setNewBrandName('')
+                          setNewBrandOriginCountry('')
+                          setShowNewBrand(false)
+                          setOrigin((ORIGINS as readonly string[]).includes(oc) ? (oc as (typeof ORIGINS)[number]) : '기타')
+                        }
+                      }}
                     style={{ borderRadius: 10, border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.2)', color: '#c9a84c', fontSize: 12, padding: '0 12px', cursor: 'pointer', fontWeight: 800 }}
                   >
                     등록
                   </button>
+                  </div>
+                  <label style={{ display: 'grid', gap: 6 }}>
+                    <span style={labelStyle}>브랜드 원산지 (필수)</span>
+                    <select
+                      value={newBrandOriginCountry}
+                      onChange={e => setNewBrandOriginCountry(e.target.value)}
+                      style={{ ...inputStyle, background: '#121212' }}
+                    >
+                      <option value="" style={{ background: '#1a1a1a' }}>
+                        — 선택 —
+                      </option>
+                      {ORIGINS.map(o => (
+                        <option key={o} value={o} style={{ background: '#1a1a1a' }}>
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
               ) : null}
             </div>
@@ -655,11 +713,22 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
             </div>
           </label>
           <label style={{ display: 'grid', gap: 6 }}>
-            <span style={labelStyle}>원산지</span>
+            <span style={labelStyle}>
+              원산지
+              {originLocked ? (
+                <span style={{ color: 'rgba(255,255,255,0.35)', fontWeight: 400 }}> · 브랜드 원산지 연동 (읽기 전용)</span>
+              ) : null}
+            </span>
             <select
               value={origin}
               onChange={e => setOrigin(e.target.value as (typeof ORIGINS)[number])}
-              style={{ ...inputStyle, background: '#121212' }}
+              disabled={originLocked}
+              style={{
+                ...inputStyle,
+                background: '#121212',
+                opacity: originLocked ? 0.75 : 1,
+                cursor: originLocked ? 'not-allowed' : undefined,
+              }}
             >
               {ORIGINS.map(o => (
                 <option key={o} value={o} style={{ background: '#1a1a1a' }}>
