@@ -1,5 +1,10 @@
 'use client'
 
+const getSeoulToday = () => {
+  const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+  return s
+}
+
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -177,10 +182,11 @@ export default function CustomerHomePage() {
   const [monthCycleRows, setMonthCycleRows] = useState<any[]>([])
   const [calendarPickDate, setCalendarPickDate] = useState('')
   const [skinCalTab, setSkinCalTab] = useState<'TODAY' | 'MONTHLY' | 'YEARLY'>('TODAY')
-  const [skinCalYM, setSkinCalYM] = useState(() => {
-    const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
-    return { y: s.getFullYear(), m: s.getMonth() }
-  })
+  const [skinCalYM, setSkinCalYM] = useState({ y: 2026, m: 3 })
+  useEffect(() => {
+    const s = getSeoulToday()
+    setSkinCalYM({ y: s.getFullYear(), m: s.getMonth() })
+  }, [])
   const [skinDailyRows, setSkinDailyRows] = useState<any[]>([])
   const [calSheetOpen, setCalSheetOpen] = useState(false)
   const [calSheetIso, setCalSheetIso] = useState('')
@@ -915,7 +921,7 @@ AURAN이 내 피부 패턴을
     return m
   }, [skinDailyRows])
   const calendarDataBounds = useMemo(() => {
-    const seoul = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    const seoul = getSeoulToday()
     const maxY = seoul.getFullYear() + 1
     const minY = profileCreatedAt ? new Date(profileCreatedAt).getFullYear() : seoul.getFullYear()
     const suY = profileCreatedAt ? new Date(profileCreatedAt).getFullYear() : minY
@@ -932,13 +938,13 @@ AURAN이 내 피부 패턴을
   const periodPinkSet = useMemo(() => {
     const pink = new Set<string>()
     if (homeCalendarKind !== 'menstrual' || isPregnancyTrack) return pink
-    const seoulCap = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    const seoulCap = getSeoulToday()
     const todayIsoCap = `${seoulCap.getFullYear()}-${String(seoulCap.getMonth() + 1).padStart(2, '0')}-${String(seoulCap.getDate()).padStart(2, '0')}`
     const L = String(hormoneCycle?.last_period_date || hormoneCycle?.period_started_at || '').trim().slice(0, 10)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(L)) return pink
     let endStr = String(hormoneCycle?.period_end_date || '').trim().slice(0, 10)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(endStr)) {
-      const seoul = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+      const seoul = getSeoulToday()
       endStr = `${seoul.getFullYear()}-${String(seoul.getMonth() + 1).padStart(2, '0')}-${String(seoul.getDate()).padStart(2, '0')}`
     }
     if (endStr < L) return pink
@@ -985,7 +991,7 @@ AURAN이 내 피부 패턴을
     return hasA || hasD
   }, [skinCalYM.y, skinCalYM.m, monthCycleRows, skinDailyRows])
   const monthCalendarDays = useMemo(() => {
-    const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    const s = getSeoulToday()
     if (skinCalTab !== 'TODAY') return [] as { iso: string; day: number; isToday: boolean; stripOff: number }[]
     const todayIso = `${s.getFullYear()}-${String(s.getMonth() + 1).padStart(2, '0')}-${String(s.getDate()).padStart(2, '0')}`
     const mid = new Date(s.getFullYear(), s.getMonth(), s.getDate(), 12, 0, 0)
@@ -1004,7 +1010,7 @@ AURAN이 내 피부 패턴을
     return `${s.getFullYear()}-${String(s.getMonth() + 1).padStart(2, '0')}-${String(s.getDate()).padStart(2, '0')}`
   }, [calendarPickDate])
   const skinCalTitleEn = useMemo(() => {
-    const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    const s = getSeoulToday()
     if (skinCalTab === 'TODAY') return `${MONTHS[s.getMonth()]} ${s.getFullYear()}`
     if (skinCalTab === 'YEARLY') return `${skinCalYM.y}`
     return `${MONTHS[skinCalYM.m]} ${skinCalYM.y}`
@@ -1044,7 +1050,7 @@ AURAN이 내 피부 패턴을
     return String(c.phase || '황체기')
   }
   const pregnancyWeekText = useMemo(() => {
-    const now = new Date()
+    const now = getSeoulToday()
     if (hormoneTrack === 'pregnant') {
       const base = hormoneCycle?.pregnancy_start_date || hormoneCycle?.last_period_date
       if (!base) return '임신 주차를 입력하면 주차가 표시돼요'
@@ -2324,7 +2330,7 @@ AURAN이 내 피부 패턴을
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                     {(() => {
-                      const navNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+                      const navNow = getSeoulToday()
                       const cY = navNow.getFullYear()
                       const cM = navNow.getMonth()
                       return MONTHS.map((ml, mi) => {
