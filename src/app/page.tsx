@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { NotificationPanel } from '@/components/notifications/NotificationPanel'
 import { useCart } from '@/context/CartContext'
 import { TOOLTIP_FALLBACKS, calcHormoneBriefing, isPeriodTrack } from '@/lib/hormoneUtils'
+import { logUserBehavior, upsertSkinCycleDaily } from '@/lib/skinAnalytics'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
@@ -598,51 +599,83 @@ export default function CustomerHomePage() {
     checkinSorted.length > 0
       ? checkinSorted.find((c: any) => String(c.id) === String(checkInTab)) || checkinSorted[0]
       : null
-  let skinRecPool: any[] = products.length > 0 ? [...products] : []
-  if (selectedCheckinOpt && skinRecPool.length > 0) {
-    const idsRaw =
-      selectedCheckinOpt.recommend_product_ids ??
-      selectedCheckinOpt.product_ids ??
-      selectedCheckinOpt.recommended_product_ids
-    let idList: string[] = []
-    if (Array.isArray(idsRaw)) idList = idsRaw.map((x: any) => String(x)).filter(Boolean)
-    else if (typeof idsRaw === 'string' && idsRaw.trim()) {
-      try {
-        const p = JSON.parse(idsRaw)
-        if (Array.isArray(p)) idList = p.map((x: any) => String(x)).filter(Boolean)
-      } catch { /* ignore */ }
-    }
-    if (idList.length > 0) {
-      const set = new Set(idList)
-      const filtered = skinRecPool.filter((p: any) => set.has(String(p.id)))
-      if (filtered.length > 0) skinRecPool = filtered
-    } else {
-      const lt = String(
-        selectedCheckinOpt.linked_tag ??
-          selectedCheckinOpt.connection_tag ??
-          selectedCheckinOpt.tag_link ??
-          ''
-      ).trim()
-      if (lt) {
-        const ll = lt.toLowerCase()
-        const filtered = skinRecPool.filter((p: any) => {
-          const tag = String(p.tag || '').toLowerCase()
-          const qm = Array.isArray(p.quiz_match) ? p.quiz_match.map((x: any) => String(x).toLowerCase()).join(' ') : ''
-          return tag.includes(ll) || qm.includes(ll)
-        })
+  const skinRecList = useMemo(() => {
+    let skinRecPool: any[] = products.length > 0 ? [...products] : []
+    const sel =
+      checkinSorted.length > 0
+        ? checkinSorted.find((c: any) => String(c.id) === String(checkInTab)) || checkinSorted[0]
+        : null
+    if (sel && skinRecPool.length > 0) {
+      const idsRaw = sel.recommend_product_ids ?? sel.product_ids ?? sel.recommended_product_ids
+      let idList: string[] = []
+      if (Array.isArray(idsRaw)) idList = idsRaw.map((x: any) => String(x)).filter(Boolean)
+      else if (typeof idsRaw === 'string' && idsRaw.trim()) {
+        try {
+          const p = JSON.parse(idsRaw)
+          if (Array.isArray(p)) idList = p.map((x: any) => String(x)).filter(Boolean)
+        } catch { /* ignore */ }
+      }
+      if (idList.length > 0) {
+        const set = new Set(idList)
+        const filtered = skinRecPool.filter((p: any) => set.has(String(p.id)))
         if (filtered.length > 0) skinRecPool = filtered
+      } else {
+        const lt = String(sel.linked_tag ?? sel.connection_tag ?? sel.tag_link ?? '').trim()
+        if (lt) {
+          const ll = lt.toLowerCase()
+          const filtered = skinRecPool.filter((p: any) => {
+            const tag = String(p.tag || '').toLowerCase()
+            const qm = Array.isArray(p.quiz_match) ? p.quiz_match.map((x: any) => String(x).toLowerCase()).join(' ') : ''
+            return tag.includes(ll) || qm.includes(ll)
+          })
+          if (filtered.length > 0) skinRecPool = filtered
+        }
       }
     }
-  }
-  if (hormoneTrack && skinRecPool.length > 0) {
-    const filteredByTrack = skinRecPool.filter((p: any) => {
-      const arr = Array.isArray(p?.categories?.target_tracks) ? p.categories.target_tracks.map((x: any) => String(x)) : []
-      if (arr.length === 0) return true
-      return arr.includes('all') || arr.includes(hormoneTrack)
+    if (hormoneTrack && skinRecPool.length > 0) {
+      const filteredByTrack = skinRecPool.filter((p: any) => {
+        const arr = Array.isArray(p?.categories?.target_tracks) ? p.categories.target_tracks.map((x: any) => String(x)) : []
+        if (arr.length === 0) return true
+        return arr.includes('all') || arr.includes(hormoneTrack)
+      })
+      if (filteredByTrack.length > 0) skinRecPool = filteredByTrack
+    }
+    const pl = products.length > 0 ? products : FALLBACK_PRODUCTS
+    return skinRecPool.length > 0 ? skinRecPool : pl
+  }, [checkInTab, checkinOptions, products, hormoneTrack])
+
+  useEffect(() => {
+    if (!myUserId || !checkInTab) return
+    const opt =
+      checkinSorted.find((c: any) => String(c.id) === String(checkInTab)) ||
+      displayCheckinTabs.find((c: any) => String(c.id) === String(checkInTab))
+    const condition =
+      `${(opt as any)?.emoji || ''}${(opt as any)?.label || ''}`.trim() ||
+      String((opt as any)?.linked_tag || (opt as any)?.connection_tag || (opt as any)?.tag_link || checkInTab)
+    const hcRow = hormoneCycle || { track: hormoneTrack, cycle_length: 28, last_period_date: null }
+    const calc = calcHormoneBriefing(hcRow)
+    const today = new Date().toISOString().slice(0, 10)
+    const ids = skinRecList.slice(0, 16).map((p: any) => String(p.id)).filter(Boolean)
+    void upsertSkinCycleDaily(supabase, myUserId, {
+      record_date: today,
+      cycle_day: calc.cycleDay,
+      hormone_stage: calc.phase,
+      checkin_condition: condition,
+      recommended_products: ids,
     })
-    if (filteredByTrack.length > 0) skinRecPool = filteredByTrack
+  }, [checkInTab, myUserId, hormoneCycle, hormoneTrack, skinRecList, supabase, checkinSorted, displayCheckinTabs])
+
+  const logProductNav = (p: any) => {
+    if (!myUserId || !p?.id) return
+    void logUserBehavior(supabase, myUserId, 'product_click', String(p.id), {
+      category_id: p.category_id ?? p.categories?.id ?? null,
+      price: Number(p.is_timesale ? (p.sale_price ?? p.retail_price) : (p.retail_price ?? p.price)) || 0,
+    })
   }
-  const skinRecList = skinRecPool.length > 0 ? skinRecPool : productList
+  const logRoutineView = (source: string) => {
+    if (!myUserId) return
+    void logUserBehavior(supabase, myUserId, 'routine_view', null, { source })
+  }
   const productById: Record<string, any> = {}
   products.forEach((p: any) => {
     if (p?.id) productById[String(p.id)] = p
@@ -796,6 +829,7 @@ export default function CustomerHomePage() {
                   <div
                     key={p.id}
                     onClick={() => {
+                      logProductNav(p)
                       router.push(`/products/${p.id}`)
                       setSearchOpen(false)
                       setSearchKeyword('')
@@ -1087,7 +1121,16 @@ export default function CustomerHomePage() {
               <div key={tid} style={{ position: 'relative', flexShrink: 0 }}>
                 <button
                   type="button"
-                  onClick={() => setCheckInTab(on ? null : tid)}
+                  onClick={() => {
+                    const nextId = on ? null : tid
+                    setCheckInTab(nextId)
+                    if (myUserId && nextId) {
+                      const condition =
+                        `${t.emoji ?? ''}${t.label ?? ''}`.trim() ||
+                        String(t.linked_tag ?? t.connection_tag ?? t.tag_link ?? tid)
+                      void logUserBehavior(supabase, myUserId, 'checkin', tid, { condition })
+                    }
+                  }}
                   style={{
                     flexShrink: 0,
                     padding: '8px 12px',
@@ -1172,6 +1215,7 @@ export default function CustomerHomePage() {
                       return
                     }
                     await supabase.from('customer_question_answers').insert({ auth_id: myUserId, question_id: dailyQuestion.id, answer_value: op, answer_date: today } as any)
+                    void logUserBehavior(supabase, myUserId, 'question_answer', String(dailyQuestion.id), { answer: op })
                     setHomeToast('답변 저장 완료')
                   }}
                   style={{ padding: '6px 9px', borderRadius: 999, border: '1px solid rgba(123,94,167,0.4)', background: 'rgba(123,94,167,0.2)', color: '#e8d9ff', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}
@@ -1205,6 +1249,7 @@ export default function CustomerHomePage() {
                       return
                     }
                     await supabase.from('customer_question_answers').insert({ auth_id: myUserId, question_id: dailyQuestion.id, answer_value: questionAnswer.trim(), answer_date: today } as any)
+                    void logUserBehavior(supabase, myUserId, 'question_answer', String(dailyQuestion.id), { answer: questionAnswer.trim() })
                     setHomeToast('답변 저장 완료')
                   }}
                   style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.2)', color: '#e8d4a8', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}
@@ -1223,6 +1268,7 @@ export default function CustomerHomePage() {
               setHomeEditSheet({ kind: 'care_banner', label: '케어 액션 배너', draft: careBannerLine })
               return
             }
+            logRoutineView('care_banner')
             routineMoreRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
           }}
           style={{
@@ -1325,12 +1371,14 @@ export default function CustomerHomePage() {
             onKeyDown={e => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault()
+                logRoutineView('routine_more')
                 setRoutineExpanded(true)
                 setRoutineMentorOpen(true)
                 setTimeout(() => routineMoreRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
               }
             }}
             onClick={() => {
+              logRoutineView('routine_more')
               setRoutineExpanded(true)
               setRoutineMentorOpen(true)
               setTimeout(() => routineMoreRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80)
@@ -1357,7 +1405,10 @@ export default function CustomerHomePage() {
           return (
             <div
               key={p.id ?? i}
-              onClick={() => router.push(`/products/${p.id}`)}
+              onClick={() => {
+                logProductNav(p)
+                router.push(`/products/${p.id}`)
+              }}
               style={{
                 minWidth: '130px', background: CARD_BG, border: CARD_BORDER,
                 borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0,
@@ -1632,7 +1683,10 @@ export default function CustomerHomePage() {
                   if (!rp && first.category_id) {
                     rp = products.find((x: any) => String(x.category_id) === String(first.category_id)) || null
                   }
-                  if (rp?.id) router.push(`/products/${rp.id}`)
+                  if (rp?.id) {
+                    logProductNav(rp)
+                    router.push(`/products/${rp.id}`)
+                  }
                   else setHomeToast('바로구매할 제품이 없어요')
                 }}
                 style={{
@@ -2112,7 +2166,7 @@ export default function CustomerHomePage() {
         {saleTab === 'sale' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {saleList.map((item: any, i: number) => (
-              <div key={i} onClick={() => router.push(`/products/${item.id}`)} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden' }}>
+              <div key={i} onClick={() => { logProductNav({ ...(item.product || {}), id: item.id, retail_price: item.product?.retail_price, sale_price: item.product?.sale_price, is_timesale: item.product?.is_timesale, categories: item.product?.categories }); router.push(`/products/${item.id}`) }} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden' }}>
                 <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
                   <div style={{
                     width: '120px',
@@ -2189,6 +2243,7 @@ export default function CustomerHomePage() {
                   <div style={{ flex: 1, padding: '8px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>🎁 선물</div>
                   <div onClick={async (e) => {
                     e.stopPropagation()
+                    logProductNav({ ...(item.product || {}), id: item.id, retail_price: item.product?.retail_price })
                     const { data: { session } } = await supabase.auth.getSession()
                     if (!session) {
                       router.push(`/products/${item.id}`)
@@ -2214,7 +2269,7 @@ export default function CustomerHomePage() {
               const salePrice = item.sale ?? item.sale_price ?? item.product?.retail_price
               const discPct = Number(item.disc ?? item.discount_rate ?? (origPrice && salePrice ? Math.round(((Number(origPrice) - Number(salePrice)) / Number(origPrice)) * 100) : 0))
               return (
-              <div key={i} onClick={() => router.push(`/products/${item.product_id || item.id}`)} style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
+              <div key={i} onClick={() => { const pid = item.product_id || item.id; logProductNav({ ...(item.product || {}), id: pid }); router.push(`/products/${pid}`) }} style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
                 <div style={{ background: 'linear-gradient(135deg,rgba(60,80,200,0.15),rgba(80,120,240,0.1))', padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: '10px', color: 'rgba(120,160,255,0.9)', fontFamily: 'monospace' }}>👥 공동구매 · </span>
                   <span style={{ fontSize: '10px', color: TEXT_MUTED }}>{current}/{target}명</span>
@@ -2241,7 +2296,9 @@ export default function CustomerHomePage() {
                 <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
                   <div onClick={(e) => {
                     e.stopPropagation()
-                    router.push(`/products/${item.product_id || item.id}`)
+                    const pid = item.product_id || item.id
+                    logProductNav({ ...(item.product || {}), id: pid })
+                    router.push(`/products/${pid}`)
                   }} style={{ flex: 2, padding: '9px 0', background: 'linear-gradient(135deg,#4060C0,#6080E0)', borderRadius: '8px', fontSize: '11px', color: '#fff', textAlign: 'center', cursor: 'pointer' }}>👥 공구 참여하기</div>
                   <div style={{ flex: 1, padding: '9px 0', background: 'rgba(80,120,220,0.1)', border: '1px solid rgba(80,120,220,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(120,160,255,0.8)', textAlign: 'center', cursor: 'pointer' }}>📤 친구 초대</div>
                 </div>
@@ -2310,7 +2367,7 @@ export default function CustomerHomePage() {
       </div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
         {newList.map((item: any, i: number) => (
-          <div key={i} onClick={() => router.push(`/products/${item.id}`)} style={{ minWidth: '130px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
+          <div key={i} onClick={() => { logProductNav(item); router.push(`/products/${item.id}`) }} style={{ minWidth: '130px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
             <div style={{
               width: 120,
               height: 120,
@@ -2516,6 +2573,7 @@ export default function CustomerHomePage() {
                       return
                     }
                     await supabase.from('customer_question_answers').insert({ auth_id: myUserId, question_id: questionPopup.id, answer_value: op, answer_date: d } as any)
+                    void logUserBehavior(supabase, myUserId, 'question_answer', String(questionPopup.id), { answer: op })
                     setQuestionPopup(null)
                     setHomeToast('답변 저장 완료')
                   }}
@@ -2545,6 +2603,7 @@ export default function CustomerHomePage() {
                       return
                     }
                     await supabase.from('customer_question_answers').insert({ auth_id: myUserId, question_id: questionPopup.id, answer_value: questionAnswer.trim(), answer_date: d } as any)
+                    void logUserBehavior(supabase, myUserId, 'question_answer', String(questionPopup.id), { answer: questionAnswer.trim() })
                     setQuestionPopup(null)
                     setHomeToast('답변 저장 완료')
                   }}

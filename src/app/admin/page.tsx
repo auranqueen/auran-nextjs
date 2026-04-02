@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { requireAdmin } from './_auth'
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: { searchParams?: { insight?: string } }) {
   const supabase = createClient()
   await requireAdmin(supabase as any)
 
@@ -37,6 +37,105 @@ export default async function AdminPage() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
   const { data: monthlyOrders } = await supabase.from('orders').select('final_amount').gte('ordered_at', monthStart).not('status', 'in', '("취소","환불")')
   const monthlyRevenue = (monthlyOrders || []).reduce((s, o) => s + (o.final_amount || 0), 0)
+
+  const kstYmd = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
+  const dayStartIso = new Date(`${kstYmd}T00:00:00+09:00`).toISOString()
+
+  const { data: skinToday } = await supabase
+    .from('skin_cycle_analysis')
+    .select('auth_id, checkin_condition, hormone_stage')
+    .eq('record_date', kstYmd)
+  const checkinTodayUsers = new Set((skinToday || []).map((r: any) => String(r.auth_id || '')).filter(Boolean)).size
+  const goldenTodayUsers = new Set(
+    (skinToday || [])
+      .filter((r: any) => String(r.hormone_stage || '').includes('여포'))
+      .map((r: any) => String(r.auth_id || ''))
+      .filter(Boolean)
+  ).size
+
+  const { data: behClicks } = await supabase.from('user_behavior_logs').select('id').eq('action_type', 'product_click').gte('created_at', dayStartIso)
+  const { data: behPurch } = await supabase.from('user_behavior_logs').select('id, metadata').eq('action_type', 'purchase').gte('created_at', dayStartIso)
+  const clickCnt = (behClicks || []).length
+  const purchaseCompleteCnt = (behPurch || []).filter((r: any) => String((r.metadata as any)?.flow || '') === 'order_complete').length
+  const conversionPct = clickCnt > 0 ? Math.round((purchaseCompleteCnt / clickCnt) * 1000) / 10 : 0
+
+  const { data: hcAll } = await supabase.from('hormone_cycle').select('track')
+  const trackDist: Record<string, number> = {}
+  for (const r of hcAll || []) {
+    const t = String((r as { track?: string }).track || 'general')
+    trackDist[t] = (trackDist[t] || 0) + 1
+  }
+  const trackTotal = Object.values(trackDist).reduce((a, b) => a + b, 0) || 1
+  const pieColors = ['#c9a84c', '#7B5EA7', '#4cad7e', '#5b8def', '#e08080', '#9ca3af', '#38bdf8']
+  let pieAcc = 0
+  const pieStops = Object.entries(trackDist)
+    .map(([_, v], i) => {
+      const pct = (v / trackTotal) * 100
+      const from = pieAcc
+      pieAcc += pct
+      return `${pieColors[i % pieColors.length]} ${from}% ${pieAcc}%`
+    })
+    .join(', ')
+
+  const { data: searchRaw } = await supabase
+    .from('customer_search_logs')
+    .select('search_keyword, count, source, created_at')
+    .eq('source', '검색')
+    .gte('created_at', monthStart)
+  const kwAgg: Record<string, number> = {}
+  for (const r of searchRaw || []) {
+    const k = String((r as { search_keyword?: string }).search_keyword || '').trim()
+    if (!k) continue
+    kwAgg[k] = (kwAgg[k] || 0) + Math.max(1, Number((r as { count?: number }).count || 1))
+  }
+  const searchTop10 = Object.entries(kwAgg)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+
+  const { count: pendingPromote } = await supabase
+    .from('customer_search_logs')
+    .select('*', { count: 'exact', head: true })
+    .eq('source', '검색')
+    .eq('is_promoted', false)
+
+  const insight = searchParams?.insight || ''
+  let insightRows: { title: string; rows: any[] } | null = null
+  if (insight === 'checkin_today') insightRows = { title: '오늘 체크인 기록', rows: skinToday || [] }
+  else if (insight === 'golden_today')
+    insightRows = {
+      title: '오늘 황금기(여포기) 기록',
+      rows: (skinToday || []).filter((r: any) => String(r.hormone_stage || '').includes('여포')),
+    }
+  else if (insight === 'product_clicks') {
+    const { data } = await supabase
+      .from('user_behavior_logs')
+      .select('*')
+      .eq('action_type', 'product_click')
+      .gte('created_at', dayStartIso)
+      .order('created_at', { ascending: false })
+      .limit(100)
+    insightRows = { title: '오늘 상품 클릭 로그', rows: data || [] }
+  } else if (insight === 'purchases_today') {
+    const { data } = await supabase
+      .from('user_behavior_logs')
+      .select('*')
+      .eq('action_type', 'purchase')
+      .gte('created_at', dayStartIso)
+      .order('created_at', { ascending: false })
+      .limit(100)
+    insightRows = { title: '오늘 구매 관련 로그', rows: data || [] }
+  } else if (insight === 'tracks') insightRows = { title: '호르몬 트랙 (원본)', rows: hcAll || [] }
+  else if (insight === 'search_top') insightRows = { title: '이번 달 검색어 TOP', rows: searchTop10.map(([keyword, total]) => ({ keyword, total })) }
+  else if (insight === 'pending_tags') {
+    const { data } = await supabase
+      .from('customer_search_logs')
+      .select('*')
+      .eq('source', '검색')
+      .eq('is_promoted', false)
+      .order('created_at', { ascending: false })
+      .limit(80)
+    insightRows = { title: '승격 대기 자연어 로그', rows: data || [] }
+  }
 
   const pendingShip = (pendingOrders || []).length
   const pendingSettle = (pendingSettlements || []).length
@@ -102,6 +201,127 @@ export default async function AdminPage() {
           <div className="sub dim">role=brand</div>
         </div>
       </div>
+
+      <div style={{ margin: '18px 0 12px', fontSize: 11, color: 'var(--text3)', letterSpacing: '.08em' }}>오늘 · 고객 행동 / 피부 사이클 (실시간)</div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10, marginBottom: 18 }}>
+        <a href="/admin?insight=checkin_today" className="card" style={{ padding: 12, textDecoration: 'none', color: 'inherit' }}>
+          <div className="lbl">오늘 체크인 고객</div>
+          <div className="val" style={{ color: 'var(--gold)' }}>
+            {checkinTodayUsers}
+            <span style={{ fontSize: 12, color: 'var(--text3)' }}>명</span>
+          </div>
+          <div className="sub dim">skin_cycle_analysis · KST {kstYmd}</div>
+        </a>
+        <a href="/admin?insight=golden_today" className="card" style={{ padding: 12, textDecoration: 'none', color: 'inherit' }}>
+          <div className="lbl">오늘 황금기 고객</div>
+          <div className="val" style={{ color: 'var(--pink)' }}>
+            {goldenTodayUsers}
+            <span style={{ fontSize: 12, color: 'var(--text3)' }}>명</span>
+          </div>
+          <div className="sub dim">여포기 단계 기록</div>
+        </a>
+        <div className="card" style={{ padding: 12 }}>
+          <a href="/admin?insight=purchases_today" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <div className="lbl">오늘 구매전환</div>
+            <div className="val" style={{ color: 'var(--blue)' }}>
+              {conversionPct}
+              <span style={{ fontSize: 12, color: 'var(--text3)' }}>%</span>
+            </div>
+            <div className="sub dim">구매확정 {purchaseCompleteCnt} / 클릭 {clickCnt}</div>
+          </a>
+          <a className="btn btn-gy" href="/admin?insight=product_clicks" style={{ fontSize: 9, padding: '4px 8px', marginTop: 8, display: 'inline-block' }}>
+            클릭 로그 보기
+          </a>
+        </div>
+        <div className="card" style={{ padding: 12 }}>
+          <div className="lbl">트랙 분포</div>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 6 }}>
+            <a href="/admin?insight=tracks" style={{ textDecoration: 'none' }}>
+              <div
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: '50%',
+                  background: pieStops ? `conic-gradient(${pieStops})` : 'rgba(255,255,255,0.08)',
+                  border: '1px solid var(--border)',
+                }}
+              />
+            </a>
+            <div style={{ flex: 1, fontSize: 10, color: 'var(--text3)', lineHeight: 1.5 }}>
+              {Object.entries(trackDist)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 6)
+                .map(([k, v], i) => (
+                  <div key={k}>
+                    <span style={{ color: pieColors[i % pieColors.length] }}>●</span> {k} {v}
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+        <a href="/admin?insight=search_top" className="card" style={{ padding: 12, textDecoration: 'none', color: 'inherit' }}>
+          <div className="lbl">이번 달 검색 TOP10</div>
+          <div className="val" style={{ fontSize: 13, color: 'var(--text)' }}>
+            {searchTop10[0] ? `${searchTop10[0][0]} (${searchTop10[0][1]})` : '—'}
+          </div>
+          <div className="sub dim">customer_search_logs</div>
+        </a>
+        <div className="card" style={{ padding: 12 }}>
+          <a href="/admin?insight=pending_tags" style={{ textDecoration: 'none', color: 'inherit' }}>
+            <div className="lbl">승격 대기 자연어</div>
+            <div className="val" style={{ color: 'var(--gold)' }}>{pendingPromote ?? 0}</div>
+          </a>
+          <a className="btn btn-gy" href="/admin/settings/categories" style={{ fontSize: 9, padding: '4px 8px', marginTop: 8, display: 'inline-block' }}>
+            태그 관리 →
+          </a>
+        </div>
+      </div>
+
+      {insightRows ? (
+        <div className="card" style={{ marginBottom: 18 }}>
+          <div className="card-hdr">
+            <div className="card-title">{insightRows.title}</div>
+            <a className="btn btn-gy" href="/admin">
+              닫기
+            </a>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                {(insightRows.rows[0] && typeof insightRows.rows[0] === 'object'
+                  ? Object.keys(insightRows.rows[0])
+                  : ['value']
+                ).map(k => (
+                  <th key={k}>{k}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {insightRows.rows.length === 0 ? (
+                <tr>
+                  <td colSpan={4} style={{ color: 'var(--text3)' }}>
+                    데이터가 없습니다.
+                  </td>
+                </tr>
+              ) : (
+                insightRows.rows.map((r, i) => (
+                  <tr key={i}>
+                    {typeof r === 'object' && r !== null ? (
+                      Object.keys(insightRows.rows[0] as object).map(k => (
+                        <td key={k} className="mono" style={{ fontSize: 10, maxWidth: 220, wordBreak: 'break-all' }}>
+                          {String((r as any)[k] ?? '')}
+                        </td>
+                      ))
+                    ) : (
+                      <td className="mono">{String(r)}</td>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
 
       <div className="split s32">
         <div className="card">

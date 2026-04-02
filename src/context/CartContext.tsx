@@ -10,6 +10,8 @@ import {
 } from 'react'
 import { nanoid } from 'nanoid'
 import { broadcastCartCountRefresh } from '@/lib/cartEvents'
+import { createClient } from '@/lib/supabase/client'
+import { logUserBehavior } from '@/lib/skinAnalytics'
 import type { CartItem } from '@/types'
 
 export type CartLine = CartItem & { id: string }
@@ -163,6 +165,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         setBump(b => b + 1)
         return [...prev, line]
       })
+      void (async () => {
+        const sb = createClient()
+        const {
+          data: { user },
+        } = await sb.auth.getUser()
+        await logUserBehavior(sb, user?.id ?? null, 'purchase', p.product_id, {
+          flow: 'cart',
+          price: p.price,
+          total_amount: p.price * qty,
+        })
+      })()
       return { wasNewLine }
     },
     []

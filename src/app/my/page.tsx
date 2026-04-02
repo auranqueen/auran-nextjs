@@ -37,6 +37,7 @@ export default function MyPage() {
   const [periodTipOpen, setPeriodTipOpen] = useState(false)
   const [periodTipText, setPeriodTipText] = useState(TOOLTIP_FALLBACKS.period_start)
   const [periodQuietNotice, setPeriodQuietNotice] = useState('')
+  const [skinMonthlyReport, setSkinMonthlyReport] = useState<any>(null)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -140,6 +141,15 @@ export default function MyPage() {
             if (ord) setOrders(ord)
           })
         supabase
+          .from('monthly_skin_reports')
+          .select('*')
+          .eq('auth_id', data.user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .then(({ data: reps }) => {
+            setSkinMonthlyReport(reps?.[0] || null)
+          })
+        supabase
           .from('friend_activities')
           .select('*')
           .eq('user_id', data.user.id)
@@ -228,6 +238,7 @@ export default function MyPage() {
         setExpiringPoint(0)
         setFriendFeed([])
         setRecentOrdersForRefill([])
+        setSkinMonthlyReport(null)
       }
     })
     // TODO: coupons 테이블에서 사용 가능한 쿠폰 조회
@@ -433,6 +444,26 @@ export default function MyPage() {
           ✅ 프로필 완성! 맞춤 추천이 활성화됐어요 💜
         </div>
       )}
+
+      {skinMonthlyReport ? (
+        <div style={{ margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: '14px 16px' }}>
+          <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 6 }}>이번 달 피부 리포트</div>
+          <div style={{ fontSize: 13, color: '#fff', lineHeight: 1.55 }}>
+            {(() => {
+              const golden = Number(skinMonthlyReport.hormone_pattern?.['여포기'] || 0)
+              const cs = skinMonthlyReport.checkin_summary || {}
+              const top = Object.entries(cs).sort((a, b) => Number(b[1]) - Number(a[1]))[0] as [string, number] | undefined
+              if (top && top[0])
+                return `지난달 황금기에 ${userName}님은 ${top[0]} 체크인을 ${top[1]}번 기록했어요 (여포기 ${golden}일)`
+              return `지난달 피부 리포트가 준비됐어요 (${String(skinMonthlyReport.report_month || '')})`
+            })()}
+          </div>
+          <div style={{ fontSize: 10, color: TEXT_DIM, marginTop: 8 }}>
+            구매 합계 ₩{Number(skinMonthlyReport.purchase_summary?.total_amount || 0).toLocaleString()} · 피부사진 기록{' '}
+            {Number(skinMonthlyReport.skin_changes?.photo_count ?? 0)}건
+          </div>
+        </div>
+      ) : null}
 
       {/* AURAN POINT */}
       <div style={{ margin: '14px 16px 0', background: 'rgba(123,94,167,0.12)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: '18px', padding: '16px' }}>

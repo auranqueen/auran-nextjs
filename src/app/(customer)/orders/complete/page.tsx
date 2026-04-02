@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { appendSkinCyclePurchased, logUserBehavior } from '@/lib/skinAnalytics'
 
 const BG = '#0D0B09'
 const GOLD = '#C9A96E'
@@ -67,6 +68,19 @@ function OrderCompleteContent() {
       }
       const productName = items[0]?.product_name || '상품'
       const qty = Number(items[0]?.quantity || 1)
+      const payTotal = num((order as { final_amount?: number }).final_amount, 0)
+      if (loggedIn && user?.id) {
+        const today = new Date().toISOString().slice(0, 10)
+        const pids = items.map((it: any) => String(it?.product_id || '').trim()).filter(Boolean)
+        if (pids.length > 0) await appendSkinCyclePurchased(supabase, user.id, today, pids)
+        for (const pid of pids) {
+          await logUserBehavior(supabase, user.id, 'purchase', pid, {
+            flow: 'order_complete',
+            total_amount: payTotal,
+            category_id: items.find((it: any) => String(it?.product_id) === pid)?.category_id ?? null,
+          })
+        }
+      }
 
       let tx: { amount?: number } | null = null
       let bs: { setting_value?: unknown } | null = null
@@ -91,7 +105,7 @@ function OrderCompleteContent() {
         setOrderNo(String((order as { order_no?: string; id?: string }).order_no || (order as { id?: string }).id || ''))
         setProductLabel(productName)
         setProductQty(Number.isNaN(qty) ? 1 : qty)
-        setPayAmount(num((order as { final_amount?: number }).final_amount, 0))
+        setPayAmount(payTotal)
         setToastAmount(tx ? num(tx.amount, 0) : null)
         setPurchaseRate(num(bs?.setting_value, 3))
         setOrderMissing(false)

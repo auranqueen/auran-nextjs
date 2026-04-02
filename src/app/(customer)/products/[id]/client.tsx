@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { logUserBehavior } from '@/lib/skinAnalytics'
 import '@toast-ui/editor/dist/toastui-editor-viewer.css'
 import { Editor } from '@toast-ui/react-editor'
 import '@toast-ui/editor/dist/toastui-editor.css'
@@ -126,6 +127,15 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     })
     const data = await res.json()
     if (data.payUrl) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      await logUserBehavior(supabase, user?.id ?? null, 'purchase', product.id, {
+        flow: 'checkout_start',
+        total_amount: price * qty,
+        category_id: product.category_id ?? null,
+        price,
+      })
       try { localStorage.removeItem('pending_payment'); localStorage.removeItem('pending_payment_ctx') } catch {}
       window.location.href = data.payUrl
     } else {
