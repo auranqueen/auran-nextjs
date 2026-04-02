@@ -9,6 +9,7 @@ type Cat = {
   parent_id: string | null
   level: number
   sort_order: number | null
+  target_tracks?: string[] | null
 }
 
 type FlatRow = Cat & { depth: number }
@@ -23,6 +24,7 @@ export default function AdminCategoriesPage() {
   const [sheet, setSheet] = useState<Cat | null>(null)
   const [sheetName, setSheetName] = useState('')
   const [sheetSort, setSheetSort] = useState('0')
+  const [sheetTracks, setSheetTracks] = useState<string[]>([])
   const [viewTab, setViewTab] = useState<'category' | 'skin' | 'natural'>('category')
   const [selL1, setSelL1] = useState('')
   const [selL2, setSelL2] = useState('')
@@ -34,7 +36,7 @@ export default function AdminCategoriesPage() {
   const loadRows = useCallback(async () => {
     const { data, error } = await supabase
       .from('categories')
-      .select('id,name,parent_id,level,sort_order')
+      .select('id,name,parent_id,level,sort_order,target_tracks')
       .order('sort_order', { ascending: true, nullsFirst: false })
       .order('name', { ascending: true })
     if (error) {
@@ -145,19 +147,21 @@ export default function AdminCategoriesPage() {
     setSheet(c)
     setSheetName(c.name || '')
     setSheetSort(String(c.sort_order ?? 0))
+    setSheetTracks(Array.isArray(c.target_tracks) ? c.target_tracks.map(x => String(x)) : ['all'])
   }
 
   const closeSheet = () => {
     setSheet(null)
     setSheetName('')
     setSheetSort('0')
+    setSheetTracks([])
   }
 
   const confirmSheet = () => {
     if (!sheet) return
     const so = Math.floor(Number(sheetSort) || 0)
     const nm = sheetName.trim() || '이름 없음'
-    setRows(prev => prev.map(r => (r.id === sheet.id ? { ...r, name: nm, sort_order: so } : r)))
+    setRows(prev => prev.map(r => (r.id === sheet.id ? { ...r, name: nm, sort_order: so, target_tracks: sheetTracks } : r)))
     closeSheet()
   }
 
@@ -186,7 +190,7 @@ export default function AdminCategoriesPage() {
     const id = crypto.randomUUID()
     setRows(prev => [
       ...prev,
-      { id, name: '새 대분류', parent_id: null, level: 1, sort_order: maxSort + 1 },
+      { id, name: '새 대분류', parent_id: null, level: 1, sort_order: maxSort + 1, target_tracks: ['all'] },
     ])
   }
 
@@ -204,6 +208,7 @@ export default function AdminCategoriesPage() {
         parent_id: parent.id,
         level: nextLevel,
         sort_order: maxSort + 1,
+        target_tracks: ['all'],
       },
     ])
   }
@@ -263,6 +268,7 @@ export default function AdminCategoriesPage() {
           parent_id: r.parent_id,
           level: r.level,
           sort_order: r.sort_order ?? 0,
+          target_tracks: Array.isArray(r.target_tracks) && r.target_tracks.length > 0 ? r.target_tracks : ['all'],
         } as any)
         if (error) throw new Error(error.message)
       }
@@ -274,7 +280,8 @@ export default function AdminCategoriesPage() {
           prev.name === r.name &&
           (prev.sort_order ?? 0) === (r.sort_order ?? 0) &&
           pidEq(prev.parent_id, r.parent_id) &&
-          (prev.level ?? 0) === (r.level ?? 0)
+          (prev.level ?? 0) === (r.level ?? 0) &&
+          JSON.stringify((prev.target_tracks || []).slice().sort()) === JSON.stringify((r.target_tracks || []).slice().sort())
         ) {
           continue
         }
@@ -285,6 +292,7 @@ export default function AdminCategoriesPage() {
             sort_order: r.sort_order ?? 0,
             parent_id: r.parent_id,
             level: r.level,
+            target_tracks: Array.isArray(r.target_tracks) && r.target_tracks.length > 0 ? r.target_tracks : ['all'],
           } as any)
           .eq('id', r.id)
         if (error) throw new Error(error.message)
@@ -599,7 +607,7 @@ export default function AdminCategoriesPage() {
                   const siblings = rows.filter(r => Number(r.level || 0) === 5 && (r.parent_id == null || r.parent_id === ''))
                   const maxSort = siblings.reduce((m, r) => Math.max(m, r.sort_order ?? 0), -1)
                   const id = crypto.randomUUID()
-                  setRows(prev => [...prev, { id, name: '새 스킨태그', parent_id: null, level: 5, sort_order: maxSort + 1 }])
+                  setRows(prev => [...prev, { id, name: '새 스킨태그', parent_id: null, level: 5, sort_order: maxSort + 1, target_tracks: ['all'] }])
                 }}
                 style={{
                   marginTop: 6,
@@ -718,6 +726,55 @@ export default function AdminCategoriesPage() {
                   </div>
                 ))
               )}
+            </div>
+          ) : null}
+          {viewTab === 'natural' ? (
+            <div style={{ marginTop: 14, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 10 }}>
+              <div style={{ fontSize: 12, color: '#fff', marginBottom: 8 }}>툴팁 키 관리</div>
+              <button
+                type="button"
+                onClick={async () => {
+                  await supabase.from('help_tooltips').upsert([
+                    { key: 'period_start', content: '생리 시작 기록 안내' },
+                    { key: 'hormone_phase', content: '호르몬 단계 설명' },
+                    { key: 'checkin', content: '체크인 안내' },
+                    { key: 'golden_period', content: '황금기란?' },
+                    { key: 'points', content: '포인트란?' },
+                    { key: 'grade', content: '등급 안내' },
+                    { key: 'routine_step', content: '루틴 단계 안내' },
+                  ] as any, { onConflict: 'key' })
+                  showToast('기본 툴팁 데이터를 넣었습니다')
+                }}
+                style={{ marginBottom: 8, padding: '7px 10px', borderRadius: 8, border: '1px solid rgba(201,168,76,0.4)', background: 'rgba(201,168,76,0.15)', color: '#e8d4a8', fontSize: 11, cursor: 'pointer' }}
+              >
+                기본 툴팁 INSERT
+              </button>
+              {['period_start','hormone_phase','checkin','golden_period','points','grade','routine_step'].map(k => (
+                <div key={k} style={{ display: 'grid', gridTemplateColumns: '120px 1fr auto', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>{k}</div>
+                  <input
+                    defaultValue=""
+                    placeholder="툴팁 텍스트"
+                    onBlur={async e => {
+                      const v = e.target.value.trim()
+                      if (!v) return
+                      await supabase.from('help_tooltips').upsert({ key: k, content: v } as any, { onConflict: 'key' })
+                      showToast('툴팁 저장')
+                    }}
+                    style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 12 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const { data } = await supabase.from('help_tooltips').select('content,text,value').eq('key', k).maybeSingle()
+                      showToast(String((data as any)?.content || (data as any)?.text || (data as any)?.value || '미등록'))
+                    }}
+                    style={{ padding: '7px 9px', borderRadius: 8, border: '1px solid rgba(201,168,76,0.4)', background: 'rgba(201,168,76,0.15)', color: '#e8d4a8', fontSize: 11, cursor: 'pointer' }}
+                  >
+                    조회
+                  </button>
+                </div>
+              ))}
             </div>
           ) : null}
 
@@ -912,6 +969,32 @@ export default function AdminCategoriesPage() {
                 }}
               />
             </label>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>노출 트랙 (target_tracks)</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {['general','menopause_peri','menopause_post','pregnant','postpartum','male','male_menopause','all'].map(t => {
+                  const on = sheetTracks.includes(t)
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setSheetTracks(prev => (on ? prev.filter(x => x !== t) : [...prev, t]))}
+                      style={{
+                        padding: '5px 8px',
+                        borderRadius: 999,
+                        border: on ? '1px solid rgba(201,168,76,0.5)' : '1px solid rgba(255,255,255,0.15)',
+                        background: on ? 'rgba(201,168,76,0.18)' : 'rgba(255,255,255,0.05)',
+                        color: on ? '#e8d4a8' : 'rgba(255,255,255,0.75)',
+                        fontSize: 11,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {t}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
             <button
               type="button"
               onClick={deleteSheetSubtree}

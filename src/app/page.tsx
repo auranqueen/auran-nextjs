@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { NotificationPanel } from '@/components/notifications/NotificationPanel'
 import { useCart } from '@/context/CartContext'
+import { TOOLTIP_FALLBACKS, calcHormoneBriefing, isPeriodTrack } from '@/lib/hormoneUtils'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
@@ -113,6 +114,11 @@ export default function CustomerHomePage() {
   const [hormoneMainLine, setHormoneMainLine] = useState('유미님, 지금 여포기 8일차예요 ✨ 황금기 시작이에요')
   const [hormoneSubLine, setHormoneSubLine] = useState('오늘의 피부 사이클')
   const [careBannerLine, setCareBannerLine] = useState('오늘은 미백앰플 집중투입 타이밍이에요 →')
+  const [hormoneTrack, setHormoneTrack] = useState<string>('general')
+  const [hormoneCycle, setHormoneCycle] = useState<any>(null)
+  const [periodTipOpen, setPeriodTipOpen] = useState(false)
+  const [periodTipText, setPeriodTipText] = useState(TOOLTIP_FALLBACKS.period_start)
+  const [periodQuietNotice, setPeriodQuietNotice] = useState('')
   const [routineExpanded, setRoutineExpanded] = useState(false)
   const [routineMentorOpen, setRoutineMentorOpen] = useState(false)
   const [routineStepPick, setRoutineStepPick] = useState<Record<string, boolean>>({})
@@ -159,6 +165,32 @@ export default function CustomerHomePage() {
         .eq('auth_id', user.id)
         .single()
       if (profile) setMotivationProfile(profile)
+      try {
+        const { data: hc } = await supabase
+          .from('hormone_cycle')
+          .select('*')
+          .eq('auth_id', user.id)
+          .maybeSingle()
+        if (hc) {
+          setHormoneCycle(hc)
+          setHormoneTrack(String((hc as any).track || 'general'))
+          const calc = calcHormoneBriefing(hc)
+          setHormoneMainLine(`${userName}님, 지금 ${calc.phase} ${calc.cycleDay > 0 ? `${calc.cycleDay}일차` : ''}예요 ✨`)
+          setHormoneSubLine(`오늘의 피부 사이클 · ${calc.focus}`)
+          if (isPeriodTrack(String((hc as any).track || 'general'))) {
+            const lp = (hc as any).last_period_date ? new Date((hc as any).last_period_date) : null
+            if (lp && !Number.isNaN(lp.getTime())) {
+              const gap = Math.floor((Date.now() - lp.getTime()) / 86400000)
+              if (gap >= 45) setPeriodQuietNotice('혹시 건너뛰셨나요?')
+            }
+          }
+        }
+      } catch {}
+      try {
+        const { data: tip } = await supabase.from('help_tooltips').select('content,text,value').eq('key', 'period_start').maybeSingle()
+        const t = String((tip as any)?.content || (tip as any)?.text || (tip as any)?.value || '').trim()
+        if (t) setPeriodTipText(t)
+      } catch {}
     }
     void loadMotivationProfile()
 
@@ -184,7 +216,7 @@ export default function CustomerHomePage() {
         })
       } catch { /* */ }
       const selFull =
-        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, brands(name), categories(name)'
+        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, brands(name), categories(name,target_tracks)'
       const selNoCat =
         'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, brands(name)'
       let res: { error: unknown; data: any[] | null } = await supabase.from('products').select(selFull).eq('is_active', true).limit(80)
@@ -450,6 +482,13 @@ export default function CustomerHomePage() {
   }, [checkinOptions.length, checkInTab])
 
   useEffect(() => {
+    if (!hormoneCycle) return
+    const c = calcHormoneBriefing(hormoneCycle)
+    setHormoneMainLine(`${userName}님, 지금 ${c.phase} ${c.cycleDay > 0 ? `${c.cycleDay}일차` : ''}예요 ✨`)
+    setHormoneSubLine(`오늘의 피부 사이클 · ${c.focus}`)
+  }, [hormoneCycle, userName])
+
+  useEffect(() => {
     if (!homeToast) return
     const t = setTimeout(() => setHomeToast(''), 2400)
     return () => clearTimeout(t)
@@ -515,6 +554,14 @@ export default function CustomerHomePage() {
         if (filtered.length > 0) skinRecPool = filtered
       }
     }
+  }
+  if (hormoneTrack && skinRecPool.length > 0) {
+    const filteredByTrack = skinRecPool.filter((p: any) => {
+      const arr = Array.isArray(p?.categories?.target_tracks) ? p.categories.target_tracks.map((x: any) => String(x)) : []
+      if (arr.length === 0) return true
+      return arr.includes('all') || arr.includes(hormoneTrack)
+    })
+    if (filteredByTrack.length > 0) skinRecPool = filteredByTrack
   }
   const skinRecList = skinRecPool.length > 0 ? skinRecPool : productList
   const productById: Record<string, any> = {}
@@ -1051,6 +1098,75 @@ export default function CustomerHomePage() {
         >
           {careBannerLine}
         </button>
+        {isPeriodTrack(hormoneTrack) ? (
+          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const { data: u } = await supabase.auth.getUser()
+                  const uid = u.user?.id
+                  if (!uid) {
+                    setHomeToast('로그인 후 이용해 주세요')
+                    return
+                  }
+                  const today = new Date().toISOString().slice(0, 10)
+                  const cycleLen = Math.max(21, Math.min(60, Number(hormoneCycle?.cycle_length || 28)))
+                  const next = new Date(today)
+                  next.setDate(next.getDate() + cycleLen)
+                  await supabase
+                    .from('hormone_cycle')
+                    .upsert(
+                      {
+                        auth_id: uid,
+                        track: hormoneTrack,
+                        last_period_date: today,
+                        expected_period_date: next.toISOString().slice(0, 10),
+                        cycle_length: cycleLen,
+                        updated_at: new Date().toISOString(),
+                      } as any,
+                      { onConflict: 'auth_id' }
+                    )
+                  await supabase.from('daily_checkin').insert({ auth_id: uid, checkin_date: today, period_started: true } as any)
+                  setHomeToast('오늘을 1일차로 기록했어요')
+                  setPeriodQuietNotice('')
+                  setHormoneCycle((prev: any) => ({ ...(prev || {}), last_period_date: today, cycle_length: cycleLen, track: hormoneTrack }))
+                } catch {
+                  setHomeToast('기록 저장에 실패했어요')
+                }
+              }}
+              style={{
+                padding: '9px 12px',
+                borderRadius: 999,
+                border: '1px solid rgba(123,94,167,0.42)',
+                background: 'rgba(123,94,167,0.2)',
+                color: '#e8d9ff',
+                fontSize: 12,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              생리 시작했어요
+            </button>
+            <button
+              type="button"
+              onClick={() => setPeriodTipOpen(true)}
+              style={{
+                width: 26,
+                height: 26,
+                borderRadius: '50%',
+                border: '1px solid rgba(255,255,255,0.2)',
+                background: 'rgba(255,255,255,0.06)',
+                color: '#fff',
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              ?
+            </button>
+            {periodQuietNotice ? <span style={{ fontSize: 11, color: 'rgba(255,220,180,0.9)' }}>{periodQuietNotice}</span> : null}
+          </div>
+        ) : null}
       </div>
 
       {/* ── 내 피부 맞춤 추천 ── */}
@@ -2166,6 +2282,35 @@ export default function CustomerHomePage() {
           </div>
         </>
       ) : null}
+      {periodTipOpen ? (
+        <>
+          <div onClick={() => setPeriodTipOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 122 }} />
+          <div
+            style={{
+              position: 'fixed',
+              left: 16,
+              right: 16,
+              bottom: 110,
+              maxWidth: 360,
+              margin: '0 auto',
+              background: '#1f1a26',
+              border: '1px solid rgba(123,94,167,0.35)',
+              borderRadius: 14,
+              padding: 14,
+              zIndex: 123,
+            }}
+          >
+            <div style={{ fontSize: 12, color: '#e8d9ff', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{periodTipText}</div>
+            <button
+              type="button"
+              onClick={() => setPeriodTipOpen(false)}
+              style={{ marginTop: 10, width: '100%', padding: 10, borderRadius: 10, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}
+            >
+              확인
+            </button>
+          </div>
+        </>
+      ) : null}
 
       {homeEditSheet ? (
         <>
@@ -2519,7 +2664,7 @@ export default function CustomerHomePage() {
                           .eq('id', homeEditSheet.id)
                         if (e) throw e
                         const sel =
-                          'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, brands(name), categories(name)'
+                          'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, brands(name), categories(name,target_tracks)'
                         const selNoCat =
                           'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, brands(name)'
                         let res: { error: unknown; data: any[] | null } = await supabase.from('products').select(sel).eq('is_active', true).limit(80)

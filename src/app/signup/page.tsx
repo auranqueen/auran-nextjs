@@ -3,6 +3,7 @@ import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
+import { TrackType } from '@/lib/hormoneUtils'
 
 const ROLE_META: Record<string, { label: string; icon: string; color: string; border: string; bg: string }> = {
   customer: { label: '고객', icon: '💧', color: '#c9a84c', border: 'rgba(201,168,76,0.35)', bg: 'rgba(201,168,76,0.08)' },
@@ -18,9 +19,15 @@ function SignupForm() {
   const inviteCode = params.get('ref') || ''
   const meta = ROLE_META[role] || ROLE_META.customer
 
-  const [step, setStep] = useState(1) // 1: 동의 2: 정보입력 3: 완료
+  const [step, setStep] = useState(1) // 1: 동의 2: 정보입력 3: 온보딩 4: 완료
   const [form, setForm] = useState({ name: '', email: '', password: '', passwordConfirm: '', phone: '' })
   const [consent, setConsent] = useState({ required1: false, required2: false, marketing: false })
+  const [track, setTrack] = useState<TrackType>('general')
+  const [cycleLength, setCycleLength] = useState('28')
+  const [lastPeriodDate, setLastPeriodDate] = useState('')
+  const [dueDate, setDueDate] = useState('')
+  const [deliveryDate, setDeliveryDate] = useState('')
+  const [isBreastfeeding, setIsBreastfeeding] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const { getSettingNum } = useAdminSettings()
@@ -56,12 +63,40 @@ function SignupForm() {
             role,
             phone: form.phone,
             invite_code: inviteCode || undefined,
+            onboarding_track: track,
+            onboarding_cycle_length: cycleLength,
+            onboarding_last_period_date: lastPeriodDate || undefined,
+            onboarding_due_date: dueDate || undefined,
+            onboarding_delivery_date: deliveryDate || undefined,
+            onboarding_breastfeeding: isBreastfeeding,
           },
         },
       })
       if (authErr) throw authErr
 
       if (authData.user && !authData.session) {
+        try {
+          const expectedPeriodDate =
+            track === 'general' && lastPeriodDate
+              ? (() => {
+                  const d = new Date(lastPeriodDate)
+                  d.setDate(d.getDate() + Math.max(21, Math.min(60, Number(cycleLength || 28))))
+                  return d.toISOString().slice(0, 10)
+                })()
+              : null
+          const payload: any = {
+            auth_id: authData.user.id,
+            track,
+            cycle_length: track === 'general' ? Math.max(21, Math.min(60, Number(cycleLength || 28))) : null,
+            last_period_date: track === 'general' || track === 'menopause_peri' ? (lastPeriodDate || null) : null,
+            due_date: track === 'pregnant' ? (dueDate || null) : null,
+            delivery_date: track === 'postpartum' ? (deliveryDate || null) : null,
+            breastfeeding: track === 'postpartum' ? isBreastfeeding : null,
+            expected_period_date: expectedPeriodDate,
+            updated_at: new Date().toISOString(),
+          }
+          await supabase.from('hormone_cycle').upsert(payload, { onConflict: 'auth_id' })
+        } catch {}
         // 이메일 인증 필요 시 세션이 없음 → 인증 대기 화면으로
         router.push(`/auth/verify-email?email=${encodeURIComponent(form.email)}&role=${encodeURIComponent(role)}`)
         return
@@ -92,7 +127,32 @@ function SignupForm() {
           action: 'signup',
         })
       }
-      setStep(3)
+      if (authData.user) {
+        const expectedPeriodDate =
+          track === 'general' && lastPeriodDate
+            ? (() => {
+                const d = new Date(lastPeriodDate)
+                d.setDate(d.getDate() + Math.max(21, Math.min(60, Number(cycleLength || 28))))
+                return d.toISOString().slice(0, 10)
+              })()
+            : null
+        const payload: any = {
+          auth_id: authData.user.id,
+          track,
+          cycle_length: track === 'general' ? Math.max(21, Math.min(60, Number(cycleLength || 28))) : null,
+          last_period_date: track === 'general' || track === 'menopause_peri' ? (lastPeriodDate || null) : null,
+          due_date: track === 'pregnant' ? (dueDate || null) : null,
+          delivery_date: track === 'postpartum' ? (deliveryDate || null) : null,
+          breastfeeding: track === 'postpartum' ? isBreastfeeding : null,
+          expected_period_date: expectedPeriodDate,
+          updated_at: new Date().toISOString(),
+        }
+        const { error: hcErr } = await supabase.from('hormone_cycle').upsert(payload, { onConflict: 'auth_id' })
+        if (hcErr) {
+          await supabase.from('hormone_cycle').insert(payload)
+        }
+      }
+      setStep(4)
     } catch (err: any) {
       setError(err.message.includes('already registered')
         ? '이미 가입된 이메일입니다. 로그인해주세요.'
@@ -113,18 +173,18 @@ function SignupForm() {
         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: meta.color }}>
           AURAN · {meta.label.toUpperCase()} 회원가입
         </div>
-        <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text3)' }}>{step}/3</div>
+        <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text3)' }}>{step}/4</div>
       </div>
 
       {/* 스텝 바 */}
       <div style={{ padding: '0 20px', marginBottom: 24 }}>
         <div style={{ display: 'flex', gap: 4 }}>
-          {[1,2,3].map(s => (
+          {[1,2,3,4].map(s => (
             <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: s <= step ? meta.color : 'var(--bg3)', transition: 'background 0.3s' }} />
           ))}
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-          {['약관 동의', '정보 입력', '가입 완료'].map((l, i) => (
+          {['약관 동의', '정보 입력', '온보딩', '가입 완료'].map((l, i) => (
             <span key={i} style={{ fontSize: 9, color: i + 1 <= step ? meta.color : 'var(--text3)' }}>{l}</span>
           ))}
         </div>
@@ -200,6 +260,85 @@ function SignupForm() {
             <button
               onClick={() => {
                 if (!form.name || !form.email || !form.password) { setError('필수 항목을 입력해주세요'); return }
+                setStep(3)
+              }}
+              disabled={loading}
+              style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.color, fontSize: 15, fontWeight: 700, marginTop: 20, opacity: loading ? 0.7 : 1 }}
+            >
+              다음 →
+            </button>
+          </div>
+        )}
+
+        {step === 3 && (
+          <div>
+            <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 20, color: 'var(--text)', marginBottom: 6 }}>온보딩 트랙 선택</div>
+            <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 18 }}>맞춤 추천 정확도를 높이기 위한 마지막 단계예요</div>
+            <div style={{ display: 'grid', gap: 8 }}>
+              {([
+                ['general', '생리 중인 여성'],
+                ['menopause_peri', '갱년기 진입 - 불규칙'],
+                ['menopause_post', '폐경 완료'],
+                ['pregnant', '임신 중'],
+                ['postpartum', '출산 후'],
+                ['male', '남성'],
+                ['male_menopause', '남성 갱년기'],
+              ] as const).map(([k, label]) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => setTrack(k)}
+                  style={{
+                    textAlign: 'left',
+                    padding: '11px 12px',
+                    borderRadius: 10,
+                    border: `1px solid ${track === k ? meta.border : 'var(--border)'}`,
+                    background: track === k ? meta.bg : 'var(--bg3)',
+                    color: track === k ? meta.color : 'var(--text)',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {(track === 'general' || track === 'menopause_peri') ? (
+              <div style={{ display: 'grid', gap: 10, marginTop: 14 }}>
+                {track === 'general' ? (
+                  <div><label style={labelStyle}>평균 주기 일수</label>{inp('cycle', cycleLength, setCycleLength, { inputMode: 'numeric', placeholder: '예: 28' })}</div>
+                ) : null}
+                <div><label style={labelStyle}>마지막 생리 시작일</label>{inp('lastPeriod', lastPeriodDate, setLastPeriodDate, { type: 'date' })}</div>
+              </div>
+            ) : null}
+            {track === 'pregnant' ? (
+              <div style={{ marginTop: 14 }}><label style={labelStyle}>출산 예정일</label>{inp('dueDate', dueDate, setDueDate, { type: 'date' })}</div>
+            ) : null}
+            {track === 'postpartum' ? (
+              <div style={{ display: 'grid', gap: 10, marginTop: 14 }}>
+                <div><label style={labelStyle}>출산일</label>{inp('deliveryDate', deliveryDate, setDeliveryDate, { type: 'date' })}</div>
+                <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12, color: 'var(--text)' }}>
+                  <input type="checkbox" checked={isBreastfeeding} onChange={e => setIsBreastfeeding(e.target.checked)} />
+                  모유수유 중
+                </label>
+              </div>
+            ) : null}
+            {error && <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(217,79,79,0.1)', border: '1px solid rgba(217,79,79,0.3)', borderRadius: 8, fontSize: 12, color: '#e08080' }}>{error}</div>}
+            <button
+              onClick={() => {
+                if ((track === 'general' || track === 'menopause_peri') && !lastPeriodDate) {
+                  setError('마지막 생리 시작일을 입력해주세요')
+                  return
+                }
+                if (track === 'pregnant' && !dueDate) {
+                  setError('출산 예정일을 입력해주세요')
+                  return
+                }
+                if (track === 'postpartum' && !deliveryDate) {
+                  setError('출산일을 입력해주세요')
+                  return
+                }
+                setError('')
                 handleSignup()
               }}
               disabled={loading}
@@ -210,8 +349,8 @@ function SignupForm() {
           </div>
         )}
 
-        {/* STEP 3: 완료 (이메일 인증 비활성 시에만 표시) */}
-        {step === 3 && (
+        {/* STEP 4: 완료 (이메일 인증 비활성 시에만 표시) */}
+        {step === 4 && (
           <div style={{ textAlign: 'center', paddingTop: 40 }}>
             <div style={{ fontSize: 60, marginBottom: 20 }}>🎉</div>
             <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 22, color: 'var(--text)', marginBottom: 8 }}>가입 완료!</div>

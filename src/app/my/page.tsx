@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { TOOLTIP_FALLBACKS, isPeriodTrack } from '@/lib/hormoneUtils'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
@@ -31,6 +32,11 @@ export default function MyPage() {
   const [completion, setCompletion] = useState(0)
   const [profileData, setProfileData] = useState<any>(null)
   const [avatarUrl, setAvatarUrl] = useState('')
+  const [hormoneTrack, setHormoneTrack] = useState('general')
+  const [hormoneCycle, setHormoneCycle] = useState<any>(null)
+  const [periodTipOpen, setPeriodTipOpen] = useState(false)
+  const [periodTipText, setPeriodTipText] = useState(TOOLTIP_FALLBACKS.period_start)
+  const [periodQuietNotice, setPeriodQuietNotice] = useState('')
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -38,6 +44,27 @@ export default function MyPage() {
         setUser(data.user)
         const name = data.user.user_metadata?.full_name || data.user.user_metadata?.name
         if (name) setUserName(name)
+        supabase
+          .from('hormone_cycle')
+          .select('*')
+          .eq('auth_id', data.user.id)
+          .maybeSingle()
+          .then(({ data: hc }) => {
+            if (!hc) return
+            setHormoneCycle(hc)
+            setHormoneTrack(String((hc as any).track || 'general'))
+            if (isPeriodTrack(String((hc as any).track || 'general'))) {
+              const lp = (hc as any).last_period_date ? new Date((hc as any).last_period_date) : null
+              if (lp && !Number.isNaN(lp.getTime())) {
+                const gap = Math.floor((Date.now() - lp.getTime()) / 86400000)
+                if (gap >= 45) setPeriodQuietNotice('혹시 건너뛰셨나요?')
+              }
+            }
+          })
+        supabase.from('help_tooltips').select('content,text,value').eq('key', 'period_start').maybeSingle().then(({ data: tip }) => {
+          const t = String((tip as any)?.content || (tip as any)?.text || (tip as any)?.value || '').trim()
+          if (t) setPeriodTipText(t)
+        })
         supabase.from('users').select('id, points, charge_balance').eq('auth_id', data.user.id).single().then(({ data }) => {
           if (data) {
             setPoint(data.points || 0)
@@ -336,6 +363,54 @@ export default function MyPage() {
         </div>
         <div onClick={() => router.push('/my/profile')} style={{ fontSize: '11px', color: TEXT_DIM, cursor: 'pointer' }}>편집 ›</div>
       </div>
+      {isPeriodTrack(hormoneTrack) ? (
+        <div style={{ margin: '10px 16px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button
+            type="button"
+            onClick={async () => {
+              if (!user?.id) return
+              const today = new Date().toISOString().slice(0, 10)
+              const cycleLen = Math.max(21, Math.min(60, Number(hormoneCycle?.cycle_length || 28)))
+              const next = new Date(today)
+              next.setDate(next.getDate() + cycleLen)
+              await supabase
+                .from('hormone_cycle')
+                .upsert(
+                  {
+                    auth_id: user.id,
+                    track: hormoneTrack,
+                    last_period_date: today,
+                    expected_period_date: next.toISOString().slice(0, 10),
+                    cycle_length: cycleLen,
+                    updated_at: new Date().toISOString(),
+                  } as any,
+                  { onConflict: 'auth_id' }
+                )
+              await supabase.from('daily_checkin').insert({ auth_id: user.id, checkin_date: today, period_started: true } as any)
+              setPeriodQuietNotice('')
+            }}
+            style={{
+              padding: '8px 12px',
+              borderRadius: 999,
+              border: '1px solid rgba(123,94,167,0.42)',
+              background: 'rgba(123,94,167,0.2)',
+              color: '#e8d9ff',
+              fontSize: 12,
+              cursor: 'pointer',
+            }}
+          >
+            생리 시작했어요
+          </button>
+          <button
+            type="button"
+            onClick={() => setPeriodTipOpen(true)}
+            style={{ width: 24, height: 24, borderRadius: '50%', border: '1px solid rgba(255,255,255,0.2)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 12, cursor: 'pointer' }}
+          >
+            ?
+          </button>
+          {periodQuietNotice ? <span style={{ fontSize: 11, color: 'rgba(255,220,180,0.9)' }}>{periodQuietNotice}</span> : null}
+        </div>
+      ) : null}
 
       {completion < 100 ? (
         <div onClick={() => router.push('/my/profile')} style={{ margin: '10px 16px 0', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 14, padding: '14px 16px', cursor: 'pointer' }}>
@@ -761,6 +836,15 @@ export default function MyPage() {
           로그아웃
         </div>
       </div>
+      {periodTipOpen ? (
+        <>
+          <div onClick={() => setPeriodTipOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 120 }} />
+          <div style={{ position: 'fixed', left: 16, right: 16, bottom: 96, maxWidth: 360, margin: '0 auto', background: '#1f1a26', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 14, padding: 14, zIndex: 121 }}>
+            <div style={{ fontSize: 12, color: '#e8d9ff', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{periodTipText}</div>
+            <button type="button" onClick={() => setPeriodTipOpen(false)} style={{ marginTop: 10, width: '100%', padding: 10, borderRadius: 10, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}>확인</button>
+          </div>
+        </>
+      ) : null}
 
     </div>
   )
