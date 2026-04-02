@@ -1171,6 +1171,61 @@ export default function CustomerHomePage() {
         </>
       ) : null}
 
+      {/* ── 인사말 ── */}
+      <div style={{
+        padding: '14px 20px 0',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <div>
+          <div style={{ fontSize: '10px', fontFamily: 'monospace', color: TEXT_MUTED, marginBottom: '4px' }}>
+            {today}
+          </div>
+          <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
+            안녕하세요, <span style={{ color: GOLD }}>{userName}님</span> 👋
+          </div>
+          <div style={{ fontSize: '11px', color: TEXT_MUTED }}>
+            오늘 루틴 완료 75% · 수분 6/8잔 💧
+          </div>
+        </div>
+        <div style={{
+          width: '40px', height: '40px', borderRadius: '50%',
+          background: 'rgba(255,255,255,0.06)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '20px',
+        }}>👩</div>
+      </div>
+
+      {/* ── TODAY'S SKIN ── */}
+      <div
+        onClick={() => router.push('/skin-analysis')}
+        style={{
+          margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER,
+          borderRadius: '16px', padding: '12px 16px',
+          display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
+        }}
+      >
+        <span style={{ fontSize: '30px' }}>💧</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: '3px' }}>
+            TODAY&apos;S SKIN
+          </div>
+          <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>건성 · 민감 복합</div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[{ label: '수분', pct: 62, color: '#6ab0e0' }, { label: '유분', pct: 38, color: GOLD }].map((b, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.label}</span>
+                <div style={{ width: '44px', height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
+                  <div style={{ height: '100%', width: `${b.pct}%`, background: b.color, borderRadius: '2px' }} />
+                </div>
+                <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.pct}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <span style={{ fontSize: '13px', color: TEXT_MUTED }}>›</span>
+      </div>
+
       {/* ── 호르몬 브리핑 · 오늘 체크인 · 케어 액션 (TODAY&apos;S SKIN 바로 아래) ── */}
       <div style={{ padding: '12px 16px 0' }}>
         <div
@@ -1454,61 +1509,6 @@ export default function CustomerHomePage() {
             {periodQuietNotice ? <span style={{ fontSize: 11, color: 'rgba(255,220,180,0.9)' }}>{periodQuietNotice}</span> : null}
           </div>
         ) : null}
-      </div>
-
-      {/* ── 인사말 ── */}
-      <div style={{
-        padding: '14px 20px 0',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <div>
-          <div style={{ fontSize: '10px', fontFamily: 'monospace', color: TEXT_MUTED, marginBottom: '4px' }}>
-            {today}
-          </div>
-          <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
-            안녕하세요, <span style={{ color: GOLD }}>{userName}님</span> 👋
-          </div>
-          <div style={{ fontSize: '11px', color: TEXT_MUTED }}>
-            오늘 루틴 완료 75% · 수분 6/8잔 💧
-          </div>
-        </div>
-        <div style={{
-          width: '40px', height: '40px', borderRadius: '50%',
-          background: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '20px',
-        }}>👩</div>
-      </div>
-
-      {/* ── TODAY'S SKIN ── */}
-      <div
-        onClick={() => router.push('/skin-analysis')}
-        style={{
-          margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER,
-          borderRadius: '16px', padding: '12px 16px',
-          display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
-        }}
-      >
-        <span style={{ fontSize: '30px' }}>💧</span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: '3px' }}>
-            TODAY&apos;S SKIN
-          </div>
-          <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>건성 · 민감 복합</div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {[{ label: '수분', pct: 62, color: '#6ab0e0' }, { label: '유분', pct: 38, color: GOLD }].map((b, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.label}</span>
-                <div style={{ width: '44px', height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
-                  <div style={{ height: '100%', width: `${b.pct}%`, background: b.color, borderRadius: '2px' }} />
-                </div>
-                <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.pct}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <span style={{ fontSize: '13px', color: TEXT_MUTED }}>›</span>
       </div>
 
       {/* ── 내 피부 맞춤 추천 ── */}

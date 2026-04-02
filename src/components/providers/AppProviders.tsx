@@ -41,7 +41,8 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/dashboard/owner') ||
     pathname.startsWith('/dashboard/brand') ||
     pathname.startsWith('/dashboard/salon') ||
-    pathname.startsWith('/owner/')
+    pathname.startsWith('/owner/') ||
+    pathname.startsWith('/brand')
   const showCustomerNav = !hideCustomerNav
   const navPad = 'calc(76px + env(safe-area-inset-bottom, 0px))'
 
