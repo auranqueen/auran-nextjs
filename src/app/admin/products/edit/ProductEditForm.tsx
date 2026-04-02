@@ -91,13 +91,18 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   const [msg, setMsg] = useState('')
 
   const [brands, setBrands] = useState<{ id: string; name: string; origin_country?: string | null }[]>([])
-  const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
-  const [categoryId, setCategoryId] = useState('')
+  const [allCategories, setAllCategories] = useState<
+    { id: string; name: string; parent_id: string | null; level: number; sort_order: number | null }[]
+  >([])
+  const [catL1, setCatL1] = useState('')
+  const [catL2, setCatL2] = useState('')
+  const [catL3, setCatL3] = useState('')
+  const [catL4, setCatL4] = useState('')
+  const [catL5, setCatL5] = useState('')
+  const [productCategoryLeafId, setProductCategoryLeafId] = useState('')
   const [showNewBrand, setShowNewBrand] = useState(false)
   const [newBrandName, setNewBrandName] = useState('')
   const [newBrandOriginCountry, setNewBrandOriginCountry] = useState('')
-  const [showNewCategory, setShowNewCategory] = useState(false)
-  const [newCategoryName, setNewCategoryName] = useState('')
 
   const [name, setName] = useState('')
   const [shortDesc, setShortDesc] = useState('')
@@ -166,10 +171,46 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   useEffect(() => {
     supabase
       .from('categories')
-      .select('id,name')
-      .order('name')
-      .then(({ data }) => setCategories((data || []) as { id: string; name: string }[]))
+      .select('id,name,parent_id,level,sort_order')
+      .order('sort_order', { ascending: true, nullsFirst: false })
+      .order('name', { ascending: true })
+      .then(({ data }) =>
+        setAllCategories(
+          (data || []) as { id: string; name: string; parent_id: string | null; level: number; sort_order: number | null }[]
+        )
+      )
   }, [supabase])
+
+  useEffect(() => {
+    if (!editId) {
+      setProductCategoryLeafId('')
+      setCatL1('')
+      setCatL2('')
+      setCatL3('')
+      setCatL4('')
+      setCatL5('')
+    }
+  }, [editId])
+
+  useEffect(() => {
+    const leaf = productCategoryLeafId
+    if (!leaf || allCategories.length === 0) return
+    const byId = new Map(allCategories.map(c => [c.id, c]))
+    const chain: string[] = []
+    let cur = byId.get(leaf)
+    let guard = 0
+    while (cur && guard++ < 24) {
+      chain.unshift(cur.id)
+      const pid = cur.parent_id != null && String(cur.parent_id) !== '' ? String(cur.parent_id) : ''
+      cur = pid ? byId.get(pid) : undefined
+    }
+    setCatL1(chain[0] || '')
+    setCatL2(chain[1] || '')
+    setCatL3(chain[2] || '')
+    setCatL4(chain[3] || '')
+    setCatL5(chain[4] || '')
+    setProductCategoryLeafId('')
+  }, [productCategoryLeafId, allCategories])
 
   useEffect(() => {
     if (!editId) setIsFlashSaleState(productKind === 'event')
@@ -197,7 +238,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       setShortDesc(String(p.description || ''))
       setKeywords(String(p.tag || ''))
       setBrandId(p.brand_id ? String(p.brand_id) : '')
-      setCategoryId(p.category_id ? String(p.category_id) : '')
+      setProductCategoryLeafId(p.category_id ? String(p.category_id) : '')
       const catRaw = String(p.category || '')
       const cat = catRaw === '국산' ? '한국' : catRaw
       setOrigin((ORIGINS as readonly string[]).includes(cat) ? (cat as (typeof ORIGINS)[number]) : '기타')
@@ -290,6 +331,27 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
 
   const selectedBrandOc = brandId ? String(brands.find(b => b.id === brandId)?.origin_country || '').trim() : ''
   const originLocked = Boolean(brandId && selectedBrandOc)
+
+  const catOpts1 = useMemo(
+    () => allCategories.filter(c => c.parent_id == null || c.parent_id === ''),
+    [allCategories]
+  )
+  const catOpts2 = useMemo(
+    () => (catL1 ? allCategories.filter(c => String(c.parent_id || '') === catL1) : []),
+    [allCategories, catL1]
+  )
+  const catOpts3 = useMemo(
+    () => (catL2 ? allCategories.filter(c => String(c.parent_id || '') === catL2) : []),
+    [allCategories, catL2]
+  )
+  const catOpts4 = useMemo(
+    () => (catL3 ? allCategories.filter(c => String(c.parent_id || '') === catL3) : []),
+    [allCategories, catL3]
+  )
+  const catOpts5 = useMemo(
+    () => (catL4 ? allCategories.filter(c => String(c.parent_id || '') === catL4) : []),
+    [allCategories, catL4]
+  )
 
   const uploadToStorage = useCallback(
     async (file: File, path: string) => {
@@ -395,9 +457,11 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       .filter(s => isUuid(s))
     const detailImgsClean = detailImages.map(s => s.trim()).filter(Boolean)
 
+    const resolvedCategoryId = catL5 || catL4 || catL3 || catL2 || catL1 || ''
+
     return {
       brand_id: brandId || null,
-      category_id: categoryId || null,
+      category_id: resolvedCategoryId || null,
       name: nameTrim || '이름 없음',
       description: shortDesc.trim() || null,
       tag: keywords.trim() || null,
@@ -454,9 +518,10 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       let existingQuiz: string[] | null = null
 
       if (!pid) {
+        const resolvedCategoryId = catL5 || catL4 || catL3 || catL2 || catL1 || ''
         const insertRow = {
           brand_id: brandId,
-          category_id: categoryId || null,
+          category_id: resolvedCategoryId || null,
           name: name.trim().slice(0, 100) || '신규 상품',
           description: shortDesc.trim() || null,
           tag: keywords.trim() || null,
@@ -664,54 +729,111 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
               ) : null}
             </div>
           </label>
-          <label style={{ display: 'grid', gap: 6 }}>
-            <span style={labelStyle}>카테고리</span>
-            <div style={{ display: 'grid', gap: 8 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
-                <select value={categoryId} onChange={e => setCategoryId(e.target.value)} style={{ ...inputStyle, background: '#121212' }}>
+          <div style={{ display: 'grid', gap: 10 }}>
+            <span style={labelStyle}>카테고리 (5단계) · 관리는 설정 → 카테고리 관리</span>
+            <label style={{ display: 'grid', gap: 6 }}>
+              <span style={labelStyle}>대분류</span>
+              <select
+                value={catL1}
+                onChange={e => {
+                  const v = e.target.value
+                  setCatL1(v)
+                  setCatL2('')
+                  setCatL3('')
+                  setCatL4('')
+                  setCatL5('')
+                }}
+                style={{ ...inputStyle, background: '#121212' }}
+              >
+                <option value="">— 선택 —</option>
+                {catOpts1.map(c => (
+                  <option key={c.id} value={c.id} style={{ background: '#1a1a1a' }}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {catL1 ? (
+              <label style={{ display: 'grid', gap: 6 }}>
+                <span style={labelStyle}>중분류</span>
+                <select
+                  value={catL2}
+                  onChange={e => {
+                    setCatL2(e.target.value)
+                    setCatL3('')
+                    setCatL4('')
+                    setCatL5('')
+                  }}
+                  style={{ ...inputStyle, background: '#121212' }}
+                >
                   <option value="">— 선택 —</option>
-                  {categories.map(c => (
+                  {catOpts2.map(c => (
                     <option key={c.id} value={c.id} style={{ background: '#1a1a1a' }}>
                       {c.name}
                     </option>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  onClick={() => setShowNewCategory(v => !v)}
-                  style={{ borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', color: '#fff', fontSize: 12, padding: '0 12px', cursor: 'pointer' }}
+              </label>
+            ) : null}
+            {catL2 ? (
+              <label style={{ display: 'grid', gap: 6 }}>
+                <span style={labelStyle}>소분류</span>
+                <select
+                  value={catL3}
+                  onChange={e => {
+                    setCatL3(e.target.value)
+                    setCatL4('')
+                    setCatL5('')
+                  }}
+                  style={{ ...inputStyle, background: '#121212' }}
                 >
-                  + 새 카테고리
-                </button>
-              </div>
-              {showNewCategory ? (
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
-                  <input value={newCategoryName} onChange={e => setNewCategoryName(e.target.value)} placeholder="카테고리명 입력" style={inputStyle} />
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      const nm = newCategoryName.trim()
-                      if (!nm) return
-                      const { data, error } = await supabase.from('categories').insert({ name: nm } as any).select('id,name').single()
-                      if (error) {
-                        setMsg(error.message)
-                        return
-                      }
-                      if (data) {
-                        setCategories(prev => [...prev, data as { id: string; name: string }].sort((a, b) => a.name.localeCompare(b.name)))
-                        setCategoryId((data as { id: string }).id)
-                        setNewCategoryName('')
-                        setShowNewCategory(false)
-                      }
-                    }}
-                    style={{ borderRadius: 10, border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.2)', color: '#c9a84c', fontSize: 12, padding: '0 12px', cursor: 'pointer', fontWeight: 800 }}
-                  >
-                    등록
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          </label>
+                  <option value="">— 선택 —</option>
+                  {catOpts3.map(c => (
+                    <option key={c.id} value={c.id} style={{ background: '#1a1a1a' }}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            {catL3 ? (
+              <label style={{ display: 'grid', gap: 6 }}>
+                <span style={labelStyle}>세부</span>
+                <select
+                  value={catL4}
+                  onChange={e => {
+                    setCatL4(e.target.value)
+                    setCatL5('')
+                  }}
+                  style={{ ...inputStyle, background: '#121212' }}
+                >
+                  <option value="">— 선택 —</option>
+                  {catOpts4.map(c => (
+                    <option key={c.id} value={c.id} style={{ background: '#1a1a1a' }}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+            {catL4 ? (
+              <label style={{ display: 'grid', gap: 6 }}>
+                <span style={labelStyle}>스킨태그</span>
+                <select
+                  value={catL5}
+                  onChange={e => setCatL5(e.target.value)}
+                  style={{ ...inputStyle, background: '#121212' }}
+                >
+                  <option value="">— 선택 —</option>
+                  {catOpts5.map(c => (
+                    <option key={c.id} value={c.id} style={{ background: '#1a1a1a' }}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
+          </div>
           <label style={{ display: 'grid', gap: 6 }}>
             <span style={labelStyle}>
               원산지
