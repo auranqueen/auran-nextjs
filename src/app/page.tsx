@@ -1294,7 +1294,14 @@ AURAN이 내 피부 패턴을
         <>
           <div
             onClick={() => setNoticeOpen(false)}
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 190 }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0,0,0,0.35)',
+              zIndex: 190,
+              visibility: noticeOpen ? 'visible' : 'hidden',
+              pointerEvents: noticeOpen ? 'auto' : 'none',
+            }}
           />
           <div
             style={{
@@ -1307,6 +1314,7 @@ AURAN이 내 피부 패턴을
               borderLeft: '1px solid rgba(255,255,255,0.08)',
               zIndex: 200,
               pointerEvents: noticeOpen ? 'auto' : 'none',
+              visibility: noticeOpen ? 'visible' : 'hidden',
               transform: noticeOpen ? 'translateX(0)' : 'translateX(100%)',
               transition: 'transform 240ms ease',
               display: 'flex',
