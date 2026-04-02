@@ -140,6 +140,12 @@ export default function CustomerHomePage() {
     const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
     return { y: s.getFullYear(), m: s.getMonth() }
   })
+  const [skinDailyRows, setSkinDailyRows] = useState<any[]>([])
+  const [calSheetOpen, setCalSheetOpen] = useState(false)
+  const [calSheetIso, setCalSheetIso] = useState('')
+  const [calSheetNote, setCalSheetNote] = useState('')
+  const [calSheetRoutine, setCalSheetRoutine] = useState(false)
+  const [calSheetConditionStr, setCalSheetConditionStr] = useState('')
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [homeEditMode, setHomeEditMode] = useState(false)
   const [homeEditSheet, setHomeEditSheet] = useState<{
@@ -613,7 +619,9 @@ export default function CustomerHomePage() {
   useEffect(() => {
     if (!myUserId) {
       setMonthCycleRows([])
+      setSkinDailyRows([])
       setCalendarPickDate('')
+      setCalSheetOpen(false)
       return
     }
     const run = async () => {
@@ -629,11 +637,22 @@ export default function CustomerHomePage() {
         .lte('record_date', yearEnd)
         .order('record_date', { ascending: true })
       setMonthCycleRows(data || [])
+      const { data: dailyD } = await supabase
+        .from('skin_cycle_daily')
+        .select('record_date,note,routine_completed')
+        .eq('auth_id', myUserId)
+        .gte('record_date', yearStart)
+        .lte('record_date', yearEnd)
+      setSkinDailyRows(dailyD || [])
       const todayIso = `${seoul.getFullYear()}-${String(seoul.getMonth() + 1).padStart(2, '0')}-${String(seoul.getDate()).padStart(2, '0')}`
       setCalendarPickDate(todayIso)
     }
     void run()
   }, [myUserId, supabase])
+
+  useEffect(() => {
+    if (!myUserId) setCalSheetOpen(false)
+  }, [myUserId])
 
   useEffect(() => {
     const next: Record<string, boolean> = {}
@@ -776,6 +795,14 @@ export default function CustomerHomePage() {
     })
     return m
   }, [monthCycleRows])
+  const skinDailyByDate = useMemo(() => {
+    const m: Record<string, any> = {}
+    ;(skinDailyRows || []).forEach((r: any) => {
+      const k = String(r.record_date || '')
+      if (k) m[k] = r
+    })
+    return m
+  }, [skinDailyRows])
   const monthCalendarDays = useMemo(() => {
     const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
     const todayIso = `${s.getFullYear()}-${String(s.getMonth() + 1).padStart(2, '0')}-${String(s.getDate()).padStart(2, '0')}`
@@ -1769,7 +1796,16 @@ export default function CustomerHomePage() {
                       <button
                         key={d.iso}
                         type="button"
-                        onClick={() => setCalendarPickDate(d.iso)}
+                        onClick={() => {
+                          setCalendarPickDate(d.iso)
+                          setCalSheetIso(d.iso)
+                          const cr = cycleRowByDate[d.iso]
+                          setCalSheetConditionStr(String(cr?.checkin_condition || ''))
+                          const dr = skinDailyByDate[d.iso]
+                          setCalSheetNote(String(dr?.note || ''))
+                          setCalSheetRoutine(!!dr?.routine_completed)
+                          setCalSheetOpen(true)
+                        }}
                         style={{
                           minWidth: 42,
                           borderRadius: 10,
@@ -1831,7 +1867,16 @@ export default function CustomerHomePage() {
                       <button
                         key={iso}
                         type="button"
-                        onClick={() => setCalendarPickDate(iso)}
+                        onClick={() => {
+                          setCalendarPickDate(iso)
+                          setCalSheetIso(iso)
+                          const cr = cycleRowByDate[iso]
+                          setCalSheetConditionStr(String(cr?.checkin_condition || ''))
+                          const dr = skinDailyByDate[iso]
+                          setCalSheetNote(String(dr?.note || ''))
+                          setCalSheetRoutine(!!dr?.routine_completed)
+                          setCalSheetOpen(true)
+                        }}
                         style={{
                           minHeight: 44,
                           borderRadius: 8,
@@ -1891,6 +1936,49 @@ export default function CustomerHomePage() {
                   ))}
                 </div>
               ) : null}
+              {skinCalTab === 'MONTHLY' || skinCalTab === 'YEARLY' ? (
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: '6px 10px',
+                    marginTop: 10,
+                    fontSize: 9,
+                    color: 'rgba(255,255,255,0.55)',
+                  }}
+                >
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span>💜</span>
+                    <span>생리기</span>
+                  </span>
+                  <span>·</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: 999, background: '#C9A96E' }} />
+                    <span>황금기</span>
+                  </span>
+                  <span>·</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: 999, background: 'rgba(168,130,220,0.9)' }} />
+                    <span>민감기</span>
+                  </span>
+                  <span>·</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: 999, background: '#e05555' }} />
+                    <span>열감</span>
+                  </span>
+                  <span>·</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: 999, background: '#6ab0e0' }} />
+                    <span>건조</span>
+                  </span>
+                  <span>·</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 6, height: 6, borderRadius: 999, background: '#E8945C' }} />
+                    <span>트러블</span>
+                  </span>
+                </div>
+              ) : null}
               <div style={{ marginTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.82)' }}>
                 {isPregnancyTrack
                   ? `${pregnancyWeekText} - 순한 성분 중심 케어를 추천해요`
@@ -1900,6 +1988,297 @@ export default function CustomerHomePage() {
                       : '선택한 날짜에 체크인 기록이 없어요')
                     : `${getPhaseByDate(selectedCalendarDate)} - ${phaseGuide(getPhaseByDate(selectedCalendarDate)).split(' - ')[1]}`}
               </div>
+              {calSheetOpen && myUserId ? (
+                <>
+                  <div
+                    onClick={() => setCalSheetOpen(false)}
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 170 }}
+                  />
+                  <div
+                    style={{
+                      position: 'fixed',
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      maxWidth: 390,
+                      margin: '0 auto',
+                      zIndex: 171,
+                      background: '#141018',
+                      borderTopLeftRadius: 16,
+                      borderTopRightRadius: 16,
+                      borderTop: '1px solid rgba(123,94,167,0.35)',
+                      padding: '16px 16px calc(18px + env(safe-area-inset-bottom, 0px))',
+                      maxHeight: '78vh',
+                      overflowY: 'auto',
+                    }}
+                  >
+                    <div style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.45)', marginBottom: 4, letterSpacing: '0.05em' }}>
+                      {(() => {
+                        const p = calSheetIso.split('-')
+                        if (p.length !== 3) return calSheetIso
+                        return `${MONTHS[Number(p[1]) - 1]} ${Number(p[2])}, ${p[0]}`
+                      })()}
+                    </div>
+                    <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.88)', marginBottom: 14 }}>이 날 기록</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>체크인 컨디션</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
+                      {checkinSorted.map((t: any) => {
+                        const lab = `${t.emoji ?? ''}${t.label ?? ''}`
+                        const on = calSheetConditionStr === lab
+                        return (
+                          <button
+                            key={String(t.id)}
+                            type="button"
+                            onClick={() => setCalSheetConditionStr(lab)}
+                            style={{
+                              padding: '6px 10px',
+                              borderRadius: 999,
+                              border: on ? '1px solid rgba(168, 130, 220, 0.65)' : '1px solid rgba(255,255,255,0.12)',
+                              background: on ? 'rgba(123, 94, 167, 0.35)' : 'rgba(255,255,255,0.04)',
+                              color: on ? '#e8d9ff' : 'rgba(255,255,255,0.75)',
+                              fontSize: 11,
+                              fontWeight: 400,
+                              cursor: 'pointer',
+                              fontFamily: 'inherit',
+                            }}
+                          >
+                            {lab}
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {!isPregnancyTrack ? (
+                      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const { data: u } = await supabase.auth.getUser()
+                            const uid = u.user?.id
+                            if (!uid) {
+                              setHomeToast('로그인 후 이용해 주세요')
+                              return
+                            }
+                            const cycleLen = Math.max(21, Math.min(60, Number(hormoneCycle?.cycle_length || 28)))
+                            const baseP = new Date(`${calSheetIso}T12:00:00+09:00`)
+                            const next = new Date(baseP)
+                            next.setDate(baseP.getDate() + cycleLen)
+                            const nextIso = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`
+                            const { error } = await supabase.from('hormone_cycle').upsert(
+                              {
+                                ...(hormoneCycle || {}),
+                                auth_id: uid,
+                                track: hormoneTrack,
+                                last_period_date: calSheetIso,
+                                period_started_at: calSheetIso,
+                                expected_period_date: nextIso,
+                                cycle_length: cycleLen,
+                                updated_at: new Date().toISOString(),
+                              } as any,
+                              { onConflict: 'auth_id' }
+                            )
+                            if (error) {
+                              setHomeToast('생리 시작 저장에 실패했어요')
+                              return
+                            }
+                            setHormoneCycle((prev: any) => ({
+                              ...(prev || {}),
+                              auth_id: uid,
+                              last_period_date: calSheetIso,
+                              period_started_at: calSheetIso,
+                              expected_period_date: nextIso,
+                              cycle_length: cycleLen,
+                              track: hormoneTrack,
+                            }))
+                            setHomeToast('생리 시작일을 반영했어요')
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: '9px 8px',
+                            borderRadius: 10,
+                            border: '1px solid rgba(123,94,167,0.45)',
+                            background: 'rgba(123,94,167,0.2)',
+                            color: '#e8d9ff',
+                            fontSize: 11,
+                            fontWeight: 400,
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          생리 시작
+                        </button>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            const { data: u } = await supabase.auth.getUser()
+                            const uid = u.user?.id
+                            if (!uid) {
+                              setHomeToast('로그인 후 이용해 주세요')
+                              return
+                            }
+                            const { error } = await supabase
+                              .from('hormone_cycle')
+                              .update({ period_end_date: calSheetIso, updated_at: new Date().toISOString() } as any)
+                              .eq('auth_id', uid)
+                            if (error) {
+                              setHomeToast(
+                                '생리 끝 저장 실패: hormone_cycle에 period_end_date 컬럼이 없을 수 있어요. Supabase SQL: ALTER TABLE public.hormone_cycle ADD COLUMN IF NOT EXISTS period_end_date date;'
+                              )
+                              return
+                            }
+                            setHormoneCycle((prev: any) => ({ ...(prev || {}), period_end_date: calSheetIso }))
+                            setHomeToast('생리 종료일을 저장했어요')
+                          }}
+                          style={{
+                            flex: 1,
+                            padding: '9px 8px',
+                            borderRadius: 10,
+                            border: '1px solid rgba(201,169,110,0.45)',
+                            background: 'rgba(201,169,110,0.15)',
+                            color: '#f1e0b7',
+                            fontSize: 11,
+                            fontWeight: 400,
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          생리 끝
+                        </button>
+                      </div>
+                    ) : null}
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>메모</div>
+                    <input
+                      value={calSheetNote}
+                      onChange={e => setCalSheetNote(e.target.value)}
+                      placeholder="오늘 피부 한마디..."
+                      maxLength={200}
+                      style={{
+                        width: '100%',
+                        marginBottom: 14,
+                        padding: '10px 12px',
+                        borderRadius: 10,
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: 'rgba(255,255,255,0.05)',
+                        color: '#fff',
+                        fontSize: 12,
+                        fontWeight: 400,
+                        outline: 'none',
+                        fontFamily: 'inherit',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>루틴 완료</span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={calSheetRoutine}
+                        onClick={() => setCalSheetRoutine(v => !v)}
+                        style={{
+                          width: 44,
+                          height: 26,
+                          borderRadius: 999,
+                          border: 'none',
+                          background: calSheetRoutine ? '#7B5EA7' : 'rgba(255,255,255,0.15)',
+                          cursor: 'pointer',
+                          position: 'relative',
+                          padding: 0,
+                        }}
+                      >
+                        <span
+                          style={{
+                            position: 'absolute',
+                            top: 3,
+                            left: calSheetRoutine ? 22 : 3,
+                            width: 20,
+                            height: 20,
+                            borderRadius: 999,
+                            background: '#fff',
+                            transition: 'left 0.15s ease',
+                          }}
+                        />
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!myUserId) return
+                        const calc = calcHormoneBriefing(
+                          { ...(hormoneCycle || {}), track: hormoneTrack },
+                          new Date(`${calSheetIso}T12:00:00+09:00`)
+                        )
+                        const ids = skinRecList.slice(0, 16).map((p: any) => String(p.id)).filter(Boolean)
+                        const { error: aErr } = await supabase.from('skin_cycle_analysis').upsert(
+                          {
+                            auth_id: myUserId,
+                            record_date: calSheetIso,
+                            cycle_day: calc.cycleDay,
+                            hormone_stage: calc.phase,
+                            checkin_condition: calSheetConditionStr,
+                            recommended_products: ids,
+                            updated_at: new Date().toISOString(),
+                          } as any,
+                          { onConflict: 'auth_id,record_date' }
+                        )
+                        if (aErr) {
+                          setHomeToast('기록 저장에 실패했어요')
+                          return
+                        }
+                        const { error: dErr } = await supabase.from('skin_cycle_daily').upsert(
+                          {
+                            auth_id: myUserId,
+                            record_date: calSheetIso,
+                            note: calSheetNote.trim() || null,
+                            routine_completed: calSheetRoutine,
+                            updated_at: new Date().toISOString(),
+                          } as any,
+                          { onConflict: 'auth_id,record_date' }
+                        )
+                        if (dErr) {
+                          setHomeToast(
+                            'skin_cycle_daily 저장 실패: 테이블·컬럼을 확인하세요. 예) CREATE TABLE public.skin_cycle_daily (auth_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE, record_date date NOT NULL, note text, routine_completed boolean DEFAULT false, updated_at timestamptz DEFAULT now(), PRIMARY KEY (auth_id, record_date));'
+                          )
+                          return
+                        }
+                        const seoul = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+                        const y = seoul.getFullYear()
+                        const yearStart = `${y}-01-01`
+                        const yearEnd = `${y}-12-31`
+                        const { data: ar } = await supabase
+                          .from('skin_cycle_analysis')
+                          .select('record_date,hormone_stage,checkin_condition')
+                          .eq('auth_id', myUserId)
+                          .gte('record_date', yearStart)
+                          .lte('record_date', yearEnd)
+                          .order('record_date', { ascending: true })
+                        setMonthCycleRows(ar || [])
+                        const { data: dr } = await supabase
+                          .from('skin_cycle_daily')
+                          .select('record_date,note,routine_completed')
+                          .eq('auth_id', myUserId)
+                          .gte('record_date', yearStart)
+                          .lte('record_date', yearEnd)
+                        setSkinDailyRows(dr || [])
+                        setHomeToast('저장했어요')
+                        setCalSheetOpen(false)
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '12px 14px',
+                        borderRadius: 12,
+                        border: 'none',
+                        background: '#7B5EA7',
+                        color: '#fff',
+                        fontSize: 13,
+                        fontWeight: 400,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      저장
+                    </button>
+                  </div>
+                </>
+              ) : null}
             </>
           )}
         </div>
