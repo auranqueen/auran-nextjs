@@ -80,6 +80,48 @@ function OrderCompleteContent() {
             category_id: items.find((it: any) => String(it?.product_id) === pid)?.category_id ?? null,
           })
         }
+        try {
+          const { data: hc } = await supabase.from('hormone_cycle').select('track').eq('auth_id', user.id).maybeSingle()
+          const myTrack = String((hc as any)?.track || 'general')
+          const { data: qs } = await supabase
+            .from('customer_questions')
+            .select('id,question_text,target_tracks,post_purchase_days')
+            .eq('is_active', true)
+            .eq('question_type', 'post_purchase')
+            .order('sort_order', { ascending: true })
+          const list = (qs || []).filter((q: any) => {
+            const tracks = Array.isArray(q.target_tracks) ? q.target_tracks.map((x: any) => String(x)) : ['all']
+            return tracks.includes('all') || tracks.includes(myTrack)
+          })
+          for (const q of list) {
+            const n = Math.max(0, Number((q as any).post_purchase_days || 0))
+            const due = new Date()
+            due.setDate(due.getDate() + n)
+            const dueIso = due.toISOString()
+            const msg = `${String(user.user_metadata?.full_name || user.user_metadata?.name || '고객')}님 제품 사용해보셨나요? 피부 변화 알려주세요 →`
+            const payload = {
+              user_id: user.id,
+              question_id: (q as any).id,
+              order_id: orderId,
+              channel: 'kakao_alimtalk',
+              message: msg,
+              scheduled_at: dueIso,
+              status: 'pending',
+            }
+            const { error: qErr } = await supabase.from('question_notification_queue' as any).insert(payload as any)
+            if (qErr) {
+              await supabase.from('notifications').insert({
+                user_id: user.id,
+                type: 'post_purchase_scheduled',
+                title: '사용 질문 알림 예약',
+                body: `${String((q as any).question_text || msg)} (${dueIso.slice(0, 10)} 예정)`,
+                is_read: true,
+              } as any)
+            }
+          }
+        } catch {
+          // 예약 구조 저장 실패 시 구매 완료 UX는 계속 진행
+        }
       }
 
       let tx: { amount?: number } | null = null

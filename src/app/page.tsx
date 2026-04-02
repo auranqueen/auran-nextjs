@@ -119,6 +119,8 @@ export default function CustomerHomePage() {
   const [hormoneCycle, setHormoneCycle] = useState<any>(null)
   const [periodTipOpen, setPeriodTipOpen] = useState(false)
   const [periodTipText, setPeriodTipText] = useState(TOOLTIP_FALLBACKS.period_start)
+  const [periodTipTitle, setPeriodTipTitle] = useState('생리 시작 안내')
+  const [periodTipEnabled, setPeriodTipEnabled] = useState(true)
   const [periodQuietNotice, setPeriodQuietNotice] = useState('')
   const [categoryBanners, setCategoryBanners] = useState<any[]>([])
   const [dailyQuestion, setDailyQuestion] = useState<any>(null)
@@ -195,9 +197,18 @@ export default function CustomerHomePage() {
         }
       } catch {}
       try {
-        const { data: tip } = await supabase.from('help_tooltips').select('content,text,value').eq('key', 'period_start').maybeSingle()
+        const { data: tip } = await supabase
+          .from('help_tooltips')
+          .select('title,content,text,value,is_active')
+          .eq('key', 'period_start')
+          .maybeSingle()
+        const isOn = (tip as any)?.is_active !== false
         const t = String((tip as any)?.content || (tip as any)?.text || (tip as any)?.value || '').trim()
-        if (t) setPeriodTipText(t)
+        setPeriodTipEnabled(isOn && !!t)
+        if (t) {
+          setPeriodTipText(t)
+          setPeriodTipTitle(String((tip as any)?.title || '생리 시작 안내'))
+        }
       } catch {}
     }
     void loadMotivationProfile()
@@ -494,10 +505,6 @@ export default function CustomerHomePage() {
   }, [checkinOptions, checkInTab])
 
   useEffect(() => {
-    if (checkinOptions.length === 0 && checkInTab == null) setCheckInTab('heat')
-  }, [checkinOptions.length, checkInTab])
-
-  useEffect(() => {
     if (!hormoneCycle) return
     const c = calcHormoneBriefing(hormoneCycle)
     setHormoneMainLine(`${userName}님, 지금 ${c.phase} ${c.cycleDay > 0 ? `${c.cycleDay}일차` : ''}예요 ✨`)
@@ -577,6 +584,26 @@ export default function CustomerHomePage() {
   }, [myUserId, hormoneTrack, supabase])
 
   useEffect(() => {
+    if (!myUserId) return
+    const ch = supabase
+      .channel(`home-hormone-cycle-${myUserId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'hormone_cycle', filter: `auth_id=eq.${myUserId}` },
+        (payload: any) => {
+          const row = payload?.new
+          if (!row) return
+          setHormoneCycle(row)
+          setHormoneTrack(String(row.track || 'general'))
+        }
+      )
+      .subscribe()
+    return () => {
+      void supabase.removeChannel(ch)
+    }
+  }, [myUserId, supabase])
+
+  useEffect(() => {
     if (!myUserId) {
       setMonthCycleRows([])
       setCalendarPickDate('')
@@ -611,16 +638,7 @@ export default function CustomerHomePage() {
   const checkinSorted = checkinOptions
     .filter((r: any) => r.is_active !== false)
     .sort((a: any, b: any) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
-  const displayCheckinTabs =
-    checkinSorted.length > 0
-      ? checkinSorted
-      : [
-          { id: 'heat', emoji: '🔥', label: '열감' },
-          { id: 'dry', emoji: '💧', label: '건조' },
-          { id: 'trouble', emoji: '😤', label: '트러블' },
-          { id: 'swell', emoji: '🌊', label: '붓기' },
-          { id: 'good', emoji: '✨', label: '좋아요' },
-        ]
+  const displayCheckinTabs = checkinSorted
   const selectedCheckinOpt =
     checkinSorted.length > 0
       ? checkinSorted.find((c: any) => String(c.id) === String(checkInTab)) || checkinSorted[0]
@@ -646,13 +664,19 @@ export default function CustomerHomePage() {
         const filtered = skinRecPool.filter((p: any) => set.has(String(p.id)))
         if (filtered.length > 0) skinRecPool = filtered
       } else {
-        const lt = String(sel.linked_tag ?? sel.connection_tag ?? sel.tag_link ?? '').trim()
-        if (lt) {
-          const ll = lt.toLowerCase()
+        const tagsRaw = (sel as any).skin_tags ?? sel.linked_tag ?? sel.connection_tag ?? sel.tag_link ?? ''
+        const tagList = Array.isArray(tagsRaw)
+          ? tagsRaw.map((x: any) => String(x).toLowerCase().trim()).filter(Boolean)
+          : String(tagsRaw)
+              .split(/[,\n]/)
+              .map((x: string) => x.trim().toLowerCase())
+              .filter(Boolean)
+        if (tagList.length > 0) {
           const filtered = skinRecPool.filter((p: any) => {
             const tag = String(p.tag || '').toLowerCase()
+            const skinTags = Array.isArray((p as any).skin_tags) ? (p as any).skin_tags.map((x: any) => String(x).toLowerCase()) : []
             const qm = Array.isArray(p.quiz_match) ? p.quiz_match.map((x: any) => String(x).toLowerCase()).join(' ') : ''
-            return tag.includes(ll) || qm.includes(ll)
+            return tagList.some((t: string) => tag.includes(t) || qm.includes(t) || skinTags.some((st: string) => st.includes(t)))
           })
           if (filtered.length > 0) skinRecPool = filtered
         }
@@ -706,6 +730,22 @@ export default function CustomerHomePage() {
   products.forEach((p: any) => {
     if (p?.id) productById[String(p.id)] = p
   })
+  const selectedCheckinTags = useMemo(() => {
+    const raw = (selectedCheckinOpt as any)?.skin_tags ?? (selectedCheckinOpt as any)?.linked_tag ?? ''
+    if (Array.isArray(raw)) return raw.map((x: any) => String(x).toLowerCase().trim()).filter(Boolean)
+    return String(raw)
+      .split(/[,\n]/)
+      .map((x: string) => x.trim().toLowerCase())
+      .filter(Boolean)
+  }, [selectedCheckinOpt])
+  const careActionLine =
+    String(
+      (selectedCheckinOpt as any)?.recommendation_message ||
+        (selectedCheckinOpt as any)?.recommend_copy ||
+        (selectedCheckinOpt as any)?.recommendation_ment ||
+        (selectedCheckinOpt as any)?.recommend_ment ||
+        ''
+    ).trim() || careBannerLine
   const hiddenCalendarTracks = ['menopause_post', 'male', 'male_menopause']
   const showSkinCalendar = !hiddenCalendarTracks.includes(String(hormoneTrack || ''))
   const isPeriTrack = hormoneTrack === 'menopause_peri'
@@ -1192,7 +1232,7 @@ export default function CustomerHomePage() {
                         draft: String(t.emoji ?? ''),
                         draft2: String(t.label ?? ''),
                         draft3: String(t.linked_tag ?? t.connection_tag ?? t.tag_link ?? ''),
-                        draft4: String(t.recommend_copy ?? t.recommendation_ment ?? t.recommend_ment ?? ''),
+                        draft4: String(t.recommendation_message ?? t.recommend_copy ?? t.recommendation_ment ?? t.recommend_ment ?? ''),
                         draftNum: Number(t.sort_order ?? 0),
                         draftBool: t.is_active !== false,
                         extra: t,
@@ -1319,7 +1359,7 @@ export default function CustomerHomePage() {
             fontFamily: 'inherit',
           }}
         >
-          {careBannerLine}
+          {careActionLine}
         </button>
         {isPeriodTrack(hormoneTrack) ? (
           <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1372,6 +1412,7 @@ export default function CustomerHomePage() {
             >
               생리 시작했어요
             </button>
+            {periodTipEnabled ? (
             <button
               type="button"
               onClick={() => setPeriodTipOpen(true)}
@@ -1388,6 +1429,7 @@ export default function CustomerHomePage() {
             >
               ?
             </button>
+            ) : null}
             {periodQuietNotice ? <span style={{ fontSize: 11, color: 'rgba(255,220,180,0.9)' }}>{periodQuietNotice}</span> : null}
           </div>
         ) : null}
@@ -1635,7 +1677,22 @@ export default function CustomerHomePage() {
                 const pid = step.product_id || step.representative_product_id
                 let rp = pid ? productById[String(pid)] : null
                 if (!rp && step.category_id) {
-                  rp = products.find((x: any) => String(x.category_id) === String(step.category_id)) || null
+                  const byCategory = products.filter((x: any) => String(x.category_id) === String(step.category_id))
+                  const byTrack = byCategory.filter((x: any) => {
+                    const arr = Array.isArray(x?.categories?.target_tracks) ? x.categories.target_tracks.map((y: any) => String(y)) : []
+                    if (arr.length === 0) return true
+                    return arr.includes('all') || arr.includes(hormoneTrack)
+                  })
+                  const byCheckin =
+                    selectedCheckinTags.length === 0
+                      ? byTrack
+                      : byTrack.filter((x: any) => {
+                          const t = String(x.tag || '').toLowerCase()
+                          const qm = Array.isArray(x.quiz_match) ? x.quiz_match.map((y: any) => String(y).toLowerCase()).join(' ') : ''
+                          const st = Array.isArray((x as any).skin_tags) ? (x as any).skin_tags.map((y: any) => String(y).toLowerCase()).join(' ') : ''
+                          return selectedCheckinTags.some((k: string) => t.includes(k) || qm.includes(k) || st.includes(k))
+                        })
+                  rp = byCheckin[0] || byTrack[0] || byCategory[0] || null
                 }
                 const stepTitle = step.step_name || step.title || step.name || '단계'
                 const thumb = rp ? (rp.storage_thumb_url || rp.thumb_img) : ''
@@ -1687,7 +1744,7 @@ export default function CustomerHomePage() {
                           <div style={{ fontSize: 11, color: TEXT_MUTED }}>{priceNum.toLocaleString()}원</div>
                         </>
                       ) : (
-                        <div style={{ fontSize: 11, color: TEXT_MUTED }}>대표 제품을 연결해 주세요</div>
+                        <div style={{ fontSize: 11, color: TEXT_MUTED }}>준비중</div>
                       )}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flexShrink: 0 }}>
@@ -2687,6 +2744,7 @@ export default function CustomerHomePage() {
               zIndex: 123,
             }}
           >
+            <div style={{ fontSize: 12, color: '#e8d9ff', marginBottom: 6 }}>{periodTipTitle}</div>
             <div style={{ fontSize: 12, color: '#e8d9ff', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{periodTipText}</div>
             <button
               type="button"
@@ -3028,6 +3086,7 @@ export default function CustomerHomePage() {
                               emoji: sheetFields.d,
                               label: sheetFields.d2,
                               linked_tag: sheetFields.d3,
+                              recommendation_message: sheetFields.d4,
                               recommend_copy: sheetFields.d4,
                               sort_order: sheetFields.n,
                               is_active: sheetFields.b,

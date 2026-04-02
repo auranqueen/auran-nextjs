@@ -36,6 +36,8 @@ export default function MyPage() {
   const [hormoneCycle, setHormoneCycle] = useState<any>(null)
   const [periodTipOpen, setPeriodTipOpen] = useState(false)
   const [periodTipText, setPeriodTipText] = useState(TOOLTIP_FALLBACKS.period_start)
+  const [periodTipTitle, setPeriodTipTitle] = useState('생리 시작 안내')
+  const [periodTipEnabled, setPeriodTipEnabled] = useState(true)
   const [periodQuietNotice, setPeriodQuietNotice] = useState('')
   const [skinMonthlyReport, setSkinMonthlyReport] = useState<any>(null)
 
@@ -62,10 +64,20 @@ export default function MyPage() {
               }
             }
           })
-        supabase.from('help_tooltips').select('content,text,value').eq('key', 'period_start').maybeSingle().then(({ data: tip }) => {
-          const t = String((tip as any)?.content || (tip as any)?.text || (tip as any)?.value || '').trim()
-          if (t) setPeriodTipText(t)
-        })
+        supabase
+          .from('help_tooltips')
+          .select('title,content,text,value,is_active')
+          .eq('key', 'period_start')
+          .maybeSingle()
+          .then(({ data: tip }) => {
+            const t = String((tip as any)?.content || (tip as any)?.text || (tip as any)?.value || '').trim()
+            const isOn = (tip as any)?.is_active !== false
+            setPeriodTipEnabled(isOn && !!t)
+            if (t) {
+              setPeriodTipText(t)
+              setPeriodTipTitle(String((tip as any)?.title || '생리 시작 안내'))
+            }
+          })
         supabase.from('users').select('id, points, charge_balance').eq('auth_id', data.user.id).single().then(({ data }) => {
           if (data) {
             setPoint(data.points || 0)
@@ -286,6 +298,15 @@ export default function MyPage() {
     !(profileData?.preferred_brands?.length > 0) ? '· 선호 브랜드를 선택해주세요' : '',
     !(profileData?.special_dates?.length > 0) ? '· 기념일을 1개 이상 등록해주세요' : '',
   ].filter(Boolean).slice(0, 2)
+  const trackLabelMap: Record<string, string> = {
+    general: '일반 주기',
+    menopause_peri: '갱년기 진입',
+    menopause_post: '폐경',
+    pregnant: '임신',
+    postpartum: '출산 후',
+    male: '남성',
+    male_menopause: '남성 갱년기',
+  }
 
   return (
     <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 300, color: '#fff', paddingBottom: '0' }}>
@@ -412,6 +433,7 @@ export default function MyPage() {
           >
             생리 시작했어요
           </button>
+          {periodTipEnabled ? (
           <button
             type="button"
             onClick={() => setPeriodTipOpen(true)}
@@ -419,9 +441,22 @@ export default function MyPage() {
           >
             ?
           </button>
+          ) : null}
           {periodQuietNotice ? <span style={{ fontSize: 11, color: 'rgba(255,220,180,0.9)' }}>{periodQuietNotice}</span> : null}
         </div>
       ) : null}
+
+      <div style={{ margin: '10px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: '12px 14px' }}>
+        <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 6 }}>내 피부 트랙</div>
+        <div style={{ fontSize: 13, color: '#fff', marginBottom: 8 }}>{trackLabelMap[hormoneTrack] || hormoneTrack || '미설정'}</div>
+        <button
+          type="button"
+          onClick={() => router.push('/signup?mode=track')}
+          style={{ border: '1px solid rgba(123,94,167,0.4)', background: 'rgba(123,94,167,0.2)', color: '#e8d9ff', borderRadius: 999, padding: '6px 11px', fontSize: 11, cursor: 'pointer' }}
+        >
+          변경하기
+        </button>
+      </div>
 
       {completion < 100 ? (
         <div onClick={() => router.push('/my/profile')} style={{ margin: '10px 16px 0', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 14, padding: '14px 16px', cursor: 'pointer' }}>
@@ -871,6 +906,7 @@ export default function MyPage() {
         <>
           <div onClick={() => setPeriodTipOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 120 }} />
           <div style={{ position: 'fixed', left: 16, right: 16, bottom: 96, maxWidth: 360, margin: '0 auto', background: '#1f1a26', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 14, padding: 14, zIndex: 121 }}>
+            <div style={{ fontSize: 12, color: '#e8d9ff', marginBottom: 6 }}>{periodTipTitle}</div>
             <div style={{ fontSize: 12, color: '#e8d9ff', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{periodTipText}</div>
             <button type="button" onClick={() => setPeriodTipOpen(false)} style={{ marginTop: 10, width: '100%', padding: 10, borderRadius: 10, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}>확인</button>
           </div>
