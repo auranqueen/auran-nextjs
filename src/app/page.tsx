@@ -138,6 +138,7 @@ export default function CustomerHomePage() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [motivationProfile, setMotivationProfile] = useState<any>(null)
   const [profileCycleType, setProfileCycleType] = useState<string | null>(null)
+  const [profileCreatedAt, setProfileCreatedAt] = useState<string | null>(null)
   const [motivationIdx, setMotivationIdx] = useState(0)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
   const [homeContestBanner, setHomeContestBanner] = useState<any>(null)
@@ -215,14 +216,16 @@ export default function CustomerHomePage() {
       if (!user) return
       const { data: profile } = await supabase
         .from('profiles')
-        .select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type')
+        .select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at')
         .eq('auth_id', user.id)
         .single()
       if (profile) {
         setMotivationProfile(profile)
         setProfileCycleType((profile as any).cycle_type != null ? String((profile as any).cycle_type) : null)
+        setProfileCreatedAt((profile as any).created_at != null ? String((profile as any).created_at) : null)
       } else {
         setProfileCycleType(null)
+        setProfileCreatedAt(null)
       }
       try {
         const { data: hc } = await supabase
@@ -662,9 +665,10 @@ export default function CustomerHomePage() {
     }
     const run = async () => {
       const seoul = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
-      const y = seoul.getFullYear()
-      const yearStart = `${y}-01-01`
-      const yearEnd = `${y}-12-31`
+      const maxY = seoul.getFullYear() + 1
+      const minY = profileCreatedAt ? new Date(profileCreatedAt).getFullYear() : seoul.getFullYear()
+      const yearStart = `${minY}-01-01`
+      const yearEnd = `${maxY}-12-31`
       const { data } = await supabase
         .from('skin_cycle_analysis')
         .select('record_date,hormone_stage,checkin_condition')
@@ -684,7 +688,7 @@ export default function CustomerHomePage() {
       setCalendarPickDate(todayIso)
     }
     void run()
-  }, [myUserId, supabase])
+  }, [myUserId, supabase, profileCreatedAt])
 
   useEffect(() => {
     if (!myUserId) setCalSheetOpen(false)
@@ -890,6 +894,75 @@ AURAN이 내 피부 패턴을
     })
     return m
   }, [skinDailyRows])
+  const calendarDataBounds = useMemo(() => {
+    const seoul = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    const maxY = seoul.getFullYear() + 1
+    const minY = profileCreatedAt ? new Date(profileCreatedAt).getFullYear() : seoul.getFullYear()
+    const suY = profileCreatedAt ? new Date(profileCreatedAt).getFullYear() : minY
+    const suM0 = profileCreatedAt ? new Date(profileCreatedAt).getMonth() : 0
+    return {
+      minY,
+      maxY,
+      yearStart: `${minY}-01-01`,
+      yearEnd: `${maxY}-12-31`,
+      signupYear: suY,
+      signupMonth0: suM0,
+    }
+  }, [profileCreatedAt])
+  const periodPinkSet = useMemo(() => {
+    const pink = new Set<string>()
+    if (homeCalendarKind !== 'menstrual' || isPregnancyTrack) return pink
+    const L = String(hormoneCycle?.last_period_date || hormoneCycle?.period_started_at || '').trim().slice(0, 10)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(L)) return pink
+    let endStr = String(hormoneCycle?.period_end_date || '').trim().slice(0, 10)
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(endStr)) {
+      const seoul = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+      endStr = `${seoul.getFullYear()}-${String(seoul.getMonth() + 1).padStart(2, '0')}-${String(seoul.getDate()).padStart(2, '0')}`
+    }
+    if (endStr < L) return pink
+    const walk = new Date(L + 'T12:00:00')
+    const endTime = new Date(endStr + 'T12:00:00').getTime()
+    while (walk.getTime() <= endTime) {
+      pink.add(
+        `${walk.getFullYear()}-${String(walk.getMonth() + 1).padStart(2, '0')}-${String(walk.getDate()).padStart(2, '0')}`
+      )
+      walk.setDate(walk.getDate() + 1)
+    }
+    return pink
+  }, [homeCalendarKind, isPregnancyTrack, hormoneCycle])
+  const yearNavDailyCounts = useMemo(() => {
+    const y = skinCalYM.y
+    const out: Record<number, number> = {
+      0: 0,
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+      6: 0,
+      7: 0,
+      8: 0,
+      9: 0,
+      10: 0,
+      11: 0,
+    }
+    ;(skinDailyRows || []).forEach((r: any) => {
+      const rd = String(r.record_date || '')
+      if (rd.length < 8) return
+      if (!rd.startsWith(`${y}-`)) return
+      const m = Number(rd.slice(5, 7)) - 1
+      if (m >= 0 && m < 12) out[m] = (out[m] || 0) + 1
+    })
+    return out
+  }, [skinDailyRows, skinCalYM.y])
+  const monthlyHasAnyRecord = useMemo(() => {
+    const y = skinCalYM.y
+    const m = skinCalYM.m
+    const pref = `${y}-${String(m + 1).padStart(2, '0')}-`
+    const hasA = (monthCycleRows || []).some((r: any) => String(r.record_date || '').startsWith(pref))
+    const hasD = (skinDailyRows || []).some((r: any) => String(r.record_date || '').startsWith(pref))
+    return hasA || hasD
+  }, [skinCalYM.y, skinCalYM.m, monthCycleRows, skinDailyRows])
   const monthCalendarDays = useMemo(() => {
     const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
     const todayIso = `${s.getFullYear()}-${String(s.getMonth() + 1).padStart(2, '0')}-${String(s.getDate()).padStart(2, '0')}`
@@ -913,39 +986,6 @@ AURAN이 내 피부 패턴을
     if (skinCalTab === 'YEARLY') return `${skinCalYM.y}`
     return `${MONTHS[skinCalYM.m]} ${skinCalYM.y}`
   }, [skinCalTab, skinCalYM.y, skinCalYM.m])
-  const yearMonthAvgColor = useMemo(() => {
-    const out: Record<number, string> = {}
-    const y = skinCalYM.y
-    for (let mi = 0; mi < 12; mi++) {
-      const prefix = `${y}-${String(mi + 1).padStart(2, '0')}`
-      const rows = (monthCycleRows || []).filter((r: any) => String(r.record_date || '').startsWith(prefix))
-      if (rows.length === 0) {
-        out[mi] = 'rgba(255,255,255,0.12)'
-        continue
-      }
-      const cnt = { 열감: 0, 건조: 0, 트러블: 0, 좋음: 0, other: 0 }
-      rows.forEach((r: any) => {
-        const c = String(r.checkin_condition || '')
-        if (c.includes('열감')) cnt.열감++
-        else if (c.includes('건조')) cnt.건조++
-        else if (c.includes('트러블')) cnt.트러블++
-        else if (c.includes('좋음')) cnt.좋음++
-        else cnt.other++
-      })
-      const top = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0][0]
-      out[mi] =
-        top === '열감'
-          ? '#e05555'
-          : top === '건조'
-            ? '#6ab0e0'
-            : top === '트러블'
-              ? '#E8945C'
-              : top === '좋음'
-                ? '#5cb88a'
-                : 'rgba(255,255,255,0.25)'
-    }
-    return out
-  }, [monthCycleRows, skinCalYM.y])
   const monthlyGridSlots = useMemo(() => {
     if (skinCalTab !== 'MONTHLY') return [] as ({ iso: string; day: number } | null)[]
     const y = skinCalYM.y
@@ -1052,7 +1092,7 @@ AURAN이 내 피부 패턴을
       color: '#fff',
       paddingBottom: '0',
     }}>
-      <style>{`@keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}`}</style>
+      <style>{`@keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}@keyframes todayPulse{0%{box-shadow:0 0 8px rgba(123,94,167,0.5)}50%{box-shadow:0 0 20px rgba(123,94,167,0.8)}100%{box-shadow:0 0 8px rgba(123,94,167,0.5)}}`}</style>
 
       {/* ── 탑바 ── */}
       <header style={{
@@ -1829,6 +1869,12 @@ AURAN이 내 피부 패턴을
                           const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
                           setSkinCalYM({ y: s.getFullYear(), m: s.getMonth() })
                         }
+                        if (tab === 'YEARLY') {
+                          setSkinCalYM(p => ({
+                            ...p,
+                            y: Math.min(Math.max(p.y, calendarDataBounds.minY), calendarDataBounds.maxY),
+                          }))
+                        }
                         setSkinCalTab(tab)
                       }}
                       style={{
@@ -1850,12 +1896,18 @@ AURAN이 내 피부 패턴을
                 })}
               </div>
               {skinCalTab === 'TODAY' ? (
-                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none', alignItems: 'flex-end' }}>
                   {monthCalendarDays.map((d) => {
                     const row = cycleRowByDate[d.iso]
                     const phase = calPhaseNeutral ? '' : getPhaseByDate(d.iso)
-                    const bg = calPhaseNeutral ? 'rgba(255,255,255,0.03)' : phaseColor(phase)
+                    const baseBg = calPhaseNeutral ? 'rgba(255,255,255,0.03)' : phaseColor(phase)
                     const hasCheckin = Boolean(row?.checkin_condition)
+                    const inPeriodPink = periodPinkSet.has(d.iso)
+                    const sToday = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+                    const todayNum = sToday.getDate()
+                    const dayDiff = Math.abs(d.day - todayNum)
+                    const sc = d.isToday ? 1 : dayDiff === 1 ? 0.88 : dayDiff === 2 ? 0.78 : 0.68
+                    const bg = inPeriodPink ? 'rgba(224,120,152,0.25)' : baseBg
                     return (
                       <button
                         key={d.iso}
@@ -1874,18 +1926,26 @@ AURAN이 내 피부 패턴을
                           setCalSheetOpen(true)
                         }}
                         style={{
-                          minWidth: 42,
+                          minWidth: d.isToday ? 52 : 42,
                           borderRadius: 10,
-                          border: d.isToday ? `1px solid ${GOLD}` : hasCheckin ? '1px solid rgba(201,169,110,0.55)' : '1px solid rgba(255,255,255,0.12)',
+                          border: d.isToday
+                            ? '1px solid #7B5EA7'
+                            : hasCheckin
+                              ? '1px solid rgba(201,169,110,0.55)'
+                              : '1px solid rgba(255,255,255,0.12)',
                           background: bg,
-                          color: '#fff',
+                          color: inPeriodPink ? '#e07898' : '#fff',
                           padding: '7px 0 6px',
                           cursor: 'pointer',
                           fontFamily: 'inherit',
                           opacity: calPhaseNeutral && !hasCheckin ? 0.45 : 1,
+                          transform: `scale(${sc})`,
+                          transition: 'transform 0.2s ease',
+                          animation: d.isToday ? 'todayPulse 2.5s ease-in-out infinite' : undefined,
+                          boxSizing: 'border-box',
                         }}
                       >
-                        <div style={{ fontSize: 10, opacity: 0.85 }}>{d.day}</div>
+                        <div style={{ fontSize: 10, opacity: inPeriodPink ? 1 : 0.85 }}>{d.day}</div>
                         {d.isToday ? <div style={{ fontSize: 9, marginTop: 2 }}>오늘</div> : null}
                       </button>
                     )
@@ -1907,7 +1967,8 @@ AURAN이 내 피부 패턴을
                     const { iso, day } = slot
                     const row = cycleRowByDate[iso]
                     const phase = calPhaseNeutral ? '' : getPhaseByDate(iso)
-                    const hormoneBg = calPhaseNeutral
+                    const inPeriodPink = periodPinkSet.has(iso)
+                    const hormoneBgBase = calPhaseNeutral
                       ? 'rgba(255,255,255,0.04)'
                       : phase === '여포기'
                         ? 'rgba(201,169,110,0.28)'
@@ -1916,6 +1977,7 @@ AURAN이 내 피부 패턴을
                           : phase === '배란기'
                             ? 'rgba(216,198,78,0.16)'
                             : 'rgba(255,255,255,0.04)'
+                    const hormoneBg = inPeriodPink ? 'rgba(224,120,152,0.25)' : hormoneBgBase
                     const cc = String(row?.checkin_condition || '')
                     const dotC = !row?.checkin_condition
                       ? 'rgba(255,255,255,0.25)'
@@ -1952,7 +2014,7 @@ AURAN이 내 피부 패턴을
                           borderRadius: 8,
                           border: sel ? `1px solid ${GOLD}` : '1px solid rgba(255,255,255,0.1)',
                           background: hormoneBg,
-                          color: '#fff',
+                          color: inPeriodPink ? '#e07898' : '#fff',
                           padding: '4px 2px 5px',
                           cursor: 'pointer',
                           fontFamily: 'inherit',
@@ -1964,7 +2026,7 @@ AURAN이 내 피부 패턴을
                         }}
                       >
                         <div style={{ fontSize: 9, opacity: 0.9 }}>{day}</div>
-                        {periodMark ? <span style={{ fontSize: 8, lineHeight: 1 }}>💜</span> : <span style={{ fontSize: 8, height: 10 }} />}
+                        {periodMark && !inPeriodPink ? <span style={{ fontSize: 8, lineHeight: 1 }}>💜</span> : <span style={{ fontSize: 8, height: 10 }} />}
                         <span
                           style={{
                             width: 6,
@@ -1979,32 +2041,176 @@ AURAN이 내 피부 패턴을
                   })}
                 </div>
               ) : null}
+              {skinCalTab === 'MONTHLY' && !monthlyHasAnyRecord ? (
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: 'rgba(255,255,255,0.35)',
+                    textAlign: 'center',
+                    marginTop: 10,
+                    lineHeight: 1.55,
+                    whiteSpace: 'pre-line',
+                  }}
+                >
+                  {`📅 날짜를 클릭해서 오늘 피부를 기록해보세요\n기록이 쌓일수록 내 피부 패턴이 보여요 💜`}
+                </div>
+              ) : null}
               {skinCalTab === 'YEARLY' ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                  {MONTHS.map((ml, mi) => (
+                <>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 14,
+                      marginBottom: 10,
+                    }}
+                  >
                     <button
-                      key={ml}
                       type="button"
-                      onClick={() => {
-                        setSkinCalYM({ y: skinCalYM.y, m: mi })
-                        setSkinCalTab('MONTHLY')
-                      }}
+                      onClick={() =>
+                        setSkinCalYM(p => ({ ...p, y: Math.max(calendarDataBounds.minY, p.y - 1) }))
+                      }
                       style={{
-                        padding: '12px 6px',
-                        borderRadius: 10,
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
                         border: '1px solid rgba(255,255,255,0.12)',
-                        background: yearMonthAvgColor[mi],
-                        color: 'rgba(255,255,255,0.9)',
-                        fontSize: 10,
-                        fontFamily: 'monospace',
-                        fontWeight: 400,
+                        background: 'rgba(255,255,255,0.05)',
+                        color: 'rgba(255,255,255,0.75)',
+                        fontSize: 14,
                         cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        padding: 0,
+                        lineHeight: 1,
                       }}
                     >
-                      {ml}
+                      &lt;
                     </button>
-                  ))}
-                </div>
+                    <span style={{ fontSize: 15, fontWeight: 400, color: 'rgba(255,255,255,0.88)', minWidth: 52, textAlign: 'center' }}>
+                      {skinCalYM.y}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSkinCalYM(p => ({ ...p, y: Math.min(calendarDataBounds.maxY, p.y + 1) }))
+                      }
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: 'rgba(255,255,255,0.05)',
+                        color: 'rgba(255,255,255,0.75)',
+                        fontSize: 14,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        padding: 0,
+                        lineHeight: 1,
+                      }}
+                    >
+                      &gt;
+                    </button>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                    {(() => {
+                      const navNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+                      const cY = navNow.getFullYear()
+                      const cM = navNow.getMonth()
+                      return MONTHS.map((ml, mi) => {
+                        if (skinCalYM.y === calendarDataBounds.signupYear && mi < calendarDataBounds.signupMonth0) {
+                          return <div key={ml} style={{ minHeight: 40 }} />
+                        }
+                        const isFuture = skinCalYM.y > cY || (skinCalYM.y === cY && mi > cM)
+                        const cnt = yearNavDailyCounts[mi] || 0
+                        if (isFuture) {
+                          return (
+                            <button
+                              key={ml}
+                              type="button"
+                              onClick={e => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                setHomeToast('아직 오지 않은 날들이에요 💜')
+                              }}
+                              style={{
+                                padding: '12px 6px',
+                                borderRadius: 10,
+                                border: '1px dashed rgba(255,255,255,0.15)',
+                                background: 'transparent',
+                                color: 'rgba(255,255,255,0.45)',
+                                fontSize: 10,
+                                fontFamily: 'monospace',
+                                fontWeight: 400,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <span style={{ fontSize: 9 }}>✨</span>
+                            </button>
+                          )
+                        }
+                        const hasRec = cnt > 0
+                        let boxShadow = '0 0 14px rgba(123,94,167,0.5), inset 0 0 8px rgba(123,94,167,0.2)'
+                        let borderSt = '1px solid rgba(123,94,167,0.8)'
+                        let monthColor = '#e8d9ff'
+                        let bgM = 'rgba(123,94,167,0.35)'
+                        if (hasRec) {
+                          if (cnt >= 16) {
+                            boxShadow = '0 0 22px rgba(123,94,167,0.7), inset 0 0 8px rgba(123,94,167,0.2)'
+                            borderSt = '1px solid #a855f7'
+                          } else if (cnt >= 6) {
+                            boxShadow = '0 0 14px rgba(123,94,167,0.5), inset 0 0 8px rgba(123,94,167,0.2)'
+                          } else {
+                            boxShadow = '0 0 8px rgba(123,94,167,0.3), inset 0 0 8px rgba(123,94,167,0.2)'
+                          }
+                        } else {
+                          bgM = 'rgba(255,255,255,0.03)'
+                          borderSt = '1px solid rgba(255,255,255,0.08)'
+                          monthColor = 'rgba(255,255,255,0.25)'
+                          boxShadow = 'none'
+                        }
+                        return (
+                          <button
+                            key={ml}
+                            type="button"
+                            onClick={e => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              setSkinCalYM({ y: skinCalYM.y, m: mi })
+                              setSkinCalTab('MONTHLY')
+                            }}
+                            style={{
+                              padding: '12px 6px',
+                              borderRadius: 10,
+                              border: borderSt,
+                              background: bgM,
+                              boxShadow,
+                              color: monthColor,
+                              fontSize: 10,
+                              fontFamily: 'monospace',
+                              fontWeight: 400,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {ml}
+                          </button>
+                        )
+                      })
+                    })()}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: 'rgba(255,255,255,0.35)',
+                      textAlign: 'center',
+                      marginTop: 10,
+                      lineHeight: 1.55,
+                      whiteSpace: 'pre-line',
+                    }}
+                  >
+                    {`✨ 기록한 달이 빛나요\n꾸준히 기록할수록 더 밝아져요 💜`}
+                  </div>
+                </>
               ) : null}
               {skinCalTab === 'MONTHLY' || skinCalTab === 'YEARLY' ? (
                 <div
@@ -2169,7 +2375,11 @@ AURAN이 내 피부 패턴을
                             padding: '9px 8px',
                             borderRadius: 10,
                             border: '1px solid rgba(123,94,167,0.45)',
-                            background: 'rgba(123,94,167,0.2)',
+                            background:
+                              String(hormoneCycle?.last_period_date || '').slice(0, 10) === calSheetIso ||
+                              String(hormoneCycle?.period_started_at || '').slice(0, 10) === calSheetIso
+                                ? '#e07898'
+                                : 'rgba(123,94,167,0.2)',
                             color: '#e8d9ff',
                             fontSize: 11,
                             fontWeight: 400,
@@ -2286,29 +2496,26 @@ AURAN이 내 피부 패턴을
                           )
                           return
                         }
-                        const seoul = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
-                        const y = seoul.getFullYear()
-                        const yearStart = `${y}-01-01`
-                        const yearEnd = `${y}-12-31`
                         const { data: ar } = await supabase
                           .from('skin_cycle_analysis')
                           .select('record_date,hormone_stage,checkin_condition')
                           .eq('auth_id', uid)
-                          .gte('record_date', yearStart)
-                          .lte('record_date', yearEnd)
+                          .gte('record_date', calendarDataBounds.yearStart)
+                          .lte('record_date', calendarDataBounds.yearEnd)
                           .order('record_date', { ascending: true })
                         setMonthCycleRows(ar || [])
                         const { data: dr } = await supabase
                           .from('skin_cycle_daily')
                           .select('record_date,note,routine_completed')
                           .eq('auth_id', uid)
-                          .gte('record_date', yearStart)
-                          .lte('record_date', yearEnd)
+                          .gte('record_date', calendarDataBounds.yearStart)
+                          .lte('record_date', calendarDataBounds.yearEnd)
                         setSkinDailyRows(dr || [])
                         setCalSheetConditionStr(condJoined)
                         setHomeToast('저장했어요')
                         setCalSheetOpen(false)
                       }}
+                      disabled={false}
                       style={{
                         width: '100%',
                         padding: '12px 14px',
