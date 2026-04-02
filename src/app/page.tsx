@@ -129,6 +129,8 @@ export default function CustomerHomePage() {
   const [routineMentorOpen, setRoutineMentorOpen] = useState(false)
   const [routineStepPick, setRoutineStepPick] = useState<Record<string, boolean>>({})
   const [homeToast, setHomeToast] = useState('')
+  const [monthCycleRows, setMonthCycleRows] = useState<any[]>([])
+  const [calendarPickDate, setCalendarPickDate] = useState('')
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [homeEditMode, setHomeEditMode] = useState(false)
   const [homeEditSheet, setHomeEditSheet] = useState<{
@@ -575,6 +577,30 @@ export default function CustomerHomePage() {
   }, [myUserId, hormoneTrack, supabase])
 
   useEffect(() => {
+    if (!myUserId) {
+      setMonthCycleRows([])
+      setCalendarPickDate('')
+      return
+    }
+    const run = async () => {
+      const now = new Date()
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10)
+      const { data } = await supabase
+        .from('skin_cycle_analysis')
+        .select('record_date,hormone_stage,checkin_condition')
+        .eq('auth_id', myUserId)
+        .gte('record_date', monthStart)
+        .lte('record_date', monthEnd)
+        .order('record_date', { ascending: true })
+      setMonthCycleRows(data || [])
+      const todayIso = new Date().toISOString().slice(0, 10)
+      setCalendarPickDate(todayIso)
+    }
+    void run()
+  }, [myUserId, supabase])
+
+  useEffect(() => {
     const next: Record<string, boolean> = {}
     routineSteps.forEach((s: any) => {
       if (s?.id != null) next[String(s.id)] = true
@@ -680,6 +706,66 @@ export default function CustomerHomePage() {
   products.forEach((p: any) => {
     if (p?.id) productById[String(p.id)] = p
   })
+  const hiddenCalendarTracks = ['menopause_post', 'male', 'male_menopause']
+  const showSkinCalendar = !hiddenCalendarTracks.includes(String(hormoneTrack || ''))
+  const isPeriTrack = hormoneTrack === 'menopause_peri'
+  const isPregnancyTrack = hormoneTrack === 'pregnant' || hormoneTrack === 'postpartum'
+  const hasCycleBase = Boolean(hormoneCycle?.last_period_date)
+  const cycleRowByDate = useMemo(() => {
+    const m: Record<string, any> = {}
+    ;(monthCycleRows || []).forEach((r: any) => {
+      const k = String(r.record_date || '')
+      if (k) m[k] = r
+    })
+    return m
+  }, [monthCycleRows])
+  const monthCalendarDays = useMemo(() => {
+    const now = new Date()
+    const y = now.getFullYear()
+    const m = now.getMonth()
+    const count = new Date(y, m + 1, 0).getDate()
+    const todayIso = now.toISOString().slice(0, 10)
+    return Array.from({ length: count }).map((_, i) => {
+      const d = new Date(y, m, i + 1)
+      const iso = d.toISOString().slice(0, 10)
+      return { iso, day: i + 1, isToday: iso === todayIso }
+    })
+  }, [])
+  const selectedCalendarDate = calendarPickDate || new Date().toISOString().slice(0, 10)
+  const selectedCycleRow = cycleRowByDate[selectedCalendarDate]
+  const phaseColor = (phase: string) => {
+    if (phase === '생리기') return '#D04558'
+    if (phase === '여포기') return '#C9A96E'
+    if (phase === '배란기') return '#D8C64E'
+    return '#7B5EA7'
+  }
+  const phaseGuide = (phase: string) => {
+    if (phase === '생리기') return '생리기 - 진정/장벽 케어 중심으로 쉬어가요'
+    if (phase === '여포기') return '황금기 - 미백앰플 집중투입 타이밍'
+    if (phase === '배란기') return '배란기 - 유분 밸런스와 모공 케어 집중'
+    return '황체기 - 진정/보습으로 컨디션 기복 완충'
+  }
+  const getPhaseByDate = (iso: string) => {
+    const d = new Date(`${iso}T00:00:00`)
+    const c = calcHormoneBriefing({ ...(hormoneCycle || {}), track: 'general' }, d)
+    return String(c.phase || '황체기')
+  }
+  const pregnancyWeekText = useMemo(() => {
+    const now = new Date()
+    if (hormoneTrack === 'pregnant') {
+      const base = hormoneCycle?.pregnancy_start_date || hormoneCycle?.last_period_date
+      if (!base) return '임신 주차를 입력하면 주차가 표시돼요'
+      const diff = Math.max(0, Math.floor((now.getTime() - new Date(base).getTime()) / 86400000))
+      return `임신 ${Math.floor(diff / 7) + 1}주차`
+    }
+    if (hormoneTrack === 'postpartum') {
+      const base = hormoneCycle?.delivery_date
+      if (!base) return '출산일을 입력하면 주차가 표시돼요'
+      const diff = Math.max(0, Math.floor((now.getTime() - new Date(base).getTime()) / 86400000))
+      return `출산 후 ${Math.floor(diff / 7) + 1}주차`
+    }
+    return ''
+  }, [hormoneTrack, hormoneCycle])
   const showHomeEditChrome = isSuperAdmin && homeEditMode
 
   return (
@@ -1322,6 +1408,7 @@ export default function CustomerHomePage() {
                   await supabase.from('daily_checkin').insert({ auth_id: uid, checkin_date: today, period_started: true } as any)
                   setHomeToast('오늘을 1일차로 기록했어요')
                   setPeriodQuietNotice('')
+                  setCalendarPickDate(today)
                   setHormoneCycle((prev: any) => ({ ...(prev || {}), last_period_date: today, cycle_length: cycleLen, track: hormoneTrack }))
                 } catch {
                   setHomeToast('기록 저장에 실패했어요')
@@ -1467,6 +1554,74 @@ export default function CustomerHomePage() {
           )
         })}
       </div>
+
+      {showSkinCalendar ? (
+        <div style={{ padding: '14px 16px 0' }}>
+          <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.78)', marginBottom: 8 }}>이번 달 피부 캘린더</div>
+          {(!myUserId || (!isPregnancyTrack && !isPeriTrack && !hasCycleBase)) ? (
+            <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 12, padding: '12px 14px' }}>
+              <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 10 }}>생리 주기를 입력하면 피부 캘린더가 활성화돼요</div>
+              <button
+                type="button"
+                onClick={() => router.push('/my/profile')}
+                style={{
+                  border: '1px solid rgba(123,94,167,0.4)',
+                  background: 'rgba(123,94,167,0.18)',
+                  color: '#e8d9ff',
+                  borderRadius: 999,
+                  padding: '7px 11px',
+                  fontSize: 11,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                입력하러 가기
+              </button>
+            </div>
+          ) : (
+            <>
+              <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+                {monthCalendarDays.map((d) => {
+                  const row = cycleRowByDate[d.iso]
+                  const phase = isPeriTrack ? '' : getPhaseByDate(d.iso)
+                  const bg = isPeriTrack ? 'rgba(255,255,255,0.03)' : phaseColor(phase)
+                  const hasCheckin = Boolean(row?.checkin_condition)
+                  return (
+                    <button
+                      key={d.iso}
+                      type="button"
+                      onClick={() => setCalendarPickDate(d.iso)}
+                      style={{
+                        minWidth: 42,
+                        borderRadius: 10,
+                        border: d.isToday ? `1px solid ${GOLD}` : hasCheckin ? '1px solid rgba(201,169,110,0.55)' : '1px solid rgba(255,255,255,0.12)',
+                        background: bg,
+                        color: '#fff',
+                        padding: '7px 0 6px',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        opacity: isPeriTrack && !hasCheckin ? 0.45 : 1,
+                      }}
+                    >
+                      <div style={{ fontSize: 10, opacity: 0.85 }}>{d.day}</div>
+                      {d.isToday ? <div style={{ fontSize: 9, marginTop: 2 }}>오늘</div> : null}
+                    </button>
+                  )
+                })}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.82)' }}>
+                {isPregnancyTrack
+                  ? `${pregnancyWeekText} - 순한 성분 중심 케어를 추천해요`
+                  : isPeriTrack
+                    ? (selectedCycleRow?.checkin_condition
+                      ? `체크인 기록 - ${String(selectedCycleRow.checkin_condition)}`
+                      : '선택한 날짜에 체크인 기록이 없어요')
+                    : `${getPhaseByDate(selectedCalendarDate)} - ${phaseGuide(getPhaseByDate(selectedCalendarDate)).split(' - ')[1]}`}
+              </div>
+            </>
+          )}
+        </div>
+      ) : null}
 
       <div ref={routineMoreRef} id="home-routine-more" style={{ padding: routineExpanded ? '12px 16px 0' : '0 16px', marginTop: routineExpanded ? 4 : 0 }}>
         {routineExpanded ? (
