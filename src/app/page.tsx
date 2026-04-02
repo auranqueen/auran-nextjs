@@ -2460,7 +2460,7 @@ AURAN이 내 피부 패턴을
                       : '선택한 날짜에 체크인 기록이 없어요')
                     : `${getPhaseByDate(selectedCalendarDate)} - ${phaseGuide(getPhaseByDate(selectedCalendarDate)).split(' - ')[1]}`}
               </div>
-              {calSheetOpen && myUserId ? (
+              {calSheetOpen ? (
                 <>
                   <div
                     onClick={() => setCalSheetOpen(false)}
