@@ -1562,51 +1562,6 @@ export default function CustomerHomePage() {
         >
           {careActionLine}
         </button>
-        {isPeriodTrack(hormoneTrack) ? (
-          <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await savePeriodStartedToday()
-                } catch {
-                  setHomeToast('기록 저장에 실패했어요')
-                }
-              }}
-              style={{
-                padding: '9px 12px',
-                borderRadius: 999,
-                border: '1px solid rgba(123,94,167,0.42)',
-                background: 'rgba(123,94,167,0.2)',
-                color: '#e8d9ff',
-                fontSize: 12,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              생리 시작했어요
-            </button>
-            {periodTipEnabled ? (
-            <button
-              type="button"
-              onClick={() => setPeriodTipOpen(true)}
-              style={{
-                width: 26,
-                height: 26,
-                borderRadius: '50%',
-                border: '1px solid rgba(255,255,255,0.2)',
-                background: 'rgba(255,255,255,0.06)',
-                color: '#fff',
-                fontSize: 12,
-                cursor: 'pointer',
-              }}
-            >
-              ?
-            </button>
-            ) : null}
-            {periodQuietNotice ? <span style={{ fontSize: 11, color: 'rgba(255,220,180,0.9)' }}>{periodQuietNotice}</span> : null}
-          </div>
-        ) : null}
       </div>
 
       {/* ── 내 피부 맞춤 추천 ── */}
@@ -1718,18 +1673,75 @@ export default function CustomerHomePage() {
 
       {showSkinCalendar ? (
         <div style={{ padding: '14px 16px 0' }}>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'baseline',
-              justifyContent: 'space-between',
-              gap: 10,
-              marginBottom: 8,
-              flexWrap: 'wrap',
-            }}
-          >
-            <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.78)' }}>이번 달 피부 캘린더</div>
-            <div style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.45)', letterSpacing: '0.06em' }}>{skinCalTitleEn}</div>
+          <div style={{ marginBottom: 8 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 10,
+                flexWrap: 'wrap',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.78)' }}>🔮 마법 캘린더</div>
+                <button
+                  type="button"
+                  onClick={() => setPeriodTipOpen(o => !o)}
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 999,
+                    background: 'rgba(123,94,167,0.3)',
+                    border: '1px solid rgba(123,94,167,0.5)',
+                    color: 'rgba(255,255,255,0.7)',
+                    fontSize: 10,
+                    cursor: 'pointer',
+                    padding: 0,
+                    lineHeight: 1,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  ?
+                </button>
+              </div>
+              <div style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.45)', letterSpacing: '0.06em' }}>{skinCalTitleEn}</div>
+            </div>
+            {periodTipOpen ? (
+              <div
+                style={{
+                  fontSize: 11,
+                  color: 'rgba(255,255,255,0.6)',
+                  background: 'rgba(123,94,167,0.1)',
+                  border: '1px solid rgba(123,94,167,0.2)',
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  marginTop: 8,
+                  lineHeight: 1.7,
+                  fontWeight: 400,
+                  whiteSpace: 'pre-wrap',
+                }}
+              >
+                {`💜 마법(생리) 기록은 캘린더에서 해요
+
+📍 기록하는 방법
+날짜를 클릭하면 생리 시작·끝을
+직접 기록할 수 있어요.
+예정일보다 빨리 시작했거나
+늦어지는 경우에도 캘린더에서
+원하는 날짜를 눌러 기록하면 돼요 🔮
+
+✨ 왜 기록해야 하나요?
+생리 주기에 따라 피부가 매주 달라져요.
+기록이 쌓일수록 AURAN이 내 피부 패턴을
+정확하게 파악해서 딱 맞는 케어를
+먼저 알려드려요.
+내 피부를 가장 잘 아는 앱이 되는 비결이에요 💜`}
+              </div>
+            ) : null}
           </div>
           <>
               <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
@@ -3317,54 +3329,6 @@ export default function CustomerHomePage() {
                 fontFamily: 'inherit',
                 fontSize: 13,
               }}
-            >
-              확인
-            </button>
-          </div>
-        </>
-      ) : null}
-      {periodTipOpen ? (
-        <>
-          <div onClick={() => setPeriodTipOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 122 }} />
-          <div
-            style={{
-              position: 'fixed',
-              left: 16,
-              right: 16,
-              bottom: 110,
-              maxWidth: 360,
-              margin: '0 auto',
-              background: '#1f1a26',
-              border: '1px solid rgba(123,94,167,0.35)',
-              borderRadius: 14,
-              padding: 14,
-              zIndex: 123,
-            }}
-          >
-            <div style={{ fontSize: 12, color: '#e8d9ff', marginBottom: 6 }}>생리 시작 기록</div>
-            <div style={{ fontSize: 12, color: '#e8d9ff', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
-              오늘 생리가 시작됐다면 아래 버튼을 눌러주세요.
-              {'\n'}피부는 생리 주기에 따라 매주 달라져요.
-              {'\n'}기록하면 AURAN이 오늘 딱 맞는 케어를 먼저 알려드려요 💜
-            </div>
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  const ok = await savePeriodStartedToday()
-                  if (ok) setPeriodTipOpen(false)
-                } catch {
-                  setHomeToast('기록 저장에 실패했어요')
-                }
-              }}
-              style={{ marginTop: 10, width: '100%', padding: 10, borderRadius: 10, border: '1px solid rgba(201,169,110,0.45)', background: 'rgba(201,169,110,0.2)', color: '#f1e0b7', fontSize: 12, cursor: 'pointer' }}
-            >
-              ✓ 오늘 생리 시작했어요
-            </button>
-            <button
-              type="button"
-              onClick={() => setPeriodTipOpen(false)}
-              style={{ marginTop: 10, width: '100%', padding: 10, borderRadius: 10, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}
             >
               확인
             </button>
