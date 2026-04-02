@@ -897,7 +897,7 @@ export default function AdminMarketingProductsClient() {
                   const v = e.target.value
                   const { error } = await supabase
                     .from('brands')
-                    .update({ origin_country: v || null, updated_at: new Date().toISOString() } as any)
+                    .update({ origin_country: v || null } as any)
                     .eq('id', b.id)
                   if (error) {
                     setToast(error.message)
