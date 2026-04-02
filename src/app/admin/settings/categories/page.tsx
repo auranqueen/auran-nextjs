@@ -10,6 +10,9 @@ type Cat = {
   level: number
   sort_order: number | null
   target_tracks?: string[] | null
+  banner_image_url?: string | null
+  banner_text?: string | null
+  banner_link?: string | null
 }
 
 type FlatRow = Cat & { depth: number }
@@ -25,18 +28,24 @@ export default function AdminCategoriesPage() {
   const [sheetName, setSheetName] = useState('')
   const [sheetSort, setSheetSort] = useState('0')
   const [sheetTracks, setSheetTracks] = useState<string[]>([])
-  const [viewTab, setViewTab] = useState<'category' | 'skin' | 'natural'>('category')
+  const [sheetBannerImage, setSheetBannerImage] = useState('')
+  const [sheetBannerText, setSheetBannerText] = useState('')
+  const [sheetBannerLink, setSheetBannerLink] = useState('')
+  const [viewTab, setViewTab] = useState<'category' | 'skin' | 'natural' | 'questions'>('category')
   const [selL1, setSelL1] = useState('')
   const [selL2, setSelL2] = useState('')
   const [selL3, setSelL3] = useState('')
   const [selL4, setSelL4] = useState('')
   const [selL5, setSelL5] = useState('')
   const [naturalRows, setNaturalRows] = useState<{ keyword: string; total: number; promoted: boolean }[]>([])
+  const [questionRows, setQuestionRows] = useState<any[]>([])
+  const [questionSaving, setQuestionSaving] = useState(false)
+  const [questionSheet, setQuestionSheet] = useState<any | null>(null)
 
   const loadRows = useCallback(async () => {
     const { data, error } = await supabase
       .from('categories')
-      .select('id,name,parent_id,level,sort_order,target_tracks')
+      .select('id,name,parent_id,level,sort_order,target_tracks,banner_image_url,banner_text,banner_link')
       .order('sort_order', { ascending: true, nullsFirst: false })
       .order('name', { ascending: true })
     if (error) {
@@ -76,18 +85,28 @@ export default function AdminCategoriesPage() {
     setNaturalRows(merged)
   }, [supabase])
 
+  const loadQuestions = useCallback(async () => {
+    const { data } = await supabase
+      .from('customer_questions')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: true })
+    setQuestionRows(data || [])
+  }, [supabase])
+
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       setLoading(true)
       await loadRows()
       await loadNatural()
+      await loadQuestions()
       if (!cancelled) setLoading(false)
     })()
     return () => {
       cancelled = true
     }
-  }, [loadRows])
+  }, [loadRows, loadQuestions])
 
   const flatRows = useMemo(() => {
     const byParent = new Map<string | null, Cat[]>()
@@ -148,6 +167,9 @@ export default function AdminCategoriesPage() {
     setSheetName(c.name || '')
     setSheetSort(String(c.sort_order ?? 0))
     setSheetTracks(Array.isArray(c.target_tracks) ? c.target_tracks.map(x => String(x)) : ['all'])
+    setSheetBannerImage(String(c.banner_image_url || ''))
+    setSheetBannerText(String(c.banner_text || ''))
+    setSheetBannerLink(String(c.banner_link || ''))
   }
 
   const closeSheet = () => {
@@ -155,13 +177,30 @@ export default function AdminCategoriesPage() {
     setSheetName('')
     setSheetSort('0')
     setSheetTracks([])
+    setSheetBannerImage('')
+    setSheetBannerText('')
+    setSheetBannerLink('')
   }
 
   const confirmSheet = () => {
     if (!sheet) return
     const so = Math.floor(Number(sheetSort) || 0)
     const nm = sheetName.trim() || '이름 없음'
-    setRows(prev => prev.map(r => (r.id === sheet.id ? { ...r, name: nm, sort_order: so, target_tracks: sheetTracks } : r)))
+    setRows(prev =>
+      prev.map(r =>
+        r.id === sheet.id
+          ? {
+              ...r,
+              name: nm,
+              sort_order: so,
+              target_tracks: sheetTracks,
+              banner_image_url: sheetBannerImage.trim() || null,
+              banner_text: sheetBannerText.trim() || null,
+              banner_link: sheetBannerLink.trim() || null,
+            }
+          : r
+      )
+    )
     closeSheet()
   }
 
@@ -269,6 +308,9 @@ export default function AdminCategoriesPage() {
           level: r.level,
           sort_order: r.sort_order ?? 0,
           target_tracks: Array.isArray(r.target_tracks) && r.target_tracks.length > 0 ? r.target_tracks : ['all'],
+          banner_image_url: r.banner_image_url ?? null,
+          banner_text: r.banner_text ?? null,
+          banner_link: r.banner_link ?? null,
         } as any)
         if (error) throw new Error(error.message)
       }
@@ -281,7 +323,10 @@ export default function AdminCategoriesPage() {
           (prev.sort_order ?? 0) === (r.sort_order ?? 0) &&
           pidEq(prev.parent_id, r.parent_id) &&
           (prev.level ?? 0) === (r.level ?? 0) &&
-          JSON.stringify((prev.target_tracks || []).slice().sort()) === JSON.stringify((r.target_tracks || []).slice().sort())
+          JSON.stringify((prev.target_tracks || []).slice().sort()) === JSON.stringify((r.target_tracks || []).slice().sort()) &&
+          String(prev.banner_image_url || '') === String(r.banner_image_url || '') &&
+          String(prev.banner_text || '') === String(r.banner_text || '') &&
+          String(prev.banner_link || '') === String(r.banner_link || '')
         ) {
           continue
         }
@@ -293,6 +338,9 @@ export default function AdminCategoriesPage() {
             parent_id: r.parent_id,
             level: r.level,
             target_tracks: Array.isArray(r.target_tracks) && r.target_tracks.length > 0 ? r.target_tracks : ['all'],
+            banner_image_url: r.banner_image_url ?? null,
+            banner_text: r.banner_text ?? null,
+            banner_link: r.banner_link ?? null,
           } as any)
           .eq('id', r.id)
         if (error) throw new Error(error.message)
@@ -339,6 +387,7 @@ export default function AdminCategoriesPage() {
           ['category', '카테고리 선택'],
           ['skin', '스킨태그'],
           ['natural', '고객 자연어'],
+          ['questions', '고객 질문'],
         ] as const).map(([k, label]) => (
           <button
             key={k}
@@ -728,6 +777,103 @@ export default function AdminCategoriesPage() {
               )}
             </div>
           ) : null}
+          {viewTab === 'questions' ? (
+            <div style={{ display: 'grid', gap: 8 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setQuestionRows(prev => [
+                      ...prev,
+                      {
+                        id: crypto.randomUUID(),
+                        question_text: '새 질문',
+                        question_type: 'daily',
+                        target_tracks: ['all'],
+                        answer_type: 'options',
+                        options: ['선택지1', '선택지2'],
+                        post_purchase_days: null,
+                        sort_order: prev.length,
+                        is_active: true,
+                      },
+                    ])
+                  }
+                  style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(76,173,126,0.38)', background: 'rgba(76,173,126,0.12)', color: '#7dce9a', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
+                >
+                  + 질문 추가
+                </button>
+                <button
+                  type="button"
+                  disabled={questionSaving}
+                  onClick={async () => {
+                    setQuestionSaving(true)
+                    try {
+                      for (const q of questionRows) {
+                        const payload = {
+                          id: q.id,
+                          question_text: q.question_text,
+                          question_type: q.question_type,
+                          target_tracks: Array.isArray(q.target_tracks) && q.target_tracks.length > 0 ? q.target_tracks : ['all'],
+                          answer_type: q.answer_type,
+                          options: Array.isArray(q.options) ? q.options : String(q.options || '').split(',').map((s: string) => s.trim()).filter(Boolean),
+                          post_purchase_days: q.question_type === 'post_purchase' ? Math.max(0, Number(q.post_purchase_days || 0)) : null,
+                          sort_order: Number(q.sort_order || 0),
+                          is_active: q.is_active !== false,
+                        }
+                        await supabase.from('customer_questions').upsert(payload as any, { onConflict: 'id' })
+                      }
+                      await loadQuestions()
+                      showToast('질문 적용 완료')
+                    } finally {
+                      setQuestionSaving(false)
+                    }
+                  }}
+                  style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(201,168,76,0.42)', background: 'rgba(201,168,76,0.15)', color: '#e8d4a8', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
+                >
+                  적용
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await supabase.from('customer_questions').upsert([
+                      { question_text: '오늘 잠을 몇 시간 주무셨어요?', question_type: 'daily', target_tracks: ['all'], answer_type: 'options', options: ['4시간이하', '5~6시간', '7~8시간', '9시간이상'], sort_order: 1, is_active: true },
+                      { question_text: '이번 주 스트레스 어때요?', question_type: 'daily', target_tracks: ['all'], answer_type: 'options', options: ['매우높음', '높음', '보통', '낮음'], sort_order: 2, is_active: true },
+                      { question_text: '이 제품 사용 후 피부 변화 느끼셨나요?', question_type: 'post_purchase', target_tracks: ['all'], answer_type: 'options', options: ['좋아졌어요', '그대로예요', '안맞아요'], post_purchase_days: 3, sort_order: 3, is_active: true },
+                      { question_text: '이번 달 피부 전반적으로 어떠셨나요?', question_type: 'monthly', target_tracks: ['all'], answer_type: 'options', options: ['좋았어요', '보통이었어요', '힘들었어요'], sort_order: 4, is_active: true },
+                    ] as any)
+                    await loadQuestions()
+                    showToast('기본 질문 INSERT 완료')
+                  }}
+                  style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(123,94,167,0.42)', background: 'rgba(123,94,167,0.15)', color: '#d7c4f2', fontSize: 12, fontWeight: 800, cursor: 'pointer' }}
+                >
+                  기본 질문 INSERT
+                </button>
+              </div>
+              {questionRows.map((q, i) => (
+                <div key={q.id || i} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '10px 10px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.03)' }}>
+                  <div style={{ width: 22, fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{i + 1}</div>
+                  <div style={{ flex: 1, minWidth: 0, fontSize: 12, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {q.question_text}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#c9a84c' }}>{q.question_type}</div>
+                  <button
+                    type="button"
+                    onClick={() => setQuestionSheet({ ...q, idx: i, optionsText: Array.isArray(q.options) ? q.options.join('\n') : String(q.options || '') })}
+                    style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(123,94,167,0.4)', background: 'rgba(123,94,167,0.18)', color: '#d2b8ff', cursor: 'pointer' }}
+                  >
+                    ✎
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuestionRows(prev => prev.filter((_, idx) => idx !== i))}
+                    style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(239,83,80,0.38)', background: 'rgba(239,83,80,0.14)', color: '#ef9a9a', cursor: 'pointer' }}
+                  >
+                    🗑
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
           {viewTab === 'natural' ? (
             <div style={{ marginTop: 14, borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 10 }}>
               <div style={{ fontSize: 12, color: '#fff', marginBottom: 8 }}>툴팁 키 관리</div>
@@ -969,6 +1115,18 @@ export default function AdminCategoriesPage() {
                 }}
               />
             </label>
+            <div style={{ display: 'grid', gap: 6, marginBottom: 12 }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>배너 이미지 URL</span>
+              <input value={sheetBannerImage} onChange={e => setSheetBannerImage(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: '#0c0c0c', color: '#fff', fontSize: 13 }} />
+            </div>
+            <div style={{ display: 'grid', gap: 6, marginBottom: 12 }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>배너 텍스트</span>
+              <input value={sheetBannerText} onChange={e => setSheetBannerText(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: '#0c0c0c', color: '#fff', fontSize: 13 }} />
+            </div>
+            <div style={{ display: 'grid', gap: 6, marginBottom: 16 }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>배너 링크</span>
+              <input value={sheetBannerLink} onChange={e => setSheetBannerLink(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: '#0c0c0c', color: '#fff', fontSize: 13 }} />
+            </div>
             <div style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>노출 트랙 (target_tracks)</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -1046,6 +1204,74 @@ export default function AdminCategoriesPage() {
               >
                 확인
               </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {questionSheet ? (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 210, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <button type="button" onClick={() => setQuestionSheet(null)} style={{ flex: 1, border: 'none', background: 'rgba(0,0,0,0.45)', cursor: 'pointer' }} />
+          <div style={{ background: '#141414', borderTopLeftRadius: 18, borderTopRightRadius: 18, border: '1px solid rgba(255,255,255,0.12)', borderBottom: 'none', padding: '16px 16px 24px', maxHeight: '88vh', overflowY: 'auto' }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 10 }}>질문 편집</div>
+            <label style={{ display: 'grid', gap: 6, marginBottom: 10 }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>질문 텍스트</span>
+              <input value={questionSheet.question_text || ''} onChange={e => setQuestionSheet((p: any) => ({ ...p, question_text: e.target.value }))} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: '#0c0c0c', color: '#fff', fontSize: 13 }} />
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+              <label style={{ display: 'grid', gap: 6 }}>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>질문 유형</span>
+                <select value={questionSheet.question_type || 'daily'} onChange={e => setQuestionSheet((p: any) => ({ ...p, question_type: e.target.value }))} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: '#0c0c0c', color: '#fff', fontSize: 13 }}>
+                  <option value="daily">daily</option><option value="post_purchase">post_purchase</option><option value="monthly">monthly</option>
+                </select>
+              </label>
+              <label style={{ display: 'grid', gap: 6 }}>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>답변 유형</span>
+                <select value={questionSheet.answer_type || 'options'} onChange={e => setQuestionSheet((p: any) => ({ ...p, answer_type: e.target.value }))} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: '#0c0c0c', color: '#fff', fontSize: 13 }}>
+                  <option value="options">선택지</option><option value="yesno">예스노</option><option value="text">텍스트</option>
+                </select>
+              </label>
+            </div>
+            <label style={{ display: 'grid', gap: 6, marginBottom: 10 }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>대상 트랙</span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {['general','menopause_peri','menopause_post','pregnant','postpartum','male','male_menopause','all'].map(t => {
+                  const arr = Array.isArray(questionSheet.target_tracks) ? questionSheet.target_tracks.map((x: any) => String(x)) : []
+                  const on = arr.includes(t)
+                  return <button key={t} type="button" onClick={() => setQuestionSheet((p: any) => ({ ...p, target_tracks: on ? arr.filter((x: string) => x !== t) : [...arr, t] }))} style={{ padding: '5px 8px', borderRadius: 999, border: on ? '1px solid rgba(201,168,76,0.5)' : '1px solid rgba(255,255,255,0.15)', background: on ? 'rgba(201,168,76,0.18)' : 'rgba(255,255,255,0.05)', color: on ? '#e8d4a8' : 'rgba(255,255,255,0.75)', fontSize: 11, cursor: 'pointer' }}>{t}</button>
+                })}
+              </div>
+            </label>
+            {questionSheet.answer_type === 'options' ? (
+              <label style={{ display: 'grid', gap: 6, marginBottom: 10 }}>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>선택지 (줄바꿈)</span>
+                <textarea value={questionSheet.optionsText || ''} onChange={e => setQuestionSheet((p: any) => ({ ...p, optionsText: e.target.value }))} rows={4} style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: '#0c0c0c', color: '#fff', fontSize: 13, resize: 'vertical' }} />
+              </label>
+            ) : null}
+            {questionSheet.question_type === 'post_purchase' ? (
+              <label style={{ display: 'grid', gap: 6, marginBottom: 10 }}>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>구매후 N일째</span>
+                <input value={String(questionSheet.post_purchase_days ?? '')} onChange={e => setQuestionSheet((p: any) => ({ ...p, post_purchase_days: Number(e.target.value || 0) }))} inputMode="numeric" style={{ width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: '#0c0c0c', color: '#fff', fontSize: 13 }} />
+              </label>
+            ) : null}
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>
+              <input type="checkbox" checked={questionSheet.is_active !== false} onChange={e => setQuestionSheet((p: any) => ({ ...p, is_active: e.target.checked }))} />
+              활성
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <button type="button" onClick={() => setQuestionSheet(null)} style={{ padding: '12px 12px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.75)', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>취소</button>
+              <button type="button" onClick={() => {
+                setQuestionRows(prev => prev.map((x, idx) => idx === Number(questionSheet.idx) ? {
+                  ...x,
+                  question_text: questionSheet.question_text,
+                  question_type: questionSheet.question_type,
+                  target_tracks: questionSheet.target_tracks,
+                  answer_type: questionSheet.answer_type,
+                  options: questionSheet.answer_type === 'options' ? String(questionSheet.optionsText || '').split('\n').map((s: string) => s.trim()).filter(Boolean) : [],
+                  post_purchase_days: questionSheet.question_type === 'post_purchase' ? Number(questionSheet.post_purchase_days || 0) : null,
+                  is_active: questionSheet.is_active !== false,
+                } : x))
+                setQuestionSheet(null)
+              }} style={{ padding: '12px 12px', borderRadius: 12, border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.2)', color: '#c9a84c', fontSize: 14, fontWeight: 800, cursor: 'pointer' }}>확인</button>
             </div>
           </div>
         </div>

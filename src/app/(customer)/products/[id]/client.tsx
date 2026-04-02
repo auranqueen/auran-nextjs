@@ -51,6 +51,7 @@ interface Product {
   unit_type?: string | null
   category_id?: string | null
   tag?: string | null
+  categories?: { target_tracks?: string[] | null } | null
 }
 
 export default function ProductDetailClient({ product }: { product: Product }) {
@@ -396,6 +397,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     : thumbUrl
 
   const showEditChrome = isSuperAdmin && isEditMode
+  const maleMeno = Array.isArray(product.categories?.target_tracks)
+    ? product.categories?.target_tracks?.map(x => String(x)).includes('male_menopause')
+    : false
 
   return (
     <div style={wrap}>
@@ -503,6 +507,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         {aiRecommendLine ? (
           <div style={{ alignSelf: 'flex-start', marginBottom: 6, display: 'inline-block', background: 'rgba(201,169,110,0.1)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: GOLD }}>
             {aiRecommendLine}
+          </div>
+        ) : null}
+        {maleMeno ? (
+          <div style={{ alignSelf: 'flex-start', marginBottom: 6, display: 'inline-block', background: 'rgba(123,94,167,0.2)', border: '1px solid rgba(123,94,167,0.4)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: '#e8d9ff' }}>
+            남성 갱년기 피부에도 효과적이에요
           </div>
         ) : null}
         <div
@@ -937,7 +946,12 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       {/* 3버튼 */}
       <div style={{ position: 'fixed', bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 8 }}>
         <button style={{ flex: 1, background: '#1e1a14', border: 'none', color: '#aaa', fontSize: 13, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>🛒 담기</button>
-        <button style={{ flex: 1, background: '#241e0e', border: 'none', color: GOLD, fontSize: 13, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>🎁 선물하기</button>
+        <button
+          onClick={() => router.push(`/checkout?gift=1&product_id=${product.id}&qty=${qty}`)}
+          style={{ flex: 1, background: '#241e0e', border: 'none', color: GOLD, fontSize: 13, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          🎁 {maleMeno ? '여성 선물하기' : '선물하기'}
+        </button>
         <button onClick={() => void handleBuy()} style={{ flex: 2, background: `linear-gradient(135deg,${GOLD},#a07840)`, border: 'none', color: '#000', fontSize: 16, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>지금 구매</button>
       </div>
 

@@ -119,6 +119,11 @@ export default function CustomerHomePage() {
   const [periodTipOpen, setPeriodTipOpen] = useState(false)
   const [periodTipText, setPeriodTipText] = useState(TOOLTIP_FALLBACKS.period_start)
   const [periodQuietNotice, setPeriodQuietNotice] = useState('')
+  const [categoryBanners, setCategoryBanners] = useState<any[]>([])
+  const [dailyQuestion, setDailyQuestion] = useState<any>(null)
+  const [questionPopup, setQuestionPopup] = useState<any | null>(null)
+  const [questionAnswer, setQuestionAnswer] = useState('')
+  const [questionOptions, setQuestionOptions] = useState<string[]>([])
   const [routineExpanded, setRoutineExpanded] = useState(false)
   const [routineMentorOpen, setRoutineMentorOpen] = useState(false)
   const [routineStepPick, setRoutineStepPick] = useState<Record<string, boolean>>({})
@@ -197,6 +202,14 @@ export default function CustomerHomePage() {
     supabase.from('skin_concerns').select('*').order('sort_order').then(({ data }) => {
       if (data && data.length > 0) setConcerns(data)
     })
+    supabase
+      .from('categories')
+      .select('id,name,level,sort_order,banner_image_url,banner_text,banner_link')
+      .order('sort_order', { ascending: true })
+      .then(({ data }) => {
+        const rows = (data || []).filter((r: any) => !!(r.banner_image_url || r.banner_text))
+        setCategoryBanners(rows)
+      })
 
     void (async () => {
       try {
@@ -493,6 +506,72 @@ export default function CustomerHomePage() {
     const t = setTimeout(() => setHomeToast(''), 2400)
     return () => clearTimeout(t)
   }, [homeToast])
+
+  useEffect(() => {
+    if (!myUserId) return
+    const run = async () => {
+      const { data: qs } = await supabase
+        .from('customer_questions')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order', { ascending: true })
+      const list = (qs || []).filter((q: any) => {
+        const tracks = Array.isArray(q.target_tracks) ? q.target_tracks.map((x: any) => String(x)) : ['all']
+        return tracks.includes('all') || tracks.includes(hormoneTrack)
+      })
+      const daily = list.find((q: any) => String(q.question_type) === 'daily')
+      setDailyQuestion(daily || null)
+      if (daily) {
+        const raw = daily.options
+        const opts = Array.isArray(raw)
+          ? raw.map((x: any) => String(x))
+          : String(raw || '')
+              .split(/[,\n]/)
+              .map((x: string) => x.trim())
+              .filter(Boolean)
+        setQuestionOptions(opts)
+      }
+      const m = new Date()
+      const monthStart = new Date(m.getFullYear(), m.getMonth(), 1).toISOString().slice(0, 10)
+      const monthly = list.find((q: any) => String(q.question_type) === 'monthly')
+      if (monthly && m.getDate() === 1) {
+        const { data: exists } = await supabase
+          .from('customer_question_answers')
+          .select('id')
+          .eq('auth_id', myUserId)
+          .eq('question_id', monthly.id)
+          .gte('answer_date', monthStart)
+          .limit(1)
+        if (!exists || exists.length === 0) setQuestionPopup(monthly)
+      }
+      const post = list.find((q: any) => String(q.question_type) === 'post_purchase')
+      if (post) {
+        const n = Math.max(0, Number(post.post_purchase_days || 0))
+        const { data: od } = await supabase
+          .from('orders')
+          .select('id, delivered_at, status')
+          .eq('customer_id', myUserId)
+          .order('delivered_at', { ascending: false })
+          .limit(10)
+        const hit = (od || []).find((o: any) => {
+          if (!o?.delivered_at) return false
+          const d = Math.floor((Date.now() - new Date(o.delivered_at).getTime()) / 86400000)
+          return d === n
+        })
+        if (hit) {
+          await supabase.from('notifications').insert({
+            user_id: myUserId,
+            title: '사용 질문이 도착했어요',
+            body: String(post.question_text || ''),
+            type: 'question',
+            is_read: false,
+          } as any)
+          setQuestionPopup(post)
+        }
+      }
+    }
+    void run()
+  }, [myUserId, hormoneTrack, supabase])
 
   useEffect(() => {
     const next: Record<string, boolean> = {}
@@ -1069,6 +1148,73 @@ export default function CustomerHomePage() {
             )
           })}
         </div>
+        {dailyQuestion ? (
+          <div style={{ marginTop: 8, padding: '11px 12px', borderRadius: 12, border: '1px solid rgba(123,94,167,0.25)', background: 'rgba(123,94,167,0.08)' }}>
+            <div style={{ fontSize: 10, color: 'rgba(196,170,230,0.8)', marginBottom: 6 }}>오늘의 질문</div>
+            <div style={{ fontSize: 12, color: '#fff', marginBottom: 8 }}>{String(dailyQuestion.question_text || '')}</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {(dailyQuestion.answer_type === 'yesno' ? ['예', '아니오'] : questionOptions).slice(0, 6).map((op: string) => (
+                <button
+                  key={op}
+                  type="button"
+                  onClick={async () => {
+                    const today = new Date().toISOString().slice(0, 10)
+                    if (!myUserId || !dailyQuestion?.id) return
+                    const { data: dup } = await supabase
+                      .from('customer_question_answers')
+                      .select('id')
+                      .eq('auth_id', myUserId)
+                      .eq('question_id', dailyQuestion.id)
+                      .eq('answer_date', today)
+                      .limit(1)
+                    if (dup && dup.length > 0) {
+                      setHomeToast('오늘은 이미 답변했어요')
+                      return
+                    }
+                    await supabase.from('customer_question_answers').insert({ auth_id: myUserId, question_id: dailyQuestion.id, answer_value: op, answer_date: today } as any)
+                    setHomeToast('답변 저장 완료')
+                  }}
+                  style={{ padding: '6px 9px', borderRadius: 999, border: '1px solid rgba(123,94,167,0.4)', background: 'rgba(123,94,167,0.2)', color: '#e8d9ff', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  {op}
+                </button>
+              ))}
+              {dailyQuestion.answer_type === 'text' ? (
+                <input
+                  value={questionAnswer}
+                  onChange={e => setQuestionAnswer(e.target.value)}
+                  placeholder="답변 입력"
+                  style={{ flex: 1, minWidth: 140, padding: '7px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 12 }}
+                />
+              ) : null}
+              {dailyQuestion.answer_type === 'text' ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const today = new Date().toISOString().slice(0, 10)
+                    if (!myUserId || !dailyQuestion?.id || !questionAnswer.trim()) return
+                    const { data: dup } = await supabase
+                      .from('customer_question_answers')
+                      .select('id')
+                      .eq('auth_id', myUserId)
+                      .eq('question_id', dailyQuestion.id)
+                      .eq('answer_date', today)
+                      .limit(1)
+                    if (dup && dup.length > 0) {
+                      setHomeToast('오늘은 이미 답변했어요')
+                      return
+                    }
+                    await supabase.from('customer_question_answers').insert({ auth_id: myUserId, question_id: dailyQuestion.id, answer_value: questionAnswer.trim(), answer_date: today } as any)
+                    setHomeToast('답변 저장 완료')
+                  }}
+                  style={{ padding: '7px 10px', borderRadius: 8, border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.2)', color: '#e8d4a8', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit' }}
+                >
+                  저장
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
 
         <button
           type="button"
@@ -1733,6 +1879,35 @@ export default function CustomerHomePage() {
           <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>피부 고민별 솔루션</span>
           <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 ›</span>
         </div>
+        {categoryBanners.length > 0 ? (
+          <div
+            onClick={() => {
+              const b = categoryBanners[selectedConcern % categoryBanners.length]
+              if (b?.banner_link) router.push(String(b.banner_link))
+            }}
+            style={{
+              marginBottom: 10,
+              borderRadius: 14,
+              overflow: 'hidden',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.03)',
+              cursor: categoryBanners[selectedConcern % categoryBanners.length]?.banner_link ? 'pointer' : 'default',
+            }}
+          >
+            {categoryBanners[selectedConcern % categoryBanners.length]?.banner_image_url ? (
+              <img
+                src={String(categoryBanners[selectedConcern % categoryBanners.length].banner_image_url)}
+                alt=""
+                style={{ width: '100%', height: 98, objectFit: 'cover' }}
+              />
+            ) : null}
+            {categoryBanners[selectedConcern % categoryBanners.length]?.banner_text ? (
+              <div style={{ padding: '9px 10px', fontSize: 12, color: '#fff' }}>
+                {String(categoryBanners[selectedConcern % categoryBanners.length].banner_text)}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
       <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
         {loading ? Array.from({ length: 7 }).map((_, i) => (
@@ -2308,6 +2483,77 @@ export default function CustomerHomePage() {
             >
               확인
             </button>
+          </div>
+        </>
+      ) : null}
+      {questionPopup ? (
+        <>
+          <div onClick={() => setQuestionPopup(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 124 }} />
+          <div style={{ position: 'fixed', left: 18, right: 18, top: '20%', maxWidth: 360, margin: '0 auto', background: '#1f1a26', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 14, padding: 14, zIndex: 125 }}>
+            <div style={{ fontSize: 12, color: 'rgba(196,170,230,0.85)', marginBottom: 8 }}>질문</div>
+            <div style={{ fontSize: 13, color: '#fff', marginBottom: 10 }}>{String(questionPopup.question_text || '')}</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {((questionPopup.answer_type === 'yesno'
+                ? ['예', '아니오']
+                : Array.isArray(questionPopup.options)
+                  ? questionPopup.options
+                  : String(questionPopup.options || '').split(/[,\n]/).map((x: string) => x.trim()).filter(Boolean)) as string[]).slice(0, 8).map(op => (
+                <button
+                  key={op}
+                  type="button"
+                  onClick={async () => {
+                    const d = new Date().toISOString().slice(0, 10)
+                    if (!myUserId || !questionPopup?.id) return
+                    const { data: dup } = await supabase
+                      .from('customer_question_answers')
+                      .select('id')
+                      .eq('auth_id', myUserId)
+                      .eq('question_id', questionPopup.id)
+                      .eq('answer_date', d)
+                      .limit(1)
+                    if (dup && dup.length > 0) {
+                      setQuestionPopup(null)
+                      return
+                    }
+                    await supabase.from('customer_question_answers').insert({ auth_id: myUserId, question_id: questionPopup.id, answer_value: op, answer_date: d } as any)
+                    setQuestionPopup(null)
+                    setHomeToast('답변 저장 완료')
+                  }}
+                  style={{ padding: '6px 9px', borderRadius: 999, border: '1px solid rgba(123,94,167,0.42)', background: 'rgba(123,94,167,0.2)', color: '#e8d9ff', fontSize: 11, cursor: 'pointer' }}
+                >
+                  {op}
+                </button>
+              ))}
+            </div>
+            {String(questionPopup.answer_type) === 'text' ? (
+              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                <input value={questionAnswer} onChange={e => setQuestionAnswer(e.target.value)} placeholder="답변 입력" style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 12 }} />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const d = new Date().toISOString().slice(0, 10)
+                    if (!myUserId || !questionPopup?.id || !questionAnswer.trim()) return
+                    const { data: dup } = await supabase
+                      .from('customer_question_answers')
+                      .select('id')
+                      .eq('auth_id', myUserId)
+                      .eq('question_id', questionPopup.id)
+                      .eq('answer_date', d)
+                      .limit(1)
+                    if (dup && dup.length > 0) {
+                      setQuestionPopup(null)
+                      return
+                    }
+                    await supabase.from('customer_question_answers').insert({ auth_id: myUserId, question_id: questionPopup.id, answer_value: questionAnswer.trim(), answer_date: d } as any)
+                    setQuestionPopup(null)
+                    setHomeToast('답변 저장 완료')
+                  }}
+                  style={{ padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.2)', color: '#e8d4a8', fontSize: 11, cursor: 'pointer' }}
+                >
+                  저장
+                </button>
+              </div>
+            ) : null}
           </div>
         </>
       ) : null}
