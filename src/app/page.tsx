@@ -965,15 +965,17 @@ AURAN이 내 피부 패턴을
   }, [skinCalYM.y, skinCalYM.m, monthCycleRows, skinDailyRows])
   const monthCalendarDays = useMemo(() => {
     const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    if (skinCalTab !== 'TODAY') return [] as { iso: string; day: number; isToday: boolean; stripOff: number }[]
     const todayIso = `${s.getFullYear()}-${String(s.getMonth() + 1).padStart(2, '0')}-${String(s.getDate()).padStart(2, '0')}`
-    const y = skinCalTab === 'TODAY' ? s.getFullYear() : skinCalYM.y
-    const m = skinCalTab === 'TODAY' ? s.getMonth() : skinCalYM.m
-    const count = new Date(Date.UTC(y, m + 1, 0)).getUTCDate()
-    return Array.from({ length: count }).map((_, i) => {
-      const day = i + 1
-      const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-      return { iso, day, isToday: iso === todayIso }
-    })
+    const mid = new Date(s.getFullYear(), s.getMonth(), s.getDate(), 12, 0, 0)
+    const out: { iso: string; day: number; isToday: boolean; stripOff: number }[] = []
+    for (let off = -3; off <= 3; off++) {
+      const d = new Date(mid)
+      d.setDate(mid.getDate() + off)
+      const iso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+      out.push({ iso, day: d.getDate(), isToday: iso === todayIso, stripOff: off })
+    }
+    return out
   }, [skinCalTab, skinCalYM.y, skinCalYM.m])
   const selectedCalendarDate = useMemo(() => {
     if (calendarPickDate) return calendarPickDate
@@ -1092,7 +1094,7 @@ AURAN이 내 피부 패턴을
       color: '#fff',
       paddingBottom: '0',
     }}>
-      <style>{`@keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}@keyframes todayPulse{0%{box-shadow:0 0 8px rgba(123,94,167,0.5)}50%{box-shadow:0 0 20px rgba(123,94,167,0.8)}100%{box-shadow:0 0 8px rgba(123,94,167,0.5)}}`}</style>
+      <style>{`@keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}@keyframes todayPulse{0%{box-shadow:0 0 8px rgba(123,94,167,0.5)}50%{box-shadow:0 0 20px rgba(123,94,167,0.8)}100%{box-shadow:0 0 8px rgba(123,94,167,0.5)}}@keyframes todayGlow{0%{box-shadow:0 0 8px rgba(123,94,167,0.5),0 0 16px rgba(123,94,167,0.3),0 0 28px rgba(123,94,167,0.15)}50%{box-shadow:0 0 14px rgba(123,94,167,0.8),0 0 28px rgba(123,94,167,0.5),0 0 45px rgba(123,94,167,0.25),0 0 60px rgba(168,85,247,0.15)}100%{box-shadow:0 0 8px rgba(123,94,167,0.5),0 0 16px rgba(123,94,167,0.3),0 0 28px rgba(123,94,167,0.15)}}@keyframes todayShimmer{0%{opacity:0.4;transform:scale(1)}50%{opacity:0.7;transform:scale(1.04)}100%{opacity:0.4;transform:scale(1)}}.home-cal-today-btn{position:relative;isolation:isolate;overflow:visible}.home-cal-today-btn::before{content:'';position:absolute;inset:-4px;border-radius:12px;background:radial-gradient(circle,rgba(168,85,247,0.25) 0%,rgba(123,94,167,0.1) 40%,transparent 70%);animation:todayShimmer 3s ease-in-out infinite;z-index:-1;pointer-events:none}`}</style>
 
       {/* ── 탑바 ── */}
       <header style={{
@@ -1903,15 +1905,18 @@ AURAN이 내 피부 패턴을
                     const baseBg = calPhaseNeutral ? 'rgba(255,255,255,0.03)' : phaseColor(phase)
                     const hasCheckin = Boolean(row?.checkin_condition)
                     const inPeriodPink = periodPinkSet.has(d.iso)
-                    const sToday = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
-                    const todayNum = sToday.getDate()
-                    const dayDiff = Math.abs(d.day - todayNum)
-                    const sc = d.isToday ? 1 : dayDiff === 1 ? 0.88 : dayDiff === 2 ? 0.78 : 0.68
-                    const bg = inPeriodPink ? 'rgba(224,120,152,0.25)' : baseBg
+                    const absOff = Math.abs(d.stripOff)
+                    const sc = absOff === 0 ? 1 : absOff === 1 ? 0.88 : absOff === 2 ? 0.78 : 0.68
+                    const bg = d.isToday
+                      ? 'linear-gradient(135deg, rgba(123,94,167,0.35), rgba(168,85,247,0.2))'
+                      : inPeriodPink
+                        ? 'rgba(224,120,152,0.25)'
+                        : baseBg
                     return (
                       <button
                         key={d.iso}
                         type="button"
+                        className={d.isToday ? 'home-cal-today-btn' : undefined}
                         onClick={() => {
                           setCalendarPickDate(d.iso)
                           setCalSheetIso(d.iso)
@@ -1929,24 +1934,30 @@ AURAN이 내 피부 패턴을
                           minWidth: d.isToday ? 52 : 42,
                           borderRadius: 10,
                           border: d.isToday
-                            ? '1px solid #7B5EA7'
+                            ? '1px solid rgba(168,85,247,0.8)'
                             : hasCheckin
                               ? '1px solid rgba(201,169,110,0.55)'
                               : '1px solid rgba(255,255,255,0.12)',
                           background: bg,
-                          color: inPeriodPink ? '#e07898' : '#fff',
+                          color: d.isToday ? '#fff' : inPeriodPink ? '#e07898' : '#fff',
                           padding: '7px 0 6px',
                           cursor: 'pointer',
                           fontFamily: 'inherit',
-                          opacity: calPhaseNeutral && !hasCheckin ? 0.45 : 1,
+                          position: d.isToday ? 'relative' : undefined,
+                          opacity: calPhaseNeutral && !hasCheckin && !d.isToday ? 0.45 : 1,
                           transform: `scale(${sc})`,
                           transition: 'transform 0.2s ease',
-                          animation: d.isToday ? 'todayPulse 2.5s ease-in-out infinite' : undefined,
+                          animation: d.isToday
+                            ? 'todayPulse 2.5s ease-in-out infinite, todayGlow 3s ease-in-out infinite'
+                            : undefined,
                           boxSizing: 'border-box',
                         }}
                       >
-                        <div style={{ fontSize: 10, opacity: inPeriodPink ? 1 : 0.85 }}>{d.day}</div>
-                        {d.isToday ? <div style={{ fontSize: 9, marginTop: 2 }}>오늘</div> : null}
+                        {d.isToday ? (
+                          <span style={{ position: 'relative', zIndex: 1, fontSize: 11, fontWeight: 400 }}>오늘</span>
+                        ) : (
+                          <div style={{ fontSize: 10, opacity: inPeriodPink ? 1 : 0.85 }}>{d.day}</div>
+                        )}
                       </button>
                     )
                   })}
@@ -2477,6 +2488,7 @@ AURAN이 내 피부 패턴을
                           { onConflict: 'auth_id,record_date' }
                         )
                         if (aErr) {
+                          console.error('[calendar save] skin_cycle_analysis', aErr)
                           setHomeToast('기록 저장에 실패했어요')
                           return
                         }
@@ -2491,6 +2503,7 @@ AURAN이 내 피부 패턴을
                           { onConflict: 'auth_id,record_date' }
                         )
                         if (dErr) {
+                          console.error('[calendar save] skin_cycle_daily', dErr)
                           setHomeToast(
                             'skin_cycle_daily 저장 실패: 테이블·컬럼을 확인하세요. 예) CREATE TABLE public.skin_cycle_daily (auth_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE, record_date date NOT NULL, note text, routine_completed boolean DEFAULT false, updated_at timestamptz DEFAULT now(), PRIMARY KEY (auth_id, record_date));'
                           )
@@ -2515,7 +2528,6 @@ AURAN이 내 피부 패턴을
                         setHomeToast('저장했어요')
                         setCalSheetOpen(false)
                       }}
-                      disabled={false}
                       style={{
                         width: '100%',
                         padding: '12px 14px',
