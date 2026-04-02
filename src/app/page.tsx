@@ -1973,7 +1973,7 @@ AURAN이 내 피부 패턴을
                 })}
               </div>
               {skinCalTab === 'TODAY' ? (
-                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none', alignItems: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none', alignItems: 'center' }}>
                   {monthCalendarDays.map((d) => {
                     const row = cycleRowByDate[d.iso]
                     const phase = calPhaseNeutral ? '' : getPhaseByDate(d.iso)
