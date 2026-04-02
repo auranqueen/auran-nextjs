@@ -1378,15 +1378,34 @@ export default function CustomerHomePage() {
           ))}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px' }}>
-          {brandList.map((brand: any, i: number) => (
+          {brandList.map((brand: any, i: number) => {
+            const raw = `${brand.label || ''} ${brand.name || ''}`.toUpperCase()
+            const genericBg = !brand.bg || brand.bg === 'rgba(201,169,110,0.1)'
+            let circleBg = brand.bg || 'rgba(201,169,110,0.1)'
+            let circleBorder = brand.border || 'rgba(201,169,110,0.3)'
+            let circleColor = brand.color || GOLD
+            if (genericBg) {
+              if (/GERNETIC|제네틱|제르/.test(raw)) { circleBg = 'rgba(28,52,38,0.55)'; circleBorder = 'rgba(56,110,76,0.5)'; circleColor = '#6fc49a' }
+              else if (/CIVASAN|시바산|프리미엄/.test(raw)) { circleBg = 'rgba(22,48,52,0.55)'; circleBorder = 'rgba(44,100,108,0.45)'; circleColor = '#5eb3bc' }
+              else if (/ANNA|안나|로자/.test(raw)) { circleBg = 'rgba(62,28,38,0.5)'; circleBorder = 'rgba(120,48,68,0.45)'; circleColor = '#c97d8f' }
+              else if (/ETR|ESTER|에뜨|에스터|레벨/.test(raw)) { circleBg = 'rgba(22,32,56,0.55)'; circleBorder = 'rgba(44,58,108,0.5)'; circleColor = '#7a90d4' }
+              else if (/SELVERT|셀버트|더말/.test(raw)) { circleBg = 'rgba(48,44,22,0.55)'; circleBorder = 'rgba(110,98,42,0.45)'; circleColor = '#b8a45a' }
+              else if (/SANTE|상떼/.test(raw)) { circleBg = 'rgba(58,36,22,0.5)'; circleBorder = 'rgba(130,72,42,0.45)'; circleColor = '#c4865c' }
+              else if (/보떼|떼덤|BEAUTE|BIOD/.test(raw)) { circleBg = 'rgba(48,28,52,0.5)'; circleBorder = 'rgba(88,44,98,0.45)'; circleColor = '#b892c4' }
+              else if (/SHOPBELLE|샵벨/.test(raw)) { circleBg = 'rgba(52,32,58,0.48)'; circleBorder = 'rgba(95,58,108,0.42)'; circleColor = '#c999d4' }
+              else if (/THALAC|탈락/.test(raw)) { circleBg = 'rgba(22,48,58,0.5)'; circleBorder = 'rgba(42,88,108,0.45)'; circleColor = '#5eb0c9' }
+              else if (/SOTHYS|소티스/.test(raw)) { circleBg = 'rgba(58,38,18,0.52)'; circleBorder = 'rgba(130,82,36,0.45)'; circleColor = '#d4a060' }
+              else if (/PHYTO|피토/.test(raw)) { circleBg = 'rgba(32,48,28,0.5)'; circleBorder = 'rgba(58,88,48,0.42)'; circleColor = '#8fbc7a' }
+            }
+            return (
             <div key={i} onClick={() => router.push(`/brands/${brand.id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
               <div style={{
                 width: '58px', height: '58px', borderRadius: '50%',
-                background: brand.bg || 'rgba(201,169,110,0.1)',
-                border: `1.5px solid ${brand.border || 'rgba(201,169,110,0.3)'}`,
+                background: circleBg,
+                border: `1.5px solid ${circleBorder}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '10px', fontWeight: 400,
-                color: brand.color || GOLD,
+                color: circleColor,
                 fontFamily: 'monospace', textAlign: 'center', lineHeight: 1.3,
               }}>
                 {brand.name?.slice(0, 4)}<br />{brand.name?.slice(4, 8)}
@@ -1395,7 +1414,8 @@ export default function CustomerHomePage() {
                 {brand.label || brand.name}
               </span>
             </div>
-          ))}
+            )
+          })}
           {/* 더보기 */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
             <div style={{
@@ -1425,8 +1445,8 @@ export default function CustomerHomePage() {
           ))}
         </div>
         <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.2)', lineHeight: 2 }}>
-          <div>대표 : 박유미 · 사업자등록번호 : 000-00-00000</div>
-          <div>대구광역시 · support@auran.kr</div>
+          <div>상호 : 주식회사 티엔씨 · 사업자등록번호 : 197-87-01357</div>
+          <div>경기도 양주시 은현면 화합로610번길30-183 1F · support@auran.kr</div>
           <div style={{ marginTop: '4px', fontSize: '9px', color: 'rgba(255,255,255,0.15)' }}>
             © 2026 AURAN. All rights reserved.
           </div>
@@ -1440,14 +1460,15 @@ export default function CustomerHomePage() {
         width: '390px', height: '80px',
         background: 'rgba(13,11,9,0.96)',
         borderTop: '1px solid rgba(255,255,255,0.06)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-around',
-        padding: '0 10px 16px', zIndex: 50,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-evenly',
+        padding: '6px max(18px, env(safe-area-inset-left, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-right, 0px))', zIndex: 50,
+        boxSizing: 'border-box',
       }}>
-        <div onClick={() => router.push('/home')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
+        <div onClick={() => router.push('/')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '44px', cursor: 'pointer' }}>
           <span style={{ fontSize: '22px' }}>🏠</span>
           <span style={{ fontSize: '9px', fontFamily: 'monospace', color: GOLD, letterSpacing: '1px' }}>HOME</span>
         </div>
-        <div onClick={() => router.push('/products')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
+        <div onClick={() => router.push('/products')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '44px', cursor: 'pointer' }}>
           <span style={{ fontSize: '22px' }}>🛍</span>
           <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM, letterSpacing: '1px' }}>SHOP</span>
         </div>
@@ -1464,11 +1485,11 @@ export default function CustomerHomePage() {
           <span style={{ fontSize: '22px' }}>🔬</span>
           <span style={{ fontSize: '8px', fontWeight: 400, color: BG, fontFamily: 'monospace', letterSpacing: '0.5px' }}>AI</span>
         </div>
-        <div onClick={() => router.push('/community')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
+        <div onClick={() => router.push('/community')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '44px', cursor: 'pointer' }}>
           <span style={{ fontSize: '22px' }}>💬</span>
           <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM, letterSpacing: '1px' }}>커뮤니티</span>
         </div>
-        <div onClick={() => router.push('/my')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '50px', cursor: 'pointer' }}>
+        <div onClick={() => router.push('/my')} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '44px', cursor: 'pointer' }}>
           <span style={{ fontSize: '22px' }}>👤</span>
           <span style={{ fontSize: '9px', fontFamily: 'monospace', color: TEXT_DIM, letterSpacing: '1px' }}>MY</span>
         </div>

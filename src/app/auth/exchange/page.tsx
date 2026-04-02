@@ -17,7 +17,7 @@ function AuthExchangeInner() {
       params.get('error_description') ||
       ''
     if (err) {
-      router.replace('/home')
+      router.replace('/')
       return
     }
 
@@ -26,7 +26,7 @@ function AuthExchangeInner() {
     const redirect = params.get('redirect') || ''
 
     if (!code) {
-      router.replace('/home')
+      router.replace('/')
       return
     }
 
@@ -36,7 +36,7 @@ function AuthExchangeInner() {
       const { data: exData, error: exErr } = await supabase.auth.exchangeCodeForSession(code)
       if (cancelled) return
       if (exErr || !exData?.session) {
-        router.replace('/home')
+        router.replace('/')
         return
       }
       let url = `/auth/done?position=${encodeURIComponent(role)}`
@@ -44,7 +44,7 @@ function AuthExchangeInner() {
       window.location.replace(url)
     })().catch((e) => {
       console.error('[auth/exchange]', e)
-      if (!cancelled) router.replace('/home')
+      if (!cancelled) router.replace('/')
     })
 
     return () => {

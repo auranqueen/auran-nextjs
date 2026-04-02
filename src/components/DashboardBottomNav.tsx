@@ -57,7 +57,7 @@ export default function DashboardBottomNav({ role }: { role: Role }) {
         backdropFilter: 'blur(12px)',
         borderTop: '1px solid var(--border)',
         display: 'flex',
-        padding: '10px 0 20px',
+        padding: '8px max(10px, env(safe-area-inset-left, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-right, 0px))',
         zIndex: 30,
       }}
     >

@@ -197,7 +197,7 @@ export async function middleware(req: NextRequest) {
     // 고객 대시보드 루트(/dashboard/customer)는 비활성화 → 앱 홈으로
     if (pathname === '/dashboard/customer' || pathname === '/dashboard/customer/') {
       const url = req.nextUrl.clone()
-      url.pathname = '/home'
+      url.pathname = '/'
       url.search = ''
       return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
     }
