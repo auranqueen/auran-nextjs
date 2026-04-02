@@ -1731,28 +1731,7 @@ export default function CustomerHomePage() {
             <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.78)' }}>이번 달 피부 캘린더</div>
             <div style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.45)', letterSpacing: '0.06em' }}>{skinCalTitleEn}</div>
           </div>
-          {(!myUserId || !hasHormoneCycleData) ? (
-            <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 12, padding: '12px 14px' }}>
-              <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 10 }}>생리 주기를 입력하면 피부 캘린더가 활성화돼요</div>
-              <button
-                type="button"
-                onClick={() => router.push('/signup?mode=track')}
-                style={{
-                  border: '1px solid rgba(123,94,167,0.4)',
-                  background: 'rgba(123,94,167,0.18)',
-                  color: '#e8d9ff',
-                  borderRadius: 999,
-                  padding: '7px 11px',
-                  fontSize: 11,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                입력하러 가기
-              </button>
-            </div>
-          ) : (
-            <>
+          <>
               <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
                 {(['TODAY', 'MONTHLY', 'YEARLY'] as const).map(tab => {
                   const on = skinCalTab === tab
@@ -2279,8 +2258,7 @@ export default function CustomerHomePage() {
                   </div>
                 </>
               ) : null}
-            </>
-          )}
+          </>
         </div>
       ) : null}
 
