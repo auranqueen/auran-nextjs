@@ -97,8 +97,9 @@ export async function middleware(req: NextRequest) {
   const isSuperConsole = pathname.startsWith('/super-console')
   const isDashboard = pathname.startsWith('/dashboard')
   const isAdmin = pathname.startsWith('/admin')
+  const isBrand = pathname.startsWith('/brand')
   const softAuth = isSoftAuthPath(pathname)
-  if (!isSuperConsole && !isDashboard && !isAdmin && !isProtectedPath && !softAuth) return NextResponse.next()
+  if (!isSuperConsole && !isDashboard && !isAdmin && !isBrand && !isProtectedPath && !softAuth) return NextResponse.next()
 
   // super-console 로그인 페이지는 예외(비로그인 접근 허용)
   if (pathname === '/super-console/login') return NextResponse.next()
@@ -162,6 +163,16 @@ export async function middleware(req: NextRequest) {
   // super-console: admin only
   if (isSuperConsole) {
     if (normalizedRole !== 'admin') {
+      const url = req.nextUrl.clone()
+      url.pathname = '/'
+      url.search = ''
+      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(url))
+    }
+    return res
+  }
+
+  if (isBrand) {
+    if (normalizedRole !== 'brand') {
       const url = req.nextUrl.clone()
       url.pathname = '/'
       url.search = ''

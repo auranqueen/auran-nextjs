@@ -105,6 +105,8 @@ function AdminProductRow({
           <div style={{ marginTop: 6, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>{p.brandName}</span>
             <span style={{ width: 4, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>브랜드사: {p.brandUserEmail || '미연결'}</span>
+            <span style={{ width: 4, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
             <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, fontWeight: 900, color: noPrice ? 'rgba(255,255,255,0.35)' : 'var(--gold, #c9a84c)' }}>
               {noPrice ? '—' : `₩${p.price.toLocaleString()}`}
             </span>
@@ -328,6 +330,10 @@ export default function AdminMarketingProductsClient() {
   const [brandsWithId, setBrandsWithId] = useState<{ id: string; name: string; origin_country?: string | null }[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const [toast, setToast] = useState('')
+  const [brandUsers, setBrandUsers] = useState<{ id: string; email: string }[]>([])
+  const [brandAssignOpen, setBrandAssignOpen] = useState(false)
+  const [brandAssignUserId, setBrandAssignUserId] = useState('')
+  const [brandAssignBusy, setBrandAssignBusy] = useState(false)
 
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null)
 
@@ -427,13 +433,31 @@ export default function AdminMarketingProductsClient() {
       })
   }, [supabase])
 
+  useEffect(() => {
+    supabase
+      .from('users')
+      .select('auth_id,email,role')
+      .eq('role', 'brand')
+      .order('email')
+      .then(({ data }) => {
+        const list = (data || [])
+          .map((r: any) => ({ id: String(r.auth_id || ''), email: String(r.email || '') }))
+          .filter((r: { id: string; email: string }) => !!r.id)
+        setBrandUsers(list)
+      })
+  }, [supabase])
+
   const mappedRows = useMemo(() =>
     rows.map(r => ({
       ...r,
       brandName: r.brands?.name || '-',
       price: Number(r.retail_price || 0),
+      brandUserEmail:
+        r.brand_user_id == null || String(r.brand_user_id || '') === ''
+          ? '미연결'
+          : (brandUsers.find(u => u.id === String(r.brand_user_id || ''))?.email || '미연결'),
     })),
-    [rows]
+    [rows, brandUsers]
   )
 
   const brandOptions = useMemo(() => {
@@ -780,6 +804,19 @@ export default function AdminMarketingProductsClient() {
           <>
             <button
               type="button"
+              onClick={() => {
+                setBrandAssignOpen(true)
+                setBrandAssignUserId(brandUsers[0]?.id || '')
+              }}
+              style={{
+                background: 'rgba(123,94,167,0.2)', border: '1px solid rgba(123,94,167,0.5)',
+                borderRadius: 10, padding: '8px 12px', color: '#d9c9f2', fontSize: 12, cursor: 'pointer',
+              }}
+            >
+              브랜드사 연결
+            </button>
+            <button
+              type="button"
               onClick={bulkHideSelected}
               disabled={bulkHideBusy}
               style={{
@@ -1034,6 +1071,62 @@ export default function AdminMarketingProductsClient() {
           ))}
         </div>
       )}
+      {brandAssignOpen ? (
+        <div
+          onClick={() => !brandAssignBusy && setBrandAssignOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 350, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 420, background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 14 }}
+          >
+            <div style={{ fontSize: 14, color: '#fff', marginBottom: 10 }}>브랜드사 연결</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 10 }}>
+              선택 제품 {visibleSelectedCount}건
+            </div>
+            <select
+              value={brandAssignUserId}
+              onChange={e => setBrandAssignUserId(e.target.value)}
+              style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 12 }}
+            >
+              {brandUsers.map(u => (
+                <option key={u.id} value={u.id} style={{ background: '#1a1a1a' }}>{u.email}</option>
+              ))}
+            </select>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button
+                type="button"
+                disabled={brandAssignBusy}
+                onClick={() => setBrandAssignOpen(false)}
+                style={{ flex: 1, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: 'rgba(255,255,255,0.75)', borderRadius: 8, padding: '9px 10px', fontSize: 12, cursor: 'pointer' }}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={brandAssignBusy || !brandAssignUserId || visibleSelectedCount === 0}
+                onClick={async () => {
+                  const ids = filteredRows.filter(r => selectedIds.has(r.id)).map(r => r.id)
+                  if (ids.length === 0) return
+                  setBrandAssignBusy(true)
+                  const { error } = await supabase.from('products').update({ brand_user_id: brandAssignUserId } as any).in('id', ids)
+                  setBrandAssignBusy(false)
+                  if (error) {
+                    setToast('브랜드사 연결 실패: ' + error.message)
+                    return
+                  }
+                  setToast(`브랜드사 연결 완료 (${ids.length}건)`)
+                  setBrandAssignOpen(false)
+                  await fetchRows()
+                }}
+                style={{ flex: 1, border: '1px solid rgba(123,94,167,0.6)', background: 'rgba(123,94,167,0.3)', color: '#e7ddf7', borderRadius: 8, padding: '9px 10px', fontSize: 12, cursor: 'pointer' }}
+              >
+                {brandAssignBusy ? '적용 중...' : '적용'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
