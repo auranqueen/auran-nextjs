@@ -23,6 +23,13 @@ export default function AdminCategoriesPage() {
   const [sheet, setSheet] = useState<Cat | null>(null)
   const [sheetName, setSheetName] = useState('')
   const [sheetSort, setSheetSort] = useState('0')
+  const [viewTab, setViewTab] = useState<'category' | 'skin' | 'natural'>('category')
+  const [selL1, setSelL1] = useState('')
+  const [selL2, setSelL2] = useState('')
+  const [selL3, setSelL3] = useState('')
+  const [selL4, setSelL4] = useState('')
+  const [selL5, setSelL5] = useState('')
+  const [naturalRows, setNaturalRows] = useState<{ keyword: string; total: number; promoted: boolean }[]>([])
 
   const loadRows = useCallback(async () => {
     const { data, error } = await supabase
@@ -41,11 +48,38 @@ export default function AdminCategoriesPage() {
     setRows(list)
   }, [supabase])
 
+  const loadNatural = useCallback(async () => {
+    const now = new Date()
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+    const { data } = await supabase
+      .from('customer_search_logs')
+      .select('search_keyword,count,is_promoted,created_at,source')
+      .eq('source', '검색')
+      .gte('created_at', monthStart)
+      .order('created_at', { ascending: false })
+      .limit(400)
+    const map = new Map<string, { total: number; promoted: boolean }>()
+    for (const r of data || []) {
+      const k = String((r as any).search_keyword || '').trim()
+      if (!k) continue
+      const cur = map.get(k) || { total: 0, promoted: false }
+      cur.total += Math.max(1, Number((r as any).count || 1))
+      cur.promoted = cur.promoted || Boolean((r as any).is_promoted)
+      map.set(k, cur)
+    }
+    const merged = Array.from(map.entries())
+      .map(([keyword, v]) => ({ keyword, total: v.total, promoted: v.promoted }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 20)
+    setNaturalRows(merged)
+  }, [supabase])
+
   useEffect(() => {
     let cancelled = false
     ;(async () => {
       setLoading(true)
       await loadRows()
+      await loadNatural()
       if (!cancelled) setLoading(false)
     })()
     return () => {
@@ -79,6 +113,28 @@ export default function AdminCategoriesPage() {
     walk(null, 0)
     return out
   }, [rows])
+
+  const sortedRows = useMemo(() => {
+    return [...rows].sort((a, b) => {
+      const sa = a.sort_order ?? 0
+      const sb = b.sort_order ?? 0
+      if (sa !== sb) return sa - sb
+      return (a.name || '').localeCompare(b.name || '', 'ko')
+    })
+  }, [rows])
+
+  const l1Rows = useMemo(
+    () => sortedRows.filter(r => (r.parent_id == null || r.parent_id === '') && Number(r.level || 0) === 1),
+    [sortedRows]
+  )
+  const l2Rows = useMemo(() => (selL1 ? sortedRows.filter(r => String(r.parent_id || '') === selL1) : []), [sortedRows, selL1])
+  const l3Rows = useMemo(() => (selL2 ? sortedRows.filter(r => String(r.parent_id || '') === selL2) : []), [sortedRows, selL2])
+  const l4Rows = useMemo(() => (selL3 ? sortedRows.filter(r => String(r.parent_id || '') === selL3) : []), [sortedRows, selL3])
+  const l5Rows = useMemo(() => (selL4 ? sortedRows.filter(r => String(r.parent_id || '') === selL4) : []), [sortedRows, selL4])
+  const skinTagRows = useMemo(
+    () => sortedRows.filter(r => Number(r.level || 0) === 5 && (r.parent_id == null || r.parent_id === '')),
+    [sortedRows]
+  )
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -235,6 +291,7 @@ export default function AdminCategoriesPage() {
       }
 
       await loadRows()
+      await loadNatural()
       showToast('적용되었습니다')
     } catch (e: unknown) {
       setToast(e instanceof Error ? e.message : '적용 실패')
@@ -244,7 +301,7 @@ export default function AdminCategoriesPage() {
   }
 
   return (
-    <div style={{ padding: '18px 16px 100px', maxWidth: 720, margin: '0 auto' }}>
+    <div style={{ padding: '18px 16px 100px', maxWidth: 1200, margin: '0 auto' }}>
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 18, fontWeight: 900, color: '#fff' }}>카테고리 관리</div>
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 6, lineHeight: 1.5 }}>
@@ -269,32 +326,408 @@ export default function AdminCategoriesPage() {
         </div>
       ) : null}
 
-      <button
-        type="button"
-        onClick={() => addRoot()}
-        disabled={applying}
-        style={{
-          marginBottom: 14,
-          width: '100%',
-          padding: '12px 14px',
-          borderRadius: 12,
-          border: '1px solid rgba(201,168,76,0.45)',
-          background: 'rgba(201,168,76,0.15)',
-          color: '#c9a84c',
-          fontSize: 13,
-          fontWeight: 800,
-          cursor: applying ? 'not-allowed' : 'pointer',
-          opacity: applying ? 0.55 : 1,
-        }}
-      >
-        + 최상위(대분류) 추가
-      </button>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        {([
+          ['category', '카테고리 선택'],
+          ['skin', '스킨태그'],
+          ['natural', '고객 자연어'],
+        ] as const).map(([k, label]) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setViewTab(k)}
+            style={{
+              padding: '8px 12px',
+              borderRadius: 10,
+              border: '1px solid',
+              borderColor: viewTab === k ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.12)',
+              background: viewTab === k ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.06)',
+              color: viewTab === k ? '#c9a84c' : '#fff',
+              fontSize: 12,
+              fontWeight: 800,
+              cursor: 'pointer',
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
       {loading ? (
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>불러오는 중…</div>
-      ) : flatRows.length === 0 ? (
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>등록된 카테고리가 없습니다.</div>
       ) : (
+        <>
+          {viewTab === 'category' ? (
+            <div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(180px, 1fr))', gap: 10 }}>
+                {[
+                  { title: '1단계', list: l1Rows, sel: selL1, setSel: setSelL1, parent: null as string | null },
+                  { title: '2단계', list: l2Rows, sel: selL2, setSel: setSelL2, parent: selL1 || null },
+                  { title: '3단계', list: l3Rows, sel: selL3, setSel: setSelL3, parent: selL2 || null },
+                  { title: '4단계', list: l4Rows, sel: selL4, setSel: setSelL4, parent: selL3 || null },
+                  { title: '5단계', list: l5Rows, sel: selL5, setSel: setSelL5, parent: selL4 || null },
+                ].map(col => (
+                  <div
+                    key={col.title}
+                    style={{
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 12,
+                      background: 'rgba(255,255,255,0.03)',
+                      minHeight: 320,
+                      display: 'flex',
+                      flexDirection: 'column',
+                    }}
+                  >
+                    <div style={{ padding: '10px 10px 8px', fontSize: 12, color: '#fff', fontWeight: 800 }}>{col.title}</div>
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '0 8px 8px', display: 'grid', gap: 6 }}>
+                      {col.list.length === 0 ? (
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', padding: '8px 4px' }}>항목 없음</div>
+                      ) : (
+                        col.list.map(item => (
+                          <div
+                            key={item.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              borderRadius: 8,
+                              border: '1px solid rgba(255,255,255,0.1)',
+                              background: col.sel === item.id ? 'rgba(201,168,76,0.16)' : 'rgba(255,255,255,0.03)',
+                              padding: '8px 8px',
+                            }}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => {
+                                col.setSel(item.id)
+                                if (col.title === '1단계') {
+                                  setSelL2('')
+                                  setSelL3('')
+                                  setSelL4('')
+                                  setSelL5('')
+                                }
+                                if (col.title === '2단계') {
+                                  setSelL3('')
+                                  setSelL4('')
+                                  setSelL5('')
+                                }
+                                if (col.title === '3단계') {
+                                  setSelL4('')
+                                  setSelL5('')
+                                }
+                                if (col.title === '4단계') setSelL5('')
+                              }}
+                              style={{
+                                flex: 1,
+                                textAlign: 'left',
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#fff',
+                                fontSize: 12,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              {item.name}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openSheet(item)}
+                              style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: 6,
+                                border: '1px solid rgba(123,94,167,0.4)',
+                                background: 'rgba(123,94,167,0.18)',
+                                color: '#d2b8ff',
+                                fontSize: 12,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              ✎
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const ids = new Set<string>([item.id])
+                                let grow = true
+                                while (grow) {
+                                  grow = false
+                                  for (const r of rows) {
+                                    const pid = r.parent_id == null || r.parent_id === '' ? '' : String(r.parent_id)
+                                    if (pid && ids.has(pid) && !ids.has(r.id)) {
+                                      ids.add(r.id)
+                                      grow = true
+                                    }
+                                  }
+                                }
+                                setRows(prev => prev.filter(r => !ids.has(r.id)))
+                              }}
+                              style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: 6,
+                                border: '1px solid rgba(239,83,80,0.38)',
+                                background: 'rgba(239,83,80,0.14)',
+                                color: '#ef9a9a',
+                                fontSize: 12,
+                                cursor: 'pointer',
+                              }}
+                            >
+                              🗑
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!col.parent && col.title === '1단계') {
+                          addRoot()
+                          return
+                        }
+                        const parent = rows.find(r => r.id === String(col.parent))
+                        if (parent) addChild(parent)
+                      }}
+                      style={{
+                        margin: 8,
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        border: '1px solid rgba(76,173,126,0.38)',
+                        background: 'rgba(76,173,126,0.12)',
+                        color: '#7dce9a',
+                        fontSize: 12,
+                        fontWeight: 800,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      + 추가
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div
+                style={{
+                  marginTop: 10,
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(255,255,255,0.1)',
+                  background: 'rgba(255,255,255,0.03)',
+                  fontSize: 12,
+                  color: '#e8d4a8',
+                }}
+              >
+                선택 경로:{' '}
+                {([selL1, selL2, selL3, selL4, selL5] as string[])
+                  .filter(Boolean)
+                  .map(id => rows.find(r => r.id === id)?.name || '')
+                  .filter(Boolean)
+                  .join(' > ') || '미선택'}
+              </div>
+            </div>
+          ) : null}
+
+          {viewTab === 'skin' ? (
+            <div style={{ display: 'grid', gap: 8 }}>
+              {skinTagRows.length === 0 ? (
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>스킨태그가 없습니다.</div>
+              ) : (
+                skinTagRows.map(row => (
+                  <div
+                    key={row.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      padding: '10px 10px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(255,255,255,0.03)',
+                    }}
+                  >
+                    <div style={{ flex: 1, fontSize: 13, color: '#fff' }}>{row.name}</div>
+                    <button
+                      type="button"
+                      onClick={() => openSheet(row)}
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 8,
+                        border: '1px solid rgba(123,94,167,0.4)',
+                        background: 'rgba(123,94,167,0.18)',
+                        color: '#d2b8ff',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      ✎
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const ids = new Set<string>([row.id])
+                        let grow = true
+                        while (grow) {
+                          grow = false
+                          for (const r of rows) {
+                            const pid = r.parent_id == null || r.parent_id === '' ? '' : String(r.parent_id)
+                            if (pid && ids.has(pid) && !ids.has(r.id)) {
+                              ids.add(r.id)
+                              grow = true
+                            }
+                          }
+                        }
+                        setRows(prev => prev.filter(r => !ids.has(r.id)))
+                      }}
+                      style={{
+                        width: 28,
+                        height: 28,
+                        borderRadius: 8,
+                        border: '1px solid rgba(239,83,80,0.38)',
+                        background: 'rgba(239,83,80,0.14)',
+                        color: '#ef9a9a',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      🗑
+                    </button>
+                  </div>
+                ))
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  const siblings = rows.filter(r => Number(r.level || 0) === 5 && (r.parent_id == null || r.parent_id === ''))
+                  const maxSort = siblings.reduce((m, r) => Math.max(m, r.sort_order ?? 0), -1)
+                  const id = crypto.randomUUID()
+                  setRows(prev => [...prev, { id, name: '새 스킨태그', parent_id: null, level: 5, sort_order: maxSort + 1 }])
+                }}
+                style={{
+                  marginTop: 6,
+                  alignSelf: 'flex-start',
+                  padding: '8px 12px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(76,173,126,0.38)',
+                  background: 'rgba(76,173,126,0.12)',
+                  color: '#7dce9a',
+                  fontSize: 12,
+                  fontWeight: 800,
+                  cursor: 'pointer',
+                }}
+              >
+                + 추가
+              </button>
+            </div>
+          ) : null}
+
+          {viewTab === 'natural' ? (
+            <div style={{ display: 'grid', gap: 8 }}>
+              {naturalRows.length === 0 ? (
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>이번 달 검색 키워드가 없습니다.</div>
+              ) : (
+                naturalRows.map((r, idx) => (
+                  <div
+                    key={r.keyword}
+                    style={{
+                      display: 'flex',
+                      gap: 8,
+                      alignItems: 'center',
+                      padding: '10px 10px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'rgba(255,255,255,0.03)',
+                    }}
+                  >
+                    <div style={{ width: 28, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{idx + 1}</div>
+                    <div style={{ flex: 1, fontSize: 13, color: '#fff' }}>{r.keyword}</div>
+                    <div style={{ fontSize: 11, color: '#c9a84c', minWidth: 52, textAlign: 'right' }}>{r.total}회</div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const exists = rows.some(
+                          x => Number(x.level || 0) === 5 && (x.parent_id == null || x.parent_id === '') && x.name === r.keyword
+                        )
+                        if (!exists) {
+                          const maxSort = rows
+                            .filter(x => Number(x.level || 0) === 5 && (x.parent_id == null || x.parent_id === ''))
+                            .reduce((m, x) => Math.max(m, x.sort_order ?? 0), -1)
+                          const id = crypto.randomUUID()
+                          setRows(prev => [...prev, { id, name: r.keyword, parent_id: null, level: 5, sort_order: maxSort + 1 }])
+                        }
+                        await supabase
+                          .from('customer_search_logs')
+                          .update({ is_promoted: true })
+                          .eq('search_keyword', r.keyword)
+                          .eq('source', '검색')
+                        await loadNatural()
+                        showToast('공식 태그풀로 승격했습니다')
+                      }}
+                      style={{
+                        padding: '6px 9px',
+                        borderRadius: 8,
+                        border: '1px solid rgba(201,168,76,0.4)',
+                        background: 'rgba(201,168,76,0.16)',
+                        color: '#e8d4a8',
+                        fontSize: 11,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      승격
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await supabase
+                          .from('customer_search_logs')
+                          .update({ is_promoted: false })
+                          .eq('search_keyword', r.keyword)
+                          .eq('source', '검색')
+                        await loadNatural()
+                        showToast('비활성 처리했습니다')
+                      }}
+                      style={{
+                        padding: '6px 9px',
+                        borderRadius: 8,
+                        border: '1px solid rgba(255,255,255,0.2)',
+                        background: 'rgba(255,255,255,0.06)',
+                        color: 'rgba(255,255,255,0.8)',
+                        fontSize: 11,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      비활성
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await supabase.from('customer_search_logs').delete().eq('search_keyword', r.keyword).eq('source', '검색')
+                        await loadNatural()
+                        showToast('삭제했습니다')
+                      }}
+                      style={{
+                        padding: '6px 9px',
+                        borderRadius: 8,
+                        border: '1px solid rgba(239,83,80,0.4)',
+                        background: 'rgba(239,83,80,0.14)',
+                        color: '#ef9a9a',
+                        fontSize: 11,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      삭제
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          ) : null}
+
+          <div style={{ display: 'none' }}>
+            {flatRows.length}
+          </div>
+        </>
+      )}
+
+      {false ? (
         <div style={{ display: 'grid', gap: 6 }}>
           {flatRows.map(row => (
             <div
@@ -394,7 +827,7 @@ export default function AdminCategoriesPage() {
             </div>
           ))}
         </div>
-      )}
+      ) : null}
 
       {sheet ? (
         <div

@@ -287,6 +287,26 @@ export default function CustomerHomePage() {
     let cancelled = false
     const run = async () => {
       setSearchLoading(true)
+      try {
+        const kw = keyword.slice(0, 100)
+        const { data: one } = await supabase
+          .from('customer_search_logs')
+          .select('id,count')
+          .eq('search_keyword', kw)
+          .eq('source', '검색')
+          .limit(1)
+          .maybeSingle()
+        if (one?.id) {
+          await supabase
+            .from('customer_search_logs')
+            .update({ count: Number(one.count || 0) + 1 })
+            .eq('id', one.id)
+        } else {
+          await supabase.from('customer_search_logs').insert({ search_keyword: kw, source: '검색', count: 1 } as any)
+        }
+      } catch {
+        // 테이블 미생성 등은 검색 UX에 영향 주지 않음
+      }
       const { data } = await supabase
         .from('products')
         .select('id, name, storage_thumb_url, thumb_img, retail_price, sale_price, is_timesale, brand_id')

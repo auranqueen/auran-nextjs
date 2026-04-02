@@ -17,21 +17,23 @@ function isUuid(s: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s.trim())
 }
 
-function parseAdminMeta(rows: string[] | null | undefined): { options: string; shippingFee: string; shippingMemo: string } {
+function parseAdminMeta(rows: string[] | null | undefined): { options: string; shippingFee: string; shippingMemo: string; skinTags: string[] } {
   const raw = rows?.find(r => typeof r === 'string' && r.startsWith('__AURAN_ADMIN__'))
-  if (!raw) return { options: '', shippingFee: '', shippingMemo: '' }
+  if (!raw) return { options: '', shippingFee: '', shippingMemo: '', skinTags: [] }
   try {
     const j = JSON.parse(raw.slice('__AURAN_ADMIN__'.length)) as {
       options?: string
       shipping?: { fee?: string; memo?: string }
+      skinTags?: string[]
     }
     return {
       options: j.options ?? '',
       shippingFee: j.shipping?.fee ?? '',
       shippingMemo: j.shipping?.memo ?? '',
+      skinTags: Array.isArray(j.skinTags) ? j.skinTags.map(x => String(x)).filter(Boolean) : [],
     }
   } catch {
-    return { options: '', shippingFee: '', shippingMemo: '' }
+    return { options: '', shippingFee: '', shippingMemo: '', skinTags: [] }
   }
 }
 
@@ -39,6 +41,7 @@ function encodeAdminMeta(
   options: string,
   shippingFee: string,
   shippingMemo: string,
+  skinTags: string[],
   existing: string[] | null | undefined
 ): string[] {
   const payload =
@@ -47,6 +50,7 @@ function encodeAdminMeta(
       v: 1,
       options,
       shipping: { fee: shippingFee, memo: shippingMemo },
+      skinTags,
     })
   const rest = (existing || []).filter(r => typeof r !== 'string' || !r.startsWith('__AURAN_ADMIN__'))
   return [payload, ...rest]
@@ -144,6 +148,12 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   const [certificationsText, setCertificationsText] = useState('')
   const [perfectTogetherInput, setPerfectTogetherInput] = useState('')
   const [detailImages, setDetailImages] = useState<string[]>([])
+  const [selectedSkinTagIds, setSelectedSkinTagIds] = useState<string[]>([])
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false)
+  const [categoryPickerTab, setCategoryPickerTab] = useState<'search' | 'select'>('select')
+  const [categorySearch, setCategorySearch] = useState('')
+  const [hasDraft, setHasDraft] = useState(false)
+  const [isMobileSheet, setIsMobileSheet] = useState(false)
 
   const fileRefs = useRef<(HTMLInputElement | null)[]>([])
   const videoRef = useRef<HTMLInputElement | null>(null)
@@ -180,6 +190,20 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
         )
       )
   }, [supabase])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const apply = () => setIsMobileSheet(window.innerWidth <= 840)
+    apply()
+    window.addEventListener('resize', apply)
+    return () => window.removeEventListener('resize', apply)
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const key = editId ? `auran_product_draft_${editId}` : 'auran_product_draft_new'
+    setHasDraft(Boolean(localStorage.getItem(key)))
+  }, [editId])
 
   useEffect(() => {
     if (!editId) {
@@ -284,6 +308,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       setOptionsText(meta.options)
       setShipFee(meta.shippingFee)
       setShipMemo(meta.shippingMemo)
+      setSelectedSkinTagIds(meta.skinTags)
 
       const thumbs = Array.isArray(p.thumb_images) && (p.thumb_images as string[]).length
         ? [...(p.thumb_images as string[])]
@@ -352,6 +377,29 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
     () => (catL4 ? allCategories.filter(c => String(c.parent_id || '') === catL4) : []),
     [allCategories, catL4]
   )
+  const skinTagOptions = useMemo(
+    () => allCategories.filter(c => Number(c.level || 0) === 5 && (c.parent_id == null || c.parent_id === '')),
+    [allCategories]
+  )
+  const categorySearchRows = useMemo(() => {
+    const q = categorySearch.trim().toLowerCase()
+    if (!q) return []
+    return allCategories.filter(c => String(c.name || '').toLowerCase().includes(q)).slice(0, 80)
+  }, [allCategories, categorySearch])
+  const categoryBreadcrumb = useMemo(() => {
+    const byId = new Map(allCategories.map(c => [c.id, c]))
+    const leaf = catL5 || catL4 || catL3 || catL2 || catL1 || ''
+    if (!leaf) return ''
+    const names: string[] = []
+    let cur = byId.get(leaf)
+    let guard = 0
+    while (cur && guard++ < 24) {
+      names.unshift(cur.name)
+      const pid = cur.parent_id != null && String(cur.parent_id) !== '' ? String(cur.parent_id) : ''
+      cur = pid ? byId.get(pid) : undefined
+    }
+    return names.join(' > ')
+  }, [allCategories, catL1, catL2, catL3, catL4, catL5])
 
   const uploadToStorage = useCallback(
     async (file: File, path: string) => {
@@ -450,7 +498,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
     const rVideo = Math.max(0, Math.floor(Number(reviewVideo) || 0))
 
     const thumbsClean = thumbImages.map(s => s.trim()).filter(Boolean)
-    const quiz = encodeAdminMeta(optionsText, shipFee, shipMemo, quizExisting)
+    const quiz = encodeAdminMeta(optionsText, shipFee, shipMemo, selectedSkinTagIds, quizExisting)
     const perfectIds = perfectTogetherInput
       .split(',')
       .map(s => s.trim())
@@ -558,6 +606,10 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
         setSaving(false)
         return
       }
+      if (typeof window !== 'undefined') {
+        const key = editId ? `auran_product_draft_${editId}` : 'auran_product_draft_new'
+        localStorage.removeItem(key)
+      }
       router.push('/admin/marketing/products')
     } catch (e: unknown) {
       setMsg(e instanceof Error ? e.message : '오류')
@@ -589,6 +641,90 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
           }}
         >
           {msg}
+        </div>
+      ) : null}
+      {hasDraft ? (
+        <div
+          style={{
+            marginBottom: 12,
+            padding: '10px 14px',
+            borderRadius: 10,
+            background: 'rgba(123,94,167,0.12)',
+            border: '1px solid rgba(123,94,167,0.35)',
+            color: '#d7c4f2',
+            fontSize: 12,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+          }}
+        >
+          <span>임시저장된 내용 불러오기</span>
+          <button
+            type="button"
+            onClick={() => {
+              if (typeof window === 'undefined') return
+              const key = editId ? `auran_product_draft_${editId}` : 'auran_product_draft_new'
+              const raw = localStorage.getItem(key)
+              if (!raw) return
+              try {
+                const d = JSON.parse(raw) as any
+                setName(String(d.name || ''))
+                setShortDesc(String(d.shortDesc || ''))
+                setKeywords(String(d.keywords || ''))
+                setBrandId(String(d.brandId || ''))
+                setOrigin((ORIGINS as readonly string[]).includes(String(d.origin || '')) ? (String(d.origin) as (typeof ORIGINS)[number]) : '한국')
+                setManufacturer(String(d.manufacturer || ''))
+                setSaleUi((String(d.saleUi || 'active') as SaleUi))
+                setOptionsText(String(d.optionsText || ''))
+                setRetailPrice(String(d.retailPrice || ''))
+                setUnitType(String(d.unitType || ''))
+                setUnitPrice(String(d.unitPrice || ''))
+                setSalePrice(String(d.salePrice || ''))
+                setAvgUsageDays(String(d.avgUsageDays || ''))
+                setQtyUi((String(d.qtyUi || 'unlimited') as QtyUi))
+                setStockInput(String(d.stockInput || '0'))
+                setTimesaleStart(String(d.timesaleStart || ''))
+                setTimesaleEnd(String(d.timesaleEnd || ''))
+                setPurchaseMode((String(d.purchaseMode || 'percent') as PointMode))
+                setPurchaseVal(String(d.purchaseVal || ''))
+                setShareVal(String(d.shareVal || ''))
+                setReviewText(String(d.reviewText || '100'))
+                setReviewPhoto(String(d.reviewPhoto || '300'))
+                setReviewVideo(String(d.reviewVideo || '500'))
+                setShipFee(String(d.shipFee || ''))
+                setShipMemo(String(d.shipMemo || ''))
+                setThumbImages(Array.isArray(d.thumbImages) ? d.thumbImages.slice(0, 5) : ['', '', '', '', ''])
+                setVideoUrl(String(d.videoUrl || ''))
+                setDetailContent(String(d.detailContent || ''))
+                setKeyIngredients(String(d.keyIngredients || ''))
+                setClinicalResult(String(d.clinicalResult || ''))
+                setCertificationsText(String(d.certificationsText || ''))
+                setPerfectTogetherInput(String(d.perfectTogetherInput || ''))
+                setDetailImages(Array.isArray(d.detailImages) ? d.detailImages : [])
+                setCatL1(String(d.catL1 || ''))
+                setCatL2(String(d.catL2 || ''))
+                setCatL3(String(d.catL3 || ''))
+                setCatL4(String(d.catL4 || ''))
+                setCatL5(String(d.catL5 || ''))
+                setSelectedSkinTagIds(Array.isArray(d.selectedSkinTagIds) ? d.selectedSkinTagIds.map((x: unknown) => String(x)) : [])
+                setMsg('임시저장 내용을 불러왔습니다')
+              } catch {
+                setMsg('임시저장 복원 실패')
+              }
+            }}
+            style={{
+              borderRadius: 8,
+              border: '1px solid rgba(123,94,167,0.45)',
+              background: 'rgba(123,94,167,0.22)',
+              color: '#e8d9ff',
+              fontSize: 11,
+              padding: '6px 10px',
+              cursor: 'pointer',
+            }}
+          >
+            불러오기
+          </button>
         </div>
       ) : null}
 
@@ -730,109 +866,48 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
             </div>
           </label>
           <div style={{ display: 'grid', gap: 10 }}>
-            <span style={labelStyle}>카테고리 (5단계) · 관리는 설정 → 카테고리 관리</span>
-            <label style={{ display: 'grid', gap: 6 }}>
-              <span style={labelStyle}>대분류</span>
-              <select
-                value={catL1}
-                onChange={e => {
-                  const v = e.target.value
-                  setCatL1(v)
-                  setCatL2('')
-                  setCatL3('')
-                  setCatL4('')
-                  setCatL5('')
-                }}
-                style={{ ...inputStyle, background: '#121212' }}
-              >
-                <option value="">— 선택 —</option>
-                {catOpts1.map(c => (
-                  <option key={c.id} value={c.id} style={{ background: '#1a1a1a' }}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {catL1 ? (
-              <label style={{ display: 'grid', gap: 6 }}>
-                <span style={labelStyle}>중분류</span>
-                <select
-                  value={catL2}
-                  onChange={e => {
-                    setCatL2(e.target.value)
-                    setCatL3('')
-                    setCatL4('')
-                    setCatL5('')
-                  }}
-                  style={{ ...inputStyle, background: '#121212' }}
-                >
-                  <option value="">— 선택 —</option>
-                  {catOpts2.map(c => (
-                    <option key={c.id} value={c.id} style={{ background: '#1a1a1a' }}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-            {catL2 ? (
-              <label style={{ display: 'grid', gap: 6 }}>
-                <span style={labelStyle}>소분류</span>
-                <select
-                  value={catL3}
-                  onChange={e => {
-                    setCatL3(e.target.value)
-                    setCatL4('')
-                    setCatL5('')
-                  }}
-                  style={{ ...inputStyle, background: '#121212' }}
-                >
-                  <option value="">— 선택 —</option>
-                  {catOpts3.map(c => (
-                    <option key={c.id} value={c.id} style={{ background: '#1a1a1a' }}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-            {catL3 ? (
-              <label style={{ display: 'grid', gap: 6 }}>
-                <span style={labelStyle}>세부</span>
-                <select
-                  value={catL4}
-                  onChange={e => {
-                    setCatL4(e.target.value)
-                    setCatL5('')
-                  }}
-                  style={{ ...inputStyle, background: '#121212' }}
-                >
-                  <option value="">— 선택 —</option>
-                  {catOpts4.map(c => (
-                    <option key={c.id} value={c.id} style={{ background: '#1a1a1a' }}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-            {catL4 ? (
-              <label style={{ display: 'grid', gap: 6 }}>
-                <span style={labelStyle}>스킨태그</span>
-                <select
-                  value={catL5}
-                  onChange={e => setCatL5(e.target.value)}
-                  style={{ ...inputStyle, background: '#121212' }}
-                >
-                  <option value="">— 선택 —</option>
-                  {catOpts5.map(c => (
-                    <option key={c.id} value={c.id} style={{ background: '#1a1a1a' }}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
+            <span style={labelStyle}>카테고리 · 스킨태그</span>
+            <button
+              type="button"
+              onClick={() => {
+                setCategoryPickerTab('select')
+                setShowCategoryPicker(true)
+              }}
+              style={{
+                ...inputStyle,
+                textAlign: 'left',
+                background: '#121212',
+                cursor: 'pointer',
+              }}
+            >
+              {categoryBreadcrumb || '카테고리 선택'}
+            </button>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>선택 경로: {categoryBreadcrumb || '미선택'}</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {skinTagOptions.map(t => {
+                const on = selectedSkinTagIds.includes(t.id)
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() =>
+                      setSelectedSkinTagIds(prev => (on ? prev.filter(x => x !== t.id) : [...prev, t.id]))
+                    }
+                    style={{
+                      padding: '5px 9px',
+                      borderRadius: 999,
+                      border: on ? '1px solid rgba(201,168,76,0.55)' : '1px solid rgba(255,255,255,0.15)',
+                      background: on ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.06)',
+                      color: on ? '#e8d4a8' : 'rgba(255,255,255,0.7)',
+                      fontSize: 11,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {t.name}
+                  </button>
+                )
+              })}
+            </div>
           </div>
           <label style={{ display: 'grid', gap: 6 }}>
             <span style={labelStyle}>
@@ -1249,14 +1324,234 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
         </div>
       )}
 
-      <div style={{ marginTop: 24 }}>
+      {showCategoryPicker ? (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 120 }}>
+          <button
+            type="button"
+            onClick={() => setShowCategoryPicker(false)}
+            style={{ position: 'absolute', inset: 0, border: 'none', background: 'rgba(0,0,0,0.55)', cursor: 'pointer' }}
+            aria-label="닫기"
+          />
+          <div
+            style={{
+              position: 'absolute',
+              left: isMobileSheet ? 0 : '50%',
+              right: isMobileSheet ? 0 : undefined,
+              top: isMobileSheet ? 'auto' : '8%',
+              bottom: isMobileSheet ? 0 : 'auto',
+              transform: isMobileSheet ? 'none' : 'translateX(-50%)',
+              width: isMobileSheet ? '100%' : 'min(980px, 92vw)',
+              maxHeight: isMobileSheet ? '86vh' : '84vh',
+              overflow: 'auto',
+              borderRadius: isMobileSheet ? '18px 18px 0 0' : 16,
+              border: '1px solid rgba(255,255,255,0.14)',
+              background: '#121212',
+              padding: 14,
+            }}
+          >
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+              <button
+                type="button"
+                onClick={() => setCategoryPickerTab('search')}
+                style={{
+                  padding: '7px 10px',
+                  borderRadius: 8,
+                  border: '1px solid',
+                  borderColor: categoryPickerTab === 'search' ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.15)',
+                  background: categoryPickerTab === 'search' ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.06)',
+                  color: categoryPickerTab === 'search' ? '#e8d4a8' : '#fff',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                }}
+              >
+                카테고리명 검색
+              </button>
+              <button
+                type="button"
+                onClick={() => setCategoryPickerTab('select')}
+                style={{
+                  padding: '7px 10px',
+                  borderRadius: 8,
+                  border: '1px solid',
+                  borderColor: categoryPickerTab === 'select' ? 'rgba(201,168,76,0.55)' : 'rgba(255,255,255,0.15)',
+                  background: categoryPickerTab === 'select' ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.06)',
+                  color: categoryPickerTab === 'select' ? '#e8d4a8' : '#fff',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                }}
+              >
+                카테고리명 선택
+              </button>
+            </div>
+            {categoryPickerTab === 'search' ? (
+              <div style={{ display: 'grid', gap: 8 }}>
+                <input
+                  value={categorySearch}
+                  onChange={e => setCategorySearch(e.target.value)}
+                  placeholder="카테고리명 검색"
+                  style={inputStyle}
+                />
+                <div style={{ display: 'grid', gap: 6, maxHeight: 320, overflowY: 'auto' }}>
+                  {categorySearchRows.map(c => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setProductCategoryLeafId(c.id)}
+                      style={{
+                        textAlign: 'left',
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: 'rgba(255,255,255,0.05)',
+                        color: '#fff',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      L{c.level} · {c.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(150px, 1fr))', gap: 8 }}>
+                {[
+                  { list: catOpts1, value: catL1, set: setCatL1, reset: () => { setCatL2(''); setCatL3(''); setCatL4(''); setCatL5('') } },
+                  { list: catOpts2, value: catL2, set: setCatL2, reset: () => { setCatL3(''); setCatL4(''); setCatL5('') } },
+                  { list: catOpts3, value: catL3, set: setCatL3, reset: () => { setCatL4(''); setCatL5('') } },
+                  { list: catOpts4, value: catL4, set: setCatL4, reset: () => { setCatL5('') } },
+                  { list: catOpts5, value: catL5, set: setCatL5, reset: () => {} },
+                ].map((col, idx) => (
+                  <div key={idx} style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, minHeight: 250, padding: 8 }}>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginBottom: 6 }}>{idx + 1}단계</div>
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      {col.list.map(c => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => { col.set(c.id); col.reset() }}
+                          style={{
+                            textAlign: 'left',
+                            padding: '7px 8px',
+                            borderRadius: 8,
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            background: col.value === c.id ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.04)',
+                            color: '#fff',
+                            fontSize: 12,
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {c.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ marginTop: 10, fontSize: 12, color: '#e8d4a8' }}>선택 경로: {categoryBreadcrumb || '미선택'}</div>
+            <div style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {skinTagOptions.map(t => {
+                const on = selectedSkinTagIds.includes(t.id)
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setSelectedSkinTagIds(prev => (on ? prev.filter(x => x !== t.id) : [...prev, t.id]))}
+                    style={{
+                      padding: '5px 8px',
+                      borderRadius: 999,
+                      border: on ? '1px solid rgba(201,168,76,0.55)' : '1px solid rgba(255,255,255,0.16)',
+                      background: on ? 'rgba(201,168,76,0.2)' : 'rgba(255,255,255,0.05)',
+                      color: on ? '#e8d4a8' : '#fff',
+                      fontSize: 11,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {t.name}
+                  </button>
+                )
+              })}
+            </div>
+            <div style={{ marginTop: 12, display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => setShowCategoryPicker(false)}
+                style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.06)', color: '#fff', cursor: 'pointer' }}
+              >
+                닫기
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowCategoryPicker(false)}
+                style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(201,168,76,0.45)', background: 'rgba(201,168,76,0.2)', color: '#e8d4a8', cursor: 'pointer' }}
+              >
+                선택 완료
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window === 'undefined') return
+            const key = editId ? `auran_product_draft_${editId}` : 'auran_product_draft_new'
+            localStorage.setItem(
+              key,
+              JSON.stringify({
+                name, shortDesc, keywords, brandId, origin, manufacturer, saleUi, optionsText, retailPrice, unitType, unitPrice, salePrice,
+                avgUsageDays, qtyUi, stockInput, timesaleStart, timesaleEnd, purchaseMode, purchaseVal, shareVal, reviewText, reviewPhoto,
+                reviewVideo, shipFee, shipMemo, thumbImages, videoUrl, detailContent, keyIngredients, clinicalResult, certificationsText,
+                perfectTogetherInput, detailImages, catL1, catL2, catL3, catL4, catL5, selectedSkinTagIds,
+              })
+            )
+            setHasDraft(true)
+            setMsg('임시저장되었습니다')
+          }}
+          style={{
+            padding: '12px 0',
+            borderRadius: 12,
+            border: '1px solid rgba(123,94,167,0.45)',
+            background: 'rgba(123,94,167,0.2)',
+            color: '#d7c4f2',
+            fontSize: 13,
+            fontWeight: 800,
+            cursor: 'pointer',
+          }}
+        >
+          임시저장
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (!editId) {
+              setMsg('미리보기는 저장 후 사용할 수 있습니다')
+              return
+            }
+            if (typeof window !== 'undefined') window.open(`/products/${editId}`, '_blank', 'noopener,noreferrer')
+          }}
+          style={{
+            padding: '12px 0',
+            borderRadius: 12,
+            border: '1px solid rgba(255,255,255,0.2)',
+            background: 'rgba(255,255,255,0.06)',
+            color: '#fff',
+            fontSize: 13,
+            fontWeight: 800,
+            cursor: 'pointer',
+          }}
+        >
+          미리보기
+        </button>
         <button
           type="button"
           disabled={saving}
           onClick={() => void onSave()}
           style={{
-            width: '100%',
-            padding: '14px 0',
+            padding: '12px 0',
             borderRadius: 12,
             border: 'none',
             background: 'linear-gradient(135deg, #c9a84c 0%, #a8863a 100%)',
@@ -1267,7 +1562,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
             opacity: saving ? 0.75 : 1,
           }}
         >
-          {saving ? '저장 중…' : editId ? '수정 저장' : '신규 저장'}
+          {saving ? '저장 중…' : '저장하기'}
         </button>
       </div>
     </div>
