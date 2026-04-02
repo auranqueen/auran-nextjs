@@ -91,6 +91,10 @@ export default function ProductDetailModal({
 
   const [nameDraft, setNameDraft] = useState(String(product.name || ''))
   const [priceDraft, setPriceDraft] = useState(String(product.retail_price ?? ''))
+  const [unitTypeDraft, setUnitTypeDraft] = useState(String(product.unit_type || ''))
+  const [unitPriceDraft, setUnitPriceDraft] = useState(
+    product.unit_price != null && product.unit_price !== '' ? String(product.unit_price) : ''
+  )
   const [brandId, setBrandId] = useState(String(product.brand_id || ''))
   const [descDraft, setDescDraft] = useState(String(product.description || ''))
 
@@ -148,6 +152,8 @@ export default function ProductDetailModal({
     setGalleryVideoUrl(typeof product.video_url === 'string' && product.video_url.trim() ? product.video_url.trim() : null)
     setNameDraft(String(product.name || ''))
     setPriceDraft(String(product.retail_price ?? ''))
+    setUnitTypeDraft(String(product.unit_type || ''))
+    setUnitPriceDraft(product.unit_price != null && product.unit_price !== '' ? String(product.unit_price) : '')
     setBrandId(String(product.brand_id || ''))
     setDescDraft(String(product.description || ''))
     setDetailContent(String(product.detail_html || product.detail_content || ''))
@@ -200,29 +206,56 @@ export default function ProductDetailModal({
 
   const debouncedSaveNamePrice = useMemo(
     () =>
-      debounce(async (field: 'name' | 'retail_price', value: string) => {
-        const p = productRef.current
-        const id = p.id
-        const payload =
-          field === 'name'
-            ? { name: value.trim() }
-            : { retail_price: Math.max(0, Math.floor(Number(value) || 0)) }
-        const { error } = await supabase.from('products').update(payload).eq('id', id)
-        if (error) {
-          onToastRef.current(error.message || '저장 실패')
-          return
-        }
-        onToastRef.current('✅ 저장됨')
-        onProductUpdatedRef.current({
-          ...p,
-          ...(field === 'name'
-            ? { name: value.trim() }
-            : {
-                retail_price: Math.max(0, Math.floor(Number(value) || 0)),
-                price: Math.max(0, Math.floor(Number(value) || 0)),
-              }),
-        })
-      }, 1000),
+      debounce(
+        async (field: 'name' | 'retail_price' | 'unit_type' | 'unit_price', value: string) => {
+          const p = productRef.current
+          const id = p.id
+          const payload =
+            field === 'name'
+              ? { name: value.trim() }
+              : field === 'retail_price'
+                ? { retail_price: Math.max(0, Math.floor(Number(value) || 0)) }
+                : field === 'unit_type'
+                  ? { unit_type: value.trim() || null }
+                  : {
+                      unit_price:
+                        value.trim() === ''
+                          ? null
+                          : (() => {
+                              const n = Number(value.trim().replace(/,/g, ''))
+                              return Number.isFinite(n) && n >= 0 ? n : null
+                            })(),
+                    }
+          const { error } = await supabase.from('products').update(payload).eq('id', id)
+          if (error) {
+            onToastRef.current(error.message || '저장 실패')
+            return
+          }
+          onToastRef.current('✅ 저장됨')
+          onProductUpdatedRef.current({
+            ...p,
+            ...(field === 'name'
+              ? { name: value.trim() }
+              : field === 'retail_price'
+                ? {
+                    retail_price: Math.max(0, Math.floor(Number(value) || 0)),
+                    price: Math.max(0, Math.floor(Number(value) || 0)),
+                  }
+                : field === 'unit_type'
+                  ? { unit_type: value.trim() || null }
+                  : {
+                      unit_price:
+                        value.trim() === ''
+                          ? null
+                          : (() => {
+                              const n = Number(value.trim().replace(/,/g, ''))
+                              return Number.isFinite(n) && n >= 0 ? n : null
+                            })(),
+                    }),
+          })
+        },
+        1000
+      ),
     [supabase]
   )
 
@@ -234,11 +267,17 @@ export default function ProductDetailModal({
   }
 
   const saveBasic = async () => {
+    const upStr = unitPriceDraft.trim().replace(/,/g, '')
+    const upParsed = upStr === '' ? NaN : Number(upStr)
+    const unitPriceVal =
+      upStr === '' || !Number.isFinite(upParsed) || upParsed < 0 ? null : upParsed
     const { error } = await supabase
       .from('products')
       .update({
         name: nameDraft.trim(),
         retail_price: Math.max(0, Math.floor(Number(priceDraft) || 0)),
+        unit_type: unitTypeDraft.trim() || null,
+        unit_price: unitPriceVal,
         brand_id: brandId || null,
         description: descDraft.trim() || null,
       })
@@ -253,6 +292,8 @@ export default function ProductDetailModal({
       ...product,
       name: nameDraft.trim(),
       retail_price: Math.max(0, Math.floor(Number(priceDraft) || 0)),
+      unit_type: unitTypeDraft.trim() || null,
+      unit_price: unitPriceVal,
       brand_id: brandId || null,
       description: descDraft.trim() || null,
       brands: brands.find(b => b.id === brandId) ? { name: brands.find(b => b.id === brandId)!.name } : product.brands,
@@ -840,6 +881,73 @@ export default function ProductDetailModal({
                 }}
               />
             </label>
+            <div
+              style={{
+                display: 'grid',
+                gap: 10,
+                padding: 14,
+                borderRadius: 12,
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.03)',
+              }}
+            >
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>단위가격</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <label style={{ display: 'grid', gap: 6 }}>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>기준</span>
+                  <select
+                    value={unitTypeDraft}
+                    onChange={e => {
+                      const v = e.target.value
+                      setUnitTypeDraft(v)
+                      mark('basic', true)
+                      debouncedSaveNamePrice('unit_type', v)
+                    }}
+                    style={{
+                      width: '100%',
+                      background: '#121212',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      borderRadius: 10,
+                      padding: '10px 14px',
+                      color: '#fff',
+                      fontSize: 13,
+                    }}
+                  >
+                    <option value="" style={{ background: '#1a1a1a' }}>
+                      — 선택 —
+                    </option>
+                    {(['ml당', 'g당', '100ml당', '100g당', '1개당'] as const).map(o => (
+                      <option key={o} value={o} style={{ background: '#1a1a1a' }}>
+                        {o}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label style={{ display: 'grid', gap: 6 }}>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>가격 (원)</span>
+                  <input
+                    value={unitPriceDraft}
+                    onChange={e => {
+                      const v = e.target.value.replace(/[^0-9.]/g, '')
+                      setUnitPriceDraft(v)
+                      mark('basic', true)
+                      debouncedSaveNamePrice('unit_price', v)
+                    }}
+                    placeholder="예: 1250"
+                    style={{
+                      width: '100%',
+                      background: 'rgba(255,255,255,0.07)',
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      borderRadius: 10,
+                      padding: '10px 14px',
+                      color: '#fff',
+                      fontSize: 13,
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </label>
+              </div>
+            </div>
             <label style={{ display: 'grid', gap: 6 }}>
               <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>브랜드</span>
               <select

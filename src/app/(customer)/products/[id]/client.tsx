@@ -47,6 +47,8 @@ interface Product {
   sales_count?: number | null
   skin_types?: string[] | null
   skin_concerns?: string[] | null
+  unit_price?: number | string | null
+  unit_type?: string | null
 }
 
 export default function ProductDetailClient({ product }: { product: Product }) {
@@ -524,6 +526,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           <div style={{ fontSize: 28, color: GOLD }}>{hasValidPrice ? `${price.toLocaleString()}원` : '가격문의'}</div>
           {discount > 0 && <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{origPrice.toLocaleString()}원</div>}
         </div>
+        {String(product.unit_type || '').trim() &&
+        Number.isFinite(Number(product.unit_price)) &&
+        Number(product.unit_price) > 0 ? (
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 10 }}>
+            {String(product.unit_type).trim()} {Number(product.unit_price).toLocaleString()}원
+          </div>
+        ) : null}
         {hasValidPrice ? (
           <div style={{ fontSize: 11, color: GOLD, marginBottom: 10 }}>이 상품 구매시 {expectedPurchasePts.toLocaleString()}P 적립</div>
         ) : null}

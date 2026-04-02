@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 const TABS = ['기본정보', '옵션정보', '가격및재고', '포인트설정', '배송비', '상품이미지'] as const
 
 const ORIGINS = ['프랑스', '이탈리아', '독일', '국산', '기타'] as const
+const UNIT_TYPE_OPTIONS = ['ml당', 'g당', '100ml당', '100g당', '1개당'] as const
 
 type SaleUi = 'active' | 'sold_out' | 'discontinued' | 'paused'
 type QtyUi = 'unlimited' | 'limited'
@@ -108,6 +109,8 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   const [optionsText, setOptionsText] = useState('')
 
   const [retailPrice, setRetailPrice] = useState('')
+  const [unitType, setUnitType] = useState('')
+  const [unitPrice, setUnitPrice] = useState('')
   const [salePrice, setSalePrice] = useState('')
   const [avgUsageDays, setAvgUsageDays] = useState('')
   const [qtyUi, setQtyUi] = useState<QtyUi>('unlimited')
@@ -194,6 +197,8 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       setStockInput(String(stockNum))
 
       setRetailPrice(String(p.retail_price ?? ''))
+      setUnitType(String(p.unit_type || ''))
+      setUnitPrice(p.unit_price != null && p.unit_price !== '' ? String(p.unit_price) : '')
       setSalePrice(p.sale_price != null && p.sale_price !== '' ? String(p.sale_price) : '')
       setAvgUsageDays(p.avg_usage_days != null && p.avg_usage_days !== '' ? String(p.avg_usage_days) : '')
 
@@ -386,6 +391,14 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       status,
       stock,
       retail_price: retail,
+      unit_type: unitType.trim() || null,
+      unit_price:
+        unitPrice.trim() === ''
+          ? null
+          : (() => {
+              const n = Number(unitPrice.trim().replace(/,/g, ''))
+              return Number.isFinite(n) && n >= 0 ? n : null
+            })(),
       sale_price: saleP,
       is_timesale: hasTs,
       timesale_starts_at: tsStart,
@@ -717,6 +730,47 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
               style={inputStyle}
             />
           </label>
+          <div
+            style={{
+              display: 'grid',
+              gap: 10,
+              padding: 14,
+              borderRadius: 12,
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(255,255,255,0.03)',
+            }}
+          >
+            <span style={labelStyle}>단위가격 (고객 상세에 노출)</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <label style={{ display: 'grid', gap: 6 }}>
+                <span style={labelStyle}>기준</span>
+                <select
+                  value={unitType}
+                  onChange={e => setUnitType(e.target.value)}
+                  style={{ ...inputStyle, background: '#121212' }}
+                >
+                  <option value="" style={{ background: '#1a1a1a' }}>
+                    — 선택 —
+                  </option>
+                  {UNIT_TYPE_OPTIONS.map(o => (
+                    <option key={o} value={o} style={{ background: '#1a1a1a' }}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label style={{ display: 'grid', gap: 6 }}>
+                <span style={labelStyle}>가격 (원)</span>
+                <input
+                  value={unitPrice}
+                  onChange={e => setUnitPrice(e.target.value.replace(/[^0-9.]/g, ''))}
+                  inputMode="decimal"
+                  placeholder="예: 1250"
+                  style={inputStyle}
+                />
+              </label>
+            </div>
+          </div>
           <label style={{ display: 'grid', gap: 6 }}>
             <span style={labelStyle}>판매가 (원)</span>
             <input

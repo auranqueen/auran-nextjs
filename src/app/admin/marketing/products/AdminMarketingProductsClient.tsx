@@ -321,6 +321,7 @@ export default function AdminMarketingProductsClient() {
   const [appliedQ, setAppliedQ] = useState('')
   const [appliedBrandQ, setAppliedBrandQ] = useState('all')
   const [listFilter, setListFilter] = useState<'all' | 'no_price' | 'with_price'>('all')
+  const [onlyMissingUnitPrice, setOnlyMissingUnitPrice] = useState(false)
   const [brandOptionsFromDb, setBrandOptionsFromDb] = useState<string[] | null>(null)
   const [brandsWithId, setBrandsWithId] = useState<{ id: string; name: string }[]>([])
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
@@ -448,9 +449,16 @@ export default function AdminMarketingProductsClient() {
         : listFilter === 'no_price'
           ? isMissingPrice(r)
           : !isMissingPrice(r)
-      return matchQ && matchB && matchP
+      const missUnit =
+        r.unit_type == null ||
+        String(r.unit_type).trim() === '' ||
+        r.unit_price == null ||
+        !Number.isFinite(Number(r.unit_price)) ||
+        Number(r.unit_price) <= 0
+      const matchU = !onlyMissingUnitPrice || missUnit
+      return matchQ && matchB && matchP && matchU
     }),
-    [appliedBrandQ, appliedQ, listFilter, mappedRows]
+    [appliedBrandQ, appliedQ, listFilter, mappedRows, onlyMissingUnitPrice]
   )
 
   const toggleSelect = (id: string) => {
@@ -892,9 +900,31 @@ export default function AdminMarketingProductsClient() {
           <option value="no_price" style={{ background: '#1a1a1a' }}>가격 없음만</option>
           <option value="with_price" style={{ background: '#1a1a1a' }}>가격 있음만</option>
         </select>
-        {(q || brandQ !== 'all' || appliedQ || appliedBrandQ !== 'all' || listFilter !== 'all') && (
+        <label
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            fontSize: 12,
+            color: 'rgba(255,255,255,0.75)',
+            cursor: 'pointer',
+            userSelect: 'none',
+            padding: '8px 10px',
+            borderRadius: 10,
+            border: '1px solid rgba(255,255,255,0.12)',
+            background: onlyMissingUnitPrice ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.05)',
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={onlyMissingUnitPrice}
+            onChange={e => setOnlyMissingUnitPrice(e.target.checked)}
+          />
+          단위가격 미입력만
+        </label>
+        {(q || brandQ !== 'all' || appliedQ || appliedBrandQ !== 'all' || listFilter !== 'all' || onlyMissingUnitPrice) && (
           <button
-            onClick={() => { setQ(''); setBrandQ('all'); setAppliedQ(''); setAppliedBrandQ('all'); setListFilter('all') }}
+            onClick={() => { setQ(''); setBrandQ('all'); setAppliedQ(''); setAppliedBrandQ('all'); setListFilter('all'); setOnlyMissingUnitPrice(false) }}
             style={{
               background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
               borderRadius: 10, padding: '10px 14px', color: 'rgba(255,255,255,0.55)',

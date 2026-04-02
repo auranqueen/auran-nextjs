@@ -27,6 +27,8 @@ async function requireAdminApi() {
 const PATCHABLE = new Set([
   'name',
   'retail_price',
+  'unit_price',
+  'unit_type',
   'description',
   'brand_id',
   'thumb_img',
