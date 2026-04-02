@@ -1992,6 +1992,7 @@ AURAN이 내 피부 패턴을
                                         color: 'rgba(255,220,100,0.9)',
                                         animation: 'starTwinkle 2.4s ease-in-out infinite',
                                         animationDelay: '0s',
+                                        pointerEvents: 'none',
                                       }}
                                     >
                                       ✦
@@ -2014,6 +2015,7 @@ AURAN이 내 피부 패턴을
                                         color: 'rgba(255,220,100,0.9)',
                                         animation: 'starTwinkle 2.4s ease-in-out infinite',
                                         animationDelay: '0.6s',
+                                        pointerEvents: 'none',
                                       }}
                                     >
                                       ✦
@@ -2036,6 +2038,7 @@ AURAN이 내 피부 패턴을
                                         color: 'rgba(255,220,100,0.9)',
                                         animation: 'starTwinkle 2.4s ease-in-out infinite',
                                         animationDelay: '1.2s',
+                                        pointerEvents: 'none',
                                       }}
                                     >
                                       ✦
@@ -2058,6 +2061,7 @@ AURAN이 내 피부 패턴을
                                         color: 'rgba(255,220,100,0.9)',
                                         animation: 'starTwinkle 2.4s ease-in-out infinite',
                                         animationDelay: '1.8s',
+                                        pointerEvents: 'none',
                                       }}
                                     >
                                       ✦
