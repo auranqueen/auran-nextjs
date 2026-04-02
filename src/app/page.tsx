@@ -69,6 +69,8 @@ const FALLBACK_HISTORY = [
   { icon: '🌊', date: '01.20', brand: 'THALAC', name: '바스솔트' },
 ]
 
+const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+
 export default function CustomerHomePage() {
   const router = useRouter()
   const supabase = createClient()
@@ -133,6 +135,11 @@ export default function CustomerHomePage() {
   const [homeToast, setHomeToast] = useState('')
   const [monthCycleRows, setMonthCycleRows] = useState<any[]>([])
   const [calendarPickDate, setCalendarPickDate] = useState('')
+  const [skinCalTab, setSkinCalTab] = useState<'TODAY' | 'MONTHLY' | 'YEARLY'>('TODAY')
+  const [skinCalYM, setSkinCalYM] = useState(() => {
+    const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    return { y: s.getFullYear(), m: s.getMonth() }
+  })
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [homeEditMode, setHomeEditMode] = useState(false)
   const [homeEditSheet, setHomeEditSheet] = useState<{
@@ -610,18 +617,19 @@ export default function CustomerHomePage() {
       return
     }
     const run = async () => {
-      const now = new Date()
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10)
+      const seoul = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+      const y = seoul.getFullYear()
+      const yearStart = `${y}-01-01`
+      const yearEnd = `${y}-12-31`
       const { data } = await supabase
         .from('skin_cycle_analysis')
         .select('record_date,hormone_stage,checkin_condition')
         .eq('auth_id', myUserId)
-        .gte('record_date', monthStart)
-        .lte('record_date', monthEnd)
+        .gte('record_date', yearStart)
+        .lte('record_date', yearEnd)
         .order('record_date', { ascending: true })
       setMonthCycleRows(data || [])
-      const todayIso = new Date().toISOString().slice(0, 10)
+      const todayIso = `${seoul.getFullYear()}-${String(seoul.getMonth() + 1).padStart(2, '0')}-${String(seoul.getDate()).padStart(2, '0')}`
       setCalendarPickDate(todayIso)
     }
     void run()
@@ -704,7 +712,8 @@ export default function CustomerHomePage() {
       String((opt as any)?.linked_tag || (opt as any)?.connection_tag || (opt as any)?.tag_link || checkInTab)
     const hcRow = hormoneCycle || { track: hormoneTrack, cycle_length: 28, last_period_date: null }
     const calc = calcHormoneBriefing(hcRow)
-    const today = new Date().toISOString().slice(0, 10)
+    const seoulD = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    const today = `${seoulD.getFullYear()}-${String(seoulD.getMonth() + 1).padStart(2, '0')}-${String(seoulD.getDate()).padStart(2, '0')}`
     const ids = skinRecList.slice(0, 16).map((p: any) => String(p.id)).filter(Boolean)
     void upsertSkinCycleDaily(supabase, myUserId, {
       record_date: today,
@@ -768,18 +777,77 @@ export default function CustomerHomePage() {
     return m
   }, [monthCycleRows])
   const monthCalendarDays = useMemo(() => {
-    const now = new Date()
-    const y = now.getFullYear()
-    const m = now.getMonth()
-    const count = new Date(y, m + 1, 0).getDate()
-    const todayIso = now.toISOString().slice(0, 10)
+    const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    const todayIso = `${s.getFullYear()}-${String(s.getMonth() + 1).padStart(2, '0')}-${String(s.getDate()).padStart(2, '0')}`
+    const y = skinCalTab === 'TODAY' ? s.getFullYear() : skinCalYM.y
+    const m = skinCalTab === 'TODAY' ? s.getMonth() : skinCalYM.m
+    const count = new Date(Date.UTC(y, m + 1, 0)).getUTCDate()
     return Array.from({ length: count }).map((_, i) => {
-      const d = new Date(y, m, i + 1)
-      const iso = d.toISOString().slice(0, 10)
-      return { iso, day: i + 1, isToday: iso === todayIso }
+      const day = i + 1
+      const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+      return { iso, day, isToday: iso === todayIso }
     })
-  }, [])
-  const selectedCalendarDate = calendarPickDate || new Date().toISOString().slice(0, 10)
+  }, [skinCalTab, skinCalYM.y, skinCalYM.m])
+  const selectedCalendarDate = useMemo(() => {
+    if (calendarPickDate) return calendarPickDate
+    const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    return `${s.getFullYear()}-${String(s.getMonth() + 1).padStart(2, '0')}-${String(s.getDate()).padStart(2, '0')}`
+  }, [calendarPickDate])
+  const skinCalTitleEn = useMemo(() => {
+    const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    if (skinCalTab === 'TODAY') return `${MONTHS[s.getMonth()]} ${s.getFullYear()}`
+    if (skinCalTab === 'YEARLY') return `${skinCalYM.y}`
+    return `${MONTHS[skinCalYM.m]} ${skinCalYM.y}`
+  }, [skinCalTab, skinCalYM.y, skinCalYM.m])
+  const yearMonthAvgColor = useMemo(() => {
+    const out: Record<number, string> = {}
+    const y = skinCalYM.y
+    for (let mi = 0; mi < 12; mi++) {
+      const prefix = `${y}-${String(mi + 1).padStart(2, '0')}`
+      const rows = (monthCycleRows || []).filter((r: any) => String(r.record_date || '').startsWith(prefix))
+      if (rows.length === 0) {
+        out[mi] = 'rgba(255,255,255,0.12)'
+        continue
+      }
+      const cnt = { 열감: 0, 건조: 0, 트러블: 0, 좋음: 0, other: 0 }
+      rows.forEach((r: any) => {
+        const c = String(r.checkin_condition || '')
+        if (c.includes('열감')) cnt.열감++
+        else if (c.includes('건조')) cnt.건조++
+        else if (c.includes('트러블')) cnt.트러블++
+        else if (c.includes('좋음')) cnt.좋음++
+        else cnt.other++
+      })
+      const top = Object.entries(cnt).sort((a, b) => b[1] - a[1])[0][0]
+      out[mi] =
+        top === '열감'
+          ? '#e05555'
+          : top === '건조'
+            ? '#6ab0e0'
+            : top === '트러블'
+              ? '#E8945C'
+              : top === '좋음'
+                ? '#5cb88a'
+                : 'rgba(255,255,255,0.25)'
+    }
+    return out
+  }, [monthCycleRows, skinCalYM.y])
+  const monthlyGridSlots = useMemo(() => {
+    if (skinCalTab !== 'MONTHLY') return [] as ({ iso: string; day: number } | null)[]
+    const y = skinCalYM.y
+    const m = skinCalYM.m
+    const firstDow = new Date(`${y}-${String(m + 1).padStart(2, '0')}-01T12:00:00+09:00`).getDay()
+    const count = new Date(Date.UTC(y, m + 1, 0)).getUTCDate()
+    const slots: ({ iso: string; day: number } | null)[] = []
+    for (let i = 0; i < firstDow; i++) slots.push(null)
+    for (let d = 1; d <= count; d++) {
+      const iso = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      slots.push({ iso, day: d })
+    }
+    while (slots.length < 42) slots.push(null)
+    slots.length = 42
+    return slots
+  }, [skinCalTab, skinCalYM.y, skinCalYM.m])
   const selectedCycleRow = cycleRowByDate[selectedCalendarDate]
   const phaseColor = (phase: string) => {
     if (phase === '생리기') return '#D04558'
@@ -821,10 +889,13 @@ export default function CustomerHomePage() {
       setHomeToast('로그인 후 이용해 주세요')
       return false
     }
-    const today = new Date().toISOString().slice(0, 10)
+    const seoulP = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    const today = `${seoulP.getFullYear()}-${String(seoulP.getMonth() + 1).padStart(2, '0')}-${String(seoulP.getDate()).padStart(2, '0')}`
     const cycleLen = Math.max(21, Math.min(60, Number(hormoneCycle?.cycle_length || 28)))
-    const next = new Date(today)
-    next.setDate(next.getDate() + cycleLen)
+    const baseP = new Date(`${today}T12:00:00+09:00`)
+    const next = new Date(baseP)
+    next.setDate(baseP.getDate() + cycleLen)
+    const nextIso = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`
     await supabase
       .from('hormone_cycle')
       .upsert(
@@ -833,7 +904,7 @@ export default function CustomerHomePage() {
           track: hormoneTrack,
           last_period_date: today,
           period_started_at: today,
-          expected_period_date: next.toISOString().slice(0, 10),
+          expected_period_date: nextIso,
           cycle_length: cycleLen,
           updated_at: new Date().toISOString(),
         } as any,
@@ -848,7 +919,7 @@ export default function CustomerHomePage() {
       auth_id: uid,
       last_period_date: today,
       period_started_at: today,
-      expected_period_date: next.toISOString().slice(0, 10),
+      expected_period_date: nextIso,
       cycle_length: cycleLen,
       track: hormoneTrack,
     }))
@@ -1620,7 +1691,19 @@ export default function CustomerHomePage() {
 
       {showSkinCalendar ? (
         <div style={{ padding: '14px 16px 0' }}>
-          <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.78)', marginBottom: 8 }}>이번 달 피부 캘린더</div>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'baseline',
+              justifyContent: 'space-between',
+              gap: 10,
+              marginBottom: 8,
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.78)' }}>이번 달 피부 캘린더</div>
+            <div style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.45)', letterSpacing: '0.06em' }}>{skinCalTitleEn}</div>
+          </div>
           {(!myUserId || !hasHormoneCycleData) ? (
             <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 12, padding: '12px 14px' }}>
               <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 10 }}>생리 주기를 입력하면 피부 캘린더가 활성화돼요</div>
@@ -1643,35 +1726,171 @@ export default function CustomerHomePage() {
             </div>
           ) : (
             <>
-              <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
-                {monthCalendarDays.map((d) => {
-                  const row = cycleRowByDate[d.iso]
-                  const phase = isPeriTrack ? '' : getPhaseByDate(d.iso)
-                  const bg = isPeriTrack ? 'rgba(255,255,255,0.03)' : phaseColor(phase)
-                  const hasCheckin = Boolean(row?.checkin_condition)
+              <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                {(['TODAY', 'MONTHLY', 'YEARLY'] as const).map(tab => {
+                  const on = skinCalTab === tab
                   return (
                     <button
-                      key={d.iso}
+                      key={tab}
                       type="button"
-                      onClick={() => setCalendarPickDate(d.iso)}
+                      onClick={() => {
+                        if (tab === 'TODAY') {
+                          const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+                          setSkinCalYM({ y: s.getFullYear(), m: s.getMonth() })
+                        }
+                        setSkinCalTab(tab)
+                      }}
                       style={{
-                        minWidth: 42,
-                        borderRadius: 10,
-                        border: d.isToday ? `1px solid ${GOLD}` : hasCheckin ? '1px solid rgba(201,169,110,0.55)' : '1px solid rgba(255,255,255,0.12)',
-                        background: bg,
-                        color: '#fff',
-                        padding: '7px 0 6px',
+                        flex: 1,
+                        padding: '6px 4px',
+                        borderRadius: 8,
+                        border: 'none',
+                        background: on ? '#7B5EA7' : 'transparent',
+                        color: on ? '#fff' : 'rgba(255,255,255,0.4)',
+                        fontSize: 10,
+                        fontFamily: 'monospace',
+                        fontWeight: 400,
                         cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        opacity: isPeriTrack && !hasCheckin ? 0.45 : 1,
                       }}
                     >
-                      <div style={{ fontSize: 10, opacity: 0.85 }}>{d.day}</div>
-                      {d.isToday ? <div style={{ fontSize: 9, marginTop: 2 }}>오늘</div> : null}
+                      {tab}
                     </button>
                   )
                 })}
               </div>
+              {skinCalTab === 'TODAY' ? (
+                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+                  {monthCalendarDays.map((d) => {
+                    const row = cycleRowByDate[d.iso]
+                    const phase = isPeriTrack ? '' : getPhaseByDate(d.iso)
+                    const bg = isPeriTrack ? 'rgba(255,255,255,0.03)' : phaseColor(phase)
+                    const hasCheckin = Boolean(row?.checkin_condition)
+                    return (
+                      <button
+                        key={d.iso}
+                        type="button"
+                        onClick={() => setCalendarPickDate(d.iso)}
+                        style={{
+                          minWidth: 42,
+                          borderRadius: 10,
+                          border: d.isToday ? `1px solid ${GOLD}` : hasCheckin ? '1px solid rgba(201,169,110,0.55)' : '1px solid rgba(255,255,255,0.12)',
+                          background: bg,
+                          color: '#fff',
+                          padding: '7px 0 6px',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          opacity: isPeriTrack && !hasCheckin ? 0.45 : 1,
+                        }}
+                      >
+                        <div style={{ fontSize: 10, opacity: 0.85 }}>{d.day}</div>
+                        {d.isToday ? <div style={{ fontSize: 9, marginTop: 2 }}>오늘</div> : null}
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : null}
+              {skinCalTab === 'MONTHLY' ? (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(7, 1fr)',
+                    gap: 4,
+                  }}
+                >
+                  {monthlyGridSlots.map((slot, si) => {
+                    if (!slot) {
+                      return <div key={`e-${si}`} style={{ minHeight: 44 }} />
+                    }
+                    const { iso, day } = slot
+                    const row = cycleRowByDate[iso]
+                    const phase = isPeriTrack ? '' : getPhaseByDate(iso)
+                    const hormoneBg = isPeriTrack
+                      ? 'rgba(255,255,255,0.04)'
+                      : phase === '여포기'
+                        ? 'rgba(201,169,110,0.28)'
+                        : phase === '생리기' || phase === '황체기'
+                          ? 'rgba(168,130,220,0.22)'
+                          : phase === '배란기'
+                            ? 'rgba(216,198,78,0.16)'
+                            : 'rgba(255,255,255,0.04)'
+                    const cc = String(row?.checkin_condition || '')
+                    const dotC = !row?.checkin_condition
+                      ? 'rgba(255,255,255,0.25)'
+                      : cc.includes('열감')
+                        ? '#e05555'
+                        : cc.includes('건조')
+                          ? '#6ab0e0'
+                          : cc.includes('트러블')
+                            ? '#E8945C'
+                            : cc.includes('좋음')
+                              ? '#5cb88a'
+                              : 'rgba(255,255,255,0.25)'
+                    const periodMark = !isPeriTrack && !isPregnancyTrack && phase === '생리기'
+                    const sel = calendarPickDate === iso
+                    return (
+                      <button
+                        key={iso}
+                        type="button"
+                        onClick={() => setCalendarPickDate(iso)}
+                        style={{
+                          minHeight: 44,
+                          borderRadius: 8,
+                          border: sel ? `1px solid ${GOLD}` : '1px solid rgba(255,255,255,0.1)',
+                          background: hormoneBg,
+                          color: '#fff',
+                          padding: '4px 2px 5px',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'flex-start',
+                          gap: 2,
+                        }}
+                      >
+                        <div style={{ fontSize: 9, opacity: 0.9 }}>{day}</div>
+                        {periodMark ? <span style={{ fontSize: 8, lineHeight: 1 }}>💜</span> : <span style={{ fontSize: 8, height: 10 }} />}
+                        <span
+                          style={{
+                            width: 6,
+                            height: 6,
+                            borderRadius: 999,
+                            background: dotC,
+                            marginTop: 1,
+                          }}
+                        />
+                      </button>
+                    )
+                  })}
+                </div>
+              ) : null}
+              {skinCalTab === 'YEARLY' ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                  {MONTHS.map((ml, mi) => (
+                    <button
+                      key={ml}
+                      type="button"
+                      onClick={() => {
+                        setSkinCalYM({ y: skinCalYM.y, m: mi })
+                        setSkinCalTab('MONTHLY')
+                      }}
+                      style={{
+                        padding: '12px 6px',
+                        borderRadius: 10,
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: yearMonthAvgColor[mi],
+                        color: 'rgba(255,255,255,0.9)',
+                        fontSize: 10,
+                        fontFamily: 'monospace',
+                        fontWeight: 400,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {ml}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
               <div style={{ marginTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.82)' }}>
                 {isPregnancyTrack
                   ? `${pregnancyWeekText} - 순한 성분 중심 케어를 추천해요`
