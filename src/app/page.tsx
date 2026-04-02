@@ -2475,6 +2475,7 @@ AURAN이 내 피부 패턴을
                       maxWidth: 390,
                       margin: '0 auto',
                       zIndex: 171,
+                      pointerEvents: 'auto',
                       background: '#141018',
                       borderTopLeftRadius: 16,
                       borderTopRightRadius: 16,
@@ -2515,6 +2516,7 @@ AURAN이 내 피부 패턴을
                               fontWeight: 400,
                               cursor: 'pointer',
                               fontFamily: 'inherit',
+                              pointerEvents: 'auto',
                             }}
                           >
                             {lab}
@@ -2581,6 +2583,7 @@ AURAN이 내 피부 패턴을
                             fontWeight: 400,
                             cursor: 'pointer',
                             fontFamily: 'inherit',
+                            pointerEvents: 'auto',
                           }}
                         >
                           생리 시작
@@ -2618,6 +2621,7 @@ AURAN이 내 피부 패턴을
                             fontWeight: 400,
                             cursor: 'pointer',
                             fontFamily: 'inherit',
+                            pointerEvents: 'auto',
                           }}
                         >
                           생리 끝
@@ -2724,6 +2728,7 @@ AURAN이 내 피부 패턴을
                         fontWeight: 400,
                         cursor: 'pointer',
                         fontFamily: 'inherit',
+                        pointerEvents: 'auto',
                       }}
                     >
                       저장
