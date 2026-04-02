@@ -1083,61 +1083,6 @@ export default function CustomerHomePage() {
         </>
       ) : null}
 
-      {/* ── 인사말 ── */}
-      <div style={{
-        padding: '14px 20px 0',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      }}>
-        <div>
-          <div style={{ fontSize: '10px', fontFamily: 'monospace', color: TEXT_MUTED, marginBottom: '4px' }}>
-            {today}
-          </div>
-          <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
-            안녕하세요, <span style={{ color: GOLD }}>{userName}님</span> 👋
-          </div>
-          <div style={{ fontSize: '11px', color: TEXT_MUTED }}>
-            오늘 루틴 완료 75% · 수분 6/8잔 💧
-          </div>
-        </div>
-        <div style={{
-          width: '40px', height: '40px', borderRadius: '50%',
-          background: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '20px',
-        }}>👩</div>
-      </div>
-
-      {/* ── TODAY'S SKIN ── */}
-      <div
-        onClick={() => router.push('/skin-analysis')}
-        style={{
-          margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER,
-          borderRadius: '16px', padding: '12px 16px',
-          display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
-        }}
-      >
-        <span style={{ fontSize: '30px' }}>💧</span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: '3px' }}>
-            TODAY&apos;S SKIN
-          </div>
-          <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>건성 · 민감 복합</div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {[{ label: '수분', pct: 62, color: '#6ab0e0' }, { label: '유분', pct: 38, color: GOLD }].map((b, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.label}</span>
-                <div style={{ width: '44px', height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
-                  <div style={{ height: '100%', width: `${b.pct}%`, background: b.color, borderRadius: '2px' }} />
-                </div>
-                <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.pct}%</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        <span style={{ fontSize: '13px', color: TEXT_MUTED }}>›</span>
-      </div>
-
       {/* ── 호르몬 브리핑 · 오늘 체크인 · 케어 액션 (TODAY&apos;S SKIN 바로 아래) ── */}
       <div style={{ padding: '12px 16px 0' }}>
         <div
@@ -1446,6 +1391,61 @@ export default function CustomerHomePage() {
             {periodQuietNotice ? <span style={{ fontSize: 11, color: 'rgba(255,220,180,0.9)' }}>{periodQuietNotice}</span> : null}
           </div>
         ) : null}
+      </div>
+
+      {/* ── 인사말 ── */}
+      <div style={{
+        padding: '14px 20px 0',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <div>
+          <div style={{ fontSize: '10px', fontFamily: 'monospace', color: TEXT_MUTED, marginBottom: '4px' }}>
+            {today}
+          </div>
+          <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
+            안녕하세요, <span style={{ color: GOLD }}>{userName}님</span> 👋
+          </div>
+          <div style={{ fontSize: '11px', color: TEXT_MUTED }}>
+            오늘 루틴 완료 75% · 수분 6/8잔 💧
+          </div>
+        </div>
+        <div style={{
+          width: '40px', height: '40px', borderRadius: '50%',
+          background: 'rgba(255,255,255,0.06)',
+          border: '1px solid rgba(255,255,255,0.1)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '20px',
+        }}>👩</div>
+      </div>
+
+      {/* ── TODAY'S SKIN ── */}
+      <div
+        onClick={() => router.push('/skin-analysis')}
+        style={{
+          margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER,
+          borderRadius: '16px', padding: '12px 16px',
+          display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
+        }}
+      >
+        <span style={{ fontSize: '30px' }}>💧</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: '3px' }}>
+            TODAY&apos;S SKIN
+          </div>
+          <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>건성 · 민감 복합</div>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[{ label: '수분', pct: 62, color: '#6ab0e0' }, { label: '유분', pct: 38, color: GOLD }].map((b, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.label}</span>
+                <div style={{ width: '44px', height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
+                  <div style={{ height: '100%', width: `${b.pct}%`, background: b.color, borderRadius: '2px' }} />
+                </div>
+                <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.pct}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <span style={{ fontSize: '13px', color: TEXT_MUTED }}>›</span>
       </div>
 
       {/* ── 내 피부 맞춤 추천 ── */}
@@ -1862,6 +1862,544 @@ export default function CustomerHomePage() {
         ) : null}
       </div>
 
+      {/* ── 피부 고민별 ── */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>피부 고민별 솔루션</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 ›</span>
+        </div>
+        {categoryBanners.length > 0 ? (
+          <div
+            onClick={() => {
+              const b = categoryBanners[selectedConcern % categoryBanners.length]
+              if (b?.banner_link) router.push(String(b.banner_link))
+            }}
+            style={{
+              marginBottom: 10,
+              borderRadius: 14,
+              overflow: 'hidden',
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.03)',
+              cursor: categoryBanners[selectedConcern % categoryBanners.length]?.banner_link ? 'pointer' : 'default',
+            }}
+          >
+            {categoryBanners[selectedConcern % categoryBanners.length]?.banner_image_url ? (
+              <img
+                src={String(categoryBanners[selectedConcern % categoryBanners.length].banner_image_url)}
+                alt=""
+                style={{ width: '100%', height: 98, objectFit: 'cover' }}
+              />
+            ) : null}
+            {categoryBanners[selectedConcern % categoryBanners.length]?.banner_text ? (
+              <div style={{ padding: '9px 10px', fontSize: 12, color: '#fff' }}>
+                {String(categoryBanners[selectedConcern % categoryBanners.length].banner_text)}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
+        {loading ? Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} style={{ minWidth: '58px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, height: '200px', animation: 'pulse 1.2s ease-in-out infinite', flexShrink: 0 }} />
+        )) : concernList.map((c: any, i: number) => (
+          <div
+            key={i}
+            onClick={() => setSelectedConcern(i)}
+            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', minWidth: '58px', cursor: 'pointer' }}
+          >
+            <div style={{
+              width: '52px', height: '52px', borderRadius: '16px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '22px', flexShrink: 0,
+              background: i === selectedConcern ? 'rgba(201,169,110,0.12)' : CARD_BG,
+              border: i === selectedConcern ? '1px solid rgba(201,169,110,0.3)' : CARD_BORDER,
+            }}>{c.icon || '💧'}</div>
+            <span style={{
+              fontSize: '9px', fontWeight: 300, textAlign: 'center', whiteSpace: 'nowrap',
+              color: i === selectedConcern ? GOLD : TEXT_MUTED,
+            }}>{c.name}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* ── BEST 랭킹 ── */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>
+            🏆 {concernList[selectedConcern]?.name} BEST
+          </span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>더보기 ›</span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
+        {productList.slice(0, 4).map((p: any, i: number) => {
+          const rankColors = ['#C9A96E', 'rgba(180,180,180,0.8)', 'rgba(180,120,60,0.8)']
+          return (
+            <div key={i} style={{
+              minWidth: '150px', background: CARD_BG, border: CARD_BORDER,
+              borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0,
+            }}>
+              <div style={{
+                width: 120,
+                height: 120,
+                margin: '0 auto',
+                overflow: 'hidden',
+                borderRadius: 12,
+                flexShrink: 0,
+                background: 'linear-gradient(135deg,#1a1510,#2a2015)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '38px', position: 'relative',
+              }}>
+                {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (p.icon || '🧴')}
+                <div style={{
+                  position: 'absolute', top: '7px', left: '7px',
+                  width: '22px', height: '22px', borderRadius: '50%',
+                  background: rankColors[i] || 'rgba(255,255,255,0.1)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '11px', fontWeight: 400,
+                  color: i === 0 ? BG : '#fff',
+                }}>{i + 1}</div>
+                {i === 0 && (
+                  <div style={{
+                    position: 'absolute', top: '7px', right: '7px',
+                    background: 'rgba(201,169,110,0.85)', color: BG,
+                    fontSize: '8px', padding: '2px 5px', borderRadius: '4px',
+                  }}>AI추천</div>
+                )}
+              </div>
+              <div style={{ padding: '9px 11px' }}>
+                <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{p.brand}</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '5px' }}>{p.name}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 400 }}>{(p.retail_price?.toLocaleString() ?? p.price?.toLocaleString())}원</span>
+                  <span style={{ fontSize: '14px', cursor: 'pointer' }}>🤍</span>
+                </div>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <div style={{ flex: 1, padding: '7px 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '9px', color: 'rgba(255,255,255,0.55)', textAlign: 'center', cursor: 'pointer' }}>🛒 담기</div>
+                  <div style={{ flex: 1, padding: '7px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '9px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>🎁 선물</div>
+                  <div style={{ flex: 1.3, padding: '7px 0', background: GOLD, borderRadius: '8px', fontSize: '9px', fontWeight: 400, color: BG, textAlign: 'center', cursor: 'pointer' }}>바로구매</div>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+
+      {/* ── 타임세일·공구 ── */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>⚡ 타임세일 · 공구</span>
+          <span
+            onClick={() => router.push(saleTab === 'sale' ? '/time-sales' : '/group-buys')}
+            style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}
+          >
+            더보기 →
+          </span>
+        </div>
+        {/* 탭 */}
+        <div style={{ display: 'flex', border: CARD_BORDER, borderRadius: '12px', overflow: 'hidden', marginBottom: '12px' }}>
+          {(['sale', 'group'] as const).map((tab) => (
+            <div
+              key={tab}
+              onClick={() => setSaleTab(tab)}
+              style={{
+                flex: 1, padding: '9px 0', textAlign: 'center', fontSize: '12px',
+                fontWeight: saleTab === tab ? 400 : 300,
+                background: saleTab === tab
+                  ? (tab === 'sale' ? 'rgba(200,60,40,0.15)' : 'rgba(60,80,200,0.15)')
+                  : 'transparent',
+                color: saleTab === tab
+                  ? (tab === 'sale' ? '#E07060' : 'rgba(120,160,255,0.9)')
+                  : TEXT_MUTED,
+                cursor: 'pointer',
+              }}
+            >
+              {tab === 'sale' ? '🔥 타임세일' : '👥 공동구매'}
+            </div>
+          ))}
+        </div>
+
+        {/* 타임세일 */}
+        {saleTab === 'sale' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {saleList.map((item: any, i: number) => (
+              <div key={i} onClick={() => { logProductNav({ ...(item.product || {}), id: item.id, retail_price: item.product?.retail_price, sale_price: item.product?.sale_price, is_timesale: item.product?.is_timesale, categories: item.product?.categories }); router.push(`/products/${item.id}`) }} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
+                  <div style={{
+                    width: '120px',
+                    height: '120px',
+                    overflow: 'hidden',
+                    borderRadius: 12,
+                    background: 'linear-gradient(135deg,#1a1510,#2a2015)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '28px', flexShrink: 0, position: 'relative',
+                  }}>
+                    {(item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (item.icon || '🧴'))}
+                    <div
+                      onClick={e => {
+                        if (!showHomeEditChrome) return
+                        e.stopPropagation()
+                        const raw = item.timesale_ends_at
+                        const iso =
+                          raw && !Number.isNaN(new Date(raw).getTime())
+                            ? new Date(raw).toISOString().slice(0, 16)
+                            : new Date(Date.now() + 86400000).toISOString().slice(0, 16)
+                        setHomeEditSheet({
+                          kind: 'timesale',
+                          id: String(item.id),
+                          label: '타임세일 (할인율·마감)',
+                          draft: String(item.disc ?? 0),
+                          draft2: iso,
+                          draftNum: i,
+                          extra: item,
+                        })
+                      }}
+                      style={{
+                        position: 'absolute', top: '-4px', right: '-4px',
+                        background: '#E04030', borderRadius: '20px', padding: '2px 6px',
+                        fontSize: '9px', color: '#fff', border: `1.5px solid ${BG}`,
+                        cursor: showHomeEditChrome ? 'pointer' : undefined,
+                        outline: showHomeEditChrome ? '1px dashed rgba(255,255,255,0.5)' : undefined,
+                      }}
+                    >-{item.disc}%</div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>
+                      {item.brand || item.product?.brand}
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>
+                      {item.product?.name}
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '5px' }}>
+                      <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
+                        {(item.orig ?? item.original_price)?.toLocaleString()}원
+                      </span>
+                      <span style={{ fontSize: '15px', fontWeight: 400, color: '#E07060' }}>
+                        {item.product?.retail_price?.toLocaleString()}원
+                      </span>
+                    </div>
+                    {/* 개별 타이머 */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '9px', color: TEXT_DIM }}>⏱ 마감</span>
+                      {[timers[i]?.h, timers[i]?.m, timers[i]?.s].map((v, ti) => (
+                        <span key={ti} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          {ti > 0 && <span style={{ color: 'rgba(220,60,40,0.4)', fontSize: '11px' }}>:</span>}
+                          <span style={{
+                            background: 'rgba(220,60,40,0.15)',
+                            border: '1px solid rgba(220,60,40,0.28)',
+                            borderRadius: '5px', padding: '2px 6px',
+                            fontSize: '11px', color: '#E07060', fontFamily: 'monospace',
+                          }}>{pad(v || 0)}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
+                  <div style={{ flex: 1, padding: '8px 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.6)', textAlign: 'center', cursor: 'pointer' }}>🛒 담기</div>
+                  <div style={{ flex: 1, padding: '8px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>🎁 선물</div>
+                  <div onClick={async (e) => {
+                    e.stopPropagation()
+                    logProductNav({ ...(item.product || {}), id: item.id, retail_price: item.product?.retail_price })
+                    const { data: { session } } = await supabase.auth.getSession()
+                    if (!session) {
+                      router.push(`/products/${item.id}`)
+                      return
+                    }
+                    router.push(`/products/${item.id}`)
+                  }} style={{ flex: 1.3, padding: '8px 0', background: '#C04030', borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: '#fff', textAlign: 'center', cursor: 'pointer' }}>지금 구매</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* 공동구매 */}
+        {saleTab === 'group' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {groupBuyList.slice(0, 3).map((item: any, i: number) => {
+              const current = Number(item.current_count ?? item.joined_count ?? item.participants ?? 127)
+              const target = Number(item.target_count ?? item.goal_count ?? item.max_participants ?? 200)
+              const pct = target > 0 ? Math.min(100, Math.max(0, Math.round((current / target) * 100))) : 0
+              const remaining = Math.max(0, target - current)
+              const origPrice = item.orig ?? item.original_price ?? item.product?.retail_price
+              const salePrice = item.sale ?? item.sale_price ?? item.product?.retail_price
+              const discPct = Number(item.disc ?? item.discount_rate ?? (origPrice && salePrice ? Math.round(((Number(origPrice) - Number(salePrice)) / Number(origPrice)) * 100) : 0))
+              return (
+              <div key={i} onClick={() => { const pid = item.product_id || item.id; logProductNav({ ...(item.product || {}), id: pid }); router.push(`/products/${pid}`) }} style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
+                <div style={{ background: 'linear-gradient(135deg,rgba(60,80,200,0.15),rgba(80,120,240,0.1))', padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '10px', color: 'rgba(120,160,255,0.9)', fontFamily: 'monospace' }}>👥 공동구매 · </span>
+                  <span style={{ fontSize: '10px', color: TEXT_MUTED }}>{current}/{target}명</span>
+                </div>
+                <div style={{ height: '3px', background: 'rgba(255,255,255,0.08)' }}>
+                  <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg,#4060C0,#8090E0)' }} />
+                </div>
+                <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
+                  <div style={{ width: '120px', height: '120px', borderRadius: 12, overflow: 'hidden', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', flexShrink: 0 }}>
+                    {(item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (item.icon || '🧴'))}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.product?.brand_name || item.brand || item.product?.brand}</div>
+                    <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>{item.product?.name}</div>
+                    <div style={{ fontSize: '10px', color: 'rgba(120,160,255,0.8)', marginBottom: '4px' }}>🎯 {target}명 달성 시 발송 · {remaining}명 더 필요</div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
+                        {(origPrice as any)?.toLocaleString?.() ?? origPrice}원
+                      </span>
+                      <span style={{ fontSize: '15px', color: 'rgba(120,160,255,0.9)' }}>{(salePrice as any)?.toLocaleString?.() ?? salePrice}원 {discPct ? `(-${discPct}%)` : ''}</span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
+                  <div onClick={(e) => {
+                    e.stopPropagation()
+                    const pid = item.product_id || item.id
+                    logProductNav({ ...(item.product || {}), id: pid })
+                    router.push(`/products/${pid}`)
+                  }} style={{ flex: 2, padding: '9px 0', background: 'linear-gradient(135deg,#4060C0,#6080E0)', borderRadius: '8px', fontSize: '11px', color: '#fff', textAlign: 'center', cursor: 'pointer' }}>👥 공구 참여하기</div>
+                  <div style={{ flex: 1, padding: '9px 0', background: 'rgba(80,120,220,0.1)', border: '1px solid rgba(80,120,220,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(120,160,255,0.8)', textAlign: 'center', cursor: 'pointer' }}>📤 친구 초대</div>
+                </div>
+              </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── 포토·영상 리뷰 ── */}
+      {/* TODO: reviews 테이블 photo_url, video_url 있는 것만 조회 */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>📸 포토·영상 리뷰</span>
+          <span onClick={() => router.push('/reviews')} style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>127개 ›</span>
+        </div>
+        {/* 일촌 추천 스트립 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 12px', background: CARD_BG, border: CARD_BORDER, borderRadius: '10px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex' }}>
+            {['🌸','🌺','💜'].map((a, i) => (
+              <div key={i} style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', border: `1.5px solid ${BG}`, marginLeft: i > 0 ? '-6px' : '0' }}>{a}</div>
+            ))}
+          </div>
+          <span style={{ fontSize: '10px', color: TEXT_MUTED, flex: 1 }}>일촌 <span style={{ color: GOLD }}>소미님 외 2명</span>이 포토 리뷰를 남겼어요</span>
+          <span onClick={() => router.push('/reviews')} style={{ fontSize: '10px', color: GOLD, cursor: 'pointer' }}>보기</span>
+        </div>
+        {/* 포토 그리드 */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '3px', borderRadius: '14px', overflow: 'hidden' }}>
+          {[
+            { emoji: '🧴', bg: 'linear-gradient(135deg,#2a1a30,#1a1020)', badge: '일촌', isVid: false },
+            { emoji: '✨', bg: 'linear-gradient(135deg,#0a1a2a,#1a2a3a)', badge: '영상', isVid: true, dur: '0:24' },
+            { emoji: '🌿', bg: 'linear-gradient(135deg,#0a1a0a,#1a2a1a)', badge: '', isVid: false },
+            { emoji: '💧', bg: 'linear-gradient(135deg,#1a1020,#2a1830)', badge: '', isVid: false },
+            { emoji: '🎬', bg: 'linear-gradient(135deg,#1a0a2a,#2a1540)', badge: '영상', isVid: true, dur: '0:18' },
+            { emoji: '+122', bg: 'rgba(255,255,255,0.04)', badge: '', isVid: false, isMore: true },
+          ].map((item: any, i: number) => (
+            <div key={i} onClick={() => router.push('/reviews')} style={{ aspectRatio: '1', background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: item.isMore ? '14px' : '28px', position: 'relative', cursor: 'pointer', flexDirection: item.isMore ? 'column' : 'row', gap: item.isMore ? '2px' : '0' }}>
+              {item.isMore ? (
+                <>
+                  <span style={{ fontSize: '16px', color: 'rgba(255,255,255,0.5)' }}>{item.emoji}</span>
+                  <span style={{ fontSize: '9px', color: TEXT_DIM }}>더보기</span>
+                </>
+              ) : (
+                <>
+                  {item.emoji}
+                  {item.badge === '일촌' && <div style={{ position: 'absolute', top: '5px', left: '5px', background: 'rgba(201,169,110,0.85)', borderRadius: '4px', padding: '1px 5px', fontSize: '7px', color: BG }}>일촌</div>}
+                  {item.isVid && (
+                    <>
+                      <div style={{ position: 'absolute', top: '5px', left: '5px', background: 'rgba(60,120,220,0.9)', borderRadius: '4px', padding: '1px 5px', fontSize: '7px', color: '#fff' }}>영상</div>
+                      <div style={{ position: 'absolute', bottom: '5px', right: '5px', background: 'rgba(0,0,0,0.6)', borderRadius: '3px', padding: '1px 4px', fontSize: '8px', color: '#fff', fontFamily: 'monospace' }}>{item.dur}</div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── 롤링 리뷰 ── */}
+      <div style={{ margin: '16px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '12px 14px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <span style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1.5px', color: TEXT_DIM }}>⭐ 실시간 리뷰</span>
+          <span onClick={() => router.push('/reviews')} style={{ fontSize: '10px', color: GOLD, cursor: 'pointer' }}>전체보기 →</span>
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <span style={{ fontSize: '20px' }}>🧴</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '11px', marginBottom: '3px' }}>⭐⭐⭐⭐⭐</div>
+            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7 }}>
+              &quot;환절기에 이 크림 덕분에 피부 안 땅겼어요. 민감한 피부에도 자극 없이 쓸 수 있어요 💧&quot;
+            </div>
+            <div style={{ fontSize: '9px', color: TEXT_DIM, marginTop: '3px' }}>건성피부 · 유미님 · CIVASAN MESS CREAM</div>
+            <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px', gap: '6px' }}>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: '3px',
+                padding: '3px 8px', background: 'rgba(255,255,255,0.04)',
+                border: CARD_BORDER, borderRadius: '6px',
+                fontSize: '10px', color: TEXT_MUTED, cursor: 'pointer',
+              }}>👍 도움돼요 24</div>
+              <span style={{ fontSize: '9px', color: 'rgba(201,169,110,0.6)' }}>+5P 적립</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── 살롱 ── */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>📍 내 주변 관리샵</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>지도보기 ›</span>
+        </div>
+        <div style={{ display: 'flex', gap: '7px', overflowX: 'auto', paddingBottom: '10px', scrollbarWidth: 'none' }}>
+          {['📍 거리순', '🔥 인기순', '⭐ 리뷰순', '💆 페이셜', '🌿 바디', '✨ 클리닉'].map((f, i) => (
+            <div key={i} style={{
+              padding: '5px 12px', whiteSpace: 'nowrap', cursor: 'pointer', fontSize: '10px',
+              background: i === 0 ? 'rgba(201,169,110,0.15)' : CARD_BG,
+              border: i === 0 ? '1px solid rgba(201,169,110,0.4)' : CARD_BORDER,
+              borderRadius: '20px',
+              color: i === 0 ? GOLD : TEXT_MUTED,
+            }}>{f}</div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {salonList.map((salon: any, i: number) => (
+            <div key={i} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '16px', padding: '13px 14px', display: 'flex', gap: '12px', alignItems: 'center', cursor: 'pointer' }}>
+              <div style={{ width: '50px', height: '50px', borderRadius: '12px', background: 'linear-gradient(135deg,#1a1520,#2a1a30)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>💆</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: '13px', fontWeight: 400, marginBottom: '2px' }}>{salon.name}</div>
+                <div style={{ fontSize: '10px', color: TEXT_MUTED, marginBottom: '4px' }}>
+                  {salon.open && (
+                    <span style={{ display: 'inline-block', width: '5px', height: '5px', borderRadius: '50%', background: '#3ab870', marginRight: '4px' }} />
+                  )}
+                  ⭐ {salon.rating} · 리뷰 {salon.reviews} · {salon.area}
+                </div>
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
+                  {(salon.tags || []).map((tag: string, ti: number) => (
+                    <span key={ti} style={{ fontSize: '8px', background: 'rgba(255,255,255,0.05)', color: TEXT_MUTED, borderRadius: '5px', padding: '2px 6px' }}>{tag}</span>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px', flexShrink: 0 }}>
+                <div style={{
+                  fontSize: '9px', padding: '3px 8px', borderRadius: '10px',
+                  background: salon.open ? 'rgba(74,200,120,0.15)' : 'rgba(200,80,80,0.1)',
+                  color: salon.open ? '#3ab870' : '#c05050',
+                }}>{salon.open ? '영업중' : '영업종료'}</div>
+                <div style={{ fontSize: '9px', color: TEXT_DIM }}>{salon.dist}</div>
+                <div style={{ padding: '6px 10px', background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: '8px', fontSize: '10px', color: GOLD, cursor: 'pointer' }}>예약하기</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── 신제품 ── */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>🆕 새로 나왔어요</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 ›</span>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
+        {newList.map((item: any, i: number) => (
+          <div key={i} onClick={() => { logProductNav(item); router.push(`/products/${item.id}`) }} style={{ minWidth: '130px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
+            <div style={{
+              width: 120,
+              height: 120,
+              margin: '0 auto',
+              overflow: 'hidden',
+              borderRadius: 12,
+              flexShrink: 0,
+              background: 'linear-gradient(135deg,#1a0a2a,#2a1540)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '32px', position: 'relative'
+            }}>
+              {(item.thumb_img ? <img src={item.thumb_img} alt={item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (item.icon || '💜'))}
+              <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'linear-gradient(90deg,#6040E0,#A040E0)', borderRadius: '5px', padding: '2px 6px', fontSize: '8px', color: '#fff' }}>NEW</div>
+            </div>
+            <div style={{ padding: '9px 10px' }}>
+              <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.brand}</div>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.4, marginBottom: '4px' }}>{item.name}</div>
+              <div style={{ fontSize: '12px', fontWeight: 400 }}>{(item.retail_price?.toLocaleString() ?? item.price?.toLocaleString())}원</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── 브랜드 원형 그리드 ── */}
+      <div style={{ padding: '16px 16px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>🏷 브랜드별 보기</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 브랜드 ›</span>
+        </div>
+        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '12px', scrollbarWidth: 'none' }}>
+          {['전체', '🇪🇺 유럽', '🇰🇷 국내', '🇯🇵 일본', '클리닉', '바디'].map((tab, i) => (
+            <div key={i} style={{
+              padding: '4px 12px', whiteSpace: 'nowrap', cursor: 'pointer', fontSize: '10px',
+              background: i === 0 ? GOLD : CARD_BG,
+              border: i === 0 ? 'none' : CARD_BORDER,
+              borderRadius: '20px',
+              color: i === 0 ? BG : TEXT_MUTED,
+              fontWeight: i === 0 ? 400 : 300,
+            }}>{tab}</div>
+          ))}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px' }}>
+          {brandList.map((brand: any, i: number) => {
+            const raw = `${brand.label || ''} ${brand.name || ''}`.toUpperCase()
+            const genericBg = !brand.bg || brand.bg === 'rgba(201,169,110,0.1)'
+            let circleBg = brand.bg || 'rgba(201,169,110,0.1)'
+            let circleBorder = brand.border || 'rgba(201,169,110,0.3)'
+            let circleColor = brand.color || GOLD
+            if (genericBg) {
+              if (/GERNETIC|제네틱|제르/.test(raw)) { circleBg = 'rgba(28,52,38,0.55)'; circleBorder = 'rgba(56,110,76,0.5)'; circleColor = '#6fc49a' }
+              else if (/CIVASAN|시바산|프리미엄/.test(raw)) { circleBg = 'rgba(22,48,52,0.55)'; circleBorder = 'rgba(44,100,108,0.45)'; circleColor = '#5eb3bc' }
+              else if (/ANNA|안나|로자/.test(raw)) { circleBg = 'rgba(62,28,38,0.5)'; circleBorder = 'rgba(120,48,68,0.45)'; circleColor = '#c97d8f' }
+              else if (/ETR|ESTER|에뜨|에스터|레벨/.test(raw)) { circleBg = 'rgba(22,32,56,0.55)'; circleBorder = 'rgba(44,58,108,0.5)'; circleColor = '#7a90d4' }
+              else if (/SELVERT|셀버트|더말/.test(raw)) { circleBg = 'rgba(48,44,22,0.55)'; circleBorder = 'rgba(110,98,42,0.45)'; circleColor = '#b8a45a' }
+              else if (/SANTE|상떼/.test(raw)) { circleBg = 'rgba(58,36,22,0.5)'; circleBorder = 'rgba(130,72,42,0.45)'; circleColor = '#c4865c' }
+              else if (/보떼|떼덤|BEAUTE|BIOD/.test(raw)) { circleBg = 'rgba(48,28,52,0.5)'; circleBorder = 'rgba(88,44,98,0.45)'; circleColor = '#b892c4' }
+              else if (/SHOPBELLE|샵벨/.test(raw)) { circleBg = 'rgba(52,32,58,0.48)'; circleBorder = 'rgba(95,58,108,0.42)'; circleColor = '#c999d4' }
+              else if (/THALAC|탈락/.test(raw)) { circleBg = 'rgba(22,48,58,0.5)'; circleBorder = 'rgba(42,88,108,0.45)'; circleColor = '#5eb0c9' }
+              else if (/SOTHYS|소티스/.test(raw)) { circleBg = 'rgba(58,38,18,0.52)'; circleBorder = 'rgba(130,82,36,0.45)'; circleColor = '#d4a060' }
+              else if (/PHYTO|피토/.test(raw)) { circleBg = 'rgba(32,48,28,0.5)'; circleBorder = 'rgba(58,88,48,0.42)'; circleColor = '#8fbc7a' }
+            }
+            return (
+            <div key={i} onClick={() => router.push(`/brands/${brand.id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+              <div style={{
+                width: '58px', height: '58px', borderRadius: '50%',
+                background: circleBg,
+                border: `1.5px solid ${circleBorder}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '10px', fontWeight: 400,
+                color: circleColor,
+                fontFamily: 'monospace', textAlign: 'center', lineHeight: 1.3,
+              }}>
+                {brand.name?.slice(0, 4)}<br />{brand.name?.slice(4, 8)}
+              </div>
+              <span style={{ fontSize: '9px', color: TEXT_MUTED, textAlign: 'center' }}>
+                {brand.label || brand.name}
+              </span>
+            </div>
+            )
+          })}
+          {/* 더보기 */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+            <div style={{
+              width: '58px', height: '58px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1.5px dashed rgba(255,255,255,0.15)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexDirection: 'column', gap: '2px',
+            }}>
+              <span style={{ fontSize: '16px', color: 'rgba(255,255,255,0.4)' }}>+</span>
+              <span style={{ fontSize: '8px', color: TEXT_DIM }}>23개</span>
+            </div>
+            <span style={{ fontSize: '9px', color: TEXT_DIM }}>전체보기</span>
+          </div>
+        </div>
+      </div>
+
       {/* ── 4대 기능 그리드 ── */}
       <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
         {[
@@ -2080,544 +2618,6 @@ export default function CustomerHomePage() {
             </div>
           </div>
         ))}
-      </div>
-
-      {/* ── 피부 고민별 ── */}
-      <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>피부 고민별 솔루션</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 ›</span>
-        </div>
-        {categoryBanners.length > 0 ? (
-          <div
-            onClick={() => {
-              const b = categoryBanners[selectedConcern % categoryBanners.length]
-              if (b?.banner_link) router.push(String(b.banner_link))
-            }}
-            style={{
-              marginBottom: 10,
-              borderRadius: 14,
-              overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.03)',
-              cursor: categoryBanners[selectedConcern % categoryBanners.length]?.banner_link ? 'pointer' : 'default',
-            }}
-          >
-            {categoryBanners[selectedConcern % categoryBanners.length]?.banner_image_url ? (
-              <img
-                src={String(categoryBanners[selectedConcern % categoryBanners.length].banner_image_url)}
-                alt=""
-                style={{ width: '100%', height: 98, objectFit: 'cover' }}
-              />
-            ) : null}
-            {categoryBanners[selectedConcern % categoryBanners.length]?.banner_text ? (
-              <div style={{ padding: '9px 10px', fontSize: 12, color: '#fff' }}>
-                {String(categoryBanners[selectedConcern % categoryBanners.length].banner_text)}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
-        {loading ? Array.from({ length: 7 }).map((_, i) => (
-          <div key={i} style={{ minWidth: '58px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, height: '200px', animation: 'pulse 1.2s ease-in-out infinite', flexShrink: 0 }} />
-        )) : concernList.map((c: any, i: number) => (
-          <div
-            key={i}
-            onClick={() => setSelectedConcern(i)}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', minWidth: '58px', cursor: 'pointer' }}
-          >
-            <div style={{
-              width: '52px', height: '52px', borderRadius: '16px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '22px', flexShrink: 0,
-              background: i === selectedConcern ? 'rgba(201,169,110,0.12)' : CARD_BG,
-              border: i === selectedConcern ? '1px solid rgba(201,169,110,0.3)' : CARD_BORDER,
-            }}>{c.icon || '💧'}</div>
-            <span style={{
-              fontSize: '9px', fontWeight: 300, textAlign: 'center', whiteSpace: 'nowrap',
-              color: i === selectedConcern ? GOLD : TEXT_MUTED,
-            }}>{c.name}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* ── BEST 랭킹 ── */}
-      <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>
-            🏆 {concernList[selectedConcern]?.name} BEST
-          </span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>더보기 ›</span>
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
-        {productList.slice(0, 4).map((p: any, i: number) => {
-          const rankColors = ['#C9A96E', 'rgba(180,180,180,0.8)', 'rgba(180,120,60,0.8)']
-          return (
-            <div key={i} style={{
-              minWidth: '150px', background: CARD_BG, border: CARD_BORDER,
-              borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0,
-            }}>
-              <div style={{
-                width: 120,
-                height: 120,
-                margin: '0 auto',
-                overflow: 'hidden',
-                borderRadius: 12,
-                flexShrink: 0,
-                background: 'linear-gradient(135deg,#1a1510,#2a2015)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '38px', position: 'relative',
-              }}>
-                {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (p.icon || '🧴')}
-                <div style={{
-                  position: 'absolute', top: '7px', left: '7px',
-                  width: '22px', height: '22px', borderRadius: '50%',
-                  background: rankColors[i] || 'rgba(255,255,255,0.1)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '11px', fontWeight: 400,
-                  color: i === 0 ? BG : '#fff',
-                }}>{i + 1}</div>
-                {i === 0 && (
-                  <div style={{
-                    position: 'absolute', top: '7px', right: '7px',
-                    background: 'rgba(201,169,110,0.85)', color: BG,
-                    fontSize: '8px', padding: '2px 5px', borderRadius: '4px',
-                  }}>AI추천</div>
-                )}
-              </div>
-              <div style={{ padding: '9px 11px' }}>
-                <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{p.brand}</div>
-                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '5px' }}>{p.name}</div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 400 }}>{(p.retail_price?.toLocaleString() ?? p.price?.toLocaleString())}원</span>
-                  <span style={{ fontSize: '14px', cursor: 'pointer' }}>🤍</span>
-                </div>
-                <div style={{ display: 'flex', gap: '4px' }}>
-                  <div style={{ flex: 1, padding: '7px 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '9px', color: 'rgba(255,255,255,0.55)', textAlign: 'center', cursor: 'pointer' }}>🛒 담기</div>
-                  <div style={{ flex: 1, padding: '7px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '9px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>🎁 선물</div>
-                  <div style={{ flex: 1.3, padding: '7px 0', background: GOLD, borderRadius: '8px', fontSize: '9px', fontWeight: 400, color: BG, textAlign: 'center', cursor: 'pointer' }}>바로구매</div>
-                </div>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-
-      {/* ── 포토·영상 리뷰 ── */}
-      {/* TODO: reviews 테이블 photo_url, video_url 있는 것만 조회 */}
-      <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>📸 포토·영상 리뷰</span>
-          <span onClick={() => router.push('/reviews')} style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>127개 ›</span>
-        </div>
-        {/* 일촌 추천 스트립 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 12px', background: CARD_BG, border: CARD_BORDER, borderRadius: '10px', marginBottom: '8px' }}>
-          <div style={{ display: 'flex' }}>
-            {['🌸','🌺','💜'].map((a, i) => (
-              <div key={i} style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', border: `1.5px solid ${BG}`, marginLeft: i > 0 ? '-6px' : '0' }}>{a}</div>
-            ))}
-          </div>
-          <span style={{ fontSize: '10px', color: TEXT_MUTED, flex: 1 }}>일촌 <span style={{ color: GOLD }}>소미님 외 2명</span>이 포토 리뷰를 남겼어요</span>
-          <span onClick={() => router.push('/reviews')} style={{ fontSize: '10px', color: GOLD, cursor: 'pointer' }}>보기</span>
-        </div>
-        {/* 포토 그리드 */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '3px', borderRadius: '14px', overflow: 'hidden' }}>
-          {[
-            { emoji: '🧴', bg: 'linear-gradient(135deg,#2a1a30,#1a1020)', badge: '일촌', isVid: false },
-            { emoji: '✨', bg: 'linear-gradient(135deg,#0a1a2a,#1a2a3a)', badge: '영상', isVid: true, dur: '0:24' },
-            { emoji: '🌿', bg: 'linear-gradient(135deg,#0a1a0a,#1a2a1a)', badge: '', isVid: false },
-            { emoji: '💧', bg: 'linear-gradient(135deg,#1a1020,#2a1830)', badge: '', isVid: false },
-            { emoji: '🎬', bg: 'linear-gradient(135deg,#1a0a2a,#2a1540)', badge: '영상', isVid: true, dur: '0:18' },
-            { emoji: '+122', bg: 'rgba(255,255,255,0.04)', badge: '', isVid: false, isMore: true },
-          ].map((item: any, i: number) => (
-            <div key={i} onClick={() => router.push('/reviews')} style={{ aspectRatio: '1', background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: item.isMore ? '14px' : '28px', position: 'relative', cursor: 'pointer', flexDirection: item.isMore ? 'column' : 'row', gap: item.isMore ? '2px' : '0' }}>
-              {item.isMore ? (
-                <>
-                  <span style={{ fontSize: '16px', color: 'rgba(255,255,255,0.5)' }}>{item.emoji}</span>
-                  <span style={{ fontSize: '9px', color: TEXT_DIM }}>더보기</span>
-                </>
-              ) : (
-                <>
-                  {item.emoji}
-                  {item.badge === '일촌' && <div style={{ position: 'absolute', top: '5px', left: '5px', background: 'rgba(201,169,110,0.85)', borderRadius: '4px', padding: '1px 5px', fontSize: '7px', color: BG }}>일촌</div>}
-                  {item.isVid && (
-                    <>
-                      <div style={{ position: 'absolute', top: '5px', left: '5px', background: 'rgba(60,120,220,0.9)', borderRadius: '4px', padding: '1px 5px', fontSize: '7px', color: '#fff' }}>영상</div>
-                      <div style={{ position: 'absolute', bottom: '5px', right: '5px', background: 'rgba(0,0,0,0.6)', borderRadius: '3px', padding: '1px 4px', fontSize: '8px', color: '#fff', fontFamily: 'monospace' }}>{item.dur}</div>
-                    </>
-                  )}
-                </>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── 롤링 리뷰 ── */}
-      <div style={{ margin: '16px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '12px 14px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1.5px', color: TEXT_DIM }}>⭐ 실시간 리뷰</span>
-          <span onClick={() => router.push('/reviews')} style={{ fontSize: '10px', color: GOLD, cursor: 'pointer' }}>전체보기 →</span>
-        </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>🧴</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '11px', marginBottom: '3px' }}>⭐⭐⭐⭐⭐</div>
-            <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7 }}>
-              &quot;환절기에 이 크림 덕분에 피부 안 땅겼어요. 민감한 피부에도 자극 없이 쓸 수 있어요 💧&quot;
-            </div>
-            <div style={{ fontSize: '9px', color: TEXT_DIM, marginTop: '3px' }}>건성피부 · 유미님 · CIVASAN MESS CREAM</div>
-            <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px', gap: '6px' }}>
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: '3px',
-                padding: '3px 8px', background: 'rgba(255,255,255,0.04)',
-                border: CARD_BORDER, borderRadius: '6px',
-                fontSize: '10px', color: TEXT_MUTED, cursor: 'pointer',
-              }}>👍 도움돼요 24</div>
-              <span style={{ fontSize: '9px', color: 'rgba(201,169,110,0.6)' }}>+5P 적립</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── 타임세일·공구 ── */}
-      <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>⚡ 타임세일 · 공구</span>
-          <span
-            onClick={() => router.push(saleTab === 'sale' ? '/time-sales' : '/group-buys')}
-            style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}
-          >
-            더보기 →
-          </span>
-        </div>
-        {/* 탭 */}
-        <div style={{ display: 'flex', border: CARD_BORDER, borderRadius: '12px', overflow: 'hidden', marginBottom: '12px' }}>
-          {(['sale', 'group'] as const).map((tab) => (
-            <div
-              key={tab}
-              onClick={() => setSaleTab(tab)}
-              style={{
-                flex: 1, padding: '9px 0', textAlign: 'center', fontSize: '12px',
-                fontWeight: saleTab === tab ? 400 : 300,
-                background: saleTab === tab
-                  ? (tab === 'sale' ? 'rgba(200,60,40,0.15)' : 'rgba(60,80,200,0.15)')
-                  : 'transparent',
-                color: saleTab === tab
-                  ? (tab === 'sale' ? '#E07060' : 'rgba(120,160,255,0.9)')
-                  : TEXT_MUTED,
-                cursor: 'pointer',
-              }}
-            >
-              {tab === 'sale' ? '🔥 타임세일' : '👥 공동구매'}
-            </div>
-          ))}
-        </div>
-
-        {/* 타임세일 */}
-        {saleTab === 'sale' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {saleList.map((item: any, i: number) => (
-              <div key={i} onClick={() => { logProductNav({ ...(item.product || {}), id: item.id, retail_price: item.product?.retail_price, sale_price: item.product?.sale_price, is_timesale: item.product?.is_timesale, categories: item.product?.categories }); router.push(`/products/${item.id}`) }} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden' }}>
-                <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
-                  <div style={{
-                    width: '120px',
-                    height: '120px',
-                    overflow: 'hidden',
-                    borderRadius: 12,
-                    background: 'linear-gradient(135deg,#1a1510,#2a2015)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '28px', flexShrink: 0, position: 'relative',
-                  }}>
-                    {(item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (item.icon || '🧴'))}
-                    <div
-                      onClick={e => {
-                        if (!showHomeEditChrome) return
-                        e.stopPropagation()
-                        const raw = item.timesale_ends_at
-                        const iso =
-                          raw && !Number.isNaN(new Date(raw).getTime())
-                            ? new Date(raw).toISOString().slice(0, 16)
-                            : new Date(Date.now() + 86400000).toISOString().slice(0, 16)
-                        setHomeEditSheet({
-                          kind: 'timesale',
-                          id: String(item.id),
-                          label: '타임세일 (할인율·마감)',
-                          draft: String(item.disc ?? 0),
-                          draft2: iso,
-                          draftNum: i,
-                          extra: item,
-                        })
-                      }}
-                      style={{
-                        position: 'absolute', top: '-4px', right: '-4px',
-                        background: '#E04030', borderRadius: '20px', padding: '2px 6px',
-                        fontSize: '9px', color: '#fff', border: `1.5px solid ${BG}`,
-                        cursor: showHomeEditChrome ? 'pointer' : undefined,
-                        outline: showHomeEditChrome ? '1px dashed rgba(255,255,255,0.5)' : undefined,
-                      }}
-                    >-{item.disc}%</div>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>
-                      {item.brand || item.product?.brand}
-                    </div>
-                    <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>
-                      {item.product?.name}
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '5px' }}>
-                      <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
-                        {(item.orig ?? item.original_price)?.toLocaleString()}원
-                      </span>
-                      <span style={{ fontSize: '15px', fontWeight: 400, color: '#E07060' }}>
-                        {item.product?.retail_price?.toLocaleString()}원
-                      </span>
-                    </div>
-                    {/* 개별 타이머 */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ fontSize: '9px', color: TEXT_DIM }}>⏱ 마감</span>
-                      {[timers[i]?.h, timers[i]?.m, timers[i]?.s].map((v, ti) => (
-                        <span key={ti} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                          {ti > 0 && <span style={{ color: 'rgba(220,60,40,0.4)', fontSize: '11px' }}>:</span>}
-                          <span style={{
-                            background: 'rgba(220,60,40,0.15)',
-                            border: '1px solid rgba(220,60,40,0.28)',
-                            borderRadius: '5px', padding: '2px 6px',
-                            fontSize: '11px', color: '#E07060', fontFamily: 'monospace',
-                          }}>{pad(v || 0)}</span>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
-                  <div style={{ flex: 1, padding: '8px 0', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.6)', textAlign: 'center', cursor: 'pointer' }}>🛒 담기</div>
-                  <div style={{ flex: 1, padding: '8px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>🎁 선물</div>
-                  <div onClick={async (e) => {
-                    e.stopPropagation()
-                    logProductNav({ ...(item.product || {}), id: item.id, retail_price: item.product?.retail_price })
-                    const { data: { session } } = await supabase.auth.getSession()
-                    if (!session) {
-                      router.push(`/products/${item.id}`)
-                      return
-                    }
-                    router.push(`/products/${item.id}`)
-                  }} style={{ flex: 1.3, padding: '8px 0', background: '#C04030', borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: '#fff', textAlign: 'center', cursor: 'pointer' }}>지금 구매</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 공동구매 */}
-        {saleTab === 'group' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {groupBuyList.slice(0, 3).map((item: any, i: number) => {
-              const current = Number(item.current_count ?? item.joined_count ?? item.participants ?? 127)
-              const target = Number(item.target_count ?? item.goal_count ?? item.max_participants ?? 200)
-              const pct = target > 0 ? Math.min(100, Math.max(0, Math.round((current / target) * 100))) : 0
-              const remaining = Math.max(0, target - current)
-              const origPrice = item.orig ?? item.original_price ?? item.product?.retail_price
-              const salePrice = item.sale ?? item.sale_price ?? item.product?.retail_price
-              const discPct = Number(item.disc ?? item.discount_rate ?? (origPrice && salePrice ? Math.round(((Number(origPrice) - Number(salePrice)) / Number(origPrice)) * 100) : 0))
-              return (
-              <div key={i} onClick={() => { const pid = item.product_id || item.id; logProductNav({ ...(item.product || {}), id: pid }); router.push(`/products/${pid}`) }} style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
-                <div style={{ background: 'linear-gradient(135deg,rgba(60,80,200,0.15),rgba(80,120,240,0.1))', padding: '10px 12px', display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: '10px', color: 'rgba(120,160,255,0.9)', fontFamily: 'monospace' }}>👥 공동구매 · </span>
-                  <span style={{ fontSize: '10px', color: TEXT_MUTED }}>{current}/{target}명</span>
-                </div>
-                <div style={{ height: '3px', background: 'rgba(255,255,255,0.08)' }}>
-                  <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg,#4060C0,#8090E0)' }} />
-                </div>
-                <div style={{ display: 'flex', gap: '12px', padding: '12px', alignItems: 'center' }}>
-                  <div style={{ width: '120px', height: '120px', borderRadius: 12, overflow: 'hidden', background: 'linear-gradient(135deg,#1a1510,#2a2015)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', flexShrink: 0 }}>
-                    {(item.product?.thumb_img ? <img src={item.product.thumb_img} alt={item.product?.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (item.icon || '🧴'))}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.product?.brand_name || item.brand || item.product?.brand}</div>
-                    <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>{item.product?.name}</div>
-                    <div style={{ fontSize: '10px', color: 'rgba(120,160,255,0.8)', marginBottom: '4px' }}>🎯 {target}명 달성 시 발송 · {remaining}명 더 필요</div>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                      <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
-                        {(origPrice as any)?.toLocaleString?.() ?? origPrice}원
-                      </span>
-                      <span style={{ fontSize: '15px', color: 'rgba(120,160,255,0.9)' }}>{(salePrice as any)?.toLocaleString?.() ?? salePrice}원 {discPct ? `(-${discPct}%)` : ''}</span>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
-                  <div onClick={(e) => {
-                    e.stopPropagation()
-                    const pid = item.product_id || item.id
-                    logProductNav({ ...(item.product || {}), id: pid })
-                    router.push(`/products/${pid}`)
-                  }} style={{ flex: 2, padding: '9px 0', background: 'linear-gradient(135deg,#4060C0,#6080E0)', borderRadius: '8px', fontSize: '11px', color: '#fff', textAlign: 'center', cursor: 'pointer' }}>👥 공구 참여하기</div>
-                  <div style={{ flex: 1, padding: '9px 0', background: 'rgba(80,120,220,0.1)', border: '1px solid rgba(80,120,220,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(120,160,255,0.8)', textAlign: 'center', cursor: 'pointer' }}>📤 친구 초대</div>
-                </div>
-              </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ── 살롱 ── */}
-      <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>📍 내 주변 관리샵</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>지도보기 ›</span>
-        </div>
-        <div style={{ display: 'flex', gap: '7px', overflowX: 'auto', paddingBottom: '10px', scrollbarWidth: 'none' }}>
-          {['📍 거리순', '🔥 인기순', '⭐ 리뷰순', '💆 페이셜', '🌿 바디', '✨ 클리닉'].map((f, i) => (
-            <div key={i} style={{
-              padding: '5px 12px', whiteSpace: 'nowrap', cursor: 'pointer', fontSize: '10px',
-              background: i === 0 ? 'rgba(201,169,110,0.15)' : CARD_BG,
-              border: i === 0 ? '1px solid rgba(201,169,110,0.4)' : CARD_BORDER,
-              borderRadius: '20px',
-              color: i === 0 ? GOLD : TEXT_MUTED,
-            }}>{f}</div>
-          ))}
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {salonList.map((salon: any, i: number) => (
-            <div key={i} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '16px', padding: '13px 14px', display: 'flex', gap: '12px', alignItems: 'center', cursor: 'pointer' }}>
-              <div style={{ width: '50px', height: '50px', borderRadius: '12px', background: 'linear-gradient(135deg,#1a1520,#2a1a30)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>💆</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '13px', fontWeight: 400, marginBottom: '2px' }}>{salon.name}</div>
-                <div style={{ fontSize: '10px', color: TEXT_MUTED, marginBottom: '4px' }}>
-                  {salon.open && (
-                    <span style={{ display: 'inline-block', width: '5px', height: '5px', borderRadius: '50%', background: '#3ab870', marginRight: '4px' }} />
-                  )}
-                  ⭐ {salon.rating} · 리뷰 {salon.reviews} · {salon.area}
-                </div>
-                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                  {(salon.tags || []).map((tag: string, ti: number) => (
-                    <span key={ti} style={{ fontSize: '8px', background: 'rgba(255,255,255,0.05)', color: TEXT_MUTED, borderRadius: '5px', padding: '2px 6px' }}>{tag}</span>
-                  ))}
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px', flexShrink: 0 }}>
-                <div style={{
-                  fontSize: '9px', padding: '3px 8px', borderRadius: '10px',
-                  background: salon.open ? 'rgba(74,200,120,0.15)' : 'rgba(200,80,80,0.1)',
-                  color: salon.open ? '#3ab870' : '#c05050',
-                }}>{salon.open ? '영업중' : '영업종료'}</div>
-                <div style={{ fontSize: '9px', color: TEXT_DIM }}>{salon.dist}</div>
-                <div style={{ padding: '6px 10px', background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: '8px', fontSize: '10px', color: GOLD, cursor: 'pointer' }}>예약하기</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── 신제품 ── */}
-      <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>🆕 새로 나왔어요</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 ›</span>
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
-        {newList.map((item: any, i: number) => (
-          <div key={i} onClick={() => { logProductNav(item); router.push(`/products/${item.id}`) }} style={{ minWidth: '130px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
-            <div style={{
-              width: 120,
-              height: 120,
-              margin: '0 auto',
-              overflow: 'hidden',
-              borderRadius: 12,
-              flexShrink: 0,
-              background: 'linear-gradient(135deg,#1a0a2a,#2a1540)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '32px', position: 'relative'
-            }}>
-              {(item.thumb_img ? <img src={item.thumb_img} alt={item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (item.icon || '💜'))}
-              <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'linear-gradient(90deg,#6040E0,#A040E0)', borderRadius: '5px', padding: '2px 6px', fontSize: '8px', color: '#fff' }}>NEW</div>
-            </div>
-            <div style={{ padding: '9px 10px' }}>
-              <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.brand}</div>
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.4, marginBottom: '4px' }}>{item.name}</div>
-              <div style={{ fontSize: '12px', fontWeight: 400 }}>{(item.retail_price?.toLocaleString() ?? item.price?.toLocaleString())}원</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── 브랜드 원형 그리드 ── */}
-      <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>🏷 브랜드별 보기</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 브랜드 ›</span>
-        </div>
-        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '12px', scrollbarWidth: 'none' }}>
-          {['전체', '🇪🇺 유럽', '🇰🇷 국내', '🇯🇵 일본', '클리닉', '바디'].map((tab, i) => (
-            <div key={i} style={{
-              padding: '4px 12px', whiteSpace: 'nowrap', cursor: 'pointer', fontSize: '10px',
-              background: i === 0 ? GOLD : CARD_BG,
-              border: i === 0 ? 'none' : CARD_BORDER,
-              borderRadius: '20px',
-              color: i === 0 ? BG : TEXT_MUTED,
-              fontWeight: i === 0 ? 400 : 300,
-            }}>{tab}</div>
-          ))}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px' }}>
-          {brandList.map((brand: any, i: number) => {
-            const raw = `${brand.label || ''} ${brand.name || ''}`.toUpperCase()
-            const genericBg = !brand.bg || brand.bg === 'rgba(201,169,110,0.1)'
-            let circleBg = brand.bg || 'rgba(201,169,110,0.1)'
-            let circleBorder = brand.border || 'rgba(201,169,110,0.3)'
-            let circleColor = brand.color || GOLD
-            if (genericBg) {
-              if (/GERNETIC|제네틱|제르/.test(raw)) { circleBg = 'rgba(28,52,38,0.55)'; circleBorder = 'rgba(56,110,76,0.5)'; circleColor = '#6fc49a' }
-              else if (/CIVASAN|시바산|프리미엄/.test(raw)) { circleBg = 'rgba(22,48,52,0.55)'; circleBorder = 'rgba(44,100,108,0.45)'; circleColor = '#5eb3bc' }
-              else if (/ANNA|안나|로자/.test(raw)) { circleBg = 'rgba(62,28,38,0.5)'; circleBorder = 'rgba(120,48,68,0.45)'; circleColor = '#c97d8f' }
-              else if (/ETR|ESTER|에뜨|에스터|레벨/.test(raw)) { circleBg = 'rgba(22,32,56,0.55)'; circleBorder = 'rgba(44,58,108,0.5)'; circleColor = '#7a90d4' }
-              else if (/SELVERT|셀버트|더말/.test(raw)) { circleBg = 'rgba(48,44,22,0.55)'; circleBorder = 'rgba(110,98,42,0.45)'; circleColor = '#b8a45a' }
-              else if (/SANTE|상떼/.test(raw)) { circleBg = 'rgba(58,36,22,0.5)'; circleBorder = 'rgba(130,72,42,0.45)'; circleColor = '#c4865c' }
-              else if (/보떼|떼덤|BEAUTE|BIOD/.test(raw)) { circleBg = 'rgba(48,28,52,0.5)'; circleBorder = 'rgba(88,44,98,0.45)'; circleColor = '#b892c4' }
-              else if (/SHOPBELLE|샵벨/.test(raw)) { circleBg = 'rgba(52,32,58,0.48)'; circleBorder = 'rgba(95,58,108,0.42)'; circleColor = '#c999d4' }
-              else if (/THALAC|탈락/.test(raw)) { circleBg = 'rgba(22,48,58,0.5)'; circleBorder = 'rgba(42,88,108,0.45)'; circleColor = '#5eb0c9' }
-              else if (/SOTHYS|소티스/.test(raw)) { circleBg = 'rgba(58,38,18,0.52)'; circleBorder = 'rgba(130,82,36,0.45)'; circleColor = '#d4a060' }
-              else if (/PHYTO|피토/.test(raw)) { circleBg = 'rgba(32,48,28,0.5)'; circleBorder = 'rgba(58,88,48,0.42)'; circleColor = '#8fbc7a' }
-            }
-            return (
-            <div key={i} onClick={() => router.push(`/brands/${brand.id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-              <div style={{
-                width: '58px', height: '58px', borderRadius: '50%',
-                background: circleBg,
-                border: `1.5px solid ${circleBorder}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '10px', fontWeight: 400,
-                color: circleColor,
-                fontFamily: 'monospace', textAlign: 'center', lineHeight: 1.3,
-              }}>
-                {brand.name?.slice(0, 4)}<br />{brand.name?.slice(4, 8)}
-              </div>
-              <span style={{ fontSize: '9px', color: TEXT_MUTED, textAlign: 'center' }}>
-                {brand.label || brand.name}
-              </span>
-            </div>
-            )
-          })}
-          {/* 더보기 */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-            <div style={{
-              width: '58px', height: '58px', borderRadius: '50%',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1.5px dashed rgba(255,255,255,0.15)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              flexDirection: 'column', gap: '2px',
-            }}>
-              <span style={{ fontSize: '16px', color: 'rgba(255,255,255,0.4)' }}>+</span>
-              <span style={{ fontSize: '8px', color: TEXT_DIM }}>23개</span>
-            </div>
-            <span style={{ fontSize: '9px', color: TEXT_DIM }}>전체보기</span>
-          </div>
-        </div>
       </div>
 
       {routineMentorOpen ? (
