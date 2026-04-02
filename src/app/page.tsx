@@ -104,6 +104,7 @@ export default function CustomerHomePage() {
   const [motivationIdx, setMotivationIdx] = useState(0)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
   const [homeContestBanner, setHomeContestBanner] = useState<any>(null)
+  const [checkInTab, setCheckInTab] = useState<string | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -625,6 +626,90 @@ export default function CustomerHomePage() {
           </div>
         </>
       ) : null}
+
+      {/* ── 호르몬 브리핑 · 오늘 체크인 · 케어 액션 (더미 UI) ── */}
+      <div style={{ padding: '12px 16px 0' }}>
+        <div
+          style={{
+            borderRadius: 16,
+            padding: '16px 16px 14px',
+            background: 'linear-gradient(145deg, #1a0f28 0%, #251538 45%, #1e1430 100%)',
+            border: '1px solid rgba(123, 94, 167, 0.35)',
+            boxShadow: '0 8px 28px rgba(0,0,0,0.35)',
+          }}
+        >
+          <div style={{ fontSize: 10, color: 'rgba(196, 170, 230, 0.75)', marginBottom: 8, letterSpacing: '0.02em' }}>
+            오늘의 피부 사이클
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 500, color: '#f3ecff', lineHeight: 1.55 }}>
+            유미님, 지금 여포기 8일차예요 ✨ 황금기 시작이에요 — 미백관리 지금이에요
+          </div>
+        </div>
+
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'nowrap',
+            gap: 8,
+            marginTop: 12,
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            paddingBottom: 4,
+            scrollbarWidth: 'none',
+          }}
+        >
+          {[
+            { id: 'heat', label: '🔥열감' },
+            { id: 'dry', label: '💧건조' },
+            { id: 'trouble', label: '😤트러블' },
+            { id: 'swell', label: '🌊붓기' },
+            { id: 'good', label: '✨좋아요' },
+          ].map(t => {
+            const on = checkInTab === t.id
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setCheckInTab(on ? null : t.id)}
+                style={{
+                  flexShrink: 0,
+                  padding: '8px 12px',
+                  borderRadius: 999,
+                  border: on ? '1px solid rgba(168, 130, 220, 0.65)' : '1px solid rgba(255,255,255,0.1)',
+                  background: on ? 'rgba(123, 94, 167, 0.35)' : 'rgba(255,255,255,0.04)',
+                  color: on ? '#e8d9ff' : 'rgba(255,255,255,0.75)',
+                  fontSize: 12,
+                  fontWeight: on ? 600 : 400,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {t.label}
+              </button>
+            )
+          })}
+        </div>
+
+        <a
+          href="#"
+          onClick={e => e.preventDefault()}
+          style={{
+            display: 'block',
+            marginTop: 12,
+            padding: '14px 16px',
+            borderRadius: 14,
+            textDecoration: 'none',
+            background: 'linear-gradient(90deg, rgba(201,169,110,0.22) 0%, rgba(201,169,110,0.12) 100%)',
+            border: '1px solid rgba(201,169,110,0.45)',
+            color: GOLD,
+            fontSize: 14,
+            fontWeight: 600,
+            boxShadow: '0 4px 18px rgba(201,169,110,0.12)',
+          }}
+        >
+          오늘은 미백앰플 집중투입 타이밍이에요 →
+        </a>
+      </div>
 
       {/* ── 인사말 ── */}
       <div style={{
