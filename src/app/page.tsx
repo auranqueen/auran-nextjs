@@ -1300,6 +1300,7 @@ AURAN이 내 피부 패턴을
               background: '#111',
               borderLeft: '1px solid rgba(255,255,255,0.08)',
               zIndex: 200,
+              pointerEvents: noticeOpen ? 'auto' : 'none',
               transform: noticeOpen ? 'translateX(0)' : 'translateX(100%)',
               transition: 'transform 240ms ease',
               display: 'flex',
