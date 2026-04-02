@@ -932,6 +932,8 @@ AURAN이 내 피부 패턴을
   const periodPinkSet = useMemo(() => {
     const pink = new Set<string>()
     if (homeCalendarKind !== 'menstrual' || isPregnancyTrack) return pink
+    const seoulCap = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    const todayIsoCap = `${seoulCap.getFullYear()}-${String(seoulCap.getMonth() + 1).padStart(2, '0')}-${String(seoulCap.getDate()).padStart(2, '0')}`
     const L = String(hormoneCycle?.last_period_date || hormoneCycle?.period_started_at || '').trim().slice(0, 10)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(L)) return pink
     let endStr = String(hormoneCycle?.period_end_date || '').trim().slice(0, 10)
@@ -943,9 +945,8 @@ AURAN이 내 피부 패턴을
     const walk = new Date(L + 'T12:00:00')
     const endTime = new Date(endStr + 'T12:00:00').getTime()
     while (walk.getTime() <= endTime) {
-      pink.add(
-        `${walk.getFullYear()}-${String(walk.getMonth() + 1).padStart(2, '0')}-${String(walk.getDate()).padStart(2, '0')}`
-      )
+      const isoStr = `${walk.getFullYear()}-${String(walk.getMonth() + 1).padStart(2, '0')}-${String(walk.getDate()).padStart(2, '0')}`
+      if (isoStr <= todayIsoCap) pink.add(isoStr)
       walk.setDate(walk.getDate() + 1)
     }
     return pink
@@ -1994,6 +1995,12 @@ AURAN이 내 피부 패턴을
                         type="button"
                         className={d.isToday ? 'home-cal-today-btn' : undefined}
                         onClick={() => {
+                          const seoul = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+                          const todayIso = `${seoul.getFullYear()}-${String(seoul.getMonth() + 1).padStart(2, '0')}-${String(seoul.getDate()).padStart(2, '0')}`
+                          if (d.iso > todayIso) {
+                            setHomeToast('아직 오지 않은 날이에요 💜')
+                            return
+                          }
                           setCalendarPickDate(d.iso)
                           setCalSheetIso(d.iso)
                           const cr = cycleRowByDate[d.iso]
@@ -2193,6 +2200,12 @@ AURAN이 내 피부 패턴을
                         key={iso}
                         type="button"
                         onClick={() => {
+                          const seoul = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+                          const todayIso = `${seoul.getFullYear()}-${String(seoul.getMonth() + 1).padStart(2, '0')}-${String(seoul.getDate()).padStart(2, '0')}`
+                          if (iso > todayIso) {
+                            setHomeToast('아직 오지 않은 날이에요 💜')
+                            return
+                          }
                           setCalendarPickDate(iso)
                           setCalSheetIso(iso)
                           const cr = cycleRowByDate[iso]
