@@ -748,6 +748,14 @@ export default function CustomerHomePage() {
     ).trim() || careBannerLine
   const hiddenCalendarTracks = ['menopause_post', 'male', 'male_menopause']
   const showSkinCalendar = !hiddenCalendarTracks.includes(String(hormoneTrack || ''))
+  const hasHormoneCycleData = Boolean(
+    hormoneCycle &&
+      ((hormoneCycle as any).track ||
+        (hormoneCycle as any).last_period_date ||
+        (hormoneCycle as any).cycle_length ||
+        (hormoneCycle as any).due_date ||
+        (hormoneCycle as any).delivery_date)
+  )
   const isPeriTrack = hormoneTrack === 'menopause_peri'
   const isPregnancyTrack = hormoneTrack === 'pregnant' || hormoneTrack === 'postpartum'
   const hasCycleBase = Boolean(hormoneCycle?.last_period_date)
@@ -806,6 +814,46 @@ export default function CustomerHomePage() {
     }
     return ''
   }, [hormoneTrack, hormoneCycle])
+  const savePeriodStartedToday = async () => {
+    const { data: u } = await supabase.auth.getUser()
+    const uid = u.user?.id
+    if (!uid) {
+      setHomeToast('로그인 후 이용해 주세요')
+      return false
+    }
+    const today = new Date().toISOString().slice(0, 10)
+    const cycleLen = Math.max(21, Math.min(60, Number(hormoneCycle?.cycle_length || 28)))
+    const next = new Date(today)
+    next.setDate(next.getDate() + cycleLen)
+    await supabase
+      .from('hormone_cycle')
+      .upsert(
+        {
+          auth_id: uid,
+          track: hormoneTrack,
+          last_period_date: today,
+          period_started_at: today,
+          expected_period_date: next.toISOString().slice(0, 10),
+          cycle_length: cycleLen,
+          updated_at: new Date().toISOString(),
+        } as any,
+        { onConflict: 'auth_id' }
+      )
+    await supabase.from('daily_checkin').insert({ auth_id: uid, checkin_date: today, period_started: true } as any)
+    setHomeToast('오늘을 1일차로 기록했어요')
+    setPeriodQuietNotice('')
+    setCalendarPickDate(today)
+    setHormoneCycle((prev: any) => ({
+      ...(prev || {}),
+      auth_id: uid,
+      last_period_date: today,
+      period_started_at: today,
+      expected_period_date: next.toISOString().slice(0, 10),
+      cycle_length: cycleLen,
+      track: hormoneTrack,
+    }))
+    return true
+  }
   const showHomeEditChrome = isSuperAdmin && homeEditMode
 
   return (
@@ -1367,34 +1415,7 @@ export default function CustomerHomePage() {
               type="button"
               onClick={async () => {
                 try {
-                  const { data: u } = await supabase.auth.getUser()
-                  const uid = u.user?.id
-                  if (!uid) {
-                    setHomeToast('로그인 후 이용해 주세요')
-                    return
-                  }
-                  const today = new Date().toISOString().slice(0, 10)
-                  const cycleLen = Math.max(21, Math.min(60, Number(hormoneCycle?.cycle_length || 28)))
-                  const next = new Date(today)
-                  next.setDate(next.getDate() + cycleLen)
-                  await supabase
-                    .from('hormone_cycle')
-                    .upsert(
-                      {
-                        auth_id: uid,
-                        track: hormoneTrack,
-                        last_period_date: today,
-                        expected_period_date: next.toISOString().slice(0, 10),
-                        cycle_length: cycleLen,
-                        updated_at: new Date().toISOString(),
-                      } as any,
-                      { onConflict: 'auth_id' }
-                    )
-                  await supabase.from('daily_checkin').insert({ auth_id: uid, checkin_date: today, period_started: true } as any)
-                  setHomeToast('오늘을 1일차로 기록했어요')
-                  setPeriodQuietNotice('')
-                  setCalendarPickDate(today)
-                  setHormoneCycle((prev: any) => ({ ...(prev || {}), last_period_date: today, cycle_length: cycleLen, track: hormoneTrack }))
+                  await savePeriodStartedToday()
                 } catch {
                   setHomeToast('기록 저장에 실패했어요')
                 }
@@ -1600,12 +1621,12 @@ export default function CustomerHomePage() {
       {showSkinCalendar ? (
         <div style={{ padding: '14px 16px 0' }}>
           <div style={{ fontSize: 13, fontWeight: 400, color: 'rgba(255,255,255,0.78)', marginBottom: 8 }}>이번 달 피부 캘린더</div>
-          {(!myUserId || (!isPregnancyTrack && !isPeriTrack && !hasCycleBase)) ? (
+          {(!myUserId || !hasHormoneCycleData) ? (
             <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 12, padding: '12px 14px' }}>
               <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 10 }}>생리 주기를 입력하면 피부 캘린더가 활성화돼요</div>
               <button
                 type="button"
-                onClick={() => router.push('/my/profile')}
+                onClick={() => router.push('/signup?mode=track')}
                 style={{
                   border: '1px solid rgba(123,94,167,0.4)',
                   background: 'rgba(123,94,167,0.18)',
@@ -2744,8 +2765,26 @@ export default function CustomerHomePage() {
               zIndex: 123,
             }}
           >
-            <div style={{ fontSize: 12, color: '#e8d9ff', marginBottom: 6 }}>{periodTipTitle}</div>
-            <div style={{ fontSize: 12, color: '#e8d9ff', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{periodTipText}</div>
+            <div style={{ fontSize: 12, color: '#e8d9ff', marginBottom: 6 }}>생리 시작 기록</div>
+            <div style={{ fontSize: 12, color: '#e8d9ff', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+              오늘 생리가 시작됐다면 아래 버튼을 눌러주세요.
+              {'\n'}피부는 생리 주기에 따라 매주 달라져요.
+              {'\n'}기록하면 AURAN이 오늘 딱 맞는 케어를 먼저 알려드려요 💜
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const ok = await savePeriodStartedToday()
+                  if (ok) setPeriodTipOpen(false)
+                } catch {
+                  setHomeToast('기록 저장에 실패했어요')
+                }
+              }}
+              style={{ marginTop: 10, width: '100%', padding: 10, borderRadius: 10, border: '1px solid rgba(201,169,110,0.45)', background: 'rgba(201,169,110,0.2)', color: '#f1e0b7', fontSize: 12, cursor: 'pointer' }}
+            >
+              ✓ 오늘 생리 시작했어요
+            </button>
             <button
               type="button"
               onClick={() => setPeriodTipOpen(false)}

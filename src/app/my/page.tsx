@@ -307,6 +307,39 @@ export default function MyPage() {
     male: '남성',
     male_menopause: '남성 갱년기',
   }
+  const savePeriodStartedToday = async () => {
+    if (!user?.id) return false
+    const today = new Date().toISOString().slice(0, 10)
+    const cycleLen = Math.max(21, Math.min(60, Number(hormoneCycle?.cycle_length || 28)))
+    const next = new Date(today)
+    next.setDate(next.getDate() + cycleLen)
+    await supabase
+      .from('hormone_cycle')
+      .upsert(
+        {
+          auth_id: user.id,
+          track: hormoneTrack,
+          last_period_date: today,
+          period_started_at: today,
+          expected_period_date: next.toISOString().slice(0, 10),
+          cycle_length: cycleLen,
+          updated_at: new Date().toISOString(),
+        } as any,
+        { onConflict: 'auth_id' }
+      )
+    await supabase.from('daily_checkin').insert({ auth_id: user.id, checkin_date: today, period_started: true } as any)
+    setPeriodQuietNotice('')
+    setHormoneCycle((prev: any) => ({
+      ...(prev || {}),
+      auth_id: user.id,
+      last_period_date: today,
+      period_started_at: today,
+      expected_period_date: next.toISOString().slice(0, 10),
+      cycle_length: cycleLen,
+      track: hormoneTrack,
+    }))
+    return true
+  }
 
   return (
     <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 300, color: '#fff', paddingBottom: '0' }}>
@@ -400,26 +433,7 @@ export default function MyPage() {
           <button
             type="button"
             onClick={async () => {
-              if (!user?.id) return
-              const today = new Date().toISOString().slice(0, 10)
-              const cycleLen = Math.max(21, Math.min(60, Number(hormoneCycle?.cycle_length || 28)))
-              const next = new Date(today)
-              next.setDate(next.getDate() + cycleLen)
-              await supabase
-                .from('hormone_cycle')
-                .upsert(
-                  {
-                    auth_id: user.id,
-                    track: hormoneTrack,
-                    last_period_date: today,
-                    expected_period_date: next.toISOString().slice(0, 10),
-                    cycle_length: cycleLen,
-                    updated_at: new Date().toISOString(),
-                  } as any,
-                  { onConflict: 'auth_id' }
-                )
-              await supabase.from('daily_checkin').insert({ auth_id: user.id, checkin_date: today, period_started: true } as any)
-              setPeriodQuietNotice('')
+              await savePeriodStartedToday()
             }}
             style={{
               padding: '8px 12px',
@@ -906,8 +920,22 @@ export default function MyPage() {
         <>
           <div onClick={() => setPeriodTipOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 120 }} />
           <div style={{ position: 'fixed', left: 16, right: 16, bottom: 96, maxWidth: 360, margin: '0 auto', background: '#1f1a26', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 14, padding: 14, zIndex: 121 }}>
-            <div style={{ fontSize: 12, color: '#e8d9ff', marginBottom: 6 }}>{periodTipTitle}</div>
-            <div style={{ fontSize: 12, color: '#e8d9ff', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{periodTipText}</div>
+            <div style={{ fontSize: 12, color: '#e8d9ff', marginBottom: 6 }}>생리 시작 기록</div>
+            <div style={{ fontSize: 12, color: '#e8d9ff', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+              오늘 생리가 시작됐다면 아래 버튼을 눌러주세요.
+              {'\n'}피부는 생리 주기에 따라 매주 달라져요.
+              {'\n'}기록하면 AURAN이 오늘 딱 맞는 케어를 먼저 알려드려요 💜
+            </div>
+            <button
+              type="button"
+              onClick={async () => {
+                const ok = await savePeriodStartedToday()
+                if (ok) setPeriodTipOpen(false)
+              }}
+              style={{ marginTop: 10, width: '100%', padding: 10, borderRadius: 10, border: '1px solid rgba(201,169,110,0.45)', background: 'rgba(201,169,110,0.2)', color: '#f1e0b7', fontSize: 12, cursor: 'pointer' }}
+            >
+              ✓ 오늘 생리 시작했어요
+            </button>
             <button type="button" onClick={() => setPeriodTipOpen(false)} style={{ marginTop: 10, width: '100%', padding: 10, borderRadius: 10, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}>확인</button>
           </div>
         </>
