@@ -1,10 +1,5 @@
 'use client'
 
-const getSeoulToday = () => {
-  const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
-  return s
-}
-
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -12,6 +7,11 @@ import { NotificationPanel } from '@/components/notifications/NotificationPanel'
 import { useCart } from '@/context/CartContext'
 import { TOOLTIP_FALLBACKS, calcHormoneBriefing, isPeriodTrack } from '@/lib/hormoneUtils'
 import { logUserBehavior, upsertSkinCycleDaily } from '@/lib/skinAnalytics'
+
+const getSeoulToday = () => {
+  const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+  return s
+}
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
