@@ -2492,7 +2492,7 @@ AURAN이 내 피부 패턴을
                 <>
                   <div
                     onClick={() => setCalSheetOpen(false)}
-                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 170 }}
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 210 }}
                   />
                   <div
                     style={{
@@ -2502,7 +2502,7 @@ AURAN이 내 피부 패턴을
                       bottom: 0,
                       maxWidth: 390,
                       margin: '0 auto',
-                      zIndex: 171,
+                      zIndex: 211,
                       pointerEvents: 'auto',
                       background: '#141018',
                       borderTopLeftRadius: 16,
