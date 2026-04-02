@@ -71,6 +71,15 @@ const FALLBACK_HISTORY = [
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
 
+const HORMONE_PHASE_TIP_ROWS: [string, string][] = [
+  ['황금기', '피부 컨디션이 최고인 시기예요! 영양 케어하기 딱 좋아요'],
+  ['민감기', '피부가 예민해지는 시기예요. 자극 없는 진정 케어가 필요해요'],
+  ['배란기', '호르몬이 최고조예요! 피부가 가장 빛나는 황금기예요 🌟'],
+  ['여포기', '생리 끝나고 회복되는 시기예요. 피부가 서서히 맑아져요'],
+  ['황체기', '생리 전 시기예요. 트러블이 생기기 쉽고 피부가 칙칙해질 수 있어요'],
+  ['생리기', '생리 중인 시기예요. 피부가 예민하고 붓기 쉬워요'],
+]
+
 const CHECKIN_CYCLE_MENOPAUSE = [
   { id: 'cycle-type-m-0', emoji: '', label: '열감', sort_order: 0, is_active: true },
   { id: 'cycle-type-m-1', emoji: '', label: '수면', sort_order: 1, is_active: true },
@@ -147,6 +156,7 @@ export default function CustomerHomePage() {
   const [routineSteps, setRoutineSteps] = useState<any[]>([])
   const [hormoneMainLine, setHormoneMainLine] = useState('유미님, 지금 여포기 8일차예요 ✨ 황금기 시작이에요')
   const [hormoneSubLine, setHormoneSubLine] = useState('오늘의 피부 사이클')
+  const [hormonePhaseTipOpen, setHormonePhaseTipOpen] = useState(false)
   const [careBannerLine, setCareBannerLine] = useState('오늘은 미백앰플 집중투입 타이밍이에요 →')
   const [hormoneTrack, setHormoneTrack] = useState<string>('general')
   const [hormoneCycle, setHormoneCycle] = useState<any>(null)
@@ -820,6 +830,16 @@ export default function CustomerHomePage() {
         (selectedCheckinOpt as any)?.recommend_ment ||
         ''
     ).trim() || careBannerLine
+  const hormonePhaseTipDesc = useMemo(() => {
+    const s = `${hormoneMainLine}\n${hormoneSubLine}`
+    for (const row of HORMONE_PHASE_TIP_ROWS) {
+      if (s.includes(row[0])) return row[1]
+    }
+    return ''
+  }, [hormoneMainLine, hormoneSubLine])
+  useEffect(() => {
+    setHormonePhaseTipOpen(false)
+  }, [hormoneMainLine, hormoneSubLine])
   const hiddenCalendarTracks = ['menopause_post', 'male', 'male_menopause']
   const homeCalendarKind =
     profileCycleType === 'menopause'
@@ -1495,11 +1515,66 @@ AURAN이 내 피부 패턴을
                   }
                 : undefined
             }
-            style={{ fontSize: 10, color: 'rgba(196, 170, 230, 0.75)', marginBottom: 8, letterSpacing: '0.02em' }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              fontSize: 9,
+              color: 'rgba(196, 170, 230, 0.75)',
+              marginBottom: 8,
+              letterSpacing: '0.02em',
+            }}
           >
-            {hormoneSubLine}
+            <span>{hormoneSubLine}</span>
+            {hormonePhaseTipDesc ? (
+              <button
+                type="button"
+                onClick={e => {
+                  e.stopPropagation()
+                  setHormonePhaseTipOpen(o => !o)
+                }}
+                style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: 999,
+                  background: 'rgba(123,94,167,0.3)',
+                  border: '1px solid rgba(123,94,167,0.5)',
+                  color: 'rgba(255,255,255,0.7)',
+                  fontSize: 8,
+                  cursor: 'pointer',
+                  marginLeft: 4,
+                  padding: 0,
+                  lineHeight: 1,
+                  fontFamily: 'inherit',
+                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontWeight: 400,
+                }}
+              >
+                ?
+              </button>
+            ) : null}
           </div>
-          <div style={{ fontSize: 15, fontWeight: 500, color: '#f3ecff', lineHeight: 1.55 }}>{hormoneMainLine}</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: '#f3ecff', lineHeight: 1.55 }}>{hormoneMainLine}</div>
+          {hormonePhaseTipDesc && hormonePhaseTipOpen ? (
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 400,
+                color: 'rgba(255,255,255,0.55)',
+                background: 'rgba(123,94,167,0.1)',
+                border: '1px solid rgba(123,94,167,0.2)',
+                borderRadius: 8,
+                padding: '6px 10px',
+                marginTop: 6,
+                lineHeight: 1.6,
+              }}
+            >
+              {hormonePhaseTipDesc}
+            </div>
+          ) : null}
         </div>
 
         <div
@@ -1540,7 +1615,7 @@ AURAN이 내 피부 패턴을
                     background: on ? 'rgba(123, 94, 167, 0.35)' : 'rgba(255,255,255,0.04)',
                     color: on ? '#e8d9ff' : 'rgba(255,255,255,0.75)',
                     fontSize: 12,
-                    fontWeight: on ? 600 : 400,
+                    fontWeight: 400,
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
                     outline: showHomeEditChrome && checkinSorted.length > 0 && homeCalendarKind === 'menstrual' ? '1px dashed rgba(123,94,167,0.4)' : undefined,
@@ -1683,7 +1758,7 @@ AURAN이 내 피부 패턴을
             border: showHomeEditChrome ? '1px dashed rgba(201,169,110,0.65)' : '1px solid rgba(201,169,110,0.45)',
             color: GOLD,
             fontSize: 14,
-            fontWeight: 600,
+            fontWeight: 400,
             boxShadow: '0 4px 18px rgba(201,169,110,0.12)',
             cursor: 'pointer',
             fontFamily: 'inherit',
