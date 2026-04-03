@@ -35,6 +35,12 @@ function seoulYmdFromDate(d: Date): { y: number; m0: number; d: number } {
   return { y, m0, d: day }
 }
 
+/** seoulClient 없는 첫 페인트에서는 Intl을 쓰지 않아 서버·브라우저 ICU 차이로 인한 hydration mismatch 방지 */
+function seoulYmdForHydrationSafeCalendar(seoulClient: Date | null): { y: number; m0: number; d: number } {
+  if (seoulClient == null) return { y: 2026, m0: 0, d: 1 }
+  return seoulYmdFromDate(seoulClient)
+}
+
 /** 해당 서울 달력일 정오(+09:00) 시각의 UTC ms — 요일·일수 계산을 TZ 일치시키기 위함 */
 function seoulNoonUtcMs(y: number, m0: number, day: number): number {
   return Date.parse(`${y}-${String(m0 + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}T12:00:00+09:00`)
@@ -215,7 +221,8 @@ export default function CustomerHomePage() {
   useEffect(() => {
     const s = getSeoulToday()
     setSeoulClient(s)
-    setSkinCalYM({ y: s.getFullYear(), m: s.getMonth() })
+    const ymd = seoulYmdFromDate(s)
+    setSkinCalYM({ y: ymd.y, m: ymd.m0 })
     setTodayLocaleLabel(
       s.toLocaleDateString('ko-KR', {
         year: 'numeric',
@@ -959,7 +966,7 @@ AURAN이 내 피부 패턴을
     return m
   }, [skinDailyRows])
   const calendarDataBounds = useMemo(() => {
-    const { y: seoulY } = seoulYmdFromDate(seoulForRender)
+    const { y: seoulY } = seoulYmdForHydrationSafeCalendar(seoulClient)
     const maxY = seoulY + 1
     const minY = profileCreatedAt ? new Date(profileCreatedAt).getFullYear() : seoulY
     const suY = profileCreatedAt ? new Date(profileCreatedAt).getFullYear() : minY
@@ -976,13 +983,13 @@ AURAN이 내 피부 패턴을
   const periodPinkSet = useMemo(() => {
     const pink = new Set<string>()
     if (homeCalendarKind !== 'menstrual' || isPregnancyTrack) return pink
-    const seoulCap = seoulYmdFromDate(seoulForRender)
+    const seoulCap = seoulYmdForHydrationSafeCalendar(seoulClient)
     const todayIsoCap = `${seoulCap.y}-${String(seoulCap.m0 + 1).padStart(2, '0')}-${String(seoulCap.d).padStart(2, '0')}`
     const L = String(hormoneCycle?.last_period_date || hormoneCycle?.period_started_at || '').trim().slice(0, 10)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(L)) return pink
     let endStr = String(hormoneCycle?.period_end_date || '').trim().slice(0, 10)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(endStr)) {
-      const se = seoulYmdFromDate(seoulForRender)
+      const se = seoulYmdForHydrationSafeCalendar(seoulClient)
       endStr = `${se.y}-${String(se.m0 + 1).padStart(2, '0')}-${String(se.d).padStart(2, '0')}`
     }
     if (endStr < L) return pink
@@ -1030,7 +1037,7 @@ AURAN이 내 피부 패턴을
   }, [skinCalYM.y, skinCalYM.m, monthCycleRows, skinDailyRows])
   const monthCalendarDays = useMemo(() => {
     if (skinCalTab !== 'TODAY') return [] as { iso: string; day: number; isToday: boolean; stripOff: number }[]
-    const { y: sy, m0: sm, d: sd } = seoulYmdFromDate(seoulForRender)
+    const { y: sy, m0: sm, d: sd } = seoulYmdForHydrationSafeCalendar(seoulClient)
     const todayIso = `${sy}-${String(sm + 1).padStart(2, '0')}-${String(sd).padStart(2, '0')}`
     const baseMs = seoulNoonUtcMs(sy, sm, sd)
     const out: { iso: string; day: number; isToday: boolean; stripOff: number }[] = []
@@ -1043,12 +1050,12 @@ AURAN이 내 피부 패턴을
   }, [skinCalTab, skinCalYM.y, skinCalYM.m, seoulClient])
   const selectedCalendarDate = useMemo(() => {
     if (calendarPickDate) return calendarPickDate
-    const { y, m0, d } = seoulYmdFromDate(seoulForRender)
+    const { y, m0, d } = seoulYmdForHydrationSafeCalendar(seoulClient)
     return `${y}-${String(m0 + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
   }, [calendarPickDate, seoulClient])
   const skinCalTitleEn = useMemo(() => {
     if (skinCalTab === 'TODAY') {
-      const { y, m0 } = seoulYmdFromDate(seoulForRender)
+      const { y, m0 } = seoulYmdForHydrationSafeCalendar(seoulClient)
       return `${MONTHS[m0]} ${y}`
     }
     if (skinCalTab === 'YEARLY') return `${skinCalYM.y}`
@@ -2383,7 +2390,7 @@ AURAN이 내 피부 패턴을
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                     {(() => {
-                      const { y: cY, m0: cM } = seoulYmdFromDate(seoulForRender)
+                      const { y: cY, m0: cM } = seoulYmdForHydrationSafeCalendar(seoulClient)
                       return MONTHS.map((ml, mi) => {
                         if (skinCalYM.y === calendarDataBounds.signupYear && mi < calendarDataBounds.signupMonth0) {
                           return <div key={ml} style={{ minHeight: 40 }} />
@@ -3665,10 +3672,18 @@ AURAN이 내 피부 패턴을
               }}
             >
               {(() => {
-                const e = new Date(homeContestBanner.end_at)
-                const endDay = new Date(e.getFullYear(), e.getMonth(), e.getDate()).getTime()
-                const t = seoulForRender
-                const today = new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime()
+                const endRaw = String(homeContestBanner.end_at ?? '')
+                const endSlice = endRaw.slice(0, 10)
+                let endDay: number
+                if (/^\d{4}-\d{2}-\d{2}$/.test(endSlice)) {
+                  const [ey, em, ed] = endSlice.split('-').map(Number)
+                  endDay = seoulNoonUtcMs(ey, em - 1, ed)
+                } else {
+                  const e = new Date(homeContestBanner.end_at)
+                  endDay = seoulNoonUtcMs(e.getFullYear(), e.getMonth(), e.getDate())
+                }
+                const { y: ty, m0: tm, d: td } = seoulYmdForHydrationSafeCalendar(seoulClient)
+                const today = seoulNoonUtcMs(ty, tm, td)
                 const n = Math.ceil((endDay - today) / 86400000)
                 return n <= 0 ? 'D-DAY' : `D-${n}일`
               })()}
