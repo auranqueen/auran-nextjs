@@ -35,6 +35,8 @@ function AdminProductRow({
   onClick,
   onToggleVisibility,
   toggleBusyId,
+  brandScope,
+  onBrandCardAssign,
 }: {
   p: any
   tab: 'pending' | 'active' | 'rejected' | 'trash'
@@ -49,6 +51,8 @@ function AdminProductRow({
   onClick: () => void
   onToggleVisibility: (id: string, next: 'active' | 'discontinued') => void
   toggleBusyId: string | null
+  brandScope?: boolean
+  onBrandCardAssign?: () => void
 }) {
   const noPrice = isMissingPrice(p)
 
@@ -61,17 +65,19 @@ function AdminProductRow({
         transition: 'background 0.15s',
       }}
     >
-      <div
-        onClick={e => e.stopPropagation()}
-        style={{ flexShrink: 0, paddingTop: 2 }}
-      >
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={() => onToggleSelect(p.id)}
-          aria-label="선택"
-        />
-      </div>
+      {!brandScope ? (
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{ flexShrink: 0, paddingTop: 2 }}
+        >
+          <input
+            type="checkbox"
+            checked={selected}
+            onChange={() => onToggleSelect(p.id)}
+            aria-label="선택"
+          />
+        </div>
+      ) : null}
 
       <div
         onClick={onClick}
@@ -158,40 +164,57 @@ function AdminProductRow({
             >
               수정
             </button>
-            <button
-              onClick={() => onApprove(p.id)}
-              disabled={busyId === p.id}
-              style={{
-                background: 'var(--gold, #c9a84c)', border: 'none', borderRadius: 8,
-                padding: '5px 14px', color: '#000', fontSize: 12, fontWeight: 900,
-                cursor: 'pointer', opacity: busyId === p.id ? 0.5 : 1,
-              }}
-            >
-              승인
-            </button>
-            <button
-              onClick={() => onReject(p.id)}
-              disabled={busyId === p.id}
-              style={{
-                background: 'rgba(229,57,53,0.15)', border: '1px solid rgba(229,57,53,0.4)',
-                borderRadius: 8, padding: '5px 14px', color: '#e57373',
-                fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                opacity: busyId === p.id ? 0.5 : 1,
-              }}
-            >
-              거절
-            </button>
-            <button
-              onClick={() => onSoftDelete(p.id)}
-              disabled={busyId === p.id}
-              style={{
-                background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.45)',
-                borderRadius: 8, padding: '5px 14px', color: '#ef5350',
-                fontSize: 12, fontWeight: 800, cursor: 'pointer', opacity: busyId === p.id ? 0.5 : 1,
-              }}
-            >
-              삭제
-            </button>
+            {!brandScope ? (
+              <button
+                onClick={() => onBrandCardAssign?.()}
+                type="button"
+                style={{
+                  background: 'rgba(123,94,167,0.2)', border: '1px solid rgba(123,94,167,0.5)',
+                  borderRadius: 8, padding: '5px 14px', color: '#d9c9f2',
+                  fontSize: 12, cursor: 'pointer',
+                }}
+              >
+                브랜드사 연결
+              </button>
+            ) : null}
+            {!brandScope ? (
+              <>
+                <button
+                  onClick={() => onApprove(p.id)}
+                  disabled={busyId === p.id}
+                  style={{
+                    background: 'var(--gold, #c9a84c)', border: 'none', borderRadius: 8,
+                    padding: '5px 14px', color: '#000', fontSize: 12, fontWeight: 900,
+                    cursor: 'pointer', opacity: busyId === p.id ? 0.5 : 1,
+                  }}
+                >
+                  승인
+                </button>
+                <button
+                  onClick={() => onReject(p.id)}
+                  disabled={busyId === p.id}
+                  style={{
+                    background: 'rgba(229,57,53,0.15)', border: '1px solid rgba(229,57,53,0.4)',
+                    borderRadius: 8, padding: '5px 14px', color: '#e57373',
+                    fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                    opacity: busyId === p.id ? 0.5 : 1,
+                  }}
+                >
+                  거절
+                </button>
+                <button
+                  onClick={() => onSoftDelete(p.id)}
+                  disabled={busyId === p.id}
+                  style={{
+                    background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.45)',
+                    borderRadius: 8, padding: '5px 14px', color: '#ef5350',
+                    fontSize: 12, fontWeight: 800, cursor: 'pointer', opacity: busyId === p.id ? 0.5 : 1,
+                  }}
+                >
+                  삭제
+                </button>
+              </>
+            ) : null}
           </>
         ) : tab === 'rejected' ? (
           <>
@@ -205,28 +228,45 @@ function AdminProductRow({
             >
               수정
             </button>
-            <button
-              onClick={() => onApprove(p.id)}
-              disabled={busyId === p.id}
-              style={{
-                background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
-                borderRadius: 8, padding: '5px 14px', color: '#fff',
-                fontSize: 12, cursor: 'pointer',
-              }}
-            >
-              다시 승인
-            </button>
-            <button
-              onClick={() => onSoftDelete(p.id)}
-              disabled={busyId === p.id}
-              style={{
-                background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.45)',
-                borderRadius: 8, padding: '5px 14px', color: '#ef5350',
-                fontSize: 12, fontWeight: 800, cursor: 'pointer', opacity: busyId === p.id ? 0.5 : 1,
-              }}
-            >
-              삭제
-            </button>
+            {!brandScope ? (
+              <button
+                onClick={() => onBrandCardAssign?.()}
+                type="button"
+                style={{
+                  background: 'rgba(123,94,167,0.2)', border: '1px solid rgba(123,94,167,0.5)',
+                  borderRadius: 8, padding: '5px 14px', color: '#d9c9f2',
+                  fontSize: 12, cursor: 'pointer',
+                }}
+              >
+                브랜드사 연결
+              </button>
+            ) : null}
+            {!brandScope ? (
+              <>
+                <button
+                  onClick={() => onApprove(p.id)}
+                  disabled={busyId === p.id}
+                  style={{
+                    background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: 8, padding: '5px 14px', color: '#fff',
+                    fontSize: 12, cursor: 'pointer',
+                  }}
+                >
+                  다시 승인
+                </button>
+                <button
+                  onClick={() => onSoftDelete(p.id)}
+                  disabled={busyId === p.id}
+                  style={{
+                    background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.45)',
+                    borderRadius: 8, padding: '5px 14px', color: '#ef5350',
+                    fontSize: 12, fontWeight: 800, cursor: 'pointer', opacity: busyId === p.id ? 0.5 : 1,
+                  }}
+                >
+                  삭제
+                </button>
+              </>
+            ) : null}
           </>
         ) : tab === 'trash' ? (
           <>
@@ -276,28 +316,45 @@ function AdminProductRow({
             >
               수정
             </button>
-            <button
-              onClick={() => onSoftDelete(p.id)}
-              disabled={busyId === p.id}
-              style={{
-                background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.45)',
-                borderRadius: 8, padding: '5px 14px', color: '#ef5350',
-                fontSize: 12, fontWeight: 800, cursor: 'pointer', opacity: busyId === p.id ? 0.5 : 1,
-              }}
-            >
-              삭제
-            </button>
-            <button
-              onClick={() => onToggleVisibility(p.id, 'discontinued')}
-              disabled={busyId === p.id || p.status !== 'active'}
-              style={{
-                background: 'rgba(229,57,53,0.15)', border: '1px solid rgba(229,57,53,0.4)',
-                borderRadius: 8, padding: '5px 14px', color: '#e57373',
-                fontSize: 12, cursor: 'pointer', opacity: busyId === p.id || p.status !== 'active' ? 0.5 : 1,
-              }}
-            >
-              숨김
-            </button>
+            {!brandScope ? (
+              <button
+                onClick={() => onBrandCardAssign?.()}
+                type="button"
+                style={{
+                  background: 'rgba(123,94,167,0.2)', border: '1px solid rgba(123,94,167,0.5)',
+                  borderRadius: 8, padding: '5px 14px', color: '#d9c9f2',
+                  fontSize: 12, cursor: 'pointer',
+                }}
+              >
+                브랜드사 연결
+              </button>
+            ) : null}
+            {!brandScope ? (
+              <>
+                <button
+                  onClick={() => onSoftDelete(p.id)}
+                  disabled={busyId === p.id}
+                  style={{
+                    background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.45)',
+                    borderRadius: 8, padding: '5px 14px', color: '#ef5350',
+                    fontSize: 12, fontWeight: 800, cursor: 'pointer', opacity: busyId === p.id ? 0.5 : 1,
+                  }}
+                >
+                  삭제
+                </button>
+                <button
+                  onClick={() => onToggleVisibility(p.id, 'discontinued')}
+                  disabled={busyId === p.id || p.status !== 'active'}
+                  style={{
+                    background: 'rgba(229,57,53,0.15)', border: '1px solid rgba(229,57,53,0.4)',
+                    borderRadius: 8, padding: '5px 14px', color: '#e57373',
+                    fontSize: 12, cursor: 'pointer', opacity: busyId === p.id || p.status !== 'active' ? 0.5 : 1,
+                  }}
+                >
+                  숨김
+                </button>
+              </>
+            ) : null}
           </>
         )}
       </div>
@@ -308,9 +365,12 @@ function AdminProductRow({
 // ───────────────────────────────────────────────
 // 메인
 // ───────────────────────────────────────────────
-export default function AdminMarketingProductsClient() {
+export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: string | null; brandOwnerEmail?: string | null }) {
+  const brandOwnerAuthId = p?.brandOwnerAuthId ?? null
+  const brandOwnerEmail = p?.brandOwnerEmail ?? null
+  const brandScope = !!brandOwnerAuthId
   const supabase = createClient()
-  const [tab, setTab] = useState<'pending' | 'active' | 'rejected' | 'trash'>('pending')
+  const [tab, setTab] = useState<'pending' | 'active' | 'rejected' | 'trash'>(() => (brandOwnerAuthId ? 'active' : 'pending'))
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<any[]>([])
   const [counts, setCounts] = useState({ pending: 0, active: 0, rejected: 0, trash: 0 })
@@ -334,6 +394,9 @@ export default function AdminMarketingProductsClient() {
   const [brandAssignOpen, setBrandAssignOpen] = useState(false)
   const [brandAssignUserId, setBrandAssignUserId] = useState('')
   const [brandAssignBusy, setBrandAssignBusy] = useState(false)
+  const [brandCardAssignRow, setBrandCardAssignRow] = useState<any | null>(null)
+  const [brandCardAssignUserId, setBrandCardAssignUserId] = useState('')
+  const [brandCardAssignBusy, setBrandCardAssignBusy] = useState(false)
 
   const [selectedProduct, setSelectedProduct] = useState<any | null>(null)
 
@@ -347,10 +410,12 @@ export default function AdminMarketingProductsClient() {
     setLoading(true)
     try {
       if (tab === 'trash') {
-        const { data, error } = await supabase
+        let trashQ = supabase
           .from('products')
           .select('*, brands(id, name)')
           .not('deleted_at', 'is', null)
+        if (brandOwnerAuthId) trashQ = trashQ.eq('brand_user_id', brandOwnerAuthId)
+        const { data, error } = await trashQ
           .order('created_at', { ascending: false })
           .limit(10000)
 
@@ -361,26 +426,33 @@ export default function AdminMarketingProductsClient() {
           setRows(data || [])
         }
 
-        const [p, a, r, t] = await Promise.all([
-          supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'pending').is('deleted_at', null),
-          supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'active').is('deleted_at', null),
-          supabase.from('products')
-            .select('id', { count: 'exact', head: true })
-            .or('status.eq.discontinued,status.eq.hidden')
-            .is('deleted_at', null),
-          supabase.from('products').select('id', { count: 'exact', head: true }).not('deleted_at', 'is', null),
-        ])
+        let cp = supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'pending').is('deleted_at', null)
+        let ca = supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'active').is('deleted_at', null)
+        let cr = supabase.from('products')
+          .select('id', { count: 'exact', head: true })
+          .or('status.eq.discontinued,status.eq.hidden')
+          .is('deleted_at', null)
+        let ct = supabase.from('products').select('id', { count: 'exact', head: true }).not('deleted_at', 'is', null)
+        if (brandOwnerAuthId) {
+          cp = cp.eq('brand_user_id', brandOwnerAuthId)
+          ca = ca.eq('brand_user_id', brandOwnerAuthId)
+          cr = cr.eq('brand_user_id', brandOwnerAuthId)
+          ct = ct.eq('brand_user_id', brandOwnerAuthId)
+        }
+        const [p, a, r, t] = await Promise.all([cp, ca, cr, ct])
         setCounts({ pending: p.count || 0, active: a.count || 0, rejected: r.count || 0, trash: t.count || 0 })
         setLoading(false)
         return
       }
 
       const statusDb = toDbStatus(tab)
-      const { data, error } = await supabase
+      let listQ = supabase
         .from('products')
         .select('*, brands(id, name)')
         .is('deleted_at', null)
         .in('status', ['active', 'pending', 'discontinued', 'hidden'])
+      if (brandOwnerAuthId) listQ = listQ.eq('brand_user_id', brandOwnerAuthId)
+      const { data, error } = await listQ
         .order('created_at', { ascending: false })
         .limit(10000)
 
@@ -400,15 +472,20 @@ export default function AdminMarketingProductsClient() {
         setRows(filtered)
       }
 
-      const [p, a, r, t] = await Promise.all([
-        supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'pending').is('deleted_at', null),
-        supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'active').is('deleted_at', null),
-        supabase.from('products')
-          .select('id', { count: 'exact', head: true })
-          .or('status.eq.discontinued,status.eq.hidden')
-          .is('deleted_at', null),
-        supabase.from('products').select('id', { count: 'exact', head: true }).not('deleted_at', 'is', null),
-      ])
+      let cp = supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'pending').is('deleted_at', null)
+      let ca = supabase.from('products').select('id', { count: 'exact', head: true }).eq('status', 'active').is('deleted_at', null)
+      let cr = supabase.from('products')
+        .select('id', { count: 'exact', head: true })
+        .or('status.eq.discontinued,status.eq.hidden')
+        .is('deleted_at', null)
+      let ct = supabase.from('products').select('id', { count: 'exact', head: true }).not('deleted_at', 'is', null)
+      if (brandOwnerAuthId) {
+        cp = cp.eq('brand_user_id', brandOwnerAuthId)
+        ca = ca.eq('brand_user_id', brandOwnerAuthId)
+        cr = cr.eq('brand_user_id', brandOwnerAuthId)
+        ct = ct.eq('brand_user_id', brandOwnerAuthId)
+      }
+      const [p, a, r, t] = await Promise.all([cp, ca, cr, ct])
       setCounts({ pending: p.count || 0, active: a.count || 0, rejected: r.count || 0, trash: t.count || 0 })
       setLoading(false)
     } catch (e) {
@@ -416,7 +493,7 @@ export default function AdminMarketingProductsClient() {
       setRows([])
       setLoading(false)
     }
-  }, [supabase, tab])
+  }, [supabase, tab, brandOwnerAuthId])
 
   useEffect(() => { fetchRows() }, [fetchRows])
 
@@ -453,11 +530,13 @@ export default function AdminMarketingProductsClient() {
       brandName: r.brands?.name || '-',
       price: Number(r.retail_price || 0),
       brandUserEmail:
-        r.brand_user_id == null || String(r.brand_user_id || '') === ''
-          ? '미연결'
-          : (brandUsers.find(u => u.id === String(r.brand_user_id || ''))?.email || '미연결'),
+        brandOwnerAuthId && String(r.brand_user_id || '') === String(brandOwnerAuthId)
+          ? (brandOwnerEmail || brandUsers.find(u => u.id === String(r.brand_user_id || ''))?.email || '미연결')
+          : r.brand_user_id == null || String(r.brand_user_id || '') === ''
+            ? '미연결'
+            : (brandUsers.find(u => u.id === String(r.brand_user_id || ''))?.email || '미연결'),
     })),
-    [rows, brandUsers]
+    [rows, brandUsers, brandOwnerAuthId, brandOwnerEmail]
   )
 
   const brandOptions = useMemo(() => {
@@ -504,7 +583,9 @@ export default function AdminMarketingProductsClient() {
 
   const approveOne = async (id: string) => {
     setBusyId(id)
-    const { error } = await supabase.from('products').update({ status: 'active' }).eq('id', id)
+    let q = supabase.from('products').update({ status: 'active' }).eq('id', id)
+    if (brandOwnerAuthId) q = q.eq('brand_user_id', brandOwnerAuthId)
+    const { error } = await q
     setBusyId(null)
     if (error) {
       setToast('저장 실패: ' + error.message)
@@ -518,7 +599,9 @@ export default function AdminMarketingProductsClient() {
 
   const rejectOne = async (id: string) => {
     setBusyId(id)
-    const { error } = await supabase.from('products').update({ status: 'discontinued' }).eq('id', id)
+    let q = supabase.from('products').update({ status: 'discontinued' }).eq('id', id)
+    if (brandOwnerAuthId) q = q.eq('brand_user_id', brandOwnerAuthId)
+    const { error } = await q
     setBusyId(null)
     if (error) {
       setToast('저장 실패: ' + error.message)
@@ -533,11 +616,13 @@ export default function AdminMarketingProductsClient() {
   const bulkApprove = async () => {
     if (!window.confirm('PENDING 제품 전체를 승인할까요?')) return
     setBulkBusy(true)
-    const { error } = await supabase
+    let q = supabase
       .from('products')
       .update({ status: 'active' })
       .eq('status', 'pending')
       .is('deleted_at', null)
+    if (brandOwnerAuthId) q = q.eq('brand_user_id', brandOwnerAuthId)
+    const { error } = await q
     setBulkBusy(false)
     if (error) {
       setToast('저장 실패: ' + error.message)
@@ -548,7 +633,9 @@ export default function AdminMarketingProductsClient() {
   }
 
   const saveFlashSale = async (id: string, payload: { is_flash_sale: boolean; flash_sale_price: number | null; flash_sale_start: string | null; flash_sale_end: string | null }) => {
-    const { error } = await supabase.from('products').update(payload as any).eq('id', id)
+    let q = supabase.from('products').update(payload as any).eq('id', id)
+    if (brandOwnerAuthId) q = q.eq('brand_user_id', brandOwnerAuthId)
+    const { error } = await q
     if (error) {
       setToast('저장 실패: ' + error.message)
       return
@@ -568,7 +655,9 @@ export default function AdminMarketingProductsClient() {
 
   const toggleVisibility = async (id: string, next: 'active' | 'discontinued') => {
     setToggleBusyId(id)
-    await supabase.from('products').update({ status: next }).eq('id', id)
+    let q = supabase.from('products').update({ status: next }).eq('id', id)
+    if (brandOwnerAuthId) q = q.eq('brand_user_id', brandOwnerAuthId)
+    await q
     await fetchRows()
     setToggleBusyId(null)
     setToast(next === 'active' ? '✅ 노출(ACTIVE)로 변경되었습니다' : '✅ 숨김(HIDDEN) 처리되었습니다')
@@ -578,7 +667,9 @@ export default function AdminMarketingProductsClient() {
     if (selectedIds.size === 0) return
     setBulkHideBusy(true)
     const ids = Array.from(selectedIds)
-    const { error } = await supabase.from('products').update({ status: 'discontinued' }).in('id', ids)
+    let qh = supabase.from('products').update({ status: 'discontinued' }).in('id', ids)
+    if (brandOwnerAuthId) qh = qh.eq('brand_user_id', brandOwnerAuthId)
+    const { error } = await qh
     if (error) {
       setToast(error.message || '선택 숨김 실패')
       setBulkHideBusy(false)
@@ -597,10 +688,12 @@ export default function AdminMarketingProductsClient() {
     if (!window.confirm(msg)) return
     setBulkTrashBusy(true)
     const nowIso = new Date().toISOString()
-    const { error } = await supabase
+    let qm = supabase
       .from('products')
       .update({ status: 'deleted', deleted_at: nowIso })
       .in('id', ids)
+    if (brandOwnerAuthId) qm = qm.eq('brand_user_id', brandOwnerAuthId)
+    const { error } = await qm
     if (error) {
       setToast(error.message || '휴지통 이동 실패')
       setBulkTrashBusy(false)
@@ -617,7 +710,9 @@ export default function AdminMarketingProductsClient() {
     if (!ok) return
     setBusyId(id)
     const nowIso = new Date().toISOString()
-    const { error } = await supabase.from('products').update({ status: 'deleted', deleted_at: nowIso }).eq('id', id)
+    let qd = supabase.from('products').update({ status: 'deleted', deleted_at: nowIso }).eq('id', id)
+    if (brandOwnerAuthId) qd = qd.eq('brand_user_id', brandOwnerAuthId)
+    const { error } = await qd
     setBusyId(null)
     if (error) {
       setToast('삭제 실패: ' + error.message)
@@ -631,11 +726,13 @@ export default function AdminMarketingProductsClient() {
     if (!window.confirm(`선택한 ${counts.pending}개 제품을 삭제할까요?`)) return
     setBulkTrashBusy(true)
     const nowIso = new Date().toISOString()
-    const { error } = await supabase
+    let qap = supabase
       .from('products')
       .update({ status: 'deleted', deleted_at: nowIso })
       .eq('status', 'pending')
       .is('deleted_at', null)
+    if (brandOwnerAuthId) qap = qap.eq('brand_user_id', brandOwnerAuthId)
+    const { error } = await qap
     setBulkTrashBusy(false)
     if (error) {
       setToast('삭제 실패: ' + error.message)
@@ -647,7 +744,9 @@ export default function AdminMarketingProductsClient() {
 
   const restoreOneFromTrash = async (id: string) => {
     setBusyId(id)
-    const { error } = await supabase.from('products').update({ status: 'active', deleted_at: null }).eq('id', id)
+    let qr = supabase.from('products').update({ status: 'active', deleted_at: null }).eq('id', id)
+    if (brandOwnerAuthId) qr = qr.eq('brand_user_id', brandOwnerAuthId)
+    const { error } = await qr
     setBusyId(null)
     if (error) {
       setToast('복구 실패: ' + error.message)
@@ -662,7 +761,9 @@ export default function AdminMarketingProductsClient() {
     const ok = window.confirm('이 작업은 되돌릴 수 없습니다. 영구삭제할까요?')
     if (!ok) return
     setBusyId(id)
-    const { error } = await supabase.from('products').delete().eq('id', id)
+    let qdel = supabase.from('products').delete().eq('id', id)
+    if (brandOwnerAuthId) qdel = qdel.eq('brand_user_id', brandOwnerAuthId)
+    const { error } = await qdel
     setBusyId(null)
     if (error) {
       setToast('영구삭제 실패: ' + error.message)
@@ -677,7 +778,9 @@ export default function AdminMarketingProductsClient() {
     const ok = window.confirm('휴지통의 모든 제품을 영구삭제합니다.\n이 작업은 되돌릴 수 없습니다.')
     if (!ok) return
     setTrashEmptyBusy(true)
-    const { data } = await supabase.from('products').select('id').not('deleted_at', 'is', null)
+    let qe = supabase.from('products').select('id').not('deleted_at', 'is', null)
+    if (brandOwnerAuthId) qe = qe.eq('brand_user_id', brandOwnerAuthId)
+    const { data } = await qe
     const ids = (data || []).map((d: any) => d.id).filter(Boolean)
     if (ids.length === 0) {
       setTrashEmptyBusy(false)
@@ -730,6 +833,7 @@ export default function AdminMarketingProductsClient() {
           onToast={setToast}
           onProductUpdated={handleProductUpdated}
           onSaveFlash={saveFlashSale}
+          hideApprovalFooter={!!brandOwnerAuthId}
         />
       )}
 
@@ -737,10 +841,10 @@ export default function AdminMarketingProductsClient() {
         <div>
           <div style={{ fontSize: 22, fontWeight: 900, color: '#fff' }}>제품 관리</div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>
-            예외만 처리 · 썸네일·노출 토글
+            {brandOwnerAuthId ? '연결된 제품만 · 썸네일·노출 토글' : '예외만 처리 · 썸네일·노출 토글'}
           </div>
         </div>
-        {tab === 'pending' && counts.pending > 0 && (
+        {!brandOwnerAuthId && tab === 'pending' && counts.pending > 0 && (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button
             type="button"
@@ -783,66 +887,68 @@ export default function AdminMarketingProductsClient() {
         )}
       </div>
 
-      <div style={{
-        display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16, alignItems: 'center',
-        padding: 12, borderRadius: 14, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)',
-      }}>
-        <button
-          type="button"
-          onClick={() => {
-            if (allSelected) clearSelection()
-            else selectAllFiltered()
-          }}
-          style={{
-            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
-            borderRadius: 10, padding: '8px 12px', color: 'rgba(255,255,255,0.75)', fontSize: 12, cursor: 'pointer',
-          }}
-        >
-          [전체선택]
-        </button>
-        {visibleSelectedCount > 0 && (
-          <>
-            <button
-              type="button"
-              onClick={() => {
-                setBrandAssignOpen(true)
-                setBrandAssignUserId(brandUsers[0]?.id || '')
-              }}
-              style={{
-                background: 'rgba(123,94,167,0.2)', border: '1px solid rgba(123,94,167,0.5)',
-                borderRadius: 10, padding: '8px 12px', color: '#d9c9f2', fontSize: 12, cursor: 'pointer',
-              }}
-            >
-              브랜드사 연결
-            </button>
-            <button
-              type="button"
-              onClick={bulkHideSelected}
-              disabled={bulkHideBusy}
-              style={{
-                background: 'rgba(229,57,53,0.15)', border: '1px solid rgba(229,57,53,0.4)',
-                borderRadius: 10, padding: '8px 12px', color: '#e57373', fontSize: 12, fontWeight: 800, cursor: 'pointer',
-              }}
-            >
-              {bulkHideBusy ? '처리 중...' : '숨김처리'}
-            </button>
-            <button
-              type="button"
-              onClick={moveSelectedToTrash}
-              disabled={bulkTrashBusy}
-              style={{
-                background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.45)',
-                borderRadius: 10, padding: '8px 12px', color: '#ef5350', fontSize: 12, fontWeight: 900, cursor: 'pointer',
-              }}
-            >
-              {bulkTrashBusy ? '처리 중...' : '🗑 선택 삭제'}
-            </button>
-          </>
-        )}
-      </div>
+      {!brandOwnerAuthId ? (
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16, alignItems: 'center',
+          padding: 12, borderRadius: 14, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)',
+        }}>
+          <button
+            type="button"
+            onClick={() => {
+              if (allSelected) clearSelection()
+              else selectAllFiltered()
+            }}
+            style={{
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+              borderRadius: 10, padding: '8px 12px', color: 'rgba(255,255,255,0.75)', fontSize: 12, cursor: 'pointer',
+            }}
+          >
+            [전체선택]
+          </button>
+          {visibleSelectedCount > 0 && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  setBrandAssignOpen(true)
+                  setBrandAssignUserId(brandUsers[0]?.id || '')
+                }}
+                style={{
+                  background: 'rgba(123,94,167,0.2)', border: '1px solid rgba(123,94,167,0.5)',
+                  borderRadius: 10, padding: '8px 12px', color: '#d9c9f2', fontSize: 12, cursor: 'pointer',
+                }}
+              >
+                브랜드사 연결
+              </button>
+              <button
+                type="button"
+                onClick={bulkHideSelected}
+                disabled={bulkHideBusy}
+                style={{
+                  background: 'rgba(229,57,53,0.15)', border: '1px solid rgba(229,57,53,0.4)',
+                  borderRadius: 10, padding: '8px 12px', color: '#e57373', fontSize: 12, fontWeight: 800, cursor: 'pointer',
+                }}
+              >
+                {bulkHideBusy ? '처리 중...' : '숨김처리'}
+              </button>
+              <button
+                type="button"
+                onClick={moveSelectedToTrash}
+                disabled={bulkTrashBusy}
+                style={{
+                  background: 'rgba(239,83,80,0.15)', border: '1px solid rgba(239,83,80,0.45)',
+                  borderRadius: 10, padding: '8px 12px', color: '#ef5350', fontSize: 12, fontWeight: 900, cursor: 'pointer',
+                }}
+              >
+                {bulkTrashBusy ? '처리 중...' : '🗑 선택 삭제'}
+              </button>
+            </>
+          )}
+        </div>
+      ) : null}
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-        {TABS.map(t => (
+        {TABS.filter(t => !brandOwnerAuthId || t.key !== 'trash').map(t => (
           <button
             key={t.key}
             onClick={() => { setTab(t.key); clearSelection() }}
@@ -859,6 +965,7 @@ export default function AdminMarketingProductsClient() {
         ))}
       </div>
 
+      {!brandOwnerAuthId ? (
       <div
         style={{
           marginBottom: 16,
@@ -928,6 +1035,7 @@ export default function AdminMarketingProductsClient() {
           ))}
         </div>
       </div>
+      ) : null}
 
       {tab === 'trash' ? (
         <div style={{ marginBottom: 12 }}>
@@ -1067,6 +1175,15 @@ export default function AdminMarketingProductsClient() {
               onClick={() => setSelectedProduct(p)}
               onToggleVisibility={toggleVisibility}
               toggleBusyId={toggleBusyId}
+              brandScope={!!brandOwnerAuthId}
+              onBrandCardAssign={
+                brandOwnerAuthId
+                  ? undefined
+                  : () => {
+                      setBrandCardAssignRow(p)
+                      setBrandCardAssignUserId(String(p.brand_user_id || ''))
+                    }
+              }
             />
           ))}
         </div>
@@ -1122,6 +1239,65 @@ export default function AdminMarketingProductsClient() {
                 style={{ flex: 1, border: '1px solid rgba(123,94,167,0.6)', background: 'rgba(123,94,167,0.3)', color: '#e7ddf7', borderRadius: 8, padding: '9px 10px', fontSize: 12, cursor: 'pointer' }}
               >
                 {brandAssignBusy ? '적용 중...' : '적용'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {brandCardAssignRow ? (
+        <div
+          onClick={() => !brandCardAssignBusy && setBrandCardAssignRow(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 360, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 420, background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, padding: 14 }}
+          >
+            <div style={{ fontSize: 14, color: '#fff', marginBottom: 10 }}>브랜드사 연결</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 8 }}>
+              현재: {brandCardAssignRow.brandUserEmail && brandCardAssignRow.brandUserEmail !== '미연결' ? brandCardAssignRow.brandUserEmail : '미연결'}
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>{brandCardAssignRow.name}</div>
+            <select
+              value={brandCardAssignUserId}
+              onChange={e => setBrandCardAssignUserId(e.target.value)}
+              style={{ width: '100%', background: '#121212', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 12 }}
+            >
+              <option value="" style={{ background: '#1a1a1a' }}>— 연결 없음 —</option>
+              {brandUsers.map(u => (
+                <option key={u.id} value={u.id} style={{ background: '#1a1a1a' }}>{u.email}</option>
+              ))}
+            </select>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+              <button
+                type="button"
+                disabled={brandCardAssignBusy}
+                onClick={() => setBrandCardAssignRow(null)}
+                style={{ flex: 1, border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: 'rgba(255,255,255,0.75)', borderRadius: 8, padding: '9px 10px', fontSize: 12, cursor: 'pointer' }}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                disabled={brandCardAssignBusy}
+                onClick={async () => {
+                  const id = brandCardAssignRow.id
+                  if (!id) return
+                  setBrandCardAssignBusy(true)
+                  const v = brandCardAssignUserId.trim() === '' ? null : brandCardAssignUserId
+                  const { error } = await supabase.from('products').update({ brand_user_id: v } as any).eq('id', id)
+                  setBrandCardAssignBusy(false)
+                  if (error) {
+                    setToast('브랜드사 연결 실패: ' + error.message)
+                    return
+                  }
+                  setToast('브랜드사 연결을 저장했습니다')
+                  setBrandCardAssignRow(null)
+                  await fetchRows()
+                }}
+                style={{ flex: 1, border: '1px solid rgba(123,94,167,0.6)', background: 'rgba(123,94,167,0.3)', color: '#e7ddf7', borderRadius: 8, padding: '9px 10px', fontSize: 12, cursor: 'pointer' }}
+              >
+                {brandCardAssignBusy ? '적용 중...' : '적용'}
               </button>
             </div>
           </div>

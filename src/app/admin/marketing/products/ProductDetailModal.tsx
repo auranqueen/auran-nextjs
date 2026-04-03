@@ -41,6 +41,7 @@ export default function ProductDetailModal({
   onToast,
   onProductUpdated,
   onSaveFlash: _onSaveFlash,
+  hideApprovalFooter = false,
 }: {
   product: any
   tab: 'pending' | 'active' | 'rejected'
@@ -51,6 +52,7 @@ export default function ProductDetailModal({
   onReject: (id: string) => void
   onToast: (msg: string) => void
   onProductUpdated: (p: any) => void
+  hideApprovalFooter?: boolean
   onSaveFlash: (
     id: string,
     payload: {
@@ -1488,7 +1490,7 @@ export default function ProductDetailModal({
           >
             닫기
           </button>
-          {listTab === 'pending' && (
+          {!hideApprovalFooter && listTab === 'pending' && (
             <>
               <button
                 onClick={() => void onReject(product.id)}
@@ -1526,7 +1528,7 @@ export default function ProductDetailModal({
               </button>
             </>
           )}
-          {listTab === 'rejected' && (
+          {!hideApprovalFooter && listTab === 'rejected' && (
             <button
               onClick={() => void onApprove(product.id)}
               disabled={busyId === product.id}
