@@ -152,6 +152,7 @@ export default function CustomerHomePage() {
     { h: 0, m: 47, s: 55 },
     { h: 5, m: 12, s: 8 },
   ])
+  const [groupTimers, setGroupTimers] = useState<{ h: number; m: number; s: number }[]>([])
 
   // Supabase 데이터
   const [concerns, setConcerns] = useState<any[]>([])
@@ -396,7 +397,20 @@ export default function CustomerHomePage() {
       })
 
     supabase.from('group_buys').select('*, product:products(id, name, retail_price, thumb_img)').eq('is_active', true).limit(3).then(({ data }) => {
-      if (data && data.length > 0) setGroupBuys(data)
+      if (data && data.length > 0) {
+        setGroupBuys(data)
+        setGroupTimers(
+          data.map((row: any) => {
+            const rawEnd = row.ends_at
+            const endMs = rawEnd ? new Date(rawEnd).getTime() : 0
+            const diffMs = Math.max(0, endMs - Date.now())
+            const h = Math.floor(diffMs / 3600000)
+            const m = Math.floor((diffMs % 3600000) / 60000)
+            const s = Math.floor((diffMs % 60000) / 1000)
+            return { h, m, s }
+          })
+        )
+      }
     })
 
     supabase.from('salons').select('*').limit(3).then(({ data }) => {
@@ -491,6 +505,14 @@ export default function CustomerHomePage() {
   useEffect(() => {
     const id = setInterval(() => {
       setTimers(prev =>
+        prev.map(t => {
+          if (t.s > 0) return { ...t, s: t.s - 1 }
+          if (t.m > 0) return { ...t, m: t.m - 1, s: 59 }
+          if (t.h > 0) return { ...t, h: t.h - 1, m: 59, s: 59 }
+          return t
+        })
+      )
+      setGroupTimers(prev =>
         prev.map(t => {
           if (t.s > 0) return { ...t, s: t.s - 1 }
           if (t.m > 0) return { ...t, m: t.m - 1, s: 59 }
@@ -1984,7 +2006,7 @@ export default function CustomerHomePage() {
               const pct = target > 0 ? Math.min(100, Math.max(0, Math.round((current / target) * 100))) : 0
               const remaining = Math.max(0, target - current)
               const origPrice = item.orig ?? item.original_price ?? item.product?.retail_price
-              const salePrice = item.sale ?? item.sale_price ?? item.product?.retail_price
+              const salePrice = item.group_price ?? item.sale ?? item.sale_price ?? item.product?.retail_price
               const discPct = Number(item.disc ?? item.discount_rate ?? (origPrice && salePrice ? Math.round(((Number(origPrice) - Number(salePrice)) / Number(origPrice)) * 100) : 0))
               return (
               <div key={i} onClick={() => { const pid = item.product_id || item.id; logProductNav({ ...(item.product || {}), id: pid }); router.push(`/products/${pid}`) }} style={{ background: CARD_BG, border: '1px solid rgba(80,120,220,0.2)', borderRadius: '14px', overflow: 'hidden' }}>
@@ -2002,12 +2024,30 @@ export default function CustomerHomePage() {
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.product?.brand_name || item.brand || item.product?.brand}</div>
                     <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>{item.product?.name}</div>
-                    <div style={{ fontSize: '10px', color: 'rgba(120,160,255,0.8)', marginBottom: '4px' }}>🎯 {target}명 달성 시 발송 · {remaining}명 더 필요</div>
+                    <div style={{ fontSize: '10px', color: 'rgba(120,160,255,0.8)', marginBottom: '4px' }}>
+                      {String(item.gift_title || '').trim()
+                        ? String(item.gift_title).trim()
+                        : `🎯 ${target}명 달성 시 발송 · ${remaining}명 더 필요`}
+                    </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
                         {(origPrice as any)?.toLocaleString?.() ?? origPrice}원
                       </span>
                       <span style={{ fontSize: '15px', color: 'rgba(120,160,255,0.9)' }}>{(salePrice as any)?.toLocaleString?.() ?? salePrice}원 {discPct ? `(-${discPct}%)` : ''}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '5px' }}>
+                      <span style={{ fontSize: '9px', color: TEXT_DIM }}>⏱ 마감</span>
+                      {[groupTimers[i]?.h, groupTimers[i]?.m, groupTimers[i]?.s].map((v, ti) => (
+                        <span key={ti} style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                          {ti > 0 && <span style={{ color: 'rgba(220,60,40,0.4)', fontSize: '11px' }}>:</span>}
+                          <span style={{
+                            background: 'rgba(220,60,40,0.15)',
+                            border: '1px solid rgba(220,60,40,0.28)',
+                            borderRadius: '5px', padding: '2px 6px',
+                            fontSize: '11px', color: '#E07060', fontFamily: 'monospace',
+                          }}>{pad(v || 0)}</span>
+                        </span>
+                      ))}
                     </div>
                   </div>
                 </div>
