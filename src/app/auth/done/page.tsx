@@ -176,8 +176,19 @@ function AuthDoneInner() {
 
   if (phase === 'loading' || phase === 'redirect') {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text3)', fontSize: 12 }}>
-        로그인 처리 중...
+      <div style={{
+        position: 'fixed',
+        inset: 0,
+        background: '#0D0B09',
+        zIndex: 9999,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        color: 'rgba(201,169,110,0.6)',
+        fontSize: 12,
+        fontFamily: 'monospace',
+      }}>
+        AURAN
       </div>
     )
   }
