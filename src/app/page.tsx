@@ -2006,8 +2006,6 @@ AURAN이 내 피부 패턴을
           <>
               <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
                 {(['TODAY', 'MONTHLY', 'YEARLY'] as const).map(tab => {
-                  if (false && tab === 'MONTHLY') return null
-                  if (false && tab === 'YEARLY') return null
                   const on = skinCalTab === tab
                   return (
                     <button
