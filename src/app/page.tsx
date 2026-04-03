@@ -218,6 +218,7 @@ export default function CustomerHomePage() {
   const [skinCalYM, setSkinCalYM] = useState({ y: 2026, m: 3 })
   const [seoulClient, setSeoulClient] = useState<Date | null>(null)
   const [todayLocaleLabel, setTodayLocaleLabel] = useState('')
+  const [magicCalendarMounted, setMagicCalendarMounted] = useState(false)
   useEffect(() => {
     const s = getSeoulToday()
     setSeoulClient(s)
@@ -232,6 +233,7 @@ export default function CustomerHomePage() {
       })
     )
     setCalSheetMounted(true)
+    setMagicCalendarMounted(true)
   }, [])
   const seoulForRender = seoulClient ?? HYDRATION_PLACEHOLDER_SEOUL
   const [skinDailyRows, setSkinDailyRows] = useState<any[]>([])
@@ -1943,7 +1945,7 @@ AURAN이 내 피부 패턴을
         })}
       </div>
 
-      {showSkinCalendar ? (
+      {showSkinCalendar && magicCalendarMounted ? (
         <div style={{ padding: '14px 16px 0' }}>
           <div style={{ marginBottom: 8 }}>
             <div
