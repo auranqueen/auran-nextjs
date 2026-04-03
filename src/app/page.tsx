@@ -247,15 +247,16 @@ export default function CustomerHomePage() {
     if (!mounted) return
     const supabase = createClient()
     const loadMotivationProfile = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at')
-        .eq('auth_id', user.id)
-        .single()
+
+      const [profileRes, hcRes, tipRes] = await Promise.all([
+        supabase.from('profiles').select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at').eq('auth_id', user.id).single(),
+        supabase.from('hormone_cycle').select('*').eq('auth_id', user.id).maybeSingle(),
+        supabase.from('help_tooltips').select('title,content,text,value,is_active').eq('key', 'period_start').maybeSingle(),
+      ])
+
+      const profile = profileRes.data
       if (profile) {
         setMotivationProfile(profile)
         setProfileCycleType((profile as any).cycle_type != null ? String((profile as any).cycle_type) : null)
@@ -264,33 +265,25 @@ export default function CustomerHomePage() {
         setProfileCycleType(null)
         setProfileCreatedAt(null)
       }
-      try {
-        const { data: hc } = await supabase
-          .from('hormone_cycle')
-          .select('*')
-          .eq('auth_id', user.id)
-          .maybeSingle()
-        if (hc) {
-          setHormoneCycle(hc)
-          setHormoneTrack(String((hc as any).track || 'general'))
-          const calc = calcHormoneBriefing(hc)
-          setHormoneMainLine(`${userName}님, 지금 ${calc.phase} ${calc.cycleDay > 0 ? `${calc.cycleDay}일차` : ''}예요 ✨`)
-          setHormoneSubLine(`오늘의 피부 사이클 · ${calc.focus}`)
-          if (isPeriodTrack(String((hc as any).track || 'general'))) {
-            const lp = (hc as any).last_period_date ? new Date((hc as any).last_period_date) : null
-            if (lp && !Number.isNaN(lp.getTime())) {
-              const gap = Math.floor((Date.now() - lp.getTime()) / 86400000)
-              if (gap >= 45) setPeriodQuietNotice('혹시 건너뛰셨나요?')
-            }
+
+      const hc = hcRes.data
+      if (hc) {
+        setHormoneCycle(hc)
+        setHormoneTrack(String((hc as any).track || 'general'))
+        const calc = calcHormoneBriefing(hc)
+        setHormoneMainLine(`${userName}님, 지금 ${calc.phase} ${calc.cycleDay > 0 ? `${calc.cycleDay}일차` : ''}예요 🌿`)
+        setHormoneSubLine(`오늘의 피부 이야기 · ${calc.focus}`)
+        if (isPeriodTrack(String((hc as any).track || 'general'))) {
+          const lp = (hc as any).last_period_date ? new Date((hc as any).last_period_date) : null
+          if (lp && !Number.isNaN(lp.getTime())) {
+            const gap = Math.floor((Date.now() - lp.getTime()) / 86400000)
+            if (gap >= 45) setPeriodQuietNotice('생리 기록을 확인해보세요')
           }
         }
-      } catch {}
-      try {
-        const { data: tip } = await supabase
-          .from('help_tooltips')
-          .select('title,content,text,value,is_active')
-          .eq('key', 'period_start')
-          .maybeSingle()
+      }
+
+      const tip = tipRes.data
+      if (tip) {
         const isOn = (tip as any)?.is_active !== false
         const t = String((tip as any)?.content || (tip as any)?.text || (tip as any)?.value || '').trim()
         setPeriodTipEnabled(isOn && !!t)
@@ -298,7 +291,7 @@ export default function CustomerHomePage() {
           setPeriodTipText(t)
           setPeriodTipTitle(String((tip as any)?.title || '생리 시작 안내'))
         }
-      } catch {}
+      }
     }
     void loadMotivationProfile()
 
