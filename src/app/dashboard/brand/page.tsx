@@ -518,7 +518,7 @@ export default function BrandDashboardPage() {
     return (
       <div style={{ minHeight: '100vh', background: BG, color: '#e9e4f1', padding: '20px 16px 40px', maxWidth: 640, margin: '0 auto' }}>
         <div style={{ textAlign: 'center', marginBottom: 18 }}>
-          <Link href="/" style={{ fontSize: 22, color: '#f5f0ff', letterSpacing: '0.12em', textDecoration: 'none' }}>
+          <Link href="/dashboard/brand" style={{ fontSize: 22, color: '#f5f0ff', letterSpacing: '0.12em', textDecoration: 'none' }}>
             AURAN
           </Link>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 6, letterSpacing: '0.08em' }}>BRAND PARTNER ONBOARDING</div>
@@ -908,7 +908,7 @@ export default function BrandDashboardPage() {
       brandRow?.created_at != null ? new Date(String(brandRow.created_at)).toLocaleString('ko-KR') : '—'
     return (
       <div style={{ minHeight: '100vh', background: BG, color: '#e9e4f1', padding: '32px 20px', maxWidth: 520, margin: '0 auto', textAlign: 'center' }}>
-        <Link href="/" style={{ fontSize: 22, color: '#f5f0ff', letterSpacing: '0.12em', textDecoration: 'none' }}>
+        <Link href="/dashboard/brand" style={{ fontSize: 22, color: '#f5f0ff', letterSpacing: '0.12em', textDecoration: 'none' }}>
           AURAN
         </Link>
         <div style={{ fontSize: 18, color: ACC, marginTop: 28, marginBottom: 12 }}>입점 신청이 접수됐어요</div>
