@@ -4,9 +4,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { NotificationPanel } from '@/components/notifications/NotificationPanel'
+import CalendarSheet from '@/components/CalendarSheet'
 import { useCart } from '@/context/CartContext'
 import { TOOLTIP_FALLBACKS, calcHormoneBriefing, isPeriodTrack } from '@/lib/hormoneUtils'
 import { logUserBehavior, upsertSkinCycleDaily } from '@/lib/skinAnalytics'
+import { CALENDAR_SHEET_CONDITION_LABELS } from '@/lib/calendarConstants'
 
 const getSeoulToday = () => {
   const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
@@ -131,20 +133,6 @@ const CHECKIN_CYCLE_PREGNANCY = [
   { id: 'cycle-type-p-2', emoji: '', label: '건조', sort_order: 2, is_active: true },
   { id: 'cycle-type-p-3', emoji: '', label: '민감', sort_order: 3, is_active: true },
   { id: 'cycle-type-p-4', emoji: '', label: '컨디션', sort_order: 4, is_active: true },
-]
-
-const CALENDAR_SHEET_CONDITION_LABELS = [
-  '열감',
-  '건조',
-  '트러블',
-  '붓기',
-  '민감',
-  '맑음',
-  '칙칙함',
-  '각질',
-  '번들거림',
-  '탄력저하',
-  '좋음',
 ]
 
 export default function CustomerHomePage() {
@@ -2441,261 +2429,142 @@ AURAN이 내 피부 패턴을
                       : '선택한 날짜에 체크인 기록이 없어요')
                     : `${getPhaseByDate(selectedCalendarDate)} - ${phaseGuide(getPhaseByDate(selectedCalendarDate)).split(' - ')[1]}`}
               </div>
-              {calSheetOpen && calSheetMounted ? (
-                <>
-                  <div
-                    onClick={() => setCalSheetOpen(false)}
-                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 170 }}
-                  />
-                  <div
-                    style={{
-                      position: 'fixed',
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      maxWidth: 390,
-                      margin: '0 auto',
-                      zIndex: 171,
-                      background: '#141018',
-                      borderTopLeftRadius: 16,
-                      borderTopRightRadius: 16,
-                      borderTop: '1px solid rgba(123,94,167,0.35)',
-                      padding: '16px 16px calc(18px + env(safe-area-inset-bottom, 0px))',
-                      maxHeight: '78vh',
-                      overflowY: 'auto',
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                      <div style={{ fontSize: 13, color: '#fff' }}>{calSheetIso}</div>
-                      <button
-                        type="button"
-                        onClick={() => setCalSheetOpen(false)}
-                        style={{ background: 'none', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer' }}
-                      >
-                        ✕
-                      </button>
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-                      {CALENDAR_SHEET_CONDITION_LABELS.map(label => (
-                        <button
-                          key={label}
-                          type="button"
-                          onClick={() =>
-                            setCalSheetConditionPick(prev =>
-                              prev.includes(label) ? prev.filter(x => x !== label) : [...prev, label]
-                            )
-                          }
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: 20,
-                            border: 'none',
-                            cursor: 'pointer',
-                            background: calSheetConditionPick.includes(label) ? '#7B5EA7' : 'rgba(255,255,255,0.1)',
-                            color: '#fff',
-                            fontSize: 11,
-                          }}
-                        >
-                          {label}
-                        </button>
-                      ))}
-                    </div>
-                    {homeCalendarKind === 'menstrual' ? (
-                      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const { data: u } = await supabase.auth.getUser()
-                            const uid = u.user?.id
-                            if (!uid) {
-                              setHomeToast('로그인 후 이용해 주세요')
-                              return
-                            }
-                            const cycleLen = Math.max(21, Math.min(60, Number(hormoneCycle?.cycle_length || 28)))
-                            const baseP = new Date(`${calSheetIso}T12:00:00+09:00`)
-                            const next = new Date(baseP)
-                            next.setDate(baseP.getDate() + cycleLen)
-                            const nextIso = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`
-                            const { error } = await supabase.from('hormone_cycle').upsert(
-                              {
-                                ...(hormoneCycle || {}),
-                                auth_id: uid,
-                                track: hormoneTrack,
-                                last_period_date: calSheetIso,
-                                period_started_at: calSheetIso,
-                                expected_period_date: nextIso,
-                                cycle_length: cycleLen,
-                                updated_at: new Date().toISOString(),
-                              } as any,
-                              { onConflict: 'auth_id' }
-                            )
-                            if (error) {
-                              setHomeToast('생리 시작 저장에 실패했어요')
-                              return
-                            }
-                            setHormoneCycle((prev: any) => ({
-                              ...(prev || {}),
-                              auth_id: uid,
-                              last_period_date: calSheetIso,
-                              period_started_at: calSheetIso,
-                              expected_period_date: nextIso,
-                              cycle_length: cycleLen,
-                              track: hormoneTrack,
-                            }))
-                            setHomeToast('생리 시작일을 반영했어요')
-                          }}
-                          style={{
-                            flex: 1,
-                            padding: '10px 0',
-                            width: '100%',
-                            borderRadius: 10,
-                            border: '1px solid rgba(123,94,167,0.4)',
-                            background: 'rgba(123,94,167,0.2)',
-                            color: '#fff',
-                            fontSize: 12,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          생리 시작
-                        </button>
-                        <button
-                          type="button"
-                          onClick={async () => {
-                            const { data: u } = await supabase.auth.getUser()
-                            const uid = u.user?.id
-                            if (!uid) {
-                              setHomeToast('로그인 후 이용해 주세요')
-                              return
-                            }
-                            const { error } = await supabase
-                              .from('hormone_cycle')
-                              .update({ period_end_date: calSheetIso, updated_at: new Date().toISOString() } as any)
-                              .eq('auth_id', uid)
-                            if (error) {
-                              setHomeToast(
-                                '생리 끝 저장 실패: hormone_cycle에 period_end_date 컬럼이 없을 수 있어요. Supabase SQL: ALTER TABLE public.hormone_cycle ADD COLUMN IF NOT EXISTS period_end_date date;'
-                              )
-                              return
-                            }
-                            setHormoneCycle((prev: any) => ({ ...(prev || {}), period_end_date: calSheetIso }))
-                            setHomeToast('생리 종료일을 저장했어요')
-                          }}
-                          style={{
-                            flex: 1,
-                            padding: '10px 0',
-                            width: '100%',
-                            borderRadius: 10,
-                            border: '1px solid rgba(123,94,167,0.4)',
-                            background: 'rgba(123,94,167,0.2)',
-                            color: '#fff',
-                            fontSize: 12,
-                            cursor: 'pointer',
-                          }}
-                        >
-                          생리 끝
-                        </button>
-                      </div>
-                    ) : null}
-                    <input
-                      value={calSheetNote}
-                      onChange={e => setCalSheetNote(e.target.value)}
-                      placeholder="오늘 피부 한마디..."
-                      maxLength={200}
-                      style={{
-                        width: '100%',
-                        marginBottom: 16,
-                        padding: '10px 12px',
-                        borderRadius: 10,
-                        border: '1px solid rgba(255,255,255,0.15)',
-                        background: 'rgba(255,255,255,0.08)',
-                        color: '#fff',
-                        fontSize: 12,
-                        outline: 'none',
-                        boxSizing: 'border-box',
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        const { data: auth } = await supabase.auth.getUser()
-                        const uid = auth.user?.id || myUserId
-                        if (!uid) {
-                          setHomeToast('로그인 후 이용해 주세요')
-                          return
-                        }
-                        const calc = calcHormoneBriefing(
-                          { ...(hormoneCycle || {}), track: hormoneTrack },
-                          new Date(`${calSheetIso}T12:00:00+09:00`)
-                        )
-                        const ids = skinRecList.slice(0, 16).map((p: any) => String(p.id)).filter(Boolean)
-                        const condJoined = calSheetConditionPick.join(' / ')
-                        const { error: aErr } = await supabase.from('skin_cycle_analysis').upsert(
-                          {
-                            auth_id: uid,
-                            record_date: calSheetIso,
-                            cycle_day: calc.cycleDay,
-                            hormone_stage: calc.phase,
-                            checkin_condition: condJoined,
-                            recommended_products: ids,
-                            updated_at: new Date().toISOString(),
-                          } as any,
-                          { onConflict: 'auth_id,record_date' }
-                        )
-                        if (aErr) {
-                          console.error('[calendar save] skin_cycle_analysis', aErr)
-                          setHomeToast('기록 저장에 실패했어요')
-                          return
-                        }
-                        const { error: dErr } = await supabase.from('skin_cycle_daily').upsert(
-                          {
-                            auth_id: uid,
-                            record_date: calSheetIso,
-                            note: calSheetNote.trim() || null,
-                            routine_completed: calSheetRoutine,
-                            updated_at: new Date().toISOString(),
-                          } as any,
-                          { onConflict: 'auth_id,record_date' }
-                        )
-                        if (dErr) {
-                          console.error('[calendar save] skin_cycle_daily', dErr)
-                          setHomeToast(
-                            'skin_cycle_daily 저장 실패: 테이블·컬럼을 확인하세요. 예) CREATE TABLE public.skin_cycle_daily (auth_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE, record_date date NOT NULL, note text, routine_completed boolean DEFAULT false, updated_at timestamptz DEFAULT now(), PRIMARY KEY (auth_id, record_date));'
-                          )
-                          return
-                        }
-                        const { data: ar } = await supabase
-                          .from('skin_cycle_analysis')
-                          .select('record_date,hormone_stage,checkin_condition')
-                          .eq('auth_id', uid)
-                          .gte('record_date', calendarDataBounds.yearStart)
-                          .lte('record_date', calendarDataBounds.yearEnd)
-                          .order('record_date', { ascending: true })
-                        setMonthCycleRows(ar || [])
-                        const { data: dr } = await supabase
-                          .from('skin_cycle_daily')
-                          .select('record_date,note,routine_completed')
-                          .eq('auth_id', uid)
-                          .gte('record_date', calendarDataBounds.yearStart)
-                          .lte('record_date', calendarDataBounds.yearEnd)
-                        setSkinDailyRows(dr || [])
-                        setCalSheetConditionStr(condJoined)
-                        setHomeToast('저장했어요')
-                        setCalSheetOpen(false)
-                      }}
-                      style={{
-                        width: '100%',
-                        padding: '12px',
-                        borderRadius: 10,
-                        border: 'none',
-                        background: '#7B5EA7',
-                        color: '#fff',
-                        fontSize: 13,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      저장
-                    </button>
-                  </div>
-                </>
+              {calSheetMounted ? (
+                <CalendarSheet
+                  open={calSheetOpen}
+                  onClose={() => setCalSheetOpen(false)}
+                  iso={calSheetIso}
+                  conditionPick={calSheetConditionPick}
+                  onConditionPick={setCalSheetConditionPick}
+                  note={calSheetNote}
+                  onNote={setCalSheetNote}
+                  onSavePeriodStart={async () => {
+                    const { data: u } = await supabase.auth.getUser()
+                    const uid = u.user?.id
+                    if (!uid) {
+                      setHomeToast('로그인 후 이용해 주세요')
+                      return
+                    }
+                    const cycleLen = Math.max(21, Math.min(60, Number(hormoneCycle?.cycle_length || 28)))
+                    const baseP = new Date(`${calSheetIso}T12:00:00+09:00`)
+                    const next = new Date(baseP)
+                    next.setDate(baseP.getDate() + cycleLen)
+                    const nextIso = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`
+                    const { error } = await supabase.from('hormone_cycle').upsert(
+                      {
+                        ...(hormoneCycle || {}),
+                        auth_id: uid,
+                        track: hormoneTrack,
+                        last_period_date: calSheetIso,
+                        period_started_at: calSheetIso,
+                        expected_period_date: nextIso,
+                        cycle_length: cycleLen,
+                        updated_at: new Date().toISOString(),
+                      } as any,
+                      { onConflict: 'auth_id' }
+                    )
+                    if (error) {
+                      setHomeToast('생리 시작 저장에 실패했어요')
+                      return
+                    }
+                    setHormoneCycle((prev: any) => ({
+                      ...(prev || {}),
+                      auth_id: uid,
+                      last_period_date: calSheetIso,
+                      period_started_at: calSheetIso,
+                      expected_period_date: nextIso,
+                      cycle_length: cycleLen,
+                      track: hormoneTrack,
+                    }))
+                    setHomeToast('생리 시작일을 반영했어요')
+                  }}
+                  onSavePeriodEnd={async () => {
+                    const { data: u } = await supabase.auth.getUser()
+                    const uid = u.user?.id
+                    if (!uid) {
+                      setHomeToast('로그인 후 이용해 주세요')
+                      return
+                    }
+                    const { error } = await supabase
+                      .from('hormone_cycle')
+                      .update({ period_end_date: calSheetIso, updated_at: new Date().toISOString() } as any)
+                      .eq('auth_id', uid)
+                    if (error) {
+                      setHomeToast(
+                        '생리 끝 저장 실패: hormone_cycle에 period_end_date 컬럼이 없을 수 있어요. Supabase SQL: ALTER TABLE public.hormone_cycle ADD COLUMN IF NOT EXISTS period_end_date date;'
+                      )
+                      return
+                    }
+                    setHormoneCycle((prev: any) => ({ ...(prev || {}), period_end_date: calSheetIso }))
+                    setHomeToast('생리 종료일을 저장했어요')
+                  }}
+                  onSave={async () => {
+                    const { data: auth } = await supabase.auth.getUser()
+                    const uid = auth.user?.id || myUserId
+                    if (!uid) {
+                      setHomeToast('로그인 후 이용해 주세요')
+                      return
+                    }
+                    const calc = calcHormoneBriefing(
+                      { ...(hormoneCycle || {}), track: hormoneTrack },
+                      new Date(`${calSheetIso}T12:00:00+09:00`)
+                    )
+                    const ids = skinRecList.slice(0, 16).map((p: any) => String(p.id)).filter(Boolean)
+                    const condJoined = calSheetConditionPick.join(' / ')
+                    const { error: aErr } = await supabase.from('skin_cycle_analysis').upsert(
+                      {
+                        auth_id: uid,
+                        record_date: calSheetIso,
+                        cycle_day: calc.cycleDay,
+                        hormone_stage: calc.phase,
+                        checkin_condition: condJoined,
+                        recommended_products: ids,
+                        updated_at: new Date().toISOString(),
+                      } as any,
+                      { onConflict: 'auth_id,record_date' }
+                    )
+                    if (aErr) {
+                      console.error('[calendar save] skin_cycle_analysis', aErr)
+                      setHomeToast('기록 저장에 실패했어요')
+                      return
+                    }
+                    const { error: dErr } = await supabase.from('skin_cycle_daily').upsert(
+                      {
+                        auth_id: uid,
+                        record_date: calSheetIso,
+                        note: calSheetNote.trim() || null,
+                        routine_completed: calSheetRoutine,
+                        updated_at: new Date().toISOString(),
+                      } as any,
+                      { onConflict: 'auth_id,record_date' }
+                    )
+                    if (dErr) {
+                      console.error('[calendar save] skin_cycle_daily', dErr)
+                      setHomeToast(
+                        'skin_cycle_daily 저장 실패: 테이블·컬럼을 확인하세요. 예) CREATE TABLE public.skin_cycle_daily (auth_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE, record_date date NOT NULL, note text, routine_completed boolean DEFAULT false, updated_at timestamptz DEFAULT now(), PRIMARY KEY (auth_id, record_date));'
+                      )
+                      return
+                    }
+                    const { data: ar } = await supabase
+                      .from('skin_cycle_analysis')
+                      .select('record_date,hormone_stage,checkin_condition')
+                      .eq('auth_id', uid)
+                      .gte('record_date', calendarDataBounds.yearStart)
+                      .lte('record_date', calendarDataBounds.yearEnd)
+                      .order('record_date', { ascending: true })
+                    setMonthCycleRows(ar || [])
+                    const { data: dr } = await supabase
+                      .from('skin_cycle_daily')
+                      .select('record_date,note,routine_completed')
+                      .eq('auth_id', uid)
+                      .gte('record_date', calendarDataBounds.yearStart)
+                      .lte('record_date', calendarDataBounds.yearEnd)
+                    setSkinDailyRows(dr || [])
+                    setCalSheetConditionStr(condJoined)
+                    setHomeToast('저장했어요')
+                    setCalSheetOpen(false)
+                  }}
+                />
               ) : null}
           </>
         </div>
