@@ -93,6 +93,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
           background: isOpen ? 'rgba(0,0,0,0.35)' : 'transparent',
           zIndex: isOpen ? 199 : -1,
           transition: 'background 220ms ease',
+          pointerEvents: isOpen ? 'auto' : 'none',
         }}
       />
       <div
@@ -109,6 +110,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
           transition: 'transform 240ms ease',
           display: 'flex',
           flexDirection: 'column',
+          pointerEvents: isOpen ? 'auto' : 'none',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 12px 8px' }}>
