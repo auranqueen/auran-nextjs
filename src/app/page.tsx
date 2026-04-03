@@ -2006,6 +2006,7 @@ AURAN이 내 피부 패턴을
           <>
               <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
                 {(['TODAY', 'MONTHLY', 'YEARLY'] as const).map(tab => {
+                  if (false && tab === 'MONTHLY') return null
                   const on = skinCalTab === tab
                   return (
                     <button
@@ -2224,7 +2225,7 @@ AURAN이 내 피부 패턴을
                         })}
                 </div>
               ) : null}
-              {skinCalTab === 'MONTHLY' ? (
+              {false && skinCalTab === 'MONTHLY' ? (
                 <div
                   style={{
                     display: 'grid',
@@ -2319,7 +2320,7 @@ AURAN이 내 피부 패턴을
                   })}
                 </div>
               ) : null}
-              {skinCalTab === 'MONTHLY' && !monthlyHasAnyRecord ? (
+              {false && skinCalTab === 'MONTHLY' && !monthlyHasAnyRecord ? (
                 <div
                   style={{
                     fontSize: 11,
@@ -2453,7 +2454,7 @@ AURAN이 내 피부 패턴을
                               e.preventDefault()
                               e.stopPropagation()
                               setSkinCalYM({ y: skinCalYM.y, m: mi })
-                              setSkinCalTab('MONTHLY')
+                              if (false) setSkinCalTab('MONTHLY')
                             }}
                             style={{
                               padding: '12px 6px',
@@ -2488,7 +2489,7 @@ AURAN이 내 피부 패턴을
                   </div>
                 </>
               ) : null}
-              {skinCalTab === 'MONTHLY' || skinCalTab === 'YEARLY' ? (
+              {(false && skinCalTab === 'MONTHLY') || skinCalTab === 'YEARLY' ? (
                 <div
                   style={{
                     display: 'flex',
