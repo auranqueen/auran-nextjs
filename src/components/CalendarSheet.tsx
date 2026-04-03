@@ -45,7 +45,8 @@ export default function CalendarSheet({
           borderTopRightRadius: 16,
           borderTop: '1px solid rgba(123,94,167,0.35)',
           padding: '16px',
-          maxHeight: '78vh',
+          paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px))',
+          maxHeight: '90vh',
           overflowY: 'auto',
         }}
       >
