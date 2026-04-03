@@ -1175,7 +1175,7 @@ AURAN이 내 피부 패턴을
       color: '#fff',
       paddingBottom: '0',
     }}>
-      <style>{`@keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}@keyframes todayPulse{0%{box-shadow:0 0 8px rgba(123,94,167,0.5)}50%{box-shadow:0 0 20px rgba(123,94,167,0.8)}100%{box-shadow:0 0 8px rgba(123,94,167,0.5)}}@keyframes todayGlow{0%{box-shadow:0 0 8px rgba(123,94,167,0.5),0 0 16px rgba(123,94,167,0.3),0 0 28px rgba(123,94,167,0.15)}50%{box-shadow:0 0 14px rgba(123,94,167,0.8),0 0 28px rgba(123,94,167,0.5),0 0 45px rgba(123,94,167,0.25),0 0 60px rgba(168,85,247,0.15)}100%{box-shadow:0 0 8px rgba(123,94,167,0.5),0 0 16px rgba(123,94,167,0.3),0 0 28px rgba(123,94,167,0.15)}}@keyframes todayShimmer{0%{opacity:0.4;transform:scale(1)}50%{opacity:0.7;transform:scale(1.04)}100%{opacity:0.4;transform:scale(1)}}@keyframes starTwinkle{0%{opacity:0.2;transform:scale(0.8)}50%{opacity:1;transform:scale(1.2)}100%{opacity:0.2;transform:scale(0.8)}}.home-cal-today-btn{position:relative;isolation:isolate;overflow:visible}.home-cal-today-btn::before{content:'';position:absolute;inset:-4px;border-radius:12px;background:transparent;animation:none;z-index:-1;pointer-events:none!important}.home-cal-today-btn::after{content:'';position:absolute;inset:0;pointer-events:none!important;z-index:-1}.home-cal-yearly-month-btn{position:relative;isolation:isolate}.home-cal-yearly-month-btn::before,.home-cal-yearly-month-btn::after{pointer-events:none!important}`}</style>
+      <style>{`@keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}.home-cal-yearly-month-btn{position:relative;isolation:isolate}.home-cal-yearly-month-btn::before,.home-cal-yearly-month-btn::after{pointer-events:none!important}`}</style>
 
       {/* ── 탑바 ── */}
       <header style={{
@@ -2055,7 +2055,7 @@ AURAN이 내 피부 패턴을
                     const absOff = Math.abs(d.stripOff)
                     const sc = absOff === 0 ? 1 : absOff === 1 ? 0.88 : absOff === 2 ? 0.78 : 0.68
                     const bg = d.isToday
-                      ? 'linear-gradient(135deg, rgba(123,94,167,0.35), rgba(168,85,247,0.2))'
+                      ? 'rgba(123,94,167,0.4)'
                       : inPeriodPink
                         ? 'rgba(224,120,152,0.25)'
                         : baseBg
@@ -2064,7 +2064,6 @@ AURAN이 내 피부 패턴을
                       <button
                         key={d.iso}
                         type="button"
-                        className={d.isToday ? 'home-cal-today-btn' : undefined}
                         onClick={() => {
                           const seoul = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
                           const todayIso = `${seoul.getFullYear()}-${String(seoul.getMonth() + 1).padStart(2, '0')}-${String(seoul.getDate()).padStart(2, '0')}`
@@ -2088,7 +2087,7 @@ AURAN이 내 피부 패턴을
                           minWidth: todayMinW,
                           borderRadius: 10,
                           border: d.isToday
-                            ? '1px solid rgba(168,85,247,0.8)'
+                            ? '1px solid #7B5EA7'
                             : hasCheckin
                               ? '1px solid rgba(201,169,110,0.55)'
                               : '1px solid rgba(255,255,255,0.12)',
@@ -2097,11 +2096,9 @@ AURAN이 내 피부 패턴을
                           padding: d.isToday ? '10px 0 8px' : '7px 0 6px',
                           cursor: 'pointer',
                           fontFamily: 'inherit',
-                          position: d.isToday ? 'relative' : undefined,
                           opacity: calPhaseNeutral && !hasCheckin && !d.isToday ? 0.45 : 1,
                           transform: `scale(${sc})`,
                           transition: 'transform 0.2s ease',
-                          animation: undefined,
                           boxSizing: 'border-box',
                           pointerEvents: 'auto',
                         }}
@@ -2109,8 +2106,6 @@ AURAN이 내 피부 패턴을
                         {d.isToday ? (
                           <span
                             style={{
-                              position: 'relative',
-                              zIndex: 1,
                               display: 'inline-flex',
                               flexDirection: 'column',
                               alignItems: 'center',
@@ -2119,104 +2114,10 @@ AURAN이 내 피부 패턴을
                               width: '100%',
                             }}
                           >
-                                  <span
-                                    aria-hidden
-                                    style={{
-                                      position: 'absolute',
-                                      top: 0,
-                                      left: '50%',
-                                      transform: 'translateX(-50%)',
-                                      pointerEvents: 'none',
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        display: 'block',
-                                        fontSize: 8,
-                                        color: 'rgba(255,220,100,0.9)',
-                                        animation: 'none',
-                                        animationDelay: '0s',
-                                        pointerEvents: 'none',
-                                      }}
-                                    >
-                                      ✦
-                                    </span>
-                                  </span>
-                                  <span
-                                    aria-hidden
-                                    style={{
-                                      position: 'absolute',
-                                      top: '50%',
-                                      right: 0,
-                                      transform: 'translateY(-50%)',
-                                      pointerEvents: 'none',
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        display: 'block',
-                                        fontSize: 8,
-                                        color: 'rgba(255,220,100,0.9)',
-                                        animation: 'none',
-                                        animationDelay: '0.6s',
-                                        pointerEvents: 'none',
-                                      }}
-                                    >
-                                      ✦
-                                    </span>
-                                  </span>
-                                  <span
-                                    aria-hidden
-                                    style={{
-                                      position: 'absolute',
-                                      bottom: 0,
-                                      left: '50%',
-                                      transform: 'translateX(-50%)',
-                                      pointerEvents: 'none',
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        display: 'block',
-                                        fontSize: 8,
-                                        color: 'rgba(255,220,100,0.9)',
-                                        animation: 'none',
-                                        animationDelay: '1.2s',
-                                        pointerEvents: 'none',
-                                      }}
-                                    >
-                                      ✦
-                                    </span>
-                                  </span>
-                                  <span
-                                    aria-hidden
-                                    style={{
-                                      position: 'absolute',
-                                      top: '50%',
-                                      left: 0,
-                                      transform: 'translateY(-50%)',
-                                      pointerEvents: 'none',
-                                    }}
-                                  >
-                                    <span
-                                      style={{
-                                        display: 'block',
-                                        fontSize: 8,
-                                        color: 'rgba(255,220,100,0.9)',
-                                        animation: 'none',
-                                        animationDelay: '1.8s',
-                                        pointerEvents: 'none',
-                                      }}
-                                    >
-                                      ✦
-                                    </span>
-                                  </span>
-                                  <>
-                                    <span style={{ fontSize: 24, lineHeight: 1 }}>⭐</span>
-                                    <span style={{ fontSize: 9, fontWeight: 400, marginTop: 2 }}>오늘</span>
-                                  </>
-                                </span>
-                              ) : (
+                            <span style={{ fontSize: 24, lineHeight: 1 }}>⭐</span>
+                            <span style={{ fontSize: 9, fontWeight: 400, marginTop: 2 }}>오늘</span>
+                          </span>
+                        ) : (
                                 <div style={{ fontSize: 10, opacity: inPeriodPink ? 1 : 0.85 }}>{d.day}</div>
                               )}
                             </button>
