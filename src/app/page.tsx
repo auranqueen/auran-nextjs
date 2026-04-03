@@ -139,6 +139,11 @@ export default function CustomerHomePage() {
   const cart = useCart()
   const routineMoreRef = useRef<HTMLDivElement | null>(null)
 
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   const [userName, setUserName] = useState('유미')
   const [selectedConcern, setSelectedConcern] = useState(0)
   const [saleTab, setSaleTab] = useState<'sale' | 'group'>('sale')
@@ -192,7 +197,10 @@ export default function CustomerHomePage() {
   const [routineMentorOpen, setRoutineMentorOpen] = useState(false)
   const [routineStepPick, setRoutineStepPick] = useState<Record<string, boolean>>({})
   const [homeToast, setHomeToast] = useState('')
-  const [seoulClient, setSeoulClient] = useState<Date | null>(null)
+  const [seoulClient, setSeoulClient] = useState<Date | null>(() => {
+    if (typeof window === 'undefined') return null
+    return getSeoulToday()
+  })
   const [todayLocaleLabel, setTodayLocaleLabel] = useState('')
   useEffect(() => {
     const s = getSeoulToday()
@@ -236,6 +244,7 @@ export default function CustomerHomePage() {
   }, [homeEditSheet])
 
   useEffect(() => {
+    if (!mounted) return
     const supabase = createClient()
     const loadMotivationProfile = async () => {
       const {
@@ -414,9 +423,10 @@ export default function CustomerHomePage() {
       .then(({ data }) => setHomeContestBanner(data || null))
 
     setLoading(false)
-  }, [])
+  }, [mounted])
 
   useEffect(() => {
+    if (!mounted) return
     const keyword = searchKeyword.trim()
     if (keyword.length < 2) {
       setSearchResults([])
@@ -460,9 +470,10 @@ export default function CustomerHomePage() {
     return () => {
       cancelled = true
     }
-  }, [searchKeyword, supabase])
+  }, [searchKeyword, supabase, mounted])
 
   useEffect(() => {
+    if (!mounted) return
     const run = async () => {
       const {
         data: { session },
@@ -481,7 +492,7 @@ export default function CustomerHomePage() {
       setUnreadCount((unreadRows || []).length)
     }
     void run()
-  }, [supabase, notificationOpen])
+  }, [supabase, notificationOpen, mounted])
 
   // 실시간 타이머
   useEffect(() => {
@@ -539,12 +550,13 @@ export default function CustomerHomePage() {
   }, [motivationCarousel.length, motivationIdx])
 
   useEffect(() => {
+    if (!mounted) return
     void supabase.auth.getSession().then(({ data: { session } }) => {
       const user = session?.user as any
       const role = user?.app_metadata?.role ?? user?.raw_app_meta_data?.role ?? ''
       setIsSuperAdmin(role === 'super_admin')
     })
-  }, [supabase])
+  }, [supabase, mounted])
 
   useEffect(() => {
     if (checkinOptions.length > 0) {
@@ -569,6 +581,7 @@ export default function CustomerHomePage() {
   }, [homeToast])
 
   useEffect(() => {
+    if (!mounted) return
     if (!myUserId) return
     const run = async () => {
       const { data: qs } = await supabase
@@ -632,9 +645,10 @@ export default function CustomerHomePage() {
       }
     }
     void run()
-  }, [myUserId, hormoneTrack, supabase])
+  }, [myUserId, hormoneTrack, supabase, mounted])
 
   useEffect(() => {
+    if (!mounted) return
     if (!myUserId) return
     const ch = supabase
       .channel(`home-hormone-cycle-${myUserId}`)
@@ -652,7 +666,7 @@ export default function CustomerHomePage() {
     return () => {
       void supabase.removeChannel(ch)
     }
-  }, [myUserId, supabase])
+  }, [myUserId, supabase, mounted])
 
   useEffect(() => {
     const next: Record<string, boolean> = {}
@@ -790,6 +804,20 @@ export default function CustomerHomePage() {
   useEffect(() => {
     setHormonePhaseTipOpen(false)
   }, [hormoneMainLine, hormoneSubLine])
+
+  if (!mounted) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          background: 'linear-gradient(165deg, #14110e 0%, #0D0B09 42%, #080706 100%)',
+          maxWidth: '390px',
+          margin: '0 auto',
+        }}
+      />
+    )
+  }
+
   const homeCalendarKind =
     profileCycleType === 'menopause'
       ? 'menopause'
