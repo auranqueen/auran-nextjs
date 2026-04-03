@@ -30,7 +30,7 @@ export default function CalendarSheet({
   if (!open) return null
   return (
     <>
-      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 170 }} />
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 160 }} />
       <div
         style={{
           position: 'fixed',
@@ -39,7 +39,7 @@ export default function CalendarSheet({
           bottom: 0,
           maxWidth: 390,
           margin: '0 auto',
-          zIndex: 171,
+          zIndex: 180,
           background: '#141018',
           borderTopLeftRadius: 16,
           borderTopRightRadius: 16,
