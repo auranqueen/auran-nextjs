@@ -150,20 +150,19 @@ export async function middleware(req: NextRequest) {
     return redirectPreservingSupabaseCookies(res, NextResponse.redirect(loginUrl))
   }
 
-  if (user && isHome) {
-    const userRole = user.user_metadata?.role || ''
-    if (userRole === 'brand')
-      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(new URL('/dashboard/brand', req.url)))
-    if (userRole === 'owner' || userRole === 'salon')
-      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(new URL('/dashboard/owner', req.url)))
-    if (userRole === 'partner')
-      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(new URL('/dashboard/partner', req.url)))
-  }
-
   let role = await getDbRole(supabase, user.id)
   // If RLS blocks role lookup, fall back to email allowlist for admin entry
   if (!role && user.email === 'admin@auran.kr') role = 'admin'
   const normalizedRole = role === 'owner' ? 'salon' : role
+
+  if (user && isHome) {
+    if (normalizedRole === 'brand')
+      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(new URL('/dashboard/brand', req.url)))
+    if (normalizedRole === 'salon' || normalizedRole === 'owner')
+      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(new URL('/dashboard/owner', req.url)))
+    if (normalizedRole === 'partner')
+      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(new URL('/dashboard/partner', req.url)))
+  }
 
   // admin routes: admin only (and keeps session refreshed via middleware cookies)
   if (isAdmin) {
