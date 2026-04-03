@@ -228,7 +228,7 @@ function AuthDoneInner() {
 
 export default function AuthDonePage() {
   return (
-    <Suspense fallback={<div style={{ minHeight: '100vh', background: 'var(--bg)', color: 'var(--text3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>로그인 처리 중...</div>}>
+    <Suspense fallback={<div style={{ position: 'fixed', inset: 0, background: '#0D0B09', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(201,169,110,0.6)', fontSize: 12, fontFamily: 'monospace' }}>AURAN</div>}>
       <AuthDoneInner />
     </Suspense>
   )
