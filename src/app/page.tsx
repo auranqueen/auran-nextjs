@@ -470,7 +470,7 @@ export default function CustomerHomePage() {
     return () => {
       cancelled = true
     }
-  }, [searchKeyword, supabase, mounted])
+  }, [searchKeyword, mounted])
 
   useEffect(() => {
     if (!mounted) return
@@ -492,7 +492,7 @@ export default function CustomerHomePage() {
       setUnreadCount((unreadRows || []).length)
     }
     void run()
-  }, [supabase, notificationOpen, mounted])
+  }, [notificationOpen, mounted])
 
   // 실시간 타이머
   useEffect(() => {
@@ -556,7 +556,7 @@ export default function CustomerHomePage() {
       const role = user?.app_metadata?.role ?? user?.raw_app_meta_data?.role ?? ''
       setIsSuperAdmin(role === 'super_admin')
     })
-  }, [supabase, mounted])
+  }, [mounted])
 
   useEffect(() => {
     if (checkinOptions.length > 0) {
@@ -645,7 +645,7 @@ export default function CustomerHomePage() {
       }
     }
     void run()
-  }, [myUserId, hormoneTrack, supabase, mounted])
+  }, [myUserId, hormoneTrack, mounted])
 
   useEffect(() => {
     if (!mounted) return
@@ -666,7 +666,7 @@ export default function CustomerHomePage() {
     return () => {
       void supabase.removeChannel(ch)
     }
-  }, [myUserId, supabase, mounted])
+  }, [myUserId, mounted])
 
   useEffect(() => {
     const next: Record<string, boolean> = {}
@@ -761,7 +761,7 @@ export default function CustomerHomePage() {
       checkin_condition: condition,
       recommended_products: ids,
     })
-  }, [checkInTab, myUserId, hormoneCycle, hormoneTrack, skinRecList, supabase, homeCheckinSorted, displayCheckinTabs])
+  }, [checkInTab, myUserId, hormoneCycle, hormoneTrack, skinRecList, homeCheckinSorted, displayCheckinTabs])
 
   const logProductNav = (p: any) => {
     if (!myUserId || !p?.id) return

@@ -101,7 +101,7 @@ export default function CalendarSection({
       .then(({ data }) => {
         setProfileCreatedAt(data?.created_at != null ? String((data as any).created_at) : null)
       })
-  }, [myUserId, supabase])
+  }, [myUserId])
 
   useEffect(() => {
     if (!myUserId) {
