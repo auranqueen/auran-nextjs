@@ -809,12 +809,9 @@ export default function CustomerHomePage() {
     return (
       <div
         style={{
-          minHeight: '100vh',
-          background: 'linear-gradient(165deg, #14110e 0%, #0D0B09 42%, #080706 100%)',
-          maxWidth: '390px',
-          margin: '0 auto',
           position: 'fixed',
           inset: 0,
+          background: '#0D0B09',
           zIndex: 9999,
         }}
       />
