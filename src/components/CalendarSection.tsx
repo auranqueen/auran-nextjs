@@ -136,7 +136,7 @@ export default function CalendarSection({
       setCalendarPickDate(todayIso)
     }
     void run()
-  }, [myUserId, supabase, profileCreatedAt])
+  }, [myUserId, profileCreatedAt])
 
   useEffect(() => {
     if (!myUserId) setCalSheetOpen(false)
