@@ -2447,7 +2447,7 @@ AURAN이 내 피부 패턴을
                 <>
                   <div
                     onClick={() => setCalSheetOpen(false)}
-                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 210 }}
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 170 }}
                   />
                   <div
                     style={{
@@ -2457,8 +2457,7 @@ AURAN이 내 피부 패턴을
                       bottom: 0,
                       maxWidth: 390,
                       margin: '0 auto',
-                      zIndex: 211,
-                      pointerEvents: 'auto',
+                      zIndex: 171,
                       background: '#141018',
                       borderTopLeftRadius: 16,
                       borderTopRightRadius: 16,
@@ -2468,47 +2467,42 @@ AURAN이 내 피부 패턴을
                       overflowY: 'auto',
                     }}
                   >
-                    <div style={{ fontSize: 10, fontFamily: 'monospace', color: 'rgba(255,255,255,0.45)', marginBottom: 4, letterSpacing: '0.05em' }}>
-                      {(() => {
-                        const p = calSheetIso.split('-')
-                        if (p.length !== 3) return calSheetIso
-                        return `${MONTHS[Number(p[1]) - 1]} ${Number(p[2])}, ${p[0]}`
-                      })()}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                      <div style={{ fontSize: 13, color: '#fff' }}>{calSheetIso}</div>
+                      <button
+                        type="button"
+                        onClick={() => setCalSheetOpen(false)}
+                        style={{ background: 'none', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer' }}
+                      >
+                        ✕
+                      </button>
                     </div>
-                    <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.88)', marginBottom: 14 }}>이 날 기록</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>체크인 컨디션</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-                      {CALENDAR_SHEET_CONDITION_LABELS.map(lab => {
-                        const on = calSheetConditionPick.includes(lab)
-                        return (
-                          <button
-                            key={lab}
-                            type="button"
-                            onClick={() =>
-                              setCalSheetConditionPick(prev =>
-                                prev.includes(lab) ? prev.filter(x => x !== lab) : [...prev, lab]
-                              )
-                            }
-                            style={{
-                              padding: '6px 10px',
-                              borderRadius: 999,
-                              border: on ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.12)',
-                              background: on ? '#7B5EA7' : 'rgba(255,255,255,0.04)',
-                              color: on ? '#fff' : 'rgba(255,255,255,0.75)',
-                              fontSize: 11,
-                              fontWeight: 400,
-                              cursor: 'pointer',
-                              fontFamily: 'inherit',
-                              pointerEvents: 'auto',
-                            }}
-                          >
-                            {lab}
-                          </button>
-                        )
-                      })}
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+                      {CALENDAR_SHEET_CONDITION_LABELS.map(label => (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() =>
+                            setCalSheetConditionPick(prev =>
+                              prev.includes(label) ? prev.filter(x => x !== label) : [...prev, label]
+                            )
+                          }
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: 20,
+                            border: 'none',
+                            cursor: 'pointer',
+                            background: calSheetConditionPick.includes(label) ? '#7B5EA7' : 'rgba(255,255,255,0.1)',
+                            color: '#fff',
+                            fontSize: 11,
+                          }}
+                        >
+                          {label}
+                        </button>
+                      ))}
                     </div>
                     {homeCalendarKind === 'menstrual' ? (
-                      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+                      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
                         <button
                           type="button"
                           onClick={async () => {
@@ -2553,20 +2547,14 @@ AURAN이 내 피부 패턴을
                           }}
                           style={{
                             flex: 1,
-                            padding: '9px 8px',
+                            padding: '10px 0',
+                            width: '100%',
                             borderRadius: 10,
-                            border: '1px solid rgba(123,94,167,0.45)',
-                            background:
-                              String(hormoneCycle?.last_period_date || '').slice(0, 10) === calSheetIso ||
-                              String(hormoneCycle?.period_started_at || '').slice(0, 10) === calSheetIso
-                                ? '#e07898'
-                                : 'rgba(123,94,167,0.2)',
-                            color: '#e8d9ff',
-                            fontSize: 11,
-                            fontWeight: 400,
+                            border: '1px solid rgba(123,94,167,0.4)',
+                            background: 'rgba(123,94,167,0.2)',
+                            color: '#fff',
+                            fontSize: 12,
                             cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            pointerEvents: 'auto',
                           }}
                         >
                           생리 시작
@@ -2595,23 +2583,20 @@ AURAN이 내 피부 패턴을
                           }}
                           style={{
                             flex: 1,
-                            padding: '9px 8px',
+                            padding: '10px 0',
+                            width: '100%',
                             borderRadius: 10,
-                            border: '1px solid rgba(201,169,110,0.45)',
-                            background: 'rgba(201,169,110,0.15)',
-                            color: '#f1e0b7',
-                            fontSize: 11,
-                            fontWeight: 400,
+                            border: '1px solid rgba(123,94,167,0.4)',
+                            background: 'rgba(123,94,167,0.2)',
+                            color: '#fff',
+                            fontSize: 12,
                             cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            pointerEvents: 'auto',
                           }}
                         >
                           생리 끝
                         </button>
                       </div>
                     ) : null}
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 6 }}>메모</div>
                     <input
                       value={calSheetNote}
                       onChange={e => setCalSheetNote(e.target.value)}
@@ -2619,16 +2604,14 @@ AURAN이 내 피부 패턴을
                       maxLength={200}
                       style={{
                         width: '100%',
-                        marginBottom: 14,
+                        marginBottom: 16,
                         padding: '10px 12px',
                         borderRadius: 10,
-                        border: '1px solid rgba(255,255,255,0.12)',
-                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        background: 'rgba(255,255,255,0.08)',
                         color: '#fff',
                         fontSize: 12,
-                        fontWeight: 400,
                         outline: 'none',
-                        fontFamily: 'inherit',
                         boxSizing: 'border-box',
                       }}
                     />
@@ -2702,16 +2685,13 @@ AURAN이 내 피부 패턴을
                       }}
                       style={{
                         width: '100%',
-                        padding: '12px 14px',
-                        borderRadius: 12,
+                        padding: '12px',
+                        borderRadius: 10,
                         border: 'none',
                         background: '#7B5EA7',
                         color: '#fff',
                         fontSize: 13,
-                        fontWeight: 400,
                         cursor: 'pointer',
-                        fontFamily: 'inherit',
-                        pointerEvents: 'auto',
                       }}
                     >
                       저장
