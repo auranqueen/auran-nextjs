@@ -2449,6 +2449,7 @@ AURAN이 내 피부 패턴을
                       overflowY: 'auto',
                     }}
                   >
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                       <div style={{ fontSize: 13, color: '#fff' }}>{calSheetIso}</div>
                       <button
@@ -2685,6 +2686,7 @@ AURAN이 내 피부 패턴을
                     >
                       저장
                     </button>
+                    </div>
                   </div>
                 </>
               ) : null}
