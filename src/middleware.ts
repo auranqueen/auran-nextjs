@@ -99,7 +99,8 @@ export async function middleware(req: NextRequest) {
   const isAdmin = pathname.startsWith('/admin')
   const isBrand = pathname.startsWith('/brand')
   const softAuth = isSoftAuthPath(pathname)
-  if (!isSuperConsole && !isDashboard && !isAdmin && !isBrand && !isProtectedPath && !softAuth) return NextResponse.next()
+  const isHome = pathname === '/'
+  if (!isHome && !isSuperConsole && !isDashboard && !isAdmin && !isBrand && !isProtectedPath && !softAuth) return NextResponse.next()
 
   // super-console 로그인 페이지는 예외(비로그인 접근 허용)
   if (pathname === '/super-console/login') return NextResponse.next()
@@ -113,6 +114,11 @@ export async function middleware(req: NextRequest) {
   const user = session?.user ?? null
 
   if (!user) {
+    if (isHome) {
+      const loginUrl = req.nextUrl.clone()
+      loginUrl.pathname = '/login'
+      return redirectPreservingSupabaseCookies(res, NextResponse.redirect(loginUrl))
+    }
     if (softAuth) {
       const loginUrl = req.nextUrl.clone()
       loginUrl.pathname = '/login'
