@@ -813,6 +813,9 @@ export default function CustomerHomePage() {
           background: 'linear-gradient(165deg, #14110e 0%, #0D0B09 42%, #080706 100%)',
           maxWidth: '390px',
           margin: '0 auto',
+          position: 'fixed',
+          inset: 0,
+          zIndex: 9999,
         }}
       />
     )
