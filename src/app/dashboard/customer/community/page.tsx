@@ -98,8 +98,8 @@ export default function CustomerCommunityPage() {
       .select('*')
       .eq('is_public', true)
       .eq('status', 'active')
-      .lte('start_at', iso)
-      .gte('end_at', iso)
+      .lte('starts_at', iso)
+      .gte('ends_at', iso)
       .limit(1)
       .maybeSingle()
     setContestRow(c || null)
@@ -488,7 +488,7 @@ export default function CustomerCommunityPage() {
             }}
           >
             <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.45, flex: 1, minWidth: 0 }}>
-              🏆 {contestRow.title} · {contestDDayLabel(contestRow.end_at)} · 투표하면 반값!
+              🏆 {contestRow.title} · {contestDDayLabel(contestRow.ends_at)} · 투표하면 반값!
             </div>
             <button
               type="button"
@@ -605,16 +605,16 @@ export default function CustomerCommunityPage() {
                 <div style={{ marginBottom: 12 }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 6 }}>{contestRow.title}</div>
                   <div style={{ fontSize: 11, color: TEXT_MUTED }}>
-                    테마 {contestRow.theme} · {new Date(contestRow.start_at).toLocaleDateString('ko-KR')} ~ {new Date(contestRow.end_at).toLocaleDateString('ko-KR')}
+                    테마 {contestRow.theme} · {new Date(contestRow.starts_at).toLocaleDateString('ko-KR')} ~ {new Date(contestRow.ends_at).toLocaleDateString('ko-KR')}
                   </div>
                   <div style={{ marginTop: 8, fontSize: 13, color: '#c4a7e7', fontFamily: 'monospace' }}>
-                    마감까지 {contestDDayLabel(contestRow.end_at)}
+                    마감까지 {contestDDayLabel(contestRow.ends_at)}
                     {votedContest ? <span style={{ marginLeft: 8, color: GOLD }}>· 투표 완료</span> : null}
                   </div>
                   <div style={{ marginTop: 4, fontSize: 11, color: TEXT_MUTED, fontFamily: 'monospace' }}>
                     {(() => {
                       void contestTick
-                      const ms = Math.max(0, new Date(contestRow.end_at).getTime() - Date.now())
+                      const ms = Math.max(0, new Date(contestRow.ends_at).getTime() - Date.now())
                       const h = Math.floor(ms / 3600000)
                       const mm = Math.floor((ms % 3600000) / 60000)
                       const s = Math.floor((ms % 60000) / 1000)

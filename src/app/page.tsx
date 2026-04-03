@@ -407,8 +407,8 @@ export default function CustomerHomePage() {
       .select('*')
       .eq('is_public', true)
       .eq('status', 'active')
-      .lte('start_at', iso)
-      .gte('end_at', iso)
+      .lte('starts_at', iso)
+      .gte('ends_at', iso)
       .limit(1)
       .maybeSingle()
       .then(({ data }) => setHomeContestBanner(data || null))
@@ -2301,14 +2301,14 @@ export default function CustomerHomePage() {
               }}
             >
               {(() => {
-                const endRaw = String(homeContestBanner.end_at ?? '')
+                const endRaw = String(homeContestBanner.ends_at ?? '')
                 const endSlice = endRaw.slice(0, 10)
                 let endDay: number
                 if (/^\d{4}-\d{2}-\d{2}$/.test(endSlice)) {
                   const [ey, em, ed] = endSlice.split('-').map(Number)
                   endDay = seoulNoonUtcMs(ey, em - 1, ed)
                 } else {
-                  const e = new Date(homeContestBanner.end_at)
+                  const e = new Date(homeContestBanner.ends_at)
                   endDay = seoulNoonUtcMs(e.getFullYear(), e.getMonth(), e.getDate())
                 }
                 const { y: ty, m0: tm, d: td } = seoulYmdForHydrationSafeCalendar(seoulClient)

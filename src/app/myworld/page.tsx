@@ -74,8 +74,8 @@ export default function MyWorldPage() {
         .select('*')
         .eq('is_public', true)
         .eq('status', 'active')
-        .lte('start_at', iso)
-        .gte('end_at', iso)
+        .lte('starts_at', iso)
+        .gte('ends_at', iso)
         .limit(1)
         .maybeSingle()
       setRoomContest(c || null)
@@ -766,7 +766,7 @@ export default function MyWorldPage() {
                 <div style={{ fontSize: 11, color: '#c4a7e7', marginBottom: 4 }}>✨ 새 배경 투표 중이에요</div>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', lineHeight: 1.35 }}>{roomContest.title}</div>
                 <div style={{ marginTop: 6, display: 'inline-block', fontSize: 9, padding: '2px 8px', borderRadius: 999, background: 'rgba(123,94,167,0.2)', color: '#e8d6ff' }}>
-                  {contestRoomDDay(roomContest.end_at)}
+                  {contestRoomDDay(roomContest.ends_at)}
                 </div>
               </div>
               <button
