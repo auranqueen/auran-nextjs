@@ -13,9 +13,18 @@ type BRow = {
   brand_name_kr?: string | null
   origin_country?: string | null
   origin?: string | null
+  description?: string | null
   manager_name?: string | null
+  manager_title?: string | null
   manager_phone?: string | null
   contact?: string | null
+  address?: string | null
+  biz_no?: string | null
+  ceo_name?: string | null
+  bank_name?: string | null
+  bank_account?: string | null
+  bank_holder?: string | null
+  extra_request?: string | null
   product_categories?: string[] | null
   settlement_cycle?: string | null
   price_range_min?: number | null
@@ -28,6 +37,39 @@ type BRow = {
   approved_at?: string | null
   reject_reason?: string | null
   user_id?: string | null
+  status?: string | null
+}
+
+type DetailForm = {
+  name: string
+  brand_name_kr: string
+  origin: string
+  description: string
+  manager_name: string
+  manager_title: string
+  mgrEmail: string
+  mgrPhone: string
+  address: string
+  biz_no: string
+  corpName: string
+  ceo_name: string
+  bank_name: string
+  bank_account: string
+  bank_holder: string
+  settlement_cycle: string
+  price_min: string
+  price_max: string
+  promo_condition: string
+  apply_status: string
+  reject_reason: string
+  extra_request: string
+}
+
+type ProductRow = {
+  id: string
+  name: string
+  retail_price?: number | null
+  thumb_img?: string | null
   status?: string | null
 }
 
@@ -59,6 +101,13 @@ export default function AdminBrandsPage() {
   const [connectProducts, setConnectProducts] = useState<{ id: string; name: string; brand_user_id: string | null }[]>([])
   const [connectSel, setConnectSel] = useState<Set<string>>(new Set())
   const [connectBusy, setConnectBusy] = useState(false)
+  const [detailBrand, setDetailBrand] = useState<BRow | null>(null)
+  const [detailTab, setDetailTab] = useState<'info' | 'products'>('info')
+  const [detailForm, setDetailForm] = useState<DetailForm | null>(null)
+  const [detailSaving, setDetailSaving] = useState(false)
+  const [detailProducts, setDetailProducts] = useState<ProductRow[]>([])
+  const [detailProductsLoading, setDetailProductsLoading] = useState(false)
+  const [productBusyId, setProductBusyId] = useState<string | null>(null)
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -70,7 +119,7 @@ export default function AdminBrandsPage() {
     const { data: bs, error } = await supabase
       .from('brands')
       .select(
-        'id,name,brand_name_kr,origin_country,origin,manager_name,manager_phone,contact,product_categories,settlement_cycle,price_range_min,price_range_max,promo_condition,applied_at,created_at,biz_doc_url,apply_status,approved_at,reject_reason,user_id,status'
+        'id,name,brand_name_kr,origin_country,origin,description,manager_name,manager_title,manager_phone,contact,address,biz_no,ceo_name,bank_name,bank_account,bank_holder,extra_request,product_categories,settlement_cycle,price_range_min,price_range_max,promo_condition,applied_at,created_at,biz_doc_url,apply_status,approved_at,reject_reason,user_id,status'
       )
       .not('user_id', 'is', null)
       .order('created_at', { ascending: false })
@@ -234,6 +283,147 @@ export default function AdminBrandsPage() {
     setConnectSel(new Set())
   }
 
+  const openDetail = (b: BRow) => {
+    const ex = String(b.extra_request || '')
+    let corpName = ''
+    const cm = ex.match(/상호\(법인명\):\s*([^\n]*)/)
+    if (cm) corpName = cm[1].trim()
+    const cLines = String(b.contact || '').split('\n')
+    const uid = b.user_id || ''
+    const u = uid ? userById[uid] : undefined
+    setDetailForm({
+      name: b.name || '',
+      brand_name_kr: b.brand_name_kr || '',
+      origin: String(b.origin_country || b.origin || ''),
+      description: String(b.description || ''),
+      manager_name: b.manager_name || '',
+      manager_title: b.manager_title || '',
+      mgrEmail: contactEmail(b.contact) || u?.email || '',
+      mgrPhone: (cLines[1] || '').trim() || b.manager_phone || '',
+      address: b.address || '',
+      biz_no: b.biz_no || '',
+      corpName,
+      ceo_name: b.ceo_name || '',
+      bank_name: b.bank_name || '',
+      bank_account: b.bank_account || '',
+      bank_holder: b.bank_holder || '',
+      settlement_cycle: b.settlement_cycle || '',
+      price_min: b.price_range_min != null ? String(b.price_range_min) : '',
+      price_max: b.price_range_max != null ? String(b.price_range_max) : '',
+      promo_condition: b.promo_condition || '',
+      apply_status: normApply(b.apply_status) || 'pending',
+      reject_reason: b.reject_reason || '',
+      extra_request: ex,
+    })
+    setDetailBrand(b)
+    setDetailTab('info')
+    setDetailProducts([])
+  }
+
+  const saveBrandDetail = async () => {
+    if (!detailBrand || !detailForm) return
+    setDetailSaving(true)
+    let extra = String(detailForm.extra_request || '')
+    const corp = detailForm.corpName.trim()
+    if (corp) {
+      const line = `상호(법인명): ${corp}`
+      extra = /상호\(법인명\):/.test(extra) ? extra.replace(/상호\(법인명\):[^\n]*/g, line) : (extra.trim() ? `${extra.trim()}\n\n${line}` : line)
+    }
+    const prMin = detailForm.price_min.trim() === '' ? null : Math.floor(Number(detailForm.price_min))
+    const prMax = detailForm.price_max.trim() === '' ? null : Math.floor(Number(detailForm.price_max))
+    const payload: Record<string, unknown> = {
+      name: detailForm.name.trim(),
+      brand_name_kr: detailForm.brand_name_kr.trim() || null,
+      origin_country: detailForm.origin.trim() || null,
+      origin: detailForm.origin.trim() || null,
+      description: detailForm.description.trim() || null,
+      manager_name: detailForm.manager_name.trim() || null,
+      manager_title: detailForm.manager_title.trim() || null,
+      manager_phone: detailForm.mgrPhone.trim() || null,
+      contact: `${detailForm.mgrEmail.trim()}\n${detailForm.mgrPhone.trim()}`,
+      address: detailForm.address.trim() || null,
+      biz_no: detailForm.biz_no.trim() || null,
+      ceo_name: detailForm.ceo_name.trim() || null,
+      bank_name: detailForm.bank_name.trim() || null,
+      bank_account: detailForm.bank_account.trim() || null,
+      bank_holder: detailForm.bank_holder.trim() || null,
+      settlement_cycle: detailForm.settlement_cycle.trim() || null,
+      price_range_min: prMin != null && Number.isFinite(prMin) ? prMin : null,
+      price_range_max: prMax != null && Number.isFinite(prMax) ? prMax : null,
+      promo_condition: detailForm.promo_condition.trim() || null,
+      apply_status: detailForm.apply_status,
+      reject_reason: detailForm.apply_status === 'rejected' ? detailForm.reject_reason.trim() || null : null,
+      extra_request: extra.trim() || null,
+    }
+    const { error } = await supabase.from('brands').update(payload as any).eq('id', detailBrand.id)
+    setDetailSaving(false)
+    if (error) {
+      showToast('저장 실패: ' + error.message)
+      return
+    }
+    showToast('저장됨')
+    setDetailBrand(null)
+    setDetailForm(null)
+    await load()
+  }
+
+  useEffect(() => {
+    if (!detailBrand || detailTab !== 'products') return
+    const authId = userById[detailBrand.user_id || '']?.auth_id
+    let cancelled = false
+    ;(async () => {
+      setDetailProductsLoading(true)
+      if (!authId) {
+        if (!cancelled) {
+          setDetailProducts([])
+          setDetailProductsLoading(false)
+        }
+        return
+      }
+      const { data, error } = await supabase
+        .from('products')
+        .select('id,name,retail_price,thumb_img,status')
+        .eq('brand_user_id', authId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(200)
+      if (!cancelled) {
+        if (error) {
+          setDetailProducts([])
+          showToast('제품 목록 실패: ' + error.message)
+        } else setDetailProducts((data || []) as ProductRow[])
+        setDetailProductsLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [detailBrand, detailTab, supabase, userById])
+
+  const approveProductRow = async (id: string) => {
+    setProductBusyId(id)
+    const { error } = await supabase.from('products').update({ status: 'active' } as any).eq('id', id)
+    setProductBusyId(null)
+    if (error) {
+      showToast('승인 실패: ' + error.message)
+      return
+    }
+    setDetailProducts(prev => prev.map(p => (p.id === id ? { ...p, status: 'active' } : p)))
+    showToast('제품 승인됨')
+  }
+
+  const rejectProductRow = async (id: string) => {
+    setProductBusyId(id)
+    const { error } = await supabase.from('products').update({ status: 'discontinued' } as any).eq('id', id)
+    setProductBusyId(null)
+    if (error) {
+      showToast('거절 실패: ' + error.message)
+      return
+    }
+    setDetailProducts(prev => prev.map(p => (p.id === id ? { ...p, status: 'discontinued' } : p)))
+    showToast('제품 거절 처리됨')
+  }
+
   const tabBtn = (k: TabKey, label: string, n: number) => {
     const on = tab === k
     return (
@@ -381,6 +571,21 @@ export default function AdminBrandsPage() {
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
                     {statusBadge(applyLabel)}
+                    <button
+                      type="button"
+                      onClick={() => openDetail(b)}
+                      style={{
+                        fontSize: 11,
+                        padding: '6px 12px',
+                        borderRadius: 8,
+                        border: `1px solid ${ACC}`,
+                        background: 'rgba(123,94,167,0.12)',
+                        color: ACC,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      상세보기/수정
+                    </button>
                     {tab === 'pending' && normApply(b.apply_status) === 'pending' ? (
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                         <button
@@ -422,22 +627,6 @@ export default function AdminBrandsPage() {
                     ) : null}
                     {tab === 'approved' ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
-                        <a
-                          href="https://auran.kr/dashboard/brand"
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            fontSize: 11,
-                            padding: '6px 12px',
-                            borderRadius: 8,
-                            border: `1px solid ${ACC}`,
-                            color: ACC,
-                            textDecoration: 'none',
-                            display: 'inline-block',
-                          }}
-                        >
-                          대시보드 바로가기
-                        </a>
                         <button
                           type="button"
                           onClick={() => void openConnect(b)}
@@ -462,6 +651,309 @@ export default function AdminBrandsPage() {
           })}
         </div>
       )}
+
+      {detailBrand && detailForm ? (
+        <div
+          onClick={() => !detailSaving && (setDetailBrand(null), setDetailForm(null))}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            zIndex: 220,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="card"
+            style={{
+              width: '100%',
+              maxWidth: 600,
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              marginBottom: 0,
+              background: 'var(--bg2)',
+            }}
+          >
+            <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+              <div style={{ fontSize: 14, color: ACC }}>{detailBrand.name}</div>
+              <button
+                type="button"
+                className="btn btn-gy"
+                style={{ fontSize: 11 }}
+                onClick={() => !detailSaving && (setDetailBrand(null), setDetailForm(null))}
+              >
+                닫기
+              </button>
+            </div>
+            <div style={{ padding: '10px 12px', display: 'flex', gap: 8, borderBottom: '1px solid var(--border)' }}>
+              <button
+                type="button"
+                onClick={() => setDetailTab('info')}
+                style={{
+                  fontSize: 11,
+                  padding: '6px 12px',
+                  borderRadius: 8,
+                  border: detailTab === 'info' ? `1px solid ${ACC}` : '1px solid var(--border)',
+                  background: detailTab === 'info' ? 'rgba(123,94,167,0.12)' : 'transparent',
+                  color: detailTab === 'info' ? ACC : 'var(--text3)',
+                  cursor: 'pointer',
+                }}
+              >
+                브랜드 정보
+              </button>
+              <button
+                type="button"
+                onClick={() => setDetailTab('products')}
+                style={{
+                  fontSize: 11,
+                  padding: '6px 12px',
+                  borderRadius: 8,
+                  border: detailTab === 'products' ? `1px solid ${ACC}` : '1px solid var(--border)',
+                  background: detailTab === 'products' ? 'rgba(123,94,167,0.12)' : 'transparent',
+                  color: detailTab === 'products' ? ACC : 'var(--text3)',
+                  cursor: 'pointer',
+                }}
+              >
+                등록 제품
+              </button>
+            </div>
+
+            {detailTab === 'info' ? (
+              <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {(
+                  [
+                    ['브랜드명 (영문)', 'name', 'text'],
+                    ['브랜드명 (한글)', 'brand_name_kr', 'text'],
+                    ['원산지', 'origin', 'text'],
+                    ['브랜드 소개', 'description', 'area'],
+                    ['담당자명', 'manager_name', 'text'],
+                    ['직책', 'manager_title', 'text'],
+                    ['이메일', 'mgrEmail', 'email'],
+                    ['연락처', 'mgrPhone', 'text'],
+                    ['사업장 주소', 'address', 'area'],
+                    ['사업자등록번호', 'biz_no', 'text'],
+                    ['법인명/상호', 'corpName', 'text'],
+                    ['대표자명', 'ceo_name', 'text'],
+                    ['은행명', 'bank_name', 'text'],
+                    ['계좌번호', 'bank_account', 'text'],
+                    ['예금주', 'bank_holder', 'text'],
+                    ['정산주기', 'settlement_cycle', 'text'],
+                    ['납품단가 최소', 'price_min', 'text'],
+                    ['납품단가 최대', 'price_max', 'text'],
+                    ['추가증정 조건', 'promo_condition', 'area'],
+                  ] as const
+                ).map(([label, key, kind]) => (
+                  <div key={key}>
+                    <label style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4, display: 'block' }}>{label}</label>
+                    {kind === 'area' ? (
+                      <textarea
+                        value={detailForm[key as keyof DetailForm]}
+                        onChange={e => setDetailForm(f => (f ? { ...f, [key]: e.target.value } : f))}
+                        rows={key === 'description' ? 4 : 3}
+                        style={{
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          background: 'var(--bg3)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 8,
+                          color: 'var(--text)',
+                          fontSize: 12,
+                          padding: '8px 10px',
+                          resize: 'vertical',
+                        }}
+                      />
+                    ) : (
+                      <input
+                        type={kind === 'email' ? 'email' : 'text'}
+                        value={detailForm[key as keyof DetailForm]}
+                        onChange={e => setDetailForm(f => (f ? { ...f, [key]: e.target.value } : f))}
+                        style={{
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          background: 'var(--bg3)',
+                          border: '1px solid var(--border)',
+                          borderRadius: 8,
+                          color: 'var(--text)',
+                          fontSize: 12,
+                          padding: '8px 10px',
+                        }}
+                      />
+                    )}
+                  </div>
+                ))}
+                <div>
+                  <label style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4, display: 'block' }}>apply_status</label>
+                  <select
+                    value={detailForm.apply_status}
+                    onChange={e => setDetailForm(f => (f ? { ...f, apply_status: e.target.value } : f))}
+                    style={{
+                      width: '100%',
+                      background: 'var(--bg3)',
+                      border: '1px solid var(--border)',
+                      borderRadius: 8,
+                      color: 'var(--text)',
+                      fontSize: 12,
+                      padding: '8px 10px',
+                    }}
+                  >
+                    <option value="pending">pending</option>
+                    <option value="approved">approved</option>
+                    <option value="rejected">rejected</option>
+                  </select>
+                </div>
+                {detailForm.apply_status === 'rejected' ? (
+                  <div>
+                    <label style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4, display: 'block' }}>거절 사유</label>
+                    <textarea
+                      value={detailForm.reject_reason}
+                      onChange={e => setDetailForm(f => (f ? { ...f, reject_reason: e.target.value } : f))}
+                      rows={3}
+                      style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        background: 'var(--bg3)',
+                        border: '1px solid var(--border)',
+                        borderRadius: 8,
+                        color: 'var(--text)',
+                        fontSize: 12,
+                        padding: '8px 10px',
+                        resize: 'vertical',
+                      }}
+                    />
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={detailSaving}
+                  onClick={() => void saveBrandDetail()}
+                  style={{
+                    marginTop: 6,
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: 10,
+                    border: `1px solid ${ACC}`,
+                    background: 'rgba(123,94,167,0.22)',
+                    color: '#e7ddf7',
+                    fontSize: 12,
+                    cursor: detailSaving ? 'wait' : 'pointer',
+                  }}
+                >
+                  {detailSaving ? '저장 중...' : '저장'}
+                </button>
+              </div>
+            ) : (
+              <div style={{ padding: 14 }}>
+                {detailProductsLoading ? (
+                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>제품 불러오는 중…</div>
+                ) : detailProducts.length === 0 ? (
+                  <div style={{ fontSize: 12, color: 'var(--text3)' }}>
+                    {userById[detailBrand.user_id || '']?.auth_id
+                      ? '등록된 제품이 없습니다.'
+                      : 'brand_user_id(계정)을 찾을 수 없어 제품을 불러올 수 없습니다.'}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    {detailProducts.map(p => {
+                      const st = String(p.status || '')
+                      let sc = 'var(--text3)'
+                      let sb = 'rgba(255,255,255,0.08)'
+                      if (st === 'active') {
+                        sc = '#4cad7e'
+                        sb = 'rgba(76,173,126,0.15)'
+                      } else if (st === 'pending') {
+                        sc = '#eab308'
+                        sb = 'rgba(234,179,8,0.12)'
+                      } else if (st === 'discontinued' || st === 'hidden') {
+                        sc = '#d94f4f'
+                        sb = 'rgba(217,79,79,0.1)'
+                      }
+                      return (
+                        <div
+                          key={p.id}
+                          style={{
+                            display: 'flex',
+                            gap: 10,
+                            alignItems: 'flex-start',
+                            padding: 10,
+                            borderRadius: 10,
+                            border: '1px solid var(--border)',
+                            background: 'var(--bg3)',
+                          }}
+                        >
+                          {p.thumb_img ? (
+                            <img src={p.thumb_img} alt="" style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />
+                          ) : (
+                            <div style={{ width: 48, height: 48, borderRadius: 8, background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, color: 'var(--text)', marginBottom: 4 }}>{p.name}</div>
+                            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 6 }}>₩{Number(p.retail_price || 0).toLocaleString()}</div>
+                            <span style={{ fontSize: 9, padding: '2px 8px', borderRadius: 12, background: sb, color: sc, fontFamily: "'JetBrains Mono', monospace" }}>{st || '—'}</span>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                              <button
+                                type="button"
+                                disabled={productBusyId === p.id}
+                                onClick={() => void approveProductRow(p.id)}
+                                style={{
+                                  fontSize: 10,
+                                  padding: '4px 10px',
+                                  borderRadius: 6,
+                                  border: `1px solid ${ACC}`,
+                                  background: 'rgba(123,94,167,0.15)',
+                                  color: ACC,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                승인
+                              </button>
+                              <button
+                                type="button"
+                                disabled={productBusyId === p.id}
+                                onClick={() => void rejectProductRow(p.id)}
+                                style={{
+                                  fontSize: 10,
+                                  padding: '4px 10px',
+                                  borderRadius: 6,
+                                  border: '1px solid rgba(217,79,79,0.45)',
+                                  background: 'rgba(217,79,79,0.1)',
+                                  color: '#f0a0a0',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                거절
+                              </button>
+                              <a
+                                href="/admin/marketing/products"
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{
+                                  fontSize: 10,
+                                  padding: '4px 10px',
+                                  borderRadius: 6,
+                                  border: '1px solid rgba(255,255,255,0.2)',
+                                  color: 'var(--text2)',
+                                  textDecoration: 'none',
+                                  display: 'inline-block',
+                                }}
+                              >
+                                수정
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {rejectFor ? (
         <div
