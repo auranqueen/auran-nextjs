@@ -1,13 +1,6 @@
 import type { Metadata, Viewport } from 'next'
-import { Nanum_Myeongjo } from 'next/font/google'
 import { AppProviders } from '@/components/providers/AppProviders'
 import './globals.css'
-
-const nanumMyeongjo = Nanum_Myeongjo({
-  weight: ['400', '700', '800'],
-  subsets: ['latin'],
-  variable: '--font-nanum',
-})
 
 export const metadata: Metadata = {
   title: 'AURAN · AI 피부 분석 플랫폼',
@@ -47,7 +40,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ko" className={nanumMyeongjo.variable} data-theme="dark" suppressHydrationWarning>
+    <html lang="ko" data-theme="dark" suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
