@@ -187,10 +187,19 @@ export default function CustomerHomePage() {
   const [skinCalTab, setSkinCalTab] = useState<'TODAY' | 'MONTHLY' | 'YEARLY'>('TODAY')
   const [skinCalYM, setSkinCalYM] = useState({ y: 2026, m: 3 })
   const [seoulClient, setSeoulClient] = useState<Date | null>(null)
+  const [todayLocaleLabel, setTodayLocaleLabel] = useState('')
   useEffect(() => {
     const s = getSeoulToday()
     setSeoulClient(s)
     setSkinCalYM({ y: s.getFullYear(), m: s.getMonth() })
+    setTodayLocaleLabel(
+      s.toLocaleDateString('ko-KR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        weekday: 'long',
+      })
+    )
   }, [])
   const seoulForRender = seoulClient ?? HYDRATION_PLACEHOLDER_SEOUL
   const [skinDailyRows, setSkinDailyRows] = useState<any[]>([])
@@ -529,9 +538,6 @@ export default function CustomerHomePage() {
   const newList = newProducts.length > 0 ? newProducts : FALLBACK_NEW
   const brandList = brands.length > 0 ? brands : FALLBACK_BRANDS
 
-  const today = new Date().toLocaleDateString('ko-KR', {
-    year: 'numeric', month: 'long', day: 'numeric', weekday: 'long',
-  })
   const motivationMsgs: { icon: string; text: string }[] = []
   if (motivationProfile?.body_status?.includes('갱년기')) motivationMsgs.push({ icon: '💜', text: '갱년기 피부 이길 수 있어요\n오늘 루틴이 방패예요' })
   if (motivationProfile?.body_status?.includes('임신중')) motivationMsgs.push({ icon: '🤱', text: '소중한 시기, 피부도 함께 지켜요\n순한 성분으로 안전하게' })
@@ -1447,7 +1453,7 @@ AURAN이 내 피부 패턴을
       }}>
         <div>
           <div style={{ fontSize: '10px', fontFamily: 'monospace', color: TEXT_MUTED, marginBottom: '4px' }}>
-            {today}
+            {todayLocaleLabel}
           </div>
           <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
             안녕하세요, <span style={{ color: GOLD }}>{userName}님</span> 👋
@@ -3630,7 +3636,7 @@ AURAN이 내 피부 패턴을
               {(() => {
                 const e = new Date(homeContestBanner.end_at)
                 const endDay = new Date(e.getFullYear(), e.getMonth(), e.getDate()).getTime()
-                const t = new Date()
+                const t = seoulForRender
                 const today = new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime()
                 const n = Math.ceil((endDay - today) / 86400000)
                 return n <= 0 ? 'D-DAY' : `D-${n}일`
