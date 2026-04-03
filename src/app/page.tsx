@@ -761,7 +761,7 @@ export default function CustomerHomePage() {
       checkin_condition: condition,
       recommended_products: ids,
     })
-  }, [checkInTab, myUserId, hormoneCycle, hormoneTrack, skinRecList, homeCheckinSorted, displayCheckinTabs])
+  }, [checkInTab, myUserId])
 
   const logProductNav = (p: any) => {
     if (!myUserId || !p?.id) return
