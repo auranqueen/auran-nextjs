@@ -1175,7 +1175,7 @@ AURAN이 내 피부 패턴을
       color: '#fff',
       paddingBottom: '0',
     }}>
-      <style>{`@keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}@keyframes todayPulse{0%{box-shadow:0 0 8px rgba(123,94,167,0.5)}50%{box-shadow:0 0 20px rgba(123,94,167,0.8)}100%{box-shadow:0 0 8px rgba(123,94,167,0.5)}}@keyframes todayGlow{0%{box-shadow:0 0 8px rgba(123,94,167,0.5),0 0 16px rgba(123,94,167,0.3),0 0 28px rgba(123,94,167,0.15)}50%{box-shadow:0 0 14px rgba(123,94,167,0.8),0 0 28px rgba(123,94,167,0.5),0 0 45px rgba(123,94,167,0.25),0 0 60px rgba(168,85,247,0.15)}100%{box-shadow:0 0 8px rgba(123,94,167,0.5),0 0 16px rgba(123,94,167,0.3),0 0 28px rgba(123,94,167,0.15)}}@keyframes todayShimmer{0%{opacity:0.4;transform:scale(1)}50%{opacity:0.7;transform:scale(1.04)}100%{opacity:0.4;transform:scale(1)}}@keyframes starTwinkle{0%{opacity:0.2;transform:scale(0.8)}50%{opacity:1;transform:scale(1.2)}100%{opacity:0.2;transform:scale(0.8)}}.home-cal-today-btn{position:relative;isolation:isolate;overflow:visible}.home-cal-today-btn::before{content:'';position:absolute;inset:-4px;border-radius:12px;background:transparent;animation:none;z-index:-1;pointer-events:none !important}`}</style>
+      <style>{`@keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}@keyframes todayPulse{0%{box-shadow:0 0 8px rgba(123,94,167,0.5)}50%{box-shadow:0 0 20px rgba(123,94,167,0.8)}100%{box-shadow:0 0 8px rgba(123,94,167,0.5)}}@keyframes todayGlow{0%{box-shadow:0 0 8px rgba(123,94,167,0.5),0 0 16px rgba(123,94,167,0.3),0 0 28px rgba(123,94,167,0.15)}50%{box-shadow:0 0 14px rgba(123,94,167,0.8),0 0 28px rgba(123,94,167,0.5),0 0 45px rgba(123,94,167,0.25),0 0 60px rgba(168,85,247,0.15)}100%{box-shadow:0 0 8px rgba(123,94,167,0.5),0 0 16px rgba(123,94,167,0.3),0 0 28px rgba(123,94,167,0.15)}}@keyframes todayShimmer{0%{opacity:0.4;transform:scale(1)}50%{opacity:0.7;transform:scale(1.04)}100%{opacity:0.4;transform:scale(1)}}@keyframes starTwinkle{0%{opacity:0.2;transform:scale(0.8)}50%{opacity:1;transform:scale(1.2)}100%{opacity:0.2;transform:scale(0.8)}}.home-cal-today-btn{position:relative;isolation:isolate;overflow:visible}.home-cal-today-btn::before{content:'';position:absolute;inset:-4px;border-radius:12px;background:transparent;animation:none;z-index:-1;pointer-events:none!important}.home-cal-today-btn::after{content:'';position:absolute;inset:0;pointer-events:none!important;z-index:-1}.home-cal-yearly-month-btn{position:relative;isolation:isolate}.home-cal-yearly-month-btn::before,.home-cal-yearly-month-btn::after{pointer-events:none!important}`}</style>
 
       {/* ── 탑바 ── */}
       <header style={{
@@ -2404,6 +2404,7 @@ AURAN이 내 피부 패턴을
                             <button
                               key={ml}
                               type="button"
+                              className="home-cal-yearly-month-btn"
                               onClick={e => {
                                 e.preventDefault()
                                 e.stopPropagation()
@@ -2449,6 +2450,7 @@ AURAN이 내 피부 패턴을
                           <button
                             key={ml}
                             type="button"
+                            className="home-cal-yearly-month-btn"
                             onClick={e => {
                               e.preventDefault()
                               e.stopPropagation()
