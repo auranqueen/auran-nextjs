@@ -1159,6 +1159,7 @@ AURAN이 내 피부 패턴을
       fontWeight: 300,
       color: '#fff',
       paddingBottom: '0',
+      ...(calSheetOpen ? { overflow: 'hidden' } : {}),
     }}>
       <style>{`@keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}.home-cal-yearly-month-btn{position:relative;isolation:isolate}.home-cal-yearly-month-btn::before,.home-cal-yearly-month-btn::after{pointer-events:none!important}`}</style>
 
@@ -2430,6 +2431,8 @@ AURAN이 내 피부 패턴을
                 <>
                   <div
                     onClick={() => setCalSheetOpen(false)}
+                    onTouchStart={e => e.stopPropagation()}
+                    onTouchMove={e => e.preventDefault()}
                     style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 160 }}
                   />
                   <div
