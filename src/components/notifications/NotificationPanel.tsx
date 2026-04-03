@@ -272,8 +272,25 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
           )}
         </div>
       </div>
-      {popNotice ? (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          zIndex: 500,
+          pointerEvents: popNotice ? 'auto' : 'none',
+          visibility: popNotice ? 'visible' : 'hidden',
+          ...(popNotice
+            ? {
+                background: 'rgba(0,0,0,0.9)',
+                backdropFilter: 'blur(10px)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }
+            : { background: 'transparent' }),
+        }}
+      >
+        {popNotice ? (
           <div
             style={{
               width: '90vw',
@@ -315,8 +332,8 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
               </button>
             ) : null}
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
       <style>{`@keyframes bounceIn { 0%{transform:scale(0)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} } @keyframes slideDown { 0%{transform:translateY(-20px);opacity:0} 100%{transform:translateY(0);opacity:1} } @keyframes fadeIn { 0%{opacity:0} 100%{opacity:1} }`}</style>
     </>
   )
