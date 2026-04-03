@@ -2007,6 +2007,7 @@ AURAN이 내 피부 패턴을
               <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
                 {(['TODAY', 'MONTHLY', 'YEARLY'] as const).map(tab => {
                   if (false && tab === 'MONTHLY') return null
+                  if (false && tab === 'YEARLY') return null
                   const on = skinCalTab === tab
                   return (
                     <button
@@ -2332,7 +2333,7 @@ AURAN이 내 피부 패턴을
                   {`📅 날짜를 클릭해서 오늘 피부를 기록해보세요\n기록이 쌓일수록 내 피부 패턴이 보여요 💜`}
                 </div>
               ) : null}
-              {skinCalTab === 'YEARLY' ? (
+              {false && skinCalTab === 'YEARLY' ? (
                 <>
                   <div
                     style={{
@@ -2487,7 +2488,7 @@ AURAN이 내 피부 패턴을
                   </div>
                 </>
               ) : null}
-              {(false && skinCalTab === 'MONTHLY') || skinCalTab === 'YEARLY' ? (
+              {(false && skinCalTab === 'MONTHLY') || (false && skinCalTab === 'YEARLY') ? (
                 <div
                   style={{
                     display: 'flex',
