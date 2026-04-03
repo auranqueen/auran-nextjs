@@ -26,7 +26,7 @@ function AuthDoneInner() {
     const savedReturnUrl = localStorage.getItem('returnUrl')
     const safeSavedReturnUrl = savedReturnUrl && savedReturnUrl.startsWith('/') ? savedReturnUrl : null
     if (safeSavedReturnUrl) localStorage.removeItem('returnUrl')
-    router.replace(safeSavedReturnUrl || safeRedirect || positionToDashboardPath(position))
+    window.location.href = safeSavedReturnUrl || safeRedirect || positionToDashboardPath(position)
   }
 
   const goDashboard = () => {
