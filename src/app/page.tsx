@@ -200,6 +200,7 @@ export default function CustomerHomePage() {
         weekday: 'long',
       })
     )
+    setCalSheetMounted(true)
   }, [])
   const seoulForRender = seoulClient ?? HYDRATION_PLACEHOLDER_SEOUL
   const [skinDailyRows, setSkinDailyRows] = useState<any[]>([])
@@ -209,6 +210,7 @@ export default function CustomerHomePage() {
   const [calSheetRoutine, setCalSheetRoutine] = useState(false)
   const [calSheetConditionStr, setCalSheetConditionStr] = useState('')
   const [calSheetConditionPick, setCalSheetConditionPick] = useState<string[]>([])
+  const [calSheetMounted, setCalSheetMounted] = useState(false)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [homeEditMode, setHomeEditMode] = useState(false)
   const [homeEditSheet, setHomeEditSheet] = useState<{
@@ -2500,7 +2502,7 @@ AURAN이 내 피부 패턴을
                       : '선택한 날짜에 체크인 기록이 없어요')
                     : `${getPhaseByDate(selectedCalendarDate)} - ${phaseGuide(getPhaseByDate(selectedCalendarDate)).split(' - ')[1]}`}
               </div>
-              {calSheetOpen ? (
+              {calSheetOpen && calSheetMounted ? (
                 <>
                   <div
                     onClick={() => setCalSheetOpen(false)}
