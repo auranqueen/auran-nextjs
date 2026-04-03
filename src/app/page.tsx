@@ -146,7 +146,7 @@ export default function CustomerHomePage() {
 
   const [userName, setUserName] = useState('유미')
   const [selectedConcern, setSelectedConcern] = useState(0)
-  const [saleTab, setSaleTab] = useState<'sale' | 'group'>('sale')
+  const [saleTab, setSaleTab] = useState<'sale' | 'group'>('group')
   const [timers, setTimers] = useState([
     { h: 2, m: 34, s: 21 },
     { h: 0, m: 47, s: 55 },
@@ -1881,7 +1881,7 @@ export default function CustomerHomePage() {
         </div>
         {/* 탭 */}
         <div style={{ display: 'flex', border: CARD_BORDER, borderRadius: '12px', overflow: 'hidden', marginBottom: '12px' }}>
-          {(['sale', 'group'] as const).map((tab) => (
+          {(['group', 'sale'] as const).map((tab) => (
             <div
               key={tab}
               onClick={() => setSaleTab(tab)}
