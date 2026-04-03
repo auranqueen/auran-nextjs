@@ -112,6 +112,9 @@ export async function middleware(req: NextRequest) {
   } = await supabase.auth.getSession()
   const user = session?.user ?? null
 
+  const isBrandApply = pathname.startsWith('/brand/apply')
+  if (isBrandApply) return res
+
   if (!user) {
     if (softAuth) {
       const loginUrl = req.nextUrl.clone()
