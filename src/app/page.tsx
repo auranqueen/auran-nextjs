@@ -336,7 +336,7 @@ export default function CustomerHomePage() {
       }
       if (res.error) res = await supabase.from('products').select(selNoCat).limit(80)
       if (res.error || !res.data?.length) {
-        const fb = await supabase.from('products').select('*').limit(8)
+        const fb = await supabase.from('products').select('id, name, retail_price, sale_price, is_timesale, thumb_img, tag, category_id, quiz_match, brands(name)').eq('status', 'active').limit(80)
         if (fb.data && fb.data.length > 0) setProducts(fb.data)
       } else if (res.data && res.data.length > 0) {
         setProducts(res.data)
