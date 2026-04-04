@@ -842,6 +842,8 @@ export default function CustomerHomePage() {
   const showHomeEditChrome = isSuperAdmin && homeEditMode
   const cycleType = profileCycleType
 
+  if (!mounted) return null
+
   return (
     <div style={{
       background: BG,
