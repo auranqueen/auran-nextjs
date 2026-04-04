@@ -18,6 +18,55 @@ function isMissingPrice(p: { retail_price?: number | null }) {
 
 const BRAND_ORIGIN_OPTIONS = ['프랑스', '이탈리아', '독일', '스페인', '영국', '스위스', '이스라엘', '기타유럽', '한국', '일본', '기타'] as const
 
+const BRAND_DEFAULTS_ACC = '#7b5ea7'
+
+type BrandRowAdmin = {
+  id: string
+  name: string
+  origin_country?: string | null
+  default_earn_points?: number | null
+  default_earn_points_type?: string | null
+  default_share_points?: number | null
+  default_share_points_type?: string | null
+  default_review_text?: number | null
+  default_review_photo?: number | null
+  default_review_video?: number | null
+  default_partner_commission?: number | null
+  default_partner_commission_type?: string | null
+  default_owner_commission?: number | null
+  default_owner_commission_type?: string | null
+}
+
+type DefaultsFormState = {
+  default_earn_points: string
+  default_earn_points_type: 'percent' | 'toast'
+  default_share_points: string
+  default_share_points_type: 'percent' | 'toast'
+  default_review_text: string
+  default_review_photo: string
+  default_review_video: string
+  default_partner_commission: string
+  default_partner_commission_type: 'percent' | 'won'
+  default_owner_commission: string
+  default_owner_commission_type: 'percent' | 'won'
+}
+
+function brandToDefaultsForm(b: BrandRowAdmin): DefaultsFormState {
+  return {
+    default_earn_points: b.default_earn_points != null ? String(b.default_earn_points) : '',
+    default_earn_points_type: b.default_earn_points_type === 'toast' ? 'toast' : 'percent',
+    default_share_points: b.default_share_points != null ? String(b.default_share_points) : '',
+    default_share_points_type: b.default_share_points_type === 'toast' ? 'toast' : 'percent',
+    default_review_text: b.default_review_text != null ? String(b.default_review_text) : '100',
+    default_review_photo: b.default_review_photo != null ? String(b.default_review_photo) : '300',
+    default_review_video: b.default_review_video != null ? String(b.default_review_video) : '500',
+    default_partner_commission: b.default_partner_commission != null ? String(b.default_partner_commission) : '',
+    default_partner_commission_type: b.default_partner_commission_type === 'won' ? 'won' : 'percent',
+    default_owner_commission: b.default_owner_commission != null ? String(b.default_owner_commission) : '',
+    default_owner_commission_type: b.default_owner_commission_type === 'won' ? 'won' : 'percent',
+  }
+}
+
 // ───────────────────────────────────────────────
 // 제품 행
 // ───────────────────────────────────────────────
@@ -387,7 +436,11 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
   const [listFilter, setListFilter] = useState<'all' | 'no_price' | 'with_price'>('all')
   const [onlyMissingUnitPrice, setOnlyMissingUnitPrice] = useState(false)
   const [brandOptionsFromDb, setBrandOptionsFromDb] = useState<string[] | null>(null)
-  const [brandsWithId, setBrandsWithId] = useState<{ id: string; name: string; origin_country?: string | null }[]>([])
+  const [brandsWithId, setBrandsWithId] = useState<BrandRowAdmin[]>([])
+  const [defaultsSelectId, setDefaultsSelectId] = useState('')
+  const [defForm, setDefForm] = useState<DefaultsFormState | null>(null)
+  const [brandDefaultsSaveBusy, setBrandDefaultsSaveBusy] = useState(false)
+  const [brandDefaultsApplyBusy, setBrandDefaultsApplyBusy] = useState(false)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set())
   const [toast, setToast] = useState('')
   const [brandUsers, setBrandUsers] = useState<{ id: string; email: string }[]>([])
@@ -500,15 +553,123 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
   useEffect(() => {
     supabase
       .from('brands')
-      .select('id,name,origin_country')
+      .select(
+        'id,name,origin_country,default_earn_points,default_earn_points_type,default_share_points,default_share_points_type,default_review_text,default_review_photo,default_review_video,default_partner_commission,default_partner_commission_type,default_owner_commission,default_owner_commission_type'
+      )
       .order('name')
       .then(({ data }) => {
-        const rows = (data || []) as { id: string; name: string; origin_country?: string | null }[]
+        const rows = (data || []) as BrandRowAdmin[]
         setBrandsWithId(rows)
         const names = rows.map(b => b.name).filter(Boolean)
         setBrandOptionsFromDb(names.length ? names : null)
       })
   }, [supabase])
+
+  const commissionPercentSumWarn = useMemo(() => {
+    if (!defForm) return false
+    if (defForm.default_partner_commission_type !== 'percent' || defForm.default_owner_commission_type !== 'percent') return false
+    const p = Number(defForm.default_partner_commission)
+    const o = Number(defForm.default_owner_commission)
+    if (!Number.isFinite(p) || !Number.isFinite(o)) return false
+    return p + o > 50
+  }, [defForm])
+
+  const buildBrandDefaultsPayload = (): Record<string, unknown> => {
+    if (!defForm) return {}
+    const ni = (s: string) => {
+      const t = s.trim()
+      if (t === '') return null
+      const n = Number(t)
+      return Number.isFinite(n) ? Math.round(n) : null
+    }
+    const nf = (s: string) => {
+      const t = s.trim()
+      if (t === '') return null
+      const n = Number(t)
+      return Number.isFinite(n) ? n : null
+    }
+    return {
+      default_earn_points: ni(defForm.default_earn_points),
+      default_earn_points_type: defForm.default_earn_points_type,
+      default_share_points: ni(defForm.default_share_points),
+      default_share_points_type: defForm.default_share_points_type,
+      default_review_text: ni(defForm.default_review_text),
+      default_review_photo: ni(defForm.default_review_photo),
+      default_review_video: ni(defForm.default_review_video),
+      default_partner_commission: nf(defForm.default_partner_commission),
+      default_partner_commission_type: defForm.default_partner_commission_type,
+      default_owner_commission: nf(defForm.default_owner_commission),
+      default_owner_commission_type: defForm.default_owner_commission_type,
+    }
+  }
+
+  const saveBrandDefaultsOnly = async () => {
+    if (!defaultsSelectId || !defForm) return
+    setBrandDefaultsSaveBusy(true)
+    const payload = buildBrandDefaultsPayload()
+    const { error } = await supabase.from('brands').update(payload as any).eq('id', defaultsSelectId)
+    setBrandDefaultsSaveBusy(false)
+    if (error) {
+      setToast('저장 실패: ' + error.message)
+      return
+    }
+    setBrandsWithId(prev =>
+      prev.map(b => (b.id === defaultsSelectId ? { ...b, ...payload } as BrandRowAdmin : b))
+    )
+    setToast('브랜드 기본값이 저장되었습니다')
+  }
+
+  const applyBrandDefaultsToAllProducts = async () => {
+    if (!defaultsSelectId || !defForm) return
+    if (!window.confirm('이 브랜드의 제품 전체에 적용됩니다. 계속할까요?')) return
+    setBrandDefaultsApplyBusy(true)
+    const payload = buildBrandDefaultsPayload()
+    const { error: uErr } = await supabase.from('brands').update(payload as any).eq('id', defaultsSelectId)
+    if (uErr) {
+      setBrandDefaultsApplyBusy(false)
+      setToast('브랜드 저장 실패: ' + uErr.message)
+      return
+    }
+    const earnVal = Math.round(Number(defForm.default_earn_points) || 0)
+    const prodUpd: Record<string, unknown> = {
+      share_points: Math.max(0, Math.round(Number(defForm.default_share_points) || 0)),
+      review_points_text: Math.max(0, Math.round(Number(defForm.default_review_text) || 0)),
+      review_points_photo: Math.max(0, Math.round(Number(defForm.default_review_photo) || 0)),
+      review_points_video: Math.max(0, Math.round(Number(defForm.default_review_video) || 0)),
+    }
+    if (defForm.default_earn_points_type === 'percent') {
+      prodUpd.earn_points = Math.max(0, Math.min(100, earnVal))
+      prodUpd.earn_points_percent = null
+    } else {
+      prodUpd.earn_points = 0
+      prodUpd.earn_points_percent = Math.max(0, earnVal)
+    }
+    const { error: pErr } = await supabase
+      .from('products')
+      .update(prodUpd as any)
+      .eq('brand_id', defaultsSelectId)
+      .is('deleted_at', null)
+    setBrandDefaultsApplyBusy(false)
+    if (pErr) {
+      setToast('제품 일괄 적용 실패: ' + pErr.message)
+      return
+    }
+    setBrandsWithId(prev =>
+      prev.map(b => (b.id === defaultsSelectId ? { ...b, ...payload } as BrandRowAdmin : b))
+    )
+    setToast('브랜드에 저장했고, 해당 브랜드 제품에 반영했습니다')
+    await fetchRows()
+  }
+
+  const onDefaultsBrandChange = (id: string) => {
+    setDefaultsSelectId(id)
+    if (!id) {
+      setDefForm(null)
+      return
+    }
+    const b = brandsWithId.find(x => x.id === id)
+    setDefForm(b ? brandToDefaultsForm(b) : null)
+  }
 
   useEffect(() => {
     supabase
@@ -966,6 +1127,7 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
       </div>
 
       {!brandOwnerAuthId ? (
+      <>
       <div
         style={{
           marginBottom: 16,
@@ -1035,6 +1197,384 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
           ))}
         </div>
       </div>
+
+      <div
+        style={{
+          marginBottom: 16,
+          padding: 14,
+          borderRadius: 14,
+          border: '1px solid rgba(255,255,255,0.1)',
+          background: 'rgba(255,255,255,0.03)',
+        }}
+      >
+        <div style={{ fontSize: 14, color: '#fff', marginBottom: 10 }}>브랜드 기본값 설정</div>
+        <select
+          value={defaultsSelectId}
+          onChange={e => onDefaultsBrandChange(e.target.value)}
+          style={{
+            width: '100%',
+            maxWidth: 440,
+            background: '#121212',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 10,
+            padding: '8px 10px',
+            color: '#fff',
+            fontSize: 12,
+            marginBottom: 12,
+          }}
+        >
+          <option value="" style={{ background: '#1a1a1a' }}>
+            — 브랜드 선택 —
+          </option>
+          {brandsWithId.map(b => (
+            <option key={b.id} value={b.id} style={{ background: '#1a1a1a' }}>
+              {b.name}
+            </option>
+          ))}
+        </select>
+
+        {defForm ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+              <span style={{ fontSize: 13, color: '#fff' }}>토스트(T) 설정</span>
+              <span
+                title="토스트(T)는 AURAN 활동으로만 쌓이는 전용 포인트예요. 1T = 100원"
+                style={{
+                  fontSize: 11,
+                  color: 'rgba(255,255,255,0.45)',
+                  cursor: 'help',
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}
+              >
+                ?
+              </span>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>구매 적립</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="number"
+                  value={defForm.default_earn_points}
+                  onChange={e => setDefForm(f => (f ? { ...f, default_earn_points: e.target.value } : f))}
+                  style={{
+                    width: 100,
+                    background: '#121212',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 8,
+                    color: '#fff',
+                    fontSize: 12,
+                    padding: '6px 8px',
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => setDefForm(f => (f ? { ...f, default_earn_points_type: 'percent' } : f))}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: defForm.default_earn_points_type === 'percent' ? `1px solid ${BRAND_DEFAULTS_ACC}` : '1px solid rgba(255,255,255,0.12)',
+                      background: defForm.default_earn_points_type === 'percent' ? 'rgba(123,94,167,0.2)' : 'transparent',
+                      color: defForm.default_earn_points_type === 'percent' ? BRAND_DEFAULTS_ACC : 'rgba(255,255,255,0.45)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    %
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDefForm(f => (f ? { ...f, default_earn_points_type: 'toast' } : f))}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: defForm.default_earn_points_type === 'toast' ? `1px solid ${BRAND_DEFAULTS_ACC}` : '1px solid rgba(255,255,255,0.12)',
+                      background: defForm.default_earn_points_type === 'toast' ? 'rgba(123,94,167,0.2)' : 'transparent',
+                      color: defForm.default_earn_points_type === 'toast' ? BRAND_DEFAULTS_ACC : 'rgba(255,255,255,0.45)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    T
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>공유 적립</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="number"
+                  value={defForm.default_share_points}
+                  onChange={e => setDefForm(f => (f ? { ...f, default_share_points: e.target.value } : f))}
+                  style={{
+                    width: 100,
+                    background: '#121212',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 8,
+                    color: '#fff',
+                    fontSize: 12,
+                    padding: '6px 8px',
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => setDefForm(f => (f ? { ...f, default_share_points_type: 'percent' } : f))}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: defForm.default_share_points_type === 'percent' ? `1px solid ${BRAND_DEFAULTS_ACC}` : '1px solid rgba(255,255,255,0.12)',
+                      background: defForm.default_share_points_type === 'percent' ? 'rgba(123,94,167,0.2)' : 'transparent',
+                      color: defForm.default_share_points_type === 'percent' ? BRAND_DEFAULTS_ACC : 'rgba(255,255,255,0.45)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    %
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDefForm(f => (f ? { ...f, default_share_points_type: 'toast' } : f))}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: defForm.default_share_points_type === 'toast' ? `1px solid ${BRAND_DEFAULTS_ACC}` : '1px solid rgba(255,255,255,0.12)',
+                      background: defForm.default_share_points_type === 'toast' ? 'rgba(123,94,167,0.2)' : 'transparent',
+                      color: defForm.default_share_points_type === 'toast' ? BRAND_DEFAULTS_ACC : 'rgba(255,255,255,0.45)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    T
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>텍스트 리뷰 (T)</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="number"
+                  value={defForm.default_review_text}
+                  onChange={e => setDefForm(f => (f ? { ...f, default_review_text: e.target.value } : f))}
+                  style={{
+                    width: 100,
+                    background: '#121212',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 8,
+                    color: '#fff',
+                    fontSize: 12,
+                    padding: '6px 8px',
+                  }}
+                />
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>T</span>
+              </div>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>포토 리뷰 (T)</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="number"
+                  value={defForm.default_review_photo}
+                  onChange={e => setDefForm(f => (f ? { ...f, default_review_photo: e.target.value } : f))}
+                  style={{
+                    width: 100,
+                    background: '#121212',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 8,
+                    color: '#fff',
+                    fontSize: 12,
+                    padding: '6px 8px',
+                  }}
+                />
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>T</span>
+              </div>
+            </div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>영상 리뷰 (T)</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="number"
+                  value={defForm.default_review_video}
+                  onChange={e => setDefForm(f => (f ? { ...f, default_review_video: e.target.value } : f))}
+                  style={{
+                    width: 100,
+                    background: '#121212',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 8,
+                    color: '#fff',
+                    fontSize: 12,
+                    padding: '6px 8px',
+                  }}
+                />
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>T</span>
+              </div>
+            </div>
+
+            <div style={{ fontSize: 13, color: '#fff', marginBottom: 10, marginTop: 4 }}>수수료 설정</div>
+
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>파트너스 수수료</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="number"
+                  value={defForm.default_partner_commission}
+                  onChange={e => setDefForm(f => (f ? { ...f, default_partner_commission: e.target.value } : f))}
+                  style={{
+                    width: 100,
+                    background: '#121212',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 8,
+                    color: '#fff',
+                    fontSize: 12,
+                    padding: '6px 8px',
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => setDefForm(f => (f ? { ...f, default_partner_commission_type: 'percent' } : f))}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: defForm.default_partner_commission_type === 'percent' ? `1px solid ${BRAND_DEFAULTS_ACC}` : '1px solid rgba(255,255,255,0.12)',
+                      background: defForm.default_partner_commission_type === 'percent' ? 'rgba(123,94,167,0.2)' : 'transparent',
+                      color: defForm.default_partner_commission_type === 'percent' ? BRAND_DEFAULTS_ACC : 'rgba(255,255,255,0.45)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    %
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDefForm(f => (f ? { ...f, default_partner_commission_type: 'won' } : f))}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: defForm.default_partner_commission_type === 'won' ? `1px solid ${BRAND_DEFAULTS_ACC}` : '1px solid rgba(255,255,255,0.12)',
+                      background: defForm.default_partner_commission_type === 'won' ? 'rgba(123,94,167,0.2)' : 'transparent',
+                      color: defForm.default_partner_commission_type === 'won' ? BRAND_DEFAULTS_ACC : 'rgba(255,255,255,0.45)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    원
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>원장님 수수료</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="number"
+                  value={defForm.default_owner_commission}
+                  onChange={e => setDefForm(f => (f ? { ...f, default_owner_commission: e.target.value } : f))}
+                  style={{
+                    width: 100,
+                    background: '#121212',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 8,
+                    color: '#fff',
+                    fontSize: 12,
+                    padding: '6px 8px',
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => setDefForm(f => (f ? { ...f, default_owner_commission_type: 'percent' } : f))}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: defForm.default_owner_commission_type === 'percent' ? `1px solid ${BRAND_DEFAULTS_ACC}` : '1px solid rgba(255,255,255,0.12)',
+                      background: defForm.default_owner_commission_type === 'percent' ? 'rgba(123,94,167,0.2)' : 'transparent',
+                      color: defForm.default_owner_commission_type === 'percent' ? BRAND_DEFAULTS_ACC : 'rgba(255,255,255,0.45)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    %
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDefForm(f => (f ? { ...f, default_owner_commission_type: 'won' } : f))}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: defForm.default_owner_commission_type === 'won' ? `1px solid ${BRAND_DEFAULTS_ACC}` : '1px solid rgba(255,255,255,0.12)',
+                      background: defForm.default_owner_commission_type === 'won' ? 'rgba(123,94,167,0.2)' : 'transparent',
+                      color: defForm.default_owner_commission_type === 'won' ? BRAND_DEFAULTS_ACC : 'rgba(255,255,255,0.45)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    원
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {commissionPercentSumWarn ? (
+              <div style={{ fontSize: 11, color: '#ef5350', marginBottom: 12, lineHeight: 1.45 }}>
+                파트너스·원장님 수수료(%) 합이 50%를 넘습니다. 정책을 다시 확인해 주세요.
+              </div>
+            ) : null}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 6 }}>
+              <button
+                type="button"
+                disabled={brandDefaultsSaveBusy || brandDefaultsApplyBusy}
+                onClick={() => void saveBrandDefaultsOnly()}
+                style={{
+                  width: '100%',
+                  maxWidth: 440,
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  border: `1px solid ${BRAND_DEFAULTS_ACC}`,
+                  background: 'rgba(123,94,167,0.22)',
+                  color: '#e7ddf7',
+                  fontSize: 12,
+                  cursor: brandDefaultsSaveBusy || brandDefaultsApplyBusy ? 'wait' : 'pointer',
+                }}
+              >
+                {brandDefaultsSaveBusy ? '저장 중…' : '저장만 하기'}
+              </button>
+              <button
+                type="button"
+                disabled={brandDefaultsSaveBusy || brandDefaultsApplyBusy}
+                onClick={() => void applyBrandDefaultsToAllProducts()}
+                style={{
+                  width: '100%',
+                  maxWidth: 440,
+                  padding: '10px 14px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(76,173,126,0.45)',
+                  background: 'rgba(76,173,126,0.12)',
+                  color: '#9fd4b8',
+                  fontSize: 12,
+                  cursor: brandDefaultsSaveBusy || brandDefaultsApplyBusy ? 'wait' : 'pointer',
+                }}
+              >
+                {brandDefaultsApplyBusy ? '적용 중…' : '전체 제품에 적용'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>
+            {brandsWithId.length === 0
+              ? '등록된 브랜드가 없습니다.'
+              : '브랜드를 선택하면 기본값을 편집할 수 있습니다.'}
+          </div>
+        )}
+      </div>
+      </>
       ) : null}
 
       {tab === 'trash' ? (
