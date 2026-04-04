@@ -106,7 +106,7 @@ export default function MyPage() {
           .from('profiles')
           .select('grade, full_name, username, avatar_url, phone, birth_date, skin_type, skin_concerns, menstrual_cycle, drink_frequency, exercise_frequency, preferred_brands, special_dates')
           .eq('auth_id', data.user.id)
-          .single()
+          .maybeSingle()
           .then(async ({ data: profile }) => {
             setGrade(profile?.grade || 'PETAL')
             const pName = profile?.full_name || profile?.username

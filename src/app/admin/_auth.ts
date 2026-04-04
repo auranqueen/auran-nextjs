@@ -30,7 +30,7 @@ export async function requireAdmin(supabase: SupabaseServerClient) {
 
   // 2) profiles.role fallback (and ensure users row exists)
   try {
-    const { data: p } = await supabase.from('profiles').select('role,email').eq('auth_id', user.id).single()
+    const { data: p } = await supabase.from('profiles').select('role,email').eq('auth_id', user.id).maybeSingle()
     if (p?.role === 'admin') {
       const email = user.email || p.email || `admin-${user.id}@no-email.auran`
       await supabase.from('users').upsert(

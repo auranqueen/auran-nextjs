@@ -252,7 +252,7 @@ export default function CustomerHomePage() {
       if (!user) return
 
       const [profileRes, hcRes, tipRes] = await Promise.all([
-        supabase.from('profiles').select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at').eq('auth_id', user.id).single(),
+        supabase.from('profiles').select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at').eq('auth_id', user.id).maybeSingle(),
         supabase.from('hormone_cycle').select('*').eq('auth_id', user.id).maybeSingle(),
         supabase.from('help_tooltips').select('title,content,text,value,is_active').eq('key', 'period_start').maybeSingle(),
       ])

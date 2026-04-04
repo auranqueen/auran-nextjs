@@ -40,7 +40,7 @@ function createMiddlewareSupabase(req: NextRequest) {
 async function getDbRole(supabase: ReturnType<typeof createServerClient>, authId: string): Promise<string | null> {
   // 1) profiles.role 우선
   try {
-    const { data } = await supabase.from('profiles').select('role').eq('auth_id', authId).single()
+    const { data } = await supabase.from('profiles').select('role').eq('auth_id', authId).maybeSingle()
     if (typeof (data as any)?.role === 'string') return (data as any).role
   } catch {}
   // 2) users.role fallback

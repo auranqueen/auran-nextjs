@@ -77,7 +77,7 @@ export default function MyProfilePage() {
         return
       }
       setAuthId(user.id)
-      const { data: profile } = await supabase.from('profiles').select('*, avatar_url').eq('auth_id', user.id).single()
+      const { data: profile } = await supabase.from('profiles').select('*, avatar_url').eq('auth_id', user.id).maybeSingle()
       setFullName(String(profile?.full_name ?? ''))
       setUsername(String(profile?.username ?? ''))
       setEmail(String(profile?.email ?? user.email ?? ''))

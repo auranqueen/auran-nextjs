@@ -95,7 +95,7 @@ export async function calculateBenefits({
     .from('profiles')
     .select('point, total_purchase_amount, grade')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
 
   const p = profile as ProfileBenefitFields | null
 

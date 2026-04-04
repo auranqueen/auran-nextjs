@@ -33,7 +33,7 @@ function WalletPageInner() {
       setProfile(p)
       return
     }
-    const { data: profileFallback } = await supabase.from('profiles').select('id, points, charge_balance').eq('auth_id', authUserId).single()
+    const { data: profileFallback } = await supabase.from('profiles').select('id, points, charge_balance').eq('auth_id', authUserId).maybeSingle()
     if (profileFallback) {
       setProfile({
         id: profileFallback.id || authUserId,
