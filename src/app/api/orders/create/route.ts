@@ -47,8 +47,9 @@ export async function POST(req: NextRequest) {
   const recipientPhone = typeof body?.recipient_phone === 'string' ? body.recipient_phone.trim().slice(0, 40) : ''
   const address = typeof body?.address === 'string' ? body.address.trim().slice(0, 500) : ''
 
-  const { data: me } = await client.from('users').select('id').eq('auth_id', user.id).single()
-  if (!me?.id) return json({ ok: false, error: 'user_row_missing' }, 400)
+  const { data: me, error: meErr } = await client.from('users').select('id').eq('auth_id', user.id).single()
+  console.log('me lookup:', { authId: user.id, me, meErr })
+  if (!me?.id) return json({ ok: false, error: 'user_row_missing', authId: user.id }, 400)
 
   if (giftTo) {
     const { data: maxRow } = await client
