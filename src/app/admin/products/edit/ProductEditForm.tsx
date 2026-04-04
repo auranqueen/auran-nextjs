@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 const TABS = ['기본정보', '옵션정보', '가격및재고', '포인트설정', '배송비', '상품이미지'] as const
 
-const ORIGINS = ['프랑스', '이탈리아', '독일', '스페인', '영국', '기타유럽', '한국', '일본', '기타'] as const
+const ORIGINS = ['프랑스', '이탈리아', '독일', '스페인', '영국', '스위스', '이스라엘', '기타유럽', '한국', '일본', '기타'] as const
 const UNIT_TYPE_OPTIONS = ['ml당', 'g당', '100ml당', '100g당', '1개당'] as const
 
 type SaleUi = 'active' | 'sold_out' | 'discontinued' | 'paused'

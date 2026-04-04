@@ -16,7 +16,7 @@ function isMissingPrice(p: { retail_price?: number | null }) {
   return Number(v) === 0
 }
 
-const BRAND_ORIGIN_OPTIONS = ['프랑스', '이탈리아', '독일', '스페인', '영국', '기타유럽', '한국', '일본', '기타'] as const
+const BRAND_ORIGIN_OPTIONS = ['프랑스', '이탈리아', '독일', '스페인', '영국', '스위스', '이스라엘', '기타유럽', '한국', '일본', '기타'] as const
 
 // ───────────────────────────────────────────────
 // 제품 행
