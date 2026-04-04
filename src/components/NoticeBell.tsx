@@ -86,51 +86,67 @@ export default function NoticeBell({
   }, [supabase])
 
   const loadUnreadCount = useCallback(async () => {
-    const pid = await resolveProfileId()
+    const client = createClient()
+    const { data: auth } = await client.auth.getUser()
+    const user = auth?.user
+    let pid: string | null = null
+    if (user) {
+      const { data: profile } = await client.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+      pid = profile?.id ? String(profile.id) : null
+    }
     setProfileId(pid)
     if (!pid) {
       setUnreadCount(0)
       return
     }
-    const { count } = await supabase
+    const { count } = await client
       .from('notifications')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', pid)
       .eq('is_read', false)
     setUnreadCount(count || 0)
-  }, [supabase, resolveProfileId])
+  }, [])
 
   const loadItems = useCallback(async () => {
-    const pid = profileId || (await resolveProfileId())
+    const client = createClient()
+    const { data: auth } = await client.auth.getUser()
+    const user = auth?.user
+    let pid: string | null = null
+    if (user) {
+      const { data: profile } = await client.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+      pid = profile?.id ? String(profile.id) : null
+    }
     if (!pid) {
       setItems([])
       return
     }
     if (autoReadDays > 0) {
       const cutoff = new Date(Date.now() - autoReadDays * 86400000).toISOString()
-      await supabase.from('notifications').update({ is_read: true }).eq('user_id', pid).eq('is_read', false).lt('created_at', cutoff)
+      await client.from('notifications').update({ is_read: true }).eq('user_id', pid).eq('is_read', false).lt('created_at', cutoff)
     }
-    const { data } = await supabase
+    const { data } = await client
       .from('notifications')
       .select('id,title,body,icon,is_read,created_at,link,type')
       .eq('user_id', pid)
       .order('created_at', { ascending: false })
       .limit(maxDisplay)
     setItems((data || []) as NotifRow[])
-  }, [supabase, profileId, resolveProfileId, maxDisplay, autoReadDays])
+  }, [maxDisplay, autoReadDays])
 
   useEffect(() => {
-    loadUnreadCount()
-    const id = setInterval(loadUnreadCount, 12_000)
+    void loadUnreadCount()
+    const id = setInterval(() => {
+      void loadUnreadCount()
+    }, 12_000)
     const onVis = () => {
-      if (document.visibilityState === 'visible') loadUnreadCount()
+      if (document.visibilityState === 'visible') void loadUnreadCount()
     }
     document.addEventListener('visibilitychange', onVis)
     return () => {
       clearInterval(id)
       document.removeEventListener('visibilitychange', onVis)
     }
-  }, [loadUnreadCount])
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -138,7 +154,7 @@ export default function NoticeBell({
       await loadItems()
       await loadUnreadCount()
     })()
-  }, [open, loadItems, loadUnreadCount])
+  }, [open])
 
   const grouped = useMemo(() => groupNotifications(items), [items])
 
