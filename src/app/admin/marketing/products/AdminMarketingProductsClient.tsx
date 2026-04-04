@@ -29,8 +29,11 @@ type BrandRowAdmin = {
   default_share_points?: number | null
   default_share_points_type?: string | null
   default_review_text?: number | null
+  default_review_text_type?: string | null
   default_review_photo?: number | null
+  default_review_photo_type?: string | null
   default_review_video?: number | null
+  default_review_video_type?: string | null
   default_partner_commission?: number | null
   default_partner_commission_type?: string | null
   default_owner_commission?: number | null
@@ -44,8 +47,11 @@ type DefaultsFormState = {
   default_share_points: string
   default_share_points_type: 'percent' | 'toast'
   default_review_text: string
+  default_review_text_type: 'percent' | 'toast'
   default_review_photo: string
+  default_review_photo_type: 'percent' | 'toast'
   default_review_video: string
+  default_review_video_type: 'percent' | 'toast'
   default_partner_commission: string
   default_partner_commission_type: 'percent' | 'won'
   default_owner_commission: string
@@ -60,8 +66,11 @@ function brandToDefaultsForm(b: BrandRowAdmin): DefaultsFormState {
     default_share_points: b.default_share_points != null ? String(b.default_share_points) : '',
     default_share_points_type: b.default_share_points_type === 'toast' ? 'toast' : 'percent',
     default_review_text: b.default_review_text != null ? String(b.default_review_text) : '100',
+    default_review_text_type: b.default_review_text_type === 'toast' ? 'toast' : 'percent',
     default_review_photo: b.default_review_photo != null ? String(b.default_review_photo) : '300',
+    default_review_photo_type: b.default_review_photo_type === 'toast' ? 'toast' : 'percent',
     default_review_video: b.default_review_video != null ? String(b.default_review_video) : '500',
+    default_review_video_type: b.default_review_video_type === 'toast' ? 'toast' : 'percent',
     default_partner_commission: b.default_partner_commission != null ? String(b.default_partner_commission) : '',
     default_partner_commission_type: b.default_partner_commission_type === 'won' ? 'won' : 'percent',
     default_owner_commission: b.default_owner_commission != null ? String(b.default_owner_commission) : '',
@@ -556,7 +565,7 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
     supabase
       .from('brands')
       .select(
-        'id,name,origin_country,default_earn_points,default_earn_points_type,default_share_points,default_share_points_type,default_review_text,default_review_photo,default_review_video,default_partner_commission,default_partner_commission_type,default_owner_commission,default_owner_commission_type'
+        'id,name,origin_country,default_earn_points,default_earn_points_type,default_share_points,default_share_points_type,default_review_text,default_review_text_type,default_review_photo,default_review_photo_type,default_review_video,default_review_video_type,default_partner_commission,default_partner_commission_type,default_owner_commission,default_owner_commission_type'
       )
       .order('name')
       .then(({ data }) => {
@@ -597,8 +606,11 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
       default_share_points: ni(defForm.default_share_points),
       default_share_points_type: defForm.default_share_points_type,
       default_review_text: ni(defForm.default_review_text),
+      default_review_text_type: defForm.default_review_text_type,
       default_review_photo: ni(defForm.default_review_photo),
+      default_review_photo_type: defForm.default_review_photo_type,
       default_review_video: ni(defForm.default_review_video),
+      default_review_video_type: defForm.default_review_video_type,
       default_partner_commission: nf(defForm.default_partner_commission),
       default_partner_commission_type: defForm.default_partner_commission_type,
       default_owner_commission: nf(defForm.default_owner_commission),
@@ -1314,7 +1326,7 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
             </div>
 
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>텍스트 리뷰 (T)</div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>텍스트 리뷰</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                 <input
                   type="number"
@@ -1330,11 +1342,42 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
                     padding: '6px 8px',
                   }}
                 />
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>T</span>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => setDefForm(f => (f ? { ...f, default_review_text_type: 'percent' } : f))}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: defForm.default_review_text_type === 'percent' ? `1px solid ${BRAND_DEFAULTS_ACC}` : '1px solid rgba(255,255,255,0.12)',
+                      background: defForm.default_review_text_type === 'percent' ? 'rgba(123,94,167,0.2)' : 'transparent',
+                      color: defForm.default_review_text_type === 'percent' ? BRAND_DEFAULTS_ACC : 'rgba(255,255,255,0.45)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    %
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDefForm(f => (f ? { ...f, default_review_text_type: 'toast' } : f))}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: defForm.default_review_text_type === 'toast' ? `1px solid ${BRAND_DEFAULTS_ACC}` : '1px solid rgba(255,255,255,0.12)',
+                      background: defForm.default_review_text_type === 'toast' ? 'rgba(123,94,167,0.2)' : 'transparent',
+                      color: defForm.default_review_text_type === 'toast' ? BRAND_DEFAULTS_ACC : 'rgba(255,255,255,0.45)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    T
+                  </button>
+                </div>
               </div>
             </div>
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>포토 리뷰 (T)</div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>포토 리뷰</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                 <input
                   type="number"
@@ -1350,11 +1393,42 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
                     padding: '6px 8px',
                   }}
                 />
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>T</span>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => setDefForm(f => (f ? { ...f, default_review_photo_type: 'percent' } : f))}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: defForm.default_review_photo_type === 'percent' ? `1px solid ${BRAND_DEFAULTS_ACC}` : '1px solid rgba(255,255,255,0.12)',
+                      background: defForm.default_review_photo_type === 'percent' ? 'rgba(123,94,167,0.2)' : 'transparent',
+                      color: defForm.default_review_photo_type === 'percent' ? BRAND_DEFAULTS_ACC : 'rgba(255,255,255,0.45)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    %
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDefForm(f => (f ? { ...f, default_review_photo_type: 'toast' } : f))}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: defForm.default_review_photo_type === 'toast' ? `1px solid ${BRAND_DEFAULTS_ACC}` : '1px solid rgba(255,255,255,0.12)',
+                      background: defForm.default_review_photo_type === 'toast' ? 'rgba(123,94,167,0.2)' : 'transparent',
+                      color: defForm.default_review_photo_type === 'toast' ? BRAND_DEFAULTS_ACC : 'rgba(255,255,255,0.45)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    T
+                  </button>
+                </div>
               </div>
             </div>
             <div style={{ marginBottom: 14 }}>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>영상 리뷰 (T)</div>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>영상 리뷰</div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                 <input
                   type="number"
@@ -1370,7 +1444,38 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
                     padding: '6px 8px',
                   }}
                 />
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>T</span>
+                <div style={{ display: 'flex', gap: 4 }}>
+                  <button
+                    type="button"
+                    onClick={() => setDefForm(f => (f ? { ...f, default_review_video_type: 'percent' } : f))}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: defForm.default_review_video_type === 'percent' ? `1px solid ${BRAND_DEFAULTS_ACC}` : '1px solid rgba(255,255,255,0.12)',
+                      background: defForm.default_review_video_type === 'percent' ? 'rgba(123,94,167,0.2)' : 'transparent',
+                      color: defForm.default_review_video_type === 'percent' ? BRAND_DEFAULTS_ACC : 'rgba(255,255,255,0.45)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    %
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDefForm(f => (f ? { ...f, default_review_video_type: 'toast' } : f))}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 10px',
+                      borderRadius: 6,
+                      border: defForm.default_review_video_type === 'toast' ? `1px solid ${BRAND_DEFAULTS_ACC}` : '1px solid rgba(255,255,255,0.12)',
+                      background: defForm.default_review_video_type === 'toast' ? 'rgba(123,94,167,0.2)' : 'transparent',
+                      color: defForm.default_review_video_type === 'toast' ? BRAND_DEFAULTS_ACC : 'rgba(255,255,255,0.45)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    T
+                  </button>
+                </div>
               </div>
             </div>
 
