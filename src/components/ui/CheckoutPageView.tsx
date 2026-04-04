@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import {
   computeCouponDiscount,
@@ -110,8 +111,35 @@ export default function CheckoutPageView({
   onPay,
   onChargeKrw,
 }: Props) {
+  const [useBankTransfer, setUseBankTransfer] = useState(false)
+  const [receiptOn, setReceiptOn] = useState(true)
+  const [receiptNum, setReceiptNum] = useState('')
+  const [selectedChargeSummary, setSelectedChargeSummary] = useState('')
+  const [customChargeOpen, setCustomChargeOpen] = useState(false)
+  const [customChargeInput, setCustomChargeInput] = useState('')
+
+  const closeChargeSheet = () => {
+    setChargeSheetOpen(false)
+    setSelectedChargeSummary('')
+    setCustomChargeOpen(false)
+    setCustomChargeInput('')
+  }
+
+  const pickChargeAmount = (label: string, krw: number) => {
+    setCustomChargeOpen(false)
+    setCustomChargeInput('')
+    setSelectedChargeSummary(`${label} · ₩${krw.toLocaleString()} 선택됨`)
+    onChargeKrw(krw)
+  }
+
   return (
     <>
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(-1deg); }
+          50% { transform: translateY(-10px) rotate(1deg); }
+        }
+      `}</style>
       <div style={{ padding: 16 }}>
         {toast && (
           <div style={{ marginBottom: 10, padding: 10, borderRadius: 10, border: '1px solid rgba(201,168,76,0.35)', background: 'rgba(201,168,76,0.12)', color: 'var(--gold)', fontSize: 12 }}>{toast}</div>
@@ -126,7 +154,18 @@ export default function CheckoutPageView({
                 return (
                   <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: 10, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
-                      <div style={{ position: 'relative', width: 44, height: 44, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: 'rgba(0,0,0,0.2)' }}>
+                      <div
+                        style={{
+                          position: 'relative',
+                          width: 44,
+                          height: 44,
+                          borderRadius: 10,
+                          overflow: 'hidden',
+                          flexShrink: 0,
+                          background: 'rgba(0,0,0,0.2)',
+                          animation: 'float 3s ease-in-out infinite',
+                        }}
+                      >
                         <ProductThumbnail src={p.thumb_img} alt={p.name || ''} fill objectFit="cover" />
                       </div>
                       <div style={{ color: '#fff', fontSize: 13, fontWeight: 700, minWidth: 0 }}>
@@ -236,10 +275,74 @@ export default function CheckoutPageView({
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 12, color: '#fff' }}>🏦 무통장 입금</span>
-                  <button type="button" onClick={() => {}} style={{ width: 36, height: 20, borderRadius: 10, border: 'none', background: 'rgba(255,255,255,0.12)', cursor: 'pointer', position: 'relative' }}>
-                    <span style={{ position: 'absolute', width: 16, height: 16, borderRadius: '50%', background: '#fff', top: 2, left: 2 }} />
+                  <button
+                    type="button"
+                    onClick={() => setUseBankTransfer(!useBankTransfer)}
+                    style={{
+                      width: 36,
+                      height: 20,
+                      borderRadius: 10,
+                      border: 'none',
+                      background: useBankTransfer ? '#7B5EA7' : 'rgba(255,255,255,0.12)',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      transition: 'background 0.2s',
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: 'absolute',
+                        width: 16,
+                        height: 16,
+                        borderRadius: '50%',
+                        background: '#fff',
+                        top: 2,
+                        left: useBankTransfer ? 18 : 2,
+                        transition: 'left 0.2s',
+                      }}
+                    />
                   </button>
                 </div>
+                {useBankTransfer && (
+                  <div
+                    style={{
+                      marginTop: 10,
+                      padding: 10,
+                      borderRadius: 10,
+                      background: 'rgba(0,0,0,0.2)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      fontSize: 12,
+                      color: 'rgba(255,255,255,0.9)',
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    <div>계좌번호: 신한은행 110-123-456789 예금주: (주)오랜</div>
+                    <div style={{ color: '#ff6b6b', marginTop: 6, fontWeight: 700 }}>입금기한: 24시간 이내</div>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, cursor: 'pointer' }}>
+                      <input type="checkbox" checked={receiptOn} onChange={(e) => setReceiptOn(e.target.checked)} />
+                      <span>현금영수증 신청</span>
+                    </label>
+                    {receiptOn && (
+                      <input
+                        type="text"
+                        placeholder="현금영수증 번호 (휴대폰/사업자번호)"
+                        value={receiptNum}
+                        onChange={(e) => setReceiptNum(e.target.value)}
+                        style={{
+                          width: '100%',
+                          marginTop: 8,
+                          boxSizing: 'border-box',
+                          background: 'rgba(0,0,0,0.25)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: 10,
+                          padding: '8px 10px',
+                          color: '#fff',
+                          fontSize: 12,
+                        }}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -272,7 +375,11 @@ export default function CheckoutPageView({
                 disabled={paying}
                 style={{ width: '100%', height: 48, borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #C9A96E, #a07840)', color: '#000', fontWeight: 900, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
               >
-                {paying ? '결제 준비 중...' : `결제하기 · ₩${(subtotal).toLocaleString()}`}
+                {paying
+                  ? '결제 준비 중...'
+                  : useBankTransfer
+                    ? `무통장 입금하기 · ₩${subtotal.toLocaleString()}`
+                    : `결제하기 · ₩${subtotal.toLocaleString()}`}
               </button>
             </div>
             <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text3)' }}>{`🍞 ${Math.floor(balance / Math.max(1, toastRate)).toLocaleString()}T 보유 (1T=${toastRate}원)`}</div>
@@ -280,14 +387,100 @@ export default function CheckoutPageView({
         )}
       </div>
       {chargeSheetOpen && (
-        <div onClick={() => setChargeSheetOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 130 }}>
+        <div onClick={closeChargeSheet} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 130 }}>
           <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 0, width: '100%', maxWidth: 480, background: '#11161b', borderTopLeftRadius: 18, borderTopRightRadius: 18, borderTop: '1px solid var(--border)', padding: 14 }}>
             <div style={{ fontSize: 14, color: '#fff', fontWeight: 800, marginBottom: 8 }}>토스트 충전 선택</div>
-            {[{ t: 100, p: 10000 }, { t: 300, p: 30000, popular: true }, { t: 500, p: 50000 }, { t: 1000, p: 100000, bonus: 50 }].map(pkg => (
-              <button key={pkg.t} type="button" onClick={() => onChargeKrw(pkg.p)} style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontWeight: 800, marginTop: 8, textAlign: 'left', padding: '0 12px' }}>
-                🍞 {pkg.t.toLocaleString()}T ₩{pkg.p.toLocaleString()} {pkg.popular ? '[인기 🔥]' : ''} {pkg.bonus ? `(+${pkg.bonus}T 보너스)` : ''}
-              </button>
-            ))}
+            {selectedChargeSummary ? (
+              <div style={{ fontSize: 12, color: 'var(--gold)', marginBottom: 8, fontWeight: 700 }}>{selectedChargeSummary}</div>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => pickChargeAmount('₩30만 (무통장+5% / 카드+2%)', 300_000)}
+              style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontWeight: 800, marginTop: 8, textAlign: 'left', padding: '0 12px' }}
+            >
+              ₩30만 (무통장+5% / 카드+2%)
+            </button>
+            <button
+              type="button"
+              onClick={() => pickChargeAmount('₩50만', 500_000)}
+              style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontWeight: 800, marginTop: 8, textAlign: 'left', padding: '0 12px' }}
+            >
+              ₩50만
+            </button>
+            <button
+              type="button"
+              onClick={() => pickChargeAmount('₩100만', 1_000_000)}
+              style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontWeight: 800, marginTop: 8, textAlign: 'left', padding: '0 12px' }}
+            >
+              ₩100만
+            </button>
+            <button
+              type="button"
+              onClick={() => pickChargeAmount('₩150만', 1_500_000)}
+              style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontWeight: 800, marginTop: 8, textAlign: 'left', padding: '0 12px' }}
+            >
+              ₩150만
+            </button>
+            <button
+              type="button"
+              onClick={() => pickChargeAmount('₩300만', 3_000_000)}
+              style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontWeight: 800, marginTop: 8, textAlign: 'left', padding: '0 12px' }}
+            >
+              ₩300만
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setCustomChargeOpen(true)
+                setSelectedChargeSummary('')
+              }}
+              style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontWeight: 800, marginTop: 8, textAlign: 'left', padding: '0 12px' }}
+            >
+              직접입력
+            </button>
+            {customChargeOpen && (
+              <div style={{ marginTop: 10 }}>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="충전 금액 (원)"
+                  value={customChargeInput}
+                  onChange={(e) => setCustomChargeInput(e.target.value.replace(/[^\d]/g, ''))}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    height: 40,
+                    borderRadius: 10,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(0,0,0,0.25)',
+                    color: '#fff',
+                    padding: '0 12px',
+                    fontSize: 14,
+                    marginBottom: 8,
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const n = Number(customChargeInput)
+                    if (!Number.isFinite(n) || n <= 0) return
+                    pickChargeAmount('직접입력', Math.floor(n))
+                  }}
+                  style={{
+                    width: '100%',
+                    height: 40,
+                    borderRadius: 10,
+                    border: 'none',
+                    background: 'rgba(201,168,110,0.25)',
+                    color: '#fff',
+                    fontWeight: 800,
+                    cursor: 'pointer',
+                  }}
+                >
+                  입력 금액으로 충전
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
