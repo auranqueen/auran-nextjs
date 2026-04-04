@@ -67,7 +67,7 @@ function SkinAnalysisResultPageContent() {
     let query = supabase
       .from('products')
       .select('*')
-      .eq('skin_type', skinType)
+      .contains('skin_types', [skinType])
       .limit(3)
 
     if (isPregnant) {
