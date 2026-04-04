@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { Suspense, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useCart } from '@/context/CartContext'
 import ProductClient from '@/app/(customer)/products/[id]/client'
 
 const GOLD = '#C9A96E'
@@ -26,11 +27,25 @@ const HORMONE_LABELS: Record<string, string> = {
   menopause_transition: '갱년기', post_menopause: '폐경 후', hrt: 'HRT 중',
 }
 
-function Btn3({ id, retail_price, name, router, onBuy }: any) {
+function Btn3({ id, name, price, thumb_img, router, onBuy }: any) {
+  const { addToCart } = useCart()
   return (
     <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
-      <div onClick={() => router.push(`/products/${id}`)} style={{ flex: 1, padding: '8px 0', background: 'rgba(255,255,255,0.05)', border: CARD_BORDER, borderRadius: '8px', fontSize: '11px', color: TEXT_MUTED, textAlign: 'center', cursor: 'pointer' }}>🛍️ 담기</div>
-      <div onClick={() => router.push(`/gift?product_id=${id}`)} style={{ flex: 1, padding: '8px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>🎁 선물</div>
+      <div
+        onClick={() => {
+          addToCart({
+            product_id: id,
+            name,
+            price: Number(price) || 0,
+            thumb_img: thumb_img || '',
+            quantity: 1,
+          })
+          alert('🛍️ 장바구니에 담겼어요!')
+        }}
+        style={{ flex: 1, padding: '8px 0', background: 'rgba(255,255,255,0.05)', border: CARD_BORDER, borderRadius: '8px', fontSize: '11px', color: TEXT_MUTED, textAlign: 'center', cursor: 'pointer' }}
+      >
+        🛍️ 담기
+      </div>
       <div onClick={() => void onBuy(id)} style={{ flex: 1.3, padding: '8px 0', background: GOLD, borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: BG, textAlign: 'center', cursor: 'pointer' }}>지금 구매</div>
     </div>
   )
@@ -347,7 +362,14 @@ function SkinAnalysisResultPageContent() {
                 <div style={{ fontSize: '13px', fontWeight: 400 }}>{(p.retail_price || 0).toLocaleString()}원</div>
               </div>
             </div>
-            <Btn3 id={p.id} retail_price={p.retail_price} name={p.name} router={router} onBuy={handleCheckoutBuy} />
+            <Btn3
+              id={p.id}
+              name={p.name}
+              price={p.retail_price ?? p.price ?? 0}
+              thumb_img={p.storage_thumb_url || p.thumb_img || ''}
+              router={router}
+              onBuy={handleCheckoutBuy}
+            />
           </div>
         ))}
       </div>
