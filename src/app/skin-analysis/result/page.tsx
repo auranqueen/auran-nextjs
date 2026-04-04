@@ -29,7 +29,7 @@ const HORMONE_LABELS: Record<string, string> = {
 function Btn3({ id, retail_price, name, router, onBuy }: any) {
   return (
     <div style={{ display: 'flex', gap: '6px', padding: '0 12px 10px' }}>
-      <div onClick={() => router.push(`/products/${id}`)} style={{ flex: 1, padding: '8px 0', background: 'rgba(255,255,255,0.05)', border: CARD_BORDER, borderRadius: '8px', fontSize: '11px', color: TEXT_MUTED, textAlign: 'center', cursor: 'pointer' }}>🛒 담기</div>
+      <div onClick={() => router.push(`/products/${id}`)} style={{ flex: 1, padding: '8px 0', background: 'rgba(255,255,255,0.05)', border: CARD_BORDER, borderRadius: '8px', fontSize: '11px', color: TEXT_MUTED, textAlign: 'center', cursor: 'pointer' }}>🛍️ 담기</div>
       <div onClick={() => router.push(`/gift?product_id=${id}`)} style={{ flex: 1, padding: '8px 0', background: 'rgba(180,100,200,0.1)', border: '1px solid rgba(180,100,200,0.25)', borderRadius: '8px', fontSize: '11px', color: 'rgba(200,140,220,0.9)', textAlign: 'center', cursor: 'pointer' }}>🎁 선물</div>
       <div onClick={() => void onBuy(id)} style={{ flex: 1.3, padding: '8px 0', background: GOLD, borderRadius: '8px', fontSize: '11px', fontWeight: 400, color: BG, textAlign: 'center', cursor: 'pointer' }}>지금 구매</div>
     </div>

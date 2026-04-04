@@ -312,7 +312,7 @@ export default function CommunityPostDetailPage() {
     }
     try {
       await supabase.from('carts').insert({ user_id: user.id, product_id: productId, quantity: 1 } as any)
-      setToast('장바구니에 담겼어요 🛒')
+      setToast('장바구니에 담겼어요 🛍️')
     } catch {
       // ignore
     }
@@ -530,7 +530,7 @@ export default function CommunityPostDetailPage() {
                             onClick={() => void addToCart(pr.id)}
                             style={{ padding: '7px 10px', borderRadius: 10, border: '1px solid rgba(201,169,110,0.3)', background: 'rgba(201,169,110,0.15)', color: '#C9A96E', fontSize: 11, cursor: 'pointer' }}
                           >
-                            담기 🛒
+                            담기 🛍️
                           </button>
                           <button
                             type="button"

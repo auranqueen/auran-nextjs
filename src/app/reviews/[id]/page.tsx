@@ -132,7 +132,7 @@ export default function ReviewDetailPage() {
                 flex: 1, padding: '12px', borderRadius: 10, fontSize: 13,
                 background: 'rgba(255,255,255,0.05)',
                 border: '1px solid rgba(255,255,255,0.1)', color: '#fff', cursor: 'pointer'
-              }}>🛒 담기</button>
+              }}>🛍️ 담기</button>
               <button style={{
                 flex: 1, padding: '12px', borderRadius: 10, fontSize: 13,
                 background: 'rgba(255,255,255,0.05)',

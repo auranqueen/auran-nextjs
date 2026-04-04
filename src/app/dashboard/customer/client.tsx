@@ -150,7 +150,7 @@ function TimesaleProductCard({
             padding: '7px 0',
           }}
         >
-          🛒 담기
+          🛍️ 담기
         </button>
         <button
           type="button"
@@ -259,7 +259,7 @@ function HomeProductRowCard({
             fontWeight: 700,
           }}
         >
-          🛒 담기
+          🛍️ 담기
         </button>
       </div>
     </div>
@@ -577,7 +577,7 @@ export default function CustomerDashboardClient({
       return
     }
     broadcastCartCountRefresh()
-    setToast('장바구니에 담았어요 🛒')
+    setToast('장바구니에 담았어요 🛍️')
   }
 
   const openGift = async (product: any) => {
@@ -1099,7 +1099,7 @@ export default function CustomerDashboardClient({
                           fontSize: 11,
                         }}
                       >
-                        🛒 담기
+                        🛍️ 담기
                       </button>
                       <button
                         type="button"

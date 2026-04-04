@@ -275,7 +275,7 @@ export default function CustomerCommunityPage() {
     }
     try {
       await supabase.from('carts').insert({ user_id: user.id, product_id: productId, quantity: 1 } as any)
-      setToast('장바구니에 담겼어요 🛒')
+      setToast('장바구니에 담겼어요 🛍️')
     } catch {
       // cart table not exists or duplicated row: ignore
     }
@@ -780,7 +780,7 @@ export default function CustomerCommunityPage() {
                           <div style={{ fontSize: 10, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tp.name}</div>
                           <div style={{ fontSize: 10, color: '#C9A96E', marginTop: 2 }}>{Number(tp.price || 0).toLocaleString()}T</div>
                         </div>
-                        <button type="button" onClick={() => void addToCart(tp.id)} style={{ fontSize: 9, background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', color: '#C9A96E', borderRadius: 20, padding: '3px 8px', cursor: 'pointer' }}>🛒 담기</button>
+                        <button type="button" onClick={() => void addToCart(tp.id)} style={{ fontSize: 9, background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', color: '#C9A96E', borderRadius: 20, padding: '3px 8px', cursor: 'pointer' }}>🛍️ 담기</button>
                         <button type="button" onClick={() => void openGiftModal(tp)} style={{ fontSize: 9, background: 'rgba(123,94,167,0.15)', border: '1px solid rgba(123,94,167,0.3)', color: '#c4a7e7', borderRadius: 20, padding: '3px 8px', cursor: 'pointer' }}>🎁 선물</button>
                       </div>
                     ))}
@@ -885,7 +885,7 @@ export default function CustomerCommunityPage() {
                             <div style={{ fontSize: 10, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tp.name}</div>
                             <div style={{ fontSize: 10, color: '#C9A96E', marginTop: 2 }}>{Number(tp.price || 0).toLocaleString()}T</div>
                           </div>
-                          <button type="button" onClick={() => void addToCart(tp.id)} style={{ fontSize: 9, background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', color: '#C9A96E', borderRadius: 20, padding: '3px 8px', cursor: 'pointer' }}>🛒 담기</button>
+                          <button type="button" onClick={() => void addToCart(tp.id)} style={{ fontSize: 9, background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', color: '#C9A96E', borderRadius: 20, padding: '3px 8px', cursor: 'pointer' }}>🛍️ 담기</button>
                           <button type="button" onClick={() => void openGiftModal(tp)} style={{ fontSize: 9, background: 'rgba(123,94,167,0.15)', border: '1px solid rgba(123,94,167,0.3)', color: '#c4a7e7', borderRadius: 20, padding: '3px 8px', cursor: 'pointer' }}>🎁 선물</button>
                         </div>
                       ))}
@@ -977,7 +977,7 @@ export default function CustomerCommunityPage() {
                             <div style={{ fontSize: 10, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{tp.name}</div>
                             <div style={{ fontSize: 10, color: '#C9A96E', marginTop: 2 }}>{Number(tp.price || 0).toLocaleString()}T</div>
                           </div>
-                          <button type="button" onClick={() => void addToCart(tp.id)} style={{ fontSize: 9, background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', color: '#C9A96E', borderRadius: 20, padding: '3px 8px', cursor: 'pointer' }}>🛒 담기</button>
+                          <button type="button" onClick={() => void addToCart(tp.id)} style={{ fontSize: 9, background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', color: '#C9A96E', borderRadius: 20, padding: '3px 8px', cursor: 'pointer' }}>🛍️ 담기</button>
                           <button type="button" onClick={() => void openGiftModal(tp)} style={{ fontSize: 9, background: 'rgba(123,94,167,0.15)', border: '1px solid rgba(123,94,167,0.3)', color: '#c4a7e7', borderRadius: 20, padding: '3px 8px', cursor: 'pointer' }}>🎁 선물</button>
                         </div>
                       ))}

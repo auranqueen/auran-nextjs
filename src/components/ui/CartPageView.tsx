@@ -61,7 +61,7 @@ export default function CartPageView({
         ) : null}
         {items.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 12px' }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>🛒</div>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🛍️</div>
             <div style={{ color: 'var(--text3)', fontSize: 13, marginBottom: 16 }}>장바구니가 비어 있어요</div>
             <Link
               href="/products"

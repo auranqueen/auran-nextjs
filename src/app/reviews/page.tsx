@@ -138,7 +138,7 @@ export default function ReviewsPage() {
                   <button onClick={e => { e.stopPropagation(); }} style={{
                     padding: '6px 10px', borderRadius: 8, fontSize: 11, cursor: 'pointer',
                     background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff'
-                  }}>🛒 담기</button>
+                  }}>🛍️ 담기</button>
                   <button onClick={e => { e.stopPropagation(); window.location.href = `/products/${review.product.id}` }} style={{
                     padding: '6px 10px', borderRadius: 8, fontSize: 11, cursor: 'pointer',
                     background: '#C9A96E', border: 'none', color: '#000', fontWeight: 700

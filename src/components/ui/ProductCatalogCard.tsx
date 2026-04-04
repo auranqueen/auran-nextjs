@@ -32,7 +32,7 @@ export default function ProductCatalogCard({ p }: { p: any }) {
       brand_name: p.brands?.name || '',
       quantity: 1,
     })
-    setToast(wasNewLine ? '🛒 장바구니에 담겼어요!' : '수량이 +1 되었습니다')
+    setToast(wasNewLine ? '🛍️ 장바구니에 담겼어요!' : '수량이 +1 되었습니다')
   }
 
   const pid = String(p.id)
@@ -124,7 +124,7 @@ export default function ProductCatalogCard({ p }: { p: any }) {
           justifyContent: 'center',
         }}
       >
-        🛒
+        🛍️
       </button>
     </div>
   )

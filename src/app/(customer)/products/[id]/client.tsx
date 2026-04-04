@@ -955,7 +955,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
       {/* 3버튼 */}
       <div style={{ position: 'fixed', bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 8 }}>
-        <button style={{ flex: 1, background: '#1e1a14', border: 'none', color: '#aaa', fontSize: 13, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>🛒 담기</button>
+        <button style={{ flex: 1, background: '#1e1a14', border: 'none', color: '#aaa', fontSize: 13, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>🛍️ 담기</button>
         <button
           onClick={() => router.push(`/checkout?gift=1&product_id=${product.id}&qty=${qty}`)}
           style={{ flex: 1, background: '#241e0e', border: 'none', color: GOLD, fontSize: 13, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}

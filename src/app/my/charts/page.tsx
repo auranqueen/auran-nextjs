@@ -54,7 +54,7 @@ export default function MyChartsPage() {
     if (!auth.user) return
     try {
       await supabase.from('carts').insert({ user_id: auth.user.id, product_id: productId, quantity: 1 } as any)
-      setToast('장바구니에 담겼어요 🛒')
+      setToast('장바구니에 담겼어요 🛍️')
     } catch {
       // ignore
     }

@@ -65,7 +65,7 @@ export default function ProductActionBar({
             cursor: 'pointer',
           }}
         >
-          🛒 장바구니
+          🛍️ 장바구니
         </button>
 
         <button
