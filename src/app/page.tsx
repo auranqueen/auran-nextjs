@@ -330,13 +330,18 @@ export default function CustomerHomePage() {
       const selNoCat =
         'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, brands(name)'
       let res: { error: unknown; data: any[] | null } = await supabase.from('products').select(selFull).eq('is_active', true).limit(80)
-      if (res.error) res = await supabase.from('products').select(selNoCat).eq('is_active', true).limit(80)
+      console.log('products fetch 1:', res.error, res.data?.length)
+      if (res.error) {
+        res = await supabase.from('products').select(selNoCat).eq('is_active', true).limit(80)
+        console.log('products fetch 2:', res.error, res.data?.length)
+      }
       if (res.error || !res.data?.length) {
         res = await supabase.from('products').select(selFull).limit(80)
       }
       if (res.error) res = await supabase.from('products').select(selNoCat).limit(80)
       if (res.error || !res.data?.length) {
         const fb = await supabase.from('products').select('id, name, retail_price, sale_price, is_timesale, thumb_img, tag, category_id, quiz_match, brands(name)').eq('status', 'active').limit(80)
+        console.log('products fetch fb:', fb.error, fb.data?.length)
         if (fb.data && fb.data.length > 0) setProducts(fb.data)
       } else if (res.data && res.data.length > 0) {
         setProducts(res.data)
