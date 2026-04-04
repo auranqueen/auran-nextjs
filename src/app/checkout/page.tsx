@@ -150,7 +150,7 @@ function CheckoutPageInner() {
       setLoading(false)
     }
     run()
-  }, [supabase, router, productIds.join(','), search])
+  }, [productIds.join(','), search?.toString()])
 
   const subtotal = useMemo(
     () =>
