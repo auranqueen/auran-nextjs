@@ -1039,7 +1039,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
       {giftSheetOpen && (
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 90, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
           onClick={() => setGiftSheetOpen(false)}
         >
           <div
@@ -1054,6 +1054,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               borderTop: `1px solid ${GOLD}44`,
               maxHeight: '70vh',
               overflowY: 'auto',
+              zIndex: 201,
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
