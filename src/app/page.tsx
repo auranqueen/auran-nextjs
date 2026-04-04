@@ -825,19 +825,6 @@ export default function CustomerHomePage() {
     setHormonePhaseTipOpen(false)
   }, [hormoneMainLine, hormoneSubLine])
 
-  if (!mounted) {
-    return (
-      <div
-        style={{
-          position: 'fixed',
-          inset: 0,
-          background: '#0D0B09',
-          zIndex: 9999,
-        }}
-      />
-    )
-  }
-
   const homeCalendarKind =
     profileCycleType === 'menopause'
       ? 'menopause'

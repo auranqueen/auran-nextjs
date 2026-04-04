@@ -32,6 +32,9 @@ export default function Loading() {
           <polygon points="0,-11 2.6,-3.6 10.5,-3.6 4.2,1.4 6.5,8.9 0,4.4 -6.5,8.9 -4.2,1.4 -10.5,-3.6 -2.6,-3.6" fill="#f5d76e" opacity="0.95"/>
         </g>
         <rect x="290" y="295" width="100" height="2" rx="1" fill="#3d1478" opacity="0.8"/>
+        <rect x="290" y="295" width="0" height="2" rx="1" fill="#c084fc" opacity="0.9">
+          <animate attributeName="width" values="0;100;0" dur="2.4s" repeatCount="indefinite" calcMode="ease-in-out" />
+        </rect>
       </svg>
     </div>
   )
