@@ -207,15 +207,40 @@ export default function CheckoutPageView({
             </div>
 
             <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)' }}>
-              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 8 }}>결제 수단</div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, fontSize: 12, color: '#fff' }}>
-                <input type="radio" name="pay" checked={payWithToast} onChange={() => setPayWithToast(true)} />
-                🍞 토스트 잔액으로 차감 (가능한 범위까지)
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#fff' }}>
-                <input type="radio" name="pay" checked={!payWithToast} onChange={() => setPayWithToast(false)} />
-                💳 PayApp 카드 (토스트 미사용 · 남은 금액은 카드)
-              </label>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 10 }}>결제 수단 <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 400 }}>(중복 사용 가능)</span></div>
+
+              {/* 토스트 */}
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: payWithToast ? 8 : 0 }}>
+                  <span style={{ fontSize: 12, color: '#fff' }}>🍞 토스트(T) · 보유 {Math.floor(balance / 100).toLocaleString()}T</span>
+                  <button type="button" onClick={() => setPayWithToast(!payWithToast)} style={{ width: 36, height: 20, borderRadius: 10, border: 'none', background: payWithToast ? '#7B5EA7' : 'rgba(255,255,255,0.12)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}>
+                    <span style={{ position: 'absolute', width: 16, height: 16, borderRadius: '50%', background: '#fff', top: 2, left: payWithToast ? 18 : 2, transition: 'left 0.2s' }} />
+                  </button>
+                </div>
+                {payWithToast && (
+                  <div style={{ fontSize: 11, color: 'var(--text3)' }}>최대 50% 사용 가능 · ₩{Math.min(toastUsed, balance).toLocaleString()} 차감 예정</div>
+                )}
+              </div>
+
+              {/* 오랜페이 */}
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, color: '#fff' }}>💳 오랜페이 · 잔액 ₩{balance.toLocaleString()}</span>
+                  <button type="button" onClick={() => {}} style={{ width: 36, height: 20, borderRadius: 10, border: 'none', background: 'rgba(255,255,255,0.12)', cursor: 'pointer', position: 'relative' }}>
+                    <span style={{ position: 'absolute', width: 16, height: 16, borderRadius: '50%', background: '#fff', top: 2, left: 2 }} />
+                  </button>
+                </div>
+              </div>
+
+              {/* 무통장 */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, color: '#fff' }}>🏦 무통장 입금</span>
+                  <button type="button" onClick={() => {}} style={{ width: 36, height: 20, borderRadius: 10, border: 'none', background: 'rgba(255,255,255,0.12)', cursor: 'pointer', position: 'relative' }}>
+                    <span style={{ position: 'absolute', width: 16, height: 16, borderRadius: '50%', background: '#fff', top: 2, left: 2 }} />
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 12, padding: 12 }}>
@@ -236,20 +261,6 @@ export default function CheckoutPageView({
               <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--text3)' }}>
                 보유: {Math.floor(balance / Math.max(1, toastRate)).toLocaleString()}T (₩{balance.toLocaleString()})
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#c9a84c', fontSize: 13 }}>
-                <span>✨ 포인트 사용</span>
-                <span>-₩{pointUsed.toLocaleString()}</span>
-              </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 12, color: 'var(--text3)' }}>
-                <input type="checkbox" checked={usePoints} onChange={e => setUsePoints(e.target.checked)} />
-                포인트 사용 (최대 {maxPointRate}%)
-              </label>
-              {usePoints && (
-                <input type="number" min={0} max={maxPointsUsable} value={pointInput} onChange={e => setPointInput(Math.max(0, Math.min(maxPointsUsable, Number(e.target.value || 0))))} style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }} />
-              )}
-              <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--text3)' }}>
-                보유: {points.toLocaleString()}P · 최대 ₩{maxPointsUsable.toLocaleString()}
-              </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: 14, fontWeight: 900, marginBottom: 10 }}>
                 <span>최종 결제금액</span>
                 <span>₩{subtotal.toLocaleString()}</span>
@@ -259,9 +270,9 @@ export default function CheckoutPageView({
               <button
                 onClick={() => onPay(true)}
                 disabled={paying}
-                style={{ width: '100%', height: 48, borderRadius: 10, border: 'none', background: '#C9A96E', color: '#000', fontWeight: 900, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
+                style={{ width: '100%', height: 48, borderRadius: 10, border: 'none', background: 'linear-gradient(135deg, #C9A96E, #a07840)', color: '#000', fontWeight: 900, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
               >
-                {paying ? '결제 준비 중...' : `결제하기 · ₩${subtotal.toLocaleString()}`}
+                {paying ? '결제 준비 중...' : `결제하기 · ₩${(subtotal).toLocaleString()}`}
               </button>
             </div>
             <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text3)' }}>{`🍞 ${Math.floor(balance / Math.max(1, toastRate)).toLocaleString()}T 보유 (1T=${toastRate}원)`}</div>
