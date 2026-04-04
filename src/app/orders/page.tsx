@@ -6,6 +6,58 @@ import { createClient } from '@/lib/supabase/client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
+const launchConfetti = () => {
+  const canvas = document.getElementById('confetti-canvas') as HTMLCanvasElement
+  if (!canvas) return
+  canvas.width = window.innerWidth
+  canvas.height = window.innerHeight
+  const ctx = canvas.getContext('2d')!
+  const colors = ['#7B5EA7', '#c9a96e', '#e8d5ff', '#f5c0d1', '#9FE1CB', '#FAC775', '#a78bfa', '#fcd34d']
+  const parts = Array.from({ length: 160 }, () => ({
+    x: window.innerWidth / 2 + (Math.random() - 0.5) * 80,
+    y: window.innerHeight * 0.3,
+    vx: (Math.random() - 0.5) * 12,
+    vy: -(Math.random() * 14 + 6),
+    color: colors[Math.floor(Math.random() * colors.length)],
+    size: Math.random() * 8 + 3,
+    rotation: Math.random() * 360,
+    rotSpeed: (Math.random() - 0.5) * 12,
+    shape: (Math.random() > 0.5 ? 'rect' : 'circle') as 'rect' | 'circle',
+    gravity: 0.4,
+    opacity: 1,
+  }))
+  const animate = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    let alive = false
+    parts.forEach((p) => {
+      p.x += p.vx
+      p.y += p.vy
+      p.vy += p.gravity
+      p.vx *= 0.99
+      p.rotation += p.rotSpeed
+      p.opacity -= 0.007
+      if (p.opacity > 0 && p.y < canvas.height + 20) {
+        alive = true
+        ctx.save()
+        ctx.globalAlpha = Math.max(0, p.opacity)
+        ctx.translate(p.x, p.y)
+        ctx.rotate((p.rotation * Math.PI) / 180)
+        ctx.fillStyle = p.color
+        if (p.shape === 'circle') {
+          ctx.beginPath()
+          ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2)
+          ctx.fill()
+        } else {
+          ctx.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * 0.6)
+        }
+        ctx.restore()
+      }
+    })
+    if (alive) requestAnimationFrame(animate)
+  }
+  animate()
+}
+
 export default function OrdersPage() {
   const supabase = createClient()
   const router = useRouter()
@@ -19,6 +71,12 @@ export default function OrdersPage() {
     const q = new URLSearchParams(window.location.search)
     setPaymentDone(q.get('payment') === 'done')
   }, [])
+
+  useEffect(() => {
+    if (!paymentDone) return
+    const t = window.setTimeout(() => launchConfetti(), 300)
+    return () => clearTimeout(t)
+  }, [paymentDone])
 
   useEffect(() => {
     const run = async () => {
@@ -70,8 +128,51 @@ export default function OrdersPage() {
           </div>
         ) : null}
         {paymentDone && (
-          <div style={{ marginBottom: 12, padding: 12, background: 'rgba(76,173,126,0.12)', border: '1px solid rgba(76,173,126,0.35)', borderRadius: 12, fontSize: 13, color: '#4cad7e', fontWeight: 600 }}>
-            결제가 완료되었습니다.
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(13,11,9,0.95)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+            <canvas id="confetti-canvas" style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 10000 }} />
+            <div style={{ fontSize: 52, marginBottom: 12, animation: 'popIn 0.5s ease' }}>🛍️</div>
+            <div style={{ fontSize: 18, fontWeight: 500, color: '#e8d5ff', marginBottom: 6 }}>결제가 완료됐어요!</div>
+            <div style={{ fontSize: 12, color: '#666', marginBottom: 20, lineHeight: 1.7, textAlign: 'center' }}>곧 배송 준비가 시작될 거예요 💜</div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, width: '100%', maxWidth: 320, marginBottom: 16 }}>
+              <div style={{ background: 'rgba(192,132,252,0.08)', border: '0.5px solid rgba(192,132,252,0.25)', borderRadius: 12, padding: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 20, marginBottom: 4 }}>🍞</div>
+                <div style={{ fontSize: 10, color: '#888', marginBottom: 3 }}>구매 토스트</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: '#c084fc' }}>확정 후 지급</div>
+                <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>구매 확정 시 바로</div>
+              </div>
+              <div style={{ background: 'rgba(201,168,76,0.07)', border: '0.5px solid rgba(201,168,76,0.25)', borderRadius: 12, padding: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 20, marginBottom: 4 }}>✍️</div>
+                <div style={{ fontSize: 10, color: '#888', marginBottom: 3 }}>리뷰 토스트</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: '#c9a96e' }}>+500T~</div>
+                <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>사진 1,000T</div>
+              </div>
+              <div style={{ background: 'rgba(74,222,128,0.06)', border: '0.5px solid rgba(74,222,128,0.18)', borderRadius: 12, padding: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 20, marginBottom: 4 }}>📦</div>
+                <div style={{ fontSize: 10, color: '#888', marginBottom: 3 }}>예상 배송</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: '#4ade80' }}>2-3일</div>
+                <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>출발 시 알림</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 20, marginBottom: 4 }}>💜</div>
+                <div style={{ fontSize: 10, color: '#888', marginBottom: 3 }}>최대 적립</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: '#c9a96e' }}>1,500T~</div>
+                <div style={{ fontSize: 10, color: '#555', marginTop: 2 }}>구매+사진리뷰</div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                const canvas = document.getElementById('confetti-canvas') as HTMLCanvasElement
+                if (canvas) canvas.style.display = 'none'
+                window.history.replaceState({}, '', '/orders')
+                location.reload()
+              }}
+              style={{ width: '100%', maxWidth: 320, padding: 14, background: 'linear-gradient(135deg,#c9a96e,#a07840)', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 500, color: '#0d0b09', cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              주문 내역 확인하기
+            </button>
           </div>
         )}
         {loading ? (
