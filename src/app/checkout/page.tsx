@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import DashboardHeader from '@/components/DashboardHeader'
+import CartHeaderButton from '@/components/CartHeaderButton'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import CheckoutPageView from '@/components/ui/CheckoutPageView'
 import CustomerDashboardShell from '@/components/views/CustomerDashboardShell'
@@ -271,7 +272,7 @@ function CheckoutPageInner() {
 
   return (
     <CustomerDashboardShell>
-      <DashboardHeader title="체크아웃" right={<CustomerHeaderRight />} />
+      <DashboardHeader title="체크아웃" right={<CartHeaderButton />} />
       <CheckoutPageView
         toast={toast}
         loading={loading}
