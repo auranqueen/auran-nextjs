@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: NextRequest) {
+  try {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
   const price = product.retail_price ?? 0
   const totalAmount = price * quantity
 
-  const { data: order } = await supabase
+  const { data: order, error: orderError } = await supabase
     .from('orders')
     .insert({
       customer_id: user.id,
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     .select()
     .single()
 
-  if (!order) return NextResponse.json({ error: '주문 생성 실패' }, { status: 500 })
+  if (!order) return NextResponse.json({ error: '주문 생성 실패', detail: orderError?.message, code: orderError?.code }, { status: 500 })
 
   const returnurl = 'https://auran.kr/orders/complete'
 
@@ -79,4 +80,8 @@ export async function POST(req: NextRequest) {
   }
 
   return NextResponse.json({ payUrl: parsed.payurl, orderId: order.id })
+  } catch (e) {
+    const message = e instanceof Error ? e.message : String(e)
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }
