@@ -38,6 +38,7 @@ type BrandRowAdmin = {
 }
 
 type DefaultsFormState = {
+  origin_country: string
   default_earn_points: string
   default_earn_points_type: 'percent' | 'toast'
   default_share_points: string
@@ -53,6 +54,7 @@ type DefaultsFormState = {
 
 function brandToDefaultsForm(b: BrandRowAdmin): DefaultsFormState {
   return {
+    origin_country: b.origin_country || '',
     default_earn_points: b.default_earn_points != null ? String(b.default_earn_points) : '',
     default_earn_points_type: b.default_earn_points_type === 'toast' ? 'toast' : 'percent',
     default_share_points: b.default_share_points != null ? String(b.default_share_points) : '',
@@ -589,6 +591,7 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
       return Number.isFinite(n) ? n : null
     }
     return {
+      origin_country: defForm.origin_country.trim() ? defForm.origin_country.trim() : null,
       default_earn_points: ni(defForm.default_earn_points),
       default_earn_points_type: defForm.default_earn_points_type,
       default_share_points: ni(defForm.default_share_points),
@@ -1127,77 +1130,6 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
       </div>
 
       {!brandOwnerAuthId ? (
-      <>
-      <div
-        style={{
-          marginBottom: 16,
-          padding: 14,
-          borderRadius: 14,
-          border: '1px solid rgba(255,255,255,0.1)',
-          background: 'rgba(255,255,255,0.03)',
-        }}
-      >
-        <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 10 }}>브랜드 원산지 (등록·수정)</div>
-        <div style={{ maxHeight: 220, overflowY: 'auto', display: 'grid', gap: 8 }}>
-          {brandsWithId.map(b => (
-            <div
-              key={b.id}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr minmax(140px,auto)',
-                gap: 10,
-                alignItems: 'center',
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 12,
-                  color: 'rgba(255,255,255,0.85)',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {b.name}
-              </span>
-              <select
-                value={b.origin_country || ''}
-                onChange={async e => {
-                  const v = e.target.value
-                  const { error } = await supabase
-                    .from('brands')
-                    .update({ origin_country: v || null } as any)
-                    .eq('id', b.id)
-                  if (error) {
-                    setToast(error.message)
-                    return
-                  }
-                  setBrandsWithId(prev => prev.map(x => (x.id === b.id ? { ...x, origin_country: v || null } : x)))
-                  setToast('브랜드 원산지 저장됨')
-                }}
-                style={{
-                  background: '#121212',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: 10,
-                  padding: '8px 10px',
-                  color: '#fff',
-                  fontSize: 12,
-                }}
-              >
-                <option value="" style={{ background: '#1a1a1a' }}>
-                  — 미지정 —
-                </option>
-                {BRAND_ORIGIN_OPTIONS.map(o => (
-                  <option key={o} value={o} style={{ background: '#1a1a1a' }}>
-                    {o}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
-        </div>
-      </div>
-
       <div
         style={{
           marginBottom: 16,
@@ -1235,6 +1167,33 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
 
         {defForm ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 4 }}>브랜드 원산지</div>
+              <select
+                value={defForm.origin_country}
+                onChange={e => setDefForm(f => (f ? { ...f, origin_country: e.target.value } : f))}
+                style={{
+                  width: '100%',
+                  maxWidth: 440,
+                  background: '#121212',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 10,
+                  padding: '8px 10px',
+                  color: '#fff',
+                  fontSize: 12,
+                }}
+              >
+                <option value="" style={{ background: '#1a1a1a' }}>
+                  — 미지정 —
+                </option>
+                {BRAND_ORIGIN_OPTIONS.map(o => (
+                  <option key={o} value={o} style={{ background: '#1a1a1a' }}>
+                    {o}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
               <span style={{ fontSize: 13, color: '#fff' }}>토스트(T) 설정</span>
               <span
@@ -1574,7 +1533,6 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
           </div>
         )}
       </div>
-      </>
       ) : null}
 
       {tab === 'trash' ? (
