@@ -11,8 +11,8 @@ export async function logUserBehavior(
   if (!authId) return
   try {
     await sb.from('user_behavior_logs').insert({
-      auth_id: authId,
-      action_type,
+      user_id: authId,
+      action: action_type,
       target_id: target_id ?? null,
       metadata: metadata && Object.keys(metadata).length > 0 ? metadata : {},
     } as any)
