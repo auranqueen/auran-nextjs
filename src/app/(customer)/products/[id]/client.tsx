@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useCart } from '@/context/CartContext'
 import { createClient } from '@/lib/supabase/client'
 import { logUserBehavior } from '@/lib/skinAnalytics'
 import '@toast-ui/editor/dist/toastui-editor-viewer.css'
@@ -18,6 +19,7 @@ interface Product {
   name: string
   description: string
   retail_price: number
+  price?: number
   original_price: number
   discount_rate: number
   avg_rating: number
@@ -57,6 +59,7 @@ interface Product {
 
 export default function ProductDetailClient({ product }: { product: Product }) {
   const router = useRouter()
+  const { addToCart } = useCart()
   const supabase = createClient()
   const [reviews, setReviews] = useState<any[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(false)
@@ -97,6 +100,10 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [editDraft, setEditDraft] = useState('')
   const [editDraft2, setEditDraft2] = useState('')
   const [saveToast, setSaveToast] = useState('')
+  const [cartToast, setCartToast] = useState('')
+  const [giftSheetOpen, setGiftSheetOpen] = useState(false)
+  const [giftFriends, setGiftFriends] = useState<{ id: string; nickname: string }[]>([])
+  const [giftFriendsLoading, setGiftFriendsLoading] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [thumbPreviewUrl, setThumbPreviewUrl] = useState('')
   const thumbFileInputRef = useRef<HTMLInputElement | null>(null)
@@ -312,6 +319,55 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     const t = setTimeout(() => setSaveToast(''), 2200)
     return () => clearTimeout(t)
   }, [saveToast])
+
+  useEffect(() => {
+    if (!cartToast) return
+    const t = setTimeout(() => setCartToast(''), 2200)
+    return () => clearTimeout(t)
+  }, [cartToast])
+
+  useEffect(() => {
+    if (!giftSheetOpen) return
+    let cancelled = false
+    ;(async () => {
+      setGiftFriendsLoading(true)
+      setGiftFriends([])
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user?.id) {
+        if (!cancelled) setGiftFriendsLoading(false)
+        return
+      }
+      const { data: me } = await supabase.from('users').select('id').eq('auth_id', session.user.id).maybeSingle()
+      if (!me?.id || cancelled) {
+        if (!cancelled) setGiftFriendsLoading(false)
+        return
+      }
+      const { data: rows } = await supabase.from('follows').select('following_id').eq('follower_id', me.id)
+      if (cancelled) return
+      const fids = Array.from(new Set((rows || []).map((r: { following_id?: string }) => r.following_id).filter(Boolean) as string[]))
+      if (!fids.length) {
+        setGiftFriends([])
+        setGiftFriendsLoading(false)
+        return
+      }
+      const { data: us } = await supabase.from('users').select('id, auth_id').in('id', fids)
+      if (cancelled) return
+      const authIds = Array.from(new Set((us || []).map((u: { auth_id?: string | null }) => u.auth_id).filter(Boolean) as string[]))
+      const { data: profs } = authIds.length
+        ? await supabase.from('profiles').select('auth_id, username, full_name').in('auth_id', authIds)
+        : { data: [] as { auth_id: string; username?: string | null; full_name?: string | null }[] }
+      if (cancelled) return
+      const profByAuth = new Map((profs || []).map((p) => [p.auth_id, p]))
+      const list = (us || []).map((u: { id: string; auth_id?: string | null }) => {
+        const p = u.auth_id ? profByAuth.get(u.auth_id) : undefined
+        const nickname = String(p?.username || p?.full_name || '').trim() || '일촌'
+        return { id: String(u.id), nickname }
+      })
+      setGiftFriends(list)
+      setGiftFriendsLoading(false)
+    })()
+    return () => { cancelled = true }
+  }, [giftSheetOpen, supabase])
 
   const brand = product.brands?.name || 'AURAN'
   const name = product.name ?? '제품명'
@@ -955,15 +1011,114 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
       {/* 3버튼 */}
       <div style={{ position: 'fixed', bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 8 }}>
-        <button style={{ flex: 1, background: '#1e1a14', border: 'none', color: '#aaa', fontSize: 13, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>🛍️ 담기</button>
         <button
-          onClick={() => router.push(`/checkout?gift=1&product_id=${product.id}&qty=${qty}`)}
+          type="button"
+          onClick={() => {
+            addToCart({
+              product_id: product.id,
+              name: product.name,
+              price: product.retail_price ?? product.price ?? 0,
+              thumb_img: product.thumb_img ?? '',
+              quantity: qty,
+            })
+            setCartToast('🛍️ 장바구니에 담겼어요!')
+          }}
+          style={{ flex: 1, background: '#1e1a14', border: 'none', color: '#aaa', fontSize: 13, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
+        >
+          🛍️ 담기
+        </button>
+        <button
+          type="button"
+          onClick={() => setGiftSheetOpen(true)}
           style={{ flex: 1, background: '#241e0e', border: 'none', color: GOLD, fontSize: 13, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           🎁 {maleMeno ? '여성 선물하기' : '선물하기'}
         </button>
         <button onClick={() => void handleBuy()} style={{ flex: 2, background: `linear-gradient(135deg,${GOLD},#a07840)`, border: 'none', color: '#000', fontSize: 16, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>지금 구매</button>
       </div>
+
+      {giftSheetOpen && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 90, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+          onClick={() => setGiftSheetOpen(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: 430,
+              background: '#1a1a1a',
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              padding: '22px 20px calc(28px + env(safe-area-inset-bottom, 0px))',
+              borderTop: `1px solid ${GOLD}44`,
+              maxHeight: '70vh',
+              overflowY: 'auto',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ fontSize: 15, color: '#fff' }}>오랜일촌 선택</div>
+              <button
+                type="button"
+                onClick={() => setGiftSheetOpen(false)}
+                style={{ fontSize: 20, color: '#666', cursor: 'pointer', background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+              >
+                ✕
+              </button>
+            </div>
+            {giftFriendsLoading ? (
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '16px 0' }}>불러오는 중...</div>
+            ) : giftFriends.length === 0 ? (
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '16px 0' }}>오랜일촌이 없어요</div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {giftFriends.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => {
+                      setGiftSheetOpen(false)
+                      router.push(`/gift?product_id=${encodeURIComponent(product.id)}&qty=${qty}&gift_to=${encodeURIComponent(f.id)}`)
+                    }}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '14px 16px',
+                      borderRadius: 12,
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      background: 'rgba(255,255,255,0.04)',
+                      color: '#e8e4dc',
+                      fontSize: 14,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {f.nickname}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setGiftSheetOpen(false)}
+              style={{
+                width: '100%',
+                marginTop: 16,
+                padding: '12px 16px',
+                borderRadius: 12,
+                border: `1px solid ${GOLD}`,
+                background: 'transparent',
+                color: GOLD,
+                fontSize: 13,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
 
       {shareOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -1354,6 +1509,30 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           }}
         >
           {saveToast}
+        </div>
+      ) : null}
+
+      {cartToast ? (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 200,
+            left: 16,
+            right: 16,
+            maxWidth: 400,
+            margin: '0 auto',
+            padding: '12px 14px',
+            borderRadius: 12,
+            background: 'rgba(30,26,20,0.96)',
+            border: `1px solid ${GOLD}55`,
+            color: GOLD,
+            fontSize: 13,
+            textAlign: 'center',
+            zIndex: 96,
+            fontFamily: 'inherit',
+          }}
+        >
+          {cartToast}
         </div>
       ) : null}
 
