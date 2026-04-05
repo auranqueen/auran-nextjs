@@ -498,7 +498,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
       {/* 갤러리 */}
       <div style={{ position: 'relative', background: '#0f0c08' }}>
-        <div style={{ height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(180deg,#1e1810,#131008)', position: 'relative' }}>
+        <div style={{ height: 360, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(180deg,#1e1810,#131008)', position: 'relative' }}>
           {discount > 0 && (
             <div style={{ position: 'absolute', top: 14, left: 14, background: '#c02030', color: '#fff', fontSize: 12, padding: '4px 12px', borderRadius: 20 }}>⚡ -{discount}%</div>
           )}
@@ -570,6 +570,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           <span style={tag('#1a2e1a','#6fcf97','#2a4a2a')}>재구매 {repurchaseRate}%</span>
           <span style={tag('#1a1e30','#74b0ff','#2a2e50')}>일촌 {activeUsers}명 사용중</span>
         </div>
+        {(product as any)?.origin && (
+          <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
+            원산지: {(product as any).origin}
+          </div>
+        )}
         {aiRecommendLine ? (
           <div style={{ alignSelf: 'flex-start', marginBottom: 6, display: 'inline-block', background: 'rgba(201,169,110,0.1)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: GOLD }}>
             {aiRecommendLine}
