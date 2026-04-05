@@ -159,6 +159,7 @@ export default function CustomerHomePage() {
   const [concerns, setConcerns] = useState<any[]>([])
   const [products, setProducts] = useState<any[]>([])
   const [seasonRecs, setSeasonRecs] = useState<any[]>([])
+  const [weather, setWeather] = useState<any>(null)
   const [timeSales, setTimeSales] = useState<any[]>([])
   const [groupBuys, setGroupBuys] = useState<any[]>([])
   const [salons, setSalons] = useState<any[]>([])
@@ -450,6 +451,23 @@ export default function CustomerHomePage() {
       .limit(1)
       .maybeSingle()
       .then(({ data }) => setHomeContestBanner(data || null))
+
+    if (typeof window !== 'undefined' && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          fetch(`/api/weather?lat=${pos.coords.latitude}&lon=${pos.coords.longitude}`)
+            .then(r => r.json())
+            .then(d => { if (!d.error) setWeather(d) })
+            .catch(() => {})
+        },
+        () => {
+          fetch('/api/weather')
+            .then(r => r.json())
+            .then(d => { if (!d.error) setWeather(d) })
+            .catch(() => {})
+        }
+      )
+    }
 
     setDataReady(true)
     setLoading(false)
@@ -1126,6 +1144,11 @@ export default function CustomerHomePage() {
           </div>
           <div style={{ fontSize: '11px', color: TEXT_MUTED }}>
             오늘 루틴 완료 75% · 수분 6/8잔 💧
+            {weather && (
+              <span style={{ marginLeft: 8, color: 'rgba(255,255,255,0.5)' }}>
+                {weather.city} {weather.temp}° · 미세먼지 {weather.dust?.level}
+              </span>
+            )}
           </div>
         </div>
         <div style={{
