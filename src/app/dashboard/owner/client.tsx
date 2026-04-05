@@ -42,7 +42,7 @@ END;
 $$ LANGUAGE plpgsql;
 */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
@@ -54,7 +54,7 @@ const GRADE_COLORS: Record<string, string> = { none: 'var(--text3)', basic: '#4a
 
 export default function OwnerDashClient({ profile, salon, todayBookings }: { profile: any; salon: any; todayBookings: any[] }) {
   const router = useRouter()
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const [csRows, setCsRows] = useState<any[]>([])
   async function logout() {
     await supabase.auth.signOut()
