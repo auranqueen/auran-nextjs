@@ -163,6 +163,7 @@ export default function CustomerHomePage() {
   const [salons, setSalons] = useState<any[]>([])
   const [newProducts, setNewProducts] = useState<any[]>([])
   const [brands, setBrands] = useState<any[]>([])
+  const [dataReady, setDataReady] = useState(false)
   const [loading, setLoading] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchKeyword, setSearchKeyword] = useState('')
@@ -435,6 +436,7 @@ export default function CustomerHomePage() {
       .maybeSingle()
       .then(({ data }) => setHomeContestBanner(data || null))
 
+    setDataReady(true)
     setLoading(false)
   }, [mounted])
 
@@ -836,6 +838,7 @@ export default function CustomerHomePage() {
   const cycleType = profileCycleType
 
   if (!mounted) return <Loading />
+  if (!dataReady) return <Loading />
 
   return (
     <div style={{
