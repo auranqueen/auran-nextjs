@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { normalizePosition, positionToDashboardPath, POSITION_STORAGE_KEY } from '@/lib/position'
 import { createClient } from '@/lib/supabase/client'
 import { setStoredTheme } from '@/lib/theme'
+import Loading from '@/app/loading'
 
 function AuthDoneInner() {
   const router = useRouter()
@@ -175,22 +176,7 @@ function AuthDoneInner() {
   }
 
   if (phase === 'loading' || phase === 'redirect') {
-    return (
-      <div style={{
-        position: 'fixed',
-        inset: 0,
-        background: '#1a0a2e',
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: 'rgba(201,169,110,0.6)',
-        fontSize: 12,
-        fontFamily: 'monospace',
-      }}>
-        AURAN
-      </div>
-    )
+    return <Loading />
   }
 
   return (
@@ -228,7 +214,7 @@ function AuthDoneInner() {
 
 export default function AuthDonePage() {
   return (
-    <Suspense fallback={<div style={{ position: 'fixed', inset: 0, background: '#1a0a2e', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(201,169,110,0.6)', fontSize: 12, fontFamily: 'monospace' }}>AURAN</div>}>
+    <Suspense fallback={<Loading />}>
       <AuthDoneInner />
     </Suspense>
   )
