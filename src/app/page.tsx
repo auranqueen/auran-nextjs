@@ -175,6 +175,9 @@ export default function CustomerHomePage() {
   const [motivationProfile, setMotivationProfile] = useState<any>(null)
   const [profileCycleType, setProfileCycleType] = useState<string | null>(null)
   const [profileCreatedAt, setProfileCreatedAt] = useState<string | null>(null)
+  const [myRoles, setMyRoles] = useState<string[]>(['customer'])
+  const [activeRole, setActiveRole] = useState<string>('customer')
+  const [showRoleSwitcher, setShowRoleSwitcher] = useState(false)
   const [motivationIdx, setMotivationIdx] = useState(0)
   const [touchStartX, setTouchStartX] = useState<number | null>(null)
   const [homeContestBanner, setHomeContestBanner] = useState<any>(null)
@@ -254,7 +257,7 @@ export default function CustomerHomePage() {
       if (!user) return
 
       const [profileRes, hcRes, tipRes] = await Promise.all([
-        supabase.from('profiles').select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at').eq('auth_id', user.id).maybeSingle(),
+        supabase.from('profiles').select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at, roles, active_role').eq('auth_id', user.id).maybeSingle(),
         supabase.from('hormone_cycle').select('*').eq('auth_id', user.id).maybeSingle(),
         supabase.from('help_tooltips').select('title,content,is_active').eq('key', 'period_start').maybeSingle(),
       ])
@@ -264,6 +267,8 @@ export default function CustomerHomePage() {
         setMotivationProfile(profile)
         setProfileCycleType((profile as any).cycle_type != null ? String((profile as any).cycle_type) : null)
         setProfileCreatedAt((profile as any).created_at != null ? String((profile as any).created_at) : null)
+        if ((profile as any)?.roles) setMyRoles((profile as any).roles)
+        if ((profile as any)?.active_role) setActiveRole((profile as any).active_role)
       } else {
         setProfileCycleType(null)
         setProfileCreatedAt(null)
@@ -865,6 +870,25 @@ export default function CustomerHomePage() {
           fontSize: '22px', fontWeight: 400,
           color: GOLD, letterSpacing: '6px',
         }}>AURAN</span>
+        <button
+          onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
+          style={{
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 20,
+            padding: '4px 10px',
+            fontSize: 11,
+            color: 'rgba(255,255,255,0.7)',
+            cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}
+        >
+          {activeRole === 'customer' ? '✦ 고객' :
+           activeRole === 'partner' ? '◈ 파트너스' :
+           activeRole === 'owner' ? '◉ 원장' :
+           activeRole === 'brand' ? '◇ 브랜드사' : '✦ 고객'}
+          <span style={{ fontSize: 8, opacity: 0.6 }}>▼</span>
+        </button>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
             onClick={() => setSearchOpen(true)}
