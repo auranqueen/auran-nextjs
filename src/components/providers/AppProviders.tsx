@@ -47,11 +47,13 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   const navPad = 'calc(76px + env(safe-area-inset-bottom, 0px))'
 
   return (
-    <AuthSessionProvider>
-      <CartProvider>
-        <div style={showCustomerNav ? { paddingBottom: navPad } : undefined}>{children}</div>
-        {showCustomerNav ? <DashboardBottomNav role="customer" /> : null}
-      </CartProvider>
-    </AuthSessionProvider>
+    <div onContextMenu={e => e.preventDefault()}>
+      <AuthSessionProvider>
+        <CartProvider>
+          <div style={showCustomerNav ? { paddingBottom: navPad } : undefined}>{children}</div>
+          {showCustomerNav ? <DashboardBottomNav role="customer" /> : null}
+        </CartProvider>
+      </AuthSessionProvider>
+    </div>
   )
 }

@@ -55,7 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body style={{ margin: 0, padding: 0, background: '#0a0c0f' }}>
+      <body style={{ margin: 0, padding: 0, background: '#0a0c0f', userSelect: 'none', WebkitUserSelect: 'none' }}>
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
