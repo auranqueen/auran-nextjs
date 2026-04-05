@@ -1230,18 +1230,19 @@ export default function CustomerHomePage() {
                 <div key={i} style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 4, lineHeight: 1.5 }}>⚠ {w}</div>
               ))
             })()}
-            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>💧 수분 섭취</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 11, color: '#64B5F6', cursor: 'pointer' }}
-                  onClick={e => { e.stopPropagation(); setShowWaterSheet(true) }}>
-                  6/8잔 기록 +
-                </span>
-                <span style={{ fontSize: 11, color: '#64B5F6', cursor: 'pointer' }}
-                  onClick={e => { e.stopPropagation(); setShowWeatherRec(true) }}>
-                  날씨 맞춤 추천
-                </span>
-              </div>
+            <div style={{ marginTop:10, paddingTop:10, borderTop:'1px solid rgba(255,255,255,0.06)', display:'flex', gap:6 }}>
+              <button
+                onClick={e => { e.stopPropagation(); setShowWaterSheet(true) }}
+                style={{ flex:1, background:'rgba(100,181,246,0.08)', border:'1px solid rgba(100,181,246,0.25)', borderRadius:20, padding:'6px 10px', fontSize:11, color:'#64B5F6', cursor:'pointer' }}
+              >
+                💧 수분 기록
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); setShowWeatherRec(true) }}
+                style={{ flex:1, background:'rgba(201,169,110,0.08)', border:'1px solid rgba(201,169,110,0.25)', borderRadius:20, padding:'6px 10px', fontSize:11, color:GOLD, cursor:'pointer' }}
+              >
+                ✦ 날씨 맞춤 추천
+              </button>
             </div>
           </div>
         )}
