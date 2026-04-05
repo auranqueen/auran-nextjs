@@ -158,6 +158,7 @@ export default function CustomerHomePage() {
   // Supabase 데이터
   const [concerns, setConcerns] = useState<any[]>([])
   const [products, setProducts] = useState<any[]>([])
+  const [seasonRecs, setSeasonRecs] = useState<any[]>([])
   const [timeSales, setTimeSales] = useState<any[]>([])
   const [groupBuys, setGroupBuys] = useState<any[]>([])
   const [salons, setSalons] = useState<any[]>([])
@@ -404,6 +405,17 @@ export default function CustomerHomePage() {
             return { h, m, s }
           })
         )
+      })
+
+    supabase
+      .from('season_product_mapping')
+      .select('*, products(*)')
+      .eq('month', new Date().getMonth() + 1)
+      .eq('is_active', true)
+      .order('priority', { ascending: true })
+      .limit(6)
+      .then(({ data }) => {
+        if (data && data.length > 0) setSeasonRecs(data)
       })
 
     supabase.from('group_buys').select('*, product:products(id, name, retail_price, thumb_img)').eq('is_active', true).limit(3).then(({ data }) => {
@@ -1449,6 +1461,44 @@ export default function CustomerHomePage() {
           {careActionLine}
         </button>
       </div>
+
+      {seasonRecs.length > 0 && (
+        <section style={{ padding: '0 20px', marginBottom: 28 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div>
+              <span style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>
+                🌸 {new Date().getMonth() + 1}월 시즌 추천
+              </span>
+              <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+                내 피부 점수 기반 이달 맞춤
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 4 }}>
+            {seasonRecs.slice(0, 4).map((r: any) => {
+              const p = r.products
+              if (!p) return null
+              return (
+                <div key={r.id} style={{ flexShrink: 0, width: 140, cursor: 'pointer' }}
+                  onClick={() => router.push(`/products/${p.id}`)}>
+                  <div style={{ width: 140, height: 140, borderRadius: 14, overflow: 'hidden', background: 'var(--bg2)', marginBottom: 8 }}>
+                    {p.storage_thumb_url || p.thumb_img ? (
+                      <img src={p.storage_thumb_url || p.thumb_img} alt={p.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>🧴</div>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 2 }}>{r.concern_tag}</div>
+                  <div style={{ fontSize: 12, color: '#fff', lineHeight: 1.4, marginBottom: 4 }}
+                    className="line-clamp-2">{p.name}</div>
+                  <div style={{ fontSize: 13, color: GOLD }}>₩{(p.retail_price || 0).toLocaleString()}</div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* ── 내 피부 맞춤 추천 ── */}
       <div style={{ padding: '16px 16px 0' }}>
