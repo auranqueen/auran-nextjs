@@ -1554,9 +1554,9 @@ export default function CustomerHomePage() {
               }}
             >
               <div style={{
-                width: 120,
-                height: 120,
-                margin: '0 auto',
+                width: '100%',
+                height: 130,
+                margin: 0,
                 overflow: 'hidden',
                 borderRadius: 12,
                 flexShrink: 0,
@@ -1577,7 +1577,7 @@ export default function CustomerHomePage() {
                 <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.38)', marginBottom: 2 }}>
                   {catName || p.tag || '맞춤'}
                 </div>
-                <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{brandName}</div>
+                {null}
                 <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '4px' }}>{p.name}</div>
                 <div
                   onClick={e => {
