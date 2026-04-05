@@ -137,7 +137,7 @@ export default function NoticeBell({
     void loadUnreadCount()
     const id = setInterval(() => {
       void loadUnreadCount()
-    }, 12_000)
+    }, 300000)
     const onVis = () => {
       if (document.visibilityState === 'visible') void loadUnreadCount()
     }
