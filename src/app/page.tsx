@@ -889,6 +889,62 @@ export default function CustomerHomePage() {
            activeRole === 'brand' ? '◇ 브랜드사' : '✦ 고객'}
           <span style={{ fontSize: 8, opacity: 0.6 }}>▼</span>
         </button>
+        {showRoleSwitcher && (
+          <div style={{
+            position: 'absolute', top: 52, left: 20,
+            background: 'rgba(20,15,30,0.97)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255,255,255,0.12)',
+            borderRadius: 16, padding: 12,
+            display: 'flex', gap: 8, zIndex: 100,
+            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          }}>
+            {[
+              { id: 'customer', label: '고객', icon: '✦' },
+              { id: 'partner', label: '파트너스', icon: '◈' },
+              { id: 'owner', label: '원장', icon: '◉' },
+              { id: 'brand', label: '브랜드사', icon: '◇' },
+            ].map(pos => {
+              const hasRole = myRoles.includes(pos.id)
+              const isActive = pos.id === activeRole
+              return (
+                <button
+                  key={pos.id}
+                  onClick={async () => {
+                    if (!hasRole) return
+                    setShowRoleSwitcher(false)
+                    const res = await fetch('/api/profile/active-role', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ role: pos.id }),
+                    })
+                    if (res.ok) {
+                      setActiveRole(pos.id)
+                      if (pos.id === 'owner') window.location.href = '/dashboard/owner'
+                      else if (pos.id === 'partner') window.location.href = '/dashboard/partner'
+                      else if (pos.id === 'brand') window.location.href = '/dashboard/brand'
+                      else window.location.href = '/'
+                    }
+                  }}
+                  style={{
+                    padding: '10px 8px', borderRadius: 12, minWidth: 60,
+                    border: isActive ? '1.5px solid rgba(255,255,255,0.5)' : '1.5px solid transparent',
+                    background: isActive ? 'rgba(255,255,255,0.15)' : hasRole ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.2)',
+                    color: hasRole ? 'white' : 'rgba(255,255,255,0.25)',
+                    fontSize: 10, cursor: hasRole ? 'pointer' : 'not-allowed',
+                    textAlign: 'center',
+                  }}
+                >
+                  <div style={{ fontSize: 16, marginBottom: 4 }}>{pos.icon}</div>
+                  <div>{pos.label}</div>
+                  <div style={{ fontSize: 8, marginTop: 3, opacity: 0.6 }}>
+                    {isActive ? '현재' : hasRole ? '전환' : '신청'}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
             onClick={() => setSearchOpen(true)}
