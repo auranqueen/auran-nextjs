@@ -1958,7 +1958,7 @@ export default function CustomerHomePage() {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '38px', position: 'relative',
               }}>
-                {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (p.icon || '🧴')}
+                {p.storage_thumb_url || p.thumb_img ? <img src={p.storage_thumb_url || p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (p.icon || '🧴')}
                 <div style={{
                   position: 'absolute', top: '7px', left: '7px',
                   width: '22px', height: '22px', borderRadius: '50%',
@@ -2340,7 +2340,7 @@ export default function CustomerHomePage() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '32px', position: 'relative'
             }}>
-              {(item.thumb_img ? <img src={item.thumb_img} alt={item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (item.icon || '💜'))}
+              {(item.storage_thumb_url || item.thumb_img ? <img src={item.storage_thumb_url || item.thumb_img} alt={item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (item.icon || '💜'))}
               <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'linear-gradient(90deg,#6040E0,#A040E0)', borderRadius: '5px', padding: '2px 6px', fontSize: '8px', color: '#fff' }}>NEW</div>
             </div>
             <div style={{ padding: '9px 10px' }}>
