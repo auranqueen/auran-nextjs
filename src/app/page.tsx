@@ -162,6 +162,8 @@ export default function CustomerHomePage() {
   const [weather, setWeather] = useState<any>(null)
   const [showWeatherDetail, setShowWeatherDetail] = useState(false)
   const [showWaterSheet, setShowWaterSheet] = useState(false)
+  const [waterCount, setWaterCount] = useState(0)
+  const [showWeatherRec, setShowWeatherRec] = useState(false)
   const [timeSales, setTimeSales] = useState<any[]>([])
   const [groupBuys, setGroupBuys] = useState<any[]>([])
   const [salons, setSalons] = useState<any[]>([])
@@ -1230,10 +1232,16 @@ export default function CustomerHomePage() {
             })()}
             <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>💧 수분 섭취</span>
-              <span style={{ fontSize: 11, color: '#64B5F6', cursor: 'pointer' }}
-                onClick={e => { e.stopPropagation(); setShowWaterSheet(true) }}>
-                6/8잔 기록 +
-              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <span style={{ fontSize: 11, color: '#64B5F6', cursor: 'pointer' }}
+                  onClick={e => { e.stopPropagation(); setShowWaterSheet(true) }}>
+                  6/8잔 기록 +
+                </span>
+                <span style={{ fontSize: 11, color: '#64B5F6', cursor: 'pointer' }}
+                  onClick={e => { e.stopPropagation(); setShowWeatherRec(true) }}>
+                  날씨 맞춤 추천
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -3383,6 +3391,107 @@ export default function CustomerHomePage() {
           </div>
         </div>
       </div>
+
+      {/* 수분 기록 바텀시트 */}
+      {showWaterSheet && (
+        <div style={{ position:'fixed',inset:0,zIndex:200,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'flex-end',justifyContent:'center',backdropFilter:'blur(4px)' }}
+          onClick={() => setShowWaterSheet(false)}>
+          <div style={{ width:'100%',maxWidth:480,background:'#1A1410',borderRadius:'28px 28px 0 0',padding:'0 0 40px' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display:'flex',justifyContent:'center',padding:'12px 0' }}>
+              <div style={{ width:40,height:4,borderRadius:2,background:'rgba(255,255,255,0.2)' }} />
+            </div>
+            <div style={{ padding:'0 24px' }}>
+              <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6 }}>
+                <div style={{ fontSize:17,color:'white' }}>💧 오늘 수분 섭취</div>
+                <button onClick={() => setShowWaterSheet(false)} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:20,cursor:'pointer' }}>×</button>
+              </div>
+              <div style={{ fontSize:12,color:'rgba(255,255,255,0.4)',marginBottom:24,lineHeight:1.6 }}>
+                하루 권장 8잔 · 피부 수분 유지에 직결돼요
+              </div>
+              <div style={{ display:'flex',justifyContent:'center',gap:10,marginBottom:24 }}>
+                {Array.from({length:8},(_,i) => (
+                  <div key={i} onClick={() => setWaterCount(i < waterCount ? i : i+1)}
+                    style={{ width:32,height:40,borderRadius:'4px 4px 8px 8px',
+                      background: i < waterCount ? 'linear-gradient(180deg,#64B5F6,#1565C0)' : 'rgba(255,255,255,0.06)',
+                      border:`1px solid ${i < waterCount ? '#1565C0' : 'rgba(255,255,255,0.12)'}`,
+                      cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,transition:'all 0.2s',
+                    }}>
+                    {i < waterCount ? '💧' : ''}
+                  </div>
+                ))}
+              </div>
+              <div style={{ textAlign:'center',marginBottom:20 }}>
+                <span style={{ fontSize:32,color:'#64B5F6',fontWeight:300 }}>{waterCount}</span>
+                <span style={{ fontSize:16,color:'rgba(255,255,255,0.4)' }}>/8잔</span>
+                {waterCount >= 8 && <div style={{ fontSize:12,color:'#4CAF50',marginTop:4 }}>🎉 오늘 목표 달성!</div>}
+              </div>
+              {weather && (
+                <div style={{ background:'rgba(100,181,246,0.1)',border:'1px solid rgba(100,181,246,0.2)',borderRadius:12,padding:'10px 14px',marginBottom:20,fontSize:11,color:'rgba(100,181,246,0.9)',lineHeight:1.6 }}>
+                  💡 오늘 {weather.city} {weather.temp}° · 수분 보충이 중요해요
+                </div>
+              )}
+              <button onClick={() => setShowWaterSheet(false)}
+                style={{ width:'100%',background:'linear-gradient(135deg,#1565C0,#42A5F5)',border:'none',borderRadius:16,padding:'15px',fontSize:14,color:'white',cursor:'pointer' }}>
+                저장하기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 날씨 맞춤 추천 모달 */}
+      {showWeatherRec && (
+        <div style={{ position:'fixed',inset:0,zIndex:200,background:'rgba(0,0,0,0.85)',display:'flex',alignItems:'flex-end',justifyContent:'center',backdropFilter:'blur(6px)' }}
+          onClick={() => setShowWeatherRec(false)}>
+          <div style={{ width:'100%',maxWidth:480,background:'#0D0B09',borderRadius:'28px 28px 0 0',maxHeight:'85vh',overflowY:'auto' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display:'flex',justifyContent:'center',padding:'12px 0' }}>
+              <div style={{ width:40,height:4,borderRadius:2,background:'rgba(255,255,255,0.2)' }} />
+            </div>
+            <div style={{ padding:'0 20px 40px' }}>
+              <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16 }}>
+                <div>
+                  <div style={{ fontSize:16,color:'white',marginBottom:4 }}>
+                    {weather?.condition || '☀️'} 오늘 날씨 맞춤 케어
+                  </div>
+                  <div style={{ fontSize:11,color:'rgba(255,255,255,0.4)',lineHeight:1.6 }}>
+                    건성·민감 복합 · 자외선 {weather?.uv?.level} · 미세먼지 {weather?.dust?.level}
+                  </div>
+                </div>
+                <button onClick={() => setShowWeatherRec(false)} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:20,cursor:'pointer' }}>×</button>
+              </div>
+              <div style={{ display:'flex',flexDirection:'column',gap:12 }}>
+                {seasonRecs.slice(0,4).map((r:any) => {
+                  const p = r.products
+                  if (!p) return null
+                  return (
+                    <div key={r.id} style={{ background:CARD_BG,border:CARD_BORDER,borderRadius:16,padding:'14px',display:'flex',gap:12,alignItems:'center' }}
+                      onClick={() => router.push(`/products/${p.id}`)}>
+                      <div style={{ width:60,height:60,borderRadius:12,overflow:'hidden',background:'rgba(255,255,255,0.04)',flexShrink:0 }}>
+                        {p.storage_thumb_url||p.thumb_img
+                          ? <img src={p.storage_thumb_url||p.thumb_img} alt={p.name} style={{ width:'100%',height:'100%',objectFit:'cover' }} />
+                          : <div style={{ width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24 }}>🧴</div>
+                        }
+                      </div>
+                      <div style={{ flex:1 }}>
+                        <div style={{ fontSize:10,color:'rgba(255,255,255,0.4)',marginBottom:3 }}>{r.concern_tag}</div>
+                        <div style={{ fontSize:13,color:'white',lineHeight:1.4,marginBottom:4,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' }}>{p.name}</div>
+                        <div style={{ fontSize:13,color:GOLD }}>₩{(p.retail_price||0).toLocaleString()}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+                {seasonRecs.length === 0 && (
+                  <div style={{ textAlign:'center',color:'rgba(255,255,255,0.3)',fontSize:13,padding:'40px 0' }}>
+                    날씨 맞춤 제품을 준비 중이에요
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
