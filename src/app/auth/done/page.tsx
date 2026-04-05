@@ -179,7 +179,7 @@ function AuthDoneInner() {
       <div style={{
         position: 'fixed',
         inset: 0,
-        background: '#0D0B09',
+        background: '#1a0a2e',
         zIndex: 9999,
         display: 'flex',
         alignItems: 'center',
@@ -228,7 +228,7 @@ function AuthDoneInner() {
 
 export default function AuthDonePage() {
   return (
-    <Suspense fallback={<div style={{ position: 'fixed', inset: 0, background: '#0D0B09', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(201,169,110,0.6)', fontSize: 12, fontFamily: 'monospace' }}>AURAN</div>}>
+    <Suspense fallback={<div style={{ position: 'fixed', inset: 0, background: '#1a0a2e', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(201,169,110,0.6)', fontSize: 12, fontFamily: 'monospace' }}>AURAN</div>}>
       <AuthDoneInner />
     </Suspense>
   )
