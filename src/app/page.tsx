@@ -312,21 +312,19 @@ export default function CustomerHomePage() {
 
     void (async () => {
       try {
-        const { data: chk } = await supabase.from('checkin_options').select('*').eq('is_active', true).order('sort_order', { ascending: true })
+        const [{ data: chk }, { data: rst }, { data: skinUi }] = await Promise.all([
+          supabase.from('checkin_options').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
+          supabase.from('routine_steps').select('*').eq('is_active', true).order('step_order', { ascending: true }),
+          supabase.from('admin_settings').select('key,value,label').eq('category', 'home_skin_ui'),
+        ])
         if (chk && chk.length > 0) setCheckinOptions(chk)
-      } catch { /* 테이블 없음 등 */ }
-      try {
-        const { data: rst } = await supabase.from('routine_steps').select('*').eq('is_active', true).order('step_order', { ascending: true })
         if (rst && rst.length > 0) setRoutineSteps(rst)
-      } catch { /* */ }
-      try {
-        const { data: skinUi } = await supabase.from('admin_settings').select('key,value,label').eq('category', 'home_skin_ui')
         ;(skinUi || []).forEach((row: any) => {
           if (row.key === 'hormone_main' && (row.label || row.value)) setHormoneMainLine(String(row.label || row.value))
           if (row.key === 'hormone_sub' && (row.label || row.value)) setHormoneSubLine(String(row.label || row.value))
           if (row.key === 'care_banner' && (row.label || row.value)) setCareBannerLine(String(row.label || row.value))
         })
-      } catch { /* */ }
+      } catch { /* 테이블 없음 등 */ }
       const selFull =
         'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, brands(name)'
       const selNoCat =
