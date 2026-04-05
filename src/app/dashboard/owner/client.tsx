@@ -147,6 +147,18 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
     !!activeSub && (ownerMode === 'independent' || ownerMode === 'both')
   const showAnnualPromoBanner = !!activeSub && !looksLikeAnnualSub && !showExpiryToday && !showExpirySoon
 
+  const switchRole = async (role: string) => {
+    await fetch('/api/profile/active-role', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    })
+    if (role === 'customer') window.location.href = '/'
+    else if (role === 'owner') window.location.href = '/dashboard/owner'
+    else if (role === 'partner') window.location.href = '/dashboard/partner'
+    else if (role === 'brand') window.location.href = '/dashboard/brand'
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
       {/* 히어로 */}
@@ -159,6 +171,18 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
           <div style={{ display: 'flex', gap: 7 }}>
             <span style={{ fontSize: 9, padding: '3px 10px', background: `${PLAN_COLORS[plan]}22`, color: PLAN_COLORS[plan], border: `1px solid ${PLAN_COLORS[plan]}44`, borderRadius: 18, fontFamily: "'JetBrains Mono', monospace", fontWeight: 700 }}>{plan.toUpperCase()}</span>
             <NoticeBell />
+            <button
+              onClick={() => switchRole('customer')}
+              style={{
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 20, padding: '5px 12px',
+                fontSize: 11, color: 'rgba(255,255,255,0.7)',
+                cursor: 'pointer',
+              }}
+            >
+              ✦ 고객으로
+            </button>
             <button onClick={logout} style={{ fontSize: 11, color: 'var(--text3)', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 10px' }}>로그아웃</button>
           </div>
         </div>

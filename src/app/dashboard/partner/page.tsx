@@ -309,6 +309,18 @@ export default function PartnerDashboardPage() {
   const minSettle = Number(getSetting('partner_min_settlement_amount', '10000'))
   const settleDay = getSetting('partner_settlement_day', '25')
 
+  const switchRole = async (role: string) => {
+    await fetch('/api/profile/active-role', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    })
+    if (role === 'customer') window.location.href = '/'
+    else if (role === 'owner') window.location.href = '/dashboard/owner'
+    else if (role === 'partner') window.location.href = '/dashboard/partner'
+    else if (role === 'brand') window.location.href = '/dashboard/brand'
+  }
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: BG, color: '#fff', maxWidth: 480, margin: '0 auto', padding: 24 }}>
@@ -322,19 +334,33 @@ export default function PartnerDashboardPage() {
       <div style={{ padding: '16px 16px 12px', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
           <div style={{ fontSize: 17, fontWeight: 800 }}>파트너스 대시보드</div>
-          <span
-            style={{
-              fontSize: 10,
-              padding: '4px 10px',
-              borderRadius: 999,
-              border: '1px solid rgba(123,94,167,0.45)',
-              background: 'rgba(123,94,167,0.15)',
-              color: '#c4a7e7',
-              fontWeight: 800,
-            }}
-          >
-            {displayGrade}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span
+              style={{
+                fontSize: 10,
+                padding: '4px 10px',
+                borderRadius: 999,
+                border: '1px solid rgba(123,94,167,0.45)',
+                background: 'rgba(123,94,167,0.15)',
+                color: '#c4a7e7',
+                fontWeight: 800,
+              }}
+            >
+              {displayGrade}
+            </span>
+            <button
+              onClick={() => switchRole('customer')}
+              style={{
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                borderRadius: 20, padding: '5px 12px',
+                fontSize: 11, color: 'rgba(255,255,255,0.7)',
+                cursor: 'pointer',
+              }}
+            >
+              ✦ 고객으로
+            </button>
+          </div>
         </div>
       </div>
 
