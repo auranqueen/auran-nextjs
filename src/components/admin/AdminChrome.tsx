@@ -61,6 +61,7 @@ const MENU = [
     section: 'MARKETING',
     items: [
       { label: '이벤트·공구 생성', href: '/admin/marketing/events', icon: '🎉' },
+      { label: "TODAY'S SKIN 공지", href: '/admin/skin-notices', icon: '💧' },
       { label: '공지·푸시 발송', href: '/admin/marketing/push', icon: '📢' },
       { label: '제품 관리', href: '/admin/marketing/products', icon: '🧴' },
       { label: '🏆 컨테스트', href: '/admin/marketing/contests', icon: '🏆' },
