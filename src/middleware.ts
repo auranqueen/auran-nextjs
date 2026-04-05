@@ -85,6 +85,9 @@ export async function middleware(req: NextRequest) {
   }
 
   const { pathname } = url
+  if (pathname === '/home' || pathname.startsWith('/home/')) {
+    return NextResponse.redirect(new URL('/', req.url))
+  }
   if (
     pathname.startsWith('/api/payment') ||
     pathname.startsWith('/api/payapp') ||
