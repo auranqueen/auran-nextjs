@@ -9,6 +9,7 @@ import { TOOLTIP_FALLBACKS, calcHormoneBriefing, isPeriodTrack } from '@/lib/hor
 import { logUserBehavior, upsertSkinCycleDaily } from '@/lib/skinAnalytics'
 import CalendarSection from '@/components/CalendarSection'
 import NoticePanel from '@/components/NoticePanel'
+import Loading from './loading'
 
 const getSeoulToday = () => {
   const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
@@ -834,7 +835,7 @@ export default function CustomerHomePage() {
   const showHomeEditChrome = isSuperAdmin && homeEditMode
   const cycleType = profileCycleType
 
-  if (!mounted) return null
+  if (!mounted) return <Loading />
 
   return (
     <div style={{
