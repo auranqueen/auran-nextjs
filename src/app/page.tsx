@@ -160,6 +160,8 @@ export default function CustomerHomePage() {
   const [products, setProducts] = useState<any[]>([])
   const [seasonRecs, setSeasonRecs] = useState<any[]>([])
   const [weather, setWeather] = useState<any>(null)
+  const [showWeatherDetail, setShowWeatherDetail] = useState(false)
+  const [showWaterSheet, setShowWaterSheet] = useState(false)
   const [timeSales, setTimeSales] = useState<any[]>([])
   const [groupBuys, setGroupBuys] = useState<any[]>([])
   const [salons, setSalons] = useState<any[]>([])
@@ -1162,32 +1164,79 @@ export default function CustomerHomePage() {
 
       {/* ── TODAY'S SKIN ── */}
       <div
-        onClick={() => router.push('/skin-analysis')}
+        onClick={() => setShowWeatherDetail(prev => !prev)}
         style={{
           margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER,
-          borderRadius: '16px', padding: '12px 16px',
-          display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer',
+          borderRadius: '16px', padding: '12px 16px', cursor: 'pointer',
         }}
       >
-        <span style={{ fontSize: '30px' }}>💧</span>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: '3px' }}>
-            TODAY&apos;S SKIN
-          </div>
-          <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>건성 · 민감 복합</div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {[{ label: '수분', pct: 62, color: '#6ab0e0' }, { label: '유분', pct: 38, color: GOLD }].map((b, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.label}</span>
-                <div style={{ width: '44px', height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
-                  <div style={{ height: '100%', width: `${b.pct}%`, background: b.color, borderRadius: '2px' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '30px' }}>💧</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: '3px' }}>
+              TODAY&apos;S SKIN
+            </div>
+            <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>건성 · 민감 복합</div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[{ label: '수분', pct: 62, color: '#6ab0e0' }, { label: '유분', pct: 38, color: GOLD }].map((b, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.label}</span>
+                  <div style={{ width: '44px', height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
+                    <div style={{ height: '100%', width: `${b.pct}%`, background: b.color, borderRadius: '2px' }} />
+                  </div>
+                  <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.pct}%</span>
                 </div>
-                <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.pct}%</span>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+          <span style={{
+            fontSize: '13px', color: TEXT_MUTED,
+            display: 'inline-block', transition: 'transform 0.2s',
+            transform: showWeatherDetail ? 'rotate(90deg)' : 'rotate(0deg)',
+          }}>›</span>
         </div>
-        <span style={{ fontSize: '13px', color: TEXT_MUTED }}>›</span>
+
+        {showWeatherDetail && (
+          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}
+            onClick={e => e.stopPropagation()}>
+            {weather && (
+              <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
+                {[
+                  { label: '날씨', value: `${weather.temp}° ${weather.condition}` },
+                  { label: '미세먼지', value: weather.dust?.level, color: weather.dust?.level === '좋음' ? '#4CAF50' : weather.dust?.level === '보통' ? '#F5A623' : '#E53935' },
+                  { label: '자외선', value: weather.uv?.level, color: weather.uv?.level === '낮음' ? '#4CAF50' : weather.uv?.level === '보통' ? '#8BC34A' : weather.uv?.level === '높음' ? '#FF9800' : '#E53935' },
+                  { label: '습도', value: `${weather.humidity}%` },
+                ].map((item, i) => (
+                  <div key={i} style={{ flex: 1, textAlign: 'center' }}>
+                    <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', marginBottom: 3 }}>{item.label}</div>
+                    <div style={{ fontSize: 11, color: (item as any).color || 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{item.value}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {weather && (() => {
+              const warnings: string[] = []
+              if (weather.dust?.level === '나쁨' || weather.dust?.level === '매우나쁨')
+                warnings.push('미세먼지 ' + weather.dust.level + ' — 외출 후 이중 세안 필수')
+              if (weather.uv?.level === '높음')
+                warnings.push('자외선 높음 — SPF50+ 선크림 필수')
+              if (weather.uv?.level === '매우높음')
+                warnings.push('자외선 매우 높음 — 선크림 2시간마다 덧바르기')
+              if (weather.humidity < 40)
+                warnings.push('건조한 날씨 — 보습 크림 추가 도포 권장')
+              return warnings.map((w, i) => (
+                <div key={i} style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 4, lineHeight: 1.5 }}>⚠ {w}</div>
+              ))
+            })()}
+            <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>💧 수분 섭취</span>
+              <span style={{ fontSize: 11, color: '#64B5F6', cursor: 'pointer' }}
+                onClick={e => { e.stopPropagation(); setShowWaterSheet(true) }}>
+                6/8잔 기록 +
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── 호르몬 브리핑 · 오늘 체크인 · 케어 액션 (TODAY&apos;S SKIN 바로 아래) ── */}
