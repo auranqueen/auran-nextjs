@@ -173,6 +173,7 @@ export default function CustomerHomePage() {
   const [showWaterSheet, setShowWaterSheet] = useState(false)
   const [waterCount, setWaterCount] = useState(0)
   const [showWeatherRec, setShowWeatherRec] = useState(false)
+  const [skinTooltipMsg, setSkinTooltipMsg] = useState('')
   const [timeSales, setTimeSales] = useState<any[]>([])
   const [groupBuys, setGroupBuys] = useState<any[]>([])
   const [salons, setSalons] = useState<any[]>([])
@@ -1187,7 +1188,12 @@ export default function CustomerHomePage() {
             <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: '3px', display: 'flex', alignItems: 'center', gap: 4 }}>
               TODAY&apos;S SKIN
               <span
-                onClick={e => { e.stopPropagation(); alert(SKIN_TOOLTIP_MSGS[Math.floor(Math.random() * SKIN_TOOLTIP_MSGS.length)]) }}
+                onClick={e => {
+                  e.stopPropagation()
+                  const msg = SKIN_TOOLTIP_MSGS[Math.floor(Math.random() * SKIN_TOOLTIP_MSGS.length)]
+                  setSkinTooltipMsg(msg)
+                  setTimeout(() => setSkinTooltipMsg(''), 3000)
+                }}
                 style={{ cursor: 'pointer' }}
               >?</span>
             </div>
@@ -3405,6 +3411,20 @@ export default function CustomerHomePage() {
           </div>
         </div>
       </div>
+
+      {skinTooltipMsg && (
+        <div style={{
+          position: 'fixed', bottom: 100, left: '50%', transform: 'translateX(-50%)',
+          background: 'linear-gradient(135deg,#2D1B4E,#1A0A2E)',
+          border: '1px solid rgba(123,94,167,0.4)',
+          borderRadius: 20, padding: '12px 20px',
+          fontSize: 13, color: 'white', zIndex: 300,
+          whiteSpace: 'nowrap', boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          animation: 'slideUp 0.3s ease',
+        }}>
+          {skinTooltipMsg}
+        </div>
+      )}
 
       {/* 수분 기록 바텀시트 */}
       {showWaterSheet && (
