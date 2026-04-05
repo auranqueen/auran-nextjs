@@ -1174,14 +1174,9 @@ export default function CustomerHomePage() {
             showHomeEditChrome
               ? e => {
                   e.stopPropagation()
-                  setHomeEditSheet({
-                    kind: 'hormone_main',
-                    label: '호르몬 브리핑 (메인)',
-                    draft: hormoneMainLine,
-                    draft2: hormoneSubLine,
-                  })
+                  setHomeEditSheet({ kind: 'hormone_main', label: '호르몬 브리핑 (메인)', draft: hormoneMainLine, draft2: hormoneSubLine })
                 }
-              : undefined
+              : () => router.push('/skin-analysis/q')
           }
           style={{
             borderRadius: 16,
@@ -1189,7 +1184,7 @@ export default function CustomerHomePage() {
             background: 'linear-gradient(145deg, #1a0f28 0%, #251538 45%, #1e1430 100%)',
             border: showHomeEditChrome ? '1px dashed rgba(168, 130, 220, 0.55)' : '1px solid rgba(123, 94, 167, 0.35)',
             boxShadow: '0 8px 28px rgba(0,0,0,0.35)',
-            cursor: showHomeEditChrome ? 'pointer' : undefined,
+            cursor: 'pointer',
             position: 'relative',
           }}
         >
