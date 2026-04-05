@@ -876,12 +876,28 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
         {/* 브랜드 카드 */}
         <div style={{ background: '#171310', border: '1px solid #252018', borderRadius: 12, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
-          <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#2a2010,#3a3020)', border: `1px solid ${GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: GOLD, textAlign: 'center', lineHeight: 1.3, flexShrink: 0 }}>
-            {brand.substring(0,4)}<br />{brand.substring(4)}
-          </div>
+          {(product as any)?.brands?.logo_url ? (
+            <img src={(product as any).brands.logo_url} alt={brand}
+              style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', border: `1px solid ${GOLD}`, flexShrink: 0 }} />
+          ) : (
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#2a2010,#3a3020)', border: `1px solid ${GOLD}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: GOLD, textAlign: 'center', lineHeight: 1.3, flexShrink: 0 }}>
+              {brand.substring(0,4)}<br />{brand.substring(4)}
+            </div>
+          )}
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 13 }}>{brand} 공식 브랜드 상세</div>
-            <div style={{ fontSize: 11, color: '#666' }}>브랜드사 직접 등록</div>
+            {(() => {
+              const originVal = (product as any)?.brands?.origin_country || (product as any)?.brands?.origin
+              if (!originVal) return null
+              const flagMap: Record<string,string> = { '한국':'🇰🇷','프랑스':'🇫🇷','스페인':'🇪🇸','독일':'🇩🇪','이탈리아':'🇮🇹','일본':'🇯🇵','미국':'🇺🇸' }
+              const flag = flagMap[originVal] || '🌍'
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 4 }}>
+                  <span style={{ fontSize: 14 }}>{flag}</span>
+                  <span style={{ fontSize: 11, color: '#888' }}>원산지 · {originVal}</span>
+                </div>
+              )
+            })()}
           </div>
           <span style={{ fontSize: 10, color: '#6fcf97', background: '#1a3020', border: '1px solid #2a4530', padding: '3px 9px', borderRadius: 20, flexShrink: 0 }}>✓ 공식</span>
         </div>
