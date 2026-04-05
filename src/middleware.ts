@@ -38,14 +38,17 @@ function createMiddlewareSupabase(req: NextRequest) {
 }
 
 async function getDbRole(supabase: ReturnType<typeof createServerClient>, authId: string): Promise<string | null> {
-  // 1) profiles.role 우선
   try {
-    const { data } = await supabase.from('profiles').select('role').eq('auth_id', authId).maybeSingle()
-    if (typeof (data as any)?.role === 'string') return (data as any).role
+    const { data } = await supabase.from('profiles')
+      .select('role, active_role')
+      .eq('auth_id', authId)
+      .maybeSingle()
+    const r = (data as any)?.active_role || (data as any)?.role
+    if (typeof r === 'string') return r
   } catch {}
-  // 2) users.role fallback
   try {
-    const { data } = await supabase.from('users').select('role').eq('auth_id', authId).single()
+    const { data } = await supabase.from('users')
+      .select('role').eq('auth_id', authId).single()
     if (typeof (data as any)?.role === 'string') return (data as any).role
   } catch {}
   return null
