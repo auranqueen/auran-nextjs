@@ -7,6 +7,13 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: '로그인 필요' }, { status: 401 })
 
+  const { data: publicUser } = await supabase
+    .from('users')
+    .select('id')
+    .eq('auth_id', user.id)
+    .maybeSingle()
+  if (!publicUser?.id) return NextResponse.json({ error: 'user_row_missing' }, { status: 400 })
+
   const { product_id, quantity, prescription_owner_id } = await req.json()
 
   const { data: product } = await supabase
@@ -23,7 +30,7 @@ export async function POST(req: NextRequest) {
   const { data: order, error: orderError } = await supabase
     .from('orders')
     .insert({
-      customer_id: user.id,
+      customer_id: publicUser.id,
       total_amount: totalAmount,
       final_amount: totalAmount,
       status: '주문확인',
