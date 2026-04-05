@@ -535,13 +535,13 @@ export default function CustomerHomePage() {
   const pad = (n: number) => String(n).padStart(2, '0')
 
   // 폴백 적용
-  const concernList = concerns.length > 0 ? concerns : FALLBACK_CONCERNS
-  const productList = products.length > 0 ? products : FALLBACK_PRODUCTS
-  const saleList = timeSales.length > 0 ? timeSales : FALLBACK_SALES
-  const groupBuyList = groupBuys.length > 0 ? groupBuys : FALLBACK_SALES
-  const salonList = salons.length > 0 ? salons : FALLBACK_SALONS
-  const newList = newProducts.length > 0 ? newProducts : FALLBACK_NEW
-  const brandList = brands.length > 0 ? brands : FALLBACK_BRANDS
+  const concernList = concerns.length > 0 ? concerns : []
+  const productList = products.length > 0 ? products : []
+  const saleList = timeSales.length > 0 ? timeSales : []
+  const groupBuyList = groupBuys.length > 0 ? groupBuys : []
+  const salonList = salons.length > 0 ? salons : []
+  const newList = newProducts.length > 0 ? newProducts : []
+  const brandList = brands.length > 0 ? brands : []
 
   const motivationMsgs: { icon: string; text: string }[] = []
   if (motivationProfile?.body_status?.includes('갱년기')) motivationMsgs.push({ icon: '💜', text: '갱년기 피부 이길 수 있어요\n오늘 루틴이 방패예요' })
@@ -760,7 +760,7 @@ export default function CustomerHomePage() {
       })
       if (filteredByTrack.length > 0) skinRecPool = filteredByTrack
     }
-    const pl = products.length > 0 ? products : FALLBACK_PRODUCTS
+    const pl = products.length > 0 ? products : []
     return skinRecPool.length > 0 ? skinRecPool : pl
   }, [checkInTab, homeCheckinSorted, products, hormoneTrack])
 
