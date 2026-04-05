@@ -1549,22 +1549,21 @@ export default function CustomerHomePage() {
                 router.push(`/products/${p.id}`)
               }}
               style={{
-                minWidth: '130px', background: CARD_BG, border: CARD_BORDER,
+                width: 140, background: CARD_BG, border: CARD_BORDER,
                 borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0,
               }}
             >
               <div style={{
-                width: '100%',
-                height: 130,
-                margin: 0,
+                width: 140,
+                height: 140,
+                borderRadius: 14,
                 overflow: 'hidden',
-                borderRadius: 12,
-                flexShrink: 0,
-                background: 'linear-gradient(135deg,#1a1510,#2a2015)',
+                background: 'var(--bg2)',
+                marginBottom: 8,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '34px', position: 'relative',
               }}>
-                {thumb ? <img src={thumb} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (p.icon || '🧴')}
+                {thumb ? <img src={thumb} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (p.icon || '🧴')}
                 {p.badge && (
                   <div style={{
                     position: 'absolute', top: '5px', left: '5px',
@@ -1578,7 +1577,7 @@ export default function CustomerHomePage() {
                   {catName || p.tag || '맞춤'}
                 </div>
                 {null}
-                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '4px' }}>{p.name}</div>
+                <div style={{ fontSize: 12, color: '#fff', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textOverflow: 'ellipsis' }}>{p.name}</div>
                 <div
                   onClick={e => {
                     if (!showHomeEditChrome || !p.id) return
@@ -1944,21 +1943,20 @@ export default function CustomerHomePage() {
           const rankColors = ['#C9A96E', 'rgba(180,180,180,0.8)', 'rgba(180,120,60,0.8)']
           return (
             <div key={i} style={{
-              minWidth: '150px', background: CARD_BG, border: CARD_BORDER,
+              width: 140, background: CARD_BG, border: CARD_BORDER,
               borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0,
             }}>
               <div style={{
-                width: '100%',
+                width: 140,
                 height: 140,
-                margin: '0 auto',
+                borderRadius: 14,
                 overflow: 'hidden',
-                borderRadius: 12,
-                flexShrink: 0,
-                background: 'linear-gradient(135deg,#1a1510,#2a2015)',
+                background: 'var(--bg2)',
+                marginBottom: 8,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: '38px', position: 'relative',
               }}>
-                {p.storage_thumb_url || p.thumb_img ? <img src={p.storage_thumb_url || p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (p.icon || '🧴')}
+                {p.storage_thumb_url || p.thumb_img ? <img src={p.storage_thumb_url || p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (p.icon || '🧴')}
                 <div style={{
                   position: 'absolute', top: '7px', left: '7px',
                   width: '22px', height: '22px', borderRadius: '50%',
@@ -1977,7 +1975,7 @@ export default function CustomerHomePage() {
               </div>
               <div style={{ padding: '9px 11px' }}>
                 {null}
-                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '5px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{p.name}</div>
+                <div style={{ fontSize: 12, color: '#fff', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textOverflow: 'ellipsis' }}>{p.name}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
                   <span style={{ fontSize: '13px', fontWeight: 400 }}>{(p.retail_price?.toLocaleString() ?? p.price?.toLocaleString())}원</span>
                   <span style={{ fontSize: '14px', cursor: 'pointer' }}>🤍</span>
@@ -2328,24 +2326,23 @@ export default function CustomerHomePage() {
       </div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
         {newList.map((item: any, i: number) => (
-          <div key={i} onClick={() => { logProductNav(item); router.push(`/products/${item.id}`) }} style={{ minWidth: '130px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
+          <div key={i} onClick={() => { logProductNav(item); router.push(`/products/${item.id}`) }} style={{ width: 140, background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
             <div style={{
-              width: '100%',
+              width: 140,
               height: 140,
-              margin: '0 auto',
+              borderRadius: 14,
               overflow: 'hidden',
-              borderRadius: 12,
-              flexShrink: 0,
-              background: 'linear-gradient(135deg,#1a0a2a,#2a1540)',
+              background: 'var(--bg2)',
+              marginBottom: 8,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '32px', position: 'relative'
             }}>
-              {(item.storage_thumb_url || item.thumb_img ? <img src={item.storage_thumb_url || item.thumb_img} alt={item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} /> : (item.icon || '💜'))}
+              {(item.storage_thumb_url || item.thumb_img ? <img src={item.storage_thumb_url || item.thumb_img} alt={item.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : (item.icon || '💜'))}
               <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'linear-gradient(90deg,#6040E0,#A040E0)', borderRadius: '5px', padding: '2px 6px', fontSize: '8px', color: '#fff' }}>NEW</div>
             </div>
             <div style={{ padding: '9px 10px' }}>
               {null}
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.4, marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{item.name}</div>
+              <div style={{ fontSize: 12, color: '#fff', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textOverflow: 'ellipsis' }}>{item.name}</div>
               <div style={{ fontSize: '12px', fontWeight: 400 }}>{(item.retail_price?.toLocaleString() ?? item.price?.toLocaleString())}원</div>
             </div>
           </div>
