@@ -65,6 +65,25 @@ const SKIN_TOOLTIP_MSGS = [
   '눌러보세요, 오늘 피부가 좋아하는 날씨인지 알려드릴게요 🌿',
 ]
 
+const WATER_DONE_MSGS = [
+  '오늘도 피부가 촉촉해지고 있어요 💧',
+  '수분이 피부 속으로 스며들고 있어요 🌊',
+  '내 피부가 물을 마실 때마다 좋아한대요 💜',
+  '촉촉한 피부의 비결, 바로 지금이에요 ✨',
+  '오늘 하루도 피부가 고마워하고 있어요 🌸',
+  '물 한 잔이 피부에게 최고의 선물이에요 💎',
+]
+const CARE_CHEER_MSGS = [
+  '오늘 피부 관리 잊지 않으셨죠? 💜',
+  '세안하고 크림 발랐어요? 피부가 기다려요 🌸',
+  '오늘 내 피부한테 5분만 써줄래요? 💎',
+  '크림 한 번이 주름 하나를 늦춰요 👑',
+  '오늘도 피부 밥 챙겨줬어요? 🍱',
+  '세럼 안 바르면 피부가 섭섭해해요 🥺',
+  '선크림은 오늘의 피부 보험이에요 ☂️',
+  '잠들기 전 크림 한 번, 내일이 달라져요 🌙',
+]
+
 // 폴백 데이터 (Supabase 연동 전)
 const FALLBACK_CONCERNS = [
   { id: 1, name: '수분부족', icon: '💧' },
@@ -1157,7 +1176,7 @@ export default function CustomerHomePage() {
             안녕하세요, <span style={{ color: GOLD }}>{userName}님</span> 👋
           </div>
           <div style={{ fontSize: '11px', color: TEXT_MUTED }}>
-            오늘 루틴 완료 75% · 수분 6/8잔 💧
+            오늘 피부 케어 75% · 🥤 {waterCount}/8잔
             {weather && (
               <span style={{ marginLeft: 8, color: 'rgba(255,255,255,0.5)' }}>
                 {weather.city} {weather.temp}° · 미세먼지 {weather.dust?.level}
@@ -1220,6 +1239,9 @@ export default function CustomerHomePage() {
         {showWeatherDetail && (
           <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}
             onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:10, lineHeight:1.6, textAlign:'center' }}>
+              {CARE_CHEER_MSGS[Math.floor(Math.random() * CARE_CHEER_MSGS.length)]}
+            </div>
             {weather && (
               <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
                 {[
@@ -3465,7 +3487,12 @@ export default function CustomerHomePage() {
                   💡 오늘 {weather.city} {weather.temp}° · 수분 보충이 중요해요
                 </div>
               )}
-              <button onClick={() => setShowWaterSheet(false)}
+              <button onClick={() => {
+                const msg = WATER_DONE_MSGS[Math.floor(Math.random() * WATER_DONE_MSGS.length)]
+                setSkinTooltipMsg(msg)
+                setTimeout(() => setSkinTooltipMsg(''), 3000)
+                setShowWaterSheet(false)
+              }}
                 style={{ width:'100%',background:'linear-gradient(135deg,#1565C0,#42A5F5)',border:'none',borderRadius:16,padding:'15px',fontSize:14,color:'white',cursor:'pointer' }}>
                 저장하기
               </button>
