@@ -41,7 +41,7 @@ function AuthExchangeInner() {
       }
       let url = `/auth/done?position=${encodeURIComponent(role)}`
       if (redirect.startsWith('/')) url += `&redirect=${encodeURIComponent(redirect)}`
-      window.location.replace(url)
+      router.replace(url)
     })().catch((e) => {
       console.error('[auth/exchange]', e)
       if (!cancelled) router.replace('/')
