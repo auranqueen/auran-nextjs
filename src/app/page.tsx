@@ -1948,8 +1948,8 @@ export default function CustomerHomePage() {
               borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0,
             }}>
               <div style={{
-                width: 120,
-                height: 120,
+                width: '100%',
+                height: 140,
                 margin: '0 auto',
                 overflow: 'hidden',
                 borderRadius: 12,
@@ -1976,8 +1976,8 @@ export default function CustomerHomePage() {
                 )}
               </div>
               <div style={{ padding: '9px 11px' }}>
-                <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{p.brand}</div>
-                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '5px' }}>{p.name}</div>
+                {null}
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', marginBottom: '5px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{p.name}</div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '7px' }}>
                   <span style={{ fontSize: '13px', fontWeight: 400 }}>{(p.retail_price?.toLocaleString() ?? p.price?.toLocaleString())}원</span>
                   <span style={{ fontSize: '14px', cursor: 'pointer' }}>🤍</span>
@@ -2330,8 +2330,8 @@ export default function CustomerHomePage() {
         {newList.map((item: any, i: number) => (
           <div key={i} onClick={() => { logProductNav(item); router.push(`/products/${item.id}`) }} style={{ minWidth: '130px', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}>
             <div style={{
-              width: 120,
-              height: 120,
+              width: '100%',
+              height: 140,
               margin: '0 auto',
               overflow: 'hidden',
               borderRadius: 12,
@@ -2344,8 +2344,8 @@ export default function CustomerHomePage() {
               <div style={{ position: 'absolute', top: '6px', left: '6px', background: 'linear-gradient(90deg,#6040E0,#A040E0)', borderRadius: '5px', padding: '2px 6px', fontSize: '8px', color: '#fff' }}>NEW</div>
             </div>
             <div style={{ padding: '9px 10px' }}>
-              <div style={{ fontSize: '8px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.brand}</div>
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.4, marginBottom: '4px' }}>{item.name}</div>
+              {null}
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.4, marginBottom: '4px', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{item.name}</div>
               <div style={{ fontSize: '12px', fontWeight: 400 }}>{(item.retail_price?.toLocaleString() ?? item.price?.toLocaleString())}원</div>
             </div>
           </div>
