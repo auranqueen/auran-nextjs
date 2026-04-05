@@ -56,6 +56,15 @@ const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
 const TEXT_MUTED = 'rgba(255,255,255,0.4)'
 const TEXT_DIM = 'rgba(255,255,255,0.25)'
 
+const SKIN_TOOLTIP_MSGS = [
+  '오늘 내 피부 날씨 알아볼까요? 💜',
+  '오늘 하늘이 내 피부에 뭐라고 하는지 볼게요 🌸',
+  '오늘 피부가 뭘 원하는지 살짝 들여다볼까요? ✨',
+  '날씨가 내 피부한테 하고 싶은 말이 있대요 💌',
+  '오늘 피부 비서가 준비한 케어 정보예요 👑',
+  '눌러보세요, 오늘 피부가 좋아하는 날씨인지 알려드릴게요 🌿',
+]
+
 // 폴백 데이터 (Supabase 연동 전)
 const FALLBACK_CONCERNS = [
   { id: 1, name: '수분부족', icon: '💧' },
@@ -1175,8 +1184,12 @@ export default function CustomerHomePage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <span style={{ fontSize: '30px' }}>💧</span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: '3px' }}>
+            <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: '3px', display: 'flex', alignItems: 'center', gap: 4 }}>
               TODAY&apos;S SKIN
+              <span
+                onClick={e => { e.stopPropagation(); alert(SKIN_TOOLTIP_MSGS[Math.floor(Math.random() * SKIN_TOOLTIP_MSGS.length)]) }}
+                style={{ cursor: 'pointer' }}
+              >?</span>
             </div>
             <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>건성 · 민감 복합</div>
             <div style={{ display: 'flex', gap: '8px' }}>
