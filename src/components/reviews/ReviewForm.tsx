@@ -71,7 +71,7 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
       setShareFollowReward(Math.max(0, Math.floor(Number(m.review_share_follower_reward ?? 0))))
     }
     void loadShareRewards()
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     const loadToastSettings = async () => {
@@ -88,7 +88,7 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
       setVideoToast(map.get('review_video_toast') ?? 500)
     }
     void loadToastSettings()
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     if (initialReview) {

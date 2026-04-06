@@ -50,7 +50,7 @@ export default function AdminSubscriptionsPage() {
       setLoading(false)
     }
     void run()
-  }, [supabase])
+  }, [])
 
   const kpi = useMemo(() => {
     const active = subs.filter((s) => String(s.status || '').toLowerCase() === 'active')

@@ -149,7 +149,7 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') router.refresh()
     })
     return () => sub.subscription.unsubscribe()
-  }, [supabase, router])
+  }, [router])
 
   useEffect(() => {
     const bids = new Set<string>()
@@ -179,7 +179,7 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
         setProductNames((prev) => ({ ...prev, ...m }))
       }
     })()
-  }, [rows, supabase])
+  }, [rows])
 
   const scopeHint = (c: any) => {
     const sc = String(c.scope || 'all').toLowerCase()

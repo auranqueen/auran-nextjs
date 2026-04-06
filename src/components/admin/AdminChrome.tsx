@@ -136,7 +136,7 @@ export default function AdminChrome({ adminName, roleCounts, pendingShipCount = 
     return () => {
       cancelled = true
     }
-  }, [supabase])
+  }, [])
 
   const goSearch = () => {
     const s = q.trim()

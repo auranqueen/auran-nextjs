@@ -24,7 +24,7 @@ export default function BookingPage() {
       setLoading(false)
     }
     run()
-  }, [supabase])
+  }, [])
 
   return (
     <CustomerDashboardShell>

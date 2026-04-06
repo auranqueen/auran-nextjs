@@ -58,7 +58,7 @@ export default function AdminInvitePage() {
       setLoading(false)
     }
     run()
-  }, [supabase])
+  }, [])
 
   const template = (role: string, url: string, note: string) => {
     if (role === 'customer') return `[AURAN] ${note ? note + '\n' : ''}AI 피부 분석을 무료로 받아보세요 🌿\n\n피부 타입을 정확히 분석하고 맞춤 제품과 케어 루틴을 추천받으세요.\n\n👇 지금 무료 가입\n${url}\n\n분석 완료 시 ${analysisPoint}P 즉시 적립 🎁`

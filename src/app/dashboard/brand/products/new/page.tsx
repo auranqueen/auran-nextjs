@@ -63,7 +63,7 @@ export default function BrandNewProductPage() {
       setLoading(false)
     }
     run()
-  }, [router, supabase])
+  }, [router])
 
   const canUpload = useMemo(() => {
     return !!me?.id && me?.role === 'brand' && !!brand?.id

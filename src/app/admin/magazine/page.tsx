@@ -47,7 +47,7 @@ export default function AdminMagazinePage() {
     } finally {
       setLoading(false)
     }
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     void load()

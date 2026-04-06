@@ -27,7 +27,7 @@ export default function AdminLivePage() {
       setLoading(false)
     }
     run()
-  }, [supabase, tick])
+  }, [tick])
 
   return (
     <div style={{ padding: '18px 18px 60px' }}>

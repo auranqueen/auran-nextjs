@@ -80,7 +80,7 @@ export default function MyPointPage() {
 
     }
     run()
-  }, [supabase])
+  }, [])
 
   const filteredRows = useMemo(() => {
     const pointEarn = rows

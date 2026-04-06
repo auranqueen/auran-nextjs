@@ -113,7 +113,7 @@ export default function OwnerSalonProductsPage() {
       const n = num((data as { setting_value?: unknown }).setting_value, 8)
       if (n > 0) setCommissionRate(n)
     }
-  }, [supabase])
+  }, [])
 
   const resolveOwner = useCallback(async () => {
     const {
@@ -133,7 +133,7 @@ export default function OwnerSalonProductsPage() {
     }
     setOwnerId(row.id)
     setAuthLoading(false)
-  }, [supabase])
+  }, [])
 
   const loadProducts = useCallback(async () => {
     if (!ownerId) return
@@ -150,7 +150,7 @@ export default function OwnerSalonProductsPage() {
       setProducts((data as SalonProduct[]) || [])
     }
     setLoadingProducts(false)
-  }, [supabase, ownerId])
+  }, [ownerId])
 
   useEffect(() => {
     resolveOwner()

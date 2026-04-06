@@ -74,7 +74,7 @@ function LoginForm() {
       const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
       router.replace(positionToDashboardPath(stored || 'customer'))
     })()
-  }, [params, redirectParam, router, supabase])
+  }, [params, redirectParam, router])
 
 
   async function submitLogin() {

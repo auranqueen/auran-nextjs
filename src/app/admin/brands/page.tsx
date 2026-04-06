@@ -151,7 +151,7 @@ export default function AdminBrandsPage() {
     }
     setUserById(m)
     setLoading(false)
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     void load()
@@ -398,7 +398,7 @@ export default function AdminBrandsPage() {
     return () => {
       cancelled = true
     }
-  }, [detailBrand, detailTab, supabase, userById])
+  }, [detailBrand, detailTab, userById])
 
   const approveProductRow = async (id: string) => {
     setProductBusyId(id)

@@ -119,7 +119,7 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
       .order('sort_order', { ascending: true, nullsFirst: false })
       .order('name', { ascending: true })
       .then(({ data }) => setCategories((data || []) as Cat[]))
-  }, [open, supabase])
+  }, [open])
 
   useEffect(() => {
     if (!open) return

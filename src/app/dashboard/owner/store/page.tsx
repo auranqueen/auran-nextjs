@@ -129,38 +129,38 @@ export default function OwnerStorePage() {
     setBankAccount(String(p?.owner_bank_account ?? p?.owner_account ?? ''))
     setBankHolder(String(p?.owner_bank_holder ?? p?.owner_holder ?? ''))
     return { user, oid, prof: p }
-  }, [router, supabase])
+  }, [router])
 
   const loadProducts = useCallback(async () => {
     if (!ownerUserId) return
     const { data } = await supabase.from('owner_products').select('*').eq('owner_id', ownerUserId).order('created_at', { ascending: false })
     setProducts((data as any[]) || [])
-  }, [ownerUserId, supabase])
+  }, [ownerUserId])
 
   const loadOrders = useCallback(async () => {
     if (!ownerUserId) return
     const { data } = await supabase.from('owner_orders').select('*').eq('owner_id', ownerUserId).order('created_at', { ascending: false })
     setOrders((data as any[]) || [])
-  }, [ownerUserId, supabase])
+  }, [ownerUserId])
 
   const loadCoupons = useCallback(async () => {
     if (!ownerUserId) return
     const { data } = await supabase.from('owner_coupons').select('*').eq('owner_id', ownerUserId)
     setCoupons((data as any[]) || [])
-  }, [ownerUserId, supabase])
+  }, [ownerUserId])
 
   const loadSettlements = useCallback(async () => {
     if (!ownerUserId) return
     const { data } = await supabase.from('owner_settlements').select('*').eq('owner_id', ownerUserId).order('period_start', { ascending: false })
     setSettlements((data as any[]) || [])
-  }, [ownerUserId, supabase])
+  }, [ownerUserId])
 
   const loadAdminNumbers = useCallback(async () => {
     const { data: fee } = await supabase.from('admin_settings').select('value').eq('key', 'platform_fee_rate').limit(1).maybeSingle()
     const { data: day } = await supabase.from('admin_settings').select('value').eq('key', 'settlement_day').limit(1).maybeSingle()
     if (fee?.value != null && String(fee.value).trim() !== '') setPlatformFeeRate(Number(fee.value) || 8)
     if (day?.value != null && String(day.value).trim() !== '') setSettlementDay(Number(day.value) || 25)
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     const run = async () => {

@@ -72,7 +72,7 @@ function WalletPageInner() {
       setLoading(false)
     }
     run()
-  }, [router, supabase])
+  }, [router])
 
   // 결제 복귀 시: 충전 완료 안내 + 잔액 재조회 (웹훅 반영까지 2~4초 걸릴 수 있음)
   useEffect(() => {

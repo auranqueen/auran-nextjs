@@ -101,7 +101,7 @@ export default function MyWorldPage() {
     void run()
     const iv = setInterval(() => void run(), 15000)
     return () => clearInterval(iv)
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     if (!toast) return
@@ -222,7 +222,7 @@ export default function MyWorldPage() {
       setGuestbook(Array.isArray(guestRows) ? guestRows : [])
     }
     run()
-  }, [supabase])
+  }, [])
 
   const roomLevel = deliveredOrders.length === 0 ? 1 : deliveredOrders.length <= 2 ? 2 : deliveredOrders.length <= 5 ? 3 : deliveredOrders.length <= 10 ? 4 : 5
   const toNext = roomLevel >= 5 ? 0 : [0, 3, 6, 11, 999][roomLevel] - deliveredOrders.length

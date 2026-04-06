@@ -124,7 +124,7 @@ export default function MyOrdersPage() {
       setLoading(false)
     }
     run()
-  }, [supabase])
+  }, [])
 
   const confirmOrder = async (orderId: string) => {
     const res = await confirmOrderById(supabase as any, orderId)

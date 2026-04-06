@@ -23,7 +23,7 @@ export default function OwnerProfilePage() {
       setOwner(data)
     }
     void run()
-  }, [ownerId, supabase])
+  }, [ownerId])
 
   useEffect(() => {
     if (!toast) return

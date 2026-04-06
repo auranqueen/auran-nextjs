@@ -136,7 +136,7 @@ export default function BrandDashboardPage() {
       .order('created_at', { ascending: false })
     setRows((pr || []) as Row[])
     setLoading(false)
-  }, [router, supabase])
+  }, [router])
 
   useEffect(() => {
     void load()
@@ -148,7 +148,7 @@ export default function BrandDashboardPage() {
       .select('id,name,origin_country')
       .order('name')
       .then(({ data }) => setBrands((data || []) as { id: string; name: string; origin_country?: string | null }[]))
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     if (!toast) return
@@ -437,7 +437,7 @@ export default function BrandDashboardPage() {
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
     setRows((pr || []) as Row[])
-  }, [authId, supabase])
+  }, [authId])
 
   const approveOne = async (id: string) => {
     setBusyId(id)

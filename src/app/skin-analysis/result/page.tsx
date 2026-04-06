@@ -135,7 +135,7 @@ function SkinAnalysisResultPageContent() {
       router.push(`/checkout?product_id=${pid}&qty=1`)
     }
     void run()
-  }, [router, supabase])
+  }, [router])
 
   const handleCheckoutBuy = async (productId: string) => {
     const {

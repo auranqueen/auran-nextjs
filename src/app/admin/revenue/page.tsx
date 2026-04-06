@@ -64,7 +64,7 @@ export default function AdminRevenuePage() {
       setLoading(false)
     }
     void run()
-  }, [supabase, fromDate, toDate])
+  }, [fromDate, toDate])
 
   const stats = useMemo(() => {
     let n = 0

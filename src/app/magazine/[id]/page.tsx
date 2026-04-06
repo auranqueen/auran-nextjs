@@ -113,7 +113,7 @@ export default function MagazineDetailPage() {
     } finally {
       setLoading(false)
     }
-  }, [id, supabase])
+  }, [id])
 
   useEffect(() => {
     void load()

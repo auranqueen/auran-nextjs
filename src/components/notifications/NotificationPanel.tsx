@@ -75,7 +75,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
       setNotices(sortNotices(nData || []))
     }
     void run()
-  }, [isOpen, supabase])
+  }, [isOpen])
 
   const chalkNoise = useMemo(
     () =>

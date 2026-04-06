@@ -60,7 +60,7 @@ export default function PartnerDashClient({ profile }: { profile: any }) {
       }
     }
     void run()
-  }, [profile.auth_id, supabase])
+  }, [profile.auth_id])
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>

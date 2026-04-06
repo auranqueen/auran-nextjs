@@ -52,7 +52,7 @@ export default function MyWishlistPage() {
       setLoading(false)
     }
     run()
-  }, [supabase])
+  }, [])
 
   const removeWishlist = async (id: string) => {
     await supabase.from('wishlists').delete().eq('id', id)

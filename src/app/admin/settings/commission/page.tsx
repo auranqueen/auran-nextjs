@@ -58,7 +58,7 @@ export default function CommissionSettingsPage() {
       }
     }
     run()
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     const run = async () => {
@@ -84,7 +84,7 @@ export default function CommissionSettingsPage() {
       }
     }
     run()
-  }, [supabase])
+  }, [])
 
   const setCommissionRate = (row: CommissionRow, rate: number) => {
     const key = cKey(row)

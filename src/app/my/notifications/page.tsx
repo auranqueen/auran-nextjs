@@ -64,7 +64,7 @@ export default function MyNotificationsPage() {
     if (!user) return null
     const { data: profile } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
     return profile?.id ? String(profile.id) : null
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     const run = async () => {
@@ -94,7 +94,7 @@ export default function MyNotificationsPage() {
       setLoading(false)
     }
     void run()
-  }, [supabase, router, resolveProfileId, maxDisplay, autoReadDays])
+  }, [router, resolveProfileId, maxDisplay, autoReadDays])
 
   const grouped = useMemo(() => groupNotifications(items), [items])
 

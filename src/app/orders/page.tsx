@@ -102,7 +102,7 @@ export default function OrdersPage() {
       setLoading(false)
     }
     run()
-  }, [router, supabase])
+  }, [router])
 
   useEffect(() => {
     if (!paymentDone || !orders.length) return
@@ -116,7 +116,7 @@ export default function OrdersPage() {
     return () => {
       cancelled = true
     }
-  }, [paymentDone, orders, supabase])
+  }, [paymentDone, orders])
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>

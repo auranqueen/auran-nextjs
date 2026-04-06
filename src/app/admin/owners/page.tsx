@@ -87,7 +87,7 @@ export default function AdminOwnersPage() {
       setLoading(false)
     }
     run()
-  }, [supabase])
+  }, [])
 
   const updateStatus = async (salon: Salon, status: string) => {
     const { error } = await supabase.from('salons').update({ status }).eq('id', salon.id)

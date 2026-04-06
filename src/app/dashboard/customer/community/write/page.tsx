@@ -74,7 +74,7 @@ export default function CommunityWritePage() {
       setMe({ id: data.id, name: data.name })
     }
     run()
-  }, [router, supabase])
+  }, [router])
 
   useEffect(() => {
     return () => {

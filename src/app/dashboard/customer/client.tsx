@@ -370,7 +370,7 @@ export default function CustomerDashboardClient({
       }
     }
     run()
-  }, [supabase, profile?.points, profile?.charge_balance])
+  }, [profile?.points, profile?.charge_balance])
 
   useEffect(() => {
     let cancelled = false
@@ -387,7 +387,7 @@ export default function CustomerDashboardClient({
     return () => {
       cancelled = true
     }
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -509,7 +509,7 @@ export default function CustomerDashboardClient({
     return () => {
       cancelled = true
     }
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     if (bannerSlides.length <= 1) return

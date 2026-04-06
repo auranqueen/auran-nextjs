@@ -35,7 +35,7 @@ export default function FlashSaleSettingsPage() {
       setProducts(data || [])
     }, 250)
     return () => clearTimeout(t)
-  }, [q, supabase])
+  }, [q])
 
   const refreshActive = async () => {
     const now = new Date().toISOString()

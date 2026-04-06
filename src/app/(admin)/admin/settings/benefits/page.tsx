@@ -95,7 +95,7 @@ export default function AdminBenefitsSettingsPage() {
       .select('setting_key, setting_value')
       .order('setting_key')
     setBenefitRows((data as BenefitSetting[]) || [])
-  }, [supabase])
+  }, [])
 
   const loadGrades = useCallback(async () => {
     const { data } = await supabase
@@ -103,7 +103,7 @@ export default function AdminBenefitsSettingsPage() {
       .select('*')
       .order('grade_order', { ascending: true })
     setGrades((data as GradeRow[]) || [])
-  }, [supabase])
+  }, [])
 
   const loadBrandsProducts = useCallback(async () => {
     const [b, p] = await Promise.all([
@@ -114,7 +114,7 @@ export default function AdminBenefitsSettingsPage() {
     const plist = (p.data as ProductRow[]) || []
     setProducts(plist)
     setAllProductIds(plist.map(x => x.id))
-  }, [supabase])
+  }, [])
 
   const loadSalonCommission = useCallback(async () => {
     const { data: rows } = await supabase.from('salon_commission_settings').select('*')
@@ -183,7 +183,7 @@ export default function AdminBenefitsSettingsPage() {
       const n = Number((defRow as { setting_value?: unknown }).setting_value)
       if (!Number.isNaN(n)) setDefaultSalonCommission(n)
     }
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     let cancelled = false

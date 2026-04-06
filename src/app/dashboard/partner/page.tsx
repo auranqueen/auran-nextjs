@@ -208,7 +208,7 @@ export default function PartnerDashboardPage() {
     } finally {
       setLoading(false)
     }
-  }, [router, supabase])
+  }, [router])
 
   useEffect(() => {
     void load()

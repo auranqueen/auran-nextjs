@@ -135,7 +135,7 @@ export default function AdminOrdersPage() {
       setLoading(false)
     }
     void run()
-  }, [supabase])
+  }, [])
 
   const filtered = useMemo(() => {
     let list = rows || []

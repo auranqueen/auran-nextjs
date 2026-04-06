@@ -62,7 +62,7 @@ export default function AnomalyPage() {
       setLoading(false)
     }
     run()
-  }, [supabase])
+  }, [])
 
   const suspendUser = async (userId: string) => {
     if (!confirm('이 사용자를 정지 처리할까요?')) return

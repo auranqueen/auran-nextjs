@@ -83,7 +83,7 @@ function AuthDoneInner() {
       }
       setPhase('phone')
     })()
-  }, [params, router, supabase])
+  }, [params, router])
 
   const savePhone = async () => {
     const digits = phoneInput.replace(/\D/g, '')

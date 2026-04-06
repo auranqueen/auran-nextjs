@@ -61,7 +61,7 @@ export default function AuranGuide() {
       setItems(rows)
     }
     void load()
-  }, [supabase])
+  }, [])
 
   const completed = useMemo(() => items.filter(i => doneMap[i.id]).length, [items, doneMap])
   const total = items.length

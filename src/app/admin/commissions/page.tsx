@@ -86,7 +86,7 @@ export default function AdminCommissionsPage() {
     } finally {
       setLoading(false)
     }
-  }, [supabase, statusFilter, df, dt])
+  }, [statusFilter, df, dt])
 
   useEffect(() => {
     void load()

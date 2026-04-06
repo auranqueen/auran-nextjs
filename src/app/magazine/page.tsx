@@ -41,7 +41,7 @@ export default function MagazinePage() {
     } finally {
       setLoading(false)
     }
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     void load()

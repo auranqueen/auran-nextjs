@@ -48,7 +48,7 @@ export default function AdminMembersPage() {
       setLoading(false)
     }
     run()
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     const urlQ = (sp.get('q') || '').trim()
@@ -150,7 +150,7 @@ export default function AdminMembersPage() {
       }
     }
     run()
-  }, [selected, supabase])
+  }, [selected])
 
   const close = () => {
     setSelected(null)

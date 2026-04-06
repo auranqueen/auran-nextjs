@@ -158,7 +158,7 @@ function OrderCompleteContent() {
     return () => {
       cancelled = true
     }
-  }, [orderId, supabase])
+  }, [orderId])
 
   if (!orderId) {
     return (

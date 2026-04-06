@@ -73,7 +73,7 @@ export default function MyReviewsPage() {
 
   useEffect(() => {
     void load()
-  }, [supabase])
+  }, [])
 
   return (
     <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 300, color: '#fff', paddingBottom: '96px' }}>

@@ -36,7 +36,7 @@ export default function MySecurityPage() {
       setLoading(false)
     }
     run()
-  }, [router, supabase])
+  }, [router])
 
   const lastLoginText = useMemo(() => {
     if (!lastSignIn) return '-'

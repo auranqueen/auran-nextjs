@@ -61,7 +61,7 @@ export default function NoticePanel({
       setNoticeLoading(false)
     }
     void loadPanelData()
-  }, [noticeOpen, myUserId, supabase])
+  }, [noticeOpen, myUserId])
 
   return (
     <>

@@ -19,7 +19,7 @@ export default function DashboardPage() {
       }
       router.replace(positionToDashboardPath(stored))
     })()
-  }, [router, supabase])
+  }, [router])
 
   return null
 }

@@ -47,7 +47,7 @@ export default function MyChartsPage() {
       setRows(list.map((c) => ({ ...c, _prescription: pMap[c.id] || null })))
     }
     void run()
-  }, [supabase])
+  }, [])
 
   const addToCart = async (productId: string) => {
     const { data: auth } = await supabase.auth.getUser()

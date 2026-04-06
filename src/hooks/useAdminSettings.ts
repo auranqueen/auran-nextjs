@@ -47,7 +47,7 @@ export function useAdminSettings() {
     _cachedRaw = raw
     _cachedMap = map
     setLoading(false)
-  }, [supabase])
+  }, [])
 
   useEffect(() => { fetchSettings() }, [fetchSettings])
 

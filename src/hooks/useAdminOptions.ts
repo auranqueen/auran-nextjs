@@ -90,7 +90,7 @@ export function useAdminOptions(supabase: any) {
     return () => {
       cancelled = true
     }
-  }, [supabase])
+  }, [])
 
   return useMemo(
     () => ({

@@ -98,7 +98,7 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
       }
     }
     void run()
-  }, [profile.id, supabase])
+  }, [profile.id])
 
   useEffect(() => {
     const run = async () => {
@@ -122,7 +122,7 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
       }
     }
     void run()
-  }, [profile.id, supabase])
+  }, [profile.id])
 
   const elapsedText = (createdAt: string) => {
     const ms = Date.now() - new Date(createdAt || '').getTime()

@@ -102,7 +102,7 @@ export default function CommunityNewPostPage() {
       setInternalUserId(urow.id)
     }
     void run()
-  }, [router, supabase])
+  }, [router])
 
   const imageCount = useMemo(() => media.filter((m) => m.kind === 'image').length, [media])
   const videoCount = useMemo(() => media.filter((m) => m.kind === 'video').length, [media])
@@ -164,7 +164,7 @@ export default function CommunityNewPostPage() {
       ((data || []) as any[]).map((p) => ({ id: p.id, name: p.name, thumb_img: p.thumb_img, retail_price: p.retail_price }))
     )
     setProductLoading(false)
-  }, [productResults.length, supabase])
+  }, [productResults.length])
 
   const filteredProducts = useMemo(() => {
     const s = productQ.trim().toLowerCase()

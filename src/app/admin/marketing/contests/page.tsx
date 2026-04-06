@@ -132,7 +132,7 @@ export default function AdminMarketingContestsPage() {
       m[r.key] = String(r.value ?? '')
     })
     setSettings(m)
-  }, [supabase])
+  }, [])
 
   const persistSetting = async (key: string, value: string) => {
     setSettings((prev) => ({ ...prev, [key]: value }))
@@ -215,7 +215,7 @@ export default function AdminMarketingContestsPage() {
       toastTotal,
       toastMonth,
     })
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     loadSettings()

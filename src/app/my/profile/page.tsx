@@ -131,7 +131,7 @@ export default function MyProfilePage() {
       setLoading(false)
     }
     void run()
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     if (birthYear && birthMonth && birthDay) {

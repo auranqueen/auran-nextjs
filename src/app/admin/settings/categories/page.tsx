@@ -57,7 +57,7 @@ export default function AdminCategoriesPage() {
     const list = (data || []) as Cat[]
     setCommittedRows(list)
     setRows(list)
-  }, [supabase])
+  }, [])
 
   const loadNatural = useCallback(async () => {
     const now = new Date()
@@ -83,7 +83,7 @@ export default function AdminCategoriesPage() {
       .sort((a, b) => b.total - a.total)
       .slice(0, 20)
     setNaturalRows(merged)
-  }, [supabase])
+  }, [])
 
   const loadQuestions = useCallback(async () => {
     const { data } = await supabase
@@ -92,7 +92,7 @@ export default function AdminCategoriesPage() {
       .order('sort_order', { ascending: true })
       .order('created_at', { ascending: true })
     setQuestionRows(data || [])
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     let cancelled = false

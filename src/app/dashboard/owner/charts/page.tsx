@@ -79,7 +79,7 @@ export default function OwnerChartsPage() {
       setCustomers((salonCustomers as any[]) || [])
     }
     void run()
-  }, [router, supabase])
+  }, [router])
 
   const filteredCustomers = useMemo(() => {
     const s = q.trim().toLowerCase()

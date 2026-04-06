@@ -557,7 +557,7 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
       setRows([])
       setLoading(false)
     }
-  }, [supabase, tab, brandOwnerAuthId])
+  }, [tab, brandOwnerAuthId])
 
   useEffect(() => { fetchRows() }, [fetchRows])
 
@@ -574,7 +574,7 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
         const names = rows.map(b => b.name).filter(Boolean)
         setBrandOptionsFromDb(names.length ? names : null)
       })
-  }, [supabase])
+  }, [])
 
   const commissionPercentSumWarn = useMemo(() => {
     if (!defForm) return false
@@ -698,7 +698,7 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
           .filter((r: { id: string; email: string }) => !!r.id)
         setBrandUsers(list)
       })
-  }, [supabase])
+  }, [])
 
   const mappedRows = useMemo(() =>
     rows.map(r => ({

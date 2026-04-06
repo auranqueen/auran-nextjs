@@ -57,7 +57,7 @@ export function useUserProfile() {
       setLoading(false)
     }
     void load()
-  }, [supabase])
+  }, [])
 
   const refresh = async () => {
     cachedProfile = null

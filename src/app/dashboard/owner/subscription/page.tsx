@@ -162,7 +162,7 @@ export default function OwnerSubscriptionPage() {
 
     setLoading(false)
     return hasActive
-  }, [router, supabase])
+  }, [router])
 
   useEffect(() => {
     void load()

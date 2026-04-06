@@ -205,7 +205,7 @@ export default function CommunityPostDetailPage() {
     }
 
     setLoading(false)
-  }, [postId, supabase])
+  }, [postId])
 
   useEffect(() => {
     void loadPost()

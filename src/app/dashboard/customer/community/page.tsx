@@ -128,7 +128,7 @@ export default function CustomerCommunityPage() {
         setVotedContest(!!(prev && prev.length > 0))
       } else setVotedContest(false)
     } else setVotedContest(false)
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -263,7 +263,7 @@ export default function CustomerCommunityPage() {
       setLoading(false)
     }
     run()
-  }, [q, supabase, tab, skinFilter])
+  }, [q, tab, skinFilter])
 
   const addToCart = async (productId: string) => {
     const {

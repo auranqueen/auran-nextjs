@@ -46,7 +46,7 @@ export default function PointSettingsPage() {
       }
     }
     run()
-  }, [supabase])
+  }, [])
 
   const setValue = (action: string, points: number) => {
     setRows(prev => {

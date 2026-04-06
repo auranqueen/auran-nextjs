@@ -25,7 +25,7 @@ export function AuthSessionProvider({ children }: { children: React.ReactNode })
     })
 
     return () => subscription.unsubscribe()
-  }, [router, supabase])
+  }, [router])
 
   return <>{children}</>
 }

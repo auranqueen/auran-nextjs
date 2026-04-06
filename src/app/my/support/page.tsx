@@ -44,7 +44,7 @@ export default function MySupportPage() {
       setInquiries((rows as InquiryRow[]) || [])
     }
     run()
-  }, [supabase])
+  }, [])
 
   return (
     <div style={{ background: BG, minHeight: '100vh', maxWidth: 390, margin: '0 auto', color: '#fff', paddingBottom: 20 }}>

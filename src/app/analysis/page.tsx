@@ -34,7 +34,7 @@ export default function AnalysisPage() {
       setLoading(false)
     }
     run()
-  }, [router, supabase])
+  }, [router])
 
   return (
     <CustomerDashboardShell>

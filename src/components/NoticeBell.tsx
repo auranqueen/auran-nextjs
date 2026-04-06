@@ -83,7 +83,7 @@ export default function NoticeBell({
     if (!user) return null
     const { data: profile } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
     return profile?.id ? String(profile.id) : null
-  }, [supabase])
+  }, [])
 
   const loadUnreadCount = useCallback(async () => {
     const client = createClient()

@@ -28,7 +28,7 @@ export default function GiftsPage() {
       setPhase('ok')
     }
     void run()
-  }, [supabase])
+  }, [])
 
   if (phase === 'load') {
     return (
