@@ -121,6 +121,12 @@ export default function ProductDetailModal({
   const [ptPicks, setPtPicks] = useState<string[]>([])
   const [ptPickOpen, setPtPickOpen] = useState(false)
   const [ptSaving, setPtSaving] = useState(false)
+  const [shareCopyPointsDraft, setShareCopyPointsDraft] = useState(
+    Array.isArray(product.share_copy_points)
+      ? (product.share_copy_points as unknown[]).map((x) => String(x)).join('\n')
+      : ''
+  )
+  const [shareCopyPointsSaving, setShareCopyPointsSaving] = useState(false)
 
   const [earnPercent, setEarnPercent] = useState<number | ''>(product.earn_points == null ? '' : Number(product.earn_points))
   const [sharePoints, setSharePoints] = useState(Number(product.share_points ?? 0))
@@ -212,6 +218,12 @@ export default function ProductDetailModal({
     setKeyIngredientsSaving(false)
     setClinicalResultSaving(false)
     setPtSaving(false)
+    setShareCopyPointsDraft(
+      Array.isArray(product.share_copy_points)
+        ? (product.share_copy_points as unknown[]).map((x) => String(x)).join('\n')
+        : ''
+    )
+    setShareCopyPointsSaving(false)
     setDirty({ thumb: false, basic: false, detail: false, points: false, flash: false })
     setModalTab('thumb')
   }, [product.id])
@@ -1414,6 +1426,92 @@ export default function ProductDetailModal({
                     fontWeight: 900,
                     cursor: 'pointer',
                     opacity: ptSaving ? 0.6 : 1,
+                  }}
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+
+            <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 16, background: 'rgba(255,255,255,0.03)' }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 8 }}>공유 카피포인트</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 8, lineHeight: 1.5 }}>
+                한 줄에 하나씩 입력하면 배열로 저장돼요.
+              </div>
+              <textarea
+                value={shareCopyPointsDraft}
+                onChange={(e) => setShareCopyPointsDraft(e.target.value)}
+                rows={5}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  background: '#121212',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  color: '#fff',
+                  fontSize: 12,
+                  resize: 'vertical' as const,
+                  fontFamily: 'inherit',
+                }}
+              />
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <button
+                  type="button"
+                  disabled={shareCopyPointsSaving}
+                  onClick={() => {
+                    void (async () => {
+                      setShareCopyPointsSaving(true)
+                      const lines = shareCopyPointsDraft
+                        .split(/\r?\n/)
+                        .map((s) => s.trim())
+                        .filter(Boolean)
+                      const { error } = await supabase.from('products').update({ share_copy_points: lines }).eq('id', product.id)
+                      setShareCopyPointsSaving(false)
+                      if (error) {
+                        onToast('저장 실패: ' + error.message)
+                        return
+                      }
+                      onToast('✅ 공유 카피포인트 저장됨')
+                      onProductUpdated({ ...product, share_copy_points: lines })
+                    })()
+                  }}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(201,168,76,0.2)',
+                    border: '1px solid rgba(201,168,76,0.45)',
+                    borderRadius: 10,
+                    padding: '12px 0',
+                    color: '#c9a84c',
+                    fontSize: 13,
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    opacity: shareCopyPointsSaving ? 0.6 : 1,
+                  }}
+                >
+                  {shareCopyPointsSaving ? '저장 중...' : '저장'}
+                </button>
+                <button
+                  type="button"
+                  disabled={shareCopyPointsSaving}
+                  onClick={() =>
+                    setShareCopyPointsDraft(
+                      Array.isArray(productRef.current.share_copy_points)
+                        ? (productRef.current.share_copy_points as unknown[]).map((x) => String(x)).join('\n')
+                        : ''
+                    )
+                  }
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 10,
+                    padding: '12px 0',
+                    color: 'rgba(255,255,255,0.75)',
+                    fontSize: 13,
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    opacity: shareCopyPointsSaving ? 0.6 : 1,
                   }}
                 >
                   취소

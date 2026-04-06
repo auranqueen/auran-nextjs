@@ -42,6 +42,8 @@ interface Product {
   clinical_result?: string | null
   certifications?: string | null
   perfect_together?: string[] | null
+  hormone_timing?: string | null
+  share_copy_points?: string[] | null
   thumb_images: string[]
   gallery_imgs?: string[]
   storage_thumb_url: string
@@ -113,6 +115,15 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const detailEditorRef = useRef<any>(null)
   const [ingOpen, setIngOpen] = useState(false)
   const [isFounder, setIsFounder] = useState(false)
+  const [hormoneOpen, setHormoneOpen] = useState(false)
+  const [hormonePhaseIdx, setHormonePhaseIdx] = useState(0)
+  const [storyTab, setStoryTab] = useState<'all' | 'review' | 'expert' | 'ambassador'>('all')
+  const [showWriteSheet, setShowWriteSheet] = useState(false)
+  const [writeContent, setWriteContent] = useState('')
+  const [writeSkinType, setWriteSkinType] = useState<string | null>(null)
+  const [writeEffectTags, setWriteEffectTags] = useState<string[]>([])
+  const [writeSubmitting, setWriteSubmitting] = useState(false)
+  const [userPurchasedProduct, setUserPurchasedProduct] = useState(false)
 
   const [saleTimeLeft, setSaleTimeLeft] = useState(() =>
     product.timesale_ends_at
@@ -137,15 +148,29 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   const fetchReviews = async () => {
     setReviewsLoading(true)
-    const { data, error } = await supabase
+    const q1 = await supabase
       .from('reviews')
-      .select('*')
+      .select(
+        '*, author_user:users!reviews_author_id_fkey(customer_grade, role), link_post:posts!reviews_community_post_id_fkey(is_expert_answered)'
+      )
       .eq('target_id', product.id)
       .eq('status', '게시')
       .order('created_at', { ascending: false })
       .limit(20)
-    if (error) console.error('fetchReviews error:', error)
-    setReviews(data || [])
+    let rows = q1.data
+    if (q1.error) {
+      console.error('fetchReviews error:', q1.error)
+      const q2 = await supabase
+        .from('reviews')
+        .select('*')
+        .eq('target_id', product.id)
+        .eq('status', '게시')
+        .order('created_at', { ascending: false })
+        .limit(20)
+      if (q2.error) console.error('fetchReviews fallback error:', q2.error)
+      rows = q2.data
+    }
+    setReviews(rows || [])
     setReviewsLoading(false)
   }
 
@@ -202,7 +227,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       await executeBuy()
     }
     void run()
-  }, [supabase, product.id, qty])
+  }, [product.id, qty])
 
   useEffect(() => {
     if (!product?.id) return
@@ -214,7 +239,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     const run = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user?.id) {
-        setMyReviewDoc(null); return
+        setMyReviewDoc(null)
+        setUserPurchasedProduct(false)
+        return
       }
       const { data: orders } = await supabase.from('orders').select('id, items').eq('customer_id', session.user.id)
       let purchased = false
@@ -237,14 +264,23 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           if (orderItems && orderItems.length > 0) purchased = true
         }
       }
+      setUserPurchasedProduct(purchased)
+      const { data: meRow } = await supabase.from('users').select('id').eq('auth_id', session.user.id).maybeSingle()
+      const internalUid = meRow?.id
+      if (!internalUid) {
+        setMyReviewDoc(null)
+        return
+      }
       const { data: myReviewRow } = await supabase.from('reviews')
         .select('id, content, rating, helpful_concerns, is_edited, created_at')
-        .eq('author_id', session.user.id).eq('target_id', product.id).maybeSingle()
+        .eq('author_id', internalUid)
+        .eq('target_id', product.id)
+        .maybeSingle()
       setMyReviewDoc(myReviewRow || null)
       if (myReviewRow) return
     }
     void run()
-  }, [product?.id, supabase])
+  }, [product?.id])
 
   useEffect(() => {
     const raw = product.perfect_together
@@ -261,7 +297,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       setPerfectTogetherRows(rows)
     })()
     return () => { cancelled = true }
-  }, [product.id, product.perfect_together, supabase])
+  }, [product.id, product.perfect_together])
 
   useEffect(() => {
     if (!product?.id) return
@@ -280,7 +316,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       setSameSkinTypeRows((data || []) as any[])
     })()
     return () => { cancelled = true }
-  }, [product.id, supabase])
+  }, [product.id])
 
   useEffect(() => {
     if (!product?.id) return
@@ -305,7 +341,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       setAiRecommendLine(`✦ 내 피부타입(${userSkinType})에 맞는 제품이에요`)
     })()
     return () => { cancelled = true }
-  }, [product.id, product.skin_types, supabase])
+  }, [product.id, product.skin_types])
 
   useEffect(() => {
     if (!shareOpen) return
@@ -313,7 +349,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     void supabase.auth.getSession().then(({ data: { session } }) => {
       setShareRefUserId(session?.user?.id ?? null)
     })
-  }, [shareOpen, supabase])
+  }, [shareOpen])
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data: { session } }) => {
@@ -321,7 +357,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       const role = user?.app_metadata?.role ?? user?.raw_app_meta_data?.role ?? ''
       setIsSuperAdmin(role === 'super_admin')
     })
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     if (editingField?.field === 'storage_thumb_url') {
@@ -402,7 +438,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       setGiftFriendsLoading(false)
     })()
     return () => { cancelled = true }
-  }, [giftSheetOpen, supabase])
+  }, [giftSheetOpen])
 
   const brand = product.brands?.name || 'AURAN'
   const name = product.name ?? '제품명'
@@ -481,6 +517,39 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const longTermUsers = (periodFreq['1달'] || 0) + (periodFreq['3달 이상'] || 0)
   const longTermPct = reviews.length > 0 ? Math.round((longTermUsers / reviews.length) * 100) : 0
 
+  const sharePts = Array.isArray(product.share_copy_points)
+    ? product.share_copy_points.map((x) => String(x || '').trim()).filter(Boolean)
+    : []
+  let hormoneMap: Record<string, { tip?: string; recommend?: string }> = {}
+  try {
+    const ht = product.hormone_timing && String(product.hormone_timing).trim()
+    if (ht) {
+      const j = JSON.parse(String(product.hormone_timing))
+      if (j && typeof j === 'object' && !Array.isArray(j)) hormoneMap = j as Record<string, { tip?: string; recommend?: string }>
+    }
+  } catch {
+    hormoneMap = {}
+  }
+  const hormonePhaseKeys = ['menstrual', 'follicular', 'ovulation', 'luteal'] as const
+  const hormoneLabels = ['생리기🌙', '여포기🌱', '배란기✨', '황체기🌸']
+  const curHormoneKey = hormonePhaseKeys[hormonePhaseIdx] || 'menstrual'
+  const curHormone = hormoneMap[curHormoneKey] || {}
+  const storyFiltered = (() => {
+    const isAmb = (r: any) => ['NOIR', 'CÉLESTE'].includes(String(r?.author_user?.customer_grade || ''))
+    const isExp = (r: any) => {
+      const role = String(r?.author_user?.role || '')
+      const g = String(r?.author_user?.customer_grade || '')
+      if (role === 'owner') return true
+      if (/원장|클리닉|owner|salon/i.test(g)) return true
+      if (r?.link_post?.is_expert_answered === true) return true
+      return false
+    }
+    if (storyTab === 'all') return reviews
+    if (storyTab === 'ambassador') return reviews.filter(isAmb)
+    if (storyTab === 'expert') return reviews.filter(isExp)
+    return reviews.filter((r: any) => !isExp(r) && !isAmb(r))
+  })()
+
   const wrap: React.CSSProperties = {
     background: '#0d0b09', color: '#e8e4dc', maxWidth: 430,
     margin: '0 auto', minHeight: '100dvh', maxHeight: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any,
@@ -507,13 +576,20 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
   return (
     <div style={wrap}>
+      {shareOpen ? (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 89, background: 'transparent' }}
+          onClick={() => setShareOpen(false)}
+          aria-hidden
+        />
+      ) : null}
       {/* 탑바 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: '#0d0b09', position: 'sticky', top: 0, zIndex: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: '#0d0b09', position: 'sticky', top: 0, zIndex: 90 }}>
         <div style={{ fontSize: 20, color: GOLD, cursor: 'pointer' }} onClick={() => router.back()}>←</div>
         <div style={{ fontSize: 15 }}>상품 상세</div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <div
-            onClick={() => setShareOpen(true)}
+            onClick={() => setShareOpen((o) => !o)}
             style={{
               color: '#7B5EA7',
               background: 'rgba(123,94,167,0.15)',
@@ -526,11 +602,148 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               justifyContent: 'center',
               cursor: 'pointer',
               fontSize: 18,
+              position: 'relative',
             }}
           >
             ⎙
+            {!shareOpen && sharePts.length > 0 ? (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: -4,
+                  right: -4,
+                  minWidth: 16,
+                  height: 16,
+                  padding: '0 4px',
+                  borderRadius: 8,
+                  background: '#c9a84c',
+                  color: '#000',
+                  fontSize: 9,
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  lineHeight: 1,
+                }}
+              >
+                {sharePts.length > 9 ? '9+' : sharePts.length}
+              </span>
+            ) : null}
           </div>
           <div style={{ fontSize: 9, color: '#7B5EA7' }}>공유</div>
+          {shareOpen ? (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                marginTop: 8,
+                width: 'min(300px, calc(100vw - 24px))',
+                background: '#1a1610',
+                border: '1px solid rgba(123,94,167,0.35)',
+                borderRadius: 14,
+                padding: 14,
+                zIndex: 91,
+                boxShadow: '0 12px 40px rgba(0,0,0,0.45)',
+              }}
+            >
+              <div style={{ fontSize: 12, color: '#B09AD0', marginBottom: 8 }}>공유 카피</div>
+              {sharePts.length > 0 ? (
+                <ul style={{ margin: '0 0 10px 0', paddingLeft: 18, fontSize: 11, color: '#e8e4dc', lineHeight: 1.5 }}>
+                  {sharePts.map((line, i) => (
+                    <li key={i} style={{ marginBottom: 4 }}>{line}</li>
+                  ))}
+                </ul>
+              ) : (
+                <div style={{ fontSize: 11, color: '#666', marginBottom: 10 }}>등록된 카피포인트가 없어요</div>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  const url = typeof window !== 'undefined' ? window.location.href.split('#')[0] : ''
+                  const text = sharePts.length ? sharePts.join('\n') : `${name}\n${url}`
+                  if (typeof navigator !== 'undefined' && navigator.share) {
+                    void navigator.share({ title: name, text, url }).catch(() => {})
+                  } else {
+                    void navigator.clipboard.writeText(`${text}\n${url}`).then(() => alert('내용을 복사했어요. 카카오톡에 붙여넣기 하세요!')).catch(() => {})
+                  }
+                }}
+                style={{
+                  width: '100%',
+                  marginBottom: 8,
+                  padding: '12px 0',
+                  borderRadius: 12,
+                  border: 'none',
+                  background: '#FEE500',
+                  color: '#191600',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                  fontWeight: 700,
+                }}
+              >
+                카카오톡 공유
+              </button>
+              {shareRefUserId === null ? (
+                <div style={{ marginTop: 4 }}>
+                  <div style={{ fontSize: 11, color: '#888', marginBottom: 8, lineHeight: 1.5 }}>
+                    로그인하면 추천 링크 복사가 열려요.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void supabase.auth.signInWithOAuth({
+                        provider: 'kakao',
+                        options: { redirectTo: typeof window !== 'undefined' ? window.location.href : undefined },
+                      })
+                    }
+                    style={{
+                      width: '100%',
+                      padding: '12px 0',
+                      borderRadius: 12,
+                      border: 'none',
+                      background: '#FEE500',
+                      color: '#191600',
+                      fontSize: 13,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      fontWeight: 700,
+                    }}
+                  >
+                    카카오 로그인
+                  </button>
+                </div>
+              ) : shareRefUserId ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(shareLinkWithRef).then(() => alert('추천 링크를 복사했어요!')).catch(() => {})
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 0',
+                      borderRadius: 12,
+                      border: '1px solid rgba(123,94,167,0.45)',
+                      background: 'rgba(123,94,167,0.15)',
+                      color: '#e8d9ff',
+                      fontSize: 13,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    내 추천 링크 복사
+                  </button>
+                  <div style={{ fontSize: 10, color: '#666', lineHeight: 1.5, marginTop: 10 }}>
+                    친구 가입·첫구매 시 토스트 추가 적립이 있을 수 있어요. (캠페인 기준)
+                  </div>
+                </>
+              ) : (
+                <div style={{ fontSize: 11, color: '#666' }}>연결 확인 중…</div>
+              )}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -621,6 +834,89 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         {aiRecommendLine ? (
           <div style={{ alignSelf: 'flex-start', marginBottom: 6, display: 'inline-block', background: 'rgba(201,169,110,0.1)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: GOLD }}>
             {aiRecommendLine}
+          </div>
+        ) : null}
+        {(showEditChrome ||
+          !!(product.hormone_timing && String(product.hormone_timing).trim()) ||
+          Object.keys(hormoneMap).length > 0) ? (
+          <div
+            style={{
+              marginBottom: 10,
+              borderRadius: 12,
+              border: showEditChrome ? '2px dashed rgba(123,94,167,0.45)' : '1px solid rgba(123,94,167,0.25)',
+              background: 'rgba(123,94,167,0.06)',
+              overflow: 'hidden',
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setHormoneOpen((v) => !v)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 12px',
+                border: 'none',
+                background: 'transparent',
+                color: '#e8d9ff',
+                fontSize: 12,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                textAlign: 'left',
+              }}
+            >
+              <span>호르몬 주기별 케어 타이밍</span>
+              <span style={{ color: '#888', fontSize: 11 }}>{hormoneOpen ? '접기' : '펼치기'}</span>
+            </button>
+            {hormoneOpen ? (
+              <div style={{ padding: '0 12px 12px' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                  {hormoneLabels.map((lb, i) => (
+                    <button
+                      key={lb}
+                      type="button"
+                      onClick={() => setHormonePhaseIdx(i)}
+                      style={{
+                        padding: '5px 10px',
+                        borderRadius: 20,
+                        border: hormonePhaseIdx === i ? `1px solid ${GOLD}` : '1px solid rgba(255,255,255,0.12)',
+                        background: hormonePhaseIdx === i ? 'rgba(201,169,110,0.12)' : 'rgba(0,0,0,0.2)',
+                        color: hormonePhaseIdx === i ? GOLD : '#aaa',
+                        fontSize: 11,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      {lb}
+                    </button>
+                  ))}
+                </div>
+                {curHormone.tip || curHormone.recommend ? (
+                  <div style={{ fontSize: 11, color: '#ccc', lineHeight: 1.65, marginBottom: 8 }}>
+                    {curHormone.tip ? (
+                      <div style={{ marginBottom: 6 }}>
+                        <span style={{ color: '#B09AD0' }}>Tip </span>
+                        {curHormone.tip}
+                      </div>
+                    ) : null}
+                    {curHormone.recommend ? (
+                      <div>
+                        <span style={{ color: GOLD }}>추천 </span>
+                        {curHormone.recommend}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 11, color: '#666', marginBottom: 8 }}>
+                    {showEditChrome ? '어드민에서 hormone_timing(JSON)을 채우면 표시돼요.' : '이 단계에 대한 안내가 아직 없어요.'}
+                  </div>
+                )}
+                <div style={{ fontSize: 10, color: '#666', lineHeight: 1.5, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  마법 캘린더에서 주기를 맞추면 단계별 맞춤 루틴과 연동될 수 있어요. (캘린더 메뉴에서 설정)
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : null}
         {maleMeno ? (
@@ -799,6 +1095,53 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           ) : null}
         </div>
 
+        {/* 스토리 피드 탭 */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+          {(
+            [
+              { k: 'all' as const, lab: '전체' },
+              { k: 'review' as const, lab: '리뷰' },
+              { k: 'expert' as const, lab: '전문가' },
+              { k: 'ambassador' as const, lab: '앰배서더' },
+            ] as const
+          ).map(({ k, lab }) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setStoryTab(k)}
+              style={{
+                padding: '5px 11px',
+                borderRadius: 20,
+                border: storyTab === k ? `1px solid ${GOLD}` : '1px solid rgba(255,255,255,0.12)',
+                background: storyTab === k ? 'rgba(201,169,110,0.12)' : 'rgba(0,0,0,0.2)',
+                color: storyTab === k ? GOLD : '#888',
+                fontSize: 11,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              {lab}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setShowWriteSheet(true)}
+            style={{
+              marginLeft: 'auto',
+              padding: '5px 12px',
+              borderRadius: 20,
+              border: `1px solid rgba(123,94,167,0.4)`,
+              background: 'rgba(123,94,167,0.12)',
+              color: '#d4c4f0',
+              fontSize: 11,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            스토리 작성
+          </button>
+        </div>
+
         {/* 리뷰 요약 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <span style={{ color: GOLD, fontSize: 17, letterSpacing: 2 }}>★★★★★</span>
@@ -878,11 +1221,13 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         <div ref={reviewSectionRef}>
           {reviewsLoading ? (
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>로딩중...</div>
-          ) : reviews.length === 0 ? (
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>아직 리뷰가 없어요</div>
+          ) : storyFiltered.length === 0 ? (
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>
+              {reviews.length === 0 ? '아직 리뷰가 없어요' : '이 탭에 해당하는 스토리가 없어요'}
+            </div>
           ) : (
             <div ref={reviewScrollRef} style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, marginBottom: 12, WebkitOverflowScrolling: 'touch' as any, scrollSnapType: 'x mandatory' }}>
-              {reviews.map((rv, i) => (
+              {storyFiltered.map((rv, i) => (
                 <div key={rv.id || i} style={{ flexShrink: 0, width: 260, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 14, scrollSnapAlign: 'start' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                     <span style={{ color: GOLD, fontSize: 13 }}>{'★'.repeat(Math.max(0, Number(rv.rating || 0)))}</span>
@@ -1266,69 +1611,201 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         </div>
       )}
 
-      {shareOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 80, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-          onClick={() => setShareOpen(false)}>
-          <div onClick={e => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: 430, background: '#1a1610', borderRadius: 20, padding: '22px 20px 32px', maxHeight: '85vh', overflowY: 'auto' }}>
-
-            {/* 헤더 */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <div style={{ fontSize: 15, color: '#e8e4dc' }}>공유하기</div>
-              <div onClick={() => setShareOpen(false)} style={{ fontSize: 20, color: '#666', cursor: 'pointer' }}>✕</div>
+      {showWriteSheet && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+          onClick={() => setShowWriteSheet(false)}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: 430,
+              background: '#1a1610',
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              padding: '22px 18px calc(28px + env(safe-area-inset-bottom, 0px))',
+              borderTop: `1px solid ${GOLD}44`,
+              maxHeight: '88vh',
+              overflowY: 'auto',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontSize: 15, color: '#e8e4dc' }}>스토리 작성</div>
+              <button
+                type="button"
+                onClick={() => setShowWriteSheet(false)}
+                style={{ fontSize: 20, color: '#666', cursor: 'pointer', background: 'none', border: 'none', padding: 0, lineHeight: 1 }}
+              >
+                ✕
+              </button>
             </div>
-
-            {/* 제품 미리보기 */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 12px', marginBottom: 16 }}>
-              {thumbUrl && <img src={thumbUrl} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }} />}
-              <div>
-                <div style={{ fontSize: 12, color: '#e8e4dc' }}>{name}</div>
-                <div style={{ fontSize: 12, color: '#C9A96E' }}>{hasValidPrice ? `${price.toLocaleString()}원` : '가격문의'}</div>
-              </div>
+            <div style={{ fontSize: 11, color: '#888', marginBottom: 10 }}>
+              제품 태그{' '}
+              <span style={{ color: GOLD }}>#{String(name).slice(0, 24)}</span>
+              {tagLine ? <span style={{ color: '#666' }}> · {tagLine.slice(0, 40)}{tagLine.length > 40 ? '…' : ''}</span> : null}
             </div>
-
-            {shareRefUserId === null ? (
-              <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                <div style={{ fontSize: 40, marginBottom: 12 }}>🔒</div>
-                <div style={{ fontSize: 14, color: '#e8e4dc', marginBottom: 8 }}>
-                  로그인하면 추천 링크가 생성돼요
-                </div>
-                <div style={{ fontSize: 12, color: '#888', lineHeight: 1.7, marginBottom: 16 }}>
-                  친구 가입시 나 <span style={{ color: '#C9A96E' }}>+1,000T</span><br />
-                  친구 첫구매 5만원↑ 확정시 나 <span style={{ color: '#C9A96E' }}>+5,000T</span>
-                </div>
-                <button onClick={() => void supabase.auth.signInWithOAuth({
-                  provider: 'kakao',
-                  options: { redirectTo: typeof window !== 'undefined' ? window.location.href : undefined }
-                })} style={{ width: '100%', padding: '14px', borderRadius: 12, border: 'none', background: '#FEE500', color: '#191600', fontSize: 15, cursor: 'pointer', fontFamily: 'inherit' }}>
-                  카카오 로그인
+            <textarea
+              value={writeContent}
+              onChange={(e) => setWriteContent(e.target.value)}
+              placeholder="제품 사용 후기를 남겨주세요"
+              style={{
+                width: '100%',
+                minHeight: 100,
+                boxSizing: 'border-box',
+                background: '#0d0b09',
+                border: '1px solid #2a2520',
+                borderRadius: 10,
+                padding: 10,
+                color: '#e8e4dc',
+                fontSize: 13,
+                fontFamily: 'inherit',
+                resize: 'vertical' as const,
+                marginBottom: 12,
+              }}
+            />
+            <div style={{ fontSize: 10, color: '#888', marginBottom: 6 }}>피부타입 (선택 시 +50T)</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+              {(['건성', '지성', '복합성', '민감성'] as const).map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setWriteSkinType((prev) => (prev === s ? null : s))}
+                  style={{
+                    padding: '5px 12px',
+                    borderRadius: 20,
+                    border: writeSkinType === s ? `1px solid ${GOLD}` : '1px solid rgba(255,255,255,0.12)',
+                    background: writeSkinType === s ? 'rgba(201,169,110,0.12)' : 'rgba(0,0,0,0.25)',
+                    color: writeSkinType === s ? GOLD : '#aaa',
+                    fontSize: 11,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {s}
                 </button>
-              </div>
-            ) : shareRefUserId ? (
-              <>
-                {/* 링크 복사 */}
-                <div style={{ background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 10, padding: '10px 12px', marginBottom: 16 }}>
-                  <div style={{ fontSize: 11, color: '#B09AD0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginBottom: 8 }}>
-                    {shareLinkWithRef}
-                  </div>
-                  <button onClick={() => {
-                    navigator.clipboard.writeText(shareLinkWithRef)
-                    alert('링크가 복사됐어요!')
-                  }} style={{ width: '100%', background: '#7B5EA7', border: 'none', color: '#fff', fontSize: 14, padding: '14px', borderRadius: 20, cursor: 'pointer', fontFamily: 'inherit' }}>
-                    🔗 링크 복사하기
+              ))}
+            </div>
+            <div style={{ fontSize: 10, color: '#888', marginBottom: 6 }}>효과 태그 (각 +30T)</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+              {(['촉촉해요', '자극없어요', '흡수빨라요', '진정돼요'] as const).map((s) => {
+                const on = writeEffectTags.includes(s)
+                return (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() =>
+                      setWriteEffectTags((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]))
+                    }
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: 20,
+                      border: on ? '1px solid rgba(123,94,167,0.5)' : '1px solid rgba(255,255,255,0.12)',
+                      background: on ? 'rgba(123,94,167,0.15)' : 'rgba(0,0,0,0.25)',
+                      color: on ? '#d4c4f0' : '#aaa',
+                      fontSize: 11,
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {s}
                   </button>
-                </div>
-
-                {/* 적립 안내 */}
-                <div style={{ background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 12, padding: '12px 14px' }}>
-                  <div style={{ fontSize: 12, color: '#B09AD0', marginBottom: 6 }}>🍞 공유 적립 안내</div>
-                  <div style={{ fontSize: 11, color: '#888', lineHeight: 1.7 }}>
-                    친구가 가입하면 친구 <span style={{ color: '#C9A96E' }}>+10,000T</span> · 나 <span style={{ color: '#C9A96E' }}>+1,000T</span><br />
-                    친구가 5만원↑ 첫구매 확정하면 나 <span style={{ color: '#C9A96E' }}>+5,000T</span> 추가 적립
-                  </div>
-                </div>
-              </>
-            ) : null}
+                )
+              })}
+            </div>
+            <div
+              style={{
+                fontSize: 11,
+                color: '#B09AD0',
+                background: 'rgba(123,94,167,0.08)',
+                border: '1px solid rgba(123,94,167,0.25)',
+                borderRadius: 10,
+                padding: '10px 12px',
+                marginBottom: 14,
+                lineHeight: 1.55,
+              }}
+            >
+              토스트 적립 안내: 기본 등록 <span style={{ color: GOLD }}>200T</span>
+              {writeSkinType ? <span> + 피부타입 <span style={{ color: GOLD }}>+50T</span></span> : null}
+              {writeEffectTags.length > 0 ? (
+                <span>
+                  {' '}
+                  + 효과태그 <span style={{ color: GOLD }}>+{30 * writeEffectTags.length}T</span>
+                </span>
+              ) : null}
+              <span style={{ color: '#666' }}> (실제 지급은 정책·DB 트리거 기준)</span>
+            </div>
+            <button
+              type="button"
+              disabled={writeSubmitting || !writeContent.trim()}
+              onClick={() => {
+                void (async () => {
+                  const { data: { session } } = await supabase.auth.getSession()
+                  if (!session?.user?.id) {
+                    alert('로그인 후 작성할 수 있어요')
+                    return
+                  }
+                  if (!userPurchasedProduct) {
+                    alert('구매한 제품만 스토리를 작성할 수 있어요')
+                    return
+                  }
+                  if (myReviewDoc) {
+                    alert('이미 작성한 리뷰가 있어요')
+                    return
+                  }
+                  setWriteSubmitting(true)
+                  const { data: urow, error: uerr } = await supabase.from('users').select('id').eq('auth_id', session.user.id).maybeSingle()
+                  if (uerr || !urow?.id) {
+                    setWriteSubmitting(false)
+                    alert('회원 정보를 찾을 수 없어요')
+                    return
+                  }
+                  const { error } = await supabase.from('reviews').insert({
+                    author_id: urow.id,
+                    review_type: 'product',
+                    target_id: product.id,
+                    rating: 5,
+                    content: writeContent.trim(),
+                    skin_type: writeSkinType,
+                    effect_tags: writeEffectTags.length ? writeEffectTags : null,
+                    status: '게시',
+                  })
+                  setWriteSubmitting(false)
+                  if (error) {
+                    alert('등록 실패: ' + error.message)
+                    return
+                  }
+                  setShowWriteSheet(false)
+                  setWriteContent('')
+                  setWriteSkinType(null)
+                  setWriteEffectTags([])
+                  await fetchReviews()
+                  const { data: myReviewRow } = await supabase
+                    .from('reviews')
+                    .select('id, content, rating, helpful_concerns, is_edited, created_at')
+                    .eq('author_id', urow.id)
+                    .eq('target_id', product.id)
+                    .maybeSingle()
+                  setMyReviewDoc(myReviewRow || null)
+                  alert('스토리가 등록됐어요!')
+                })()
+              }}
+              style={{
+                width: '100%',
+                padding: '14px 0',
+                borderRadius: 12,
+                border: 'none',
+                background: `linear-gradient(135deg,${GOLD},#a07840)`,
+                color: '#000',
+                fontSize: 15,
+                fontWeight: 700,
+                cursor: writeSubmitting || !writeContent.trim() ? 'default' : 'pointer',
+                fontFamily: 'inherit',
+                opacity: writeSubmitting || !writeContent.trim() ? 0.5 : 1,
+              }}
+            >
+              {writeSubmitting ? '등록 중…' : '등록하기'}
+            </button>
           </div>
         </div>
       )}
