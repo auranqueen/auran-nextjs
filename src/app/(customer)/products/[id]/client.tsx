@@ -1322,7 +1322,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             ) : null}
             {detailHtml ? (
               <div className="toastui-editor-contents" dangerouslySetInnerHTML={{ __html: detailHtml }}
-                style={{ padding: '16px 0', color: '#ccc', marginBottom: 0 }} />
+                style={{ padding: '16px 0', color: '#ffffff', marginBottom: 0 }} />
             ) : (
               <div style={{ padding: '16px 0', color: '#666', fontSize: 12, marginBottom: 0 }}>상세 본문이 비어 있어요</div>
             )}
