@@ -1806,9 +1806,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
       )}
 
       {loginSheetOpen && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 80, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
           onClick={() => { try { localStorage.removeItem('pending_payment'); localStorage.removeItem('pending_payment_ctx') } catch {} setLoginSheetOpen(false) }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 430, background: '#1a1a1a', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: '22px 20px 28px', borderTop: `1px solid ${GOLD}44` }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 430, background: '#1a1a1a', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: '22px 20px 28px', borderTop: `1px solid ${GOLD}44`, zIndex: 201 }}>
             <div style={{ fontSize: 15, color: '#fff', marginBottom: 8, textAlign: 'center' }}>결제를 위해 로그인이 필요해요</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 18, textAlign: 'center' }}>로그인 후 이 페이지에서 결제를 이어갈게요</div>
             <button type="button"
