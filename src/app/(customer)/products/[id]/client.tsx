@@ -178,27 +178,22 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     const qsOwner = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('prescription_owner_id') : null
     const localOwner = typeof window !== 'undefined' ? localStorage.getItem('prescription_owner_id') : null
     const prescriptionOwnerId = qsOwner || localOwner || null
-    const res = await fetch(`${window.location.origin}/api/payment/request`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ product_id: product.id, quantity: qty, prescription_owner_id: prescriptionOwnerId })
+
+    const params = new URLSearchParams({
+      product_id: product.id,
+      qty: String(qty),
     })
-    const data = await res.json()
-    if (data.payUrl) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      await logUserBehavior(supabase, user?.id ?? null, 'purchase', product.id, {
-        flow: 'checkout_start',
-        total_amount: price * qty,
-        category_id: product.category_id ?? null,
-        price,
-      })
-      try { localStorage.removeItem('pending_payment'); localStorage.removeItem('pending_payment_ctx') } catch {}
-      window.location.href = data.payUrl
-    } else {
-      alert('결제 요청 실패')
-    }
+    if (prescriptionOwnerId) params.set('prescription_owner_id', prescriptionOwnerId)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    await logUserBehavior(supabase, user?.id ?? null, 'purchase', product.id, {
+      flow: 'checkout_start',
+      total_amount: price * qty,
+      category_id: product.category_id ?? null,
+      price,
+    })
+    router.push(`/checkout?${params.toString()}`)
   }
 
   const handleBuy = async () => {
