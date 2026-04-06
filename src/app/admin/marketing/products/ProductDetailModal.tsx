@@ -118,7 +118,7 @@ export default function ProductDetailModal({
   const [clinicalResultSaving, setClinicalResultSaving] = useState(false)
   const [ptQuery, setPtQuery] = useState('')
   const [ptResults, setPtResults] = useState<{ id: string; name: string }[]>([])
-  const [ptPicks, setPtPicks] = useState<string[]>([])
+  const [ptPicks, setPtPicks] = useState<{ id: string; name: string }[]>([])
   const [ptPickOpen, setPtPickOpen] = useState(false)
   const [ptSaving, setPtSaving] = useState(false)
   const [shareCopyPointsDraft, setShareCopyPointsDraft] = useState(
@@ -213,7 +213,20 @@ export default function ProductDetailModal({
     setTimesaleSaving(false)
     setKeyIngredientsDraft(String(product.key_ingredients ?? ''))
     setClinicalResultDraft(String(product.clinical_result ?? ''))
-    setPtPicks(Array.isArray(product.perfect_together) ? product.perfect_together.map((x: unknown) => String(x)) : [])
+    setPtPicks([])
+    void (async () => {
+      const ids = Array.isArray(product.perfect_together)
+        ? (product.perfect_together as unknown[]).map((x) => String(x).trim()).filter(Boolean)
+        : []
+      if (ids.length === 0) return
+      const { data, error } = await supabase.from('products').select('id, name').in('id', ids)
+      if (error || !data) {
+        setPtPicks(ids.map((id) => ({ id, name: id })))
+        return
+      }
+      const byId = new Map((data as { id: string; name: string }[]).map((r) => [r.id, r.name]))
+      setPtPicks(ids.map((id) => ({ id, name: String(byId.get(id) || id) })))
+    })()
     setPtQuery('')
     setPtResults([])
     setPtPickOpen(false)
@@ -1396,7 +1409,7 @@ export default function ProductDetailModal({
                       key={p.id}
                       type="button"
                       onClick={() => {
-                        setPtPicks(prev => (prev.includes(p.id) ? prev : [...prev, p.id]))
+                        setPtPicks(prev => (prev.some(x => x.id === p.id) ? prev : [...prev, { id: p.id, name: p.name }]))
                         setPtPickOpen(false)
                         setPtQuery('')
                         setPtResults([])
@@ -1421,7 +1434,7 @@ export default function ProductDetailModal({
                 </div>
               ) : null}
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                {ptPicks.map(id => (
+                {ptPicks.map(({ id, name }) => (
                   <span
                     key={id}
                     style={{
@@ -1436,13 +1449,13 @@ export default function ProductDetailModal({
                       color: '#c9a84c',
                     }}
                   >
-                    <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={id}>
-                      {id.slice(0, 8)}…
+                    <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={name}>
+                      {name}
                     </span>
                     <button
                       type="button"
                       aria-label="제거"
-                      onClick={() => setPtPicks(prev => prev.filter(x => x !== id))}
+                      onClick={() => setPtPicks(prev => prev.filter(x => x.id !== id))}
                       style={{
                         border: 'none',
                         background: 'transparent',
@@ -1466,14 +1479,14 @@ export default function ProductDetailModal({
                   onClick={() => {
                     void (async () => {
                       setPtSaving(true)
-                      const { error } = await supabase.from('products').update({ perfect_together: ptPicks }).eq('id', product.id)
+                      const { error } = await supabase.from('products').update({ perfect_together: ptPicks.map(x => x.id) }).eq('id', product.id)
                       setPtSaving(false)
                       if (error) {
                         onToast('저장 실패: ' + error.message)
                         return
                       }
                       onToast('✅ 같이 쓰면 좋아요 저장됨')
-                      onProductUpdated({ ...product, perfect_together: ptPicks })
+                      onProductUpdated({ ...product, perfect_together: ptPicks.map(x => x.id) })
                     })()
                   }}
                   style={{
@@ -1494,13 +1507,23 @@ export default function ProductDetailModal({
                 <button
                   type="button"
                   disabled={ptSaving}
-                  onClick={() =>
-                    setPtPicks(
-                      Array.isArray(productRef.current.perfect_together)
-                        ? productRef.current.perfect_together.map((x: unknown) => String(x))
+                  onClick={() => {
+                    setPtPicks([])
+                    void (async () => {
+                      const raw = productRef.current.perfect_together
+                      const ids = Array.isArray(raw)
+                        ? (raw as unknown[]).map((x) => String(x).trim()).filter(Boolean)
                         : []
-                    )
-                  }
+                      if (ids.length === 0) return
+                      const { data, error } = await supabase.from('products').select('id, name').in('id', ids)
+                      if (error || !data) {
+                        setPtPicks(ids.map((id) => ({ id, name: id })))
+                        return
+                      }
+                      const byId = new Map((data as { id: string; name: string }[]).map((r) => [r.id, r.name]))
+                      setPtPicks(ids.map((id) => ({ id, name: String(byId.get(id) || id) })))
+                    })()
+                  }}
                   style={{
                     flex: 1,
                     background: 'rgba(255,255,255,0.06)',
