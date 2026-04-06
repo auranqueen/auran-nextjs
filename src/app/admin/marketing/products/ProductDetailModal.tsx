@@ -127,6 +127,8 @@ export default function ProductDetailModal({
       : ''
   )
   const [shareCopyPointsSaving, setShareCopyPointsSaving] = useState(false)
+  const [hormoneDraft, setHormoneDraft] = useState(String(product.hormone_timing ?? ''))
+  const [hormoneSaving, setHormoneSaving] = useState(false)
 
   const [earnPercent, setEarnPercent] = useState<number | ''>(product.earn_points == null ? '' : Number(product.earn_points))
   const [sharePoints, setSharePoints] = useState(Number(product.share_points ?? 0))
@@ -224,6 +226,8 @@ export default function ProductDetailModal({
         : ''
     )
     setShareCopyPointsSaving(false)
+    setHormoneDraft(String(product.hormone_timing ?? ''))
+    setHormoneSaving(false)
     setDirty({ thumb: false, basic: false, detail: false, points: false, flash: false })
     setModalTab('thumb')
   }, [product.id])
@@ -1115,6 +1119,86 @@ export default function ProductDetailModal({
                   }}
                   onChange={() => mark('detail', true)}
                 />
+              </div>
+            </div>
+
+            <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 16, background: 'rgba(255,255,255,0.03)' }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 8 }}>호르몬 주기별 케어 타이밍</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 8, lineHeight: 1.5 }}>
+                JSON 형식 예){' '}
+                {`{"menstrual":{"tip":"자극 없이 진정에 집중해요","recommend":"얇게 여러 번 레이어링"},"follicular":{"tip":"영양 흡수가 잘 되는 준비 기간이에요","recommend":"아침저녁 규칙적으로"},"ovulation":{"tip":"지금 쓰면 효과가 드라마틱해요","recommend":"평소보다 2겹 덧발라 보호"},"luteal":{"tip":"예비 트러블을 미리 잡아줘요","recommend":"저녁 루틴에 집중 도포"}}`}
+              </div>
+              <textarea
+                value={hormoneDraft}
+                onChange={(e) => setHormoneDraft(e.target.value)}
+                rows={4}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  background: '#121212',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  color: '#fff',
+                  fontSize: 12,
+                  resize: 'vertical' as const,
+                  fontFamily: 'inherit',
+                }}
+              />
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <button
+                  type="button"
+                  disabled={hormoneSaving}
+                  onClick={() => {
+                    void (async () => {
+                      setHormoneSaving(true)
+                      const { error } = await supabase
+                        .from('products')
+                        .update({ hormone_timing: hormoneDraft })
+                        .eq('id', product.id)
+                      setHormoneSaving(false)
+                      if (error) {
+                        onToast('저장 실패: ' + error.message)
+                        return
+                      }
+                      onToast('✅ 호르몬 타이밍 저장됨')
+                      onProductUpdated({ ...product, hormone_timing: hormoneDraft })
+                    })()
+                  }}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(201,168,76,0.2)',
+                    border: '1px solid rgba(201,168,76,0.45)',
+                    borderRadius: 10,
+                    padding: '12px 0',
+                    color: '#c9a84c',
+                    fontSize: 13,
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    opacity: hormoneSaving ? 0.6 : 1,
+                  }}
+                >
+                  {hormoneSaving ? '저장 중...' : '저장'}
+                </button>
+                <button
+                  type="button"
+                  disabled={hormoneSaving}
+                  onClick={() => setHormoneDraft(String(productRef.current.hormone_timing ?? ''))}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 10,
+                    padding: '12px 0',
+                    color: 'rgba(255,255,255,0.75)',
+                    fontSize: 13,
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    opacity: hormoneSaving ? 0.6 : 1,
+                  }}
+                >
+                  취소
+                </button>
               </div>
             </div>
 
