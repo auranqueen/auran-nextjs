@@ -24,7 +24,7 @@ function tabLabel(t: TabKey, dirty: boolean) {
     thumb: '📷 썸네일',
     basic: '📝 기본정보',
     detail: '🖼 상세내용',
-    points: '💰 포인트',
+    points: '💰 토스트',
     flash: '⚡ 타임세일',
   }
   return `${dirty ? '🔴 ' : ''}${labels[t]}`
@@ -410,7 +410,7 @@ export default function ProductDetailModal({
       return
     }
     mark('points', false)
-    onToast('✅ 포인트 설정 저장됨')
+    onToast('✅ 토스트 설정이 적용되었습니다')
     onProductUpdated({
       ...product,
       earn_points: Math.max(0, Math.min(100, Math.floor(Number(earnPercent) || 0))),
@@ -1690,7 +1690,7 @@ export default function ProductDetailModal({
               />{' '}
               T
             </label>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', marginBottom: 8 }}>리뷰 포인트</div>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', marginBottom: 8 }}>리뷰 토스트</div>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
               텍스트 리뷰
               <input

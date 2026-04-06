@@ -44,6 +44,9 @@ interface Product {
   perfect_together?: string[] | null
   hormone_timing?: string | null
   share_copy_points?: string[] | null
+  review_points_text?: number | null
+  review_points_photo?: number | null
+  review_points_video?: number | null
   thumb_images: string[]
   gallery_imgs?: string[]
   storage_thumb_url: string
@@ -467,6 +470,16 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   )
   const pointRate = Number.isFinite(pointRateRaw) && pointRateRaw > 0 ? Math.min(100, Math.max(0, pointRateRaw)) : 1
   const expectedPurchasePts = Math.floor((price * pointRate) / 100)
+  const rt = product.review_points_text
+  const rp = product.review_points_photo
+  const rv = product.review_points_video
+  const hasAllReviewToastNums =
+    rt != null &&
+    rp != null &&
+    rv != null &&
+    Number.isFinite(Number(rt)) &&
+    Number.isFinite(Number(rp)) &&
+    Number.isFinite(Number(rv))
   const detailHtml = ((product as any).detail_html || (product as any).detail_content) ? String((product as any).detail_html || (product as any).detail_content || '') : ''
   const total = (price * qty).toLocaleString() + '원'
   const shareLinkWithRef =
@@ -1724,7 +1737,20 @@ export default function ProductDetailClient({ product }: { product: Product }) {
                 lineHeight: 1.55,
               }}
             >
-              토스트 적립 안내: 기본 등록 <span style={{ color: GOLD }}>200T</span>
+              토스트 적립 안내:{' '}
+              {hasAllReviewToastNums ? (
+                <>
+                  기본 등록 <span style={{ color: GOLD }}>{Number(rt)}T</span>
+                  {' · '}
+                  포토 +<span style={{ color: GOLD }}>{Number(rp)}T</span>
+                  {' · '}
+                  영상 +<span style={{ color: GOLD }}>{Number(rv)}T</span>
+                </>
+              ) : (
+                <>
+                  기본 등록 <span style={{ color: GOLD }}>{product.review_points_text ?? 200}T</span>
+                </>
+              )}
               {writeSkinType ? <span> + 피부타입 <span style={{ color: GOLD }}>+50T</span></span> : null}
               {writeEffectTags.length > 0 ? (
                 <span>
