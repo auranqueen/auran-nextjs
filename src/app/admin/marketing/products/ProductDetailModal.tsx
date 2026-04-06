@@ -46,7 +46,7 @@ export default function ProductDetailModal({
   product: any
   tab: 'pending' | 'active' | 'rejected'
   busyId: string | null
-  brands: { id: string; name: string; origin_country?: string | null }[]
+  brands: { id: string; name: string; origin_country?: string | null; default_earn_points?: number | null }[]
   onClose: () => void
   onApprove: (id: string) => void
   onReject: (id: string) => void
@@ -397,6 +397,7 @@ export default function ProductDetailModal({
       .from('products')
       .update({
         earn_points: Math.max(0, Math.min(100, Math.floor(Number(earnPercent) || 0))),
+        earn_points_percent: Math.max(0, Math.min(100, Math.floor(Number(earnPercent) || 0))),
         share_points: Math.max(0, Math.floor(sharePoints)),
         review_points_text: Math.max(0, Math.floor(textReviewPts)),
         review_points_photo: Math.max(0, Math.floor(photoPoints)),
@@ -413,6 +414,7 @@ export default function ProductDetailModal({
     onProductUpdated({
       ...product,
       earn_points: Math.max(0, Math.min(100, Math.floor(Number(earnPercent) || 0))),
+      earn_points_percent: Math.max(0, Math.min(100, Math.floor(Number(earnPercent) || 0))),
       share_points: Math.max(0, Math.floor(sharePoints)),
       review_points_text: Math.max(0, Math.floor(textReviewPts)),
       review_points_photo: Math.max(0, Math.floor(photoPoints)),
@@ -1634,6 +1636,9 @@ export default function ProductDetailModal({
             }}
           >
             <div style={{ fontSize: 15, fontWeight: 900, color: '#fff', marginBottom: 14 }}>🍞 토스트 설정</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>
+              브랜드 기본값: {brands.find((x) => x.id === brandId)?.default_earn_points ?? 0}% (미입력시 자동 적용)
+            </div>
             <label style={{ display: 'block', marginBottom: 12, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
               구매 적립 토스트 — 구매금액의{' '}
               <input

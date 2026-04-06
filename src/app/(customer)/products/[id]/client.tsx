@@ -460,7 +460,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const thumbImgs = product.thumb_images ?? []
   const galleryImgs = product.gallery_imgs ?? []
   const thumbUrl = product.storage_thumb_url || product.thumb_img || thumbImgs[0] || galleryImgs[0] || ''
-  const pointRateRaw = Number((product as any).earn_points_percent ?? (product as any).earn_points ?? 0)
+  const pointRateRaw = Number(
+    (product as any).earn_points_percent > 0
+      ? (product as any).earn_points_percent
+      : ((product.brands as any)?.default_earn_points ?? 0)
+  )
   const pointRate = Number.isFinite(pointRateRaw) && pointRateRaw > 0 ? Math.min(100, Math.max(0, pointRateRaw)) : 1
   const expectedPurchasePts = Math.floor((price * pointRate) / 100)
   const detailHtml = ((product as any).detail_html || (product as any).detail_content) ? String((product as any).detail_html || (product as any).detail_content || '') : ''
@@ -1074,7 +1078,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           </div>
         )}
         {hasValidPrice ? (
-          <div style={{ fontSize: 11, color: GOLD, marginBottom: 10 }}>이 상품 구매시 {expectedPurchasePts.toLocaleString()}P 적립</div>
+          <div style={{ fontSize: 11, color: GOLD, marginBottom: 10 }}>이 상품 구매시 {expectedPurchasePts.toLocaleString()}T 적립</div>
         ) : null}
 
         <div style={{ display: 'flex', flexDirection: 'row', gap: 12, alignItems: 'center', flexWrap: 'wrap' as const, marginBottom: 10, fontSize: 11 }}>

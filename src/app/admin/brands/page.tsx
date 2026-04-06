@@ -38,6 +38,7 @@ type BRow = {
   reject_reason?: string | null
   user_id?: string | null
   status?: string | null
+  default_earn_points?: number | null
 }
 
 type DetailForm = {
@@ -108,6 +109,9 @@ export default function AdminBrandsPage() {
   const [detailProducts, setDetailProducts] = useState<ProductRow[]>([])
   const [detailProductsLoading, setDetailProductsLoading] = useState(false)
   const [productBusyId, setProductBusyId] = useState<string | null>(null)
+  const [brandEarnEditId, setBrandEarnEditId] = useState<string | null>(null)
+  const [brandEarnDraft, setBrandEarnDraft] = useState('')
+  const [brandEarnBusyId, setBrandEarnBusyId] = useState<string | null>(null)
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -119,7 +123,7 @@ export default function AdminBrandsPage() {
     const { data: bs, error } = await supabase
       .from('brands')
       .select(
-        'id,name,brand_name_kr,origin_country,origin,description,manager_name,manager_title,manager_phone,contact,address,biz_no,ceo_name,bank_name,bank_account,bank_holder,extra_request,product_categories,settlement_cycle,price_range_min,price_range_max,promo_condition,applied_at,created_at,biz_doc_url,apply_status,approved_at,reject_reason,user_id,status'
+        'id,name,brand_name_kr,origin_country,origin,description,manager_name,manager_title,manager_phone,contact,address,biz_no,ceo_name,bank_name,bank_account,bank_holder,extra_request,product_categories,settlement_cycle,price_range_min,price_range_max,promo_condition,applied_at,created_at,biz_doc_url,apply_status,approved_at,reject_reason,user_id,status,default_earn_points'
       )
       .not('user_id', 'is', null)
       .order('created_at', { ascending: false })
@@ -551,6 +555,96 @@ export default function AdminBrandsPage() {
                         납품단가 범위: {prMin} ~ {prMax}
                       </div>
                       <div>추가증정 조건: {b.promo_condition?.trim() ? b.promo_condition : '—'}</div>
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => {
+                          setBrandEarnEditId(b.id)
+                          setBrandEarnDraft(String(b.default_earn_points ?? 0))
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            setBrandEarnEditId(b.id)
+                            setBrandEarnDraft(String(b.default_earn_points ?? 0))
+                          }
+                        }}
+                        style={{ marginTop: 6, cursor: 'pointer' }}
+                      >
+                        <span style={{ color: 'var(--text2)' }}>구매 토스트 적립률</span>
+                        {brandEarnEditId === b.id ? (
+                          <span onClick={(e) => e.stopPropagation()} style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 4 }}>
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              value={brandEarnDraft}
+                              onChange={(e) => setBrandEarnDraft(e.target.value)}
+                              style={{
+                                width: 56,
+                                padding: '4px 6px',
+                                borderRadius: 6,
+                                border: '1px solid var(--border)',
+                                background: 'var(--bg)',
+                                color: 'var(--text)',
+                                fontSize: 11,
+                              }}
+                            />
+                            <span style={{ color: 'var(--text2)' }}>%</span>
+                            <button
+                              type="button"
+                              disabled={brandEarnBusyId === b.id}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                void (async () => {
+                                  const v = Math.max(0, Math.min(100, Math.floor(Number(brandEarnDraft) || 0)))
+                                  setBrandEarnBusyId(b.id)
+                                  const { error } = await supabase.from('brands').update({ default_earn_points: v }).eq('id', b.id)
+                                  setBrandEarnBusyId(null)
+                                  if (error) {
+                                    showToast('저장 실패: ' + error.message)
+                                    return
+                                  }
+                                  setRows((prev) => prev.map((r) => (r.id === b.id ? { ...r, default_earn_points: v } : r)))
+                                  setBrandEarnEditId(null)
+                                  showToast('저장됨')
+                                })()
+                              }}
+                              style={{
+                                fontSize: 10,
+                                padding: '4px 8px',
+                                borderRadius: 6,
+                                border: `1px solid ${ACC}`,
+                                background: 'rgba(123,94,167,0.2)',
+                                color: ACC,
+                                cursor: brandEarnBusyId === b.id ? 'wait' : 'pointer',
+                              }}
+                            >
+                              저장
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setBrandEarnEditId(null)
+                              }}
+                              style={{
+                                fontSize: 10,
+                                padding: '4px 8px',
+                                borderRadius: 6,
+                                border: '1px solid var(--border)',
+                                background: 'transparent',
+                                color: 'var(--text2)',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              취소
+                            </button>
+                          </span>
+                        ) : (
+                          <span style={{ color: 'var(--text)', marginLeft: 6 }}>{b.default_earn_points ?? 0}%</span>
+                        )}
+                      </div>
                       <div style={{ color: 'var(--text3)', marginTop: 4 }}>신청일: {applied}</div>
                       {b.biz_doc_url ? (
                         <div style={{ marginTop: 6 }}>
