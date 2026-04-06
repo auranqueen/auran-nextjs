@@ -112,6 +112,16 @@ export default function ProductDetailModal({
   const [detailPreview, setDetailPreview] = useState(false)
   const [detailSaving, setDetailSaving] = useState(false)
 
+  const [keyIngredientsDraft, setKeyIngredientsDraft] = useState(String(product.key_ingredients ?? ''))
+  const [clinicalResultDraft, setClinicalResultDraft] = useState(String(product.clinical_result ?? ''))
+  const [keyIngredientsSaving, setKeyIngredientsSaving] = useState(false)
+  const [clinicalResultSaving, setClinicalResultSaving] = useState(false)
+  const [ptQuery, setPtQuery] = useState('')
+  const [ptResults, setPtResults] = useState<{ id: string; name: string }[]>([])
+  const [ptPicks, setPtPicks] = useState<string[]>([])
+  const [ptPickOpen, setPtPickOpen] = useState(false)
+  const [ptSaving, setPtSaving] = useState(false)
+
   const [earnPercent, setEarnPercent] = useState<number | ''>(product.earn_points == null ? '' : Number(product.earn_points))
   const [sharePoints, setSharePoints] = useState(Number(product.share_points ?? 0))
   const [textReviewPts, setTextReviewPts] = useState(Number(product.review_points_text ?? 0))
@@ -193,6 +203,15 @@ export default function ProductDetailModal({
     setIsGroupBuy(!!product.is_groupbuy)
     setGroupbuySaving(false)
     setTimesaleSaving(false)
+    setKeyIngredientsDraft(String(product.key_ingredients ?? ''))
+    setClinicalResultDraft(String(product.clinical_result ?? ''))
+    setPtPicks(Array.isArray(product.perfect_together) ? product.perfect_together.map((x: unknown) => String(x)) : [])
+    setPtQuery('')
+    setPtResults([])
+    setPtPickOpen(false)
+    setKeyIngredientsSaving(false)
+    setClinicalResultSaving(false)
+    setPtSaving(false)
     setDirty({ thumb: false, basic: false, detail: false, points: false, flash: false })
     setModalTab('thumb')
   }, [product.id])
@@ -209,6 +228,33 @@ export default function ProductDetailModal({
     onToastRef.current = onToast
     onProductUpdatedRef.current = onProductUpdated
   }, [onToast, onProductUpdated])
+
+  const debouncedPtSearch = useMemo(
+    () =>
+      debounce(async (q: string, pid: string) => {
+        const t = q.trim()
+        if (t.length < 1) {
+          setPtResults([])
+          return
+        }
+        const { data, error } = await supabase
+          .from('products')
+          .select('id, name')
+          .ilike('name', `%${t}%`)
+          .neq('id', pid)
+          .limit(12)
+        if (error) {
+          setPtResults([])
+          return
+        }
+        setPtResults((data as { id: string; name: string }[]) || [])
+      }, 220),
+    [supabase]
+  )
+
+  useEffect(() => {
+    debouncedPtSearch(ptQuery, product.id)
+  }, [ptQuery, product.id, debouncedPtSearch])
 
   const debouncedSaveNamePrice = useMemo(
     () =>
@@ -1057,6 +1103,321 @@ export default function ProductDetailModal({
                   }}
                   onChange={() => mark('detail', true)}
                 />
+              </div>
+            </div>
+
+            <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 16, background: 'rgba(255,255,255,0.03)' }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 10 }}>주요 성분 (KEY INGREDIENTS)</div>
+              <textarea
+                value={keyIngredientsDraft}
+                onChange={e => setKeyIngredientsDraft(e.target.value)}
+                rows={4}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  background: '#121212',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  color: '#fff',
+                  fontSize: 12,
+                  resize: 'vertical' as const,
+                  fontFamily: 'inherit',
+                }}
+              />
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <button
+                  type="button"
+                  disabled={keyIngredientsSaving}
+                  onClick={() => {
+                    void (async () => {
+                      setKeyIngredientsSaving(true)
+                      const { error } = await supabase.from('products').update({ key_ingredients: keyIngredientsDraft }).eq('id', product.id)
+                      setKeyIngredientsSaving(false)
+                      if (error) {
+                        onToast('저장 실패: ' + error.message)
+                        return
+                      }
+                      onToast('✅ 주요 성분 저장됨')
+                      onProductUpdated({ ...product, key_ingredients: keyIngredientsDraft })
+                    })()
+                  }}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(201,168,76,0.2)',
+                    border: '1px solid rgba(201,168,76,0.45)',
+                    borderRadius: 10,
+                    padding: '12px 0',
+                    color: '#c9a84c',
+                    fontSize: 13,
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    opacity: keyIngredientsSaving ? 0.6 : 1,
+                  }}
+                >
+                  {keyIngredientsSaving ? '저장 중...' : '저장'}
+                </button>
+                <button
+                  type="button"
+                  disabled={keyIngredientsSaving}
+                  onClick={() => setKeyIngredientsDraft(String(productRef.current.key_ingredients ?? ''))}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 10,
+                    padding: '12px 0',
+                    color: 'rgba(255,255,255,0.75)',
+                    fontSize: 13,
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    opacity: keyIngredientsSaving ? 0.6 : 1,
+                  }}
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+
+            <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 16, background: 'rgba(255,255,255,0.03)' }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 8 }}>임상 결과 (CLINICAL RESULT)</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 8, lineHeight: 1.5 }}>
+                라벨 숫자% 형식, 줄바꿈 구분 예) 피부 수분도 개선 94%
+              </div>
+              <textarea
+                value={clinicalResultDraft}
+                onChange={e => setClinicalResultDraft(e.target.value)}
+                rows={4}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  background: '#121212',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  color: '#fff',
+                  fontSize: 12,
+                  resize: 'vertical' as const,
+                  fontFamily: 'inherit',
+                }}
+              />
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <button
+                  type="button"
+                  disabled={clinicalResultSaving}
+                  onClick={() => {
+                    void (async () => {
+                      setClinicalResultSaving(true)
+                      const { error } = await supabase.from('products').update({ clinical_result: clinicalResultDraft }).eq('id', product.id)
+                      setClinicalResultSaving(false)
+                      if (error) {
+                        onToast('저장 실패: ' + error.message)
+                        return
+                      }
+                      onToast('✅ 임상 결과 저장됨')
+                      onProductUpdated({ ...product, clinical_result: clinicalResultDraft })
+                    })()
+                  }}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(201,168,76,0.2)',
+                    border: '1px solid rgba(201,168,76,0.45)',
+                    borderRadius: 10,
+                    padding: '12px 0',
+                    color: '#c9a84c',
+                    fontSize: 13,
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    opacity: clinicalResultSaving ? 0.6 : 1,
+                  }}
+                >
+                  {clinicalResultSaving ? '저장 중...' : '저장'}
+                </button>
+                <button
+                  type="button"
+                  disabled={clinicalResultSaving}
+                  onClick={() => setClinicalResultDraft(String(productRef.current.clinical_result ?? ''))}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 10,
+                    padding: '12px 0',
+                    color: 'rgba(255,255,255,0.75)',
+                    fontSize: 13,
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    opacity: clinicalResultSaving ? 0.6 : 1,
+                  }}
+                >
+                  취소
+                </button>
+              </div>
+            </div>
+
+            <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 14, padding: 16, background: 'rgba(255,255,255,0.03)', position: 'relative' }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 10 }}>같이 쓰면 좋아요 (PERFECT TOGETHER)</div>
+              <input
+                value={ptQuery}
+                onChange={e => {
+                  setPtQuery(e.target.value)
+                  setPtPickOpen(true)
+                }}
+                onFocus={() => setPtPickOpen(true)}
+                placeholder="제품명 검색"
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  background: '#121212',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  color: '#fff',
+                  fontSize: 12,
+                  fontFamily: 'inherit',
+                }}
+              />
+              {ptPickOpen && ptResults.length > 0 ? (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: 16,
+                    right: 16,
+                    zIndex: 20,
+                    marginTop: 4,
+                    maxHeight: 200,
+                    overflowY: 'auto',
+                    background: '#1a1a1a',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 10,
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+                  }}
+                >
+                  {ptResults.map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => {
+                        setPtPicks(prev => (prev.includes(p.id) ? prev : [...prev, p.id]))
+                        setPtPickOpen(false)
+                        setPtQuery('')
+                        setPtResults([])
+                      }}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '10px 12px',
+                        border: 'none',
+                        borderBottom: '1px solid rgba(255,255,255,0.06)',
+                        background: 'transparent',
+                        color: '#e8e4dc',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                {ptPicks.map(id => (
+                  <span
+                    key={id}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '6px 10px',
+                      borderRadius: 999,
+                      background: 'rgba(201,168,76,0.12)',
+                      border: '1px solid rgba(201,168,76,0.35)',
+                      fontSize: 11,
+                      color: '#c9a84c',
+                    }}
+                  >
+                    <span style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={id}>
+                      {id.slice(0, 8)}…
+                    </span>
+                    <button
+                      type="button"
+                      aria-label="제거"
+                      onClick={() => setPtPicks(prev => prev.filter(x => x !== id))}
+                      style={{
+                        border: 'none',
+                        background: 'transparent',
+                        color: '#c9a84c',
+                        cursor: 'pointer',
+                        fontSize: 14,
+                        lineHeight: 1,
+                        padding: 0,
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                <button
+                  type="button"
+                  disabled={ptSaving}
+                  onClick={() => {
+                    void (async () => {
+                      setPtSaving(true)
+                      const { error } = await supabase.from('products').update({ perfect_together: ptPicks }).eq('id', product.id)
+                      setPtSaving(false)
+                      if (error) {
+                        onToast('저장 실패: ' + error.message)
+                        return
+                      }
+                      onToast('✅ 같이 쓰면 좋아요 저장됨')
+                      onProductUpdated({ ...product, perfect_together: ptPicks })
+                    })()
+                  }}
+                  style={{
+                    flex: 1,
+                    background: 'rgba(201,168,76,0.2)',
+                    border: '1px solid rgba(201,168,76,0.45)',
+                    borderRadius: 10,
+                    padding: '12px 0',
+                    color: '#c9a84c',
+                    fontSize: 13,
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    opacity: ptSaving ? 0.6 : 1,
+                  }}
+                >
+                  {ptSaving ? '저장 중...' : '저장'}
+                </button>
+                <button
+                  type="button"
+                  disabled={ptSaving}
+                  onClick={() =>
+                    setPtPicks(
+                      Array.isArray(productRef.current.perfect_together)
+                        ? productRef.current.perfect_together.map((x: unknown) => String(x))
+                        : []
+                    )
+                  }
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    borderRadius: 10,
+                    padding: '12px 0',
+                    color: 'rgba(255,255,255,0.75)',
+                    fontSize: 13,
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    opacity: ptSaving ? 0.6 : 1,
+                  }}
+                >
+                  취소
+                </button>
               </div>
             </div>
 
