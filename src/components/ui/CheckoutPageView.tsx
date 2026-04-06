@@ -302,10 +302,6 @@ export default function CheckoutPageView({
                   <span>+₩{extraShippingFee.toLocaleString()}</span>
                 </div>
               )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: 14, fontWeight: 900 }}>
-                <span>최종 결제 필요금액</span>
-                <span>₩{needCharge.toLocaleString()}</span>
-              </div>
             </div>
 
             <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)' }}>
