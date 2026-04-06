@@ -85,7 +85,7 @@ export default function MyPointPage() {
   const filteredRows = useMemo(() => {
     const pointEarn = rows
       .filter((r) => Number(r.amount) > 0)
-      .map((r) => ({ icon: '🍞', desc: r.description || '토스트 적립', amountText: `+${Math.abs(Number(r.amount)).toLocaleString()}T`, amountColor: '#6dba6d', created_at: r.created_at }))
+      .map((r) => ({ icon: '🍞', desc: (r.description || '토스트 적립').replace(/포인트/g, '토스트'), amountText: `+${Math.abs(Number(r.amount)).toLocaleString()}T`, amountColor: '#6dba6d', created_at: r.created_at }))
     const pointSpend = rows
       .filter((r) => Number(r.amount) < 0)
       .map((r) => ({ icon: '🍞', desc: '토스트 사용', amountText: `-${Math.abs(Number(r.amount)).toLocaleString()}T`, amountColor: 'rgba(220,80,80,0.8)', created_at: r.created_at }))
@@ -109,8 +109,8 @@ export default function MyPointPage() {
       <header style={{ position: 'sticky', top: 0, zIndex: 20, display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'rgba(13,11,9,0.95)', borderBottom: CARD_BORDER }}>
         <button onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: '#fff', fontSize: 18, cursor: 'pointer' }}>←</button>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 17, fontWeight: 400 }}>토스트 · AURAN PAY 내역</div>
-          <div style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,255,255,0.3)' }}>적립, 사용, 충전 내역을 확인해요</div>
+          <div style={{ fontSize: 17, fontWeight: 400 }}>토스트(T)</div>
+          <div style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,255,255,0.3)' }}>토스트 적립·사용·충전 내역을 확인해요</div>
         </div>
         <button
           onClick={() => router.push('/wallet')}
@@ -125,11 +125,13 @@ export default function MyPointPage() {
           <div style={{ display: 'grid', gridTemplateColumns: chargeBalance > 0 ? '1fr 1fr' : '1fr', gap: 10 }}>
             <div>
               <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 8 }}>토스트 잔액</div>
-              <div style={{ fontSize: 18, color: '#c4a7e7', fontWeight: 400 }}>{Number(point || 0).toLocaleString()}T</div>
+              <div style={{ fontSize: 18, color: '#c4a7e7', fontWeight: 400 }}>
+                {(Number(point || 0) + Math.floor(Number(chargeBalance || 0) / 100)).toLocaleString()}T
+              </div>
             </div>
             {chargeBalance > 0 ? (
               <div>
-                <div style={{ fontSize: 10, color: '#9b7ec8', marginBottom: 8 }}>AURAN PAY</div>
+                <div style={{ fontSize: 10, color: '#9b7ec8', marginBottom: 8 }}>AURAN PAY (원)</div>
                 <div style={{ fontSize: 18, color: '#9b7ec8', fontWeight: 400 }}>₩{Number(chargeBalance || 0).toLocaleString()}</div>
               </div>
             ) : null}
@@ -138,7 +140,7 @@ export default function MyPointPage() {
 
         {isDecember && expiringPoints > 0 ? (
           <section style={{ background: 'rgba(123,94,167,0.14)', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 12, padding: '10px 12px', fontSize: 12, color: '#c7b0ea', marginBottom: 10 }}>
-            {expiringPoints.toLocaleString()}T가 12월 31일 소멸 예정이에요
+            {expiringPoints.toLocaleString()}T 토스트가 12월 31일 소멸 예정이에요
           </section>
         ) : null}
 

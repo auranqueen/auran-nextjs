@@ -50,24 +50,19 @@ type Props = {
   setPayWithToast: (v: boolean) => void
   toastDraftWon: number | null
   setToastDraftWon: (v: number | null) => void
-  goodsAfterPoints: number
+  afterCoupon: number
   payWithOran: boolean
   setPayWithOran: (v: boolean) => void
   oranDraftWon: number | null
   setOranDraftWon: (v: number | null) => void
   oranUsed: number
   toastUsed: number
-  pointUsed: number
   points: number
   balance: number
   toastRate: number
-  usePoints: boolean
-  setUsePoints: (v: boolean) => void
-  pointInput: number
-  setPointInput: (v: number) => void
-  maxPointsUsable: number
-  maxPointRate: number
   needCharge: number
+  groupbuyDiscount?: number
+  timesaleDiscount?: number
   paying: boolean
   showChargeOption: boolean
   chargeSheetOpen: boolean
@@ -113,24 +108,19 @@ export default function CheckoutPageView({
   setPayWithToast,
   toastDraftWon,
   setToastDraftWon,
-  goodsAfterPoints,
+  afterCoupon,
   payWithOran,
   setPayWithOran,
   oranDraftWon,
   setOranDraftWon,
   oranUsed,
   toastUsed,
-  pointUsed,
   points,
   balance,
   toastRate,
-  usePoints,
-  setUsePoints,
-  pointInput,
-  setPointInput,
-  maxPointsUsable,
-  maxPointRate,
   needCharge,
+  groupbuyDiscount = 0,
+  timesaleDiscount = 0,
   paying,
   showChargeOption,
   chargeSheetOpen,
@@ -147,9 +137,10 @@ export default function CheckoutPageView({
   onPayBankTransfer,
   onChargeKrw,
 }: Props) {
-  const toastHalfLocal = Math.min(balance, Math.floor((goodsAfterPoints * 1) / 2))
+  const toastHalfLocal = Math.min(balance, Math.floor((afterCoupon * 1) / 2))
   const remBalAfterToast = Math.max(0, balance - toastUsed)
-  const oranCapLocal = Math.min(remBalAfterToast, Math.max(0, goodsAfterPoints - toastUsed))
+  const oranCapLocal = Math.min(remBalAfterToast, Math.max(0, afterCoupon - toastUsed))
+  const toastTBalance = points + Math.floor(balance / Math.max(1, toastRate))
   const [useBankTransfer, setUseBankTransfer] = useState(false)
   const [receiptOn, setReceiptOn] = useState(true)
   const [receiptNum, setReceiptNum] = useState('')
@@ -190,6 +181,23 @@ export default function CheckoutPageView({
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
               {orderedProducts.map((p, idx) => {
                 const lineQty = qtyList[idx] ?? qtyList[0] ?? 1
+                const now = new Date()
+                const retail = toNum(p.retail_price)
+                const sale = toNum(p.sale_price)
+                let showPromo = false
+                let lineUnit = retail
+                if (p.is_timesale && p.timesale_ends_at) {
+                  const end = new Date(p.timesale_ends_at)
+                  if (end > now) {
+                    showPromo = true
+                    lineUnit = sale
+                  }
+                } else if (p.is_groupbuy) {
+                  showPromo = true
+                  lineUnit = sale
+                }
+                const lineTotal = lineUnit * lineQty
+                const retailLine = retail * lineQty
                 return (
                   <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, padding: 10, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
@@ -211,7 +219,16 @@ export default function CheckoutPageView({
                         {p.name} · {lineQty}개
                       </div>
                     </div>
-                    <div style={{ color: 'var(--gold)', fontSize: 12, fontWeight: 800, flexShrink: 0 }}>₩{(toNum(p.retail_price) * lineQty).toLocaleString()}</div>
+                    <div style={{ color: 'var(--gold)', fontSize: 12, fontWeight: 800, flexShrink: 0, textAlign: 'right' }}>
+                      {showPromo && retailLine > lineTotal ? (
+                        <span>
+                          <span style={{ textDecoration: 'line-through', color: 'rgba(255,255,255,0.45)', marginRight: 6 }}>₩{retailLine.toLocaleString()}</span>
+                          ₩{lineTotal.toLocaleString()}
+                        </span>
+                      ) : (
+                        <>₩{lineTotal.toLocaleString()}</>
+                      )}
+                    </div>
                   </div>
                 )
               })}
@@ -232,6 +249,18 @@ export default function CheckoutPageView({
                 <span>주문금액</span>
                 <span>₩{subtotal.toLocaleString()}</span>
               </div>
+              {timesaleDiscount > 0 ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#7ec8e8', fontSize: 13 }}>
+                  <span>타임세일 할인</span>
+                  <span>-₩{timesaleDiscount.toLocaleString()}</span>
+                </div>
+              ) : null}
+              {groupbuyDiscount > 0 ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#9ecfff', fontSize: 13 }}>
+                  <span>공구 할인</span>
+                  <span>-₩{groupbuyDiscount.toLocaleString()}</span>
+                </div>
+              ) : null}
               {isFounder && founderDiscountAmt > 0 ? (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#C9A96E', fontSize: 13 }}>
                   <span>👑 Founders 2% 할인</span>
@@ -252,6 +281,12 @@ export default function CheckoutPageView({
                   <span>-₩{couponDiscount.toLocaleString()}</span>
                 </div>
               )}
+              {toastUsed > 0 ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#d4b8f0', fontSize: 13 }}>
+                  <span>🍞 토스트 차감</span>
+                  <span>-₩{toastUsed.toLocaleString()}</span>
+                </div>
+              ) : null}
               {freeShippingThreshold > 0 && (
                 <div style={{ marginBottom: 8, fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>
                   ₩{freeShippingThreshold.toLocaleString()} 이상 주문 시 기본 배송비 무료 · 제주·울릉 등 추가 배송비는 별도
@@ -335,38 +370,18 @@ export default function CheckoutPageView({
               </div>
 
               <div style={{ marginBottom: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: usePoints ? 8 : 0 }}>
-                  <span style={{ fontSize: 12, color: '#fff' }}>💎 포인트 사용 · 보유 {points.toLocaleString()}P</span>
-                  <button
-                    type="button"
-                    onClick={() => setUsePoints(!usePoints)}
-                    style={{ width: 36, height: 20, borderRadius: 10, border: 'none', background: usePoints ? '#7B5EA7' : 'rgba(255,255,255,0.12)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}
-                  >
-                    <span style={{ position: 'absolute', width: 16, height: 16, borderRadius: '50%', background: '#fff', top: 2, left: usePoints ? 18 : 2, transition: 'left 0.2s' }} />
-                  </button>
-                </div>
-                {usePoints && (
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    value={String(pointInput)}
-                    onChange={(e) => setPointInput(Math.max(0, Math.floor(Number(e.target.value.replace(/\D/g, '') || 0))))}
-                    style={{ width: '100%', boxSizing: 'border-box', marginTop: 4, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 10px', color: '#fff', fontSize: 12 }}
-                  />
-                )}
-                {usePoints && <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>최대 {maxPointsUsable.toLocaleString()}P ({maxPointRate}% 한도)</div>}
-              </div>
-
-              <div style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: payWithToast ? 8 : 0 }}>
-                  <span style={{ fontSize: 12, color: '#fff' }}>
-                    🍞 토스트 · 보유 {Math.floor(balance / Math.max(1, toastRate)).toLocaleString()}T · ₩{balance.toLocaleString()}
-                  </span>
+                  <span style={{ fontSize: 12, color: '#fff' }}>🍞 토스트 · 보유 {toastTBalance.toLocaleString()}T</span>
                   <button
                     type="button"
                     onClick={() => {
                       const next = !payWithToast
-                      if (next) setToastDraftWon(null)
+                      if (next) {
+                        const half = Math.min(balance, Math.floor((afterCoupon * 1) / 2))
+                        setToastDraftWon(half)
+                      } else {
+                        setToastDraftWon(null)
+                      }
                       setPayWithToast(next)
                     }}
                     style={{ width: 36, height: 20, borderRadius: 10, border: 'none', background: payWithToast ? '#7B5EA7' : 'rgba(255,255,255,0.12)', cursor: 'pointer', position: 'relative', transition: 'background 0.2s' }}

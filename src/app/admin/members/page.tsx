@@ -300,14 +300,14 @@ export default function AdminMembersPage() {
                     fontSize: 11,
                     padding: '4px 8px',
                     borderRadius: 999,
-                    border: '1px solid rgba(201,168,110,0.35)',
-                    background: m.is_founder ? 'rgba(201,168,110,0.18)' : 'rgba(255,255,255,0.06)',
-                    color: m.is_founder ? '#c9a84c' : 'rgba(255,255,255,0.45)',
+                    border: m.is_founder ? '1px solid rgba(201,169,110,0.55)' : '1px solid rgba(255,255,255,0.12)',
+                    background: m.is_founder ? 'rgba(201,169,110,0.2)' : 'rgba(255,255,255,0.04)',
+                    color: m.is_founder ? '#C9A96E' : 'rgba(255,255,255,0.38)',
                     fontWeight: 900,
                     cursor: 'pointer',
                   }}
                 >
-                  {m.is_founder ? '👑 Founders' : 'Founders 부여'}
+                  {m.is_founder ? '👑 Founders' : '미부여'}
                 </button>
                 <div style={{ fontSize: 10, padding: '4px 8px', borderRadius: 999, background: m.status === 'suspended' ? 'rgba(217,79,79,0.12)' : 'rgba(76,173,126,0.12)', border: '1px solid rgba(255,255,255,0.10)', color: m.status === 'suspended' ? '#d94f4f' : '#4cad7e', fontWeight: 900 }}>
                   {m.status}

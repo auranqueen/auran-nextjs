@@ -54,8 +54,6 @@ function CheckoutPageInner() {
   const [balance, setBalance] = useState(0)
   const [points, setPoints] = useState(0)
   const [products, setProducts] = useState<any[]>([])
-  const [usePoints, setUsePoints] = useState(true)
-  const [pointInput, setPointInput] = useState(0)
   const [paying, setPaying] = useState(false)
   const [toast, setToast] = useState('')
   const [chargeSheetOpen, setChargeSheetOpen] = useState(false)
@@ -83,7 +81,6 @@ function CheckoutPageInner() {
 
   const toastRate = getSettingNum('toast', 'exchange_rate', 100)
   const maxCouponPct = getSettingNum('coupon', 'max_percent_discount', 70)
-  const maxPointRate = getSettingNum('checkout', 'point_max_ratio', 20) || getSettingNum('toast', 'point_max_usage_rate', 20)
   const showChargeOption = getSettingNum('checkout', 'show_charge_option', 1) === 1
   const minOrderAmount = getSettingNum('checkout', 'min_order_amount', 0)
   const freeShippingThreshold = getSettingNum('shipping', 'free_shipping_threshold', 50000)
@@ -226,6 +223,24 @@ function CheckoutPageInner() {
     [orderedProducts, qtyList]
   )
 
+  const { groupbuyDiscount, timesaleDiscount } = useMemo(() => {
+    let gb = 0
+    let ts = 0
+    const now = new Date()
+    orderedProducts.forEach((p, i) => {
+      const q = qtyList[i] ?? qtyList[0] ?? 1
+      const retail = toNum(p.retail_price)
+      const sale = toNum(p.sale_price)
+      if (p.is_timesale && p.timesale_ends_at) {
+        const end = new Date(p.timesale_ends_at)
+        if (end > now && retail > sale) ts += (retail - sale) * q
+      } else if (p.is_groupbuy && retail > sale) {
+        gb += (retail - sale) * q
+      }
+    })
+    return { groupbuyDiscount: gb, timesaleDiscount: ts }
+  }, [orderedProducts, qtyList])
+
   useEffect(() => {
     const addr = String(address || '')
     const basic = subtotal >= freeShippingThreshold ? 0 : Math.max(0, Math.floor(basicShippingFeeCfg))
@@ -259,26 +274,15 @@ function CheckoutPageInner() {
   }, [selectedRow, afterGrade, orderLines, authUid, maxCouponPct])
 
   const afterCoupon = Math.max(0, afterGrade - couponDiscount)
-  const maxPointsUsable = useMemo(() => Math.min(points, Math.floor((afterCoupon * maxPointRate) / 100)), [points, afterCoupon, maxPointRate])
-  const pointUsed = useMemo(() => {
-    if (!usePoints) return 0
-    const input = Math.max(0, Math.floor(pointInput || 0))
-    return Math.min(maxPointsUsable, input, afterCoupon)
-  }, [usePoints, pointInput, maxPointsUsable, afterCoupon])
-  const goodsAfterPoints = Math.max(0, afterCoupon - pointUsed)
-  const toastHalf = Math.min(balance, Math.floor((goodsAfterPoints * 1) / 2))
-  const toastUsed = payWithToast ? Math.min(balance, goodsAfterPoints, toastDraftWon ?? toastHalf) : 0
-  const goodsAfterToast = Math.max(0, goodsAfterPoints - toastUsed)
+  const toastHalf = Math.min(balance, Math.floor((afterCoupon * 1) / 2))
+  const toastUsed = payWithToast ? Math.min(balance, afterCoupon, toastDraftWon ?? toastHalf) : 0
+  const goodsAfterToast = Math.max(0, afterCoupon - toastUsed)
   const remBalAfterToast = Math.max(0, balance - toastUsed)
   const oranCap = Math.min(remBalAfterToast, goodsAfterToast)
   const oranUsed = payWithOran ? Math.min(oranCap, oranDraftWon ?? oranCap) : 0
   const goodsAfterOran = Math.max(0, goodsAfterToast - oranUsed)
   const needCharge = Math.max(0, goodsAfterOran + shippingFee + extraShippingFee)
   const payAppAmount = Math.max(0, Math.floor(goodsAfterOran + shippingFee + extraShippingFee))
-
-  useEffect(() => {
-    setPointInput(maxPointsUsable)
-  }, [maxPointsUsable])
 
   useEffect(() => {
     if (!selectedUserCouponId) return
@@ -409,23 +413,16 @@ function CheckoutPageInner() {
         setPayWithToast={setPayWithToast}
         toastDraftWon={toastDraftWon}
         setToastDraftWon={setToastDraftWon}
-        goodsAfterPoints={goodsAfterPoints}
+        afterCoupon={afterCoupon}
         payWithOran={payWithOran}
         setPayWithOran={setPayWithOran}
         oranDraftWon={oranDraftWon}
         setOranDraftWon={setOranDraftWon}
         oranUsed={oranUsed}
         toastUsed={toastUsed}
-        pointUsed={pointUsed}
         points={points}
         balance={balance}
         toastRate={toastRate}
-        usePoints={usePoints}
-        setUsePoints={setUsePoints}
-        pointInput={pointInput}
-        setPointInput={setPointInput}
-        maxPointsUsable={maxPointsUsable}
-        maxPointRate={maxPointRate}
         needCharge={needCharge}
         paying={paying}
         showChargeOption={showChargeOption}
@@ -442,6 +439,8 @@ function CheckoutPageInner() {
         onPay={onPay}
         onPayBankTransfer={handleBankTransfer}
         onChargeKrw={onChargeKrw}
+        groupbuyDiscount={groupbuyDiscount}
+        timesaleDiscount={timesaleDiscount}
       />
       {pinOpen ? (
         <div style={{ position: 'fixed', inset: 0, zIndex: 120, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
