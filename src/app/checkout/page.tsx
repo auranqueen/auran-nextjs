@@ -76,6 +76,10 @@ function CheckoutPageInner() {
   const [gradeName, setGradeName] = useState('')
   const [shippingFee, setShippingFee] = useState(0)
   const [extraShippingFee, setExtraShippingFee] = useState(0)
+  const [toastDraftWon, setToastDraftWon] = useState<number | null>(null)
+  const [payWithOran, setPayWithOran] = useState(false)
+  const [oranDraftWon, setOranDraftWon] = useState<number | null>(null)
+  const [isFounderUser, setIsFounderUser] = useState(false)
 
   const toastRate = getSettingNum('toast', 'exchange_rate', 100)
   const maxCouponPct = getSettingNum('coupon', 'max_percent_discount', 70)
@@ -135,7 +139,7 @@ function CheckoutPageInner() {
       }
       const { data: me } = await supabase
         .from('users')
-        .select('id,name,phone,points,charge_balance,customer_grade')
+        .select('id,name,phone,points,charge_balance,customer_grade,is_founder')
         .eq('auth_id', user.id)
         .maybeSingle()
       if (!me?.id) {
@@ -148,6 +152,7 @@ function CheckoutPageInner() {
       setRecipientPhone(String((me as any).phone || ''))
       setPoints(toNum(me.points))
       setBalance(toNum(me.charge_balance))
+      setIsFounderUser(!!(me as { is_founder?: boolean }).is_founder)
       const cg = String((me as any).customer_grade || '').trim()
       setGradeName(cg)
       let gPct = 0
@@ -231,11 +236,16 @@ function CheckoutPageInner() {
     setExtraShippingFee(extra)
   }, [address, subtotal, freeShippingThreshold, basicShippingFeeCfg, jejuShippingFeeCfg, islandShippingFeeCfg])
 
-  const gradeDiscountAmt = useMemo(
-    () => Math.floor((subtotal * Math.max(0, gradeDiscount)) / 100),
-    [subtotal, gradeDiscount]
+  const founderDiscountAmt = useMemo(
+    () => (isFounderUser ? Math.floor((subtotal * 2) / 100) : 0),
+    [subtotal, isFounderUser]
   )
-  const afterGrade = Math.max(0, subtotal - gradeDiscountAmt)
+  const afterFounder = Math.max(0, subtotal - founderDiscountAmt)
+  const gradeDiscountAmt = useMemo(
+    () => Math.floor((afterFounder * Math.max(0, gradeDiscount)) / 100),
+    [afterFounder, gradeDiscount]
+  )
+  const afterGrade = Math.max(0, afterFounder - gradeDiscountAmt)
 
   const selectedRow = useMemo(
     () => userCoupons.find((u) => u.id === selectedUserCouponId) || null,
@@ -256,10 +266,15 @@ function CheckoutPageInner() {
     return Math.min(maxPointsUsable, input, afterCoupon)
   }, [usePoints, pointInput, maxPointsUsable, afterCoupon])
   const goodsAfterPoints = Math.max(0, afterCoupon - pointUsed)
-  const toastUsed = payWithToast ? Math.min(balance, goodsAfterPoints) : 0
+  const toastHalf = Math.min(balance, Math.floor((goodsAfterPoints * 1) / 2))
+  const toastUsed = payWithToast ? Math.min(balance, goodsAfterPoints, toastDraftWon ?? toastHalf) : 0
   const goodsAfterToast = Math.max(0, goodsAfterPoints - toastUsed)
-  const needCharge = Math.max(0, goodsAfterToast + shippingFee + extraShippingFee)
-  const payAppAmount = Math.max(0, Math.floor(goodsAfterToast + shippingFee + extraShippingFee))
+  const remBalAfterToast = Math.max(0, balance - toastUsed)
+  const oranCap = Math.min(remBalAfterToast, goodsAfterToast)
+  const oranUsed = payWithOran ? Math.min(oranCap, oranDraftWon ?? oranCap) : 0
+  const goodsAfterOran = Math.max(0, goodsAfterToast - oranUsed)
+  const needCharge = Math.max(0, goodsAfterOran + shippingFee + extraShippingFee)
+  const payAppAmount = Math.max(0, Math.floor(goodsAfterOran + shippingFee + extraShippingFee))
 
   useEffect(() => {
     setPointInput(maxPointsUsable)
@@ -334,6 +349,35 @@ function CheckoutPageInner() {
     window.location.href = payJson.pay_url as string
   }
 
+  const handleBankTransfer = async () => {
+    if (!orderedProducts.length || !meId) return
+    if (subtotal < minOrderAmount) {
+      setToast(`최소 주문금액은 ₩${minOrderAmount.toLocaleString()}입니다`)
+      return
+    }
+    const productId = orderedProducts[0]?.id
+    const qty = qtyList[0] ?? 1
+    const res = await fetch('/api/payment/request', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        product_id: productId,
+        quantity: qty,
+        prescription_owner_id: null,
+        payment_method: 'bank_transfer',
+        total_amount: subtotal,
+        final_amount: payAppAmount,
+      }),
+    })
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok || !json?.ok || !json?.orderId) {
+      setToast((json as { error?: string })?.error || '무통장 주문 요청 실패')
+      return
+    }
+    router.push(`/orders/complete?order_id=${encodeURIComponent(String(json.orderId))}`)
+  }
+
   return (
     <CustomerDashboardShell>
       <DashboardHeader title="체크아웃" right={<CartHeaderButton />} />
@@ -350,6 +394,9 @@ function CheckoutPageInner() {
         address={address}
         setAddress={setAddress}
         subtotal={subtotal}
+        afterGrade={afterGrade}
+        isFounder={isFounderUser}
+        founderDiscountAmt={founderDiscountAmt}
         gradeDiscount={gradeDiscount}
         gradeDiscountAmt={gradeDiscountAmt}
         gradeName={gradeName}
@@ -360,6 +407,14 @@ function CheckoutPageInner() {
         maxCouponPct={maxCouponPct}
         payWithToast={payWithToast}
         setPayWithToast={setPayWithToast}
+        toastDraftWon={toastDraftWon}
+        setToastDraftWon={setToastDraftWon}
+        goodsAfterPoints={goodsAfterPoints}
+        payWithOran={payWithOran}
+        setPayWithOran={setPayWithOran}
+        oranDraftWon={oranDraftWon}
+        setOranDraftWon={setOranDraftWon}
+        oranUsed={oranUsed}
         toastUsed={toastUsed}
         pointUsed={pointUsed}
         points={points}
@@ -385,6 +440,7 @@ function CheckoutPageInner() {
         extraShippingFee={extraShippingFee}
         freeShippingThreshold={freeShippingThreshold}
         onPay={onPay}
+        onPayBankTransfer={handleBankTransfer}
         onChargeKrw={onChargeKrw}
       />
       {pinOpen ? (

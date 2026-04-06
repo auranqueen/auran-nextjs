@@ -12,6 +12,7 @@ type Member = {
   role: string
   status: string
   points?: number
+  is_founder?: boolean
   created_at: string
   last_login_at?: string | null
 }
@@ -41,7 +42,7 @@ export default function AdminMembersPage() {
       setLoading(true)
       const { data } = await supabase
         .from('users')
-        .select('id,auth_id,name,email,role,status,points,created_at,last_login_at')
+        .select('id,auth_id,name,email,role,status,points,is_founder,created_at,last_login_at')
         .order('created_at', { ascending: false })
         .limit(200)
       setMembers((data || []) as any)
@@ -248,9 +249,17 @@ export default function AdminMembersPage() {
           <div style={{ padding: 16, fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>검색 결과가 없습니다.</div>
         ) : (
           filtered.map(m => (
-            <button
+            <div
               key={m.id}
+              role="button"
+              tabIndex={0}
               onClick={() => setSelected(m)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault()
+                  setSelected(m)
+                }
+              }}
               style={{
                 width: '100%',
                 textAlign: 'left',
@@ -273,10 +282,38 @@ export default function AdminMembersPage() {
                   {m.email}
                 </div>
               </div>
-              <div style={{ fontSize: 10, padding: '4px 8px', borderRadius: 999, background: m.status === 'suspended' ? 'rgba(217,79,79,0.12)' : 'rgba(76,173,126,0.12)', border: '1px solid rgba(255,255,255,0.10)', color: m.status === 'suspended' ? '#d94f4f' : '#4cad7e', fontWeight: 900 }}>
-                {m.status}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                <button
+                  type="button"
+                  onClick={async (e) => {
+                    e.stopPropagation()
+                    const next = !m.is_founder
+                    const { error } = await supabase.from('users').update({ is_founder: next }).eq('id', m.id)
+                    if (error) {
+                      alert(error.message)
+                      return
+                    }
+                    setMembers(prev => prev.map(x => (x.id === m.id ? { ...x, is_founder: next } : x)))
+                    setSelected(prev => (prev?.id === m.id ? { ...prev, is_founder: next } : prev))
+                  }}
+                  style={{
+                    fontSize: 11,
+                    padding: '4px 8px',
+                    borderRadius: 999,
+                    border: '1px solid rgba(201,168,110,0.35)',
+                    background: m.is_founder ? 'rgba(201,168,110,0.18)' : 'rgba(255,255,255,0.06)',
+                    color: m.is_founder ? '#c9a84c' : 'rgba(255,255,255,0.45)',
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {m.is_founder ? '👑 Founders' : 'Founders 부여'}
+                </button>
+                <div style={{ fontSize: 10, padding: '4px 8px', borderRadius: 999, background: m.status === 'suspended' ? 'rgba(217,79,79,0.12)' : 'rgba(76,173,126,0.12)', border: '1px solid rgba(255,255,255,0.10)', color: m.status === 'suspended' ? '#d94f4f' : '#4cad7e', fontWeight: 900 }}>
+                  {m.status}
+                </div>
               </div>
-            </button>
+            </div>
           ))
         )}
       </div>
