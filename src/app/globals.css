@@ -111,3 +111,14 @@ button { cursor: pointer; font-family: 'Pretendard', sans-serif; }
 
 img { -webkit-user-drag: none; pointer-events: none; }
 a img, button img, [role="button"] img { pointer-events: auto; }
+
+.toastui-editor-contents * {
+  color: #ffffff !important;
+}
+.toastui-editor-contents a {
+  color: #C9A96E !important;
+}
+.toastui-editor-contents img {
+  max-width: 100%;
+  height: auto;
+}
