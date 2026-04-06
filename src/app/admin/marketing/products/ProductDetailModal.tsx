@@ -140,6 +140,8 @@ export default function ProductDetailModal({
         : ''
   )
   const [timesaleSaving, setTimesaleSaving] = useState(false)
+  const [isGroupBuy, setIsGroupBuy] = useState(!!product.is_groupbuy)
+  const [groupbuySaving, setGroupbuySaving] = useState(false)
 
   const thumbDisplay = thumbPreview || product.thumb_img || product.storage_thumb_url || '/og-image.png'
 
@@ -188,6 +190,8 @@ export default function ProductDetailModal({
           ? new Date(product.flash_sale_end).toISOString().slice(0, 16)
           : ''
     )
+    setIsGroupBuy(!!product.is_groupbuy)
+    setGroupbuySaving(false)
     setTimesaleSaving(false)
     setDirty({ thumb: false, basic: false, detail: false, points: false, flash: false })
     setModalTab('thumb')
@@ -1259,6 +1263,26 @@ export default function ProductDetailModal({
                 }}
               />
               타임세일 적용
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, fontSize: 12, color: '#fff' }}>
+              <input
+                type="checkbox"
+                checked={isGroupBuy}
+                disabled={groupbuySaving}
+                onChange={async e => {
+                  const next = e.target.checked
+                  setGroupbuySaving(true)
+                  const { error } = await supabase.from('products').update({ is_groupbuy: next }).eq('id', product.id)
+                  setGroupbuySaving(false)
+                  if (error) {
+                    onToast('공구 표시 저장 실패: ' + error.message)
+                    return
+                  }
+                  setIsGroupBuy(next)
+                  onProductUpdated({ ...product, is_groupbuy: next })
+                }}
+              />
+              상품 공동구매 표시
             </label>
             {isFlashSale && (
               <div style={{ display: 'grid', gap: 8 }}>

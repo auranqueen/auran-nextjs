@@ -35,6 +35,11 @@ const inp = {
   boxSizing: 'border-box' as const,
 }
 
+async function syncProductGroupBuy(productId: string, isGroupbuy: boolean, count: number) {
+  const supabase = createClient()
+  return supabase.from('products').update({ is_groupbuy: isGroupbuy, groupbuy_count: count }).eq('id', productId)
+}
+
 export default function GroupBuysAdminPage() {
   const supabase = createClient()
   const [items, setItems] = useState<any[]>([])
@@ -142,6 +147,10 @@ export default function GroupBuysAdminPage() {
       alert(error.message)
       return
     }
+    const { error: syncErr } = await syncProductGroupBuy(sel.id, isActiveNew, currentCount)
+    if (syncErr) {
+      alert('제품 공구 표시 동기화 실패: ' + syncErr.message)
+    }
     loadItems()
     alert('공구가 등록되었습니다.')
   }
@@ -172,18 +181,33 @@ export default function GroupBuysAdminPage() {
       alert(error.message)
       return
     }
+    const pid = row.product_id as string | undefined
+    if (pid) {
+      const { error: syncErr } = await syncProductGroupBuy(pid, !!row.is_active, Number(row.current_count))
+      if (syncErr) {
+        alert('제품 공구 표시 동기화 실패: ' + syncErr.message)
+      }
+    }
     loadItems()
     alert('저장되었습니다.')
   }
 
-  const deleteRow = async (id: string) => {
+  const deleteRow = async (row: { id: string; product_id?: string | null }) => {
     if (!confirm('이 공구를 삭제할까요?')) return
-    const { error } = await supabase.from('group_buys').delete().eq('id', id)
+    const pid = row.product_id as string | undefined | null
+    if (pid) {
+      const { error: syncErr } = await syncProductGroupBuy(pid, false, 0)
+      if (syncErr) {
+        alert('제품 공구 해제 실패: ' + syncErr.message)
+        return
+      }
+    }
+    const { error } = await supabase.from('group_buys').delete().eq('id', row.id)
     if (error) {
       alert(error.message)
       return
     }
-    setItems(prev => prev.filter(i => i.id !== id))
+    setItems(prev => prev.filter(i => i.id !== row.id))
   }
 
   return (
@@ -499,7 +523,7 @@ export default function GroupBuysAdminPage() {
               </button>
               <button
                 type="button"
-                onClick={() => void deleteRow(row.id)}
+                onClick={() => void deleteRow(row)}
                 style={{
                   padding: '10px 16px',
                   borderRadius: 8,

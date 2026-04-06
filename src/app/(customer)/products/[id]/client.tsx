@@ -45,7 +45,10 @@ interface Product {
   thumb_images: string[]
   gallery_imgs?: string[]
   storage_thumb_url: string
-  is_timesale?: boolean
+  is_timesale?: boolean | null
+  timesale_ends_at?: string | null
+  is_groupbuy?: boolean | null
+  groupbuy_count?: number | null
   sale_price?: number
   sales_count?: number | null
   skin_types?: string[] | null
@@ -108,6 +111,27 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [thumbPreviewUrl, setThumbPreviewUrl] = useState('')
   const thumbFileInputRef = useRef<HTMLInputElement | null>(null)
   const detailEditorRef = useRef<any>(null)
+
+  const [saleTimeLeft, setSaleTimeLeft] = useState(() =>
+    product.timesale_ends_at
+      ? Math.max(0, Math.floor((new Date(product.timesale_ends_at).getTime() - Date.now()) / 1000))
+      : 0
+  )
+  useEffect(() => {
+    if (!product.is_timesale || !product.timesale_ends_at) {
+      setSaleTimeLeft(0)
+      return
+    }
+    setSaleTimeLeft(
+      Math.max(0, Math.floor((new Date(product.timesale_ends_at).getTime() - Date.now()) / 1000))
+    )
+  }, [product.is_timesale, product.timesale_ends_at])
+  useEffect(() => {
+    if (!product.is_timesale || saleTimeLeft <= 0) return
+    const t = setInterval(() => setSaleTimeLeft(p => (p > 0 ? p - 1 : 0)), 1000)
+    return () => clearInterval(t)
+  }, [product.is_timesale, product.timesale_ends_at])
+  const saleHMS = `${String(Math.floor(saleTimeLeft / 3600)).padStart(2, '0')}:${String(Math.floor((saleTimeLeft % 3600) / 60)).padStart(2, '0')}:${String(saleTimeLeft % 60).padStart(2, '0')}`
 
   const fetchReviews = async () => {
     setReviewsLoading(true)
@@ -619,6 +643,18 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           ) : null}
           {seoDesc}
         </div>
+        {product.is_timesale && saleTimeLeft > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'rgba(192,64,48,0.08)', border: '1px solid rgba(192,64,48,0.25)', borderRadius: 20, marginBottom: 8, width: 'fit-content' }}>
+            <span style={{ fontSize: 11, color: 'rgba(220,100,80,0.9)' }}>⚡ 타임세일</span>
+            <span style={{ fontSize: 12, color: '#E07060', fontFamily: 'monospace' }}>{saleHMS}</span>
+            <span style={{ fontSize: 10, color: 'rgba(220,100,80,0.6)' }}>후 종료</span>
+          </div>
+        )}
+        {product.is_groupbuy && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 20, marginBottom: 8, width: 'fit-content' }}>
+            <span style={{ fontSize: 11, color: '#C4A0F0' }}>👥 {product.groupbuy_count || 0}명 공동구매 중</span>
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
           <div style={{ fontSize: 28, color: GOLD }}>{hasValidPrice ? `${price.toLocaleString()}원` : '가격문의'}</div>
           {discount > 0 && <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{origPrice.toLocaleString()}원</div>}
@@ -743,18 +779,6 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             </span>
           ) : null}
         </div>
-
-        {discount > 0 && (
-          <div style={{ background: '#171310', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <div style={{ color: '#e05050' }}>🔥</div>
-            <div style={{ fontSize: 12, color: '#888', flex: 1 }}>타임세일 마감까지</div>
-            <div style={{ display: 'flex', gap: 4 }}>
-              {['02','33','25'].map((n, i) => (
-                <div key={i} style={{ background: '#2a2218', border: '1px solid #3a3020', color: GOLD, fontSize: 14, width: 34, height: 30, borderRadius: 6, textAlign: 'center', lineHeight: '30px' }}>{n}</div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* 리뷰 요약 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
