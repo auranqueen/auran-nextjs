@@ -34,8 +34,8 @@ export async function GET(req: NextRequest) {
     const pm25Level = pm25Value <= 15 ? '좋음' : pm25Value <= 35 ? '보통' : pm25Value <= 75 ? '나쁨' : '매우나쁨'
 
     return NextResponse.json({
-      temp: Math.round(weather?.main?.temp || 0),
-      feel: Math.round(weather?.main?.feels_like || 0),
+      temp: Math.round(weather?.main?.temp ?? 0),
+      feel: Math.round(weather?.main?.feels_like ?? 0),
       humidity: weather?.main?.humidity || 0,
       condition: weather?.weather?.[0]?.description || '맑음',
       icon: weather?.weather?.[0]?.icon || '01d',

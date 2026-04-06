@@ -39,16 +39,24 @@ function createMiddlewareSupabase(req: NextRequest) {
 
 async function getDbRole(supabase: ReturnType<typeof createServerClient>, authId: string): Promise<string | null> {
   try {
-    const { data } = await supabase.from('profiles')
-      .select('role, active_role')
-      .eq('auth_id', authId)
-      .maybeSingle()
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 3000)
+    )
+    const { data } = (await Promise.race([
+      supabase.from('profiles').select('role, active_role').eq('auth_id', authId).maybeSingle(),
+      timeoutPromise,
+    ])) as { data: any }
     const r = (data as any)?.active_role || (data as any)?.role
     if (typeof r === 'string') return r
   } catch {}
   try {
-    const { data } = await supabase.from('users')
-      .select('role').eq('auth_id', authId).single()
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 3000)
+    )
+    const { data } = (await Promise.race([
+      supabase.from('users').select('role').eq('auth_id', authId).single(),
+      timeoutPromise,
+    ])) as { data: any }
     if (typeof (data as any)?.role === 'string') return (data as any).role
   } catch {}
   return null
