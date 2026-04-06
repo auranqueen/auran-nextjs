@@ -111,6 +111,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const [thumbPreviewUrl, setThumbPreviewUrl] = useState('')
   const thumbFileInputRef = useRef<HTMLInputElement | null>(null)
   const detailEditorRef = useRef<any>(null)
+  const [ingOpen, setIngOpen] = useState(false)
+  const [isFounder, setIsFounder] = useState(false)
 
   const [saleTimeLeft, setSaleTimeLeft] = useState(() =>
     product.timesale_ends_at
@@ -286,7 +288,16 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     ;(async () => {
       const { data: { session } } = await supabase.auth.getSession()
       const uid = session?.user?.id
-      if (!uid) { if (!cancelled) setAiRecommendLine(null); return }
+      if (!uid) {
+        if (!cancelled) {
+          setAiRecommendLine(null)
+          setIsFounder(false)
+        }
+        return
+      }
+      const { data: gradeRow } = await supabase.from('users').select('customer_grade').eq('auth_id', uid).maybeSingle()
+      if (cancelled) return
+      setIsFounder(['NOIR', 'CÉLESTE'].includes(String((gradeRow as { customer_grade?: string } | null)?.customer_grade || '')))
       const { data: profile } = await supabase.from('profiles').select('skin_type').eq('auth_id', uid).maybeSingle()
       if (cancelled) return
       const userSkinType = String((profile as any)?.skin_type || '').trim()
@@ -410,6 +421,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const tags = product.tags ?? []
   const tagLine = String((product as any).tag || '').trim() || (tags.length ? tags.join(', ') : '')
   const keyIngredientsText = String(product.key_ingredients ?? '').trim()
+  const ingredientLinesAll = keyIngredientsText ? keyIngredientsText.split('\n').map(s => s.trim()).filter(Boolean) : []
+  const ingredientPreviewLines = ingredientLinesAll.slice(0, 3)
+  const ingredientExtraCount = Math.max(0, ingredientLinesAll.length - 3)
   const clinicalResultText = String(product.clinical_result ?? '').trim()
   const certificationLines = String(product.certifications ?? '').split('\n').map(s => s.trim()).filter(Boolean)
   const thumbImgs = product.thumb_images ?? []
@@ -597,6 +611,11 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         {(product as any)?.origin && (
           <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 4 }}>
             원산지: {(product as any).origin}
+          </div>
+        )}
+        {isFounder && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.2)', borderRadius: 20, marginBottom: 8, width: 'fit-content' }}>
+            <span style={{ fontSize: 11, color: '#C9A96E' }}>👑 AURAN Founders 평생 2% 추가 할인 적용 중</span>
           </div>
         )}
         {aiRecommendLine ? (
@@ -971,7 +990,33 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               {showEditChrome ? (
                 <span style={{ position: 'absolute', top: 8, right: 8, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
               ) : null}
-              {keyIngredientsText || (showEditChrome ? '주요 성분이 비어 있어요' : '')}
+              {showEditChrome ? (
+                keyIngredientsText || '주요 성분이 비어 있어요'
+              ) : (
+                <>
+                  <div style={{ whiteSpace: 'pre-wrap' }}>
+                    {ingOpen ? ingredientLinesAll.join('\n') : ingredientPreviewLines.join('\n')}
+                  </div>
+                  {ingredientExtraCount > 0 && !ingOpen ? (
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); setIngOpen(true) }}
+                      style={{ marginTop: 8, padding: 0, border: 'none', background: 'none', cursor: 'pointer', fontSize: 11, color: GOLD, fontFamily: 'inherit' }}
+                    >
+                      전체보기 +{ingredientExtraCount}
+                    </button>
+                  ) : null}
+                  {ingOpen && ingredientLinesAll.length > 3 ? (
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); setIngOpen(false) }}
+                      style={{ marginTop: 8, padding: 0, border: 'none', background: 'none', cursor: 'pointer', fontSize: 11, color: GOLD, fontFamily: 'inherit' }}
+                    >
+                      접기
+                    </button>
+                  ) : null}
+                </>
+              )}
             </div>
           </div>
         ) : null}
@@ -981,7 +1026,28 @@ export default function ProductDetailClient({ product }: { product: Product }) {
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, marginBottom: 12 }}>CLINICAL RESULT</div>
             <div style={{ fontSize: 13, lineHeight: 1.75, color: '#bbb', whiteSpace: 'pre-wrap', background: '#1a1610', border: '1px solid #252018', borderRadius: 12, padding: '14px 12px' }}>
-              {clinicalResultText}
+              {clinicalResultText.split('\n').map((rawLine, i) => {
+                const line = rawLine.trim()
+                if (!line) return null
+                const m = line.match(/^(.+)\s+(\d+(?:\.\d+)?)%\s*$/)
+                if (m) {
+                  const pct = Math.min(100, Math.max(0, Number(m[2])))
+                  return (
+                    <div key={i} style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 12, color: '#bbb', marginBottom: 6 }}>{m[1].trim()}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 11, color: GOLD, width: 36, flexShrink: 0 }}>{pct}%</span>
+                        <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+                          <div style={{ width: `${pct}%`, height: 3, background: 'linear-gradient(90deg, #C9A96E, #A07840)', borderRadius: 2 }} />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                }
+                return (
+                  <div key={i} style={{ fontSize: 13, lineHeight: 1.75, color: '#bbb', marginBottom: 6 }}>{line}</div>
+                )
+              })}
             </div>
           </div>
         ) : null}
@@ -1003,9 +1069,9 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         {perfectTogetherRows.length > 0 ? (
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, marginBottom: 12 }}>PERFECT TOGETHER</div>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
               {perfectTogetherRows.map((t, i) => (
-                <div key={t.id || i} style={{ flex: 1, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center' }}>
+                <div key={t.id || i} style={{ flexShrink: 0, width: 110, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center' }}>
                   <div style={{ fontSize: 8, background: '#2a1f0e', color: GOLD, padding: '2px 6px', borderRadius: 4, display: 'inline-block', marginBottom: 6 }}>STEP {i + 1}</div>
                   <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {t.storage_thumb_url || t.thumb_img ? (
