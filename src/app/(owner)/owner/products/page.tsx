@@ -300,7 +300,7 @@ export default function OwnerSalonProductsPage() {
       }
       setPromoLoading(false)
     },
-    [supabase, ownerId]
+    [ownerId]
   )
 
   useEffect(() => {

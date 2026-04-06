@@ -166,7 +166,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       .select('id,name,origin_country')
       .order('name')
       .then(({ data }) => setBrands((data || []) as { id: string; name: string; origin_country?: string | null }[]))
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     if (!brandId) return
@@ -189,7 +189,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
           (data || []) as { id: string; name: string; parent_id: string | null; level: number; sort_order: number | null }[]
         )
       )
-  }, [supabase])
+  }, [])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -336,7 +336,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
     return () => {
       cancelled = true
     }
-  }, [editId, supabase])
+  }, [editId])
 
   const inputStyle = useMemo(
     () => ({
@@ -407,7 +407,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       if (error) throw error
       return `${supabaseUrl}/storage/v1/object/public/product-images/${path}`
     },
-    [supabase, supabaseUrl]
+    [supabaseUrl]
   )
 
   const handleImagePick = async (slot: number, file: File | undefined) => {

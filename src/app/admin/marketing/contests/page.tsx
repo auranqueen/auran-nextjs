@@ -256,7 +256,7 @@ export default function AdminMarketingContestsPage() {
       setEntries(en.data || [])
       setVotes(vo.data || [])
     },
-    [supabase]
+    []
   )
 
   useEffect(() => {

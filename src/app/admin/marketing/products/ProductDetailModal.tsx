@@ -265,7 +265,7 @@ export default function ProductDetailModal({
         }
         setPtResults((data as { id: string; name: string }[]) || [])
       }, 220),
-    [supabase]
+    []
   )
 
   useEffect(() => {
@@ -324,7 +324,7 @@ export default function ProductDetailModal({
         },
         1000
       ),
-    [supabase]
+    []
   )
 
   const requestClose = () => {
