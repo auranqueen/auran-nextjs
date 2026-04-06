@@ -1022,32 +1022,49 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         ) : null}
 
         {/* CLINICAL RESULT */}
-        {clinicalResultText ? (
+        {clinicalResultText || showEditChrome ? (
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, marginBottom: 12 }}>CLINICAL RESULT</div>
-            <div style={{ fontSize: 13, lineHeight: 1.75, color: '#bbb', whiteSpace: 'pre-wrap', background: '#1a1610', border: '1px solid #252018', borderRadius: 12, padding: '14px 12px' }}>
-              {clinicalResultText.split('\n').map((rawLine, i) => {
-                const line = rawLine.trim()
-                if (!line) return null
-                const m = line.match(/^(.+)\s+(\d+(?:\.\d+)?)%\s*$/)
-                if (m) {
-                  const pct = Math.min(100, Math.max(0, Number(m[2])))
-                  return (
-                    <div key={i} style={{ marginBottom: 12 }}>
-                      <div style={{ fontSize: 12, color: '#bbb', marginBottom: 6 }}>{m[1].trim()}</div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 11, color: GOLD, width: 36, flexShrink: 0 }}>{pct}%</span>
-                        <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
-                          <div style={{ width: `${pct}%`, height: 3, background: 'linear-gradient(90deg, #C9A96E, #A07840)', borderRadius: 2 }} />
+            <div
+              data-edit-field="clinical_result"
+              onClick={isEditMode ? (e) => { e.stopPropagation(); setEditingField({ field: 'clinical_result', label: '임상 결과 수정', currentValue: String(product.clinical_result ?? '') }) } : undefined}
+              style={{
+                position: showEditChrome ? 'relative' : undefined,
+                fontSize: 13, lineHeight: 1.75, color: '#bbb', whiteSpace: 'pre-wrap', background: '#1a1610', border: '1px solid #252018', borderRadius: 12, padding: '14px 12px',
+                outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
+                outlineOffset: showEditChrome ? 2 : undefined,
+                cursor: isEditMode ? 'pointer' : undefined,
+              }}
+            >
+              {showEditChrome ? (
+                <span style={{ position: 'absolute', top: 8, right: 8, zIndex: 2, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 5px', lineHeight: 1 }}>✏️</span>
+              ) : null}
+              {showEditChrome ? (
+                clinicalResultText || '임상 결과가 비어 있어요'
+              ) : (
+                clinicalResultText.split('\n').map((rawLine, i) => {
+                  const line = rawLine.trim()
+                  if (!line) return null
+                  const m = line.match(/^(.+)\s+(\d+(?:\.\d+)?)%\s*$/)
+                  if (m) {
+                    const pct = Math.min(100, Math.max(0, Number(m[2])))
+                    return (
+                      <div key={i} style={{ marginBottom: 12 }}>
+                        <div style={{ fontSize: 12, color: '#bbb', marginBottom: 6 }}>{m[1].trim()}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 11, color: GOLD, width: 36, flexShrink: 0 }}>{pct}%</span>
+                          <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.08)', borderRadius: 2, overflow: 'hidden' }}>
+                            <div style={{ width: `${pct}%`, height: 3, background: 'linear-gradient(90deg, #C9A96E, #A07840)', borderRadius: 2 }} />
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )
+                  }
+                  return (
+                    <div key={i} style={{ fontSize: 13, lineHeight: 1.75, color: '#bbb', marginBottom: 6 }}>{line}</div>
                   )
-                }
-                return (
-                  <div key={i} style={{ fontSize: 13, lineHeight: 1.75, color: '#bbb', marginBottom: 6 }}>{line}</div>
-                )
-              })}
+                })
+              )}
             </div>
           </div>
         ) : null}
@@ -1066,25 +1083,42 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         ) : null}
 
         {/* PERFECT TOGETHER */}
-        {perfectTogetherRows.length > 0 ? (
+        {perfectTogetherRows.length > 0 || showEditChrome ? (
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, marginBottom: 12 }}>PERFECT TOGETHER</div>
-            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
-              {perfectTogetherRows.map((t, i) => (
-                <div key={t.id || i} style={{ flexShrink: 0, width: 110, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center' }}>
-                  <div style={{ fontSize: 8, background: '#2a1f0e', color: GOLD, padding: '2px 6px', borderRadius: 4, display: 'inline-block', marginBottom: 6 }}>STEP {i + 1}</div>
-                  <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {t.storage_thumb_url || t.thumb_img ? (
-                      <img src={t.storage_thumb_url || t.thumb_img || ''} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : <div style={{ fontSize: 28 }}>📦</div>}
+            {perfectTogetherRows.length > 0 ? (
+              <div style={{ display: 'flex', gap: 10, overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
+                {perfectTogetherRows.map((t, i) => (
+                  <div key={t.id || i} style={{ flexShrink: 0, width: 110, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center' }}>
+                    <div style={{ fontSize: 8, background: '#2a1f0e', color: GOLD, padding: '2px 6px', borderRadius: 4, display: 'inline-block', marginBottom: 6 }}>STEP {i + 1}</div>
+                    <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {t.storage_thumb_url || t.thumb_img ? (
+                        <img src={t.storage_thumb_url || t.thumb_img || ''} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : <div style={{ fontSize: 28 }}>📦</div>}
+                    </div>
+                    <div style={{ fontSize: 8, color: '#666' }}>{t.brands?.name || ''}</div>
+                    <div style={{ fontSize: 10, lineHeight: 1.3 }}>{t.name}</div>
+                    <div style={{ fontSize: 11, color: GOLD, marginTop: 3 }}>{Number(t.retail_price || 0).toLocaleString()}원</div>
+                    <div style={{ fontSize: 10, color: '#888', background: '#1e1a14', borderRadius: 5, padding: 4, marginTop: 5, cursor: 'pointer' }} onClick={() => router.push(`/products/${t.id}`)}>+ 담기</div>
                   </div>
-                  <div style={{ fontSize: 8, color: '#666' }}>{t.brands?.name || ''}</div>
-                  <div style={{ fontSize: 10, lineHeight: 1.3 }}>{t.name}</div>
-                  <div style={{ fontSize: 11, color: GOLD, marginTop: 3 }}>{Number(t.retail_price || 0).toLocaleString()}원</div>
-                  <div style={{ fontSize: 10, color: '#888', background: '#1e1a14', borderRadius: 5, padding: 4, marginTop: 5, cursor: 'pointer' }} onClick={() => router.push(`/products/${t.id}`)}>+ 담기</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : showEditChrome ? (
+              <div
+                style={{
+                  fontSize: 12,
+                  color: '#666',
+                  background: '#1a1610',
+                  border: '1px solid #252018',
+                  borderRadius: 12,
+                  padding: '14px 12px',
+                  outline: '2px dashed #7B5EA7',
+                  outlineOffset: 2,
+                }}
+              >
+                함께 쓰기 연결 제품이 없어요
+              </div>
+            ) : null}
           </div>
         ) : null}
 
@@ -1330,7 +1364,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
               <div style={{ fontSize: 15, color: '#e8e4dc' }}>{editingField.label}</div>
               <button type="button" onClick={() => setEditingField(null)} style={{ fontSize: 20, color: '#666', cursor: 'pointer', background: 'none', border: 'none', padding: 0, lineHeight: 1 }}>✕</button>
             </div>
-            {editingField.field === 'name' || editingField.field === 'description' || editingField.field === 'key_ingredients' ? (
+            {editingField.field === 'name' || editingField.field === 'description' || editingField.field === 'key_ingredients' || editingField.field === 'clinical_result' ? (
               <textarea
                 value={editDraft}
                 onChange={(e) => setEditDraft(e.target.value)}
