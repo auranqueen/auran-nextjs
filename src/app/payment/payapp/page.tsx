@@ -32,7 +32,10 @@ function PayAppInner() {
       }
 
       const price = product.retail_price ?? product.original_price ?? 0
-      const amount = price * qty
+      const fromQuery = params.get('amount')
+      const parsed = fromQuery != null && fromQuery !== '' ? Math.floor(Number(fromQuery)) : NaN
+      const amount =
+        Number.isFinite(parsed) && parsed >= 0 ? parsed : Math.max(0, Math.floor(Number(price) * qty))
 
       const res = await fetch('/api/payments/payapp/create', {
         method: 'POST',
@@ -54,7 +57,7 @@ function PayAppInner() {
     }
 
     doPayment()
-  }, [])
+  }, [params.toString(), router])
 
   return (
     <div style={{

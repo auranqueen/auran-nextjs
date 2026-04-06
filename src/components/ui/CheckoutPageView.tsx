@@ -66,6 +66,9 @@ type Props = {
   userCoupons: CheckoutUcRow[]
   authUid: string | null
   orderLines: OrderLineForCoupon[]
+  shippingFee?: number
+  extraShippingFee?: number
+  freeShippingThreshold?: number
   onPay: (allowCharge: boolean) => void
   onChargeKrw: (krw: number) => void
 }
@@ -114,6 +117,9 @@ export default function CheckoutPageView({
   userCoupons,
   authUid,
   orderLines,
+  shippingFee = 0,
+  extraShippingFee = 0,
+  freeShippingThreshold = 0,
   onPay,
   onChargeKrw,
 }: Props) {
@@ -372,6 +378,12 @@ export default function CheckoutPageView({
                   <span>-₩{couponDiscount.toLocaleString()}</span>
                 </div>
               )}
+              {pointUsed > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#e8c96e', fontSize: 13 }}>
+                  <span>포인트 사용</span>
+                  <span>-₩{pointUsed.toLocaleString()}</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#4cad7e', fontSize: 13 }}>
                 <span>🍞 토스트 사용</span>
                 <span>-₩{toastUsed.toLocaleString()}</span>
@@ -379,9 +391,24 @@ export default function CheckoutPageView({
               <div style={{ marginBottom: 8, fontSize: 12, color: 'var(--text3)' }}>
                 보유: {Math.floor(balance / Math.max(1, toastRate)).toLocaleString()}T (₩{balance.toLocaleString()})
               </div>
+              {freeShippingThreshold > 0 && (
+                <div style={{ marginBottom: 8, fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>
+                  ₩{freeShippingThreshold.toLocaleString()} 이상 주문 시 기본 배송비 무료 · 제주·울릉 등 추가 배송비는 별도
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: 'rgba(255,255,255,0.88)', fontSize: 13 }}>
+                <span>배송비</span>
+                <span>{shippingFee > 0 ? `₩${shippingFee.toLocaleString()}` : '무료'}</span>
+              </div>
+              {extraShippingFee > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#9ecfff', fontSize: 13 }}>
+                  <span>제주·산간 추가</span>
+                  <span>+₩{extraShippingFee.toLocaleString()}</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: 14, fontWeight: 900, marginBottom: 10 }}>
                 <span>최종 결제금액</span>
-                <span>₩{subtotal.toLocaleString()}</span>
+                <span>₩{needCharge.toLocaleString()}</span>
               </div>
 
               {/* 결제 버튼 */}
@@ -393,8 +420,8 @@ export default function CheckoutPageView({
                 {paying
                   ? '결제 준비 중...'
                   : useBankTransfer
-                    ? `무통장 입금하기 · ₩${subtotal.toLocaleString()}`
-                    : `결제하기 · ₩${subtotal.toLocaleString()}`}
+                    ? `무통장 입금하기 · ₩${needCharge.toLocaleString()}`
+                    : `결제하기 · ₩${needCharge.toLocaleString()}`}
               </button>
             </div>
             <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text3)' }}>{`🍞 ${Math.floor(balance / Math.max(1, toastRate)).toLocaleString()}T 보유 (1T=${toastRate}원)`}</div>

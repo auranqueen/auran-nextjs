@@ -74,12 +74,18 @@ function CheckoutPageInner() {
   const [pinChecking, setPinChecking] = useState(false)
   const [gradeDiscount, setGradeDiscount] = useState(0)
   const [gradeName, setGradeName] = useState('')
+  const [shippingFee, setShippingFee] = useState(0)
+  const [extraShippingFee, setExtraShippingFee] = useState(0)
 
   const toastRate = getSettingNum('toast', 'exchange_rate', 100)
   const maxCouponPct = getSettingNum('coupon', 'max_percent_discount', 70)
   const maxPointRate = getSettingNum('checkout', 'point_max_ratio', 20) || getSettingNum('toast', 'point_max_usage_rate', 20)
   const showChargeOption = getSettingNum('checkout', 'show_charge_option', 1) === 1
   const minOrderAmount = getSettingNum('checkout', 'min_order_amount', 0)
+  const freeShippingThreshold = getSettingNum('shipping', 'free_shipping_threshold', 50000)
+  const basicShippingFeeCfg = getSettingNum('shipping', 'basic_shipping_fee', 3000)
+  const jejuShippingFeeCfg = getSettingNum('shipping', 'jeju_shipping_fee', 0)
+  const islandShippingFeeCfg = getSettingNum('shipping', 'island_shipping_fee', 0)
   const productIds = useMemo(() => {
     const fromProducts = String(search.get('products') || '')
       .split(',')
@@ -215,6 +221,16 @@ function CheckoutPageInner() {
     [orderedProducts, qtyList]
   )
 
+  useEffect(() => {
+    const addr = String(address || '')
+    const basic = subtotal >= freeShippingThreshold ? 0 : Math.max(0, Math.floor(basicShippingFeeCfg))
+    let extra = 0
+    if (addr.includes('제주')) extra += Math.max(0, Math.floor(jejuShippingFeeCfg))
+    if (addr.includes('울릉')) extra += Math.max(0, Math.floor(islandShippingFeeCfg))
+    setShippingFee(basic)
+    setExtraShippingFee(extra)
+  }, [address, subtotal, freeShippingThreshold, basicShippingFeeCfg, jejuShippingFeeCfg, islandShippingFeeCfg])
+
   const gradeDiscountAmt = useMemo(
     () => Math.floor((subtotal * Math.max(0, gradeDiscount)) / 100),
     [subtotal, gradeDiscount]
@@ -239,10 +255,11 @@ function CheckoutPageInner() {
     const input = Math.max(0, Math.floor(pointInput || 0))
     return Math.min(maxPointsUsable, input, afterCoupon)
   }, [usePoints, pointInput, maxPointsUsable, afterCoupon])
-  const remaining = Math.max(0, afterCoupon - pointUsed)
-  const toastUsed = payWithToast ? Math.min(balance, remaining) : 0
-  const needCharge = Math.max(0, remaining - toastUsed)
-  const payAppAmount = Math.max(0, Math.floor(remaining))
+  const goodsAfterPoints = Math.max(0, afterCoupon - pointUsed)
+  const toastUsed = payWithToast ? Math.min(balance, goodsAfterPoints) : 0
+  const goodsAfterToast = Math.max(0, goodsAfterPoints - toastUsed)
+  const needCharge = Math.max(0, goodsAfterToast + shippingFee + extraShippingFee)
+  const payAppAmount = Math.max(0, Math.floor(goodsAfterToast + shippingFee + extraShippingFee))
 
   useEffect(() => {
     setPointInput(maxPointsUsable)
@@ -285,7 +302,7 @@ function CheckoutPageInner() {
       setPayModal(true)
       return
     }
-    router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1`)
+    router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}`)
   }
 
   const confirmPinAndPay = async () => {
@@ -364,6 +381,9 @@ function CheckoutPageInner() {
         userCoupons={userCoupons}
         authUid={authUid}
         orderLines={orderLines}
+        shippingFee={shippingFee}
+        extraShippingFee={extraShippingFee}
+        freeShippingThreshold={freeShippingThreshold}
         onPay={onPay}
         onChargeKrw={onChargeKrw}
       />

@@ -159,6 +159,15 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       'grade_discount_CÉLESTE': { label: 'CÉLESTE 등급 할인율(%)', type: 'number', defaultValue: '0' },
     },
   },
+  shipping: {
+    label: '배송비',
+    keys: {
+      free_shipping_threshold: { label: '무료배송 기준 금액', unit: '원', type: 'number', defaultValue: '50000' },
+      basic_shipping_fee: { label: '기본 배송비', unit: '원', type: 'number', defaultValue: '3000' },
+      jeju_shipping_fee: { label: '제주 추가 배송비', unit: '원', type: 'number', defaultValue: '0' },
+      island_shipping_fee: { label: '울릉 등 산간 추가 배송비', unit: '원', type: 'number', defaultValue: '0' },
+    },
+  },
   home_special: {
     label: '오늘의 특가',
     keys: {
@@ -231,6 +240,10 @@ export default function AdminSettingsAdminSettingsPage() {
   const [gradeDraft, setGradeDraft] = useState('')
   const [gradeRowBusy, setGradeRowBusy] = useState<string | null>(null)
   const [gradeLocalErr, setGradeLocalErr] = useState<string | null>(null)
+  const [shipEditKey, setShipEditKey] = useState<string | null>(null)
+  const [shipDraft, setShipDraft] = useState('')
+  const [shipRowBusy, setShipRowBusy] = useState<string | null>(null)
+  const [shipLocalErr, setShipLocalErr] = useState<string | null>(null)
 
   const categories = useMemo(() => Object.keys(META), [])
   const activeMeta = META[active]
@@ -257,6 +270,8 @@ export default function AdminSettingsAdminSettingsPage() {
                 setActive(c)
                 setGradeEditKey(null)
                 setGradeLocalErr(null)
+                setShipEditKey(null)
+                setShipLocalErr(null)
               }}
               style={{
                 flex: 1,
@@ -280,10 +295,24 @@ export default function AdminSettingsAdminSettingsPage() {
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>불러오는 중...</div>
       ) : (
         <div style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 16, overflow: 'hidden' }}>
-          {active === 'grade'
+          {active === 'grade' || active === 'shipping'
             ? rows.map(([key, meta]) => {
+                const category = active === 'grade' ? 'grade' : 'shipping'
                 const current = settings[active]?.[key] ?? meta.defaultValue
-                const editing = gradeEditKey === key
+                const editing = category === 'grade' ? gradeEditKey === key : shipEditKey === key
+                const rowBusy = category === 'grade' ? gradeRowBusy : shipRowBusy
+                const draft = category === 'grade' ? gradeDraft : shipDraft
+                const openRow = () => {
+                  if (category === 'grade') {
+                    setGradeEditKey(key)
+                    setGradeDraft(String(settings[active]?.[key] ?? meta.defaultValue))
+                    setGradeLocalErr(null)
+                  } else {
+                    setShipEditKey(key)
+                    setShipDraft(String(settings[active]?.[key] ?? meta.defaultValue))
+                    setShipLocalErr(null)
+                  }
+                }
                 return (
                   <div
                     key={key}
@@ -291,17 +320,13 @@ export default function AdminSettingsAdminSettingsPage() {
                     tabIndex={0}
                     onClick={() => {
                       if (editing) return
-                      setGradeEditKey(key)
-                      setGradeDraft(String(settings[active]?.[key] ?? meta.defaultValue))
-                      setGradeLocalErr(null)
+                      openRow()
                     }}
                     onKeyDown={(e) => {
                       if (editing) return
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault()
-                        setGradeEditKey(key)
-                        setGradeDraft(String(settings[active]?.[key] ?? meta.defaultValue))
-                        setGradeLocalErr(null)
+                        openRow()
                       }
                     }}
                     style={{
@@ -322,8 +347,10 @@ export default function AdminSettingsAdminSettingsPage() {
                       <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <input
                           type="number"
-                          value={gradeDraft}
-                          onChange={(e) => setGradeDraft(e.target.value)}
+                          value={draft}
+                          onChange={(e) =>
+                            category === 'grade' ? setGradeDraft(e.target.value) : setShipDraft(e.target.value)
+                          }
                           style={{
                             width: '100%',
                             boxSizing: 'border-box',
@@ -340,24 +367,29 @@ export default function AdminSettingsAdminSettingsPage() {
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                           <button
                             type="button"
-                            disabled={!!gradeRowBusy}
+                            disabled={!!rowBusy}
                             onClick={async () => {
-                              setGradeRowBusy(key)
-                              setGradeLocalErr(null)
+                              if (category === 'grade') setGradeRowBusy(key)
+                              else setShipRowBusy(key)
+                              if (category === 'grade') setGradeLocalErr(null)
+                              else setShipLocalErr(null)
                               const { createClient } = await import('@/lib/supabase/client')
                               const supabase = createClient()
                               const { error: uerr } = await supabase
                                 .from('admin_settings')
-                                .update({ value: String(gradeDraft) })
-                                .eq('category', 'grade')
+                                .update({ value: String(draft) })
+                                .eq('category', category)
                                 .eq('key', key)
-                              setGradeRowBusy(null)
+                              if (category === 'grade') setGradeRowBusy(null)
+                              else setShipRowBusy(null)
                               if (uerr) {
-                                setGradeLocalErr(uerr.message)
+                                if (category === 'grade') setGradeLocalErr(uerr.message)
+                                else setShipLocalErr(uerr.message)
                                 return
                               }
                               await refetch(true)
-                              setGradeEditKey(null)
+                              if (category === 'grade') setGradeEditKey(null)
+                              else setShipEditKey(null)
                             }}
                             style={{
                               flex: '1 1 120px',
@@ -367,19 +399,25 @@ export default function AdminSettingsAdminSettingsPage() {
                               border: 'none',
                               color: '#111',
                               fontWeight: 900,
-                              cursor: gradeRowBusy ? 'wait' : 'pointer',
-                              opacity: gradeRowBusy ? 0.7 : 1,
+                              cursor: rowBusy ? 'wait' : 'pointer',
+                              opacity: rowBusy ? 0.7 : 1,
                             }}
                           >
                             저장
                           </button>
                           <button
                             type="button"
-                            disabled={!!gradeRowBusy}
+                            disabled={!!rowBusy}
                             onClick={() => {
-                              setGradeEditKey(null)
-                              setGradeDraft('')
-                              setGradeLocalErr(null)
+                              if (category === 'grade') {
+                                setGradeEditKey(null)
+                                setGradeDraft('')
+                                setGradeLocalErr(null)
+                              } else {
+                                setShipEditKey(null)
+                                setShipDraft('')
+                                setShipLocalErr(null)
+                              }
                             }}
                             style={{
                               flex: '1 1 120px',
@@ -465,6 +503,11 @@ export default function AdminSettingsAdminSettingsPage() {
           {gradeLocalErr}
         </div>
       )}
+      {shipLocalErr && active === 'shipping' && (
+        <div style={{ marginTop: 12, background: 'rgba(217,79,79,0.10)', border: '1px solid rgba(217,79,79,0.25)', borderRadius: 12, padding: 12, color: '#e08080', fontSize: 13 }}>
+          {shipLocalErr}
+        </div>
+      )}
 
       {error && (
         <div style={{ marginTop: 12, background: 'rgba(217,79,79,0.10)', border: '1px solid rgba(217,79,79,0.25)', borderRadius: 12, padding: 12, color: '#e08080', fontSize: 13 }}>
@@ -522,7 +565,7 @@ export default function AdminSettingsAdminSettingsPage() {
         </div>
       )}
 
-      {active !== 'grade' ? (
+      {active !== 'grade' && active !== 'shipping' ? (
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 14 }}>
           <button
             type="button"
