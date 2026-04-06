@@ -1633,9 +1633,9 @@ export default function ProductDetailModal({
               background: 'rgba(255,255,255,0.03)',
             }}
           >
-            <div style={{ fontSize: 15, fontWeight: 900, color: '#fff', marginBottom: 14 }}>💰 포인트 설정</div>
+            <div style={{ fontSize: 15, fontWeight: 900, color: '#fff', marginBottom: 14 }}>🍞 토스트 설정</div>
             <label style={{ display: 'block', marginBottom: 12, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
-              구매 적립 포인트 — 구매금액의{' '}
+              구매 적립 토스트 — 구매금액의{' '}
               <input
                 type="number"
                 min={0}
@@ -1661,10 +1661,10 @@ export default function ProductDetailModal({
               %
             </label>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 16 }}>
-              예) ₩{Math.max(0, Math.floor(Number(priceDraft) || 0)).toLocaleString()} 구매 시 약 {exampleEarn.toLocaleString()}P 적립
+              예) ₩{Math.max(0, Math.floor(Number(priceDraft) || 0)).toLocaleString()} 구매 시 약 {exampleEarn.toLocaleString()}T 적립
             </div>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
-              공유 포인트 (표시용)
+              공유 토스트 (표시용)
               <input
                 type="number"
                 min={0}
@@ -1683,7 +1683,7 @@ export default function ProductDetailModal({
                   fontSize: 13,
                 }}
               />{' '}
-              P
+              T
             </label>
             <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', marginBottom: 8 }}>리뷰 포인트</div>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
@@ -1706,7 +1706,7 @@ export default function ProductDetailModal({
                   fontSize: 13,
                 }}
               />{' '}
-              P
+              T
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
               📷 포토 리뷰
@@ -1728,7 +1728,7 @@ export default function ProductDetailModal({
                   fontSize: 13,
                 }}
               />{' '}
-              P
+              T
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
               🎬 영상 리뷰
@@ -1750,7 +1750,7 @@ export default function ProductDetailModal({
                   fontSize: 13,
                 }}
               />{' '}
-              P
+              T
             </label>
             <div style={{ display: 'flex', gap: 8 }}>
               <button
