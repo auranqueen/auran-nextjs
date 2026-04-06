@@ -147,6 +147,18 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       min_order_amount: { label: '최소 주문 금액', unit: '원', type: 'number', defaultValue: '0' },
     },
   },
+  grade: {
+    label: '등급 할인',
+    keys: {
+      grade_discount_PETAL: { label: 'PETAL 등급 할인율(%)', type: 'number', defaultValue: '0' },
+      grade_discount_BLOOM: { label: 'BLOOM 등급 할인율(%)', type: 'number', defaultValue: '0' },
+      grade_discount_VELVET: { label: 'VELVET 등급 할인율(%)', type: 'number', defaultValue: '0' },
+      'grade_discount_LUMIÈRE': { label: 'LUMIÈRE 등급 할인율(%)', type: 'number', defaultValue: '0' },
+      grade_discount_REINE: { label: 'REINE 등급 할인율(%)', type: 'number', defaultValue: '0' },
+      grade_discount_NOIR: { label: 'NOIR 등급 할인율(%)', type: 'number', defaultValue: '0' },
+      'grade_discount_CÉLESTE': { label: 'CÉLESTE 등급 할인율(%)', type: 'number', defaultValue: '0' },
+    },
+  },
   home_special: {
     label: '오늘의 특가',
     keys: {
@@ -209,12 +221,16 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
 }
 
 export default function AdminSettingsAdminSettingsPage() {
-  const { settings, loading, saving, error, saved, set, saveCategory } = useAdminSettings()
+  const { settings, loading, saving, error, saved, set, saveCategory, refetch } = useAdminSettings()
   const [active, setActive] = useState<string>('points_action')
   const [testPhone, setTestPhone] = useState('')
   const [testMsg, setTestMsg] = useState('AURAN 테스트 알림입니다.')
   const [testBusy, setTestBusy] = useState(false)
   const [testResult, setTestResult] = useState<string | null>(null)
+  const [gradeEditKey, setGradeEditKey] = useState<string | null>(null)
+  const [gradeDraft, setGradeDraft] = useState('')
+  const [gradeRowBusy, setGradeRowBusy] = useState<string | null>(null)
+  const [gradeLocalErr, setGradeLocalErr] = useState<string | null>(null)
 
   const categories = useMemo(() => Object.keys(META), [])
   const activeMeta = META[active]
@@ -237,7 +253,11 @@ export default function AdminSettingsAdminSettingsPage() {
             <button
               key={c}
               type="button"
-              onClick={() => setActive(c)}
+              onClick={() => {
+                setActive(c)
+                setGradeEditKey(null)
+                setGradeLocalErr(null)
+              }}
               style={{
                 flex: 1,
                 padding: '10px 10px',
@@ -260,61 +280,189 @@ export default function AdminSettingsAdminSettingsPage() {
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>불러오는 중...</div>
       ) : (
         <div style={{ background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 16, overflow: 'hidden' }}>
-          {rows.map(([key, meta]) => {
-            const current = settings[active]?.[key] ?? meta.defaultValue
-            const unit = meta.unit ? <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{meta.unit}</span> : null
-
-            return (
-              <div key={key} style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', marginBottom: 8 }}>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>{meta.label}</div>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>
-                      {key}
+          {active === 'grade'
+            ? rows.map(([key, meta]) => {
+                const current = settings[active]?.[key] ?? meta.defaultValue
+                const editing = gradeEditKey === key
+                return (
+                  <div
+                    key={key}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      if (editing) return
+                      setGradeEditKey(key)
+                      setGradeDraft(String(settings[active]?.[key] ?? meta.defaultValue))
+                      setGradeLocalErr(null)
+                    }}
+                    onKeyDown={(e) => {
+                      if (editing) return
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setGradeEditKey(key)
+                        setGradeDraft(String(settings[active]?.[key] ?? meta.defaultValue))
+                        setGradeLocalErr(null)
+                      }
+                    }}
+                    style={{
+                      padding: '12px 14px',
+                      borderBottom: '1px solid rgba(255,255,255,0.06)',
+                      cursor: editing ? 'default' : 'pointer',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', marginBottom: 8 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>{meta.label}</div>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>
+                          {key}
+                        </div>
+                      </div>
                     </div>
+                    {editing ? (
+                      <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <input
+                          type="number"
+                          value={gradeDraft}
+                          onChange={(e) => setGradeDraft(e.target.value)}
+                          style={{
+                            width: '100%',
+                            boxSizing: 'border-box',
+                            background: 'rgba(0,0,0,0.25)',
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            borderRadius: 12,
+                            padding: '10px 10px',
+                            color: '#fff',
+                            fontSize: 12,
+                            outline: 'none',
+                            fontFamily: "'JetBrains Mono', monospace",
+                          }}
+                        />
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                          <button
+                            type="button"
+                            disabled={!!gradeRowBusy}
+                            onClick={async () => {
+                              setGradeRowBusy(key)
+                              setGradeLocalErr(null)
+                              const { createClient } = await import('@/lib/supabase/client')
+                              const supabase = createClient()
+                              const { error: uerr } = await supabase
+                                .from('admin_settings')
+                                .update({ value: String(gradeDraft) })
+                                .eq('category', 'grade')
+                                .eq('key', key)
+                              setGradeRowBusy(null)
+                              if (uerr) {
+                                setGradeLocalErr(uerr.message)
+                                return
+                              }
+                              await refetch(true)
+                              setGradeEditKey(null)
+                            }}
+                            style={{
+                              flex: '1 1 120px',
+                              padding: '10px 12px',
+                              borderRadius: 12,
+                              background: '#c9a84c',
+                              border: 'none',
+                              color: '#111',
+                              fontWeight: 900,
+                              cursor: gradeRowBusy ? 'wait' : 'pointer',
+                              opacity: gradeRowBusy ? 0.7 : 1,
+                            }}
+                          >
+                            저장
+                          </button>
+                          <button
+                            type="button"
+                            disabled={!!gradeRowBusy}
+                            onClick={() => {
+                              setGradeEditKey(null)
+                              setGradeDraft('')
+                              setGradeLocalErr(null)
+                            }}
+                            style={{
+                              flex: '1 1 120px',
+                              padding: '10px 12px',
+                              borderRadius: 12,
+                              background: 'rgba(255,255,255,0.08)',
+                              border: '1px solid rgba(255,255,255,0.12)',
+                              color: 'rgba(255,255,255,0.85)',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            취소
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 14, fontWeight: 800, color: '#c9a84c', fontFamily: "'JetBrains Mono', monospace" }}>{Number(current)}</div>
+                    )}
                   </div>
-                  {unit}
-                </div>
+                )
+              })
+            : rows.map(([key, meta]) => {
+                const current = settings[active]?.[key] ?? meta.defaultValue
+                const unit = meta.unit ? <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{meta.unit}</span> : null
 
-                {meta.type === 'number' ? (
-                  <input
-                    type="number"
-                    value={Number(current)}
-                    onChange={e => set(active, key, Number(e.target.value))}
-                    style={{
-                      width: '100%',
-                      background: 'rgba(0,0,0,0.25)',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      borderRadius: 12,
-                      padding: '10px 10px',
-                      color: '#fff',
-                      fontSize: 12,
-                      outline: 'none',
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  />
-                ) : (
-                  <textarea
-                    value={current}
-                    onChange={e => set(active, key, e.target.value)}
-                    rows={meta.type === 'json' ? 4 : 2}
-                    style={{
-                      width: '100%',
-                      background: 'rgba(0,0,0,0.25)',
-                      border: '1px solid rgba(255,255,255,0.12)',
-                      borderRadius: 12,
-                      padding: '10px 10px',
-                      color: '#fff',
-                      fontSize: 12,
-                      outline: 'none',
-                      resize: 'vertical',
-                      fontFamily: "'JetBrains Mono', monospace",
-                    }}
-                  />
-                )}
-              </div>
-            )
-          })}
+                return (
+                  <div key={key} style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center', marginBottom: 8 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 900, color: '#fff' }}>{meta.label}</div>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 2, fontFamily: "'JetBrains Mono', monospace" }}>
+                          {key}
+                        </div>
+                      </div>
+                      {unit}
+                    </div>
+
+                    {meta.type === 'number' ? (
+                      <input
+                        type="number"
+                        value={Number(current)}
+                        onChange={e => set(active, key, Number(e.target.value))}
+                        style={{
+                          width: '100%',
+                          background: 'rgba(0,0,0,0.25)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: 12,
+                          padding: '10px 10px',
+                          color: '#fff',
+                          fontSize: 12,
+                          outline: 'none',
+                          fontFamily: "'JetBrains Mono', monospace",
+                        }}
+                      />
+                    ) : (
+                      <textarea
+                        value={current}
+                        onChange={e => set(active, key, e.target.value)}
+                        rows={meta.type === 'json' ? 4 : 2}
+                        style={{
+                          width: '100%',
+                          background: 'rgba(0,0,0,0.25)',
+                          border: '1px solid rgba(255,255,255,0.12)',
+                          borderRadius: 12,
+                          padding: '10px 10px',
+                          color: '#fff',
+                          fontSize: 12,
+                          outline: 'none',
+                          resize: 'vertical',
+                          fontFamily: "'JetBrains Mono', monospace",
+                        }}
+                      />
+                    )}
+                  </div>
+                )
+              })}
+        </div>
+      )}
+
+      {gradeLocalErr && active === 'grade' && (
+        <div style={{ marginTop: 12, background: 'rgba(217,79,79,0.10)', border: '1px solid rgba(217,79,79,0.25)', borderRadius: 12, padding: 12, color: '#e08080', fontSize: 13 }}>
+          {gradeLocalErr}
         </div>
       )}
 
@@ -374,32 +522,34 @@ export default function AdminSettingsAdminSettingsPage() {
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 14 }}>
-        <button
-          type="button"
-          disabled={saving}
-          onClick={() =>
-            saveCategory(
-              active,
-              Object.fromEntries(
-                Object.entries(activeMeta.keys).map(([k, m]) => [k, { label: m.label, unit: m.unit || '', value_type: m.type }])
+      {active !== 'grade' ? (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 14 }}>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() =>
+              saveCategory(
+                active,
+                Object.fromEntries(
+                  Object.entries(activeMeta.keys).map(([k, m]) => [k, { label: m.label, unit: m.unit || '', value_type: m.type }])
+                )
               )
-            )
-          }
-          style={{
-            padding: '10px 12px',
-            borderRadius: 12,
-            background: '#c9a84c',
-            border: 'none',
-            color: '#111',
-            fontWeight: 900,
-            cursor: saving ? 'wait' : 'pointer',
-            opacity: saving ? 0.7 : 1,
-          }}
-        >
-          {saving ? '저장 중...' : '저장'}
-        </button>
-      </div>
+            }
+            style={{
+              padding: '10px 12px',
+              borderRadius: 12,
+              background: '#c9a84c',
+              border: 'none',
+              color: '#111',
+              fontWeight: 900,
+              cursor: saving ? 'wait' : 'pointer',
+              opacity: saving ? 0.7 : 1,
+            }}
+          >
+            {saving ? '저장 중...' : '저장'}
+          </button>
+        </div>
+      ) : null}
     </div>
   )
 }

@@ -30,6 +30,10 @@ const TEST_PRODUCT = {
   thumb_img: '',
   brand_id: null as string | null,
   brands: { name: 'TEST' },
+  is_timesale: false,
+  timesale_ends_at: null as string | null,
+  is_groupbuy: false,
+  sale_price: 100,
 }
 
 type UcRow = {
@@ -68,6 +72,8 @@ function CheckoutPageInner() {
   const [pinOpen, setPinOpen] = useState(false)
   const [pinInput, setPinInput] = useState('')
   const [pinChecking, setPinChecking] = useState(false)
+  const [gradeDiscount, setGradeDiscount] = useState(0)
+  const [gradeName, setGradeName] = useState('')
 
   const toastRate = getSettingNum('toast', 'exchange_rate', 100)
   const maxCouponPct = getSettingNum('coupon', 'max_percent_discount', 70)
@@ -121,7 +127,11 @@ function CheckoutPageInner() {
         setLoading(false)
         return
       }
-      const { data: me } = await supabase.from('users').select('id,name,phone,points,charge_balance').eq('auth_id', user.id).maybeSingle()
+      const { data: me } = await supabase
+        .from('users')
+        .select('id,name,phone,points,charge_balance,customer_grade')
+        .eq('auth_id', user.id)
+        .maybeSingle()
       if (!me?.id) {
         setLoading(false)
         return
@@ -132,13 +142,27 @@ function CheckoutPageInner() {
       setRecipientPhone(String((me as any).phone || ''))
       setPoints(toNum(me.points))
       setBalance(toNum(me.charge_balance))
+      const cg = String((me as any).customer_grade || '').trim()
+      setGradeName(cg)
+      let gPct = 0
+      if (cg) {
+        const gKey = `grade_discount_${cg}`
+        const { data: gRow } = await supabase
+          .from('admin_settings')
+          .select('value')
+          .eq('category', 'grade')
+          .eq('key', gKey)
+          .maybeSingle()
+        gPct = Number((gRow as any)?.value || 0)
+      }
+      setGradeDiscount(Number.isFinite(gPct) ? gPct : 0)
       const { rows: ucs, error: ucErr } = await fetchUserCouponsWithCoupons(supabase, user.id, { status: 'unused' })
       if (ucErr) console.warn('[checkout] user_coupons', ucErr.message)
       setUserCoupons((ucs || []) as UcRow[])
       if (productIds.length > 0) {
         const { data: rows } = await supabase
           .from('products')
-          .select('id,name,thumb_img,retail_price,brand_id')
+          .select('id,name,thumb_img,retail_price,brand_id,is_timesale,timesale_ends_at,is_groupbuy,sale_price')
           .in('id', productIds)
           .eq('status', 'active')
           .gt('retail_price', 0)
@@ -157,7 +181,15 @@ function CheckoutPageInner() {
     () =>
       orderedProducts.reduce((s, p, i) => {
         const q = qtyList[i] ?? qtyList[0] ?? 1
-        return s + toNum(p.retail_price) * q
+        const now = new Date()
+        let unit = toNum(p.retail_price)
+        if (p.is_timesale && p.timesale_ends_at) {
+          const end = new Date(p.timesale_ends_at)
+          if (end > now) unit = toNum(p.sale_price)
+        } else if (p.is_groupbuy) {
+          unit = toNum(p.sale_price)
+        }
+        return s + unit * q
       }, 0),
     [orderedProducts, qtyList]
   )
@@ -166,14 +198,28 @@ function CheckoutPageInner() {
     () =>
       orderedProducts.map((p, i) => {
         const q = qtyList[i] ?? qtyList[0] ?? 1
+        const now = new Date()
+        let unit = toNum(p.retail_price)
+        if (p.is_timesale && p.timesale_ends_at) {
+          const end = new Date(p.timesale_ends_at)
+          if (end > now) unit = toNum(p.sale_price)
+        } else if (p.is_groupbuy) {
+          unit = toNum(p.sale_price)
+        }
         return {
           product_id: p.id,
           brand_id: p.brand_id ?? null,
-          subtotal: toNum(p.retail_price) * q,
+          subtotal: unit * q,
         }
       }),
     [orderedProducts, qtyList]
   )
+
+  const gradeDiscountAmt = useMemo(
+    () => Math.floor((subtotal * Math.max(0, gradeDiscount)) / 100),
+    [subtotal, gradeDiscount]
+  )
+  const afterGrade = Math.max(0, subtotal - gradeDiscountAmt)
 
   const selectedRow = useMemo(
     () => userCoupons.find((u) => u.id === selectedUserCouponId) || null,
@@ -182,12 +228,12 @@ function CheckoutPageInner() {
   const couponDiscount = useMemo(() => {
     if (!selectedRow?.coupons || !authUid) return 0
     const c = selectedRow.coupons
-    if (!isCouponApplicableForOrder(c, orderLines, subtotal, authUid)) return 0
-    return computeCouponDiscount(subtotal, c, { maxPercent: maxCouponPct })
-  }, [selectedRow, subtotal, orderLines, authUid, maxCouponPct])
+    if (!isCouponApplicableForOrder(c, orderLines, afterGrade, authUid)) return 0
+    return computeCouponDiscount(afterGrade, c, { maxPercent: maxCouponPct })
+  }, [selectedRow, afterGrade, orderLines, authUid, maxCouponPct])
 
-  const afterCoupon = Math.max(0, subtotal - couponDiscount)
-  const maxPointsUsable = useMemo(() => Math.min(points, Math.floor((subtotal * maxPointRate) / 100)), [points, subtotal, maxPointRate])
+  const afterCoupon = Math.max(0, afterGrade - couponDiscount)
+  const maxPointsUsable = useMemo(() => Math.min(points, Math.floor((afterCoupon * maxPointRate) / 100)), [points, afterCoupon, maxPointRate])
   const pointUsed = useMemo(() => {
     if (!usePoints) return 0
     const input = Math.max(0, Math.floor(pointInput || 0))
@@ -196,6 +242,7 @@ function CheckoutPageInner() {
   const remaining = Math.max(0, afterCoupon - pointUsed)
   const toastUsed = payWithToast ? Math.min(balance, remaining) : 0
   const needCharge = Math.max(0, remaining - toastUsed)
+  const payAppAmount = Math.max(0, Math.floor(remaining))
 
   useEffect(() => {
     setPointInput(maxPointsUsable)
@@ -211,22 +258,22 @@ function CheckoutPageInner() {
     if (
       !authUid ||
       isCouponExpiredForUser({ status: 'unused', expired_at: row.expired_at }, row.coupons) ||
-      !isCouponApplicableForOrder(row.coupons, orderLines, subtotal, authUid) ||
-      computeCouponDiscount(subtotal, row.coupons, { maxPercent: maxCouponPct }) <= 0
+      !isCouponApplicableForOrder(row.coupons, orderLines, afterGrade, authUid) ||
+      computeCouponDiscount(afterGrade, row.coupons, { maxPercent: maxCouponPct }) <= 0
     ) {
       setSelectedUserCouponId(null)
     }
-  }, [subtotal, userCoupons, selectedUserCouponId, orderLines, authUid, maxCouponPct])
+  }, [afterGrade, userCoupons, selectedUserCouponId, orderLines, authUid, maxCouponPct])
 
   const applicableCheckoutCoupons = useMemo(() => {
     if (!authUid) return []
     return userCoupons.filter((u) => {
       if (!u.coupons || u.status !== 'unused') return false
       if (isCouponExpiredForUser({ status: u.status, expired_at: u.expired_at }, u.coupons)) return false
-      if (!isCouponApplicableForOrder(u.coupons, orderLines, subtotal, authUid)) return false
-      return computeCouponDiscount(subtotal, u.coupons, { maxPercent: maxCouponPct }) > 0
+      if (!isCouponApplicableForOrder(u.coupons, orderLines, afterGrade, authUid)) return false
+      return computeCouponDiscount(afterGrade, u.coupons, { maxPercent: maxCouponPct }) > 0
     })
-  }, [userCoupons, subtotal, orderLines, authUid, maxCouponPct])
+  }, [userCoupons, afterGrade, orderLines, authUid, maxCouponPct])
 
   const onPay = async (allowCharge = true) => {
     if (!orderedProducts.length || !meId) return
@@ -252,7 +299,7 @@ function CheckoutPageInner() {
     }
     setPinOpen(false)
     setPinChecking(false)
-    router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&amount=${subtotal}&qty=1`)
+    router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&qty=1`)
   }
 
   const onChargeKrw = async (krw: number) => {
@@ -286,6 +333,9 @@ function CheckoutPageInner() {
         address={address}
         setAddress={setAddress}
         subtotal={subtotal}
+        gradeDiscount={gradeDiscount}
+        gradeDiscountAmt={gradeDiscountAmt}
+        gradeName={gradeName}
         couponDiscount={couponDiscount}
         applicableCheckoutCoupons={applicableCheckoutCoupons}
         selectedUserCouponId={selectedUserCouponId}
@@ -358,7 +408,7 @@ function CheckoutPageInner() {
               충전하고 결제하기<br/>
               <span style={{fontSize:11,fontWeight:400}}>토스트 충전 후 결제 · 구매금액의 5% 적립</span>
             </button>
-            <button onClick={() => { setPayModal(false); setEarnToast(false); router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${subtotal}`) }}
+            <button onClick={() => { setPayModal(false); setEarnToast(false); router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}`) }}
               style={{width:'100%',background:'#1e1a14',border:'1px solid #2a2520',borderRadius:12,padding:'14px 0',fontSize:15,fontWeight:700,color:'#e8e4dc',cursor:'pointer',fontFamily:'inherit'}}>
               지금 바로 결제하기<br/>
               <span style={{fontSize:11,fontWeight:400,color:'#888'}}>토스트 없이 바로 결제</span>

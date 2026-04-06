@@ -35,6 +35,9 @@ type Props = {
   address: string
   setAddress: (v: string) => void
   subtotal: number
+  gradeDiscount?: number
+  gradeDiscountAmt?: number
+  gradeName?: string
   couponDiscount: number
   applicableCheckoutCoupons: CheckoutUcRow[]
   selectedUserCouponId: string | null
@@ -80,6 +83,9 @@ export default function CheckoutPageView({
   address,
   setAddress,
   subtotal,
+  gradeDiscount = 0,
+  gradeDiscountAmt = 0,
+  gradeName = '',
   couponDiscount,
   applicableCheckoutCoupons,
   selectedUserCouponId,
@@ -111,6 +117,7 @@ export default function CheckoutPageView({
   onPay,
   onChargeKrw,
 }: Props) {
+  const afterGrade = Math.max(0, subtotal - (gradeDiscountAmt || 0))
   const [useBankTransfer, setUseBankTransfer] = useState(false)
   const [receiptOn, setReceiptOn] = useState(true)
   const [receiptNum, setReceiptNum] = useState('')
@@ -187,7 +194,7 @@ export default function CheckoutPageView({
               {applicableCheckoutCoupons.map(uc => {
                 const c = uc.coupons
                 if (!c) return null
-                const disc = computeCouponDiscount(subtotal, c, { maxPercent: maxCouponPct })
+                const disc = computeCouponDiscount(afterGrade, c, { maxPercent: maxCouponPct })
                 const minO = Number(c.min_order || 0)
                 const exp = uc.expired_at || c.end_at
                 const expLabel = exp ? new Date(exp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit' }) : '—'
@@ -351,6 +358,14 @@ export default function CheckoutPageView({
                 <span>주문금액</span>
                 <span>₩{subtotal.toLocaleString()}</span>
               </div>
+              {gradeDiscountAmt > 0 && gradeName ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#c4a5f5', fontSize: 13 }}>
+                  <span>
+                    {gradeName} 등급 {gradeDiscount}% 할인
+                  </span>
+                  <span>-₩{gradeDiscountAmt.toLocaleString()}</span>
+                </div>
+              ) : null}
               {couponDiscount > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#7eb8ff', fontSize: 13 }}>
                   <span>🎫 쿠폰 할인</span>
@@ -499,12 +514,12 @@ export default function CheckoutPageView({
                 </div>
               )
               const expired = isCouponExpiredForUser({ status: uc.status, expired_at: uc.expired_at }, c)
-              const applicable = !!authUid && !expired && isCouponApplicableForOrder(c, orderLines, subtotal, authUid)
-              const disc = applicable ? computeCouponDiscount(subtotal, c, { maxPercent: maxCouponPct }) : 0
+              const applicable = !!authUid && !expired && isCouponApplicableForOrder(c, orderLines, afterGrade, authUid)
+              const disc = applicable ? computeCouponDiscount(afterGrade, c, { maxPercent: maxCouponPct }) : 0
               const ok = applicable && disc > 0
               const sel = selectedUserCouponId === uc.id
               const minO = Math.max(0, Number(c.min_order ?? 0))
-              const subFail = !expired && subtotal < minO
+              const subFail = !expired && afterGrade < minO
               const dt = (c.discount_type || (c.type === 'rate' ? 'rate' : 'amount')) as string
               const dv = c.discount_value != null ? Number(c.discount_value) : dt === 'rate' ? Number(c.discount_rate || 0) : Number(c.discount_amount || 0)
               const discLabel = dt === 'rate' ? `${dv}% 할인` : `₩${dv.toLocaleString()} 할인`
