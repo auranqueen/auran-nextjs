@@ -44,6 +44,7 @@ export default function AdminRevenuePage() {
       let r1 = await supabase
         .from('orders')
         .select('id, order_no, customer_id, status, total_amount, point_used, charge_used, coupon_discount, final_amount, earn_points, items, partner_id, owner_id, partner_commission, owner_commission, ordered_at, shipped_at, delivered_at, profiles(grade, email, username, full_name)')
+        .eq('payment_applied', true)
         .gte('ordered_at', `${fromDate}T00:00:00`)
         .lte('ordered_at', `${toDate}T23:59:59.999`)
         .not('status', 'in', '("취소","환불")')
@@ -51,6 +52,7 @@ export default function AdminRevenuePage() {
         const r2 = await supabase
           .from('orders')
           .select('id, order_no, customer_id, status, total_amount, point_used, charge_used, coupon_discount, final_amount, earn_points, items, partner_id, owner_id, ordered_at, shipped_at, delivered_at')
+          .eq('payment_applied', true)
           .gte('ordered_at', `${fromDate}T00:00:00`)
           .lte('ordered_at', `${toDate}T23:59:59.999`)
           .not('status', 'in', '("취소","환불")')

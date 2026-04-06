@@ -96,6 +96,7 @@ export default function OrdersPage() {
         .from('orders')
         .select('id,order_no,status,final_amount,ordered_at,gift_receiver_id,tracking_no,courier,order_items(product_name,quantity)')
         .eq('customer_id', profile.id)
+        .eq('payment_applied', true)
         .order('ordered_at', { ascending: false })
         .limit(20)
       setOrders(data || [])

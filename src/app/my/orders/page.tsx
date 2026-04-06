@@ -79,6 +79,7 @@ export default function MyOrdersPage() {
         .from('orders')
         .select('id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, delivered_at, confirmed_at, auto_confirm_at, referrer_user_id, items')
         .eq('customer_id', user.id)
+        .eq('payment_applied', true)
         .order('ordered_at', { ascending: false })
       const nextRows = (rows as OrderRow[]) || []
       const ids = nextRows.map((o) => o.id).filter(Boolean)
