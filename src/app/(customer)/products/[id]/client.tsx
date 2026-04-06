@@ -151,7 +151,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
     const q1 = await supabase
       .from('reviews')
       .select(
-        '*, author_user:users!reviews_author_id_fkey(customer_grade, role), link_post:posts!reviews_community_post_id_fkey(is_expert_answered)'
+        '*, author_user:users!reviews_author_id_fkey(customer_grade, role)'
       )
       .eq('target_id', product.id)
       .eq('status', '게시')
