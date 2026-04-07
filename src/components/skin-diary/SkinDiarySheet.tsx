@@ -136,7 +136,7 @@ export default function SkinDiarySheet({ open, onClose, supabase, userId, hormon
               </div>
 
               <button onClick={onSave} disabled={!ready || saving} style={{ width:'100%', padding:'14px', borderRadius:14, border:'none', cursor: ready ? 'pointer' : 'default', fontSize:14, background: ready ? PURPLE : 'rgba(255,255,255,0.06)', color: ready ? '#fff' : 'rgba(255,255,255,0.25)' }}>
-                {saving ? '저장 중...' : '저장하기'}
+                {saving ? '저장 중...' : saved ? '저장완료 ✓' : '저장하기'}
               </button>
             </div>
           )}
