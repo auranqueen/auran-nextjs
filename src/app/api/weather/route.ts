@@ -6,7 +6,7 @@ export async function GET(req: NextRequest) {
   const lon = searchParams.get('lon') || '128.6014'
 
   try {
-    const owKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY
+    const owKey = process.env.OPENWEATHER_API_KEY
     const akKey = process.env.AIRKOREA_API_KEY
 
     // OpenWeatherMap - 날씨/기온/습도/자외선
