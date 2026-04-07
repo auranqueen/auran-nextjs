@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import { createClient } from '@/lib/supabase/client'
+import { compressImage } from '@/lib/imageUpload'
 
 const BG = '#0a0a0a'
 const CARD = '#1a1a1a'
@@ -182,6 +183,7 @@ export default function CommunityWritePage() {
     const path = `community/${userId}/${Date.now()}_${img.id}.${ext}`
 
     setImages(prev => prev.map(x => (x.id === img.id ? { ...x, uploading: true, error: undefined } : x)))
+    img.file = await compressImage(img.file, 'community')
     const { error } = await supabase.storage.from('community').upload(path, img.file, {
       cacheControl: '3600',
       upsert: false,

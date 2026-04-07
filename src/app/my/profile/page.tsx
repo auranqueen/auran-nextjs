@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { compressImage } from '@/lib/imageUpload'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
@@ -183,13 +184,14 @@ export default function MyProfilePage() {
   }
 
   const onAvatarFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
+    let file = e.target.files?.[0]
     e.target.value = ''
     if (!file || !authId) return
     setUploading(true)
     // Supabase 대시보드에서 avatars 버킷 생성 필요
     const ext = (file.name.split('.').pop() || 'jpg').replace(/[^a-zA-Z0-9]/g, '') || 'jpg'
     const filePath = `avatars/${authId}_${Date.now()}.${ext}`
+    file = await compressImage(file, 'avatar')
     const { error: upErr } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true, cacheControl: '3600' })
     if (upErr) {
       setUploading(false)

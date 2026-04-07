@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { compressImage } from '@/lib/imageUpload'
 
 const CATS = ['피부케어', '성분', '루틴', '브랜드', '원장님픽'] as const
 
@@ -108,8 +109,10 @@ export default function AdminMagazinePage() {
 
   const uploadThumb = async (magId: string) => {
     if (!thumbFile) return thumbPreview || null
+    let f = thumbFile
+    f = await compressImage(f, 'magazine')
     const path = `${magId}/thumb`
-    const { error } = await supabase.storage.from('magazine').upload(path, thumbFile, { upsert: true })
+    const { error } = await supabase.storage.from('magazine').upload(path, f, { upsert: true })
     if (error) return thumbPreview || null
     const { data } = supabase.storage.from('magazine').getPublicUrl(path)
     return data.publicUrl || null

@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { compressImage } from '@/lib/imageUpload'
 
 const TABS = ['기본정보', '옵션정보', '가격및재고', '포인트설정', '배송비', '상품이미지'] as const
 
@@ -403,6 +404,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
 
   const uploadToStorage = useCallback(
     async (file: File, path: string) => {
+      file = await compressImage(file, 'product_detail')
       const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true })
       if (error) throw error
       return `${supabaseUrl}/storage/v1/object/public/product-images/${path}`

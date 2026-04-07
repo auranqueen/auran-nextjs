@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useUserProfile } from '@/hooks/useUserProfile'
+import { compressImage } from '@/lib/imageUpload'
 
 const BG = '#0D0B09'
 const GOLD = '#C9A96E'
@@ -366,6 +367,7 @@ export default function MyWorldPage() {
         const uploads = await Promise.all(
           mediaFiles.map(async (file, index) => {
             const path = `diary/${user.id}/${Date.now()}_${index}`
+            if (file.type.startsWith('image/')) file = await compressImage(file, 'diary')
             const { error } = await supabase.storage.from('skin-diary').upload(path, file, { upsert: true })
             if (error) return ''
             const { data } = supabase.storage.from('skin-diary').getPublicUrl(path)

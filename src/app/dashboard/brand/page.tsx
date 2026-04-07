@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { CSSProperties } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { compressImage } from '@/lib/imageUpload'
 
 const BrandProductForm = dynamic(() => import('@/components/brand/BrandProductForm'), { ssr: false })
 const ProductDetailModal = dynamic(() => import('@/app/admin/marketing/products/ProductDetailModal'), { ssr: false })
@@ -159,6 +160,7 @@ export default function BrandDashboardPage() {
   const uploadAsset = async (file: File, prefix: string) => {
     const ext = (file.name.split('.').pop() || 'bin').toLowerCase()
     const path = `apply/${applyFolder}/${prefix}_${Date.now()}.${ext}`
+    file = await compressImage(file, 'brand_logo')
     const { error } = await supabase.storage.from('brand-assets').upload(path, file, {
       upsert: true,
       contentType: file.type || undefined,

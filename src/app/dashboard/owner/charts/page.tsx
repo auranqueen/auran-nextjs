@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { compressImage } from '@/lib/imageUpload'
 
 const BG = '#0D0B09'
 
@@ -115,8 +116,9 @@ export default function OwnerChartsPage() {
   const uploadBatch = async (files: File[], chartId: string, kind: 'before' | 'after') => {
     if (!owner?.id) return []
     const urls: string[] = []
-    for (const f of files) {
+    for (let f of files) {
       const path = `charts/${owner.id}/${chartId}/${kind}_${Date.now()}_${Math.random().toString(16).slice(2)}`
+      f = await compressImage(f, 'owner_store')
       const { error } = await supabase.storage.from('charts').upload(path, f, { upsert: true })
       if (!error) {
         const { data } = supabase.storage.from('charts').getPublicUrl(path)
