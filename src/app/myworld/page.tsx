@@ -33,7 +33,6 @@ export default function MyWorldPage() {
   const [skinDiary, setSkinDiary] = useState<any[]>([])
   const [guestbook, setGuestbook] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'room' | 'diary' | 'routine' | 'guestbook'>('room')
-  const [isPlaying, setIsPlaying] = useState(false)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [selectedMoods, setSelectedMoods] = useState<string[]>([])
   const [selectedSkinStatuses, setSelectedSkinStatuses] = useState<string[]>([])
@@ -575,21 +574,6 @@ export default function MyWorldPage() {
           <div style={{ fontSize: 10, color: 'rgba(196,167,231,0.5)', marginTop: 4 }}>일촌 0명 · 방명록 {guestbook.length}개</div>
         </div>
         <button onClick={() => setShowCustomize(true)} style={{ border: '1px solid rgba(123,94,167,0.4)', color: '#9b7ec8', fontSize: 11, background: 'transparent', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}>꾸미기 ✏️</button>
-      </div>
-
-      <div style={{ background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.15)', borderRadius: 12, padding: '10px 14px', margin: '10px 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: '#9b7ec8' }}>
-          <span>🎵</span>
-          <span>AURAN Morning Routine</span>
-        </div>
-        <button
-          onClick={() => {
-            setIsPlaying((p) => !p)
-          }}
-          style={{ fontSize: 10, border: '1px solid rgba(123,94,167,0.3)', color: '#c4a7e7', borderRadius: 8, background: 'transparent', padding: '6px 10px', cursor: 'pointer' }}
-        >
-          {isPlaying ? '⏸ 정지' : '▶ 재생'}
-        </button>
       </div>
 
       <div style={{ display: 'flex', margin: '14px 16px 0', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
