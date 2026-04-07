@@ -51,7 +51,7 @@ export default function MyWorldPage() {
   const [commentsMap, setCommentsMap] = useState<Record<string, any[]>>({})
   const [commentInputMap, setCommentInputMap] = useState<Record<string, string>>({})
   const [guestbookInput, setGuestbookInput] = useState('')
-  const [bgmTab, setBgmTab] = useState<'morning' | 'night' | 'pack'>('morning')
+  const [bgmTab, setBgmTab] = useState<'auran' | 'balance'>('auran')
   const [routineChecked, setRoutineChecked] = useState<Record<string, boolean>>({})
   const mediaInputRef = useRef<HTMLInputElement | null>(null)
   const [showCustomize, setShowCustomize] = useState(false)
@@ -477,12 +477,6 @@ export default function MyWorldPage() {
     setToast('방명록이 남겨졌어요 💜')
   }
 
-  const bgmQuery =
-    bgmTab === 'morning'
-      ? 'morning+skincare+routine+music'
-      : bgmTab === 'night'
-        ? 'night+skincare+routine+relaxing+music'
-        : 'face+mask+relaxing+music+15min'
   const particles = useMemo(() => {
     if (daysSinceRoutine < 1) return []
     const count = daysSinceRoutine < 3 ? 5 : daysSinceRoutine < 5 ? 8 : daysSinceRoutine < 7 ? 12 : 16
@@ -1253,18 +1247,24 @@ export default function MyWorldPage() {
             <div style={{ fontSize: 12, color: '#c4a7e7', marginBottom: 8 }}>🎵 루틴 BGM 추천</div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
               {[
-                ['morning', '모닝'],
-                ['night', '나이트'],
-                ['pack', '팩타임'],
+                ['auran', 'AURAN 루틴'],
+                ['balance', 'Keep Balance'],
               ].map(([k, label]) => (
                 <button key={k} onClick={() => setBgmTab(k as any)} style={{ flex: 1, border: bgmTab === k ? '1px solid #7B5EA7' : '1px solid rgba(123,94,167,0.2)', background: bgmTab === k ? 'rgba(123,94,167,0.2)' : 'transparent', color: '#fff', borderRadius: 8, padding: '6px 0', fontSize: 11, cursor: 'pointer' }}>
                   {label}
                 </button>
               ))}
             </div>
-            <button onClick={() => window.open(`https://youtube.com/results?search_query=${bgmQuery}`, '_blank')} style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '8px 10px', fontSize: 11, cursor: 'pointer' }}>
-              ▶ 유튜브에서 듣기
-            </button>
+            <audio
+              key={bgmTab}
+              src={
+                bgmTab === 'auran'
+                  ? 'https://bhpcqgedhfawlehobphq.supabase.co/storage/v1/object/public/bgm/auran-routine.mp3'
+                  : 'https://bhpcqgedhfawlehobphq.supabase.co/storage/v1/object/public/bgm/keep-the-balance.mp3'
+              }
+              controls
+              style={{ width: '100%', marginTop: 4, borderRadius: 8, accentColor: '#7B5EA7' }}
+            />
           </div>
         </div>
       ) : null}
