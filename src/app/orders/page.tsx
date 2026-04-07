@@ -177,7 +177,72 @@ export default function OrdersPage() {
           </div>
         )}
         {loading ? (
-          <div style={{ fontSize: 12, color: 'var(--text3)' }}>불러오는 중...</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[...Array(4)].map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid rgba(255,255,255,0.10)',
+                  borderRadius: 14,
+                  padding: '14px 14px',
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div
+                    style={{
+                      height: 12,
+                      width: '35%',
+                      borderRadius: 6,
+                      background: 'rgba(255,255,255,0.08)',
+                      animation: 'pulse 1.5s ease-in-out infinite',
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: 12,
+                      width: '20%',
+                      borderRadius: 6,
+                      background: 'rgba(255,255,255,0.06)',
+                      animation: 'pulse 1.5s ease-in-out infinite',
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <div
+                    style={{
+                      width: 56,
+                      height: 56,
+                      borderRadius: 10,
+                      background: 'rgba(255,255,255,0.07)',
+                      flexShrink: 0,
+                      animation: 'pulse 1.5s ease-in-out infinite',
+                    }}
+                  />
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 7 }}>
+                    <div
+                      style={{
+                        height: 13,
+                        width: '70%',
+                        borderRadius: 6,
+                        background: 'rgba(255,255,255,0.08)',
+                        animation: 'pulse 1.5s ease-in-out infinite',
+                      }}
+                    />
+                    <div
+                      style={{
+                        height: 11,
+                        width: '40%',
+                        borderRadius: 6,
+                        background: 'rgba(201,168,76,0.12)',
+                        animation: 'pulse 1.5s ease-in-out infinite',
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : orders.length === 0 ? (
           <div style={{ fontSize: 12, color: 'var(--text3)' }}>구매 내역이 없습니다.</div>
         ) : (
