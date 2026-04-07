@@ -302,7 +302,63 @@ export default function ProductsCatalogView({
             {error}
           </div>
         ) : loading ? (
-          <div style={{ fontSize: 13, color: 'var(--text3)', padding: '8px 0' }}>불러오는 중...</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {[...Array(6)].map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  borderRadius: 18,
+                  padding: '14px 14px 14px 16px',
+                  display: 'flex',
+                  gap: 12,
+                  alignItems: 'center',
+                  background: 'linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)',
+                  border: '1px solid rgba(201,168,76,0.15)',
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                }}
+              >
+                <div
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 12,
+                    background: 'rgba(255,255,255,0.08)',
+                    flexShrink: 0,
+                    animation: 'pulse 1.5s ease-in-out infinite',
+                  }}
+                />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div
+                    style={{
+                      height: 14,
+                      borderRadius: 6,
+                      background: 'rgba(255,255,255,0.08)',
+                      width: '70%',
+                      animation: 'pulse 1.5s ease-in-out infinite',
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: 11,
+                      borderRadius: 6,
+                      background: 'rgba(255,255,255,0.05)',
+                      width: '40%',
+                      animation: 'pulse 1.5s ease-in-out infinite',
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: 13,
+                      borderRadius: 6,
+                      background: 'rgba(201,168,76,0.12)',
+                      width: '30%',
+                      animation: 'pulse 1.5s ease-in-out infinite',
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : empty ? (
           <div
             style={{
