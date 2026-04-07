@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Editor } from '@toast-ui/react-editor'
 import '@toast-ui/editor/dist/toastui-editor.css'
 import '@toast-ui/editor/dist/i18n/ko-kr'
+import { compressImage } from '@/lib/imageUpload'
 
 type TabKey = 'thumb' | 'basic' | 'detail' | 'points' | 'flash'
 
@@ -561,7 +562,7 @@ export default function ProductDetailModal({
               className="hidden"
               style={{ display: 'none' }}
               onChange={async e => {
-                const file = e.target.files?.[0]
+                let file = e.target.files?.[0]
                 const inputEl = e.target
                 inputEl.value = ''
                 if (!file) return
@@ -574,6 +575,7 @@ export default function ProductDetailModal({
                 setThumbUploading(true)
                 const safe = file.name.replace(/[^\w.\-가-힣]/g, '_')
                 const path = `thumbnails/${product.id}/${Date.now()}_${safe}`
+                file = await compressImage(file, 'product_thumb')
                 const { error } = await supabase.storage.from('products').upload(path, file, { upsert: true })
                 if (error) {
                   onToast(error.message || '업로드 실패')
@@ -639,7 +641,7 @@ export default function ProductDetailModal({
                   let gif = galleryGifUrl
                   let vid = galleryVideoUrl
                   let anyOk = false
-                  for (const file of files) {
+                  for (let file of files) {
                     const isVid = file.type.startsWith('video/') || /\.mp4$/i.test(file.name)
                     const isGif = file.type === 'image/gif' || /\.gif$/i.test(file.name)
                     if (isVid) {
@@ -703,6 +705,7 @@ export default function ProductDetailModal({
                       }
                       const safe = file.name.replace(/[^\w.\-가-힣]/g, '_')
                       const path = `thumbnails/${product.id}/${Date.now()}_${safe}`
+                      file = await compressImage(file, 'product_detail')
                       const { error } = await supabase.storage.from('products').upload(path, file, { upsert: true })
                       if (error) {
                         onToast(error.message || '업로드 실패')
@@ -733,6 +736,7 @@ export default function ProductDetailModal({
                     }
                     const safe = file.name.replace(/[^\w.\-가-힣]/g, '_')
                     const path = `thumbnails/${product.id}/${Date.now()}_${safe}`
+                    file = await compressImage(file, 'product_detail')
                     const { error } = await supabase.storage.from('products').upload(path, file, { upsert: true })
                     if (error) {
                       onToast(error.message || '업로드 실패')
@@ -1117,10 +1121,11 @@ export default function ProductDetailModal({
                   ]}
                   hooks={{
                     addImageBlobHook: async (blob: any, callback: (url: string, alt: string) => void) => {
-                      const file = blob
+                      let file = blob
                       const ext = file?.name?.split?.('.')?.pop?.() || 'jpg'
                       const productId = product.id
                       const path = `detail/${productId}/${Date.now()}.${ext}`
+                      file = await compressImage(file, 'product_detail')
                       const { error: upErr } = await supabase.storage.from('products').upload(path, file, { upsert: true })
                       if (upErr) {
                         onToast(upErr.message || '이미지 업로드 실패')
