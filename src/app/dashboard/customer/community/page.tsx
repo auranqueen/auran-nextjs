@@ -595,7 +595,68 @@ export default function CustomerCommunityPage() {
       {/* 콘텐츠 */}
       <div style={{ padding: '6px 16px 0' }}>
         {loading ? (
-          <div style={{ fontSize: 12, color: TEXT_MUTED }}>불러오는 중...</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                style={{
+                  borderRadius: 16,
+                  padding: '14px 16px',
+                  background: 'rgba(255,255,255,0.03)',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                }}
+              >
+                <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 10 }}>
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.08)',
+                      animation: 'pulse 1.5s ease-in-out infinite',
+                    }}
+                  />
+                  <div
+                    style={{
+                      height: 11,
+                      width: '30%',
+                      borderRadius: 6,
+                      background: 'rgba(255,255,255,0.08)',
+                      animation: 'pulse 1.5s ease-in-out infinite',
+                    }}
+                  />
+                </div>
+                <div
+                  style={{
+                    height: 13,
+                    width: '80%',
+                    borderRadius: 6,
+                    background: 'rgba(255,255,255,0.08)',
+                    marginBottom: 8,
+                    animation: 'pulse 1.5s ease-in-out infinite',
+                  }}
+                />
+                <div
+                  style={{
+                    height: 11,
+                    width: '60%',
+                    borderRadius: 6,
+                    background: 'rgba(255,255,255,0.06)',
+                    animation: 'pulse 1.5s ease-in-out infinite',
+                  }}
+                />
+                <div
+                  style={{
+                    marginTop: 10,
+                    height: 140,
+                    borderRadius: 10,
+                    background: 'rgba(255,255,255,0.05)',
+                    animation: 'pulse 1.5s ease-in-out infinite',
+                  }}
+                />
+              </div>
+            ))}
+          </div>
         ) : tab === 'contest' ? (
           <div ref={contestAnchorRef}>
             {!contestRow ? (
