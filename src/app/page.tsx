@@ -1197,7 +1197,7 @@ export default function CustomerHomePage() {
 
       {/* ── TODAY'S SKIN ── */}
       <div
-        onClick={() => setShowSkinDiary(true)}
+        onClick={() => setShowWeatherDetail(prev => !prev)}
         style={{
           margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER,
           borderRadius: '16px', padding: '12px 16px', cursor: 'pointer',
@@ -1288,6 +1288,12 @@ export default function CustomerHomePage() {
                 style={{ flex:1, background:'rgba(201,169,110,0.08)', border:'1px solid rgba(201,169,110,0.25)', borderRadius:20, padding:'6px 10px', fontSize:11, color:GOLD, cursor:'pointer' }}
               >
                 ✦ 날씨 맞춤 추천
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); setShowSkinDiary(true) }}
+                style={{ flex:1, background:'rgba(123,94,167,0.08)', border:'1px solid rgba(123,94,167,0.25)', borderRadius:20, padding:'6px 10px', fontSize:11, color:'#c4a7e7', cursor:'pointer' }}
+              >
+                💜 오늘 기록하기
               </button>
             </div>
           </div>
