@@ -1247,6 +1247,7 @@ export default function CustomerHomePage() {
                 {[
                   { label: '날씨', value: `${weather.temp}° ${weather.condition}` },
                   { label: '미세먼지', value: weather.dust?.level, color: weather.dust?.level === '좋음' ? '#4CAF50' : weather.dust?.level === '보통' ? '#F5A623' : '#E53935' },
+                  { label: '초미세먼지', value: weather.fineDust?.level, color: weather.fineDust?.level === '좋음' ? '#4CAF50' : weather.fineDust?.level === '보통' ? '#F5A623' : '#E53935' },
                   { label: '자외선', value: weather.uv?.level, color: weather.uv?.level === '낮음' ? '#4CAF50' : weather.uv?.level === '보통' ? '#8BC34A' : weather.uv?.level === '높음' ? '#FF9800' : '#E53935' },
                   { label: '습도', value: `${weather.humidity}%` },
                 ].map((item, i) => (
