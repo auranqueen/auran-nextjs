@@ -50,10 +50,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Cinzel:wght@700&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body style={{ margin: 0, padding: 0, background: '#0a0c0f', userSelect: 'none', WebkitUserSelect: 'none' }}>
         <AppProviders>{children}</AppProviders>
