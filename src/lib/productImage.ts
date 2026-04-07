@@ -4,6 +4,9 @@ export function normalizeProductThumbUrl(url: string | null | undefined): string
   const u = String(url).trim()
   if (!u) return null
   if (u.startsWith('//')) return `https:${u}`
+  if (u.includes('/storage/v1/object/public/')) {
+    return u.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/') + '?width=600&quality=80'
+  }
   return u
 }
 
