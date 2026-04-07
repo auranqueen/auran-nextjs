@@ -15,7 +15,6 @@ type Props = {
   cycleType: string | null
 }
 
-const GOLD = '#C9A96E'
 const PURPLE = '#7B5EA7'
 
 const SLEEP_OPTS = [['4시간\n이하','😵'],['5시간','😪'],['6시간','😐'],['7시간','🙂'],['8시간\n이상','😊']]
@@ -26,7 +25,6 @@ const SAVE_MSGS = ['오늘도 내 피부를 잘 챙겼어요 💜','기록이 �
 
 export default function SkinDiarySheet({ open, onClose, supabase, userId, hormoneCycle, hormoneTrack, skinRecList, cycleType }: Props) {
   const [tab, setTab] = useState(0)
-  const [water, setWater] = useState(0)
   const [sleep, setSleep] = useState(-1)
   const [uv, setUv] = useState(-1)
   const [stress, setStress] = useState(-1)
@@ -38,7 +36,7 @@ export default function SkinDiarySheet({ open, onClose, supabase, userId, hormon
   if (!open) return null
 
   const toggleSkin = (s: string) => setSkins(prev => prev.includes(s) ? prev.filter(x=>x!==s) : [...prev, s])
-  const ready = water > 0 && sleep >= 0 && uv >= 0 && stress >= 0 && skins.length > 0
+  const ready = sleep >= 0 && uv >= 0 && stress >= 0 && skins.length > 0
 
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
 
@@ -48,7 +46,6 @@ export default function SkinDiarySheet({ open, onClose, supabase, userId, hormon
     await supabase.from('daily_skin_log').upsert({
       user_id: userId,
       date: today,
-      water,
       sleep_hours: sleep + 4,
       uv_exposure: uv,
       stress_level: stress,
@@ -90,15 +87,6 @@ export default function SkinDiarySheet({ open, onClose, supabase, userId, hormon
           {tab === 0 && (
             <div>
               {saved && <div style={{ background:'rgba(123,94,167,0.2)', border:'1px solid rgba(123,94,167,0.4)', borderRadius:12, padding:'10px 14px', marginBottom:14, fontSize:13, color:'#c4a7e7', textAlign:'center' }}>{SAVE_MSGS[Math.floor(Math.random()*SAVE_MSGS.length)]}</div>}
-
-              <div style={{ marginBottom:14 }}>
-                <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginBottom:8 }}>물 마시기 <span style={{ color:GOLD }}>{water}/8잔</span></div>
-                <div style={{ display:'flex', gap:6 }}>
-                  {Array.from({length:8},(_,i) => (
-                    <div key={i} onClick={() => setWater(i < water ? i : i+1)} style={{ cursor:'pointer', fontSize:20, opacity: i < water ? 1 : 0.2 }}>💧</div>
-                  ))}
-                </div>
-              </div>
 
               <div style={{ marginBottom:14 }}>
                 <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginBottom:8 }}>수면 시간</div>
