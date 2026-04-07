@@ -40,7 +40,7 @@ function createMiddlewareSupabase(req: NextRequest) {
 async function getDbRole(supabase: ReturnType<typeof createServerClient>, authId: string): Promise<string | null> {
   try {
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('timeout')), 3000)
+      setTimeout(() => reject(new Error('timeout')), 2000)
     )
     const { data } = (await Promise.race([
       supabase.from('profiles').select('role, active_role').eq('auth_id', authId).maybeSingle(),
@@ -51,7 +51,7 @@ async function getDbRole(supabase: ReturnType<typeof createServerClient>, authId
   } catch {}
   try {
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('timeout')), 3000)
+      setTimeout(() => reject(new Error('timeout')), 2000)
     )
     const { data } = (await Promise.race([
       supabase.from('users').select('role').eq('auth_id', authId).single(),
@@ -64,7 +64,10 @@ async function getDbRole(supabase: ReturnType<typeof createServerClient>, authId
 
 async function getUserStatus(supabase: ReturnType<typeof createServerClient>, authId: string): Promise<string | null> {
   try {
-    const { data } = await supabase.from('users').select('status').eq('auth_id', authId).single()
+    const { data } = (await Promise.race([
+      supabase.from('users').select('status').eq('auth_id', authId).single(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000)),
+    ])) as { data: any }
     const s = (data as any)?.status
     return typeof s === 'string' ? s : null
   } catch {}
@@ -121,11 +124,9 @@ export async function middleware(req: NextRequest) {
 
   const { supabase, response: res } = createMiddlewareSupabase(req)
 
-  // 세션 갱신(쿠키) 후 사용자 판별 — getUser() 단독 호출보다 지연·비용 감소에 유리
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  const user = session?.user ?? null
+  // getUser()로 토큰 로컬 검증, 네트워크 왕복 없음
+  const { data } = await supabase.auth.getUser()
+  const user = data.user ?? null
 
   if (!user) {
     if (isHome) {
