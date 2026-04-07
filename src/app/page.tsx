@@ -10,6 +10,7 @@ import { logUserBehavior, upsertSkinCycleDaily } from '@/lib/skinAnalytics'
 import CalendarSection from '@/components/CalendarSection'
 import NoticePanel from '@/components/NoticePanel'
 import Loading from './loading'
+import SkinDiarySheet from '@/components/skin-diary/SkinDiarySheet'
 
 const getSeoulToday = () => {
   const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
@@ -189,6 +190,7 @@ export default function CustomerHomePage() {
   const [seasonRecs, setSeasonRecs] = useState<any[]>([])
   const [weather, setWeather] = useState<any>(null)
   const [showWeatherDetail, setShowWeatherDetail] = useState(false)
+  const [showSkinDiary, setShowSkinDiary] = useState(false)
   const [showWaterSheet, setShowWaterSheet] = useState(false)
   const [waterCount, setWaterCount] = useState(0)
   const [showWeatherRec, setShowWeatherRec] = useState(false)
@@ -1195,7 +1197,7 @@ export default function CustomerHomePage() {
 
       {/* ── TODAY'S SKIN ── */}
       <div
-        onClick={() => setShowWeatherDetail(prev => !prev)}
+        onClick={() => setShowSkinDiary(true)}
         style={{
           margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER,
           borderRadius: '16px', padding: '12px 16px', cursor: 'pointer',
@@ -3556,6 +3558,17 @@ export default function CustomerHomePage() {
           </div>
         </div>
       )}
+
+      <SkinDiarySheet
+        open={showSkinDiary}
+        onClose={() => setShowSkinDiary(false)}
+        supabase={supabase}
+        userId={myUserId}
+        hormoneCycle={hormoneCycle}
+        hormoneTrack={hormoneTrack}
+        skinRecList={skinRecList}
+        cycleType={cycleType}
+      />
 
     </div>
   )
