@@ -1179,7 +1179,7 @@ export default function CustomerHomePage() {
             오늘 피부 케어 75% · 🥤 {waterCount}/8잔
             {weather && (
               <span style={{ marginLeft: 8, color: 'rgba(255,255,255,0.5)' }}>
-                {weather.city} {weather.temp}° · 미세먼지 {weather.dust?.level}
+                {weather.city} {weather.temp}° · {weather.condition} · 미세먼지 {weather.dust?.level} · 초미세 {weather.fineDust?.level} · 자외선 {weather.uv?.level}
               </span>
             )}
           </div>
@@ -1262,8 +1262,10 @@ export default function CustomerHomePage() {
               const warnings: string[] = []
               if (weather.dust?.level === '나쁨' || weather.dust?.level === '매우나쁨')
                 warnings.push('미세먼지 ' + weather.dust.level + ' — 외출 후 이중 세안 필수')
+              if (weather.fineDust?.level === '나쁨' || weather.fineDust?.level === '매우나쁨')
+                warnings.push('초미세먼지 ' + weather.fineDust.level + ' · 외출 후 딥클렌징 추천')
               if (weather.uv?.level === '높음')
-                warnings.push('자외선 높음 — SPF50+ 선크림 필수')
+                warnings.push('자외선 높음 · SPF30+ 자외선차단제 바르세요')
               if (weather.uv?.level === '매우높음')
                 warnings.push('자외선 매우 높음 — 선크림 2시간마다 덧바르기')
               if (weather.humidity < 40)
