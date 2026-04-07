@@ -585,7 +585,6 @@ export default function MyWorldPage() {
         <button
           onClick={() => {
             setIsPlaying((p) => !p)
-            window.open('https://www.youtube.com/results?search_query=AURAN+morning+routine+bgm', '_blank')
           }}
           style={{ fontSize: 10, border: '1px solid rgba(123,94,167,0.3)', color: '#c4a7e7', borderRadius: 8, background: 'transparent', padding: '6px 10px', cursor: 'pointer' }}
         >
