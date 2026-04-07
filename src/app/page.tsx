@@ -1181,7 +1181,7 @@ export default function CustomerHomePage() {
             오늘 피부 케어 75% · 🥤 {waterCount}/8잔
             {weather && (
               <span style={{ marginLeft: 8, color: 'rgba(255,255,255,0.5)' }}>
-                {weather.city} {weather.temp}° · {weather.condition} · 미세먼지 {weather.dust?.level} · 초미세 {weather.fineDust?.level} · 자외선 {weather.uv?.level}
+                {weather.city} {weather.temp}° {weather.condition} · 🌫 {weather.dust?.level} · 💨 {weather.fineDust?.level} · 🔆 {weather.uv?.level}
               </span>
             )}
           </div>

@@ -33,11 +33,24 @@ export async function GET(req: NextRequest) {
     const pm10Level = pm10Value <= 30 ? '좋음' : pm10Value <= 80 ? '보통' : pm10Value <= 150 ? '나쁨' : '매우나쁨'
     const pm25Level = pm25Value <= 15 ? '좋음' : pm25Value <= 35 ? '보통' : pm25Value <= 75 ? '나쁨' : '매우나쁨'
 
+    const toWeatherEmoji = (icon: string): string => {
+      if (icon.startsWith('01')) return '☀️'
+      if (icon.startsWith('02')) return '🌤'
+      if (icon.startsWith('03')) return '🌥'
+      if (icon.startsWith('04')) return '☁️'
+      if (icon.startsWith('09')) return '🌧'
+      if (icon.startsWith('10')) return '🌦'
+      if (icon.startsWith('11')) return '⛈'
+      if (icon.startsWith('13')) return '❄️'
+      if (icon.startsWith('50')) return '🌫'
+      return '🌈'
+    }
+
     return NextResponse.json({
       temp: Math.round(weather?.main?.temp ?? 0),
       feel: Math.round(weather?.main?.feels_like ?? 0),
       humidity: weather?.main?.humidity || 0,
-      condition: weather?.weather?.[0]?.description || '맑음',
+      condition: toWeatherEmoji(weather?.weather?.[0]?.icon || '01d'),
       icon: weather?.weather?.[0]?.icon || '01d',
       city: weather?.name || '대구',
       uv: { value: uvValue, level: uvLevel },
