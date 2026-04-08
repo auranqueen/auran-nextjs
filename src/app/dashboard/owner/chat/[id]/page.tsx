@@ -7,7 +7,19 @@ import { useParams, useRouter } from 'next/navigation'
 
 const BG = '#0D0B09'
 const PURPLE = '#7B5EA7'
+const GOLD = '#C9A96E'
 const TEXT_MUTED = 'rgba(255,255,255,0.45)'
+
+type ToolPanel = 'product' | 'routine' | 'coupon' | 'toast' | null
+
+type BasketItem = { id: string; name: string; price: number; thumb: string }
+
+type ProductRow = { id: string; name: string; retail_price: number; thumb_img: string | null }
+
+const SAMPLE_COUPON_OPTIONS: { id: string; title: string }[] = [
+  { id: 'sample_welcome', title: '웰컴 5% 쿠폰 (샘플)' },
+  { id: 'sample_ship', title: '배송비 무료 (샘플)' },
+]
 
 type MsgRow = {
   id: string
@@ -46,6 +58,17 @@ export default function OwnerChatRoomPage() {
   const [memoOpen, setMemoOpen] = useState(false)
   const [memoText, setMemoText] = useState('')
   const [memoSaving, setMemoSaving] = useState(false)
+
+  const [toolPanel, setToolPanel] = useState<ToolPanel>(null)
+  const [basket, setBasket] = useState<BasketItem[]>([])
+  const [productSearch, setProductSearch] = useState('')
+  const [products, setProducts] = useState<ProductRow[]>([])
+  const [routineText, setRoutineText] = useState('')
+  const [toastAmount, setToastAmount] = useState('')
+  const [toastMemo, setToastMemo] = useState('')
+  const [customerUserId, setCustomerUserId] = useState<string | null>(null)
+  const [couponOptions, setCouponOptions] = useState<{ id: string; title: string }[]>(SAMPLE_COUPON_OPTIONS)
+  const [selectedCouponId, setSelectedCouponId] = useState<string | null>(null)
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -87,7 +110,7 @@ export default function OwnerChatRoomPage() {
 
       const { data: ch, error: chErr } = await supabase
         .from('chat_channels')
-        .select('id,title,owner_memo')
+        .select('id,title,owner_memo,user_id')
         .eq('id', channelId)
         .maybeSingle()
 
@@ -99,6 +122,7 @@ export default function OwnerChatRoomPage() {
       }
       setChannelTitle(String(ch.title || '상담'))
       setMemoText(String((ch as { owner_memo?: string | null }).owner_memo ?? ''))
+      setCustomerUserId((ch as { user_id?: string | null }).user_id ? String((ch as { user_id: string }).user_id) : null)
 
       await supabase.from('chat_channels').update({ unread_count: 0 }).eq('id', channelId)
 
@@ -142,6 +166,61 @@ export default function OwnerChatRoomPage() {
       }
     }
   }, [channelId, router, supabase])
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      const { data } = await supabase
+        .from('products')
+        .select('id,name,retail_price,thumb_img')
+        .eq('status', 'active')
+        .limit(50)
+      if (!cancelled && data) setProducts((data as ProductRow[]) || [])
+    })()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable; mount once
+  }, [])
+
+  useEffect(() => {
+    if (toolPanel !== 'coupon' || !customerUserId) {
+      if (toolPanel !== 'coupon') setSelectedCouponId(null)
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      const { data: u } = await supabase.from('users').select('auth_id').eq('id', customerUserId).maybeSingle()
+      const authId = u && (u as { auth_id?: string | null }).auth_id ? String((u as { auth_id: string }).auth_id) : null
+      if (!authId) {
+        if (!cancelled) {
+          setCouponOptions(SAMPLE_COUPON_OPTIONS)
+          setSelectedCouponId(SAMPLE_COUPON_OPTIONS[0]?.id ?? null)
+        }
+        return
+      }
+      const { data: ucs, error } = await supabase.from('user_coupons').select('id,coupon_id,status').eq('user_id', authId).eq('status', 'active').limit(30)
+      if (cancelled) return
+      if (error || !ucs?.length) {
+        setCouponOptions(SAMPLE_COUPON_OPTIONS)
+        setSelectedCouponId(SAMPLE_COUPON_OPTIONS[0]?.id ?? null)
+        return
+      }
+      const ids = Array.from(new Set(ucs.map((r: { coupon_id: string }) => r.coupon_id).filter(Boolean)))
+      const { data: cps } = ids.length ? await supabase.from('coupons').select('id,name').in('id', ids) : { data: null }
+      const map = new Map((cps as { id: string; name: string }[] | null)?.map((c) => [c.id, c.name]) || [])
+      const opts = ucs.map((r: { id: string; coupon_id: string }) => ({
+        id: r.id,
+        title: map.get(r.coupon_id) || `쿠폰 ${r.coupon_id.slice(0, 8)}…`,
+      }))
+      setCouponOptions(opts.length ? opts : SAMPLE_COUPON_OPTIONS)
+      setSelectedCouponId((opts.length ? opts : SAMPLE_COUPON_OPTIONS)[0]?.id ?? null)
+    })()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable
+  }, [toolPanel, customerUserId])
 
   const sendText = async () => {
     const text = draft.trim()
@@ -197,6 +276,135 @@ export default function OwnerChatRoomPage() {
       setMemoSaving(false)
     }
   }
+
+  const toggleTool = (p: Exclude<ToolPanel, null>) => {
+    setToolPanel((cur) => (cur === p ? null : p))
+  }
+
+  const toggleProductInBasket = (p: ProductRow) => {
+    setBasket((prev) => {
+      const i = prev.findIndex((b) => b.id === p.id)
+      if (i >= 0) return prev.filter((_, j) => j !== i)
+      return [
+        ...prev,
+        {
+          id: p.id,
+          name: p.name,
+          price: Number(p.retail_price ?? 0),
+          thumb: String(p.thumb_img || ''),
+        },
+      ]
+    })
+  }
+
+  const removeFromBasket = (id: string) => {
+    setBasket((prev) => prev.filter((b) => b.id !== id))
+  }
+
+  const sendProductRecommend = async () => {
+    if (!channelId || !ownerUserId || !basket.length || sending) return
+    setSending(true)
+    try {
+      const { error } = await supabase.from('consultation_messages').insert({
+        channel_id: channelId,
+        sender_id: ownerUserId,
+        message: JSON.stringify(basket),
+        is_from_customer: false,
+        message_kind: 'product_recommend',
+      } as any)
+      if (!error) {
+        setBasket([])
+        setToolPanel(null)
+      }
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const sendRoutineCard = async () => {
+    const t = routineText.trim()
+    if (!channelId || !ownerUserId || !t || sending) return
+    setSending(true)
+    try {
+      const { error } = await supabase.from('consultation_messages').insert({
+        channel_id: channelId,
+        sender_id: ownerUserId,
+        message: t,
+        is_from_customer: false,
+        message_kind: 'routine_card',
+      } as any)
+      if (!error) {
+        setRoutineText('')
+        setToolPanel(null)
+      }
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const sendCouponGift = async () => {
+    if (!channelId || !ownerUserId || !selectedCouponId || sending) return
+    const opt = couponOptions.find((c) => c.id === selectedCouponId)
+    if (!opt) return
+    setSending(true)
+    try {
+      const { error } = await supabase.from('consultation_messages').insert({
+        channel_id: channelId,
+        sender_id: ownerUserId,
+        message: JSON.stringify({ user_coupon_id: opt.id, title: opt.title }),
+        is_from_customer: false,
+        message_kind: 'coupon_gift',
+      } as any)
+      if (!error) setToolPanel(null)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const sendToastGift = async () => {
+    const n = Math.floor(Number(toastAmount))
+    if (!channelId || !ownerUserId || !customerUserId || !Number.isFinite(n) || n <= 0 || sending) return
+    setSending(true)
+    try {
+      const { data: u } = await supabase.from('users').select('points').eq('id', customerUserId).maybeSingle()
+      const cur = Number((u as { points?: number } | null)?.points || 0)
+      const next = cur + n
+      const { error: upErr } = await supabase.from('users').update({ points: next }).eq('id', customerUserId)
+      if (upErr) return
+      const base = `${toastAmount}T 딸기잼 적립!`
+      const msg = toastMemo.trim() ? `${base}\n${toastMemo.trim()}` : base
+      const { error } = await supabase.from('consultation_messages').insert({
+        channel_id: channelId,
+        sender_id: ownerUserId,
+        message: msg,
+        is_from_customer: false,
+        message_kind: 'toast_gift',
+      } as any)
+      if (!error) {
+        setToastAmount('')
+        setToastMemo('')
+        setToolPanel(null)
+      }
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const filteredProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(productSearch.trim().toLowerCase())
+  )
+
+  const chipBtnStyle = (active: boolean) => ({
+    flexShrink: 0,
+    padding: '6px 10px',
+    borderRadius: 999,
+    border: active ? `1px solid ${GOLD}` : `1px solid rgba(123,94,167,0.4)`,
+    background: active ? 'rgba(201,169,110,0.2)' : 'rgba(123,94,167,0.12)',
+    color: active ? '#f5e6c8' : '#e8dff5',
+    fontSize: 11,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap',
+  })
 
   if (loading) {
     return (
@@ -336,12 +544,317 @@ export default function OwnerChatRoomPage() {
           left: 0,
           right: 0,
           bottom: 0,
-          padding: '10px 12px calc(10px + env(safe-area-inset-bottom, 0px))',
+          zIndex: 40,
+          padding: '10px 12px',
+          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 64px)',
           background: 'linear-gradient(180deg, transparent, #0D0B09 28%)',
           borderTop: '1px solid rgba(255,255,255,0.06)',
+          maxHeight: '72vh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+        {toolPanel === 'product' ? (
+          <div
+            style={{
+              marginBottom: 8,
+              flexShrink: 0,
+              maxHeight: 200,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              overflow: 'hidden',
+            }}
+          >
+            <input
+              type="search"
+              value={productSearch}
+              onChange={(e) => setProductSearch(e.target.value)}
+              placeholder="제품 검색"
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#fff',
+                fontSize: 13,
+                padding: '8px 10px',
+                outline: 'none',
+              }}
+            />
+            <div
+              style={{
+                maxHeight: 150,
+                overflowY: 'auto',
+                borderRadius: 10,
+                border: '1px solid rgba(123,94,167,0.25)',
+                background: 'rgba(0,0,0,0.2)',
+              }}
+            >
+              {filteredProducts.length === 0 ? (
+                <div style={{ padding: 12, fontSize: 12, color: TEXT_MUTED }}>검색 결과가 없어요</div>
+              ) : (
+                filteredProducts.map((p) => {
+                  const on = basket.some((b) => b.id === p.id)
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => toggleProductInBasket(p)}
+                      style={{
+                        display: 'block',
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: '8px 10px',
+                        border: 'none',
+                        borderBottom: '1px solid rgba(255,255,255,0.06)',
+                        background: on ? 'rgba(123,94,167,0.2)' : 'transparent',
+                        color: '#fff',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {on ? '✓ ' : ''}
+                      {p.name}{' '}
+                      <span style={{ color: GOLD }}>{Number(p.retail_price ?? 0).toLocaleString()}원</span>
+                    </button>
+                  )
+                })
+              )}
+            </div>
+            {basket.length > 0 ? (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                {basket.map((b) => (
+                  <span
+                    key={b.id}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: '4px 8px',
+                      borderRadius: 8,
+                      background: 'rgba(201,169,110,0.15)',
+                      border: '1px solid rgba(201,169,110,0.35)',
+                      fontSize: 11,
+                      color: '#f5e6c8',
+                    }}
+                  >
+                    {b.name}
+                    <button
+                      type="button"
+                      aria-label="제거"
+                      onClick={() => removeFromBasket(b.id)}
+                      style={{
+                        border: 'none',
+                        background: 'transparent',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        padding: 0,
+                        fontSize: 14,
+                        lineHeight: 1,
+                      }}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => void sendProductRecommend()}
+              disabled={sending || basket.length === 0}
+              style={{
+                alignSelf: 'flex-end',
+                padding: '8px 16px',
+                borderRadius: 10,
+                border: 'none',
+                background: sending || basket.length === 0 ? 'rgba(123,94,167,0.25)' : PURPLE,
+                color: '#fff',
+                fontSize: 13,
+                cursor: sending || basket.length === 0 ? 'default' : 'pointer',
+              }}
+            >
+              전송{basket.length > 1 ? ' (묶음)' : ''}
+            </button>
+          </div>
+        ) : null}
+
+        {toolPanel === 'routine' ? (
+          <div style={{ marginBottom: 8, flexShrink: 0, maxHeight: 160, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <textarea
+              value={routineText}
+              onChange={(e) => setRoutineText(e.target.value)}
+              placeholder="루틴 알림장 내용"
+              rows={4}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                maxHeight: 120,
+                resize: 'none',
+                borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#fff',
+                fontSize: 13,
+                padding: '10px 12px',
+                outline: 'none',
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => void sendRoutineCard()}
+              disabled={sending || !routineText.trim()}
+              style={{
+                alignSelf: 'flex-end',
+                padding: '8px 16px',
+                borderRadius: 10,
+                border: 'none',
+                background: sending || !routineText.trim() ? 'rgba(123,94,167,0.25)' : PURPLE,
+                color: '#fff',
+                fontSize: 13,
+                cursor: sending || !routineText.trim() ? 'default' : 'pointer',
+              }}
+            >
+              전송
+            </button>
+          </div>
+        ) : null}
+
+        {toolPanel === 'coupon' ? (
+          <div style={{ marginBottom: 8, flexShrink: 0, maxHeight: 140 }}>
+            <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 6 }}>쿠폰 선택 후 전송</div>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 6, maxWidth: '100%' }}>
+              {couponOptions.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setSelectedCouponId(c.id)}
+                  style={{
+                    flexShrink: 0,
+                    maxWidth: 200,
+                    padding: '10px 12px',
+                    borderRadius: 12,
+                    border:
+                      selectedCouponId === c.id ? `1px solid ${GOLD}` : '1px solid rgba(123,94,167,0.35)',
+                    background: selectedCouponId === c.id ? 'rgba(201,169,110,0.15)' : 'rgba(123,94,167,0.1)',
+                    color: '#f5e6c8',
+                    fontSize: 12,
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {c.title}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => void sendCouponGift()}
+              disabled={sending || !selectedCouponId}
+              style={{
+                marginTop: 8,
+                padding: '8px 16px',
+                borderRadius: 10,
+                border: 'none',
+                background: sending || !selectedCouponId ? 'rgba(123,94,167,0.25)' : PURPLE,
+                color: '#fff',
+                fontSize: 13,
+                cursor: sending || !selectedCouponId ? 'default' : 'pointer',
+              }}
+            >
+              쿠폰 선물 전송
+            </button>
+          </div>
+        ) : null}
+
+        {toolPanel === 'toast' ? (
+          <div style={{ marginBottom: 8, flexShrink: 0, maxHeight: 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={1}
+              value={toastAmount}
+              onChange={(e) => setToastAmount(e.target.value)}
+              placeholder="딸기잼 (T)"
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#fff',
+                fontSize: 13,
+                padding: '8px 10px',
+                outline: 'none',
+              }}
+            />
+            <textarea
+              value={toastMemo}
+              onChange={(e) => setToastMemo(e.target.value)}
+              placeholder="메모 (선택)"
+              rows={2}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                resize: 'none',
+                borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#fff',
+                fontSize: 12,
+                padding: '8px 10px',
+                outline: 'none',
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => void sendToastGift()}
+              disabled={sending || !customerUserId}
+              style={{
+                alignSelf: 'flex-end',
+                padding: '8px 16px',
+                borderRadius: 10,
+                border: 'none',
+                background: sending || !customerUserId ? 'rgba(123,94,167,0.25)' : PURPLE,
+                color: '#fff',
+                fontSize: 13,
+                cursor: sending || !customerUserId ? 'default' : 'pointer',
+              }}
+            >
+              적립 전송
+            </button>
+          </div>
+        ) : null}
+
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, flexShrink: 0, minHeight: 0 }}>
+          <div
+            style={{
+              display: 'flex',
+              flex: '0 0 auto',
+              maxWidth: 200,
+              minWidth: 0,
+              gap: 6,
+              overflowX: 'auto',
+              paddingBottom: 2,
+              WebkitOverflowScrolling: 'touch',
+            }}
+          >
+            <button type="button" onClick={() => toggleTool('product')} style={chipBtnStyle(toolPanel === 'product')}>
+              🧴 제품추천
+            </button>
+            <button type="button" onClick={() => toggleTool('routine')} style={chipBtnStyle(toolPanel === 'routine')}>
+              📋 루틴알림장
+            </button>
+            <button type="button" onClick={() => toggleTool('coupon')} style={chipBtnStyle(toolPanel === 'coupon')}>
+              🎫 쿠폰선물
+            </button>
+            <button type="button" onClick={() => toggleTool('toast')} style={chipBtnStyle(toolPanel === 'toast')}>
+              🍓 딸기잼 적립
+            </button>
+          </div>
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
@@ -369,6 +882,7 @@ export default function OwnerChatRoomPage() {
             rows={1}
             style={{
               flex: 1,
+              minWidth: 0,
               minHeight: 40,
               maxHeight: 120,
               resize: 'none',
