@@ -52,10 +52,19 @@ import DashboardBottomNav from '@/components/DashboardBottomNav'
 const PLAN_COLORS: Record<string, string> = { basic: '#4a8dc0', pro: '#bf5f90', premium: '#c9a84c' }
 const GRADE_COLORS: Record<string, string> = { none: 'var(--text3)', basic: '#4a8dc0', silver: '#aab8c8', gold: '#c9a84c' }
 
+type ChannelRow = {
+  id: string
+  title?: string | null
+  preview_text?: string | null
+  last_message_at?: string | null
+  unread_count?: number | null
+}
+
 export default function OwnerDashClient({ profile, salon, todayBookings }: { profile: any; salon: any; todayBookings: any[] }) {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
   const [csRows, setCsRows] = useState<any[]>([])
+  const [ownerChannels, setOwnerChannels] = useState<ChannelRow[]>([])
   async function logout() {
     await supabase.auth.signOut()
     localStorage.removeItem(POSITION_STORAGE_KEY)
@@ -103,6 +112,22 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
   useEffect(() => {
     const run = async () => {
       try {
+        const { data } = await supabase
+          .from('chat_channels')
+          .select('id,title,preview_text,last_message_at,unread_count')
+          .eq('channel_type', 'owner')
+          .order('last_message_at', { ascending: false })
+        setOwnerChannels((data as ChannelRow[]) || [])
+      } catch {
+        setOwnerChannels([])
+      }
+    }
+    void run()
+  }, [])
+
+  useEffect(() => {
+    const run = async () => {
+      try {
         const { data: orderRows } = await supabase.from('orders').select('id').eq('owner_id', profile.id).order('created_at', { ascending: false }).limit(200)
         const orderIds = ((orderRows as any[]) || []).map((r) => r.id).filter(Boolean)
         if (!orderIds.length) {
@@ -146,6 +171,7 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
   const showIndependentStoreBtn =
     !!activeSub && (ownerMode === 'independent' || ownerMode === 'both')
   const showAnnualPromoBanner = !!activeSub && !looksLikeAnnualSub && !showExpiryToday && !showExpirySoon
+  const ownerUnreadTotal = ownerChannels.reduce((acc, ch) => acc + Math.max(0, Number(ch.unread_count || 0)), 0)
 
   const switchRole = async (role: string) => {
     await fetch('/api/profile/active-role', {
@@ -195,6 +221,38 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
           ))}
         </div>
       </div>
+
+      {ownerChannels.length > 0 ? (
+        <div style={{ margin: '12px 16px 0', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 13, padding: '12px 14px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#e8d6ff' }}>미답변 상담</div>
+            <div style={{ minWidth: 20, height: 20, borderRadius: 999, background: 'rgba(123,94,167,0.9)', color: '#fff', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 7px' }}>
+              {ownerUnreadTotal}
+            </div>
+          </div>
+          <div>
+            {ownerChannels.slice(0, 6).map((ch) => (
+              <button
+                key={ch.id}
+                type="button"
+                onClick={() => router.push('/dashboard/owner/chat/' + ch.id)}
+                style={{ width: '100%', textAlign: 'left', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(123,94,167,0.22)', borderRadius: 10, padding: '10px 10px', marginBottom: 7, cursor: 'pointer' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 3 }}>
+                  <div style={{ fontSize: 12, color: '#fff', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{ch.title || '고객'}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {Number(ch.unread_count || 0) > 0 ? <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#7B5EA7', display: 'inline-block' }} /> : null}
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>{ch.last_message_at ? new Date(ch.last_message_at).toLocaleDateString('ko-KR') : '-'}</span>
+                  </div>
+                </div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                  {ch.preview_text || '새 메시지가 없어요'}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {subReady ? (
         <div style={{ margin: '12px 16px 0' }}>
