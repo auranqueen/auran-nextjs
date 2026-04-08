@@ -371,12 +371,10 @@ export default function OwnerChatRoomPage() {
       const next = cur + n
       const { error: upErr } = await supabase.from('users').update({ points: next }).eq('id', customerUserId)
       if (upErr) return
-      const base = `${toastAmount}T 딸기잼 적립!`
-      const msg = toastMemo.trim() ? `${base}\n${toastMemo.trim()}` : base
       const { error } = await supabase.from('consultation_messages').insert({
         channel_id: channelId,
         sender_id: ownerUserId,
-        message: msg,
+        message: '🍓 달콤한 딸기잼 선물! 🍞 ' + toastAmount + 'T가 쌓였어요',
         is_from_customer: false,
         message_kind: 'toast_gift',
       } as any)

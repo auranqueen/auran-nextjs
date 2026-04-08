@@ -265,6 +265,12 @@ export default function CustomerChatRoomPage() {
 
   return (
     <div style={{ height: '100dvh', overflow: 'hidden', background: BG, color: '#fff', display: 'flex', flexDirection: 'column' }}>
+      <style>{`
+        @keyframes fadeOut {
+          from { opacity: 1; }
+          to { opacity: 0; }
+        }
+      `}</style>
       <div
         style={{
           position: 'sticky',
@@ -338,6 +344,47 @@ export default function CustomerChatRoomPage() {
           const mine = Boolean(m.is_from_customer)
           const isCoupon = m.message_kind === 'coupon'
           const isImage = m.message_kind === 'image' && m.image_url
+
+          if (m.message_kind === 'toast_gift') {
+            return (
+              <div
+                key={m.id}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  marginBottom: 10,
+                  width: '100%',
+                }}
+              >
+                <div
+                  style={{
+                    maxWidth: 320,
+                    width: '100%',
+                    textAlign: 'center',
+                    borderRadius: 16,
+                    border: `2px solid ${GOLD}`,
+                    padding: '18px 16px',
+                    background: 'rgba(123,94,167,0.42)',
+                    animation: 'fadeOut 0.8s ease 2.2s forwards',
+                  }}
+                >
+                  <div style={{ fontSize: 24, lineHeight: 1.2 }}>🍓</div>
+                  <div style={{ fontSize: 24, lineHeight: 1.2, marginTop: 2 }}>🍞</div>
+                  <div
+                    style={{
+                      fontSize: 14,
+                      color: '#f5e6c8',
+                      marginTop: 12,
+                      lineHeight: 1.55,
+                      whiteSpace: 'pre-wrap',
+                    }}
+                  >
+                    {msgText(m)}
+                  </div>
+                </div>
+              </div>
+            )
+          }
 
           if (isCoupon) {
             return (
