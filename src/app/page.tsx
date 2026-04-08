@@ -165,7 +165,7 @@ export default function CustomerHomePage() {
     setMounted(true)
   }, [])
 
-  const [userName, setUserName] = useState('유미')
+  const [userName, setUserName] = useState('')
   const [selectedConcern, setSelectedConcern] = useState(0)
   const [saleTab, setSaleTab] = useState<'sale' | 'group'>('group')
   const [timers, setTimers] = useState([
@@ -212,7 +212,7 @@ export default function CustomerHomePage() {
   const [checkInTab, setCheckInTab] = useState<string | null>(null)
   const [checkinOptions, setCheckinOptions] = useState<any[]>([])
   const [routineSteps, setRoutineSteps] = useState<any[]>([])
-  const [hormoneMainLine, setHormoneMainLine] = useState('유미님, 지금 여포기 8일차예요 ✨ 황금기 시작이에요')
+  const [hormoneMainLine, setHormoneMainLine] = useState('')
   const [hormoneSubLine, setHormoneSubLine] = useState('오늘의 피부 사이클')
   const [hormonePhaseTipOpen, setHormonePhaseTipOpen] = useState(false)
   const [careBannerLine, setCareBannerLine] = useState('오늘은 미백앰플 집중투입 타이밍이에요 →')
@@ -291,8 +291,12 @@ export default function CustomerHomePage() {
       ])
 
       const profile = profileRes.data
+      let nameForHormoneLine = userName || '고객'
       if (profile) {
         setMotivationProfile(profile)
+        const displayName = (profile as { full_name?: string | null }).full_name || '고객'
+        nameForHormoneLine = displayName
+        setUserName(displayName)
         setProfileCycleType((profile as any).cycle_type != null ? String((profile as any).cycle_type) : null)
         setProfileCreatedAt((profile as any).created_at != null ? String((profile as any).created_at) : null)
         if ((profile as any)?.roles) setMyRoles((profile as any).roles)
@@ -307,7 +311,7 @@ export default function CustomerHomePage() {
         setHormoneCycle(hc)
         setHormoneTrack(String((hc as any).track || 'general'))
         const calc = calcHormoneBriefing(hc)
-        setHormoneMainLine(`${userName}님, 지금 ${calc.phase} ${calc.cycleDay > 0 ? `${calc.cycleDay}일차` : ''}예요 🌿`)
+        setHormoneMainLine(`${nameForHormoneLine}님, 지금 ${calc.phase} ${calc.cycleDay > 0 ? `${calc.cycleDay}일차` : ''}예요 🌿`)
         setHormoneSubLine(`오늘의 피부 이야기 · ${calc.focus}`)
         if (isPeriodTrack(String((hc as any).track || 'general'))) {
           const lp = (hc as any).last_period_date ? new Date((hc as any).last_period_date) : null
@@ -2519,7 +2523,9 @@ export default function CustomerHomePage() {
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7 }}>
               &quot;환절기에 이 크림 덕분에 피부 안 땅겼어요. 민감한 피부에도 자극 없이 쓸 수 있어요 💧&quot;
             </div>
-            <div style={{ fontSize: '9px', color: TEXT_DIM, marginTop: '3px' }}>건성피부 · 유미님 · CIVASAN MESS CREAM</div>
+            <div style={{ fontSize: '9px', color: TEXT_DIM, marginTop: '3px' }}>
+              {'건성피부 · ' + (motivationProfile?.full_name || '고객') + '님 · CIVASAN MESS CREAM'}
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px', gap: '6px' }}>
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: '3px',
