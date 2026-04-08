@@ -7,7 +7,6 @@ import { NotificationPanel } from '@/components/notifications/NotificationPanel'
 import { useCart } from '@/context/CartContext'
 import { TOOLTIP_FALLBACKS, calcHormoneBriefing, isPeriodTrack } from '@/lib/hormoneUtils'
 import { logUserBehavior, upsertSkinCycleDaily } from '@/lib/skinAnalytics'
-import CalendarSection from '@/components/CalendarSection'
 import NoticePanel from '@/components/NoticePanel'
 import Loading from './loading'
 import SkinDiarySheet from '@/components/skin-diary/SkinDiarySheet'
@@ -66,14 +65,6 @@ const SKIN_TOOLTIP_MSGS = [
   '눌러보세요, 오늘 피부가 좋아하는 날씨인지 알려드릴게요 🌿',
 ]
 
-const WATER_DONE_MSGS = [
-  '오늘도 피부가 촉촉해지고 있어요 💧',
-  '수분이 피부 속으로 스며들고 있어요 🌊',
-  '내 피부가 물을 마실 때마다 좋아한대요 💜',
-  '촉촉한 피부의 비결, 바로 지금이에요 ✨',
-  '오늘 하루도 피부가 고마워하고 있어요 🌸',
-  '물 한 잔이 피부에게 최고의 선물이에요 💎',
-]
 const CARE_CHEER_MSGS = [
   '오늘 피부 관리 잊지 않으셨죠? 💜',
   '세안하고 크림 발랐어요? 피부가 기다려요 🌸',
@@ -191,8 +182,6 @@ export default function CustomerHomePage() {
   const [weather, setWeather] = useState<any>(null)
   const [showWeatherDetail, setShowWeatherDetail] = useState(false)
   const [showSkinDiary, setShowSkinDiary] = useState(false)
-  const [showWaterSheet, setShowWaterSheet] = useState(false)
-  const [waterCount, setWaterCount] = useState(0)
   const [showWeatherRec, setShowWeatherRec] = useState(false)
   const [skinTooltipMsg, setSkinTooltipMsg] = useState('')
   const [timeSales, setTimeSales] = useState<any[]>([])
@@ -1178,7 +1167,7 @@ export default function CustomerHomePage() {
             안녕하세요, <span style={{ color: GOLD }}>{userName}님</span> 👋
           </div>
           <div style={{ fontSize: '11px', color: TEXT_MUTED }}>
-            오늘 피부 케어 75% · 🥤 {waterCount}/8잔
+            오늘 피부 케어 75%
             {weather && (
               <span style={{ marginLeft: 8, color: 'rgba(255,255,255,0.5)' }}>
                 {weather.city} {weather.temp}° {weather.condition} · 🌫 {weather.dust?.level} · 💨 {weather.fineDust?.level} · 🔆 {weather.uv?.level}
@@ -1277,12 +1266,6 @@ export default function CustomerHomePage() {
               ))
             })()}
             <div style={{ marginTop:10, paddingTop:10, borderTop:'1px solid rgba(255,255,255,0.06)', display:'flex', gap:6 }}>
-              <button
-                onClick={e => { e.stopPropagation(); setShowWaterSheet(true) }}
-                style={{ flex:1, background:'rgba(100,181,246,0.08)', border:'1px solid rgba(100,181,246,0.25)', borderRadius:20, padding:'6px 10px', fontSize:11, color:'#64B5F6', cursor:'pointer' }}
-              >
-                💧 수분 기록
-              </button>
               <button
                 onClick={e => { e.stopPropagation(); setShowWeatherRec(true) }}
                 style={{ flex:1, background:'rgba(201,169,110,0.08)', border:'1px solid rgba(201,169,110,0.25)', borderRadius:20, padding:'6px 10px', fontSize:11, color:GOLD, cursor:'pointer' }}
@@ -1733,15 +1716,6 @@ export default function CustomerHomePage() {
           )
         })}
       </div>
-
-      <CalendarSection
-        supabase={supabase}
-        myUserId={myUserId}
-        hormoneCycle={hormoneCycle}
-        hormoneTrack={hormoneTrack}
-        skinRecList={skinRecList}
-        cycleType={cycleType}
-      />
 
       <div ref={routineMoreRef} id="home-routine-more" style={{ padding: routineExpanded ? '12px 16px 0' : '0 16px', marginTop: routineExpanded ? 4 : 0 }}>
         {routineExpanded ? (
@@ -2551,40 +2525,6 @@ export default function CustomerHomePage() {
         </div>
       </div>
 
-      {/* ── 4대 기능 그리드 ── */}
-      <div style={{ margin: '14px 16px 0', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        {[
-          { icon: '🔬', title: '피부분석', desc: 'AI 정밀 분석', badge: 'AI', path: '/skin-analysis', bg: 'linear-gradient(135deg,rgba(160,80,220,0.15),rgba(120,60,180,0.1))' },
-          { icon: '🌍', title: 'MY WORLD', desc: '나만의 미니홈피', badge: 'MY', path: '/my-world', bg: 'linear-gradient(135deg,rgba(60,120,220,0.15),rgba(40,80,180,0.1))' },
-          { icon: '💬', title: '커뮤니티', desc: '피부 타입별 소통', badge: 'NEW', path: '/community', bg: 'linear-gradient(135deg,rgba(220,60,60,0.1),rgba(180,40,40,0.08))', badgeColor: '#E04030' },
-          { icon: '💆', title: '살롱예약', desc: '전문 관리샵 예약', badge: '근처', path: '/salon', bg: 'linear-gradient(135deg,rgba(60,180,120,0.12),rgba(40,140,90,0.08))' },
-          { icon: '📖', title: '매거진', desc: '피부 케어 콘텐츠', badge: null, path: '/magazine', bg: 'linear-gradient(135deg,rgba(196,167,231,0.14),rgba(90,70,130,0.08))' },
-          { icon: '🏆', title: '컨테스트', desc: '투표하고 혜택받기', badge: 'HOT', path: '/community?tab=contest', bg: 'linear-gradient(135deg,rgba(123,94,167,0.18),rgba(201,169,110,0.1))', badgeColor: '#E04030' },
-        ].map((f, i) => (
-          <div
-            key={i}
-            onClick={() => router.push(f.path)}
-            style={{
-              background: f.bg, border: CARD_BORDER,
-              borderRadius: '20px', padding: '16px 14px',
-              cursor: 'pointer', position: 'relative',
-            }}
-          >
-            {f.badge ? (
-              <div style={{
-                position: 'absolute', top: '10px', right: '10px',
-                background: f.badgeColor || 'rgba(201,169,110,0.2)',
-                color: f.badgeColor ? '#fff' : GOLD,
-                fontSize: '9px', padding: '2px 7px', borderRadius: '6px',
-              }}>{f.badge}</div>
-            ) : null}
-            <span style={{ fontSize: '28px', display: 'block', marginBottom: '8px' }}>{f.icon}</span>
-            <div style={{ fontSize: '13px', fontWeight: 400, marginBottom: '3px' }}>{f.title}</div>
-            <div style={{ fontSize: '10px', color: TEXT_MUTED }}>{f.desc}</div>
-          </div>
-        ))}
-      </div>
-
       {homeContestBanner ? (
         <div
           style={{
@@ -2738,14 +2678,6 @@ export default function CustomerHomePage() {
           </div>
         </div>
       </div>
-
-      {/* ── DUCHESS.KR 구분선 ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', margin: '20px 16px 0' }}>
-        <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
-        <span style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '2px', color: TEXT_DIM }}>DUCHESS.KR STORE</span>
-        <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
-      </div>
-
 
       {/* ── 브랜드 영상 ── */}
       {/* TODO: brand_videos 테이블에서 is_active=true, order by sort_order */}
@@ -3456,59 +3388,6 @@ export default function CustomerHomePage() {
           animation: 'slideUp 0.3s ease',
         }}>
           {skinTooltipMsg}
-        </div>
-      )}
-
-      {/* 수분 기록 바텀시트 */}
-      {showWaterSheet && (
-        <div style={{ position:'fixed',inset:0,zIndex:200,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'flex-end',justifyContent:'center',backdropFilter:'blur(4px)' }}
-          onClick={() => setShowWaterSheet(false)}>
-          <div style={{ width:'100%',maxWidth:480,background:'#1A1410',borderRadius:'28px 28px 0 0',padding:'0 0 40px' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ display:'flex',justifyContent:'center',padding:'12px 0' }}>
-              <div style={{ width:40,height:4,borderRadius:2,background:'rgba(255,255,255,0.2)' }} />
-            </div>
-            <div style={{ padding:'0 24px' }}>
-              <div style={{ display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6 }}>
-                <div style={{ fontSize:17,color:'white' }}>💧 오늘 수분 섭취</div>
-                <button onClick={() => setShowWaterSheet(false)} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:20,cursor:'pointer' }}>×</button>
-              </div>
-              <div style={{ fontSize:12,color:'rgba(255,255,255,0.4)',marginBottom:24,lineHeight:1.6 }}>
-                하루 권장 8잔 · 피부 수분 유지에 직결돼요
-              </div>
-              <div style={{ display:'flex',justifyContent:'center',gap:10,marginBottom:24 }}>
-                {Array.from({length:8},(_,i) => (
-                  <div key={i} onClick={() => setWaterCount(i < waterCount ? i : i+1)}
-                    style={{ width:32,height:40,borderRadius:'4px 4px 8px 8px',
-                      background: i < waterCount ? 'linear-gradient(180deg,#64B5F6,#1565C0)' : 'rgba(255,255,255,0.06)',
-                      border:`1px solid ${i < waterCount ? '#1565C0' : 'rgba(255,255,255,0.12)'}`,
-                      cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,transition:'all 0.2s',
-                    }}>
-                    {i < waterCount ? '💧' : ''}
-                  </div>
-                ))}
-              </div>
-              <div style={{ textAlign:'center',marginBottom:20 }}>
-                <span style={{ fontSize:32,color:'#64B5F6',fontWeight:300 }}>{waterCount}</span>
-                <span style={{ fontSize:16,color:'rgba(255,255,255,0.4)' }}>/8잔</span>
-                {waterCount >= 8 && <div style={{ fontSize:12,color:'#4CAF50',marginTop:4 }}>🎉 오늘 목표 달성!</div>}
-              </div>
-              {weather && (
-                <div style={{ background:'rgba(100,181,246,0.1)',border:'1px solid rgba(100,181,246,0.2)',borderRadius:12,padding:'10px 14px',marginBottom:20,fontSize:11,color:'rgba(100,181,246,0.9)',lineHeight:1.6 }}>
-                  💡 오늘 {weather.city} {weather.temp}° · 수분 보충이 중요해요
-                </div>
-              )}
-              <button onClick={() => {
-                const msg = WATER_DONE_MSGS[Math.floor(Math.random() * WATER_DONE_MSGS.length)]
-                setSkinTooltipMsg(msg)
-                setTimeout(() => setSkinTooltipMsg(''), 3000)
-                setShowWaterSheet(false)
-              }}
-                style={{ width:'100%',background:'linear-gradient(135deg,#1565C0,#42A5F5)',border:'none',borderRadius:16,padding:'15px',fontSize:14,color:'white',cursor:'pointer' }}>
-                저장하기
-              </button>
-            </div>
-          </div>
         </div>
       )}
 
