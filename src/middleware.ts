@@ -40,7 +40,7 @@ function createMiddlewareSupabase(req: NextRequest) {
 async function getDbRole(supabase: ReturnType<typeof createServerClient>, authId: string): Promise<string | null> {
   try {
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('timeout')), 2000)
+      setTimeout(() => reject(new Error('timeout')), 800)
     )
     const { data } = (await Promise.race([
       supabase.from('profiles').select('role, active_role').eq('auth_id', authId).maybeSingle(),
@@ -51,7 +51,7 @@ async function getDbRole(supabase: ReturnType<typeof createServerClient>, authId
   } catch {}
   try {
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('timeout')), 2000)
+      setTimeout(() => reject(new Error('timeout')), 800)
     )
     const { data } = (await Promise.race([
       supabase.from('users').select('role').eq('auth_id', authId).single(),
@@ -66,7 +66,7 @@ async function getUserStatus(supabase: ReturnType<typeof createServerClient>, au
   try {
     const { data } = (await Promise.race([
       supabase.from('users').select('status').eq('auth_id', authId).single(),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 2000)),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 800)),
     ])) as { data: any }
     const s = (data as any)?.status
     return typeof s === 'string' ? s : null
