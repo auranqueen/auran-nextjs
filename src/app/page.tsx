@@ -1274,7 +1274,7 @@ export default function CustomerHomePage() {
                       .select('id')
                       .eq('user_id', urow.id)
                       .eq('channel_type', 'owner')
-                            .eq('owner_id', '9fa4eb0b-44be-4cb8-ac6a-c5f47f13bd54')
+                            .eq('owner_id', '46ec32d1-0f25-4944-a6dc-8100acc68abf')
                       .maybeSingle()
                     if (ownerRow?.id) {
                       router.push('/dashboard/customer/chat/' + ownerRow.id)
@@ -1284,7 +1284,7 @@ export default function CustomerHomePage() {
                       .from('chat_channels')
                       .insert({
                         user_id: urow.id,
-                              owner_id: '9fa4eb0b-44be-4cb8-ac6a-c5f47f13bd54',
+                              owner_id: '46ec32d1-0f25-4944-a6dc-8100acc68abf',
                         channel_type: 'owner',
                         title: '원장님 상담',
                         system_kind: null,
