@@ -94,6 +94,7 @@ export default function CustomerChatListPage() {
       }
       authUser = user2
     }
+    if (!authUser) return
     const { data: urow } = await supabase.from('users').select('id').eq('auth_id', authUser.id).maybeSingle()
     if (!urow?.id) {
       setLoading(false)
