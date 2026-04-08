@@ -34,7 +34,21 @@ export async function GET(request: NextRequest) {
     (provider === 'kakao' && kakaoId ? `kakao-${kakaoId}@no-email.auran` : null) ||
     `${user.id}@no-email.auran`
 
+  let existingByEmail: { id: string; role: string | null } | null = null
   if (!existing) {
+    const { data } = await supabase
+      .from('users')
+      .select('id, role')
+      .eq('email', emailOrFallback)
+      .maybeSingle()
+    existingByEmail = data
+    if (existingByEmail?.id) {
+      await supabase.from('users').update({ auth_id: user.id }).eq('id', existingByEmail.id)
+    }
+  }
+  const existingUser = existing ?? existingByEmail
+
+  if (!existingUser) {
     const dbRole = meta.role === 'salon' ? 'owner' : (position === 'salon' ? 'owner' : position || meta.role || 'customer')
     const referralCode = Math.random().toString(36).slice(2, 8).toUpperCase()
     const status = dbRole === 'customer' ? 'active' : 'pending'
@@ -87,7 +101,7 @@ export async function GET(request: NextRequest) {
     await sendSignupAlimtalkIfNeeded(user.id)
   }
 
-  const rawRole = existing?.role ?? meta.role ?? (position === 'salon' ? 'owner' : position) ?? 'customer'
+  const rawRole = existingUser?.role ?? meta.role ?? (position === 'salon' ? 'owner' : position) ?? 'customer'
   const userRole = rawRole === 'salon' ? 'owner' : rawRole
   const finalPosition = userRole === 'owner' ? 'salon' : userRole
 
