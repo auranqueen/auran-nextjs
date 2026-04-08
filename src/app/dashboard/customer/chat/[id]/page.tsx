@@ -368,15 +368,15 @@ export default function CustomerChatRoomPage() {
                   maxWidth: '85%',
                   borderRadius: mine ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
                   padding: '10px 12px',
-                  background: mine ? 'rgba(123,94,167,0.45)' : 'rgba(255,255,255,0.08)',
-                  border: mine ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                  background: mine ? 'rgba(123,94,167,0.45)' : 'rgba(201,169,110,0.15)',
+                  border: mine ? 'none' : '1px solid rgba(201,169,110,0.3)',
                 }}
               >
                 {isImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={m.image_url!} alt="" style={{ maxWidth: '100%', borderRadius: 8, display: 'block' }} />
                 ) : (
-                  <div style={{ fontSize: 13, color: mine ? '#f3e9ff' : '#fff', lineHeight: 1.5 }}>{msgText(m)}</div>
+                  <div style={{ fontSize: 13, color: mine ? '#f3e9ff' : '#f5e6c8', lineHeight: 1.5 }}>{msgText(m)}</div>
                 )}
               </div>
             </div>
