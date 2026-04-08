@@ -75,15 +75,18 @@ export default function CustomerChatListPage() {
   const [filterTab, setFilterTab] = useState<FilterTab>('all')
 
   const loadChannels = useCallback(async () => {
+    if (!loading) setLoading(true)
     const {
       data: { user },
     } = await supabase.auth.getUser()
     if (!user) {
+      setLoading(false)
       router.replace('/login?role=customer')
       return
     }
     const { data: urow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
     if (!urow?.id) {
+      setLoading(false)
       router.replace('/login?role=customer')
       return
     }
