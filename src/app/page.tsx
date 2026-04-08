@@ -1217,7 +1217,7 @@ export default function CustomerHomePage() {
               }} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: '#fff' }}>홍길동 원장님</div>
+              <div style={{ fontSize: 12, color: '#fff' }}>맑원장님</div>
               <div style={{
                 fontSize: 11, color: 'rgba(255,255,255,0.45)',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
@@ -1253,7 +1253,7 @@ export default function CustomerHomePage() {
                 }} />
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 12, color: '#fff' }}>홍길동 원장님</div>
+                <div style={{ fontSize: 12, color: '#fff' }}>맑원장님</div>
                 <div style={{ fontSize: 10, color: '#4cad7e' }}>● 온라인 · 스킨파우더룸</div>
               </div>
               <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.3)' }}>▲</div>
