@@ -263,7 +263,7 @@ export default function CustomerChatRoomPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: '#fff', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100dvh', overflow: 'hidden', background: BG, color: '#fff', display: 'flex', flexDirection: 'column' }}>
       <div
         style={{
           position: 'sticky',
