@@ -390,6 +390,7 @@ export default function CustomerChatRoomPage() {
           right: 0,
           bottom: 0,
           padding: '10px 12px calc(10px + env(safe-area-inset-bottom, 0px))',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 64px)',
           background: 'linear-gradient(180deg, transparent, #0D0B09 28%)',
           borderTop: '1px solid rgba(255,255,255,0.06)',
         }}
