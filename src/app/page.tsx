@@ -183,6 +183,8 @@ export default function CustomerHomePage() {
   const [showWeatherDetail, setShowWeatherDetail] = useState(false)
   const [showSkinDiary, setShowSkinDiary] = useState(false)
   const [showWeatherRec, setShowWeatherRec] = useState(false)
+  const [cardExpanded, setCardExpanded] = useState(false)
+  const [consultType, setConsultType] = useState<string | null>(null)
   const [skinTooltipMsg, setSkinTooltipMsg] = useState('')
   const [timeSales, setTimeSales] = useState<any[]>([])
   const [groupBuys, setGroupBuys] = useState<any[]>([])
@@ -1182,6 +1184,161 @@ export default function CustomerHomePage() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '20px',
         }}>👩</div>
+      </div>
+
+      {/* 원장님 대화카드 */}
+      <div style={{ margin: '12px 16px 0' }}>
+        {!cardExpanded ? (
+          <div
+            onClick={() => setCardExpanded(true)}
+            style={{
+              background: 'rgba(123,94,167,0.08)',
+              border: '1px solid rgba(123,94,167,0.25)',
+              borderRadius: 14, padding: '11px 14px',
+              display: 'flex', alignItems: 'center',
+              gap: 10, cursor: 'pointer'
+            }}
+          >
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <div style={{
+                width: 34, height: 34, borderRadius: '50%',
+                background: 'rgba(123,94,167,0.3)',
+                display: 'flex', alignItems: 'center',
+                justifyContent: 'center', fontSize: 15
+              }}>👩</div>
+              <div style={{
+                position: 'absolute', bottom: 0, right: 0,
+                width: 10, height: 10, borderRadius: '50%',
+                background: '#4cad7e', border: '2px solid #0D0B09'
+              }} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12, color: '#fff' }}>홍길동 원장님</div>
+              <div style={{
+                fontSize: 11, color: 'rgba(255,255,255,0.45)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+              }}>오늘 어떤 도움이 필요하세요?</div>
+            </div>
+            <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.3)' }}>▼</div>
+          </div>
+        ) : (
+          <div style={{
+            background: 'rgba(123,94,167,0.08)',
+            border: '1px solid rgba(123,94,167,0.25)',
+            borderRadius: 14, overflow: 'hidden'
+          }}>
+            <div
+              onClick={() => { setCardExpanded(false); setConsultType(null); }}
+              style={{
+                padding: '11px 14px', display: 'flex',
+                alignItems: 'center', gap: 10, cursor: 'pointer',
+                borderBottom: '1px solid rgba(255,255,255,0.05)'
+              }}
+            >
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <div style={{
+                  width: 34, height: 34, borderRadius: '50%',
+                  background: 'rgba(123,94,167,0.3)',
+                  display: 'flex', alignItems: 'center',
+                  justifyContent: 'center', fontSize: 15
+                }}>👩</div>
+                <div style={{
+                  position: 'absolute', bottom: 0, right: 0,
+                  width: 10, height: 10, borderRadius: '50%',
+                  background: '#4cad7e', border: '2px solid #0D0B09'
+                }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, color: '#fff' }}>홍길동 원장님</div>
+                <div style={{ fontSize: 10, color: '#4cad7e' }}>● 온라인 · 스킨파우더룸</div>
+              </div>
+              <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.3)' }}>▲</div>
+            </div>
+
+            {!consultType ? (
+              <div style={{ padding: '10px 14px 12px' }}>
+                <div style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  borderRadius: '12px 12px 12px 3px',
+                  padding: '10px 12px', fontSize: 12,
+                  color: 'rgba(255,255,255,0.85)',
+                  lineHeight: 1.6, marginBottom: 10
+                }}>오늘 어떤 도움이 필요하세요?</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                  {[
+                    { key: 'skin', label: '오늘 피부 고민', sub: 'AI 즉시 답변' },
+                    { key: 'routine', label: '루틴 재배치', sub: '보유 제품 기반' },
+                    { key: 'recommend', label: '제품 추천', sub: '피부타입 매핑' },
+                    { key: 'photo', label: '사진 상담', sub: '조용한 상담' },
+                    { key: 'sample', label: '샘플 받기', sub: '원장님 승인' },
+                    { key: 'sos', label: '피부 SOS', sub: '즉시 원장님 연결' },
+                  ].map(item => (
+                    <button
+                      key={item.key}
+                      onClick={() => setConsultType(item.key)}
+                      style={{
+                        border: item.key === 'sos'
+                          ? '1px solid rgba(217,79,79,0.3)'
+                          : '1px solid rgba(255,255,255,0.08)',
+                        background: item.key === 'sos'
+                          ? 'rgba(217,79,79,0.06)'
+                          : 'rgba(255,255,255,0.03)',
+                        borderRadius: 12, padding: '10px 12px',
+                        cursor: 'pointer', textAlign: 'left'
+                      }}
+                    >
+                      <div style={{
+                        fontSize: 11,
+                        color: item.key === 'sos' ? '#e08080' : '#fff',
+                        marginBottom: 2
+                      }}>{item.label}</div>
+                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>{item.sub}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div style={{ padding: '10px 14px 12px' }}>
+                <div style={{
+                  background: 'rgba(255,255,255,0.06)',
+                  borderRadius: '12px 12px 12px 3px',
+                  padding: '10px 12px', fontSize: 12,
+                  color: 'rgba(255,255,255,0.85)',
+                  lineHeight: 1.6, marginBottom: 10
+                }}>
+                  {consultType === 'skin' && '어떤 피부 고민이 있으세요?'}
+                  {consultType === 'routine' && '보유 제품으로 루틴 정리해드릴게요! 어떤 시간대가 필요하세요?'}
+                  {consultType === 'recommend' && '어떤 고민을 해결하고 싶으세요?'}
+                  {consultType === 'photo' && '사진 1장만 올려주세요. 원장님이 확인 후 답변드려요!'}
+                  {consultType === 'sample' && '어떤 샘플이 필요하세요? 원장님 승인 후 다음 주문에 동봉해드려요'}
+                  {consultType === 'sos' && '어떤 상황이에요? 즉시 도와드릴게요!'}
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    onClick={() => router.push('/dashboard/customer/chat')}
+                    style={{
+                      flex: 1, padding: '8px',
+                      borderRadius: 9,
+                      border: '1px solid rgba(123,94,167,0.4)',
+                      background: 'rgba(123,94,167,0.1)',
+                      color: '#c4a7e7', fontSize: 12, cursor: 'pointer'
+                    }}
+                  >오랜상담 전체보기 →</button>
+                  <button
+                    onClick={() => setConsultType(null)}
+                    style={{
+                      padding: '8px 12px', borderRadius: 9,
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      background: 'transparent',
+                      color: 'rgba(255,255,255,0.35)',
+                      fontSize: 12, cursor: 'pointer'
+                    }}
+                  >← 뒤로</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ── TODAY'S SKIN ── */}
