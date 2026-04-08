@@ -1257,7 +1257,8 @@ export default function CustomerHomePage() {
 
             {!consultType ? (
               <div
-                onClick={() => {
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation()
                   void (async () => {
                     const {
                       data: { user },
