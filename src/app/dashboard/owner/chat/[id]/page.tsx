@@ -42,6 +42,9 @@ export default function OwnerChatRoomPage() {
   const [messages, setMessages] = useState<MsgRow[]>([])
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
+  const [memoOpen, setMemoOpen] = useState(false)
+  const [memoText, setMemoText] = useState('')
+  const [memoSaving, setMemoSaving] = useState(false)
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -83,7 +86,7 @@ export default function OwnerChatRoomPage() {
 
       const { data: ch, error: chErr } = await supabase
         .from('chat_channels')
-        .select('id,title')
+        .select('id,title,owner_memo')
         .eq('id', channelId)
         .maybeSingle()
 
@@ -94,6 +97,7 @@ export default function OwnerChatRoomPage() {
         return
       }
       setChannelTitle(String(ch.title || '상담'))
+      setMemoText(String((ch as { owner_memo?: string | null }).owner_memo ?? ''))
 
       await supabase.from('chat_channels').update({ unread_count: 0 }).eq('id', channelId)
 
@@ -182,6 +186,17 @@ export default function OwnerChatRoomPage() {
     }
   }
 
+  const saveMemo = async () => {
+    if (!channelId || memoSaving) return
+    setMemoSaving(true)
+    try {
+      const { error } = await supabase.from('chat_channels').update({ owner_memo: memoText }).eq('id', channelId)
+      if (!error) setMemoOpen(false)
+    } finally {
+      setMemoSaving(false)
+    }
+  }
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: BG, color: TEXT_MUTED, padding: 24, fontSize: 13 }}>
@@ -259,6 +274,28 @@ export default function OwnerChatRoomPage() {
           >
             {channelTitle}
           </div>
+          <button
+            type="button"
+            aria-label="원장 메모"
+            onClick={() => setMemoOpen(true)}
+            style={{
+              flexShrink: 0,
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              border: `1px solid rgba(123,94,167,0.45)`,
+              background: 'rgba(123,94,167,0.18)',
+              color: '#e8dff5',
+              fontSize: 13,
+              lineHeight: 1,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            📝
+          </button>
         </div>
         <div style={{ fontSize: 11, color: '#e8dff5', border: '1px solid rgba(123,94,167,0.45)', background: 'rgba(123,94,167,0.2)', borderRadius: 999, padding: '4px 10px' }}>
           원장
@@ -368,6 +405,87 @@ export default function OwnerChatRoomPage() {
           </button>
         </div>
       </div>
+
+      {memoOpen ? (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 200,
+            background: 'rgba(0,0,0,0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 400,
+              borderRadius: 14,
+              border: '1px solid rgba(123,94,167,0.35)',
+              background: '#151218',
+              padding: 16,
+              boxShadow: '0 16px 40px rgba(0,0,0,0.45)',
+            }}
+          >
+            <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 10 }}>원장님만 볼 수 있는 메모예요</div>
+            <textarea
+              value={memoText}
+              onChange={(e) => setMemoText(e.target.value)}
+              rows={6}
+              style={{
+                width: '100%',
+                boxSizing: 'border-box',
+                borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.12)',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#fff',
+                fontSize: 13,
+                padding: '10px 12px',
+                outline: 'none',
+                resize: 'vertical',
+                marginBottom: 12,
+              }}
+            />
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                type="button"
+                onClick={() => setMemoOpen(false)}
+                disabled={memoSaving}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  background: 'transparent',
+                  color: TEXT_MUTED,
+                  fontSize: 13,
+                  cursor: memoSaving ? 'default' : 'pointer',
+                }}
+              >
+                닫기
+              </button>
+              <button
+                type="button"
+                onClick={() => void saveMemo()}
+                disabled={memoSaving}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: memoSaving ? 'rgba(123,94,167,0.35)' : PURPLE,
+                  color: '#fff',
+                  fontSize: 13,
+                  cursor: memoSaving ? 'default' : 'pointer',
+                }}
+              >
+                {memoSaving ? '저장 중…' : '저장'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
