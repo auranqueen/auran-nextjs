@@ -31,7 +31,7 @@ export default function CustomerChatNewHelpPage() {
         data: { user },
       } = await supabase.auth.getUser()
       if (!user) {
-        if (!cancelled) setAuthReady(true)
+        setAuthReady(true)
         return
       }
       const { data: urow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
