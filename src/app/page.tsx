@@ -1275,7 +1275,7 @@ export default function CustomerHomePage() {
                   ].map(item => (
                     <button
                       key={item.key}
-                      onClick={() => setConsultType(item.key)}
+                      onClick={() => router.push('/dashboard/customer/chat?type=' + item.key)}
                       style={{
                         border: item.key === 'sos'
                           ? '1px solid rgba(217,79,79,0.3)'
