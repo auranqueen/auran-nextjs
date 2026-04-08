@@ -328,7 +328,7 @@ export default function CustomerChatRoomPage() {
                 }}
               >
                 <div style={{ fontSize: 13, color: '#fff', marginBottom: 6 }}>{c.title || '루틴'}</div>
-                <div style={{ fontSize: 12, color: TEXT_MUTED, lineHeight: 1.5 }}>{c.body || ''}</div>
+                <div style={{ fontSize: 12, color: TEXT_MUTED, lineHeight: 1.5 }}>{c.steps || c.memo || ''}</div>
               </div>
             ))}
           </div>
