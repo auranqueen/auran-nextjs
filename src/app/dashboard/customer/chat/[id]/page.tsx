@@ -178,7 +178,7 @@ export default function CustomerChatRoomPage() {
     try {
       const { error } = await supabase.from('consultation_messages').insert({
         channel_id: channelId,
-        user_id: internalUserId,
+        sender_id: internalUserId,
         body: text,
         is_from_customer: true,
         message_kind: 'text',
@@ -195,7 +195,7 @@ export default function CustomerChatRoomPage() {
     try {
       await supabase.from('consultation_messages').insert({
         channel_id: channelId,
-        user_id: internalUserId,
+        sender_id: internalUserId,
         body: text,
         is_from_customer: true,
         message_kind: 'text',
@@ -220,7 +220,7 @@ export default function CustomerChatRoomPage() {
       if (!url) return
       await supabase.from('consultation_messages').insert({
         channel_id: channelId,
-        user_id: internalUserId,
+        sender_id: internalUserId,
         body: null,
         image_url: url,
         is_from_customer: true,
