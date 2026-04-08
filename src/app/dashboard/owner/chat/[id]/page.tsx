@@ -13,7 +13,7 @@ type MsgRow = {
   id: string
   channel_id: string
   sender_id?: string | null
-  body?: string | null
+  message?: string | null
   content?: string | null
   image_url?: string | null
   is_from_customer?: boolean | null
@@ -22,7 +22,7 @@ type MsgRow = {
 }
 
 function msgText(m: MsgRow): string {
-  return String(m.body ?? m.content ?? '').trim()
+  return String(m.message ?? m.content ?? '').trim()
 }
 
 export default function OwnerChatRoomPage() {
@@ -146,7 +146,7 @@ export default function OwnerChatRoomPage() {
       const { error } = await supabase.from('consultation_messages').insert({
         channel_id: channelId,
         sender_id: ownerUserId,
-        body: text,
+        message: text,
         is_from_customer: false,
         message_kind: 'text',
       } as any)
@@ -172,7 +172,7 @@ export default function OwnerChatRoomPage() {
       await supabase.from('consultation_messages').insert({
         channel_id: channelId,
         sender_id: ownerUserId,
-        body: null,
+        message: null,
         image_url: url,
         is_from_customer: false,
         message_kind: 'image',

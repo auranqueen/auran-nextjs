@@ -23,7 +23,7 @@ type MsgRow = {
   id: string
   channel_id: string
   user_id: string
-  body?: string | null
+  message?: string | null
   content?: string | null
   image_url?: string | null
   is_from_customer?: boolean | null
@@ -44,7 +44,7 @@ type RoutineCardRow = {
 }
 
 function msgText(m: MsgRow): string {
-  return String(m.body ?? m.content ?? '').trim()
+  return String(m.message ?? m.content ?? '').trim()
 }
 
 export default function CustomerChatRoomPage() {
@@ -180,7 +180,7 @@ export default function CustomerChatRoomPage() {
       const { error } = await supabase.from('consultation_messages').insert({
         channel_id: channelId,
         sender_id: internalUserId,
-        body: text,
+        message: text,
         is_from_customer: true,
         message_kind: 'text',
       } as any)
@@ -197,7 +197,7 @@ export default function CustomerChatRoomPage() {
       await supabase.from('consultation_messages').insert({
         channel_id: channelId,
         sender_id: internalUserId,
-        body: text,
+        message: text,
         is_from_customer: true,
         message_kind: 'text',
       } as any)
@@ -222,7 +222,7 @@ export default function CustomerChatRoomPage() {
       await supabase.from('consultation_messages').insert({
         channel_id: channelId,
         sender_id: internalUserId,
-        body: null,
+        message: null,
         image_url: url,
         is_from_customer: true,
         message_kind: 'image',
