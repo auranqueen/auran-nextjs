@@ -81,12 +81,20 @@ export default function CustomerChatListPage() {
     const {
       data: { user },
     } = await supabase.auth.getUser()
+    let authUser = user
     if (!user) {
-      setLoading(false)
-      router.replace('/login?role=customer')
-      return
+      await new Promise((r) => setTimeout(r, 600))
+      const {
+        data: { user: user2 },
+      } = await supabase.auth.getUser()
+      if (!user2) {
+        setLoading(false)
+        router.replace('/login?role=customer')
+        return
+      }
+      authUser = user2
     }
-    const { data: urow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+    const { data: urow } = await supabase.from('users').select('id').eq('auth_id', authUser.id).maybeSingle()
     if (!urow?.id) {
       setLoading(false)
       router.replace('/login?role=customer')
