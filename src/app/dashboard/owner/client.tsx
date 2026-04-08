@@ -116,6 +116,7 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
           .from('chat_channels')
           .select('id,title,preview_text,last_message_at,unread_count')
           .eq('channel_type', 'owner')
+          .eq('owner_id', profile.id)
           .order('last_message_at', { ascending: false })
         setOwnerChannels((data as ChannelRow[]) || [])
       } catch {
