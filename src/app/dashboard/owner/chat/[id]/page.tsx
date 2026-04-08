@@ -553,18 +553,28 @@ export default function OwnerChatRoomPage() {
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
+          boxSizing: 'border-box',
         }}
       >
+        {toolPanel ? (
+          <div
+            style={{
+              marginTop: 8,
+              marginBottom: 0,
+              padding: 12,
+              maxHeight: 220,
+              overflowY: 'auto',
+              flexShrink: 0,
+              boxSizing: 'border-box',
+              WebkitOverflowScrolling: 'touch',
+            }}
+          >
         {toolPanel === 'product' ? (
           <div
             style={{
-              marginBottom: 8,
-              flexShrink: 0,
-              maxHeight: 200,
               display: 'flex',
               flexDirection: 'column',
               gap: 8,
-              overflow: 'hidden',
             }}
           >
             <input
@@ -586,8 +596,6 @@ export default function OwnerChatRoomPage() {
             />
             <div
               style={{
-                maxHeight: 150,
-                overflowY: 'auto',
                 borderRadius: 10,
                 border: '1px solid rgba(123,94,167,0.25)',
                 background: 'rgba(0,0,0,0.2)',
@@ -683,7 +691,7 @@ export default function OwnerChatRoomPage() {
         ) : null}
 
         {toolPanel === 'routine' ? (
-          <div style={{ marginBottom: 8, flexShrink: 0, maxHeight: 160, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <textarea
               value={routineText}
               onChange={(e) => setRoutineText(e.target.value)}
@@ -724,7 +732,7 @@ export default function OwnerChatRoomPage() {
         ) : null}
 
         {toolPanel === 'coupon' ? (
-          <div style={{ marginBottom: 8, flexShrink: 0, maxHeight: 140 }}>
+          <div>
             <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 6 }}>쿠폰 선택 후 전송</div>
             <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 6, maxWidth: '100%' }}>
               {couponOptions.map((c) => (
@@ -771,7 +779,7 @@ export default function OwnerChatRoomPage() {
         ) : null}
 
         {toolPanel === 'toast' ? (
-          <div style={{ marginBottom: 8, flexShrink: 0, maxHeight: 180, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <input
               type="number"
               inputMode="numeric"
@@ -828,13 +836,14 @@ export default function OwnerChatRoomPage() {
             </button>
           </div>
         ) : null}
+          </div>
+        ) : null}
 
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, flexShrink: 0, minHeight: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flexShrink: 0, minHeight: 0 }}>
           <div
             style={{
               display: 'flex',
-              flex: '0 0 auto',
-              maxWidth: 200,
+              width: '100%',
               minWidth: 0,
               gap: 6,
               overflowX: 'auto',
@@ -855,69 +864,71 @@ export default function OwnerChatRoomPage() {
               🍓 딸기잼 적립
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            disabled={sending}
-            style={{
-              flexShrink: 0,
-              width: 40,
-              height: 40,
-              borderRadius: 10,
-              border: `1px solid rgba(123,94,167,0.35)`,
-              background: 'rgba(123,94,167,0.12)',
-              color: PURPLE,
-              fontSize: 18,
-              cursor: sending ? 'default' : 'pointer',
-            }}
-            aria-label="사진"
-          >
-            🖼
-          </button>
-          <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onPickImage} />
-          <textarea
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="메시지를 입력하세요"
-            rows={1}
-            style={{
-              flex: 1,
-              minWidth: 0,
-              minHeight: 40,
-              maxHeight: 120,
-              resize: 'none',
-              borderRadius: 12,
-              border: '1px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.05)',
-              color: '#fff',
-              fontSize: 13,
-              padding: '10px 12px',
-              outline: 'none',
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                void sendText()
-              }
-            }}
-          />
-          <button
-            type="button"
-            onClick={() => void sendText()}
-            disabled={sending || !draft.trim()}
-            style={{
-              flexShrink: 0,
-              padding: '10px 14px',
-              borderRadius: 12,
-              border: 'none',
-              background: sending || !draft.trim() ? 'rgba(123,94,167,0.25)' : PURPLE,
-              color: '#fff',
-              fontSize: 13,
-              cursor: sending || !draft.trim() ? 'default' : 'pointer',
-            }}
-          >
-            보내기
-          </button>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, width: '100%', minHeight: 0 }}>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={sending}
+              style={{
+                flexShrink: 0,
+                width: 40,
+                height: 40,
+                borderRadius: 10,
+                border: `1px solid rgba(123,94,167,0.35)`,
+                background: 'rgba(123,94,167,0.12)',
+                color: PURPLE,
+                fontSize: 18,
+                cursor: sending ? 'default' : 'pointer',
+              }}
+              aria-label="사진"
+            >
+              🖼
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onPickImage} />
+            <textarea
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="메시지를 입력하세요"
+              rows={1}
+              style={{
+                flex: 1,
+                minWidth: 0,
+                minHeight: 40,
+                maxHeight: 120,
+                resize: 'none',
+                borderRadius: 12,
+                border: '1px solid rgba(255,255,255,0.1)',
+                background: 'rgba(255,255,255,0.05)',
+                color: '#fff',
+                fontSize: 13,
+                padding: '10px 12px',
+                outline: 'none',
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  void sendText()
+                }
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => void sendText()}
+              disabled={sending || !draft.trim()}
+              style={{
+                flexShrink: 0,
+                padding: '10px 14px',
+                borderRadius: 12,
+                border: 'none',
+                background: sending || !draft.trim() ? 'rgba(123,94,167,0.25)' : PURPLE,
+                color: '#fff',
+                fontSize: 13,
+                cursor: sending || !draft.trim() ? 'default' : 'pointer',
+              }}
+            >
+              보내기
+            </button>
+          </div>
         </div>
       </div>
 
