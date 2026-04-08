@@ -21,6 +21,15 @@ const TYPE_PROMPTS: Record<string, string> = {
   sos: '어떤 상황이에요? 즉시 도와드릴게요!',
 }
 
+const HELP_ITEMS: { key: string; label: string; sub: string; icon: string }[] = [
+  { key: 'skin', label: '오늘 피부 고민', sub: 'AI 즉시 답변', icon: '✨' },
+  { key: 'routine', label: '루틴 재배치', sub: '보유 제품 기반', icon: '📋' },
+  { key: 'recommend', label: '제품 추천', sub: '피부타입 매핑', icon: '💜' },
+  { key: 'photo', label: '사진 상담', sub: '조용한 상담', icon: '📷' },
+  { key: 'sample', label: '샘플 받기', sub: '원장님 승인', icon: '🎁' },
+  { key: 'sos', label: '피부 SOS', sub: '즉시 원장님 연결', icon: '🆘' },
+]
+
 type MsgRow = {
   id: string
   channel_id: string
@@ -58,6 +67,7 @@ export default function CustomerChatRoomPage() {
   const fileRef = useRef<HTMLInputElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const rtRef = useRef<any>(null)
+  const openedTypeSheetKeyRef = useRef<string | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
@@ -67,6 +77,7 @@ export default function CustomerChatRoomPage() {
   const [routineCards, setRoutineCards] = useState<RoutineCardRow[]>([])
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
+  const [helpSheetOpen, setHelpSheetOpen] = useState(false)
 
   const typeParam = searchParams.get('type')
   const seedLine = useMemo(() => {
@@ -84,7 +95,20 @@ export default function CustomerChatRoomPage() {
 
   useEffect(() => {
     scrollBottom()
-  }, [messages, routineCards, seedLine, scrollBottom])
+  }, [messages, routineCards, scrollBottom])
+
+  useEffect(() => {
+    openedTypeSheetKeyRef.current = null
+  }, [channelId])
+
+  useEffect(() => {
+    if (loading || forbidden) return
+    if (!seedLine || !typeParam) return
+    const k = `${channelId}:${typeParam}`
+    if (openedTypeSheetKeyRef.current === k) return
+    openedTypeSheetKeyRef.current = k
+    setHelpSheetOpen(true)
+  }, [loading, forbidden, seedLine, typeParam, channelId])
 
   useEffect(() => {
     if (!channelId) {
@@ -224,23 +248,6 @@ export default function CustomerChatRoomPage() {
     }
   }
 
-  const displayList = useMemo(() => {
-    const seed: MsgRow[] = seedLine
-      ? [
-          {
-            id: '__seed_type__',
-            channel_id: channelId,
-            user_id: '',
-            body: seedLine,
-            is_from_customer: false,
-            message_kind: 'text',
-            created_at: new Date(0).toISOString(),
-          },
-        ]
-      : []
-    return [...seed, ...messages]
-  }, [seedLine, messages, channelId])
-
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: BG, color: TEXT_MUTED, padding: 24, fontSize: 13 }}>
@@ -343,8 +350,8 @@ export default function CustomerChatRoomPage() {
           </div>
         ) : null}
 
-        {displayList.map((m) => {
-          const mine = m.id === '__seed_type__' ? false : Boolean(m.is_from_customer)
+        {messages.map((m) => {
+          const mine = Boolean(m.is_from_customer)
           const isCoupon = m.message_kind === 'coupon'
           const isImage = m.message_kind === 'image' && m.image_url
 
@@ -404,6 +411,24 @@ export default function CustomerChatRoomPage() {
           borderTop: '1px solid rgba(255,255,255,0.06)',
         }}
       >
+        <button
+          type="button"
+          onClick={() => setHelpSheetOpen(true)}
+          style={{
+            width: '100%',
+            marginBottom: 10,
+            padding: '10px 14px',
+            borderRadius: 12,
+            border: `1px solid rgba(123,94,167,0.35)`,
+            background: 'rgba(123,94,167,0.1)',
+            color: '#e8dff5',
+            fontSize: 13,
+            cursor: 'pointer',
+            textAlign: 'center',
+          }}
+        >
+          어떤 도움이 필요하세요? +
+        </button>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
           <button
             type="button"
@@ -469,6 +494,89 @@ export default function CustomerChatRoomPage() {
           </button>
         </div>
       </div>
+
+      {helpSheetOpen ? (
+        <>
+          <button
+            type="button"
+            aria-label="닫기"
+            onClick={() => setHelpSheetOpen(false)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 40,
+              border: 'none',
+              padding: 0,
+              margin: 0,
+              background: 'rgba(0,0,0,0.55)',
+              cursor: 'pointer',
+            }}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 50,
+              maxHeight: '72vh',
+              overflowY: 'auto',
+              background: '#16131a',
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+              borderTop: `1px solid rgba(123,94,167,0.35)`,
+              padding: '16px 16px calc(20px + env(safe-area-inset-bottom, 0px))',
+              boxShadow: '0 -8px 32px rgba(0,0,0,0.45)',
+            }}
+          >
+            <div style={{ fontSize: 14, color: '#fff', marginBottom: 12, textAlign: 'center' }}>도움받기</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {HELP_ITEMS.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={async () => {
+                    const text = TYPE_PROMPTS[item.key]
+                    if (!text || !internalUserId || !channelId || sending) {
+                      setHelpSheetOpen(false)
+                      return
+                    }
+                    setHelpSheetOpen(false)
+                    setSending(true)
+                    try {
+                      await supabase.from('consultation_messages').insert({
+                        channel_id: channelId,
+                        user_id: internalUserId,
+                        body: text,
+                        is_from_customer: true,
+                        message_kind: 'text',
+                      } as any)
+                    } finally {
+                      setSending(false)
+                    }
+                  }}
+                  style={{
+                    border:
+                      item.key === 'sos' ? '1px solid rgba(217,79,79,0.35)' : '1px solid rgba(255,255,255,0.1)',
+                    background: item.key === 'sos' ? 'rgba(217,79,79,0.08)' : 'rgba(255,255,255,0.04)',
+                    borderRadius: 12,
+                    padding: '12px 10px',
+                    cursor: sending ? 'default' : 'pointer',
+                    textAlign: 'left',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 4,
+                  }}
+                >
+                  <span style={{ fontSize: 18 }}>{item.icon}</span>
+                  <span style={{ fontSize: 12, color: item.key === 'sos' ? '#e08080' : '#fff' }}>{item.label}</span>
+                  <span style={{ fontSize: 10, color: TEXT_MUTED }}>{item.sub}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      ) : null}
     </div>
   )
 }
