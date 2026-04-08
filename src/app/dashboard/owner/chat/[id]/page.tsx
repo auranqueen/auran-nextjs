@@ -515,13 +515,24 @@ export default function OwnerChatRoomPage() {
         {messages.map((m) => {
           const mine = !m.is_from_customer
           const isImage = m.message_kind === 'image' && m.image_url
+          let productItems: { id: string; name: string; price: number; thumb: string }[] = []
+          if (m.message_kind === 'product_recommend') {
+            try {
+              const raw = String(m.message ?? '')
+              const p = raw ? JSON.parse(raw) : null
+              productItems = Array.isArray(p) ? p : []
+            } catch {
+              productItems = []
+            }
+          }
           return (
             <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
               <div
                 style={{
                   maxWidth: '85%',
                   borderRadius: mine ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                  padding: '10px 12px',
+                  padding:
+                    m.message_kind === 'product_recommend' || m.message_kind === 'routine_card' ? 8 : '10px 12px',
                   background: mine ? 'rgba(123,94,167,0.45)' : 'rgba(201,169,110,0.15)',
                   border: mine ? 'none' : '1px solid rgba(201,169,110,0.3)',
                 }}
@@ -529,6 +540,113 @@ export default function OwnerChatRoomPage() {
                 {isImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={m.image_url!} alt="" style={{ maxWidth: '100%', borderRadius: 8, display: 'block' }} />
+                ) : m.message_kind === 'product_recommend' ? (
+                  <div
+                    style={{
+                      maxWidth: 260,
+                      borderRadius: 12,
+                      border: '1px solid rgba(123,94,167,0.55)',
+                      overflow: 'hidden',
+                      background: 'rgba(123,94,167,0.08)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: '#e8dff5',
+                        padding: '8px 10px',
+                        borderBottom: '1px solid rgba(123,94,167,0.25)',
+                      }}
+                    >
+                      🧴 추천 제품 {productItems.length}개
+                    </div>
+                    {productItems.length === 0 ? (
+                      <div style={{ padding: '10px 12px', fontSize: 12, color: TEXT_MUTED }}>표시할 제품이 없어요</div>
+                    ) : (
+                      productItems.map((it, idx) => (
+                        <div
+                          key={it.id || String(idx)}
+                          style={{
+                            display: 'flex',
+                            gap: 8,
+                            alignItems: 'center',
+                            padding: '10px',
+                            borderBottom:
+                              idx < productItems.length - 1 ? '1px solid rgba(123,94,167,0.2)' : undefined,
+                          }}
+                        >
+                          {it.thumb ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={it.thumb}
+                              alt=""
+                              style={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: 8,
+                                objectFit: 'cover',
+                                flexShrink: 0,
+                                background: 'rgba(255,255,255,0.06)',
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: 8,
+                                flexShrink: 0,
+                                background: 'rgba(255,255,255,0.08)',
+                              }}
+                            />
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, color: '#fff', lineHeight: 1.35 }}>{it.name}</div>
+                            <div style={{ fontSize: 10, color: PURPLE, marginTop: 2 }}>
+                              {Number(it.price ?? 0).toLocaleString()}원
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    <button
+                      type="button"
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        background: 'transparent',
+                        border: 'none',
+                        borderTop: '1px solid rgba(123,94,167,0.25)',
+                        color: PURPLE,
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      장바구니 담기 →
+                    </button>
+                  </div>
+                ) : m.message_kind === 'routine_card' ? (
+                  <div
+                    style={{
+                      maxWidth: 260,
+                      borderRadius: 12,
+                      border: '1px solid rgba(123,94,167,0.55)',
+                      padding: 10,
+                      background: 'rgba(123,94,167,0.08)',
+                    }}
+                  >
+                    <div style={{ fontSize: 11, color: '#e8dff5', marginBottom: 8 }}>💜 루틴 알림장</div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: mine ? '#f3e9ff' : '#f5e6c8',
+                        whiteSpace: 'pre-wrap',
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {msgText(m)}
+                    </div>
+                  </div>
                 ) : (
                   <div style={{ fontSize: 13, color: mine ? '#f3e9ff' : '#f5e6c8', lineHeight: 1.5 }}>{msgText(m)}</div>
                 )}
