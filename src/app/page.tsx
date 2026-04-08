@@ -1228,7 +1228,7 @@ export default function CustomerHomePage() {
             borderRadius: 14, overflow: 'hidden'
           }}>
             <div
-              onClick={() => { setCardExpanded(false); setConsultType(null); }}
+              onClick={(e) => { e.stopPropagation(); setCardExpanded(false); setConsultType(null); }}
               style={{
                 padding: '11px 14px', display: 'flex',
                 alignItems: 'center', gap: 10, cursor: 'pointer',
@@ -1256,87 +1256,49 @@ export default function CustomerHomePage() {
             </div>
 
             {!consultType ? (
-              <div style={{ padding: '10px 14px 12px' }}>
-                <div style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  borderRadius: '12px 12px 12px 3px',
-                  padding: '10px 12px', fontSize: 12,
-                  color: 'rgba(255,255,255,0.85)',
-                  lineHeight: 1.6, marginBottom: 10
-                }}>오늘 어떤 도움이 필요하세요?</div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                  {[
-                    { key: 'skin', label: '오늘 피부 고민', sub: 'AI 즉시 답변' },
-                    { key: 'routine', label: '루틴 재배치', sub: '보유 제품 기반' },
-                    { key: 'recommend', label: '제품 추천', sub: '피부타입 매핑' },
-                    { key: 'photo', label: '사진 상담', sub: '조용한 상담' },
-                    { key: 'sample', label: '샘플 받기', sub: '원장님 승인' },
-                    { key: 'sos', label: '피부 SOS', sub: '즉시 원장님 연결' },
-                  ].map(item => (
-                    <button
-                      key={item.key}
-                      onClick={() => {
-                        void (async () => {
-                          const {
-                            data: { user },
-                          } = await supabase.auth.getUser()
-                          if (!user) {
-                            router.push('/login?role=customer')
-                            return
-                          }
-                          const { data: urow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
-                          if (!urow?.id) {
-                            router.push('/login?role=customer')
-                            return
-                          }
-                          const { data: ownerRow } = await supabase
-                            .from('chat_channels')
-                            .select('id')
-                            .eq('user_id', urow.id)
-                            .eq('channel_type', 'owner')
-                            .maybeSingle()
-                          if (ownerRow?.id) {
-                            router.push('/dashboard/customer/chat/' + ownerRow.id)
-                            return
-                          }
-                          const { data: inserted, error: insErr } = await supabase
-                            .from('chat_channels')
-                            .insert({
-                              user_id: urow.id,
-                              channel_type: 'owner',
-                              title: '원장님 상담',
-                              system_kind: null,
-                              preview_text: '',
-                              unread_count: 0,
-                              is_online: false,
-                            } as any)
-                            .select('id')
-                            .maybeSingle()
-                          if (!insErr && inserted?.id) {
-                            router.push('/dashboard/customer/chat/' + inserted.id)
-                          }
-                        })()
-                      }}
-                      style={{
-                        border: item.key === 'sos'
-                          ? '1px solid rgba(217,79,79,0.3)'
-                          : '1px solid rgba(255,255,255,0.08)',
-                        background: item.key === 'sos'
-                          ? 'rgba(217,79,79,0.06)'
-                          : 'rgba(255,255,255,0.03)',
-                        borderRadius: 12, padding: '10px 12px',
-                        cursor: 'pointer', textAlign: 'left'
-                      }}
-                    >
-                      <div style={{
-                        fontSize: 11,
-                        color: item.key === 'sos' ? '#e08080' : '#fff',
-                        marginBottom: 2
-                      }}>{item.label}</div>
-                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>{item.sub}</div>
-                    </button>
-                  ))}
-                </div>
+              <div
+                onClick={() => {
+                  void (async () => {
+                    const {
+                      data: { user },
+                    } = await supabase.auth.getUser()
+                    if (!user) {
+                      router.push('/login?role=customer')
+                      return
+                    }
+                    const { data: urow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+                    if (!urow?.id) return
+                    const { data: ownerRow } = await supabase
+                      .from('chat_channels')
+                      .select('id')
+                      .eq('user_id', urow.id)
+                      .eq('channel_type', 'owner')
+                      .maybeSingle()
+                    if (ownerRow?.id) {
+                      router.push('/dashboard/customer/chat/' + ownerRow.id)
+                      return
+                    }
+                    const { data: inserted, error: insErr } = await supabase
+                      .from('chat_channels')
+                      .insert({
+                        user_id: urow.id,
+                        channel_type: 'owner',
+                        title: '원장님 상담',
+                        system_kind: null,
+                        preview_text: '',
+                        unread_count: 0,
+                        is_online: false,
+                      } as any)
+                      .select('id')
+                      .maybeSingle()
+                    if (!insErr && inserted?.id) {
+                      router.push('/dashboard/customer/chat/' + inserted.id)
+                    }
+                  })()
+                }}
+                style={{ padding: '10px 14px 12px', cursor: 'pointer' }}
+              >
+                <div style={{ fontSize: 11, color: '#7B5EA7', textAlign: 'right' }}>상담하기</div>
               </div>
             ) : (
               <div style={{ padding: '10px 14px 12px' }}>
