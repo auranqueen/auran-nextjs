@@ -222,37 +222,37 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
         </div>
       </div>
 
-      {ownerChannels.length > 0 ? (
-        <div style={{ margin: '12px 16px 0', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 13, padding: '12px 14px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#e8d6ff' }}>미답변 상담</div>
-            <div style={{ minWidth: 20, height: 20, borderRadius: 999, background: 'rgba(123,94,167,0.9)', color: '#fff', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 7px' }}>
-              {ownerUnreadTotal}
-            </div>
-          </div>
-          <div>
-            {ownerChannels.slice(0, 6).map((ch) => (
-              <button
-                key={ch.id}
-                type="button"
-                onClick={() => router.push('/dashboard/owner/chat/' + ch.id)}
-                style={{ width: '100%', textAlign: 'left', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(123,94,167,0.22)', borderRadius: 10, padding: '10px 10px', marginBottom: 7, cursor: 'pointer' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 3 }}>
-                  <div style={{ fontSize: 12, color: '#fff', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{ch.title || '고객'}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {Number(ch.unread_count || 0) > 0 ? <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#7B5EA7', display: 'inline-block' }} /> : null}
-                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>{ch.last_message_at ? new Date(ch.last_message_at).toLocaleDateString('ko-KR') : '-'}</span>
-                  </div>
-                </div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                  {ch.preview_text || '새 메시지가 없어요'}
-                </div>
-              </button>
-            ))}
+      <div style={{ margin: '12px 16px 0', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 13, padding: '12px 14px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#e8d6ff' }}>미답변 상담</div>
+          <div style={{ minWidth: 20, height: 20, borderRadius: 999, background: 'rgba(123,94,167,0.9)', color: '#fff', fontSize: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 7px' }}>
+            {ownerUnreadTotal}
           </div>
         </div>
-      ) : null}
+        <div>
+          {ownerChannels.length === 0 ? (
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>아직 상담 요청이 없어요</div>
+          ) : ownerChannels.slice(0, 6).map((ch) => (
+            <button
+              key={ch.id}
+              type="button"
+              onClick={() => router.push('/dashboard/owner/chat/' + ch.id)}
+              style={{ width: '100%', textAlign: 'left', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(123,94,167,0.22)', borderRadius: 10, padding: '10px 10px', marginBottom: 7, cursor: 'pointer' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 3 }}>
+                <div style={{ fontSize: 12, color: '#fff', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{ch.title || '고객'}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {Number(ch.unread_count || 0) > 0 ? <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#7B5EA7', display: 'inline-block' }} /> : null}
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>{ch.last_message_at ? new Date(ch.last_message_at).toLocaleDateString('ko-KR') : '-'}</span>
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                {ch.preview_text || '새 메시지가 없어요'}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
 
       {subReady ? (
         <div style={{ margin: '12px 16px 0' }}>
