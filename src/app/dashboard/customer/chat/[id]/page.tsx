@@ -11,12 +11,12 @@ const GOLD = '#C9A96E'
 const TEXT_MUTED = 'rgba(255,255,255,0.45)'
 
 const QUICK_CHIPS = [
-  { key: 'skin', label: '🔬 요즘 피부 고민있어요 😢', text: '오늘 피부 고민이 있으세요?' },
-  { key: 'routine', label: '🔄 나만의 루틴만들어주세요!', text: '보유 제품으로 루틴 정리해드릴게요! 어떤 시간대가 필요하세요?' },
-  { key: 'recommend', label: '✨ 제품추천 도와주세요?', text: '어떤 고민을 해결하고 싶으세요?' },
-  { key: 'photo', label: '📷 지금 피부사진전송', text: '사진 1장만 올려주세요. 원장님이 확인 후 답변드려요!' },
-  { key: 'sample', label: '🎁 이 샘플 받고싶어요', text: '어떤 샘플이 필요하세요? 원장님 승인 후 다음 주문에 동봉해드려요' },
-  { key: 'sos', label: '🚨 피부 SOS타임이에요', text: '어떤 상황이에요? 즉시 도와드릴게요!' },
+  { key: 'skin', label: '🔬 요즘 피부 고민있어요 😢' },
+  { key: 'routine', label: '🔄 나만의 루틴만들어주세요!' },
+  { key: 'recommend', label: '✨ 제품추천 도와주세요?' },
+  { key: 'photo', label: '📷 지금 피부사진전송' },
+  { key: 'sample', label: '🎁 이 샘플 받고싶어요' },
+  { key: 'sos', label: '🚨 피부 SOS타임이에요' },
 ] as const
 
 type MsgRow = {
@@ -412,7 +412,7 @@ export default function CustomerChatRoomPage() {
             <button
               key={chip.key}
               type="button"
-              onClick={() => void sendQuickText(chip.text)}
+              onClick={() => void sendQuickText(chip.label)}
               disabled={sending}
               style={{
                 flexShrink: 0,
