@@ -47,6 +47,18 @@ function msgText(m: MsgRow): string {
   return String(m.message ?? m.content ?? '').trim()
 }
 
+type RecommendItem = { id: string; name: string; price: number; thumb: string }
+
+function parseRecommendItems(m: MsgRow): RecommendItem[] {
+  try {
+    const raw = String(m.message ?? '')
+    const p = raw ? JSON.parse(raw) : null
+    return Array.isArray(p) ? p : []
+  } catch {
+    return []
+  }
+}
+
 export default function CustomerChatRoomPage() {
   const supabase = createClient()
   const router = useRouter()
@@ -232,6 +244,27 @@ export default function CustomerChatRoomPage() {
     }
   }
 
+  const addRecommendItemsToCart = async (items: RecommendItem[]) => {
+    if (!items.length) return
+    if (!internalUserId) {
+      router.push('/login?redirect=' + encodeURIComponent('/dashboard/customer/chat/' + channelId))
+      return
+    }
+    for (const it of items) {
+      if (!it.id) continue
+      const { error } = await supabase
+        .from('cart_items')
+        .insert({ user_id: internalUserId, product_id: it.id, quantity: 1 } as any)
+      if (
+        error &&
+        !String(error.message || '').toLowerCase().includes('duplicate') &&
+        String((error as { code?: string }).code || '') !== '23505'
+      ) {
+        console.warn('[chat recommend cart]', error)
+      }
+    }
+  }
+
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', background: BG, color: TEXT_MUTED, padding: 24, fontSize: 13 }}>
@@ -380,6 +413,153 @@ export default function CustomerChatRoomPage() {
                     }}
                   >
                     {msgText(m)}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
+          if (m.message_kind === 'product_recommend') {
+            const productItems = parseRecommendItems(m)
+            return (
+              <div
+                key={m.id}
+                style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginBottom: 10 }}
+              >
+                <div
+                  style={{
+                    maxWidth: '85%',
+                    borderRadius: mine ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                    padding: 8,
+                    background: mine ? 'rgba(123,94,167,0.45)' : 'rgba(201,169,110,0.15)',
+                    border: mine ? 'none' : '1px solid rgba(201,169,110,0.3)',
+                  }}
+                >
+                  <div
+                    style={{
+                      maxWidth: 260,
+                      borderRadius: 12,
+                      border: '1px solid rgba(123,94,167,0.55)',
+                      overflow: 'hidden',
+                      background: 'rgba(123,94,167,0.08)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: '#e8dff5',
+                        padding: '8px 10px',
+                        borderBottom: '1px solid rgba(123,94,167,0.25)',
+                      }}
+                    >
+                      🧴 원장님 추천 제품
+                    </div>
+                    {productItems.length === 0 ? (
+                      <div style={{ padding: '10px 12px', fontSize: 12, color: TEXT_MUTED }}>표시할 제품이 없어요</div>
+                    ) : (
+                      productItems.map((it, idx) => (
+                        <div
+                          key={it.id || String(idx)}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => it.id && router.push('/products/' + it.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              if (it.id) router.push('/products/' + it.id)
+                            }
+                          }}
+                          style={{
+                            display: 'flex',
+                            gap: 8,
+                            alignItems: 'center',
+                            padding: '10px',
+                            borderBottom:
+                              idx < productItems.length - 1 ? '1px solid rgba(123,94,167,0.2)' : undefined,
+                            cursor: it.id ? 'pointer' : 'default',
+                          }}
+                        >
+                          {it.thumb ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={it.thumb}
+                              alt=""
+                              style={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: 8,
+                                objectFit: 'cover',
+                                flexShrink: 0,
+                                background: 'rgba(255,255,255,0.06)',
+                              }}
+                            />
+                          ) : (
+                            <div
+                              style={{
+                                width: 48,
+                                height: 48,
+                                borderRadius: 8,
+                                flexShrink: 0,
+                                background: 'rgba(123,94,167,0.35)',
+                              }}
+                            />
+                          )}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 12, color: '#fff', lineHeight: 1.35 }}>{it.name}</div>
+                            <div style={{ fontSize: 10, color: PURPLE, marginTop: 2 }}>
+                              {Number(it.price ?? 0).toLocaleString()}원
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                    <div
+                      style={{
+                        display: 'flex',
+                        gap: 8,
+                        padding: '8px',
+                        borderTop: '1px solid rgba(123,94,167,0.25)',
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          void addRecommendItemsToCart(productItems)
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '8px 10px',
+                          borderRadius: 8,
+                          border: `1px solid ${PURPLE}`,
+                          background: 'rgba(123,94,167,0.2)',
+                          color: '#e8dff5',
+                          fontSize: 12,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        장바구니 담기
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          router.push('/checkout')
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '8px 10px',
+                          borderRadius: 8,
+                          border: `1px solid ${GOLD}`,
+                          background: 'rgba(201,169,110,0.12)',
+                          color: '#f5e6c8',
+                          fontSize: 12,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        전체 구매하기
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

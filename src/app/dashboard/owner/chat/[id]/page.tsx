@@ -556,7 +556,7 @@ export default function OwnerChatRoomPage() {
                         borderBottom: '1px solid rgba(123,94,167,0.25)',
                       }}
                     >
-                      🧴 추천 제품 {productItems.length}개
+                      🧴 원장님 추천 제품
                     </div>
                     {productItems.length === 0 ? (
                       <div style={{ padding: '10px 12px', fontSize: 12, color: TEXT_MUTED }}>표시할 제품이 없어요</div>
@@ -594,7 +594,7 @@ export default function OwnerChatRoomPage() {
                                 height: 48,
                                 borderRadius: 8,
                                 flexShrink: 0,
-                                background: 'rgba(255,255,255,0.08)',
+                                background: 'rgba(123,94,167,0.35)',
                               }}
                             />
                           )}
@@ -607,21 +607,63 @@ export default function OwnerChatRoomPage() {
                         </div>
                       ))
                     )}
-                    <button
-                      type="button"
+                    <div
                       style={{
-                        width: '100%',
-                        padding: '8px 10px',
-                        background: 'transparent',
-                        border: 'none',
+                        display: 'flex',
+                        gap: 6,
+                        padding: '8px',
                         borderTop: '1px solid rgba(123,94,167,0.25)',
-                        color: PURPLE,
-                        fontSize: 12,
-                        cursor: 'pointer',
                       }}
                     >
-                      장바구니 담기 →
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => alert('준비 중')}
+                        style={{
+                          flex: 1,
+                          padding: '8px 6px',
+                          borderRadius: 8,
+                          border: `1px solid rgba(123,94,167,0.45)`,
+                          background: 'rgba(123,94,167,0.15)',
+                          color: '#e8dff5',
+                          fontSize: 11,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        담기
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => alert('준비 중')}
+                        style={{
+                          flex: 1,
+                          padding: '8px 6px',
+                          borderRadius: 8,
+                          border: `1px solid rgba(123,94,167,0.45)`,
+                          background: 'rgba(123,94,167,0.15)',
+                          color: '#e8dff5',
+                          fontSize: 11,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        선물
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => alert('준비 중')}
+                        style={{
+                          flex: 1,
+                          padding: '8px 6px',
+                          borderRadius: 8,
+                          border: `1px solid rgba(123,94,167,0.45)`,
+                          background: 'rgba(123,94,167,0.15)',
+                          color: '#e8dff5',
+                          fontSize: 11,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        구매
+                      </button>
+                    </div>
                   </div>
                 ) : m.message_kind === 'routine_card' ? (
                   <div
