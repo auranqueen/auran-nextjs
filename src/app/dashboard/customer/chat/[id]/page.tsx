@@ -2,33 +2,22 @@
 
 import { compressImage } from '@/lib/imageUpload'
 import { createClient } from '@/lib/supabase/client'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useParams, useRouter, useSearchParams } from 'next/navigation'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useParams, useRouter } from 'next/navigation'
 
 const BG = '#0D0B09'
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
 const TEXT_MUTED = 'rgba(255,255,255,0.45)'
 
-const VALID_TYPES = new Set(['skin', 'routine', 'recommend', 'photo', 'sample', 'sos'])
-
-const TYPE_PROMPTS: Record<string, string> = {
-  skin: '오늘 피부 고민이 있으세요?',
-  routine: '보유 제품으로 루틴 정리해드릴게요! 어떤 시간대가 필요하세요?',
-  recommend: '어떤 고민을 해결하고 싶으세요?',
-  photo: '사진 1장만 올려주세요. 원장님이 확인 후 답변드려요!',
-  sample: '어떤 샘플이 필요하세요? 원장님 승인 후 다음 주문에 동봉해드려요',
-  sos: '어떤 상황이에요? 즉시 도와드릴게요!',
-}
-
-const HELP_ITEMS: { key: string; label: string; sub: string; icon: string }[] = [
-  { key: 'skin', label: '오늘 피부 고민', sub: 'AI 즉시 답변', icon: '✨' },
-  { key: 'routine', label: '루틴 재배치', sub: '보유 제품 기반', icon: '📋' },
-  { key: 'recommend', label: '제품 추천', sub: '피부타입 매핑', icon: '💜' },
-  { key: 'photo', label: '사진 상담', sub: '조용한 상담', icon: '📷' },
-  { key: 'sample', label: '샘플 받기', sub: '원장님 승인', icon: '🎁' },
-  { key: 'sos', label: '피부 SOS', sub: '즉시 원장님 연결', icon: '🆘' },
-]
+const QUICK_CHIPS = [
+  { key: 'skin', label: '🔬 피부고민', text: '오늘 피부 고민이 있으세요?' },
+  { key: 'routine', label: '🔄 루틴재배치', text: '보유 제품으로 루틴 정리해드릴게요! 어떤 시간대가 필요하세요?' },
+  { key: 'recommend', label: '✨ 제품추천', text: '어떤 고민을 해결하고 싶으세요?' },
+  { key: 'photo', label: '📷 사진상담', text: '사진 1장만 올려주세요. 원장님이 확인 후 답변드려요!' },
+  { key: 'sample', label: '🎁 샘플받기', text: '어떤 샘플이 필요하세요? 원장님 승인 후 다음 주문에 동봉해드려요' },
+  { key: 'sos', label: '🚨 피부SOS', text: '어떤 상황이에요? 즉시 도와드릴게요!' },
+] as const
 
 type MsgRow = {
   id: string
@@ -61,13 +50,11 @@ export default function CustomerChatRoomPage() {
   const supabase = createClient()
   const router = useRouter()
   const params = useParams<{ id: string }>()
-  const searchParams = useSearchParams()
   const channelId = params?.id ? String(params.id) : ''
 
   const fileRef = useRef<HTMLInputElement | null>(null)
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const rtRef = useRef<any>(null)
-  const openedTypeSheetKeyRef = useRef<string | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
@@ -77,13 +64,6 @@ export default function CustomerChatRoomPage() {
   const [routineCards, setRoutineCards] = useState<RoutineCardRow[]>([])
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
-  const [helpSheetOpen, setHelpSheetOpen] = useState(false)
-
-  const typeParam = searchParams.get('type')
-  const seedLine = useMemo(() => {
-    if (!typeParam || !VALID_TYPES.has(typeParam)) return null
-    return TYPE_PROMPTS[typeParam] ?? null
-  }, [typeParam])
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -96,19 +76,6 @@ export default function CustomerChatRoomPage() {
   useEffect(() => {
     scrollBottom()
   }, [messages, routineCards, scrollBottom])
-
-  useEffect(() => {
-    openedTypeSheetKeyRef.current = null
-  }, [channelId])
-
-  useEffect(() => {
-    if (loading || forbidden) return
-    if (!seedLine || !typeParam) return
-    const k = `${channelId}:${typeParam}`
-    if (openedTypeSheetKeyRef.current === k) return
-    openedTypeSheetKeyRef.current = k
-    setHelpSheetOpen(true)
-  }, [loading, forbidden, seedLine, typeParam, channelId])
 
   useEffect(() => {
     if (!channelId) {
@@ -217,6 +184,22 @@ export default function CustomerChatRoomPage() {
         message_kind: 'text',
       } as any)
       if (!error) setDraft('')
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const sendQuickText = async (text: string) => {
+    if (!text || !internalUserId || !channelId || sending) return
+    setSending(true)
+    try {
+      await supabase.from('consultation_messages').insert({
+        channel_id: channelId,
+        user_id: internalUserId,
+        body: text,
+        is_from_customer: true,
+        message_kind: 'text',
+      } as any)
     } finally {
       setSending(false)
     }
@@ -411,24 +394,40 @@ export default function CustomerChatRoomPage() {
           borderTop: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        <button
-          type="button"
-          onClick={() => setHelpSheetOpen(true)}
+        <div
+          className="quick-chip-scroll"
           style={{
-            width: '100%',
-            marginBottom: 10,
-            padding: '10px 14px',
-            borderRadius: 12,
-            border: `1px solid rgba(123,94,167,0.35)`,
-            background: 'rgba(123,94,167,0.1)',
-            color: '#e8dff5',
-            fontSize: 13,
-            cursor: 'pointer',
-            textAlign: 'center',
+            display: 'flex',
+            gap: 8,
+            overflowX: 'auto',
+            paddingBottom: 8,
+            marginBottom: 2,
+            msOverflowStyle: 'none',
+            scrollbarWidth: 'none',
           }}
         >
-          어떤 도움이 필요하세요? +
-        </button>
+          {QUICK_CHIPS.map((chip) => (
+            <button
+              key={chip.key}
+              type="button"
+              onClick={() => void sendQuickText(chip.text)}
+              disabled={sending}
+              style={{
+                flexShrink: 0,
+                borderRadius: 999,
+                border: '1px solid rgba(123,94,167,0.4)',
+                background: 'rgba(123,94,167,0.14)',
+                color: '#e8dff5',
+                fontSize: 12,
+                padding: '7px 10px',
+                cursor: sending ? 'default' : 'pointer',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {chip.label}
+            </button>
+          ))}
+        </div>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
           <button
             type="button"
@@ -494,89 +493,11 @@ export default function CustomerChatRoomPage() {
           </button>
         </div>
       </div>
-
-      {helpSheetOpen ? (
-        <>
-          <button
-            type="button"
-            aria-label="닫기"
-            onClick={() => setHelpSheetOpen(false)}
-            style={{
-              position: 'fixed',
-              inset: 0,
-              zIndex: 40,
-              border: 'none',
-              padding: 0,
-              margin: 0,
-              background: 'rgba(0,0,0,0.55)',
-              cursor: 'pointer',
-            }}
-          />
-          <div
-            style={{
-              position: 'fixed',
-              left: 0,
-              right: 0,
-              bottom: 0,
-              zIndex: 50,
-              maxHeight: '72vh',
-              overflowY: 'auto',
-              background: '#16131a',
-              borderTopLeftRadius: 16,
-              borderTopRightRadius: 16,
-              borderTop: `1px solid rgba(123,94,167,0.35)`,
-              padding: '16px 16px calc(20px + env(safe-area-inset-bottom, 0px))',
-              boxShadow: '0 -8px 32px rgba(0,0,0,0.45)',
-            }}
-          >
-            <div style={{ fontSize: 14, color: '#fff', marginBottom: 12, textAlign: 'center' }}>도움받기</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {HELP_ITEMS.map((item) => (
-                <button
-                  key={item.key}
-                  type="button"
-                  onClick={async () => {
-                    const text = TYPE_PROMPTS[item.key]
-                    if (!text || !internalUserId || !channelId || sending) {
-                      setHelpSheetOpen(false)
-                      return
-                    }
-                    setHelpSheetOpen(false)
-                    setSending(true)
-                    try {
-                      await supabase.from('consultation_messages').insert({
-                        channel_id: channelId,
-                        user_id: internalUserId,
-                        body: text,
-                        is_from_customer: true,
-                        message_kind: 'text',
-                      } as any)
-                    } finally {
-                      setSending(false)
-                    }
-                  }}
-                  style={{
-                    border:
-                      item.key === 'sos' ? '1px solid rgba(217,79,79,0.35)' : '1px solid rgba(255,255,255,0.1)',
-                    background: item.key === 'sos' ? 'rgba(217,79,79,0.08)' : 'rgba(255,255,255,0.04)',
-                    borderRadius: 12,
-                    padding: '12px 10px',
-                    cursor: sending ? 'default' : 'pointer',
-                    textAlign: 'left',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 4,
-                  }}
-                >
-                  <span style={{ fontSize: 18 }}>{item.icon}</span>
-                  <span style={{ fontSize: 12, color: item.key === 'sos' ? '#e08080' : '#fff' }}>{item.label}</span>
-                  <span style={{ fontSize: 10, color: TEXT_MUTED }}>{item.sub}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </>
-      ) : null}
+      <style jsx global>{`
+        .quick-chip-scroll::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   )
 }
