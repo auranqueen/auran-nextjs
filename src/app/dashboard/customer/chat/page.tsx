@@ -4,7 +4,7 @@ import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import DashboardHeader from '@/components/DashboardHeader'
 import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 const BG = '#0D0B09'
 const PURPLE = '#7B5EA7'
@@ -70,6 +70,8 @@ function matchesFilter(row: ChannelRow, tab: FilterTab): boolean {
 export default function CustomerChatListPage() {
   const supabase = createClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const typeParam = searchParams.get('type')
   const [loading, setLoading] = useState(true)
   const [channels, setChannels] = useState<ChannelRow[]>([])
   const [filterTab, setFilterTab] = useState<FilterTab>('all')
@@ -101,6 +103,34 @@ export default function CustomerChatListPage() {
     }
     setChannels(sortChannels((data || []) as ChannelRow[]))
     setLoading(false)
+    if (typeParam) {
+      const { data: ownerRow } = await supabase
+        .from('chat_channels')
+        .select('id')
+        .eq('user_id', urow.id)
+        .eq('channel_type', 'owner')
+        .maybeSingle()
+      if (ownerRow?.id) {
+        router.push(`/dashboard/customer/chat/${ownerRow.id}?type=${encodeURIComponent(typeParam)}`)
+        return
+      }
+      const { data: inserted, error: insErr } = await supabase
+        .from('chat_channels')
+        .insert({
+          user_id: urow.id,
+          channel_type: 'owner',
+          title: '원장님 상담',
+          system_kind: null,
+          preview_text: '',
+          unread_count: 0,
+          is_online: false,
+        } as any)
+        .select('id')
+        .maybeSingle()
+      if (!insErr && inserted?.id) {
+        router.push(`/dashboard/customer/chat/${inserted.id}?type=${encodeURIComponent(typeParam)}`)
+      }
+    }
   }, [router])
 
   useEffect(() => {
