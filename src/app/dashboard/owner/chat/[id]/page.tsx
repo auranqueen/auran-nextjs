@@ -13,6 +13,7 @@ type MsgRow = {
   id: string
   channel_id: string
   sender_id?: string | null
+  body?: string | null
   message?: string | null
   content?: string | null
   image_url?: string | null
@@ -22,7 +23,7 @@ type MsgRow = {
 }
 
 function msgText(m: MsgRow): string {
-  return String(m.message ?? m.content ?? '').trim()
+  return String(m.body ?? m.message ?? m.content ?? '').trim()
 }
 
 export default function OwnerChatRoomPage() {
