@@ -38,7 +38,8 @@ type RoutineCardRow = {
   channel_id?: string | null
   user_id?: string | null
   title?: string | null
-  body?: string | null
+  steps?: any
+  memo?: string | null
   created_at?: string | null
 }
 
@@ -131,7 +132,7 @@ export default function CustomerChatRoomPage() {
 
       const { data: rc } = await supabase
         .from('routine_cards')
-        .select('id,channel_id,user_id,title,body,created_at')
+        .select('id,channel_id,user_id,title,steps,memo,created_at')
         .eq('channel_id', channelId)
         .order('created_at', { ascending: false })
         .limit(20)
