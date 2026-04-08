@@ -16,10 +16,14 @@ type BasketItem = { id: string; name: string; price: number; thumb: string }
 
 type ProductRow = { id: string; name: string; retail_price: number; thumb_img: string | null }
 
-const SAMPLE_COUPON_OPTIONS: { id: string; title: string }[] = [
-  { id: 'sample_welcome', title: '웰컴 5% 쿠폰 (샘플)' },
-  { id: 'sample_ship', title: '배송비 무료 (샘플)' },
-]
+type OwnerCouponRow = {
+  id: string
+  name: string
+  discount_type: string
+  discount_value: number
+  min_order_amount: number | null
+  expires_at: string | null
+}
 
 type MsgRow = {
   id: string
@@ -67,8 +71,13 @@ export default function OwnerChatRoomPage() {
   const [toastAmount, setToastAmount] = useState('')
   const [toastMemo, setToastMemo] = useState('')
   const [customerUserId, setCustomerUserId] = useState<string | null>(null)
-  const [couponOptions, setCouponOptions] = useState<{ id: string; title: string }[]>(SAMPLE_COUPON_OPTIONS)
-  const [selectedCouponId, setSelectedCouponId] = useState<string | null>(null)
+  const [couponList, setCouponList] = useState<OwnerCouponRow[]>([])
+  const [couponName, setCouponName] = useState('')
+  const [discountType, setDiscountType] = useState<'amount' | 'percent'>('percent')
+  const [discountValue, setDiscountValue] = useState('')
+  const [minOrder, setMinOrder] = useState(0)
+  const [validDays, setValidDays] = useState(30)
+  const [showCouponForm, setShowCouponForm] = useState(false)
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -184,43 +193,22 @@ export default function OwnerChatRoomPage() {
   }, [])
 
   useEffect(() => {
-    if (toolPanel !== 'coupon' || !customerUserId) {
-      if (toolPanel !== 'coupon') setSelectedCouponId(null)
-      return
-    }
+    if (!ownerUserId) return
     let cancelled = false
     void (async () => {
-      const { data: u } = await supabase.from('users').select('auth_id').eq('id', customerUserId).maybeSingle()
-      const authId = u && (u as { auth_id?: string | null }).auth_id ? String((u as { auth_id: string }).auth_id) : null
-      if (!authId) {
-        if (!cancelled) {
-          setCouponOptions(SAMPLE_COUPON_OPTIONS)
-          setSelectedCouponId(SAMPLE_COUPON_OPTIONS[0]?.id ?? null)
-        }
-        return
-      }
-      const { data: ucs, error } = await supabase.from('user_coupons').select('id,coupon_id,status').eq('user_id', authId).eq('status', 'active').limit(30)
-      if (cancelled) return
-      if (error || !ucs?.length) {
-        setCouponOptions(SAMPLE_COUPON_OPTIONS)
-        setSelectedCouponId(SAMPLE_COUPON_OPTIONS[0]?.id ?? null)
-        return
-      }
-      const ids = Array.from(new Set(ucs.map((r: { coupon_id: string }) => r.coupon_id).filter(Boolean)))
-      const { data: cps } = ids.length ? await supabase.from('coupons').select('id,name').in('id', ids) : { data: null }
-      const map = new Map((cps as { id: string; name: string }[] | null)?.map((c) => [c.id, c.name]) || [])
-      const opts = ucs.map((r: { id: string; coupon_id: string }) => ({
-        id: r.id,
-        title: map.get(r.coupon_id) || `쿠폰 ${r.coupon_id.slice(0, 8)}…`,
-      }))
-      setCouponOptions(opts.length ? opts : SAMPLE_COUPON_OPTIONS)
-      setSelectedCouponId((opts.length ? opts : SAMPLE_COUPON_OPTIONS)[0]?.id ?? null)
+      const { data, error } = await supabase
+        .from('owner_coupons')
+        .select('id,name,discount_type,discount_value,min_order_amount,expires_at')
+        .eq('owner_id', ownerUserId)
+        .eq('is_active', true)
+      if (cancelled || error) return
+      setCouponList(((data as OwnerCouponRow[]) || []).filter((r) => r?.id))
     })()
     return () => {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable
-  }, [toolPanel, customerUserId])
+  }, [ownerUserId])
 
   const sendText = async () => {
     const text = draft.trim()
@@ -342,20 +330,95 @@ export default function OwnerChatRoomPage() {
     }
   }
 
-  const sendCouponGift = async () => {
-    if (!channelId || !ownerUserId || !selectedCouponId || sending) return
-    const opt = couponOptions.find((c) => c.id === selectedCouponId)
-    if (!opt) return
+  const resolveChannelCustomerId = async (): Promise<string | null> => {
+    if (customerUserId) return customerUserId
+    if (!channelId) return null
+    const { data } = await supabase.from('chat_channels').select('user_id').eq('id', channelId).maybeSingle()
+    const uid = data && (data as { user_id?: string | null }).user_id ? String((data as { user_id: string }).user_id) : null
+    if (uid) setCustomerUserId(uid)
+    return uid
+  }
+
+  const sendOwnerCouponToCustomer = async (coupon: OwnerCouponRow) => {
+    if (!channelId || !ownerUserId || sending) return
+    const uid = await resolveChannelCustomerId()
+    if (!uid) return
     setSending(true)
     try {
-      const { error } = await supabase.from('consultation_messages').insert({
+      const { error: e1 } = await supabase.from('customer_coupons').insert({
+        owner_coupon_id: coupon.id,
+        user_id: uid,
+        channel_id: channelId,
+        expires_at: coupon.expires_at,
+      } as any)
+      if (e1) {
+        console.warn('[customer_coupons]', e1)
+        return
+      }
+      const { error: e2 } = await supabase.from('benefit_history').insert({
+        user_id: uid,
+        giver_id: ownerUserId,
+        giver_type: 'owner',
+        benefit_type: 'coupon',
+        benefit_name: coupon.name,
+        benefit_value: coupon.discount_value,
+      } as any)
+      if (e2) {
+        console.warn('[benefit_history]', e2)
+        return
+      }
+      const { error: e3 } = await supabase.from('consultation_messages').insert({
         channel_id: channelId,
         sender_id: ownerUserId,
-        message: JSON.stringify({ user_coupon_id: opt.id, title: opt.title }),
+        message: JSON.stringify({
+          id: coupon.id,
+          name: coupon.name,
+          discount_type: coupon.discount_type,
+          discount_value: coupon.discount_value,
+          min_order_amount: coupon.min_order_amount,
+          expires_at: coupon.expires_at,
+        }),
         is_from_customer: false,
         message_kind: 'coupon_gift',
       } as any)
-      if (!error) setToolPanel(null)
+      if (!e3) setToolPanel(null)
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const createOwnerCoupon = async () => {
+    if (!ownerUserId || !couponName.trim() || sending) return
+    const val = Number(discountValue)
+    if (!Number.isFinite(val)) return
+    setSending(true)
+    try {
+      const expires_at = new Date(Date.now() + validDays * 86400000).toISOString()
+      const { data, error } = await supabase
+        .from('owner_coupons')
+        .insert({
+          owner_id: ownerUserId,
+          name: couponName.trim(),
+          discount_type: discountType,
+          discount_value: val,
+          min_order_amount: minOrder,
+          expires_at,
+          is_active: true,
+        } as any)
+        .select('id,name,discount_type,discount_value,min_order_amount,expires_at')
+        .maybeSingle()
+      if (error || !data) {
+        console.warn('[owner_coupons insert]', error)
+        return
+      }
+      const row = data as OwnerCouponRow
+      setCouponList((prev) => [...prev, row])
+      setShowCouponForm(false)
+      setCouponName('')
+      setDiscountValue('')
+      setDiscountType('percent')
+      setMinOrder(0)
+      setValidDays(30)
     } finally {
       setSending(false)
     }
@@ -890,49 +953,200 @@ export default function OwnerChatRoomPage() {
         ) : null}
 
         {toolPanel === 'coupon' ? (
-          <div>
-            <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 6 }}>쿠폰 선택 후 전송</div>
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 6, maxWidth: '100%' }}>
-              {couponOptions.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setSelectedCouponId(c.id)}
-                  style={{
-                    flexShrink: 0,
-                    maxWidth: 200,
-                    padding: '10px 12px',
-                    borderRadius: 12,
-                    border:
-                      selectedCouponId === c.id ? `1px solid ${GOLD}` : '1px solid rgba(123,94,167,0.35)',
-                    background: selectedCouponId === c.id ? 'rgba(201,169,110,0.15)' : 'rgba(123,94,167,0.1)',
-                    color: '#f5e6c8',
-                    fontSize: 12,
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {c.title}
-                </button>
-              ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, maxWidth: '100%' }}>
+              {couponList.length === 0 ? (
+                <div style={{ fontSize: 12, color: TEXT_MUTED, padding: '4px 0' }}>아직 만든 쿠폰이 없어요</div>
+              ) : (
+                couponList.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => void sendOwnerCouponToCustomer(c)}
+                    disabled={sending}
+                    style={{
+                      flexShrink: 0,
+                      maxWidth: 220,
+                      padding: '10px 12px',
+                      borderRadius: 12,
+                      border: `1px solid rgba(123,94,167,0.35)`,
+                      background: 'rgba(123,94,167,0.1)',
+                      color: '#f5e6c8',
+                      fontSize: 12,
+                      textAlign: 'left',
+                      cursor: sending ? 'default' : 'pointer',
+                    }}
+                  >
+                    <div style={{ fontWeight: 600 }}>{c.name}</div>
+                    <div style={{ fontSize: 10, color: TEXT_MUTED, marginTop: 4 }}>
+                      {c.discount_type === 'percent' ? `${c.discount_value}%` : `${Number(c.discount_value).toLocaleString()}원`}{' '}
+                      · 최소 {c.min_order_amount ? `${Number(c.min_order_amount).toLocaleString()}원` : '없음'}
+                    </div>
+                  </button>
+                ))
+              )}
             </div>
             <button
               type="button"
-              onClick={() => void sendCouponGift()}
-              disabled={sending || !selectedCouponId}
+              onClick={() => setShowCouponForm((v) => !v)}
               style={{
-                marginTop: 8,
-                padding: '8px 16px',
-                borderRadius: 10,
-                border: 'none',
-                background: sending || !selectedCouponId ? 'rgba(123,94,167,0.25)' : PURPLE,
-                color: '#fff',
-                fontSize: 13,
-                cursor: sending || !selectedCouponId ? 'default' : 'pointer',
+                alignSelf: 'flex-start',
+                padding: '6px 12px',
+                borderRadius: 8,
+                border: `1px dashed ${GOLD}`,
+                background: 'rgba(201,169,110,0.08)',
+                color: GOLD,
+                fontSize: 12,
+                cursor: 'pointer',
               }}
             >
-              쿠폰 선물 전송
+              + 새 쿠폰 만들기
             </button>
+            {showCouponForm ? (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                  padding: 10,
+                  borderRadius: 10,
+                  border: '1px solid rgba(123,94,167,0.35)',
+                  background: 'rgba(0,0,0,0.25)',
+                }}
+              >
+                <input
+                  value={couponName}
+                  onChange={(e) => setCouponName(e.target.value)}
+                  placeholder="쿠폰 이름"
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    borderRadius: 8,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#fff',
+                    fontSize: 13,
+                    padding: '8px 10px',
+                    outline: 'none',
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    type="button"
+                    onClick={() => setDiscountType('percent')}
+                    style={{
+                      flex: 1,
+                      padding: '6px 8px',
+                      borderRadius: 8,
+                      border: discountType === 'percent' ? `1px solid ${GOLD}` : '1px solid rgba(255,255,255,0.15)',
+                      background: discountType === 'percent' ? 'rgba(201,169,110,0.15)' : 'transparent',
+                      color: '#fff',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    %
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDiscountType('amount')}
+                    style={{
+                      flex: 1,
+                      padding: '6px 8px',
+                      borderRadius: 8,
+                      border: discountType === 'amount' ? `1px solid ${GOLD}` : '1px solid rgba(255,255,255,0.15)',
+                      background: discountType === 'amount' ? 'rgba(201,169,110,0.15)' : 'transparent',
+                      color: '#fff',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    금액
+                  </button>
+                </div>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={discountValue}
+                  onChange={(e) => setDiscountValue(e.target.value)}
+                  placeholder={discountType === 'percent' ? '할인율' : '할인 금액'}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    borderRadius: 8,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#fff',
+                    fontSize: 13,
+                    padding: '8px 10px',
+                    outline: 'none',
+                  }}
+                />
+                <div style={{ fontSize: 10, color: TEXT_MUTED }}>최소 주문</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {[
+                    { v: 0, label: '없음' },
+                    { v: 50000, label: '5만' },
+                    { v: 100000, label: '10만' },
+                  ].map(({ v, label }) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setMinOrder(v)}
+                      style={{
+                        padding: '5px 10px',
+                        borderRadius: 999,
+                        border: minOrder === v ? `1px solid ${GOLD}` : '1px solid rgba(123,94,167,0.35)',
+                        background: minOrder === v ? 'rgba(201,169,110,0.12)' : 'rgba(123,94,167,0.08)',
+                        color: '#e8dff5',
+                        fontSize: 11,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize: 10, color: TEXT_MUTED }}>유효 기간</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {[7, 14, 30].map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setValidDays(d)}
+                      style={{
+                        padding: '5px 10px',
+                        borderRadius: 999,
+                        border: validDays === d ? `1px solid ${GOLD}` : '1px solid rgba(123,94,167,0.35)',
+                        background: validDays === d ? 'rgba(201,169,110,0.12)' : 'rgba(123,94,167,0.08)',
+                        color: '#e8dff5',
+                        fontSize: 11,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {d}일
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void createOwnerCoupon()}
+                  disabled={sending || !couponName.trim()}
+                  style={{
+                    alignSelf: 'flex-end',
+                    padding: '8px 14px',
+                    borderRadius: 10,
+                    border: 'none',
+                    background: sending || !couponName.trim() ? 'rgba(123,94,167,0.25)' : PURPLE,
+                    color: '#fff',
+                    fontSize: 13,
+                    cursor: sending || !couponName.trim() ? 'default' : 'pointer',
+                  }}
+                >
+                  만들기
+                </button>
+              </div>
+            ) : null}
           </div>
         ) : null}
 
