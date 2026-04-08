@@ -1275,7 +1275,48 @@ export default function CustomerHomePage() {
                   ].map(item => (
                     <button
                       key={item.key}
-                      onClick={() => router.push('/dashboard/customer/chat/new')}
+                      onClick={() => {
+                        void (async () => {
+                          const {
+                            data: { user },
+                          } = await supabase.auth.getUser()
+                          if (!user) {
+                            router.push('/login?role=customer')
+                            return
+                          }
+                          const { data: urow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+                          if (!urow?.id) {
+                            router.push('/login?role=customer')
+                            return
+                          }
+                          const { data: ownerRow } = await supabase
+                            .from('chat_channels')
+                            .select('id')
+                            .eq('user_id', urow.id)
+                            .eq('channel_type', 'owner')
+                            .maybeSingle()
+                          if (ownerRow?.id) {
+                            router.push('/dashboard/customer/chat/' + ownerRow.id)
+                            return
+                          }
+                          const { data: inserted, error: insErr } = await supabase
+                            .from('chat_channels')
+                            .insert({
+                              user_id: urow.id,
+                              channel_type: 'owner',
+                              title: '원장님 상담',
+                              system_kind: null,
+                              preview_text: '',
+                              unread_count: 0,
+                              is_online: false,
+                            } as any)
+                            .select('id')
+                            .maybeSingle()
+                          if (!insErr && inserted?.id) {
+                            router.push('/dashboard/customer/chat/' + inserted.id)
+                          }
+                        })()
+                      }}
                       style={{
                         border: item.key === 'sos'
                           ? '1px solid rgba(217,79,79,0.3)'
