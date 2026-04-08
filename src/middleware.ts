@@ -112,7 +112,7 @@ export async function middleware(req: NextRequest) {
   const protectedPaths = ['/wallet', '/checkout']
   const isProtectedPath = protectedPaths.some((p) => pathname === p || pathname.startsWith(`${p}/`))
   const isSuperConsole = pathname.startsWith('/super-console')
-  if (pathname.startsWith('/dashboard/customer/chat')) return NextResponse.next()
+  if (pathname.startsWith('/dashboard/customer/chat') || pathname.startsWith('/dashboard/owner/chat')) return NextResponse.next()
   const isDashboard = pathname.startsWith('/dashboard')
   const isAdmin = pathname.startsWith('/admin')
   const isBrand = pathname.startsWith('/brand')
