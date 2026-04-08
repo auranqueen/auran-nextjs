@@ -1,0 +1,29 @@
+---
+description: Customer chat page — help sheet useEffect must gate on typeParam
+globs: src/app/dashboard/customer/chat/**/page.tsx
+alwaysApply: false
+---
+
+# Help sheet `useEffect` (type → `setHelpSheetOpen(true)`)
+
+In `src/app/dashboard/customer/chat/[id]/page.tsx`, the `useEffect` that opens the help sheet (sets `helpSheetOpen` to `true`, ~104–110행) **must not** call `setHelpSheetOpen(true)` unless the URL `type` query is meaningful.
+
+## Requirement
+
+- **`typeParam`** comes from `searchParams.get('type')` (`string | null`).
+- Before opening the sheet, **return early** (or skip the open) when `typeParam` is missing or empty: **`!typeParam`** → do **not** run `setHelpSheetOpen(true)`.
+- Equivalently: only run `setHelpSheetOpen(true)` when **`typeParam` is not `null` and not `''`** (after any other existing guards such as `loading`, `forbidden`, `seedLine`, dedupe key).
+
+## Pattern
+
+```tsx
+useEffect(() => {
+  if (loading || forbidden) return
+  if (!typeParam) return // null or "" — do not open
+  if (!seedLine) return
+  // ... dedupe with openedTypeSheetKeyRef ...
+  setHelpSheetOpen(true)
+}, [/* ... */])
+```
+
+Keep the **`!typeParam`** guard (or explicit `typeParam == null || typeParam === ''`) **before** `setHelpSheetOpen(true)` so invalid/missing `type` never opens the sheet.

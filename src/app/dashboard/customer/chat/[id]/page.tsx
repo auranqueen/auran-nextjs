@@ -202,7 +202,7 @@ export default function CustomerChatRoomPage() {
         void supabase.removeChannel(ch)
       }
     }
-  }, [channelId, router])
+  }, [channelId])
 
   const sendText = async () => {
     const text = draft.trim()
