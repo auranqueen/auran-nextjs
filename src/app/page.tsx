@@ -650,7 +650,12 @@ export default function CustomerHomePage() {
     if (checkinOptions.length > 0) {
       const ids = checkinOptions.map((c: any) => String(c.id))
       if (checkInTab == null || !ids.includes(String(checkInTab))) {
-        setCheckInTab(String(checkinOptions[0].id))
+        // 오늘 요일 기준 weekday 매칭 탭 자동 선택
+        const seoulNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+        const todayWeekday = seoulNow.getDay() // 0=일 1=월 2=화 3=수 4=목 5=금 6=토
+        const weekdayMatch = checkinOptions.find((c: any) => Number(c.weekday) === todayWeekday)
+        const fallback = checkinOptions[0]
+        setCheckInTab(String((weekdayMatch || fallback).id))
       }
     }
   }, [checkinOptions, checkInTab])
