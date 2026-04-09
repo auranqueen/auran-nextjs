@@ -237,6 +237,11 @@ export default function CustomerHomePage() {
     return getSeoulToday()
   })
   const [todayLocaleLabel, setTodayLocaleLabel] = useState('')
+  const [routineTimeSlot, setRoutineTimeSlot] = useState<'am' | 'midday' | 'pm'>(() => {
+    if (typeof window === 'undefined') return 'am'
+    const h = new Date().getHours()
+    return h < 11 ? 'am' : h < 15 ? 'midday' : 'pm'
+  })
   useEffect(() => {
     const s = getSeoulToday()
     setSeoulClient(s)
@@ -267,7 +272,6 @@ export default function CustomerHomePage() {
   } | null>(null)
   const [homeEditSaving, setHomeEditSaving] = useState(false)
   const [sheetFields, setSheetFields] = useState({ d: '', d2: '', d3: '', d4: '', n: 0, b: true })
-  const [routineTimeSlot, setRoutineTimeSlot] = useState<'am' | 'midday' | 'pm'>('am')
 
   useEffect(() => {
     if (!homeEditSheet) return
