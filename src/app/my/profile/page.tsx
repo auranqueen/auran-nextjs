@@ -607,18 +607,18 @@ export default function MyProfilePage() {
         </section>
 
         <section id="profile-brand-section" style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 12 }}>
-          <div style={{ fontSize: 11, color: '#b79ce8', marginBottom: 10, lineHeight: 1.5 }}>피부 맞춤 추천을 위한 정보예요 💜</div>
-          <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 6 }}>생리 주기</div>
+          <div style={{ fontSize: 11, color: '#b79ce8', marginBottom: 10, lineHeight: 1.5 }}>피부 케어 기준을 알려주세요 💜</div>
+          <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 6 }}>피부 케어 사이클</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-            {['규칙적', '불규칙', '폐경', '해당없음'].map((x) => (
+            {['사이클 있어요', '불규칙해요', '폐경 이후예요', '해당없어요'].map((x) => (
               <button key={x} type="button" className="btn" onClick={() => setMenstrualCycle(x)} style={selBtn(menstrualCycle === x)}>
                 {x}
               </button>
             ))}
           </div>
-          <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 6 }}>현재 상태</div>
+          <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 6 }}>케어 스타일</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-            {['임신중', '수유중', '갱년기', '해당없음'].map((x) => {
+            {['임신/수유 중이에요', '갱년기 케어 중이에요', '일반 케어로 할게요', '해당없어요'].map((x) => {
               const on = bodyStatus.includes(x)
               return (
                 <button key={x} type="button" className="btn" onClick={() => setBodyStatus((p) => (p.includes(x) ? p.filter((v) => v !== x) : [...p, x]))} style={selBtn(on)}>
