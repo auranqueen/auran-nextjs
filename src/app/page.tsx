@@ -1411,7 +1411,7 @@ export default function CustomerHomePage() {
                 ].map((item, i) => (
                   <div key={i} style={{ flex: 1, textAlign: 'center' }}>
                     <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', marginBottom: 3 }}>{item.label}</div>
-                    <div style={{ fontSize: 11, color: (item as any).color || 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{item.value}</div>
+                    <div style={{ fontSize: 11, color: (item as any).color || 'rgba(255,255,255,0.7)', fontWeight: 300 }}>{item.value}</div>
                   </div>
                 ))}
               </div>
@@ -1529,7 +1529,7 @@ export default function CustomerHomePage() {
               </button>
             ) : null}
           </div>
-          <div style={{ fontSize: 13, fontWeight: 500, color: '#f3ecff', lineHeight: 1.55 }}>{hormoneMainLine}</div>
+          <div style={{ fontSize: 13, fontWeight: 300, color: '#f3ecff', lineHeight: 1.55 }}>{hormoneMainLine}</div>
           {hormonePhaseTipDesc && hormonePhaseTipOpen ? (
             <div
               style={{
@@ -1744,7 +1744,7 @@ export default function CustomerHomePage() {
         <section style={{ padding: '0 20px', marginBottom: 28 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
             <div>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>
+              <span style={{ fontSize: 15, fontWeight: 300, color: '#fff' }}>
                 🌸 {new Date().getMonth() + 1}월 시즌 추천
               </span>
               <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
@@ -2707,7 +2707,7 @@ export default function CustomerHomePage() {
           }}
         >
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.65)', marginBottom: 6 }}>🏆 이달의 케어룸 컨테스트</div>
-          <div style={{ fontSize: 15, fontWeight: 500, color: '#fff', lineHeight: 1.45, marginBottom: 6 }}>{homeContestBanner.title}</div>
+          <div style={{ fontSize: 15, fontWeight: 300, color: '#fff', lineHeight: 1.45, marginBottom: 6 }}>{homeContestBanner.title}</div>
           <div style={{ fontSize: 12, color: '#c4a7e7', marginBottom: 10 }}>투표하면 반값 혜택!</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
             <span
@@ -2748,7 +2748,7 @@ export default function CustomerHomePage() {
                 background: '#7B5EA7',
                 color: '#fff',
                 fontSize: 12,
-                fontWeight: 600,
+                fontWeight: 300,
                 cursor: 'pointer',
               }}
             >
