@@ -60,6 +60,9 @@ export default function MyProfilePage() {
   const [preferredBrands, setPreferredBrands] = useState<string[]>([])
   const [brands, setBrands] = useState<{ id: string; name: string }[]>([])
   const [brandsLoading, setBrandsLoading] = useState(true)
+  const [brandEditMode, setBrandEditMode] = useState(false)
+  const [brandEditSnapshot, setBrandEditSnapshot] = useState<string[]>([])
+  const [brandSaving, setBrandSaving] = useState(false)
 
   const [kakaoNotify, setKakaoNotify] = useState(true)
   const [emailNotify, setEmailNotify] = useState(true)
@@ -671,37 +674,95 @@ export default function MyProfilePage() {
         <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 12 }}>
           <div style={{ fontSize: 12, fontWeight: 300, marginBottom: 10, color: GOLD, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span>선호 브랜드</span>
-            {preferredBrands.length > 0 && (
-              <span style={{ fontSize: 11, color: '#9b7ec8' }}>{preferredBrands.length}개 선택됨</span>
+            {!brandEditMode && (
+              <span
+                onClick={() => { setBrandEditSnapshot([...preferredBrands]); setBrandEditMode(true) }}
+                style={{ fontSize: 11, color: '#9b7ec8', cursor: 'pointer' }}
+              >
+                편집
+              </span>
             )}
           </div>
-          {brandsLoading ? <div style={{ fontSize: 11, color: TEXT_MUTED }}>브랜드 불러오는 중...</div> : null}
-          {!brandsLoading && !brands.length ? <div style={{ fontSize: 11, color: TEXT_MUTED }}>등록된 브랜드가 없습니다</div> : null}
-          {!!brands.length ? (
+
+          {!brandEditMode && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {brands.map((brand) => {
-                const on = preferredBrands.includes(brand.name)
-                return (
+              {preferredBrands.length === 0 ? (
+                <div
+                  onClick={() => { setBrandEditSnapshot([]); setBrandEditMode(true) }}
+                  style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', cursor: 'pointer' }}
+                >
+                  + 브랜드 추가
+                </div>
+              ) : (
+                <>
+                  {preferredBrands.map((name) => (
+                    <div
+                      key={name}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 10px 6px 14px', borderRadius: 20, border: '1px solid #7B5EA7', background: 'rgba(123,94,167,0.15)', color: '#9b7ec8', fontSize: 12 }}
+                    >
+                      {name}
+                      <span
+                        onClick={() => setPreferredBrands((p) => p.filter((v) => v !== name))}
+                        style={{ fontSize: 13, color: 'rgba(155,126,200,0.6)', cursor: 'pointer', lineHeight: 1 }}
+                      >×</span>
+                    </div>
+                  ))}
                   <div
-                    key={brand.id}
-                    onClick={() => setPreferredBrands((p) => (p.includes(brand.name) ? p.filter((v) => v !== brand.name) : [...p, brand.name]))}
-                    style={{
-                      padding: '6px 14px',
-                      borderRadius: 20,
-                      border: on ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.1)',
-                      background: on ? 'rgba(123,94,167,0.15)' : 'rgba(255,255,255,0.03)',
-                      color: on ? '#9b7ec8' : 'rgba(255,255,255,0.6)',
-                      fontSize: 12,
-                      cursor: 'pointer',
-                      flexShrink: 0,
-                    }}
+                    onClick={() => { setBrandEditSnapshot([...preferredBrands]); setBrandEditMode(true) }}
+                    style={{ padding: '6px 14px', borderRadius: 20, border: '1px dashed rgba(255,255,255,0.2)', color: 'rgba(255,255,255,0.3)', fontSize: 12, cursor: 'pointer' }}
                   >
-                    {brand.name}
+                    + 추가
                   </div>
-                )
-              })}
+                </>
+              )}
             </div>
-          ) : null}
+          )}
+
+          {brandEditMode && (
+            <>
+              {brandsLoading ? (
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>불러오는 중...</div>
+              ) : null}
+              {!!brands.length && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
+                  {brands.map((brand) => {
+                    const on = preferredBrands.includes(brand.name)
+                    return (
+                      <div
+                        key={brand.id}
+                        onClick={() => setPreferredBrands((p) => p.includes(brand.name) ? p.filter((v) => v !== brand.name) : [...p, brand.name])}
+                        style={{ padding: '6px 14px', borderRadius: 20, border: on ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.1)', background: on ? 'rgba(123,94,167,0.15)' : 'rgba(255,255,255,0.03)', color: on ? '#9b7ec8' : 'rgba(255,255,255,0.6)', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
+                      >
+                        {on ? '✓ ' : ''}{brand.name}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button
+                  onClick={() => { setPreferredBrands(brandEditSnapshot); setBrandEditMode(false) }}
+                  style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 300 }}
+                >
+                  취소
+                </button>
+                <button
+                  onClick={async () => {
+                    setBrandSaving(true)
+                    const { data: { user } } = await supabase.auth.getUser()
+                    if (user) {
+                      await supabase.from('profiles').update({ preferred_brands: preferredBrands } as any).eq('auth_id', user.id)
+                    }
+                    setBrandSaving(false)
+                    setBrandEditMode(false)
+                  }}
+                  style={{ flex: 2, padding: '10px', borderRadius: 10, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 300 }}
+                >
+                  {brandSaving ? '저장 중...' : '적용'}
+                </button>
+              </div>
+            </>
+          )}
         </section>
 
         <section id="notify" style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: '10px 14px 14px', marginBottom: 12 }}>
