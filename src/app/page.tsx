@@ -2032,6 +2032,28 @@ export default function CustomerHomePage() {
                 const sid = String(step.id ?? '')
                 const pid = step.product_id || step.representative_product_id
                 let rp = pid ? productById[String(pid)] : null
+                if (!rp && step.routine_category) {
+                  const byCat = products.filter((x: any) =>
+                    String((x as any).routine_category || '').toLowerCase() ===
+                    String(step.routine_category).toLowerCase()
+                  )
+                  const byTrackCat = byCat.filter((x: any) => {
+                    const arr = Array.isArray(x?.categories?.target_tracks)
+                      ? x.categories.target_tracks.map((y: any) => String(y))
+                      : []
+                    if (arr.length === 0) return true
+                    return arr.includes('all') || arr.includes(hormoneTrack)
+                  })
+                  const byPref = byTrackCat.filter((x: any) => {
+                    const bn = String(x.brands?.name || x.brand || '').toLowerCase()
+                    const prefs: string[] = Array.isArray((motivationProfile as any)?.preferred_brands)
+                      ? (motivationProfile as any).preferred_brands.map((b: any) => String(b).toLowerCase())
+                      : []
+                    if (prefs.length === 0) return true
+                    return prefs.some((b: string) => bn.includes(b))
+                  })
+                  rp = byPref[0] || byTrackCat[0] || byCat[0] || null
+                }
                 if (!rp && step.category_id) {
                   const byCategory = products.filter((x: any) => String(x.category_id) === String(step.category_id))
                   const byTrack = byCategory.filter((x: any) => {
