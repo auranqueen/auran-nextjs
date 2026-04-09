@@ -201,6 +201,7 @@ export default function CustomerHomePage() {
   const [myUserId, setMyUserId] = useState('')
   const [unreadCount, setUnreadCount] = useState(0)
   const [motivationProfile, setMotivationProfile] = useState<any>(null)
+  const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null)
   const [profileCycleType, setProfileCycleType] = useState<string | null>(null)
   const [profileCreatedAt, setProfileCreatedAt] = useState<string | null>(null)
   const [myRoles, setMyRoles] = useState<string[]>(['customer'])
@@ -285,7 +286,7 @@ export default function CustomerHomePage() {
       if (!user) return
 
       const [profileRes, hcRes, tipRes] = await Promise.all([
-        supabase.from('profiles').select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at, roles, active_role').eq('auth_id', user.id).maybeSingle(),
+        supabase.from('profiles').select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at, roles, active_role, onboarding_done, onboarding_step').eq('auth_id', user.id).maybeSingle(),
         supabase.from('hormone_cycle').select('*').eq('auth_id', user.id).maybeSingle(),
         supabase.from('help_tooltips').select('title,content,is_active').eq('key', 'period_start').maybeSingle(),
       ])
@@ -294,6 +295,7 @@ export default function CustomerHomePage() {
       let nameForHormoneLine = userName || '고객'
       if (profile) {
         setMotivationProfile(profile)
+        setOnboardingDone((profile as any).onboarding_done === true)
         const displayName = (profile as { full_name?: string | null }).full_name || '고객'
         nameForHormoneLine = displayName
         setUserName(displayName)
@@ -902,6 +904,71 @@ export default function CustomerHomePage() {
 
   if (!mounted) return <Loading />
   if (!dataReady) return <Loading />
+
+  if (onboardingDone === false) {
+    return (
+      <div style={{
+        background: '#0D0B09',
+        minHeight: '100vh',
+        maxWidth: '390px',
+        margin: '0 auto',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 24px',
+        fontFamily: "'Noto Sans KR', sans-serif",
+        color: '#fff',
+      }}>
+        <div style={{ fontSize: 48, marginBottom: 20 }}>💜</div>
+        <div style={{ fontSize: 22, color: '#C9A96E', letterSpacing: 4, marginBottom: 8, fontFamily: 'Georgia, serif' }}>AURAN</div>
+        <div style={{ fontSize: 15, color: '#fff', marginBottom: 8, fontWeight: 300 }}>
+          {(motivationProfile as any)?.full_name || ''}님 환영해요
+        </div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 40, textAlign: 'center', lineHeight: 1.7, fontWeight: 300 }}>
+          피부 정보를 입력하면<br/>나만을 위한 케어가 시작돼요
+        </div>
+        <button
+          onClick={() => router.push('/my/profile')}
+          style={{
+            width: '100%',
+            padding: '14px',
+            background: '#7B5EA7',
+            border: 'none',
+            borderRadius: 13,
+            color: '#fff',
+            fontSize: 14,
+            cursor: 'pointer',
+            fontFamily: "'Noto Sans KR', sans-serif",
+            fontWeight: 300,
+            marginBottom: 12,
+          }}
+        >
+          내 피부 정보 입력하기
+        </button>
+        <button
+          onClick={async () => {
+            await supabase.from('profiles').update({ onboarding_done: true }).eq('auth_id', myUserId)
+            setOnboardingDone(true)
+          }}
+          style={{
+            width: '100%',
+            padding: '14px',
+            background: 'transparent',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: 13,
+            color: 'rgba(255,255,255,0.5)',
+            fontSize: 13,
+            cursor: 'pointer',
+            fontFamily: "'Noto Sans KR', sans-serif",
+            fontWeight: 300,
+          }}
+        >
+          나중에 할게요
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div style={{
