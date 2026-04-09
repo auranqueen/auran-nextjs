@@ -2003,23 +2003,28 @@ export default function CustomerHomePage() {
           <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: '14px 14px 16px' }}>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
               <span>오늘의 루틴</span>
-              <span
-                onClick={() => setRoutineTimeSlot('am')}
-                style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, cursor: 'pointer', background: routineTimeSlot === 'am' ? 'rgba(201,169,110,0.2)' : 'rgba(255,255,255,0.06)', color: routineTimeSlot === 'am' ? '#C9A96E' : 'rgba(255,255,255,0.4)', border: routineTimeSlot === 'am' ? '1px solid rgba(201,169,110,0.4)' : '1px solid transparent' }}
-              >☀️ 아침</span>
-              <span
-                onClick={() => setRoutineTimeSlot('midday')}
-                style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, cursor: 'pointer', background: routineTimeSlot === 'midday' ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.06)', color: routineTimeSlot === 'midday' ? '#9b7ec8' : 'rgba(255,255,255,0.4)', border: routineTimeSlot === 'midday' ? '1px solid rgba(123,94,167,0.4)' : '1px solid transparent' }}
-              >🌤️ 낮</span>
-              <span
-                onClick={() => setRoutineTimeSlot('pm')}
-                style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, cursor: 'pointer', background: routineTimeSlot === 'pm' ? 'rgba(100,149,200,0.22)' : 'rgba(255,255,255,0.06)', color: routineTimeSlot === 'pm' ? '#9ec5e8' : 'rgba(255,255,255,0.4)', border: routineTimeSlot === 'pm' ? '1px solid rgba(100,149,200,0.45)' : '1px solid transparent' }}
-              >🌙 저녁</span>
+              {(['am', 'midday', 'pm'] as const).map((slot) => {
+                const label = slot === 'am' ? '☀️ 아침' : slot === 'midday' ? '🌤️ 점심' : '🌙 저녁'
+                const on = routineTimeSlot === slot
+                return (
+                  <span key={slot} onClick={() => setRoutineTimeSlot(slot)} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, cursor: 'pointer', background: on ? 'rgba(201,169,110,0.2)' : 'rgba(255,255,255,0.06)', color: on ? '#C9A96E' : 'rgba(255,255,255,0.4)', border: on ? '1px solid rgba(201,169,110,0.4)' : '1px solid transparent' }}>
+                    {label}
+                  </span>
+                )
+              })}
             </div>
             {routineSteps.length === 0 ? (
               <div style={{ fontSize: 11, color: TEXT_MUTED }}>등록된 루틴 단계가 없어요</div>
             ) : (
-              routineSteps.map((step: any) => {
+              routineSteps
+                .filter((step: any) => {
+                  const t = String(step.routine_time || 'both')
+                  if (routineTimeSlot === 'am') return t === 'am' || t === 'both'
+                  if (routineTimeSlot === 'pm') return t === 'pm' || t === 'both'
+                  if (routineTimeSlot === 'midday') return t === 'midday'
+                  return true
+                })
+                .map((step: any) => {
                 const sid = String(step.id ?? '')
                 const pid = step.product_id || step.representative_product_id
                 let rp = pid ? productById[String(pid)] : null
