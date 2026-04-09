@@ -669,11 +669,16 @@ export default function MyProfilePage() {
         </section>
 
         <section style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 14, marginBottom: 12 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: GOLD }}>선호 브랜드</div>
+          <div style={{ fontSize: 12, fontWeight: 300, marginBottom: 10, color: GOLD, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span>선호 브랜드</span>
+            {preferredBrands.length > 0 && (
+              <span style={{ fontSize: 11, color: '#9b7ec8' }}>{preferredBrands.length}개 선택됨</span>
+            )}
+          </div>
           {brandsLoading ? <div style={{ fontSize: 11, color: TEXT_MUTED }}>브랜드 불러오는 중...</div> : null}
           {!brandsLoading && !brands.length ? <div style={{ fontSize: 11, color: TEXT_MUTED }}>등록된 브랜드가 없습니다</div> : null}
           {!!brands.length ? (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {brands.map((brand) => {
                 const on = preferredBrands.includes(brand.name)
                 return (
@@ -681,13 +686,14 @@ export default function MyProfilePage() {
                     key={brand.id}
                     onClick={() => setPreferredBrands((p) => (p.includes(brand.name) ? p.filter((v) => v !== brand.name) : [...p, brand.name]))}
                     style={{
-                      padding: '8px 14px',
-                      borderRadius: 8,
+                      padding: '6px 14px',
+                      borderRadius: 20,
                       border: on ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.1)',
                       background: on ? 'rgba(123,94,167,0.15)' : 'rgba(255,255,255,0.03)',
                       color: on ? '#9b7ec8' : 'rgba(255,255,255,0.6)',
                       fontSize: 12,
                       cursor: 'pointer',
+                      flexShrink: 0,
                     }}
                   >
                     {brand.name}
