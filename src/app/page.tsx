@@ -372,9 +372,9 @@ export default function CustomerHomePage() {
         })
       } catch { /* 테이블 없음 등 */ }
       const selFull =
-        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, brands(name)'
+        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name)'
       const selNoCat =
-        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, brands(name)'
+        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name)'
       let res: { error: unknown; data: any[] | null } = await supabase.from('products').select(selFull).eq('is_active', true).limit(80)
       console.log('products fetch 1:', res.error, res.data?.length)
       if (res.error) {
