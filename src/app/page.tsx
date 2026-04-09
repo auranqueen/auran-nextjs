@@ -248,6 +248,8 @@ export default function CustomerHomePage() {
         weekday: 'long',
       })
     )
+    const seoulHour = s.getHours()
+    setRoutineTimeSlot(seoulHour < 11 ? 'am' : seoulHour < 15 ? 'midday' : 'pm')
   }, [])
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [homeEditMode, setHomeEditMode] = useState(false)
@@ -265,6 +267,7 @@ export default function CustomerHomePage() {
   } | null>(null)
   const [homeEditSaving, setHomeEditSaving] = useState(false)
   const [sheetFields, setSheetFields] = useState({ d: '', d2: '', d3: '', d4: '', n: 0, b: true })
+  const [routineTimeSlot, setRoutineTimeSlot] = useState<'am' | 'midday' | 'pm'>('am')
 
   useEffect(() => {
     if (!homeEditSheet) return
@@ -1998,7 +2001,21 @@ export default function CustomerHomePage() {
       <div ref={routineMoreRef} id="home-routine-more" style={{ padding: routineExpanded ? '12px 16px 0' : '0 16px', marginTop: routineExpanded ? 4 : 0 }}>
         {routineExpanded ? (
           <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: '14px 14px 16px' }}>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 10 }}>단계별 루틴</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span>오늘의 루틴</span>
+              <span
+                onClick={() => setRoutineTimeSlot('am')}
+                style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, cursor: 'pointer', background: routineTimeSlot === 'am' ? 'rgba(201,169,110,0.2)' : 'rgba(255,255,255,0.06)', color: routineTimeSlot === 'am' ? '#C9A96E' : 'rgba(255,255,255,0.4)', border: routineTimeSlot === 'am' ? '1px solid rgba(201,169,110,0.4)' : '1px solid transparent' }}
+              >☀️ 아침</span>
+              <span
+                onClick={() => setRoutineTimeSlot('midday')}
+                style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, cursor: 'pointer', background: routineTimeSlot === 'midday' ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.06)', color: routineTimeSlot === 'midday' ? '#9b7ec8' : 'rgba(255,255,255,0.4)', border: routineTimeSlot === 'midday' ? '1px solid rgba(123,94,167,0.4)' : '1px solid transparent' }}
+              >🌤️ 낮</span>
+              <span
+                onClick={() => setRoutineTimeSlot('pm')}
+                style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, cursor: 'pointer', background: routineTimeSlot === 'pm' ? 'rgba(100,149,200,0.22)' : 'rgba(255,255,255,0.06)', color: routineTimeSlot === 'pm' ? '#9ec5e8' : 'rgba(255,255,255,0.4)', border: routineTimeSlot === 'pm' ? '1px solid rgba(100,149,200,0.45)' : '1px solid transparent' }}
+              >🌙 저녁</span>
+            </div>
             {routineSteps.length === 0 ? (
               <div style={{ fontSize: 11, color: TEXT_MUTED }}>등록된 루틴 단계가 없어요</div>
             ) : (
