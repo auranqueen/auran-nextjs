@@ -826,8 +826,47 @@ export default function CustomerHomePage() {
       if (filteredByTrack.length > 0) skinRecPool = filteredByTrack
     }
     const pl = products.length > 0 ? products : []
+    // 선호브랜드 우선 정렬
+    const prefBrands: string[] = Array.isArray((motivationProfile as any)?.preferred_brands)
+      ? (motivationProfile as any).preferred_brands.map((x: any) => String(x).toLowerCase())
+      : []
+
+    // 체크인 없을 때 프로필 기본값으로 필터
+    const hasCheckin = checkInTab && homeCheckinSorted.length > 0
+    if (!hasCheckin && skinRecPool.length > 0) {
+      const skinType = String((motivationProfile as any)?.skin_type || '').toLowerCase()
+      const skinConcerns: string[] = Array.isArray((motivationProfile as any)?.skin_concerns)
+        ? (motivationProfile as any).skin_concerns.map((x: any) => String(x).toLowerCase())
+        : []
+      if (skinType || skinConcerns.length > 0) {
+        const filtered = skinRecPool.filter((p: any) => {
+          const tag = String(p.tag || '').toLowerCase()
+          const qm = Array.isArray(p.quiz_match)
+            ? p.quiz_match.map((x: any) => String(x).toLowerCase()).join(' ')
+            : ''
+          const matchType = skinType ? (tag.includes(skinType) || qm.includes(skinType)) : false
+          const matchConcern = skinConcerns.some((c: string) => tag.includes(c) || qm.includes(c))
+          return matchType || matchConcern
+        })
+        if (filtered.length > 0) skinRecPool = filtered
+      }
+    }
+
+    // 선호브랜드 있으면 상단 정렬
+    if (prefBrands.length > 0) {
+      const preferred = skinRecPool.filter((p: any) => {
+        const bn = String(p.brands?.name || p.brand || '').toLowerCase()
+        return prefBrands.some((b: string) => bn.includes(b))
+      })
+      const others = skinRecPool.filter((p: any) => {
+        const bn = String(p.brands?.name || p.brand || '').toLowerCase()
+        return !prefBrands.some((b: string) => bn.includes(b))
+      })
+      if (preferred.length > 0) skinRecPool = [...preferred, ...others]
+    }
+
     return skinRecPool.length > 0 ? skinRecPool : pl
-  }, [checkInTab, homeCheckinSorted, products, hormoneTrack])
+  }, [checkInTab, homeCheckinSorted, products, hormoneTrack, motivationProfile])
 
   useEffect(() => {
     if (!myUserId || !checkInTab) return
