@@ -154,6 +154,7 @@ export default function MyProfilePage() {
         skin_type: skinType || null,
         skin_concerns: skinConcerns,
         allergy_ingredients: allergyIngredients,
+        onboarding_done: true,
         menstrual_cycle: menstrualCycle || null,
         body_status: bodyStatusVal,
         procedure_history: procedureHistory,
@@ -176,10 +177,10 @@ export default function MyProfilePage() {
       alert(error.message)
       return
     }
+    router.push('/')
     setToast(profileCompletion === 100 ? '완성도 100% 달성! +3000T 💜' : '프로필이 저장됐습니다 💜')
     window.setTimeout(() => {
       setToast('')
-      router.back()
     }, 900)
   }
 
