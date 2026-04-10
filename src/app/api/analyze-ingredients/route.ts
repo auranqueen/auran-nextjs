@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   const nameStr = typeof name === 'string' ? name.trim() : ''
 
-  const model = process.env.ANTHROPIC_MODEL || 'claude-opus-4-5'
+  const model = process.env.ANTHROPIC_MODEL || 'claude-haiku-4-5-20251001'
 
   let userContent: string | unknown[] | null = null
 
