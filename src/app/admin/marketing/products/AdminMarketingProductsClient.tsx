@@ -1044,6 +1044,7 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           content: `전성분: ${text}\n아래 JSON만 반환해. 설명 없이.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}`,
+          name: pr.name || '',
         }),
       })
       const data = (await res.json()) as {

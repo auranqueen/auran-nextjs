@@ -1343,7 +1343,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
                         const res = await fetch('/api/analyze-ingredients', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ content }),
+                          body: JSON.stringify({ content, name: name || '' }),
                         })
                         const data = (await res.json()) as {
                           concern_tags?: unknown

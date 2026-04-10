@@ -1042,7 +1042,7 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
                             const res = await fetch('/api/analyze-ingredients', {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ content }),
+                              body: JSON.stringify({ content, name: name || '' }),
                             })
                             const data = (await res.json()) as {
                               concern_tags?: unknown
