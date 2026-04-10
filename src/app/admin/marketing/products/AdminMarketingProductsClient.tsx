@@ -1112,8 +1112,28 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
         let qu = supabase.from('products').update(upd as any).eq('id', pr.id)
         if (brandOwnerAuthId) qu = qu.eq('brand_user_id', brandOwnerAuthId)
         const { error } = await qu
-        if (error) failed += 1
-        else done += 1
+        if (error) {
+          failed += 1
+        } else {
+          done += 1
+          const merged: Record<string, unknown> = {
+            ...pr,
+            skin_concerns: upd.skin_concerns,
+            skin_types: upd.skin_types,
+            concern_tags: upd.concern_tags,
+            skin_tags: upd.skin_tags,
+          }
+          if (upd.hormone_timing !== undefined) merged.hormone_timing = upd.hormone_timing
+          const stillUnmapped = productNeedsTagMapping(merged as Parameters<typeof productNeedsTagMapping>[0])
+          setRows(prev => {
+            if (!prev.some(r => r.id === pr.id)) return prev
+            if (tab === 'unmapped' && !stillUnmapped) return prev.filter(r => r.id !== pr.id)
+            return prev.map(r => (r.id === pr.id ? { ...r, ...merged } : r))
+          })
+          if (!stillUnmapped) {
+            setCounts(c => ({ ...c, unmapped: Math.max(0, c.unmapped - 1) }))
+          }
+        }
       } catch {
         failed += 1
       } finally {
