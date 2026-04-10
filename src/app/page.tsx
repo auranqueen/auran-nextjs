@@ -357,6 +357,24 @@ export default function CustomerHomePage() {
       })
 
     void (async () => {
+      let restrictExclusiveCatalog = true
+      try {
+        const { data: { session: _rex } } = await supabase.auth.getSession()
+        const _raid = _rex?.user?.id
+        if (_raid) {
+          const { data: _ruser } = await supabase.from('users').select('id').eq('auth_id', _raid).maybeSingle()
+          if (_ruser?.id) {
+            const { count: _rcp } = await supabase
+              .from('orders')
+              .select('id', { count: 'exact', head: true })
+              .eq('customer_id', _ruser.id)
+              .eq('payment_applied', true)
+            if ((_rcp ?? 0) > 0) restrictExclusiveCatalog = false
+          }
+        }
+      } catch {
+        restrictExclusiveCatalog = true
+      }
       try {
         const [{ data: chk }, { data: rst }, { data: skinUi }] = await Promise.all([
           supabase.from('checkin_options').select('*').eq('is_active', true).order('sort_order', { ascending: true }),
@@ -372,9 +390,9 @@ export default function CustomerHomePage() {
         })
       } catch { /* 테이블 없음 등 */ }
       const selFull =
-        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name)'
+        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive'
       const selNoCat =
-        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name)'
+        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive'
       let res: { error: unknown; data: any[] | null } = await supabase.from('products').select(selFull).eq('is_active', true).limit(80)
       console.log('products fetch 1:', res.error, res.data?.length)
       if (res.error) {
@@ -386,34 +404,47 @@ export default function CustomerHomePage() {
       }
       if (res.error) res = await supabase.from('products').select(selNoCat).limit(80)
       if (res.error || !res.data?.length) {
-        const fb = await supabase.from('products').select('id, name, retail_price, sale_price, is_timesale, thumb_img, tag, category_id, quiz_match, brands(name)').eq('status', 'active').limit(80)
+        const fb = await supabase
+          .from('products')
+          .select('id, name, retail_price, sale_price, is_timesale, thumb_img, tag, category_id, quiz_match, brands(name), is_exclusive')
+          .eq('status', 'active')
+          .limit(80)
         console.log('products fetch fb:', fb.error, fb.data?.length)
-        if (fb.data && fb.data.length > 0) setProducts(fb.data)
+        if (fb.data && fb.data.length > 0) {
+          setProducts(
+            restrictExclusiveCatalog ? fb.data.filter((p: any) => p.is_exclusive !== true) : fb.data
+          )
+        }
       } else if (res.data && res.data.length > 0) {
-        setProducts(res.data)
+        setProducts(
+          restrictExclusiveCatalog ? res.data.filter((p: any) => p.is_exclusive !== true) : res.data
+        )
       }
-    })()
 
-    supabase.from('products').select('*').order('created_at', { ascending: false }).limit(6).then(({ data }) => {
-      if (data && data.length > 0) setNewProducts(data)
-    })
+      const { data: npData } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(6)
+      if (npData && npData.length > 0) {
+        setNewProducts(
+          restrictExclusiveCatalog ? npData.filter((p: any) => p.is_exclusive !== true) : npData
+        )
+      }
 
-    supabase.from('brands').select('*').limit(7).then(({ data }) => {
-      if (data && data.length > 0) setBrands(data)
-    })
-
-    // admin에서 products.is_timesale / sale_price / timesale_ends_at 을 업데이트하므로,
-    // 홈 타임세일은 time_sales 테이블이 아니라 products 기준으로 조회
-    supabase
-      .from('products')
-      .select('id, name, brand_id, retail_price, sale_price, thumb_img, storage_thumb_url, timesale_ends_at, brands(name)')
-      .eq('is_timesale', true)
-      .gt('timesale_ends_at', new Date().toISOString())
-      .order('timesale_ends_at', { ascending: true })
-      .limit(3)
-      .then(({ data }) => {
-        if (!data || data.length === 0) return
-        const mapped = data.map((p: any) => {
+      const { data: tsRaw } = await supabase
+        .from('products')
+        .select('id, name, brand_id, retail_price, sale_price, thumb_img, storage_thumb_url, timesale_ends_at, brands(name), is_exclusive')
+        .eq('is_timesale', true)
+        .gt('timesale_ends_at', new Date().toISOString())
+        .order('timesale_ends_at', { ascending: true })
+        .limit(3)
+      const tsData =
+        restrictExclusiveCatalog && tsRaw
+          ? tsRaw.filter((p: any) => p.is_exclusive !== true)
+          : tsRaw || []
+      if (tsData.length > 0) {
+        const mapped = tsData.map((p: any) => {
           const orig = Number(p.retail_price ?? 0)
           const sale = Number(p.sale_price ?? 0)
           const disc = orig > 0 && sale >= 0 ? Math.round(((orig - sale) / orig) * 100) : 0
@@ -436,34 +467,7 @@ export default function CustomerHomePage() {
         setTimeSales(mapped)
         setTimers(
           mapped.map((it: any) => {
-            const rawEnd = data.find((x: any) => x.id === it.id)?.timesale_ends_at
-            const endMs = rawEnd ? new Date(rawEnd).getTime() : 0
-            const diffMs = Math.max(0, endMs - Date.now())
-            const h = Math.floor(diffMs / 3600000)
-            const m = Math.floor((diffMs % 3600000) / 60000)
-            const s = Math.floor((diffMs % 60000) / 1000)
-            return { h, m, s }
-          })
-        )
-      })
-
-    supabase
-      .from('season_product_mapping')
-      .select('*, products(*)')
-      .eq('month', new Date().getMonth() + 1)
-      .eq('is_active', true)
-      .order('priority', { ascending: true })
-      .limit(6)
-      .then(({ data }) => {
-        if (data && data.length > 0) setSeasonRecs(data)
-      })
-
-    supabase.from('group_buys').select('*, product:products(id, name, retail_price, thumb_img)').eq('is_active', true).limit(3).then(({ data }) => {
-      if (data && data.length > 0) {
-        setGroupBuys(data)
-        setGroupTimers(
-          data.map((row: any) => {
-            const rawEnd = row.ends_at
+            const rawEnd = tsData.find((x: any) => x.id === it.id)?.timesale_ends_at
             const endMs = rawEnd ? new Date(rawEnd).getTime() : 0
             const diffMs = Math.max(0, endMs - Date.now())
             const h = Math.floor(diffMs / 3600000)
@@ -473,6 +477,49 @@ export default function CustomerHomePage() {
           })
         )
       }
+
+      const { data: seaData } = await supabase
+        .from('season_product_mapping')
+        .select('*, products(*)')
+        .eq('month', new Date().getMonth() + 1)
+        .eq('is_active', true)
+        .order('priority', { ascending: true })
+        .limit(6)
+      if (seaData && seaData.length > 0) {
+        const sea2 = restrictExclusiveCatalog
+          ? seaData.filter((row: any) => row.products?.is_exclusive !== true)
+          : seaData
+        if (sea2.length > 0) setSeasonRecs(sea2)
+      }
+
+      const { data: gbData } = await supabase
+        .from('group_buys')
+        .select('*, product:products(id, name, retail_price, thumb_img, is_exclusive)')
+        .eq('is_active', true)
+        .limit(3)
+      if (gbData && gbData.length > 0) {
+        const gb2 = restrictExclusiveCatalog
+          ? gbData.filter((row: any) => row.product?.is_exclusive !== true)
+          : gbData
+        if (gb2.length > 0) {
+          setGroupBuys(gb2)
+          setGroupTimers(
+            gb2.map((row: any) => {
+              const rawEnd = row.ends_at
+              const endMs = rawEnd ? new Date(rawEnd).getTime() : 0
+              const diffMs = Math.max(0, endMs - Date.now())
+              const h = Math.floor(diffMs / 3600000)
+              const m = Math.floor((diffMs % 3600000) / 60000)
+              const s = Math.floor((diffMs % 60000) / 1000)
+              return { h, m, s }
+            })
+          )
+        }
+      }
+    })()
+
+    supabase.from('brands').select('*').limit(7).then(({ data }) => {
+      if (data && data.length > 0) setBrands(data)
     })
 
     supabase.from('salons').select('*').limit(3).then(({ data }) => {
@@ -523,6 +570,24 @@ export default function CustomerHomePage() {
     let cancelled = false
     const run = async () => {
       setSearchLoading(true)
+      let restrictExclusiveCatalog = true
+      try {
+        const { data: { session: _rex } } = await supabase.auth.getSession()
+        const _raid = _rex?.user?.id
+        if (_raid) {
+          const { data: _ruser } = await supabase.from('users').select('id').eq('auth_id', _raid).maybeSingle()
+          if (_ruser?.id) {
+            const { count: _rcp } = await supabase
+              .from('orders')
+              .select('id', { count: 'exact', head: true })
+              .eq('customer_id', _ruser.id)
+              .eq('payment_applied', true)
+            if ((_rcp ?? 0) > 0) restrictExclusiveCatalog = false
+          }
+        }
+      } catch {
+        restrictExclusiveCatalog = true
+      }
       try {
         const kw = keyword.slice(0, 100)
         const { data: one } = await supabase
@@ -543,12 +608,13 @@ export default function CustomerHomePage() {
       } catch {
         // 테이블 미생성 등은 검색 UX에 영향 주지 않음
       }
-      const { data } = await supabase
+      let searchQ = supabase
         .from('products')
         .select('id, name, storage_thumb_url, thumb_img, retail_price, sale_price, is_timesale, brand_id')
         .or(`name.ilike.%${keyword}%, description.ilike.%${keyword}%`)
         .eq('is_active', true)
-        .limit(10)
+      if (restrictExclusiveCatalog) searchQ = searchQ.eq('is_exclusive', false)
+      const { data } = await searchQ.limit(10)
       if (cancelled) return
       setSearchResults(data || [])
       setSearchLoading(false)

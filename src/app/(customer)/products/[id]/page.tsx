@@ -54,5 +54,25 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
 
   if (!product) return notFound()
 
-  return <ProductDetailClient product={product} />
+  let exclusiveLocked = false
+  if ((product as { is_exclusive?: boolean }).is_exclusive === true) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      exclusiveLocked = true
+    } else {
+      const { data: ur } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+      if (!ur?.id) {
+        exclusiveLocked = true
+      } else {
+        const { count } = await supabase
+          .from('orders')
+          .select('id', { count: 'exact', head: true })
+          .eq('customer_id', ur.id)
+          .eq('payment_applied', true)
+        exclusiveLocked = (count ?? 0) === 0
+      }
+    }
+  }
+
+  return <ProductDetailClient product={product} exclusiveLocked={exclusiveLocked} />
 }

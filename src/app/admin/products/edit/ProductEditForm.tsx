@@ -116,6 +116,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   const [origin, setOrigin] = useState<(typeof ORIGINS)[number]>('한국')
   const [manufacturer, setManufacturer] = useState('')
   const [saleUi, setSaleUi] = useState<SaleUi>('active')
+  const [isExclusiveProduct, setIsExclusiveProduct] = useState(false)
 
   const [optionsText, setOptionsText] = useState('')
 
@@ -278,6 +279,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
 
       const { sale, qty, stockNum } = uiFromRow(p)
       setSaleUi(sale)
+      setIsExclusiveProduct(p.is_exclusive === true)
       setQtyUi(qty)
       setStockInput(String(stockNum))
 
@@ -565,6 +567,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       detail_images: detailImgsClean,
       detail_imgs: detailImgsClean,
       is_flash_sale: isFlashSaleState,
+      is_exclusive: isExclusiveProduct,
       updated_at: new Date().toISOString(),
     }
   }
@@ -990,6 +993,14 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
               ))}
             </div>
           </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, color: '#fff' }}>
+            <input
+              type="checkbox"
+              checked={isExclusiveProduct}
+              onChange={e => setIsExclusiveProduct(e.target.checked)}
+            />
+            AURAN 독점(첫구매 전 비노출) 브랜드
+          </label>
         </div>
       )}
 

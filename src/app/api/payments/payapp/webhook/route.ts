@@ -212,7 +212,21 @@ export async function POST(req: NextRequest) {
               await client.from('users').update({ points: nextPoints, charge_balance: nextCharge }).eq('id', orderRow.customer_id)
             }
           }
+          const { count: _priorPaidCount } = await client
+            .from('orders')
+            .select('id', { count: 'exact', head: true })
+            .eq('customer_id', orderRow.customer_id)
+            .eq('payment_applied', true)
           await client.from('orders').update({ payment_applied: true }).eq('id', orderRow.id)
+          if ((_priorPaidCount ?? 0) === 0 && intent.user_id) {
+            await client.from('notifications').insert({
+              user_id: intent.user_id,
+              type: 'exclusive_unlock',
+              title: '✦ 새로운 케어 세계가 열렸어요',
+              body: 'AURAN 회원만 만날 수 있는 프리미엄 아로마 브랜드를 소개합니다',
+              is_read: false,
+            } as any)
+          }
 
           if (orderRow.user_coupon_id) {
             await client

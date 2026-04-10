@@ -63,9 +63,16 @@ interface Product {
   category_id?: string | null
   tag?: string | null
   categories?: { target_tracks?: string[] | null } | null
+  is_exclusive?: boolean | null
 }
 
-export default function ProductDetailClient({ product }: { product: Product }) {
+export default function ProductDetailClient({
+  product,
+  exclusiveLocked = false,
+}: {
+  product: Product
+  exclusiveLocked?: boolean
+}) {
   const router = useRouter()
   const { addToCart } = useCart()
   const supabase = createClient()
@@ -585,6 +592,31 @@ export default function ProductDetailClient({ product }: { product: Product }) {
   const maleMeno = Array.isArray(product.categories?.target_tracks)
     ? product.categories?.target_tracks?.map(x => String(x)).includes('male_menopause')
     : false
+
+  if (exclusiveLocked) {
+    return (
+      <div
+        style={{
+          background: '#0d0b09',
+          color: '#e8e4dc',
+          maxWidth: 430,
+          margin: '0 auto',
+          minHeight: '100dvh',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+          textAlign: 'center',
+          fontFamily: '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif',
+        }}
+      >
+        <div style={{ fontSize: 16, lineHeight: 1.65, color: '#e8e4dc' }}>
+          AURAN 첫 구매 후 만날 수 있는 특별한 브랜드예요 💜
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={wrap}>
