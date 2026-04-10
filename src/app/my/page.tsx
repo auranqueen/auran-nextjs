@@ -17,7 +17,7 @@ export default function MyPage() {
   const supabase = createClient()
 
   const [user, setUser] = useState<any>(null)
-  const [userName, setUserName] = useState('유미')
+  const [userName, setUserName] = useState('')
   const [grade, setGrade] = useState('')
   const [point, setPoint] = useState(0)
   const [chargeBalance, setChargeBalance] = useState(0)

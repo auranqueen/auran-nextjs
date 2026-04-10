@@ -16,16 +16,25 @@ export default function SkinAnalysisPage() {
   const supabase = createClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [userName, setUserName] = useState('유미')
+  const [userName, setUserName] = useState('')
   const [userAge, setUserAge] = useState(42)
   const [analyzing, setAnalyzing] = useState(false)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) { router.push('/login'); return }
-      const name = data.user.user_metadata?.full_name || data.user.user_metadata?.name
-      if (name) setUserName(name)
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('full_name, username')
+        .eq('auth_id', data.user.id)
+        .maybeSingle()
+      const name =
+        prof?.full_name ||
+        prof?.username ||
+        data.user.user_metadata?.full_name ||
+        data.user.user_metadata?.name
+      if (name) setUserName(String(name))
       const birth = data.user.user_metadata?.birth_date
       if (birth) {
         const age = new Date().getFullYear() - new Date(birth).getFullYear()

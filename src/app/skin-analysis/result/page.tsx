@@ -73,7 +73,7 @@ function SkinAnalysisResultPageContent() {
 
   const [products, setProducts] = useState<any[]>([])
   const [prevScores, setPrevScores] = useState<any>(null)
-  const [userName, setUserName] = useState('유미')
+  const [userName, setUserName] = useState('')
   const [historyData, setHistoryData] = useState<number[]>([])
   const [payLoginSheet, setPayLoginSheet] = useState(false)
 
@@ -98,9 +98,20 @@ function SkinAnalysisResultPageContent() {
   }
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      const name = data.user?.user_metadata?.full_name || data.user?.user_metadata?.name
-      if (name) setUserName(name)
+    supabase.auth.getUser().then(async ({ data }) => {
+      const u = data.user
+      if (!u) return
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('full_name, username')
+        .eq('auth_id', u.id)
+        .maybeSingle()
+      const name =
+        prof?.full_name ||
+        prof?.username ||
+        u.user_metadata?.full_name ||
+        u.user_metadata?.name
+      if (name) setUserName(String(name))
     })
     fetchRecommendedProducts().then((data) => setProducts(data))
 

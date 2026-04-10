@@ -80,13 +80,15 @@ export async function GET(request: NextRequest) {
     await issueSignupCouponsForAuthUser(user.id)
     const { data: profile } = await supabase
       .from('profiles')
-      .select('name, nickname')
-      .eq('id', user.id)
+      .select('full_name, username')
+      .eq('auth_id', user.id)
       .maybeSingle()
-    const displayName = String(profile?.name || profile?.nickname || '').trim()
+    const displayName = String(
+      profile?.full_name || profile?.username || meta.full_name || meta.name || ''
+    ).trim()
     const welcomeBody = displayName
-      ? `세상에서 제일 예쁜 ${displayName}님이 오셨네요 💜 유미님만을 위한 뷰티 플랫폼이에요. 피부분석부터 시작해봐요!`
-      : '세상에서 제일 예쁜 분이 오셨네요 💜 유미님만을 위한 뷰티 플랫폼이에요. 피부분석부터 시작해봐요!'
+      ? `세상에서 제일 예쁜 ${displayName}님이 오셨네요 💜 ${displayName}님만을 위한 뷰티 플랫폼이에요. 피부분석부터 시작해봐요!`
+      : '세상에서 제일 예쁜 분이 오셨네요 💜 회원님만을 위한 뷰티 플랫폼이에요. 피부분석부터 시작해봐요!'
     await supabase.from('notifications').insert({
       user_id: user.id,
       title: '🌸 AURAN에 오신 걸 환영해요!',
