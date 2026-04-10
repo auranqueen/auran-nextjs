@@ -498,8 +498,12 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
     return () => clearTimeout(t)
   }, [toast])
 
-  const fetchRows = useCallback(async () => {
-    setLoading(true)
+  const fetchRows = useCallback(async (opts?: { silent?: boolean }) => {
+    const silent = !!opts?.silent
+    const endLoading = () => {
+      if (!silent) setLoading(false)
+    }
+    if (!silent) setLoading(true)
     try {
       if (tab === 'trash') {
         let trashQ = supabase
@@ -546,7 +550,7 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
         ).length
         const [p, a, r, t] = await Promise.all([cp, ca, cr, ct])
         setCounts({ pending: p.count || 0, active: a.count || 0, rejected: r.count || 0, trash: t.count || 0, total, unmapped, noBrand })
-        setLoading(false)
+        endLoading()
         return
       }
 
@@ -605,11 +609,11 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
         productNeedsTagMapping(p)
       ).length
       setCounts({ pending: p.count || 0, active: a.count || 0, rejected: r.count || 0, trash: t.count || 0, total, unmapped, noBrand })
-      setLoading(false)
+      endLoading()
     } catch (e) {
       console.error('[admin products fetchRows]', e)
       setRows([])
-      setLoading(false)
+      endLoading()
     }
   }, [tab, brandOwnerAuthId])
 
@@ -1147,11 +1151,12 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
         await new Promise(r => setTimeout(r, 300))
       }
     }
+    setAiBulkProgress({ cur: picked.length, total: picked.length })
+    await fetchRows({ silent: true })
     setAiBulkBusy(false)
     setAiBulkProgress(null)
     setToast(`${done}개 완료, ${failed}개 실패`)
     setSelectedIds(new Set())
-    await fetchRows()
   }
 
   const visibleSelectedCount = useMemo(() => filteredRows.filter(r => selectedIds.has(r.id)).length, [filteredRows, selectedIds])
