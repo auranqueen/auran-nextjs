@@ -1718,28 +1718,19 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
         </div>
       ) : null}
 
-      {tabIdx === 0 ? (
-        <label
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            cursor: 'pointer',
-            fontSize: 13,
-            color: '#fff',
-            marginTop: 20,
-          }}
-        >
-          <input
-            type="checkbox"
-            checked={isExclusiveProduct}
-            onChange={e => setIsExclusiveProduct(e.target.checked)}
-          />
-          AURAN 독점(첫구매 전 비노출) 브랜드
-        </label>
-      ) : null}
-
       <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+        {tabIdx === 0 ? (
+          <div style={{ gridColumn: '1 / -1' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, color: '#fff' }}>
+              <input
+                type="checkbox"
+                checked={isExclusiveProduct}
+                onChange={e => setIsExclusiveProduct(e.target.checked)}
+              />
+              🔒 AURAN 독점 브랜드 (첫구매 전 비노출)
+            </label>
+          </div>
+        ) : null}
         <button
           type="button"
           onClick={() => {
