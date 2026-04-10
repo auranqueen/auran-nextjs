@@ -60,9 +60,11 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
     if (!user) {
       exclusiveLocked = true
     } else {
-      const { data: ur } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+      const { data: ur } = await supabase.from('users').select('id,role').eq('auth_id', user.id).maybeSingle()
       if (!ur?.id) {
         exclusiveLocked = true
+      } else if ((ur as { role?: string }).role === 'admin') {
+        exclusiveLocked = false
       } else {
         const { count } = await supabase
           .from('orders')

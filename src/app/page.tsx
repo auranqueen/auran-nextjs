@@ -362,14 +362,18 @@ export default function CustomerHomePage() {
         const { data: { session: _rex } } = await supabase.auth.getSession()
         const _raid = _rex?.user?.id
         if (_raid) {
-          const { data: _ruser } = await supabase.from('users').select('id').eq('auth_id', _raid).maybeSingle()
+          const { data: _ruser } = await supabase.from('users').select('id,role').eq('auth_id', _raid).maybeSingle()
           if (_ruser?.id) {
-            const { count: _rcp } = await supabase
-              .from('orders')
-              .select('id', { count: 'exact', head: true })
-              .eq('customer_id', _ruser.id)
-              .eq('payment_applied', true)
-            if ((_rcp ?? 0) > 0) restrictExclusiveCatalog = false
+            if ((_ruser as { role?: string }).role === 'admin') {
+              restrictExclusiveCatalog = false
+            } else {
+              const { count: _rcp } = await supabase
+                .from('orders')
+                .select('id', { count: 'exact', head: true })
+                .eq('customer_id', _ruser.id)
+                .eq('payment_applied', true)
+              if ((_rcp ?? 0) > 0) restrictExclusiveCatalog = false
+            }
           }
         }
       } catch {
@@ -575,14 +579,18 @@ export default function CustomerHomePage() {
         const { data: { session: _rex } } = await supabase.auth.getSession()
         const _raid = _rex?.user?.id
         if (_raid) {
-          const { data: _ruser } = await supabase.from('users').select('id').eq('auth_id', _raid).maybeSingle()
+          const { data: _ruser } = await supabase.from('users').select('id,role').eq('auth_id', _raid).maybeSingle()
           if (_ruser?.id) {
-            const { count: _rcp } = await supabase
-              .from('orders')
-              .select('id', { count: 'exact', head: true })
-              .eq('customer_id', _ruser.id)
-              .eq('payment_applied', true)
-            if ((_rcp ?? 0) > 0) restrictExclusiveCatalog = false
+            if ((_ruser as { role?: string }).role === 'admin') {
+              restrictExclusiveCatalog = false
+            } else {
+              const { count: _rcp } = await supabase
+                .from('orders')
+                .select('id', { count: 'exact', head: true })
+                .eq('customer_id', _ruser.id)
+                .eq('payment_applied', true)
+              if ((_rcp ?? 0) > 0) restrictExclusiveCatalog = false
+            }
           }
         }
       } catch {
