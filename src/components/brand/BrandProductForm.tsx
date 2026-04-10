@@ -991,8 +991,12 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
                           setIngredientAnalyzeDone(false)
                           setMsg('')
                           try {
-                            const SKIN_TYPES = ['건성', '지성', '복합성', '민감성', '중성', '모든피부']
-                            const SKIN_CONCERNS = ['수분부족', '트러블', '미백/톤업', '안티에이징', '모공', '각질', '민감', '탄력저하']
+                            const SKIN_TYPES = adminOpts.skinType.length
+                              ? adminOpts.skinType
+                              : ['건성', '지성', '복합성', '민감성', '중성', '모든피부']
+                            const SKIN_CONCERNS = adminOpts.skinConcern.length
+                              ? adminOpts.skinConcern
+                              : ['수분부족', '트러블', '미백/톤업', '안티에이징', '모공', '각질', '민감', '탄력저하']
                             const MAP_CONCERN: Record<string, string> = {
                               트러블: '트러블',
                               건조: '수분부족',
@@ -1023,7 +1027,7 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
                                 {
                                   type: 'text',
                                   text:
-                                    '전성분을 읽고 아래 JSON만 반환해. 설명 없이.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}',
+                                    '전성분을 읽고 아래 JSON만 반환해. 설명 없이.\nconcern_tags: 트러블/건조/탄력/미백/홍조/진정/호르몬케어 중 해당만.\nskin_tags: #건성 #지성 #복합성 #민감성 #탄력 #미백 #수분 #트러블 #모공 #홍조 #재생 #각질 #갱년기 #열감 #호르몬밸런스 #30대 #40대 #50대 #장벽강화 #펩타이드 #레티놀 #비타민C 중 해당만.\nhormone_timing: 생리기/여포기/배란기/황체기 중 해당만.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}',
                                 },
                               ]
                             } else {
@@ -1033,7 +1037,7 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
                                 setIngredientAnalyzeLoading(false)
                                 return
                               }
-                              content = `전성분: ${text}\n아래 JSON만 반환해. 설명 없이.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}`
+                              content = `전성분: ${text}\n아래 JSON만 반환해. 설명 없이.\n{"concern_tags":["트러블/건조/탄력/미백/홍조/진정/호르몬케어 중 해당"],"skin_tags":["#건성 #지성 #복합성 #민감성 #탄력 #미백 #수분 #트러블 #모공 #홍조 #재생 #각질 #갱년기 #열감 #호르몬밸런스 #30대 #40대 #50대 #장벽강화 #펩타이드 #레티놀 #비타민C 중 해당"],"hormone_timing":["생리기/여포기/배란기/황체기 중 해당"]}`
                             }
                             const res = await fetch('/api/analyze-ingredients', {
                               method: 'POST',
@@ -1048,17 +1052,26 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
                             }
                             if (!res.ok) throw new Error(data.error || '분석 실패')
                             const rawC = Array.isArray(data.concern_tags) ? data.concern_tags : []
-                            const nextC = [
-                              ...Array.from(new Set(
-                                rawC
-                                  .map((x: unknown) => {
-                                    const s = String(x).trim()
-                                    if (SKIN_CONCERNS.includes(s)) return s
-                                    return MAP_CONCERN[s] || ''
-                                  })
-                                  .filter(Boolean)
-                              )),
-                            ]
+                            const FROM_TAG: Record<string, string> = {
+                              탄력: '탄력저하',
+                              미백: '미백/톤업',
+                              수분: '수분부족',
+                              트러블: '트러블',
+                              모공: '모공',
+                              홍조: '민감',
+                              재생: '안티에이징',
+                              각질: '각질',
+                              갱년기: '안티에이징',
+                              열감: '민감',
+                              호르몬밸런스: '안티에이징',
+                              장벽강화: '민감',
+                              펩타이드: '안티에이징',
+                              레티놀: '안티에이징',
+                              비타민C: '미백/톤업',
+                              '30대': '안티에이징',
+                              '40대': '안티에이징',
+                              '50대': '안티에이징',
+                            }
                             const rawS = Array.isArray(data.skin_tags) ? data.skin_tags : []
                             const nextS = [
                               ...Array.from(new Set(
@@ -1068,6 +1081,26 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
                                     .replace(/^#+/, '')
                                   return SKIN_TYPES.filter(t => raw === t || raw.includes(t) || t.includes(raw))
                                 })
+                              )),
+                            ]
+                            const nextC = [
+                              ...Array.from(new Set(
+                                [
+                                  ...rawC
+                                    .map((x: unknown) => {
+                                      const s = String(x).trim()
+                                      if (SKIN_CONCERNS.includes(s)) return s
+                                      return MAP_CONCERN[s] || ''
+                                    })
+                                    .filter(Boolean),
+                                  ...rawS.flatMap((x: unknown) => {
+                                    const raw = String(x)
+                                      .trim()
+                                      .replace(/^#+/, '')
+                                    const m = FROM_TAG[raw]
+                                    return m && SKIN_CONCERNS.includes(m) ? [m] : []
+                                  }),
+                                ]
                               )),
                             ]
                             const h = data.hormone_timing
