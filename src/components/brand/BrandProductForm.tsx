@@ -1049,7 +1049,7 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
                             if (!res.ok) throw new Error(data.error || '분석 실패')
                             const rawC = Array.isArray(data.concern_tags) ? data.concern_tags : []
                             const nextC = [
-                              ...new Set(
+                              ...Array.from(new Set(
                                 rawC
                                   .map((x: unknown) => {
                                     const s = String(x).trim()
@@ -1057,18 +1057,18 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
                                     return MAP_CONCERN[s] || ''
                                   })
                                   .filter(Boolean)
-                              ),
+                              )),
                             ]
                             const rawS = Array.isArray(data.skin_tags) ? data.skin_tags : []
                             const nextS = [
-                              ...new Set(
+                              ...Array.from(new Set(
                                 rawS.flatMap((x: unknown) => {
                                   const raw = String(x)
                                     .trim()
                                     .replace(/^#+/, '')
                                   return SKIN_TYPES.filter(t => raw === t || raw.includes(t) || t.includes(raw))
                                 })
-                              ),
+                              )),
                             ]
                             const h = data.hormone_timing
                             const htStr = Array.isArray(h)
