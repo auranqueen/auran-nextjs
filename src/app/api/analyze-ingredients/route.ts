@@ -6,26 +6,56 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'ANTHROPIC_API_KEY is not configured' }, { status: 500 })
   }
 
-  let body: { content?: unknown }
+  let body: { content?: unknown; ingredients?: unknown; name?: unknown }
   try {
     body = await req.json()
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  const { content } = body
-  if (content === undefined || content === null) {
-    return NextResponse.json({ error: 'content is required' }, { status: 400 })
-  }
+  const { content, ingredients, name } = body
+
+  const ing =
+    typeof ingredients === 'string'
+      ? ingredients.trim()
+      : ingredients != null && String(ingredients).trim() !== ''
+        ? String(ingredients).trim()
+        : ''
+
+  const nameStr = typeof name === 'string' ? name.trim() : ''
 
   const model = process.env.ANTHROPIC_MODEL || 'claude-opus-4-5'
 
-  const userContent =
-    typeof content === 'string' || Array.isArray(content)
-      ? content
-      : null
+  let userContent: string | unknown[] | null = null
+
+  if (Array.isArray(content)) {
+    userContent = content
+  } else if (ing) {
+    if (typeof content === 'string' && content.trim() !== '') {
+      userContent = content
+    } else {
+      userContent = `전성분: ${ing}\n아래 JSON만 반환해. 설명 없이.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}`
+    }
+  } else if (nameStr) {
+    userContent = `제품명: ${nameStr}
+제품명만 보고 AURAN 뷰티 플랫폼 분류 기준으로 JSON만 반환해. 설명 없이.
+{
+  concern_tags: [트러블/건조/탄력/미백/홍조/진정/호르몬케어 중 해당],
+  skin_tags: [#건성 #지성 #복합성 #민감성 #탄력 #미백 #수분 #트러블 #모공 #홍조 #재생 #각질 #갱년기 #열감 #호르몬밸런스 #30대 #40대 #50대 #장벽강화 중 해당],
+  hormone_timing: [생리기/여포기/배란기/황체기 중 해당]
+}`
+  } else if (typeof content === 'string' && content.trim() !== '') {
+    userContent = content
+  }
 
   if (userContent === null) {
+    return NextResponse.json({ error: 'content, ingredients, or name is required' }, { status: 400 })
+  }
+
+  const normalized =
+    typeof userContent === 'string' || Array.isArray(userContent) ? userContent : null
+
+  if (normalized === null) {
     return NextResponse.json({ error: 'content must be a string or array' }, { status: 400 })
   }
 
@@ -41,7 +71,7 @@ export async function POST(req: NextRequest) {
       max_tokens: 4096,
       system:
         '너는 AURAN 뷰티 플랫폼 성분 분석 전문가야. 전성분 분석해서 JSON만 반환해. 절대 설명 추가하지 마.',
-      messages: [{ role: 'user', content: userContent }],
+      messages: [{ role: 'user', content: normalized }],
     }),
   })
 
