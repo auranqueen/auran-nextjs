@@ -1821,7 +1821,9 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
               disabled={aiBulkBusy}
               onClick={(e) => {
                 e.preventDefault()
-                void runAiBulkForProducts(filteredRows)
+                tab === 'unmapped'
+                  ? void runAiBulkForProducts(filteredRows.filter(r => productNeedsTagMapping(r)))
+                  : void runAiBulkForProducts(filteredRows)
               }}
               style={{
                 background: 'linear-gradient(135deg, #c9a84c 0%, #a8863a 100%)',
