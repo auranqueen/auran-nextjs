@@ -114,6 +114,8 @@ export default function AdminBrandsPage() {
   const [brandEarnBusyId, setBrandEarnBusyId] = useState<string | null>(null)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [brandAllExclusive, setBrandAllExclusive] = useState<Record<string, boolean>>({})
+  const [exclusiveBusyId, setExclusiveBusyId] = useState<string | null>(null)
   const [productCountByBrand, setProductCountByBrand] = useState<Record<string, number>>({})
 
   const showToast = (msg: string) => {
@@ -137,6 +139,7 @@ export default function AdminBrandsPage() {
       setRows([])
       setUserById({})
       setProductCountByBrand({})
+      setBrandAllExclusive({})
       setLoading(false)
       return
     }
@@ -146,14 +149,28 @@ export default function AdminBrandsPage() {
 
     const bids = list.map(b => b.id)
     const pcm: Record<string, number> = {}
+    const allExc: Record<string, boolean> = {}
     if (bids.length > 0) {
-      const { data: prows } = await supabase.from('products').select('brand_id').in('brand_id', bids)
+      const per: Record<string, { n: number; allTrue: boolean }> = {}
+      for (const bid of bids) {
+        per[bid] = { n: 0, allTrue: true }
+      }
+      const { data: prows } = await supabase.from('products').select('brand_id,is_exclusive').in('brand_id', bids)
       for (const p of prows || []) {
         const bid = String((p as { brand_id?: string | null }).brand_id || '')
-        if (bid) pcm[bid] = (pcm[bid] || 0) + 1
+        if (!bid || !per[bid]) continue
+        per[bid].n += 1
+        if (!(p as { is_exclusive?: boolean | null }).is_exclusive) {
+          per[bid].allTrue = false
+        }
+      }
+      for (const bid of bids) {
+        pcm[bid] = per[bid].n
+        allExc[bid] = per[bid].n > 0 && per[bid].allTrue
       }
     }
     setProductCountByBrand(pcm)
+    setBrandAllExclusive(allExc)
 
     const uids = Array.from(new Set(list.map(b => b.user_id).filter(Boolean) as string[]))
     if (uids.length === 0) {
@@ -801,6 +818,38 @@ export default function AdminBrandsPage() {
                           브랜드 연결
                         </button>
                       </div>
+                    ) : null}
+                    {expandedId === b.id && normApply(b.apply_status) === 'approved' ? (
+                      <button
+                        type="button"
+                        disabled={exclusiveBusyId === b.id}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          void (async () => {
+                            const turnOn = !brandAllExclusive[b.id]
+                            setExclusiveBusyId(b.id)
+                            const { error } = await supabase.from('products').update({ is_exclusive: turnOn }).eq('brand_id', b.id)
+                            setExclusiveBusyId(null)
+                            if (error) {
+                              showToast('독점 설정 실패: ' + error.message)
+                              return
+                            }
+                            showToast(turnOn ? '독점 ON 적용됨' : '독점 해제됨')
+                            await load()
+                          })()
+                        }}
+                        style={{
+                          fontSize: 11,
+                          padding: '6px 12px',
+                          borderRadius: 8,
+                          border: `1px solid rgba(201,168,76,0.45)`,
+                          background: 'rgba(201,168,76,0.12)',
+                          color: '#e8d4a8',
+                          cursor: exclusiveBusyId === b.id ? 'wait' : 'pointer',
+                        }}
+                      >
+                        {brandAllExclusive[b.id] ? '🔒 독점 해제' : '🔒 독점 ON'}
+                      </button>
                     ) : null}
                   </div>
                 </div>
