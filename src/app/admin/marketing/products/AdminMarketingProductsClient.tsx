@@ -1034,81 +1034,102 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
     setAiBulkBusy(true)
     setAiBulkProgress({ cur: 0, total: picked.length })
     let done = 0
-    for (let i = 0; i < picked.length; i++) {
-      const pr = picked[i]
-      setAiBulkProgress({ cur: i + 1, total: picked.length })
-      const text = String(pr.key_ingredients ?? '').trim()
-      if (!text) continue
-      const res = await fetch('/api/analyze-ingredients', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          content: `전성분: ${text}\n아래 JSON만 반환해. 설명 없이.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}`,
-          name: pr.name || '',
-        }),
-      })
-      const data = (await res.json()) as {
-        concern_tags?: unknown
-        skin_tags?: unknown
-        hormone_timing?: unknown
-        error?: string
-      }
-      if (!res.ok) continue
-      const SKIN_TYPES = ['건성', '지성', '복합성', '민감성', '중성', '모든피부']
-      const SKIN_CONCERNS = ['수분부족', '트러블', '미백/톤업', '안티에이징', '모공', '각질', '민감', '탄력저하']
-      const MAP_CONCERN: Record<string, string> = {
-        트러블: '트러블',
-        건조: '수분부족',
-        탄력: '탄력저하',
-        미백: '미백/톤업',
-        홍조: '민감',
-        진정: '민감',
-        호르몬케어: '안티에이징',
-      }
-      const rawC = Array.isArray(data.concern_tags) ? data.concern_tags : []
-      const nextC = [
-        ...Array.from(new Set(
-          rawC
-            .map((x: unknown) => {
-              const s = String(x).trim()
-              if (SKIN_CONCERNS.includes(s)) return s
-              return MAP_CONCERN[s] || ''
+    let failed = 0
+    let progressed = 0
+    const bumpProgress = () => {
+      progressed += 1
+      setAiBulkProgress({ cur: progressed, total: picked.length })
+    }
+    const processOne = async (pr: any) => {
+      try {
+        const text = String(pr.key_ingredients ?? '').trim()
+        if (!text) return
+        const res = await fetch('/api/analyze-ingredients', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            content: `전성분: ${text}\n아래 JSON만 반환해. 설명 없이.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}`,
+            name: pr.name || '',
+          }),
+        })
+        const data = (await res.json()) as {
+          concern_tags?: unknown
+          skin_tags?: unknown
+          hormone_timing?: unknown
+          error?: string
+        }
+        if (!res.ok) {
+          failed += 1
+          return
+        }
+        const SKIN_TYPES = ['건성', '지성', '복합성', '민감성', '중성', '모든피부']
+        const SKIN_CONCERNS = ['수분부족', '트러블', '미백/톤업', '안티에이징', '모공', '각질', '민감', '탄력저하']
+        const MAP_CONCERN: Record<string, string> = {
+          트러블: '트러블',
+          건조: '수분부족',
+          탄력: '탄력저하',
+          미백: '미백/톤업',
+          홍조: '민감',
+          진정: '민감',
+          호르몬케어: '안티에이징',
+        }
+        const rawC = Array.isArray(data.concern_tags) ? data.concern_tags : []
+        const nextC = [
+          ...Array.from(new Set(
+            rawC
+              .map((x: unknown) => {
+                const s = String(x).trim()
+                if (SKIN_CONCERNS.includes(s)) return s
+                return MAP_CONCERN[s] || ''
+              })
+              .filter(Boolean)
+          )),
+        ]
+        const rawS = Array.isArray(data.skin_tags) ? data.skin_tags : []
+        const nextS = [
+          ...Array.from(new Set(
+            rawS.flatMap((x: unknown) => {
+              const raw = String(x)
+                .trim()
+                .replace(/^#+/, '')
+              return SKIN_TYPES.filter(st => raw === st || raw.includes(st) || st.includes(raw))
             })
-            .filter(Boolean)
-        )),
-      ]
-      const rawS = Array.isArray(data.skin_tags) ? data.skin_tags : []
-      const nextS = [
-        ...Array.from(new Set(
-          rawS.flatMap((x: unknown) => {
-            const raw = String(x)
-              .trim()
-              .replace(/^#+/, '')
-            return SKIN_TYPES.filter(st => raw === st || raw.includes(st) || st.includes(raw))
-          })
-        )),
-      ]
-      const h = data.hormone_timing
-      const htStr = Array.isArray(h)
-        ? JSON.stringify(h.map((x: unknown) => String(x)))
-        : h != null && String(h).trim()
-          ? String(h)
-          : ''
-      const upd: Record<string, unknown> = {
-        skin_concerns: nextC.length ? nextC : null,
-        skin_types: nextS.length ? nextS : null,
-        concern_tags: nextC.length ? nextC : null,
-        skin_tags: nextS.length ? nextS : null,
+          )),
+        ]
+        const h = data.hormone_timing
+        const htStr = Array.isArray(h)
+          ? JSON.stringify(h.map((x: unknown) => String(x)))
+          : h != null && String(h).trim()
+            ? String(h)
+            : ''
+        const upd: Record<string, unknown> = {
+          skin_concerns: nextC.length ? nextC : null,
+          skin_types: nextS.length ? nextS : null,
+          concern_tags: nextC.length ? nextC : null,
+          skin_tags: nextS.length ? nextS : null,
+        }
+        if (htStr) upd.hormone_timing = htStr
+        let qu = supabase.from('products').update(upd as any).eq('id', pr.id)
+        if (brandOwnerAuthId) qu = qu.eq('brand_user_id', brandOwnerAuthId)
+        const { error } = await qu
+        if (error) failed += 1
+        else done += 1
+      } catch {
+        failed += 1
+      } finally {
+        bumpProgress()
       }
-      if (htStr) upd.hormone_timing = htStr
-      let qu = supabase.from('products').update(upd as any).eq('id', pr.id)
-      if (brandOwnerAuthId) qu = qu.eq('brand_user_id', brandOwnerAuthId)
-      const { error } = await qu
-      if (!error) done += 1
+    }
+    for (let i = 0; i < picked.length; i += 3) {
+      const chunk = picked.slice(i, i + 3)
+      await Promise.all(chunk.map(pr => processOne(pr)))
+      if (i + 3 < picked.length) {
+        await new Promise(r => setTimeout(r, 300))
+      }
     }
     setAiBulkBusy(false)
     setAiBulkProgress(null)
-    setToast(`${done}개 매핑 완료`)
+    setToast(`${done}개 완료, ${failed}개 실패`)
     setSelectedIds(new Set())
     await fetchRows()
   }
