@@ -1047,14 +1047,16 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
     const processOne = async (pr: any) => {
       try {
         const text = String(pr.key_ingredients ?? '').trim()
-        if (!text) return
+        const nameTrim = String(pr.name ?? '').trim()
+        if (!text && !nameTrim) return
         const res = await fetch('/api/analyze-ingredients', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: `전성분: ${text}\n아래 JSON만 반환해. 설명 없이.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}`,
-            name: pr.name || '',
-          }),
+          body: JSON.stringify(
+            text
+              ? { ingredients: text, name: pr.name || '' }
+              : { name: pr.name || '' }
+          ),
         })
         const data = (await res.json()) as {
           concern_tags?: unknown
