@@ -145,6 +145,11 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   const [videoUrl, setVideoUrl] = useState('')
   const [detailContent, setDetailContent] = useState('')
   const [keyIngredients, setKeyIngredients] = useState('')
+  const [skinTypesProduct, setSkinTypesProduct] = useState<string[]>([])
+  const [skinConcernsProduct, setSkinConcernsProduct] = useState<string[]>([])
+  const [hormoneTimingProduct, setHormoneTimingProduct] = useState('')
+  const [ingredientAnalyzeLoading, setIngredientAnalyzeLoading] = useState(false)
+  const [ingredientAnalyzeDone, setIngredientAnalyzeDone] = useState(false)
   const [clinicalResult, setClinicalResult] = useState('')
   const [certificationsText, setCertificationsText] = useState('')
   const [perfectTogetherInput, setPerfectTogetherInput] = useState('')
@@ -159,6 +164,8 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   const fileRefs = useRef<(HTMLInputElement | null)[]>([])
   const videoRef = useRef<HTMLInputElement | null>(null)
   const detailFileRef = useRef<HTMLInputElement | null>(null)
+  const ingredientPhotoRef = useRef<HTMLInputElement | null>(null)
+  const ingredientPhotoFileRef = useRef<File | null>(null)
   const workingIdRef = useRef<string | null>(null)
 
   useEffect(() => {
@@ -319,6 +326,9 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       setVideoUrl(String(p.video_url || ''))
       setDetailContent(String(p.detail_content || ''))
       setKeyIngredients(String(p.key_ingredients || ''))
+      setSkinTypesProduct(Array.isArray(p.skin_types) ? (p.skin_types as unknown[]).map(x => String(x)) : [])
+      setSkinConcernsProduct(Array.isArray(p.skin_concerns) ? (p.skin_concerns as unknown[]).map(x => String(x)) : [])
+      setHormoneTimingProduct(p.hormone_timing != null && String(p.hormone_timing).trim() ? String(p.hormone_timing) : '')
       setClinicalResult(String(p.clinical_result || ''))
       setCertificationsText(String(p.certifications || ''))
       setPerfectTogetherInput(
@@ -546,6 +556,9 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       video_url: videoUrl.trim() || null,
       detail_content: detailContent.trim() || null,
       key_ingredients: keyIngredients.trim() || null,
+      skin_types: skinTypesProduct.length ? skinTypesProduct : null,
+      skin_concerns: skinConcernsProduct.length ? skinConcernsProduct : null,
+      hormone_timing: hormoneTimingProduct.trim() || null,
       clinical_result: clinicalResult.trim() || null,
       certifications: certificationsText.trim() || null,
       perfect_together: perfectIds,
@@ -581,6 +594,9 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
           stock: 0,
           retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)),
           avg_usage_days: avgUsageDays.trim() === '' ? null : Math.max(1, Math.min(365, Math.floor(Number(avgUsageDays) || 0))),
+          skin_types: null,
+          skin_concerns: null,
+          hormone_timing: null,
           thumb_img: null,
           is_flash_sale: isFlashSaleState,
           created_at: new Date().toISOString(),
@@ -700,6 +716,9 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
                 setVideoUrl(String(d.videoUrl || ''))
                 setDetailContent(String(d.detailContent || ''))
                 setKeyIngredients(String(d.keyIngredients || ''))
+                setSkinTypesProduct(Array.isArray(d.skinTypesProduct) ? d.skinTypesProduct.map((x: unknown) => String(x)) : [])
+                setSkinConcernsProduct(Array.isArray(d.skinConcernsProduct) ? d.skinConcernsProduct.map((x: unknown) => String(x)) : [])
+                setHormoneTimingProduct(String(d.hormoneTimingProduct || ''))
                 setClinicalResult(String(d.clinicalResult || ''))
                 setCertificationsText(String(d.certificationsText || ''))
                 setPerfectTogetherInput(String(d.perfectTogetherInput || ''))
@@ -1238,6 +1257,178 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
               rows={5}
               style={{ ...inputStyle, minHeight: 100, resize: 'vertical' }}
             />
+            <input
+              ref={ingredientPhotoRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              style={{ display: 'none' }}
+              onChange={e => {
+                ingredientPhotoFileRef.current = e.target.files?.[0] ?? null
+                setIngredientAnalyzeDone(false)
+              }}
+            />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, width: '100%' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                <button
+                  type="button"
+                  onClick={() => ingredientPhotoRef.current?.click()}
+                  style={{
+                    minHeight: 44,
+                    padding: '0 14px',
+                    borderRadius: 10,
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    background: 'rgba(255,255,255,0.08)',
+                    color: '#fff',
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  전성분 사진
+                </button>
+                <button
+                  type="button"
+                  disabled={ingredientAnalyzeLoading}
+                  onClick={() =>
+                    void (async () => {
+                      setIngredientAnalyzeLoading(true)
+                      setIngredientAnalyzeDone(false)
+                      setMsg('')
+                      try {
+                        const SKIN_TYPES = ['건성', '지성', '복합성', '민감성', '중성', '모든피부']
+                        const SKIN_CONCERNS = ['수분부족', '트러블', '미백/톤업', '안티에이징', '모공', '각질', '민감', '탄력저하']
+                        const MAP_CONCERN: Record<string, string> = {
+                          트러블: '트러블',
+                          건조: '수분부족',
+                          탄력: '탄력저하',
+                          미백: '미백/톤업',
+                          홍조: '민감',
+                          진정: '민감',
+                          호르몬케어: '안티에이징',
+                        }
+                        const file = ingredientPhotoFileRef.current
+                        let content: unknown
+                        if (file) {
+                          const dataUrl = await new Promise<string>((resolve, reject) => {
+                            const fr = new FileReader()
+                            fr.onload = () => resolve(String(fr.result || ''))
+                            fr.onerror = () => reject(new Error('이미지를 읽지 못했습니다'))
+                            fr.readAsDataURL(file)
+                          })
+                          const comma = dataUrl.indexOf(',')
+                          const base64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl
+                          const mediaType =
+                            file.type && file.type.startsWith('image/') ? file.type : 'image/jpeg'
+                          content = [
+                            {
+                              type: 'image',
+                              source: { type: 'base64', media_type: mediaType, data: base64 },
+                            },
+                            {
+                              type: 'text',
+                              text:
+                                '전성분을 읽고 아래 JSON만 반환해. 설명 없이.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}',
+                            },
+                          ]
+                        } else {
+                          const text = keyIngredients.trim()
+                          if (!text) {
+                            setMsg('전성분 텍스트를 입력하거나 사진을 선택하세요')
+                            setIngredientAnalyzeLoading(false)
+                            return
+                          }
+                          content = `전성분: ${text}\n아래 JSON만 반환해. 설명 없이.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}`
+                        }
+                        const res = await fetch('/api/analyze-ingredients', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ content }),
+                        })
+                        const data = (await res.json()) as {
+                          concern_tags?: unknown
+                          skin_tags?: unknown
+                          hormone_timing?: unknown
+                          error?: string
+                        }
+                        if (!res.ok) throw new Error(data.error || '분석 실패')
+                        const rawC = Array.isArray(data.concern_tags) ? data.concern_tags : []
+                        const nextC = [
+                          ...new Set(
+                            rawC
+                              .map((x: unknown) => {
+                                const s = String(x).trim()
+                                if (SKIN_CONCERNS.includes(s)) return s
+                                return MAP_CONCERN[s] || ''
+                              })
+                              .filter(Boolean)
+                          ),
+                        ]
+                        const rawS = Array.isArray(data.skin_tags) ? data.skin_tags : []
+                        const nextS = [
+                          ...new Set(
+                            rawS.flatMap((x: unknown) => {
+                              const raw = String(x)
+                                .trim()
+                                .replace(/^#+/, '')
+                              return SKIN_TYPES.filter(t => raw === t || raw.includes(t) || t.includes(raw))
+                            })
+                          ),
+                        ]
+                        const h = data.hormone_timing
+                        const htStr = Array.isArray(h)
+                          ? JSON.stringify(h.map((x: unknown) => String(x)))
+                          : h != null && String(h).trim()
+                            ? String(h)
+                            : ''
+                        setSkinConcernsProduct(nextC)
+                        setSkinTypesProduct(nextS)
+                        if (htStr) setHormoneTimingProduct(htStr)
+                        setIngredientAnalyzeDone(true)
+                      } catch (e: unknown) {
+                        setMsg(e instanceof Error ? e.message : '분석 오류')
+                      } finally {
+                        setIngredientAnalyzeLoading(false)
+                      }
+                    })()
+                  }
+                  style={{
+                    minHeight: 44,
+                    padding: '0 14px',
+                    borderRadius: 10,
+                    border: '1px solid rgba(201,168,76,0.45)',
+                    background: ingredientAnalyzeLoading ? 'rgba(201,168,76,0.12)' : 'rgba(201,168,76,0.22)',
+                    color: '#e8d4a8',
+                    fontSize: 12,
+                    cursor: ingredientAnalyzeLoading ? 'wait' : 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {ingredientAnalyzeLoading ? '분석 중…' : 'AI 자동 분석'}
+                </button>
+                {ingredientAnalyzeLoading ? (
+                  <>
+                    <style dangerouslySetInnerHTML={{ __html: '@keyframes auranIngSpin{to{transform:rotate(360deg)}}' }} />
+                    <span
+                      aria-hidden
+                      style={{
+                        display: 'inline-block',
+                        width: 18,
+                        height: 18,
+                        border: '2px solid rgba(255,255,255,0.15)',
+                        borderTopColor: 'rgba(201,168,76,0.85)',
+                        borderRadius: '50%',
+                        animation: 'auranIngSpin 0.75s linear infinite',
+                        flexShrink: 0,
+                      }}
+                    />
+                  </>
+                ) : null}
+                {ingredientAnalyzeDone ? (
+                  <span style={{ fontSize: 12, color: 'rgba(201,168,76,0.95)' }}>✓ 분석 완료</span>
+                ) : null}
+              </div>
+            </div>
           </label>
           <label style={{ display: 'grid', gap: 6 }}>
             <span style={labelStyle}>CLINICAL RESULT</span>
@@ -1506,7 +1697,8 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
               JSON.stringify({
                 name, shortDesc, keywords, brandId, origin, manufacturer, saleUi, optionsText, retailPrice, unitType, unitPrice, salePrice,
                 avgUsageDays, qtyUi, stockInput, timesaleStart, timesaleEnd, purchaseMode, purchaseVal, shareVal, reviewText, reviewPhoto,
-                reviewVideo, shipFee, shipMemo, thumbImages, videoUrl, detailContent, keyIngredients, clinicalResult, certificationsText,
+                reviewVideo, shipFee, shipMemo, thumbImages, videoUrl, detailContent, keyIngredients, skinTypesProduct, skinConcernsProduct,
+                hormoneTimingProduct, clinicalResult, certificationsText,
                 perfectTogetherInput, detailImages, catL1, catL2, catL3, catL4, catL5, selectedSkinTagIds,
               })
             )

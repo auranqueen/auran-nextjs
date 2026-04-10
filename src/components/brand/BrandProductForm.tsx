@@ -51,6 +51,8 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
   const supabase = createClient()
   const draftIdRef = useRef<string>(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : uid())
   const editorRef = useRef<any>(null)
+  const ingredientPhotoRef = useRef<HTMLInputElement | null>(null)
+  const ingredientPhotoFileRef = useRef<File | null>(null)
   const adminOpts = useAdminOptions(supabase)
 
   const [tab, setTab] = useState(0)
@@ -72,6 +74,7 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
   const [skinConcernsPick, setSkinConcernsPick] = useState<string[]>([])
   const [skinStage, setSkinStage] = useState('')
   const [useTiming, setUseTiming] = useState('')
+  const [hormoneTimingProduct, setHormoneTimingProduct] = useState('')
 
   const [supplyPrice, setSupplyPrice] = useState('')
   const [retailPrice, setRetailPrice] = useState('')
@@ -95,6 +98,8 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
   const [detailHtml, setDetailHtml] = useState('')
 
   const [fullIngredient, setFullIngredient] = useState('')
+  const [ingredientAnalyzeLoading, setIngredientAnalyzeLoading] = useState(false)
+  const [ingredientAnalyzeDone, setIngredientAnalyzeDone] = useState(false)
   const [keyIngs, setKeyIngs] = useState<KeyIng[]>([])
   const [clinical, setClinical] = useState('')
   const [allergyNote, setAllergyNote] = useState('')
@@ -147,6 +152,7 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
       skinConcernsPick,
       skinStage,
       useTiming,
+      hormoneTimingProduct,
       supplyPrice,
       retailPrice,
       unitPriceNum,
@@ -214,6 +220,7 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
     unitTypePick,
     useByDate,
     useTiming,
+    hormoneTimingProduct,
     asContact,
   ])
 
@@ -235,6 +242,7 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
       setSkinConcernsPick(Array.isArray(d.skinConcernsPick) ? d.skinConcernsPick.map(String) : [])
       setSkinStage(String(d.skinStage || ''))
       setUseTiming(String(d.useTiming || ''))
+      setHormoneTimingProduct(String(d.hormoneTimingProduct || ''))
       setSupplyPrice(String(d.supplyPrice || ''))
       setRetailPrice(String(d.retailPrice || ''))
       setUnitPriceNum(String(d.unitPriceNum || ''))
@@ -430,6 +438,7 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
         video_url: videoUrl,
         skin_types: skinTypesPick.length ? skinTypesPick : null,
         skin_concerns: skinConcernsPick.length ? skinConcernsPick : null,
+        hormone_timing: hormoneTimingProduct.trim() || null,
         unit_type: unitType,
         unit_price: unitPrice,
         quiz_match: [`__BRAND_EXT__${JSON.stringify({ ...ext, gifUrl })}`],
@@ -943,6 +952,178 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
               <div>
                 <span style={labelStyle}>전성분</span>
                 <textarea value={fullIngredient} onChange={e => setFullIngredient(e.target.value)} style={{ ...inputStyle, minHeight: 100 }} />
+                <input
+                  ref={ingredientPhotoRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  style={{ display: 'none' }}
+                  onChange={e => {
+                    ingredientPhotoFileRef.current = e.target.files?.[0] ?? null
+                    setIngredientAnalyzeDone(false)
+                  }}
+                />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, width: '100%' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => ingredientPhotoRef.current?.click()}
+                      style={{
+                        minHeight: 44,
+                        padding: '0 14px',
+                        borderRadius: 10,
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        background: 'rgba(255,255,255,0.08)',
+                        color: '#fff',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      전성분 사진
+                    </button>
+                    <button
+                      type="button"
+                      disabled={ingredientAnalyzeLoading}
+                      onClick={() =>
+                        void (async () => {
+                          setIngredientAnalyzeLoading(true)
+                          setIngredientAnalyzeDone(false)
+                          setMsg('')
+                          try {
+                            const SKIN_TYPES = ['건성', '지성', '복합성', '민감성', '중성', '모든피부']
+                            const SKIN_CONCERNS = ['수분부족', '트러블', '미백/톤업', '안티에이징', '모공', '각질', '민감', '탄력저하']
+                            const MAP_CONCERN: Record<string, string> = {
+                              트러블: '트러블',
+                              건조: '수분부족',
+                              탄력: '탄력저하',
+                              미백: '미백/톤업',
+                              홍조: '민감',
+                              진정: '민감',
+                              호르몬케어: '안티에이징',
+                            }
+                            const file = ingredientPhotoFileRef.current
+                            let content: unknown
+                            if (file) {
+                              const dataUrl = await new Promise<string>((resolve, reject) => {
+                                const fr = new FileReader()
+                                fr.onload = () => resolve(String(fr.result || ''))
+                                fr.onerror = () => reject(new Error('이미지를 읽지 못했습니다'))
+                                fr.readAsDataURL(file)
+                              })
+                              const comma = dataUrl.indexOf(',')
+                              const base64 = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl
+                              const mediaType =
+                                file.type && file.type.startsWith('image/') ? file.type : 'image/jpeg'
+                              content = [
+                                {
+                                  type: 'image',
+                                  source: { type: 'base64', media_type: mediaType, data: base64 },
+                                },
+                                {
+                                  type: 'text',
+                                  text:
+                                    '전성분을 읽고 아래 JSON만 반환해. 설명 없이.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}',
+                                },
+                              ]
+                            } else {
+                              const text = fullIngredient.trim()
+                              if (!text) {
+                                setMsg('전성분 텍스트를 입력하거나 사진을 선택하세요')
+                                setIngredientAnalyzeLoading(false)
+                                return
+                              }
+                              content = `전성분: ${text}\n아래 JSON만 반환해. 설명 없이.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}`
+                            }
+                            const res = await fetch('/api/analyze-ingredients', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ content }),
+                            })
+                            const data = (await res.json()) as {
+                              concern_tags?: unknown
+                              skin_tags?: unknown
+                              hormone_timing?: unknown
+                              error?: string
+                            }
+                            if (!res.ok) throw new Error(data.error || '분석 실패')
+                            const rawC = Array.isArray(data.concern_tags) ? data.concern_tags : []
+                            const nextC = [
+                              ...new Set(
+                                rawC
+                                  .map((x: unknown) => {
+                                    const s = String(x).trim()
+                                    if (SKIN_CONCERNS.includes(s)) return s
+                                    return MAP_CONCERN[s] || ''
+                                  })
+                                  .filter(Boolean)
+                              ),
+                            ]
+                            const rawS = Array.isArray(data.skin_tags) ? data.skin_tags : []
+                            const nextS = [
+                              ...new Set(
+                                rawS.flatMap((x: unknown) => {
+                                  const raw = String(x)
+                                    .trim()
+                                    .replace(/^#+/, '')
+                                  return SKIN_TYPES.filter(t => raw === t || raw.includes(t) || t.includes(raw))
+                                })
+                              ),
+                            ]
+                            const h = data.hormone_timing
+                            const htStr = Array.isArray(h)
+                              ? JSON.stringify(h.map((x: unknown) => String(x)))
+                              : h != null && String(h).trim()
+                                ? String(h)
+                                : ''
+                            setSkinConcernsPick(nextC)
+                            setSkinTypesPick(nextS)
+                            if (htStr) setHormoneTimingProduct(htStr)
+                            setIngredientAnalyzeDone(true)
+                          } catch (e: unknown) {
+                            setMsg(e instanceof Error ? e.message : '분석 오류')
+                          } finally {
+                            setIngredientAnalyzeLoading(false)
+                          }
+                        })()
+                      }
+                      style={{
+                        minHeight: 44,
+                        padding: '0 14px',
+                        borderRadius: 10,
+                        border: `1px solid ${ACC}`,
+                        background: ingredientAnalyzeLoading ? 'rgba(123,94,167,0.12)' : 'rgba(123,94,167,0.22)',
+                        color: '#e4daf5',
+                        fontSize: 12,
+                        cursor: ingredientAnalyzeLoading ? 'wait' : 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      {ingredientAnalyzeLoading ? '분석 중…' : 'AI 자동 분석'}
+                    </button>
+                    {ingredientAnalyzeLoading ? (
+                      <>
+                        <style dangerouslySetInnerHTML={{ __html: '@keyframes auranIngSpin{to{transform:rotate(360deg)}}' }} />
+                        <span
+                          aria-hidden
+                          style={{
+                            display: 'inline-block',
+                            width: 18,
+                            height: 18,
+                            border: '2px solid rgba(255,255,255,0.15)',
+                            borderTopColor: 'rgba(123,94,167,0.85)',
+                            borderRadius: '50%',
+                            animation: 'auranIngSpin 0.75s linear infinite',
+                            flexShrink: 0,
+                          }}
+                        />
+                      </>
+                    ) : null}
+                    {ingredientAnalyzeDone ? (
+                      <span style={{ fontSize: 12, color: '#c4b0e6' }}>✓ 분석 완료</span>
+                    ) : null}
+                  </div>
+                </div>
               </div>
               <div>
                 <span style={labelStyle}>KEY INGREDIENTS (최대 5)</span>
