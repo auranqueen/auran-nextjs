@@ -10,6 +10,30 @@ function toDbStatus(tab: 'pending' | 'active' | 'rejected') {
   return tab === 'rejected' ? 'discontinued' : tab
 }
 
+function productNeedsTagMapping(p: {
+  status?: string
+  concern_tags?: unknown
+  skin_tags?: unknown
+  skin_concerns?: unknown
+  skin_types?: unknown
+}) {
+  if (p.status !== 'active' && p.status !== 'pending') return false
+  const concern =
+    Array.isArray(p.concern_tags) && p.concern_tags.length > 0
+      ? p.concern_tags
+      : Array.isArray(p.skin_concerns) && p.skin_concerns.length > 0
+        ? p.skin_concerns
+        : null
+  const skin =
+    Array.isArray(p.skin_tags) && p.skin_tags.length > 0
+      ? p.skin_tags
+      : Array.isArray(p.skin_types) && p.skin_types.length > 0
+        ? p.skin_types
+        : null
+  const miss = (v: unknown) => v == null || (Array.isArray(v) && v.length === 0)
+  return miss(concern) || miss(skin)
+}
+
 function isMissingPrice(p: { retail_price?: number | null }) {
   const v = p.retail_price
   if (v == null) return true
@@ -517,13 +541,9 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
         const sl = statList || []
         const total = sl.length
         const noBrand = sl.filter((p: { brand_id?: unknown }) => p.brand_id == null || String(p.brand_id).trim() === '').length
-        const unmapped = sl.filter((p: { status?: string; concern_tags?: unknown; skin_tags?: unknown; skin_concerns?: unknown; skin_types?: unknown }) => {
-          if (p.status !== 'active' && p.status !== 'pending') return false
-          const ct = p.concern_tags !== undefined ? p.concern_tags : p.skin_concerns
-          const st = p.skin_tags !== undefined ? p.skin_tags : p.skin_types
-          const miss = (v: unknown) => v == null || (Array.isArray(v) && v.length === 0)
-          return miss(ct) || miss(st)
-        }).length
+        const unmapped = sl.filter((p: { status?: string; concern_tags?: unknown; skin_tags?: unknown; skin_concerns?: unknown; skin_types?: unknown }) =>
+          productNeedsTagMapping(p)
+        ).length
         const [p, a, r, t] = await Promise.all([cp, ca, cr, ct])
         setCounts({ pending: p.count || 0, active: a.count || 0, rejected: r.count || 0, trash: t.count || 0, total, unmapped, noBrand })
         setLoading(false)
@@ -550,13 +570,9 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
         const list = data || []
         let filtered: typeof list
         if (tab === 'unmapped') {
-          filtered = list.filter((p: { status?: string; concern_tags?: unknown; skin_tags?: unknown; skin_concerns?: unknown; skin_types?: unknown }) => {
-            if (p.status !== 'active' && p.status !== 'pending') return false
-            const ct = p.concern_tags !== undefined ? p.concern_tags : p.skin_concerns
-            const st = p.skin_tags !== undefined ? p.skin_tags : p.skin_types
-            const miss = (v: unknown) => v == null || (Array.isArray(v) && v.length === 0)
-            return miss(ct) || miss(st)
-          })
+          filtered = list.filter((p: { status?: string; concern_tags?: unknown; skin_tags?: unknown; skin_concerns?: unknown; skin_types?: unknown }) =>
+            productNeedsTagMapping(p)
+          )
         } else {
           filtered = list.filter((p: { status?: string }) => {
             if (statusDb === 'discontinued') {
@@ -585,13 +601,9 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
       const list = data || []
       const total = list.length
       const noBrand = list.filter((p: { brand_id?: unknown }) => p.brand_id == null || String(p.brand_id).trim() === '').length
-      const unmapped = list.filter((p: { status?: string; concern_tags?: unknown; skin_tags?: unknown; skin_concerns?: unknown; skin_types?: unknown }) => {
-        if (p.status !== 'active' && p.status !== 'pending') return false
-        const ct = p.concern_tags !== undefined ? p.concern_tags : p.skin_concerns
-        const st = p.skin_tags !== undefined ? p.skin_tags : p.skin_types
-        const miss = (v: unknown) => v == null || (Array.isArray(v) && v.length === 0)
-        return miss(ct) || miss(st)
-      }).length
+      const unmapped = list.filter((p: { status?: string; concern_tags?: unknown; skin_tags?: unknown; skin_concerns?: unknown; skin_types?: unknown }) =>
+        productNeedsTagMapping(p)
+      ).length
       setCounts({ pending: p.count || 0, active: a.count || 0, rejected: r.count || 0, trash: t.count || 0, total, unmapped, noBrand })
       setLoading(false)
     } catch (e) {
@@ -1013,6 +1025,89 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
       return
     }
     setToast('✅ 휴지통 비우기 완료')
+    setSelectedIds(new Set())
+    await fetchRows()
+  }
+
+  const runAiBulkForProducts = async (picked: any[]) => {
+    if (picked.length === 0) return
+    setAiBulkBusy(true)
+    setAiBulkProgress({ cur: 0, total: picked.length })
+    let done = 0
+    for (let i = 0; i < picked.length; i++) {
+      const pr = picked[i]
+      setAiBulkProgress({ cur: i + 1, total: picked.length })
+      const text = String(pr.key_ingredients ?? '').trim()
+      if (!text) continue
+      const res = await fetch('/api/analyze-ingredients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: `전성분: ${text}\n아래 JSON만 반환해. 설명 없이.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}`,
+        }),
+      })
+      const data = (await res.json()) as {
+        concern_tags?: unknown
+        skin_tags?: unknown
+        hormone_timing?: unknown
+        error?: string
+      }
+      if (!res.ok) continue
+      const SKIN_TYPES = ['건성', '지성', '복합성', '민감성', '중성', '모든피부']
+      const SKIN_CONCERNS = ['수분부족', '트러블', '미백/톤업', '안티에이징', '모공', '각질', '민감', '탄력저하']
+      const MAP_CONCERN: Record<string, string> = {
+        트러블: '트러블',
+        건조: '수분부족',
+        탄력: '탄력저하',
+        미백: '미백/톤업',
+        홍조: '민감',
+        진정: '민감',
+        호르몬케어: '안티에이징',
+      }
+      const rawC = Array.isArray(data.concern_tags) ? data.concern_tags : []
+      const nextC = [
+        ...Array.from(new Set(
+          rawC
+            .map((x: unknown) => {
+              const s = String(x).trim()
+              if (SKIN_CONCERNS.includes(s)) return s
+              return MAP_CONCERN[s] || ''
+            })
+            .filter(Boolean)
+        )),
+      ]
+      const rawS = Array.isArray(data.skin_tags) ? data.skin_tags : []
+      const nextS = [
+        ...Array.from(new Set(
+          rawS.flatMap((x: unknown) => {
+            const raw = String(x)
+              .trim()
+              .replace(/^#+/, '')
+            return SKIN_TYPES.filter(st => raw === st || raw.includes(st) || st.includes(raw))
+          })
+        )),
+      ]
+      const h = data.hormone_timing
+      const htStr = Array.isArray(h)
+        ? JSON.stringify(h.map((x: unknown) => String(x)))
+        : h != null && String(h).trim()
+          ? String(h)
+          : ''
+      const upd: Record<string, unknown> = {
+        skin_concerns: nextC.length ? nextC : null,
+        skin_types: nextS.length ? nextS : null,
+        concern_tags: nextC.length ? nextC : null,
+        skin_tags: nextS.length ? nextS : null,
+      }
+      if (htStr) upd.hormone_timing = htStr
+      let qu = supabase.from('products').update(upd as any).eq('id', pr.id)
+      if (brandOwnerAuthId) qu = qu.eq('brand_user_id', brandOwnerAuthId)
+      const { error } = await qu
+      if (!error) done += 1
+    }
+    setAiBulkBusy(false)
+    setAiBulkProgress(null)
+    setToast(`${done}개 매핑 완료`)
     setSelectedIds(new Set())
     await fetchRows()
   }
@@ -1671,6 +1766,29 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
           display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16, alignItems: 'center',
           padding: 12, borderRadius: 14, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)',
         }}>
+          {tab === 'unmapped' && filteredRows.length > 0 ? (
+            <button
+              type="button"
+              disabled={aiBulkBusy}
+              onClick={(e) => {
+                e.preventDefault()
+                void runAiBulkForProducts(filteredRows)
+              }}
+              style={{
+                background: 'linear-gradient(135deg, #c9a84c 0%, #a8863a 100%)',
+                border: 'none',
+                borderRadius: 10,
+                padding: '8px 14px',
+                color: '#000',
+                fontSize: 12,
+                fontWeight: 900,
+                cursor: aiBulkBusy ? 'wait' : 'pointer',
+                boxShadow: '0 2px 12px rgba(201,168,76,0.25)',
+              }}
+            >
+              {aiBulkBusy ? '분석 중…' : 'AI 일괄분석 시작'}
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => {
@@ -1726,99 +1844,22 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
               >
                 {bulkTrashBusy ? '처리 중...' : '🗑 선택 삭제'}
               </button>
-              <button
-                type="button"
-                disabled={aiBulkBusy}
-                onClick={() => {
-                  void (async () => {
-                    const picked = filteredRows.filter(r => selectedIds.has(r.id))
-                    if (picked.length === 0) return
-                    setAiBulkBusy(true)
-                    setAiBulkProgress({ cur: 0, total: picked.length })
-                    let done = 0
-                    for (let i = 0; i < picked.length; i++) {
-                      const pr = picked[i]
-                      setAiBulkProgress({ cur: i + 1, total: picked.length })
-                      const text = String(pr.key_ingredients ?? '').trim()
-                      if (!text) continue
-                      const res = await fetch('/api/analyze-ingredients', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          content: `전성분: ${text}\n아래 JSON만 반환해. 설명 없이.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}`,
-                        }),
-                      })
-                      const data = (await res.json()) as {
-                        concern_tags?: unknown
-                        skin_tags?: unknown
-                        hormone_timing?: unknown
-                        error?: string
-                      }
-                      if (!res.ok) continue
-                      const SKIN_TYPES = ['건성', '지성', '복합성', '민감성', '중성', '모든피부']
-                      const SKIN_CONCERNS = ['수분부족', '트러블', '미백/톤업', '안티에이징', '모공', '각질', '민감', '탄력저하']
-                      const MAP_CONCERN: Record<string, string> = {
-                        트러블: '트러블',
-                        건조: '수분부족',
-                        탄력: '탄력저하',
-                        미백: '미백/톤업',
-                        홍조: '민감',
-                        진정: '민감',
-                        호르몬케어: '안티에이징',
-                      }
-                      const rawC = Array.isArray(data.concern_tags) ? data.concern_tags : []
-                      const nextC = [
-                        ...Array.from(new Set(
-                          rawC
-                            .map((x: unknown) => {
-                              const s = String(x).trim()
-                              if (SKIN_CONCERNS.includes(s)) return s
-                              return MAP_CONCERN[s] || ''
-                            })
-                            .filter(Boolean)
-                        )),
-                      ]
-                      const rawS = Array.isArray(data.skin_tags) ? data.skin_tags : []
-                      const nextS = [
-                        ...Array.from(new Set(
-                          rawS.flatMap((x: unknown) => {
-                            const raw = String(x)
-                              .trim()
-                              .replace(/^#+/, '')
-                            return SKIN_TYPES.filter(st => raw === st || raw.includes(st) || st.includes(raw))
-                          })
-                        )),
-                      ]
-                      const h = data.hormone_timing
-                      const htStr = Array.isArray(h)
-                        ? JSON.stringify(h.map((x: unknown) => String(x)))
-                        : h != null && String(h).trim()
-                          ? String(h)
-                          : ''
-                      const upd: Record<string, unknown> = {
-                        skin_concerns: nextC.length ? nextC : null,
-                        skin_types: nextS.length ? nextS : null,
-                      }
-                      if (htStr) upd.hormone_timing = htStr
-                      let qu = supabase.from('products').update(upd as any).eq('id', pr.id)
-                      if (brandOwnerAuthId) qu = qu.eq('brand_user_id', brandOwnerAuthId)
-                      const { error } = await qu
-                      if (!error) done += 1
-                    }
-                    setAiBulkBusy(false)
-                    setAiBulkProgress(null)
-                    setToast(`✓ ${done}개 매핑 완료`)
-                    setSelectedIds(new Set())
-                    await fetchRows()
-                  })()
-                }}
-                style={{
-                  background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.45)',
-                  borderRadius: 10, padding: '8px 12px', color: '#e8d4a8', fontSize: 12, fontWeight: 900, cursor: aiBulkBusy ? 'wait' : 'pointer',
-                }}
-              >
-                AI 자동분석 일괄실행
-              </button>
+              {tab !== 'unmapped' ? (
+                <button
+                  type="button"
+                  disabled={aiBulkBusy}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    void runAiBulkForProducts(filteredRows.filter(r => selectedIds.has(r.id)))
+                  }}
+                  style={{
+                    background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.45)',
+                    borderRadius: 10, padding: '8px 12px', color: '#e8d4a8', fontSize: 12, fontWeight: 900, cursor: aiBulkBusy ? 'wait' : 'pointer',
+                  }}
+                >
+                  AI 자동분석 일괄실행
+                </button>
+              ) : null}
             </>
           )}
         </div>
@@ -1827,6 +1868,7 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
       <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         {TABS.filter(t => !brandOwnerAuthId || t.key !== 'trash').map(t => (
           <button
+            type="button"
             key={t.key}
             onClick={() => { setTab(t.key); clearSelection(); setFilterNoBrandOnly(false) }}
             style={{
@@ -1947,6 +1989,7 @@ export default function AdminMarketingProductsClient(p?: { brandOwnerAuthId?: st
         </label>
         {(q || brandQ !== 'all' || appliedQ || appliedBrandQ !== 'all' || listFilter !== 'all' || onlyMissingUnitPrice || filterNoBrandOnly) && (
           <button
+            type="button"
             onClick={() => { setQ(''); setBrandQ('all'); setAppliedQ(''); setAppliedBrandQ('all'); setListFilter('all'); setOnlyMissingUnitPrice(false); setFilterNoBrandOnly(false) }}
             style={{
               background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
