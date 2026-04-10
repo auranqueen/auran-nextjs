@@ -112,6 +112,9 @@ export default function AdminBrandsPage() {
   const [brandEarnEditId, setBrandEarnEditId] = useState<string | null>(null)
   const [brandEarnDraft, setBrandEarnDraft] = useState('')
   const [brandEarnBusyId, setBrandEarnBusyId] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [productCountByBrand, setProductCountByBrand] = useState<Record<string, number>>({})
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -133,12 +136,24 @@ export default function AdminBrandsPage() {
       showToast('불러오기 실패: ' + error.message)
       setRows([])
       setUserById({})
+      setProductCountByBrand({})
       setLoading(false)
       return
     }
 
     const list = (bs || []) as BRow[]
     setRows(list)
+
+    const bids = list.map(b => b.id)
+    const pcm: Record<string, number> = {}
+    if (bids.length > 0) {
+      const { data: prows } = await supabase.from('products').select('brand_id').in('brand_id', bids)
+      for (const p of prows || []) {
+        const bid = String((p as { brand_id?: string | null }).brand_id || '')
+        if (bid) pcm[bid] = (pcm[bid] || 0) + 1
+      }
+    }
+    setProductCountByBrand(pcm)
 
     const uids = Array.from(new Set(list.map(b => b.user_id).filter(Boolean) as string[]))
     if (uids.length === 0) {
@@ -175,14 +190,24 @@ export default function AdminBrandsPage() {
   }, [rows])
 
   const filtered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
     return rows.filter(r => {
       const s = normApply(r.apply_status)
-      if (tab === 'pending') return s === 'pending'
-      if (tab === 'approved') return s === 'approved'
-      if (tab === 'rejected') return s === 'rejected'
+      if (tab === 'pending') {
+        if (s !== 'pending') return false
+      } else if (tab === 'approved') {
+        if (s !== 'approved') return false
+      } else if (tab === 'rejected') {
+        if (s !== 'rejected') return false
+      }
+      if (q) {
+        const n = (r.name || '').toLowerCase()
+        const kr = (r.brand_name_kr || '').toLowerCase()
+        if (!n.includes(q) && !kr.includes(q)) return false
+      }
       return true
     })
-  }, [rows, tab])
+  }, [rows, tab, searchQuery])
 
   const approve = async (b: BRow) => {
     setBusyId(b.id)
@@ -502,6 +527,25 @@ export default function AdminBrandsPage() {
             <div className="card-sub">apply_status 기준으로 검토 · 승인 시 이메일 발송(API 설정 시)</div>
           </div>
         </div>
+        <div style={{ padding: '12px 16px 8px' }}>
+          <label style={{ fontSize: 10, color: 'var(--text3)', display: 'block', marginBottom: 6 }}>브랜드명 검색</label>
+          <input
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="브랜드명 (영문/한글)"
+            style={{
+              width: '100%',
+              maxWidth: 420,
+              padding: '9px 12px',
+              fontSize: 12,
+              borderRadius: 8,
+              border: '1px solid var(--border)',
+              background: 'var(--bg)',
+              color: 'var(--text)',
+              boxSizing: 'border-box',
+            }}
+          />
+        </div>
         <div style={{ padding: '12px 16px 16px', display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {tabBtn('pending', '신청 대기', counts.pending)}
           {tabBtn('approved', '승인됨', counts.approved)}
@@ -538,6 +582,44 @@ export default function AdminBrandsPage() {
 
             return (
               <div key={b.id} className="card" style={{ marginBottom: 0 }}>
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setExpandedId(expandedId === b.id ? null : b.id)
+                    }
+                  }}
+                  onClick={() => setExpandedId(expandedId === b.id ? null : b.id)}
+                  style={{
+                    padding: '14px 16px',
+                    borderBottom: expandedId === b.id ? '1px solid var(--border)' : 'none',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 12,
+                    flexWrap: 'wrap',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ fontSize: 15, color: 'var(--text)', letterSpacing: '-0.02em', flex: 1, minWidth: 0 }}>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' }}>
+                      {b.name}
+                      {b.brand_name_kr ? <span style={{ fontSize: 12, color: 'var(--text3)', marginLeft: 8 }}>{b.brand_name_kr}</span> : null}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                    {statusBadge(applyLabel)}
+                    <span style={{ fontSize: 11, color: 'var(--text2)', fontFamily: "'JetBrains Mono', monospace" }}>
+                      제품 {productCountByBrand[b.id] ?? 0}
+                    </span>
+                    <span style={{ fontSize: 12, color: 'var(--text3)' }} aria-hidden>
+                      {expandedId === b.id ? '▲' : '▼'}
+                    </span>
+                  </div>
+                </div>
+                {expandedId === b.id ? (
                 <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
                   <div>
                     <div style={{ fontSize: 15, color: 'var(--text)', letterSpacing: '-0.02em' }}>
@@ -740,6 +822,7 @@ export default function AdminBrandsPage() {
                     ) : null}
                   </div>
                 </div>
+                ) : null}
               </div>
             )
           })}
