@@ -10,28 +10,11 @@ function toDbStatus(tab: 'pending' | 'active' | 'rejected') {
   return tab === 'rejected' ? 'discontinued' : tab
 }
 
-function productNeedsTagMapping(p: {
-  status?: string
-  concern_tags?: unknown
-  skin_tags?: unknown
-  skin_concerns?: unknown
-  skin_types?: unknown
-}) {
+function productNeedsTagMapping(p: { status?: string; concern_tags?: unknown; skin_tags?: unknown }) {
   if (p.status !== 'active' && p.status !== 'pending') return false
-  const concern =
-    Array.isArray(p.concern_tags) && p.concern_tags.length > 0
-      ? p.concern_tags
-      : Array.isArray(p.skin_concerns) && p.skin_concerns.length > 0
-        ? p.skin_concerns
-        : null
-  const skin =
-    Array.isArray(p.skin_tags) && p.skin_tags.length > 0
-      ? p.skin_tags
-      : Array.isArray(p.skin_types) && p.skin_types.length > 0
-        ? p.skin_types
-        : null
-  const miss = (v: unknown) => v == null || (Array.isArray(v) && v.length === 0)
-  return miss(concern) || miss(skin)
+  const hasConcern = Array.isArray(p.concern_tags) && p.concern_tags.length > 0
+  const hasSkin = Array.isArray(p.skin_tags) && p.skin_tags.length > 0
+  return !hasConcern || !hasSkin
 }
 
 function isMissingPrice(p: { retail_price?: number | null }) {
