@@ -10,6 +10,7 @@ import { logUserBehavior, upsertSkinCycleDaily } from '@/lib/skinAnalytics'
 import NoticePanel from '@/components/NoticePanel'
 import Loading from './loading'
 import SkinDiarySheet from '@/components/skin-diary/SkinDiarySheet'
+import HormoneCard from '@/components/home/HormoneCard'
 
 const getSeoulToday = () => {
   const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
@@ -1644,102 +1645,32 @@ export default function CustomerHomePage() {
 
       {/* ── 호르몬 브리핑 · 오늘 체크인 · 케어 액션 (TODAY&apos;S SKIN 바로 아래) ── */}
       <div style={{ padding: '12px 16px 0' }}>
-        <div
-          onClick={
-            showHomeEditChrome
-              ? e => {
-                  e.stopPropagation()
-                  setHomeEditSheet({ kind: 'hormone_main', label: '호르몬 브리핑 (메인)', draft: hormoneMainLine, draft2: hormoneSubLine })
-                }
-              : undefined
+        <HormoneCard
+          hormoneMainLine={hormoneMainLine}
+          hormoneSubLine={hormoneSubLine}
+          hormonePhaseTipDesc={hormonePhaseTipDesc}
+          hormonePhaseTipOpen={hormonePhaseTipOpen}
+          onTipToggle={() => setHormonePhaseTipOpen(o => !o)}
+          showEditChrome={showHomeEditChrome}
+          onEditClick={() =>
+            setHomeEditSheet({
+              kind: 'hormone_main',
+              label: '호르몬 브리핑 (메인)',
+              draft: hormoneMainLine,
+              draft2: hormoneSubLine,
+            })
           }
-          style={{
-            borderRadius: 16,
-            padding: '16px 16px 14px',
-            background: 'linear-gradient(145deg, #1a0f28 0%, #251538 45%, #1e1430 100%)',
-            border: showHomeEditChrome ? '1px dashed rgba(168, 130, 220, 0.55)' : '1px solid rgba(123, 94, 167, 0.35)',
-            boxShadow: '0 8px 28px rgba(0,0,0,0.35)',
-            cursor: 'pointer',
-            position: 'relative',
-          }}
-        >
-          {showHomeEditChrome ? (
-            <span style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, background: '#7B5EA7', color: '#fff', borderRadius: 4, padding: '2px 6px' }}>✏️</span>
-          ) : null}
-          <div
-            onClick={
-              showHomeEditChrome
-                ? e => {
-                    e.stopPropagation()
-                    setHomeEditSheet({
-                      kind: 'hormone_sub',
-                      label: '호르몬 브리핑 (서브)',
-                      draft: hormoneSubLine,
-                    })
-                  }
-                : undefined
-            }
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              fontSize: 9,
-              color: 'rgba(196, 170, 230, 0.75)',
-              marginBottom: 8,
-              letterSpacing: '0.02em',
-            }}
-          >
-            <span>{hormoneSubLine}</span>
-            {hormonePhaseTipDesc ? (
-              <button
-                type="button"
-                onClick={e => {
-                  e.stopPropagation()
-                  setHormonePhaseTipOpen(o => !o)
-                }}
-                style={{
-                  width: 14,
-                  height: 14,
-                  borderRadius: 999,
-                  background: 'rgba(123,94,167,0.3)',
-                  border: '1px solid rgba(123,94,167,0.5)',
-                  color: 'rgba(255,255,255,0.7)',
-                  fontSize: 8,
-                  cursor: 'pointer',
-                  marginLeft: 4,
-                  padding: 0,
-                  lineHeight: 1,
-                  fontFamily: 'inherit',
-                  flexShrink: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontWeight: 400,
-                }}
-              >
-                ?
-              </button>
-            ) : null}
-          </div>
-          <div style={{ fontSize: 13, fontWeight: 300, color: '#f3ecff', lineHeight: 1.55 }}>{hormoneMainLine}</div>
-          {hormonePhaseTipDesc && hormonePhaseTipOpen ? (
-            <div
-              style={{
-                fontSize: 10,
-                fontWeight: 400,
-                color: 'rgba(255,255,255,0.55)',
-                background: 'rgba(123,94,167,0.1)',
-                border: '1px solid rgba(123,94,167,0.2)',
-                borderRadius: 8,
-                padding: '6px 10px',
-                marginTop: 6,
-                lineHeight: 1.6,
-              }}
-            >
-              {hormonePhaseTipDesc}
-            </div>
-          ) : null}
-        </div>
+          onEditSubClick={() =>
+            setHomeEditSheet({
+              kind: 'hormone_sub',
+              label: '호르몬 브리핑 (서브)',
+              draft: hormoneSubLine,
+            })
+          }
+          currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? '달빛기'}
+          cycleDay={calcHormoneBriefing(hormoneCycle)?.cycleDay ?? 0}
+          supabaseClient={supabase}
+        />
 
         <div
           style={{
