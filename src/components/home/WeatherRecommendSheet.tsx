@@ -40,6 +40,7 @@ type WeatherShape = {
 
 type MappingRow = {
   id: string
+  product_id?: string
   concern_tag?: string | null
   weather_tags?: string[] | null
   hormone_tags?: string[] | null
@@ -122,6 +123,33 @@ function toggleInList(list: string[], v: string): string[] {
   return [...list, v]
 }
 
+const ROUTINE_MAP_STEPS = ['클렌징', '토너', '앰플·세럼', '크림', '선크림'] as const
+
+function pickProductForStep(
+  pool: MappingRow['products'][],
+  step: string
+): MappingRow['products'] | null {
+  if (pool.length === 0) return null
+  const t = (p: MappingRow['products']) => String(p?.tag || '').toLowerCase()
+  if (step === '클렌징') {
+    const a = pool.find(p => t(p).includes('클렌징') && !t(p).includes('딥'))
+    return a || pool.find(p => t(p).includes('클렌징')) || null
+  }
+  if (step === '토너') return pool.find(p => t(p).includes('토너')) || null
+  if (step === '앰플·세럼')
+    return pool.find(p => t(p).includes('앰플') || t(p).includes('세럼')) || null
+  if (step === '크림') return pool.find(p => t(p).includes('크림') && !t(p).includes('선크림')) || null
+  if (step === '선크림')
+    return pool.find(p => t(p).includes('선크림') || t(p).includes('자외선') || t(p).includes('spf')) || null
+  return null
+}
+
+function pickDeepCleanse(pool: MappingRow['products'][]): MappingRow['products'] | null {
+  if (pool.length === 0) return null
+  const t = (p: MappingRow['products']) => String(p?.tag || '').toLowerCase()
+  return pool.find(p => t(p).includes('딥') || t(p).includes('딥클렌')) || pool.find(p => t(p).includes('클렌징')) || null
+}
+
 export type WeatherRecommendSheetProps = {
   isOpen: boolean
   onClose: () => void
@@ -145,6 +173,7 @@ export default function WeatherRecommendSheet({
 }: WeatherRecommendSheetProps) {
   const router = useRouter()
   const [rows, setRows] = useState<MappingRow[]>([])
+  const [routineProducts, setRoutineProducts] = useState<Record<string, MappingRow['products'] | null>>({})
   const [loading, setLoading] = useState(false)
   const [tab, setTab] = useState<'three' | 'routine'>('three')
   const [openReasonId, setOpenReasonId] = useState<string | null>(null)
@@ -171,17 +200,68 @@ export default function WeatherRecommendSheet({
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const { data, error } = await supabaseClient
+      const month = new Date().getMonth() + 1
+      let list: MappingRow[] = []
+
+      const { data: wData, error: wErr } = await supabaseClient
         .from('weather_product_mapping')
         .select('*, products(*)')
         .eq('is_active', true)
         .order('priority', { ascending: true })
         .limit(20)
-      if (error) {
-        setRows([])
-        return
+
+      if (!wErr && wData && wData.length > 0) {
+        list = wData as MappingRow[]
+      } else {
+        const { data: sData } = await supabaseClient
+          .from('season_product_mapping')
+          .select('*, products(*)')
+          .eq('month', month)
+          .eq('is_active', true)
+          .order('priority', { ascending: true })
+          .limit(12)
+        if (sData && sData.length > 0) {
+          list = (sData as any[]).map(row => ({
+            id: String(row.id),
+            product_id: row.product_id,
+            products: row.products as MappingRow['products'],
+            weather_tags: [],
+            hormone_tags: [],
+            skin_tags: [],
+            reason_text: row.concern_tag || '',
+          }))
+        } else {
+          const sel =
+            'id, name, retail_price, sale_price, thumb_img, storage_thumb_url, tag, skin_types, is_exclusive'
+          let fb = await supabaseClient
+            .from('products')
+            .select(sel)
+            .eq('is_active', true)
+            .eq('status', 'approved')
+            .order('sales_count', { ascending: false })
+            .limit(9)
+          if (fb.error || !fb.data?.length) {
+            fb = await supabaseClient
+              .from('products')
+              .select(sel)
+              .eq('is_active', true)
+              .eq('status', 'active')
+              .order('sales_count', { ascending: false })
+              .limit(9)
+          }
+          const pData = fb.data
+          list = (pData || []).map((p: any) => ({
+            id: `auto-${p.id}`,
+            product_id: p.id,
+            products: p as MappingRow['products'],
+            weather_tags: [],
+            hormone_tags: [],
+            skin_tags: [],
+            reason_text: '',
+          }))
+        }
       }
-      const list = (data || []) as MappingRow[]
+
       const scored = [...list].sort((a, b) => {
         const pa = a.products
         const pb = b.products
@@ -201,6 +281,52 @@ export default function WeatherRecommendSheet({
         return sb - sa
       })
       setRows(scored)
+
+      const { data: seasonRoutine } = await supabaseClient
+        .from('season_product_mapping')
+        .select('*, products(*)')
+        .eq('month', month)
+        .eq('is_active', true)
+        .order('priority', { ascending: true })
+        .limit(40)
+
+      const routineMap: Record<string, MappingRow['products'] | null> = {}
+      const seasonRows = (seasonRoutine || []) as any[]
+      for (const step of ROUTINE_MAP_STEPS) {
+        const row = seasonRows.find(
+          (r: any) => String(r.step_tag || '').trim() === step && r.products
+        )
+        routineMap[step] = row?.products ?? null
+      }
+
+      const poolSel =
+        'id, name, retail_price, sale_price, thumb_img, storage_thumb_url, tag, skin_types, is_exclusive'
+      let poolFb = await supabaseClient
+        .from('products')
+        .select(poolSel)
+        .eq('is_active', true)
+        .eq('status', 'approved')
+        .order('sales_count', { ascending: false })
+        .limit(80)
+      if (poolFb.error || !poolFb.data?.length) {
+        poolFb = await supabaseClient
+          .from('products')
+          .select(poolSel)
+          .eq('is_active', true)
+          .eq('status', 'active')
+          .order('sales_count', { ascending: false })
+          .limit(80)
+      }
+      const pool = ((poolFb.data || []) as MappingRow['products'][]) || []
+
+      for (const step of ROUTINE_MAP_STEPS) {
+        if (!routineMap[step]) {
+          routineMap[step] = pickProductForStep(pool, step)
+        }
+      }
+      routineMap['딥클렌징(주1~2회)'] = pickDeepCleanse(pool)
+
+      setRoutineProducts(routineMap)
     } finally {
       setLoading(false)
     }
@@ -867,6 +993,8 @@ export default function WeatherRecommendSheet({
               dustBad={!!dustBad}
               phaseLabel={phaseLabel}
               routineBg={ROUTINE_BG}
+              routineProducts={routineProducts}
+              onProductNavigate={id => router.push(`/products/${id}`)}
             />
           )}
         </div>
@@ -880,11 +1008,15 @@ function RoutinePanel({
   dustBad,
   phaseLabel,
   routineBg,
+  routineProducts,
+  onProductNavigate,
 }: {
   uvHigh: boolean
   dustBad: boolean
   phaseLabel: string | null
   routineBg: string
+  routineProducts: Record<string, MappingRow['products'] | null>
+  onProductNavigate: (productId: string) => void
 }) {
   const steps: { label: string; badge?: string }[] = [
     { label: '클렌징', badge: dustBad ? '오늘 필수' : undefined },
@@ -909,41 +1041,107 @@ function RoutinePanel({
         gap: 10,
       }}
     >
-      {steps.map((s, i) => (
-        <div
-          key={s.label}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 10,
-            padding: '10px 12px',
-            borderRadius: 10,
-            background: 'rgba(0,0,0,0.2)',
-            border: '1px solid rgba(255,255,255,0.06)',
-          }}
-        >
-          <div style={{ fontSize: 13, color: '#fff', fontWeight: 400 }}>
-            {i + 1}. {s.label}
-          </div>
-          {s.badge ? (
-            <span
+      {steps.map((s, i) => {
+        const p = routineProducts[s.label]
+        const thumb = p?.storage_thumb_url || p?.thumb_img || ''
+        const price = p ? displayPrice(p) : 0
+        return (
+          <div
+            key={s.label}
+            style={{
+              borderRadius: 10,
+              background: 'rgba(0,0,0,0.2)',
+              border: '1px solid rgba(255,255,255,0.06)',
+              overflow: 'hidden',
+            }}
+          >
+            <div
               style={{
-                fontSize: 10,
-                padding: '3px 8px',
-                borderRadius: 8,
-                background: 'rgba(240,160,96,0.15)',
-                color: '#f0a060',
-                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 10,
+                padding: '10px 12px',
               }}
             >
-              {s.badge}
-            </span>
-          ) : (
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>—</span>
-          )}
-        </div>
-      ))}
+              <div style={{ fontSize: 13, color: '#fff', fontWeight: 400 }}>
+                {i + 1}. {s.label}
+              </div>
+              {s.badge ? (
+                <span
+                  style={{
+                    fontSize: 10,
+                    padding: '3px 8px',
+                    borderRadius: 8,
+                    background: 'rgba(240,160,96,0.15)',
+                    color: '#f0a060',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {s.badge}
+                </span>
+              ) : (
+                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>—</span>
+              )}
+            </div>
+            {p ? (
+              <button
+                type="button"
+                onClick={() => onProductNavigate(p.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  width: '100%',
+                  padding: '8px 12px 12px',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                }}
+              >
+                <div
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                    background: 'rgba(255,255,255,0.06)',
+                  }}
+                >
+                  {thumb ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : null}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: 'rgba(255,255,255,0.92)',
+                      fontWeight: 500,
+                      lineHeight: 1.35,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {p.name}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#f0a060', marginTop: 4 }}>
+                    {price > 0 ? `${price.toLocaleString('ko-KR')}원` : '가격 문의'}
+                  </div>
+                </div>
+              </button>
+            ) : (
+              <div style={{ padding: '0 12px 10px', fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>
+                연결된 제품 없음
+              </div>
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
