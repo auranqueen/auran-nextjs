@@ -1901,35 +1901,6 @@ export default function CustomerHomePage() {
           </div>
         ) : null}
 
-        <button
-          type="button"
-          onClick={() => {
-            if (showHomeEditChrome) {
-              setHomeEditSheet({ kind: 'care_banner', label: '케어 액션 배너', draft: careBannerLine })
-              return
-            }
-            logRoutineView('care_banner')
-            routineMoreRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-          }}
-          style={{
-            display: 'block',
-            width: '100%',
-            marginTop: 12,
-            padding: '14px 16px',
-            borderRadius: 14,
-            textAlign: 'left',
-            background: 'linear-gradient(90deg, rgba(201,169,110,0.22) 0%, rgba(201,169,110,0.12) 100%)',
-            border: showHomeEditChrome ? '1px dashed rgba(201,169,110,0.65)' : '1px solid rgba(201,169,110,0.45)',
-            color: GOLD,
-            fontSize: 14,
-            fontWeight: 400,
-            boxShadow: '0 4px 18px rgba(201,169,110,0.12)',
-            cursor: 'pointer',
-            fontFamily: 'inherit',
-          }}
-        >
-          {careActionLine}
-        </button>
       </div>
 
       {seasonRecs.length > 0 && (
