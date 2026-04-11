@@ -911,6 +911,7 @@ export default function WeatherRecommendSheet({
                               display: '-webkit-box',
                               WebkitLineClamp: 2,
                               WebkitBoxOrient: 'vertical',
+                              textOverflow: 'ellipsis',
                             }}
                           >
                             {p.name}
@@ -949,7 +950,10 @@ export default function WeatherRecommendSheet({
                             position: 'absolute',
                             left: 12,
                             right: 12,
-                            bottom: 44,
+                            bottom: '100%',
+                            marginBottom: 8,
+                            overflow: 'visible',
+                            zIndex: 10,
                             background: REASON_BOX,
                             borderLeft: `3px solid ${REASON_BORDER}`,
                             borderRadius: 8,
