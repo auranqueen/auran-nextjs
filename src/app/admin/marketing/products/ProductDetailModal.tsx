@@ -182,6 +182,9 @@ export default function ProductDetailModal({
     skin_types: [],
     ai_tag_status: 'pending',
   })
+  const [ingredientImg, setIngredientImg] = useState<string | null>(null)
+  const [aiAnalyzing, setAiAnalyzing] = useState(false)
+  const [aiReason, setAiReason] = useState('')
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data: { session } }) => {
@@ -481,6 +484,114 @@ export default function ProductDetailModal({
       review_points_photo: Math.max(0, Math.floor(photoPoints)),
       review_points_video: Math.max(0, Math.floor(videoPoints)),
     })
+  }
+
+  const analyzeIngredients = async () => {
+    const text = (product?.key_ingredients || '') + '\n' + (product?.ingredient || '')
+    if (!text.trim() && !ingredientImg) {
+      onToast('전성분 텍스트나 사진을 먼저 입력해주세요')
+      return
+    }
+    setAiAnalyzing(true)
+    try {
+      const messages: any[] = []
+      if (ingredientImg) {
+        const base64 = ingredientImg.split(',')[1]
+        const mimeMatch = ingredientImg.match(/data:(.*?);base64/)
+        const mediaType = (mimeMatch?.[1] as any) || 'image/jpeg'
+        messages.push({
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mediaType,
+                data: base64,
+              },
+            },
+            {
+              type: 'text',
+              text: text.trim()
+                ? `이미지의 전성분표와 아래 텍스트를 함께 분석해줘:\n${text}`
+                : '이 전성분표 이미지를 분석해줘.',
+            },
+          ],
+        })
+      } else {
+        messages.push({
+          role: 'user',
+          content: text,
+        })
+      }
+
+      const systemPrompt = `너는 화장품 전성분 분석 전문가야.
+전성분표를 보고 아래 JSON 형식으로만 답해줘.
+다른 텍스트 없이 JSON만 출력해.
+
+{
+  "step_tags": [],
+  "func_tags": [],
+  "hormone_tags": [],
+  "skin_types": [],
+  "situation_tags": [],
+  "ingredient_tags": [],
+  "medical_tags": [],
+  "weather_tags": [],
+  "reason": ""
+}
+
+선택 가능한 값:
+step_tags: 클렌징|토너|앰플·세럼|크림|선케어|마스크·팩|바디케어|헤어케어
+func_tags: 보습·수분|탄력·주름|미백·톤업|진정·민감|장벽·재생|모공·피지|아로마·릴렉스|트러블케어|노화케어
+hormone_tags: 달빛기|황금기|만개기|물들기|갱년기|남성|전연령
+skin_types: 건성|지성|복합성|민감성|중성|모든피부
+situation_tags: 여드름·뾰루지|피지·모공|좁쌀|가려움|벌레물림|압출후|시술후|임신·수유중|산후|아토피|10대사춘기|체취케어
+ingredient_tags: 비건|크루얼티프리|무향|무색소|천연·유기농|EWG그린|임산부안전|스테로이드프리|파라벤프리|레티놀함유|AHA함유|BHA함유|나이아신아마이드|세라마이드|히알루론산|펩타이드
+medical_tags: 아토피|건선|지루성피부염|로사세아|색소침착|흉터케어|보톡스후|필러후|레이저후|박피후|항암중
+weather_tags: 자외선높음|자외선매우높음|미세먼지나쁨|황사|건조한날|일교차큼|고온다습|전천후
+reason: 태그 선정 이유 한 줄
+
+주의:
+- 레티놀 포함 → hormone_tags에 달빛기 제외
+- 향료/알코올 포함 → situation_tags에 달빛기 주의 추가
+- AHA/BHA → situation_tags에 달빛기 주의 추가
+- 임산부 금지 성분 → situation_tags에 임신·수유중 제외`
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: systemPrompt,
+          messages,
+        }),
+      })
+      const data = await res.json()
+      const raw = data.content?.map((c: any) => c.text || '').join('')
+      const clean = raw.replace(/```json|```/g, '').trim()
+      const result = JSON.parse(clean)
+
+      setTagForm((f: any) => ({
+        ...f,
+        step_tags: result.step_tags?.length ? result.step_tags : f.step_tags,
+        func_tags: result.func_tags?.length ? result.func_tags : f.func_tags,
+        hormone_tags: result.hormone_tags?.length ? result.hormone_tags : f.hormone_tags,
+        skin_types: result.skin_types?.length ? result.skin_types : f.skin_types,
+        situation_tags: result.situation_tags?.length ? result.situation_tags : f.situation_tags,
+        ingredient_tags: result.ingredient_tags?.length ? result.ingredient_tags : f.ingredient_tags,
+        medical_tags: result.medical_tags?.length ? result.medical_tags : f.medical_tags,
+        weather_tags: result.weather_tags?.length ? result.weather_tags : f.weather_tags,
+        ai_tag_status: 'ai_suggested',
+      }))
+      setAiReason(result.reason || '')
+      onToast('AI 분석 완료! 태그 확인 후 저장해주세요 ✦')
+    } catch {
+      onToast('AI 분석 실패. 다시 시도해주세요.')
+    } finally {
+      setAiAnalyzing(false)
+    }
   }
 
   const saveTagForm = async () => {
@@ -2124,6 +2235,114 @@ export default function ProductDetailModal({
                   gap: 20,
                 }}
               >
+                <div style={{ marginBottom: 16 }}>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: 'rgba(255,255,255,0.4)',
+                      marginBottom: 8,
+                    }}
+                  >
+                    전성분 사진 업로드 (선택)
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      gap: 8,
+                      alignItems: 'center',
+                      marginBottom: 8,
+                    }}
+                  >
+                    <label
+                      style={{
+                        padding: '6px 14px',
+                        borderRadius: 8,
+                        fontSize: 11,
+                        cursor: 'pointer',
+                        background: 'rgba(255,255,255,0.06)',
+                        color: 'rgba(255,255,255,0.5)',
+                        border: '0.5px solid rgba(255,255,255,0.15)',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      사진 선택
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={e => {
+                          const file = e.target.files?.[0]
+                          if (!file) return
+                          const reader = new FileReader()
+                          reader.onload = ev => {
+                            setIngredientImg(ev.target?.result as string)
+                          }
+                          reader.readAsDataURL(file)
+                        }}
+                      />
+                    </label>
+                    {ingredientImg && (
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: '#5adb8a',
+                        }}
+                      >
+                        사진 업로드됨 ✓
+                      </span>
+                    )}
+                    {ingredientImg && (
+                      <button
+                        type="button"
+                        onClick={() => setIngredientImg(null)}
+                        style={{
+                          fontSize: 11,
+                          color: 'rgba(255,255,255,0.3)',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        삭제
+                      </button>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    disabled={aiAnalyzing}
+                    onClick={() => void analyzeIngredients()}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      borderRadius: 10,
+                      fontSize: 12,
+                      fontWeight: 500,
+                      cursor: aiAnalyzing ? 'not-allowed' : 'pointer',
+                      border: '1px solid rgba(123,94,167,0.4)',
+                      fontFamily: 'inherit',
+                      background: aiAnalyzing ? 'rgba(123,94,167,0.2)' : '#3a2060',
+                      color: aiAnalyzing ? 'rgba(255,255,255,0.3)' : '#c4a8ff',
+                    }}
+                  >
+                    {aiAnalyzing ? 'AI 분석 중...' : '✦ AI 전성분 분석 · 태그 자동 제안'}
+                  </button>
+                  {aiReason && (
+                    <div
+                      style={{
+                        marginTop: 8,
+                        padding: '8px 10px',
+                        background: 'rgba(123,94,167,0.1)',
+                        borderRadius: 8,
+                        fontSize: 11,
+                        color: '#c4a8ff',
+                        borderLeft: '2px solid #7B5EA7',
+                      }}
+                    >
+                      {aiReason}
+                    </div>
+                  )}
+                </div>
                 <div>
                   <div
                     style={{

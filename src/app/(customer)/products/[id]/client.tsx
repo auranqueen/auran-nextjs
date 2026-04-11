@@ -114,6 +114,8 @@ export default function ProductDetailClient({
   const [editError, setEditError] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState('')
   const [editDraft2, setEditDraft2] = useState('')
+  const [kIngredientImg, setKIngredientImg] = useState<string | null>(null)
+  const [kAiAnalyzing, setKAiAnalyzing] = useState(false)
   const [saveToast, setSaveToast] = useState('')
   const [cartToast, setCartToast] = useState('')
   const [giftSheetOpen, setGiftSheetOpen] = useState(false)
@@ -444,6 +446,104 @@ export default function ProductDetailClient({
     })()
     return () => { cancelled = true }
   }, [giftSheetOpen])
+
+  const analyzeKeyIngredients = async () => {
+    if (!editDraft.trim() && !kIngredientImg) return
+    setKAiAnalyzing(true)
+    try {
+      const messages: any[] = []
+      if (kIngredientImg) {
+        const base64 = kIngredientImg.split(',')[1]
+        const mimeMatch = kIngredientImg.match(/data:(.*?);base64/)
+        const mediaType = (mimeMatch?.[1] as any) || 'image/jpeg'
+        messages.push({
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mediaType,
+                data: base64,
+              },
+            },
+            {
+              type: 'text',
+              text: editDraft.trim()
+                ? `이미지와 텍스트를 함께 분석해줘:\n${editDraft}`
+                : '이 전성분표를 분석해줘.',
+            },
+          ],
+        })
+      } else {
+        messages.push({
+          role: 'user',
+          content: editDraft,
+        })
+      }
+
+      const systemPrompt = `너는 화장품 전성분 분석 전문가야.
+전성분표를 보고 아래 JSON만 출력해.
+
+{
+  "step_tags": [],
+  "func_tags": [],
+  "hormone_tags": [],
+  "skin_types": [],
+  "situation_tags": [],
+  "ingredient_tags": [],
+  "medical_tags": [],
+  "weather_tags": [],
+  "reason": ""
+}
+
+step_tags: 클렌징|토너|앰플·세럼|크림|선케어|마스크·팩|바디케어|헤어케어
+func_tags: 보습·수분|탄력·주름|미백·톤업|진정·민감|장벽·재생|모공·피지|아로마·릴렉스|트러블케어|노화케어
+hormone_tags: 달빛기|황금기|만개기|물들기|갱년기|남성|전연령
+skin_types: 건성|지성|복합성|민감성|중성|모든피부
+situation_tags: 여드름·뾰루지|피지·모공|압출후|시술후|임신·수유중|아토피|체취케어
+ingredient_tags: 비건|무향|EWG그린|임산부안전|레티놀함유|AHA함유|BHA함유|나이아신아마이드|세라마이드|히알루론산|펩타이드
+medical_tags: 아토피|보톡스후|필러후|레이저후
+weather_tags: 자외선높음|자외선매우높음|미세먼지나쁨|건조한날|전천후`
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: systemPrompt,
+          messages,
+        }),
+      })
+      const data = await res.json()
+      const raw = data.content?.map((c: any) => c.text || '').join('')
+      const clean = raw.replace(/```json|```/g, '').trim()
+      const result = JSON.parse(clean)
+
+      await supabase
+        .from('products')
+        .update({
+          step_tags: result.step_tags || [],
+          func_tags: result.func_tags || [],
+          hormone_tags: result.hormone_tags || [],
+          skin_types: result.skin_types?.length ? result.skin_types : null,
+          situation_tags: result.situation_tags || [],
+          ingredient_tags: result.ingredient_tags || [],
+          medical_tags: result.medical_tags || [],
+          weather_tags: result.weather_tags || [],
+          ai_tag_status: 'ai_suggested',
+        })
+        .eq('id', product.id)
+
+      alert('AI 분석 완료! 태그가 저장됐어요 ✦')
+      setKIngredientImg(null)
+    } catch {
+      alert('AI 분석 실패. 다시 시도해주세요.')
+    } finally {
+      setKAiAnalyzing(false)
+    }
+  }
 
   const brand = product.brands?.name || 'AURAN'
   const name = product.name ?? '제품명'
@@ -1917,6 +2017,76 @@ export default function ProductDetailClient({
                 }}
               />
             ) : null}
+            {editingField.field === 'key_ingredients' && (
+              <div style={{ marginTop: 10 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: 8,
+                    alignItems: 'center',
+                    marginBottom: 8,
+                  }}
+                >
+                  <label
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: 8,
+                      fontSize: 11,
+                      cursor: 'pointer',
+                      background: 'rgba(255,255,255,0.06)',
+                      color: 'rgba(255,255,255,0.45)',
+                      border: '0.5px solid rgba(255,255,255,0.15)',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    전성분 사진 업로드
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={e => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        const reader = new FileReader()
+                        reader.onload = ev => {
+                          setKIngredientImg(ev.target?.result as string)
+                        }
+                        reader.readAsDataURL(file)
+                      }}
+                    />
+                  </label>
+                  {kIngredientImg && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: '#5adb8a',
+                      }}
+                    >
+                      사진 업로드됨 ✓
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  disabled={kAiAnalyzing}
+                  onClick={() => void analyzeKeyIngredients()}
+                  style={{
+                    width: '100%',
+                    padding: '9px',
+                    borderRadius: 10,
+                    fontSize: 12,
+                    fontWeight: 500,
+                    cursor: kAiAnalyzing ? 'not-allowed' : 'pointer',
+                    border: '1px solid rgba(123,94,167,0.4)',
+                    fontFamily: 'inherit',
+                    background: kAiAnalyzing ? 'rgba(123,94,167,0.2)' : '#3a2060',
+                    color: kAiAnalyzing ? 'rgba(255,255,255,0.3)' : '#c4a8ff',
+                  }}
+                >
+                  {kAiAnalyzing ? 'AI 분석 중...' : '✦ AI 전성분 분석 · 태그 자동 적용'}
+                </button>
+              </div>
+            )}
             {editingField.field === 'detail_content' ? (
               <div style={{ width: '100%', minWidth: 0, overflowX: 'hidden' }}>
                 <Editor
