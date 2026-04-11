@@ -221,6 +221,10 @@ export default function CustomerHomePage() {
   const [hormoneTrack, setHormoneTrack] = useState<string>('general')
   const [hormoneCycle, setHormoneCycle] = useState<any>(null)
   const [periodTipText, setPeriodTipText] = useState(TOOLTIP_FALLBACKS.period_start)
+  const [userBirthday, setUserBirthday] =
+    useState<string | null>(null)
+  const [userAgeGroup, setUserAgeGroup] =
+    useState<string | null>(null)
   const [periodTipTitle, setPeriodTipTitle] = useState('생리 시작 안내')
   const [periodTipEnabled, setPeriodTipEnabled] = useState(true)
   const [periodQuietNotice, setPeriodQuietNotice] = useState('')
@@ -363,8 +367,18 @@ export default function CustomerHomePage() {
         const { data: { session: _rex } } = await supabase.auth.getSession()
         const _raid = _rex?.user?.id
         if (_raid) {
-          const { data: _ruser } = await supabase.from('users').select('id,role').eq('auth_id', _raid).maybeSingle()
+          const { data: _ruser } = await supabase.from('users').select('id,role,birthday,age_group').eq('auth_id', _raid).maybeSingle()
           if (_ruser?.id) {
+            if ((_ruser as any).birthday) {
+              setUserBirthday(
+                String((_ruser as any).birthday)
+              )
+            }
+            if ((_ruser as any).age_group) {
+              setUserAgeGroup(
+                String((_ruser as any).age_group)
+              )
+            }
             if ((_ruser as { role?: string }).role === 'admin') {
               restrictExclusiveCatalog = false
             } else {
