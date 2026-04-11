@@ -2272,7 +2272,31 @@ reason: 태그 선정 이유 한 줄
                           if (!file) return
                           const reader = new FileReader()
                           reader.onload = ev => {
-                            setIngredientImg(ev.target?.result as string)
+                            const img = new Image()
+                            img.onload = () => {
+                              const canvas =
+                                document.createElement('canvas')
+                              const MAX = 1200
+                              let w = img.width
+                              let h = img.height
+                              if (w > MAX || h > MAX) {
+                                if (w > h) {
+                                  h = Math.round(h * MAX / w)
+                                  w = MAX
+                                } else {
+                                  w = Math.round(w * MAX / h)
+                                  h = MAX
+                                }
+                              }
+                              canvas.width = w
+                              canvas.height = h
+                              const ctx = canvas.getContext('2d')
+                              ctx?.drawImage(img, 0, 0, w, h)
+                              setIngredientImg(
+                                canvas.toDataURL('image/jpeg', 0.8)
+                              )
+                            }
+                            img.src = ev.target?.result as string
                           }
                           reader.readAsDataURL(file)
                         }}
