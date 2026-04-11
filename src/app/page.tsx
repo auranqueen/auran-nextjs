@@ -11,6 +11,7 @@ import NoticePanel from '@/components/NoticePanel'
 import Loading from './loading'
 import SkinDiarySheet from '@/components/skin-diary/SkinDiarySheet'
 import HormoneCard from '@/components/home/HormoneCard'
+import BodyCareCard from '@/components/home/BodyCareCard'
 
 const getSeoulToday = () => {
   const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
@@ -1683,6 +1684,22 @@ export default function CustomerHomePage() {
           }
           currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? '달빛기'}
           cycleDay={calcHormoneBriefing(hormoneCycle)?.cycleDay ?? 0}
+          supabaseClient={supabase}
+        />
+
+        <BodyCareCard
+          hormoneTrack={hormoneTrack}
+          cycleDay={
+            calcHormoneBriefing(hormoneCycle)
+              ?.cycleDay ?? 0
+          }
+          userBirthday={userBirthday}
+          userAgeGroup={userAgeGroup}
+          stressLevel={
+            (motivationProfile as any)
+              ?.stress_level ?? null
+          }
+          showEditChrome={showHomeEditChrome}
           supabaseClient={supabase}
         />
 
