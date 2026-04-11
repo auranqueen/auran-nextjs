@@ -3695,6 +3695,7 @@ export default function CustomerHomePage() {
         hormoneTrack={hormoneTrack}
         cycleDay={calcHormoneBriefing(hormoneCycle)?.cycleDay ?? 0}
         supabaseClient={supabase}
+        showEditChrome={showHomeEditChrome}
       />
 
       <SkinDiarySheet
