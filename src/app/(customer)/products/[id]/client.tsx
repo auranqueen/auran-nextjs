@@ -506,14 +506,11 @@ ingredient_tags: 비건|무향|EWG그린|임산부안전|레티놀함유|AHA함�
 medical_tags: 아토피|보톡스후|필러후|레이저후
 weather_tags: 자외선높음|자외선매우높음|미세먼지나쁨|건조한날|전천후`
 
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/analyze-ingredients', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          system: systemPrompt,
           messages,
+          systemPrompt,
         }),
       })
       const data = await res.json()
