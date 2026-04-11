@@ -198,7 +198,7 @@ export default function BodyCareCardV2({
         .in('id', ids)
         .eq('is_active', true)
       if (cancelled) return
-      setSheetProducts((data as ProductRow[]) || [])
+      setSheetProducts((data as unknown as ProductRow[]) || [])
       setSheetProductsLoading(false)
     })()
     return () => {
