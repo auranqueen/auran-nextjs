@@ -13,6 +13,7 @@ import SkinDiarySheet from '@/components/skin-diary/SkinDiarySheet'
 import HormoneCard from '@/components/home/HormoneCard'
 import BodyCareCardV2 from
   '@/components/home/BodyCareCardV2'
+import WeatherRecommendSheet from '@/components/home/WeatherRecommendSheet'
 
 const getSeoulToday = () => {
   const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
@@ -3716,58 +3717,15 @@ export default function CustomerHomePage() {
         </div>
       )}
 
-      {/* 날씨 맞춤 추천 모달 */}
-      {showWeatherRec && (
-        <div style={{ position:'fixed',inset:0,zIndex:200,background:'rgba(0,0,0,0.85)',display:'flex',alignItems:'flex-end',justifyContent:'center',backdropFilter:'blur(6px)' }}
-          onClick={() => setShowWeatherRec(false)}>
-          <div style={{ width:'100%',maxWidth:480,background:'#0D0B09',borderRadius:'28px 28px 0 0',maxHeight:'85vh',overflowY:'auto' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ display:'flex',justifyContent:'center',padding:'12px 0' }}>
-              <div style={{ width:40,height:4,borderRadius:2,background:'rgba(255,255,255,0.2)' }} />
-            </div>
-            <div style={{ padding:'0 20px 40px' }}>
-              <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:16 }}>
-                <div>
-                  <div style={{ fontSize:16,color:'white',marginBottom:4 }}>
-                    {weather?.condition || '☀️'} 오늘 날씨 맞춤 케어
-                  </div>
-                  <div style={{ fontSize:11,color:'rgba(255,255,255,0.4)',lineHeight:1.6 }}>
-                    건성·민감 복합 · 자외선 {weather?.uv?.level} · 미세먼지 {weather?.dust?.level}
-                  </div>
-                </div>
-                <button onClick={() => setShowWeatherRec(false)} style={{ background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:20,cursor:'pointer' }}>×</button>
-              </div>
-              <div style={{ display:'flex',flexDirection:'column',gap:12 }}>
-                {seasonRecs.slice(0,4).map((r:any) => {
-                  const p = r.products
-                  if (!p) return null
-                  return (
-                    <div key={r.id} style={{ background:CARD_BG,border:CARD_BORDER,borderRadius:16,padding:'14px',display:'flex',gap:12,alignItems:'center' }}
-                      onClick={() => router.push(`/products/${p.id}`)}>
-                      <div style={{ width:60,height:60,borderRadius:12,overflow:'hidden',background:'rgba(255,255,255,0.04)',flexShrink:0 }}>
-                        {p.storage_thumb_url||p.thumb_img
-                          ? <img src={p.storage_thumb_url||p.thumb_img} alt={p.name} style={{ width:'100%',height:'100%',objectFit:'cover' }} />
-                          : <div style={{ width:'100%',height:'100%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:24 }}>🧴</div>
-                        }
-                      </div>
-                      <div style={{ flex:1 }}>
-                        <div style={{ fontSize:10,color:'rgba(255,255,255,0.4)',marginBottom:3 }}>{r.concern_tag}</div>
-                        <div style={{ fontSize:13,color:'white',lineHeight:1.4,marginBottom:4,overflow:'hidden',display:'-webkit-box',WebkitLineClamp:2,WebkitBoxOrient:'vertical' }}>{p.name}</div>
-                        <div style={{ fontSize:13,color:GOLD }}>₩{(p.retail_price||0).toLocaleString()}</div>
-                      </div>
-                    </div>
-                  )
-                })}
-                {seasonRecs.length === 0 && (
-                  <div style={{ textAlign:'center',color:'rgba(255,255,255,0.3)',fontSize:13,padding:'40px 0' }}>
-                    날씨 맞춤 제품을 준비 중이에요
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <WeatherRecommendSheet
+        isOpen={showWeatherRec}
+        onClose={() => setShowWeatherRec(false)}
+        weather={weather}
+        skinType={String((motivationProfile as any)?.skin_type ?? '')}
+        hormoneTrack={hormoneTrack}
+        cycleDay={calcHormoneBriefing(hormoneCycle)?.cycleDay ?? 0}
+        supabaseClient={supabase}
+      />
 
       <SkinDiarySheet
         open={showSkinDiary}
