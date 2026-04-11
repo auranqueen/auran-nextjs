@@ -1651,7 +1651,7 @@ export default function CustomerHomePage() {
                   e.stopPropagation()
                   setHomeEditSheet({ kind: 'hormone_main', label: '호르몬 브리핑 (메인)', draft: hormoneMainLine, draft2: hormoneSubLine })
                 }
-              : () => router.push('/skin-analysis/q')
+              : undefined
           }
           style={{
             borderRadius: 16,
