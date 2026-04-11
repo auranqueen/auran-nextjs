@@ -347,21 +347,21 @@ AURAN이 내 피부 패턴을
   }, [skinCalTab, skinCalYM.y, skinCalYM.m])
   const selectedCycleRow = cycleRowByDate[selectedCalendarDate]
   const phaseColor = (phase: string) => {
-    if (phase === '생리기') return '#D04558'
-    if (phase === '여포기') return '#C9A96E'
-    if (phase === '배란기') return '#D8C64E'
+    if (phase === '달빛기') return '#D04558'
+    if (phase === '황금기') return '#C9A96E'
+    if (phase === '만개기') return '#D8C64E'
     return '#7B5EA7'
   }
   const phaseGuide = (phase: string) => {
-    if (phase === '생리기') return '생리기 - 진정/장벽 케어 중심으로 쉬어가요'
-    if (phase === '여포기') return '황금기 - 미백앰플 집중투입 타이밍'
-    if (phase === '배란기') return '배란기 - 유분 밸런스와 모공 케어 집중'
-    return '황체기 - 진정/보습으로 컨디션 기복 완충'
+    if (phase === '달빛기') return '달빛기 - 진정/장벽 케어 중심으로 쉬어가요'
+    if (phase === '황금기') return '황금기 - 미백앰플 집중투입 타이밍'
+    if (phase === '만개기') return '만개기 - 유분 밸런스와 모공 케어 집중'
+    return '물들기 - 진정/보습으로 컨디션 기복 완충'
   }
   const getPhaseByDate = (iso: string) => {
     const d = new Date(`${iso}T12:00:00+09:00`)
     const c = calcHormoneBriefing({ ...(hormoneCycle || {}), track: 'general' }, d)
-    return String(c.phase || '황체기')
+    return String(c.phase || '물들기')
   }
   const pregnancyWeekText = useMemo(() => {
     const nowMs = seoulForRender.getTime()
@@ -584,11 +584,11 @@ AURAN이 내 피부 패턴을
                     const inPeriodPink = periodPinkSet.has(iso)
                     const hormoneBgBase = calPhaseNeutral
                       ? 'rgba(255,255,255,0.04)'
-                      : phase === '여포기'
+                      : phase === '황금기'
                         ? 'rgba(201,169,110,0.28)'
-                        : phase === '생리기' || phase === '황체기'
+                        : phase === '달빛기' || phase === '물들기'
                           ? 'rgba(168,130,220,0.22)'
-                          : phase === '배란기'
+                          : phase === '만개기'
                             ? 'rgba(216,198,78,0.16)'
                             : 'rgba(255,255,255,0.04)'
                     const hormoneBg = inPeriodPink ? 'rgba(224,120,152,0.25)' : hormoneBgBase
@@ -604,7 +604,7 @@ AURAN이 내 피부 패턴을
                             : cc.includes('좋음')
                               ? '#5cb88a'
                               : 'rgba(255,255,255,0.25)'
-                    const periodMark = homeCalendarKind === 'menstrual' && !isPeriTrack && !isPregnancyTrack && phase === '생리기'
+                    const periodMark = homeCalendarKind === 'menstrual' && !isPeriTrack && !isPregnancyTrack && phase === '달빛기'
                     const sel = calendarPickDate === iso
                     return (
                       <button
@@ -846,7 +846,7 @@ AURAN이 내 피부 패턴을
                 >
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                     <span>💜</span>
-                    <span>생리기</span>
+                    <span>달빛기</span>
                   </span>
                   <span>·</span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>

@@ -550,7 +550,7 @@ export default function ProductDetailClient({
     hormoneMap = {}
   }
   const hormonePhaseKeys = ['menstrual', 'follicular', 'ovulation', 'luteal'] as const
-  const hormoneLabels = ['생리기🌙', '여포기🌱', '배란기✨', '황체기🌸']
+  const hormoneLabels = ['달빛기🌙', '황금기🌱', '만개기✨', '물들기🌸']
   const curHormoneKey = hormonePhaseKeys[hormonePhaseIdx] || 'menstrual'
   const curHormone = hormoneMap[curHormoneKey] || {}
   const storyFiltered = (() => {

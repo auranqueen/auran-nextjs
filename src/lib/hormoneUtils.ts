@@ -25,10 +25,10 @@ export function calcHormoneBriefing(row: any, now = new Date()) {
   const track = String(row?.track || 'general') as TrackType
   const cycleDay = calcCycleDay(row?.last_period_date || null, Number(row?.cycle_length || 28), now)
   if (track === 'general') {
-    if (cycleDay >= 1 && cycleDay <= 5) return { track, cycleDay, phase: '생리기', focus: '예민/진정' }
-    if (cycleDay >= 6 && cycleDay <= 13) return { track, cycleDay, phase: '여포기', focus: '황금기/미백/집중케어' }
-    if (cycleDay >= 14 && cycleDay <= 16) return { track, cycleDay, phase: '배란기', focus: '피지/모공' }
-    return { track, cycleDay, phase: '황체기', focus: '유지/아로마' }
+    if (cycleDay >= 1 && cycleDay <= 5) return { track, cycleDay, phase: '달빛기', focus: '예민/진정' }
+    if (cycleDay >= 6 && cycleDay <= 13) return { track, cycleDay, phase: '황금기', focus: '황금기/미백/집중케어' }
+    if (cycleDay >= 14 && cycleDay <= 16) return { track, cycleDay, phase: '만개기', focus: '피지/모공' }
+    return { track, cycleDay, phase: '물들기', focus: '유지/아로마' }
   }
   if (track === 'menopause_peri') return { track, cycleDay, phase: '불규칙기', focus: '체크인 기반 추천' }
   if (track === 'menopause_post') return { track, cycleDay: 0, phase: '폐경기', focus: '보습/장벽강화/아로마' }
