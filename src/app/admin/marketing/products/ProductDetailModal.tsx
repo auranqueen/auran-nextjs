@@ -53,7 +53,7 @@ export default function ProductDetailModal({
   onApprove: (id: string) => void
   onReject: (id: string) => void
   onToast: (msg: string) => void
-  onProductUpdated: (p: any) => void
+  onProductUpdated?: (p: any) => void
   hideApprovalFooter?: boolean
   onSaveFlash: (
     id: string,
@@ -361,7 +361,7 @@ export default function ProductDetailModal({
             return
           }
           onToastRef.current('✅ 저장됨')
-          onProductUpdatedRef.current({
+          onProductUpdatedRef.current?.({
             ...p,
             ...(field === 'name'
               ? { name: value.trim() }
@@ -417,7 +417,7 @@ export default function ProductDetailModal({
     }
     mark('basic', false)
     onToast('✅ 기본정보 저장됨')
-    onProductUpdated({
+    onProductUpdated?.({
       ...product,
       name: nameDraft.trim(),
       retail_price: Math.max(0, Math.floor(Number(priceDraft) || 0)),
@@ -446,7 +446,7 @@ export default function ProductDetailModal({
 
       mark('detail', false)
       onToast('저장되었습니다')
-      onProductUpdated({ ...product, detail_html: html.trim() || null })
+      onProductUpdated?.({ ...product, detail_html: html.trim() || null })
     } finally {
       setDetailSaving(false)
     }
@@ -472,7 +472,7 @@ export default function ProductDetailModal({
     }
     mark('points', false)
     onToast('✅ 토스트 설정이 적용되었습니다')
-    onProductUpdated({
+    onProductUpdated?.({
       ...product,
       earn_points: Math.max(0, Math.min(100, Math.floor(Number(earnPercent) || 0))),
       earn_points_percent: Math.max(0, Math.min(100, Math.floor(Number(earnPercent) || 0))),
@@ -510,6 +510,11 @@ export default function ProductDetailModal({
       return
     }
     setTagForm((f: any) => ({ ...f, ai_tag_status: 'approved' }))
+    onProductUpdated?.({
+      ...product,
+      ...tagForm,
+      ai_tag_status: 'approved',
+    })
     alert('태그 저장됐어요! ✅')
   }
 
@@ -673,7 +678,7 @@ export default function ProductDetailModal({
                 }
                 mark('thumb', false)
                 onToast('✅ 썸네일 저장됨')
-                onProductUpdated({ ...product, thumb_img: newUrl, storage_thumb_url: newUrl })
+                onProductUpdated?.({ ...product, thumb_img: newUrl, storage_thumb_url: newUrl })
               }}
             />
             <div style={{ display: 'grid', gap: 8 }}>
@@ -768,7 +773,7 @@ export default function ProductDetailModal({
                         continue
                       }
                       anyOk = true
-                      onProductUpdated({ ...product, thumb_images: tArr, video_url: vid })
+                      onProductUpdated?.({ ...product, thumb_images: tArr, video_url: vid })
                       continue
                     }
                     if (isGif) {
@@ -800,7 +805,7 @@ export default function ProductDetailModal({
                         continue
                       }
                       anyOk = true
-                      onProductUpdated({ ...product, thumb_images: tArr, video_url: vid || null })
+                      onProductUpdated?.({ ...product, thumb_images: tArr, video_url: vid || null })
                       continue
                     }
                     if (file.size > IMG_MAX) {
@@ -831,7 +836,7 @@ export default function ProductDetailModal({
                       continue
                     }
                     anyOk = true
-                    onProductUpdated({ ...product, thumb_images: tArr, video_url: vid || null })
+                    onProductUpdated?.({ ...product, thumb_images: tArr, video_url: vid || null })
                   }
                   setGalleryImgUrls(imgs)
                   setGalleryGifUrl(gif)
@@ -871,7 +876,7 @@ export default function ProductDetailModal({
                           return
                         }
                         mark('thumb', false)
-                        onProductUpdated({ ...product, thumb_images: tArr, video_url: galleryVideoUrl || null })
+                        onProductUpdated?.({ ...product, thumb_images: tArr, video_url: galleryVideoUrl || null })
                         onToast('✅ 삭제 반영됨')
                       })()
                     }}
@@ -918,7 +923,7 @@ export default function ProductDetailModal({
                           return
                         }
                         mark('thumb', false)
-                        onProductUpdated({ ...product, thumb_images: tArr, video_url: galleryVideoUrl || null })
+                        onProductUpdated?.({ ...product, thumb_images: tArr, video_url: galleryVideoUrl || null })
                         onToast('✅ 삭제 반영됨')
                       })()
                     }}
@@ -969,7 +974,7 @@ export default function ProductDetailModal({
                           return
                         }
                         mark('thumb', false)
-                        onProductUpdated({ ...product, thumb_images: tArr, video_url: null })
+                        onProductUpdated?.({ ...product, thumb_images: tArr, video_url: null })
                         onToast('✅ 삭제 반영됨')
                       })()
                     }}
@@ -1259,7 +1264,7 @@ export default function ProductDetailModal({
                         return
                       }
                       onToast('✅ 호르몬 타이밍 저장됨')
-                      onProductUpdated({ ...product, hormone_timing: hormoneDraft })
+                      onProductUpdated?.({ ...product, hormone_timing: hormoneDraft })
                     })()
                   }}
                   style={{
@@ -1332,7 +1337,7 @@ export default function ProductDetailModal({
                         return
                       }
                       onToast('✅ 주요 성분 저장됨')
-                      onProductUpdated({ ...product, key_ingredients: keyIngredientsDraft })
+                      onProductUpdated?.({ ...product, key_ingredients: keyIngredientsDraft })
                     })()
                   }}
                   style={{
@@ -1408,7 +1413,7 @@ export default function ProductDetailModal({
                         return
                       }
                       onToast('✅ 임상 결과 저장됨')
-                      onProductUpdated({ ...product, clinical_result: clinicalResultDraft })
+                      onProductUpdated?.({ ...product, clinical_result: clinicalResultDraft })
                     })()
                   }}
                   style={{
@@ -1568,7 +1573,7 @@ export default function ProductDetailModal({
                         return
                       }
                       onToast('✅ 같이 쓰면 좋아요 저장됨')
-                      onProductUpdated({ ...product, perfect_together: ptPicks.map(x => x.id) })
+                      onProductUpdated?.({ ...product, perfect_together: ptPicks.map(x => x.id) })
                     })()
                   }}
                   style={{
@@ -1664,7 +1669,7 @@ export default function ProductDetailModal({
                         return
                       }
                       onToast('✅ 공유 카피포인트 저장됨')
-                      onProductUpdated({ ...product, share_copy_points: lines })
+                      onProductUpdated?.({ ...product, share_copy_points: lines })
                     })()
                   }}
                   style={{
@@ -1932,7 +1937,7 @@ export default function ProductDetailModal({
                     return
                   }
                   setIsGroupBuy(next)
-                  onProductUpdated({ ...product, is_groupbuy: next })
+                  onProductUpdated?.({ ...product, is_groupbuy: next })
                 }}
               />
               상품 공동구매 표시
@@ -2020,7 +2025,7 @@ export default function ProductDetailModal({
                     return
                   }
                   onToast('✅ 타임세일 설정됨 — 홈에 즉시 노출')
-                  onProductUpdated({
+                  onProductUpdated?.({
                     ...product,
                     is_timesale: true,
                     sale_price: salePrice,
@@ -2069,7 +2074,7 @@ export default function ProductDetailModal({
                   setFlashSalePrice('')
                   setFlashSaleStart('')
                   setFlashSaleEnd('')
-                  onProductUpdated({
+                  onProductUpdated?.({
                     ...product,
                     is_timesale: false,
                     sale_price: null,
@@ -2417,7 +2422,7 @@ export default function ProductDetailModal({
                 setThumbPreview(null)
                 mark('thumb', false)
                 onToast('저장되었습니다')
-                onProductUpdated({
+                onProductUpdated?.({
                   ...product,
                   thumb_img: rep,
                   storage_thumb_url: rep,
