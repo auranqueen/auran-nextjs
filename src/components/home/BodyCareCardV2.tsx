@@ -223,7 +223,7 @@ export default function BodyCareCardV2({
           .eq('is_active', true)
           .limit(15)
         if (cancelled) return
-        setSearchResults((data as ProductRow[]) || [])
+        setSearchResults((data as unknown as ProductRow[]) || [])
         setSearchLoading(false)
       })()
     }, 320)
