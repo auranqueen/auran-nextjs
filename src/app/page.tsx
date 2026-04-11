@@ -1968,11 +1968,6 @@ export default function CustomerHomePage() {
             더보기 ›
           </span>
         </div>
-        {selectedCheckinOpt && (selectedCheckinOpt.recommend_copy || selectedCheckinOpt.recommendation_ment || selectedCheckinOpt.recommend_ment) ? (
-          <div style={{ fontSize: 11, color: 'rgba(196,170,230,0.85)', marginBottom: 8, lineHeight: 1.5 }}>
-            {String(selectedCheckinOpt.recommend_copy || selectedCheckinOpt.recommendation_ment || selectedCheckinOpt.recommend_ment)}
-          </div>
-        ) : null}
       </div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
         {loading ? Array.from({ length: 4 }).map((_, i) => (
