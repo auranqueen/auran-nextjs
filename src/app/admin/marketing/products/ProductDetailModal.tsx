@@ -8,7 +8,7 @@ import '@toast-ui/editor/dist/toastui-editor.css'
 import '@toast-ui/editor/dist/i18n/ko-kr'
 import { compressImage } from '@/lib/imageUpload'
 
-type TabKey = 'thumb' | 'basic' | 'detail' | 'points' | 'flash'
+type TabKey = 'thumb' | 'basic' | 'detail' | 'points' | 'flash' | 'tags'
 
 function debounce<A extends unknown[]>(fn: (...args: A) => void | Promise<void>, ms: number) {
   let t: ReturnType<typeof setTimeout> | undefined
@@ -27,6 +27,7 @@ function tabLabel(t: TabKey, dirty: boolean) {
     detail: '🖼 상세내용',
     points: '💰 토스트',
     flash: '⚡ 타임세일',
+    tags: '🏷 태그관리',
   }
   return `${dirty ? '🔴 ' : ''}${labels[t]}`
 }
@@ -73,6 +74,7 @@ export default function ProductDetailModal({
     detail: false,
     points: false,
     flash: false,
+    tags: false,
   })
   const mark = useCallback((k: TabKey, v: boolean) => {
     setDirty(d => ({ ...d, [k]: v }))
@@ -162,6 +164,33 @@ export default function ProductDetailModal({
   const [isGroupBuy, setIsGroupBuy] = useState(!!product.is_groupbuy)
   const [groupbuySaving, setGroupbuySaving] = useState(false)
 
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [tagForm, setTagForm] = useState<any>({
+    step_tags: [],
+    func_tags: [],
+    hormone_tags: [],
+    weather_tags: [],
+    season_tags: [],
+    gender_tag: '',
+    situation_tags: [],
+    body_part_tags: [],
+    lifestyle_tags: [],
+    timing_tags: [],
+    event_tags: [],
+    ingredient_tags: [],
+    medical_tags: [],
+    skin_types: [],
+    ai_tag_status: 'pending',
+  })
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user as { app_metadata?: { role?: string }; raw_app_meta_data?: { role?: string } }
+      const role = user?.app_metadata?.role ?? user?.raw_app_meta_data?.role ?? ''
+      setIsSuperAdmin(role === 'super_admin')
+    })
+  }, [supabase])
+
   const thumbDisplay = thumbPreview || product.thumb_img || product.storage_thumb_url || '/og-image.png'
 
   useEffect(() => {
@@ -242,7 +271,25 @@ export default function ProductDetailModal({
     setShareCopyPointsSaving(false)
     setHormoneDraft(String(product.hormone_timing ?? ''))
     setHormoneSaving(false)
-    setDirty({ thumb: false, basic: false, detail: false, points: false, flash: false })
+    const strArr = (v: unknown) => (Array.isArray(v) ? v.map(x => String(x)) : [])
+    setTagForm({
+      step_tags: strArr(product.step_tags),
+      func_tags: strArr(product.func_tags),
+      hormone_tags: strArr(product.hormone_tags),
+      weather_tags: strArr(product.weather_tags),
+      season_tags: strArr(product.season_tags),
+      gender_tag: String(product.gender_tag ?? ''),
+      situation_tags: strArr(product.situation_tags),
+      body_part_tags: strArr(product.body_part_tags),
+      lifestyle_tags: strArr(product.lifestyle_tags),
+      timing_tags: strArr(product.timing_tags),
+      event_tags: strArr(product.event_tags),
+      ingredient_tags: strArr(product.ingredient_tags),
+      medical_tags: strArr(product.medical_tags),
+      skin_types: Array.isArray(product.skin_types) ? (product.skin_types as unknown[]).map(x => String(x)) : [],
+      ai_tag_status: String(product.ai_tag_status ?? 'pending'),
+    })
+    setDirty({ thumb: false, basic: false, detail: false, points: false, flash: false, tags: false })
     setModalTab('thumb')
   }, [product.id])
 
@@ -436,6 +483,36 @@ export default function ProductDetailModal({
     })
   }
 
+  const saveTagForm = async () => {
+    if (!product?.id) return
+    const { error } = await supabase
+      .from('products')
+      .update({
+        step_tags: tagForm.step_tags || [],
+        func_tags: tagForm.func_tags || [],
+        hormone_tags: tagForm.hormone_tags || [],
+        weather_tags: tagForm.weather_tags || [],
+        season_tags: tagForm.season_tags || [],
+        gender_tag: tagForm.gender_tag || '',
+        situation_tags: tagForm.situation_tags || [],
+        body_part_tags: tagForm.body_part_tags || [],
+        lifestyle_tags: tagForm.lifestyle_tags || [],
+        timing_tags: tagForm.timing_tags || [],
+        event_tags: tagForm.event_tags || [],
+        ingredient_tags: tagForm.ingredient_tags || [],
+        medical_tags: tagForm.medical_tags || [],
+        skin_types: tagForm.skin_types?.length ? tagForm.skin_types : null,
+        ai_tag_status: 'approved',
+      })
+      .eq('id', product.id)
+    if (error) {
+      onToast('태그 저장 실패: ' + (error.message || ''))
+      return
+    }
+    setTagForm((f: any) => ({ ...f, ai_tag_status: 'approved' }))
+    alert('태그 저장됐어요! ✅')
+  }
+
   const applyDefaults = () => {
     setEarnPercent(1)
     setSharePoints(50)
@@ -493,7 +570,7 @@ export default function ProductDetailModal({
             paddingBottom: 12,
           }}
         >
-          {(['thumb', 'basic', 'detail', 'points', 'flash'] as TabKey[]).map(t => (
+          {(['thumb', 'basic', 'detail', 'points', 'flash', 'tags'] as TabKey[]).map(t => (
             <button
               key={t}
               type="button"
@@ -2018,6 +2095,297 @@ export default function ProductDetailModal({
                 해제
               </button>
             </div>
+          </div>
+        )}
+
+        {modalTab === 'tags' && (
+          <div style={{ padding: '16px 0 40px' }}>
+            {!isSuperAdmin ? (
+              <div
+                style={{
+                  textAlign: 'center',
+                  padding: '60px 0',
+                  color: 'rgba(255,255,255,0.3)',
+                  fontSize: 13,
+                }}
+              >
+                슈퍼어드민만 접근할 수 있어요
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 20,
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: 'rgba(255,255,255,0.4)',
+                      marginBottom: 8,
+                    }}
+                  >
+                    AI 태깅 상태
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {(['pending', 'ai_suggested', 'needs_review', 'approved'] as const).map(s => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setTagForm((f: any) => ({ ...f, ai_tag_status: s }))}
+                        style={{
+                          padding: '5px 12px',
+                          borderRadius: 10,
+                          fontSize: 11,
+                          cursor: 'pointer',
+                          border: 'none',
+                          fontFamily: 'inherit',
+                          background: tagForm.ai_tag_status === s ? '#7B5EA7' : 'rgba(255,255,255,0.08)',
+                          color: tagForm.ai_tag_status === s ? '#fff' : 'rgba(255,255,255,0.4)',
+                        }}
+                      >
+                        {s === 'pending'
+                          ? '미태깅'
+                          : s === 'ai_suggested'
+                            ? 'AI제안'
+                            : s === 'needs_review'
+                              ? '검수필요'
+                              : '승인완료'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {[
+                  {
+                    label: '루틴 단계',
+                    key: 'step_tags',
+                    options: ['클렌징', '토너', '앰플·세럼', '크림', '선케어', '마스크·팩', '바디케어', '헤어케어'],
+                  },
+                  {
+                    label: '기능',
+                    key: 'func_tags',
+                    options: [
+                      '보습·수분',
+                      '탄력·주름',
+                      '미백·톤업',
+                      '진정·민감',
+                      '장벽·재생',
+                      '모공·피지',
+                      '아로마·릴렉스',
+                      '트러블케어',
+                      '노화케어',
+                    ],
+                  },
+                  {
+                    label: '호르몬 단계',
+                    key: 'hormone_tags',
+                    options: ['달빛기', '황금기', '만개기', '물들기', '갱년기', '남성', '전연령'],
+                  },
+                  {
+                    label: '피부타입',
+                    key: 'skin_types',
+                    options: ['건성', '지성', '복합성', '민감성', '중성', '모든피부'],
+                  },
+                  {
+                    label: '날씨',
+                    key: 'weather_tags',
+                    options: ['자외선높음', '자외선매우높음', '미세먼지나쁨', '황사', '건조한날', '일교차큼', '고온다습', '전천후'],
+                  },
+                  {
+                    label: '계절',
+                    key: 'season_tags',
+                    options: ['봄', '여름', '가을', '겨울', '전계절'],
+                  },
+                  { label: '성별', key: 'gender_tag', options: ['여성', '남성', '공용'], single: true },
+                  {
+                    label: '상황',
+                    key: 'situation_tags',
+                    options: [
+                      '여드름·뾰루지',
+                      '피지·모공',
+                      '좁쌀',
+                      '가려움',
+                      '벌레물림',
+                      '압출후',
+                      '시술후',
+                      '음주후',
+                      '수면부족',
+                      '스트레스',
+                      '반신욕용',
+                      '족욕용',
+                      '체취케어',
+                      '마스크후',
+                      '운동후',
+                      '비행기탑승',
+                      '임신·수유중',
+                      '산후',
+                      '아토피',
+                      '10대사춘기',
+                    ],
+                  },
+                  {
+                    label: '신체 부위',
+                    key: 'body_part_tags',
+                    options: [
+                      '이마',
+                      '코·T존',
+                      '볼·U존',
+                      '눈가',
+                      '입술',
+                      '턱라인',
+                      '목·데콜테',
+                      '등',
+                      '팔닭살',
+                      '겨드랑이',
+                      '발뒤꿈치',
+                      '복부',
+                      '무릎·팔꿈치',
+                    ],
+                  },
+                  {
+                    label: '이벤트',
+                    key: 'event_tags',
+                    options: [
+                      '웨딩신부',
+                      '웨딩신랑',
+                      '웨딩D-100',
+                      '웨딩D-60',
+                      '웨딩D-30',
+                      '웨딩D-14',
+                      '웨딩D-7',
+                      '웨딩D-3',
+                      '웨딩D-1',
+                      '웨딩당일',
+                      '웨딩후',
+                      '졸업사진',
+                      '소개팅',
+                      '면접',
+                      '해외여행',
+                      '출산예정',
+                      '선물용',
+                    ],
+                  },
+                  {
+                    label: '성분',
+                    key: 'ingredient_tags',
+                    options: [
+                      '비건',
+                      '크루얼티프리',
+                      '무향',
+                      '무색소',
+                      '천연·유기농',
+                      'EWG그린',
+                      '임산부안전',
+                      '스테로이드프리',
+                      '파라벤프리',
+                      '레티놀함유',
+                      'AHA함유',
+                      'BHA함유',
+                      '나이아신아마이드',
+                      '세라마이드',
+                      '히알루론산',
+                      '펩타이드',
+                    ],
+                  },
+                  {
+                    label: '의료·피부질환',
+                    key: 'medical_tags',
+                    options: [
+                      '아토피',
+                      '건선',
+                      '지루성피부염',
+                      '로사세아',
+                      '색소침착',
+                      '흉터케어',
+                      '보톡스후',
+                      '필러후',
+                      '레이저후',
+                      '박피후',
+                      '항암중',
+                    ],
+                  },
+                ].map(({ label, key, options, single }) => (
+                  <div key={key}>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: 'rgba(255,255,255,0.4)',
+                        marginBottom: 8,
+                      }}
+                    >
+                      {label}
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 6,
+                      }}
+                    >
+                      {options.map(opt => {
+                        const val = (tagForm as any)[key]
+                        const isSelected = single ? val === opt : Array.isArray(val) && val.includes(opt)
+                        return (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() => {
+                              if (single) {
+                                setTagForm((f: any) => ({
+                                  ...f,
+                                  [key]: isSelected ? '' : opt,
+                                }))
+                              } else {
+                                setTagForm((f: any) => ({
+                                  ...f,
+                                  [key]: isSelected
+                                    ? (f[key] || []).filter((v: string) => v !== opt)
+                                    : [...(f[key] || []), opt],
+                                }))
+                              }
+                            }}
+                            style={{
+                              padding: '5px 11px',
+                              borderRadius: 10,
+                              fontSize: 11,
+                              cursor: 'pointer',
+                              border: 'none',
+                              fontFamily: 'inherit',
+                              background: isSelected ? '#7B5EA7' : 'rgba(255,255,255,0.08)',
+                              color: isSelected ? '#fff' : 'rgba(255,255,255,0.45)',
+                            }}
+                          >
+                            {opt}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  onClick={() => void saveTagForm()}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: 12,
+                    fontSize: 13,
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    border: 'none',
+                    fontFamily: 'inherit',
+                    background: '#7B5EA7',
+                    color: '#fff',
+                  }}
+                >
+                  태그 저장 · 승인
+                </button>
+              </div>
+            )}
           </div>
         )}
 
