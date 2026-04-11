@@ -11,7 +11,6 @@ import NoticePanel from '@/components/NoticePanel'
 import Loading from './loading'
 import SkinDiarySheet from '@/components/skin-diary/SkinDiarySheet'
 import HormoneCard from '@/components/home/HormoneCard'
-import BodyCareCard from '@/components/home/BodyCareCard'
 import BodyCareCardV2 from
   '@/components/home/BodyCareCardV2'
 
@@ -1686,22 +1685,6 @@ export default function CustomerHomePage() {
           }
           currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? '달빛기'}
           cycleDay={calcHormoneBriefing(hormoneCycle)?.cycleDay ?? 0}
-          supabaseClient={supabase}
-        />
-
-        <BodyCareCard
-          hormoneTrack={hormoneTrack}
-          cycleDay={
-            calcHormoneBriefing(hormoneCycle)
-              ?.cycleDay ?? 0
-          }
-          userBirthday={userBirthday}
-          userAgeGroup={userAgeGroup}
-          stressLevel={
-            (motivationProfile as any)
-              ?.stress_level ?? null
-          }
-          showEditChrome={showHomeEditChrome}
           supabaseClient={supabase}
         />
 
