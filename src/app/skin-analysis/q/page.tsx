@@ -382,7 +382,7 @@ function SkinAnalysisQPageContent() {
                   { val: 'menstrual', icon: '🩸', label: '생리 중', desc: '민감도↑ 진정 케어 추천' },
                   { val: 'pre_menstrual', icon: '📅', label: '생리 전 (1주일)', desc: '유분↑ 트러블 주의' },
                   { val: 'post_menstrual', icon: '🌿', label: '생리 후 (회복기)', desc: '영양 흡수 최적기' },
-                  { val: 'ovulation', icon: '💫', label: '배란기', desc: '피부 컨디션 최상' },
+                  { val: 'ovulation', icon: '💫', label: '만개기', desc: '피부 컨디션 최상' },
                   ...(userAge >= 40 ? [{ val: 'irregular', icon: '🔄', label: '불규칙 (40대)', desc: '호르몬 변화기 케어' }] : []),
                   ...(isOlderWoman ? [
                     { val: 'menopause_transition', icon: '🌸', label: '갱년기 진행 중', desc: '불규칙·안면홍조·건조증' },

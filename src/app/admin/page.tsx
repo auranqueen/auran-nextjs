@@ -103,7 +103,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
   if (insight === 'checkin_today') insightRows = { title: '오늘 체크인 기록', rows: skinToday || [] }
   else if (insight === 'golden_today')
     insightRows = {
-      title: '오늘 황금기(여포기) 기록',
+      title: '오늘 황금기 기록',
       rows: (skinToday || []).filter((r: any) => String(r.hormone_stage || '').includes('여포')),
     }
   else if (insight === 'product_clicks') {
@@ -218,7 +218,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
             {goldenTodayUsers}
             <span style={{ fontSize: 12, color: 'var(--text3)' }}>명</span>
           </div>
-          <div className="sub dim">여포기 단계 기록</div>
+          <div className="sub dim">황금기 단계 기록</div>
         </a>
         <div className="card" style={{ padding: 12 }}>
           <a href="/admin?insight=purchases_today" style={{ textDecoration: 'none', color: 'inherit' }}>

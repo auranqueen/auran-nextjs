@@ -424,8 +424,8 @@ UNION ALL SELECT id_t12, '#각질', NULL::uuid, 5, 11 FROM k
 UNION ALL SELECT id_t13, '#갱년기', NULL::uuid, 5, 12 FROM k
 UNION ALL SELECT id_t14, '#열감', NULL::uuid, 5, 13 FROM k
 UNION ALL SELECT id_t15, '#호르몬밸런스', NULL::uuid, 5, 14 FROM k
-UNION ALL SELECT id_t16, '#황체기', NULL::uuid, 5, 15 FROM k
-UNION ALL SELECT id_t17, '#여포기', NULL::uuid, 5, 16 FROM k
+UNION ALL SELECT id_t16, '#물들기', NULL::uuid, 5, 15 FROM k
+UNION ALL SELECT id_t17, '#황금기(여포기)', NULL::uuid, 5, 16 FROM k
 UNION ALL SELECT id_t18, '#황금기', NULL::uuid, 5, 17 FROM k
 UNION ALL SELECT id_t19, '#집중케어', NULL::uuid, 5, 18 FROM k
 UNION ALL SELECT id_t20, '#데일리', NULL::uuid, 5, 19 FROM k

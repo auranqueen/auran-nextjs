@@ -23,7 +23,7 @@ const SKIN_TYPE_LABELS: Record<string, string> = {
 const EVENT_LABELS: Record<string, string> = { laser: '레이저·시술 후', travel: '여행 중', season: '환절기', none: '', '': '' }
 const HORMONE_LABELS: Record<string, string> = {
   pregnant: '임신 중', menstrual: '생리 중', pre_menstrual: '생리 전',
-  post_menstrual: '생리 후', ovulation: '배란기', irregular: '호르몬 불규칙',
+  post_menstrual: '생리 후', ovulation: '만개기', irregular: '호르몬 불규칙',
   menopause_transition: '갱년기', post_menopause: '폐경 후', hrt: 'HRT 중',
 }
 
