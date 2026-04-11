@@ -11,8 +11,6 @@ const REASON_BOX = '#16141e'
 const REASON_BORDER = '#5a4a9a'
 const BTN_Q = '#2a2040'
 const BTN_Q_FG = '#9b7de8'
-const FORM_BG = '#1a1a24'
-
 const TAG_WEATHER_BG = 'rgba(240,160,96,0.12)'
 const TAG_WEATHER_FG = '#f0a060'
 const TAG_SKIN_BG = 'rgba(155,125,232,0.12)'
@@ -490,11 +488,19 @@ export default function WeatherRecommendSheet({
           {showEditChrome && formOpen ? (
             <div
               style={{
-                marginBottom: 12,
-                padding: 12,
-                borderRadius: 12,
-                background: FORM_BG,
-                border: '1px solid rgba(255,255,255,0.08)',
+                position: 'fixed',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 9999,
+                width: '90%',
+                maxWidth: 480,
+                maxHeight: '80vh',
+                overflowY: 'auto',
+                background: '#17171e',
+                borderRadius: 16,
+                border: '1px solid rgba(123,94,167,0.4)',
+                padding: 16,
               }}
               onClick={e => e.stopPropagation()}
             >
