@@ -556,7 +556,33 @@ reason: 태그 선정 이유 한 줄
 - 레티놀 포함 → hormone_tags에 달빛기 제외
 - 향료/알코올 포함 → situation_tags에 달빛기 주의 추가
 - AHA/BHA → situation_tags에 달빛기 주의 추가
-- 임산부 금지 성분 → situation_tags에 임신·수유중 제외`
+- 임산부 금지 성분 → situation_tags에 임신·수유중 제외
+
+갱년기 hormone_tags 추가 기준:
+아래 성분 중 하나라도 포함 시
+hormone_tags에 '갱년기' 추가:
+이소플라본, 콜라겐 펩타이드,
+CoQ10/코엔자임Q10, 레스베라트롤,
+비타민E 고함량, 열감 진정 성분,
+로즈/장미 추출물, 자스민/재스민 추출물,
+네롤리 추출물, 일랑일랑,
+클라리세이지, 제라늄,
+라벤더 고함량, 달맞이꽃 오일,
+블랙커런트 오일
+브랜드명 이타카(ITHACA) 또는
+르노벨(RENOBELL) 제품이면
+hormone_tags에 '갱년기' 자동 추가
+
+남성 hormone_tags·gender_tag 기준:
+제품명에 '옴므'/'맨'/'남성' 포함
+또는 징크/살리실산 고함량 시
+hormone_tags에 '남성' 추가
+gender_tag: '남성'
+
+공용 제품:
+위 조건 해당 없으면
+hormone_tags에 '갱년기'·'남성' 넣지 마
+해당 단계 없으면 '전연령' 추가`
 
       const res = await fetch('/api/analyze-ingredients', {
         method: 'POST',

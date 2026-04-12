@@ -165,6 +165,82 @@ function AccordionShell({
   )
 }
 
+const getHormoneMatchMsg = (
+  customerPhase: string,
+  productTags: string[]
+): { match: boolean; title: string; sub: string } => {
+  const hasAll = productTags.includes('전연령')
+  if (hasAll) return {
+    match: true,
+    title: '모든 호르몬 단계에 사용 가능한 제품이에요 💜',
+    sub: '언제 써도 좋아요!',
+  }
+  const isMatch = productTags.includes(customerPhase)
+  if (isMatch) {
+    const matchMsgs: Record<string, { title: string; sub: string }> = {
+      달빛기: { title: '지금이 바로 이 제품 쓸 타이밍이에요 🌙', sub: '달빛기엔 자극 없는 순한 성분이 피부를 가장 잘 달래줘요' },
+      황금기: { title: '지금이 바로 이 제품 쓸 타이밍이에요 ✨', sub: '황금기엔 흡수력이 최고라 효과가 극대화돼요!' },
+      만개기: { title: '지금이 딱이에요 🌸', sub: '만개기엔 피부가 가장 빛나는 시기 이 제품으로 광채 극대화해요!' },
+      물들기: { title: '지금 쓰기 딱 좋아요 🍂', sub: '물들기 붓기·예민함 잡는데 이 제품이 도움돼요' },
+      갱년기: { title: '갱년기 피부를 위해 고른 제품이에요 🌿', sub: '꾸준히 쓸수록 효과가 좋아요' },
+      남성: { title: '남성 전용 제품이에요 👨 딱이에요!', sub: '남성 피부에 맞게 특별히 설계된 제품이에요' },
+    }
+    return { match: true, ...(matchMsgs[customerPhase] || { title: '지금 쓰기 좋은 제품이에요 💜', sub: '내 피부 단계에 잘 맞아요' }) }
+  }
+
+  if (customerPhase === '갱년기') return {
+    match: true,
+    title: '갱년기 피부에도 잘 맞는 제품이에요 🌿',
+    sub: '피부 장벽 케어와 함께 쓰면 더 좋아요!',
+  }
+
+  if (customerPhase === '남성') return {
+    match: true,
+    title: '남성도 사용 가능한 제품이에요 👨',
+    sub: '피부 고민에 맞게 써보세요!',
+  }
+
+  const mismatchMsgs: Record<string, Record<string, { title: string; sub: string }>> = {
+    달빛기: {
+      황금기: { title: '황금기(생리 후 6~13일차)에 쓰면 효과가 극대화돼요 ✨', sub: '지금 담아두고 황금기에 써보세요!' },
+      만개기: { title: '만개기(14~16일차) 배란기에 써보세요 🌸', sub: '에너지·피부 최고조일 때 효과가 2배예요!' },
+      물들기: { title: '물들기(17~28일차)에 더 잘 맞는 제품이에요 🍂', sub: '붓기·예민함 올라올 때 지금 담아두세요!' },
+    },
+    황금기: {
+      달빛기: { title: '달빛기(생리 중 1~5일차)에 더 잘 맞는 제품이에요 🌙', sub: '그때 쓰면 피부가 고마워해요' },
+      만개기: { title: '만개기(14~16일차)에 함께 써보세요 🌸', sub: '배란기 피부 광채 극대화에 좋아요!' },
+      물들기: { title: '물들기(17~28일차)에 써보세요 🍂', sub: '황체기 붓기·예민함 케어에 딱이에요!' },
+    },
+    만개기: {
+      달빛기: { title: '달빛기(생리 중 1~5일차)에 더 잘 맞아요 🌙', sub: '지금 담아두고 그때 써보세요!' },
+      황금기: { title: '황금기(6~13일차)에도 잘 맞는 제품이에요 ✨', sub: '지금 써도 좋고 황금기에 쓰면 더 좋아요!' },
+      물들기: { title: '물들기(17~28일차)에 써보세요 🍂', sub: '배란 후 붓기·예민함 케어에 도움돼요' },
+    },
+    물들기: {
+      달빛기: { title: '달빛기(생리 중)에 더 잘 맞는 제품이에요 🌙', sub: '다음 생리 시작 때 써보세요!' },
+      황금기: { title: '다음 황금기(6~13일차)에 써보세요 ✨', sub: '피부 흡수력 최고인 시기에 효과가 극대화돼요!' },
+      만개기: { title: '다음 만개기(14~16일차)에 써보세요 🌸', sub: '배란기 피부 최고조일 때 빛이 나요!' },
+    },
+  }
+
+  const customerMsgs = mismatchMsgs[customerPhase]
+  if (customerMsgs) {
+    const firstProductTag = productTags.find(t =>
+      ['달빛기', '황금기', '만개기', '물들기'].includes(t)
+    )
+    const msg = firstProductTag
+      ? customerMsgs[firstProductTag]
+      : null
+    if (msg) return { match: false, ...msg }
+  }
+
+  return {
+    match: true,
+    title: '사용 가능한 제품이에요 💜',
+    sub: '담아두고 최적 시기에 써보세요!',
+  }
+}
+
 export default function ProductTagSection({
   product,
   weather,
@@ -244,7 +320,6 @@ export default function ProductTagSection({
 
   const weatherMsgLine = getWeatherMsg()
 
-  const hormoneMatch = tagMatchesPhase(hormoneTags, selectedPhase)
   const showMatchBlock = (hormoneTags?.length ?? 0) > 0
   const showWeatherBlock = weather != null
   const showIngredientBlock = (ingredientTags?.length ?? 0) > 0
@@ -292,26 +367,40 @@ export default function ProductTagSection({
               )
             })}
           </div>
-          {selectedPhase ? (
+          {selectedPhase ? (() => {
+            const matchResult = getHormoneMatchMsg(selectedPhase, hormoneTags ?? [])
+            return (
             <div
               style={{
                 padding: '12px 12px',
                 borderRadius: 14,
-                background: hormoneMatch ? '#0f1a14' : '#1a0f0a',
-                border: hormoneMatch ? '1px solid rgba(90,219,138,0.35)' : '1px solid rgba(232,123,74,0.35)',
+                background: matchResult.match ? '#0f1a14' : '#1a0f0a',
+                border: matchResult.match ? '1px solid rgba(90,219,138,0.35)' : '1px solid rgba(232,123,74,0.35)',
               }}
             >
-              {hormoneMatch ? (
+              {matchResult.match ? (
                 <div style={{ color: '#5adb8a', fontSize: 13, lineHeight: 1.5 }}>
                   <span style={{ marginRight: 6 }}>✓</span>
-                  {`${selectedPhase}인 지금 딱 맞는 제품이에요`}
+                  {matchResult.title}
                 </div>
               ) : (
                 <div style={{ color: '#e87b4a', fontSize: 13, lineHeight: 1.5 }}>
                   <span style={{ marginRight: 6 }}>!</span>
-                  {`${selectedPhase}엔 사용에 주의가 필요해요`}
+                  {matchResult.title}
                 </div>
               )}
+              {matchResult.sub ? (
+                <div
+                  style={{
+                    marginTop: 4,
+                    fontSize: 11,
+                    color: 'rgba(255,255,255,0.5)',
+                    lineHeight: 1.5,
+                  }}
+                >
+                  {matchResult.sub}
+                </div>
+              ) : null}
               {phaseDesc[selectedPhase] ? (
                 <div
                   style={{
@@ -326,7 +415,8 @@ export default function ProductTagSection({
                 </div>
               ) : null}
             </div>
-          ) : (
+            )
+          })() : (
             <div style={{ fontSize: 12, color: '#888' }}>호르몬 단계를 선택하면 매칭 결과를 볼 수 있어요.</div>
           )}
         </AccordionShell>
