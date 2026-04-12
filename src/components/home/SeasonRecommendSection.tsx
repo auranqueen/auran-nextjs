@@ -28,6 +28,8 @@ type ProductLite = {
   skin_types?: string[] | null
   sales_count?: number | null
   avg_rating?: number | null
+  step_tags?: string[] | null
+  func_tags?: string[] | null
 }
 
 type MappingRow = {
@@ -155,22 +157,13 @@ export default function SeasonRecommendSection({ month, showEditChrome, supabase
 
       const sel =
         'id, name, retail_price, sale_price, storage_thumb_url, thumb_img, tag, skin_types, sales_count, avg_rating, step_tags, func_tags'
-      let fb = await supabaseClient
+      const fb = await supabaseClient
         .from('products')
         .select(sel)
         .eq('is_active', true)
-        .eq('status', 'approved')
+        .eq('status', 'active')
         .order('sales_count', { ascending: false })
         .limit(8)
-      if (fb.error || !fb.data?.length) {
-        fb = await supabaseClient
-          .from('products')
-          .select(sel)
-          .eq('is_active', true)
-          .eq('status', 'active')
-          .order('sales_count', { ascending: false })
-          .limit(8)
-      }
 
       if (fb.error || !fb.data?.length) {
         setIsAuto(false)
@@ -188,7 +181,11 @@ export default function SeasonRecommendSection({ month, showEditChrome, supabase
         func_tag: '',
         priority: i,
         is_active: true,
-        products: p,
+        products: {
+          ...p,
+          step_tags: p.step_tags ?? [],
+          func_tags: p.func_tags ?? [],
+        },
       }))
       setRows(synthetic)
     } finally {
