@@ -1103,6 +1103,11 @@ weather_tags: 자외선높음|자외선매우높음|미세먼지나쁨|건조한
             ) : null}
           </div>
         ) : null}
+        <ProductTagSection
+          product={product}
+          weather={weather}
+          hormonePhase={hormonePhase}
+        />
         {maleMeno ? (
           <div style={{ alignSelf: 'flex-start', marginBottom: 6, display: 'inline-block', background: 'rgba(123,94,167,0.2)', border: '1px solid rgba(123,94,167,0.4)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: '#e8d9ff' }}>
             남성 갱년기 피부에도 효과적이에요
@@ -1682,12 +1687,6 @@ weather_tags: 자외선높음|자외선매우높음|미세먼지나쁨|건조한
         </div>
         <div style={{ fontSize: 22, color: GOLD }}>{total}</div>
       </div>
-
-      <ProductTagSection
-        product={product}
-        weather={weather}
-        hormonePhase={hormonePhase}
-      />
 
       {/* 3버튼 */}
       <div style={{ position: 'fixed', bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 8 }}>
