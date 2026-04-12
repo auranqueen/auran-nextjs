@@ -8,6 +8,7 @@ import '@toast-ui/editor/dist/toastui-editor-viewer.css'
 import { Editor } from '@toast-ui/react-editor'
 import '@toast-ui/editor/dist/toastui-editor.css'
 import '@toast-ui/editor/dist/i18n/ko-kr'
+import ProductTagSection from '@/components/product/ProductTagSection'
 
 const GOLD = '#C9A96E'
 
@@ -142,6 +143,8 @@ export default function ProductDetailClient({
       ? Math.max(0, Math.floor((new Date(product.timesale_ends_at).getTime() - Date.now()) / 1000))
       : 0
   )
+  const [weather, setWeather] = useState<any>(null)
+  const [hormonePhase, setHormonePhase] = useState<string>('')
   useEffect(() => {
     if (!product.is_timesale || !product.timesale_ends_at) {
       setSaleTimeLeft(0)
@@ -364,6 +367,46 @@ export default function ProductDetailClient({
       const role = user?.app_metadata?.role ?? user?.raw_app_meta_data?.role ?? ''
       setIsSuperAdmin(role === 'super_admin')
     })
+
+    void fetch('/api/weather?lat=37.5665&lon=126.9780')
+      .then(r => r.json())
+      .then(d => setWeather(d))
+      .catch(() => {})
+
+    void (async () => {
+      const { data: { session } } =
+        await supabase.auth.getSession()
+      if (!session?.user) return
+      const { data: hc } = await supabase
+        .from('hormone_cycles')
+        .select('track, cycle_start_date, cycle_length')
+        .eq('user_id', session.user.id)
+        .maybeSingle()
+      if (!hc) return
+      const today = new Date()
+      const start = new Date(
+        (hc as any).cycle_start_date
+      )
+      const diff = Math.floor(
+        (today.getTime() - start.getTime())
+        / (1000 * 60 * 60 * 24)
+      ) + 1
+      const len = (hc as any).cycle_length || 28
+      const day = ((diff - 1) % len) + 1
+      const track = (hc as any).track || ''
+      let phase = '전연령'
+      if (track === 'menopause_peri' ||
+          track === 'menopause_post')
+        phase = '갱년기'
+      else if (track === 'male' ||
+               track === 'male_menopause')
+        phase = '남성'
+      else if (day <= 5) phase = '달빛기'
+      else if (day <= 13) phase = '황금기'
+      else if (day <= 16) phase = '만개기'
+      else phase = '물들기'
+      setHormonePhase(phase)
+    })()
   }, [])
 
   useEffect(() => {
@@ -1639,6 +1682,12 @@ weather_tags: 자외선높음|자외선매우높음|미세먼지나쁨|건조한
         </div>
         <div style={{ fontSize: 22, color: GOLD }}>{total}</div>
       </div>
+
+      <ProductTagSection
+        product={product}
+        weather={weather}
+        hormonePhase={hormonePhase}
+      />
 
       {/* 3버튼 */}
       <div style={{ position: 'fixed', bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 8 }}>
