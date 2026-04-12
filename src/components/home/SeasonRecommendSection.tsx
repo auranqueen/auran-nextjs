@@ -73,9 +73,42 @@ function rowMatchesFilters(
   const p = row.products
   if (!p) return false
   if (isAuto) {
-    const tagLower = String(p.tag || '').toLowerCase()
-    if (stepF !== '전체' && !stepMatchesTag(stepF, tagLower)) return false
-    if (funcF !== '전체' && !funcMatchesTag(funcF, tagLower)) return false
+    const prod = p as any
+    const stepTags = prod?.step_tags || []
+    const funcTags = prod?.func_tags || []
+
+    if (stepF !== '전체') {
+      const stepMap: Record<string, string> = {
+        클렌징: '클렌징',
+        토너: '토너',
+        '앰플·세럼': '앰플·세럼',
+        크림: '크림',
+        선크림: '선케어',
+      }
+      const matched = stepTags.some(
+        (t: string) =>
+          t === stepF ||
+          t === stepMap[stepF]
+      )
+      if (!matched) return false
+    }
+
+    if (funcF !== '전체') {
+      const funcMap: Record<string, string> = {
+        미백: '미백·톤업',
+        탄력: '탄력·주름',
+        수분: '보습·수분',
+        진정: '진정·민감',
+        장벽: '장벽·재생',
+      }
+      const matched = funcTags.some(
+        (t: string) =>
+          t === funcF ||
+          t === funcMap[funcF]
+      )
+      if (!matched) return false
+    }
+
     return true
   }
   const st = String(row.step_tag || '').trim()
@@ -121,7 +154,7 @@ export default function SeasonRecommendSection({ month, showEditChrome, supabase
       }
 
       const sel =
-        'id, name, retail_price, sale_price, storage_thumb_url, thumb_img, tag, skin_types, sales_count, avg_rating'
+        'id, name, retail_price, sale_price, storage_thumb_url, thumb_img, tag, skin_types, sales_count, avg_rating, step_tags, func_tags'
       let fb = await supabaseClient
         .from('products')
         .select(sel)
