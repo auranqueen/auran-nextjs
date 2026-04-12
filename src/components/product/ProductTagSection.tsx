@@ -12,6 +12,15 @@ export interface ProductTagSectionProps {
 
 const PHASE_OPTIONS = ['달빛기', '황금기', '만개기', '물들기', '갱년기', '남성'] as const
 
+const phaseDesc: Record<string, string> = {
+  달빛기: '생리 첫날~5일차 · 몸과 피부가 쉬어가는 시기예요',
+  황금기: '생리 후 6~13일차 · 피부 컨디션 최고인 시기예요',
+  만개기: '배란기 14~16일차 · 에너지·피부 모두 최고조예요',
+  물들기: '배란 후 17~28일차 · 붓기·예민함이 올라오는 시기예요',
+  갱년기: '호르몬 변화가 큰 시기 · 피부 장벽 케어가 중요해요',
+  남성: '남성 호르몬 사이클 · 피지·체취 관리가 핵심이에요',
+}
+
 const HORMONE_CHIP: Record<string, { bg: string; color: string }> = {
   달빛기: { bg: '#1a0f28', color: '#c4a8ff' },
   황금기: { bg: '#28200a', color: '#f0c060' },
@@ -295,14 +304,27 @@ export default function ProductTagSection({
               {hormoneMatch ? (
                 <div style={{ color: '#5adb8a', fontSize: 13, lineHeight: 1.5 }}>
                   <span style={{ marginRight: 6 }}>✓</span>
-                  선택한 단계와 제품 호르몬 태그가 맞아요.
+                  {`${selectedPhase}인 지금 딱 맞는 제품이에요`}
                 </div>
               ) : (
                 <div style={{ color: '#e87b4a', fontSize: 13, lineHeight: 1.5 }}>
                   <span style={{ marginRight: 6 }}>!</span>
-                  이 단계용으로 표시된 태그가 아니에요. 피부 상태에 맞는지 한 번 더 확인해 주세요.
+                  {`${selectedPhase}엔 사용에 주의가 필요해요`}
                 </div>
               )}
+              {phaseDesc[selectedPhase] ? (
+                <div
+                  style={{
+                    marginTop: 6,
+                    fontSize: 10,
+                    color: 'rgba(255,255,255,0.35)',
+                    lineHeight: 1.5,
+                    padding: '0 2px',
+                  }}
+                >
+                  {phaseDesc[selectedPhase]}
+                </div>
+              ) : null}
             </div>
           ) : (
             <div style={{ fontSize: 12, color: '#888' }}>호르몬 단계를 선택하면 매칭 결과를 볼 수 있어요.</div>
