@@ -78,6 +78,8 @@ function rowMatchesFilters(
     const prod = p as any
     const stepTags = prod?.step_tags || []
     const funcTags = prod?.func_tags || []
+    const normalize = (s: string) =>
+      s.replace(/[\s·・•]/g, '').toLowerCase()
 
     if (stepF !== '전체') {
       const stepMap: Record<string, string> = {
@@ -89,8 +91,8 @@ function rowMatchesFilters(
       }
       const matched = stepTags.some(
         (t: string) =>
-          t === stepF ||
-          t === stepMap[stepF]
+          normalize(t) === normalize(stepF) ||
+          normalize(t) === normalize(stepMap[stepF] || '')
       )
       if (!matched) return false
     }
@@ -105,8 +107,8 @@ function rowMatchesFilters(
       }
       const matched = funcTags.some(
         (t: string) =>
-          t === funcF ||
-          t === funcMap[funcF]
+          normalize(t) === normalize(funcF) ||
+          normalize(t) === normalize(funcMap[funcF] || '')
       )
       if (!matched) return false
     }
