@@ -11,7 +11,7 @@ const BADGE_FUNC_BG = '#1a2818'
 const BADGE_FUNC_FG = '#5adb8a'
 const FORM_BG = '#1a1a24'
 
-const STEP_CHIPS = ['전체', '클렌징', '토너', '앰플·세럼', '크림', '선크림'] as const
+const STEP_CHIPS = ['전체', '클렌징', '토너', '앰플·세럼·에센스', '크림·로션', '선크림'] as const
 const FUNC_CHIPS = ['전체', '미백', '탄력', '수분', '진정', '장벽'] as const
 
 const STEP_OPTIONS = ['클렌징', '토너', '앰플·세럼', '크림', '선크림', '기타'] as const
@@ -58,7 +58,12 @@ function displayPrice(p: ProductLite): number {
 }
 
 function stepMatchesTag(step: string, tagLower: string): boolean {
-  if (step === '앰플·세럼') return tagLower.includes('앰플') || tagLower.includes('세럼')
+  if (step === '앰플·세럼·에센스') {
+    return tagLower.includes('앰플') || tagLower.includes('세럼') || tagLower.includes('에센스')
+  }
+  if (step === '크림·로션') {
+    return tagLower.includes('크림') || tagLower.includes('로션')
+  }
   return tagLower.includes(step.toLowerCase())
 }
 
@@ -78,39 +83,46 @@ function rowMatchesFilters(
     const prod = p as any
     const stepTags = prod?.step_tags || []
     const funcTags = prod?.func_tags || []
-    const normalize = (s: string) =>
-      s.replace(/[\s·・•]/g, '').toLowerCase()
 
     if (stepF !== '전체') {
-      const stepMap: Record<string, string> = {
-        클렌징: '클렌징',
-        토너: '토너',
-        '앰플·세럼': '앰플·세럼',
-        크림: '크림',
-        선크림: '선케어',
+      const stepKeywords: Record<string, string[]> = {
+        클렌징: ['클렌징', '클렌저', '폼클', '오일클렌', '클렌밤'],
+        토너: ['토너', '스킨', '토닉', '미스트'],
+        '앰플·세럼·에센스': ['앰플', '세럼', '에센스', '부스터', '컨센트레이트'],
+        '크림·로션': ['크림', '로션', '에멀전', '모이스처'],
+        선크림: ['선크림', '선스틱', '선젤', '썬', 'spf'],
+        '마스크·팩': ['마스크', '팩', '시트'],
+        바디케어: ['바디', '입욕', '솔트', '마사지오일'],
+        헤어케어: ['헤어', '샴푸', '트리트먼트'],
       }
-      const matched = stepTags.some(
-        (t: string) =>
-          normalize(t) === normalize(stepF) ||
-          normalize(t) === normalize(stepMap[stepF] || '')
+      const stepF_keywords = stepKeywords[stepF] || [stepF]
+      const matched = stepTags.some((t: string) =>
+        stepF_keywords.some(k =>
+          t.replace(/[·・•\s]/g, '').toLowerCase()
+            .includes(k.replace(/[·・•\s]/g, '').toLowerCase())
+        )
       )
       if (!matched) return false
     }
 
     if (funcF !== '전체') {
-      const funcMap: Record<string, string> = {
-        미백: '미백·톤업',
-        탄력: '탄력·주름',
-        수분: '보습·수분',
-        진정: '진정·민감',
-        장벽: '장벽·재생',
+      const funcKeywords: Record<string, string[]> = {
+        미백: ['미백', '톤업', '브라이트', '화이트'],
+        탄력: ['탄력', '주름', '리프팅', '콜라겐', '안티에이징'],
+        수분: ['수분', '보습', '하이드', '촉촉'],
+        진정: ['진정', '민감', '예민', '수딩', '칼밍'],
+        장벽: ['장벽', '재생', '리페어', '배리어', '세라마이드'],
+        모공: ['모공', '피지', '블랙헤드'],
+        아로마: ['아로마', '릴렉스', '에센셜'],
       }
-      const matched = funcTags.some(
-        (t: string) =>
-          normalize(t) === normalize(funcF) ||
-          normalize(t) === normalize(funcMap[funcF] || '')
+      const funcF_keywords = funcKeywords[funcF] || [funcF]
+      const funcMatched = funcTags.some((t: string) =>
+        funcF_keywords.some(k =>
+          t.replace(/[·・•\s]/g, '').toLowerCase()
+            .includes(k.replace(/[·・•\s]/g, '').toLowerCase())
+        )
       )
-      if (!matched) return false
+      if (!funcMatched) return false
     }
 
     return true
