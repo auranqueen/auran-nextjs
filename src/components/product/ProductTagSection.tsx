@@ -178,7 +178,7 @@ export default function ProductTagSection({
       .from('admin_settings')
       .select('key, value')
       .eq('category', 'weather_message')
-      .then(({ data }) => {
+      .then(({ data }: { data: any }) => {
         if (!data) return
         const map: Record<string, string> = {}
         data.forEach((row: any) => {
