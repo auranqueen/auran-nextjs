@@ -167,8 +167,33 @@ export default function CustomerHomePage() {
   const routineMoreRef = useRef<HTMLDivElement | null>(null)
 
   const [mounted, setMounted] = useState(false)
+  const [hormonePhase, setHormonePhase] = useState<string>('')
   useEffect(() => {
     setMounted(true)
+    void (async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+      const { data: hc } = await supabase
+        .from('hormone_cycles')
+        .select('track, cycle_start_date, cycle_length')
+        .eq('user_id', session.user.id)
+        .maybeSingle()
+      if (!hc) return
+      const today = new Date()
+      const start = new Date((hc as any).cycle_start_date)
+      const diff = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
+      const len = (hc as any).cycle_length || 28
+      const day = ((diff - 1) % len) + 1
+      const track = (hc as any).track || ''
+      let phase = ''
+      if (track === 'menopause_peri' || track === 'menopause_post') phase = '갱년기'
+      else if (track === 'male' || track === 'male_menopause') phase = '남성'
+      else if (day <= 5) phase = '달빛기'
+      else if (day <= 13) phase = '황금기'
+      else if (day <= 16) phase = '만개기'
+      else phase = '물들기'
+      setHormonePhase(phase)
+    })()
   }, [])
 
   const [userName, setUserName] = useState('')
@@ -1878,6 +1903,7 @@ export default function CustomerHomePage() {
         month={new Date().getMonth() + 1}
         showEditChrome={showHomeEditChrome}
         supabaseClient={supabase}
+        hormonePhase={hormonePhase}
       />
 
       <div ref={routineMoreRef} id="home-routine-more" style={{ padding: routineExpanded ? '12px 16px 0' : '0 16px', marginTop: routineExpanded ? 4 : 0 }}>
@@ -2173,66 +2199,6 @@ export default function CustomerHomePage() {
             </div>
           </div>
         ) : null}
-      </div>
-
-      {/* ── 피부 고민별 ── */}
-      <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>피부 고민별 솔루션</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 ›</span>
-        </div>
-        {categoryBanners.length > 0 ? (
-          <div
-            onClick={() => {
-              const b = categoryBanners[selectedConcern % categoryBanners.length]
-              if (b?.banner_link) router.push(String(b.banner_link))
-            }}
-            style={{
-              marginBottom: 10,
-              borderRadius: 14,
-              overflow: 'hidden',
-              border: '1px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.03)',
-              cursor: categoryBanners[selectedConcern % categoryBanners.length]?.banner_link ? 'pointer' : 'default',
-            }}
-          >
-            {categoryBanners[selectedConcern % categoryBanners.length]?.banner_image_url ? (
-              <img
-                src={String(categoryBanners[selectedConcern % categoryBanners.length].banner_image_url)}
-                alt=""
-                style={{ width: '100%', height: 98, objectFit: 'cover' }}
-              />
-            ) : null}
-            {categoryBanners[selectedConcern % categoryBanners.length]?.banner_text ? (
-              <div style={{ padding: '9px 10px', fontSize: 12, color: '#fff' }}>
-                {String(categoryBanners[selectedConcern % categoryBanners.length].banner_text)}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
-        {loading ? Array.from({ length: 7 }).map((_, i) => (
-          <div key={i} style={{ minWidth: '58px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, height: '200px', animation: 'pulse 1.2s ease-in-out infinite', flexShrink: 0 }} />
-        )) : concernList.map((c: any, i: number) => (
-          <div
-            key={i}
-            onClick={() => setSelectedConcern(i)}
-            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', minWidth: '58px', cursor: 'pointer' }}
-          >
-            <div style={{
-              width: '52px', height: '52px', borderRadius: '16px',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '22px', flexShrink: 0,
-              background: i === selectedConcern ? 'rgba(201,169,110,0.12)' : CARD_BG,
-              border: i === selectedConcern ? '1px solid rgba(201,169,110,0.3)' : CARD_BORDER,
-            }}>{c.icon || '💧'}</div>
-            <span style={{
-              fontSize: '9px', fontWeight: 300, textAlign: 'center', whiteSpace: 'nowrap',
-              color: i === selectedConcern ? GOLD : TEXT_MUTED,
-            }}>{c.name}</span>
-          </div>
-        ))}
       </div>
 
       {/* ── BEST 랭킹 ── */}

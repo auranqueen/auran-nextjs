@@ -48,6 +48,7 @@ export type SeasonRecommendSectionProps = {
   month: number
   showEditChrome: boolean
   supabaseClient: SupabaseClient
+  hormonePhase?: string
 }
 
 function displayPrice(p: ProductLite): number {
@@ -134,7 +135,12 @@ function rowMatchesFilters(
   return true
 }
 
-export default function SeasonRecommendSection({ month, showEditChrome, supabaseClient }: SeasonRecommendSectionProps) {
+export default function SeasonRecommendSection({
+  month,
+  showEditChrome,
+  supabaseClient,
+  hormonePhase,
+}: SeasonRecommendSectionProps) {
   const router = useRouter()
   const [rows, setRows] = useState<MappingRow[]>([])
   const [isAuto, setIsAuto] = useState(false)
@@ -151,6 +157,7 @@ export default function SeasonRecommendSection({ month, showEditChrome, supabase
   const [formStep, setFormStep] = useState<string>(STEP_OPTIONS[0])
   const [formFunc, setFormFunc] = useState<string>(FUNC_OPTIONS[0])
   const [saving, setSaving] = useState(false)
+  const [activeTab, setActiveTab] = useState<'pick' | 'step' | 'func'>('pick')
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -240,8 +247,15 @@ export default function SeasonRecommendSection({ month, showEditChrome, supabase
   }, [searchQ, supabaseClient])
 
   const filtered = useMemo(() => {
-    return rows.filter(r => rowMatchesFilters(r, stepFilter, funcFilter, isAuto))
-  }, [rows, stepFilter, funcFilter, isAuto])
+    if (activeTab === 'pick') {
+      if (isAuto) return []
+      return rows.filter(r => rowMatchesFilters(r, '전체', '전체', false))
+    }
+    if (activeTab === 'step') {
+      return rows.filter(r => rowMatchesFilters(r, stepFilter, '전체', isAuto))
+    }
+    return rows.filter(r => rowMatchesFilters(r, '전체', funcFilter, isAuto))
+  }, [rows, stepFilter, funcFilter, isAuto, activeTab, hormonePhase])
 
   const openAdd = () => {
     setEditingId(null)
@@ -319,25 +333,10 @@ export default function SeasonRecommendSection({ month, showEditChrome, supabase
     await fetchData()
   }
 
-  const chipScroll = (children: React.ReactNode) => (
-    <div
-      style={{
-        display: 'flex',
-        gap: 8,
-        overflowX: 'auto',
-        paddingBottom: 6,
-        WebkitOverflowScrolling: 'touch',
-        scrollbarWidth: 'none',
-      }}
-    >
-      {children}
-    </div>
-  )
-
   return (
     <div style={{ marginTop: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
-        <div style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.92)' }}>이달의 시즌 추천</div>
+        <div style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.92)' }}>오랜 픽 💜</div>
         {showEditChrome ? (
           <button
             type="button"
@@ -358,63 +357,126 @@ export default function SeasonRecommendSection({ month, showEditChrome, supabase
         ) : null}
       </div>
 
+      <div
+        style={{
+          display: 'flex',
+          gap: 0,
+          margin: '10px 0 12px',
+          background: '#1a1a20',
+          borderRadius: 11,
+          padding: 3,
+        }}
+      >
+        {([
+          { key: 'pick', label: '원장 픽' },
+          { key: 'step', label: '단계별' },
+          { key: 'func', label: '고민별' },
+        ] as const).map(t => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setActiveTab(t.key)}
+            style={{
+              flex: 1,
+              padding: '7px',
+              borderRadius: 8,
+              fontSize: 11,
+              cursor: 'pointer',
+              border: 'none',
+              fontFamily: 'inherit',
+              fontWeight: activeTab === t.key ? 500 : 400,
+              background: activeTab === t.key ? '#7B5EA7' : 'transparent',
+              color: activeTab === t.key ? '#fff' : '#555',
+              transition: 'all 0.2s',
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       {isAuto ? (
         <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)', marginBottom: 8 }}>판매량·평점 기준 자동 추천이에요</div>
       ) : null}
 
-      <div style={{ marginBottom: 8 }}>
-        {chipScroll(
-          <>
-            {STEP_CHIPS.map(s => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setStepFilter(s)}
-                style={{
-                  flexShrink: 0,
-                  padding: '6px 12px',
-                  borderRadius: 999,
-                  border: stepFilter === s ? '1px solid rgba(123,108,192,0.6)' : '1px solid rgba(255,255,255,0.1)',
-                  background: stepFilter === s ? 'rgba(123,108,192,0.2)' : 'rgba(255,255,255,0.04)',
-                  color: stepFilter === s ? '#e0d8ff' : 'rgba(255,255,255,0.55)',
-                  fontSize: 11,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                {s}
-              </button>
-            ))}
-          </>
-        )}
-      </div>
-
-      <div style={{ marginBottom: 12 }}>
-        {chipScroll(
-          <>
-            {FUNC_CHIPS.map(s => (
-              <button
-                key={s}
-                type="button"
-                onClick={() => setFuncFilter(s)}
-                style={{
-                  flexShrink: 0,
-                  padding: '6px 12px',
-                  borderRadius: 999,
-                  border: funcFilter === s ? '1px solid rgba(90,219,138,0.45)' : '1px solid rgba(255,255,255,0.1)',
-                  background: funcFilter === s ? 'rgba(90,219,138,0.12)' : 'rgba(255,255,255,0.04)',
-                  color: funcFilter === s ? '#b8f0cf' : 'rgba(255,255,255,0.55)',
-                  fontSize: 11,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                }}
-              >
-                {s}
-              </button>
-            ))}
-          </>
-        )}
-      </div>
+      {activeTab === 'pick' && (
+        <div
+          style={{
+            fontSize: 11,
+            color: 'rgba(255,255,255,0.3)',
+            marginBottom: 10,
+            paddingLeft: 2,
+          }}
+        >
+          원장님이 직접 고른 제품이에요 💜
+        </div>
+      )}
+      {activeTab === 'step' && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 5,
+            overflowX: 'auto',
+            scrollbarWidth: 'none',
+            marginBottom: 10,
+          }}
+        >
+          {STEP_CHIPS.map(s => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setStepFilter(s)}
+              style={{
+                padding: '5px 12px',
+                borderRadius: 14,
+                fontSize: 11,
+                cursor: 'pointer',
+                border: stepFilter === s ? '1px solid #4a3878' : '0.5px solid #2a2a36',
+                fontFamily: 'inherit',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                background: stepFilter === s ? '#2a2040' : '#1e1e26',
+                color: stepFilter === s ? '#9b7de8' : '#555',
+              }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+      {activeTab === 'func' && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 5,
+            overflowX: 'auto',
+            scrollbarWidth: 'none',
+            marginBottom: 10,
+          }}
+        >
+          {FUNC_CHIPS.map(s => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setFuncFilter(s)}
+              style={{
+                padding: '5px 12px',
+                borderRadius: 14,
+                fontSize: 11,
+                cursor: 'pointer',
+                border: funcFilter === s ? '1px solid rgba(90,219,138,0.4)' : '0.5px solid #2a2a36',
+                fontFamily: 'inherit',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                background: funcFilter === s ? '#1a2818' : '#1e1e26',
+                color: funcFilter === s ? '#5adb8a' : '#555',
+              }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', padding: '20px 0' }}>불러오는 중…</div>
@@ -554,7 +616,11 @@ export default function SeasonRecommendSection({ month, showEditChrome, supabase
           fontFamily: 'inherit',
         }}
       >
-        이달 추천 전체보기 →
+        {activeTab === 'pick'
+          ? '원장 픽 전체보기 →'
+          : activeTab === 'step'
+            ? '단계별 전체보기 →'
+            : '고민별 전체보기 →'}
       </button>
 
       {showEditChrome && formOpen ? (
