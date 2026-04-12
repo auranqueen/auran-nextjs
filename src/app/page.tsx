@@ -414,9 +414,9 @@ export default function CustomerHomePage() {
         })
       } catch { /* 테이블 없음 등 */ }
       const selFull =
-        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive'
+        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive, step_tags'
       const selNoCat =
-        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive'
+        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive, step_tags'
       let res: { error: unknown; data: any[] | null } = await supabase.from('products').select(selFull).eq('is_active', true).limit(80)
       console.log('products fetch 1:', res.error, res.data?.length)
       if (res.error) {
@@ -1842,7 +1842,7 @@ export default function CustomerHomePage() {
               </div>
               <div style={{ padding: '8px 10px' }}>
                 <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.38)', marginBottom: 2 }}>
-                  {catName || p.tag || '맞춤'}
+                  {(p as any).step_tags?.[0] || catName || p.tag || ''}
                 </div>
                 {null}
                 <div style={{ fontSize: 12, color: '#fff', lineHeight: 1.4, marginBottom: 4, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', textOverflow: 'ellipsis' }}>{p.name}</div>
