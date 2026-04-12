@@ -6,6 +6,8 @@ export interface ProductTagSectionProps {
   product: any
   weather?: any
   hormonePhase?: string
+  supabaseClient?: any
+  isSuperAdmin?: boolean
 }
 
 const PHASE_OPTIONS = ['달빛기', '황금기', '만개기', '물들기', '갱년기', '남성'] as const
@@ -154,14 +156,37 @@ function AccordionShell({
   )
 }
 
-export default function ProductTagSection({ product, weather, hormonePhase }: ProductTagSectionProps) {
+export default function ProductTagSection({
+  product,
+  weather,
+  hormonePhase,
+  supabaseClient,
+  isSuperAdmin,
+}: ProductTagSectionProps) {
   const [matchOpen, setMatchOpen] = useState(false)
   const [selectedPhase, setSelectedPhase] = useState(hormonePhase || '')
   const [accOpen, setAccOpen] = useState<Record<string, boolean>>({})
+  const [weatherMessages, setWeatherMessages] = useState<Record<string, string>>({})
 
   useEffect(() => {
     if (hormonePhase) setSelectedPhase(hormonePhase)
   }, [hormonePhase])
+
+  useEffect(() => {
+    if (!supabaseClient) return
+    void supabaseClient
+      .from('admin_settings')
+      .select('key, value')
+      .eq('category', 'weather_message')
+      .then(({ data }) => {
+        if (!data) return
+        const map: Record<string, string> = {}
+        data.forEach((row: any) => {
+          map[row.key] = row.value
+        })
+        setWeatherMessages(map)
+      })
+  }, [supabaseClient])
 
   const hormoneTags = product?.hormone_tags as string[] | undefined
   const funcTags = product?.func_tags as string[] | undefined
@@ -179,6 +204,36 @@ export default function ProductTagSection({ product, weather, hormonePhase }: Pr
     (ingredientTags?.length ?? 0) > 0
 
   if (!hasAnyBlock) return null
+
+  const getWeatherMsg = () => {
+    if (!weather) return null
+    const uv = weather.uv?.level || ''
+    const dust = weather.dust?.level || ''
+    const fineDust = weather.fineDust?.level || ''
+
+    const isDustBad =
+      dust === '나쁨' || dust === '매우나쁨' ||
+      fineDust === '나쁨' || fineDust === '매우나쁨'
+    const isDustVeryBad =
+      dust === '매우나쁨' || fineDust === '매우나쁨'
+
+    if (isDustVeryBad)
+      return weatherMessages.dust_very_bad ||
+        '황사·미세먼지 매우 나빠요. 외출 자제 + 귀가 후 즉시 세안해요 🌫'
+    if (isDustBad)
+      return weatherMessages.dust_bad ||
+        '미세먼지 많은 날은 귀가 후 이중세안이 필수예요 🌫'
+    if (uv === '매우높음' || uv === '위험')
+      return weatherMessages.uv_very_high ||
+        '자외선 매우 강해요. 선크림 2시간마다 덧바르기 필수예요 ☀️'
+    if (uv === '높음')
+      return weatherMessages.uv_high ||
+        '자외선 강한 날이에요. 외출 전 선크림 꼭 챙기세요 ☀️'
+    return weatherMessages.uv_normal ||
+      '실내에서도 선크림은 필수예요. 가벼운 선크림 하나면 충분해요 ☀️'
+  }
+
+  const weatherMsgLine = getWeatherMsg()
 
   const hormoneMatch = tagMatchesPhase(hormoneTags, selectedPhase)
   const showMatchBlock = (hormoneTags?.length ?? 0) > 0
@@ -317,6 +372,11 @@ export default function ProductTagSection({ product, weather, hormonePhase }: Pr
               <span style={{ color: '#666' }}> ({String(weather.fineDust?.level ?? weather.dust?.level)})</span>
             ) : null}
           </div>
+          {weatherMsgLine ? (
+            <div style={{ fontSize: 13, color: '#ccc', lineHeight: 1.55, marginBottom: 10 }}>
+              {weatherMsgLine}
+            </div>
+          ) : null}
           <div
             style={{
               padding: '12px 12px',
@@ -347,6 +407,81 @@ export default function ProductTagSection({ product, weather, hormonePhase }: Pr
               </div>
             </div>
           ) : null}
+          {isSuperAdmin && (
+            <div
+              style={{
+                marginTop: 10,
+                padding: '8px 10px',
+                background: 'rgba(123,94,167,0.08)',
+                borderRadius: 8,
+                border: '0.5px dashed rgba(123,94,167,0.4)',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  color: 'rgba(196,168,255,0.5)',
+                  marginBottom: 6,
+                }}
+              >
+                날씨 문구 수정 (슈퍼어드민)
+              </div>
+              {[
+                { key: 'uv_very_high', label: '자외선 매우높음' },
+                { key: 'uv_high', label: '자외선 높음' },
+                { key: 'uv_normal', label: '자외선 보통·낮음' },
+                { key: 'dust_very_bad', label: '미세먼지 매우나쁨' },
+                { key: 'dust_bad', label: '미세먼지 나쁨' },
+                { key: 'dry', label: '건조한날' },
+                { key: 'normal', label: '날씨 보통' },
+              ].map(({ key, label }) => (
+                <div key={key} style={{ marginBottom: 8 }}>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      color: 'rgba(255,255,255,0.35)',
+                      marginBottom: 3,
+                    }}
+                  >
+                    {label}
+                  </div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <input
+                      type="text"
+                      defaultValue={weatherMessages[key] || ''}
+                      onBlur={async (e) => {
+                        const val = e.target.value.trim()
+                        if (!val) return
+                        await supabaseClient
+                          ?.from('admin_settings')
+                          .upsert(
+                            {
+                              category: 'weather_message',
+                              key,
+                              value: val,
+                              label,
+                            },
+                            { onConflict: 'category,key' }
+                          )
+                        setWeatherMessages((prev: Record<string, string>) => ({ ...prev, [key]: val }))
+                      }}
+                      style={{
+                        flex: 1,
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '0.5px solid rgba(255,255,255,0.1)',
+                        borderRadius: 7,
+                        padding: '5px 8px',
+                        fontSize: 11,
+                        color: '#ccc',
+                        fontFamily: 'inherit',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </AccordionShell>
       ) : null}
 

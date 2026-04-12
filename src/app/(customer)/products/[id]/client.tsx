@@ -1107,6 +1107,8 @@ weather_tags: 자외선높음|자외선매우높음|미세먼지나쁨|건조한
           product={product}
           weather={weather}
           hormonePhase={hormonePhase}
+          supabaseClient={supabase}
+          isSuperAdmin={isSuperAdmin}
         />
         {maleMeno ? (
           <div style={{ alignSelf: 'flex-start', marginBottom: 6, display: 'inline-block', background: 'rgba(123,94,167,0.2)', border: '1px solid rgba(123,94,167,0.4)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: '#e8d9ff' }}>
