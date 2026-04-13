@@ -941,6 +941,7 @@ export default function SeasonRecommendSection({
                         product_id: p.id,
                         step_tag: st,
                         func_tag: ft,
+                        concern_tag: '',
                         priority: maxPriority + 1,
                         is_active: true,
                       })
