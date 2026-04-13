@@ -167,6 +167,9 @@ export default function SeasonRecommendSection({
     }>
   >([])
   const [activeIssue, setActiveIssue] = useState<string>('전체')
+  const [addProdOpen, setAddProdOpen] = useState(false)
+  const [addProdSearch, setAddProdSearch] = useState('')
+  const [addProdResults, setAddProdResults] = useState<any[]>([])
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -299,16 +302,6 @@ export default function SeasonRecommendSection({
     return rows.filter(r => rowMatchesFilters(r, '전체', funcFilter, isAuto))
   }, [rows, stepFilter, funcFilter, isAuto, activeTab, hormonePhase, issueButtons, activeIssue])
 
-  const openAdd = () => {
-    setEditingId(null)
-    setPickProduct(null)
-    setFormStep(STEP_OPTIONS[0])
-    setFormFunc(FUNC_OPTIONS[0])
-    setSearchQ('')
-    setSearchResults([])
-    setFormOpen(true)
-  }
-
   const openEdit = (row: MappingRow) => {
     if (row.id.startsWith('auto-')) return
     setEditingId(row.id)
@@ -379,10 +372,10 @@ export default function SeasonRecommendSection({
     <div style={{ marginTop: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
         <div style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.92)' }}>오랜 픽 💜</div>
-        {showEditChrome ? (
+        {showEditChrome && activeTab === 'pick' ? (
           <button
             type="button"
-            onClick={openAdd}
+            onClick={() => setAddProdOpen(v => !v)}
             style={{
               fontSize: 11,
               padding: '4px 10px',
@@ -394,7 +387,7 @@ export default function SeasonRecommendSection({
               fontFamily: 'inherit',
             }}
           >
-            + 제품 추가
+            {addProdOpen ? '닫기' : '+ 제품 추가'}
           </button>
         ) : null}
       </div>
@@ -453,6 +446,146 @@ export default function SeasonRecommendSection({
           >
             원장님이 직접 고른 제품이에요 💜
           </div>
+          {showEditChrome && activeTab === 'pick' && addProdOpen ? (
+            <div
+              style={{
+                margin: '0 0 10px',
+                padding: '10px',
+                background: 'rgba(123,94,167,0.08)',
+                borderRadius: 10,
+                border: '0.5px solid rgba(123,94,167,0.3)',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  color: 'rgba(196,168,255,0.5)',
+                  marginBottom: 8,
+                }}
+              >
+                제품 검색 후 선택하면 원장 픽에 추가돼요
+              </div>
+              <input
+                type="text"
+                value={addProdSearch}
+                onChange={async e => {
+                  const q = e.target.value
+                  setAddProdSearch(q)
+                  if (q.length < 1) {
+                    setAddProdResults([])
+                    return
+                  }
+                  const { data } = await supabaseClient
+                    .from('products')
+                    .select('id, name, step_tags, func_tags, storage_thumb_url')
+                    .eq('is_active', true)
+                    .ilike('name', `%${q}%`)
+                    .limit(8)
+                  setAddProdResults(data || [])
+                }}
+                placeholder="제품명 검색..."
+                style={{
+                  width: '100%',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '0.5px solid rgba(255,255,255,0.1)',
+                  borderRadius: 8,
+                  padding: '7px 10px',
+                  fontSize: 12,
+                  color: '#ccc',
+                  fontFamily: 'inherit',
+                  outline: 'none',
+                  marginBottom: 8,
+                }}
+              />
+              {addProdResults.map(p => (
+                <div
+                  key={p.id}
+                  onClick={async () => {
+                    const maxPriority = rows.length
+                    await supabaseClient.from('season_product_mapping').insert({
+                      month,
+                      product_id: p.id,
+                      concern_tag: '',
+                      step_tag: p.step_tags?.[0] || '',
+                      func_tag: p.func_tags?.[0] || '',
+                      priority: maxPriority,
+                      is_active: true,
+                    })
+                    setAddProdSearch('')
+                    setAddProdResults([])
+                    setAddProdOpen(false)
+                    void fetchData()
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '7px 8px',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    background: 'rgba(255,255,255,0.03)',
+                    marginBottom: 4,
+                    border: '0.5px solid rgba(255,255,255,0.06)',
+                  }}
+                >
+                  {p.storage_thumb_url ? (
+                    <img
+                      src={p.storage_thumb_url}
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 6,
+                        objectFit: 'cover',
+                        flexShrink: 0,
+                      }}
+                      alt=""
+                    />
+                  ) : null}
+                  <div style={{ flex: 1 }}>
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: '#ccc',
+                        marginBottom: 2,
+                      }}
+                    >
+                      {p.name}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 9,
+                        color: 'rgba(255,255,255,0.3)',
+                      }}
+                    >
+                      {p.step_tags?.[0] || ''}
+                      {p.func_tags?.[0] ? ' · ' + p.func_tags[0] : ''}
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      color: '#7B5EA7',
+                      flexShrink: 0,
+                    }}
+                  >
+                    + 추가
+                  </span>
+                </div>
+              ))}
+              {addProdSearch.length > 0 && addProdResults.length === 0 ? (
+                <div
+                  style={{
+                    fontSize: 11,
+                    color: '#555',
+                    textAlign: 'center',
+                    padding: '10px 0',
+                  }}
+                >
+                  검색 결과가 없어요
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           {issueButtons.length > 0 && (
             <div
               style={{
@@ -506,84 +639,143 @@ export default function SeasonRecommendSection({
             </div>
           )}
           {showEditChrome ? (
-            <div
-              style={{
-                marginBottom: 8,
-                padding: '8px 10px',
-                background: 'rgba(123,94,167,0.08)',
-                borderRadius: 8,
-                border: '0.5px dashed rgba(123,94,167,0.3)',
-              }}
-            >
+            <>
               <div
                 style={{
-                  fontSize: 10,
-                  color: 'rgba(196,168,255,0.5)',
-                  marginBottom: 6,
+                  marginBottom: 8,
+                  padding: '8px 10px',
+                  background: 'rgba(123,94,167,0.08)',
+                  borderRadius: 8,
+                  border: '0.5px dashed rgba(123,94,167,0.3)',
                 }}
               >
-                이슈 버튼 관리 (슈퍼어드민)
-              </div>
-              {issueButtons.map((ib, idx) => (
                 <div
-                  key={ib.key}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    marginBottom: 5,
+                    fontSize: 10,
+                    color: 'rgba(196,168,255,0.5)',
+                    marginBottom: 6,
                   }}
                 >
-                  <input
-                    type="text"
-                    defaultValue={ib.label}
-                    onBlur={async e => {
-                      const val = e.target.value.trim()
-                      if (!val) return
-                      const newVal = JSON.stringify({
-                        ...ib,
-                        label: val,
-                      })
-                      await supabaseClient
-                        .from('admin_settings')
-                        .update({ value: newVal })
-                        .eq('category', 'monthly_issue')
-                        .eq('key', ib.key)
-                      setIssueButtons(prev => prev.map((b, i) => (i === idx ? { ...b, label: val } : b)))
-                    }}
+                  이슈 버튼 관리 (슈퍼어드민)
+                </div>
+                {issueButtons.map((ib, idx) => (
+                  <div
+                    key={ib.key}
                     style={{
-                      flex: 1,
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '0.5px solid rgba(255,255,255,0.1)',
-                      borderRadius: 7,
-                      padding: '4px 8px',
-                      fontSize: 11,
-                      color: '#ccc',
-                      fontFamily: 'inherit',
-                      outline: 'none',
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await supabaseClient.from('admin_settings').delete().eq('category', 'monthly_issue').eq('key', ib.key)
-                      setIssueButtons(prev => prev.filter((_, i) => i !== idx))
-                    }}
-                    style={{
-                      fontSize: 11,
-                      color: '#e87b4a',
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      flexShrink: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      marginBottom: 5,
                     }}
                   >
-                    삭제
-                  </button>
-                </div>
-              ))}
-            </div>
+                    <input
+                      type="text"
+                      defaultValue={ib.label}
+                      onBlur={async e => {
+                        const val = e.target.value.trim()
+                        if (!val) return
+                        const newVal = JSON.stringify({
+                          ...ib,
+                          label: val,
+                        })
+                        await supabaseClient
+                          .from('admin_settings')
+                          .update({ value: newVal })
+                          .eq('category', 'monthly_issue')
+                          .eq('key', ib.key)
+                        setIssueButtons(prev => prev.map((b, i) => (i === idx ? { ...b, label: val } : b)))
+                      }}
+                      style={{
+                        flex: 1,
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '0.5px solid rgba(255,255,255,0.1)',
+                        borderRadius: 7,
+                        padding: '4px 8px',
+                        fontSize: 11,
+                        color: '#ccc',
+                        fontFamily: 'inherit',
+                        outline: 'none',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await supabaseClient.from('admin_settings').delete().eq('category', 'monthly_issue').eq('key', ib.key)
+                        setIssueButtons(prev => prev.filter((_, i) => i !== idx))
+                      }}
+                      style={{
+                        fontSize: 11,
+                        color: '#e87b4a',
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        flexShrink: 0,
+                      }}
+                    >
+                      삭제
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div
+                style={{
+                  display: 'flex',
+                  gap: 6,
+                  marginTop: 6,
+                }}
+              >
+                <input
+                  type="text"
+                  placeholder="이슈 버튼 추가 (예: 🌸 봄 환절기)"
+                  id="newIssueLabel"
+                  style={{
+                    flex: 1,
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '0.5px solid rgba(255,255,255,0.1)',
+                    borderRadius: 7,
+                    padding: '6px 8px',
+                    fontSize: 11,
+                    color: '#ccc',
+                    fontFamily: 'inherit',
+                    outline: 'none',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const input = document.getElementById('newIssueLabel') as HTMLInputElement
+                    const val = input?.value.trim()
+                    if (!val) return
+                    const newKey = `${month}_${Date.now()}`
+                    const newVal = JSON.stringify({
+                      label: val,
+                    })
+                    await supabaseClient.from('admin_settings').insert({
+                      category: 'monthly_issue',
+                      key: newKey,
+                      value: newVal,
+                      label: val,
+                    })
+                    setIssueButtons(prev => [...prev, { key: newKey, label: val }])
+                    if (input) input.value = ''
+                  }}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 7,
+                    fontSize: 11,
+                    cursor: 'pointer',
+                    border: '1px solid rgba(123,94,167,0.4)',
+                    background: '#2a1a3e',
+                    color: '#c4a8ff',
+                    fontFamily: 'inherit',
+                    flexShrink: 0,
+                  }}
+                >
+                  + 추가
+                </button>
+              </div>
+            </>
           ) : null}
         </>
       )}
@@ -782,9 +974,9 @@ export default function SeasonRecommendSection({
           if (activeTab === 'pick') {
             router.push('/products?pick=true')
           } else if (activeTab === 'step') {
-            router.push(`/products?step=${stepFilter}`)
+            router.push(`/products?step=${encodeURIComponent(stepFilter)}`)
           } else {
-            router.push(`/products?func=${funcFilter}`)
+            router.push(`/products?func=${encodeURIComponent(funcFilter)}`)
           }
         }}
         style={{
