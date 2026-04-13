@@ -436,131 +436,6 @@ export default function SeasonRecommendSection({
         ))}
       </div>
 
-      {addProdOpen ? (
-        <div
-          style={{
-            margin: '0 0 10px',
-            padding: '10px',
-            background: 'rgba(123,94,167,0.08)',
-            borderRadius: 10,
-            border: '0.5px solid rgba(123,94,167,0.3)',
-          }}
-        >
-          <div style={{ fontSize: 10, color: 'rgba(196,168,255,0.5)', marginBottom: 4 }}>제품 검색 (2글자 이상)</div>
-          <input
-            type="text"
-            value={addProdSearch}
-            onChange={async e => {
-              const q = e.target.value
-              setAddProdSearch(q)
-              if (q.trim().length < 2) {
-                setAddProdResults([])
-                setAddProdSearchLoading(false)
-                return
-              }
-              setAddProdSearchLoading(true)
-              const { data } = await supabaseClient
-                .from('products')
-                .select('id, name, step_tags, func_tags, storage_thumb_url, thumb_img')
-                .eq('is_active', true)
-                .ilike('name', `%${q.trim().slice(0, 80)}%`)
-                .limit(8)
-              setAddProdResults(data || [])
-              setAddProdSearchLoading(false)
-            }}
-            placeholder="제품명"
-            style={{
-              width: '100%',
-              boxSizing: 'border-box',
-              padding: '8px 10px',
-              borderRadius: 8,
-              border: '0.5px solid rgba(255,255,255,0.1)',
-              background: 'rgba(255,255,255,0.04)',
-              color: '#ccc',
-              fontSize: 12,
-              fontFamily: 'inherit',
-              marginBottom: 8,
-              outline: 'none',
-            }}
-          />
-          {addProdSearchLoading ? <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>검색 중…</div> : null}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 200, overflowY: 'auto' }}>
-            {addProdResults.map(p => {
-              const added = mappedProductIds.has(p.id)
-              const thumb = p.storage_thumb_url || p.thumb_img
-              return (
-                <div
-                  key={p.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: 6,
-                    borderRadius: 8,
-                    border: '1px solid rgba(123,108,192,0.2)',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 6,
-                      overflow: 'hidden',
-                      flexShrink: 0,
-                      background: 'rgba(123,108,192,0.1)',
-                    }}
-                  >
-                    {thumb ? <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 11, color: '#fff', fontWeight: 500 }}>{p.name}</div>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)' }}>{p.step_tags?.[0] || '—'}</div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (added) return
-                      const st = p.step_tags?.[0] || ''
-                      const ft = p.func_tags?.[0] || ''
-                      const { error } = await supabaseClient.from('season_product_mapping').insert({
-                        month,
-                        product_id: p.id,
-                        step_tag: st,
-                        func_tag: ft,
-                        priority: maxPriority + 1,
-                        is_active: true,
-                      })
-                      if (error) return
-                      setAddProdSearch('')
-                      setAddProdResults([])
-                      setAddProdOpen(false)
-                      void fetchData()
-                    }}
-                    disabled={added}
-                    style={{
-                      fontSize: 10,
-                      padding: '4px 8px',
-                      borderRadius: 6,
-                      border: '0.5px solid rgba(123,108,192,0.45)',
-                      background: added ? 'rgba(123,108,192,0.05)' : 'rgba(123,108,192,0.2)',
-                      color: added ? '#666' : '#c4b8f0',
-                      cursor: added ? 'default' : 'pointer',
-                      fontFamily: 'inherit',
-                      flexShrink: 0,
-                    }}
-                  >
-                    {added ? '추가됨' : '+ 추가'}
-                  </button>
-                </div>
-              )
-            })}
-          </div>
-          {addProdSearch.trim().length >= 2 && addProdResults.length === 0 && !addProdSearchLoading ? (
-            <div style={{ fontSize: 11, color: '#555', textAlign: 'center', padding: '10px 0' }}>검색 결과가 없어요</div>
-          ) : null}
-        </div>
-      ) : null}
-
       {isAuto ? (
         <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)', marginBottom: 8 }}>판매량·평점 기준 자동 추천이에요</div>
       ) : null}
@@ -840,6 +715,7 @@ export default function SeasonRecommendSection({
       {loading ? (
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', padding: '20px 0' }}>불러오는 중…</div>
       ) : (
+        <>
         <div
           style={{
             display: 'flex',
@@ -974,6 +850,131 @@ export default function SeasonRecommendSection({
             </div>
           ) : null}
         </div>
+      {addProdOpen ? (
+        <div
+          style={{
+            margin: '0 0 10px',
+            padding: '10px',
+            background: 'rgba(123,94,167,0.08)',
+            borderRadius: 10,
+            border: '0.5px solid rgba(123,94,167,0.3)',
+          }}
+        >
+          <div style={{ fontSize: 10, color: 'rgba(196,168,255,0.5)', marginBottom: 4 }}>제품 검색 (2글자 이상)</div>
+          <input
+            type="text"
+            value={addProdSearch}
+            onChange={async e => {
+              const q = e.target.value
+              setAddProdSearch(q)
+              if (q.trim().length < 2) {
+                setAddProdResults([])
+                setAddProdSearchLoading(false)
+                return
+              }
+              setAddProdSearchLoading(true)
+              const { data } = await supabaseClient
+                .from('products')
+                .select('id, name, step_tags, func_tags, storage_thumb_url, thumb_img')
+                .eq('is_active', true)
+                .ilike('name', `%${q.trim().slice(0, 80)}%`)
+                .limit(8)
+              setAddProdResults(data || [])
+              setAddProdSearchLoading(false)
+            }}
+            placeholder="제품명"
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              padding: '8px 10px',
+              borderRadius: 8,
+              border: '0.5px solid rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.04)',
+              color: '#ccc',
+              fontSize: 12,
+              fontFamily: 'inherit',
+              marginBottom: 8,
+              outline: 'none',
+            }}
+          />
+          {addProdSearchLoading ? <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>검색 중…</div> : null}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 200, overflowY: 'auto' }}>
+            {addProdResults.map(p => {
+              const added = mappedProductIds.has(p.id)
+              const thumb = p.storage_thumb_url || p.thumb_img
+              return (
+                <div
+                  key={p.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: 6,
+                    borderRadius: 8,
+                    border: '1px solid rgba(123,108,192,0.2)',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 6,
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                      background: 'rgba(123,108,192,0.1)',
+                    }}
+                  >
+                    {thumb ? <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, color: '#fff', fontWeight: 500 }}>{p.name}</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)' }}>{p.step_tags?.[0] || '—'}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (added) return
+                      const st = p.step_tags?.[0] || ''
+                      const ft = p.func_tags?.[0] || ''
+                      const { error } = await supabaseClient.from('season_product_mapping').insert({
+                        month,
+                        product_id: p.id,
+                        step_tag: st,
+                        func_tag: ft,
+                        priority: maxPriority + 1,
+                        is_active: true,
+                      })
+                      if (error) return
+                      setAddProdSearch('')
+                      setAddProdResults([])
+                      setAddProdOpen(false)
+                      void fetchData()
+                    }}
+                    disabled={added}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 8px',
+                      borderRadius: 6,
+                      border: '0.5px solid rgba(123,108,192,0.45)',
+                      background: added ? 'rgba(123,108,192,0.05)' : 'rgba(123,108,192,0.2)',
+                      color: added ? '#666' : '#c4b8f0',
+                      cursor: added ? 'default' : 'pointer',
+                      fontFamily: 'inherit',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {added ? '추가됨' : '+ 추가'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+          {addProdSearch.trim().length >= 2 && addProdResults.length === 0 && !addProdSearchLoading ? (
+            <div style={{ fontSize: 11, color: '#555', textAlign: 'center', padding: '10px 0' }}>검색 결과가 없어요</div>
+          ) : null}
+        </div>
+      ) : null}
+        </>
       )}
 
       {filtered.length === 0 && !loading ? (
