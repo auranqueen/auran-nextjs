@@ -436,7 +436,7 @@ export default function SeasonRecommendSection({
         ))}
       </div>
 
-      {showEditChrome && addProdOpen ? (
+      {addProdOpen ? (
         <div
           style={{
             margin: '0 0 10px',
@@ -952,6 +952,27 @@ export default function SeasonRecommendSection({
               </button>
             )
           })}
+          {showEditChrome ? (
+            <div
+              onClick={() => setAddProdOpen(true)}
+              style={{
+                flexShrink: 0,
+                width: 115,
+                minHeight: 140,
+                borderRadius: 13,
+                border: '1px dashed rgba(123,108,192,0.45)',
+                background: 'rgba(30,24,48,0.3)',
+                color: '#c4b8f0',
+                fontSize: 24,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              +
+            </div>
+          ) : null}
         </div>
       )}
 

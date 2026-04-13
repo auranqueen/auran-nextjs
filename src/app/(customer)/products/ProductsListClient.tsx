@@ -23,6 +23,9 @@ type Row = {
   func_tags?: string[] | null
   hormone_tags?: string[] | null
   brands?: { name?: string | null } | null
+  /** pick 목록 전용: season_product_mapping 행 id */
+  mapping_id?: string | null
+  season_priority?: number | null
 }
 
 function priceOf(p: Row) {
@@ -54,10 +57,17 @@ export default function ProductsListClient() {
   const [loading, setLoading] = useState(true)
   const [hormoneBadge, setHormoneBadge] = useState('')
   const [phaseFocus, setPhaseFocus] = useState({ phase: '', focus: '' })
+  const [showEditChrome, setShowEditChrome] = useState(false)
+  const [addProdOpen, setAddProdOpen] = useState(false)
+  const [addProdSearch, setAddProdSearch] = useState('')
+  const [addProdResults, setAddProdResults] = useState<any[]>([])
+  const [addProdSearchLoading, setAddProdSearchLoading] = useState(false)
 
   const step = sp.get('step') ? decodeURIComponent(sp.get('step')!) : ''
   const func = sp.get('func') ? decodeURIComponent(sp.get('func')!) : ''
   const pick = sp.get('pick') === 'true'
+
+  const currentMonth = useMemo(() => new Date().getMonth() + 1, [])
 
   const title = useMemo(() => {
     if (pick) return '원장 픽'
@@ -65,6 +75,21 @@ export default function ProductsListClient() {
     if (func) return '고민별'
     return '제품'
   }, [pick, step, func])
+
+  useEffect(() => {
+    void supabase.auth.getSession().then(({ data: { session } }) => {
+      const user = session?.user as { app_metadata?: { role?: string }; raw_app_meta_data?: { role?: string } } | undefined
+      const role = user?.app_metadata?.role ?? user?.raw_app_meta_data?.role ?? ''
+      setShowEditChrome(role === 'super_admin')
+    })
+  }, [supabase])
+
+  const maxSeasonPriority = useMemo(() => {
+    if (!rows.length) return 0
+    return Math.max(0, ...rows.map(r => r.season_priority ?? 0))
+  }, [rows])
+
+  const mappedPickIds = useMemo(() => new Set(pick ? rows.map(r => r.id) : []), [rows, pick])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -88,11 +113,18 @@ export default function ProductsListClient() {
     if (pick) {
       const { data: maps } = await supabase
         .from('season_product_mapping')
-        .select(`priority, products(${sel})`)
+        .select(`id, priority, products(${sel})`)
         .eq('month', month)
         .eq('is_active', true)
         .order('priority', { ascending: true })
-      list = (maps || []).map((m: any) => m.products).filter(Boolean) as Row[]
+      list = (maps || [])
+        .map((m: any) => {
+          const raw = m.products
+          const prod = (Array.isArray(raw) ? raw[0] : raw) as Row | null | undefined
+          if (!prod) return null
+          return { ...prod, mapping_id: m.id, season_priority: m.priority ?? 0 }
+        })
+        .filter(Boolean) as Row[]
     } else {
       const { data } = await supabase.from('products').select(sel).eq('is_active', true).eq('status', 'active').limit(200)
       list = (data as Row[]) || []
@@ -128,6 +160,15 @@ export default function ProductsListClient() {
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0], 'ko'))
   }, [rows])
 
+  const deletePickProduct = async (productId: string) => {
+    const { error } = await supabase
+      .from('season_product_mapping')
+      .update({ is_active: false })
+      .eq('product_id', productId)
+      .eq('month', currentMonth)
+    if (!error) void load()
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: BG, color: '#e8e8ec', paddingBottom: 32 }}>
       <header style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
@@ -136,10 +177,156 @@ export default function ProductsListClient() {
         {hormoneBadge ? <span style={{ fontSize: 11, padding: '4px 10px', borderRadius: 999, background: BADGE_BG, color: BADGE_FG }}>{hormoneBadge}</span> : null}
       </header>
 
+      {addProdOpen && pick && showEditChrome ? (
+        <div
+          style={{
+            margin: '0 0 10px',
+            padding: '10px 14px',
+            background: 'rgba(123,94,167,0.08)',
+            borderBottom: '0.5px solid rgba(123,94,167,0.3)',
+          }}
+        >
+          <div style={{ fontSize: 10, color: 'rgba(196,168,255,0.5)', marginBottom: 4 }}>제품 검색 (2글자 이상)</div>
+          <input
+            type="text"
+            value={addProdSearch}
+            onChange={async e => {
+              const q = e.target.value
+              setAddProdSearch(q)
+              if (q.trim().length < 2) {
+                setAddProdResults([])
+                setAddProdSearchLoading(false)
+                return
+              }
+              setAddProdSearchLoading(true)
+              const { data } = await supabase
+                .from('products')
+                .select('id, name, step_tags, func_tags, storage_thumb_url, thumb_img')
+                .eq('is_active', true)
+                .ilike('name', `%${q.trim().slice(0, 80)}%`)
+                .limit(8)
+              setAddProdResults(data || [])
+              setAddProdSearchLoading(false)
+            }}
+            placeholder="제품명"
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              padding: '8px 10px',
+              borderRadius: 8,
+              border: '0.5px solid rgba(255,255,255,0.1)',
+              background: 'rgba(255,255,255,0.04)',
+              color: '#ccc',
+              fontSize: 12,
+              fontFamily: 'inherit',
+              marginBottom: 8,
+              outline: 'none',
+            }}
+          />
+          {addProdSearchLoading ? <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>검색 중…</div> : null}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 200, overflowY: 'auto' }}>
+            {addProdResults.map(p => {
+              const added = mappedPickIds.has(p.id)
+              const thumb = p.storage_thumb_url || p.thumb_img
+              return (
+                <div
+                  key={p.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: 6,
+                    borderRadius: 8,
+                    border: '1px solid rgba(123,108,192,0.2)',
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 6,
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                      background: 'rgba(123,108,192,0.1)',
+                    }}
+                  >
+                    {thumb ? <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 11, color: '#fff', fontWeight: 500 }}>{p.name}</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)' }}>{p.step_tags?.[0] || '—'}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (added) return
+                      const st = p.step_tags?.[0] || ''
+                      const ft = p.func_tags?.[0] || ''
+                      const { error } = await supabase.from('season_product_mapping').insert({
+                        month: currentMonth,
+                        product_id: p.id,
+                        step_tag: st,
+                        func_tag: ft,
+                        priority: maxSeasonPriority + 1,
+                        is_active: true,
+                      })
+                      if (error) return
+                      setAddProdSearch('')
+                      setAddProdResults([])
+                      setAddProdOpen(false)
+                      void load()
+                    }}
+                    disabled={added}
+                    style={{
+                      fontSize: 10,
+                      padding: '4px 8px',
+                      borderRadius: 6,
+                      border: '0.5px solid rgba(123,108,192,0.45)',
+                      background: added ? 'rgba(123,108,192,0.05)' : 'rgba(123,108,192,0.2)',
+                      color: added ? '#666' : '#c4b8f0',
+                      cursor: added ? 'default' : 'pointer',
+                      fontFamily: 'inherit',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {added ? '추가됨' : '+ 추가'}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+          {addProdSearch.trim().length >= 2 && addProdResults.length === 0 && !addProdSearchLoading ? (
+            <div style={{ fontSize: 11, color: '#555', textAlign: 'center', padding: '10px 0' }}>검색 결과가 없어요</div>
+          ) : null}
+        </div>
+      ) : null}
+
       {loading ? (
         <div style={{ padding: 24, textAlign: 'center', color: '#666', fontSize: 13 }}>불러오는 중…</div>
       ) : grouped.length === 0 ? (
-        <div style={{ padding: 24, textAlign: 'center', color: '#666', fontSize: 13 }}>제품이 없어요</div>
+        <div style={{ padding: 24, textAlign: 'center', color: '#666', fontSize: 13 }}>
+          제품이 없어요
+          {pick && showEditChrome ? (
+            <div style={{ marginTop: 14 }}>
+              <button
+                type="button"
+                onClick={() => setAddProdOpen(true)}
+                style={{
+                  padding: '8px 14px',
+                  borderRadius: 10,
+                  border: '1px dashed rgba(123,108,192,0.45)',
+                  background: 'rgba(30,24,48,0.35)',
+                  color: '#c4b8f0',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                + 제품 추가
+              </button>
+            </div>
+          ) : null}
+        </div>
       ) : (
         grouped.map(([brandName, items]) => (
           <section key={brandName} style={{ marginTop: 18, paddingLeft: 14 }}>
@@ -155,36 +342,89 @@ export default function ProductsListClient() {
                     phaseFocus.focus.split('/').some(k => k.trim() && String(t).includes(k.trim()))
                   )
                 return (
-                  <Link
+                  <div
                     key={p.id}
-                    href={`/products/${p.id}`}
                     style={{
+                      position: 'relative',
                       width: 115,
                       flexShrink: 0,
-                      background: CARD,
-                      borderRadius: 12,
-                      padding: 8,
-                      textDecoration: 'none',
-                      color: 'inherit',
-                      border: '1px solid rgba(255,255,255,0.06)',
                     }}
                   >
-                    <div style={{ width: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.05)', marginBottom: 6 }}>
-                      {p.storage_thumb_url || p.thumb_img ? (
-                        <img src={p.storage_thumb_url || p.thumb_img || ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : null}
-                    </div>
-                    <div style={{ fontSize: 8, color: '#7b6cc0', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {p.step_tags?.[0] || '·'}
-                    </div>
-                    <div style={{ fontSize: 10, color: '#fff', lineHeight: 1.3, minHeight: 26, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{p.name}</div>
-                    <div style={{ fontSize: 11, color: '#c9a96e', marginTop: 4 }}>₩{priceOf(p).toLocaleString()}</div>
-                    <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.38)', marginTop: 4, lineHeight: 1.35 }}>
-                      {dramaticLine(p, phaseFocus.phase, phaseFocus.focus, hit)}
-                    </div>
-                  </Link>
+                    {pick && showEditChrome ? (
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.stopPropagation()
+                          void deletePickProduct(p.id)
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          zIndex: 2,
+                          fontSize: 9,
+                          padding: '2px 6px',
+                          borderRadius: 4,
+                          border: '1px solid rgba(220,80,80,0.45)',
+                          background: 'rgba(40,20,20,0.9)',
+                          color: '#f0a0a0',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        삭제
+                      </button>
+                    ) : null}
+                    <Link
+                      href={`/products/${p.id}`}
+                      style={{
+                        display: 'block',
+                        background: CARD,
+                        borderRadius: 12,
+                        padding: 8,
+                        textDecoration: 'none',
+                        color: 'inherit',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                      }}
+                    >
+                      <div style={{ width: '100%', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.05)', marginBottom: 6 }}>
+                        {p.storage_thumb_url || p.thumb_img ? (
+                          <img src={p.storage_thumb_url || p.thumb_img || ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : null}
+                      </div>
+                      <div style={{ fontSize: 8, color: '#7b6cc0', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {p.step_tags?.[0] || '·'}
+                      </div>
+                      <div style={{ fontSize: 10, color: '#fff', lineHeight: 1.3, minHeight: 26, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{p.name}</div>
+                      <div style={{ fontSize: 11, color: '#c9a96e', marginTop: 4 }}>₩{priceOf(p).toLocaleString()}</div>
+                      <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.38)', marginTop: 4, lineHeight: 1.35 }}>
+                        {dramaticLine(p, phaseFocus.phase, phaseFocus.focus, hit)}
+                      </div>
+                    </Link>
+                  </div>
                 )
               })}
+              {pick && showEditChrome ? (
+                <div
+                  onClick={() => setAddProdOpen(true)}
+                  style={{
+                    flexShrink: 0,
+                    width: 115,
+                    minHeight: 140,
+                    borderRadius: 13,
+                    border: '1px dashed rgba(123,108,192,0.45)',
+                    background: 'rgba(30,24,48,0.3)',
+                    color: '#c4b8f0',
+                    fontSize: 24,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  +
+                </div>
+              ) : null}
             </div>
           </section>
         ))
