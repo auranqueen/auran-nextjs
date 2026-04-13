@@ -946,10 +946,10 @@ export default function SeasonRecommendSection({
                         is_active: true,
                       })
                       if (error) return
+                      await fetchData()
                       setAddProdSearch('')
                       setAddProdResults([])
                       setAddProdOpen(false)
-                      void fetchData()
                     }}
                     disabled={added}
                     style={{
