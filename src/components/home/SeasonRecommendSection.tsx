@@ -158,6 +158,15 @@ export default function SeasonRecommendSection({
   const [formFunc, setFormFunc] = useState<string>(FUNC_OPTIONS[0])
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState<'pick' | 'step' | 'func'>('pick')
+  const [issueButtons, setIssueButtons] = useState<
+    Array<{
+      key: string
+      label: string
+      step_tag?: string
+      func_tag?: string
+    }>
+  >([])
+  const [activeIssue, setActiveIssue] = useState<string>('전체')
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -216,6 +225,21 @@ export default function SeasonRecommendSection({
 
   useEffect(() => {
     void fetchData()
+    supabaseClient
+      .from('admin_settings')
+      .select('key, value')
+      .eq('category', 'monthly_issue')
+      .like('key', `${month}_%%`)
+      .order('key')
+      .then(({ data }) => {
+        if (!data) return
+        setIssueButtons(
+          data.map((row: any) => ({
+            key: row.key,
+            ...JSON.parse(row.value),
+          }))
+        )
+      })
   }, [fetchData])
 
   useEffect(() => {
@@ -247,15 +271,33 @@ export default function SeasonRecommendSection({
   }, [searchQ, supabaseClient])
 
   const filtered = useMemo(() => {
+    const activeIssueBtnData = issueButtons.find(ib => ib.key === activeIssue)
     if (activeTab === 'pick') {
       if (isAuto) return []
-      return rows.filter(r => rowMatchesFilters(r, '전체', '전체', false))
+      const pickRows = rows.filter(r => rowMatchesFilters(r, '전체', '전체', false))
+      if (activeIssue === '전체') return pickRows
+      if (!activeIssueBtnData) return pickRows
+      return pickRows.filter(r => {
+        const p = r.products
+        if (!p) return false
+        if (activeIssueBtnData.step_tag) {
+          const needle = String(activeIssueBtnData.step_tag)
+          const tags = p.step_tags || []
+          if (!tags.some(t => String(t).toLowerCase().includes(needle.toLowerCase()))) return false
+        }
+        if (activeIssueBtnData.func_tag) {
+          const needle = String(activeIssueBtnData.func_tag)
+          const tags = p.func_tags || []
+          if (!tags.some(t => String(t).toLowerCase().includes(needle.toLowerCase()))) return false
+        }
+        return true
+      })
     }
     if (activeTab === 'step') {
       return rows.filter(r => rowMatchesFilters(r, stepFilter, '전체', isAuto))
     }
     return rows.filter(r => rowMatchesFilters(r, '전체', funcFilter, isAuto))
-  }, [rows, stepFilter, funcFilter, isAuto, activeTab, hormonePhase])
+  }, [rows, stepFilter, funcFilter, isAuto, activeTab, hormonePhase, issueButtons, activeIssue])
 
   const openAdd = () => {
     setEditingId(null)
@@ -400,16 +442,150 @@ export default function SeasonRecommendSection({
       ) : null}
 
       {activeTab === 'pick' && (
-        <div
-          style={{
-            fontSize: 11,
-            color: 'rgba(255,255,255,0.3)',
-            marginBottom: 10,
-            paddingLeft: 2,
-          }}
-        >
-          원장님이 직접 고른 제품이에요 💜
-        </div>
+        <>
+          <div
+            style={{
+              fontSize: 11,
+              color: 'rgba(255,255,255,0.3)',
+              marginBottom: 10,
+              paddingLeft: 2,
+            }}
+          >
+            원장님이 직접 고른 제품이에요 💜
+          </div>
+          {issueButtons.length > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                gap: 6,
+                overflowX: 'auto',
+                scrollbarWidth: 'none',
+                marginBottom: 10,
+                paddingBottom: 2,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setActiveIssue('전체')}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 20,
+                  fontSize: 11,
+                  cursor: 'pointer',
+                  border: activeIssue === '전체' ? '1px solid rgba(123,94,167,0.6)' : '0.5px solid #2a2a36',
+                  fontFamily: 'inherit',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  background: activeIssue === '전체' ? '#2a1a3e' : '#1e1e26',
+                  color: activeIssue === '전체' ? '#c4a8ff' : '#555',
+                }}
+              >
+                전체
+              </button>
+              {issueButtons.map(ib => (
+                <button
+                  key={ib.key}
+                  type="button"
+                  onClick={() => setActiveIssue(ib.key)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 20,
+                    fontSize: 11,
+                    cursor: 'pointer',
+                    border: activeIssue === ib.key ? '1px solid rgba(123,94,167,0.6)' : '0.5px solid #2a2a36',
+                    fontFamily: 'inherit',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    background: activeIssue === ib.key ? '#2a1a3e' : '#1e1e26',
+                    color: activeIssue === ib.key ? '#c4a8ff' : '#555',
+                  }}
+                >
+                  {ib.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {showEditChrome ? (
+            <div
+              style={{
+                marginBottom: 8,
+                padding: '8px 10px',
+                background: 'rgba(123,94,167,0.08)',
+                borderRadius: 8,
+                border: '0.5px dashed rgba(123,94,167,0.3)',
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  color: 'rgba(196,168,255,0.5)',
+                  marginBottom: 6,
+                }}
+              >
+                이슈 버튼 관리 (슈퍼어드민)
+              </div>
+              {issueButtons.map((ib, idx) => (
+                <div
+                  key={ib.key}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    marginBottom: 5,
+                  }}
+                >
+                  <input
+                    type="text"
+                    defaultValue={ib.label}
+                    onBlur={async e => {
+                      const val = e.target.value.trim()
+                      if (!val) return
+                      const newVal = JSON.stringify({
+                        ...ib,
+                        label: val,
+                      })
+                      await supabaseClient
+                        .from('admin_settings')
+                        .update({ value: newVal })
+                        .eq('category', 'monthly_issue')
+                        .eq('key', ib.key)
+                      setIssueButtons(prev => prev.map((b, i) => (i === idx ? { ...b, label: val } : b)))
+                    }}
+                    style={{
+                      flex: 1,
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '0.5px solid rgba(255,255,255,0.1)',
+                      borderRadius: 7,
+                      padding: '4px 8px',
+                      fontSize: 11,
+                      color: '#ccc',
+                      fontFamily: 'inherit',
+                      outline: 'none',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await supabaseClient.from('admin_settings').delete().eq('category', 'monthly_issue').eq('key', ib.key)
+                      setIssueButtons(prev => prev.filter((_, i) => i !== idx))
+                    }}
+                    style={{
+                      fontSize: 11,
+                      color: '#e87b4a',
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      flexShrink: 0,
+                    }}
+                  >
+                    삭제
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </>
       )}
       {activeTab === 'step' && (
         <div
@@ -602,7 +778,15 @@ export default function SeasonRecommendSection({
 
       <button
         type="button"
-        onClick={() => router.push('/products?season=true')}
+        onClick={() => {
+          if (activeTab === 'pick') {
+            router.push('/products?pick=true')
+          } else if (activeTab === 'step') {
+            router.push(`/products?step=${stepFilter}`)
+          } else {
+            router.push(`/products?func=${funcFilter}`)
+          }
+        }}
         style={{
           marginTop: 8,
           width: '100%',
