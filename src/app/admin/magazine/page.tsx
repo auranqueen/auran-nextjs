@@ -115,7 +115,7 @@ export default function AdminMagazinePage() {
     if (!thumbFile) return thumbPreview || null
     let f = thumbFile
     f = await compressImage(f, 'magazine')
-    const path = `${magId}/thumb`
+    const path = `thumb_${magId}`
     const { error } = await supabase.storage.from('magazine').upload(path, f, { upsert: true })
     if (error) return thumbPreview || null
     const { data } = supabase.storage.from('magazine').getPublicUrl(path)
