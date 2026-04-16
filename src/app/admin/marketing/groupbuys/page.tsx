@@ -56,7 +56,6 @@ export default function GroupBuysAdminPage() {
   const [originalPrice, setOriginalPrice] = useState(0)
   const [groupPrice, setGroupPrice] = useState(0)
   const [endsAt, setEndsAt] = useState(defaultEndsAtLocal)
-  const [giftTitle, setGiftTitle] = useState('')
   const [giftDescription, setGiftDescription] = useState('')
   const [giftPoints, setGiftPoints] = useState(500)
   const [isActiveNew, setIsActiveNew] = useState(true)
@@ -142,7 +141,6 @@ export default function GroupBuysAdminPage() {
       original_price: originalPrice,
       group_price: groupPrice,
       ends_at: endsIso,
-      gift_title: giftTitle.trim() || null,
       gift_description: giftDescription.trim() || null,
       gift_points: giftPoints,
       is_active: isActiveNew,
@@ -170,7 +168,6 @@ export default function GroupBuysAdminPage() {
     setOriginalPrice(0)
     setGroupPrice(0)
     setEndsAt(defaultEndsAtLocal())
-    setGiftTitle('')
     setGiftDescription('')
     setGiftPoints(500)
     setIsActiveNew(true)
@@ -382,10 +379,6 @@ export default function GroupBuysAdminPage() {
           <div style={{ gridColumn: '1 / -1' }}>
             {label('마감 (일시)', 11)}
             <input type="datetime-local" value={endsAt} onChange={e => setEndsAt(e.target.value)} style={inp} />
-          </div>
-          <div style={{ gridColumn: '1 / -1' }}>
-            {label('달성 문구 (gift_title)', 11)}
-            <input value={giftTitle} onChange={e => setGiftTitle(e.target.value)} style={inp} placeholder="선택" />
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
             {label('선물 설명', 11)}

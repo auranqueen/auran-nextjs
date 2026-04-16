@@ -62,6 +62,22 @@ const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
 const TEXT_MUTED = 'rgba(255,255,255,0.4)'
 const TEXT_DIM = 'rgba(255,255,255,0.25)'
 
+const GROUPBUY_HOOKS = [
+  '○○명만 더 모이면 딸기잼 쏜다 🍓',
+  '같이 사면 선물이 생겨요 💜',
+  '친구 데려오면 우리 모두 이득 🎉',
+  '○○명 남았어요, 마감 전 마지막 찬스!',
+  '함께 모을수록 더 달콤해져요 🍓',
+]
+
+function pickGroupbuyHook(gbIdRaw: string, remaining: number): string {
+  const id = gbIdRaw || '0'
+  let h = 0
+  for (let i = 0; i < id.length; i++) h = ((h << 5) - h) + id.charCodeAt(i)
+  const idx = Math.abs(h) % GROUPBUY_HOOKS.length
+  return GROUPBUY_HOOKS[idx].replace(/○○/g, String(remaining))
+}
+
 const SKIN_TOOLTIP_MSGS = [
   '오늘 내 피부 날씨 알아볼까요? 💜',
   '오늘 하늘이 내 피부에 뭐라고 하는지 볼게요 🌸',
@@ -2398,9 +2414,10 @@ export default function CustomerHomePage() {
                     <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{item.product?.brand_name || item.brand || item.product?.brand}</div>
                     <div style={{ fontSize: '13px', color: '#fff', marginBottom: '4px' }}>{item.product?.name}</div>
                     <div style={{ fontSize: '10px', color: 'rgba(120,160,255,0.8)', marginBottom: '4px' }}>
-                      {String(item.gift_title || '').trim()
-                        ? String(item.gift_title).trim()
-                        : `🎯 ${target}명 달성 시 발송 · ${remaining}명 더 필요`}
+                      {pickGroupbuyHook(
+                        String(item.id ?? item.group_buy_id ?? item.product_id ?? i),
+                        remaining
+                      )}
                     </div>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <span style={{ fontSize: '11px', color: TEXT_DIM, textDecoration: 'line-through' }}>
