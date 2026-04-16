@@ -170,30 +170,6 @@ export default function CustomerHomePage() {
   const [hormonePhase, setHormonePhase] = useState<string>('')
   useEffect(() => {
     setMounted(true)
-    void (async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) return
-      const { data: hc } = await supabase
-        .from('hormone_cycles')
-        .select('track, cycle_start_date, cycle_length')
-        .eq('user_id', session.user.id)
-        .maybeSingle()
-      if (!hc) return
-      const today = new Date()
-      const start = new Date((hc as any).cycle_start_date)
-      const diff = Math.floor((today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1
-      const len = (hc as any).cycle_length || 28
-      const day = ((diff - 1) % len) + 1
-      const track = (hc as any).track || ''
-      let phase = ''
-      if (track === 'menopause_peri' || track === 'menopause_post') phase = '갱년기'
-      else if (track === 'male' || track === 'male_menopause') phase = '남성'
-      else if (day <= 5) phase = '달빛기'
-      else if (day <= 13) phase = '황금기'
-      else if (day <= 16) phase = '만개기'
-      else phase = '물들기'
-      setHormonePhase(phase)
-    })()
   }, [])
 
   const [userName, setUserName] = useState('')
@@ -355,6 +331,7 @@ export default function CustomerHomePage() {
         setHormoneCycle(hc)
         setHormoneTrack(String((hc as any).track || 'general'))
         const calc = calcHormoneBriefing(hc)
+        setHormonePhase(calc.phase)
         setHormoneMainLine(`${nameForHormoneLine}님, 지금 ${calc.phase} ${calc.cycleDay > 0 ? `${calc.cycleDay}일차` : ''}예요 🌿`)
         setHormoneSubLine(`오늘의 피부 이야기 · ${calc.focus}`)
         if (isPeriodTrack(String((hc as any).track || 'general'))) {
