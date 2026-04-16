@@ -503,20 +503,20 @@ export default function CheckoutPageView({
                       }}
                       style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 10px', color: '#fff', fontSize: 12 }}
                     />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const raw = Number((toastInputRef.current?.value || '').replace(/\D/g, '') || 0)
-                        const next = Math.max(0, Math.min(toastHalfLocal, raw))
-                        setToastDraftWon(next)
-                      }}
-                      style={{ width: '100%', marginTop: 6, background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 0', fontSize: 12, cursor: 'pointer' }}
-                    >
-                      적용
-                    </button>
                   </div>
                 )}
               </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const raw = Number((toastInputRef.current?.value || '').replace(/\D/g, '') || 0)
+                  const next = Math.max(0, Math.min(toastHalfLocal, raw))
+                  setToastDraftWon(next)
+                }}
+                style={{ width: '100%', marginTop: 6, background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 0', fontSize: 12, cursor: 'pointer' }}
+              >
+                적용
+              </button>
 
               <div style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: payWithOran ? 8 : 0 }}>
