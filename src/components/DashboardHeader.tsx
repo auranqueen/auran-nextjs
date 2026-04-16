@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function DashboardHeader({
   title,
@@ -27,6 +28,17 @@ export default function DashboardHeader({
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+        <Link href="/" style={{
+          fontFamily: "'Noto Serif KR', serif",
+          fontSize: 14,
+          fontWeight: 500,
+          color: '#7B5EA7',
+          textDecoration: 'none',
+          letterSpacing: '0.1em',
+          flexShrink: 0,
+        }}>
+          AURAN
+        </Link>
         <button
           type="button"
           aria-label="뒤로가기"
