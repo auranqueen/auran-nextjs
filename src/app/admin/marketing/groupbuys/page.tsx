@@ -60,6 +60,11 @@ export default function GroupBuysAdminPage() {
   const [giftDescription, setGiftDescription] = useState('')
   const [giftPoints, setGiftPoints] = useState(500)
   const [isActiveNew, setIsActiveNew] = useState(true)
+  const [achievementRewardType, setAchievementRewardType] = useState('jam')
+  const [achievementRewardValue, setAchievementRewardValue] = useState('0')
+  const [achievementMessage, setAchievementMessage] = useState(
+    '함께라서 가능했어요, 딸기잼 선물이에요 🎉'
+  )
 
   const loadItems = () => {
     void supabase
@@ -141,6 +146,9 @@ export default function GroupBuysAdminPage() {
       gift_description: giftDescription.trim() || null,
       gift_points: giftPoints,
       is_active: isActiveNew,
+      achievement_reward_type: achievementRewardType,
+      achievement_reward_value: achievementRewardValue,
+      achievement_message: achievementMessage,
     } as any)
     setCreating(false)
     if (error) {
@@ -166,6 +174,9 @@ export default function GroupBuysAdminPage() {
     setGiftDescription('')
     setGiftPoints(500)
     setIsActiveNew(true)
+    setAchievementRewardType('jam')
+    setAchievementRewardValue('0')
+    setAchievementMessage('함께라서 가능했어요, 딸기잼 선물이에요 🎉')
     alert('공구가 등록되었습니다.')
   }
 
@@ -387,6 +398,39 @@ export default function GroupBuysAdminPage() {
               value={giftPoints}
               onChange={e => setGiftPoints(Number(e.target.value))}
               style={inp}
+            />
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            {label('달성 보상 종류', 11)}
+            <select
+              value={achievementRewardType}
+              onChange={e => setAchievementRewardType(e.target.value)}
+              style={inp}
+            >
+              <option value="jam">딸기잼</option>
+              <option value="toast">토스트</option>
+              <option value="coupon">쿠폰</option>
+              <option value="gift">실물선물</option>
+              <option value="content">콘텐츠</option>
+            </select>
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            {label('보상 수량/내용', 11)}
+            <input
+              type="text"
+              value={achievementRewardValue}
+              onChange={e => setAchievementRewardValue(e.target.value)}
+              style={inp}
+            />
+          </div>
+          <div style={{ gridColumn: '1 / -1' }}>
+            {label('달성 멘트', 11)}
+            <input
+              type="text"
+              value={achievementMessage}
+              onChange={e => setAchievementMessage(e.target.value)}
+              style={inp}
+              placeholder="함께라서 가능했어요, 딸기잼 선물이에요 🎉"
             />
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
