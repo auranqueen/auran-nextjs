@@ -479,38 +479,63 @@ export default function CheckoutPageView({
                     <span style={{ position: 'absolute', width: 16, height: 16, borderRadius: '50%', background: '#fff', top: 2, left: payWithToast ? 18 : 2, transition: 'left 0.2s' }} />
                   </button>
                 </div>
-                {payWithToast && (
-                  <div style={{ background: 'rgba(123,94,167,0.1)', borderRadius: 10, padding: 12, marginTop: 8 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>보유 {toastTBalance.toLocaleString()}T</span>
-                      <span style={{ fontSize: 11, color: '#7B5EA7' }}>사용 가능 50%</span>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>사용 금액 (최대 {toastHalfLocal.toLocaleString()}원)</span>
-                      <span style={{ fontSize: 13, color: '#7B5EA7' }}>-{(toastDraftWon ?? toastHalfLocal).toLocaleString()}원</span>
-                    </div>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      value={String(toastDraftWon ?? toastHalfLocal)}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\D/g, '')
-                        setToastDraftWon(raw === '' ? 0 : Math.floor(Number(raw)))
-                      }}
-                      style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 10px', color: '#fff', fontSize: 12 }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const next = Math.max(0, Math.min(toastHalfLocal, toastDraftWon != null ? Number(toastDraftWon) : toastHalfLocal))
-                        setToastDraftWon(next)
-                      }}
-                      style={{ width: '100%', marginTop: 6, background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 0', fontSize: 12, cursor: 'pointer' }}
-                    >
-                      적용
-                    </button>
+                <div style={{ background: 'rgba(123,94,167,0.1)', borderRadius: 10, padding: 12, marginTop: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>보유 {toastTBalance.toLocaleString()}T</span>
+                    <span style={{ fontSize: 11, color: payWithToast ? '#7B5EA7' : 'rgba(255,255,255,0.3)' }}>사용 가능 50%</span>
                   </div>
-                )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>사용 금액 (최대 {toastHalfLocal.toLocaleString()}원)</span>
+                    {payWithToast ? (
+                      <span style={{ fontSize: 13, color: '#7B5EA7' }}>-{(toastDraftWon ?? toastHalfLocal).toLocaleString()}원</span>
+                    ) : (
+                      <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>미적용</span>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    disabled={!payWithToast}
+                    value={String(toastDraftWon ?? toastHalfLocal)}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/\D/g, '')
+                      setToastDraftWon(raw === '' ? 0 : Math.floor(Number(raw)))
+                    }}
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      background: 'rgba(0,0,0,0.25)',
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      borderRadius: 10,
+                      padding: '8px 10px',
+                      color: '#fff',
+                      fontSize: 12,
+                      opacity: payWithToast ? 1 : 0.4,
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={!payWithToast}
+                    onClick={() => {
+                      const next = Math.max(0, Math.min(toastHalfLocal, toastDraftWon != null ? Number(toastDraftWon) : toastHalfLocal))
+                      setToastDraftWon(next)
+                    }}
+                    style={{
+                      width: '100%',
+                      marginTop: 6,
+                      background: '#7B5EA7',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 8,
+                      padding: '7px 0',
+                      fontSize: 12,
+                      cursor: payWithToast ? 'pointer' : 'not-allowed',
+                      opacity: payWithToast ? 1 : 0.4,
+                    }}
+                  >
+                    적용
+                  </button>
+                </div>
               </div>
 
               <div style={{ marginBottom: 10 }}>
