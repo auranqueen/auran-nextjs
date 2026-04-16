@@ -513,6 +513,23 @@ export default function CheckoutPageView({
                       opacity: payWithToast ? 1 : 0.4,
                     }}
                   />
+                  {payWithToast && (
+                    <div style={{ marginTop: 6 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>
+                        <span>잔액 {Math.max(0, toastTBalance - (toastDraftWon ?? toastHalfLocal)).toLocaleString()}T 남음</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const clamped = Math.max(0, Math.min(toastHalfLocal, Number(toastDraftWon ?? toastHalfLocal) || 0))
+                          setToastDraftWon(clamped)
+                        }}
+                        style={{ width: '100%', background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 0', fontSize: 12, cursor: 'pointer' }}
+                      >
+                        적용
+                      </button>
+                    </div>
+                  )}
                   <button
                     type="button"
                     disabled={!payWithToast}
