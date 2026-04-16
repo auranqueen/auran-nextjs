@@ -294,9 +294,10 @@ function CheckoutPageInner() {
   const afterCoupon = Math.max(0, afterGrade - couponDiscount)
   const toastTBalance = points + Math.floor(balance / Math.max(1, toastRate))
   const toastHalf = Math.min(Math.floor(toastTBalance * toastRate), Math.floor((afterCoupon * 1) / 2))
-  const toastUsed = payWithToast
-    ? Math.min(toastTBalance * toastRate, afterCoupon, toastDraftWon ?? toastHalf)
-    : 0
+  const toastUsed = Math.min(
+    Math.floor(toastTBalance * toastRate * 0.5),
+    afterCoupon
+  )
   const goodsAfterToast = Math.max(0, afterCoupon - toastUsed)
   const remBalAfterToast = Math.max(0, balance - toastUsed)
   const oranCap = Math.min(remBalAfterToast, goodsAfterToast)
