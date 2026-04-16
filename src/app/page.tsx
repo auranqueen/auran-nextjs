@@ -176,6 +176,17 @@ const CHECKIN_CYCLE_PREGNANCY = [
   { id: 'cycle-type-p-4', emoji: '', label: '컨디션', sort_order: 4, is_active: true },
 ]
 
+const GREETINGS = [
+  (name: string) => `${name}님 오늘도 빛나시네요 💜`,
+  (name: string) => `찬란한 피부 소유자 ${name}님 🌸`,
+  (name: string) => `${name}님 피부가 오늘따라 더 빛나요 ✨`,
+  (name: string) => `역시 ${name}님은 달라요 💜`,
+  (name: string) => `${name}님 오셨군요, 오늘도 완벽해요 🌿`,
+  (name: string) => `피부 천재 ${name}님 반가워요 💜`,
+  (name: string) => `${name}님 덕분에 오랜이 빛나요 🌟`,
+  (name: string) => `오늘도 가장 예쁜 ${name}님 💜`,
+]
+
 export default function CustomerHomePage() {
   const router = useRouter()
   const supabase = createClient()
@@ -1426,7 +1437,9 @@ export default function CustomerHomePage() {
             {todayLocaleLabel}
           </div>
           <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
-            안녕하세요, <span style={{ color: GOLD }}>{userName}님</span> 👋
+            {userName
+              ? GREETINGS[Math.floor(Math.random() * GREETINGS.length)](userName)
+              : '오랜에 오셨군요 💜'}
           </div>
           <div style={{ fontSize: '11px', color: TEXT_MUTED }}>
             오늘 피부 케어 75%
