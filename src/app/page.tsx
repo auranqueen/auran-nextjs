@@ -200,6 +200,9 @@ export default function CustomerHomePage() {
   }, [])
 
   const [userName, setUserName] = useState('')
+  const [greetingIndex, setGreetingIndex] = useState(
+    () => Math.floor(Math.random() * GREETINGS.length)
+  )
   const [selectedConcern, setSelectedConcern] = useState(0)
   const [saleTab, setSaleTab] = useState<'sale' | 'group'>('group')
   const [timers, setTimers] = useState([
@@ -1438,7 +1441,7 @@ export default function CustomerHomePage() {
           </div>
           <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
             {userName
-              ? GREETINGS[Math.floor(Math.random() * GREETINGS.length)](userName)
+              ? GREETINGS[greetingIndex](userName)
               : '오랜에 오셨군요 💜'}
           </div>
           <div style={{ fontSize: '11px', color: TEXT_MUTED }}>
