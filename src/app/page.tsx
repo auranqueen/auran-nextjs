@@ -214,6 +214,9 @@ export default function CustomerHomePage() {
   const [salons, setSalons] = useState<any[]>([])
   const [newProducts, setNewProducts] = useState<any[]>([])
   const [brands, setBrands] = useState<any[]>([])
+  const [selectedBrand, setSelectedBrand] = useState<any>(null)
+  const [brandProducts, setBrandProducts] = useState<any[]>([])
+  const [brandProductsLoading, setBrandProductsLoading] = useState(false)
   const [dataReady, setDataReady] = useState(false)
   const [loading, setLoading] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -717,6 +720,29 @@ export default function CustomerHomePage() {
   }, [])
 
   const pad = (n: number) => String(n).padStart(2, '0')
+
+  useEffect(() => {
+    if (!selectedBrand?.id) {
+      setBrandProducts([])
+      setBrandProductsLoading(false)
+      return
+    }
+    let cancelled = false
+    setBrandProductsLoading(true)
+    void supabase
+      .from('products')
+      .select('id, name, sale_price, retail_price, thumb_img, step_tags, func_tags, brands(name)')
+      .eq('brand_id', selectedBrand.id)
+      .eq('status', 'active')
+      .then(({ data }) => {
+        if (cancelled) return
+        setBrandProducts((data as any[]) || [])
+        setBrandProductsLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [selectedBrand])
 
   // 폴백 적용
   const concernList = concerns.length > 0 ? concerns : []
@@ -2628,7 +2654,7 @@ export default function CustomerHomePage() {
             {brandList.map((brand: any, i: number) => (
               <div
                 key={i}
-                onClick={() => router.push(`/brands/${brand.id}`)}
+                onClick={() => setSelectedBrand(brand)}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -2670,6 +2696,157 @@ export default function CustomerHomePage() {
           </div>
         </div>
       </div>
+
+      {selectedBrand ? (
+        <>
+          <div
+            onClick={() => setSelectedBrand(null)}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 199,
+              background: 'rgba(0,0,0,0.55)',
+            }}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              zIndex: 200,
+              background: '#11161b',
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              padding: '14px 16px 24px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: 12,
+              }}
+            >
+              <div style={{ fontSize: 14, color: '#fff' }}>{selectedBrand?.name || selectedBrand?.label || '브랜드'}</div>
+              <button
+                type="button"
+                onClick={() => setSelectedBrand(null)}
+                style={{
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  background: 'transparent',
+                  color: 'rgba(255,255,255,0.8)',
+                  borderRadius: 8,
+                  padding: '6px 10px',
+                  cursor: 'pointer',
+                  fontSize: 11,
+                }}
+              >
+                닫기
+              </button>
+            </div>
+
+            {brandProductsLoading ? (
+              <div style={{ padding: '20px 0', textAlign: 'center', color: 'rgba(255,255,255,0.7)', fontSize: 12 }}>
+                로딩 중...
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {brandProducts.map((p: any) => {
+                  const step0 = Array.isArray(p.step_tags) ? String(p.step_tags[0] || '') : ''
+                  const func0 = Array.isArray(p.func_tags) ? String(p.func_tags[0] || '') : ''
+                  const tagText = [step0, func0].filter(Boolean).join(' · ')
+                  const price = Number(p.sale_price) > 0 ? Number(p.sale_price) : Number(p.retail_price || 0)
+                  return (
+                    <div
+                      key={String(p.id)}
+                      style={{
+                        display: 'flex',
+                        gap: 10,
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '1px solid rgba(255,255,255,0.08)',
+                        borderRadius: 12,
+                        padding: 10,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: 80,
+                          height: 80,
+                          borderRadius: 10,
+                          overflow: 'hidden',
+                          background: 'rgba(255,255,255,0.08)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {p.thumb_img ? (
+                          <img src={p.thumb_img} alt={p.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>NO IMG</span>
+                        )}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 13, color: '#fff', marginBottom: 4 }}>{p.name}</div>
+                        <div style={{ fontSize: 11, color: '#a988ff', marginBottom: 6 }}>{tagText || '-'}</div>
+                        <div style={{ fontSize: 13, color: '#fff', marginBottom: 8 }}>{price.toLocaleString()}원</div>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedBrand(null)
+                              router.push(`/products/${p.id}`)
+                            }}
+                            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.22)', background: 'transparent', color: '#fff', fontSize: 11, cursor: 'pointer' }}
+                          >
+                            상세보기
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              cart.addToCart({
+                                product_id: String(p.id),
+                                name: String(p.name || ''),
+                                price,
+                                thumb_img: String(p.thumb_img || ''),
+                                quantity: 1,
+                              })
+                              setHomeToast('장바구니에 담았어요')
+                            }}
+                            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid rgba(123,94,167,0.35)', background: 'rgba(123,94,167,0.2)', color: '#e8d9ff', fontSize: 11, cursor: 'pointer' }}
+                          >
+                            담기
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedBrand(null)
+                              router.push(`/checkout?product_id=${p.id}&qty=1`)
+                            }}
+                            style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 11, cursor: 'pointer' }}
+                          >
+                            바로구매
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+                {!brandProductsLoading && brandProducts.length === 0 ? (
+                  <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, textAlign: 'center', padding: '10px 0' }}>
+                    등록된 상품이 없어요
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </div>
+        </>
+      ) : null}
 
       {homeContestBanner ? (
         <div
