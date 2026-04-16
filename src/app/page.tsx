@@ -242,6 +242,7 @@ export default function CustomerHomePage() {
   const [salons, setSalons] = useState<any[]>([])
   const [newProducts, setNewProducts] = useState<any[]>([])
   const [brands, setBrands] = useState<any[]>([])
+  const [magazines, setMagazines] = useState<any[]>([])
   const [selectedBrand, setSelectedBrand] = useState<any>(null)
   const [brandProducts, setBrandProducts] = useState<any[]>([])
   const [brandProductsLoading, setBrandProductsLoading] = useState(false)
@@ -594,6 +595,16 @@ export default function CustomerHomePage() {
     supabase.from('brands').select('*').limit(7).then(({ data }) => {
       if (data && data.length > 0) setBrands(data)
     })
+
+    supabase
+      .from('magazines')
+      .select('id,title,subtitle,thumbnail_url,category,published_at')
+      .eq('is_published', true)
+      .order('published_at', { ascending: false })
+      .limit(3)
+      .then(({ data }) => {
+        setMagazines((data as any[]) || [])
+      })
 
     supabase.from('salons').select('*').limit(3).then(({ data }) => {
       if (data && data.length > 0) setSalons(data)
@@ -2682,6 +2693,82 @@ export default function CustomerHomePage() {
           </div>
         ))}
       </div>
+
+      {magazines.length > 0 && (
+        <div style={{ padding: '0 16px 24px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <span style={{ fontSize: 14, color: '#fff' }}>📖 매거진</span>
+            <span onClick={() => router.push('/magazine')} style={{ fontSize: 12, color: '#7B5EA7', cursor: 'pointer' }}>
+              전체 보기 →
+            </span>
+          </div>
+          {magazines.map((m: any) => (
+            <div
+              key={m.id}
+              onClick={() => router.push(`/magazine/${m.id}`)}
+              style={{
+                display: 'flex',
+                gap: 12,
+                marginBottom: 12,
+                cursor: 'pointer',
+                background: 'rgba(255,255,255,0.04)',
+                borderRadius: 12,
+                padding: 12,
+              }}
+            >
+              {m.thumbnail_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={m.thumbnail_url}
+                  alt={String(m.title || '')}
+                  style={{ width: 88, height: 88, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 88,
+                    height: 88,
+                    borderRadius: 10,
+                    background: 'rgba(255,255,255,0.06)',
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 28,
+                    color: 'rgba(255,255,255,0.25)',
+                  }}
+                >
+                  📖
+                </div>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 4, lineHeight: 1.35 }}>
+                  {m.title}
+                </div>
+                {m.subtitle ? (
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: 'rgba(255,255,255,0.55)',
+                      lineHeight: 1.45,
+                      display: '-webkit-box',
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {m.subtitle}
+                  </div>
+                ) : null}
+                <div style={{ fontSize: 10, color: TEXT_MUTED, marginTop: 6 }}>
+                  {m.category ? `${m.category} · ` : ''}
+                  {m.published_at ? new Date(m.published_at).toLocaleDateString('ko-KR') : ''}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ── 브랜드 원형 그리드 ── */}
       <div style={{ padding: '16px 16px 0' }}>
