@@ -483,7 +483,9 @@ export default function CheckoutPageView({
                   <div style={{ background: 'rgba(123,94,167,0.1)', borderRadius: 10, padding: 12, marginTop: 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                       <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>보유 {toastTBalance.toLocaleString()}T</span>
-                      <span style={{ fontSize: 11, color: '#7B5EA7' }}>사용 가능 50%</span>
+                      <span style={{ fontSize: 11, color: '#7B5EA7' }}>
+                        사용 후 잔액 {Math.max(0, toastTBalance - (toastDraftWon ?? toastHalfLocal)).toLocaleString()}T 남음
+                      </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                       <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>사용 금액 (최대 {toastHalfLocal.toLocaleString()}원)</span>
@@ -503,7 +505,8 @@ export default function CheckoutPageView({
                       type="button"
                       onClick={() => {
                         const next = Math.max(0, Math.min(toastHalfLocal, Number(toastDraftWon ?? toastHalfLocal) || 0))
-                        setToastDraftWon(next)
+                        setToastDraftWon(null)
+                        setTimeout(() => setToastDraftWon(next), 0)
                       }}
                       style={{ width: '100%', marginTop: 6, background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 0', fontSize: 12, cursor: 'pointer' }}
                     >
