@@ -432,8 +432,8 @@ export default function CheckoutPageView({
               <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 10 }}>결제 수단 <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 400 }}>(중복 사용 가능)</span></div>
 
               <div style={{ marginBottom: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: payWithToast ? 8 : 0 }}>
-                  <span style={{ fontSize: 12, color: '#fff' }}>🍞 토스트 · 보유 {toastTBalance.toLocaleString()}T</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 12, color: '#fff' }}>🍞 토스트</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -452,8 +452,15 @@ export default function CheckoutPageView({
                   </button>
                 </div>
                 {payWithToast && (
-                  <div style={{ marginTop: 6 }}>
-                    <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4 }}>사용 금액 (최대 {toastHalfLocal.toLocaleString()}원)</div>
+                  <div style={{ background: 'rgba(123,94,167,0.1)', borderRadius: 10, padding: 12, marginTop: 8 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>보유 {toastTBalance.toLocaleString()}T</span>
+                      <span style={{ fontSize: 11, color: '#7B5EA7' }}>사용 가능 50%</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                      <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>사용 금액 (최대 {toastHalfLocal.toLocaleString()}원)</span>
+                      <span style={{ fontSize: 13, color: '#7B5EA7' }}>-{(toastDraftWon ?? toastHalfLocal).toLocaleString()}원</span>
+                    </div>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -474,7 +481,6 @@ export default function CheckoutPageView({
                     >
                       적용
                     </button>
-                    <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>₩{toastUsed.toLocaleString()} 차감 예정</div>
                   </div>
                 )}
               </div>
