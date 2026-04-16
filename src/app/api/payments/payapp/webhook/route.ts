@@ -185,7 +185,9 @@ export async function POST(req: NextRequest) {
         const client = tryCreateServiceClient() || supabase
         const { data: orderRow } = await client
           .from('orders')
-          .select('id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,gift_receiver_id,gift_message,payment_applied,gift_created,user_coupon_id')
+          .select(
+            'id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,gift_receiver_id,gift_message,payment_applied,gift_created,user_coupon_id,address,recipient_name,recipient_phone'
+          )
           .eq('id', intent.target_id)
           .maybeSingle()
         const amount = Number(intent.amount || 0)
@@ -196,6 +198,29 @@ export async function POST(req: NextRequest) {
           body: `주문이 결제되었습니다. ₩${amount.toLocaleString()}${orderRow?.order_no ? ` · 주문번호 ${orderRow.order_no}` : ''}`,
           is_read: false,
         })
+
+        const shipAddr = String((orderRow as any)?.address || '').trim()
+        const shipName = String((orderRow as any)?.recipient_name || '').trim()
+        const shipPhone = String((orderRow as any)?.recipient_phone || '').trim()
+        if (shipAddr && intent.user_id) {
+          const { data: dupShip } = await client
+            .from('shipping_addresses')
+            .select('id')
+            .eq('user_id', intent.user_id)
+            .eq('address', shipAddr)
+            .maybeSingle()
+          if (!dupShip) {
+            await client.from('shipping_addresses').insert({
+              user_id: intent.user_id,
+              address: shipAddr,
+              recipient_name: shipName || null,
+              recipient_phone: shipPhone || null,
+              is_default: true,
+              label: '최근배송지',
+            } as any)
+          }
+          await client.from('users').update({ shipping_address: shipAddr } as any).eq('id', intent.user_id)
+        }
 
         if (orderRow?.id && !orderRow.payment_applied) {
           const pointUsed = Math.max(0, Number(orderRow.point_used || 0))
