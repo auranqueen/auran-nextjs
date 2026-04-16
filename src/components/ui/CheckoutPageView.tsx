@@ -502,7 +502,7 @@ export default function CheckoutPageView({
                     <button
                       type="button"
                       onClick={() => {
-                        const next = Math.max(0, Math.min(toastHalfLocal, Number(toastDraftWon ?? toastHalfLocal) || 0))
+                        const next = Math.max(0, Math.min(toastHalfLocal, toastDraftWon != null ? Number(toastDraftWon) : toastHalfLocal))
                         setToastDraftWon(next)
                       }}
                       style={{ width: '100%', marginTop: 6, background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 0', fontSize: 12, cursor: 'pointer' }}
