@@ -93,13 +93,13 @@ export async function POST(req: NextRequest) {
   const productIds = Array.from(productIdSet)
   const { data: products } = await client
     .from('products')
-    .select('id,name,retail_price,brand_id,earn_points')
+    .select('id,name,retail_price,brand_id,earn_points,is_timesale,is_groupbuy,is_event')
     .eq('status', 'active')
     .in('id', productIds)
   const productMap = new Map((products || []).map((p: any) => [p.id, p]))
 
   let totalAmount = 0
-  const orderItemsRows: { product_id: string; brand_id: string | null; product_name: string; product_price: number; quantity: number; subtotal: number }[] = []
+  const orderItemsRows: { product_id: string; brand_id: string | null; product_name: string; product_price: number; quantity: number; subtotal: number; is_timesale: boolean; is_groupbuy: boolean; is_event: boolean }[] = []
   for (const item of validItems) {
     const product = productMap.get(item.product_id)
     if (!product) return json({ ok: false, error: 'product_not_found', product_id: item.product_id }, 400)
@@ -113,6 +113,9 @@ export async function POST(req: NextRequest) {
       product_price: price,
       quantity: item.quantity,
       subtotal,
+      is_timesale: product.is_timesale === true,
+      is_groupbuy: product.is_groupbuy === true,
+      is_event: product.is_event === true,
     })
   }
   if (totalAmount < 1) return json({ ok: false, error: 'invalid_total' }, 400)
@@ -151,6 +154,9 @@ export async function POST(req: NextRequest) {
       product_id: r.product_id,
       brand_id: r.brand_id,
       subtotal: r.subtotal,
+      is_timesale: r.is_timesale === true,
+      is_groupbuy: r.is_groupbuy === true,
+      is_event: false,
     }))
     if (!isCouponApplicableForOrder(c, linesForCoupon, totalAmount, user.id)) {
       return json({ ok: false, error: 'coupon_not_applicable' }, 400)

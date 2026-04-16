@@ -4,6 +4,9 @@ export type OrderLineForCoupon = {
   product_id: string
   brand_id: string | null
   subtotal: number
+  is_timesale?: boolean
+  is_groupbuy?: boolean
+  is_event?: boolean
 }
 
 export function isCouponApplicableForOrder(
@@ -34,6 +37,16 @@ export function isCouponApplicableForOrder(
   const su = (coupon.scope_user_ids || []) as string[]
   if (su.length > 0) {
     if (!su.map(String).includes(String(authUserId))) return false
+  }
+
+  if (coupon.exclude_timesale === true) {
+    if (lines.some((l) => l.is_timesale === true)) return false
+  }
+  if (coupon.exclude_groupbuy === true) {
+    if (lines.some((l) => l.is_groupbuy === true)) return false
+  }
+  if (coupon.exclude_event === true) {
+    if (lines.some((l) => l.is_event === true)) return false
   }
 
   const minOrder = Math.max(0, Number(coupon.min_order ?? 0))

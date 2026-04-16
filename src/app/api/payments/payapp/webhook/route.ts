@@ -226,6 +226,32 @@ export async function POST(req: NextRequest) {
               body: 'AURAN 회원만 만날 수 있는 프리미엄 아로마 브랜드를 소개합니다',
               is_read: false,
             } as any)
+
+            const { data: fpCoupons } = await client
+              .from('coupons')
+              .select('id,issued_count,max_issue_count')
+              .eq('issue_trigger', 'first_purchase')
+              .eq('is_active', true)
+            for (const c of fpCoupons || []) {
+              if (c.max_issue_count != null && (c.issued_count || 0) >= c.max_issue_count) continue
+              const { data: exists } = await client
+                .from('user_coupons')
+                .select('id')
+                .eq('user_id', intent.user_id)
+                .eq('coupon_id', c.id)
+                .maybeSingle()
+              if (exists) continue
+              const { error: insErr } = await client.from('user_coupons').insert({
+                user_id: intent.user_id,
+                coupon_id: c.id,
+                status: 'unused',
+              })
+              if (insErr) continue
+              await client
+                .from('coupons')
+                .update({ issued_count: (c.issued_count || 0) + 1 })
+                .eq('id', c.id)
+            }
           }
 
           if (orderRow.user_coupon_id) {

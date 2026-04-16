@@ -218,6 +218,9 @@ function CheckoutPageInner() {
           product_id: p.id,
           brand_id: p.brand_id ?? null,
           subtotal: unit * q,
+          is_timesale: p.is_timesale === true,
+          is_groupbuy: p.is_groupbuy === true,
+          is_event: false,
         }
       }),
     [orderedProducts, qtyList]
