@@ -103,7 +103,7 @@ export default function MagazineDetailPage() {
       const tags = (data as any).product_tags
       const ids = Array.isArray(tags) ? tags.map((x: any) => String(x)).filter(Boolean).slice(0, 5) : []
       if (ids.length) {
-        const { data: prods } = await supabase.from('products').select('id,name,price,thumbnail_url').in('id', ids)
+        const { data: prods } = await supabase.from('products').select('id,name,retail_price,sale_price,thumb_img').in('id', ids)
         setTagProducts((prods as any[]) || [])
       } else {
         setTagProducts([])
@@ -271,14 +271,17 @@ export default function MagazineDetailPage() {
                 style={{ flexShrink: 0, width: 140, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}
               >
                 <div style={{ width: '100%', aspectRatio: '1', background: '#222' }}>
-                  {p.thumbnail_url ? (
+                  {p.thumb_img ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={p.thumbnail_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={p.thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : null}
                 </div>
                 <div style={{ padding: 8 }}>
                   <div style={{ fontSize: 11, fontWeight: 600, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
-                  <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 4 }}>₩{Number(p.price || 0).toLocaleString()}</div>
+                  <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 4 }}>
+                    ₩
+                    {Number(Number(p.sale_price ?? 0) > 0 ? p.sale_price : p.retail_price ?? 0).toLocaleString()}
+                  </div>
                   <button
                     type="button"
                     onClick={() => router.push(`/products/${p.id}`)}
