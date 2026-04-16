@@ -149,10 +149,13 @@ export default function CheckoutPageView({
   onChargeKrw,
 }: Props) {
   const supabase = createClient()
-  const toastHalfLocal = Math.min(balance, Math.floor((afterCoupon * 1) / 2))
   const remBalAfterToast = Math.max(0, balance - toastUsed)
   const oranCapLocal = Math.min(remBalAfterToast, Math.max(0, afterCoupon - toastUsed))
   const toastTBalance = points + Math.floor(balance / Math.max(1, toastRate))
+  const toastHalfLocal = Math.min(
+    Math.floor(toastTBalance * 0.5),
+    afterCoupon
+  )
   const [useBankTransfer, setUseBankTransfer] = useState(false)
   const [receiptOn, setReceiptOn] = useState(true)
   const [receiptNum, setReceiptNum] = useState('')
