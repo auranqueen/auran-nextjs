@@ -154,11 +154,41 @@ export default function MagazineDetailPage() {
     return mdToSafeHtml(c)
   }, [row])
 
+  const awardMagazineShareJam = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    const authId = user?.id
+    if (!authId) return
+
+    const { data: urow } = await supabase.from('users').select('id').eq('auth_id', authId).maybeSingle()
+    const publicUserId = urow?.id as string | undefined
+    if (!publicUserId) return
+
+    const { data: jamRow } = await supabase
+      .from('admin_settings')
+      .select('value')
+      .eq('category', 'points_action')
+      .eq('key', 'magazine_share_jam')
+      .maybeSingle()
+
+    const amount = Math.max(0, Number(jamRow?.value ?? 100))
+    if (!amount) return
+
+    await supabase.rpc('award_points', {
+      p_user_id: publicUserId,
+      p_amount: amount,
+      p_description: '매거진 공유 🍓 딸기잼',
+      p_icon: '🍓',
+    })
+  }
+
   const share = async () => {
     const url = typeof window !== 'undefined' ? window.location.href : ''
     try {
       if (navigator.share) {
         await navigator.share({ title: row?.title, text: row?.subtitle || '', url })
+        await awardMagazineShareJam()
         return
       }
     } catch {
@@ -167,6 +197,7 @@ export default function MagazineDetailPage() {
     try {
       await navigator.clipboard.writeText(url)
       alert('링크가 복사됐어요 💜')
+      await awardMagazineShareJam()
     } catch {
       /* ignore */
     }
@@ -208,9 +239,17 @@ export default function MagazineDetailPage() {
         <button type="button" onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: '#fff', fontSize: 18, cursor: 'pointer', padding: 4 }}>
           ←
         </button>
-        <button type="button" onClick={() => void share()} style={{ border: 'none', background: 'transparent', color: '#c4a7e7', fontSize: 13, cursor: 'pointer' }}>
-          공유
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <button type="button" onClick={() => void share()} style={{ border: 'none', background: 'transparent', color: '#c4a7e7', fontSize: 13, cursor: 'pointer' }}>
+            공유
+          </button>
+          <span
+            title="공유하면 🍓 딸기잼이 적립돼요!"
+            style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', cursor: 'help', marginLeft: 4 }}
+          >
+            ?
+          </span>
+        </div>
       </div>
 
       <div style={{ width: '100%', aspectRatio: '16/9', background: '#222' }}>
