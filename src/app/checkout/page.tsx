@@ -164,7 +164,7 @@ function CheckoutPageInner() {
         gPct = Number((gRow as any)?.value || 0)
       }
       setGradeDiscount(Number.isFinite(gPct) ? gPct : 0)
-      const { rows: ucs, error: ucErr } = await fetchUserCouponsWithCoupons(supabase, user.id, { status: 'unused' })
+      const { rows: ucs, error: ucErr } = await fetchUserCouponsWithCoupons(supabase, me.id, { status: 'unused' })
       if (ucErr) console.warn('[checkout] user_coupons', ucErr.message)
       setUserCoupons((ucs || []) as UcRow[])
       if (productIds.length > 0) {
