@@ -378,7 +378,7 @@ export default function CheckoutPageView({
                 </div>
                 {payWithToast && (
                   <div style={{ marginTop: 6 }}>
-                    <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4 }}>사용 금액 (원)</div>
+                    <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 4 }}>사용 금액 (최대 {toastHalfLocal.toLocaleString()}원)</div>
                     <input
                       type="text"
                       inputMode="numeric"
@@ -389,6 +389,16 @@ export default function CheckoutPageView({
                       }}
                       style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '8px 10px', color: '#fff', fontSize: 12 }}
                     />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const next = Math.max(0, Math.min(toastHalfLocal, Number(toastDraftWon ?? toastHalfLocal) || 0))
+                        setToastDraftWon(next)
+                      }}
+                      style={{ width: '100%', marginTop: 6, background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 0', fontSize: 12, cursor: 'pointer' }}
+                    >
+                      적용
+                    </button>
                     <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>₩{toastUsed.toLocaleString()} 차감 예정</div>
                   </div>
                 )}
