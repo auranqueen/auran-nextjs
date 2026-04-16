@@ -304,16 +304,12 @@ export default function CheckoutPageView({
                       }}
                     >
                       <input type="radio" name="checkout_coupon" checked={selectedUserCouponId === uc.id} onChange={() => setSelectedUserCouponId(uc.id)} />
-                      <span style={{ lineHeight: 1.45 }}>
+                      <span style={{ display: 'flex', justifyContent: 'space-between', width: '100%', fontSize: 13, color: '#c4a5f5' }}>
                         <span style={{ fontWeight: 900 }}>{c.name}</span>
-                        <br />
-                        <span style={{ color: 'var(--gold)', fontWeight: 800 }}>{disc > 0 ? `${disc.toLocaleString()}원 할인` : ''}</span>
-                        {minO > 0 ? (
-                          <>
-                            {disc > 0 ? ' · ' : ''}
-                            최소 ₩{minO.toLocaleString()}
-                          </>
-                        ) : null}
+                        <span>
+                          {disc > 0 ? `-${disc.toLocaleString()}원` : ''}
+                          {minO > 0 ? ` · 최소 ${minO.toLocaleString()}원` : ''}
+                        </span>
                       </span>
                     </label>
                   )
