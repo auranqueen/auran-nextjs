@@ -56,6 +56,8 @@ type Props = {
   setPayWithToast: (v: boolean) => void
   toastDraftWon: number | null
   setToastDraftWon: (v: number | null) => void
+  appliedToast: number | null
+  setAppliedToast: (v: number | null) => void
   afterCoupon: number
   payWithOran: boolean
   setPayWithOran: (v: boolean) => void
@@ -119,6 +121,8 @@ export default function CheckoutPageView({
   setPayWithToast,
   toastDraftWon,
   setToastDraftWon,
+  appliedToast,
+  setAppliedToast,
   afterCoupon,
   payWithOran,
   setPayWithOran,
@@ -475,6 +479,7 @@ export default function CheckoutPageView({
                         setToastDraftWon(half)
                       } else {
                         setToastDraftWon(null)
+                        setAppliedToast(null)
                       }
                       setPayWithToast(next)
                     }}
@@ -512,9 +517,12 @@ export default function CheckoutPageView({
               <button
                 type="button"
                 onClick={() => {
-                  const raw = Number((toastInputRef.current?.value || '').replace(/\D/g, '') || 0)
-                  const next = Math.max(0, Math.min(toastHalfLocal, raw))
+                  const next = Math.max(
+                    0,
+                    Math.min(toastHalfLocal, Number(toastInputRef.current?.value?.replace(/\D/g, '') || 0))
+                  )
                   setToastDraftWon(next)
+                  setAppliedToast(next)
                 }}
                 style={{ width: '100%', marginTop: 6, background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 0', fontSize: 12, cursor: 'pointer' }}
               >
