@@ -185,7 +185,21 @@ const GREETINGS = [
   (name: string) => `피부 천재 ${name}님 반가워요 💜`,
   (name: string) => `${name}님 덕분에 오랜이 빛나요 🌟`,
   (name: string) => `오늘도 가장 예쁜 ${name}님 💜`,
+  (name: string) => `오늘 하루 어떠셨어요, ${name}님? 💜`,
+  (name: string) => `${name}님 오늘도 수고 많으셨어요 🌸`,
+  (name: string) => `오늘도 ${name}님 응원해요 💜`,
+  (name: string) => `${name}님이라면 뭐든 잘 될 거예요 🌟`,
+  (name: string) => `오늘 하루도 ${name}님 편이에요 💜`,
+  (name: string) => `힘든 날엔 피부 케어로 충전해요, ${name}님 🌿`,
+  (name: string) => `${name}님 오늘도 최고예요 ✨`,
 ]
+
+const HORMONE_GREETINGS: Record<string, (name: string) => string> = {
+  '달빛기': (name) => `${name}님 오늘은 푹 쉬어요 💜`,
+  '황금기': (name) => `${name}님 지금이 황금기예요 ✨`,
+  '만개기': (name) => `${name}님 오늘 제일 빛나는 날이에요 🌸`,
+  '물들기': (name) => `${name}님 예민한 날이죠, 오랜이 있어요 💜`,
+}
 
 export default function CustomerHomePage() {
   const router = useRouter()
@@ -1092,6 +1106,18 @@ export default function CustomerHomePage() {
     }
     return ''
   }, [hormoneMainLine, hormoneSubLine])
+  const homeGreetingForUser = useMemo(() => {
+    if (!userName) return ''
+    const defaultGreeting = GREETINGS[greetingIndex](userName)
+    if (!hormonePhase || hormoneCycle == null || String(hormoneCycle?.track) !== 'general') {
+      return defaultGreeting
+    }
+    const hormoneFn = HORMONE_GREETINGS[hormonePhase]
+    if (Math.random() < 0.5) {
+      return hormoneFn ? hormoneFn(userName) : defaultGreeting
+    }
+    return defaultGreeting
+  }, [userName, greetingIndex, hormonePhase, hormoneCycle])
   useEffect(() => {
     setHormonePhaseTipOpen(false)
   }, [hormoneMainLine, hormoneSubLine])
@@ -1440,9 +1466,7 @@ export default function CustomerHomePage() {
             {todayLocaleLabel}
           </div>
           <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
-            {userName
-              ? GREETINGS[greetingIndex](userName)
-              : '오랜에 오셨군요 💜'}
+            {userName ? homeGreetingForUser : '오랜에 오셨군요 💜'}
           </div>
           <div style={{ fontSize: '11px', color: TEXT_MUTED }}>
             오늘 피부 케어 75%
