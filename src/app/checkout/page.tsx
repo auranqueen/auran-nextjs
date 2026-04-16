@@ -77,7 +77,6 @@ function CheckoutPageInner() {
   const [shippingFee, setShippingFee] = useState(0)
   const [extraShippingFee, setExtraShippingFee] = useState(0)
   const [toastDraftWon, setToastDraftWon] = useState<number | null>(null)
-  const [appliedToast, setAppliedToast] = useState<number | null>(null)
   const [payWithOran, setPayWithOran] = useState(false)
   const [oranDraftWon, setOranDraftWon] = useState<number | null>(null)
   const [isFounderUser, setIsFounderUser] = useState(false)
@@ -294,7 +293,9 @@ function CheckoutPageInner() {
 
   const afterCoupon = Math.max(0, afterGrade - couponDiscount)
   const toastHalf = Math.min(balance, Math.floor((afterCoupon * 1) / 2))
-  const toastUsed = payWithToast ? Math.min(balance, afterCoupon, appliedToast ?? toastHalf) : 0
+  const toastUsed = payWithToast
+    ? Math.min(balance, afterCoupon, toastDraftWon ?? toastHalf)
+    : 0
   const goodsAfterToast = Math.max(0, afterCoupon - toastUsed)
   const remBalAfterToast = Math.max(0, balance - toastUsed)
   const oranCap = Math.min(remBalAfterToast, goodsAfterToast)
@@ -437,8 +438,6 @@ function CheckoutPageInner() {
         setPayWithToast={setPayWithToast}
         toastDraftWon={toastDraftWon}
         setToastDraftWon={setToastDraftWon}
-        appliedToast={appliedToast}
-        setAppliedToast={setAppliedToast}
         afterCoupon={afterCoupon}
         payWithOran={payWithOran}
         setPayWithOran={setPayWithOran}
