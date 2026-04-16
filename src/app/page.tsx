@@ -2623,57 +2623,37 @@ export default function CustomerHomePage() {
           <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>🏷 브랜드별 보기</span>
           <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 브랜드 ›</span>
         </div>
-        <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '12px', scrollbarWidth: 'none' }}>
-          {['전체', '🇪🇺 유럽', '🇰🇷 국내', '🇯🇵 일본', '클리닉', '바디'].map((tab, i) => (
-            <div key={i} style={{
-              padding: '4px 12px', whiteSpace: 'nowrap', cursor: 'pointer', fontSize: '10px',
-              background: i === 0 ? GOLD : CARD_BG,
-              border: i === 0 ? 'none' : CARD_BORDER,
-              borderRadius: '20px',
-              color: i === 0 ? BG : TEXT_MUTED,
-              fontWeight: i === 0 ? 400 : 300,
-            }}>{tab}</div>
-          ))}
-        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px' }}>
-          {brandList.map((brand: any, i: number) => {
-            const raw = `${brand.label || ''} ${brand.name || ''}`.toUpperCase()
-            const genericBg = !brand.bg || brand.bg === 'rgba(201,169,110,0.1)'
-            let circleBg = brand.bg || 'rgba(201,169,110,0.1)'
-            let circleBorder = brand.border || 'rgba(201,169,110,0.3)'
-            let circleColor = brand.color || GOLD
-            if (genericBg) {
-              if (/GERNETIC|제네틱|제르/.test(raw)) { circleBg = 'rgba(28,52,38,0.55)'; circleBorder = 'rgba(56,110,76,0.5)'; circleColor = '#6fc49a' }
-              else if (/CIVASAN|시바산|프리미엄/.test(raw)) { circleBg = 'rgba(22,48,52,0.55)'; circleBorder = 'rgba(44,100,108,0.45)'; circleColor = '#5eb3bc' }
-              else if (/ANNA|안나|로자/.test(raw)) { circleBg = 'rgba(62,28,38,0.5)'; circleBorder = 'rgba(120,48,68,0.45)'; circleColor = '#c97d8f' }
-              else if (/ETR|ESTER|에뜨|에스터|레벨/.test(raw)) { circleBg = 'rgba(22,32,56,0.55)'; circleBorder = 'rgba(44,58,108,0.5)'; circleColor = '#7a90d4' }
-              else if (/SELVERT|셀버트|더말/.test(raw)) { circleBg = 'rgba(48,44,22,0.55)'; circleBorder = 'rgba(110,98,42,0.45)'; circleColor = '#b8a45a' }
-              else if (/SANTE|상떼/.test(raw)) { circleBg = 'rgba(58,36,22,0.5)'; circleBorder = 'rgba(130,72,42,0.45)'; circleColor = '#c4865c' }
-              else if (/보떼|떼덤|BEAUTE|BIOD/.test(raw)) { circleBg = 'rgba(48,28,52,0.5)'; circleBorder = 'rgba(88,44,98,0.45)'; circleColor = '#b892c4' }
-              else if (/SHOPBELLE|샵벨/.test(raw)) { circleBg = 'rgba(52,32,58,0.48)'; circleBorder = 'rgba(95,58,108,0.42)'; circleColor = '#c999d4' }
-              else if (/THALAC|탈락/.test(raw)) { circleBg = 'rgba(22,48,58,0.5)'; circleBorder = 'rgba(42,88,108,0.45)'; circleColor = '#5eb0c9' }
-              else if (/SOTHYS|소티스/.test(raw)) { circleBg = 'rgba(58,38,18,0.52)'; circleBorder = 'rgba(130,82,36,0.45)'; circleColor = '#d4a060' }
-              else if (/PHYTO|피토/.test(raw)) { circleBg = 'rgba(32,48,28,0.5)'; circleBorder = 'rgba(58,88,48,0.42)'; circleColor = '#8fbc7a' }
-            }
-            return (
-            <div key={i} onClick={() => router.push(`/brands/${brand.id}`)} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-              <div style={{
-                width: '58px', height: '58px', borderRadius: '50%',
-                background: circleBg,
-                border: `1.5px solid ${circleBorder}`,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: '10px', fontWeight: 400,
-                color: circleColor,
-                fontFamily: 'monospace', textAlign: 'center', lineHeight: 1.3,
-              }}>
-                {brand.name?.slice(0, 4)}<br />{brand.name?.slice(4, 8)}
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', padding: '4px 0', gridColumn: '1 / -1', scrollbarWidth: 'none' }}>
+            {brandList.map((brand: any, i: number) => (
+              <div
+                key={i}
+                onClick={() => router.push(`/brands/${brand.id}`)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  background: 'rgba(255,255,255,0.08)',
+                  borderRadius: 20,
+                  padding: '8px 14px',
+                }}
+              >
+                {brand.logo_url ? (
+                  <img
+                    src={brand.logo_url}
+                    alt={brand.name || ''}
+                    style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
+                  />
+                ) : null}
+                <span style={{ fontSize: 11, color: TEXT_MUTED }}>
+                  {brand.label || brand.name}
+                </span>
               </div>
-              <span style={{ fontSize: '9px', color: TEXT_MUTED, textAlign: 'center' }}>
-                {brand.label || brand.name}
-              </span>
-            </div>
-            )
-          })}
+            ))}
+          </div>
           {/* 더보기 */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
             <div style={{
