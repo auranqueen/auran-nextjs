@@ -21,7 +21,7 @@ function PayAppInner() {
       const supabase = createClient()
       const { data: product } = await supabase
         .from('products')
-        .select('id, name, retail_price, original_price')
+        .select('id, name, retail_price, sale_price')
         .eq('id', productId)
         .single()
 
@@ -31,7 +31,7 @@ function PayAppInner() {
         return
       }
 
-      const price = product.retail_price ?? product.original_price ?? 0
+      const price = product.retail_price ?? product.sale_price ?? 0
       const fromQuery = params.get('amount')
       const parsed = fromQuery != null && fromQuery !== '' ? Math.floor(Number(fromQuery)) : NaN
       const amount =

@@ -643,7 +643,7 @@ export default function CheckoutPageView({
       )}
       {couponSheetOpen && (
         <div onClick={() => setCouponSheetOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 131 }}>
-          <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 0, width: '100%', maxWidth: 480, maxHeight: '72vh', overflow: 'auto', background: '#11161b', borderTopLeftRadius: 18, borderTopRightRadius: 18, borderTop: '1px solid var(--border)', padding: 14 }}>
+          <div onClick={e => e.stopPropagation()} style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 0, width: '100%', maxWidth: 480, maxHeight: '72vh', overflow: 'auto', background: '#11161b', borderTopLeftRadius: 18, borderTopRightRadius: 18, borderTop: '1px solid var(--border)', padding: 14 }}>
             <div style={{ fontSize: 15, color: '#fff', fontWeight: 900, marginBottom: 10 }}>쿠폰 선택</div>
             <button type="button" onClick={() => { setSelectedUserCouponId(null); setCouponSheetOpen(false) }} style={{ width: '100%', padding: 10, marginBottom: 8, borderRadius: 10, border: '1px dashed var(--border)', background: 'transparent', color: 'var(--text3)', fontSize: 12 }}>
               쿠폰 적용 안 함
