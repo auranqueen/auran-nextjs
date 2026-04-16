@@ -61,6 +61,7 @@ const MENU = [
     section: 'MARKETING',
     items: [
       { label: '이벤트·공구 생성', href: '/admin/marketing/events', icon: '🎉' },
+      { label: '공동구매 관리', href: '/admin/marketing/groupbuys', icon: '🛒' },
       { label: "TODAY'S SKIN 공지", href: '/admin/skin-notices', icon: '💧' },
       { label: '공지·푸시 발송', href: '/admin/marketing/push', icon: '📢' },
       { label: '제품 관리', href: '/admin/marketing/products', icon: '🧴' },
@@ -109,6 +110,7 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/privacy')) return '개인정보 접근 로그'
   if (path.startsWith('/admin/coupons')) return '쿠폰 관리'
   if (path.startsWith('/admin/marketing/contests')) return '컨테스트 관리'
+  if (path.startsWith('/admin/marketing/groupbuys')) return '공동구매 관리'
   if (path.startsWith('/admin/commissions')) return '커미션 관리'
   if (path.startsWith('/admin/magazine')) return '매거진 관리'
   return 'Admin Console'
