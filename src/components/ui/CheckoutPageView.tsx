@@ -165,6 +165,16 @@ export default function CheckoutPageView({
   const [newAddress, setNewAddress] = useState('')
   const [newAddressDetail, setNewAddressDetail] = useState('')
   const [addressSaving, setAddressSaving] = useState(false)
+  const [addressDetail, setAddressDetail] = useState('')
+  const [newAddrStep, setNewAddrStep] = useState(1)
+  const [newAddressLabel, setNewAddressLabel] = useState('집')
+
+  useEffect(() => {
+    if (!newAddressOpen) {
+      setNewAddrStep(1)
+      setNewAddressLabel('집')
+    }
+  }, [newAddressOpen])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -304,16 +314,34 @@ export default function CheckoutPageView({
                 <>
                   <input type="text" placeholder="받는 분 이름" value={recipientName} onChange={e => setRecipientName(e.target.value)} style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }} />
                   <input type="tel" placeholder="연락처" value={recipientPhone} onChange={e => setRecipientPhone(e.target.value)} style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }} />
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <textarea placeholder="주소" value={address} onChange={e => setAddress(e.target.value)} rows={2} style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff', resize: 'none' }} />
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <input
+                      type="text"
+                      readOnly
+                      placeholder="주소"
+                      value={address}
+                      style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13 }}
+                    />
                     <button
                       type="button"
-                      onClick={() => openAddressSearch((nextAddress) => setAddress(nextAddress))}
-                      style={{ width: 56, border: 'none', borderRadius: 10, background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}
+                      onClick={() =>
+                        openAddressSearch((nextAddress) => {
+                          setAddress(nextAddress)
+                          setAddressDetail('')
+                        })
+                      }
+                      style={{ width: 56, flexShrink: 0, border: 'none', borderRadius: 10, background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}
                     >
                       찾기
                     </button>
                   </div>
+                  <input
+                    type="text"
+                    placeholder="상세주소 (동/호수 등)"
+                    value={addressDetail}
+                    onChange={(e) => setAddressDetail(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff', fontSize: 13 }}
+                  />
                 </>
               )}
             </div>
@@ -665,43 +693,126 @@ export default function CheckoutPageView({
             </button>
             {newAddressOpen && (
               <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 10, marginBottom: 10 }}>
-                <input type="text" placeholder="이름" value={newRecipientName} onChange={(e) => setNewRecipientName(e.target.value)} style={{ width: '100%', marginBottom: 8, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
-                <input type="tel" placeholder="전화번호" value={newRecipientPhone} onChange={(e) => setNewRecipientPhone(e.target.value)} style={{ width: '100%', marginBottom: 8, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
-                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                  <input type="text" placeholder="주소" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} style={{ flex: 1, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
-                  <button type="button" onClick={() => openAddressSearch((addr) => setNewAddress(addr))} style={{ width: 64, border: 'none', borderRadius: 8, background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}>주소찾기</button>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                  <div style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: 800, color: newAddrStep === 1 ? '#fff' : 'rgba(255,255,255,0.45)', padding: '6px 0', borderRadius: 8, background: newAddrStep === 1 ? '#7B5EA7' : 'rgba(255,255,255,0.06)' }}>
+                    1. 주소
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'center', fontSize: 11, fontWeight: 800, color: newAddrStep === 2 ? '#fff' : 'rgba(255,255,255,0.45)', padding: '6px 0', borderRadius: 8, background: newAddrStep === 2 ? '#7B5EA7' : 'rgba(255,255,255,0.06)' }}>
+                    2. 받는 분
+                  </div>
                 </div>
-                <input type="text" placeholder="상세주소" value={newAddressDetail} onChange={(e) => setNewAddressDetail(e.target.value)} style={{ width: '100%', marginBottom: 8, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
-                <button
-                  type="button"
-                  disabled={addressSaving || !meId || !newRecipientName.trim() || !newRecipientPhone.trim() || !newAddress.trim()}
-                  onClick={async () => {
-                    if (!meId) return
-                    setAddressSaving(true)
-                    const finalAddress = `${newAddress.trim()} ${newAddressDetail.trim()}`.trim()
-                    const { error } = await supabase.from('shipping_addresses').insert({
-                      user_id: meId,
-                      recipient_name: newRecipientName.trim(),
-                      recipient_phone: newRecipientPhone.trim(),
-                      address: finalAddress,
-                      is_default: savedAddresses.length === 0,
-                    })
-                    setAddressSaving(false)
-                    if (error) return
-                    await reloadSavedAddresses()
-                    setRecipientName(newRecipientName.trim())
-                    setRecipientPhone(newRecipientPhone.trim())
-                    setAddress(finalAddress)
-                    setNewAddressOpen(false)
-                    setNewRecipientName('')
-                    setNewRecipientPhone('')
-                    setNewAddress('')
-                    setNewAddressDetail('')
-                  }}
-                  style={{ width: '100%', border: 'none', borderRadius: 8, background: '#7B5EA7', color: '#fff', fontSize: 12, padding: '8px 0', cursor: 'pointer', opacity: addressSaving ? 0.7 : 1 }}
-                >
-                  {addressSaving ? '저장 중...' : '저장'}
-                </button>
+                {newAddrStep === 1 ? (
+                  <>
+                    <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 10 }}>주소를 입력해주세요</div>
+                    <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                      <input
+                        type="text"
+                        readOnly
+                        placeholder="주소"
+                        value={newAddress}
+                        style={{ flex: 1, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }}
+                      />
+                      <button type="button" onClick={() => openAddressSearch((addr) => setNewAddress(addr))} style={{ width: 72, flexShrink: 0, border: 'none', borderRadius: 8, background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}>
+                        주소찾기
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="상세주소"
+                      value={newAddressDetail}
+                      onChange={(e) => setNewAddressDetail(e.target.value)}
+                      style={{ width: '100%', marginBottom: 10, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }}
+                    />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewAddressOpen(false)
+                          setNewAddrStep(1)
+                        }}
+                        style={{ flex: 1, border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, background: 'transparent', color: 'rgba(255,255,255,0.85)', fontSize: 12, padding: '8px 0', cursor: 'pointer' }}
+                      >
+                        취소
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!newAddress.trim()}
+                        onClick={() => setNewAddrStep(2)}
+                        style={{ flex: 1, border: 'none', borderRadius: 8, background: '#7B5EA7', color: '#fff', fontSize: 12, padding: '8px 0', cursor: 'pointer', opacity: !newAddress.trim() ? 0.45 : 1 }}
+                      >
+                        다음
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 10 }}>받는 분 정보</div>
+                    <div style={{ marginBottom: 10, padding: 10, borderRadius: 8, background: 'rgba(123, 94, 167, 0.35)', border: '1px solid rgba(123, 94, 167, 0.5)', fontSize: 12, color: 'rgba(255,255,255,0.95)', lineHeight: 1.5 }}>
+                      {`${newAddress.trim()} ${newAddressDetail.trim()}`.trim() || '-'}
+                    </div>
+                    <input type="text" placeholder="이름" value={newRecipientName} onChange={(e) => setNewRecipientName(e.target.value)} style={{ width: '100%', marginBottom: 8, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
+                    <input type="tel" placeholder="전화번호" value={newRecipientPhone} onChange={(e) => setNewRecipientPhone(e.target.value)} style={{ width: '100%', marginBottom: 8, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginBottom: 6 }}>배송지 이름</div>
+                    <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                      {(['집', '회사', '기타'] as const).map((chip) => (
+                        <button
+                          key={chip}
+                          type="button"
+                          onClick={() => setNewAddressLabel(chip)}
+                          style={{
+                            flex: 1,
+                            border: newAddressLabel === chip ? 'none' : '1px solid rgba(255,255,255,0.15)',
+                            borderRadius: 999,
+                            background: newAddressLabel === chip ? '#7B5EA7' : 'transparent',
+                            color: '#fff',
+                            fontSize: 11,
+                            fontWeight: 800,
+                            padding: '6px 0',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {chip}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button type="button" onClick={() => setNewAddrStep(1)} style={{ flex: 1, border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, background: 'transparent', color: 'rgba(255,255,255,0.85)', fontSize: 12, padding: '8px 0', cursor: 'pointer' }}>
+                        ← 이전
+                      </button>
+                      <button
+                        type="button"
+                        disabled={addressSaving || !meId || !newRecipientName.trim() || !newRecipientPhone.trim() || !newAddress.trim()}
+                        onClick={async () => {
+                          if (!meId) return
+                          setAddressSaving(true)
+                          const finalAddress = `${newAddress.trim()} ${newAddressDetail.trim()}`.trim()
+                          const { error } = await supabase.from('shipping_addresses').insert({
+                            user_id: meId,
+                            recipient_name: newRecipientName.trim(),
+                            recipient_phone: newRecipientPhone.trim(),
+                            address: finalAddress,
+                            label: newAddressLabel,
+                            is_default: savedAddresses.length === 0,
+                          })
+                          setAddressSaving(false)
+                          if (error) return
+                          await reloadSavedAddresses()
+                          setRecipientName(newRecipientName.trim())
+                          setRecipientPhone(newRecipientPhone.trim())
+                          setAddress(finalAddress)
+                          setNewAddressOpen(false)
+                          setNewRecipientName('')
+                          setNewRecipientPhone('')
+                          setNewAddress('')
+                          setNewAddressDetail('')
+                        }}
+                        style={{ flex: 1, border: 'none', borderRadius: 8, background: '#7B5EA7', color: '#fff', fontSize: 12, padding: '8px 0', cursor: 'pointer', opacity: addressSaving ? 0.7 : 1 }}
+                      >
+                        {addressSaving ? '저장 중...' : '저장하기'}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             )}
             <button type="button" onClick={() => setAddressSheetOpen(false)} style={{ width: '100%', border: 'none', borderRadius: 10, background: 'linear-gradient(135deg, #C9A96E, #a07840)', color: '#000', fontWeight: 900, padding: '11px 0', cursor: 'pointer' }}>
