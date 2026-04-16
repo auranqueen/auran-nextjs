@@ -442,12 +442,6 @@ export default function CheckoutPageView({
                   전체 보유 쿠폰 목록
                 </button>
               </div>
-              {toastUsed > 0 ? (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#d4b8f0', fontSize: 13 }}>
-                  <span>🍞 토스트 차감</span>
-                  <span>-₩{toastUsed.toLocaleString()}</span>
-                </div>
-              ) : null}
               {freeShippingThreshold > 0 && (
                 <div style={{ marginBottom: 8, fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>
                   ₩{freeShippingThreshold.toLocaleString()} 이상 주문 시 기본 배송비 무료 · 제주·울릉 등 추가 배송비는 별도
