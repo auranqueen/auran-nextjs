@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import ProductThumbnail from '@/components/ui/ProductThumbnail'
+import { createClient } from '@/lib/supabase/client'
 import {
   computeCouponDiscount,
   isCouponApplicableForOrder,
@@ -34,6 +35,11 @@ type Props = {
   setRecipientPhone: (v: string) => void
   address: string
   setAddress: (v: string) => void
+  meId: string
+  savedAddresses: any[]
+  setSavedAddresses: (rows: any[]) => void
+  addressSheetOpen: boolean
+  setAddressSheetOpen: (v: boolean) => void
   subtotal: number
   afterGrade: number
   isFounder?: boolean
@@ -92,6 +98,11 @@ export default function CheckoutPageView({
   setRecipientPhone,
   address,
   setAddress,
+  meId,
+  savedAddresses,
+  setSavedAddresses,
+  addressSheetOpen,
+  setAddressSheetOpen,
   subtotal,
   afterGrade,
   isFounder = false,
@@ -137,6 +148,7 @@ export default function CheckoutPageView({
   onPayBankTransfer,
   onChargeKrw,
 }: Props) {
+  const supabase = createClient()
   const toastHalfLocal = Math.min(balance, Math.floor((afterCoupon * 1) / 2))
   const remBalAfterToast = Math.max(0, balance - toastUsed)
   const oranCapLocal = Math.min(remBalAfterToast, Math.max(0, afterCoupon - toastUsed))
@@ -147,6 +159,24 @@ export default function CheckoutPageView({
   const [selectedChargeSummary, setSelectedChargeSummary] = useState('')
   const [customChargeOpen, setCustomChargeOpen] = useState(false)
   const [customChargeInput, setCustomChargeInput] = useState('')
+  const [newAddressOpen, setNewAddressOpen] = useState(false)
+  const [newRecipientName, setNewRecipientName] = useState('')
+  const [newRecipientPhone, setNewRecipientPhone] = useState('')
+  const [newAddress, setNewAddress] = useState('')
+  const [newAddressDetail, setNewAddressDetail] = useState('')
+  const [addressSaving, setAddressSaving] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if ((window as any).daum?.Postcode) return
+    const existing = document.querySelector('script[data-daum-postcode="true"]')
+    if (existing) return
+    const script = document.createElement('script')
+    script.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js'
+    script.async = true
+    script.setAttribute('data-daum-postcode', 'true')
+    document.body.appendChild(script)
+  }, [])
 
   const closeChargeSheet = () => {
     setChargeSheetOpen(false)
@@ -160,6 +190,23 @@ export default function CheckoutPageView({
     setCustomChargeInput('')
     setSelectedChargeSummary(`${label} · ₩${krw.toLocaleString()} 선택됨`)
     onChargeKrw(krw)
+  }
+
+  const openAddressSearch = (onSelect: (addr: string) => void) => {
+    if (!(window as any).daum?.Postcode) return
+    new (window as any).daum.Postcode({
+      oncomplete: (data: any) => onSelect(String(data?.roadAddress || '')),
+    }).open()
+  }
+
+  const reloadSavedAddresses = async () => {
+    if (!meId) return
+    const { data } = await supabase
+      .from('shipping_addresses')
+      .select('*')
+      .eq('user_id', meId)
+      .order('is_default', { ascending: false })
+    setSavedAddresses(data || [])
   }
 
   return (
@@ -238,9 +285,37 @@ export default function CheckoutPageView({
 
             <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)' }}>
               <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 10 }}>배송 정보</div>
-              <input type="text" placeholder="받는 분 이름" value={recipientName} onChange={e => setRecipientName(e.target.value)} style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }} />
-              <input type="tel" placeholder="연락처" value={recipientPhone} onChange={e => setRecipientPhone(e.target.value)} style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }} />
-              <textarea placeholder="주소" value={address} onChange={e => setAddress(e.target.value)} rows={2} style={{ width: '100%', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff', resize: 'none' }} />
+              {savedAddresses.length > 0 ? (
+                <div style={{ padding: 12, borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.2)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>기본 배송지</div>
+                    <button type="button" onClick={() => setAddressSheetOpen(true)} style={{ border: 'none', background: 'rgba(123,94,167,0.2)', color: '#d9c7ff', fontSize: 11, borderRadius: 8, padding: '5px 9px', cursor: 'pointer' }}>변경</button>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <span style={{ fontSize: 12, color: '#fff', fontWeight: 800 }}>{recipientName || '-'}</span>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>· {recipientPhone || '-'}</span>
+                    {savedAddresses.some((a) => a.is_default === true && String(a.address || '') === String(address || '')) ? (
+                      <span style={{ fontSize: 10, color: '#fff', background: '#7B5EA7', borderRadius: 999, padding: '2px 7px' }}>기본</span>
+                    ) : null}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>{address || '-'}</div>
+                </div>
+              ) : (
+                <>
+                  <input type="text" placeholder="받는 분 이름" value={recipientName} onChange={e => setRecipientName(e.target.value)} style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }} />
+                  <input type="tel" placeholder="연락처" value={recipientPhone} onChange={e => setRecipientPhone(e.target.value)} style={{ width: '100%', marginBottom: 8, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff' }} />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <textarea placeholder="주소" value={address} onChange={e => setAddress(e.target.value)} rows={2} style={{ flex: 1, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '10px 12px', color: '#fff', resize: 'none' }} />
+                    <button
+                      type="button"
+                      onClick={() => openAddressSearch((nextAddress) => setAddress(nextAddress))}
+                      style={{ width: 56, border: 'none', borderRadius: 10, background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}
+                    >
+                      찾기
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
 
             <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)' }}>
@@ -544,6 +619,91 @@ export default function CheckoutPageView({
           </>
         )}
       </div>
+      {addressSheetOpen && (
+        <>
+          <div onClick={() => setAddressSheetOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 199, background: 'rgba(0,0,0,0.55)' }} />
+          <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, maxHeight: '75vh', overflowY: 'auto', zIndex: 200, background: '#11161b', borderTopLeftRadius: 20, borderTopRightRadius: 20, borderTop: '1px solid var(--border)', padding: 14 }}>
+            <div style={{ fontSize: 15, fontWeight: 900, color: '#fff', marginBottom: 10 }}>배송지 선택</div>
+            {savedAddresses.map((row) => {
+              const lineAddress = String(row.address || '')
+              const selected = lineAddress === String(address || '') && String(row.recipient_name || row.name || '') === String(recipientName || '')
+              return (
+                <label key={row.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, border: selected ? '1px solid rgba(201,168,76,0.6)' : '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 10, marginBottom: 8, cursor: 'pointer' }}>
+                  <input
+                    type="radio"
+                    name="saved_address_pick"
+                    checked={selected}
+                    onChange={() => {
+                      setRecipientName(String(row.recipient_name || row.name || ''))
+                      setRecipientPhone(String(row.recipient_phone || row.phone || ''))
+                      setAddress(lineAddress)
+                    }}
+                  />
+                  <span style={{ lineHeight: 1.45 }}>
+                    <span style={{ fontWeight: 900, color: '#fff' }}>{row.label || '배송지'}</span>
+                    {row.is_default === true ? <span style={{ marginLeft: 6, fontSize: 10, color: '#fff', background: '#7B5EA7', borderRadius: 999, padding: '2px 7px' }}>기본</span> : null}
+                    <br />
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.86)' }}>{String(row.recipient_name || row.name || '-')} · {String(row.recipient_phone || row.phone || '-')}</span>
+                    <br />
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>{lineAddress || '-'}</span>
+                  </span>
+                </label>
+              )
+            })}
+            <button
+              type="button"
+              onClick={() => setNewAddressOpen((v) => !v)}
+              style={{ width: '100%', marginTop: 4, marginBottom: 8, border: '1px dashed rgba(255,255,255,0.2)', background: 'transparent', color: 'var(--text3)', borderRadius: 10, padding: '9px 0', cursor: 'pointer' }}
+            >
+              + 새 배송지 추가
+            </button>
+            {newAddressOpen && (
+              <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 10, marginBottom: 10 }}>
+                <input type="text" placeholder="이름" value={newRecipientName} onChange={(e) => setNewRecipientName(e.target.value)} style={{ width: '100%', marginBottom: 8, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
+                <input type="tel" placeholder="전화번호" value={newRecipientPhone} onChange={(e) => setNewRecipientPhone(e.target.value)} style={{ width: '100%', marginBottom: 8, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
+                <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                  <input type="text" placeholder="주소" value={newAddress} onChange={(e) => setNewAddress(e.target.value)} style={{ flex: 1, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
+                  <button type="button" onClick={() => openAddressSearch((addr) => setNewAddress(addr))} style={{ width: 64, border: 'none', borderRadius: 8, background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}>주소찾기</button>
+                </div>
+                <input type="text" placeholder="상세주소" value={newAddressDetail} onChange={(e) => setNewAddressDetail(e.target.value)} style={{ width: '100%', marginBottom: 8, boxSizing: 'border-box', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '8px 10px', color: '#fff', fontSize: 12 }} />
+                <button
+                  type="button"
+                  disabled={addressSaving || !meId || !newRecipientName.trim() || !newRecipientPhone.trim() || !newAddress.trim()}
+                  onClick={async () => {
+                    if (!meId) return
+                    setAddressSaving(true)
+                    const finalAddress = `${newAddress.trim()} ${newAddressDetail.trim()}`.trim()
+                    const { error } = await supabase.from('shipping_addresses').insert({
+                      user_id: meId,
+                      recipient_name: newRecipientName.trim(),
+                      recipient_phone: newRecipientPhone.trim(),
+                      address: finalAddress,
+                      is_default: savedAddresses.length === 0,
+                    })
+                    setAddressSaving(false)
+                    if (error) return
+                    await reloadSavedAddresses()
+                    setRecipientName(newRecipientName.trim())
+                    setRecipientPhone(newRecipientPhone.trim())
+                    setAddress(finalAddress)
+                    setNewAddressOpen(false)
+                    setNewRecipientName('')
+                    setNewRecipientPhone('')
+                    setNewAddress('')
+                    setNewAddressDetail('')
+                  }}
+                  style={{ width: '100%', border: 'none', borderRadius: 8, background: '#7B5EA7', color: '#fff', fontSize: 12, padding: '8px 0', cursor: 'pointer', opacity: addressSaving ? 0.7 : 1 }}
+                >
+                  {addressSaving ? '저장 중...' : '저장'}
+                </button>
+              </div>
+            )}
+            <button type="button" onClick={() => setAddressSheetOpen(false)} style={{ width: '100%', border: 'none', borderRadius: 10, background: 'linear-gradient(135deg, #C9A96E, #a07840)', color: '#000', fontWeight: 900, padding: '11px 0', cursor: 'pointer' }}>
+              이 주소로 배송
+            </button>
+          </div>
+        </>
+      )}
       {chargeSheetOpen && (
         <div onClick={closeChargeSheet} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 130 }}>
           <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 0, width: '100%', maxWidth: 480, background: '#11161b', borderTopLeftRadius: 18, borderTopRightRadius: 18, borderTop: '1px solid var(--border)', padding: 14 }}>

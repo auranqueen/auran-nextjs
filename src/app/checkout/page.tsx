@@ -64,6 +64,8 @@ function CheckoutPageInner() {
   const [recipientName, setRecipientName] = useState('')
   const [recipientPhone, setRecipientPhone] = useState('')
   const [address, setAddress] = useState('')
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([])
+  const [addressSheetOpen, setAddressSheetOpen] = useState(false)
   const [payWithToast, setPayWithToast] = useState(true)
   const [payModal, setPayModal] = useState(false)
   const [earnToast, setEarnToast] = useState(true)
@@ -147,6 +149,19 @@ function CheckoutPageInner() {
       setMeId(me.id)
       setRecipientName(String((me as any).name || ''))
       setRecipientPhone(String((me as any).phone || ''))
+      const { data: shippingRows } = await supabase
+        .from('shipping_addresses')
+        .select('*')
+        .eq('user_id', me.id)
+        .order('is_default', { ascending: false })
+      const rows = shippingRows || []
+      setSavedAddresses(rows)
+      const defaultAddr = rows.find((r: any) => r.is_default === true) || null
+      if (defaultAddr) {
+        setRecipientName(String(defaultAddr.recipient_name || defaultAddr.name || (me as any).name || ''))
+        setRecipientPhone(String(defaultAddr.recipient_phone || defaultAddr.phone || (me as any).phone || ''))
+        setAddress(String(defaultAddr.address || ''))
+      }
       setPoints(toNum(me.points))
       setBalance(toNum(me.charge_balance))
       setIsFounderUser(!!(me as { is_founder?: boolean }).is_founder)
@@ -400,6 +415,11 @@ function CheckoutPageInner() {
         setRecipientPhone={setRecipientPhone}
         address={address}
         setAddress={setAddress}
+        meId={meId}
+        savedAddresses={savedAddresses}
+        setSavedAddresses={setSavedAddresses}
+        addressSheetOpen={addressSheetOpen}
+        setAddressSheetOpen={setAddressSheetOpen}
         subtotal={subtotal}
         afterGrade={afterGrade}
         isFounder={isFounderUser}
