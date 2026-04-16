@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -168,6 +168,7 @@ export default function CheckoutPageView({
   const [addressDetail, setAddressDetail] = useState('')
   const [newAddrStep, setNewAddrStep] = useState(1)
   const [newAddressLabel, setNewAddressLabel] = useState('집')
+  const toastInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!newAddressOpen) {
@@ -492,6 +493,7 @@ export default function CheckoutPageView({
                       <span style={{ fontSize: 13, color: '#7B5EA7' }}>-{(toastDraftWon ?? toastHalfLocal).toLocaleString()}원</span>
                     </div>
                     <input
+                      ref={toastInputRef}
                       type="text"
                       inputMode="numeric"
                       value={String(toastDraftWon ?? toastHalfLocal)}
@@ -504,9 +506,9 @@ export default function CheckoutPageView({
                     <button
                       type="button"
                       onClick={() => {
-                        const next = Math.max(0, Math.min(toastHalfLocal, Number(toastDraftWon ?? toastHalfLocal) || 0))
-                        setToastDraftWon(null)
-                        setTimeout(() => setToastDraftWon(next), 0)
+                        const raw = Number((toastInputRef.current?.value || '').replace(/\D/g, '') || 0)
+                        const next = Math.max(0, Math.min(toastHalfLocal, raw))
+                        setToastDraftWon(next)
                       }}
                       style={{ width: '100%', marginTop: 6, background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 8, padding: '7px 0', fontSize: 12, cursor: 'pointer' }}
                     >
