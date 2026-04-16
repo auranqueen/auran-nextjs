@@ -16,7 +16,7 @@ export async function issueSignupCouponsForAuthUser(authUserId: string): Promise
 
   const { data: coupons } = await client
     .from('coupons')
-    .select('id,name,issued_count,max_issue_count')
+    .select('id,name,issued_count,max_issue_count,is_gift,exclude_timesale,exclude_groupbuy,exclude_event')
     .eq('issue_trigger', 'signup')
     .eq('is_active', true)
 
