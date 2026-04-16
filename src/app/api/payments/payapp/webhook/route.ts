@@ -186,7 +186,7 @@ export async function POST(req: NextRequest) {
         const { data: orderRow } = await client
           .from('orders')
           .select(
-            'id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,gift_receiver_id,gift_message,payment_applied,gift_created,user_coupon_id,address,recipient_name,recipient_phone'
+            'id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,gift_receiver_id,gift_message,payment_applied,gift_created,user_coupon_id,address,recipient_name,recipient_phone,order_items(product_id)'
           )
           .eq('id', intent.target_id)
           .maybeSingle()
@@ -289,6 +289,59 @@ export async function POST(req: NextRequest) {
               })
               .eq('id', orderRow.user_coupon_id)
               .eq('status', 'unused')
+          }
+
+          // 브랜드별 상시 쿠폰 (issue_trigger null · scope brand) — unused 없을 때만 발급, issued_count 반영
+          if (intent.user_id) {
+            let oiList = ((orderRow as any)?.order_items || []) as { product_id?: string | null }[]
+            const pidFromOi = (rows: { product_id?: string | null }[]) =>
+              Array.from(
+                new Set(rows.map((x) => x?.product_id).filter((id): id is string => Boolean(id)))
+              )
+            let productIds = pidFromOi(oiList)
+            if (!productIds.length && orderRow.id) {
+              const { data: oiRows } = await client.from('order_items').select('product_id').eq('order_id', orderRow.id)
+              oiList = (oiRows || []) as { product_id?: string | null }[]
+              productIds = pidFromOi(oiList)
+            }
+            if (productIds.length) {
+              const { data: prows } = await client.from('products').select('brand_id').in('id', productIds)
+              const brandIds = Array.from(
+                new Set((prows || []).map((p: { brand_id?: string | null }) => p?.brand_id).filter((id): id is string => Boolean(id)))
+              )
+              if (brandIds.length) {
+                const { data: brandCoupons } = await client
+                  .from('coupons')
+                  .select('id,issued_count,max_issue_count,scope_brand_ids')
+                  .is('issue_trigger', null)
+                  .eq('scope', 'brand')
+                  .eq('is_active', true)
+                for (const c of brandCoupons || []) {
+                  const scopeIds = (c.scope_brand_ids || []) as string[]
+                  const applies = brandIds.some((bid) => scopeIds.includes(bid))
+                  if (!applies) continue
+                  if (c.max_issue_count != null && (c.issued_count || 0) >= c.max_issue_count) continue
+                  const { data: unusedRow } = await client
+                    .from('user_coupons')
+                    .select('id')
+                    .eq('user_id', intent.user_id)
+                    .eq('coupon_id', c.id)
+                    .eq('status', 'unused')
+                    .maybeSingle()
+                  if (unusedRow) continue
+                  const { error: bcErr } = await client.from('user_coupons').insert({
+                    user_id: intent.user_id,
+                    coupon_id: c.id,
+                    status: 'unused',
+                  })
+                  if (bcErr) continue
+                  await client
+                    .from('coupons')
+                    .update({ issued_count: (c.issued_count || 0) + 1 })
+                    .eq('id', c.id)
+                }
+              }
+            }
           }
         }
 
