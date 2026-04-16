@@ -286,8 +286,6 @@ export default function CheckoutPageView({
                   if (!c) return null
                   const disc = computeCouponDiscount(afterGrade, c, { maxPercent: maxCouponPct })
                   const minO = Number(c.min_order || 0)
-                  const exp = uc.expired_at || c.end_at
-                  const expLabel = exp ? new Date(exp).toLocaleDateString('ko-KR', { timeZone: 'Asia/Seoul', month: '2-digit', day: '2-digit' }) : '—'
                   return (
                     <label
                       key={uc.id}
@@ -309,9 +307,13 @@ export default function CheckoutPageView({
                       <span style={{ lineHeight: 1.45 }}>
                         <span style={{ fontWeight: 900 }}>{c.name}</span>
                         <br />
-                        <span style={{ color: 'var(--gold)', fontWeight: 800 }}>−₩{disc.toLocaleString()}</span>
-                        {' · '}
-                        최소 ₩{minO.toLocaleString()} · ~{expLabel}
+                        <span style={{ color: 'var(--gold)', fontWeight: 800 }}>{disc > 0 ? `${disc.toLocaleString()}원 할인` : ''}</span>
+                        {minO > 0 ? (
+                          <>
+                            {disc > 0 ? ' · ' : ''}
+                            최소 ₩{minO.toLocaleString()}
+                          </>
+                        ) : null}
                       </span>
                     </label>
                   )
@@ -656,7 +658,7 @@ export default function CheckoutPageView({
               const minO = Math.max(0, Number(c.min_order ?? 0))
               const subFail = !expired && afterGrade < minO
               const dt = (c.discount_type || (c.type === 'rate' ? 'rate' : 'amount')) as string
-              const dv = c.discount_value != null ? Number(c.discount_value) : dt === 'rate' ? Number(c.discount_rate || 0) : Number(c.discount_amount || 0)
+              const dv = (c.discount_value != null && Number(c.discount_value) !== 0) ? Number(c.discount_value) : dt === 'rate' ? Number(c.discount_rate || 0) : Number(c.discount_amount || 0)
               const discLabel = dt === 'rate' ? `${dv}% 할인` : `₩${dv.toLocaleString()} 할인`
               return (
                 <button key={uc.id} type="button" disabled={!ok} onClick={() => { if (!ok) return; setSelectedUserCouponId(uc.id); setCouponSheetOpen(false) }}
