@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import DashboardHeader from '@/components/DashboardHeader'
@@ -80,7 +80,6 @@ function CheckoutPageInner() {
   const [payWithOran, setPayWithOran] = useState(false)
   const [oranDraftWon, setOranDraftWon] = useState<number | null>(null)
   const [isFounderUser, setIsFounderUser] = useState(false)
-  const skipAddressPersistOnce = useRef(false)
 
   const toastRate = getSettingNum('toast', 'exchange_rate', 100)
   const maxCouponPct = getSettingNum('coupon', 'max_percent_discount', 70)
@@ -139,7 +138,7 @@ function CheckoutPageInner() {
       }
       const { data: me } = await supabase
         .from('users')
-        .select('id,name,phone,points,charge_balance,customer_grade,is_founder,shipping_address')
+        .select('id,name,phone,points,charge_balance,customer_grade,is_founder')
         .eq('auth_id', user.id)
         .maybeSingle()
       if (!me?.id) {
@@ -162,13 +161,6 @@ function CheckoutPageInner() {
         setRecipientName(String(defaultAddr.recipient_name || defaultAddr.name || (me as any).name || ''))
         setRecipientPhone(String(defaultAddr.recipient_phone || defaultAddr.phone || (me as any).phone || ''))
         setAddress(String(defaultAddr.address || ''))
-        skipAddressPersistOnce.current = true
-      } else if (rows.length === 0) {
-        const fallbackAddr = String((me as any).shipping_address || '').trim()
-        if (fallbackAddr) {
-          setAddress(fallbackAddr)
-          skipAddressPersistOnce.current = true
-        }
       }
       setPoints(toNum(me.points))
       setBalance(toNum(me.charge_balance))
@@ -207,39 +199,6 @@ function CheckoutPageInner() {
     }
     run()
   }, [productIds.join(','), search?.toString()])
-
-  useEffect(() => {
-    if (loading || !meId) return
-    const trimmed = String(address || '').trim()
-    if (trimmed.length < 2) return
-    if (skipAddressPersistOnce.current) {
-      skipAddressPersistOnce.current = false
-      return
-    }
-    const t = window.setTimeout(() => {
-      void (async () => {
-        const client = createClient()
-        const { data: existing } = await client
-          .from('shipping_addresses')
-          .select('id')
-          .eq('user_id', meId)
-          .eq('is_default', true)
-          .maybeSingle()
-        if (existing?.id) {
-          await client.from('shipping_addresses').update({ address: trimmed, label: '최근입력' }).eq('id', existing.id)
-        } else {
-          await client.from('shipping_addresses').insert({
-            user_id: meId,
-            address: trimmed,
-            is_default: true,
-            label: '최근입력',
-          })
-        }
-        await client.from('users').update({ shipping_address: trimmed } as any).eq('id', meId)
-      })()
-    }, 450)
-    return () => window.clearTimeout(t)
-  }, [address, meId, loading])
 
   const subtotal = useMemo(
     () =>
