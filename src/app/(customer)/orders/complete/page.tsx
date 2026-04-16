@@ -33,6 +33,8 @@ function OrderCompleteContent() {
   const [payAmount, setPayAmount] = useState<number>(0)
   const [toastAmount, setToastAmount] = useState<number | null>(null)
   const [purchaseRate, setPurchaseRate] = useState<number>(3)
+  const [userPoints, setUserPoints] = useState<number | null>(null)
+  const [orderToastUsed, setOrderToastUsed] = useState(0)
 
   useEffect(() => {
     if (!orderId) {
@@ -48,7 +50,7 @@ function OrderCompleteContent() {
 
       const { data: order } = await supabase
         .from('orders')
-        .select('id, order_no, items, total_amount, final_amount')
+        .select('id, order_no, items, total_amount, final_amount, toast_used')
         .eq('id', orderId)
         .maybeSingle()
 
@@ -142,6 +144,12 @@ function OrderCompleteContent() {
         bs = bsRes.data as { setting_value?: unknown } | null
       }
 
+      let pointsForUser: number | null = null
+      if (loggedIn && user?.id) {
+        const { data: upRow } = await supabase.from('users').select('points').eq('auth_id', user.id).maybeSingle()
+        pointsForUser = num((upRow as { points?: unknown })?.points, 0)
+      }
+
       if (!cancelled) {
         setIsLoggedIn(loggedIn)
         setOrderNo(String((order as { order_no?: string; id?: string }).order_no || (order as { id?: string }).id || ''))
@@ -150,6 +158,8 @@ function OrderCompleteContent() {
         setPayAmount(payTotal)
         setToastAmount(tx ? num(tx.amount, 0) : null)
         setPurchaseRate(num(bs?.setting_value, 3))
+        setOrderToastUsed(num((order as { toast_used?: unknown }).toast_used, 0))
+        setUserPoints(pointsForUser)
         setOrderMissing(false)
         setLoading(false)
       }
@@ -283,6 +293,16 @@ function OrderCompleteContent() {
                 </div>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)' }}>
                   구매금액의 {purchaseRate}% 적립
+                </div>
+                <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 12, marginTop: 12 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 6 }}>
+                    <span>사용한 토스트</span>
+                    <span>-{(orderToastUsed ?? 0).toLocaleString()}T</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#7B5EA7' }}>
+                    <span>남은 토스트</span>
+                    <span>{Math.max(0, (userPoints ?? 0) - (orderToastUsed ?? 0)).toLocaleString()}T</span>
+                  </div>
                 </div>
               </>
             ) : (

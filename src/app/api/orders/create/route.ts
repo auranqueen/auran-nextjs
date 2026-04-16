@@ -188,6 +188,7 @@ export async function POST(req: NextRequest) {
       total_amount: totalAmount,
       point_used: pointUsed,
       charge_used: chargeUsed,
+      toast_used: Number(body.toastUsed ?? 0),
       coupon_discount: couponDiscount,
       final_amount: finalAmount,
       earn_points: purchaseEarnPoints,
