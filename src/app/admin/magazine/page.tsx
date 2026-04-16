@@ -96,7 +96,11 @@ export default function AdminMagazinePage() {
       setProdHits([])
       return
     }
-    const { data } = await supabase.from('products').select('id,name,price').ilike('name', `%${q}%`).limit(15)
+    const { data } = await supabase
+      .from('products')
+      .select('id,name,retail_price,sale_price')
+      .ilike('name', `%${q}%`)
+      .limit(15)
     setProdHits((data as any[]) || [])
   }
 
@@ -319,7 +323,10 @@ export default function AdminMagazinePage() {
                       onClick={() => addTag(String(p.id))}
                       style={{ display: 'block', width: '100%', textAlign: 'left', padding: 8, border: 'none', borderBottom: '1px solid var(--border)', background: 'transparent', color: 'var(--text)', fontSize: 11, cursor: 'pointer' }}
                     >
-                      {p.name} — ₩{Number(p.price || 0).toLocaleString()}
+                      {p.name} — ₩
+                      {Number(
+                        Number(p.sale_price ?? 0) > 0 ? p.sale_price : p.retail_price ?? 0
+                      ).toLocaleString()}
                     </button>
                   ))}
                 </div>
