@@ -152,6 +152,20 @@ export default function GroupBuysAdminPage() {
       alert('제품 공구 표시 동기화 실패: ' + syncErr.message)
     }
     loadItems()
+    setPq('')
+    setPicks([])
+    setPickOpen(false)
+    setSel(null)
+    setTargetCount(200)
+    setCurrentCount(0)
+    setDiscountRate(30)
+    setOriginalPrice(0)
+    setGroupPrice(0)
+    setEndsAt(defaultEndsAtLocal())
+    setGiftTitle('')
+    setGiftDescription('')
+    setGiftPoints(500)
+    setIsActiveNew(true)
     alert('공구가 등록되었습니다.')
   }
 
