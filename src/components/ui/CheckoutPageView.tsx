@@ -441,32 +441,6 @@ export default function CheckoutPageView({
                   전체 보유 쿠폰 목록
                 </button>
               </div>
-              {toastUsed > 0 ? (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#d4b8f0', fontSize: 13 }}>
-                  <span>🍞 토스트 차감</span>
-                  <span>-₩{toastUsed.toLocaleString()}</span>
-                </div>
-              ) : null}
-              {freeShippingThreshold > 0 && (
-                <div style={{ marginBottom: 8, fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>
-                  ₩{freeShippingThreshold.toLocaleString()} 이상 주문 시 기본 배송비 무료 · 제주·울릉 등 추가 배송비는 별도
-                </div>
-              )}
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: 'rgba(255,255,255,0.88)', fontSize: 13 }}>
-                <span>배송비</span>
-                <span>{shippingFee > 0 ? `₩${shippingFee.toLocaleString()}` : '무료'}</span>
-              </div>
-              {extraShippingFee > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#9ecfff', fontSize: 13 }}>
-                  <span>제주·산간 추가</span>
-                  <span>+₩{extraShippingFee.toLocaleString()}</span>
-                </div>
-              )}
-            </div>
-
-            <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)' }}>
-              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 10 }}>결제 수단 <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 400 }}>(중복 사용 가능)</span></div>
-
               <div style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: 12, color: '#fff' }}>🍞 토스트</span>
@@ -528,6 +502,31 @@ export default function CheckoutPageView({
               >
                 적용
               </button>
+              {toastUsed > 0 ? (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#d4b8f0', fontSize: 13 }}>
+                  <span>🍞 토스트 차감</span>
+                  <span>-₩{toastUsed.toLocaleString()}</span>
+                </div>
+              ) : null}
+              {freeShippingThreshold > 0 && (
+                <div style={{ marginBottom: 8, fontSize: 11, color: 'var(--text3)', lineHeight: 1.45 }}>
+                  ₩{freeShippingThreshold.toLocaleString()} 이상 주문 시 기본 배송비 무료 · 제주·울릉 등 추가 배송비는 별도
+                </div>
+              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: 'rgba(255,255,255,0.88)', fontSize: 13 }}>
+                <span>배송비</span>
+                <span>{shippingFee > 0 ? `₩${shippingFee.toLocaleString()}` : '무료'}</span>
+              </div>
+              {extraShippingFee > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#9ecfff', fontSize: 13 }}>
+                  <span>제주·산간 추가</span>
+                  <span>+₩{extraShippingFee.toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginBottom: 12, padding: 12, borderRadius: 12, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)' }}>
+              <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 10 }}>결제 수단 <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 400 }}>(중복 사용 가능)</span></div>
 
               <div style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: payWithOran ? 8 : 0 }}>
