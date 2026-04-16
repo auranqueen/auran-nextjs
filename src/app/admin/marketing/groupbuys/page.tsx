@@ -333,6 +333,24 @@ export default function GroupBuysAdminPage() {
             />
           </div>
           <div>
+            {label('할인 금액 (원)', 11)}
+            <input
+              type="number"
+              disabled={originalPrice === 0}
+              value={originalPrice === 0 ? '' : originalPrice - groupPrice}
+              onChange={e => {
+                const op = originalPrice
+                if (!op) return
+                const raw = Number(e.target.value)
+                if (Number.isNaN(raw)) return
+                const amt = Math.max(0, Math.min(raw, op))
+                setGroupPrice(op - amt)
+                setDiscountRate(Math.round((amt / op) * 100))
+              }}
+              style={inp}
+            />
+          </div>
+          <div>
             {label('정가 (원)', 11)}
             <input
               type="number"
@@ -363,7 +381,7 @@ export default function GroupBuysAdminPage() {
             <input value={giftDescription} onChange={e => setGiftDescription(e.target.value)} style={inp} />
           </div>
           <div>
-            {label('포인트', 11)}
+            {label('토스트 (T)', 11)}
             <input
               type="number"
               value={giftPoints}
