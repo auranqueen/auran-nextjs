@@ -58,10 +58,10 @@ export function isCouponApplicableForOrder(
 function effectiveDiscountMeta(c: any): { kind: 'amount' | 'rate'; value: number } {
   const dt = (c.discount_type || (c.type === 'rate' ? 'rate' : 'amount')) as string
   if (dt === 'rate') {
-    const v = Number(c.discount_value != null ? c.discount_value : c.discount_rate ?? 0)
+    const v = Number((c.discount_value != null && Number(c.discount_value) !== 0) ? c.discount_value : c.discount_rate ?? 0)
     return { kind: 'rate', value: v }
   }
-  const v = Number(c.discount_value != null ? c.discount_value : c.discount_amount ?? 0)
+  const v = Number((c.discount_value != null && Number(c.discount_value) !== 0) ? c.discount_value : c.discount_amount ?? 0)
   return { kind: 'amount', value: v }
 }
 
