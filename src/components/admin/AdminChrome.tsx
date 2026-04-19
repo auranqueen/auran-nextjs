@@ -32,42 +32,38 @@ const MENU = [
     ],
   },
   {
-    section: 'ORDER',
+    section: 'SALES',
     items: [
-      { label: '배송 관리', href: '/admin/shipping', icon: '🚚', badgeKey: 'ship' as const },
       { label: '주문 내역', href: '/admin/orders', icon: '📦' },
       { label: '충전 승인', href: '/admin/wallet-requests', icon: '🏦' },
-      { label: '제품 등록', href: '/admin/products/edit', icon: '📝' },
       { label: '정산 일괄 처리', href: '/admin/settlement', icon: '💰' },
       { label: '매출 분석', href: '/admin/revenue', icon: '📈' },
+      { label: '배송 관리', href: '/admin/shipping', icon: '🚚', badgeKey: 'ship' as const },
     ],
   },
   {
-    section: 'COMMISSION',
-    items: [{ label: '커미션관리', href: '/admin/commissions', icon: '💰', badgeKey: 'commission' as const }],
-  },
-  {
-    section: 'SETTINGS+',
+    section: 'PRODUCT',
     items: [
-      { label: '추천 매핑', href: '/admin/mapping', icon: '🧩' },
-      { label: '충전 플랜', href: '/admin/charge', icon: '💳' },
-      { label: '구독 관리', href: '/admin/subscriptions', icon: '🪪' },
-      { label: '초대 링크', href: '/admin/invite', icon: '🔗' },
+      { label: '제품 등록', href: '/admin/products/edit', icon: '📝' },
+      { label: '제품 관리', href: '/admin/marketing/products', icon: '🧴' },
+      { label: '공동구매 관리', href: '/admin/marketing/groupbuys', icon: '🛒' },
+      { label: '쿠폰 관리', href: '/admin/coupons', icon: '🎫' },
     ],
   },
   {
     section: 'CONTENT',
-    items: [{ label: '매거진', href: '/admin/magazine', icon: '📖' }],
-  },
-  {
-    section: 'MARKETING',
     items: [
-      { label: '공동구매 관리', href: '/admin/marketing/groupbuys', icon: '🛒' },
+      { label: '매거진', href: '/admin/magazine', icon: '📖' },
+      { label: '🏆 컨테스트', href: '/admin/marketing/contests', icon: '🏆' },
       { label: "TODAY'S SKIN 공지", href: '/admin/skin-notices', icon: '💧' },
       { label: '공지·푸시 발송', href: '/admin/marketing/push', icon: '📢' },
-      { label: '제품 관리', href: '/admin/marketing/products', icon: '🧴' },
-      { label: '🏆 컨테스트', href: '/admin/marketing/contests', icon: '🏆' },
-      { label: '쿠폰 관리', href: '/admin/coupons', icon: '🎫' },
+    ],
+  },
+  {
+    section: 'MEMBER',
+    items: [
+      { label: '커미션관리', href: '/admin/commissions', icon: '💰', badgeKey: 'commission' as const },
+      { label: '초대 링크', href: '/admin/invite', icon: '🔗' },
     ],
   },
   {
@@ -75,6 +71,9 @@ const MENU = [
     items: [
       { label: '포인트 설정', href: '/admin/settings/points', icon: '✨' },
       { label: '수수료·추천 설정', href: '/admin/settings/commission', icon: '💰' },
+      { label: '추천 매핑', href: '/admin/mapping', icon: '🧩' },
+      { label: '충전 플랜', href: '/admin/charge', icon: '💳' },
+      { label: '구독 관리', href: '/admin/subscriptions', icon: '🪪' },
       { label: '이상 감지·알림', href: '/admin/settings/anomaly', icon: '🚨' },
       { label: 'AURAN 설정', href: '/admin/settings/admin-settings', icon: '🧩' },
       { label: '타임세일 관리', href: '/admin/settings/flash-sale', icon: '⏱️' },
