@@ -37,6 +37,7 @@ const MENU = [
       { label: '배송 관리', href: '/admin/shipping', icon: '🚚', badgeKey: 'ship' as const },
       { label: '주문 내역', href: '/admin/orders', icon: '📦' },
       { label: '충전 승인', href: '/admin/wallet-requests', icon: '🏦' },
+      { label: '제품 등록', href: '/admin/products/edit', icon: '📝' },
       { label: '정산 일괄 처리', href: '/admin/settlement', icon: '💰' },
       { label: '매출 분석', href: '/admin/revenue', icon: '📈' },
     ],
@@ -92,6 +93,7 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/shipping')) return '배송 관리'
   if (path.startsWith('/admin/orders')) return '주문 내역'
   if (path.startsWith('/admin/wallet-requests')) return '충전 승인'
+  if (path.startsWith('/admin/products/edit')) return '제품 등록'
   if (path.startsWith('/admin/members')) return '회원 관리'
   if (path.startsWith('/admin/owners')) return '원장님 관리'
   if (path.startsWith('/admin/creators')) return '크리에이터'
