@@ -660,7 +660,6 @@ export default function OwnerChatRoomPage() {
                     .update({ status: 'completed' } as any)
                     .eq('id', channelId)
                   if (stErr) return
-                  await supabase.from('users').update({ renobel_unlocked: true }).eq('id', customerUserId)
                 } finally {
                   setSending(false)
                 }
@@ -680,6 +679,35 @@ export default function OwnerChatRoomPage() {
             }}
           >
             상담 완료
+          </button>
+          <button
+            type="button"
+            disabled={!customerUserId}
+            onClick={() => {
+              void (async () => {
+                if (!customerUserId) return
+                const { error } = await supabase.from('users').update({ renobel_unlocked: true }).eq('id', customerUserId)
+                if (error) {
+                  console.warn('[renobel_unlocked]', error)
+                  return
+                }
+                alert('르노벨이 오픈됐어요 💜')
+              })()
+            }}
+            style={{
+              flexShrink: 0,
+              padding: '6px 10px',
+              borderRadius: 8,
+              border: '1px solid rgba(123,94,167,0.5)',
+              background: 'rgba(76,173,126,0.15)',
+              color: '#b8e6c8',
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: !customerUserId ? 'default' : 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            💜 르노벨 오픈
           </button>
         </div>
         <div style={{ fontSize: 11, color: '#e8dff5', border: '1px solid rgba(123,94,167,0.45)', background: 'rgba(123,94,167,0.2)', borderRadius: 999, padding: '4px 10px' }}>
