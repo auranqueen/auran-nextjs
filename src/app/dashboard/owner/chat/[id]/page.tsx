@@ -80,7 +80,18 @@ export default function OwnerChatRoomPage() {
   const [showCouponForm, setShowCouponForm] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const [historyOrders, setHistoryOrders] = useState<
-    { id: string; created_at: string; final_amount: number | null; status: string | null }[]
+    {
+      id: string
+      created_at: string
+      final_amount: number | null
+      status: string | null
+      order_items?: {
+        quantity: number
+        unit_price: number
+        product_name?: string
+        products?: { thumbnail_url?: string; name?: string } | null
+      }[]
+    }[]
   >([])
 
   const scrollBottom = useCallback(() => {
@@ -101,15 +112,28 @@ export default function OwnerChatRoomPage() {
     void (async () => {
       const { data } = await supabase
         .from('orders')
-        .select('id,created_at,final_amount,status')
+        .select(
+          'id,created_at,final_amount,status,order_items(quantity,unit_price,product_name,products(thumbnail_url,name))'
+        )
         .eq('customer_id', customerUserId)
         .order('created_at', { ascending: false })
         .limit(10)
       if (!cancelled)
         setHistoryOrders(
-          ((data as { id: string; created_at: string; final_amount: number | null; status: string | null }[]) || []).filter(
-            (r) => r?.id
-          )
+          (
+            (data as {
+              id: string
+              created_at: string
+              final_amount: number | null
+              status: string | null
+              order_items?: {
+                quantity: number
+                unit_price: number
+                product_name?: string
+                products?: { thumbnail_url?: string; name?: string } | null
+              }[]
+            }[]) || []
+          ).filter((r) => r?.id)
         )
     })()
     return () => {
@@ -675,21 +699,98 @@ export default function OwnerChatRoomPage() {
           {historyOrders.length === 0 ? (
             <div style={{ fontSize: 12, color: TEXT_MUTED }}>아직 구매 내역이 없어요</div>
           ) : (
-            historyOrders.map((o) => (
-              <div
-                key={o.id}
-                style={{
-                  fontSize: 12,
-                  color: 'rgba(255,255,255,0.82)',
-                  padding: '6px 0',
-                  borderBottom: '1px solid rgba(255,255,255,0.06)',
-                  fontFamily: "'JetBrains Mono', ui-monospace, monospace",
-                }}
-              >
-                {new Date(o.created_at).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' })} · ₩
-                {Number(o.final_amount ?? 0).toLocaleString()} · {String(o.status ?? '—')}
-              </div>
-            ))
+            historyOrders.map((o) => {
+              const cd = new Date(o.created_at)
+              const dateStr = `${cd.getFullYear()}.${String(cd.getMonth() + 1).padStart(2, '0')}.${String(cd.getDate()).padStart(2, '0')}`
+              const items = o.order_items ?? []
+              return (
+                <div
+                  key={o.id}
+                  style={{
+                    marginBottom: 10,
+                    background: 'rgba(255,255,255,0.04)',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: items.length > 0 ? 8 : 0,
+                    }}
+                  >
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.82)' }}>{dateStr}</span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: 'rgba(255,255,255,0.6)',
+                        background: 'rgba(255,255,255,0.08)',
+                        padding: '2px 8px',
+                        borderRadius: 4,
+                      }}
+                    >
+                      {String(o.status ?? '—')}
+                    </span>
+                  </div>
+                  {items.map((it, idx) => {
+                    const thumb = it.products?.thumbnail_url
+                    const label = it.product_name ?? it.products?.name ?? '상품'
+                    const lineTotal = Number(it.quantity ?? 0) * Number(it.unit_price ?? 0)
+                    return (
+                      <div
+                        key={idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          marginTop: idx === 0 ? 0 : 6,
+                          fontSize: 12,
+                          color: 'rgba(255,255,255,0.82)',
+                        }}
+                      >
+                        {thumb ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={thumb}
+                            alt=""
+                            style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: 24,
+                              height: 24,
+                              borderRadius: 4,
+                              background: 'rgba(255,255,255,0.12)',
+                              flexShrink: 0,
+                            }}
+                          />
+                        )}
+                        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {label}
+                        </span>
+                        <span style={{ flexShrink: 0, color: 'rgba(255,255,255,0.65)' }}>×{Number(it.quantity ?? 0)}</span>
+                        <span style={{ flexShrink: 0, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+                          ₩{lineTotal.toLocaleString()}
+                        </span>
+                      </div>
+                    )
+                  })}
+                  <div
+                    style={{
+                      marginTop: items.length > 0 ? 8 : 0,
+                      textAlign: 'right',
+                      fontSize: 13,
+                      color: 'rgba(255,255,255,0.9)',
+                    }}
+                  >
+                    총 ₩{Number(o.final_amount ?? 0).toLocaleString()}
+                  </div>
+                </div>
+              )
+            })
           )}
         </div>
       ) : null}
