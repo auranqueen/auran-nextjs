@@ -927,7 +927,7 @@ export default function OwnerChatRoomPage() {
                 ) : m.message_kind === 'routine_card' ? (
                   <div
                     style={{
-                      maxWidth: 260,
+                      maxWidth: '85%',
                       borderRadius: 12,
                       border: '1px solid rgba(123,94,167,0.55)',
                       padding: 10,
@@ -941,9 +941,27 @@ export default function OwnerChatRoomPage() {
                         color: mine ? '#f3e9ff' : '#f5e6c8',
                         whiteSpace: 'pre-wrap',
                         lineHeight: 1.5,
+                        wordBreak: 'break-word',
                       }}
                     >
                       {msgText(m)}
+                    </div>
+                  </div>
+                ) : m.message_kind === 'toast_gift' ? (
+                  <div
+                    style={{
+                      borderRadius: 12,
+                      border: '1px solid rgba(255,180,50,0.4)',
+                      padding: '10px 14px',
+                      background: 'rgba(255,180,50,0.08)',
+                      minWidth: 160,
+                    }}
+                  >
+                    <div style={{ fontSize: 11, color: 'rgba(255,200,80,0.8)', marginBottom: 4 }}>
+                      🍓 달콤한 딸기잼 선물!
+                    </div>
+                    <div style={{ fontSize: 15, color: '#ffe08a', fontWeight: 500 }}>
+                      🍞 {msgText(m)}
                     </div>
                   </div>
                 ) : (
