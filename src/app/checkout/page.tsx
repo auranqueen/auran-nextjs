@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import DashboardHeader from '@/components/DashboardHeader'
 import CartHeaderButton from '@/components/CartHeaderButton'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
@@ -46,6 +46,7 @@ type UcRow = {
 
 function CheckoutPageInner() {
   const router = useRouter()
+  const pathname = usePathname()
   const search = useSearchParams()
   const supabase = createClient()
   const { getSettingNum } = useAdminSettings()
@@ -56,7 +57,6 @@ function CheckoutPageInner() {
   const [products, setProducts] = useState<any[]>([])
   const [paying, setPaying] = useState(false)
   const [toast, setToast] = useState('')
-  const [chargeSheetOpen, setChargeSheetOpen] = useState(false)
   const [couponSheetOpen, setCouponSheetOpen] = useState(false)
   const [userCoupons, setUserCoupons] = useState<UcRow[]>([])
   const [selectedUserCouponId, setSelectedUserCouponId] = useState<string | null>(null)
@@ -122,6 +122,18 @@ function CheckoutPageInner() {
     const t = setTimeout(() => setToast(''), 2000)
     return () => clearTimeout(t)
   }, [toast])
+
+  useEffect(() => {
+    const chargeDone = search.get('charge_done')
+    const paymentQ = search.get('payment')
+    if (chargeDone !== '1' && paymentQ !== 'done') return
+    setToast('충전 완료! 이제 결제해주세요 💜')
+    const p = new URLSearchParams(search.toString())
+    p.delete('charge_done')
+    p.delete('payment')
+    const q = p.toString()
+    router.replace(q ? `${pathname}?${q}` : pathname, { scroll: false })
+  }, [search, pathname, router])
 
   useEffect(() => {
     const run = async () => {
@@ -361,11 +373,16 @@ function CheckoutPageInner() {
   }
 
   const onChargeKrw = async (krw: number) => {
+    const params = new URLSearchParams(
+      typeof window !== 'undefined' ? window.location.search.slice(1) : ''
+    )
+    params.set('charge_done', '1')
+    const return_url = '/checkout?' + params.toString()
     const payRes = await fetch('/api/payments/payapp/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify({ kind: 'charge', amount: krw }),
+      body: JSON.stringify({ kind: 'charge', amount: krw, return_url }),
     })
     const payJson = await payRes.json().catch(() => ({}))
     if (!payRes.ok || !payJson?.ok || !payJson?.pay_url) {
@@ -453,8 +470,6 @@ function CheckoutPageInner() {
         needCharge={needCharge}
         paying={paying}
         showChargeOption={showChargeOption}
-        chargeSheetOpen={chargeSheetOpen}
-        setChargeSheetOpen={setChargeSheetOpen}
         couponSheetOpen={couponSheetOpen}
         setCouponSheetOpen={setCouponSheetOpen}
         userCoupons={userCoupons}
@@ -465,7 +480,6 @@ function CheckoutPageInner() {
         freeShippingThreshold={freeShippingThreshold}
         onPay={onPay}
         onPayBankTransfer={handleBankTransfer}
-        onChargeKrw={onChargeKrw}
         groupbuyDiscount={groupbuyDiscount}
         timesaleDiscount={timesaleDiscount}
       />
@@ -505,7 +519,7 @@ function CheckoutPageInner() {
           <div style={{width:'100%',background:'#171310',borderRadius:'20px 20px 0 0',padding:'24px 20px 40px'}}>
             <div style={{fontSize:16,fontWeight:700,color:'#e8e4dc',marginBottom:6}}>결제 방법 선택</div>
             <div style={{fontSize:13,color:'#888',marginBottom:20}}>토스트 잔액이 부족해요</div>
-            <button onClick={() => { setPayModal(false); setEarnToast(true); setChargeSheetOpen(true) }}
+            <button onClick={() => { setPayModal(false); router.push('/wallet?return=' + encodeURIComponent(typeof window !== 'undefined' ? window.location.href : '')) }}
               style={{width:'100%',background:'#C9A96E',border:'none',borderRadius:12,padding:'14px 0',fontSize:15,fontWeight:800,color:'#000',marginBottom:10,cursor:'pointer',fontFamily:'inherit'}}>
               충전하고 결제하기<br/>
               <span style={{fontSize:11,fontWeight:400}}>토스트 충전 후 결제 · 구매금액의 5% 적립</span>

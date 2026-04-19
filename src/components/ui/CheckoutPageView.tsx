@@ -71,8 +71,6 @@ type Props = {
   timesaleDiscount?: number
   paying: boolean
   showChargeOption: boolean
-  chargeSheetOpen: boolean
-  setChargeSheetOpen: (v: boolean) => void
   couponSheetOpen: boolean
   setCouponSheetOpen: (v: boolean) => void
   userCoupons: CheckoutUcRow[]
@@ -83,7 +81,6 @@ type Props = {
   freeShippingThreshold?: number
   onPay: (allowCharge: boolean) => void
   onPayBankTransfer?: () => void | Promise<void>
-  onChargeKrw: (krw: number) => void
 }
 
 export default function CheckoutPageView({
@@ -134,8 +131,6 @@ export default function CheckoutPageView({
   timesaleDiscount = 0,
   paying,
   showChargeOption,
-  chargeSheetOpen,
-  setChargeSheetOpen,
   couponSheetOpen,
   setCouponSheetOpen,
   userCoupons,
@@ -146,7 +141,6 @@ export default function CheckoutPageView({
   freeShippingThreshold = 0,
   onPay,
   onPayBankTransfer,
-  onChargeKrw,
 }: Props) {
   const supabase = createClient()
   const remBalAfterToast = Math.max(0, balance - toastUsed)
@@ -159,9 +153,6 @@ export default function CheckoutPageView({
   const [useBankTransfer, setUseBankTransfer] = useState(false)
   const [receiptOn, setReceiptOn] = useState(true)
   const [receiptNum, setReceiptNum] = useState('')
-  const [selectedChargeSummary, setSelectedChargeSummary] = useState('')
-  const [customChargeOpen, setCustomChargeOpen] = useState(false)
-  const [customChargeInput, setCustomChargeInput] = useState('')
   const [newAddressOpen, setNewAddressOpen] = useState(false)
   const [newRecipientName, setNewRecipientName] = useState('')
   const [newRecipientPhone, setNewRecipientPhone] = useState('')
@@ -191,20 +182,6 @@ export default function CheckoutPageView({
     script.setAttribute('data-daum-postcode', 'true')
     document.body.appendChild(script)
   }, [])
-
-  const closeChargeSheet = () => {
-    setChargeSheetOpen(false)
-    setSelectedChargeSummary('')
-    setCustomChargeOpen(false)
-    setCustomChargeInput('')
-  }
-
-  const pickChargeAmount = (label: string, krw: number) => {
-    setCustomChargeOpen(false)
-    setCustomChargeInput('')
-    setSelectedChargeSummary(`${label} · ₩${krw.toLocaleString()} 선택됨`)
-    onChargeKrw(krw)
-  }
 
   const openAddressSearch = (onSelect: (addr: string) => void) => {
     if (!(window as any).daum?.Postcode) return
@@ -835,105 +812,6 @@ export default function CheckoutPageView({
             <button type="button" onClick={() => setAddressSheetOpen(false)} style={{ width: '100%', border: 'none', borderRadius: 10, background: 'linear-gradient(135deg, #C9A96E, #a07840)', color: '#000', fontWeight: 500, padding: '11px 0', cursor: 'pointer' }}>
               이 주소로 배송
             </button>
-          </div>
-        </>
-      )}
-      {chargeSheetOpen && (
-        <>
-          <div onClick={closeChargeSheet} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 130 }} />
-          <div onClick={e => e.stopPropagation()} style={{ position: 'fixed', bottom: 0, left: 0, right: 0, width: '100%', maxWidth: 480, background: '#11161b', borderTopLeftRadius: 18, borderTopRightRadius: 18, borderTop: '1px solid var(--border)', padding: 14 }}>
-            <div style={{ fontSize: 14, color: '#fff', fontWeight: 500, marginBottom: 8 }}>토스트 충전 선택</div>
-            {selectedChargeSummary ? (
-              <div style={{ fontSize: 12, color: 'var(--gold)', marginBottom: 8, fontWeight: 500 }}>{selectedChargeSummary}</div>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => pickChargeAmount('₩30만 (무통장+5% / 카드+2%)', 300_000)}
-              style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontWeight: 500, marginTop: 8, textAlign: 'left', padding: '0 12px' }}
-            >
-              ₩30만 (무통장+5% / 카드+2%)
-            </button>
-            <button
-              type="button"
-              onClick={() => pickChargeAmount('₩50만', 500_000)}
-              style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontWeight: 500, marginTop: 8, textAlign: 'left', padding: '0 12px' }}
-            >
-              ₩50만
-            </button>
-            <button
-              type="button"
-              onClick={() => pickChargeAmount('₩100만', 1_000_000)}
-              style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontWeight: 500, marginTop: 8, textAlign: 'left', padding: '0 12px' }}
-            >
-              ₩100만
-            </button>
-            <button
-              type="button"
-              onClick={() => pickChargeAmount('₩150만', 1_500_000)}
-              style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontWeight: 500, marginTop: 8, textAlign: 'left', padding: '0 12px' }}
-            >
-              ₩150만
-            </button>
-            <button
-              type="button"
-              onClick={() => pickChargeAmount('₩300만', 3_000_000)}
-              style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontWeight: 500, marginTop: 8, textAlign: 'left', padding: '0 12px' }}
-            >
-              ₩300만
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setCustomChargeOpen(true)
-                setSelectedChargeSummary('')
-              }}
-              style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid var(--border)', background: 'rgba(255,255,255,0.04)', color: '#fff', fontWeight: 500, marginTop: 8, textAlign: 'left', padding: '0 12px' }}
-            >
-              직접입력
-            </button>
-            {customChargeOpen && (
-              <div style={{ marginTop: 10 }}>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="충전 금액 (원)"
-                  value={customChargeInput}
-                  onChange={(e) => setCustomChargeInput(e.target.value.replace(/[^\d]/g, ''))}
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    height: 40,
-                    borderRadius: 10,
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    background: 'rgba(0,0,0,0.25)',
-                    color: '#fff',
-                    padding: '0 12px',
-                    fontSize: 14,
-                    marginBottom: 8,
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const n = Number(customChargeInput)
-                    if (!Number.isFinite(n) || n <= 0) return
-                    pickChargeAmount('직접입력', Math.floor(n))
-                  }}
-                  style={{
-                    width: '100%',
-                    height: 40,
-                    borderRadius: 10,
-                    border: 'none',
-                    background: 'rgba(201,168,110,0.25)',
-                    color: '#fff',
-                    fontWeight: 500,
-                    cursor: 'pointer',
-                  }}
-                >
-                  입력 금액으로 충전
-                </button>
-              </div>
-            )}
           </div>
         </>
       )}
