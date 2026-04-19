@@ -516,7 +516,7 @@ export default function CustomerChatRoomPage() {
                     <div
                       style={{
                         display: 'flex',
-                        gap: 8,
+                        gap: 6,
                         padding: '8px',
                         borderTop: '1px solid rgba(123,94,167,0.25)',
                       }}
@@ -538,13 +538,28 @@ export default function CustomerChatRoomPage() {
                           cursor: 'pointer',
                         }}
                       >
-                        장바구니 담기
+                        담기
                       </button>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation()
-                          router.push('/checkout')
+                          void (async () => {
+                            if (!internalUserId) {
+                              router.push('/login?redirect=' + encodeURIComponent('/dashboard/customer/chat/' + channelId))
+                              return
+                            }
+                            for (const it of productItems) {
+                              if (!it.id) continue
+                              await supabase.from('cart_items').insert({
+                                user_id: internalUserId,
+                                product_id: it.id,
+                                quantity: 1,
+                                gift_to: internalUserId,
+                              } as any)
+                            }
+                            router.push('/cart')
+                          })()
                         }}
                         style={{
                           flex: 1,
@@ -557,7 +572,26 @@ export default function CustomerChatRoomPage() {
                           cursor: 'pointer',
                         }}
                       >
-                        전체 구매하기
+                        선물
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          router.push(`/products/${productItems[0]?.id ?? ''}`)
+                        }}
+                        style={{
+                          flex: 1,
+                          padding: '8px 10px',
+                          borderRadius: 8,
+                          border: `1px solid ${PURPLE}`,
+                          background: 'rgba(123,94,167,0.2)',
+                          color: '#e8dff5',
+                          fontSize: 12,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        구매
                       </button>
                     </div>
                   </div>

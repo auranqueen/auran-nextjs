@@ -903,7 +903,8 @@ export default function OwnerChatRoomPage() {
                     >
                       <button
                         type="button"
-                        onClick={() => alert('준비 중')}
+                        onClick={() => void sendProductRecommend()}
+                        disabled={sending || basket.length === 0}
                         style={{
                           flex: 1,
                           padding: '8px 6px',
@@ -912,42 +913,11 @@ export default function OwnerChatRoomPage() {
                           background: 'rgba(123,94,167,0.15)',
                           color: '#e8dff5',
                           fontSize: 11,
-                          cursor: 'pointer',
+                          cursor: sending || basket.length === 0 ? 'default' : 'pointer',
+                          opacity: sending || basket.length === 0 ? 0.5 : 1,
                         }}
                       >
-                        담기
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => alert('준비 중')}
-                        style={{
-                          flex: 1,
-                          padding: '8px 6px',
-                          borderRadius: 8,
-                          border: `1px solid rgba(123,94,167,0.45)`,
-                          background: 'rgba(123,94,167,0.15)',
-                          color: '#e8dff5',
-                          fontSize: 11,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        선물
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => alert('준비 중')}
-                        style={{
-                          flex: 1,
-                          padding: '8px 6px',
-                          borderRadius: 8,
-                          border: `1px solid rgba(123,94,167,0.45)`,
-                          background: 'rgba(123,94,167,0.15)',
-                          color: '#e8dff5',
-                          fontSize: 11,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        구매
+                        추천 전송
                       </button>
                     </div>
                   </div>
