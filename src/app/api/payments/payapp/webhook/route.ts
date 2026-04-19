@@ -166,7 +166,48 @@ export async function POST(req: NextRequest) {
 
         const nextBalance = Number(u?.charge_balance || 0) + amount
         const nextPoints = Number(u?.points || 0) + pointsToAdd
-        await client.from('users').update({ charge_balance: nextBalance, points: nextPoints }).eq('id', intent.user_id)
+        const { error: chargeUserUpdateErr } = await client
+          .from('users')
+          .update({ charge_balance: nextBalance, points: nextPoints })
+          .eq('id', intent.user_id)
+        if (!chargeUserUpdateErr) {
+          try {
+            const payType = String(data.pay_type ?? data.paymethod ?? '')
+            const isBank = payType === 'vbank'
+            const chargeRate = isBank ? 0.05 : 0.02
+            const chargeToast = Math.floor(amount * chargeRate)
+
+            if (chargeToast > 0) {
+              const { data: uRow, error: uRowErr } = await client
+                .from('users')
+                .select('points')
+                .eq('id', intent.user_id)
+                .maybeSingle()
+              if (uRowErr) {
+                console.warn('[charge toast uRow]', uRowErr)
+              } else if (uRow) {
+                const { error: ptErr } = await client
+                  .from('users')
+                  .update({ points: (Number(uRow.points) || 0) + chargeToast })
+                  .eq('id', intent.user_id)
+                if (ptErr) console.warn('[charge toast points]', ptErr)
+              }
+
+              const { error: ttErr } = await client.from('toast_transactions').insert({
+                user_id: intent.user_id,
+                amount: chargeToast,
+                transaction_type: 'charge',
+                description: isBank ? '충전 토스트 적립 (가상계좌 5%)' : '충전 토스트 적립 (카드 2%)',
+                reference_id: intent.id,
+              } as any)
+              if (ttErr) console.warn('[toast_transactions charge bonus]', ttErr)
+            }
+          } catch (e) {
+            console.warn('[charge toast bonus]', e)
+          }
+        } else {
+          console.warn('[charge users.update]', chargeUserUpdateErr)
+        }
         await client.from('notifications').insert({
           user_id: intent.user_id,
           type: 'payment',
