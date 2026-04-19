@@ -104,7 +104,7 @@ function WalletPageInner() {
       let chargeKrw = 0
       let payTypeRaw = ''
       if (intentIdStr) {
-        let intentRow: { amount?: unknown; provider_trade_id?: string | null; status?: string } | null = null
+        let intentRow: { status: string; amount: number; [key: string]: unknown } | null = null
         const { data: i1 } = await supabase
           .from('payment_intents')
           .select('amount,provider_trade_id,status')
