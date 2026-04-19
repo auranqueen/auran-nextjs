@@ -1401,7 +1401,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
                             {
                               type: 'text',
                               text:
-                                '전성분을 읽고 아래 JSON만 반환해. 설명 없이.\nconcern_tags: 트러블/건조/탄력/미백/홍조/진정/호르몬케어 중 해당만.\nskin_tags: #건성 #지성 #복합성 #민감성 #탄력 #미백 #수분 #트러블 #모공 #홍조 #재생 #각질 #갱년기 #열감 #호르몬밸런스 #30대 #40대 #50대 #장벽강화 #펩타이드 #레티놀 #비타민C 중 해당만.\nhormone_timing: 생리기/여포기/배란기/황체기 중 해당만.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}',
+                                '전성분을 읽고 아래 JSON만 반환해. 설명 없이.\nconcern_tags: 트러블/건조/탄력/미백/홍조/진정/호르몬케어 중 해당만.\nskin_tags: #건성 #지성 #복합성 #민감성 #탄력 #미백 #수분 #트러블 #모공 #홍조 #재생 #각질 #갱년기 #열감 #호르몬밸런스 #30대 #40대 #50대 #장벽강화 #펩타이드 #레티놀 #비타민C 중 해당만.\nhormone_timing: 달빛기(생리기)/황금기(여포기)/만개기(배란기)/물들기(황체기) 중 해당만.\n{"concern_tags":[],"skin_tags":[],"hormone_timing":[]}',
                             },
                           ]
                         } else {
@@ -1411,7 +1411,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
                             setIngredientAnalyzeLoading(false)
                             return
                           }
-                          content = `전성분: ${text}\n아래 JSON만 반환해. 설명 없이.\n{"concern_tags":["트러블/건조/탄력/미백/홍조/진정/호르몬케어 중 해당"],"skin_tags":["#건성 #지성 #복합성 #민감성 #탄력 #미백 #수분 #트러블 #모공 #홍조 #재생 #각질 #갱년기 #열감 #호르몬밸런스 #30대 #40대 #50대 #장벽강화 #펩타이드 #레티놀 #비타민C 중 해당"],"hormone_timing":["생리기/여포기/배란기/황체기 중 해당"]}`
+                          content = `전성분: ${text}\n아래 JSON만 반환해. 설명 없이.\n{"concern_tags":["트러블/건조/탄력/미백/홍조/진정/호르몬케어 중 해당"],"skin_tags":["#건성 #지성 #복합성 #민감성 #탄력 #미백 #수분 #트러블 #모공 #홍조 #재생 #각질 #갱년기 #열감 #호르몬밸런스 #30대 #40대 #50대 #장벽강화 #펩타이드 #레티놀 #비타민C 중 해당"],"hormone_timing":["달빛기(생리기)/황금기(여포기)/만개기(배란기)/물들기(황체기) 중 해당"]}`
                         }
                         const res = await fetch('/api/analyze-ingredients', {
                           method: 'POST',
