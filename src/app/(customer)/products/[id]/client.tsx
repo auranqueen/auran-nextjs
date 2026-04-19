@@ -829,6 +829,80 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
     : thumbUrl
 
   const showEditChrome = isSuperAdmin && isEditMode
+  const perfectTogetherAddSearch = (
+    <>
+      <input
+        type="text"
+        value={ptSearch}
+        onChange={(e) => setPtSearch(e.target.value)}
+        placeholder="제품명 검색"
+        style={{
+          width: '100%',
+          boxSizing: 'border-box',
+          padding: '10px 12px',
+          borderRadius: 8,
+          border: '1px solid rgba(255,255,255,0.12)',
+          background: '#141210',
+          color: '#fff',
+          fontSize: 12,
+          fontFamily: 'inherit',
+        }}
+      />
+      {ptSearchHits.length > 0 ? (
+        <div
+          style={{
+            marginTop: 8,
+            maxHeight: 180,
+            overflowY: 'auto',
+            borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.08)',
+          }}
+        >
+          {ptSearchHits.map((h) => (
+            <button
+              key={h.id}
+              type="button"
+              onClick={() => {
+                void (async () => {
+                  const raw = product.perfect_together
+                  const ids = Array.isArray(raw) ? raw.map((x) => String(x)).filter(Boolean) : []
+                  if (ids.includes(h.id)) return
+                  const next = [...ids, h.id]
+                  const { error } = await supabase.from('products').update({ perfect_together: next }).eq('id', product.id)
+                  if (error) return
+                  const { data: row } = await supabase
+                    .from('products')
+                    .select('id,name,retail_price,thumb_img,storage_thumb_url,brands(name)')
+                    .eq('id', h.id)
+                    .maybeSingle()
+                  if (row) setPerfectTogetherRows((prev) => [...prev, row as any])
+                  setSaveToast('저장했어요')
+                  setPtSearch('')
+                  setPtSearchHits([])
+                  router.refresh()
+                })()
+              }}
+              style={{
+                display: 'block',
+                width: '100%',
+                textAlign: 'left',
+                padding: '10px 12px',
+                border: 'none',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                background: 'transparent',
+                color: '#e8e4dc',
+                fontSize: 12,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              {h.name}
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </>
+  )
   const maleMeno = Array.isArray(product.categories?.target_tracks)
     ? product.categories?.target_tracks?.map(x => String(x)).includes('male_menopause')
     : false
@@ -1842,60 +1916,67 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           <div style={{ marginBottom: 20 }}>
             <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, marginBottom: 12 }}>PERFECT TOGETHER</div>
             {perfectTogetherRows.length > 0 ? (
-              <div style={{ display: 'flex', gap: 10, overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
-                {perfectTogetherRows.map((t, i) => (
-                  <div key={t.id || i} style={{ flexShrink: 0, width: 110, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center', position: 'relative' }}>
-                    {showEditChrome ? (
-                      <button
-                        type="button"
-                        aria-label="연결 해제"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          void (async () => {
-                            const raw = product.perfect_together
-                            const ids = Array.isArray(raw) ? raw.map((x) => String(x)).filter(Boolean) : []
-                            const next = ids.filter((id) => id !== t.id)
-                            const { error } = await supabase.from('products').update({ perfect_together: next }).eq('id', product.id)
-                            if (error) return
-                            setPerfectTogetherRows((prev) => prev.filter((r) => r.id !== t.id))
-                            setSaveToast('저장했어요')
-                            router.refresh()
-                          })()
-                        }}
-                        style={{
-                          position: 'absolute',
-                          top: 4,
-                          right: 4,
-                          width: 22,
-                          height: 22,
-                          borderRadius: 999,
-                          border: '1px solid rgba(255,255,255,0.25)',
-                          background: 'rgba(0,0,0,0.55)',
-                          color: '#fff',
-                          fontSize: 12,
-                          cursor: 'pointer',
-                          lineHeight: 1,
-                          padding: 0,
-                          zIndex: 2,
-                          fontFamily: 'inherit',
-                        }}
-                      >
-                        ×
-                      </button>
-                    ) : null}
-                    <div style={{ fontSize: 8, background: '#2a1f0e', color: GOLD, padding: '2px 6px', borderRadius: 4, display: 'inline-block', marginBottom: 6 }}>STEP {i + 1}</div>
-                    <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {t.storage_thumb_url || t.thumb_img ? (
-                        <img src={t.storage_thumb_url || t.thumb_img || ''} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : <div style={{ fontSize: 28 }}>📦</div>}
+              <>
+                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
+                  {perfectTogetherRows.map((t, i) => (
+                    <div key={t.id || i} style={{ flexShrink: 0, width: 110, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center', position: 'relative' }}>
+                      {showEditChrome ? (
+                        <button
+                          type="button"
+                          aria-label="연결 해제"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            void (async () => {
+                              const raw = product.perfect_together
+                              const ids = Array.isArray(raw) ? raw.map((x) => String(x)).filter(Boolean) : []
+                              const next = ids.filter((id) => id !== t.id)
+                              const { error } = await supabase.from('products').update({ perfect_together: next }).eq('id', product.id)
+                              if (error) return
+                              setPerfectTogetherRows((prev) => prev.filter((r) => r.id !== t.id))
+                              setSaveToast('저장했어요')
+                              router.refresh()
+                            })()
+                          }}
+                          style={{
+                            position: 'absolute',
+                            top: 4,
+                            right: 4,
+                            width: 22,
+                            height: 22,
+                            borderRadius: 999,
+                            border: '1px solid rgba(255,255,255,0.25)',
+                            background: 'rgba(0,0,0,0.55)',
+                            color: '#fff',
+                            fontSize: 12,
+                            cursor: 'pointer',
+                            lineHeight: 1,
+                            padding: 0,
+                            zIndex: 2,
+                            fontFamily: 'inherit',
+                          }}
+                        >
+                          ×
+                        </button>
+                      ) : null}
+                      <div style={{ fontSize: 8, background: '#2a1f0e', color: GOLD, padding: '2px 6px', borderRadius: 4, display: 'inline-block', marginBottom: 6 }}>STEP {i + 1}</div>
+                      <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {t.storage_thumb_url || t.thumb_img ? (
+                          <img src={t.storage_thumb_url || t.thumb_img || ''} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : <div style={{ fontSize: 28 }}>📦</div>}
+                      </div>
+                      <div style={{ fontSize: 8, color: '#666' }}>{t.brands?.name || ''}</div>
+                      <div style={{ fontSize: 10, lineHeight: 1.3 }}>{t.name}</div>
+                      <div style={{ fontSize: 11, color: GOLD, marginTop: 3 }}>{Number(t.retail_price || 0).toLocaleString()}원</div>
+                      <div style={{ fontSize: 10, color: '#888', background: '#1e1a14', borderRadius: 5, padding: 4, marginTop: 5, cursor: 'pointer' }} onClick={() => router.push(`/products/${t.id}`)}>+ 담기</div>
                     </div>
-                    <div style={{ fontSize: 8, color: '#666' }}>{t.brands?.name || ''}</div>
-                    <div style={{ fontSize: 10, lineHeight: 1.3 }}>{t.name}</div>
-                    <div style={{ fontSize: 11, color: GOLD, marginTop: 3 }}>{Number(t.retail_price || 0).toLocaleString()}원</div>
-                    <div style={{ fontSize: 10, color: '#888', background: '#1e1a14', borderRadius: 5, padding: 4, marginTop: 5, cursor: 'pointer' }} onClick={() => router.push(`/products/${t.id}`)}>+ 담기</div>
+                  ))}
+                </div>
+                {showEditChrome ? (
+                  <div style={{ marginTop: 12 }}>
+                    {perfectTogetherAddSearch}
                   </div>
-                ))}
-              </div>
+                ) : null}
+              </>
             ) : showEditChrome ? (
               <div
                 style={{
@@ -1910,76 +1991,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 }}
               >
                 <div style={{ marginBottom: 10 }}>함께 쓰기 연결 제품이 없어요</div>
-                <input
-                  type="text"
-                  value={ptSearch}
-                  onChange={(e) => setPtSearch(e.target.value)}
-                  placeholder="제품명 검색"
-                  style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    padding: '10px 12px',
-                    borderRadius: 8,
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    background: '#141210',
-                    color: '#fff',
-                    fontSize: 12,
-                    fontFamily: 'inherit',
-                  }}
-                />
-                {ptSearchHits.length > 0 ? (
-                  <div
-                    style={{
-                      marginTop: 8,
-                      maxHeight: 180,
-                      overflowY: 'auto',
-                      borderRadius: 8,
-                      border: '1px solid rgba(255,255,255,0.08)',
-                    }}
-                  >
-                    {ptSearchHits.map((h) => (
-                      <button
-                        key={h.id}
-                        type="button"
-                        onClick={() => {
-                          void (async () => {
-                            const raw = product.perfect_together
-                            const ids = Array.isArray(raw) ? raw.map((x) => String(x)).filter(Boolean) : []
-                            if (ids.includes(h.id)) return
-                            const next = [...ids, h.id]
-                            const { error } = await supabase.from('products').update({ perfect_together: next }).eq('id', product.id)
-                            if (error) return
-                            const { data: row } = await supabase
-                              .from('products')
-                              .select('id,name,retail_price,thumb_img,storage_thumb_url,brands(name)')
-                              .eq('id', h.id)
-                              .maybeSingle()
-                            if (row) setPerfectTogetherRows((prev) => [...prev, row as any])
-                            setSaveToast('저장했어요')
-                            setPtSearch('')
-                            setPtSearchHits([])
-                            router.refresh()
-                          })()
-                        }}
-                        style={{
-                          display: 'block',
-                          width: '100%',
-                          textAlign: 'left',
-                          padding: '10px 12px',
-                          border: 'none',
-                          borderBottom: '1px solid rgba(255,255,255,0.06)',
-                          background: 'transparent',
-                          color: '#e8e4dc',
-                          fontSize: 12,
-                          cursor: 'pointer',
-                          fontFamily: 'inherit',
-                        }}
-                      >
-                        {h.name}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
+                {perfectTogetherAddSearch}
               </div>
             ) : null}
           </div>
