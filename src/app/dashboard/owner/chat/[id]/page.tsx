@@ -673,7 +673,7 @@ export default function OwnerChatRoomPage() {
         >
           <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 8 }}>최근 주문 (10건)</div>
           {historyOrders.length === 0 ? (
-            <div style={{ fontSize: 12, color: TEXT_MUTED }}>주문 내역이 없어요</div>
+            <div style={{ fontSize: 12, color: TEXT_MUTED }}>아직 구매 내역이 없어요</div>
           ) : (
             historyOrders.map((o) => (
               <div
