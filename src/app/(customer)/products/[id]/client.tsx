@@ -2026,6 +2026,16 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     alert('등록 실패: ' + error.message)
                     return
                   }
+                  {
+                    const reviewToastAmt = Math.max(0, Math.floor(Number(product.review_points_text ?? 200)))
+                    const { error: ttErr } = await supabase.from('toast_transactions').insert({
+                      user_id: urow.id,
+                      amount: reviewToastAmt,
+                      transaction_type: 'review',
+                      description: '리뷰 작성 토스트',
+                    } as any)
+                    if (ttErr) console.warn('[toast_transactions review]', ttErr)
+                  }
                   setShowWriteSheet(false)
                   setWriteContent('')
                   setWriteSkinType(null)

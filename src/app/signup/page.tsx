@@ -112,18 +112,33 @@ function SignupForm() {
         // 인증 없이 즉시 세션 발급된 경우(설정에 따라): users 저장 후 완료
         const referralCode = Math.random().toString(36).slice(2, 8).toUpperCase()
         const status = role === 'customer' ? 'active' : 'pending'
-        await supabase.from('users').insert({
-          auth_id: authData.user.id,
-          email: form.email,
-          name: form.name,
-          phone: form.phone,
-          role,
-          provider: 'email',
-          referral_code: referralCode,
-          status,
-          points: 0,
-          charge_balance: 0,
-        }).then(() => {})
+        const { data: newUserRow, error: newUserInsertErr } = await supabase
+          .from('users')
+          .insert({
+            auth_id: authData.user.id,
+            email: form.email,
+            name: form.name,
+            phone: form.phone,
+            role,
+            provider: 'email',
+            referral_code: referralCode,
+            status,
+            points: 0,
+            charge_balance: 0,
+          })
+          .select('id')
+          .single()
+        if (newUserInsertErr) {
+          console.warn('[users insert]', newUserInsertErr)
+        } else if (newUserRow?.id) {
+          const { error: ttErr } = await supabase.from('toast_transactions').insert({
+            user_id: newUserRow.id,
+            amount: signupWelcomePoint,
+            transaction_type: 'signup',
+            description: '회원가입 환영 토스트',
+          } as any)
+          if (ttErr) console.warn('[toast_transactions signup]', ttErr)
+        }
         if (inviteCode) {
           await supabase.from('invite_links').update({ used_count: supabase.rpc('increment', { row_id: inviteCode }) }).eq('code', inviteCode)
         }

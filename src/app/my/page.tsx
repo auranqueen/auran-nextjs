@@ -327,7 +327,35 @@ export default function MyPage() {
         } as any,
         { onConflict: 'auth_id' }
       )
-    await supabase.from('daily_checkin').insert({ auth_id: user.id, checkin_date: today, period_started: true } as any)
+    const { error: dcErr } = await supabase
+      .from('daily_checkin')
+      .insert({ auth_id: user.id, checkin_date: today, period_started: true } as any)
+    if (dcErr) {
+      console.warn('[daily_checkin]', dcErr)
+    } else {
+      try {
+        const { data: psRow } = await supabase.from('point_settings').select('points').eq('action', 'attendance').maybeSingle()
+        const attPts = Math.max(0, Math.floor(Number((psRow as { points?: unknown } | null)?.points ?? 100)))
+        const { data: uRow } = await supabase.from('users').select('id,points').eq('auth_id', user.id).maybeSingle()
+        if (uRow?.id) {
+          const nextPoints = (Number(uRow.points) || 0) + attPts
+          const { error: upErr } = await supabase.from('users').update({ points: nextPoints }).eq('id', uRow.id)
+          if (upErr) {
+            console.warn('[users attendance points]', upErr)
+          } else {
+            const { error: ttErr } = await supabase.from('toast_transactions').insert({
+              user_id: uRow.id,
+              amount: attPts,
+              transaction_type: 'attendance',
+              description: '출석 체크 토스트',
+            } as any)
+            if (ttErr) console.warn('[toast_transactions attendance]', ttErr)
+          }
+        }
+      } catch (e) {
+        console.warn('[attendance reward]', e)
+      }
+    }
     setPeriodQuietNotice('')
     setHormoneCycle((prev: any) => ({
       ...(prev || {}),

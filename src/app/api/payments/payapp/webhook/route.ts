@@ -186,7 +186,7 @@ export async function POST(req: NextRequest) {
         const { data: orderRow } = await client
           .from('orders')
           .select(
-            'id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,gift_receiver_id,gift_message,payment_applied,gift_created,user_coupon_id,address,recipient_name,recipient_phone,order_items(product_id)'
+            'id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,toast_used,gift_receiver_id,gift_message,payment_applied,gift_created,user_coupon_id,address,recipient_name,recipient_phone,order_items(product_id)'
           )
           .eq('id', intent.target_id)
           .maybeSingle()
@@ -236,6 +236,17 @@ export async function POST(req: NextRequest) {
               const nextCharge = Math.max(0, Number(buyer.charge_balance || 0) - chargeUsed)
               await client.from('users').update({ points: nextPoints, charge_balance: nextCharge }).eq('id', orderRow.customer_id)
             }
+          }
+          const toastUsedOrder = Math.max(0, Number((orderRow as { toast_used?: unknown }).toast_used || 0))
+          if (toastUsedOrder > 0) {
+            const { error: ttUseErr } = await client.from('toast_transactions').insert({
+              user_id: orderRow.customer_id,
+              amount: -toastUsedOrder,
+              transaction_type: 'use',
+              description: '구매 토스트 사용',
+              reference_id: orderRow.id,
+            } as any)
+            if (ttUseErr) console.warn('[toast_transactions use]', ttUseErr)
           }
           const { count: _priorPaidCount } = await client
             .from('orders')

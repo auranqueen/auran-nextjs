@@ -493,6 +493,16 @@ export default function OwnerChatRoomPage() {
       const next = cur + n
       const { error: upErr } = await supabase.from('users').update({ points: next }).eq('id', customerUserId)
       if (upErr) return
+      {
+        const { error: ttErr } = await supabase.from('toast_transactions').insert({
+          user_id: customerUserId,
+          amount: n,
+          transaction_type: 'gift',
+          description: '원장님 딸기잼 선물',
+          reference_id: channelId,
+        } as any)
+        if (ttErr) console.warn('[toast_transactions gift]', ttErr)
+      }
       const { error } = await supabase.from('consultation_messages').insert({
         channel_id: channelId,
         sender_id: ownerUserId,
