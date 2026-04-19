@@ -230,18 +230,21 @@ export default function OwnerChatRoomPage() {
   useEffect(() => {
     let cancelled = false
     void (async () => {
-      const { data } = await supabase
+      const q = productSearch.trim()
+      const base = supabase
         .from('products')
         .select('id,name,retail_price,thumb_img')
         .eq('status', 'active')
-        .limit(50)
+      const { data } = q
+        ? await base.ilike('name', `%${q}%`).limit(30)
+        : await base.limit(50)
       if (!cancelled && data) setProducts((data as ProductRow[]) || [])
     })()
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable; mount once
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable
+  }, [productSearch])
 
   useEffect(() => {
     if (!ownerUserId) return
@@ -961,8 +964,8 @@ export default function OwnerChatRoomPage() {
           zIndex: 40,
           padding: '10px 12px',
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 64px)',
-          background: 'linear-gradient(180deg, transparent, #0D0B09 28%)',
-          borderTop: '1px solid rgba(255,255,255,0.06)',
+          background: '#0D0B09',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
           maxHeight: '72vh',
           display: 'flex',
           flexDirection: 'column',
