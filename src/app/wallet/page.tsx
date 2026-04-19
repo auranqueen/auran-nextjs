@@ -13,6 +13,7 @@ function WalletPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const paymentDone = searchParams.get('payment') === 'done'
+  const returnUrl = searchParams.get('return') ?? ''
 
   const [loading, setLoading] = useState(true)
   const [profile, setProfile] = useState<any | null>(null)
@@ -79,7 +80,11 @@ function WalletPageInner() {
     if (!paymentDone || !profile || paymentSuccessHandled.current) return
     paymentSuccessHandled.current = true
     setShowPaymentSuccess(true)
-    router.replace('/wallet', { scroll: false })
+    if (returnUrl) {
+      router.replace(returnUrl)
+    } else {
+      router.replace('/wallet', { scroll: false })
+    }
     const refetch = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (user?.id) await fetchProfile(user.id)
