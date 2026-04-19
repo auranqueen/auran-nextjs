@@ -78,6 +78,10 @@ export default function OwnerChatRoomPage() {
   const [minOrder, setMinOrder] = useState(0)
   const [validDays, setValidDays] = useState(30)
   const [showCouponForm, setShowCouponForm] = useState(false)
+  const [showHistory, setShowHistory] = useState(false)
+  const [historyOrders, setHistoryOrders] = useState<
+    { id: string; created_at: string; final_amount: number | null; status: string | null }[]
+  >([])
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -90,6 +94,29 @@ export default function OwnerChatRoomPage() {
   useEffect(() => {
     scrollBottom()
   }, [messages, scrollBottom])
+
+  useEffect(() => {
+    if (!showHistory || !customerUserId) return
+    let cancelled = false
+    void (async () => {
+      const { data } = await supabase
+        .from('orders')
+        .select('id,created_at,final_amount,status')
+        .eq('customer_id', customerUserId)
+        .order('created_at', { ascending: false })
+        .limit(10)
+      if (!cancelled)
+        setHistoryOrders(
+          ((data as { id: string; created_at: string; final_amount: number | null; status: string | null }[]) || []).filter(
+            (r) => r?.id
+          )
+        )
+    })()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable for this effect
+  }, [showHistory, customerUserId])
 
   useEffect(() => {
     if (!channelId) {
@@ -258,7 +285,12 @@ export default function OwnerChatRoomPage() {
     if (!channelId || memoSaving) return
     setMemoSaving(true)
     try {
-      const { error } = await supabase.from('chat_channels').update({ owner_memo: memoText }).eq('id', channelId)
+      const { data: memoRow } = await supabase.from('chat_channels').select('owner_memo').eq('id', channelId).maybeSingle()
+      const prevMemo = String((memoRow as { owner_memo?: string | null } | null)?.owner_memo ?? '')
+      const dn = new Date()
+      const stamp = `[${dn.getFullYear()}.${String(dn.getMonth() + 1).padStart(2, '0')}.${String(dn.getDate()).padStart(2, '0')}]`
+      const nextMemo = `${stamp}\n${memoText}\n\n${prevMemo}`
+      const { error } = await supabase.from('chat_channels').update({ owner_memo: nextMemo }).eq('id', channelId)
       if (!error) setMemoOpen(false)
     } finally {
       setMemoSaving(false)
@@ -546,6 +578,28 @@ export default function OwnerChatRoomPage() {
           </div>
           <button
             type="button"
+            aria-label="구매 히스토리"
+            onClick={() => setShowHistory((v) => !v)}
+            style={{
+              flexShrink: 0,
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              border: `1px solid rgba(201,169,110,0.45)`,
+              background: 'rgba(201,169,110,0.12)',
+              color: '#e8dff5',
+              fontSize: 13,
+              lineHeight: 1,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            🛍
+          </button>
+          <button
+            type="button"
             aria-label="원장 메모"
             onClick={() => setMemoOpen(true)}
             style={{
@@ -605,6 +659,40 @@ export default function OwnerChatRoomPage() {
           원장
         </div>
       </div>
+
+      {showHistory && customerUserId ? (
+        <div
+          style={{
+            flexShrink: 0,
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(0,0,0,0.25)',
+            padding: '10px 16px 12px',
+            maxHeight: 200,
+            overflowY: 'auto',
+          }}
+        >
+          <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 8 }}>최근 주문 (10건)</div>
+          {historyOrders.length === 0 ? (
+            <div style={{ fontSize: 12, color: TEXT_MUTED }}>주문 내역이 없어요</div>
+          ) : (
+            historyOrders.map((o) => (
+              <div
+                key={o.id}
+                style={{
+                  fontSize: 12,
+                  color: 'rgba(255,255,255,0.82)',
+                  padding: '6px 0',
+                  borderBottom: '1px solid rgba(255,255,255,0.06)',
+                  fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                }}
+              >
+                {new Date(o.created_at).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' })} · ₩
+                {Number(o.final_amount ?? 0).toLocaleString()} · {String(o.status ?? '—')}
+              </div>
+            ))
+          )}
+        </div>
+      ) : null}
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 100px' }}>
         {messages.map((m) => {
