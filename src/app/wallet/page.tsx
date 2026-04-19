@@ -19,7 +19,7 @@ function WalletPageInner() {
   const [hasPin, setHasPin] = useState<boolean | null>(null)
   const [charging, setCharging] = useState(false)
   const [chargeMode, setChargeMode] = useState<'preset' | 'custom'>('preset')
-  const [selectedAmount, setSelectedAmount] = useState<number | null>(30000)
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(500000)
   const [customAmount, setCustomAmount] = useState<string>('')
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false)
   const paymentSuccessHandled = useRef(false)
@@ -87,6 +87,83 @@ function WalletPageInner() {
     const t1 = setTimeout(refetch, 2000)
     const t2 = setTimeout(refetch, 4500)
     const hide = setTimeout(() => setShowPaymentSuccess(false), 6000)
+
+    void (async () => {
+      let intentIdStr: string | null = null
+      let krwStr: string | null = null
+      try {
+        intentIdStr = sessionStorage.getItem('wallet_pending_charge_intent')
+        krwStr = sessionStorage.getItem('wallet_pending_charge_krw')
+      } catch {}
+      const uid = profile?.id as string | undefined
+      if (!uid) return
+
+      const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
+      await sleep(2500)
+
+      let chargeKrw = 0
+      let payTypeRaw = ''
+      if (intentIdStr) {
+        let intentRow: { amount?: unknown; provider_trade_id?: string | null; status?: string } | null = null
+        const { data: i1 } = await supabase
+          .from('payment_intents')
+          .select('amount,provider_trade_id,status')
+          .eq('id', intentIdStr)
+          .maybeSingle()
+        intentRow = i1 as typeof intentRow
+        if (intentRow?.status !== 'paid') {
+          await sleep(3000)
+          const { data: i2 } = await supabase
+            .from('payment_intents')
+            .select('amount,provider_trade_id,status')
+            .eq('id', intentIdStr)
+            .maybeSingle()
+          intentRow = i2 as typeof intentRow
+        }
+        chargeKrw = Math.max(0, Math.floor(Number(intentRow?.amount ?? 0)))
+        const tid = intentRow?.provider_trade_id
+        if (tid) {
+          const { data: logRow } = await supabase
+            .from('payment_webhook_logs')
+            .select('raw_body')
+            .eq('provider_trade_id', tid)
+            .order('received_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          const raw = String((logRow as { raw_body?: string } | null)?.raw_body || '')
+          try {
+            const sp = new URLSearchParams(raw.trim().replace(/^\?/, ''))
+            payTypeRaw = (sp.get('pay_type') || sp.get('paymethod') || '').toLowerCase()
+          } catch {}
+        }
+      }
+      if (!chargeKrw && krwStr) {
+        chargeKrw = Math.max(0, Math.floor(Number(krwStr)))
+      }
+      if (!chargeKrw) {
+        try {
+          sessionStorage.removeItem('wallet_pending_charge_intent')
+          sessionStorage.removeItem('wallet_pending_charge_krw')
+        } catch {}
+        return
+      }
+
+      const isBank = ['rbank', 'vbank', 'myaccount'].includes(payTypeRaw)
+      const pct = payTypeRaw ? (isBank ? 0.05 : 0.02) : 0.02
+      const toastAmt = Math.floor(chargeKrw * pct)
+      const { error: ttErr } = await supabase.from('toast_transactions').insert({
+        user_id: uid,
+        amount: toastAmt,
+        transaction_type: 'charge',
+        description: '충전 토스트 적립',
+      } as any)
+      if (ttErr) console.warn('[toast_transactions charge]', ttErr)
+      try {
+        sessionStorage.removeItem('wallet_pending_charge_intent')
+        sessionStorage.removeItem('wallet_pending_charge_krw')
+      } catch {}
+    })()
+
     return () => {
       clearTimeout(t1)
       clearTimeout(t2)
@@ -187,7 +264,7 @@ function WalletPageInner() {
                 {/* 방식 A: 고정 금액 버튼 */}
                 {chargeMode === 'preset' && (
                   <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                    {[30000, 50000, 100000].map(amt => {
+                    {[500000, 1000000, 2000000, 3000000].map(amt => {
                       const active = selectedAmount === amt
                       return (
                         <button
@@ -251,6 +328,11 @@ function WalletPageInner() {
                   </div>
                 )}
 
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 10, lineHeight: 1.5, whiteSpace: 'pre-line' }}>
+                  {`💳 카드 결제 시 2% 토스트 적립
+🏦 무통장 입금 시 5% 토스트 적립`}
+                </div>
+
                 {/* 선택 금액 표시 */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
                   <span style={{ fontSize: 11, color: 'var(--text3)' }}>굽기 예정 금액</span>
@@ -303,6 +385,12 @@ function WalletPageInner() {
                       })
                       const json = await res.json().catch(() => ({}))
                       if (!json?.ok || !json?.pay_url) throw new Error(json?.error || json?.reason || 'payapp_create_failed')
+                      try {
+                        if ((json as { intent_id?: string }).intent_id) {
+                          sessionStorage.setItem('wallet_pending_charge_intent', String((json as { intent_id?: string }).intent_id))
+                        }
+                        sessionStorage.setItem('wallet_pending_charge_krw', String(amt))
+                      } catch {}
                       // 페이앱 실결제창으로 이동
                       window.location.href = json.pay_url
                     } catch (e: any) {
