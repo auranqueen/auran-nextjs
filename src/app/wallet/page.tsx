@@ -110,7 +110,7 @@ function WalletPageInner() {
           .select('amount,provider_trade_id,status')
           .eq('id', intentIdStr)
           .maybeSingle()
-        intentRow = i1 as typeof intentRow
+        intentRow = i1 as { status: string; amount: number; [key: string]: unknown } | null
         if (intentRow?.status !== 'paid') {
           await sleep(3000)
           const { data: i2 } = await supabase
