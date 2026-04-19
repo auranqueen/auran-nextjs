@@ -118,7 +118,7 @@ function WalletPageInner() {
             .select('amount,provider_trade_id,status')
             .eq('id', intentIdStr)
             .maybeSingle()
-          intentRow = i2 as typeof intentRow
+          intentRow = i2 as { status: string; amount: number; [key: string]: unknown } | null
         }
         chargeKrw = Math.max(0, Math.floor(Number(intentRow?.amount ?? 0)))
         const tid = intentRow?.provider_trade_id
