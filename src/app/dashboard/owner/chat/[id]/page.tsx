@@ -566,6 +566,40 @@ export default function OwnerChatRoomPage() {
           >
             📝
           </button>
+          <button
+            type="button"
+            disabled={!channelId || !customerUserId || sending}
+            onClick={() => {
+              void (async () => {
+                if (!channelId || !customerUserId || sending) return
+                setSending(true)
+                try {
+                  const { error: stErr } = await supabase
+                    .from('chat_channels')
+                    .update({ status: 'completed' } as any)
+                    .eq('id', channelId)
+                  if (stErr) return
+                  await supabase.from('users').update({ renobel_unlocked: true }).eq('id', customerUserId)
+                } finally {
+                  setSending(false)
+                }
+              })()
+            }}
+            style={{
+              flexShrink: 0,
+              padding: '6px 10px',
+              borderRadius: 8,
+              border: `1px solid rgba(76,173,126,0.45)`,
+              background: 'rgba(76,173,126,0.15)',
+              color: '#b8e6c8',
+              fontSize: 11,
+              fontWeight: 700,
+              cursor: sending || !customerUserId ? 'default' : 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            상담 완료
+          </button>
         </div>
         <div style={{ fontSize: 11, color: '#e8dff5', border: '1px solid rgba(123,94,167,0.45)', background: 'rgba(123,94,167,0.2)', borderRadius: 999, padding: '4px 10px' }}>
           원장

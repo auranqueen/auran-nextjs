@@ -134,6 +134,7 @@ export default function ProductDetailModal({
   const [hormoneSaving, setHormoneSaving] = useState(false)
 
   const [earnPercent, setEarnPercent] = useState<number | ''>(product.earn_points == null ? '' : Number(product.earn_points))
+  const [toastFixedAmount, setToastFixedAmount] = useState(Number(product.toast_fixed_amount ?? 0))
   const [sharePoints, setSharePoints] = useState(Number(product.share_points ?? 0))
   const [textReviewPts, setTextReviewPts] = useState(Number(product.review_points_text ?? 0))
   const [photoPoints, setPhotoPoints] = useState(Number(product.review_points_photo ?? 0))
@@ -221,6 +222,7 @@ export default function ProductDetailModal({
           : []
     )
     setEarnPercent(product.earn_points == null ? '' : Number(product.earn_points))
+    setToastFixedAmount(Number(product.toast_fixed_amount ?? 0))
     setSharePoints(Number(product.share_points ?? 0))
     setTextReviewPts(Number(product.review_points_text ?? 0))
     setPhotoPoints(Number(product.review_points_photo ?? 0))
@@ -462,6 +464,7 @@ export default function ProductDetailModal({
       .update({
         earn_points: Math.max(0, Math.min(100, Math.floor(Number(earnPercent) || 0))),
         earn_points_percent: Math.max(0, Math.min(100, Math.floor(Number(earnPercent) || 0))),
+        toast_fixed_amount: Math.max(0, Math.floor(Number(toastFixedAmount) || 0)),
         share_points: Math.max(0, Math.floor(sharePoints)),
         review_points_text: Math.max(0, Math.floor(textReviewPts)),
         review_points_photo: Math.max(0, Math.floor(photoPoints)),
@@ -479,6 +482,7 @@ export default function ProductDetailModal({
       ...product,
       earn_points: Math.max(0, Math.min(100, Math.floor(Number(earnPercent) || 0))),
       earn_points_percent: Math.max(0, Math.min(100, Math.floor(Number(earnPercent) || 0))),
+      toast_fixed_amount: Math.max(0, Math.floor(Number(toastFixedAmount) || 0)),
       share_points: Math.max(0, Math.floor(sharePoints)),
       review_points_text: Math.max(0, Math.floor(textReviewPts)),
       review_points_photo: Math.max(0, Math.floor(photoPoints)),
@@ -1912,6 +1916,29 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 16 }}>
               예) ₩{Math.max(0, Math.floor(Number(priceDraft) || 0)).toLocaleString()} 구매 시 약 {exampleEarn.toLocaleString()}T 적립
             </div>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
+              고정 토스트 (타임세일·공구 전용)
+              <input
+                type="number"
+                min={0}
+                step={1}
+                value={toastFixedAmount}
+                onChange={e => {
+                  setToastFixedAmount(Math.max(0, Math.floor(Number(e.target.value) || 0)))
+                  mark('points', true)
+                }}
+                style={{
+                  width: 72,
+                  background: '#121212',
+                  border: '1px solid rgba(255,255,255,0.15)',
+                  borderRadius: 8,
+                  padding: '4px 6px',
+                  color: '#fff',
+                  fontSize: 13,
+                }}
+              />{' '}
+              T
+            </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
               공유 토스트 (표시용)
               <input

@@ -777,9 +777,26 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           fontFamily: '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif',
         }}
       >
-        <div style={{ fontSize: 16, lineHeight: 1.65, color: '#e8e4dc' }}>
-          AURAN 첫 구매 후 만날 수 있는 특별한 브랜드예요 💜
+        <div style={{ fontSize: 16, lineHeight: 1.65, color: '#e8e4dc', marginBottom: 20 }}>
+          원장님과 상담 후 만나볼 수 있는 브랜드예요 💜
         </div>
+        <button
+          type="button"
+          onClick={() => console.log('상담신청')}
+          style={{
+            padding: '14px 24px',
+            borderRadius: 12,
+            border: 'none',
+            background: `linear-gradient(135deg,${GOLD},#a07840)`,
+            color: '#000',
+            fontSize: 15,
+            fontWeight: 800,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          원장님께 상담 신청하기
+        </button>
       </div>
     )
   }

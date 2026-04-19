@@ -33,9 +33,41 @@ export async function POST(req: NextRequest) {
       })
 
       const purchaseRate = settingsMap['purchase_point_rate'] ?? 3
-      const pointsToAdd = Math.floor(
+
+      const { data: oiRows } = await supabase
+        .from('order_items')
+        .select('product_id, quantity')
+        .eq('order_id', orderId)
+
+      const ids = Array.from(
+        new Set((oiRows || []).map((r) => r.product_id).filter(Boolean))
+      ) as string[]
+
+      let pointsToAdd = Math.floor(
         (Number(benefitOrder.total_amount) || 0) * (purchaseRate / 100)
       )
+
+      if (ids.length > 0) {
+        const { data: prows } = await supabase
+          .from('products')
+          .select('id, is_timesale, is_groupbuy, toast_fixed_amount')
+          .in('id', ids)
+
+        const pmap = new Map((prows || []).map((p) => [p.id, p]))
+        const hasPromo = (oiRows || []).some((r) => {
+          const p = r.product_id ? pmap.get(r.product_id) : undefined
+          return p && (p.is_timesale === true || p.is_groupbuy === true)
+        })
+        if (hasPromo) {
+          pointsToAdd = (oiRows || []).reduce((sum, r) => {
+            const p = r.product_id ? pmap.get(r.product_id) : undefined
+            if (!p || (p.is_timesale !== true && p.is_groupbuy !== true)) return sum
+            const q = Math.max(1, Math.floor(Number(r.quantity) || 1))
+            const fixed = Math.max(0, Math.floor(Number(p.toast_fixed_amount) || 0))
+            return sum + fixed * q
+          }, 0)
+        }
+      }
 
       const { data: userRow } = await supabase
         .from('users')
