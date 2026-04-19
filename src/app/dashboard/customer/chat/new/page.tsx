@@ -1,7 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 const BG = '#0D0B09'
@@ -20,6 +20,9 @@ const HELP_ITEMS: { key: string; label: string; sub: string; icon: string }[] = 
 export default function CustomerChatNewHelpPage() {
   const supabase = createClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const fromProduct = searchParams.get('from') === 'product'
+  const productId = searchParams.get('product_id') ?? ''
   const [selecting, setSelecting] = useState(false)
   const [authReady, setAuthReady] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
@@ -73,7 +76,8 @@ export default function CustomerChatNewHelpPage() {
             channel_type: 'owner',
             title: '원장님 상담',
             system_kind: null,
-            preview_text: '',
+            preview_text:
+              fromProduct && productId ? `product_id:${productId}` : '',
             unread_count: 0,
             is_online: false,
           } as any)
@@ -115,6 +119,19 @@ export default function CustomerChatNewHelpPage() {
         </div>
       ) : (
         <>
+          {fromProduct ? (
+            <p
+              style={{
+                fontSize: 13,
+                color: '#e8dff5',
+                textAlign: 'center',
+                margin: '0 0 16px',
+                lineHeight: 1.55,
+              }}
+            >
+              르노벨아로마 BLACK PINK 제품 상담을 신청해요 💜
+            </p>
+          ) : null}
           <h1 style={{ fontSize: 18, fontWeight: 600, margin: '0 0 20px', textAlign: 'center', color: '#e8dff5' }}>
             어떤 도움이 필요하세요?
           </h1>

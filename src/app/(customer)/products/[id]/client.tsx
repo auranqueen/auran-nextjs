@@ -782,7 +782,11 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         </div>
         <button
           type="button"
-          onClick={() => console.log('상담신청')}
+          onClick={() =>
+            router.push(
+              `/dashboard/customer/chat/new?from=product&product_id=${encodeURIComponent(product.id)}`
+            )
+          }
           style={{
             padding: '14px 24px',
             borderRadius: 12,
