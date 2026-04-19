@@ -378,6 +378,35 @@ export default function CustomerChatRoomPage() {
           const isCoupon = m.message_kind === 'coupon'
           const isImage = m.message_kind === 'image' && m.image_url
 
+          if (m.message_kind === 'routine_card') {
+            return (
+              <div key={m.id} style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 10 }}>
+                <div
+                  style={{
+                    maxWidth: '85%',
+                    borderRadius: 12,
+                    border: '1px solid rgba(123,94,167,0.55)',
+                    padding: '10px 14px',
+                    background: 'rgba(123,94,167,0.08)',
+                  }}
+                >
+                  <div style={{ fontSize: 11, color: '#e8dff5', marginBottom: 6 }}>💜 루틴 알림장</div>
+                  <div
+                    style={{
+                      fontSize: 13,
+                      color: '#f3e9ff',
+                      whiteSpace: 'pre-wrap',
+                      lineHeight: 1.6,
+                      wordBreak: 'break-word',
+                    }}
+                  >
+                    {msgText(m)}
+                  </div>
+                </div>
+              </div>
+            )
+          }
+
           if (m.message_kind === 'toast_gift') {
             return (
               <div
