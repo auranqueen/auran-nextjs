@@ -130,6 +130,15 @@ export default function ProductDetailClient({
   const [isFounder, setIsFounder] = useState(false)
   const [hormoneOpen, setHormoneOpen] = useState(false)
   const [hormonePhaseIdx, setHormonePhaseIdx] = useState(0)
+  const [editingHormone, setEditingHormone] = useState<{
+    menstrual: { tip: string; recommend: string }
+    follicular: { tip: string; recommend: string }
+    ovulation: { tip: string; recommend: string }
+    luteal: { tip: string; recommend: string }
+  } | null>(null)
+  const [hormoneSaveBusy, setHormoneSaveBusy] = useState(false)
+  const [ptSearch, setPtSearch] = useState('')
+  const [ptSearchHits, setPtSearchHits] = useState<{ id: string; name: string }[]>([])
   const [storyTab, setStoryTab] = useState<'all' | 'review' | 'expert' | 'ambassador'>('all')
   const [showWriteSheet, setShowWriteSheet] = useState(false)
   const [writeContent, setWriteContent] = useState('')
@@ -308,6 +317,71 @@ export default function ProductDetailClient({
     })()
     return () => { cancelled = true }
   }, [product.id, product.perfect_together])
+
+  useEffect(() => {
+    setEditingHormone(null)
+    setPtSearch('')
+    setPtSearchHits([])
+  }, [product.id])
+
+  useEffect(() => {
+    if (!isSuperAdmin || !isEditMode) {
+      setEditingHormone(null)
+      return
+    }
+    setEditingHormone((prev) => {
+      if (prev !== null) return prev
+      let map: Record<string, { tip?: string; recommend?: string }> = {}
+      try {
+        const ht = product.hormone_timing && String(product.hormone_timing).trim()
+        if (ht) {
+          const j = JSON.parse(String(product.hormone_timing))
+          if (j && typeof j === 'object' && !Array.isArray(j)) map = j as Record<string, { tip?: string; recommend?: string }>
+        }
+      } catch {
+        map = {}
+      }
+      const pick = (k: 'menstrual' | 'follicular' | 'ovulation' | 'luteal') => ({
+        tip: String(map[k]?.tip ?? ''),
+        recommend: String(map[k]?.recommend ?? ''),
+      })
+      return {
+        menstrual: pick('menstrual'),
+        follicular: pick('follicular'),
+        ovulation: pick('ovulation'),
+        luteal: pick('luteal'),
+      }
+    })
+  }, [isSuperAdmin, isEditMode, product.hormone_timing, product.id])
+
+  useEffect(() => {
+    if (!isSuperAdmin || !isEditMode) {
+      setPtSearchHits([])
+      return
+    }
+    const q = ptSearch.trim()
+    if (q.length < 1) {
+      setPtSearchHits([])
+      return
+    }
+    const existing = new Set([
+      String(product.id),
+      ...(Array.isArray(product.perfect_together) ? product.perfect_together.map((x) => String(x)) : []),
+    ])
+    const t = setTimeout(() => {
+      void (async () => {
+        const { data } = await supabase
+          .from('products')
+          .select('id,name')
+          .ilike('name', `%${q}%`)
+          .eq('status', 'active')
+          .limit(12)
+        const rows = ((data as { id: string; name: string }[]) || []).filter((r) => !existing.has(r.id))
+        setPtSearchHits(rows)
+      })()
+    }, 250)
+    return () => clearTimeout(t)
+  }, [ptSearch, isSuperAdmin, isEditMode, product.id, product.perfect_together, supabase])
 
   useEffect(() => {
     if (!product?.id) return
@@ -1123,7 +1197,105 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     </button>
                   ))}
                 </div>
-                {curHormone.tip || curHormone.recommend ? (
+                {showEditChrome && editingHormone ? (
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 10, color: '#B09AD0', marginBottom: 4 }}>Tip</div>
+                    <textarea
+                      value={editingHormone[curHormoneKey].tip}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        setEditingHormone((prev) => {
+                          if (!prev) return prev
+                          return { ...prev, [curHormoneKey]: { ...prev[curHormoneKey], tip: v } }
+                        })
+                      }}
+                      rows={3}
+                      style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        fontSize: 11,
+                        color: '#ccc',
+                        background: '#141210',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 8,
+                        padding: 8,
+                        marginBottom: 8,
+                        fontFamily: 'inherit',
+                        resize: 'vertical' as const,
+                      }}
+                    />
+                    <div style={{ fontSize: 10, color: GOLD, marginBottom: 4 }}>추천</div>
+                    <textarea
+                      value={editingHormone[curHormoneKey].recommend}
+                      onChange={(e) => {
+                        const v = e.target.value
+                        setEditingHormone((prev) => {
+                          if (!prev) return prev
+                          return { ...prev, [curHormoneKey]: { ...prev[curHormoneKey], recommend: v } }
+                        })
+                      }}
+                      rows={3}
+                      style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        fontSize: 11,
+                        color: '#ccc',
+                        background: '#141210',
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: 8,
+                        padding: 8,
+                        marginBottom: 8,
+                        fontFamily: 'inherit',
+                        resize: 'vertical' as const,
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={hormoneSaveBusy}
+                      onClick={() => {
+                        void (async () => {
+                          if (!editingHormone) return
+                          setHormoneSaveBusy(true)
+                          try {
+                            const updatedMap = {
+                              menstrual: { tip: editingHormone.menstrual.tip, recommend: editingHormone.menstrual.recommend },
+                              follicular: { tip: editingHormone.follicular.tip, recommend: editingHormone.follicular.recommend },
+                              ovulation: { tip: editingHormone.ovulation.tip, recommend: editingHormone.ovulation.recommend },
+                              luteal: { tip: editingHormone.luteal.tip, recommend: editingHormone.luteal.recommend },
+                            }
+                            const { error } = await supabase
+                              .from('products')
+                              .update({ hormone_timing: JSON.stringify(updatedMap) })
+                              .eq('id', product.id)
+                            if (error) throw error
+                            setSaveToast('저장했어요')
+                            router.refresh()
+                          } catch (e) {
+                            console.error(e)
+                          } finally {
+                            setHormoneSaveBusy(false)
+                          }
+                        })()
+                      }}
+                      style={{
+                        width: '100%',
+                        border: 'none',
+                        background: '#7B5EA7',
+                        color: '#fff',
+                        padding: 13,
+                        borderRadius: 10,
+                        fontSize: 13,
+                        cursor: hormoneSaveBusy ? 'default' : 'pointer',
+                        fontFamily: 'inherit',
+                        opacity: hormoneSaveBusy ? 0.75 : 1,
+                      }}
+                    >
+                      {hormoneSaveBusy ? '저장 중...' : '저장'}
+                    </button>
+                  </div>
+                ) : showEditChrome && !editingHormone ? (
+                  <div style={{ fontSize: 11, color: '#666', marginBottom: 8 }}>편집 준비 중…</div>
+                ) : curHormone.tip || curHormone.recommend ? (
                   <div style={{ fontSize: 11, color: '#ccc', lineHeight: 1.65, marginBottom: 8 }}>
                     {curHormone.tip ? (
                       <div style={{ marginBottom: 6 }}>
@@ -1672,7 +1844,45 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             {perfectTogetherRows.length > 0 ? (
               <div style={{ display: 'flex', gap: 10, overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
                 {perfectTogetherRows.map((t, i) => (
-                  <div key={t.id || i} style={{ flexShrink: 0, width: 110, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center' }}>
+                  <div key={t.id || i} style={{ flexShrink: 0, width: 110, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center', position: 'relative' }}>
+                    {showEditChrome ? (
+                      <button
+                        type="button"
+                        aria-label="연결 해제"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          void (async () => {
+                            const raw = product.perfect_together
+                            const ids = Array.isArray(raw) ? raw.map((x) => String(x)).filter(Boolean) : []
+                            const next = ids.filter((id) => id !== t.id)
+                            const { error } = await supabase.from('products').update({ perfect_together: next }).eq('id', product.id)
+                            if (error) return
+                            setPerfectTogetherRows((prev) => prev.filter((r) => r.id !== t.id))
+                            setSaveToast('저장했어요')
+                            router.refresh()
+                          })()
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: 4,
+                          right: 4,
+                          width: 22,
+                          height: 22,
+                          borderRadius: 999,
+                          border: '1px solid rgba(255,255,255,0.25)',
+                          background: 'rgba(0,0,0,0.55)',
+                          color: '#fff',
+                          fontSize: 12,
+                          cursor: 'pointer',
+                          lineHeight: 1,
+                          padding: 0,
+                          zIndex: 2,
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        ×
+                      </button>
+                    ) : null}
                     <div style={{ fontSize: 8, background: '#2a1f0e', color: GOLD, padding: '2px 6px', borderRadius: 4, display: 'inline-block', marginBottom: 6 }}>STEP {i + 1}</div>
                     <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {t.storage_thumb_url || t.thumb_img ? (
@@ -1699,7 +1909,77 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   outlineOffset: 2,
                 }}
               >
-                함께 쓰기 연결 제품이 없어요
+                <div style={{ marginBottom: 10 }}>함께 쓰기 연결 제품이 없어요</div>
+                <input
+                  type="text"
+                  value={ptSearch}
+                  onChange={(e) => setPtSearch(e.target.value)}
+                  placeholder="제품명 검색"
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: '#141210',
+                    color: '#fff',
+                    fontSize: 12,
+                    fontFamily: 'inherit',
+                  }}
+                />
+                {ptSearchHits.length > 0 ? (
+                  <div
+                    style={{
+                      marginTop: 8,
+                      maxHeight: 180,
+                      overflowY: 'auto',
+                      borderRadius: 8,
+                      border: '1px solid rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    {ptSearchHits.map((h) => (
+                      <button
+                        key={h.id}
+                        type="button"
+                        onClick={() => {
+                          void (async () => {
+                            const raw = product.perfect_together
+                            const ids = Array.isArray(raw) ? raw.map((x) => String(x)).filter(Boolean) : []
+                            if (ids.includes(h.id)) return
+                            const next = [...ids, h.id]
+                            const { error } = await supabase.from('products').update({ perfect_together: next }).eq('id', product.id)
+                            if (error) return
+                            const { data: row } = await supabase
+                              .from('products')
+                              .select('id,name,retail_price,thumb_img,storage_thumb_url,brands(name)')
+                              .eq('id', h.id)
+                              .maybeSingle()
+                            if (row) setPerfectTogetherRows((prev) => [...prev, row as any])
+                            setSaveToast('저장했어요')
+                            setPtSearch('')
+                            setPtSearchHits([])
+                            router.refresh()
+                          })()
+                        }}
+                        style={{
+                          display: 'block',
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '10px 12px',
+                          border: 'none',
+                          borderBottom: '1px solid rgba(255,255,255,0.06)',
+                          background: 'transparent',
+                          color: '#e8e4dc',
+                          fontSize: 12,
+                          cursor: 'pointer',
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        {h.name}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
