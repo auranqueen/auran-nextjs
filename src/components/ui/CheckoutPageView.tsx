@@ -171,6 +171,7 @@ export default function CheckoutPageView({
   const [addressDetail, setAddressDetail] = useState('')
   const [newAddrStep, setNewAddrStep] = useState(1)
   const [newAddressLabel, setNewAddressLabel] = useState('집')
+  const [showToastTooltip, setShowToastTooltip] = useState(false)
 
   useEffect(() => {
     if (!newAddressOpen) {
@@ -382,9 +383,76 @@ export default function CheckoutPageView({
                 </div>
               ) : null}
               {toastUsed > 0 ? (
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, color: '#c4a5f5', fontSize: 13 }}>
-                  <span>🍞 토스트 할인</span>
-                  <span>-₩{toastUsed.toLocaleString()}</span>
+                <div style={{ marginBottom: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', color: '#c4a5f5', fontSize: 13 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span>🍞 토스트 할인</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowToastTooltip((v) => !v)}
+                        style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: '50%',
+                          border: '1px solid rgba(255,180,50,0.5)',
+                          background: 'rgba(255,180,50,0.1)',
+                          color: 'rgba(255,200,80,0.9)',
+                          fontSize: 10,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}
+                      >
+                        ?
+                      </button>
+                    </div>
+                    <span>-₩{toastUsed.toLocaleString()}</span>
+                  </div>
+                  {showToastTooltip ? (
+                    <div
+                      style={{
+                        marginTop: 6,
+                        background: 'rgba(255,255,255,0.04)',
+                        border: '0.5px solid rgba(255,180,50,0.25)',
+                        borderRadius: 8,
+                        padding: '10px 12px',
+                        fontSize: 12,
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '4px 0',
+                          borderBottom: '0.5px solid rgba(255,255,255,0.06)',
+                          color: 'rgba(255,255,255,0.6)',
+                        }}
+                      >
+                        <span>보유 토스트</span>
+                        <span style={{ color: 'rgba(255,255,255,0.85)' }}>{toastTBalance.toLocaleString()}T</span>
+                      </div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          padding: '4px 0',
+                          borderBottom: '0.5px solid rgba(255,255,255,0.06)',
+                          color: 'rgba(255,255,255,0.6)',
+                        }}
+                      >
+                        <span>사용 한도 (보유의 50%)</span>
+                        <span style={{ color: 'rgba(255,255,255,0.85)' }}>
+                          {Math.floor(toastTBalance * 0.5).toLocaleString()}T
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: 'rgba(255,200,80,0.9)' }}>
+                        <span>실제 사용</span>
+                        <span>{toastUsed.toLocaleString()}T</span>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
               <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
