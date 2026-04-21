@@ -1560,14 +1560,6 @@ export default function CustomerHomePage() {
           <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
             {userName ? homeGreetingForUser : '오랜에 오셨군요 💜'}
           </div>
-          <div style={{ fontSize: '11px', color: TEXT_MUTED }}>
-            오늘 피부 케어 75%
-            {weather && (
-              <span style={{ marginLeft: 8, color: 'rgba(255,255,255,0.5)' }}>
-                {weather.city} {weather.temp}° {weather.condition} · 🌫 {weather.dust?.level} · 💨 {weather.fineDust?.level} · 🔆 {weather.uv?.level}
-              </span>
-            )}
-          </div>
         </div>
         <div style={{
           width: '40px', height: '40px', borderRadius: '50%',
