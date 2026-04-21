@@ -1742,59 +1742,32 @@ export default function CustomerHomePage() {
 
       {/* ── 호르몬 브리핑 · 오늘 체크인 · 케어 액션 (TODAY&apos;S SKIN 바로 아래) ── */}
       <div style={{ padding: '12px 16px 0' }}>
-        {hormoneCycle === null ? (
-          <div style={{
-            background: 'rgba(123,94,167,0.08)',
-            border: '0.5px solid rgba(123,94,167,0.25)',
-            borderRadius: 16, padding: '20px 16px',
-            textAlign: 'center', margin: '0 16px',
-          }}>
-            <div style={{ fontSize: 24, marginBottom: 8 }}>🔮</div>
-            <div style={{ fontSize: 13, color: '#e8dff5', marginBottom: 4, lineHeight: 1.6 }}>
-              생리 시작일을 입력하면
-            </div>
-            <div style={{ fontSize: 12, color: 'rgba(232,223,245,0.6)', marginBottom: 14, lineHeight: 1.6 }}>
-              내 피부 사이클 맞춤 케어를 알려드려요 💜
-            </div>
-            <button
-              onClick={() => { setShowSkinDiary(true); setSkinDiaryInitialTab(1) }}
-              style={{
-                background: '#7B5EA7', border: 'none',
-                borderRadius: 20, padding: '8px 20px',
-                color: '#fff', fontSize: 12, cursor: 'pointer',
-              }}
-            >
-              마법캘린더 (생리주기) 입력하기
-            </button>
-          </div>
-        ) : (
-          <HormoneCard
-            hormoneMainLine={hormoneMainLine}
-            hormoneSubLine={hormoneSubLine}
-            hormonePhaseTipDesc={hormonePhaseTipDesc}
-            hormonePhaseTipOpen={hormonePhaseTipOpen}
-            onTipToggle={() => setHormonePhaseTipOpen(o => !o)}
-            showEditChrome={showHomeEditChrome}
-            onEditClick={() =>
-              setHomeEditSheet({
-                kind: 'hormone_main',
-                label: '호르몬 브리핑 (메인)',
-                draft: hormoneMainLine,
-                draft2: hormoneSubLine,
-              })
-            }
-            onEditSubClick={() =>
-              setHomeEditSheet({
-                kind: 'hormone_sub',
-                label: '호르몬 브리핑 (서브)',
-                draft: hormoneSubLine,
-              })
-            }
-            currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? '달빛기'}
-            cycleDay={calcHormoneBriefing(hormoneCycle)?.cycleDay ?? 0}
-            supabaseClient={supabase}
-          />
-        )}
+        <HormoneCard
+          hormoneMainLine={hormoneMainLine}
+          hormoneSubLine={hormoneSubLine}
+          hormonePhaseTipDesc={hormonePhaseTipDesc}
+          hormonePhaseTipOpen={hormonePhaseTipOpen}
+          onTipToggle={() => setHormonePhaseTipOpen(o => !o)}
+          showEditChrome={showHomeEditChrome}
+          onEditClick={() =>
+            setHomeEditSheet({
+              kind: 'hormone_main',
+              label: '호르몬 브리핑 (메인)',
+              draft: hormoneMainLine,
+              draft2: hormoneSubLine,
+            })
+          }
+          onEditSubClick={() =>
+            setHomeEditSheet({
+              kind: 'hormone_sub',
+              label: '호르몬 브리핑 (서브)',
+              draft: hormoneSubLine,
+            })
+          }
+          currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? '달빛기'}
+          cycleDay={calcHormoneBriefing(hormoneCycle)?.cycleDay ?? 0}
+          supabaseClient={supabase}
+        />
 
         {hormoneCycle === null ? (
           <div style={{
