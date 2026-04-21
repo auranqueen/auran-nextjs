@@ -176,29 +176,71 @@ const CHECKIN_CYCLE_PREGNANCY = [
   { id: 'cycle-type-p-4', emoji: '', label: '컨디션', sort_order: 4, is_active: true },
 ]
 
-const GREETINGS = [
-  (name: string) => `${name}님 오늘도 빛나시네요 💜`,
-  (name: string) => `찬란한 피부 소유자 ${name}님 🌸`,
-  (name: string) => `${name}님 피부가 오늘따라 더 빛나요 ✨`,
-  (name: string) => `역시 ${name}님은 달라요 💜`,
-  (name: string) => `${name}님 오셨군요, 오늘도 완벽해요 🌿`,
+const GREETINGS_MORNING = [
+  (name: string) => `${name}님 좋은 아침이에요 ☀️ 오늘 루틴 시작해볼까요?`,
+  (name: string) => `${name}님 아침 세안은 하셨나요? 🌿 상쾌하게 시작해요`,
   (name: string) => `${name}님 오늘 하루도 빛나길 바라요 🌸`,
-  (name: string) => `${name}님 덕분에 오랜이 빛나요 🌟`,
-  (name: string) => `오늘도 가장 예쁜 ${name}님 💜`,
-  (name: string) => `오늘 하루 어떠셨어요, ${name}님? 💜`,
-  (name: string) => `${name}님 오늘도 수고 많으셨어요 🌸`,
+  (name: string) => `좋은 아침이에요 ${name}님 💜 오늘도 피부 챙겨요`,
+  (name: string) => `${name}님 오늘 피부 컨디션 어때요? ✨`,
+]
+
+const GREETINGS_AFTERNOON = [
+  (name: string) => `${name}님 오늘도 빛나시네요 💜`,
+  (name: string) => `${name}님 오늘 피부 어때요? 💜`,
+  (name: string) => `${name}님 오늘도 피부 챙기러 오셨네요 🌿`,
+  (name: string) => `${name}님 오늘 루틴은 준비됐나요? ✨`,
   (name: string) => `오늘도 ${name}님 응원해요 💜`,
-  (name: string) => `${name}님이라면 뭐든 잘 될 거예요 🌟`,
-  (name: string) => `오늘 하루도 ${name}님 편이에요 💜`,
-  (name: string) => `힘든 날엔 피부 케어로 충전해요, ${name}님 🌿`,
+  (name: string) => `${name}님 피부도 마음도 빛나는 하루 되세요 🌸`,
   (name: string) => `${name}님 오늘도 최고예요 ✨`,
 ]
 
-const HORMONE_GREETINGS: Record<string, (name: string) => string> = {
-  '달빛기': (name) => `${name}님 오늘은 푹 쉬어요 💜`,
-  '황금기': (name) => `${name}님 지금이 황금기예요 ✨`,
-  '만개기': (name) => `${name}님 오늘 제일 빛나는 날이에요 🌸`,
-  '물들기': (name) => `${name}님 예민한 날이죠, 오랜이 있어요 💜`,
+const GREETINGS_EVENING = [
+  (name: string) => `${name}님 오늘 하루도 정말 애쓰셨어요 🌙 이제 나를 위한 시간이에요`,
+  (name: string) => `고생 많으셨어요 ${name}님 💜 저녁 케어로 하루 마무리해요`,
+  (name: string) => `오늘 힘드셨죠? 괜찮아요 🌿 피부 케어가 최고의 힐링이에요`,
+  (name: string) => `세상이 다 내 편인 저녁이에요 💜 오랜이 응원해요`,
+  (name: string) => `오늘도 열심히 사셨잖아요 ✨ 피부도 쉬어야 해요`,
+  (name: string) => `${name}님 수고하셨어요 🌙 저녁 루틴 시작해요`,
+]
+
+const GREETINGS_NIGHT = [
+  (name: string) => `${name}님 늦은 시간이네요 💜 수면 전 보습 잊지 마세요`,
+  (name: string) => `잠들기 전 크림 한 번만 더 발라줘요 🌙 ${name}님`,
+  (name: string) => `숙면이 최고의 피부 케어예요 💜 편안한 밤 되세요 ${name}님`,
+  (name: string) => `${name}님 오늘도 수고 많으셨어요 🌙 푹 쉬세요`,
+]
+
+const GREETINGS_WEATHER: Record<string, (name: string) => string> = {
+  'dust': (name) => `${name}님 오늘 미세먼지 높아요 😷 세정 꼼꼼히 해주세요`,
+  'rain': (name) => `${name}님 비 오는 날엔 피지 관리가 중요해요 🌧️`,
+  'hot': (name) => `${name}님 오늘 자외선 강해요 ☀️ 선크림 꼭 챙기세요`,
+  'cold': (name) => `${name}님 춥고 건조한 날이에요 ❄️ 보습 두 겹으로 시작해요`,
+}
+
+const GREETINGS_SEASON: Record<string, (name: string) => string> = {
+  'spring': (name) => `${name}님 꽃가루 많은 계절이에요 🌸 진정 케어 먼저요`,
+  'summer': (name) => `${name}님 여름엔 수분 보충이 핵심이에요 💧`,
+  'autumn': (name) => `${name}님 환절기라 피부 예민할 수 있어요 🍂 보습 집중해요`,
+  'winter': (name) => `${name}님 건조한 겨울이에요 ❄️ 오일 크림으로 마무리해요`,
+}
+
+const HORMONE_GREETINGS: Record<string, ((name: string) => string)[]> = {
+  '달빛기': [
+    (name) => `${name}님 오늘은 푹 쉬어요 💜`,
+    (name) => `달빛기엔 자극 줄이는 게 최고예요 🌙 ${name}님`,
+  ],
+  '황금기': [
+    (name) => `${name}님 지금이 황금기예요 ✨`,
+    (name) => `${name}님 지금 뭘 발라도 잘 흡수돼요 ✨ 집중 케어 타이밍이에요`,
+  ],
+  '만개기': [
+    (name) => `${name}님 오늘 제일 빛나는 날이에요 🌸`,
+    (name) => `${name}님 오늘 피부 컨디션 최고예요 🌸 마음껏 빛내요`,
+  ],
+  '물들기': [
+    (name) => `${name}님 예민한 날이죠, 오랜이 있어요 💜`,
+    (name) => `${name}님 트러블 미리 잡아요 🍂 진정 케어 타이밍이에요`,
+  ],
 }
 
 export default function CustomerHomePage() {
@@ -215,7 +257,7 @@ export default function CustomerHomePage() {
 
   const [userName, setUserName] = useState('')
   const [greetingIndex, setGreetingIndex] = useState(
-    () => Math.floor(Math.random() * GREETINGS.length)
+    () => Math.floor(Math.random() * GREETINGS_AFTERNOON.length)
   )
   const [selectedConcern, setSelectedConcern] = useState(0)
   const [saleTab, setSaleTab] = useState<'sale' | 'group'>('group')
@@ -1122,16 +1164,54 @@ export default function CustomerHomePage() {
   }, [hormoneMainLine, hormoneSubLine])
   const homeGreetingForUser = useMemo(() => {
     if (!userName) return ''
-    const defaultGreeting = GREETINGS[greetingIndex](userName)
-    if (!hormonePhase || hormoneCycle == null || String(hormoneCycle?.track) !== 'general') {
-      return defaultGreeting
+    const hour = new Date().getHours()
+    const month = new Date().getMonth() + 1
+
+    const timeGreetings =
+      hour >= 6 && hour < 11 ? GREETINGS_MORNING :
+      hour >= 11 && hour < 17 ? GREETINGS_AFTERNOON :
+      hour >= 17 && hour < 22 ? GREETINGS_EVENING :
+      GREETINGS_NIGHT
+
+    const season =
+      month >= 3 && month <= 5 ? 'spring' :
+      month >= 6 && month <= 8 ? 'summer' :
+      month >= 9 && month <= 11 ? 'autumn' : 'winter'
+
+    const rand = Math.random()
+    let greeting = ''
+
+    const dustLevel = weather?.dust?.level
+    const isDustBad = dustLevel === '나쁨' || dustLevel === '매우나쁨'
+    const isRaining =
+      weather?.condition === '비' ||
+      weather?.condition === '소나기' ||
+      weather?.condition === '눈/비'
+
+    if (isDustBad && rand < 0.2) {
+      greeting = GREETINGS_WEATHER['dust'](userName)
+    } else if (isRaining && rand < 0.2) {
+      greeting = GREETINGS_WEATHER['rain'](userName)
+    } else if (hormonePhase && hormoneCycle && hormoneTrack === 'general' && rand < 0.4) {
+      const arr = HORMONE_GREETINGS[hormonePhase]
+      if (Array.isArray(arr) && arr.length > 0) {
+        greeting = arr[Math.floor(Math.random() * arr.length)](userName)
+      }
+    } else if (rand < 0.6) {
+      greeting = GREETINGS_SEASON[season](userName)
+    } else {
+      const arr = timeGreetings
+      const idx = greetingIndex % arr.length
+      greeting = arr[idx](userName)
     }
-    const hormoneFn = HORMONE_GREETINGS[hormonePhase]
-    if (Math.random() < 0.5) {
-      return hormoneFn ? hormoneFn(userName) : defaultGreeting
+
+    if (!greeting) {
+      const arr = timeGreetings
+      const idx = greetingIndex % arr.length
+      greeting = arr[idx](userName)
     }
-    return defaultGreeting
-  }, [userName, greetingIndex, hormonePhase, hormoneCycle])
+    return greeting
+  }, [userName, greetingIndex, hormonePhase, hormoneCycle, hormoneTrack, weather])
   useEffect(() => {
     setHormonePhaseTipOpen(false)
   }, [hormoneMainLine, hormoneSubLine])
