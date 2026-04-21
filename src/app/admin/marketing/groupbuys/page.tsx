@@ -515,7 +515,14 @@ export default function GroupBuysAdminPage() {
                 <input
                   type="number"
                   value={row.group_price ?? ''}
-                  onChange={e => patchLocal(row.id, 'group_price', Number(e.target.value))}
+                  onChange={e => {
+                    const v = Number(e.target.value)
+                    patchLocal(row.id, 'group_price', v)
+                    const original = Number(row.original_price ?? row.retail_price ?? 0)
+                    if (original > 0 && Number.isFinite(v)) {
+                      patchLocal(row.id, 'discount_rate', Math.round((1 - v / original) * 100))
+                    }
+                  }}
                   style={{ ...inp, fontSize: 12 }}
                 />
               </div>
@@ -524,7 +531,14 @@ export default function GroupBuysAdminPage() {
                 <input
                   type="number"
                   value={row.discount_rate ?? ''}
-                  onChange={e => patchLocal(row.id, 'discount_rate', Number(e.target.value))}
+                  onChange={e => {
+                    const v = Number(e.target.value)
+                    patchLocal(row.id, 'discount_rate', v)
+                    const original = Number(row.original_price ?? row.retail_price ?? 0)
+                    if (original > 0 && Number.isFinite(v)) {
+                      patchLocal(row.id, 'group_price', Math.round(original * (1 - v / 100)))
+                    }
+                  }}
                   style={{ ...inp, fontSize: 12 }}
                 />
               </div>
