@@ -277,8 +277,6 @@ export default function CustomerHomePage() {
   const [showSkinDiary, setShowSkinDiary] = useState(false)
   const [skinDiaryInitialTab, setSkinDiaryInitialTab] = useState(0)
   const [showWeatherRec, setShowWeatherRec] = useState(false)
-  const [cardExpanded, setCardExpanded] = useState(false)
-  const [consultType, setConsultType] = useState<string | null>(null)
   const [skinTooltipMsg, setSkinTooltipMsg] = useState('')
   const [timeSales, setTimeSales] = useState<any[]>([])
   const [groupBuys, setGroupBuys] = useState<any[]>([])
@@ -1582,163 +1580,78 @@ export default function CustomerHomePage() {
 
       {/* 원장님 대화카드 */}
       <div style={{ margin: '12px 16px 0' }}>
-        {!cardExpanded ? (
-          <div
-            onClick={() => setCardExpanded(true)}
-            style={{
-              background: 'rgba(123,94,167,0.08)',
-              border: '1px solid rgba(123,94,167,0.25)',
-              borderRadius: 14, padding: '11px 14px',
-              display: 'flex', alignItems: 'center',
-              gap: 10, cursor: 'pointer'
-            }}
-          >
-            <div style={{ position: 'relative', flexShrink: 0 }}>
-              <div style={{
-                width: 34, height: 34, borderRadius: '50%',
-                background: 'rgba(123,94,167,0.3)',
-                display: 'flex', alignItems: 'center',
-                justifyContent: 'center', fontSize: 15
-              }}>👩</div>
-              <div style={{
-                position: 'absolute', bottom: 0, right: 0,
-                width: 10, height: 10, borderRadius: '50%',
-                background: '#4cad7e', border: '2px solid #0D0B09'
-              }} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 12, color: '#fff' }}>맑원장님</div>
-              <div style={{
-                fontSize: 11, color: 'rgba(255,255,255,0.45)',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-              }}>오늘 어떤 도움이 필요하세요?</div>
-            </div>
-            <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.3)' }}>▼</div>
-          </div>
-        ) : (
-          <div style={{
+        <div
+          onClick={() => {
+            void (async () => {
+              const {
+                data: { user },
+              } = await supabase.auth.getUser()
+              if (!user) {
+                router.push('/login?role=customer')
+                return
+              }
+              const { data: urow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+              if (!urow?.id) return
+              const { data: ownerRow } = await supabase
+                .from('chat_channels')
+                .select('id')
+                .eq('user_id', urow.id)
+                .eq('channel_type', 'owner')
+                      .eq('owner_id', '46ec32d1-0f25-4944-a6dc-8100acc68abf')
+                .maybeSingle()
+              if (ownerRow?.id) {
+                router.push('/dashboard/customer/chat/' + ownerRow.id)
+                return
+              }
+              const { data: inserted, error: insErr } = await supabase
+                .from('chat_channels')
+                .insert({
+                  user_id: urow.id,
+                        owner_id: '46ec32d1-0f25-4944-a6dc-8100acc68abf',
+                  channel_type: 'owner',
+                  title: '원장님 상담',
+                  system_kind: null,
+                  preview_text: '',
+                  unread_count: 0,
+                  is_online: false,
+                } as any)
+                .select('id')
+                .maybeSingle()
+              if (!insErr && inserted?.id) {
+                router.push('/dashboard/customer/chat/' + inserted.id)
+              }
+            })()
+          }}
+          style={{
             background: 'rgba(123,94,167,0.08)',
             border: '1px solid rgba(123,94,167,0.25)',
-            borderRadius: 14, overflow: 'hidden'
-          }}>
-            <div
-              onClick={(e) => { e.stopPropagation(); setCardExpanded(false); setConsultType(null); }}
-              style={{
-                padding: '11px 14px', display: 'flex',
-                alignItems: 'center', gap: 10, cursor: 'pointer',
-                borderBottom: '1px solid rgba(255,255,255,0.05)'
-              }}
-            >
-              <div style={{ position: 'relative', flexShrink: 0 }}>
-                <div style={{
-                  width: 34, height: 34, borderRadius: '50%',
-                  background: 'rgba(123,94,167,0.3)',
-                  display: 'flex', alignItems: 'center',
-                  justifyContent: 'center', fontSize: 15
-                }}>👩</div>
-                <div style={{
-                  position: 'absolute', bottom: 0, right: 0,
-                  width: 10, height: 10, borderRadius: '50%',
-                  background: '#4cad7e', border: '2px solid #0D0B09'
-                }} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 12, color: '#fff' }}>맑원장님</div>
-                <div style={{ fontSize: 10, color: '#4cad7e' }}>● 온라인 · 스킨파우더룸</div>
-              </div>
-              <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.3)' }}>▲</div>
-            </div>
-
-            {!consultType ? (
-              <div
-                onClick={(e: React.MouseEvent) => {
-                  e.stopPropagation()
-                  void (async () => {
-                    const {
-                      data: { user },
-                    } = await supabase.auth.getUser()
-                    if (!user) {
-                      router.push('/login?role=customer')
-                      return
-                    }
-                    const { data: urow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
-                    if (!urow?.id) return
-                    const { data: ownerRow } = await supabase
-                      .from('chat_channels')
-                      .select('id')
-                      .eq('user_id', urow.id)
-                      .eq('channel_type', 'owner')
-                            .eq('owner_id', '46ec32d1-0f25-4944-a6dc-8100acc68abf')
-                      .maybeSingle()
-                    if (ownerRow?.id) {
-                      router.push('/dashboard/customer/chat/' + ownerRow.id)
-                      return
-                    }
-                    const { data: inserted, error: insErr } = await supabase
-                      .from('chat_channels')
-                      .insert({
-                        user_id: urow.id,
-                              owner_id: '46ec32d1-0f25-4944-a6dc-8100acc68abf',
-                        channel_type: 'owner',
-                        title: '원장님 상담',
-                        system_kind: null,
-                        preview_text: '',
-                        unread_count: 0,
-                        is_online: false,
-                      } as any)
-                      .select('id')
-                      .maybeSingle()
-                    if (!insErr && inserted?.id) {
-                      router.push('/dashboard/customer/chat/' + inserted.id)
-                    }
-                  })()
-                }}
-                style={{ padding: '10px 14px 12px', cursor: 'pointer' }}
-              >
-                <div style={{ fontSize: 11, color: '#7B5EA7', textAlign: 'right' }}>상담하기</div>
-              </div>
-            ) : (
-              <div style={{ padding: '10px 14px 12px' }}>
-                <div style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  borderRadius: '12px 12px 12px 3px',
-                  padding: '10px 12px', fontSize: 12,
-                  color: 'rgba(255,255,255,0.85)',
-                  lineHeight: 1.6, marginBottom: 10
-                }}>
-                  {consultType === 'skin' && '어떤 피부 고민이 있으세요?'}
-                  {consultType === 'routine' && '보유 제품으로 루틴 정리해드릴게요! 어떤 시간대가 필요하세요?'}
-                  {consultType === 'recommend' && '어떤 고민을 해결하고 싶으세요?'}
-                  {consultType === 'photo' && '사진 1장만 올려주세요. 원장님이 확인 후 답변드려요!'}
-                  {consultType === 'sample' && '어떤 샘플이 필요하세요? 원장님 승인 후 다음 주문에 동봉해드려요'}
-                  {consultType === 'sos' && '어떤 상황이에요? 즉시 도와드릴게요!'}
-                </div>
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <button
-                    onClick={() => router.push('/dashboard/customer/chat')}
-                    style={{
-                      flex: 1, padding: '8px',
-                      borderRadius: 9,
-                      border: '1px solid rgba(123,94,167,0.4)',
-                      background: 'rgba(123,94,167,0.1)',
-                      color: '#c4a7e7', fontSize: 12, cursor: 'pointer'
-                    }}
-                  >오랜상담 전체보기 →</button>
-                  <button
-                    onClick={() => setConsultType(null)}
-                    style={{
-                      padding: '8px 12px', borderRadius: 9,
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      background: 'transparent',
-                      color: 'rgba(255,255,255,0.35)',
-                      fontSize: 12, cursor: 'pointer'
-                    }}
-                  >← 뒤로</button>
-                </div>
-              </div>
-            )}
+            borderRadius: 14, padding: '11px 14px',
+            display: 'flex', alignItems: 'center',
+            gap: 10, cursor: 'pointer'
+          }}
+        >
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div style={{
+              width: 34, height: 34, borderRadius: '50%',
+              background: 'rgba(123,94,167,0.3)',
+              display: 'flex', alignItems: 'center',
+              justifyContent: 'center', fontSize: 15
+            }}>👩</div>
+            <div style={{
+              position: 'absolute', bottom: 0, right: 0,
+              width: 10, height: 10, borderRadius: '50%',
+              background: '#4cad7e', border: '2px solid #0D0B09'
+            }} />
           </div>
-        )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, color: '#fff' }}>맑원장님</div>
+            <div style={{
+              fontSize: 11, color: 'rgba(255,255,255,0.45)',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+            }}>오늘 어떤 도움이 필요하세요?</div>
+          </div>
+          <div style={{ fontSize: 16, color: 'rgba(255,255,255,0.3)' }}>›</div>
+        </div>
       </div>
 
       {/* ── TODAY'S SKIN ── */}
