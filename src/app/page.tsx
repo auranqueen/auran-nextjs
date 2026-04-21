@@ -387,7 +387,8 @@ export default function CustomerHomePage() {
 
   const loadMotivationProfile = useCallback(async () => {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+  const user = session?.user
     if (!user) return
 
     const [profileRes, hcRes, tipRes] = await Promise.all([
