@@ -3882,7 +3882,7 @@ export default function CustomerHomePage() {
 
       <SkinDiarySheet
         open={showSkinDiary}
-        onClose={() => { setShowSkinDiary(false); setSkinDiaryInitialTab(0) }}
+        onClose={() => { setShowSkinDiary(false); void loadMotivationProfile(); setSkinDiaryInitialTab(0) }}
         supabase={supabase}
         userId={myUserId}
         hormoneCycle={hormoneCycle}
