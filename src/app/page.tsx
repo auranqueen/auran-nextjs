@@ -1220,6 +1220,8 @@ export default function CustomerHomePage() {
       : profileCycleType === 'pregnancy' || profileCycleType === 'postpartum'
         ? 'pregnancy'
         : 'menstrual'
+  const profileSkinType = String((motivationProfile as any)?.skin_type ?? '')
+  const profileSkinConcerns = String((motivationProfile as any)?.skin_concerns ?? '')
   const showHomeEditChrome = isSuperAdmin && homeEditMode
   const cycleType = profileCycleType
 
@@ -1554,9 +1556,6 @@ export default function CustomerHomePage() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       }}>
         <div>
-          <div style={{ fontSize: '10px', fontFamily: 'monospace', color: TEXT_MUTED, marginBottom: '4px' }}>
-            {todayLocaleLabel}
-          </div>
           <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
             {userName ? homeGreetingForUser : '오랜에 오셨군요 💜'}
           </div>
@@ -1667,6 +1666,7 @@ export default function CustomerHomePage() {
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: '3px', display: 'flex', alignItems: 'center', gap: 4 }}>
               TODAY&apos;S SKIN
+              {weather ? `· ${weather.city} ${weather.temp}°` : ''}
               <span
                 onClick={e => {
                   e.stopPropagation()
@@ -1677,18 +1677,12 @@ export default function CustomerHomePage() {
                 style={{ cursor: 'pointer' }}
               >?</span>
             </div>
-            <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>건성 · 민감 복합</div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              {[{ label: '수분', pct: 62, color: '#6ab0e0' }, { label: '유분', pct: 38, color: GOLD }].map((b, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.label}</span>
-                  <div style={{ width: '44px', height: '2px', background: 'rgba(255,255,255,0.08)', borderRadius: '2px' }}>
-                    <div style={{ height: '100%', width: `${b.pct}%`, background: b.color, borderRadius: '2px' }} />
-                  </div>
-                  <span style={{ fontSize: '9px', color: TEXT_MUTED }}>{b.pct}%</span>
-                </div>
-              ))}
+            <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>
+              {profileSkinType || '피부타입을 설정해주세요'}
             </div>
+            {profileSkinConcerns ? (
+              <div style={{ fontSize: 11, color: 'rgba(232,223,245,0.45)' }}>{profileSkinConcerns}</div>
+            ) : null}
           </div>
           <span style={{
             fontSize: '13px', color: TEXT_MUTED,
@@ -1714,7 +1708,7 @@ export default function CustomerHomePage() {
                 ].map((item, i) => (
                   <div key={i} style={{ flex: 1, textAlign: 'center' }}>
                     <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', marginBottom: 3 }}>{item.label}</div>
-                    <div style={{ fontSize: 11, color: (item as any).color || 'rgba(255,255,255,0.7)', fontWeight: 300 }}>{item.value}</div>
+                    <div style={{ fontSize: 11, color: (item as any).color || 'rgba(255,255,255,0.7)', fontWeight: 400 }}>{item.value}</div>
                   </div>
                 ))}
               </div>
