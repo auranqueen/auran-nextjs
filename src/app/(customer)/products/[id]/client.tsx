@@ -689,9 +689,14 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
   const brand = product.brands?.name || 'AURAN'
   const name = product.name ?? '제품명'
   const seoDesc = product.description ?? ''
-  const priceRaw = product.is_timesale ? (product.sale_price ?? (product as any).price ?? 0) : (product.retail_price ?? (product as any).price ?? 0)
+  const priceRaw = product.is_timesale
+    ? (product.sale_price ?? (product as any).price ?? 0)
+    : product.is_groupbuy
+      ? (product.sale_price ?? (product as any).price ?? 0)
+      : (product.retail_price ?? (product as any).price ?? 0)
   const price = Number(priceRaw) || 0
   const hasValidPrice = price > 0
+  const retailPrice = Number(product.retail_price ?? (product as any).price ?? 0) || 0
   const origPrice = product.original_price ?? 0
   const discount = product.discount_rate ?? 0
   const rating = product.avg_rating ?? 4.9
@@ -1529,9 +1534,18 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             <span style={{ fontSize: 11, color: '#C4A0F0' }}>👥 {product.groupbuy_count || 0}명 공동구매 중</span>
           </div>
         )}
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 10 }}>
-          <div style={{ fontSize: 28, color: GOLD }}>{hasValidPrice ? `${price.toLocaleString()}원` : '가격문의'}</div>
-          {discount > 0 && <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{origPrice.toLocaleString()}원</div>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+          {(product.is_timesale || product.is_groupbuy) && discount > 0 ? (
+            <div style={{ background: '#c02030', color: '#fff', fontSize: 11, padding: '3px 8px', borderRadius: 999 }}>-{discount}%</div>
+          ) : null}
+          <div style={{ fontSize: 28, color: GOLD, fontWeight: product.is_groupbuy ? 900 : 700 }}>
+            {hasValidPrice ? `${price.toLocaleString()}원` : '가격문의'}
+          </div>
+          {product.is_groupbuy && retailPrice > 0 ? (
+            <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{retailPrice.toLocaleString()}원</div>
+          ) : discount > 0 ? (
+            <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{origPrice.toLocaleString()}원</div>
+          ) : null}
         </div>
         {(String(product.unit_type || '').trim() &&
           Number.isFinite(Number(product.unit_price)) &&
