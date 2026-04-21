@@ -101,6 +101,16 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
       status: 'confirmed',
     })
     await addUserPointsByAuth(supabase, referrerAuthId, shareAmount)
+    {
+      const { error: ttErr } = await supabase.from('toast_transactions').insert({
+        user_id: referrerAuthId,
+        amount: shareAmount,
+        transaction_type: 'share_reward',
+        description: '추천 구매확정 보상 토스트',
+        reference_id: orderId,
+      } as any)
+      if (ttErr) console.warn('[confirmOrder] toast_transactions share_reward', ttErr)
+    }
     await supabase
       .from('orders')
       .update({ share_toast_paid: true, share_toast_amount: shareAmount } as any)

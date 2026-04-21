@@ -101,6 +101,10 @@ function CheckoutPageInner() {
   const giftTo = search.get('gift_to') || ''
   const giftMessage = search.get('gift_message') || search.get('message') || ''
   const shareJournalId = search.get('share_journal_id') || ''
+  const [refUserId, setRefUserId] = useState('')
+  useEffect(() => {
+    setRefUserId(search.get('ref') ?? '')
+  }, [search])
 
   const qtyList = useMemo(() => {
     const raw = String(search.get('qty') || '1')
@@ -411,6 +415,7 @@ function CheckoutPageInner() {
         payment_method: 'bank_transfer',
         total_amount: subtotal,
         final_amount: payAppAmount,
+        referrer_user_id: refUserId || undefined,
       }),
     })
     const json = await res.json().catch(() => ({}))

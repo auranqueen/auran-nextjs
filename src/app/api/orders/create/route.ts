@@ -20,6 +20,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const items = Array.isArray(body?.items) ? body.items : []
   const shareJournalId = typeof body?.share_journal_id === 'string' ? body.share_journal_id : null
+  const referrerUserId = body?.referrer_user_id || null
   const usePoints = Math.max(0, Math.floor(Number(body?.use_points) || 0))
   const useCharge = Math.max(0, Math.floor(Number(body?.use_charge) || 0))
   const giftTo = typeof body?.gift_to === 'string' && body.gift_to ? body.gift_to : null
@@ -200,6 +201,7 @@ export async function POST(req: NextRequest) {
       recipient_name: recipientName || null,
       recipient_phone: recipientPhone || null,
       address: address || null,
+      referrer_user_id: referrerUserId,
     })
     .select('id,order_no,final_amount')
     .single()
