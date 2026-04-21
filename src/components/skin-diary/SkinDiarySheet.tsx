@@ -13,6 +13,7 @@ type Props = {
   hormoneTrack: string
   skinRecList: any[]
   cycleType: string | null
+  initialTab?: number
 }
 
 const PURPLE = '#7B5EA7'
@@ -23,8 +24,8 @@ const STRESS_OPTS = [['여유로워요','😌'],['보통이에요','🙂'],['좀
 const SKIN_OPTS = [['열감','🔥'],['건조','💧'],['트러블','😤'],['붓기','🌊'],['좋아요','✨']]
 const SAVE_MSGS = ['오늘도 내 피부를 잘 챙겼어요 💜','기록이 쌓일수록 피부가 좋아져요 🌸','오늘 하루도 수고하셨어요 ✨','내 피부가 고마워하고 있어요 💎']
 
-export default function SkinDiarySheet({ open, onClose, supabase, userId, hormoneCycle, hormoneTrack, skinRecList, cycleType }: Props) {
-  const [tab, setTab] = useState(0)
+export default function SkinDiarySheet({ open, onClose, supabase, userId, hormoneCycle, hormoneTrack, skinRecList, cycleType, initialTab }: Props) {
+  const [tab, setTab] = useState(initialTab ?? 0)
   const [sleep, setSleep] = useState(-1)
   const [uv, setUv] = useState(-1)
   const [stress, setStress] = useState(-1)
@@ -57,7 +58,7 @@ export default function SkinDiarySheet({ open, onClose, supabase, userId, hormon
     setTimeout(() => setSaved(false), 2000)
   }
 
-  const TAB_LABELS = ['오늘 상태', '마법 캘린더', '피부 일지']
+  const TAB_LABELS = ['오늘 상태', '마법캘린더 (생리주기)', '피부 일지']
 
   return (
     <div style={{ position:'fixed', inset:0, zIndex:300, background:'rgba(0,0,0,0.8)', display:'flex', alignItems:'flex-end', justifyContent:'center', backdropFilter:'blur(6px)' }}

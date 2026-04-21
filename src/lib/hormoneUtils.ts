@@ -7,6 +7,20 @@ export type TrackType =
   | 'male'
   | 'male_menopause'
 
+export const PHASE_LABELS: Record<string, string> = {
+  '달빛기': '달빛기 🌙 (생리기)',
+  '황금기': '황금기 ✨ (여포기)',
+  '만개기': '만개기 🌸 (배란기)',
+  '물들기': '물들기 🍂 (황체기)',
+}
+
+export const PHASE_DESC: Record<string, string> = {
+  '달빛기': '생리 시작 후 1~5일차 · 예민한 시기예요',
+  '황금기': '생리 종료 후 6~13일차 · 흡수력 최고예요',
+  '만개기': '14~16일차 · 피부 컨디션 절정이에요',
+  '물들기': '17일차~생리 전날 · 트러블 주의 시기예요',
+}
+
 export function isPeriodTrack(track: string | null | undefined) {
   return track === 'general' || track === 'menopause_peri'
 }

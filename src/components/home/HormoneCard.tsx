@@ -3,6 +3,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { useState } from 'react'
 import HormoneSheet from '@/components/home/HormoneSheet'
+import { PHASE_LABELS, PHASE_DESC } from '@/lib/hormoneUtils'
 
 type HormoneCardProps = {
   hormoneMainLine: string
@@ -78,7 +79,7 @@ export default function HormoneCard({
             letterSpacing: '0.02em',
           }}
         >
-          <span>{hormoneSubLine}</span>
+          <span>{PHASE_LABELS[currentPhase] || hormoneSubLine}</span>
           {hormonePhaseTipDesc ? (
             <button
               type="button"
@@ -111,6 +112,11 @@ export default function HormoneCard({
           ) : null}
         </div>
         <div style={{ fontSize: 13, fontWeight: 300, color: '#f3ecff', lineHeight: 1.55 }}>{hormoneMainLine}</div>
+        {cycleDay > 0 && PHASE_DESC[currentPhase] ? (
+          <div style={{ fontSize: 11, color: 'rgba(232,223,245,0.5)', marginTop: 6 }}>
+            {PHASE_DESC[currentPhase]}
+          </div>
+        ) : null}
         {hormonePhaseTipDesc && hormonePhaseTipOpen ? (
           <div
             style={{
