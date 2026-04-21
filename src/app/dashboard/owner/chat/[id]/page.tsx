@@ -79,6 +79,7 @@ export default function OwnerChatRoomPage() {
   const [validDays, setValidDays] = useState(30)
   const [showCouponForm, setShowCouponForm] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
+  const [showSkinLog, setShowSkinLog] = useState(false)
   const [historyOrders, setHistoryOrders] = useState<
     {
       id: string
@@ -93,6 +94,7 @@ export default function OwnerChatRoomPage() {
       }[]
     }[]
   >([])
+  const [skinLogs, setSkinLogs] = useState<any[]>([])
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -141,6 +143,24 @@ export default function OwnerChatRoomPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable for this effect
   }, [showHistory, customerUserId])
+
+  useEffect(() => {
+    if (!showSkinLog || !customerUserId) return
+    let cancelled = false
+    void (async () => {
+      const { data } = await supabase
+        .from('daily_skin_log')
+        .select('id, created_at, sleep_hours, uv_exposure, stress_level, skin_conditions, memo')
+        .eq('user_id', customerUserId)
+        .order('created_at', { ascending: false })
+        .limit(10)
+      if (!cancelled) setSkinLogs((data as any[]) || [])
+    })()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable for this effect
+  }, [showSkinLog, customerUserId])
 
   useEffect(() => {
     if (!channelId) {
@@ -616,7 +636,7 @@ export default function OwnerChatRoomPage() {
           <button
             type="button"
             aria-label="구매 히스토리"
-            onClick={() => setShowHistory((v) => !v)}
+            onClick={() => { setShowSkinLog(false); setShowHistory((v) => !v) }}
             style={{
               flexShrink: 0,
               width: 28,
@@ -634,6 +654,28 @@ export default function OwnerChatRoomPage() {
             }}
           >
             🛍
+          </button>
+          <button
+            type="button"
+            aria-label="피부기록"
+            onClick={() => { setShowHistory(false); setShowSkinLog((v) => !v) }}
+            style={{
+              flexShrink: 0,
+              padding: '6px 10px',
+              borderRadius: 8,
+              border: `1px solid rgba(123,94,167,0.45)`,
+              background: 'rgba(123,94,167,0.18)',
+              color: '#e8dff5',
+              fontSize: 11,
+              lineHeight: 1,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            🌿 피부기록
           </button>
           <button
             type="button"
@@ -829,6 +871,53 @@ export default function OwnerChatRoomPage() {
                   >
                     총 ₩{Number(o.final_amount ?? 0).toLocaleString()}
                   </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+      ) : null}
+
+      {showSkinLog && customerUserId ? (
+        <div
+          style={{
+            flexShrink: 0,
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(0,0,0,0.25)',
+            padding: '10px 16px 12px',
+            maxHeight: 200,
+            overflowY: 'auto',
+          }}
+        >
+          <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 8 }}>최근 피부 기록 (10건)</div>
+          {skinLogs.length === 0 ? (
+            <div style={{ fontSize: 12, color: TEXT_MUTED }}>아직 피부 기록이 없어요</div>
+          ) : (
+            skinLogs.map((l) => {
+              const cd = new Date(l.created_at)
+              const dateStr = `${cd.getFullYear()}.${String(cd.getMonth() + 1).padStart(2, '0')}.${String(cd.getDate()).padStart(2, '0')}`
+              const conds = Array.isArray(l.skin_conditions) ? l.skin_conditions : []
+              return (
+                <div
+                  key={String(l.id)}
+                  style={{
+                    marginBottom: 10,
+                    background: 'rgba(255,255,255,0.04)',
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    fontSize: 12,
+                    color: 'rgba(255,255,255,0.82)',
+                    lineHeight: 1.55,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span>{dateStr}</span>
+                  </div>
+                  <div>수면: {Number(l.sleep_hours ?? 0)}h</div>
+                  <div>자외선: {Number(l.uv_exposure ?? 0)}</div>
+                  <div>스트레스: {Number(l.stress_level ?? 0)}</div>
+                  <div>피부상태: {conds.length ? conds.join(', ') : '-'}</div>
+                  <div>메모: {String(l.memo || '-')}</div>
                 </div>
               )
             })
