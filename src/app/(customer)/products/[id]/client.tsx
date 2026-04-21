@@ -45,6 +45,7 @@ interface Product {
   perfect_together?: string[] | null
   hormone_timing?: string | null
   share_copy_points?: string[] | null
+  share_points?: number | null
   review_points_text?: number | null
   review_points_photo?: number | null
   review_points_video?: number | null
@@ -736,6 +737,64 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         }`
       : ''
 
+  const recordShare = async (channel: string) => {
+    try {
+      const authId = shareRefUserId
+      if (!authId || typeof authId !== 'string') return
+
+      const { data: userRow, error: userLookupErr } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_id', authId)
+        .maybeSingle()
+      if (userLookupErr) {
+        console.warn('[recordShare] users lookup', userLookupErr)
+        return
+      }
+      if (!userRow?.id) return
+
+      const { error: logErr } = await supabase.from('share_logs' as any).insert({
+        sharer_user_id: userRow.id,
+        product_id: product.id,
+        channel,
+      })
+      if (logErr) console.warn('[recordShare] share_logs', logErr)
+
+      const sharePtsAmount = Math.max(0, Math.floor(Number(product.share_points ?? 0)))
+      if (sharePtsAmount > 0) {
+        const { data: uRow, error: ptsFetchErr } = await supabase
+          .from('users')
+          .select('points')
+          .eq('id', userRow.id)
+          .maybeSingle()
+        if (ptsFetchErr) {
+          console.warn('[recordShare] points fetch', ptsFetchErr)
+          return
+        }
+        if (uRow) {
+          const { error: upErr } = await supabase
+            .from('users')
+            .update({ points: (Number(uRow.points) || 0) + sharePtsAmount })
+            .eq('id', userRow.id)
+          if (upErr) {
+            console.warn('[recordShare] points update', upErr)
+            return
+          }
+          const { error: ttErr } = await supabase.from('toast_transactions').insert({
+            user_id: userRow.id,
+            amount: sharePtsAmount,
+            transaction_type: 'share',
+            description: '제품 공유 토스트',
+            reference_id: product.id,
+          } as any)
+          if (ttErr) console.warn('[recordShare] toast_transactions', ttErr)
+        }
+      }
+    } catch (e) {
+      console.warn('recordShare failed', e)
+    }
+  }
+
   // 리뷰 통계
   let reviewListAvg = 0
   const concernFreq: Record<string, number> = {}
@@ -1042,11 +1101,19 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 onClick={() => {
                   const url = typeof window !== 'undefined' ? window.location.href.split('#')[0] : ''
                   const text = sharePts.length ? sharePts.join('\n') : `${name}\n${url}`
-                  if (typeof navigator !== 'undefined' && navigator.share) {
-                    void navigator.share({ title: name, text, url }).catch(() => {})
-                  } else {
-                    void navigator.clipboard.writeText(`${text}\n${url}`).then(() => alert('내용을 복사했어요. 카카오톡에 붙여넣기 하세요!')).catch(() => {})
-                  }
+                  void (async () => {
+                    try {
+                      if (typeof navigator !== 'undefined' && navigator.share) {
+                        await navigator.share({ title: name, text, url })
+                      } else {
+                        await navigator.clipboard.writeText(`${text}\n${url}`)
+                        alert('내용을 복사했어요. 카카오톡에 붙여넣기 하세요!')
+                      }
+                      void recordShare('kakao')
+                    } catch {
+                      /* user cancelled or share/copy failed */
+                    }
+                  })()
                 }}
                 style={{
                   width: '100%',
@@ -1098,7 +1165,15 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   <button
                     type="button"
                     onClick={() => {
-                      void navigator.clipboard.writeText(shareLinkWithRef).then(() => alert('추천 링크를 복사했어요!')).catch(() => {})
+                      void (async () => {
+                        try {
+                          await navigator.clipboard.writeText(shareLinkWithRef)
+                          alert('추천 링크를 복사했어요!')
+                          void recordShare('link')
+                        } catch {
+                          /* copy failed */
+                        }
+                      })()
                     }}
                     style={{
                       width: '100%',
