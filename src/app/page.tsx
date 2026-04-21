@@ -1804,15 +1804,45 @@ export default function CustomerHomePage() {
           />
         )}
 
-        <BodyCareCardV2
-          hormoneTrack={hormoneTrack}
-          cycleDay={
-            calcHormoneBriefing(hormoneCycle)
-              ?.cycleDay ?? 0
-          }
-          showEditChrome={showHomeEditChrome}
-          supabaseClient={supabase}
-        />
+        {hormoneCycle === null ? (
+          <div style={{
+            background: 'rgba(123,94,167,0.06)',
+            border: '0.5px dashed rgba(123,94,167,0.3)',
+            borderRadius: 12,
+            padding: '18px 16px',
+            textAlign: 'center',
+            margin: '0 16px',
+          }}>
+            <div style={{ fontSize: 24, marginBottom: 10 }}>🌙</div>
+            <div style={{ fontSize: 12, color: 'rgba(232,223,245,0.5)', marginBottom: 6 }}>
+              피부사이클케어가 잠겨있어요
+            </div>
+            <div style={{ fontSize: 13, color: '#e8dff5', lineHeight: 1.65, marginBottom: 16 }}>
+              생리 첫날 오랜한테 귓속말 해주면<br />나만의 피부 사이클 케어가 깨어나요 ✨
+            </div>
+            <button
+              onClick={() => { setShowSkinDiary(true); setSkinDiaryInitialTab(1) }}
+              style={{
+                background: '#7B5EA7', border: 'none',
+                borderRadius: 20, padding: '8px 22px',
+                color: '#fff', fontSize: 12, cursor: 'pointer',
+              }}
+            >
+              마법캘린더 입력하기
+            </button>
+          </div>
+        ) : (
+          <BodyCareCardV2
+            hormoneTrack={hormoneTrack}
+            cycleDay={
+              calcHormoneBriefing(hormoneCycle)
+                ?.cycleDay ?? 0
+            }
+            currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? undefined}
+            showEditChrome={showHomeEditChrome}
+            supabaseClient={supabase}
+          />
+        )}
 
         {dailyQuestion ? (
           <div style={{ marginTop: 8, padding: '11px 12px', borderRadius: 12, border: '1px solid rgba(123,94,167,0.25)', background: 'rgba(123,94,167,0.08)' }}>

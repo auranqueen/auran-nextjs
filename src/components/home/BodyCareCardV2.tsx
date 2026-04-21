@@ -68,9 +68,10 @@ function cardMatchesTodayPhase(row: BodyCareCardRow, phase: string | null): bool
 export function pickTodayCard(
   rows: BodyCareCardRow[],
   hormoneTrack: string,
-  cycleDay: number
+  cycleDay: number,
+  currentPhase?: string
 ): BodyCareCardRow | null {
-  const phase = phaseTagFromTrackAndDay(hormoneTrack, cycleDay)
+  const phase = currentPhase ?? phaseTagFromTrackAndDay(hormoneTrack, cycleDay)
   const filtered = rows.filter(r => cardMatchesTodayPhase(r, phase))
   const n = filtered.length
   if (n === 0) return null
@@ -92,6 +93,7 @@ function thumbUrl(p: Pick<ProductRow, 'storage_thumb_url' | 'thumb_img'>): strin
 type BodyCareCardV2Props = {
   hormoneTrack: string
   cycleDay: number
+  currentPhase?: string
   showEditChrome: boolean
   supabaseClient: SupabaseClient
 }
@@ -130,6 +132,7 @@ function rowToForm(row: BodyCareCardRow): FormState {
 export default function BodyCareCardV2({
   hormoneTrack,
   cycleDay,
+  currentPhase,
   showEditChrome,
   supabaseClient,
 }: BodyCareCardV2Props) {
@@ -175,8 +178,8 @@ export default function BodyCareCardV2({
   }, [fetchCards])
 
   const todayCard = useMemo(
-    () => (cardsLoaded ? pickTodayCard(rows, hormoneTrack, cycleDay) : null),
-    [cardsLoaded, rows, hormoneTrack, cycleDay]
+    () => (cardsLoaded ? pickTodayCard(rows, hormoneTrack, cycleDay, currentPhase) : null),
+    [cardsLoaded, rows, hormoneTrack, cycleDay, currentPhase]
   )
 
   useEffect(() => {
