@@ -55,6 +55,10 @@ function pickPrice(p: ProductRow): number {
 
 function categoryMatch(row: BodyCareCardRow, tab: Zone): boolean {
   const tags = Array.isArray(row.category_tags) ? row.category_tags : []
+  const hasKnownZone =
+    tags.includes('face') || tags.includes('body') || tags.includes('scalp') || tags.includes('inner') ||
+    tags.includes('_zone:face') || tags.includes('_zone:body') || tags.includes('_zone:scalp') || tags.includes('_zone:inner')
+  if (!hasKnownZone) return tab === 'face'
   return tags.includes(tab) || tags.includes(`_zone:${tab}`)
 }
 
