@@ -13,8 +13,7 @@ import SkinDiarySheet from '@/components/skin-diary/SkinDiarySheet'
 import HormoneCard from '@/components/home/HormoneCard'
 import SeasonRecommendSection from
   '@/components/home/SeasonRecommendSection'
-import BodyCareCardV2 from
-  '@/components/home/BodyCareCardV2'
+import BodyCareCard from '@/components/home/BodyCareCard'
 import WeatherRecommendSheet from '@/components/home/WeatherRecommendSheet'
 
 const getSeoulToday = () => {
@@ -1990,18 +1989,19 @@ export default function CustomerHomePage() {
             </button>
           </div>
         ) : (
-          <BodyCareCardV2
-            hormoneTrack={hormoneTrack}
-            cycleDay={
-              calcHormoneBriefing(hormoneCycle)
-                ?.cycleDay ?? 0
-            }
-            currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? undefined}
-            skinType={String((motivationProfile as any)?.skin_type ?? 'all')}
-            skinConcern={String((motivationProfile as any)?.skin_concerns ?? 'all')}
-            showEditChrome={showHomeEditChrome}
-            supabaseClient={supabase}
-          />
+          <>
+            {hormoneCycle && (
+              <BodyCareCard
+                currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? ''}
+                skinType={String((motivationProfile as any)?.skin_type ?? '')}
+                skinConcerns={Array.isArray((motivationProfile as any)?.skin_concerns)
+                  ? (motivationProfile as any).skin_concerns
+                  : []}
+                showEditChrome={showHomeEditChrome}
+                supabaseClient={supabase}
+              />
+            )}
+          </>
         )}
 
         {dailyQuestion ? (
