@@ -301,6 +301,7 @@ export default function CustomerHomePage() {
   const [obGender, setObGender] = useState('')
   const [obSkin, setObSkin] = useState('')
   const [obConcerns, setObConcerns] = useState<string[]>([])
+  const [safetyRules, setSafetyRules] = useState<Array<{condition_type: string, condition_value: string, rule_type: string, rule_value: string}>>([])
   const [profileCycleType, setProfileCycleType] = useState<string | null>(null)
   const [profileCreatedAt, setProfileCreatedAt] = useState<string | null>(null)
   const [myRoles, setMyRoles] = useState<string[]>(['customer'])
@@ -399,6 +400,11 @@ export default function CustomerHomePage() {
       supabase.from('hormone_cycle').select('*').eq('auth_id', user.id).maybeSingle(),
       supabase.from('help_tooltips').select('title,content,is_active').eq('key', 'period_start').maybeSingle(),
     ])
+    const { data: rules } = await supabase
+      .from('safety_rules')
+      .select('condition_type, condition_value, rule_type, rule_value')
+      .eq('is_active', true)
+    if (rules) setSafetyRules(rules)
 
     const profile = profileRes.data
     let nameForHormoneLine = userName || '고객'
@@ -1053,8 +1059,6 @@ export default function CustomerHomePage() {
         }
       }
     }
-    const safetyRules: Array<{condition_type: string, condition_value: string, rule_type: string, rule_value: string}> = (window as any).__safetyRules ?? []
-
     const isSafe = (p: any) => {
       return safetyRules.every(rule => {
         if (rule.condition_type === 'hormone_phase' && rule.condition_value === hormonePhase) {
