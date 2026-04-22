@@ -69,14 +69,50 @@ export function pickTodayCard(
   rows: BodyCareCardRow[],
   hormoneTrack: string,
   cycleDay: number,
-  currentPhase?: string
+  currentPhase?: string,
+  skinType?: string,
+  skinConcern?: string
 ): BodyCareCardRow | null {
   const phase = currentPhase ?? phaseTagFromTrackAndDay(hormoneTrack, cycleDay)
-  const filtered = rows.filter(r => cardMatchesTodayPhase(r, phase))
-  const n = filtered.length
-  if (n === 0) return null
-  const idx = new Date().getDate() % n
-  return filtered[idx] ?? null
+  const st = skinType ?? 'all'
+  const sc = skinConcern ?? 'all'
+
+  const matchesTrack = (row: BodyCareCardRow) => {
+    const tags = Array.isArray(row.category_tags) ? row.category_tags : []
+    const trackTag = tags.find(t => t.startsWith('_track:'))
+    if (!trackTag) return true
+    return trackTag === `_track:${hormoneTrack ?? 'general'}`
+  }
+
+  const matchesSkin = (row: BodyCareCardRow) => {
+    const tags = Array.isArray(row.category_tags) ? row.category_tags : []
+    const skinTag = tags.find(t => t.startsWith('_skin:'))
+    if (!skinTag) return true
+    return skinTag === `_skin:${st}` || skinTag === '_skin:all'
+  }
+
+  const matchesConcern = (row: BodyCareCardRow) => {
+    const tags = Array.isArray(row.category_tags) ? row.category_tags : []
+    const concernTag = tags.find(t => t.startsWith('_concern:'))
+    if (!concernTag) return true
+    return concernTag === `_concern:${sc}` || concernTag === '_concern:all'
+  }
+
+  const phaseMatched = rows.filter(r => cardMatchesTodayPhase(r, phase))
+  const fullMatched = phaseMatched.filter(r => matchesTrack(r) && matchesSkin(r) && matchesConcern(r))
+  if (fullMatched.length > 0) {
+    const idx = new Date().getDate() % fullMatched.length
+    return fullMatched[idx] ?? null
+  }
+  if (phaseMatched.length > 0) {
+    const idx = new Date().getDate() % phaseMatched.length
+    return phaseMatched[idx] ?? null
+  }
+  if (rows.length > 0) {
+    const idx = Math.floor(Math.random() * rows.length)
+    return rows[idx] ?? null
+  }
+  return null
 }
 
 function productPrice(p: ProductRow): number {
@@ -94,6 +130,8 @@ type BodyCareCardV2Props = {
   hormoneTrack: string
   cycleDay: number
   currentPhase?: string
+  skinType?: string
+  skinConcern?: string
   showEditChrome: boolean
   supabaseClient: SupabaseClient
 }
@@ -133,6 +171,8 @@ export default function BodyCareCardV2({
   hormoneTrack,
   cycleDay,
   currentPhase,
+  skinType,
+  skinConcern,
   showEditChrome,
   supabaseClient,
 }: BodyCareCardV2Props) {
@@ -178,8 +218,9 @@ export default function BodyCareCardV2({
   }, [fetchCards])
 
   const todayCard = useMemo(
-    () => (cardsLoaded ? pickTodayCard(rows, hormoneTrack, cycleDay, currentPhase) : null),
-    [cardsLoaded, rows, hormoneTrack, cycleDay, currentPhase]
+    () =>
+      cardsLoaded ? pickTodayCard(rows, hormoneTrack, cycleDay, currentPhase, skinType, skinConcern) : null,
+    [cardsLoaded, rows, hormoneTrack, cycleDay, currentPhase, skinType, skinConcern]
   )
 
   useEffect(() => {

@@ -1765,6 +1765,8 @@ export default function CustomerHomePage() {
                 ?.cycleDay ?? 0
             }
             currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? undefined}
+            skinType={String((motivationProfile as any)?.skin_type ?? 'all')}
+            skinConcern={String((motivationProfile as any)?.skin_concerns ?? 'all')}
             showEditChrome={showHomeEditChrome}
             supabaseClient={supabase}
           />
