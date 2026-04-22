@@ -2174,7 +2174,7 @@ export default function CustomerHomePage() {
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
         {loading ? Array.from({ length: 4 }).map((_, i) => (
           <div key={i} style={{ minWidth: '130px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, height: '200px', animation: 'pulse 1.2s ease-in-out infinite', flexShrink: 0 }} />
-        )) : skinRecList.slice(0, 4).map((p: any, i: number) => {
+        )) : skinRecList.slice(0, 6).map((p: any, i: number) => {
           const thumb = p.storage_thumb_url || p.thumb_img
           const brandName = p.brands?.name || p.brand
           const catName = p.categories?.name || ''
