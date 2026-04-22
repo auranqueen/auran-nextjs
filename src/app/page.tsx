@@ -78,23 +78,22 @@ function pickGroupbuyHook(gbIdRaw: string, remaining: number): string {
 }
 
 const SKIN_TOOLTIP_MSGS = [
-  '오늘 내 피부 날씨 알아볼까요? 💜',
-  '오늘 하늘이 내 피부에 뭐라고 하는지 볼게요 🌸',
-  '오늘 피부가 뭘 원하는지 살짝 들여다볼까요? ✨',
+  '오늘 피부 컨디션 몰래 엿볼까요? 💜',
   '날씨가 내 피부한테 하고 싶은 말이 있대요 💌',
-  '오늘 피부 비서가 준비한 케어 정보예요 👑',
-  '눌러보세요, 오늘 피부가 좋아하는 날씨인지 알려드릴게요 🌿',
+  '오늘 피부가 뭘 원하는지 살짝 들여다볼게요 ✨',
+  '눌러봐요, 피부 비서가 준비했어요 👑',
+  '오늘 내 피부 날씨 예보예요 🌸',
+  '오늘 피부 상태 딱 맞춤 케어 알려드릴게요 🌿',
 ]
 
 const CARE_CHEER_MSGS = [
   '오늘 피부 관리 잊지 않으셨죠? 💜',
-  '세안하고 크림 발랐어요? 피부가 기다려요 🌸',
   '오늘 내 피부한테 5분만 써줄래요? 💎',
   '크림 한 번이 주름 하나를 늦춰요 👑',
-  '오늘도 피부 밥 챙겨줬어요? 🍱',
   '세럼 안 바르면 피부가 섭섭해해요 🥺',
   '선크림은 오늘의 피부 보험이에요 ☂️',
   '잠들기 전 크림 한 번, 내일이 달라져요 🌙',
+  '오늘도 피부가 고마워할 거예요 🌸',
 ]
 
 // 폴백 데이터 (Supabase 연동 전)
@@ -1970,15 +1969,15 @@ export default function CustomerHomePage() {
             {weather && (() => {
               const warnings: string[] = []
               if (weather.dust?.level === '나쁨' || weather.dust?.level === '매우나쁨')
-                warnings.push('미세먼지 ' + weather.dust.level + ' — 외출 후 이중 세안 필수')
+                warnings.push('미세먼지 ' + weather.dust.level + ' 😷 외출 후 꼭 더블클렌징이에요')
               if (weather.fineDust?.level === '나쁨' || weather.fineDust?.level === '매우나쁨')
-                warnings.push('초미세먼지 ' + weather.fineDust.level + ' · 외출 후 딥클렌징 추천')
+                warnings.push('초미세먼지 ' + weather.fineDust.level + ' 🌫️ 딥클렌징 오늘 필수예요')
               if (weather.uv?.level === '높음')
-                warnings.push('자외선 높음 · SPF30+ 자외선차단제 바르세요')
+                warnings.push('자외선 높음 ☀️ 선크림 지금 바로 덧발라요')
               if (weather.uv?.level === '매우높음')
-                warnings.push('자외선 매우 높음 — 선크림 2시간마다 덧바르기')
+                warnings.push('자외선 매우 높음 🔥 2시간마다 선크림 덧바르기')
               if (weather.humidity < 40)
-                warnings.push('건조한 날씨 — 보습 크림 추가 도포 권장')
+                warnings.push('건조한 날씨 💧 보습 크림 한 겹 더 올려줘요')
               return warnings.map((w, i) => (
                 <div key={i} style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 4, lineHeight: 1.5 }}>⚠ {w}</div>
               ))
