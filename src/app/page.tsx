@@ -1571,49 +1571,10 @@ export default function CustomerHomePage() {
       </div>
 
       {/* 원장님 대화카드 */}
-      <div style={{ margin: '12px 16px 0' }}>
+      <div className="select-none" style={{ margin: '12px 16px 0' }}>
         <div
-          onClick={() => {
-            void (async () => {
-              const {
-                data: { user },
-              } = await supabase.auth.getUser()
-              if (!user) {
-                router.push('/login?role=customer')
-                return
-              }
-              const { data: urow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
-              if (!urow?.id) return
-              const { data: ownerRow } = await supabase
-                .from('chat_channels')
-                .select('id')
-                .eq('user_id', urow.id)
-                .eq('channel_type', 'owner')
-                      .eq('owner_id', '46ec32d1-0f25-4944-a6dc-8100acc68abf')
-                .maybeSingle()
-              if (ownerRow?.id) {
-                router.push('/dashboard/customer/chat/' + ownerRow.id)
-                return
-              }
-              const { data: inserted, error: insErr } = await supabase
-                .from('chat_channels')
-                .insert({
-                  user_id: urow.id,
-                        owner_id: '46ec32d1-0f25-4944-a6dc-8100acc68abf',
-                  channel_type: 'owner',
-                  title: '원장님 상담',
-                  system_kind: null,
-                  preview_text: '',
-                  unread_count: 0,
-                  is_online: false,
-                } as any)
-                .select('id')
-                .maybeSingle()
-              if (!insErr && inserted?.id) {
-                router.push('/dashboard/customer/chat/' + inserted.id)
-              }
-            })()
-          }}
+          onContextMenu={(e) => e.preventDefault()}
+          onClick={() => { router.push('/dashboard/customer/chat/new') }}
           style={{
             background: 'rgba(123,94,167,0.08)',
             border: '1px solid rgba(123,94,167,0.25)',
