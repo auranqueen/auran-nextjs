@@ -157,6 +157,21 @@ function SkinAnalysisQPageContent() {
         is_pregnant: isPregnant,
       }).select().single()
 
+      if (analysis?.id) {
+        try {
+          // profiles 자동 반영
+          await supabase.from('profiles').update({
+            skin_type: answers.skinType || null,
+            skin_concerns: answers.concerns?.length > 0
+              ? answers.concerns
+              : null,
+            gender: answers.gender || null,
+          }).eq('auth_id', user.id)
+        } catch (e) {
+          console.warn('profiles update skipped', e)
+        }
+      }
+
       const params = new URLSearchParams({
         moisture: String(finalScores.moisture),
         oil: String(finalScores.oil),
