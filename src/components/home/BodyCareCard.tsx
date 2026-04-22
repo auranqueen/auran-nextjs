@@ -230,17 +230,17 @@ export default function BodyCareCard({
 
   if (!todayCard) {
     return (
-      <div style={{ marginTop: 10, border: `1px solid ${CARD_BORDER}`, borderRadius: 12, background: CARD_BG, padding: 14 }}>
-        <div style={{ fontSize: 12, color: TEXT_MUTED, fontWeight: 400 }}>카드가 없어요.</div>
-        {showEditChrome ? (
-          <button
-            type="button"
-            onClick={startNew}
-            style={{ marginTop: 10, border: '1px solid rgba(123,94,167,0.4)', background: 'rgba(123,94,167,0.15)', color: '#d8c7ef', borderRadius: 8, padding: '8px 10px', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}
-          >
-            + 추가
-          </button>
-        ) : null}
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', padding: '32px 16px', gap: 12, textAlign: 'center'
+      }}>
+        <span style={{ fontSize: 32 }}>🌿</span>
+        <span style={{ fontSize: 14, color: '#7B5EA7', fontWeight: undefined }}>
+          아직 케어 카드가 없어요
+        </span>
+        <span style={{ fontSize: 12, color: '#aaa' }}>
+          원장님이 곧 맞춤 케어를 준비해드릴게요
+        </span>
       </div>
     )
   }
@@ -275,21 +275,33 @@ export default function BodyCareCard({
           <div style={{ fontSize: 11, fontWeight: 400, color: TEXT_MUTED, marginBottom: 8, lineHeight: 1.55 }}>{todayCard.care}</div>
           <div style={{ borderLeft: `2px solid ${PURPLE}`, paddingLeft: 8, fontSize: 11, color: '#d6c7ea', marginBottom: 10, lineHeight: 1.5, fontWeight: 400 }}>{todayCard.quote}</div>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
-            {products.map((p) => (
-              <div key={p.id} style={{ minWidth: 170, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 8, display: 'flex', gap: 8 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 8, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0 }}>
-                  {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
-                </div>
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 11, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 400 }}>{p.name}</div>
-                  <div style={{ fontSize: 11, color: '#e4d7f4', marginTop: 2, fontWeight: 500 }}>{pickPrice(p).toLocaleString()}원</div>
-                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                    <button type="button" onClick={() => { void addToCart(p.id) }} style={{ borderRadius: 6, border: '1px solid rgba(255,255,255,0.16)', background: 'transparent', color: 'rgba(255,255,255,0.8)', fontSize: 10, fontWeight: 400, padding: '4px 6px', cursor: 'pointer' }}>담기</button>
-                    <button type="button" onClick={() => router.push(`/products/${p.id}`)} style={{ borderRadius: 6, border: 'none', background: 'rgba(123,94,167,0.25)', color: '#e7dcf5', fontSize: 10, fontWeight: 500, padding: '4px 6px', cursor: 'pointer' }}>구매</button>
+            {products.length === 0 ? (
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: 'center', padding: '24px 16px', gap: 8, textAlign: 'center'
+              }}>
+                <span style={{ fontSize: 28 }}>🛍️</span>
+                <span style={{ fontSize: 13, color: '#aaa' }}>
+                  연결된 제품이 없어요
+                </span>
+              </div>
+            ) : (
+              products.map((p) => (
+                <div key={p.id} style={{ minWidth: 170, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 8, display: 'flex', gap: 8 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 8, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0 }}>
+                    {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: 11, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 400 }}>{p.name}</div>
+                    <div style={{ fontSize: 11, color: '#e4d7f4', marginTop: 2, fontWeight: 500 }}>{pickPrice(p).toLocaleString()}원</div>
+                    <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                      <button type="button" onClick={() => { void addToCart(p.id) }} style={{ borderRadius: 6, border: '1px solid rgba(255,255,255,0.16)', background: 'transparent', color: 'rgba(255,255,255,0.8)', fontSize: 10, fontWeight: 400, padding: '4px 6px', cursor: 'pointer' }}>담기</button>
+                      <button type="button" onClick={() => router.push(`/products/${p.id}`)} style={{ borderRadius: 6, border: 'none', background: 'rgba(123,94,167,0.25)', color: '#e7dcf5', fontSize: 10, fontWeight: 500, padding: '4px 6px', cursor: 'pointer' }}>구매</button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </>
       ) : (
