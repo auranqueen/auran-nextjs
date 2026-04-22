@@ -1254,6 +1254,21 @@ export default function CustomerHomePage() {
         ? 'pregnancy'
         : 'menstrual'
   const profileSkinType = String((motivationProfile as any)?.skin_type ?? '')
+  const CONCERN_LABEL_MAP: Record<string, string> = {
+    'acne': '트러블·뾰루지',
+    'dryness': '수분 부족',
+    'sebum': '과잉 피지',
+    'pore': '모공·블랙헤드',
+    'redness': '홍조·열감',
+    'pigmentation': '색소침착·잡티',
+    'brightening': '미백·브라이트닝',
+    'elasticity': '탄력 저하',
+    'wrinkle': '잔주름·주름',
+    'sensitivity': '민감·자극',
+    'barrier': '피부염·아토피',
+    'darkcircle': '다크서클',
+    'exfoliation': '각질',
+  }
   const profileSkinConcerns = Array.isArray((motivationProfile as any)?.skin_concerns)
     ? (motivationProfile as any).skin_concerns.join(', ')
     : String((motivationProfile as any)?.skin_concerns ?? '')
@@ -1277,22 +1292,6 @@ export default function CustomerHomePage() {
     '다크서클': 'darkcircle',
     '수분 부족': 'dryness',
     '모세혈관': 'redness',
-  }
-
-  const CONCERN_LABEL_MAP: Record<string, string> = {
-    'acne': '트러블·뾰루지',
-    'dryness': '수분 부족',
-    'sebum': '과잉 피지',
-    'pore': '모공·블랙헤드',
-    'redness': '홍조·열감',
-    'pigmentation': '색소침착·잡티',
-    'brightening': '미백·브라이트닝',
-    'elasticity': '탄력 저하',
-    'wrinkle': '잔주름·주름',
-    'sensitivity': '민감·자극',
-    'barrier': '피부염·아토피',
-    'darkcircle': '다크서클',
-    'exfoliation': '각질',
   }
 
   async function finishOnboarding() {
