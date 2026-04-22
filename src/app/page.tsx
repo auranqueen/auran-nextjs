@@ -1255,7 +1255,9 @@ export default function CustomerHomePage() {
         ? 'pregnancy'
         : 'menstrual'
   const profileSkinType = String((motivationProfile as any)?.skin_type ?? '')
-  const profileSkinConcerns = String((motivationProfile as any)?.skin_concerns ?? '')
+  const profileSkinConcerns = Array.isArray((motivationProfile as any)?.skin_concerns)
+    ? (motivationProfile as any).skin_concerns.join(', ')
+    : String((motivationProfile as any)?.skin_concerns ?? '')
   const showHomeEditChrome = isSuperAdmin && homeEditMode
   const cycleType = profileCycleType
 
