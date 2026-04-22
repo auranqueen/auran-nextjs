@@ -131,13 +131,17 @@ function pickProductForStep(
 ): MappingRow['products'] | null {
   if (pool.length === 0) return null
   const t = (p: MappingRow['products']) => String(p?.tag || '').toLowerCase()
+  const rc = (p: MappingRow['products']) => String((p as any)?.routine_category || '').toLowerCase()
   if (step === '클렌징') {
     const a = pool.find(p => t(p).includes('클렌징') && !t(p).includes('딥'))
     return a || pool.find(p => t(p).includes('클렌징')) || null
   }
-  if (step === '토너') return pool.find(p => t(p).includes('토너')) || null
+  if (step === '토너')
+    return pool.find(p => rc(p) === 'toner' && !t(p).includes('딥') && !t(p).includes('deep'))
+      || pool.find(p => t(p).includes('토너') && !t(p).includes('딥')) || null
   if (step === '앰플·세럼')
-    return pool.find(p => t(p).includes('앰플') || t(p).includes('세럼')) || null
+    return pool.find(p => rc(p) === 'ampoule' && !t(p).includes('딥') && !t(p).includes('deep'))
+      || pool.find(p => (t(p).includes('앰플') || t(p).includes('세럼')) && !t(p).includes('딥')) || null
   if (step === '크림') return pool.find(p => t(p).includes('크림') && !t(p).includes('선크림')) || null
   if (step === '선크림')
     return pool.find(p => t(p).includes('선크림') || t(p).includes('자외선') || t(p).includes('spf')) || null
