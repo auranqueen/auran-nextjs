@@ -92,7 +92,12 @@ export default function BodyCareCard({
       .eq('is_active', true)
       .order('sort_order')
     const filtered = ((data as any[]) || []).filter((row) => {
-      const tags = Array.isArray(row.phase_tags) ? row.phase_tags : []
+      let tags: string[] = []
+      if (Array.isArray(row.phase_tags)) {
+        tags = row.phase_tags
+      } else if (typeof row.phase_tags === 'string') {
+        try { tags = JSON.parse(row.phase_tags) } catch { tags = [] }
+      }
       return tags.includes(phaseToken) || tags.includes('all')
     })
     setRows(filtered as BodyCareCardRow[])
