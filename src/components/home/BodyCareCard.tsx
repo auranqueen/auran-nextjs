@@ -29,6 +29,7 @@ type Props = {
   currentPhase: string
   skinType: string
   skinConcerns: string[]
+  recommended?: any[]
   showEditChrome: boolean
   supabaseClient: SupabaseClient
 }
@@ -66,6 +67,7 @@ export default function BodyCareCard({
   currentPhase,
   skinType: _skinType,
   skinConcerns: _skinConcerns,
+  recommended,
   showEditChrome,
   supabaseClient,
 }: Props) {
@@ -229,18 +231,52 @@ export default function BodyCareCard({
   if (loading) return <div style={{ marginTop: 10, fontSize: 12, color: TEXT_MUTED }}>불러오는 중...</div>
 
   if (!todayCard) {
+    const filteredRecommended = (recommended ?? []).filter((p: any) => {
+      const ct: string[] = p.category_tags ?? []
+      return ct.includes(tab) || ct.some((t: string) => t.startsWith('_zone:' + tab))
+    })
+    const visibleRecommended = (filteredRecommended.length > 0 ? filteredRecommended : (recommended ?? [])).slice(0, 6)
     return (
-      <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        justifyContent: 'center', padding: '32px 16px', gap: 12, textAlign: 'center'
-      }}>
-        <span style={{ fontSize: 32 }}>🌿</span>
-        <span style={{ fontSize: 14, color: '#7B5EA7', fontWeight: undefined }}>
-          아직 케어 카드가 없어요
-        </span>
-        <span style={{ fontSize: 12, color: '#aaa' }}>
-          원장님이 곧 맞춤 케어를 준비해드릴게요
-        </span>
+      <div>
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'center', padding: '32px 16px', gap: 12, textAlign: 'center'
+        }}>
+          <span style={{ fontSize: 32 }}>🌿</span>
+          <span style={{ fontSize: 14, color: '#7B5EA7', fontWeight: undefined }}>
+            아직 케어 카드가 없어요
+          </span>
+          <span style={{ fontSize: 12, color: '#aaa' }}>
+            원장님이 곧 맞춤 케어를 준비해드릴게요
+          </span>
+        </div>
+        {Array.isArray(recommended) && recommended.length > 0 ? (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 12, color: '#aaa', marginBottom: 8, paddingLeft: 4 }}>
+              점수 기반 추천 제품
+            </div>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }} className="scroll-hide">
+              {visibleRecommended.map((p: any) => (
+                <div key={p.id} style={{
+                  minWidth: 100, borderRadius: 10, overflow: 'hidden',
+                  background: 'rgba(255,255,255,0.04)', flexShrink: 0
+                }}>
+                  {p.thumb_img && (
+                    <img src={p.thumb_img} alt={p.name} style={{ width: 100, height: 100, objectFit: 'cover' }} />
+                  )}
+                  <div style={{ padding: '6px 8px' }}>
+                    <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.3 }}>
+                      {p.name}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#7B5EA7', marginTop: 2 }}>
+                      {p.sale_price?.toLocaleString()}원
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </div>
     )
   }

@@ -2064,6 +2064,7 @@ export default function CustomerHomePage() {
                 skinConcerns={Array.isArray((motivationProfile as any)?.skin_concerns)
                   ? (motivationProfile as any).skin_concerns
                   : []}
+                recommended={skinRecList.slice(0, 12)}
                 showEditChrome={showHomeEditChrome}
                 supabaseClient={supabase}
               />
