@@ -1053,6 +1053,24 @@ export default function CustomerHomePage() {
         }
       }
     }
+    const safetyRules: Array<{condition_type: string, condition_value: string, rule_type: string, rule_value: string}> = (window as any).__safetyRules ?? []
+
+    const isSafe = (p: any) => {
+      return safetyRules.every(rule => {
+        if (rule.condition_type === 'hormone_phase' && rule.condition_value === hormonePhase) {
+          if (rule.rule_type === 'exclude_ingredient') {
+            const ingredients = (p.ingredients ?? '').toLowerCase()
+            return !ingredients.includes(rule.rule_value)
+          }
+        }
+        if (rule.condition_type === 'skin_type' && rule.condition_value === motivationProfile?.skin_type) {
+          if (rule.rule_type === 'exclude_concern_tag') {
+            return !(p.concern_tags ?? []).includes(rule.rule_value)
+          }
+        }
+        return true
+      })
+    }
     if (hormoneTrack && skinRecPool.length > 0) {
       const filteredByTrack = skinRecPool.filter((p: any) => {
         const arr = Array.isArray(p?.categories?.target_tracks) ? p.categories.target_tracks.map((x: any) => String(x)) : []
@@ -1070,22 +1088,30 @@ export default function CustomerHomePage() {
     // 체크인 없을 때 프로필 기본값으로 필터
     const hasCheckin = checkInTab && homeCheckinSorted.length > 0
     if (!hasCheckin && skinRecPool.length > 0) {
-      const skinType = String((motivationProfile as any)?.skin_type || '').toLowerCase()
-      const skinConcerns: string[] = Array.isArray((motivationProfile as any)?.skin_concerns)
-        ? (motivationProfile as any).skin_concerns.map((x: any) => String(x).toLowerCase())
-        : []
-      if (skinType || skinConcerns.length > 0) {
-        const filtered = skinRecPool.filter((p: any) => {
-          const tag = String(p.tag || '').toLowerCase()
-          const qm = Array.isArray(p.quiz_match)
-            ? p.quiz_match.map((x: any) => String(x).toLowerCase()).join(' ')
-            : ''
-          const matchType = skinType ? (tag.includes(skinType) || qm.includes(skinType)) : false
-          const matchConcern = skinConcerns.some((c: string) => tag.includes(c) || qm.includes(c))
-          return matchType || matchConcern
+      const userConcerns: string[] = motivationProfile?.skin_concerns ?? []
+      const userSkinType: string = motivationProfile?.skin_type ?? ''
+
+      const scored = (skinRecPool as any[])
+        .filter(isSafe)
+        .map(p => {
+          let score = 0
+          // concern score
+          const pConcerns: string[] = p.concern_tags ?? []
+          const concernMatch = pConcerns.filter((c: string) => userConcerns.includes(c)).length
+          score += concernMatch * 3
+          // critical 보정
+          if (pConcerns.includes('barrier') || pConcerns.includes('sensitivity')) score += 2
+          if (pConcerns.includes('acne')) score += 1
+          // hormone score
+          const pHormone: string[] = p.hormone_timing ?? []
+          if (pHormone.includes(hormonePhase)) score += 3
+          else if (pHormone.length > 0) score += 1
+          // skin_type score
+          if ((p.tag ?? '').includes(userSkinType) || (p.quiz_match ?? '').includes(userSkinType)) score += 2
+          return { ...p, _score: score }
         })
-        if (filtered.length > 0) skinRecPool = filtered
-      }
+        .sort((a, b) => b._score - a._score)
+      if (scored.length > 0) skinRecPool = scored
     }
 
     // 선호브랜드 있으면 상단 정렬
