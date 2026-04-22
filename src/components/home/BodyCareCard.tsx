@@ -90,9 +90,12 @@ export default function BodyCareCard({
       .from('body_care_cards')
       .select('*')
       .eq('is_active', true)
-      .contains('phase_tags', [phaseToken])
       .order('sort_order')
-    setRows((data as BodyCareCardRow[]) || [])
+    const filtered = ((data as any[]) || []).filter((row) => {
+      const tags = Array.isArray(row.phase_tags) ? row.phase_tags : []
+      return tags.includes(phaseToken) || tags.includes('all')
+    })
+    setRows(filtered as BodyCareCardRow[])
     setLoading(false)
   }, [supabaseClient, currentPhase])
 
