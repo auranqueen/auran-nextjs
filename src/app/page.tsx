@@ -298,6 +298,10 @@ export default function CustomerHomePage() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [motivationProfile, setMotivationProfile] = useState<any>(null)
   const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null)
+  const [obStep, setObStep] = useState(1)
+  const [obGender, setObGender] = useState('')
+  const [obSkin, setObSkin] = useState('')
+  const [obConcerns, setObConcerns] = useState<string[]>([])
   const [profileCycleType, setProfileCycleType] = useState<string | null>(null)
   const [profileCreatedAt, setProfileCreatedAt] = useState<string | null>(null)
   const [myRoles, setMyRoles] = useState<string[]>(['customer'])
@@ -1226,10 +1230,29 @@ export default function CustomerHomePage() {
   const showHomeEditChrome = isSuperAdmin && homeEditMode
   const cycleType = profileCycleType
 
+  async function finishOnboarding() {
+    await supabase.from('profiles').update({
+      gender: obGender,
+      skin_type: obSkin || null,
+      skin_concerns: obConcerns.length > 0 ? obConcerns : null,
+      onboarding_done: true,
+    }).eq('auth_id', myUserId)
+    setOnboardingDone(true)
+  }
+
   if (!mounted) return <Loading />
   if (!dataReady) return <Loading />
 
   if (onboardingDone === false) {
+    const concernOptions = [
+      '여드름', '트러블·뾰루지', '건조·당김', '과잉 피지',
+      '모공·블랙헤드', '홍조·열감', '색소침착·잡티', '미백·브라이트닝',
+      '탄력 저하', '잔주름·주름', '민감·자극', '피부염·아토피',
+      '다크서클', '칙칙한 톤', '수분 부족', '모세혈관',
+    ]
+    const canNextStep1 = obGender !== ''
+    const canNextStep2 = obSkin !== ''
+    const canFinishStep3 = obConcerns.length > 0
     return (
       <div style={{
         background: '#0D0B09',
@@ -1238,58 +1261,267 @@ export default function CustomerHomePage() {
         margin: '0 auto',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '40px 24px',
+        padding: '28px 20px 24px',
         fontFamily: "'Noto Sans KR', sans-serif",
         color: '#fff',
       }}>
-        <div style={{ fontSize: 48, marginBottom: 20 }}>💜</div>
-        <div style={{ fontSize: 22, color: '#C9A96E', letterSpacing: 4, marginBottom: 8, fontFamily: 'Georgia, serif' }}>AURAN</div>
-        <div style={{ fontSize: 15, color: '#fff', marginBottom: 8, fontWeight: 300 }}>
-          {(motivationProfile as any)?.full_name || ''}님 환영해요
+        <div style={{ fontSize: 18, fontWeight: 500, marginBottom: 6 }}>온보딩</div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginBottom: 14 }}>
+          피부 정보 3단계 설정
         </div>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 40, textAlign: 'center', lineHeight: 1.7, fontWeight: 300 }}>
-          피부 정보를 입력하면<br/>나만을 위한 케어가 시작돼요
+        <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
+          {[1, 2, 3].map((n) => (
+            <div
+              key={n}
+              style={{
+                width: 96,
+                height: 5,
+                borderRadius: 999,
+                background: n <= obStep ? '#7B5EA7' : 'rgba(255,255,255,0.12)',
+              }}
+            />
+          ))}
         </div>
-        <button
-          onClick={() => router.push('/my/profile')}
-          style={{
-            width: '100%',
-            padding: '14px',
-            background: '#7B5EA7',
-            border: 'none',
-            borderRadius: 13,
-            color: '#fff',
-            fontSize: 14,
-            cursor: 'pointer',
-            fontFamily: "'Noto Sans KR', sans-serif",
-            fontWeight: 300,
-            marginBottom: 12,
-          }}
-        >
-          내 피부 정보 입력하기
-        </button>
-        <button
-          onClick={async () => {
-            await supabase.from('profiles').update({ onboarding_done: true }).eq('auth_id', myUserId)
-            setOnboardingDone(true)
-          }}
-          style={{
-            width: '100%',
-            padding: '14px',
-            background: 'transparent',
-            border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: 13,
-            color: 'rgba(255,255,255,0.5)',
-            fontSize: 13,
-            cursor: 'pointer',
-            fontFamily: "'Noto Sans KR', sans-serif",
-            fontWeight: 300,
-          }}
-        >
-          나중에 할게요
-        </button>
+
+        {obStep === 1 && (
+          <div style={{ width: '100%' }}>
+            <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 6 }}>성별을 선택해줘</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginBottom: 14 }}>
+              더 맞는 피부 추천을 위해 필요해
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
+              <button
+                type="button"
+                onClick={() => setObGender('female')}
+                style={{
+                  borderRadius: 14,
+                  border: obGender === 'female' ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.14)',
+                  background: obGender === 'female' ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.03)',
+                  color: '#fff',
+                  padding: '18px 10px',
+                  cursor: 'pointer',
+                }}
+              >
+                <div style={{ fontSize: 28, marginBottom: 6 }}>👩</div>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>여성</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setObGender('male')}
+                style={{
+                  borderRadius: 14,
+                  border: obGender === 'male' ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.14)',
+                  background: obGender === 'male' ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.03)',
+                  color: '#fff',
+                  padding: '18px 10px',
+                  cursor: 'pointer',
+                }}
+              >
+                <div style={{ fontSize: 28, marginBottom: 6 }}>👨</div>
+                <div style={{ fontSize: 14, fontWeight: 500 }}>남성</div>
+              </button>
+            </div>
+            <button
+              type="button"
+              disabled={!canNextStep1}
+              onClick={() => setObStep(2)}
+              style={{
+                width: '100%',
+                padding: '13px',
+                borderRadius: 12,
+                border: 'none',
+                background: canNextStep1 ? '#7B5EA7' : 'rgba(255,255,255,0.1)',
+                color: canNextStep1 ? '#fff' : 'rgba(255,255,255,0.4)',
+                fontSize: 14,
+                fontWeight: 500,
+                cursor: canNextStep1 ? 'pointer' : 'default',
+                marginBottom: 10,
+              }}
+            >
+              다음
+            </button>
+            <button
+              type="button"
+              onClick={() => { void finishOnboarding() }}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: 12,
+                border: '1px solid rgba(255,255,255,0.16)',
+                background: 'transparent',
+                color: 'rgba(255,255,255,0.6)',
+                fontSize: 13,
+                fontWeight: 400,
+                cursor: 'pointer',
+              }}
+            >
+              나중에 할게요
+            </button>
+          </div>
+        )}
+
+        {obStep === 2 && (
+          <div style={{ width: '100%' }}>
+            <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 6 }}>피부타입을 선택해줘</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginBottom: 14 }}>
+              현재 피부에 가장 가까운 타입을 골라줘
+            </div>
+            <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
+              {[
+                { key: '건성', label: '건성', desc: '자주 당기고 건조한 타입' },
+                { key: '지성', label: '지성', desc: '유분이 많고 번들거리는 타입' },
+                { key: '복합성', label: '복합성', desc: '부위마다 유수분이 다른 타입' },
+                { key: '민감성', label: '민감성', desc: '자극에 쉽게 반응하는 타입' },
+              ].map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setObSkin(item.key)}
+                  style={{
+                    textAlign: 'left',
+                    borderRadius: 12,
+                    border: obSkin === item.key ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.14)',
+                    background: obSkin === item.key ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.03)',
+                    color: '#fff',
+                    padding: '11px 12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 3 }}>{item.label}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.58)', fontWeight: 400 }}>{item.desc}</div>
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => setObStep(1)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(255,255,255,0.16)',
+                  background: 'transparent',
+                  color: 'rgba(255,255,255,0.7)',
+                  fontSize: 13,
+                  fontWeight: 400,
+                  cursor: 'pointer',
+                }}
+              >
+                뒤로가기
+              </button>
+              <button
+                type="button"
+                disabled={!canNextStep2}
+                onClick={() => setObStep(3)}
+                style={{
+                  flex: 1,
+                  padding: '12px',
+                  borderRadius: 12,
+                  border: 'none',
+                  background: canNextStep2 ? '#7B5EA7' : 'rgba(255,255,255,0.1)',
+                  color: canNextStep2 ? '#fff' : 'rgba(255,255,255,0.4)',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: canNextStep2 ? 'pointer' : 'default',
+                }}
+              >
+                다음
+              </button>
+            </div>
+          </div>
+        )}
+
+        {obStep === 3 && (
+          <div style={{ width: '100%' }}>
+            <div style={{ fontSize: 16, fontWeight: 500, marginBottom: 6 }}>피부고민을 선택해줘</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', marginBottom: 14 }}>
+              여러 개 선택 가능해
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 16 }}>
+              {concernOptions.map((item) => {
+                const active = obConcerns.includes(item)
+                return (
+                  <button
+                    key={item}
+                    type="button"
+                    onClick={() =>
+                      setObConcerns((prev) =>
+                        prev.includes(item) ? prev.filter((v) => v !== item) : [...prev, item]
+                      )
+                    }
+                    style={{
+                      borderRadius: 20,
+                      border: active ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.14)',
+                      background: active ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.03)',
+                      color: active ? '#d7c8ec' : 'rgba(255,255,255,0.82)',
+                      padding: '7px 10px',
+                      fontSize: 12,
+                      fontWeight: 400,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {item}
+                  </button>
+                )
+              })}
+            </div>
+            <div style={{ display: 'grid', gap: 8 }}>
+              <button
+                type="button"
+                onClick={() => setObStep(2)}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(255,255,255,0.16)',
+                  background: 'transparent',
+                  color: 'rgba(255,255,255,0.7)',
+                  fontSize: 13,
+                  fontWeight: 400,
+                  cursor: 'pointer',
+                }}
+              >
+                뒤로가기
+              </button>
+              <button
+                type="button"
+                disabled={!canFinishStep3}
+                onClick={() => { void finishOnboarding() }}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: 12,
+                  border: 'none',
+                  background: canFinishStep3 ? '#7B5EA7' : 'rgba(255,255,255,0.1)',
+                  color: canFinishStep3 ? '#fff' : 'rgba(255,255,255,0.4)',
+                  fontSize: 13,
+                  fontWeight: 500,
+                  cursor: canFinishStep3 ? 'pointer' : 'default',
+                }}
+              >
+                완료
+              </button>
+              <button
+                type="button"
+                onClick={() => { void finishOnboarding() }}
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(255,255,255,0.16)',
+                  background: 'transparent',
+                  color: 'rgba(255,255,255,0.6)',
+                  fontSize: 13,
+                  fontWeight: 400,
+                  cursor: 'pointer',
+                }}
+              >
+                나중에 선택할게요
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
