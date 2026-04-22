@@ -46,6 +46,7 @@ const MENU = [
     items: [
       { label: '제품 등록', href: '/admin/products/edit', icon: '📝' },
       { label: '제품 관리', href: '/admin/marketing/products', icon: '🧴' },
+      { label: '케어카드 관리', href: '/admin/marketing/care-cards', icon: '💠' },
       { label: '공동구매 관리', href: '/admin/marketing/groupbuys', icon: '🛒' },
       { label: '쿠폰 관리', href: '/admin/coupons', icon: '🎫' },
     ],
@@ -113,6 +114,7 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/coupons')) return '쿠폰 관리'
   if (path.startsWith('/admin/marketing/contests')) return '컨테스트 관리'
   if (path.startsWith('/admin/marketing/groupbuys')) return '공동구매 관리'
+  if (path.startsWith('/admin/marketing/care-cards')) return '케어카드 관리'
   if (path.startsWith('/admin/commissions')) return '커미션 관리'
   if (path.startsWith('/admin/magazine')) return '매거진 관리'
   return 'Admin Console'
