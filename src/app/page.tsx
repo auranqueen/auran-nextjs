@@ -1229,11 +1229,48 @@ export default function CustomerHomePage() {
   const showHomeEditChrome = isSuperAdmin && homeEditMode
   const cycleType = profileCycleType
 
+  const CONCERN_KEY_MAP: Record<string, string> = {
+    '여드름': 'acne',
+    '트러블·뾰루지': 'acne',
+    '건조·당김': 'dryness',
+    '과잉 피지': 'sebum',
+    '모공·블랙헤드': 'pore',
+    '홍조·열감': 'redness',
+    '색소침착·잡티': 'pigmentation',
+    '미백·브라이트닝': 'brightening',
+    '칙칙한 톤': 'brightening',
+    '탄력 저하': 'elasticity',
+    '잔주름·주름': 'wrinkle',
+    '민감·자극': 'sensitivity',
+    '피부염·아토피': 'barrier',
+    '다크서클': 'darkcircle',
+    '수분 부족': 'dryness',
+    '모세혈관': 'redness',
+  }
+
+  const CONCERN_LABEL_MAP: Record<string, string> = {
+    'acne': '트러블·뾰루지',
+    'dryness': '수분 부족',
+    'sebum': '과잉 피지',
+    'pore': '모공·블랙헤드',
+    'redness': '홍조·열감',
+    'pigmentation': '색소침착·잡티',
+    'brightening': '미백·브라이트닝',
+    'elasticity': '탄력 저하',
+    'wrinkle': '잔주름·주름',
+    'sensitivity': '민감·자극',
+    'barrier': '피부염·아토피',
+    'darkcircle': '다크서클',
+    'exfoliation': '각질',
+  }
+
   async function finishOnboarding() {
     await supabase.from('profiles').update({
       gender: obGender,
       skin_type: obSkin || null,
-      skin_concerns: obConcerns.length > 0 ? obConcerns : null,
+      skin_concerns: obConcerns.length > 0
+        ? obConcerns.map(c => CONCERN_KEY_MAP[c] ?? c)
+        : null,
       onboarding_done: true,
     }).eq('auth_id', myUserId)
     setOnboardingDone(true)
