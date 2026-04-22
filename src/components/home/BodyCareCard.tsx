@@ -281,6 +281,7 @@ export default function BodyCareCard({
     )
   }
 
+  const finalProducts = products.length > 0 ? products : (recommended ?? []).slice(0, 6)
   return (
     <div style={{ marginTop: 10, border: `1px solid ${CARD_BORDER}`, borderRadius: 12, background: CARD_BG, padding: 12 }}>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
@@ -322,7 +323,7 @@ export default function BodyCareCard({
                 </span>
               </div>
             ) : (
-              products.map((p) => (
+              finalProducts.map((p) => (
                 <div key={p.id} style={{ minWidth: 170, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 8, display: 'flex', gap: 8 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 8, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0 }}>
                     {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
