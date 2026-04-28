@@ -41,8 +41,8 @@ export async function GET() {
         .limit(200),
       supabase
         .from('brands')
-        .select('id,name,status,created_at')
-        .eq('status', 'pending')
+        .select('id,name,status,apply_status,created_at')
+        .eq('apply_status', 'pending')
         .order('created_at', { ascending: false })
         .limit(200),
     ])
@@ -65,8 +65,8 @@ export async function GET() {
       .limit(200),
     svc
       .from('brands')
-      .select('id,name,status,created_at')
-      .eq('status', 'pending')
+      .select('id,name,status,apply_status,created_at')
+      .eq('apply_status', 'pending')
       .order('created_at', { ascending: false })
       .limit(200),
   ])
