@@ -865,7 +865,7 @@ export default function CustomerHomePage() {
     if (motivationCarousel.length <= 1) return
     const id = setInterval(() => {
       setMotivationIdx((prev) => (prev + 1) % motivationCarousel.length)
-    }, 5000)
+    }, 8000)
     return () => clearInterval(id)
   }, [motivationCarousel.length])
 
@@ -1270,7 +1270,7 @@ export default function CustomerHomePage() {
     'exfoliation': '각질',
   }
   const profileSkinConcerns = Array.isArray((motivationProfile as any)?.skin_concerns)
-    ? (motivationProfile as any).skin_concerns.join(', ')
+    ? (motivationProfile as any).skin_concerns.map((k: string) => CONCERN_LABEL_MAP[k] ?? k).join(', ')
     : String((motivationProfile as any)?.skin_concerns ?? '')
   const showHomeEditChrome = isSuperAdmin && homeEditMode
   const cycleType = profileCycleType
