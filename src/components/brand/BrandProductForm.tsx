@@ -75,7 +75,7 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
   const [skinConcernsPick, setSkinConcernsPick] = useState<string[]>([])
   const [skinStage, setSkinStage] = useState('')
   const [useTiming, setUseTiming] = useState('')
-  const [hormoneTimingProduct, setHormoneTimingProduct] = useState('')
+  const [hormoneTimingProduct, setHormoneTimingProduct] = useState<string[]>([])
 
   const [supplyPrice, setSupplyPrice] = useState('')
   const [retailPrice, setRetailPrice] = useState('')
@@ -246,7 +246,20 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
       setSkinConcernsPick(Array.isArray(d.skinConcernsPick) ? d.skinConcernsPick.map(String) : [])
       setSkinStage(String(d.skinStage || ''))
       setUseTiming(String(d.useTiming || ''))
-      setHormoneTimingProduct(String(d.hormoneTimingProduct || ''))
+      setHormoneTimingProduct(
+        Array.isArray(d.hormoneTimingProduct)
+          ? (d.hormoneTimingProduct as unknown[]).map(String)
+          : typeof d.hormoneTimingProduct === 'string' && (d.hormoneTimingProduct as string).trim()
+            ? (() => {
+                try {
+                  const p = JSON.parse(d.hormoneTimingProduct as string)
+                  return Array.isArray(p) ? p.map(String) : [(d.hormoneTimingProduct as string).trim()]
+                } catch {
+                  return [(d.hormoneTimingProduct as string).trim()]
+                }
+              })()
+            : []
+      )
       setSupplyPrice(String(d.supplyPrice || ''))
       setRetailPrice(String(d.retailPrice || ''))
       setUnitPriceNum(String(d.unitPriceNum || ''))
@@ -442,7 +455,7 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
         video_url: videoUrl,
         skin_types: skinTypesPick.length ? skinTypesPick : null,
         skin_concerns: skinConcernsPick.length ? skinConcernsPick : null,
-        hormone_timing: hormoneTimingProduct.trim() || null,
+        hormone_timing: hormoneTimingProduct.length > 0 ? JSON.stringify(hormoneTimingProduct) : null,
         ingredient_analyzed: ingredientAnalyzeDone,
         ingredient_photo_url: ingredientPhotoUrl || null,
         unit_type: unitType,
@@ -1124,14 +1137,14 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
                               )),
                             ]
                             const h = data.hormone_timing
-                            const htStr = Array.isArray(h)
-                              ? JSON.stringify(h.map((x: unknown) => String(x)))
+                            const htArr = Array.isArray(h)
+                              ? h.map((x: unknown) => String(x)).filter(Boolean)
                               : h != null && String(h).trim()
-                                ? String(h)
-                                : ''
+                                ? [String(h).trim()]
+                                : []
                             setSkinConcernsPick(nextC)
                             setSkinTypesPick(nextS)
-                            if (htStr) setHormoneTimingProduct(htStr)
+                            if (htArr.length > 0) setHormoneTimingProduct(htArr)
                             if (ingredientPhotoFileRef.current) {
                               const file = ingredientPhotoFileRef.current
                               const ext = file.name.split('.').pop()

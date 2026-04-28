@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
 {
   "concern_tags": ["트러블","건조","탄력","미백","홍조","진정"] 중 해당,
   "skin_tags": ["건성","지성","복합성","민감성","탄력","미백","수분","트러블","모공","홍조","재생","장벽강화"] 중 해당,
-  "hormone_timing": ["달빛기","황금기","만개기","물들기"] 중 해당
+  "hormone_timing": ["생리기","여포기","배란기","황체기"] 중 해당
 }`
 
     const messages = clientMessages || [
