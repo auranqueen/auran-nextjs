@@ -34,7 +34,7 @@ const SELECT_FULL =
 const SELECT_FULL_NOUSER =
   'id, order_no, status, total_amount, final_amount, coupon_discount, points_used, payment_method, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, admin_order_notes, customer_id, customer_memo'
 const SELECT_FALLBACK =
-  'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, customer_id'
+  'id, order_no, status, total_amount, final_amount, coupon_discount, points_used, payment_method, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, admin_order_notes, customer_id, customer_memo'
 
 export default function AdminOrdersPage() {
   const supabase = createClient()
