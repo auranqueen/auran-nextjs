@@ -30,6 +30,9 @@ export default function BrandDashboardPage() {
   const [brandId, setBrandId] = useState<string | null>(null)
   const [brandName, setBrandName] = useState('')
   const [brandRow, setBrandRow] = useState<Record<string, unknown> | null>(null)
+  const [myBrands, setMyBrands] = useState<Array<{ id: string; name: string; role: string }>>([])
+  const [activeBrandId, setActiveBrandId] = useState<string | null>(null)
+  const [showBrandDropdown, setShowBrandDropdown] = useState(false)
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<Row[]>([])
   const [tab, setTab] = useState<'pending' | 'active' | 'hidden'>('pending')
@@ -129,6 +132,19 @@ export default function BrandDashboardPage() {
     setBrandId(bid)
     setBrandRow((b as Record<string, unknown> | null) || null)
     setBrandName(String((b as { name?: string } | null)?.name || ''))
+    const { data: memberRows } = await supabase
+      .from('brand_members')
+      .select('brand_id, role, brands(id, name)')
+      .eq('user_id', u.id)
+    if (memberRows && memberRows.length > 0) {
+      const list = memberRows.map((m: any) => ({
+        id: m.brands?.id ?? m.brand_id,
+        name: m.brands?.name ?? '',
+        role: m.role,
+      }))
+      setMyBrands(list)
+      if (!activeBrandId) setActiveBrandId(list[0]?.id ?? null)
+    }
     const { data: pr } = await supabase
       .from('products')
       .select('*, brands(id,name)')
@@ -1086,6 +1102,34 @@ export default function BrandDashboardPage() {
         brandName={brandName}
         onSubmitted={() => void fetchRows()}
       />
+
+      {myBrands.length > 1 && (
+        <div style={{ position: 'relative', marginBottom: 12 }}>
+          <button
+            onClick={() => setShowBrandDropdown(v => !v)}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', cursor: 'pointer', color: '#fff', fontSize: 13 }}
+          >
+            <span>{myBrands.find(b => b.id === activeBrandId)?.name ?? brandName}</span>
+            <span style={{ fontSize: 10, opacity: 0.5 }}>▼</span>
+          </button>
+          {showBrandDropdown && (
+            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, minWidth: 180, zIndex: 50, overflow: 'hidden' }}>
+              {myBrands.map(b => (
+                <div
+                  key={b.id}
+                  onClick={() => {
+                    setActiveBrandId(b.id)
+                    setShowBrandDropdown(false)
+                  }}
+                  style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, color: b.id === activeBrandId ? '#7B5EA7' : 'rgba(255,255,255,0.7)', background: b.id === activeBrandId ? 'rgba(123,94,167,0.1)' : 'transparent' }}
+                >
+                  {b.name}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div style={{ fontSize: 20, color: ACC, marginBottom: 6 }}>브랜드사 대시보드</div>
       <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 18 }}>연결된 제품만 표시됩니다.</div>
