@@ -64,13 +64,14 @@ export default function AdminMembersPage() {
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase()
     const role = (sp.get('role') || '').trim().toLowerCase()
-    if (!s) return members
-    const base = members.filter(m =>
+    const roleFiltered = role ? members.filter(m => (m.role || '').toLowerCase() === role) : members
+    if (!s) return roleFiltered
+    const base = roleFiltered.filter(m =>
       (m.name || '').toLowerCase().includes(s) ||
       (m.email || '').toLowerCase().includes(s) ||
       (m.role || '').toLowerCase().includes(s)
     )
-    return role ? base.filter(m => (m.role || '').toLowerCase() === role) : base
+    return base
   }, [members, q])
 
   const suspend = async (m: Member) => {
