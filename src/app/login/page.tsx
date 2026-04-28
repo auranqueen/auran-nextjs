@@ -45,6 +45,10 @@ function LoginForm() {
   const [googleOAuthLoading, setGoogleOAuthLoading] = useState(false)
   const [recentKakao, setRecentKakao] = useState(false)
   const [autoLogin, setAutoLogin] = useState(true)
+  const [showReset, setShowReset] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetSent, setResetSent] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
 
   useEffect(() => {
     try {
@@ -147,6 +151,16 @@ function LoginForm() {
     } finally {
       setLoading(false)
     }
+  }
+
+  async function submitReset() {
+    if (!resetEmail) return
+    setResetLoading(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    setResetLoading(false)
+    if (!error) setResetSent(true)
   }
 
   async function handleLogin(e: React.FormEvent) {
@@ -391,6 +405,39 @@ function LoginForm() {
           >
             {loading ? '로그인 중...' : `${meta.label} 로그인`}
           </button>
+          <div style={{textAlign:'right', marginTop:8}}>
+            <button type="button" onClick={() => setShowReset(v => !v)}
+              style={{fontSize:12, color:'rgba(255,255,255,0.4)', background:'none', border:'none', cursor:'pointer', padding:0}}>
+              비밀번호를 잊으셨나요?
+            </button>
+          </div>
+          {showReset && (
+            <div style={{marginTop:12, padding:'14px', borderRadius:12, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)'}}>
+              {resetSent ? (
+                <div style={{fontSize:13, color:'#a78bfa', textAlign:'center', lineHeight:1.6}}>
+                  📬 재설정 링크를 보냈어요<br/>
+                  <span style={{fontSize:11, color:'rgba(255,255,255,0.4)'}}>이메일을 확인해주세요</span>
+                </div>
+              ) : (
+                <>
+                  <div style={{fontSize:12, color:'rgba(255,255,255,0.5)', marginBottom:8}}>
+                    가입한 이메일을 입력하면 재설정 링크를 보내드려요
+                  </div>
+                  <input
+                    type="email"
+                    value={resetEmail}
+                    onChange={e => setResetEmail(e.target.value)}
+                    placeholder="이메일 주소"
+                    style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.05)', color:'#fff', fontSize:13, boxSizing:'border-box', marginBottom:8, outline:'none'}}
+                  />
+                  <button type="button" onClick={submitReset} disabled={resetLoading}
+                    style={{width:'100%', padding:'10px', borderRadius:8, background:'#7B5EA7', border:'none', color:'#fff', fontSize:13, cursor:'pointer', opacity: resetLoading ? 0.6 : 1}}>
+                    {resetLoading ? '전송 중...' : '재설정 링크 보내기'}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
         </form>
 
         <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--text3)', marginTop: 14, marginBottom: 4 }}>
