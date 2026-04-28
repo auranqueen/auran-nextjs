@@ -45,9 +45,10 @@ export type BrandProductFormProps = {
   brandId: string
   brandName: string
   onSubmitted?: () => void
+  initialData?: { ingredient_analyzed?: boolean | null; ingredient_photo_url?: string | null }
 }
 
-export default function BrandProductForm({ open, onClose, authUserId, brandId, brandName, onSubmitted }: BrandProductFormProps) {
+export default function BrandProductForm({ open, onClose, authUserId, brandId, brandName, onSubmitted, initialData }: BrandProductFormProps) {
   const supabase = createClient()
   const draftIdRef = useRef<string>(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : uid())
   const editorRef = useRef<any>(null)
@@ -100,6 +101,7 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
   const [fullIngredient, setFullIngredient] = useState('')
   const [ingredientAnalyzeLoading, setIngredientAnalyzeLoading] = useState(false)
   const [ingredientAnalyzeDone, setIngredientAnalyzeDone] = useState(false)
+  const [ingredientPhotoUrl, setIngredientPhotoUrl] = useState<string>('')
   const [keyIngs, setKeyIngs] = useState<KeyIng[]>([])
   const [clinical, setClinical] = useState('')
   const [allergyNote, setAllergyNote] = useState('')
@@ -131,7 +133,9 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
     setMsg('')
     setTab(0)
     draftIdRef.current = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : uid()
-  }, [open])
+    if (initialData?.ingredient_analyzed) setIngredientAnalyzeDone(true)
+    if (initialData?.ingredient_photo_url) setIngredientPhotoUrl(initialData.ingredient_photo_url)
+  }, [open, initialData])
 
   useEffect(() => {
     if (saleStatusChip === '' && adminOpts.productStatus.length) setSaleStatusChip(adminOpts.productStatus[0])
@@ -439,6 +443,8 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
         skin_types: skinTypesPick.length ? skinTypesPick : null,
         skin_concerns: skinConcernsPick.length ? skinConcernsPick : null,
         hormone_timing: hormoneTimingProduct.trim() || null,
+        ingredient_analyzed: ingredientAnalyzeDone,
+        ingredient_photo_url: ingredientPhotoUrl || null,
         unit_type: unitType,
         unit_price: unitPrice,
         quiz_match: [`__BRAND_EXT__${JSON.stringify({ ...ext, gifUrl })}`],
@@ -961,6 +967,7 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
                   onChange={e => {
                     ingredientPhotoFileRef.current = e.target.files?.[0] ?? null
                     setIngredientAnalyzeDone(false)
+                    setIngredientPhotoUrl('')
                   }}
                 />
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, width: '100%' }}>
@@ -982,9 +989,22 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
                     >
                       전성분 사진
                     </button>
+                    {(ingredientPhotoFileRef.current || ingredientPhotoUrl) && (
+                      <div style={{ marginTop: 8, borderRadius: 8, overflow: 'hidden', maxWidth: 200 }}>
+                        <img
+                          src={
+                            ingredientPhotoFileRef.current
+                              ? URL.createObjectURL(ingredientPhotoFileRef.current)
+                              : ingredientPhotoUrl
+                          }
+                          alt="전성분 사진"
+                          style={{ width: '100%', borderRadius: 8, opacity: 0.85 }}
+                        />
+                      </div>
+                    )}
                     <button
                       type="button"
-                      disabled={ingredientAnalyzeLoading}
+                      disabled={ingredientAnalyzeLoading || ingredientAnalyzeDone}
                       onClick={() =>
                         void (async () => {
                           setIngredientAnalyzeLoading(true)
@@ -1112,6 +1132,18 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
                             setSkinConcernsPick(nextC)
                             setSkinTypesPick(nextS)
                             if (htStr) setHormoneTimingProduct(htStr)
+                            if (ingredientPhotoFileRef.current) {
+                              const file = ingredientPhotoFileRef.current
+                              const ext = file.name.split('.').pop()
+                              const path = `ingredient-photos/${Date.now()}.${ext}`
+                              const { data: upData } = await supabase.storage
+                                .from('products')
+                                .upload(path, file, { upsert: true })
+                              if (upData) {
+                                const { data: urlData } = supabase.storage.from('products').getPublicUrl(path)
+                                setIngredientPhotoUrl(urlData.publicUrl)
+                              }
+                            }
                             setIngredientAnalyzeDone(true)
                           } catch (e: unknown) {
                             setMsg(e instanceof Error ? e.message : '분석 오류')
@@ -1132,7 +1164,7 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
                         fontFamily: 'inherit',
                       }}
                     >
-                      {ingredientAnalyzeLoading ? '분석 중…' : 'AI 자동 분석'}
+                      {ingredientAnalyzeLoading ? '분석 중…' : ingredientAnalyzeDone ? '✓ 분석 완료' : 'AI 자동 분석'}
                     </button>
                     {ingredientAnalyzeLoading ? (
                       <>
