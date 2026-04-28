@@ -323,11 +323,11 @@ export default function AdminMembersPage() {
       {selected && (
         <div
           onClick={close}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 100, display: 'flex', alignItems: 'flex-end' }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
         >
           <div
             onClick={e => e.stopPropagation()}
-            style={{ width: '100%', maxWidth: 560, margin: '0 auto', background: '#141414', borderRadius: '24px 24px 0 0', padding: '18px 18px 26px', border: '1px solid rgba(255,255,255,0.10)' }}
+            style={{ width: '100%', maxWidth: 560, marginLeft: 0, background: '#141414', borderRadius: '24px 24px 0 0', padding: '18px 18px 26px', border: '1px solid rgba(255,255,255,0.10)' }}
           >
             <div style={{ width: 44, height: 4, borderRadius: 999, background: 'rgba(255,255,255,0.18)', margin: '0 auto 14px' }} />
             <div style={{ fontSize: 16, fontWeight: 900, color: '#fff' }}>{selected.name}</div>
