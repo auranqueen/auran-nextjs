@@ -72,7 +72,7 @@ export default function AdminMembersPage() {
       (m.role || '').toLowerCase().includes(s)
     )
     return base
-  }, [members, q])
+  }, [members, q, sp])
 
   const suspend = async (m: Member) => {
     if (!confirm(`${m.name} (${m.email}) 계정을 정지할까요?`)) return
