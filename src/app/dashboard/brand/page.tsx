@@ -33,6 +33,13 @@ export default function BrandDashboardPage() {
   const [myBrands, setMyBrands] = useState<Array<{ id: string; name: string; role: string }>>([])
   const [activeBrandId, setActiveBrandId] = useState<string | null>(null)
   const [showBrandDropdown, setShowBrandDropdown] = useState(false)
+  const [showAddBrand, setShowAddBrand] = useState(false)
+  const [addBrandName, setAddBrandName] = useState('')
+  const [addBrandNameEn, setAddBrandNameEn] = useState('')
+  const [addBrandCountry, setAddBrandCountry] = useState('')
+  const [addBrandContact, setAddBrandContact] = useState('')
+  const [addBrandLoading, setAddBrandLoading] = useState(false)
+  const [addBrandDone, setAddBrandDone] = useState(false)
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<Row[]>([])
   const [tab, setTab] = useState<'pending' | 'active' | 'hidden'>('pending')
@@ -1128,6 +1135,129 @@ export default function BrandDashboardPage() {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+        <button
+          onClick={() => setShowAddBrand(true)}
+          style={{ fontSize: 12, color: '#7B5EA7', background: 'rgba(123,94,167,0.1)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 20, padding: '6px 14px', cursor: 'pointer' }}
+        >
+          + 브랜드 추가
+        </button>
+      </div>
+      {showAddBrand && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#1a1a2e', borderRadius: 16, padding: 24, width: '100%', maxWidth: 400 }}>
+            {addBrandDone ? (
+              <div style={{ textAlign: 'center', padding: '24px 0' }}>
+                <div style={{ fontSize: 32, marginBottom: 12 }}>🎉</div>
+                <div style={{ fontSize: 15, color: '#fff', marginBottom: 8 }}>브랜드 추가 신청 완료!</div>
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 20 }}>승인 후 대시보드에서 전환할 수 있어요</div>
+                <button
+                  onClick={() => {
+                    setShowAddBrand(false)
+                    setAddBrandDone(false)
+                    setAddBrandName('')
+                    setAddBrandNameEn('')
+                    setAddBrandCountry('')
+                    setAddBrandContact('')
+                  }}
+                  style={{ padding: '10px 24px', borderRadius: 20, background: '#7B5EA7', border: 'none', color: '#fff', fontSize: 13, cursor: 'pointer' }}
+                >
+                  확인
+                </button>
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                  <span style={{ fontSize: 15, color: '#fff' }}>새 브랜드 추가</span>
+                  <button onClick={() => setShowAddBrand(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 18 }}>
+                    ✕
+                  </button>
+                </div>
+                {[
+                  { label: '브랜드명 (한글)', value: addBrandName, set: setAddBrandName, placeholder: '예: 탈라' },
+                  { label: '브랜드명 (영문)', value: addBrandNameEn, set: setAddBrandNameEn, placeholder: '예: THALAC' },
+                  { label: '원산지', value: addBrandCountry, set: setAddBrandCountry, placeholder: '예: 프랑스' },
+                  { label: '담당자 연락처', value: addBrandContact, set: setAddBrandContact, placeholder: '010-0000-0000' },
+                ].map(({ label, value, set, placeholder }) => (
+                  <div key={label} style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>{label}</div>
+                    <input
+                      value={value}
+                      onChange={e => set(e.target.value)}
+                      placeholder={placeholder}
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px',
+                        borderRadius: 8,
+                        border: '1px solid rgba(255,255,255,0.1)',
+                        background: 'rgba(255,255,255,0.05)',
+                        color: '#fff',
+                        fontSize: 13,
+                        boxSizing: 'border-box',
+                        outline: 'none',
+                      }}
+                    />
+                  </div>
+                ))}
+                <button
+                  disabled={addBrandLoading || !addBrandName}
+                  onClick={async () => {
+                    if (!addBrandName) return
+                    setAddBrandLoading(true)
+                    const {
+                      data: { user },
+                    } = await supabase.auth.getUser()
+                    if (!user) {
+                      setAddBrandLoading(false)
+                      return
+                    }
+                    const { data: newBrand, error } = await supabase
+                      .from('brands')
+                      .insert({
+                        name: addBrandName,
+                        name_en: addBrandNameEn || null,
+                        origin_country: addBrandCountry || null,
+                        user_id: user.id,
+                        apply_status: 'pending',
+                        status: 'pending',
+                      })
+                      .select('id')
+                      .single()
+                    if (!error && newBrand) {
+                      await supabase.from('brand_members').insert({
+                        user_id: user.id,
+                        brand_id: newBrand.id,
+                        role: 'owner',
+                      })
+                      await supabase.from('notifications').insert({
+                        type: 'brand_apply',
+                        message: `새 브랜드 추가 신청: ${addBrandName}`,
+                        is_read: false,
+                      })
+                      setAddBrandDone(true)
+                    }
+                    setAddBrandLoading(false)
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '12px',
+                    borderRadius: 10,
+                    background: addBrandLoading || !addBrandName ? 'rgba(123,94,167,0.3)' : '#7B5EA7',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: 14,
+                    cursor: 'pointer',
+                    marginTop: 8,
+                  }}
+                >
+                  {addBrandLoading ? '신청 중...' : '신청하기'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
       )}
 
