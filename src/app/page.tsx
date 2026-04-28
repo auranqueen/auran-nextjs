@@ -3074,9 +3074,19 @@ export default function CustomerHomePage() {
                   <img
                     src={brand.logo_url}
                     alt={brand.name || ''}
-                    style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }}
+                    style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }}
                   />
-                ) : null}
+                ) : (
+                  <div style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    background: 'rgba(123,94,167,0.3)',
+                    border: '1px solid rgba(123,94,167,0.4)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, color: '#7B5EA7', flexShrink: 0,
+                  }}>
+                    {(brand.name || '?')[0]}
+                  </div>
+                )}
                 <span style={{ fontSize: 11, color: TEXT_MUTED }}>
                   {brand.label || brand.name}
                 </span>
