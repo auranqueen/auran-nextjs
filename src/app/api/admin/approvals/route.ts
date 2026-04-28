@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
       if (!id) return NextResponse.json({ ok: false, error: 'missing_id' }, { status: 400 })
       const { data: updated, error } = await supabase
         .from('brands')
-        .update({ status: 'active' })
+        .update({ status: 'active', apply_status: 'approved' })
         .eq('id', id)
         .select('id,status')
         .maybeSingle()
@@ -148,7 +148,7 @@ export async function POST(req: NextRequest) {
 
     const { data: updated, error } = await svc
       .from('brands')
-      .update({ status: 'active' })
+      .update({ status: 'active', apply_status: 'approved' })
       .eq('id', id)
       .select('id,status')
       .maybeSingle()

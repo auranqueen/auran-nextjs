@@ -64,6 +64,7 @@ export default function AdminApprovalsPage() {
       })
       const json = await res.json().catch(() => ({}))
       if (!json?.ok) throw new Error(json?.error || json?.reason || 'approve_failed')
+      setRows(prev => prev.filter(row => row.id !== r.id))
       await load()
     } catch (e: any) {
       setError(e?.message || '승인에 실패했습니다.')
