@@ -31,7 +31,7 @@ export async function GET() {
   if (!svc) {
     // fallback: use normal session client (admin RLS permitting)
     const supabase = createClient()
-    const [usersRes, brandsRes] = await Promise.all([
+    const [usersRes, brandsRes, approvedBrandsRes] = await Promise.all([
       supabase
         .from('users')
         .select('id,auth_id,email,name,role,status,created_at')
@@ -45,17 +45,25 @@ export async function GET() {
         .eq('apply_status', 'pending')
         .order('created_at', { ascending: false })
         .limit(200),
+      supabase
+        .from('brands')
+        .select('id,name,status,apply_status,created_at')
+        .eq('apply_status', 'approved')
+        .order('created_at', { ascending: false })
+        .limit(100),
     ])
     if (usersRes.error) return NextResponse.json({ ok: false, error: usersRes.error.message }, { status: 500 })
     if (brandsRes.error) return NextResponse.json({ ok: false, error: brandsRes.error.message }, { status: 500 })
+    if (approvedBrandsRes.error) return NextResponse.json({ ok: false, error: approvedBrandsRes.error.message }, { status: 500 })
     const rows = [
       ...(usersRes.data || []).map((r: any) => ({ type: 'user', ...r })),
       ...(brandsRes.data || []).map((r: any) => ({ type: 'brand', ...r })),
     ]
-    return NextResponse.json({ ok: true, rows, via: 'session' })
+    const approvedRows = (approvedBrandsRes.data || []).map((r: any) => ({ type: 'brand', ...r }))
+    return NextResponse.json({ ok: true, rows, approvedRows, via: 'session' })
   }
 
-  const [usersRes, brandsRes] = await Promise.all([
+  const [usersRes, brandsRes, approvedBrandsRes] = await Promise.all([
     svc
       .from('users')
       .select('id,auth_id,email,name,role,status,created_at')
@@ -69,17 +77,25 @@ export async function GET() {
       .eq('apply_status', 'pending')
       .order('created_at', { ascending: false })
       .limit(200),
+    svc
+      .from('brands')
+      .select('id,name,status,apply_status,created_at')
+      .eq('apply_status', 'approved')
+      .order('created_at', { ascending: false })
+      .limit(100),
   ])
 
   if (usersRes.error) return NextResponse.json({ ok: false, error: usersRes.error.message }, { status: 500 })
   if (brandsRes.error) return NextResponse.json({ ok: false, error: brandsRes.error.message }, { status: 500 })
+  if (approvedBrandsRes.error) return NextResponse.json({ ok: false, error: approvedBrandsRes.error.message }, { status: 500 })
 
   const rows = [
     ...(usersRes.data || []).map((r: any) => ({ type: 'user', ...r })),
     ...(brandsRes.data || []).map((r: any) => ({ type: 'brand', ...r })),
   ]
+  const approvedRows = (approvedBrandsRes.data || []).map((r: any) => ({ type: 'brand', ...r }))
 
-  return NextResponse.json({ ok: true, rows })
+  return NextResponse.json({ ok: true, rows, approvedRows })
 }
 
 export async function POST(req: NextRequest) {

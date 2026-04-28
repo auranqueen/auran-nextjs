@@ -23,6 +23,8 @@ const roleLabel = (r: string) => {
 export default function AdminApprovalsPage() {
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<Row[]>([])
+  const [approvedRows, setApprovedRows] = useState<any[]>([])
+  const [tab, setTab] = useState<'pending' | 'approved'>('pending')
   const [error, setError] = useState('')
   const [savingId, setSavingId] = useState<string | null>(null)
 
@@ -36,6 +38,7 @@ export default function AdminApprovalsPage() {
       const json = await res.json().catch(() => ({}))
       if (!json?.ok) throw new Error(json?.error || json?.reason || 'failed')
       setRows((json.rows || []) as Row[])
+      setApprovedRows(json.approvedRows || [])
     } catch (e: any) {
       setError(e?.message || '불러오기에 실패했습니다.')
     } finally {
@@ -76,6 +79,20 @@ export default function AdminApprovalsPage() {
   return (
     <div>
       <div className="card" style={{ padding: 16, marginBottom: 14 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <button onClick={() => setTab('pending')}
+            style={{ padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 13,
+            background: tab === 'pending' ? '#7B5EA7' : 'rgba(255,255,255,0.07)',
+            color: tab === 'pending' ? '#fff' : 'rgba(255,255,255,0.5)' }}>
+            대기 {rows.length}
+          </button>
+          <button onClick={() => setTab('approved')}
+            style={{ padding: '8px 20px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 13,
+            background: tab === 'approved' ? '#C9A96E' : 'rgba(255,255,255,0.07)',
+            color: tab === 'approved' ? '#fff' : 'rgba(255,255,255,0.5)' }}>
+            승인완료 {approvedRows.length}
+          </button>
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--text)' }}>✅ 승인 요청</div>
@@ -93,8 +110,10 @@ export default function AdminApprovalsPage() {
 
       {loading ? (
         <div className="card" style={{ padding: 16, color: 'rgba(255,255,255,0.55)' }}>로딩 중...</div>
-      ) : rows.length === 0 ? (
+      ) : tab === 'pending' && rows.length === 0 ? (
         <div className="card" style={{ padding: 16, color: 'rgba(255,255,255,0.55)' }}>승인 대기 요청이 없습니다.</div>
+      ) : tab === 'approved' && approvedRows.length === 0 ? (
+        <div className="card" style={{ padding: 16, color: 'rgba(255,255,255,0.55)' }}>승인 완료 항목이 없습니다.</div>
       ) : (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
           <table className="tbl">
@@ -109,7 +128,24 @@ export default function AdminApprovalsPage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map(r => {
+              {tab === 'approved' ? approvedRows.map((r: any) => {
+                const key = r.id
+                const role = '브랜드 입점'
+                const name = r.name || '-'
+                const status = r.apply_status || r.status || 'approved'
+                return (
+                <tr key={key}>
+                  <td><span className="b b-gy">{role}</span></td>
+                  <td style={{ fontWeight: 700 }}>{name}</td>
+                  <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11 }}>-</td>
+                  <td><span className="b b-gd">{status}</span></td>
+                  <td style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: 'rgba(255,255,255,0.55)' }}>
+                    {new Date(r.created_at).toLocaleDateString()}
+                  </td>
+                  <td style={{ textAlign: 'right' }}></td>
+                </tr>
+                )
+              }) : rows.map(r => {
                 const key = r.type === 'brand' ? r.id : (r.auth_id || r.id)
                 const role = r.type === 'brand' ? '브랜드 입점' : roleLabel(r.role || '-')
                 const name = r.type === 'brand' ? (r.name || '-') : (r.name || '-')
