@@ -176,7 +176,7 @@ function CheckoutPageInner() {
       if (defaultAddr) {
         setRecipientName(String(defaultAddr.recipient_name || defaultAddr.name || (me as any).name || ''))
         setRecipientPhone(String(defaultAddr.recipient_phone || defaultAddr.phone || (me as any).phone || ''))
-        setAddress(String(defaultAddr.address || ''))
+        setAddress(`${defaultAddr.address ?? ''} ${defaultAddr.address_detail ?? ''}`.trim())
       }
       setPoints(toNum(me.points))
       setBalance(toNum(me.charge_balance))
@@ -350,6 +350,18 @@ function CheckoutPageInner() {
   }, [userCoupons, afterGrade, orderLines, authUid, maxCouponPct])
 
   const onPay = async (allowCharge = true) => {
+    if (!recipientName?.trim()) {
+      setToast('받는 분 이름을 입력해주세요')
+      return
+    }
+    if (!recipientPhone?.trim()) {
+      setToast('연락처를 입력해주세요')
+      return
+    }
+    if (!address?.trim()) {
+      setToast('배송지 주소를 입력해주세요')
+      return
+    }
     if (!orderedProducts.length || !meId) return
     if (subtotal < minOrderAmount) {
       setToast(`최소 주문금액은 ₩${minOrderAmount.toLocaleString()}입니다`)
@@ -363,6 +375,18 @@ function CheckoutPageInner() {
   }
 
   const confirmPinAndPay = async () => {
+    if (!recipientName?.trim()) {
+      setToast('받는 분 이름을 입력해주세요')
+      return
+    }
+    if (!recipientPhone?.trim()) {
+      setToast('연락처를 입력해주세요')
+      return
+    }
+    if (!address?.trim()) {
+      setToast('배송지 주소를 입력해주세요')
+      return
+    }
     if (!meId || pinInput.length !== 6 || pinChecking) return
     setPinChecking(true)
     const { data: me } = await supabase.from('users').select('payment_pin').eq('id', meId).maybeSingle()
@@ -397,6 +421,18 @@ function CheckoutPageInner() {
   }
 
   const handleBankTransfer = async () => {
+    if (!recipientName?.trim()) {
+      setToast('받는 분 이름을 입력해주세요')
+      return
+    }
+    if (!recipientPhone?.trim()) {
+      setToast('연락처를 입력해주세요')
+      return
+    }
+    if (!address?.trim()) {
+      setToast('배송지 주소를 입력해주세요')
+      return
+    }
     if (!orderedProducts.length || !meId) return
     if (subtotal < minOrderAmount) {
       setToast(`최소 주문금액은 ₩${minOrderAmount.toLocaleString()}입니다`)
