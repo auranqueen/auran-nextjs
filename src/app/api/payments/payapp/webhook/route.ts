@@ -6,7 +6,7 @@ import { tryCreateServiceClient } from '@/lib/supabase/service'
 function mustEnv(name: string): string {
   const v = process.env[name]
   if (!v) throw new Error(`Missing env: ${name}`)
-  return v
+  return v.trim()
 }
 
 async function readRawBody(req: NextRequest) {
@@ -52,8 +52,8 @@ export async function POST(req: NextRequest) {
   const linkval = mustEnv('PAYAPP_LINKVAL')
 
   const checkUser = data.userid === userid
-  const checkKey = data.linkkey === linkkey
-  const checkVal = data.linkval === linkval
+  const checkKey = data.linkkey?.trim() === linkkey
+  const checkVal = data.linkval?.trim() === linkval
   if (!checkUser || !checkKey || !checkVal) {
     // IMPORTANT: return SUCCESS to stop retries, but do not process
     return new NextResponse('SUCCESS', { status: 200 })
