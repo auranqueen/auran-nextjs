@@ -29,12 +29,11 @@ type OrderRow = {
   users?: { customer_grade?: string | null } | null
 }
 
-const SELECT_FULL =
-  'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, admin_order_notes, customer_id, users!orders_customer_id_fkey(customer_grade, profiles(full_name, username, email, grade))'
-const SELECT_FULL_NOUSER =
-  'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, admin_order_notes, customer_id'
-const SELECT_FALLBACK =
-  'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, admin_order_notes, customer_id'
+const SELECT_FULL = 'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, customer_id, address, recipient_name, recipient_phone, earn_points, toast_used, charge_used'
+
+const SELECT_FULL_NOUSER = SELECT_FULL
+
+const SELECT_FALLBACK = SELECT_FULL
 
 export default function AdminOrdersPage() {
   const supabase = createClient()
