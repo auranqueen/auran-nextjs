@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
     .from('orders')
     .insert({
       customer_id: me.id,
-      status: '주문확인',
+      status: '결제대기',
       total_amount: totalAmount,
       point_used: pointUsed,
       charge_used: chargeUsed,
