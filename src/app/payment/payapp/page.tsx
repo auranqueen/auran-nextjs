@@ -37,6 +37,24 @@ function PayAppInner() {
       const amount =
         Number.isFinite(parsed) && parsed >= 0 ? parsed : Math.max(0, Math.floor(Number(price) * qty))
 
+      const orderRes = await fetch('/api/payment/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          product_id: productId,
+          quantity: qty,
+          payment_method: 'payapp',
+          total_amount: amount,
+          final_amount: amount,
+        }),
+      })
+      const orderData = await orderRes.json()
+      if (!orderData.orderId) {
+        router.replace('/?error=order_fail')
+        return
+      }
+
       const res = await fetch('/api/payments/payapp/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -44,7 +62,7 @@ function PayAppInner() {
         body: JSON.stringify({
           kind: 'order',
           amount,
-          target_id: productId,
+          target_id: orderData.orderId,
         }),
       })
       const json = await res.json().catch(() => ({}))
