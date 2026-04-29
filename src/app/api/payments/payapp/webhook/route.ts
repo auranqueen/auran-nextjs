@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
   }
 
   // PayApp pay_state: 4=paid, 9/64=cancel, 8/16/31=request cancel, 10=pending
-  if (payState === '4') {
+  if (payState === '4' || (payState as unknown) === 4) {
     if (intent.status !== 'paid') {
       // mark paid
       await supabase
