@@ -14,9 +14,17 @@ function redirectToWallet(req: NextRequest, success = true) {
 }
 
 export async function GET(req: NextRequest) {
-  return redirectToWallet(req, true)
+  const orderId = req.nextUrl.searchParams.get('order_id')
+  if (orderId) {
+    return NextResponse.redirect(`${req.nextUrl.origin}/orders/complete?order_id=${orderId}`, 302)
+  }
+  return NextResponse.redirect(`${req.nextUrl.origin}/wallet?payment=done`, 302)
 }
 
 export async function POST(req: NextRequest) {
-  return redirectToWallet(req, true)
+  const orderId = req.nextUrl.searchParams.get('order_id')
+  if (orderId) {
+    return NextResponse.redirect(`${req.nextUrl.origin}/orders/complete?order_id=${orderId}`, 302)
+  }
+  return NextResponse.redirect(`${req.nextUrl.origin}/wallet?payment=done`, 302)
 }
