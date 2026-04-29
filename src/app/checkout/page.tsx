@@ -416,6 +416,9 @@ function CheckoutPageInner() {
         total_amount: subtotal,
         final_amount: payAppAmount,
         referrer_user_id: refUserId || undefined,
+        recipient_name: recipientName || null,
+        recipient_phone: recipientPhone || null,
+        address: [address].filter(Boolean).join(' ') || null,
       }),
     })
     const json = await res.json().catch(() => ({}))

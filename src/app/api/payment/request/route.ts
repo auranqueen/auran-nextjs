@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!publicUser?.id) return NextResponse.json({ error: 'user_row_missing' }, { status: 400 })
 
   const body = await req.json()
-  const { product_id, quantity, prescription_owner_id, payment_method, total_amount: bodyTotal, final_amount: bodyFinal } = body
+  const { product_id, quantity, prescription_owner_id, payment_method, total_amount: bodyTotal, final_amount: bodyFinal, recipient_name, recipient_phone, address } = body
 
   const { data: product } = await supabase
     .from('products')
@@ -44,6 +44,9 @@ export async function POST(req: NextRequest) {
       final_amount: finalAmount,
       status: payment_method === 'bank_transfer' ? '입금대기' : '주문확인',
       prescription_owner_id: prescription_owner_id || null,
+      recipient_name: recipient_name || null,
+      recipient_phone: recipient_phone || null,
+      address: address || null,
       order_no: `ORD-${Date.now()}`,
       items: JSON.stringify([{
         product_id: product.id,
