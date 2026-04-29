@@ -690,7 +690,7 @@ export default function AdminOrdersPage() {
               color: orderTab === 'pending' ? '#fff' : 'rgba(255,255,255,0.5)',
             }}
           >
-            결제대기
+            입금대기
           </button>
         </div>
         <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
