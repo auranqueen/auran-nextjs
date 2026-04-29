@@ -30,11 +30,11 @@ type OrderRow = {
 }
 
 const SELECT_FULL =
-  'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, payment_method, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, admin_order_notes, customer_id, customer_memo, users!orders_customer_id_fkey(customer_grade, profiles(full_name, username, email, grade))'
+  'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, admin_order_notes, customer_id, users!orders_customer_id_fkey(customer_grade, profiles(full_name, username, email, grade))'
 const SELECT_FULL_NOUSER =
-  'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, payment_method, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, admin_order_notes, customer_id, customer_memo'
+  'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, admin_order_notes, customer_id'
 const SELECT_FALLBACK =
-  'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, payment_method, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, admin_order_notes, customer_id, customer_memo'
+  'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, admin_order_notes, customer_id'
 
 export default function AdminOrdersPage() {
   const supabase = createClient()
