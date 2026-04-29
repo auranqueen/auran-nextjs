@@ -110,16 +110,16 @@ export default function AdminOrdersPage() {
     const run = async () => {
       setLoading(true)
       let data: OrderRow[] | null = null
-      const r1 = await supabase.from('orders').select(SELECT_FULL_NOUSER).eq('payment_applied', true).order('ordered_at', { ascending: false }).limit(500)
+      const r1 = await supabase.from('orders').select(SELECT_FULL_NOUSER).order('ordered_at', { ascending: false }).limit(500)
       let fetchError = r1.error
       data = (r1.data as OrderRow[] | null) ?? null
       if (fetchError) {
-        const r1b = await supabase.from('orders').select(SELECT_FULL_NOUSER).eq('payment_applied', true).order('ordered_at', { ascending: false }).limit(500)
+        const r1b = await supabase.from('orders').select(SELECT_FULL_NOUSER).order('ordered_at', { ascending: false }).limit(500)
         data = (r1b.data as OrderRow[] | null) ?? null
         fetchError = r1b.error
       }
       if (fetchError) {
-        const r2 = await supabase.from('orders').select(SELECT_FALLBACK).eq('payment_applied', true).order('ordered_at', { ascending: false }).limit(500)
+        const r2 = await supabase.from('orders').select(SELECT_FALLBACK).order('ordered_at', { ascending: false }).limit(500)
         data = (r2.data as OrderRow[] | null) ?? null
         fetchError = r2.error
       }
