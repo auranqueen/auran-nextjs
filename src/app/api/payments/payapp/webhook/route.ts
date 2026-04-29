@@ -294,7 +294,15 @@ export async function POST(req: NextRequest) {
             .select('id', { count: 'exact', head: true })
             .eq('customer_id', orderRow.customer_id)
             .eq('payment_applied', true)
-          await client.from('orders').update({ payment_applied: true, status: '주문확인', payment_status: 'paid' }).eq('id', orderRow.id)
+          await client
+            .from('orders')
+            .update({
+              payment_applied: true,
+              status: '주문확인',
+              payment_status: 'paid',
+              payment_method: String(data.pay_type ?? data.paymethod ?? '') || null,
+            })
+            .eq('id', orderRow.id)
           if ((_priorPaidCount ?? 0) === 0 && intent.user_id) {
             await client.from('notifications').insert({
               user_id: intent.user_id,
