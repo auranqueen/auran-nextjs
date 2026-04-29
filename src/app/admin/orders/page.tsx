@@ -29,7 +29,7 @@ type OrderRow = {
   users?: { customer_grade?: string | null } | null
 }
 
-const SELECT_FULL = 'id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, customer_id, address, recipient_name, recipient_phone, earn_points, toast_used, charge_used'
+const SELECT_FULL = 'id, order_no, status, payment_status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, customer_id, address, recipient_name, recipient_phone, earn_points, toast_used, charge_used'
 
 const SELECT_FULL_NOUSER = SELECT_FULL
 
@@ -112,23 +112,23 @@ export default function AdminOrdersPage() {
       setLoading(true)
       let data: OrderRow[] | null = null
       const r1 = await (orderTab === 'paid'
-        ? supabase.from('orders').select(SELECT_FULL_NOUSER).neq('status', '결제대기')
-        : supabase.from('orders').select(SELECT_FULL_NOUSER).eq('status', '결제대기')
+        ? supabase.from('orders').select(SELECT_FULL_NOUSER).eq('payment_status', 'paid')
+        : supabase.from('orders').select(SELECT_FULL_NOUSER).eq('payment_status', 'pending')
       ).order('ordered_at', { ascending: false }).limit(500)
       let fetchError = r1.error
       data = (r1.data as OrderRow[] | null) ?? null
       if (fetchError) {
         const r1b = await (orderTab === 'paid'
-          ? supabase.from('orders').select(SELECT_FULL_NOUSER).neq('status', '결제대기')
-          : supabase.from('orders').select(SELECT_FULL_NOUSER).eq('status', '결제대기')
+          ? supabase.from('orders').select(SELECT_FULL_NOUSER).eq('payment_status', 'paid')
+          : supabase.from('orders').select(SELECT_FULL_NOUSER).eq('payment_status', 'pending')
         ).order('ordered_at', { ascending: false }).limit(500)
         data = (r1b.data as OrderRow[] | null) ?? null
         fetchError = r1b.error
       }
       if (fetchError) {
         const r2 = await (orderTab === 'paid'
-          ? supabase.from('orders').select(SELECT_FALLBACK).neq('status', '결제대기')
-          : supabase.from('orders').select(SELECT_FALLBACK).eq('status', '결제대기')
+          ? supabase.from('orders').select(SELECT_FALLBACK).eq('payment_status', 'paid')
+          : supabase.from('orders').select(SELECT_FALLBACK).eq('payment_status', 'pending')
         ).order('ordered_at', { ascending: false }).limit(500)
         data = (r2.data as OrderRow[] | null) ?? null
         fetchError = r2.error
