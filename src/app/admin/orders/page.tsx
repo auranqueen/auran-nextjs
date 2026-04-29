@@ -40,6 +40,7 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<OrderRow[]>([])
   const [tab, setTab] = useState<TabKey>('주문확인')
+  const [orderTab, setOrderTab] = useState<'paid' | 'pending'>('paid')
 
   const [modalId, setModalId] = useState<string | null>(null)
   const [modalCourier, setModalCourier] = useState('CJ대한통운')
@@ -110,16 +111,25 @@ export default function AdminOrdersPage() {
     const run = async () => {
       setLoading(true)
       let data: OrderRow[] | null = null
-      const r1 = await supabase.from('orders').select(SELECT_FULL_NOUSER).order('ordered_at', { ascending: false }).limit(500)
+      const r1 = await (orderTab === 'paid'
+        ? supabase.from('orders').select(SELECT_FULL_NOUSER).neq('status', '결제대기')
+        : supabase.from('orders').select(SELECT_FULL_NOUSER).eq('status', '결제대기')
+      ).order('ordered_at', { ascending: false }).limit(500)
       let fetchError = r1.error
       data = (r1.data as OrderRow[] | null) ?? null
       if (fetchError) {
-        const r1b = await supabase.from('orders').select(SELECT_FULL_NOUSER).order('ordered_at', { ascending: false }).limit(500)
+        const r1b = await (orderTab === 'paid'
+          ? supabase.from('orders').select(SELECT_FULL_NOUSER).neq('status', '결제대기')
+          : supabase.from('orders').select(SELECT_FULL_NOUSER).eq('status', '결제대기')
+        ).order('ordered_at', { ascending: false }).limit(500)
         data = (r1b.data as OrderRow[] | null) ?? null
         fetchError = r1b.error
       }
       if (fetchError) {
-        const r2 = await supabase.from('orders').select(SELECT_FALLBACK).order('ordered_at', { ascending: false }).limit(500)
+        const r2 = await (orderTab === 'paid'
+          ? supabase.from('orders').select(SELECT_FALLBACK).neq('status', '결제대기')
+          : supabase.from('orders').select(SELECT_FALLBACK).eq('status', '결제대기')
+        ).order('ordered_at', { ascending: false }).limit(500)
         data = (r2.data as OrderRow[] | null) ?? null
         fetchError = r2.error
       }
@@ -134,7 +144,7 @@ export default function AdminOrdersPage() {
       setLoading(false)
     }
     void run()
-  }, [])
+  }, [orderTab])
 
   const filtered = useMemo(() => {
     let list = rows || []
@@ -652,6 +662,36 @@ export default function AdminOrdersPage() {
               </button>
             ) : null}
           </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          <button
+            onClick={() => setOrderTab('paid')}
+            style={{
+              padding: '8px 20px',
+              borderRadius: 20,
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 13,
+              background: orderTab === 'paid' ? '#7B5EA7' : 'rgba(255,255,255,0.07)',
+              color: orderTab === 'paid' ? '#fff' : 'rgba(255,255,255,0.5)',
+            }}
+          >
+            결제완료
+          </button>
+          <button
+            onClick={() => setOrderTab('pending')}
+            style={{
+              padding: '8px 20px',
+              borderRadius: 20,
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: 13,
+              background: orderTab === 'pending' ? '#C9A96E' : 'rgba(255,255,255,0.07)',
+              color: orderTab === 'pending' ? '#fff' : 'rgba(255,255,255,0.5)',
+            }}
+          >
+            결제대기
+          </button>
         </div>
         <div style={{ padding: '12px 14px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
