@@ -85,6 +85,7 @@ function CheckoutPageInner() {
   const maxCouponPct = getSettingNum('coupon', 'max_percent_discount', 70)
   const showChargeOption = getSettingNum('checkout', 'show_charge_option', 1) === 1
   const minOrderAmount = getSettingNum('checkout', 'min_order_amount', 0)
+  const minToastOrderAmount = getSettingNum('checkout', 'min_toast_order_amount', 50000)
   const freeShippingThreshold = getSettingNum('shipping', 'free_shipping_threshold', 50000)
   const basicShippingFeeCfg = getSettingNum('shipping', 'basic_shipping_fee', 3000)
   const jejuShippingFeeCfg = getSettingNum('shipping', 'jeju_shipping_fee', 0)
@@ -310,10 +311,10 @@ function CheckoutPageInner() {
   const afterCoupon = Math.max(0, afterGrade - couponDiscount)
   const toastTBalance = points + Math.floor(balance / Math.max(1, toastRate))
   const toastHalf = Math.min(Math.floor(toastTBalance * toastRate), Math.floor((afterCoupon * 1) / 2))
-  const toastUsed = Math.min(
-    Math.floor(toastTBalance * 0.5),
-    afterCoupon
-  )
+  const toastMaxUsageRate = 0.5
+  const toastUsed = (payWithToast && afterCoupon >= minToastOrderAmount)
+    ? Math.min(Math.floor(toastTBalance * toastMaxUsageRate), afterCoupon)
+    : 0
   const goodsAfterToast = Math.max(0, afterCoupon - toastUsed)
   const remBalAfterToast = Math.max(0, balance - toastUsed)
   const oranCap = Math.min(remBalAfterToast, goodsAfterToast)
