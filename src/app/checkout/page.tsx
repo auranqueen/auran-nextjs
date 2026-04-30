@@ -72,6 +72,7 @@ function CheckoutPageInner() {
   const [pinOpen, setPinOpen] = useState(false)
   const [pinInput, setPinInput] = useState('')
   const [pinChecking, setPinChecking] = useState(false)
+  const [isPaying, setIsPaying] = useState(false)
   const [gradeDiscount, setGradeDiscount] = useState(0)
   const [gradeName, setGradeName] = useState('')
   const [shippingFee, setShippingFee] = useState(0)
@@ -351,54 +352,75 @@ function CheckoutPageInner() {
   }, [userCoupons, afterGrade, orderLines, authUid, maxCouponPct])
 
   const onPay = async (allowCharge = true) => {
+    if (isPaying) return
+    setIsPaying(true)
     if (!recipientName?.trim()) {
       setToast('받는 분 이름을 입력해주세요')
+      setIsPaying(false)
       return
     }
     if (!recipientPhone?.trim()) {
       setToast('연락처를 입력해주세요')
+      setIsPaying(false)
       return
     }
     if (!address?.trim()) {
       setToast('배송지 주소를 입력해주세요')
+      setIsPaying(false)
       return
     }
-    if (!orderedProducts.length || !meId) return
+    if (!orderedProducts.length || !meId) {
+      setIsPaying(false)
+      return
+    }
     if (subtotal < minOrderAmount) {
       setToast(`최소 주문금액은 ₩${minOrderAmount.toLocaleString()}입니다`)
+      setIsPaying(false)
       return
     }
     if (needCharge > 0) {
       setPayModal(true)
+      setIsPaying(false)
       return
     }
     router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}`)
+    setIsPaying(false)
   }
 
   const confirmPinAndPay = async () => {
+    if (isPaying) return
+    setIsPaying(true)
     if (!recipientName?.trim()) {
       setToast('받는 분 이름을 입력해주세요')
+      setIsPaying(false)
       return
     }
     if (!recipientPhone?.trim()) {
       setToast('연락처를 입력해주세요')
+      setIsPaying(false)
       return
     }
     if (!address?.trim()) {
       setToast('배송지 주소를 입력해주세요')
+      setIsPaying(false)
       return
     }
-    if (!meId || pinInput.length !== 6 || pinChecking) return
+    if (!meId || pinInput.length !== 6 || pinChecking) {
+      setIsPaying(false)
+      return
+    }
     setPinChecking(true)
     const { data: me } = await supabase.from('users').select('payment_pin').eq('id', meId).maybeSingle()
     if (!me?.payment_pin || String(me.payment_pin) !== pinInput) {
       setPinChecking(false)
       setToast('결제 PIN이 올바르지 않습니다')
+      setIsPaying(false)
       return
     }
     setPinOpen(false)
     setPinChecking(false)
     router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&qty=1`)
+    setIsPaying(false)
   }
 
   const onChargeKrw = async (krw: number) => {
@@ -513,7 +535,7 @@ function CheckoutPageInner() {
         balance={balance}
         toastRate={toastRate}
         needCharge={needCharge}
-        paying={paying}
+        paying={paying || isPaying}
         showChargeOption={showChargeOption}
         couponSheetOpen={couponSheetOpen}
         setCouponSheetOpen={setCouponSheetOpen}
@@ -550,8 +572,8 @@ function CheckoutPageInner() {
               </button>
               <button
                 onClick={confirmPinAndPay}
-                disabled={pinInput.length !== 6 || pinChecking || settingsLoading}
-                style={{ flex: 1, height: 40, borderRadius: 10, border: 'none', background: '#C9A96E', color: '#0d0b09', fontWeight: 700, cursor: 'pointer', opacity: pinInput.length !== 6 || pinChecking || settingsLoading ? 0.6 : 1 }}
+                disabled={pinInput.length !== 6 || pinChecking || settingsLoading || isPaying}
+                style={{ flex: 1, height: 40, borderRadius: 10, border: 'none', background: '#C9A96E', color: '#0d0b09', fontWeight: 700, cursor: 'pointer', opacity: pinInput.length !== 6 || pinChecking || settingsLoading || isPaying ? 0.6 : 1 }}
               >
                 {pinChecking ? '확인 중...' : '확인'}
               </button>
@@ -570,7 +592,7 @@ function CheckoutPageInner() {
               <span style={{fontSize:11,fontWeight:400}}>토스트 충전 후 결제 · 구매금액의 5% 적립</span>
             </button>
             <button onClick={() => { setPayModal(false); setEarnToast(false); router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}`) }}
-              disabled={settingsLoading}
+              disabled={settingsLoading || isPaying}
               style={{width:'100%',background:'#1e1a14',border:'1px solid #2a2520',borderRadius:12,padding:'14px 0',fontSize:15,fontWeight:700,color:'#e8e4dc',cursor:'pointer',fontFamily:'inherit'}}>
               지금 바로 결제하기<br/>
               <span style={{fontSize:11,fontWeight:400,color:'#888'}}>토스트 없이 바로 결제</span>
