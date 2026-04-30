@@ -7,10 +7,9 @@ import { createClient } from '@/lib/supabase/client'
 function PayAppInner() {
   const router = useRouter()
   const params = useSearchParams()
-  const amountParam = params.get('amount')
 
   useEffect(() => {
-    if (!amountParam) return
+    if (!params.get('amount')) return
     const productId = params.get('product_id')
     const qty = Number(params.get('qty') || '1')
 
@@ -79,7 +78,7 @@ function PayAppInner() {
     }
 
     doPayment()
-  }, [params.toString(), router, amountParam])
+  }, [params.toString(), router])
 
   return (
     <div style={{
