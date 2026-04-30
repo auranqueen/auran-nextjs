@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
   // PayApp pay_state: 4=paid, 9/64=cancel, 8/16/31=request cancel, 10=pending
   if (payState === '4' || (payState as string | number) === 4) {
-    if (intent.status !== 'paid') {
+    if (intent.status !== 'paid' || (intent.kind === 'order' && intent.target_id && intent.status === 'paid')) {
       // mark paid
       await supabase
         .from('payment_intents')
@@ -227,7 +227,7 @@ export async function POST(req: NextRequest) {
         const { data: orderRow } = await client
           .from('orders')
           .select(
-            'id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,toast_used,gift_receiver_id,gift_message,payment_applied,gift_created,user_coupon_id,address,recipient_name,recipient_phone,order_items(product_id)'
+            'id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,toast_used,gift_receiver_id,gift_message,payment_applied,payment_status,gift_created,user_coupon_id,address,recipient_name,recipient_phone,order_items(product_id)'
           )
           .eq('id', intent.target_id)
           .maybeSingle()
@@ -263,7 +263,7 @@ export async function POST(req: NextRequest) {
           await client.from('users').update({ shipping_address: shipAddr } as any).eq('id', intent.user_id)
         }
 
-        if (orderRow?.id && !orderRow.payment_applied) {
+        if (orderRow?.id && (!orderRow.payment_applied || orderRow.payment_status !== 'paid')) {
           const pointUsed = Math.max(0, Number(orderRow.point_used || 0))
           const chargeUsed = Math.max(0, Number(orderRow.charge_used || 0))
           if (pointUsed > 0 || chargeUsed > 0) {
