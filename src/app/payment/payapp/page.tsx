@@ -36,12 +36,11 @@ function PayAppInner() {
       }
 
       const rawAmount = params.get('amount')
-      const parsed = rawAmount ? Number(rawAmount) : NaN
-      if (!rawAmount || !Number.isFinite(parsed) || parsed <= 0) {
+      const amount = Number(rawAmount)
+      if (!rawAmount || !Number.isFinite(amount) || amount <= 0) {
         router.replace('/?error=invalid_amount')
         return
       }
-      const amount = Math.floor(parsed)
 
       const orderRes = await fetch('/api/payment/request', {
         method: 'POST',
