@@ -9,6 +9,7 @@ function PayAppInner() {
   const params = useSearchParams()
 
   useEffect(() => {
+    if (!params.get('amount')) return
     const productId = params.get('product_id')
     const qty = Number(params.get('qty') || '1')
 
@@ -31,16 +32,13 @@ function PayAppInner() {
         return
       }
 
-      const price = product.retail_price ?? product.sale_price ?? 0
-      const fromQuery = params.get('amount')
-      const parsed = fromQuery != null && fromQuery !== '' ? Math.floor(Number(fromQuery)) : NaN
-      const amount =
-        Number.isFinite(parsed) && parsed >= 0 ? parsed : Math.max(0, Math.floor(Number(price) * qty))
-
-      if (!amount || amount < 1000) {
+      const rawAmount = params.get('amount')
+      const parsed = rawAmount ? Number(rawAmount) : NaN
+      if (!rawAmount || !Number.isFinite(parsed) || parsed <= 0) {
         router.replace('/?error=invalid_amount')
         return
       }
+      const amount = Math.floor(parsed)
 
       const orderRes = await fetch('/api/payment/request', {
         method: 'POST',
