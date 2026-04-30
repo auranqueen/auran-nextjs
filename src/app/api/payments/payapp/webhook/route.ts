@@ -501,7 +501,7 @@ export async function POST(req: NextRequest) {
         .eq('id', intent.target_id)
         .maybeSingle()
 
-      if (orderRow?.id && (!orderRow.payment_applied || orderRow.payment_status !== 'paid')) {
+      if (orderRow?.id && (!orderRow.payment_applied || orderRow.payment_status !== 'paid') && Math.abs(Number((orderRow as any).final_amount) - Number(intent.amount)) <= 10) {
         await orderClient
           .from('orders')
           .update({
