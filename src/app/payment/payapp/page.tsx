@@ -10,8 +10,10 @@ function PayAppInner() {
   const didRun = useRef(false)
 
   useEffect(() => {
-    if (didRun.current) return
-    didRun.current = true
+    const lockKey = `payapp_lock_${params.get('product_id')}_${params.get('amount')}`
+    if (sessionStorage.getItem(lockKey)) return
+    sessionStorage.setItem(lockKey, '1')
+    setTimeout(() => sessionStorage.removeItem(lockKey), 5000)
     if (!params.get('amount')) return
     const productId = params.get('product_id')
     const qty = Number(params.get('qty') || '1')
