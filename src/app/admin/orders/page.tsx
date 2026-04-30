@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { confirmOrderById } from '@/lib/orders/confirmOrder'
+import OrderDetailPanel from './OrderDetailPanel'
 
 type TabKey = '전체' | '주문확인' | '발송준비' | '배송중' | '배송완료' | '취소/환불'
 
@@ -103,6 +104,8 @@ export default function AdminOrdersPage() {
     customerMemo: false,
   })
   const [printIncludeStats, setPrintIncludeStats] = useState(true)
+  const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null)
+  const [isPanelOpen, setIsPanelOpen] = useState(false)
 
   const current = useMemo(() => rows.find((r) => r.id === modalId) || null, [modalId, rows])
   const memoOrder = useMemo(() => rows.find((r) => r.id === memoDetailId) || null, [memoDetailId, rows])
@@ -1159,7 +1162,11 @@ export default function AdminOrdersPage() {
                   (em0.indexOf('@') > 0 ? em0.slice(0, em0.indexOf('@')) : em0) ||
                   (o.customer_id ? String(o.customer_id).slice(0, 8) : '—')
                 return (
-                  <tr key={o.id} style={{ background: rowWarn ? 'rgba(255,80,80,0.07)' : undefined }}>
+                  <tr
+                    key={o.id}
+                    onClick={() => { setSelectedOrder(o); setIsPanelOpen(true) }}
+                    style={{ background: rowWarn ? 'rgba(255,80,80,0.07)' : undefined, cursor: 'pointer' }}
+                  >
                     <td>
                       <input
                         type="checkbox"
@@ -2045,6 +2052,11 @@ export default function AdminOrdersPage() {
           {toastMsg}
         </div>
       ) : null}
+      <OrderDetailPanel
+        order={selectedOrder}
+        open={isPanelOpen}
+        onClose={() => setIsPanelOpen(false)}
+      />
     </div>
   )
 }
