@@ -49,7 +49,7 @@ function CheckoutPageInner() {
   const pathname = usePathname()
   const search = useSearchParams()
   const supabase = createClient()
-  const { getSettingNum } = useAdminSettings()
+  const { getSettingNum, loading: settingsLoading } = useAdminSettings()
   const [loading, setLoading] = useState(true)
   const [meId, setMeId] = useState('')
   const [balance, setBalance] = useState(0)
@@ -550,8 +550,8 @@ function CheckoutPageInner() {
               </button>
               <button
                 onClick={confirmPinAndPay}
-                disabled={pinInput.length !== 6 || pinChecking}
-                style={{ flex: 1, height: 40, borderRadius: 10, border: 'none', background: '#C9A96E', color: '#0d0b09', fontWeight: 700, cursor: 'pointer', opacity: pinInput.length !== 6 || pinChecking ? 0.6 : 1 }}
+                disabled={pinInput.length !== 6 || pinChecking || settingsLoading}
+                style={{ flex: 1, height: 40, borderRadius: 10, border: 'none', background: '#C9A96E', color: '#0d0b09', fontWeight: 700, cursor: 'pointer', opacity: pinInput.length !== 6 || pinChecking || settingsLoading ? 0.6 : 1 }}
               >
                 {pinChecking ? '확인 중...' : '확인'}
               </button>
@@ -570,6 +570,7 @@ function CheckoutPageInner() {
               <span style={{fontSize:11,fontWeight:400}}>토스트 충전 후 결제 · 구매금액의 5% 적립</span>
             </button>
             <button onClick={() => { setPayModal(false); setEarnToast(false); router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}`) }}
+              disabled={settingsLoading}
               style={{width:'100%',background:'#1e1a14',border:'1px solid #2a2520',borderRadius:12,padding:'14px 0',fontSize:15,fontWeight:700,color:'#e8e4dc',cursor:'pointer',fontFamily:'inherit'}}>
               지금 바로 결제하기<br/>
               <span style={{fontSize:11,fontWeight:400,color:'#888'}}>토스트 없이 바로 결제</span>
