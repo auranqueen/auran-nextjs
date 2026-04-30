@@ -37,6 +37,11 @@ function PayAppInner() {
       const amount =
         Number.isFinite(parsed) && parsed >= 0 ? parsed : Math.max(0, Math.floor(Number(price) * qty))
 
+      if (!amount || amount < 1000) {
+        router.replace('/?error=invalid_amount')
+        return
+      }
+
       const orderRes = await fetch('/api/payment/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
