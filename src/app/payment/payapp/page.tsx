@@ -1,14 +1,17 @@
 
 'use client'
-import { useEffect, Suspense } from 'react'
+import { useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 function PayAppInner() {
   const router = useRouter()
   const params = useSearchParams()
+  const didRun = useRef(false)
 
   useEffect(() => {
+    if (didRun.current) return
+    didRun.current = true
     if (!params.get('amount')) return
     const productId = params.get('product_id')
     const qty = Number(params.get('qty') || '1')
