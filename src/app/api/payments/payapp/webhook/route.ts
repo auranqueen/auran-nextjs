@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
 
   // PayApp pay_state: 4=paid, 9/64=cancel, 8/16/31=request cancel, 10=pending
   if (payState === '4' || (payState as string | number) === 4) {
-    if (intent.status !== 'paid' || (intent.kind === 'order' && intent.target_id && intent.status === 'paid')) {
+    if (intent.status !== 'paid') {
       // mark paid
       await supabase
         .from('payment_intents')
@@ -490,6 +490,27 @@ export async function POST(req: NextRequest) {
               .eq('id', orderRow.id)
           }
         }
+      }
+    }
+
+    if (intent.kind === 'order' && intent.target_id) {
+      const orderClient = tryCreateServiceClient() || supabase
+      const { data: orderRow } = await orderClient
+        .from('orders')
+        .select('id,payment_applied,payment_status')
+        .eq('id', intent.target_id)
+        .maybeSingle()
+
+      if (orderRow?.id && (!orderRow.payment_applied || orderRow.payment_status !== 'paid')) {
+        await orderClient
+          .from('orders')
+          .update({
+            payment_status: 'paid',
+            payment_applied: true,
+            status: '주문확인',
+            payment_method: String(data.pay_type ?? data.paymethod ?? '') || null,
+          })
+          .eq('id', orderRow.id)
       }
     }
   } else if (payState === '9' || payState === '64' || payState === '70' || payState === '71' || payState === '8' || payState === '16' || payState === '31') {
