@@ -379,7 +379,7 @@ function CheckoutPageInner() {
       return
     }
     if (needCharge > 0) {
-      setPayModal(true)
+      router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}`)
       setIsPaying(false)
       return
     }
