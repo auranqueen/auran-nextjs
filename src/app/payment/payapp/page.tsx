@@ -47,6 +47,7 @@ function PayAppInner() {
       const shippingFee = Math.max(0, Math.floor(Number(params.get('shipping_fee') ?? 0)))
       const gradeDiscount = Math.max(0, Math.floor(Number(params.get('grade_discount') ?? 0)))
       const subtotalParam = Math.max(0, Math.floor(Number(params.get('subtotal') ?? 0)))
+      const couponDiscount = Math.max(0, Math.floor(Number(params.get('coupon_discount') ?? 0)))
 
       const orderRes = await fetch('/api/payment/request', {
         method: 'POST',
@@ -64,6 +65,7 @@ function PayAppInner() {
           recipient_name: decodeURIComponent(params.get('recipient_name') || '') || null,
           recipient_phone: decodeURIComponent(params.get('recipient_phone') || '') || null,
           address: decodeURIComponent(params.get('address') || '') || null,
+          coupon_discount: couponDiscount,
         }),
       })
       const orderData = await orderRes.json()
