@@ -290,6 +290,26 @@ export default function CheckoutPageView({
                     ) : null}
                   </div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>{address || '-'}</div>
+                  <input
+                    type="text"
+                    placeholder="상세주소 (동/호수 등) *필수"
+                    value={addressDetail}
+                    onChange={(e) => setAddressDetail(e.target.value)}
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      marginTop: 8,
+                      background: 'rgba(0,0,0,0.25)',
+                      border: `1px solid ${addressDetail.trim() ? 'rgba(255,255,255,0.12)' : 'rgba(220,80,80,0.6)'}`,
+                      borderRadius: 10,
+                      padding: '10px 12px',
+                      color: '#fff',
+                      fontSize: 13,
+                    }}
+                  />
+                  {!addressDetail.trim() && (
+                    <div style={{ fontSize: 11, color: 'rgba(220,80,80,0.8)', marginTop: 4 }}>상세주소를 입력해주세요</div>
+                  )}
                 </div>
               ) : (
                 <>
