@@ -174,11 +174,11 @@ function CheckoutPageInner() {
         .order('is_default', { ascending: false })
       const rows = shippingRows || []
       setSavedAddresses(rows)
-      const defaultAddr = rows.find((r: any) => r.is_default === true) || null
+      const defaultAddr = rows.find((r: any) => r.is_default) || rows[0] || null
       if (defaultAddr) {
-        setRecipientName(String(defaultAddr.recipient_name || defaultAddr.name || (me as any).name || ''))
-        setRecipientPhone(String(defaultAddr.recipient_phone || defaultAddr.phone || (me as any).phone || ''))
-        setAddress(`${defaultAddr.address ?? ''} ${defaultAddr.address_detail ?? ''}`.trim())
+        setRecipientName(String(defaultAddr.recipient_name || ''))
+        setRecipientPhone(String(defaultAddr.recipient_phone || ''))
+        setAddress(String(defaultAddr.address || ''))
       }
       setPoints(toNum(me.points))
       setBalance(toNum(me.charge_balance))
