@@ -663,7 +663,7 @@ export default function CheckoutPageView({
                     checked={selected}
                     onChange={() => {
                       setRecipientName(String(row.recipient_name || row.name || ''))
-                      setRecipientPhone(String(row.recipient_phone || row.phone || ''))
+                      setRecipientPhone(String(row.phone || row.recipient_phone || ''))
                       setAddress(lineAddress)
                     }}
                   />
@@ -671,7 +671,7 @@ export default function CheckoutPageView({
                     <span style={{ fontWeight: 500, color: '#fff' }}>{row.label || '배송지'}</span>
                     {row.is_default === true ? <span style={{ marginLeft: 6, fontSize: 10, color: '#fff', background: '#7B5EA7', borderRadius: 999, padding: '2px 7px' }}>기본</span> : null}
                     <br />
-                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.86)' }}>{String(row.recipient_name || row.name || '-')} · {String(row.recipient_phone || row.phone || '-')}</span>
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.86)' }}>{String(row.recipient_name || row.name || '-')} · {String(row.phone || row.recipient_phone || '-')}</span>
                     <br />
                     <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)' }}>{lineAddress || '-'}</span>
                   </span>

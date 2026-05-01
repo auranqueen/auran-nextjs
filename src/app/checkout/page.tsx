@@ -176,9 +176,10 @@ function CheckoutPageInner() {
       setSavedAddresses(rows)
       const defaultAddr = rows.find((r: any) => r.is_default) || rows[0] || null
       if (defaultAddr) {
-        setRecipientName(String(defaultAddr.recipient_name || ''))
-        setRecipientPhone(String(defaultAddr.recipient_phone || ''))
-        setAddress(String(defaultAddr.address || ''))
+        setRecipientName(String(defaultAddr.recipient_name || defaultAddr.name || ''))
+        setRecipientPhone(String(defaultAddr.phone || defaultAddr.recipient_phone || ''))
+        const detailPart = String(defaultAddr.address_detail || '').trim()
+        setAddress(String(defaultAddr.address || '') + (detailPart ? ' ' + detailPart : ''))
       }
       setPoints(toNum(me.points))
       setBalance(toNum(me.charge_balance))
