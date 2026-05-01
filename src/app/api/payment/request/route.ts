@@ -79,24 +79,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, orderId: order.id, bankTransfer: true })
   }
 
-  const { data: intent, error: intentErr } = await supabase
-    .from('payment_intents')
-    .insert({
-      provider: 'payapp',
-      kind: 'order',
-      status: 'pending',
-      user_id: publicUser.id,
-      target_id: order.id,
-      amount: Math.trunc(finalAmount),
-      currency: 'KRW',
-    })
-    .select('id')
-    .single()
-
-  if (intentErr || !intent?.id) {
-    return NextResponse.json({ error: intentErr?.message || 'intent_create_failed' }, { status: 500 })
-  }
-
   return NextResponse.json({ ok: true, orderId: order.id })
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e)
