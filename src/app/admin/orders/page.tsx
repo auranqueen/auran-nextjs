@@ -30,7 +30,7 @@ type OrderRow = {
   users?: { customer_grade?: string | null } | null
 }
 
-const SELECT_FULL = 'id, order_no, status, payment_status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, customer_id, address, recipient_name, recipient_phone, earn_points, toast_used, charge_used'
+const SELECT_FULL = 'id, order_no, status, payment_status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, customer_id, address, recipient_name, recipient_phone, earn_points, toast_used, charge_used, items, shipping_fee, grade_discount, subtotal'
 
 const SELECT_FULL_NOUSER = SELECT_FULL
 
