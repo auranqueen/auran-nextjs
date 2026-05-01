@@ -370,6 +370,11 @@ function CheckoutPageInner() {
       setIsPaying(false)
       return
     }
+    if (!addressDetail?.trim()) {
+      setToast('상세주소를 입력해주세요')
+      setIsPaying(false)
+      return
+    }
     if (!orderedProducts.length || !meId) {
       setIsPaying(false)
       return
