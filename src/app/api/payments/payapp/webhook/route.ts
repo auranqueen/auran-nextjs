@@ -497,7 +497,7 @@ export async function POST(req: NextRequest) {
       const orderClient = tryCreateServiceClient() || supabase
       const { data: orderRow } = await orderClient
         .from('orders')
-        .select('id,payment_applied,payment_status')
+        .select('id,payment_applied,payment_status,final_amount')
         .eq('id', intent.target_id)
         .maybeSingle()
 
