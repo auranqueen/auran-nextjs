@@ -353,23 +353,6 @@ function OrderCompleteContent() {
             ) : (
               <>
                 <Link
-                  href="/dashboard/customer/orders"
-                  style={{
-                    display: 'block',
-                    textAlign: 'center',
-                    padding: '14px 20px',
-                    borderRadius: 12,
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    color: 'rgba(255,255,255,0.85)',
-                    fontSize: 14,
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                  }}
-                >
-                  주문내역 보기
-                </Link>
-                <Link
                   href="/dashboard/customer/products"
                   style={{
                     display: 'block',
