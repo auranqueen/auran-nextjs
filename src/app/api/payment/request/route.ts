@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
       final_amount: finalAmount,
       shipping_fee: Math.max(0, Math.floor(Number(body.shipping_fee ?? 0))),
       grade_discount: Math.max(0, Math.floor(Number(body.grade_discount ?? 0))),
+      coupon_discount: Math.max(0, Math.floor(Number(body.coupon_discount ?? 0))),
       subtotal: Math.max(0, Math.floor(Number(body.subtotal ?? 0))),
       status: payment_method === 'bank_transfer' ? '입금대기' : '주문확인',
       prescription_owner_id: prescription_owner_id || null,
