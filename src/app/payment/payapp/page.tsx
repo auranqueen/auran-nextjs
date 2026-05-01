@@ -44,6 +44,10 @@ function PayAppInner() {
         return
       }
 
+      const shippingFee = Math.max(0, Math.floor(Number(params.get('shipping_fee') ?? 0)))
+      const gradeDiscount = Math.max(0, Math.floor(Number(params.get('grade_discount') ?? 0)))
+      const subtotalParam = Math.max(0, Math.floor(Number(params.get('subtotal') ?? 0)))
+
       const orderRes = await fetch('/api/payment/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -54,6 +58,12 @@ function PayAppInner() {
           payment_method: 'payapp',
           total_amount: amount,
           final_amount: amount,
+          shipping_fee: shippingFee,
+          grade_discount: gradeDiscount,
+          subtotal: subtotalParam,
+          recipient_name: null,
+          recipient_phone: null,
+          address: null,
         }),
       })
       const orderData = await orderRes.json()
