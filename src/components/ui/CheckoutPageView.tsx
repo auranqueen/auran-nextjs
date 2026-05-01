@@ -783,7 +783,7 @@ export default function CheckoutPageView({
                           const { error } = await supabase.from('shipping_addresses').insert({
                             user_id: meId,
                             recipient_name: newRecipientName.trim(),
-                            recipient_phone: newRecipientPhone.trim(),
+                            phone: newRecipientPhone.trim(),
                             address: finalAddress,
                             label: newAddressLabel,
                             is_default: savedAddresses.length === 0,
