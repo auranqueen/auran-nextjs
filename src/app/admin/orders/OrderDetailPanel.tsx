@@ -186,7 +186,7 @@ export default function OrderDetailPanel({ order, open, onClose }: Props) {
           <div className="mono" style={{ fontSize: 12, color: 'var(--text2)' }}>등급할인: -₩{Number(order.grade_discount ?? 0).toLocaleString()}</div>
           <div className="mono" style={{ fontSize: 12, color: 'var(--text2)' }}>쿠폰할인: -₩{Number(order.coupon_discount ?? 0).toLocaleString()}</div>
           <div className="mono" style={{ fontSize: 12, color: 'var(--text2)' }}>충전금 사용: -₩{Number(order.charge_used ?? 0).toLocaleString()}</div>
-          <div className="mono" style={{ fontSize: 12, color: 'var(--text2)' }}>토스트(toast_used): {Number(order.toast_used ?? 0).toLocaleString()}</div>
+          {Number(order.toast_used ?? 0) > 0 && <div className="mono" style={{ fontSize: 12, color: 'var(--text2)' }}>토스트 사용: -{Number(order.toast_used ?? 0).toLocaleString()}T</div>}
           <div className="mono" style={{ fontSize: 13, color: 'var(--gold)', fontWeight: 700, marginTop: 4 }}>최종결제: ₩{Number(order.final_amount ?? 0).toLocaleString()}</div>
           <div style={{ marginTop: 8 }}>
             <span style={{ fontSize: 11, color: paymentBadgeColor, border: `1px solid ${paymentBadgeColor}`, borderRadius: 999, padding: '3px 8px' }}>
