@@ -156,7 +156,7 @@ function CheckoutPageInner() {
       }
       const { data: me } = await supabase
         .from('users')
-        .select('id,name,phone,points,charge_balance,customer_grade,is_founder,shipping_address')
+        .select('id,name,phone,points,charge_balance,customer_grade,is_founder')
         .eq('auth_id', user.id)
         .maybeSingle()
       if (!me?.id) {
@@ -176,13 +176,9 @@ function CheckoutPageInner() {
       setSavedAddresses(rows)
       const defaultAddr = rows.find((r: any) => r.is_default) || rows[0] || null
       if (defaultAddr) {
-        const r = defaultAddr as any
-        setRecipientName(String(r.recipient_name || r.name || (me as any).name || ''))
-        setRecipientPhone(String(r.recipient_phone || r.phone || (me as any).phone || ''))
-        setAddress(`${r.address ?? ''} ${r.address_detail ?? ''}`.trim())
-      } else {
-        const shipFallback = String((me as any).shipping_address || '').trim()
-        if (shipFallback) setAddress(shipFallback)
+        setRecipientName(String(defaultAddr.recipient_name || ''))
+        setRecipientPhone(String(defaultAddr.recipient_phone || ''))
+        setAddress(String(defaultAddr.address || ''))
       }
       setPoints(toNum(me.points))
       setBalance(toNum(me.charge_balance))
