@@ -240,29 +240,6 @@ export async function POST(req: NextRequest) {
           is_read: false,
         })
 
-        const shipAddr = String((orderRow as any)?.address || '').trim()
-        const shipName = String((orderRow as any)?.recipient_name || '').trim()
-        const shipPhone = String((orderRow as any)?.recipient_phone || '').trim()
-        if (shipAddr && intent.user_id) {
-          const { data: dupShip } = await client
-            .from('shipping_addresses')
-            .select('id')
-            .eq('user_id', intent.user_id)
-            .eq('address', shipAddr)
-            .maybeSingle()
-          if (!dupShip) {
-            await client.from('shipping_addresses').insert({
-              user_id: intent.user_id,
-              address: shipAddr,
-              recipient_name: shipName || null,
-              recipient_phone: shipPhone || null,
-              is_default: true,
-              label: '최근배송지',
-            } as any)
-          }
-          await client.from('users').update({ shipping_address: shipAddr } as any).eq('id', intent.user_id)
-        }
-
         if (orderRow?.id && (!orderRow.payment_applied || orderRow.payment_status !== 'paid')) {
           const pointUsed = Math.max(0, Number(orderRow.point_used || 0))
           const chargeUsed = Math.max(0, Number(orderRow.charge_used || 0))
@@ -497,9 +474,32 @@ export async function POST(req: NextRequest) {
       const orderClient = tryCreateServiceClient() || supabase
       const { data: orderRow } = await orderClient
         .from('orders')
-        .select('id,payment_applied,payment_status,final_amount')
+        .select('id,payment_applied,payment_status,final_amount,address,recipient_name,recipient_phone')
         .eq('id', intent.target_id)
         .maybeSingle()
+
+      const shipAddr = String(orderRow?.address || '').trim()
+      const shipName = String(orderRow?.recipient_name || '').trim()
+      const shipPhone = String(orderRow?.recipient_phone || '').trim()
+      if (shipAddr && intent.user_id) {
+        const { data: dupShip } = await orderClient
+          .from('shipping_addresses')
+          .select('id')
+          .eq('user_id', intent.user_id)
+          .eq('address', shipAddr)
+          .maybeSingle()
+        if (!dupShip) {
+          await orderClient.from('shipping_addresses').insert({
+            user_id: intent.user_id,
+            address: shipAddr,
+            recipient_name: shipName || null,
+            recipient_phone: shipPhone || null,
+            is_default: true,
+            label: '최근배송지',
+          } as any)
+        }
+        await orderClient.from('users').update({ shipping_address: shipAddr } as any).eq('id', intent.user_id)
+      }
 
       if (orderRow?.id && (!orderRow.payment_applied || orderRow.payment_status !== 'paid') && Math.abs(Number((orderRow as any).final_amount) - Number(intent.amount)) <= 10) {
         await orderClient
