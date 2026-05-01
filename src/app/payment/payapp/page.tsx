@@ -61,9 +61,9 @@ function PayAppInner() {
           shipping_fee: shippingFee,
           grade_discount: gradeDiscount,
           subtotal: subtotalParam,
-          recipient_name: null,
-          recipient_phone: null,
-          address: null,
+          recipient_name: decodeURIComponent(params.get('recipient_name') || '') || null,
+          recipient_phone: decodeURIComponent(params.get('recipient_phone') || '') || null,
+          address: decodeURIComponent(params.get('address') || '') || null,
         }),
       })
       const orderData = await orderRes.json()
