@@ -35,6 +35,8 @@ type Props = {
   setRecipientPhone: (v: string) => void
   address: string
   setAddress: (v: string) => void
+  addressDetail: string
+  setAddressDetail: (v: string) => void
   meId: string
   savedAddresses: any[]
   setSavedAddresses: (rows: any[]) => void
@@ -95,6 +97,8 @@ export default function CheckoutPageView({
   setRecipientPhone,
   address,
   setAddress,
+  addressDetail,
+  setAddressDetail,
   meId,
   savedAddresses,
   setSavedAddresses,
@@ -159,7 +163,6 @@ export default function CheckoutPageView({
   const [newAddress, setNewAddress] = useState('')
   const [newAddressDetail, setNewAddressDetail] = useState('')
   const [addressSaving, setAddressSaving] = useState(false)
-  const [addressDetail, setAddressDetail] = useState('')
   const [newAddrStep, setNewAddrStep] = useState(1)
   const [newAddressLabel, setNewAddressLabel] = useState('집')
   const [showToastTooltip, setShowToastTooltip] = useState(false)

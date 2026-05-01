@@ -64,6 +64,7 @@ function CheckoutPageInner() {
   const [recipientName, setRecipientName] = useState('')
   const [recipientPhone, setRecipientPhone] = useState('')
   const [address, setAddress] = useState('')
+  const [addressDetail, setAddressDetail] = useState('')
   const [savedAddresses, setSavedAddresses] = useState<any[]>([])
   const [addressSheetOpen, setAddressSheetOpen] = useState(false)
   const [payWithToast, setPayWithToast] = useState(true)
@@ -379,11 +380,11 @@ function CheckoutPageInner() {
       return
     }
     if (needCharge > 0) {
-      router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&coupon_discount=${couponDiscount}`)
+      router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}`)
       setIsPaying(false)
       return
     }
-    router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&coupon_discount=${couponDiscount}`)
+    router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}`)
     setIsPaying(false)
   }
 
@@ -419,7 +420,7 @@ function CheckoutPageInner() {
     }
     setPinOpen(false)
     setPinChecking(false)
-    router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&qty=1&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&coupon_discount=${couponDiscount}`)
+    router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&qty=1&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}`)
     setIsPaying(false)
   }
 
@@ -503,6 +504,8 @@ function CheckoutPageInner() {
         setRecipientPhone={setRecipientPhone}
         address={address}
         setAddress={setAddress}
+        addressDetail={addressDetail}
+        setAddressDetail={setAddressDetail}
         meId={meId}
         savedAddresses={savedAddresses}
         setSavedAddresses={setSavedAddresses}
@@ -591,7 +594,7 @@ function CheckoutPageInner() {
               충전하고 결제하기<br/>
               <span style={{fontSize:11,fontWeight:400}}>토스트 충전 후 결제 · 구매금액의 5% 적립</span>
             </button>
-            <button onClick={() => { setPayModal(false); setEarnToast(false); router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&coupon_discount=${couponDiscount}`) }}
+            <button onClick={() => { setPayModal(false); setEarnToast(false); router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}`) }}
               disabled={settingsLoading || isPaying}
               style={{width:'100%',background:'#1e1a14',border:'1px solid #2a2520',borderRadius:12,padding:'14px 0',fontSize:15,fontWeight:700,color:'#e8e4dc',cursor:'pointer',fontFamily:'inherit'}}>
               지금 바로 결제하기<br/>
