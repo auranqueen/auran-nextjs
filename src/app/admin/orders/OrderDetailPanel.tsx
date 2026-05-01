@@ -172,7 +172,7 @@ export default function OrderDetailPanel({ order, open, onClose }: Props) {
 
         <section style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 6 }}>주문 상품</div>
-          {(Array.isArray(order.items) ? order.items : []).map((item: any, i: number) => (
+          {(Array.isArray(order.items) ? order.items : (() => { try { return JSON.parse(String(order.items || '[]')) } catch { return [] } })()).map((item: any, i: number) => (
             <div key={i} className="mono" style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 2 }}>
               {item.product_name || item.name || '상품'} × {item.quantity || 1} — ₩{Number(item.price ?? 0).toLocaleString()}
             </div>
@@ -183,6 +183,7 @@ export default function OrderDetailPanel({ order, open, onClose }: Props) {
           <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 6 }}>결제 상세</div>
           <div className="mono" style={{ fontSize: 12, color: 'var(--text2)' }}>상품 소계: ₩{Number(order.subtotal ?? order.total_amount ?? 0).toLocaleString()}</div>
           <div className="mono" style={{ fontSize: 12, color: 'var(--text2)' }}>배송비: {Number(order.shipping_fee ?? 0) === 0 ? '무료' : `₩${Number(order.shipping_fee ?? 0).toLocaleString()}`}</div>
+          <div className="mono" style={{ fontSize: 12, color: 'var(--text2)' }}>등급할인: -₩{Number(order.grade_discount ?? 0).toLocaleString()}</div>
           <div className="mono" style={{ fontSize: 12, color: 'var(--text2)' }}>쿠폰할인: -₩{Number(order.coupon_discount ?? 0).toLocaleString()}</div>
           <div className="mono" style={{ fontSize: 12, color: 'var(--text2)' }}>충전금 사용: -₩{Number(order.charge_used ?? 0).toLocaleString()}</div>
           <div className="mono" style={{ fontSize: 12, color: 'var(--text2)' }}>토스트(toast_used): {Number(order.toast_used ?? 0).toLocaleString()}</div>
