@@ -82,7 +82,7 @@ function PayAppInner() {
     }
 
     doPayment()
-  }, [params.toString(), router])
+  }, [])
 
   return (
     <div style={{
