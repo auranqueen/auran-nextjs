@@ -227,16 +227,48 @@ export async function POST(req: NextRequest) {
         const { data: orderRow } = await client
           .from('orders')
           .select(
-            'id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,toast_used,gift_receiver_id,gift_message,payment_applied,payment_status,gift_created,user_coupon_id,address,recipient_name,recipient_phone,subtotal,shipping_fee,grade_discount,coupon_discount,order_items(product_id,product_name,quantity,price)'
+            'id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,toast_used,gift_receiver_id,gift_message,payment_applied,payment_status,gift_created,user_coupon_id,address,recipient_name,recipient_phone,subtotal,shipping_fee,grade_discount,coupon_discount,order_items(product_name,quantity,product_price)'
           )
           .eq('id', intent.target_id)
           .maybeSingle()
         const amount = Number(intent.amount || 0)
+        const orderMsgs = [
+          '오늘의 나를 위한 선택 💜 주문이 접수됐어요',
+          '피부가 기대하고 있어요 ✨ 정성껏 준비할게요',
+          '당신의 루틴이 시작됩니다 🌙',
+          '소중한 주문, 설레는 마음으로 준비해요 💜',
+          '나를 가장 잘 아는 케어, 출발 준비 완료 ✨',
+        ]
+        const orderMsg = orderMsgs[Math.floor(Math.random() * orderMsgs.length)]
+        const itemList = ((orderRow?.order_items as any[]) || []).map((i: any) => `${i.product_name || '상품'} × ${i.quantity || 1}`).join('\n')
+        const subtotalAmt = Number((orderRow as any)?.subtotal ?? 0)
+        const shippingFeeAmt = Number((orderRow as any)?.shipping_fee ?? 0)
+        const gradeDiscountAmt = Number((orderRow as any)?.grade_discount ?? 0)
+        const couponDiscountAmt = Number((orderRow as any)?.coupon_discount ?? 0)
+        const toastUsedAmt = Number((orderRow as any)?.toast_used ?? 0)
+        const chargeUsedAmt = Number((orderRow as any)?.charge_used ?? 0)
+        const payType = String(data.pay_type ?? data.paymethod ?? '')
+        const payMethodLabel = payType === '1' ? '신용카드' : payType === 'vbank' ? '가상계좌' : payType ? payType : '카드'
         await client.from('notifications').insert({
           user_id: intent.user_id,
           type: 'payment',
-          title: '주문 결제 완료',
-          body: `주문이 결제되었습니다. ₩${amount.toLocaleString()}${orderRow?.order_no ? ` · 주문번호 ${orderRow.order_no}` : ''}`,
+          title: '💜 주문이 완료됐어요',
+          body: [
+            orderMsg,
+            '',
+            itemList,
+            '',
+            subtotalAmt > 0 ? `상품금액 ₩${subtotalAmt.toLocaleString()}` : '',
+            shippingFeeAmt > 0 ? `배송비 ₩${shippingFeeAmt.toLocaleString()}` : '배송비 무료',
+            gradeDiscountAmt > 0 ? `등급할인 -₩${gradeDiscountAmt.toLocaleString()}` : '',
+            couponDiscountAmt > 0 ? `쿠폰할인 -₩${couponDiscountAmt.toLocaleString()}` : '',
+            toastUsedAmt > 0 ? `🍞 토스트 사용 -${toastUsedAmt}T` : '',
+            chargeUsedAmt > 0 ? `충전금 사용 -₩${chargeUsedAmt.toLocaleString()}` : '',
+            `결제수단 ${payMethodLabel}`,
+            `최종결제 ₩${amount.toLocaleString()}`,
+            '',
+            orderRow?.order_no ? `주문번호 ${orderRow.order_no}` : '',
+          ].filter(Boolean).join('\n'),
           is_read: false,
         })
 
