@@ -178,8 +178,7 @@ function CheckoutPageInner() {
       if (defaultAddr) {
         setRecipientName(String(defaultAddr.recipient_name || defaultAddr.name || ''))
         setRecipientPhone(String(defaultAddr.phone || defaultAddr.recipient_phone || ''))
-        const detailPart = String(defaultAddr.address_detail || '').trim()
-        setAddress(String(defaultAddr.address || '') + (detailPart ? ' ' + detailPart : ''))
+        setAddress(String(defaultAddr.address || ''))
       }
       setPoints(toNum(me.points))
       setBalance(toNum(me.charge_balance))
