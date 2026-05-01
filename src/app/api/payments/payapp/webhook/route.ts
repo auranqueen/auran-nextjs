@@ -493,7 +493,7 @@ export async function POST(req: NextRequest) {
             user_id: intent.user_id,
             address: shipAddr,
             recipient_name: shipName || null,
-            recipient_phone: shipPhone || null,
+            phone: shipPhone || null,
             is_default: true,
             label: '최근배송지',
           } as any)
