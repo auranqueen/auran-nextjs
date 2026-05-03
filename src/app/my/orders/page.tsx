@@ -189,7 +189,21 @@ export default function MyOrdersPage() {
           const status = String(order.status || '주문접수')
           return (
             <div key={order.id} style={{ marginBottom: 10 }}>
-              <PaymentCompleteCard order={order} points={points} charge_balance={chargeBalance} variant="history" />
+              <PaymentCompleteCard
+                order={order}
+                points={points}
+                charge_balance={chargeBalance}
+                variant="history"
+                status={order.status}
+                onCancel={() => {
+                  setOrders((prev) => prev.filter((o) => o.id !== order.id))
+                }}
+                onReturn={() => {
+                  setOrders((prev) =>
+                    prev.map((o) => (o.id === order.id ? { ...o, status: '반품요청' } : o))
+                  )
+                }}
+              />
               {order._cs ? (
                 <div style={{ marginTop: 8 }}>
                   <div style={{ fontSize: 10, display: 'inline-block', padding: '3px 8px', borderRadius: 999, background: 'rgba(123,94,167,0.2)', color: '#c4a7e7' }}>
