@@ -13,6 +13,8 @@ type PaymentCompleteCardProps = {
     courier: string | null
     ordered_at: string | null
     items: any
+    shipping_fee?: number | null
+    grade_discount?: number | null
   }
   points: number
   charge_balance: number
@@ -65,6 +67,8 @@ export default function PaymentCompleteCard({ order, points, charge_balance, var
   const finalAmount = Number(order.final_amount || 0)
   const couponDisc = Number(order.coupon_discount || 0)
   const pointUsed = Number(order.point_used || 0)
+  const shippingFee = Number(order.shipping_fee || 0)
+  const gradeDisc = Number(order.grade_discount || 0)
 
   const line = (label: string, value: string, valueClass?: string) => (
     <div className="flex justify-between gap-3 text-xs" style={{ fontWeight: 500 }}>
@@ -145,6 +149,8 @@ export default function PaymentCompleteCard({ order, points, charge_balance, var
           </div>
           <div className="space-y-1.5">
             {totalAmount > 0 ? line('상품금액', `${totalAmount.toLocaleString()}원`) : null}
+            {shippingFee > 0 ? line('배송비', `${shippingFee.toLocaleString()}원`) : null}
+            {gradeDisc > 0 ? line('등급할인', `-${gradeDisc.toLocaleString()}원`, 'text-[#534AB7]') : null}
             {couponDisc > 0 ? line('쿠폰할인', `-${couponDisc.toLocaleString()}원`, 'text-[#534AB7]') : null}
             {pointUsed > 0 ? line('토스트사용', `-${pointUsed.toLocaleString()}P`, 'text-[#7B5EA7]') : null}
             {finalAmount > 0 ? line('최종결제금액', `${finalAmount.toLocaleString()}원`, 'text-[#7B5EA7]') : null}
