@@ -19,6 +19,8 @@ type PaymentCompleteCardProps = {
     items: any
     shipping_fee?: number | null
     grade_discount?: number | null
+    address?: string | null
+    payment_method?: string | null
   }
   points: number
   charge_balance: number
@@ -26,6 +28,8 @@ type PaymentCompleteCardProps = {
   status?: string | null
   onCancel?: () => void
   onReturn?: () => void
+  address?: string | null
+  payment_method?: string | null
 }
 
 function productNames(items: any): string[] {
@@ -405,7 +409,11 @@ export default function PaymentCompleteCard({
             상품
           </div>
           <div className="text-sm text-white/90" style={{ fontWeight: 500 }}>
-            {titleText}
+            {names.length > 0 ? (
+              names.map((n, i) => <div key={i}>{n}</div>)
+            ) : (
+              <div>상품</div>
+            )}
           </div>
           {order.ordered_at ? (
             <div className="mt-1 text-[11px] text-white/40" style={{ fontWeight: 500 }}>
@@ -450,11 +458,11 @@ export default function PaymentCompleteCard({
         <div className="space-y-1 text-xs text-white/55" style={{ fontWeight: 500 }}>
           <div className="flex justify-between gap-2">
             <span className="text-white/45">배송지</span>
-            <span className="text-right text-white/70">—</span>
+            <span className="text-right text-white/70">{order.address || '—'}</span>
           </div>
           <div className="flex justify-between gap-2">
             <span className="text-white/45">결제수단</span>
-            <span className="text-right text-white/70">—</span>
+            <span className="text-right text-white/70">{order.payment_method || '—'}</span>
           </div>
         </div>
 

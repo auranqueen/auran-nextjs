@@ -30,6 +30,8 @@ type OrderRow = {
   items: any
   shipping_fee?: number | null
   grade_discount?: number | null
+  address?: string | null
+  payment_method?: string | null
   _cs?: any | null
 }
 
@@ -75,7 +77,7 @@ export default function MyOrdersPage() {
       setAutoConfirmDays(Math.max(1, Math.floor(Number((autoRow as { value?: string } | null)?.value ?? 7))))
       const { data: rows } = await supabase
         .from('orders')
-        .select('id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, delivered_at, confirmed_at, auto_confirm_at, referrer_user_id, items, shipping_fee, grade_discount')
+        .select('id, order_no, status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, delivered_at, confirmed_at, auto_confirm_at, referrer_user_id, items, shipping_fee, grade_discount, address, payment_method')
         .eq('customer_id', user.id)
         .eq('payment_applied', true)
         .order('ordered_at', { ascending: false })
@@ -195,6 +197,8 @@ export default function MyOrdersPage() {
                 charge_balance={chargeBalance}
                 variant="history"
                 status={order.status}
+                address={order.address}
+                payment_method={order.payment_method}
                 onCancel={() => {
                   setOrders((prev) => prev.filter((o) => o.id !== order.id))
                 }}
