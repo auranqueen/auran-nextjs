@@ -1,10 +1,14 @@
 'use client'
 
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+
 type PaymentCompleteCardProps = {
   order: {
     id: string
     order_no: string | null
     status: string | null
+    customer_id?: string | null
     total_amount: number | null
     final_amount: number | null
     coupon_discount: number | null
@@ -19,6 +23,9 @@ type PaymentCompleteCardProps = {
   points: number
   charge_balance: number
   variant: 'history' | 'notification'
+  status?: string | null
+  onCancel?: () => void
+  onReturn?: () => void
 }
 
 function productNames(items: any): string[] {
@@ -60,7 +67,18 @@ function TrackingButton({
   )
 }
 
-export default function PaymentCompleteCard({ order, points, charge_balance, variant }: PaymentCompleteCardProps) {
+export default function PaymentCompleteCard({
+  order,
+  points,
+  charge_balance,
+  variant,
+  status: statusProp,
+  onCancel,
+  onReturn,
+}: PaymentCompleteCardProps) {
+  const supabase = createClient()
+  const [showCancelModal, setShowCancelModal] = useState(false)
+  const [showReturnModal, setShowReturnModal] = useState(false)
   const names = productNames(order.items)
   const titleText = names.length > 0 ? names.join(', ') : '상품'
   const totalAmount = Number(order.total_amount || 0)
@@ -77,54 +95,307 @@ export default function PaymentCompleteCard({ order, points, charge_balance, var
     </div>
   )
 
-  if (variant === 'notification') {
-    return (
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0D0B09] text-white">
-        <div className="space-y-3 p-4">
-          <div className="text-sm text-white/90" style={{ fontWeight: 500 }}>
-            {titleText}
-          </div>
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="text-xs text-white/50" style={{ fontWeight: 500 }}>
-              최종 결제
-            </span>
-            <span className="text-base text-[#7B5EA7]" style={{ fontWeight: 500 }}>
-              {finalAmount.toLocaleString()}원
-            </span>
-          </div>
-          <div className="rounded-xl border border-[#7B5EA7]/25 bg-[#7B5EA7]/10 px-3 py-2 text-xs text-[#7B5EA7]" style={{ fontWeight: 500 }}>
-            🍞 배송완료 후 토스트가 적립돼요
-          </div>
-          <div className="flex gap-2">
+  const st = String(statusProp ?? order.status ?? '')
+  const canShowCancelBtn = st === '결제완료' || st === '상품준비중'
+  const canShowReturnBtn = st === '배송완료'
+
+  const cancelModal =
+    showCancelModal ? (
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          minHeight: 200,
+          background: 'rgba(0,0,0,0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 20,
+          borderRadius: 'inherit',
+        }}
+      >
+        <div
+          style={{
+            background: '#1a1820',
+            borderRadius: 12,
+            padding: 20,
+            maxWidth: 280,
+            width: '100%',
+            textAlign: 'center',
+            border: '1px solid rgba(123,94,167,0.35)',
+          }}
+        >
+          <div style={{ fontSize: 14, color: '#fff', marginBottom: 16, fontWeight: 500 }}>주문을 취소할까요?</div>
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
             <button
               type="button"
-              className="flex-1 rounded-xl border border-white/15 bg-white/5 py-2.5 text-xs text-white/80 transition hover:bg-white/10"
-              style={{ fontWeight: 500 }}
+              onClick={() => setShowCancelModal(false)}
+              style={{
+                padding: '8px 14px',
+                borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.2)',
+                background: 'transparent',
+                color: 'rgba(255,255,255,0.75)',
+                fontSize: 12,
+                cursor: 'pointer',
+                fontWeight: 500,
+              }}
             >
-              주문취소
+              닫기
             </button>
-            {String(order.tracking_no || '').trim() ? (
-              <div className="min-w-0 flex-1">
-                <TrackingButton courier={order.courier} trackingNo={order.tracking_no} fullWidth />
-              </div>
-            ) : (
-              <button
-                type="button"
-                disabled
-                className="flex-1 rounded-xl border border-white/10 bg-transparent py-2.5 text-xs text-white/35"
-                style={{ fontWeight: 500 }}
-              >
-                배송조회
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={() => {
+                void (async () => {
+                  const { error } = await supabase
+                    .from('orders')
+                    .update({ status: '취소', request_type: 'cancel' } as any)
+                    .eq('id', order.id)
+                  if (error) return
+                  onCancel?.()
+                  setShowCancelModal(false)
+                })()
+              }}
+              style={{
+                padding: '8px 14px',
+                borderRadius: 10,
+                border: 'none',
+                background: '#7B5EA7',
+                color: '#fff',
+                fontSize: 12,
+                cursor: 'pointer',
+                fontWeight: 500,
+              }}
+            >
+              취소하기
+            </button>
           </div>
         </div>
       </div>
+    ) : null
+
+  const returnModal =
+    showReturnModal ? (
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          minHeight: 200,
+          background: 'rgba(0,0,0,0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 20,
+          borderRadius: 'inherit',
+        }}
+      >
+        <form
+          style={{
+            background: '#1a1820',
+            borderRadius: 12,
+            padding: 16,
+            maxWidth: 320,
+            width: '100%',
+            border: '1px solid rgba(123,94,167,0.35)',
+          }}
+          onSubmit={(e) => {
+            e.preventDefault()
+            void (async () => {
+              const fd = new FormData(e.currentTarget)
+              const kind = String(fd.get('return_kind') || 'return') === 'exchange' ? 'exchange' : 'return'
+              const reason = String(fd.get('return_reason') || '').trim()
+              const memo = String(fd.get('return_memo') || '').trim().slice(0, 100)
+              const reasonLabel =
+                reason === 'change_mind'
+                  ? '단순변심'
+                  : reason === 'defect'
+                    ? '상품불량'
+                    : reason === 'wrong_ship'
+                      ? '오배송'
+                      : reason === 'etc'
+                        ? '기타'
+                        : ''
+              const return_reason = [reasonLabel, memo].filter(Boolean).join(' · ')
+              const { error: upErr } = await supabase
+                .from('orders')
+                .update({
+                  status: '반품요청',
+                  request_type: kind,
+                  return_reason,
+                } as any)
+                .eq('id', order.id)
+              if (upErr) return
+              const cid = order.customer_id
+              if (cid) {
+                const { data: channelRow } = await supabase
+                  .from('chat_channels')
+                  .select('id')
+                  .eq('user_id', cid)
+                  .eq('channel_type', 'owner')
+                  .maybeSingle()
+                if (channelRow?.id) {
+                  await supabase.from('consultation_messages').insert({
+                    channel_id: channelRow.id,
+                    user_id: cid,
+                    message_kind: 'order_return',
+                    content: `${kind === 'exchange' ? '교환' : '반품'} 신청 · ${reasonLabel || reason || '-'}`,
+                    order_id: order.id,
+                    is_from_customer: true,
+                  } as any)
+                }
+              }
+              onReturn?.()
+              setShowReturnModal(false)
+            })()
+          }}
+        >
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <label style={{ flex: 1, cursor: 'pointer' }}>
+              <input type="radio" name="return_kind" value="exchange" defaultChecked style={{ marginRight: 6 }} />
+              <span style={{ fontSize: 12, color: '#e8dff5', fontWeight: 500 }}>교환</span>
+            </label>
+            <label style={{ flex: 1, cursor: 'pointer' }}>
+              <input type="radio" name="return_kind" value="return" style={{ marginRight: 6 }} />
+              <span style={{ fontSize: 12, color: '#e8dff5', fontWeight: 500 }}>반품</span>
+            </label>
+          </div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 6, fontWeight: 500 }}>사유</div>
+          <select
+            name="return_reason"
+            required
+            style={{
+              width: '100%',
+              marginBottom: 10,
+              borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(0,0,0,0.25)',
+              color: '#fff',
+              fontSize: 12,
+              padding: '8px 10px',
+              fontWeight: 500,
+            }}
+            defaultValue=""
+          >
+            <option value="" disabled>
+              선택
+            </option>
+            <option value="change_mind">단순변심</option>
+            <option value="defect">상품불량</option>
+            <option value="wrong_ship">오배송</option>
+            <option value="etc">기타</option>
+          </select>
+          <textarea
+            name="return_memo"
+            maxLength={100}
+            rows={3}
+            placeholder="메모 (선택, 최대 100자)"
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              marginBottom: 12,
+              borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(0,0,0,0.25)',
+              color: '#fff',
+              fontSize: 12,
+              padding: '8px 10px',
+              resize: 'none',
+              fontWeight: 500,
+            }}
+          />
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button
+              type="button"
+              onClick={() => setShowReturnModal(false)}
+              style={{
+                padding: '8px 14px',
+                borderRadius: 10,
+                border: '1px solid rgba(255,255,255,0.2)',
+                background: 'transparent',
+                color: 'rgba(255,255,255,0.75)',
+                fontSize: 12,
+                cursor: 'pointer',
+                fontWeight: 500,
+              }}
+            >
+              닫기
+            </button>
+            <button
+              type="submit"
+              style={{
+                padding: '8px 14px',
+                borderRadius: 10,
+                border: 'none',
+                background: '#7B5EA7',
+                color: '#fff',
+                fontSize: 12,
+                cursor: 'pointer',
+                fontWeight: 500,
+              }}
+            >
+              신청하기
+            </button>
+          </div>
+        </form>
+      </div>
+    ) : null
+
+  if (variant === 'notification') {
+    return (
+      <>
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0D0B09] text-white">
+          <div className="space-y-3 p-4">
+            <div className="text-sm text-white/90" style={{ fontWeight: 500 }}>
+              {titleText}
+            </div>
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-xs text-white/50" style={{ fontWeight: 500 }}>
+                최종 결제
+              </span>
+              <span className="text-base text-[#7B5EA7]" style={{ fontWeight: 500 }}>
+                {finalAmount.toLocaleString()}원
+              </span>
+            </div>
+            <div className="rounded-xl border border-[#7B5EA7]/25 bg-[#7B5EA7]/10 px-3 py-2 text-xs text-[#7B5EA7]" style={{ fontWeight: 500 }}>
+              🍞 배송완료 후 토스트가 적립돼요
+            </div>
+            <div className="flex gap-2">
+              {canShowCancelBtn ? (
+                <button
+                  type="button"
+                  className="flex-1 rounded-xl border border-white/15 bg-white/5 py-2.5 text-xs text-white/80 transition hover:bg-white/10"
+                  style={{ fontWeight: 500 }}
+                  onClick={() => setShowCancelModal(true)}
+                >
+                  주문취소
+                </button>
+              ) : null}
+              {String(order.tracking_no || '').trim() ? (
+                <div className="min-w-0 flex-1">
+                  <TrackingButton courier={order.courier} trackingNo={order.tracking_no} fullWidth />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="flex-1 rounded-xl border border-white/10 bg-transparent py-2.5 text-xs text-white/35"
+                  style={{ fontWeight: 500 }}
+                >
+                  배송조회
+                </button>
+              )}
+            </div>
+          </div>
+          {cancelModal}
+          {returnModal}
+        </div>
+      </>
     )
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0D0B09] text-white">
+    <>
+      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0D0B09] text-white">
       <div className="px-4 py-3 text-sm text-white" style={{ backgroundColor: '#7B5EA7', fontWeight: 500 }}>
         주문 {order.order_no || order.id}
       </div>
@@ -188,13 +459,16 @@ export default function PaymentCompleteCard({ order, points, charge_balance, var
         </div>
 
         <div className="flex gap-2 pt-1">
-          <button
-            type="button"
-            className="flex-1 rounded-xl border border-white/15 bg-white/5 py-2.5 text-xs text-white/85 transition hover:bg-white/10"
-            style={{ fontWeight: 500 }}
-          >
-            교환·반품
-          </button>
+          {canShowReturnBtn ? (
+            <button
+              type="button"
+              className="flex-1 rounded-xl border border-white/15 bg-white/5 py-2.5 text-xs text-white/85 transition hover:bg-white/10"
+              style={{ fontWeight: 500 }}
+              onClick={() => setShowReturnModal(true)}
+            >
+              교환·반품
+            </button>
+          ) : null}
           <button
             type="button"
             className="flex-1 rounded-xl border border-[#7B5EA7]/40 bg-[#7B5EA7]/20 py-2.5 text-xs text-[#e8d5ff] transition hover:bg-[#7B5EA7]/30"
@@ -203,7 +477,10 @@ export default function PaymentCompleteCard({ order, points, charge_balance, var
             재구매
           </button>
         </div>
+        {cancelModal}
+        {returnModal}
       </div>
-    </div>
+      </div>
+    </>
   )
 }
