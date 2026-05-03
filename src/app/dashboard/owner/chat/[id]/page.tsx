@@ -111,6 +111,13 @@ export default function OwnerChatRoomPage() {
   }, [messages, scrollBottom])
 
   useEffect(() => {
+    const handleResize = () => setIsPC(window.innerWidth >= 768)
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useEffect(() => {
     if (!customerUserId || (!showHistory && !isPC)) return
     let cancelled = false
     void (async () => {
@@ -285,13 +292,6 @@ export default function OwnerChatRoomPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable
   }, [ownerUserId])
-
-  useEffect(() => {
-    const handleResize = () => setIsPC(window.innerWidth >= 768)
-    handleResize()
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
 
   const sendText = async () => {
     const text = draft.trim()
