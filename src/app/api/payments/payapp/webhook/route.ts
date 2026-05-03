@@ -309,11 +309,18 @@ export async function POST(req: NextRequest) {
               payment_applied: true,
               status: '주문확인',
               payment_status: 'paid',
-              payment_method: String(data.pay_type ?? data.paymethod ?? '') || null,
+              payment_method: (() => {
+                const pt = String(data.pay_type ?? data.paymethod ?? '')
+                const cardName = String(data.card_name ?? '').trim()
+                if (pt === '1') return cardName ? `${cardName}카드` : '신용카드'
+                if (pt === '2') return '계좌이체'
+                if (pt === '3') return '가상계좌'
+                if (pt === '4') return '휴대폰'
+                return pt || null
+              })(),
             })
             .eq('id', orderRow.id)
           if (orderRow?.customer_id) {
-            console.log('[chat] customer_id:', orderRow?.customer_id)
             const { data: channelRow } = await supabase
               .from('chat_channels')
               .select('id')
@@ -321,7 +328,6 @@ export async function POST(req: NextRequest) {
               .eq('channel_type', 'owner')
               .maybeSingle()
 
-            console.log('[chat] channelRow:', channelRow)
             if (channelRow?.id) {
               const allProductNames = (orderRow.order_items ?? [])
                 .map((item: any) => item.product_name)
@@ -338,7 +344,6 @@ export async function POST(req: NextRequest) {
                 order_id: orderRow.id,
                 is_from_customer: false,
               })
-              console.log('[chat] insert done')
             }
           }
           if ((_priorPaidCount ?? 0) === 0 && intent.user_id) {
@@ -569,7 +574,15 @@ export async function POST(req: NextRequest) {
             payment_status: 'paid',
             payment_applied: true,
             status: '주문확인',
-            payment_method: String(data.pay_type ?? data.paymethod ?? '') || null,
+            payment_method: (() => {
+              const pt = String(data.pay_type ?? data.paymethod ?? '')
+              const cardName = String(data.card_name ?? '').trim()
+              if (pt === '1') return cardName ? `${cardName}카드` : '신용카드'
+              if (pt === '2') return '계좌이체'
+              if (pt === '3') return '가상계좌'
+              if (pt === '4') return '휴대폰'
+              return pt || null
+            })(),
           })
           .eq('id', orderRow.id)
       }
