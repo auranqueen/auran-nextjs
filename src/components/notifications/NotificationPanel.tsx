@@ -22,6 +22,7 @@ function iconForType(type: string): { icon: string; color: string } {
   if (type === 'groupbuy') return { icon: '⏰', color: '#ff5b5b' }
   if (type === 'timesale') return { icon: '⚡', color: '#ffe066' }
   if (type === 'noir_invite') return { icon: '🖤', color: '#b79f74' }
+  if (type === 'payment_complete' || type === 'order_paid') return { icon: '💜', color: '#7B5EA7' }
   return { icon: '🔔', color: '#a0a0a0' }
 }
 
@@ -158,6 +159,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
             ) : (
               items.map((n: any) => {
                 const iconStyle = iconForType(String(n.type || ''))
+                const isPayment = String(n.type || '') === 'payment_complete' || String(n.type || '') === 'order_paid'
                 return (
                   <div
                     key={n.id}
@@ -181,7 +183,11 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                     }}
                     onClick={async () => {
                       console.log('카드 클릭됨', n.id)
-                      setPopNotice(n)
+                      if (isPayment) {
+                        router.push('/my/orders')
+                      } else {
+                        setPopNotice(n)
+                      }
                       if (!n.is_read) {
                         await supabase.from('notifications').update({ is_read: true }).eq('id', n.id)
                         setItems(prev => prev.map(x => (x.id === n.id ? { ...x, is_read: true } : x)))
@@ -203,6 +209,14 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                       <span style={{ fontSize: 13, color: '#fff' }}>{n.title}</span>
                       <span style={{ marginLeft: 'auto', fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{'>'}</span>
                     </div>
+                    {isPayment && n.body ? (
+                      <div style={{ marginTop: 6, fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>{String(n.body)}</div>
+                    ) : null}
+                    {isPayment && n.toast_amount != null && String(n.toast_amount) !== '' ? (
+                      <div style={{ marginTop: 4, fontSize: 11, color: '#534AB7' }}>
+                        {`🍞 배송완료 후 ${n.toast_amount} T 적립 예정`}
+                      </div>
+                    ) : null}
                   </div>
                 )
               })
