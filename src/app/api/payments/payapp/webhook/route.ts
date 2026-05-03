@@ -313,6 +313,7 @@ export async function POST(req: NextRequest) {
             })
             .eq('id', orderRow.id)
           if (orderRow?.customer_id) {
+            console.log('[chat] customer_id:', orderRow?.customer_id)
             const { data: channelRow } = await supabase
               .from('chat_channels')
               .select('id')
@@ -320,6 +321,7 @@ export async function POST(req: NextRequest) {
               .eq('channel_type', 'owner')
               .maybeSingle()
 
+            console.log('[chat] channelRow:', channelRow)
             if (channelRow?.id) {
               const allProductNames = (orderRow.order_items ?? [])
                 .map((item: any) => item.product_name)
@@ -336,6 +338,7 @@ export async function POST(req: NextRequest) {
                 order_id: orderRow.id,
                 is_from_customer: false,
               })
+              console.log('[chat] insert done')
             }
           }
           if ((_priorPaidCount ?? 0) === 0 && intent.user_id) {
