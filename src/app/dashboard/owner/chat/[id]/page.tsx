@@ -118,7 +118,7 @@ export default function OwnerChatRoomPage() {
   }, [])
 
   useEffect(() => {
-    if (!customerUserId || (!showHistory && !isPC)) return
+    if (!customerUserId) return
     let cancelled = false
     void (async () => {
       const { data } = await supabase
@@ -151,7 +151,7 @@ export default function OwnerChatRoomPage() {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable for this effect
-  }, [showHistory, customerUserId, isPC])
+  }, [customerUserId])
 
   useEffect(() => {
     if (!showSkinLog || !customerUserId) return
