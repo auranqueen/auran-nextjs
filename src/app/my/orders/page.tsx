@@ -190,11 +190,90 @@ export default function MyOrdersPage() {
       <div style={{ padding: '0 16px' }}>
         {loading ? <div style={{ color: TEXT_MUTED, fontSize: 13 }}>불러오는 중...</div> : null}
         {!loading && filtered.length === 0 ? <div style={{ color: TEXT_MUTED, fontSize: 13 }}>주문 내역이 없어요</div> : null}
-        {filtered.map((order) => (
-          <div key={order.id} style={{ marginBottom: 10 }}>
-            <PaymentCompleteCard order={order} points={points} charge_balance={chargeBalance} variant="history" />
-          </div>
-        ))}
+        {filtered.map((order) => {
+          const status = String(order.status || '주문접수')
+          return (
+            <div key={order.id} style={{ marginBottom: 10 }}>
+              <PaymentCompleteCard order={order} points={points} charge_balance={chargeBalance} variant="history" />
+              {order._cs ? (
+                <div style={{ marginTop: 8 }}>
+                  <div style={{ fontSize: 10, display: 'inline-block', padding: '3px 8px', borderRadius: 999, background: 'rgba(123,94,167,0.2)', color: '#c4a7e7' }}>
+                    📋 {String(order._cs.type || order._cs.cs_type || 'CS')} {String(order._cs.status || 'pending')}
+                  </div>
+                  <div style={{ marginTop: 5, fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
+                    {(() => {
+                      const s = String(order._cs.status || 'pending')
+                      if (s === 'pending') return '접수 완료 · 검토 중이에요'
+                      if (s === 'approved') return '승인됐어요 · 처리 중이에요'
+                      if (s === 'held') return '추가 확인 중이에요 · 곧 연락드려요'
+                      if (s === 'rejected') return '처리가 어려워요 · 고객센터 문의'
+                      if (s === 'completed') return '처리 완료됐어요 ✅'
+                      return ''
+                    })()}
+                  </div>
+                  {order._cs.pickup_tracking_no || order._cs.pickup_tracking ? (
+                    <div style={{ marginTop: 5, fontSize: 10, color: 'rgba(255,255,255,0.55)' }}>
+                      회수 송장: {String(order._cs.pickup_tracking_no || order._cs.pickup_tracking)} ({String(order._cs.pickup_courier || order._cs.pickup_carrier || '-')})
+                      <button
+                        type="button"
+                        onClick={() => window.open(getTrackingUrl(String(order._cs.pickup_courier || order._cs.pickup_carrier || ''), String(order._cs.pickup_tracking_no || order._cs.pickup_tracking || '')), '_blank', 'noopener,noreferrer')}
+                        style={{ marginLeft: 8, border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '3px 8px', fontSize: 10, cursor: 'pointer' }}
+                      >
+                        배송조회
+                      </button>
+                    </div>
+                  ) : null}
+                  {order._cs.reship_tracking_no || order._cs.reship_tracking ? (
+                    <div style={{ marginTop: 5, fontSize: 10, color: 'rgba(255,255,255,0.55)' }}>
+                      재발송 중: {String(order._cs.reship_tracking_no || order._cs.reship_tracking)} ({String(order._cs.reship_courier || order._cs.reship_carrier || '-')})
+                      <button
+                        type="button"
+                        onClick={() => window.open(getTrackingUrl(String(order._cs.reship_courier || order._cs.reship_carrier || ''), String(order._cs.reship_tracking_no || order._cs.reship_tracking || '')), '_blank', 'noopener,noreferrer')}
+                        style={{ marginLeft: 8, border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '3px 8px', fontSize: 10, cursor: 'pointer' }}
+                      >
+                        배송조회
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+              {status.includes('배송중') && order.tracking_no ? (
+                <button
+                  onClick={() => window.open(getTrackingUrl(String(order.courier || ''), String(order.tracking_no || '')), '_blank', 'noopener,noreferrer')}
+                  style={{ marginTop: 10, width: '100%', border: '1px solid #7B5EA7', color: '#bfa2ec', background: 'transparent', borderRadius: 10, padding: '8px 0', fontSize: 12, cursor: 'pointer' }}
+                >
+                  🚚 배송조회
+                </button>
+              ) : null}
+              {status.includes('배송완료') ? (
+                <div style={{ marginTop: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => void confirmOrder(order.id)}
+                    style={{ width: '100%', border: 'none', background: '#7B5EA7', color: '#fff', borderRadius: 12, padding: 10, fontSize: 12, cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    구매확정하기 💜
+                  </button>
+                  <div style={{ marginTop: 6, fontSize: 10, color: 'rgba(255,255,255,0.4)', whiteSpace: 'pre-line' as const }}>
+                    {`확정하면 토스트 적립돼요 ✨\n${(() => {
+                      const base = new Date(order.delivered_at || order.ordered_at || '').getTime()
+                      const remain = Math.max(0, autoConfirmDays - Math.floor((Date.now() - base) / 86400000))
+                      return `D-${remain}일 후 자동확정`
+                    })()}`}
+                  </div>
+                </div>
+              ) : null}
+              {reviewPromptOrderId === order.id ? (
+                <div style={{ marginTop: 10, background: 'rgba(123,94,167,0.12)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 10, padding: '10px 12px' }}>
+                  <div style={{ fontSize: 11, color: '#c4a7e7', marginBottom: 8 }}>리뷰 작성하면 +50T 추가 적립!</div>
+                  <button type="button" onClick={() => router.push('/my/reviews/new')} style={{ border: 'none', background: '#7B5EA7', color: '#fff', borderRadius: 8, padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}>
+                    리뷰 쓰기
+                  </button>
+                </div>
+              ) : null}
+            </div>
+          )
+        })}
       </div>
       {toast ? (
         <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 24, background: 'rgba(123,94,167,0.95)', color: '#fff', borderRadius: 10, padding: '10px 14px', fontSize: 12, zIndex: 60 }}>
