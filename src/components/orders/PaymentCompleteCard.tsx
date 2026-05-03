@@ -462,7 +462,16 @@ export default function PaymentCompleteCard({
           </div>
           <div className="flex justify-between gap-2">
             <span className="text-white/45">결제수단</span>
-            <span className="text-right text-white/70">{order.payment_method || '—'}</span>
+            <span className="text-right text-white/70">
+              {(() => {
+                const m = String(order.payment_method || '')
+                if (m === '1') return '신용카드'
+                if (m === '2') return '계좌이체'
+                if (m === '3') return '가상계좌'
+                if (m === '4') return '휴대폰'
+                return m || '—'
+              })()}
+            </span>
           </div>
         </div>
 
