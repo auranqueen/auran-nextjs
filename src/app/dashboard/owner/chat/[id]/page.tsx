@@ -96,7 +96,7 @@ export default function OwnerChatRoomPage() {
   >([])
   const [skinLogs, setSkinLogs] = useState<any[]>([])
 
-  const isPC = typeof window !== 'undefined' && window.innerWidth >= 768
+  const [isPC, setIsPC] = useState(false)
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -285,6 +285,10 @@ export default function OwnerChatRoomPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable
   }, [ownerUserId])
+
+  useEffect(() => {
+    setIsPC(window.innerWidth >= 768)
+  }, [])
 
   const sendText = async () => {
     const text = draft.trim()
