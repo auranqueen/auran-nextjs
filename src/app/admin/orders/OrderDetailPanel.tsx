@@ -76,6 +76,22 @@ export default function OrderDetailPanel({ order, open, onClose }: Props) {
         alert(error.message)
         return
       }
+      const { data: msgRow } = await supabase
+        .from('consultation_messages')
+        .select('id')
+        .eq('order_id', order.id)
+        .eq('message_kind', 'order_paid')
+        .maybeSingle()
+
+      if (msgRow?.id) {
+        await supabase
+          .from('consultation_messages')
+          .update({
+            tracking_no: trackingNo.trim(),
+            courier,
+          })
+          .eq('id', msgRow.id)
+      }
       await supabase.from('notifications').insert({
         user_id: order.customer_id,
         type: 'shipping',
