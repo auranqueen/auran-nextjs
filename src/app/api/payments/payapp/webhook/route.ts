@@ -312,7 +312,6 @@ export async function POST(req: NextRequest) {
               payment_method: String(data.pay_type ?? data.paymethod ?? '') || null,
             })
             .eq('id', orderRow.id)
-          // 상담톡 자동 메시지 insert
           if (orderRow?.customer_id) {
             const { data: channelRow } = await supabase
               .from('chat_channels')
@@ -322,7 +321,10 @@ export async function POST(req: NextRequest) {
               .maybeSingle()
 
             if (channelRow?.id) {
-              const productName = orderRow.order_items?.[0]?.product_name ?? '상품'
+              const allProductNames = (orderRow.order_items ?? [])
+                .map((item: any) => item.product_name)
+                .filter(Boolean)
+                .join(' · ')
               const finalAmount = (orderRow as any).final_amount
                 ? `${Number((orderRow as any).final_amount).toLocaleString()}원`
                 : ''
@@ -330,7 +332,7 @@ export async function POST(req: NextRequest) {
                 channel_id: channelRow.id,
                 user_id: orderRow.customer_id,
                 message_kind: 'order_paid',
-                content: `${productName}${finalAmount ? ' · ' + finalAmount : ''}`,
+                content: `${allProductNames}${finalAmount ? ' · ' + finalAmount : ''}`,
                 order_id: orderRow.id,
                 is_from_customer: false,
               })
