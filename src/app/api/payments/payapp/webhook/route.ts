@@ -332,9 +332,9 @@ export async function POST(req: NextRequest) {
                 : ''
               await supabase.from('consultation_messages').insert({
                 channel_id: channelRow.id,
-                user_id: orderRow.customer_id,
+                sender_id: orderRow.customer_id,
                 message_kind: 'order_paid',
-                content: `${allProductNames}${finalAmount ? ' · ' + finalAmount : ''}`,
+                body: `${allProductNames}${finalAmount ? ' · ' + finalAmount : ''}`,
                 order_id: orderRow.id,
                 is_from_customer: false,
               })
