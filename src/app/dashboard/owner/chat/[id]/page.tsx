@@ -96,6 +96,8 @@ export default function OwnerChatRoomPage() {
   >([])
   const [skinLogs, setSkinLogs] = useState<any[]>([])
 
+  const isPC = typeof window !== 'undefined' && window.innerWidth >= 768
+
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
     if (!el) return
@@ -109,7 +111,7 @@ export default function OwnerChatRoomPage() {
   }, [messages, scrollBottom])
 
   useEffect(() => {
-    if (!showHistory || !customerUserId) return
+    if (!customerUserId || (!showHistory && !isPC)) return
     let cancelled = false
     void (async () => {
       const { data } = await supabase
@@ -142,7 +144,7 @@ export default function OwnerChatRoomPage() {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable for this effect
-  }, [showHistory, customerUserId])
+  }, [showHistory, customerUserId, isPC])
 
   useEffect(() => {
     if (!showSkinLog || !customerUserId) return
@@ -588,7 +590,7 @@ export default function OwnerChatRoomPage() {
   }
 
   return (
-    <div style={{ height: '100dvh', overflow: 'hidden', background: BG, color: '#fff', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100dvh', overflow: 'hidden', background: BG, color: '#fff', display: 'flex', flexDirection: isPC ? 'row' : 'column' }}>
       <div
         style={{
           position: 'sticky',
@@ -767,16 +769,29 @@ export default function OwnerChatRoomPage() {
         </div>
       </div>
 
-      {showHistory && customerUserId ? (
+      {(isPC || showHistory) && customerUserId ? (
         <div
-          style={{
-            flexShrink: 0,
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
-            background: 'rgba(0,0,0,0.25)',
-            padding: '10px 16px 12px',
-            maxHeight: 200,
-            overflowY: 'auto',
-          }}
+          style={
+            isPC
+              ? {
+                  width: 280,
+                  flexShrink: 0,
+                  borderLeft: '1px solid rgba(255,255,255,0.08)',
+                  borderBottom: 'none',
+                  background: 'rgba(0,0,0,0.25)',
+                  overflowY: 'auto',
+                  padding: '16px',
+                  maxHeight: '100dvh',
+                }
+              : {
+                  flexShrink: 0,
+                  borderBottom: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(0,0,0,0.25)',
+                  padding: '10px 16px 12px',
+                  maxHeight: 200,
+                  overflowY: 'auto',
+                }
+          }
         >
           <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 8 }}>최근 주문 (10건)</div>
           {historyOrders.length === 0 ? (
@@ -925,7 +940,7 @@ export default function OwnerChatRoomPage() {
         </div>
       ) : null}
 
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 100px' }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 100px', minWidth: 0 }}>
         {messages.map((m) => {
           const mine = !m.is_from_customer
           const isImage = m.message_kind === 'image' && m.image_url
