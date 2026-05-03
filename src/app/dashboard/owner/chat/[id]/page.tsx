@@ -287,7 +287,10 @@ export default function OwnerChatRoomPage() {
   }, [ownerUserId])
 
   useEffect(() => {
-    setIsPC(window.innerWidth >= 768)
+    const handleResize = () => setIsPC(window.innerWidth >= 768)
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [])
 
   const sendText = async () => {
