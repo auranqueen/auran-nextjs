@@ -629,6 +629,25 @@ export default function CustomerChatRoomPage() {
             )
           }
 
+          if (m.message_kind === 'order_paid') {
+            return (
+              <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '12px 0' }}>
+                <div style={{ background: '#EEEDFE', borderRadius: 12, padding: '12px 16px', maxWidth: '80%', textAlign: 'center' }}>
+                  <div style={{ fontSize: 13, color: '#3C3489', fontWeight: 500 }}>💜 주문이 확인됐어요</div>
+                  <div style={{ fontSize: 12, color: '#534AB7', marginTop: 4 }}>
+                    {m.content || '결제가 완료됐어요'}
+                  </div>
+                </div>
+                <div
+                  style={{ fontSize: 12, color: '#7B5EA7', border: '0.5px solid #AFA9EC', borderRadius: 8, padding: '5px 14px', cursor: 'pointer' }}
+                  onClick={() => router.push('/my/orders')}
+                >
+                  주문 상세보기 →
+                </div>
+              </div>
+            )
+          }
+
           if (isCoupon) {
             return (
               <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
