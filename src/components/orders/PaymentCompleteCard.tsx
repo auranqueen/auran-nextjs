@@ -96,7 +96,7 @@ export default function PaymentCompleteCard({
   )
 
   const st = String(statusProp ?? order.status ?? '')
-  const canShowCancelBtn = st === '결제완료' || st === '상품준비중'
+  const canShowCancelBtn = st === '주문확인' || st === '발송준비'
   const canShowReturnBtn = st === '배송완료'
 
   const cancelModal =
