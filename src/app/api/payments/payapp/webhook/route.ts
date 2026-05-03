@@ -227,7 +227,7 @@ export async function POST(req: NextRequest) {
         const { data: orderRow } = await client
           .from('orders')
           .select(
-            'id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,toast_used,gift_receiver_id,gift_message,payment_applied,payment_status,gift_created,user_coupon_id,address,recipient_name,recipient_phone,subtotal,shipping_fee,grade_discount,coupon_discount,order_items(product_name,quantity,product_price)'
+            'id,order_no,customer_id,share_journal_id,purchase_lead_rewarded,point_used,charge_used,toast_used,gift_receiver_id,gift_message,payment_applied,payment_status,gift_created,user_coupon_id,address,recipient_name,recipient_phone,subtotal,shipping_fee,grade_discount,coupon_discount,order_items(product_name,quantity,product_price),final_amount'
           )
           .eq('id', intent.target_id)
           .maybeSingle()
