@@ -43,13 +43,6 @@ function getTrackingUrl(courier: string, trackingNo: string) {
   return `https://www.cjlogistics.com/ko/tool/parcel/tracking?gnbInvcNo=${encodeURIComponent(trackingNo)}`
 }
 
-function getStatusBadge(status: string) {
-  if (status.includes('배송중')) return { bg: 'rgba(80,140,255,0.2)', color: '#8ab0ff' }
-  if (status.includes('완료')) return { bg: 'rgba(100,200,120,0.2)', color: '#88d59a' }
-  if (status.includes('취소') || status.includes('환불')) return { bg: 'rgba(220,100,100,0.2)', color: '#ef9a9a' }
-  return { bg: 'rgba(201,169,110,0.15)', color: GOLD }
-}
-
 export default function MyOrdersPage() {
   const router = useRouter()
   const supabase = createClient()
