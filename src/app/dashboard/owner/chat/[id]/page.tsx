@@ -728,7 +728,7 @@ export default function OwnerChatRoomPage() {
               background: 'rgba(76,173,126,0.15)',
               color: '#b8e6c8',
               fontSize: 11,
-              fontWeight: 700,
+              fontWeight: 500,
               cursor: sending || !customerUserId ? 'default' : 'pointer',
               whiteSpace: 'nowrap',
             }}
@@ -757,7 +757,7 @@ export default function OwnerChatRoomPage() {
               background: 'rgba(76,173,126,0.15)',
               color: '#b8e6c8',
               fontSize: 11,
-              fontWeight: 700,
+              fontWeight: 500,
               cursor: !customerUserId ? 'default' : 'pointer',
               whiteSpace: 'nowrap',
             }}
@@ -1210,7 +1210,7 @@ export default function OwnerChatRoomPage() {
                       cursor: sending ? 'default' : 'pointer',
                     }}
                   >
-                    <div style={{ fontWeight: 600 }}>{c.name}</div>
+                    <div style={{ fontWeight: 500 }}>{c.name}</div>
                     <div style={{ fontSize: 10, color: TEXT_MUTED, marginTop: 4 }}>
                       {c.discount_type === 'percent' ? `${c.discount_value}%` : `${Number(c.discount_value).toLocaleString()}원`}{' '}
                       · 최소 {c.min_order_amount ? `${Number(c.min_order_amount).toLocaleString()}원` : '없음'}
