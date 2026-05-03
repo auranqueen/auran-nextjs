@@ -387,6 +387,24 @@ export default function AdminOrdersPage() {
           return
         }
       }
+      for (const orderId of idList) {
+        const { data: msgRow } = await supabase
+          .from('consultation_messages')
+          .select('id')
+          .eq('order_id', orderId)
+          .eq('message_kind', 'order_paid')
+          .maybeSingle()
+
+        if (msgRow?.id) {
+          await supabase
+            .from('consultation_messages')
+            .update({
+              tracking_no: tracking,
+              courier,
+            })
+            .eq('id', msgRow.id)
+        }
+      }
       const idSet = new Set(idList)
       for (const rid of idList) {
         const ro = rows.find((r) => r.id === rid)
@@ -602,6 +620,22 @@ export default function AdminOrdersPage() {
       if (error) {
         fail++
         continue
+      }
+      const { data: msgRow } = await supabase
+        .from('consultation_messages')
+        .select('id')
+        .eq('order_id', o.id)
+        .eq('message_kind', 'order_paid')
+        .maybeSingle()
+
+      if (msgRow?.id) {
+        await supabase
+          .from('consultation_messages')
+          .update({
+            tracking_no: tracking,
+            courier,
+          })
+          .eq('id', msgRow.id)
       }
       const body =
         `[AURAN] 주문이 발송됐습니다.\n` +
