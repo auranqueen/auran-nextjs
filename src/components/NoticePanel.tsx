@@ -164,7 +164,7 @@ export default function NoticePanel({
                     >
                       {!n.is_read ? <span style={{ position: 'absolute', left: -6, top: 16, width: 6, height: 6, borderRadius: 3, background: '#7B5EA7' }} /> : null}
                       <div style={{ fontSize: 13, color: '#fff', marginBottom: 4 }}>{n.title}</div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>{n.body || ''}</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 4, whiteSpace: 'pre-line' }}>{n.body || ''}</div>
                       <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>{n.created_at ? String(n.created_at).slice(0, 16).replace('T', ' ') : ''}</div>
                     </div>
                   ))

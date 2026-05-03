@@ -372,6 +372,7 @@ export default function NoticeBell({
                                   WebkitBoxOrient: 'vertical',
                                   overflow: 'hidden',
                                   textDecoration: 'none',
+                                  whiteSpace: 'pre-line',
                                 }}
                               >
                                 {n.body}

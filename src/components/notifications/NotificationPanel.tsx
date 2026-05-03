@@ -210,7 +210,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
                       <span style={{ marginLeft: 'auto', fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{'>'}</span>
                     </div>
                     {isPayment && n.body ? (
-                      <div style={{ marginTop: 6, fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>{String(n.body)}</div>
+                      <div style={{ marginTop: 6, fontSize: 12, color: 'rgba(255,255,255,0.55)', whiteSpace: 'pre-line' }}>{String(n.body)}</div>
                     ) : null}
                     {isPayment && n.toast_amount != null && String(n.toast_amount) !== '' ? (
                       <div style={{ marginTop: 4, fontSize: 11, color: '#534AB7' }}>
@@ -330,7 +330,7 @@ export function NotificationPanel({ isOpen, onClose }: NotificationPanelProps) {
             </button>
             <div style={{ fontSize: 72, animation: 'bounceIn 0.5s ease' }}>{iconForType(String(popNotice?.type || '')).icon}</div>
             <div style={{ fontSize: 18, color: '#fff', marginTop: 10, animation: 'slideDown 0.3s ease' }}>{String(popNotice?.title || '')}</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 10, lineHeight: 1.6, animation: 'fadeIn 0.5s ease' }}>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginTop: 10, lineHeight: 1.6, animation: 'fadeIn 0.5s ease', whiteSpace: 'pre-line' }}>
               {String(popNotice?.body || '')}
             </div>
             {popNotice?.link_url ? (

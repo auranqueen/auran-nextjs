@@ -184,7 +184,7 @@ export default function MyNotificationsPage() {
                           </span>
                         </div>
                         {n.body && (
-                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.45, marginBottom: 6, paddingLeft: 24 }}>
+                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.45, marginBottom: 6, paddingLeft: 24, whiteSpace: 'pre-line' }}>
                             {n.body}
                           </div>
                         )}
