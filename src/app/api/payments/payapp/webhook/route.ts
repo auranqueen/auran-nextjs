@@ -253,22 +253,7 @@ export async function POST(req: NextRequest) {
           user_id: intent.user_id,
           type: 'payment',
           title: '💜 주문이 완료됐어요',
-          body: [
-            orderMsg,
-            '',
-            itemList,
-            '',
-            subtotalAmt > 0 ? `상품금액 ₩${subtotalAmt.toLocaleString()}` : '',
-            shippingFeeAmt > 0 ? `배송비 ₩${shippingFeeAmt.toLocaleString()}` : '배송비 무료',
-            gradeDiscountAmt > 0 ? `등급할인 -₩${gradeDiscountAmt.toLocaleString()}` : '',
-            couponDiscountAmt > 0 ? `쿠폰할인 -₩${couponDiscountAmt.toLocaleString()}` : '',
-            toastUsedAmt > 0 ? `🍞 토스트 사용 -${toastUsedAmt}T` : '',
-            chargeUsedAmt > 0 ? `충전금 사용 -₩${chargeUsedAmt.toLocaleString()}` : '',
-            `결제수단 ${payMethodLabel}`,
-            `최종결제 ₩${amount.toLocaleString()}`,
-            '',
-            orderRow?.order_no ? `주문번호 ${orderRow.order_no}` : '',
-          ].filter(Boolean).join('\n'),
+          body: `${orderMsg}\n${itemList} · ${Number(orderRow?.final_amount || 0).toLocaleString()}원`,
           is_read: false,
         })
 
