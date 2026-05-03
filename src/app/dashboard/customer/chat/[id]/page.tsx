@@ -31,6 +31,9 @@ type MsgRow = {
   created_at: string
   coupon_title?: string | null
   coupon_subtitle?: string | null
+  order_id?: string | null
+  tracking_no?: string | null
+  courier?: string | null
 }
 
 type RoutineCardRow = {
