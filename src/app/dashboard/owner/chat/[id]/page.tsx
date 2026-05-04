@@ -124,7 +124,7 @@ export default function OwnerChatRoomPage() {
       const { data } = await supabase
         .from('orders')
         .select(
-          'id,created_at,final_amount,status,order_items(quantity,unit_price,product_name,products(thumbnail_url,name))'
+          'id,created_at,final_amount,status,order_items(quantity,unit_price,product_name)'
         )
         .eq('customer_id', customerUserId)
         .order('created_at', { ascending: false })
