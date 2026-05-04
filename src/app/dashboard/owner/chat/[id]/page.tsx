@@ -1129,7 +1129,43 @@ export default function OwnerChatRoomPage() {
                       {msgText(m)}
                     </div>
                   </div>
-                ) : m.message_kind === 'toast_gift' ? (
+                ) : m.message_kind === 'coupon_gift' ? (() => {
+                  let cp: Record<string, unknown> = {}
+                  try {
+                    cp = JSON.parse(m.message ?? '')
+                  } catch {}
+                  const isShip = !!cp.user_coupon_id
+                  return (
+                    <div
+                      style={{
+                        background: 'rgba(123,94,167,0.15)',
+                        border: '1px solid rgba(123,94,167,0.4)',
+                        borderRadius: 12,
+                        padding: '12px 14px',
+                        minWidth: 180,
+                        maxWidth: 260,
+                      }}
+                    >
+                      <div style={{ fontSize: 11, color: '#C084FC', marginBottom: 4 }}>🎁 쿠폰 발송</div>
+                      <div style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>
+                        {isShip ? '배송비 무료' : String(cp.name ?? '')}
+                      </div>
+                      {!isShip && (
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 3 }}>
+                          {cp.discount_type === 'percent'
+                            ? `${cp.discount_value}% 할인`
+                            : `${Number(cp.discount_value).toLocaleString()}원 할인`}
+                          {cp.min_order_amount ? ` · ${Number(cp.min_order_amount).toLocaleString()}원 이상` : ''}
+                        </div>
+                      )}
+                      {Boolean(cp.expires_at) ? (
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)', marginTop: 6 }}>
+                          ~ {new Date(String(cp.expires_at)).toLocaleDateString('ko-KR')} 까지
+                        </div>
+                      ) : null}
+                    </div>
+                  )
+                })() : m.message_kind === 'toast_gift' ? (
                   <div
                     style={{
                       borderRadius: 12,

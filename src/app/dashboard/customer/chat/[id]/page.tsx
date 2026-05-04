@@ -378,7 +378,7 @@ export default function CustomerChatRoomPage() {
 
         {messages.map((m) => {
           const mine = Boolean(m.is_from_customer)
-          const isCoupon = m.message_kind === 'coupon'
+          const isCoupon = m.message_kind === 'coupon' || m.message_kind === 'coupon_gift'
           const isImage = m.message_kind === 'image' && m.image_url
 
           if (m.message_kind === 'routine_card') {
