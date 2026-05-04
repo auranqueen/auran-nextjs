@@ -1629,7 +1629,16 @@ export default function OwnerChatRoomPage() {
             historyOrders.map((o) => {
               const cd = new Date(o.created_at)
               const dateStr = `${cd.getFullYear()}.${String(cd.getMonth() + 1).padStart(2, '0')}.${String(cd.getDate()).padStart(2, '0')}`
-              const items = Array.isArray(o.items) ? o.items : []
+              const items = (() => {
+                try {
+                  const raw = o.items
+                  if (Array.isArray(raw)) return raw
+                  if (typeof raw === 'string') return JSON.parse(raw)
+                  return []
+                } catch {
+                  return []
+                }
+              })()
               return (
                 <div
                   key={o.id}
