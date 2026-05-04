@@ -88,9 +88,9 @@ export default function OwnerChatRoomPage() {
       status: string | null
       order_items?: {
         quantity: number
-        unit_price: number
         product_name?: string
-        products?: { thumbnail_url?: string; name?: string } | null
+        product_id?: string
+        products?: { storage_thumb_url?: string } | null
       }[]
     }[]
   >([])
@@ -124,7 +124,7 @@ export default function OwnerChatRoomPage() {
       const { data } = await supabase
         .from('orders')
         .select(
-          'id,created_at,final_amount,status,order_items(quantity,product_name)'
+          'id,created_at,final_amount,status,order_items(quantity,product_name,product_id,products(storage_thumb_url))'
         )
         .eq('customer_id', customerUserId)
         .order('created_at', { ascending: false })
@@ -139,9 +139,9 @@ export default function OwnerChatRoomPage() {
               status: string | null
               order_items?: {
                 quantity: number
-                unit_price: number
                 product_name?: string
-                products?: { thumbnail_url?: string; name?: string } | null
+                product_id?: string
+                products?: { storage_thumb_url?: string } | null
               }[]
             }[]) || []
           ).filter((r) => r?.id)
@@ -1609,19 +1609,20 @@ export default function OwnerChatRoomPage() {
                     </span>
                   </div>
                   {items.map((it, idx) => {
-                    const thumb = it.products?.thumbnail_url
-                    const label = it.product_name ?? it.products?.name ?? '상품'
-                    const lineTotal = Number(it.quantity ?? 0) * Number(it.unit_price ?? 0)
+                    const thumb = it.products?.storage_thumb_url
+                    const label = it.product_name ?? '상품'
                     return (
                       <div
                         key={idx}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          gap: 8,
-                          marginTop: idx === 0 ? 0 : 6,
+                          gap: 10,
+                          marginTop: idx === 0 ? 0 : 8,
+                          padding: '6px 0',
+                          borderTop: idx === 0 ? undefined : '1px solid rgba(123,94,167,0.2)',
                           fontSize: 12,
-                          color: 'rgba(255,255,255,0.82)',
+                          color: 'rgba(255,255,255,0.85)',
                         }}
                       >
                         {thumb ? (
@@ -1629,26 +1630,43 @@ export default function OwnerChatRoomPage() {
                           <img
                             src={thumb}
                             alt=""
-                            style={{ width: 24, height: 24, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }}
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 8,
+                              objectFit: 'cover',
+                              flexShrink: 0,
+                              border: '1px solid rgba(123,94,167,0.35)',
+                              background: 'rgba(0,0,0,0.3)',
+                            }}
                           />
                         ) : (
                           <div
                             style={{
-                              width: 24,
-                              height: 24,
-                              borderRadius: 4,
-                              background: 'rgba(255,255,255,0.12)',
+                              width: 40,
+                              height: 40,
+                              borderRadius: 8,
                               flexShrink: 0,
+                              background: 'rgba(255,255,255,0.08)',
+                              border: '1px solid rgba(123,94,167,0.25)',
                             }}
                           />
                         )}
-                        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {label}
-                        </span>
-                        <span style={{ flexShrink: 0, color: 'rgba(255,255,255,0.65)' }}>×{Number(it.quantity ?? 0)}</span>
-                        <span style={{ flexShrink: 0, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
-                          ₩{lineTotal.toLocaleString()}
-                        </span>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div
+                            style={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              lineHeight: 1.35,
+                            }}
+                          >
+                            {label}
+                          </div>
+                          <div style={{ fontSize: 11, color: 'rgba(201,169,110,0.75)', marginTop: 4 }}>
+                            수량 {Number(it.quantity ?? 0)}
+                          </div>
+                        </div>
                       </div>
                     )
                   })}
