@@ -418,7 +418,7 @@ export default function OwnerChatRoomPage() {
   }
 
   const sendOwnerCouponToCustomer = async (coupon: OwnerCouponRow) => {
-    if (!channelId || !ownerUserId || sending) return
+    if (!channelId || !ownerUserId) return
     const uid = await resolveChannelCustomerId()
     if (!uid) return
     setSending(true)
@@ -491,6 +491,7 @@ export default function OwnerChatRoomPage() {
       }
       const row = data as OwnerCouponRow
       setCouponList((prev) => [...prev, row])
+      await sendOwnerCouponToCustomer(row)
       setShowCouponForm(false)
       setCouponName('')
       setDiscountValue('')
@@ -1373,7 +1374,7 @@ export default function OwnerChatRoomPage() {
                     cursor: sending || !couponName.trim() ? 'default' : 'pointer',
                   }}
                 >
-                  만들기
+                  바로 발행하기
                 </button>
               </div>
             ) : null}
