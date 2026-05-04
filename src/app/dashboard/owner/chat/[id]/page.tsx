@@ -723,29 +723,6 @@ export default function OwnerChatRoomPage() {
           </div>
           <button
             type="button"
-            aria-label="구매 히스토리"
-            onClick={() => { setShowSkinLog(false); setShowHistory((v) => !v) }}
-            style={{
-              flexShrink: 0,
-              width: 'auto',
-              height: 28,
-              borderRadius: 8,
-              border: `1px solid rgba(201,169,110,0.45)`,
-              background: 'rgba(201,169,110,0.12)',
-              color: '#e8dff5',
-              fontSize: 13,
-              lineHeight: 1,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '0 10px',
-            }}
-          >
-            <span style={{ fontSize: 11 }}>🛍 구매내역</span>
-          </button>
-          <button
-            type="button"
             aria-label="피부기록"
             onClick={() => { setShowHistory(false); setShowSkinLog((v) => !v) }}
             style={{
