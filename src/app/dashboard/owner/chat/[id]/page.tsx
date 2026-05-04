@@ -482,6 +482,7 @@ export default function OwnerChatRoomPage() {
           min_order_amount: minOrder,
           expires_at,
           is_active: true,
+          code: Math.random().toString(36).slice(2, 10).toUpperCase(),
         } as any)
         .select('id,name,discount_type,discount_value,min_order_amount,expires_at')
         .maybeSingle()
