@@ -1649,63 +1649,70 @@ export default function OwnerChatRoomPage() {
                     }}
                   >
                     <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.82)' }}>{dateStr}</span>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        color: 'rgba(255,255,255,0.6)',
-                        background: 'rgba(255,255,255,0.08)',
-                        padding: '2px 8px',
-                        borderRadius: 4,
-                      }}
-                    >
-                      {String(o.status ?? '—')}
-                    </span>
+                    {(() => {
+                      const s = String(o.status ?? '')
+                      const map: Record<string, { bg: string; color: string }> = {
+                        주문확인: { bg: '#EAF3DE', color: '#3B6D11' },
+                        발송준비: { bg: '#E6F1FB', color: '#185FA5' },
+                        배송중: { bg: '#E6F1FB', color: '#185FA5' },
+                        배송완료: { bg: '#EEEDFE', color: '#534AB7' },
+                        구매확정: { bg: '#EEEDFE', color: '#3C3489' },
+                        취소: { bg: '#FCEBEB', color: '#A32D2D' },
+                        반품요청: { bg: '#FAEEDA', color: '#854F0B' },
+                      }
+                      const c = map[s] || { bg: '#F1EFE8', color: '#5F5E5A' }
+                      return (
+                        <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, fontWeight: 500, background: c.bg, color: c.color }}>
+                          {s || '—'}
+                        </span>
+                      )
+                    })()}
                   </div>
-                  {items.map((it, idx) => {
-                    return (
-                      <div
-                        key={idx}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 10,
-                          marginTop: idx === 0 ? 0 : 8,
-                          padding: '6px 0',
-                          borderTop: idx === 0 ? undefined : '1px solid rgba(123,94,167,0.2)',
-                          fontSize: 12,
-                          color: 'rgba(255,255,255,0.85)',
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: 8,
-                            flexShrink: 0,
-                            background: '#3a3a4a',
-                          }}
-                        />
-                        <div style={{ flex: 1, minWidth: 0 }}>
+                  {items.length > 0
+                    ? (() => {
+                        const it = items[0]
+                        const more = items.length - 1
+                        return (
                           <div
                             style={{
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              lineHeight: 1.35,
+                              display: 'flex',
+                              alignItems: 'flex-start',
+                              gap: 10,
+                              marginTop: 0,
+                              padding: '8px 0 0',
                             }}
                           >
-                            {it.product_name}
+                            <div
+                              style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 8,
+                                flexShrink: 0,
+                                background: '#EEEDFE',
+                              }}
+                            />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div
+                                style={{
+                                  fontSize: 12,
+                                  color: 'rgba(255,255,255,0.9)',
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  lineHeight: 1.35,
+                                }}
+                              >
+                                {it.product_name}
+                              </div>
+                              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>수량 {Number(it.quantity ?? 0)}</div>
+                              {more > 0 ? (
+                                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>외 {more}개 상품</div>
+                              ) : null}
+                            </div>
                           </div>
-                          <div style={{ fontSize: 11, color: 'rgba(201,169,110,0.75)', marginTop: 4 }}>
-                            수량 {Number(it.quantity ?? 0)}
-                          </div>
-                          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
-                            {Number(it.price ?? 0).toLocaleString()}원
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+                        )
+                      })()
+                    : null}
                   <div
                     style={{
                       marginTop: items.length > 0 ? 8 : 0,
