@@ -87,8 +87,10 @@ export default function OwnerChatRoomPage() {
       final_amount: number | null
       status: string | null
       items?: any
+      thumbUrl?: string | null
     }[]
   >([])
+  const [productThumbs, setProductThumbs] = useState<Record<string, string>>({})
   const [skinLogs, setSkinLogs] = useState<any[]>([])
 
   const [isPC, setIsPC] = useState(false)
@@ -136,9 +138,34 @@ export default function OwnerChatRoomPage() {
               final_amount: number | null
               status: string | null
               items?: any
+              thumbUrl?: string | null
             }[]) || []
           ).filter((r) => r?.id)
         )
+      const productIds = (data || [])
+        .flatMap((o: any) => {
+          try {
+            const items = Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]')
+            return items.map((it: any) => it.product_id).filter(Boolean)
+          } catch {
+            return []
+          }
+        })
+        .filter((id: string, i: number, arr: string[]) => arr.indexOf(id) === i)
+
+      if (productIds.length > 0) {
+        const { data: thumbData } = await supabase
+          .from('products')
+          .select('id, storage_thumb_url')
+          .in('id', productIds)
+        if (thumbData) {
+          const map: Record<string, string> = {}
+          thumbData.forEach((p: any) => {
+            if (p.storage_thumb_url) map[p.id] = p.storage_thumb_url
+          })
+          if (!cancelled) setProductThumbs(map)
+        }
+      }
     })()
     return () => {
       cancelled = true
@@ -1679,7 +1706,8 @@ export default function OwnerChatRoomPage() {
                   </div>
                   {items.length > 0
                     ? (() => {
-                        const it = items[0]
+                        const firstItem = items[0]
+                        const thumbUrl = firstItem?.product_id ? productThumbs[firstItem.product_id] : null
                         const more = items.length - 1
                         return (
                           <div
@@ -1691,15 +1719,20 @@ export default function OwnerChatRoomPage() {
                               padding: '8px 0 0',
                             }}
                           >
-                            <div
-                              style={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: 8,
-                                flexShrink: 0,
-                                background: '#EEEDFE',
-                              }}
-                            />
+                            {thumbUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={thumbUrl} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                            ) : (
+                              <div
+                                style={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: 8,
+                                  flexShrink: 0,
+                                  background: '#EEEDFE',
+                                }}
+                              />
+                            )}
                             <div style={{ flex: 1, minWidth: 0 }}>
                               <div
                                 style={{
@@ -1711,9 +1744,9 @@ export default function OwnerChatRoomPage() {
                                   lineHeight: 1.35,
                                 }}
                               >
-                                {it.product_name}
+                                {firstItem.product_name}
                               </div>
-                              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>수량 {Number(it.quantity ?? 0)}</div>
+                              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>수량 {Number(firstItem.quantity ?? 0)}</div>
                               {more > 0 ? (
                                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>외 {more}개 상품</div>
                               ) : null}
