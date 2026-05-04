@@ -318,7 +318,7 @@ export default function OwnerChatRoomPage() {
         void supabase.removeChannel(ch)
       }
     }
-  }, [channelId, router, supabase])
+  }, [channelId, router])
 
   useEffect(() => {
     let cancelled = false
