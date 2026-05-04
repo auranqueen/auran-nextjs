@@ -97,6 +97,8 @@ export default function OwnerChatRoomPage() {
   const [showGradePopup, setShowGradePopup] = useState(false)
   const [customerGrade, setCustomerGrade] = useState<string>('PETAL')
   const [customerTotalPurchase, setCustomerTotalPurchase] = useState<number>(0)
+  const [channels, setChannels] = useState<{ id: string; title: string; preview_text: string; last_message_at: string | null; unread_count: number }[]>([])
+  const [channelsLoading, setChannelsLoading] = useState(true)
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -342,6 +344,21 @@ export default function OwnerChatRoomPage() {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable
+  }, [ownerUserId])
+
+  useEffect(() => {
+    if (!ownerUserId) return
+    supabase
+      .from('chat_channels')
+      .select('id,title,preview_text,last_message_at,unread_count')
+      .eq('channel_type', 'owner')
+      .eq('owner_id', ownerUserId)
+      .order('last_message_at', { ascending: false })
+      .then(({ data }) => {
+        setChannels(data ?? [])
+        setChannelsLoading(false)
+      })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable for this effect
   }, [ownerUserId])
 
   const sendText = async () => {
@@ -651,6 +668,74 @@ export default function OwnerChatRoomPage() {
 
   return (
     <div style={{ height: '100dvh', overflow: 'hidden', background: BG, color: '#fff', display: 'flex', flexDirection: isPC ? 'row' : 'column' }}>
+      {isPC && (
+        <div
+          style={{
+            width: 260,
+            flexShrink: 0,
+            borderRight: '1px solid rgba(255,255,255,0.08)',
+            overflowY: 'auto',
+            background: 'rgba(0,0,0,0.2)',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          <div style={{ padding: '16px 14px 10px', fontSize: 12, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.05em' }}>상담 채널</div>
+          {channelsLoading ? (
+            <div style={{ padding: '20px 14px', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>로딩중...</div>
+          ) : channels.length === 0 ? (
+            <div style={{ padding: '20px 14px', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>채널 없음</div>
+          ) : (
+            channels.map((ch) => {
+              const isActive = ch.id === channelId
+              return (
+                <div
+                  key={ch.id}
+                  onClick={() => router.push('/dashboard/owner/chat/' + ch.id)}
+                  style={{
+                    padding: '11px 14px',
+                    cursor: 'pointer',
+                    background: isActive ? 'rgba(123,94,167,0.25)' : 'transparent',
+                    borderLeft: isActive ? '2px solid #7B5EA7' : '2px solid transparent',
+                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    transition: 'background 0.15s',
+                  }}
+                >
+                  <div style={{ fontSize: 13, color: isActive ? '#fff' : 'rgba(255,255,255,0.75)', marginBottom: 3, fontWeight: 500 }}>
+                    {ch.title || '고객'}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11,
+                      color: 'rgba(255,255,255,0.38)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {ch.preview_text || '메시지 없음'}
+                  </div>
+                  {ch.unread_count > 0 && (
+                    <div
+                      style={{
+                        marginTop: 4,
+                        display: 'inline-block',
+                        background: '#7B5EA7',
+                        borderRadius: 8,
+                        padding: '1px 7px',
+                        fontSize: 10,
+                        color: '#fff',
+                      }}
+                    >
+                      {ch.unread_count}
+                    </div>
+                  )}
+                </div>
+              )
+            })
+          )}
+        </div>
+      )}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
       <div
         style={{
