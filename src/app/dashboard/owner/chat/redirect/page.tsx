@@ -18,8 +18,7 @@ export default function OwnerChatRedirect() {
         .from('chat_channels')
         .select('id')
         .eq('channel_type', 'owner')
-        .eq('owner_id', data.user.id)
-        .order('created_at', { ascending: false })
+        .order('last_message_at', { ascending: false })
         .limit(1)
         .maybeSingle()
         .then(({ data: ch }) => {
