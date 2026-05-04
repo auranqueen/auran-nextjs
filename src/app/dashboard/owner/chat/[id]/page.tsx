@@ -86,12 +86,7 @@ export default function OwnerChatRoomPage() {
       created_at: string
       final_amount: number | null
       status: string | null
-      order_items?: {
-        quantity: number
-        product_name?: string
-        product_id?: string
-        products?: { storage_thumb_url?: string } | null
-      }[]
+      items?: any
     }[]
   >([])
   const [skinLogs, setSkinLogs] = useState<any[]>([])
@@ -124,7 +119,7 @@ export default function OwnerChatRoomPage() {
       const { data } = await supabase
         .from('orders')
         .select(
-          'id,created_at,final_amount,status,order_items(quantity,product_name,product_id,products(storage_thumb_url))'
+          'id,created_at,final_amount,status,items'
         )
         .eq('customer_id', customerUserId)
         .order('created_at', { ascending: false })
@@ -137,12 +132,7 @@ export default function OwnerChatRoomPage() {
               created_at: string
               final_amount: number | null
               status: string | null
-              order_items?: {
-                quantity: number
-                product_name?: string
-                product_id?: string
-                products?: { storage_thumb_url?: string } | null
-              }[]
+              items?: any
             }[]) || []
           ).filter((r) => r?.id)
         )
@@ -1576,7 +1566,7 @@ export default function OwnerChatRoomPage() {
             historyOrders.map((o) => {
               const cd = new Date(o.created_at)
               const dateStr = `${cd.getFullYear()}.${String(cd.getMonth() + 1).padStart(2, '0')}.${String(cd.getDate()).padStart(2, '0')}`
-              const items = o.order_items ?? []
+              const items = Array.isArray(o.items) ? o.items : []
               return (
                 <div
                   key={o.id}
@@ -1609,8 +1599,6 @@ export default function OwnerChatRoomPage() {
                     </span>
                   </div>
                   {items.map((it, idx) => {
-                    const thumb = it.products?.storage_thumb_url
-                    const label = it.product_name ?? '상품'
                     return (
                       <div
                         key={idx}
@@ -1625,33 +1613,15 @@ export default function OwnerChatRoomPage() {
                           color: 'rgba(255,255,255,0.85)',
                         }}
                       >
-                        {thumb ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={thumb}
-                            alt=""
-                            style={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: 8,
-                              objectFit: 'cover',
-                              flexShrink: 0,
-                              border: '1px solid rgba(123,94,167,0.35)',
-                              background: 'rgba(0,0,0,0.3)',
-                            }}
-                          />
-                        ) : (
-                          <div
-                            style={{
-                              width: 40,
-                              height: 40,
-                              borderRadius: 8,
-                              flexShrink: 0,
-                              background: 'rgba(255,255,255,0.08)',
-                              border: '1px solid rgba(123,94,167,0.25)',
-                            }}
-                          />
-                        )}
+                        <div
+                          style={{
+                            width: 40,
+                            height: 40,
+                            borderRadius: 8,
+                            flexShrink: 0,
+                            background: '#3a3a4a',
+                          }}
+                        />
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div
                             style={{
@@ -1661,10 +1631,13 @@ export default function OwnerChatRoomPage() {
                               lineHeight: 1.35,
                             }}
                           >
-                            {label}
+                            {it.product_name}
                           </div>
                           <div style={{ fontSize: 11, color: 'rgba(201,169,110,0.75)', marginTop: 4 }}>
                             수량 {Number(it.quantity ?? 0)}
+                          </div>
+                          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>
+                            {Number(it.price ?? 0).toLocaleString()}원
                           </div>
                         </div>
                       </div>
