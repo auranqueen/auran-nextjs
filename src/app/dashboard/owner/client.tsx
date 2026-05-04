@@ -224,6 +224,25 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
       </div>
 
       <div style={{ padding: '18px 18px 0' }}>
+        <button
+          onClick={() => router.push('/dashboard/owner/chat/redirect')}
+          style={{
+            width: '100%',
+            padding: '16px 18px',
+            marginBottom: 10,
+            background: '#2D1B4E',
+            border: '1px solid rgba(123,94,167,0.5)',
+            borderRadius: 14,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            color: '#C084FC',
+          }}
+        >
+          <span style={{ fontSize: 22 }}>💬</span>
+          <span style={{ fontSize: 15, fontWeight: 500 }}>상담톡</span>
+        </button>
         {/* 오늘 예약 */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>📅 오늘 예약 일정</div>
@@ -249,7 +268,6 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
             { icon: '🏪', label: '스토어', color: 'rgba(149,104,212,0.1)', border: 'rgba(149,104,212,0.3)', tc: '#9568d4', href: '/dashboard/owner/store' },
             { icon: '🖊️', label: '샵 편집', color: 'rgba(76,173,126,0.08)', border: 'rgba(76,173,126,0.25)', tc: '#4cad7e', href: '/dashboard/owner/edit' },
             { icon: '📊', label: '매출 리포트', color: 'rgba(240,160,80,0.08)', border: 'rgba(240,160,80,0.25)', tc: '#f0a050', href: '/dashboard/owner/revenue' },
-            { icon: '💬', label: '상담톡', href: '/dashboard/owner/chat/redirect', color: '#2D1B4E', border: 'rgba(123,94,167,0.4)', tc: '#C084FC' },
             { icon: '💳', label: '구독 관리', color: 'rgba(191,95,144,0.08)', border: 'rgba(191,95,144,0.2)', tc: '#bf5f90', href: '/dashboard/owner/subscription' },
           ].map(m => (
             <button
