@@ -158,13 +158,13 @@ export default function OwnerChatRoomPage() {
       if (productIds.length > 0) {
         const { data: thumbData } = await supabase
           .from('products')
-          .select('id, storage_thumb_url, thumbnail_url')
+          .select('id, storage_thumb_url, thumb_img')
           .in('id', productIds)
         if (thumbData) {
           const map: Record<string, string> = {}
           thumbData.forEach((p: any) => {
             if (p.storage_thumb_url) map[p.id] = p.storage_thumb_url
-            else if (p.thumbnail_url) map[p.id] = p.thumbnail_url
+            else if (p.thumb_img) map[p.id] = p.thumb_img
           })
           if (!cancelled) setProductThumbs(map)
         }
