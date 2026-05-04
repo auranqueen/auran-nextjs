@@ -130,6 +130,7 @@ export default function OwnerChatRoomPage() {
         .order('created_at', { ascending: false })
         .limit(10)
         .eq('payment_applied', true)
+        .eq('payment_status', 'paid')
       if (!cancelled)
         setHistoryOrders(
           (
@@ -157,12 +158,13 @@ export default function OwnerChatRoomPage() {
       if (productIds.length > 0) {
         const { data: thumbData } = await supabase
           .from('products')
-          .select('id, storage_thumb_url')
+          .select('id, storage_thumb_url, thumbnail_url')
           .in('id', productIds)
         if (thumbData) {
           const map: Record<string, string> = {}
           thumbData.forEach((p: any) => {
             if (p.storage_thumb_url) map[p.id] = p.storage_thumb_url
+            else if (p.thumbnail_url) map[p.id] = p.thumbnail_url
           })
           if (!cancelled) setProductThumbs(map)
         }
@@ -191,6 +193,7 @@ export default function OwnerChatRoomPage() {
         .select('final_amount')
         .eq('customer_id', customerUserId)
         .eq('payment_applied', true)
+        .eq('payment_status', 'paid')
       if (!cancelled && orderData) {
         const total = orderData.reduce((sum, o) => sum + (o.final_amount || 0), 0)
         setCustomerTotalPurchase(total)
