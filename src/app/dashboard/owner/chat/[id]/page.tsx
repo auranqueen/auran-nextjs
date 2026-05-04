@@ -129,8 +129,7 @@ export default function OwnerChatRoomPage() {
         .eq('customer_id', customerUserId)
         .order('created_at', { ascending: false })
         .limit(10)
-        .eq('payment_status', 'paid')
-        .neq('status', '취소')
+        .eq('payment_applied', true)
       if (!cancelled)
         setHistoryOrders(
           (
@@ -191,8 +190,7 @@ export default function OwnerChatRoomPage() {
         .from('orders')
         .select('final_amount')
         .eq('customer_id', customerUserId)
-        .eq('payment_status', 'paid')
-        .neq('status', '취소')
+        .eq('payment_applied', true)
       if (!cancelled && orderData) {
         const total = orderData.reduce((sum, o) => sum + (o.final_amount || 0), 0)
         setCustomerTotalPurchase(total)
