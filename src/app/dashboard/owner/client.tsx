@@ -223,6 +223,47 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
         </div>
       </div>
 
+      <div style={{ padding: '18px 18px 0' }}>
+        {/* 오늘 예약 */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>📅 오늘 예약 일정</div>
+          {todayBookings.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '20px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12, color: 'var(--text3)' }}>오늘 예약이 없습니다</div>
+          ) : todayBookings.map(b => (
+            <div key={b.id} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 13px', marginBottom: 7, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text3)' }}>{b.booking_time}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{b.service_name}</div>
+                <div style={{ fontSize: 11, color: 'var(--text3)' }}>₩{(b.service_price || 0).toLocaleString()}</div>
+              </div>
+              <span style={{ fontSize: 10, padding: '3px 9px', borderRadius: 18, background: b.status === '예약확정' ? 'rgba(76,173,126,0.12)' : 'rgba(201,168,76,0.1)', color: b.status === '예약확정' ? '#4cad7e' : 'var(--gold)', border: `1px solid ${b.status === '예약확정' ? 'rgba(76,173,126,0.3)' : 'rgba(201,168,76,0.3)'}`, fontWeight: 600 }}>{b.status}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* 빠른 메뉴 */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
+          {[
+            { icon: '📅', label: '예약 관리', color: 'rgba(191,95,144,0.1)', border: 'rgba(191,95,144,0.3)', tc: '#bf5f90', href: '/dashboard/owner/bookings' },
+            { icon: '👥', label: '고객 관리', color: 'rgba(74,141,192,0.1)', border: 'rgba(74,141,192,0.3)', tc: '#4a8dc0', href: '/dashboard/owner/customers' },
+            { icon: '🏪', label: '스토어', color: 'rgba(149,104,212,0.1)', border: 'rgba(149,104,212,0.3)', tc: '#9568d4', href: '/dashboard/owner/store' },
+            { icon: '🖊️', label: '샵 편집', color: 'rgba(76,173,126,0.08)', border: 'rgba(76,173,126,0.25)', tc: '#4cad7e', href: '/dashboard/owner/edit' },
+            { icon: '📊', label: '매출 리포트', color: 'rgba(240,160,80,0.08)', border: 'rgba(240,160,80,0.25)', tc: '#f0a050', href: '/dashboard/owner/revenue' },
+            { icon: '💬', label: '상담톡', href: '/dashboard/owner/chat/redirect', color: '#2D1B4E', border: 'rgba(123,94,167,0.4)', tc: '#C084FC' },
+            { icon: '💳', label: '구독 관리', color: 'rgba(191,95,144,0.08)', border: 'rgba(191,95,144,0.2)', tc: '#bf5f90', href: '/dashboard/owner/subscription' },
+          ].map(m => (
+            <button
+              key={m.label}
+              type="button"
+              onClick={() => router.push(m.href)}
+              style={{ background: m.color, border: `1px solid ${m.border}`, borderRadius: 13, padding: '13px 12px', textAlign: 'left', cursor: 'pointer' }}
+            >
+              <div style={{ fontSize: 22, marginBottom: 6 }}>{m.icon}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: m.tc }}>{m.label}</div>
+            </button>
+          ))}
+        </div>
+
       {subReady ? (
         <div style={{ margin: '12px 16px 0' }}>
           {!activeSub ? (
@@ -355,47 +396,6 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
           ) : null}
         </div>
       ) : null}
-
-      <div style={{ padding: '18px 18px 0' }}>
-        {/* 오늘 예약 */}
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>📅 오늘 예약 일정</div>
-          {todayBookings.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '20px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12, color: 'var(--text3)' }}>오늘 예약이 없습니다</div>
-          ) : todayBookings.map(b => (
-            <div key={b.id} style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, padding: '12px 13px', marginBottom: 7, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text3)' }}>{b.booking_time}</div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{b.service_name}</div>
-                <div style={{ fontSize: 11, color: 'var(--text3)' }}>₩{(b.service_price || 0).toLocaleString()}</div>
-              </div>
-              <span style={{ fontSize: 10, padding: '3px 9px', borderRadius: 18, background: b.status === '예약확정' ? 'rgba(76,173,126,0.12)' : 'rgba(201,168,76,0.1)', color: b.status === '예약확정' ? '#4cad7e' : 'var(--gold)', border: `1px solid ${b.status === '예약확정' ? 'rgba(76,173,126,0.3)' : 'rgba(201,168,76,0.3)'}`, fontWeight: 600 }}>{b.status}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* 빠른 메뉴 */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
-          {[
-            { icon: '📅', label: '예약 관리', color: 'rgba(191,95,144,0.1)', border: 'rgba(191,95,144,0.3)', tc: '#bf5f90', href: '/dashboard/owner/bookings' },
-            { icon: '👥', label: '고객 관리', color: 'rgba(74,141,192,0.1)', border: 'rgba(74,141,192,0.3)', tc: '#4a8dc0', href: '/dashboard/owner/customers' },
-            { icon: '🏪', label: '스토어', color: 'rgba(149,104,212,0.1)', border: 'rgba(149,104,212,0.3)', tc: '#9568d4', href: '/dashboard/owner/store' },
-            { icon: '🖊️', label: '샵 편집', color: 'rgba(76,173,126,0.08)', border: 'rgba(76,173,126,0.25)', tc: '#4cad7e', href: '/dashboard/owner/edit' },
-            { icon: '📊', label: '매출 리포트', color: 'rgba(240,160,80,0.08)', border: 'rgba(240,160,80,0.25)', tc: '#f0a050', href: '/dashboard/owner/revenue' },
-            { icon: '💬', label: '상담톡', href: '/dashboard/owner/chat', color: '#2D1B4E', border: 'rgba(123,94,167,0.4)', tc: '#C084FC' },
-            { icon: '💳', label: '구독 관리', color: 'rgba(191,95,144,0.08)', border: 'rgba(191,95,144,0.2)', tc: '#bf5f90', href: '/dashboard/owner/subscription' },
-          ].map(m => (
-            <button
-              key={m.label}
-              type="button"
-              onClick={() => router.push(m.href)}
-              style={{ background: m.color, border: `1px solid ${m.border}`, borderRadius: 13, padding: '13px 12px', textAlign: 'left', cursor: 'pointer' }}
-            >
-              <div style={{ fontSize: 22, marginBottom: 6 }}>{m.icon}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: m.tc }}>{m.label}</div>
-            </button>
-          ))}
-        </div>
 
         <div style={{ marginTop: 16, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 13, padding: '13px 15px' }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>📋 고객 CS 현황</div>
