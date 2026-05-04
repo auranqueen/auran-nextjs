@@ -92,6 +92,7 @@ export default function OwnerChatRoomPage() {
   const [skinLogs, setSkinLogs] = useState<any[]>([])
 
   const [isPC, setIsPC] = useState(false)
+  const [showGradePopup, setShowGradePopup] = useState(false)
   const [customerGrade, setCustomerGrade] = useState<string>('PETAL')
   const [customerTotalPurchase, setCustomerTotalPurchase] = useState<number>(0)
 
@@ -665,6 +666,10 @@ export default function OwnerChatRoomPage() {
               }}>
                 {customerGrade}
               </div>
+              <div
+                onClick={() => setShowGradePopup(true)}
+                style={{ width: 16, height: 16, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', flexShrink: 0 }}
+              >?</div>
             </div>
             {(() => {
               const gradeMap: Record<string, { next: string; threshold: number; prev: number }> = {
@@ -695,7 +700,7 @@ export default function OwnerChatRoomPage() {
             onClick={() => { setShowSkinLog(false); setShowHistory((v) => !v) }}
             style={{
               flexShrink: 0,
-              width: 28,
+              width: 'auto',
               height: 28,
               borderRadius: 8,
               border: `1px solid rgba(201,169,110,0.45)`,
@@ -707,9 +712,10 @@ export default function OwnerChatRoomPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              padding: '0 10px',
             }}
           >
-            🛍
+            <span style={{ fontSize: 11 }}>🛍 구매내역</span>
           </button>
           <button
             type="button"
@@ -739,7 +745,7 @@ export default function OwnerChatRoomPage() {
             onClick={() => setMemoOpen(true)}
             style={{
               flexShrink: 0,
-              width: 28,
+              width: 'auto',
               height: 28,
               borderRadius: 8,
               border: `1px solid rgba(123,94,167,0.45)`,
@@ -751,9 +757,39 @@ export default function OwnerChatRoomPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              padding: '0 10px',
             }}
           >
-            📝
+            <span style={{ fontSize: 11 }}>📝 메모</span>
+          </button>
+          <button
+            type="button"
+            disabled={!customerUserId}
+            onClick={() => {
+              void (async () => {
+                if (!customerUserId) return
+                const { error } = await supabase.from('users').update({ renobel_unlocked: true }).eq('id', customerUserId)
+                if (error) {
+                  console.warn('[renobel_unlocked]', error)
+                  return
+                }
+                alert('르노벨이 오픈됐어요 💜')
+              })()
+            }}
+            style={{
+              flexShrink: 0,
+              padding: '6px 10px',
+              borderRadius: 8,
+              border: '1px solid rgba(123,94,167,0.5)',
+              background: 'rgba(76,173,126,0.15)',
+              color: '#b8e6c8',
+              fontSize: 11,
+              fontWeight: 500,
+              cursor: !customerUserId ? 'default' : 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            💜 르노벨 오픈
           </button>
           <button
             type="button"
@@ -787,35 +823,6 @@ export default function OwnerChatRoomPage() {
             }}
           >
             상담 완료
-          </button>
-          <button
-            type="button"
-            disabled={!customerUserId}
-            onClick={() => {
-              void (async () => {
-                if (!customerUserId) return
-                const { error } = await supabase.from('users').update({ renobel_unlocked: true }).eq('id', customerUserId)
-                if (error) {
-                  console.warn('[renobel_unlocked]', error)
-                  return
-                }
-                alert('르노벨이 오픈됐어요 💜')
-              })()
-            }}
-            style={{
-              flexShrink: 0,
-              padding: '6px 10px',
-              borderRadius: 8,
-              border: '1px solid rgba(123,94,167,0.5)',
-              background: 'rgba(76,173,126,0.15)',
-              color: '#b8e6c8',
-              fontSize: 11,
-              fontWeight: 500,
-              cursor: !customerUserId ? 'default' : 'pointer',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            💜 르노벨 오픈
           </button>
         </div>
         <div style={{ fontSize: 11, color: '#e8dff5', border: '1px solid rgba(123,94,167,0.45)', background: 'rgba(123,94,167,0.2)', borderRadius: 999, padding: '4px 10px' }}>
@@ -1715,6 +1722,34 @@ export default function OwnerChatRoomPage() {
           )}
         </div>
       ) : null}
+
+      {showGradePopup && (
+        <div onClick={() => setShowGradePopup(false)} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: '#1a1a2e', borderRadius: 16, overflow: 'hidden', width: '90%', maxWidth: 340, border: '0.5px solid rgba(255,255,255,0.1)' }}>
+            <div style={{ background: '#7B5EA7', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>AURAN 등급 안내</span>
+              <span onClick={() => setShowGradePopup(false)} style={{ fontSize: 14, color: 'rgba(255,255,255,0.7)', cursor: 'pointer' }}>✕</span>
+            </div>
+            {[
+              { grade: 'PETAL', amount: '0원 ~', benefits: '기본 혜택 · 토스트 적립 0%', bg: '#EEEDFE', color: '#534AB7' },
+              { grade: 'BLOOM', amount: '300만원 ~', benefits: '등급 할인 1% · 토스트 적립 0.5% · 충전 보너스 0.2%', bg: '#EAF3DE', color: '#3B6D11' },
+              { grade: 'VELVET', amount: '600만원 ~', benefits: '등급 할인 2% · 토스트 적립 1% · 충전 보너스 0.4%', bg: '#FAEEDA', color: '#854F0B' },
+              { grade: 'LUMIÈRE', amount: '1,200만원 ~', benefits: '등급 할인 3% · 토스트 적립 1.5% · 충전 보너스 0.6%', bg: '#FBEAF0', color: '#993556' },
+              { grade: 'REINE', amount: '2,400만원 ~', benefits: '등급 할인 4% · 토스트 적립 2% · 충전 보너스 0.8%', bg: '#F1EFE8', color: '#5F5E5A' },
+              { grade: 'NOIR', amount: '초대제', benefits: '등급 할인 5% · 토스트 적립 2.5% · 충전 보너스 1.0%', bg: '#2C2C2A', color: '#D3D1C7' },
+              { grade: 'CÉLESTE', amount: '초대제 · 상위 1%', benefits: '등급 할인 6% · 토스트 적립 3% · 충전 보너스 1.2% · VIP 전용 혜택', bg: '#3C3489', color: '#EEEDFE' },
+            ].map((g) => (
+              <div key={g.grade} style={{ padding: '10px 16px', borderBottom: '0.5px solid rgba(255,255,255,0.08)', background: g.grade === customerGrade ? 'rgba(123,94,167,0.2)' : 'transparent', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, fontWeight: 500, background: g.bg, color: g.color, flexShrink: 0, marginTop: 2 }}>{g.grade}{g.grade === customerGrade ? ' ←' : ''}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{g.amount}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.5 }}>{g.benefits}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {memoOpen ? (
         <div
