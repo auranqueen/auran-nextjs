@@ -1141,7 +1141,7 @@ export default function OwnerChatRoomPage() {
                         background: 'rgba(123,94,167,0.15)',
                         border: '1px solid rgba(123,94,167,0.4)',
                         borderRadius: 12,
-                        padding: '12px 14px',
+                        padding: '12px 14px 16px',
                         minWidth: 180,
                         maxWidth: 260,
                       }}
