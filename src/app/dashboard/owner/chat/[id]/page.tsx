@@ -92,6 +92,8 @@ export default function OwnerChatRoomPage() {
   const [skinLogs, setSkinLogs] = useState<any[]>([])
 
   const [isPC, setIsPC] = useState(false)
+  const [customerGrade, setCustomerGrade] = useState<string>('PETAL')
+  const [customerTotalPurchase, setCustomerTotalPurchase] = useState<number>(0)
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -141,6 +143,34 @@ export default function OwnerChatRoomPage() {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable for this effect
+  }, [customerUserId])
+
+  useEffect(() => {
+    if (!customerUserId) return
+    let cancelled = false
+    void (async () => {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('customer_grade')
+        .eq('id', customerUserId)
+        .maybeSingle()
+      if (!cancelled && userData?.customer_grade) {
+        setCustomerGrade(userData.customer_grade)
+      }
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('final_amount')
+        .eq('customer_id', customerUserId)
+        .eq('payment_status', 'paid')
+        .neq('status', '취소')
+      if (!cancelled && orderData) {
+        const total = orderData.reduce((sum, o) => sum + (o.final_amount || 0), 0)
+        setCustomerTotalPurchase(total)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [customerUserId])
 
   useEffect(() => {
@@ -623,17 +653,41 @@ export default function OwnerChatRoomPage() {
           >
             ‹
           </button>
-          <div
-            style={{
-              fontFamily: "'Noto Serif KR', serif",
-              fontSize: 16,
-              color: '#fff',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {channelTitle}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 16, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {channelTitle}
+              </div>
+              <div style={{
+                fontSize: 10, fontWeight: 500, padding: '2px 8px', borderRadius: 20,
+                background: customerGrade === 'CÉLESTE' ? '#3C3489' : customerGrade === 'NOIR' ? '#2C2C2A' : customerGrade === 'REINE' ? '#F1EFE8' : customerGrade === 'LUMIÈRE' ? '#FBEAF0' : customerGrade === 'VELVET' ? '#FAEEDA' : customerGrade === 'BLOOM' ? '#EAF3DE' : '#EEEDFE',
+                color: customerGrade === 'CÉLESTE' ? '#EEEDFE' : customerGrade === 'NOIR' ? '#D3D1C7' : customerGrade === 'REINE' ? '#5F5E5A' : customerGrade === 'LUMIÈRE' ? '#993556' : customerGrade === 'VELVET' ? '#854F0B' : customerGrade === 'BLOOM' ? '#3B6D11' : '#534AB7',
+              }}>
+                {customerGrade}
+              </div>
+            </div>
+            {(() => {
+              const gradeMap: Record<string, { next: string; threshold: number; prev: number }> = {
+                PETAL: { next: 'BLOOM', threshold: 3000000, prev: 0 },
+                BLOOM: { next: 'VELVET', threshold: 6000000, prev: 3000000 },
+                VELVET: { next: 'LUMIÈRE', threshold: 12000000, prev: 6000000 },
+                LUMIÈRE: { next: 'REINE', threshold: 24000000, prev: 12000000 },
+              }
+              const info = gradeMap[customerGrade]
+              if (!info) return null
+              const remaining = Math.max(0, info.threshold - customerTotalPurchase)
+              const progress = Math.min(100, ((customerTotalPurchase - info.prev) / (info.threshold - info.prev)) * 100)
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>
+                    {info.next}까지 {remaining.toLocaleString()}원
+                  </div>
+                  <div style={{ height: 3, background: 'rgba(255,255,255,0.2)', borderRadius: 2, width: 120, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${progress}%`, background: '#AFA9EC', borderRadius: 2 }} />
+                  </div>
+                </div>
+              )
+            })()}
           </div>
           <button
             type="button"
