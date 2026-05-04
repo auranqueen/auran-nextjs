@@ -289,6 +289,17 @@ export default function OwnerChatRoomPage() {
               if (prev.some((p) => p.id === row.id)) return prev
               return [...prev, row]
             })
+            setChannels((prev) => {
+              const idx = prev.findIndex((c) => c.id === channelId)
+              if (idx < 0) return prev
+              const updated = {
+                ...prev[idx],
+                preview_text: msgText(row) || (row.image_url ? '이미지' : ''),
+                last_message_at: row.created_at ?? null,
+              }
+              const rest = prev.filter((_, i) => i !== idx)
+              return [updated, ...rest]
+            })
           }
         )
         .subscribe()
