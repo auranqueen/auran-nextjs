@@ -129,6 +129,8 @@ export default function OwnerChatRoomPage() {
         .eq('customer_id', customerUserId)
         .order('created_at', { ascending: false })
         .limit(10)
+        .eq('payment_status', 'paid')
+        .neq('status', '취소')
       if (!cancelled)
         setHistoryOrders(
           (
@@ -1698,7 +1700,11 @@ export default function OwnerChatRoomPage() {
                           >
                             {thumbUrl ? (
                               // eslint-disable-next-line @next/next/no-img-element
-                              <img src={thumbUrl} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
+                              <img
+                                src={thumbUrl}
+                                alt=""
+                                style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', display: 'block' }}
+                              />
                             ) : (
                               <div
                                 style={{
