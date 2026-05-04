@@ -364,7 +364,6 @@ export default function OwnerChatRoomPage() {
       .select('id,title,preview_text,last_message_at,unread_count')
       .eq('channel_type', 'owner')
       .eq('owner_id', ownerUserId)
-      .not('last_message_at', 'is', null)
       .order('last_message_at', { ascending: false })
       .then(({ data }) => {
         setChannels(data ?? [])
