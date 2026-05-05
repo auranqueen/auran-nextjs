@@ -1001,7 +1001,7 @@ export default function OwnerChatRoomPage() {
                   maxWidth: '85%',
                   borderRadius: mine ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
                   padding:
-                    m.message_kind === 'product_recommend' || m.message_kind === 'routine_card' ? 8 : '10px 12px',
+                    m.message_kind === 'product_recommend' || m.message_kind === 'routine_card' ? '8px 8px 14px' : '10px 12px 16px',
                   background: mine ? 'rgba(123,94,167,0.45)' : 'rgba(201,169,110,0.15)',
                   border: mine ? 'none' : '1px solid rgba(201,169,110,0.3)',
                 }}
