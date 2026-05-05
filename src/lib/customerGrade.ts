@@ -1,9 +1,11 @@
 export const CUSTOMER_GRADES = [
-  { value: 'welcome', label: '웰컴' },
-  { value: 'silver', label: '실버' },
-  { value: 'gold', label: '골드' },
-  { value: 'vip', label: 'VIP' },
-  { value: 'influencer', label: '인플루언서' },
+  { value: 'PETAL', label: 'PETAL' },
+  { value: 'BLOOM', label: 'BLOOM' },
+  { value: 'VELVET', label: 'VELVET' },
+  { value: 'LUMIÈRE', label: 'LUMIÈRE' },
+  { value: 'REINE', label: 'REINE' },
+  { value: 'NOIR', label: 'NOIR' },
+  { value: 'CÉLESTE', label: 'CÉLESTE' },
 ] as const
 
 /** 어드민 타겟 발급 UI용 (DB customer_grade 값과 동일) */
