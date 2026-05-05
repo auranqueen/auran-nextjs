@@ -55,6 +55,18 @@ export async function POST(req: NextRequest) {
   const checkKey = decodeURIComponent(data.linkkey?.trim() ?? '') === linkkey
   const checkVal = decodeURIComponent(data.linkval?.trim() ?? '') === linkval
   if (!checkUser || !checkKey || !checkVal) {
+    console.log('[webhook verify]', {
+      checkUser,
+      checkKey,
+      checkVal,
+      dataUserid: data.userid,
+      dataLinkkey: data.linkkey?.trim(),
+      dataLinkkeyDecoded: decodeURIComponent(data.linkkey?.trim() ?? ''),
+      envLinkkey: linkkey,
+      dataLinkval: data.linkval?.trim(),
+      dataLinkvalDecoded: decodeURIComponent(data.linkval?.trim() ?? ''),
+      envLinkval: linkval,
+    })
     // IMPORTANT: return SUCCESS to stop retries, but do not process
     return new NextResponse('SUCCESS', { status: 200 })
   }
