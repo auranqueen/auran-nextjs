@@ -147,7 +147,7 @@ export default function CheckoutPageView({
   onPayBankTransfer,
 }: Props) {
   const supabase = createClient()
-  const remBalAfterToast = Math.max(0, balance - toastUsed)
+  const remBalAfterToast = Math.max(0, balance)
   const oranCapLocal = Math.min(remBalAfterToast, Math.max(0, afterCoupon - toastUsed))
   const toastTBalance = points + Math.floor(balance / Math.max(1, toastRate))
   const toastHalfLocal = Math.min(
