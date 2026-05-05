@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
 
   const { data: row, error: findErr } = await svc
     .from('users')
-    .select('id,role')
+    .select('id,role,auth_id')
     .eq('id', user_id)
     .maybeSingle()
 
@@ -63,6 +63,8 @@ export async function POST(req: NextRequest) {
 
   const { error: upErr } = await svc.from('users').update({ customer_grade } as any).eq('id', user_id)
   if (upErr) return json({ ok: false, error: upErr.message }, 500)
+
+  await svc.from('profiles').update({ grade: customer_grade }).eq('auth_id', (row as any).auth_id)
 
   return json({ ok: true })
 }
