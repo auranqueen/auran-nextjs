@@ -199,7 +199,13 @@ export default function CustomerChatRoomPage() {
         is_from_customer: true,
         message_kind: 'text',
       } as any)
-      if (!error) setDraft('')
+      if (!error) {
+        supabase.from('chat_channels').update({
+          last_message_at: new Date().toISOString(),
+          preview_text: draft.trim(),
+        }).eq('id', channelId)
+        setDraft('')
+      }
     } finally {
       setSending(false)
     }
@@ -216,6 +222,10 @@ export default function CustomerChatRoomPage() {
         is_from_customer: true,
         message_kind: 'text',
       } as any)
+      supabase.from('chat_channels').update({
+        last_message_at: new Date().toISOString(),
+        preview_text: text,
+      }).eq('id', channelId)
     } finally {
       setSending(false)
     }
@@ -242,6 +252,10 @@ export default function CustomerChatRoomPage() {
         is_from_customer: true,
         message_kind: 'image',
       } as any)
+      supabase.from('chat_channels').update({
+        last_message_at: new Date().toISOString(),
+        preview_text: '이미지',
+      }).eq('id', channelId)
     } finally {
       setSending(false)
     }
