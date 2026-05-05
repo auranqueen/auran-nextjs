@@ -80,6 +80,19 @@ export default function CustomerChatRoomPage() {
   const [routineCards, setRoutineCards] = useState<RoutineCardRow[]>([])
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
+  const [slideOpen, setSlideOpen] = useState(false)
+  const [profileInfo, setProfileInfo] = useState<{
+    username: string
+    avatar_url: string | null
+    grade: string
+    total_purchase: number
+    hormone_phase: string | null
+    hormone_label: string | null
+  } | null>(null)
+  const [recommendedProducts, setRecommendedProducts] = useState<{
+    product_name: string
+    created_at: string
+  }[]>([])
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -92,6 +105,63 @@ export default function CustomerChatRoomPage() {
   useEffect(() => {
     scrollBottom()
   }, [messages, routineCards, scrollBottom])
+
+  useEffect(() => {
+    if (!internalUserId) return
+    const load = async () => {
+      const { data: userRow } = await supabase
+        .from('users')
+        .select('auth_id,total_purchase_amount,points')
+        .eq('id', internalUserId)
+        .maybeSingle()
+      if (!userRow) return
+      const authId = userRow.auth_id
+      const [profileRes, cycleRes, recRes] = await Promise.all([
+        supabase.from('profiles').select('username,avatar_url,grade').eq('auth_id', authId).maybeSingle(),
+        supabase
+          .from('skin_cycle_daily')
+          .select('hormone_phase')
+          .eq('auth_id', authId)
+          .order('date', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('consultation_messages')
+          .select('message,created_at')
+          .eq('channel_id', channelId)
+          .eq('message_kind', 'product_recommend')
+          .order('created_at', { ascending: false })
+          .limit(3),
+      ])
+      const phaseMap: Record<string, string> = {
+        menstrual: '달빛기',
+        follicular: '황금기',
+        ovulation: '만개기',
+        luteal: '물들기',
+      }
+      const phase = cycleRes.data?.hormone_phase ?? null
+      setProfileInfo({
+        username: profileRes.data?.username ?? '고객',
+        avatar_url: profileRes.data?.avatar_url ?? null,
+        grade: profileRes.data?.grade ?? 'PETAL',
+        total_purchase: userRow.total_purchase_amount ?? 0,
+        hormone_phase: phase,
+        hormone_label: phase ? (phaseMap[phase] ?? phase) : null,
+      })
+      if (recRes.data) {
+        const parsed = recRes.data.map((m: any) => {
+          try {
+            const p = JSON.parse(m.message ?? '{}')
+            return { product_name: p.name ?? '추천 제품', created_at: m.created_at }
+          } catch {
+            return { product_name: '추천 제품', created_at: m.created_at }
+          }
+        })
+        setRecommendedProducts(parsed)
+      }
+    }
+    void load()
+  }, [internalUserId, channelId])
 
   useEffect(() => {
     if (!channelId) {
@@ -366,6 +436,21 @@ export default function CustomerChatRoomPage() {
             {channelTitle}
           </div>
         </div>
+        <button
+          onClick={() => setSlideOpen((v) => !v)}
+          style={{
+            fontSize: 11,
+            color: '#C084FC',
+            background: slideOpen ? 'rgba(123,94,167,0.35)' : 'rgba(123,94,167,0.15)',
+            border: 'none',
+            borderRadius: 12,
+            padding: '4px 10px',
+            cursor: 'pointer',
+            flexShrink: 0,
+          }}
+        >
+          내 정보
+        </button>
       </div>
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 100px' }}>
@@ -747,6 +832,185 @@ export default function CustomerChatRoomPage() {
             </div>
           )
         })}
+      </div>
+
+      {slideOpen && (
+        <div
+          onClick={() => setSlideOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40 }}
+        />
+      )}
+      <div
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          transform: slideOpen ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 0.3s ease',
+          background: '#16162a',
+          borderRadius: '16px 16px 0 0',
+          padding: '10px 16px 32px',
+          zIndex: 50,
+          maxHeight: '70vh',
+          overflowY: 'auto',
+        }}
+      >
+        <div
+          style={{
+            width: 28,
+            height: 3,
+            background: 'rgba(255,255,255,0.2)',
+            borderRadius: 2,
+            margin: '0 auto 14px',
+          }}
+        />
+        {profileInfo ? (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              {profileInfo.avatar_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={profileInfo.avatar_url}
+                  alt=""
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '2px solid rgba(192,132,252,0.3)',
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    background: '#7B5EA7',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 18,
+                    color: '#fff',
+                    border: '2px solid rgba(192,132,252,0.3)',
+                  }}
+                >
+                  {profileInfo.username.slice(0, 1)}
+                </div>
+              )}
+              <div>
+                <div style={{ fontSize: 14, color: '#fff', fontWeight: 500 }}>{profileInfo.username}님</div>
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: '#C084FC',
+                    background: 'rgba(192,132,252,0.15)',
+                    padding: '2px 7px',
+                    borderRadius: 8,
+                  }}
+                >
+                  ✦ {profileInfo.grade}
+                </span>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
+                  누적 {profileInfo.total_purchase.toLocaleString()}원
+                </div>
+              </div>
+            </div>
+            {(() => {
+              const gradeOrder = ['PETAL', 'BLOOM', 'VELVET', 'LUMIÈRE', 'REINE', 'NOIR', 'CÉLESTE']
+              const threshold = [0, 300000, 1000000, 3000000, 6000000, 10000000, 20000000]
+              const gi = gradeOrder.indexOf(profileInfo.grade)
+              const nextG = gi >= 0 && gi < gradeOrder.length - 1 ? gradeOrder[gi + 1] : null
+              const curBase = gi >= 0 ? threshold[gi] : 0
+              const nextBase =
+                gi >= 0 && gi < threshold.length - 1 ? threshold[gi + 1] : threshold[threshold.length - 1]
+              const remain = nextG ? Math.max(0, nextBase - profileInfo.total_purchase) : 0
+              const prog = nextG
+                ? Math.max(
+                    0,
+                    Math.min(100, ((profileInfo.total_purchase - curBase) / Math.max(1, nextBase - curBase)) * 100)
+                  )
+                : 100
+              return nextG ? (
+                <div
+                  style={{
+                    background: 'rgba(255,255,255,0.04)',
+                    borderRadius: 10,
+                    padding: '10px 12px',
+                    marginBottom: 8,
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>다음 등급 {nextG}</span>
+                    <span style={{ fontSize: 10, color: '#C084FC' }}>{remain.toLocaleString()}원 남음</span>
+                  </div>
+                  <div
+                    style={{
+                      height: 5,
+                      background: 'rgba(255,255,255,0.08)',
+                      borderRadius: 3,
+                      overflow: 'hidden',
+                      marginBottom: 4,
+                    }}
+                  >
+                    <div style={{ width: `${prog}%`, height: '100%', background: '#7B5EA7', borderRadius: 3 }} />
+                  </div>
+                </div>
+              ) : null
+            })()}
+            {profileInfo.hormone_label && (
+              <div
+                style={{
+                  background: 'rgba(255,255,255,0.04)',
+                  borderRadius: 10,
+                  padding: '10px 12px',
+                  marginBottom: 8,
+                }}
+              >
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>
+                  오늘의 피부 - {profileInfo.hormone_label}
+                </div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
+                  {profileInfo.hormone_phase === 'menstrual' && '피지 줄고 피부 얇아지는 시기예요. 보습 집중 케어 타이밍!'}
+                  {profileInfo.hormone_phase === 'follicular' && '피부 컨디션 최고조! 영양 집중 케어 하기 좋은 시기예요.'}
+                  {profileInfo.hormone_phase === 'ovulation' && '피부 화사하고 탄력 있는 시기예요. 수분 유지가 중요해요.'}
+                  {profileInfo.hormone_phase === 'luteal' && '피지 분비 늘고 트러블 주의. 진정 케어에 집중하세요.'}
+                </div>
+              </div>
+            )}
+            {recommendedProducts.length > 0 && (
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 12px' }}>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>원장님 추천 제품</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {recommendedProducts.map((p, i) => (
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: 6,
+                          background: 'rgba(123,94,167,0.2)',
+                          flexShrink: 0,
+                        }}
+                      />
+                      <div>
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>{p.product_name}</div>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>
+                          {new Date(p.created_at).toLocaleDateString('ko-KR')} 추천
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div style={{ padding: '20px 0', textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>
+            로딩중...
+          </div>
+        )}
       </div>
 
       <div
