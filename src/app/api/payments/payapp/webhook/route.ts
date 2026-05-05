@@ -177,10 +177,9 @@ export async function POST(req: NextRequest) {
         const pointsToAdd = basePointsToAdd + extraPointsToAdd
 
         const nextBalance = Number(u?.charge_balance || 0) + amount
-        const nextPoints = Number(u?.points || 0)
         const { error: chargeUserUpdateErr } = await client
           .from('users')
-          .update({ charge_balance: nextBalance, points: nextPoints })
+          .update({ charge_balance: nextBalance })
           .eq('id', intent.user_id)
         if (!chargeUserUpdateErr) {
           try {
@@ -198,9 +197,10 @@ export async function POST(req: NextRequest) {
               if (uRowErr) {
                 console.warn('[charge toast uRow]', uRowErr)
               } else if (uRow) {
+                const { data: freshUser } = await client.from('users').select('points').eq('id', intent.user_id).maybeSingle()
                 const { error: ptErr } = await client
                   .from('users')
-                  .update({ points: (Number(uRow.points) || 0) + chargeToast })
+                  .update({ points: (Number(freshUser?.points) || 0) + chargeToast })
                   .eq('id', intent.user_id)
                 if (ptErr) console.warn('[charge toast points]', ptErr)
               }
