@@ -176,12 +176,7 @@ export async function POST(req: NextRequest) {
         const extraPointsToAdd = u?.star_level && u.star_level >= 2 ? Math.floor(amount * (bonusRatePct / 100)) : 0
         const pointsToAdd = basePointsToAdd + extraPointsToAdd
 
-        const { data: freshBalance } = await client.from('users').select('charge_balance').eq('id', intent.user_id).maybeSingle()
-        const nextBalance = (Number(freshBalance?.charge_balance) || 0) + amount
-        const { error: chargeUserUpdateErr } = await client
-          .from('users')
-          .update({ charge_balance: nextBalance })
-          .eq('id', intent.user_id)
+        const { error: chargeUserUpdateErr } = await client.rpc('increment_charge_balance', { user_id: intent.user_id, amount: amount })
         if (!chargeUserUpdateErr) {
           try {
             const payType = String(data.pay_type ?? data.paymethod ?? '')
@@ -190,21 +185,8 @@ export async function POST(req: NextRequest) {
             const chargeToast = Math.floor(amount * chargeRate)
 
             if (chargeToast > 0) {
-              const { data: uRow, error: uRowErr } = await client
-                .from('users')
-                .select('points')
-                .eq('id', intent.user_id)
-                .maybeSingle()
-              if (uRowErr) {
-                console.warn('[charge toast uRow]', uRowErr)
-              } else if (uRow) {
-                const { data: freshUser } = await client.from('users').select('points').eq('id', intent.user_id).maybeSingle()
-                const { error: ptErr } = await client
-                  .from('users')
-                  .update({ points: (Number(freshUser?.points) || 0) + chargeToast })
-                  .eq('id', intent.user_id)
-                if (ptErr) console.warn('[charge toast points]', ptErr)
-              }
+              const { error: ptErr } = await client.rpc('increment_points', { user_id: intent.user_id, amount: chargeToast })
+              if (ptErr) console.warn('[charge toast points]', ptErr)
 
               const { error: ttErr } = await client.from('toast_transactions').insert({
                 user_id: intent.user_id,
