@@ -176,7 +176,8 @@ export async function POST(req: NextRequest) {
         const extraPointsToAdd = u?.star_level && u.star_level >= 2 ? Math.floor(amount * (bonusRatePct / 100)) : 0
         const pointsToAdd = basePointsToAdd + extraPointsToAdd
 
-        const nextBalance = Number(u?.charge_balance || 0) + amount
+        const { data: freshBalance } = await client.from('users').select('charge_balance').eq('id', intent.user_id).maybeSingle()
+        const nextBalance = (Number(freshBalance?.charge_balance) || 0) + amount
         const { error: chargeUserUpdateErr } = await client
           .from('users')
           .update({ charge_balance: nextBalance })
