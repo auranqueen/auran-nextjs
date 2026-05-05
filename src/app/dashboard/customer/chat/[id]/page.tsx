@@ -119,10 +119,10 @@ export default function CustomerChatRoomPage() {
       const [profileRes, cycleRes, recRes] = await Promise.all([
         supabase.from('profiles').select('username,avatar_url,grade').eq('auth_id', authId).maybeSingle(),
         supabase
-          .from('skin_cycle_daily')
-          .select('hormone_phase')
+          .from('skin_cycle_analysis')
+          .select('hormone_stage')
           .eq('auth_id', authId)
-          .order('date', { ascending: false })
+          .order('analysis_date', { ascending: false })
           .limit(1)
           .maybeSingle(),
         supabase
@@ -139,7 +139,7 @@ export default function CustomerChatRoomPage() {
         ovulation: '만개기',
         luteal: '물들기',
       }
-      const phase = cycleRes.data?.hormone_phase ?? null
+      const phase = cycleRes.data?.hormone_stage ?? null
       setProfileInfo({
         username: profileRes.data?.username ?? '고객',
         avatar_url: profileRes.data?.avatar_url ?? null,
