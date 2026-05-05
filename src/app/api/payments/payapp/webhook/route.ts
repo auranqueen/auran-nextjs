@@ -52,8 +52,8 @@ export async function POST(req: NextRequest) {
   const linkval = mustEnv('PAYAPP_LINKVAL')
 
   const checkUser = data.userid === userid
-  const checkKey = data.linkkey?.trim() === linkkey
-  const checkVal = data.linkval?.trim() === linkval
+  const checkKey = decodeURIComponent(data.linkkey?.trim() ?? '') === linkkey
+  const checkVal = decodeURIComponent(data.linkval?.trim() ?? '') === linkval
   if (!checkUser || !checkKey || !checkVal) {
     // IMPORTANT: return SUCCESS to stop retries, but do not process
     return new NextResponse('SUCCESS', { status: 200 })
