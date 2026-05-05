@@ -165,7 +165,7 @@ export async function POST(req: NextRequest) {
         const pointsToAdd = basePointsToAdd + extraPointsToAdd
 
         const nextBalance = Number(u?.charge_balance || 0) + amount
-        const nextPoints = Number(u?.points || 0) + pointsToAdd
+        const nextPoints = Number(u?.points || 0)
         const { error: chargeUserUpdateErr } = await client
           .from('users')
           .update({ charge_balance: nextBalance, points: nextPoints })
