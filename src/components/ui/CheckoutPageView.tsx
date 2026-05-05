@@ -433,20 +433,22 @@ export default function CheckoutPageView({
                         <span>보유 토스트</span>
                         <span style={{ color: 'rgba(255,255,255,0.85)' }}>{toastTBalance.toLocaleString()}T</span>
                       </div>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          padding: '4px 0',
-                          borderBottom: '0.5px solid rgba(255,255,255,0.06)',
-                          color: 'rgba(255,255,255,0.6)',
-                        }}
-                      >
-                        <span>사용 한도 (보유의 50%)</span>
-                        <span style={{ color: 'rgba(255,255,255,0.85)' }}>
-                          {Math.floor(toastTBalance * 0.5).toLocaleString()}T
-                        </span>
-                      </div>
+                      {!['LUMIÈRE', 'REINE', 'NOIR', 'CÉLESTE'].includes(gradeName) ? (
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            padding: '4px 0',
+                            borderBottom: '0.5px solid rgba(255,255,255,0.06)',
+                            color: 'rgba(255,255,255,0.6)',
+                          }}
+                        >
+                          <span>사용 한도 (보유의 50%)</span>
+                          <span style={{ color: 'rgba(255,255,255,0.85)' }}>
+                            {Math.floor(toastTBalance * 0.5).toLocaleString()}T
+                          </span>
+                        </div>
+                      ) : null}
                       <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', color: 'rgba(255,200,80,0.9)' }}>
                         <span>실제 사용</span>
                         <span>{toastUsed.toLocaleString()}T</span>
