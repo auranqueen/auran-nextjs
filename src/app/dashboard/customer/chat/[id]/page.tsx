@@ -115,6 +115,12 @@ export default function CustomerChatRoomPage() {
         .eq('id', internalUserId)
         .maybeSingle()
       if (!userRow) return
+      const { data: orderSum } = await supabase
+        .from('orders')
+        .select('final_amount')
+        .eq('customer_id', internalUserId)
+        .in('status', ['paid', 'delivered', 'shipping', '주문확인', '배송중', '완료'])
+      const totalPurchase = (orderSum ?? []).reduce((acc: number, o: any) => acc + (Number(o.final_amount) || 0), 0)
       const authId = userRow.auth_id
       const [profileRes, cycleRes, recRes] = await Promise.all([
         supabase.from('profiles').select('username,avatar_url,grade').eq('auth_id', authId).maybeSingle(),
@@ -144,15 +150,16 @@ export default function CustomerChatRoomPage() {
         username: profileRes.data?.username ?? '고객',
         avatar_url: profileRes.data?.avatar_url ?? null,
         grade: profileRes.data?.grade ?? 'PETAL',
-        total_purchase: userRow.total_orders ?? 0,
+        total_purchase: totalPurchase,
         hormone_phase: phase,
         hormone_label: phase ? (phaseMap[phase] ?? phase) : null,
       })
       if (recRes.data) {
         const parsed = recRes.data.map((m: any) => {
           try {
-            const p = JSON.parse(m.message ?? '{}')
-            return { product_name: p.name ?? '추천 제품', created_at: m.created_at }
+            const arr = JSON.parse(m.message ?? '[]')
+            const first = Array.isArray(arr) ? arr[0] : arr
+            return { product_name: first?.name ?? '추천 제품', created_at: m.created_at }
           } catch {
             return { product_name: '추천 제품', created_at: m.created_at }
           }
