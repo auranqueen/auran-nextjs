@@ -38,6 +38,7 @@ export default function AdminMembersPage() {
   const [pointSaving, setPointSaving] = useState(false)
   const [approving, setApproving] = useState(false)
   const [gradeEdit, setGradeEdit] = useState('')
+  const [gradeSaved, setGradeSaved] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
 
   useEffect(() => {
@@ -169,6 +170,7 @@ export default function AdminMembersPage() {
     setPointAmount('')
     setPointReason('관리자 수동 지급')
     setGradeEdit('')
+    setGradeSaved(false)
   }
 
   const openPointModal = () => {
@@ -263,12 +265,14 @@ export default function AdminMembersPage() {
               onClick={() => {
                 setSelected(m)
                 setGradeEdit(m.customer_grade || 'PETAL')
+                setGradeSaved(false)
               }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault()
                   setSelected(m)
                   setGradeEdit(m.customer_grade || 'PETAL')
+                  setGradeSaved(false)
                 }
               }}
               style={{
@@ -320,6 +324,11 @@ export default function AdminMembersPage() {
                 >
                   {m.is_founder ? '👑 Founders' : '미부여'}
                 </button>
+                {m.customer_grade && (
+                  <span style={{ fontSize: 11, background: 'rgba(123,94,167,0.2)', color: '#C084FC', padding: '2px 8px', borderRadius: 20, marginLeft: 4 }}>
+                    {m.customer_grade}
+                  </span>
+                )}
                 <div style={{ fontSize: 10, padding: '4px 8px', borderRadius: 999, background: m.status === 'suspended' ? 'rgba(217,79,79,0.12)' : 'rgba(76,173,126,0.12)', border: '1px solid rgba(255,255,255,0.10)', color: m.status === 'suspended' ? '#d94f4f' : '#4cad7e', fontWeight: 900 }}>
                   {m.status}
                 </div>
@@ -443,10 +452,12 @@ export default function AdminMembersPage() {
                           }
                           setMembers(prev => prev.map(x => (x.id === selected.id ? { ...x, customer_grade: gradeEdit } : x)))
                           setSelected(prev => (prev ? { ...prev, customer_grade: gradeEdit } : prev))
+                          setGradeSaved(true)
+                          setTimeout(() => setGradeSaved(false), 2000)
                         }}
                         style={{
                           fontSize: 11,
-                          background: '#7B5EA7',
+                          background: gradeSaved ? '#3b7a57' : '#7B5EA7',
                           border: 'none',
                           borderRadius: 6,
                           color: '#fff',
@@ -454,7 +465,7 @@ export default function AdminMembersPage() {
                           cursor: 'pointer',
                         }}
                       >
-                        저장
+                        {gradeSaved ? '적용완료 ✓' : '저장'}
                       </button>
                     </div>
                   </div>
