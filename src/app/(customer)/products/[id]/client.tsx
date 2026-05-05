@@ -789,7 +789,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             user_id: userRow.id,
             amount: sharePtsAmount,
             transaction_type: 'share',
-            description: '제품 공유 토스트',
+            source_type: 'review_bonus',
             reference_id: product.id,
           } as any)
           if (ttErr) console.warn('[recordShare] toast_transactions', ttErr)
@@ -2413,7 +2413,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       user_id: urow.id,
                       amount: reviewToastAmt,
                       transaction_type: 'review',
-                      description: '리뷰 작성 토스트',
+                      source_type: 'review_bonus',
                     } as any)
                     if (ttErr) console.warn('[toast_transactions review]', ttErr)
                   }

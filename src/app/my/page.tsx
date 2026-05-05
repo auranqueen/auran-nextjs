@@ -347,7 +347,7 @@ export default function MyPage() {
               user_id: uRow.id,
               amount: attPts,
               transaction_type: 'attendance',
-              description: '출석 체크 토스트',
+              source_type: 'checkin',
             } as any)
             if (ttErr) console.warn('[toast_transactions attendance]', ttErr)
           }

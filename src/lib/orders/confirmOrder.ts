@@ -106,7 +106,7 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
         user_id: referrerAuthId,
         amount: shareAmount,
         transaction_type: 'share_reward',
-        description: '추천 구매확정 보상 토스트',
+        source_type: 'order',
         reference_id: orderId,
       } as any)
       if (ttErr) console.warn('[confirmOrder] toast_transactions share_reward', ttErr)

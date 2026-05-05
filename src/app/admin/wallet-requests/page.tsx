@@ -109,7 +109,7 @@ export default function AdminWalletRequestsPage() {
         user_id: uid,
         amount: ptsAdd,
         transaction_type: 'charge',
-        description: '충전 토스트 적립 (무통장 5%)',
+        source_type: 'admin',
         reference_id: id,
       } as any)
       if (e3) throw e3

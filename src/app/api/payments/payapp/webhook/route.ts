@@ -274,7 +274,8 @@ export async function POST(req: NextRequest) {
               user_id: orderRow.customer_id,
               amount: -toastUsedOrder,
               transaction_type: 'use',
-              description: '구매 토스트 사용',
+              source_type: 'order',
+              source_id: orderRow.id,
               reference_id: orderRow.id,
             } as any)
             if (ttUseErr) console.warn('[toast_transactions use]', ttUseErr)

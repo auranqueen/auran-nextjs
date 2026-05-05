@@ -608,7 +608,7 @@ export default function OwnerChatRoomPage() {
           user_id: customerUserId,
           amount: n,
           transaction_type: 'gift',
-          description: '원장님 딸기잼 선물',
+          source_type: 'gift',
           reference_id: channelId,
         } as any)
         if (ttErr) console.warn('[toast_transactions gift]', ttErr)

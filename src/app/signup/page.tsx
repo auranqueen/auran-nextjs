@@ -135,7 +135,7 @@ function SignupForm() {
             user_id: newUserRow.id,
             amount: signupWelcomePoint,
             transaction_type: 'signup',
-            description: '회원가입 환영 토스트',
+            source_type: 'signup_bonus',
           } as any)
           if (ttErr) console.warn('[toast_transactions signup]', ttErr)
         }

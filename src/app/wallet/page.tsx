@@ -160,7 +160,8 @@ function WalletPageInner() {
         user_id: uid,
         amount: toastAmt,
         transaction_type: 'charge',
-        description: '충전 토스트 적립',
+        source_type: 'charge',
+        source_id: intentIdStr || null,
       } as any)
       if (ttErr) console.warn('[toast_transactions charge]', ttErr)
       try {
