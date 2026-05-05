@@ -15,6 +15,7 @@ type Member = {
   is_founder?: boolean
   created_at: string
   last_login_at?: string | null
+  customer_grade?: string | null
 }
 
 type DetailTab = 'summary' | 'orders' | 'points' | 'logs'
@@ -36,13 +37,14 @@ export default function AdminMembersPage() {
   const [pointReason, setPointReason] = useState('관리자 수동 지급')
   const [pointSaving, setPointSaving] = useState(false)
   const [approving, setApproving] = useState(false)
+  const [gradeEdit, setGradeEdit] = useState('')
 
   useEffect(() => {
     const run = async () => {
       setLoading(true)
       const { data } = await supabase
         .from('users')
-        .select('id,auth_id,name,email,role,status,points,is_founder,created_at,last_login_at')
+        .select('id,auth_id,name,email,role,status,points,is_founder,created_at,last_login_at,customer_grade')
         .order('created_at', { ascending: false })
         .limit(200)
       setMembers((data || []) as any)
@@ -163,6 +165,7 @@ export default function AdminMembersPage() {
     setPointModal(false)
     setPointAmount('')
     setPointReason('관리자 수동 지급')
+    setGradeEdit('')
   }
 
   const openPointModal = () => {
@@ -254,11 +257,15 @@ export default function AdminMembersPage() {
               key={m.id}
               role="button"
               tabIndex={0}
-              onClick={() => setSelected(m)}
+              onClick={() => {
+                setSelected(m)
+                setGradeEdit(m.customer_grade || 'PETAL')
+              }}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault()
                   setSelected(m)
+                  setGradeEdit(m.customer_grade || 'PETAL')
                 }
               }}
               style={{
@@ -379,6 +386,74 @@ export default function AdminMembersPage() {
                   <div style={{ gridColumn: '1 / -1', background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 16, padding: '12px 12px' }}>
                     <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>STATUS</div>
                     <div style={{ marginTop: 6, fontSize: 13, fontWeight: 900, color: '#fff' }}>{selected.status}</div>
+                  </div>
+                  <div
+                    style={{
+                      gridColumn: '1 / -1',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '6px 0',
+                      borderBottom: '1px solid rgba(255,255,255,0.06)',
+                    }}
+                  >
+                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>GRADE</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <select
+                        value={gradeEdit}
+                        onChange={e => setGradeEdit(e.target.value)}
+                        style={{
+                          fontSize: 12,
+                          background: 'rgba(255,255,255,0.08)',
+                          border: '1px solid rgba(255,255,255,0.15)',
+                          borderRadius: 6,
+                          color: '#fff',
+                          padding: '2px 6px',
+                        }}
+                      >
+                        {['PETAL', 'BLOOM', 'VELVET', 'LUMIÈRE', 'REINE', 'NOIR', 'CÉLESTE'].map(g => (
+                          <option key={g} value={g} style={{ background: '#1a1a2e' }}>
+                            {g}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!selected) return
+                          const res = await fetch('/api/admin/customer-grade', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            credentials: 'same-origin',
+                            body: JSON.stringify({ user_id: selected.id, customer_grade: gradeEdit }),
+                          })
+                          const j = await res.json().catch(() => ({}))
+                          if (!res.ok || !j?.ok) {
+                            alert(
+                              j?.error === 'not_customer'
+                                ? '고객(role=customer)만 변경할 수 있어요.'
+                                : typeof j?.error === 'string'
+                                  ? j.error
+                                  : '등급 저장 실패'
+                            )
+                            return
+                          }
+                          setMembers(prev => prev.map(x => (x.id === selected.id ? { ...x, customer_grade: gradeEdit } : x)))
+                          setSelected(prev => (prev ? { ...prev, customer_grade: gradeEdit } : prev))
+                        }}
+                        style={{
+                          fontSize: 11,
+                          background: '#7B5EA7',
+                          border: 'none',
+                          borderRadius: 6,
+                          color: '#fff',
+                          padding: '3px 10px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        저장
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
