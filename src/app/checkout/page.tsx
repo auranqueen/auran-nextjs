@@ -312,8 +312,9 @@ function CheckoutPageInner() {
 
   const afterCoupon = Math.max(0, afterGrade - couponDiscount)
   const toastTBalance = points + Math.floor(balance / Math.max(1, toastRate))
-  const toastHalf = Math.min(Math.floor(toastTBalance * toastRate), Math.floor((afterCoupon * 1) / 2))
-  const toastMaxUsageRate = 0.5
+  const LUMIERE_GRADES = ['LUMIÈRE', 'REINE', 'NOIR', 'CÉLESTE']
+  const toastMaxUsageRate = LUMIERE_GRADES.includes(gradeName ?? '') ? 1.0 : 0.5
+  const toastHalf = Math.min(Math.floor(toastTBalance * toastRate), Math.floor(afterCoupon * toastMaxUsageRate))
   const toastUsed = (payWithToast && afterCoupon >= minToastOrderAmount)
     ? Math.min(Math.floor(toastTBalance * toastMaxUsageRate), afterCoupon)
     : 0
