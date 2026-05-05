@@ -209,7 +209,8 @@ export async function POST(req: NextRequest) {
                 user_id: intent.user_id,
                 amount: chargeToast,
                 transaction_type: 'charge',
-                description: isBank ? '충전 토스트 적립 (가상계좌 5%)' : '충전 토스트 적립 (카드 2%)',
+                source_type: 'charge',
+                source_id: intent.id,
                 reference_id: intent.id,
               } as any)
               if (ttErr) console.warn('[toast_transactions charge bonus]', ttErr)
