@@ -376,7 +376,6 @@ export default function MyPage() {
       <header style={{ position: 'sticky', top: 0, zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', background: 'rgba(13,11,9,0.95)', borderBottom: CARD_BORDER, backdropFilter: 'blur(12px)' }}>
         <span style={{ fontFamily: 'Georgia, serif', fontSize: '22px', fontWeight: 400, color: GOLD, letterSpacing: '6px' }}>AURAN</span>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => router.push('/my/notifications')} style={{ width: '34px', height: '34px', borderRadius: '50%', background: CARD_BG, border: CARD_BORDER, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', cursor: 'pointer' }}>🔔</button>
           <button onClick={() => router.push('/my/settings')} style={{ width: '34px', height: '34px', borderRadius: '50%', background: CARD_BG, border: CARD_BORDER, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', cursor: 'pointer' }}>⚙️</button>
         </div>
       </header>
