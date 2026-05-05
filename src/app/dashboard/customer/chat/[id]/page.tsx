@@ -111,7 +111,7 @@ export default function CustomerChatRoomPage() {
     const load = async () => {
       const { data: userRow } = await supabase
         .from('users')
-        .select('auth_id,total_purchase_amount,points')
+        .select('auth_id,total_orders,points')
         .eq('id', internalUserId)
         .maybeSingle()
       if (!userRow) return
@@ -144,7 +144,7 @@ export default function CustomerChatRoomPage() {
         username: profileRes.data?.username ?? '고객',
         avatar_url: profileRes.data?.avatar_url ?? null,
         grade: profileRes.data?.grade ?? 'PETAL',
-        total_purchase: userRow.total_purchase_amount ?? 0,
+        total_purchase: userRow.total_orders ?? 0,
         hormone_phase: phase,
         hormone_label: phase ? (phaseMap[phase] ?? phase) : null,
       })
