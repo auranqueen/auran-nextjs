@@ -126,7 +126,7 @@ export default function NoticeBell({
     }
     const { data } = await client
       .from('notifications')
-      .select('id,title,body,icon,is_read,created_at,link,type')
+      .select('id,title,body,icon,is_read,created_at,type')
       .eq('user_id', pid)
       .order('created_at', { ascending: false })
       .limit(maxDisplay)
@@ -173,9 +173,7 @@ export default function NoticeBell({
     setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)))
     setUnreadCount((c) => Math.max(0, c - (n.is_read ? 0 : 1)))
     setOpen(false)
-    const raw = (n.link && String(n.link).trim()) || ''
-    const path =
-      raw.startsWith('/') ? raw : getDefaultLinkForType(n.type || undefined) || ''
+    const path = getDefaultLinkForType(n.type || undefined) || ''
     if (path) router.push(path)
   }
 
