@@ -319,7 +319,7 @@ function CheckoutPageInner() {
     ? Math.min(Math.floor(toastTBalance * toastMaxUsageRate), afterCoupon)
     : 0
   const goodsAfterToast = Math.max(0, afterCoupon - toastUsed)
-  const remBalAfterToast = Math.max(0, balance - toastUsed)
+  const remBalAfterToast = Math.max(0, balance)
   const oranCap = Math.min(remBalAfterToast, goodsAfterToast)
   const oranUsed = payWithOran ? Math.min(oranCap, oranDraftWon ?? oranCap) : 0
   const goodsAfterOran = Math.max(0, goodsAfterToast - oranUsed)
