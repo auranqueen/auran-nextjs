@@ -79,7 +79,13 @@ export default function HormoneCard({
             letterSpacing: '0.02em',
           }}
         >
-          <span>{PHASE_LABELS[currentPhase] || hormoneSubLine}</span>
+          <span>{({
+            달빛기: '달빛기 (생리기)',
+            황금기: '황금기 (여포기)',
+            만개기: '만개기 (배란기)',
+            물들기: '물들기 (황체기)',
+            갱년기: '갱년기',
+          } as Record<string, string>)[currentPhase] || PHASE_LABELS[currentPhase] || hormoneSubLine}</span>
           {hormonePhaseTipDesc ? (
             <button
               type="button"

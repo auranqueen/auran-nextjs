@@ -435,7 +435,7 @@ export default function CustomerHomePage() {
       setHormoneTrack(String((hc as any).track || 'general'))
       const calc = calcHormoneBriefing(hc)
       setHormonePhase(calc.phase)
-      setHormoneMainLine(`${nameForHormoneLine}님, 지금 ${calc.phase} ${calc.cycleDay > 0 ? `${calc.cycleDay}일차` : ''}예요 🌿`)
+      setHormoneMainLine(`${nameForHormoneLine}님, 지금 ${calc.phase} 예요 🌿`)
       setHormoneSubLine(`오늘의 피부 이야기 · ${calc.focus}`)
       if (isPeriodTrack(String((hc as any).track || 'general'))) {
         const lp = (hc as any).last_period_date ? new Date((hc as any).last_period_date) : null
@@ -906,7 +906,7 @@ export default function CustomerHomePage() {
   useEffect(() => {
     if (!hormoneCycle) return
     const c = calcHormoneBriefing(hormoneCycle)
-    setHormoneMainLine(`${userName}님, 지금 ${c.phase} ${c.cycleDay > 0 ? `${c.cycleDay}일차` : ''}예요 ✨`)
+    setHormoneMainLine(`${userName}님, 지금 ${c.phase} 예요 ✨`)
     setHormoneSubLine(`오늘의 피부 사이클 · ${c.focus}`)
   }, [hormoneCycle, userName])
 
