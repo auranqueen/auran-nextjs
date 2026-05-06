@@ -257,7 +257,6 @@ export default function AdminCareCardsPage() {
         draft.skin_concern,
         draft.category
       )
-      console.log('[save] product_ids:', draft.product_ids)
       const payload = {
         title: draft.title.trim(),
         phase_tags: phaseTagsPayload(draft.phase),

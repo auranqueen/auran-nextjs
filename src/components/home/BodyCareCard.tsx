@@ -308,7 +308,10 @@ export default function BodyCareCard({
           <button
             key={t.key}
             type="button"
-            onClick={() => setTab(t.key)}
+            onClick={() => {
+              setTab(t.key)
+              setClosed(false)
+            }}
             style={{
               border: tab === t.key ? '1px solid rgba(123,94,167,0.45)' : '1px solid rgba(255,255,255,0.12)',
               background: tab === t.key ? 'rgba(123,94,167,0.15)' : 'rgba(255,255,255,0.03)',
