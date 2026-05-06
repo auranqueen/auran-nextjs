@@ -150,6 +150,7 @@ const inp: React.CSSProperties = {
   color: '#fff',
   fontSize: 13,
   boxSizing: 'border-box',
+  colorScheme: 'dark',
 }
 
 const lbl = (t: string) => (
@@ -256,6 +257,7 @@ export default function AdminCareCardsPage() {
         draft.skin_concern,
         draft.category
       )
+      console.log('[save] product_ids:', draft.product_ids)
       const payload = {
         title: draft.title.trim(),
         phase_tags: phaseTagsPayload(draft.phase),
