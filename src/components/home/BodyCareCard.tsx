@@ -298,6 +298,7 @@ export default function BodyCareCard({
           fontSize: 16,
           cursor: 'pointer',
           lineHeight: 1,
+          zIndex: 10,
         }}
       >
         ×
