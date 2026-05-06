@@ -2074,7 +2074,7 @@ export default function CustomerHomePage() {
           </div>
         ) : (
           <>
-            {hormoneCycle && (
+            {hormoneCycle && typeof window !== 'undefined' && window.innerWidth < 768 && (
               <BodyCareCard
                 currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? ''}
                 skinType={String((motivationProfile as any)?.skin_type ?? '')}
