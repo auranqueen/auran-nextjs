@@ -119,7 +119,7 @@ export default function CustomerChatRoomPage() {
         .from('orders')
         .select('final_amount')
         .eq('customer_id', internalUserId)
-        .in('status', ['paid', 'delivered', 'shipping', '주문확인', '배송중', '완료'])
+        .in('status', ['주문확인', '발송준비', '배송중', '배송완료'])
       const totalPurchase = (orderSum ?? []).reduce((acc: number, o: any) => acc + (Number(o.final_amount) || 0), 0)
       const authId = userRow.auth_id
       const [profileRes, cycleRes, recRes] = await Promise.all([
