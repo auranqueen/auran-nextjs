@@ -410,8 +410,6 @@ export default function SeasonRecommendSection({
       >
         {([
           { key: 'pick', label: '원장 픽' },
-          { key: 'step', label: '단계별' },
-          { key: 'func', label: '고민별' },
         ] as const).map(t => (
           <button
             key={t.key}
@@ -645,73 +643,6 @@ export default function SeasonRecommendSection({
           ) : null}
         </>
       )}
-      {activeTab === 'step' && (
-        <div
-          style={{
-            display: 'flex',
-            gap: 5,
-            overflowX: 'auto',
-            scrollbarWidth: 'none',
-            marginBottom: 10,
-          }}
-        >
-          {STEP_CHIPS.map(s => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setStepFilter(s)}
-              style={{
-                padding: '5px 12px',
-                borderRadius: 14,
-                fontSize: 11,
-                cursor: 'pointer',
-                border: stepFilter === s ? '1px solid #4a3878' : '0.5px solid #2a2a36',
-                fontFamily: 'inherit',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                background: stepFilter === s ? '#2a2040' : '#1e1e26',
-                color: stepFilter === s ? '#9b7de8' : '#555',
-              }}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
-      {activeTab === 'func' && (
-        <div
-          style={{
-            display: 'flex',
-            gap: 5,
-            overflowX: 'auto',
-            scrollbarWidth: 'none',
-            marginBottom: 10,
-          }}
-        >
-          {FUNC_CHIPS.map(s => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setFuncFilter(s)}
-              style={{
-                padding: '5px 12px',
-                borderRadius: 14,
-                fontSize: 11,
-                cursor: 'pointer',
-                border: funcFilter === s ? '1px solid rgba(90,219,138,0.4)' : '0.5px solid #2a2a36',
-                fontFamily: 'inherit',
-                whiteSpace: 'nowrap',
-                flexShrink: 0,
-                background: funcFilter === s ? '#1a2818' : '#1e1e26',
-                color: funcFilter === s ? '#5adb8a' : '#555',
-              }}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      )}
-
       {loading ? (
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', padding: '20px 0' }}>불러오는 중…</div>
       ) : (
