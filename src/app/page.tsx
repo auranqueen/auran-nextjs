@@ -1961,6 +1961,7 @@ export default function CustomerHomePage() {
             setShowSkinDiary(true)
             setSkinDiaryInitialTab(1)
           }}
+          onRefreshCycle={() => void loadMotivationProfile()}
         />
 
         {hormoneCycle === null ? (

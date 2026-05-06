@@ -21,6 +21,7 @@ type HormoneCardProps = {
   hormoneCycle?: any
   supabaseClient: SupabaseClient
   onOpenSkinDiary?: () => void
+  onRefreshCycle?: () => void
 }
 
 const PHASE_ORDER = ['달빛기', '황금기', '만개기', '물들기']
@@ -39,6 +40,7 @@ export default function HormoneCard({
   hormoneCycle,
   supabaseClient,
   onOpenSkinDiary,
+  onRefreshCycle,
 }: HormoneCardProps) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const phaseIdx = PHASE_ORDER.indexOf(currentPhase)
@@ -215,6 +217,7 @@ export default function HormoneCard({
         showEditChrome={showEditChrome}
         supabaseClient={supabaseClient}
         onOpenSkinDiary={onOpenSkinDiary}
+        onRefreshCycle={onRefreshCycle}
       />
     </>
   )

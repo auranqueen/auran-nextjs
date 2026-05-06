@@ -207,6 +207,7 @@ type HormoneSheetProps = {
   showEditChrome: boolean
   supabaseClient: SupabaseClient
   onOpenSkinDiary?: () => void
+  onRefreshCycle?: () => void
 }
 
 export default function HormoneSheet({
@@ -218,6 +219,7 @@ export default function HormoneSheet({
   showEditChrome,
   supabaseClient,
   onOpenSkinDiary,
+  onRefreshCycle,
 }: HormoneSheetProps) {
   const [activeTab, setActiveTab] = useState(0)
   const [values, setValues] = useState<Record<string, string>>(() => ({ ...DEFAULTS_BY_KEY }))
@@ -382,6 +384,7 @@ export default function HormoneSheet({
       .then(() => {
         setGuideMsg('')
         setPendingStart(null)
+        onRefreshCycle?.()
       })
   }
 
@@ -398,6 +401,7 @@ export default function HormoneSheet({
       .then(() => {
         setGuideMsg('')
         setPendingEnd(null)
+        onRefreshCycle?.()
       })
   }
 
