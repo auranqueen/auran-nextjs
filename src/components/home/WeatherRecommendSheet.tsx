@@ -780,29 +780,11 @@ export default function WeatherRecommendSheet({
             >
               오랜의 3선
             </button>
-            <button
-              type="button"
-              onClick={() => setTab('routine')}
-              style={{
-                flex: 1,
-                padding: '8px 10px',
-                borderRadius: 10,
-                border: tab === 'routine' ? '1px solid rgba(155,125,232,0.5)' : '1px solid rgba(255,255,255,0.08)',
-                background: tab === 'routine' ? 'rgba(155,125,232,0.12)' : 'transparent',
-                color: tab === 'routine' ? '#e8e0ff' : 'rgba(255,255,255,0.45)',
-                fontSize: 12,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              단계별 루틴
-            </button>
           </div>
         </div>
 
         <div style={{ overflowY: 'auto', flex: 1, padding: '0 18px 28px' }}>
-          {tab === 'three' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {loading ? (
                 <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.35)', fontSize: 13, padding: '32px 0' }}>불러오는 중…</div>
               ) : displayThree.length === 0 ? (
@@ -994,162 +976,9 @@ export default function WeatherRecommendSheet({
                   )
                 })
               )}
-            </div>
-          ) : (
-            <RoutinePanel
-              uvHigh={uvHigh}
-              dustBad={!!dustBad}
-              phaseLabel={phaseLabel}
-              routineBg={ROUTINE_BG}
-              routineProducts={routineProducts}
-              onProductNavigate={id => router.push(`/products/${id}`)}
-            />
-          )}
+          </div>
         </div>
       </div>
-    </div>
-  )
-}
-
-function RoutinePanel({
-  uvHigh,
-  dustBad,
-  phaseLabel,
-  routineBg,
-  routineProducts,
-  onProductNavigate,
-}: {
-  uvHigh: boolean
-  dustBad: boolean
-  phaseLabel: string | null
-  routineBg: string
-  routineProducts: Record<string, MappingRow['products'] | null>
-  onProductNavigate: (productId: string) => void
-}) {
-  const steps: { label: string; badge?: string }[] = [
-    { label: '클렌징', badge: dustBad ? '오늘 필수' : undefined },
-    { label: '토너' },
-    { label: '딥클렌징(주1~2회)' },
-    {
-      label: '앰플·세럼',
-      badge: phaseLabel === '달빛기' ? '주의' : undefined,
-    },
-    { label: '크림' },
-    { label: '선크림', badge: uvHigh ? '☀ 오늘 필수' : undefined },
-  ]
-
-  return (
-    <div
-      style={{
-        background: routineBg,
-        borderRadius: 14,
-        padding: '14px 14px 16px',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 10,
-      }}
-    >
-      {steps.map((s, i) => {
-        const p = routineProducts[s.label]
-        const thumb = p?.storage_thumb_url || p?.thumb_img || ''
-        const price = p ? displayPrice(p) : 0
-        return (
-          <div
-            key={s.label}
-            style={{
-              borderRadius: 10,
-              background: 'rgba(0,0,0,0.2)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 10,
-                padding: '10px 12px',
-              }}
-            >
-              <div style={{ fontSize: 13, color: '#fff', fontWeight: 400 }}>
-                {i + 1}. {s.label}
-              </div>
-              {s.badge ? (
-                <span
-                  style={{
-                    fontSize: 10,
-                    padding: '3px 8px',
-                    borderRadius: 8,
-                    background: 'rgba(240,160,96,0.15)',
-                    color: '#f0a060',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {s.badge}
-                </span>
-              ) : (
-                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>—</span>
-              )}
-            </div>
-            {p ? (
-              <button
-                type="button"
-                onClick={() => onProductNavigate(p.id)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  width: '100%',
-                  padding: '8px 12px 12px',
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
-              >
-                <div
-                  style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 8,
-                    overflow: 'hidden',
-                    flexShrink: 0,
-                    background: 'rgba(255,255,255,0.06)',
-                  }}
-                >
-                  {thumb ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  ) : null}
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: 'rgba(255,255,255,0.92)',
-                      fontWeight: 500,
-                      lineHeight: 1.35,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {p.name}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#f0a060', marginTop: 4 }}>
-                    {price > 0 ? `${price.toLocaleString('ko-KR')}원` : '가격 문의'}
-                  </div>
-                </div>
-              </button>
-            ) : (
-              <div style={{ padding: '0 12px 10px', fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>
-                연결된 제품 없음
-              </div>
-            )}
-          </div>
-        )
-      })}
     </div>
   )
 }
