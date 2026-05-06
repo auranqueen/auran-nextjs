@@ -72,7 +72,7 @@ const LABELS: Record<string, string> = {
   quote: '오랜한마디',
 }
 
-const PHASE_EXTRA_COPY: Record<string, { body: string; care: string; quote: string[] }> = {
+const PHASE_EXTRA_COPY: Record<string, { body: string; care: string; quote: string[]; treatment: string }> = {
   moon: {
     body: '프로게스테론·에스트로겐이 모두 낮아요. 피부 장벽이 약하고 예민한 시기예요. 트러블이 나기 쉽고 홍조나 건조함이 생길 수 있어요.',
     care: '자극적인 성분은 잠깐 쉬어가요. 저자극 클렌징과 진정 앰플로 장벽을 지켜주세요. 마사지나 필링은 이 시기엔 피해요.',
@@ -81,6 +81,7 @@ const PHASE_EXTRA_COPY: Record<string, { body: string; care: string; quote: stri
       '데미지케어 후 진정·보습에 집중할 타이밍이에요. 레이저·시술은 잠깐 쉬어요 🌙',
       '몸이 리셋되는 중이에요. 피부 장벽 지키기에만 집중해요',
     ],
+    treatment: '시술·데미지케어는 이 시기엔 피해요. 피부 장벽이 약해서 자극에 더 민감해요. 진정·보습 시술만 가능하면 OK예요.',
   },
   gold: {
     body: '에스트로겐이 상승하면서 피부 장벽이 강해지고 흡수력이 최고조에 달해요. 피부가 맑아지고 탄력이 올라오는 시기예요.',
@@ -90,6 +91,7 @@ const PHASE_EXTRA_COPY: Record<string, { body: string; care: string; quote: stri
       '피부과·관리실 가기 딱 좋은 타이밍이에요. 레이저·MTS·미백 시술 지금이에요 💜',
       '에시드 관리·미백 집중 케어 최적 시기예요. 피부 흡수력 최고조!',
     ],
+    treatment: 'MTS·화학적필링·스피큘·기기케어 최적 타이밍이에요. 피부 흡수력·재생력이 최고조라 시술 효과가 극대화돼요. 피부과·관리실 예약 지금 잡으세요 💜',
   },
   bloom: {
     body: 'LH 호르몬 급증으로 배란 발생. 체온이 살짝 상승하고 에너지·자신감 최고조. 피지 분비가 늘어나기 시작해요.',
@@ -99,6 +101,7 @@ const PHASE_EXTRA_COPY: Record<string, { body: string; care: string; quote: stri
       '레이저·MTS·데미지케어 하기 좋은 날이에요. 피부과 예약해봐요 💜',
       '에너지 최고조! 시술 효과도 극대화되는 타이밍이에요 🌺',
     ],
+    treatment: '황금기와 함께 시술하기 좋은 시기예요. 레이저·미백 시술·MTS 효과 좋아요. 단, 피지 분비 증가하니 모공 관리도 함께해요.',
   },
   fall: {
     body: '프로게스테론이 증가하면서 피부가 건조해지고 트러블이 생기기 쉬워요. 예민함이 올라오고 부기가 나타날 수 있어요.',
@@ -108,6 +111,7 @@ const PHASE_EXTRA_COPY: Record<string, { body: string; care: string; quote: stri
       '시술·데미지케어는 잠깐 쉬어요. 진정·보습 집중 타이밍이에요',
       '물들기엔 수분이 답이에요. 자극 줄이고 촉촉하게 채워줘요 🍂',
     ],
+    treatment: '시술 효과가 떨어지는 시기예요. 자극적인 케어는 다음 황금기로 미뤄요. 진정·보습 관리 위주로 가줘요 💧',
   },
   meno: {
     body: '에스트로겐 감소로 피부 장벽이 얇아지고 건조함이 심해져요. 탄력 저하, 색소침착, 민감도 증가가 함께 올 수 있어요.',
@@ -117,6 +121,7 @@ const PHASE_EXTRA_COPY: Record<string, { body: string; care: string; quote: stri
       '에스트로겐은 줄었지만 케어로 충분히 커버할 수 있어요 ✨',
       '갱년기 피부, 포기하지 마요. 오랜이 함께할게요 🌿',
     ],
+    treatment: '피부 재생력이 낮아져 시술 후 회복이 느릴 수 있어요. 자극 강도 낮은 시술부터 시작해요. 원장님과 상담 후 시술 타이밍 잡는 걸 추천해요 💜',
   },
   male: {
     body: '테스토스테론 감소와 생활 습관 변화로 피부 밸런스가 쉽게 무너질 수 있어요.',
@@ -126,6 +131,7 @@ const PHASE_EXTRA_COPY: Record<string, { body: string; care: string; quote: stri
       '남성 피부도 수분·자외선 차단이 핵심이에요 ✨',
       '피부 관리 시작하기 딱 좋은 날이에요 🌿',
     ],
+    treatment: '자극적인 시술 전 피부 상태 먼저 확인해요. 기초 케어 탄탄히 한 후 시술 효과가 더 좋아요. 원장님과 상담 후 결정해요 💜',
   },
 }
 
@@ -641,6 +647,12 @@ export default function HormoneSheet({
                   <div style={{ background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '11px 13px' }}>
                     <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>케어 포인트</div>
                     <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.65 }}>{PHASE_EXTRA_COPY[tabId].care}</div>
+                  </div>
+                  <div style={{ background: 'rgba(201,169,110,0.08)', border: '0.5px solid rgba(201,169,110,0.2)', borderRadius: 12, padding: '11px 13px' }}>
+                    <div style={{ fontSize: 10, color: '#C9A96E', marginBottom: 4 }}>시술 타이밍</div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.65 }}>
+                      {PHASE_EXTRA_COPY[tabId].treatment}
+                    </div>
                   </div>
                   <div style={{ background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '11px 13px' }}>
                     <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>오랜 한마디</div>
