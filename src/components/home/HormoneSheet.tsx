@@ -170,7 +170,7 @@ type HormoneSheetProps = {
   cycleDay: number
   showEditChrome: boolean
   supabaseClient: SupabaseClient
-  products?: any[]
+  skinRecList?: any[]
 }
 
 export default function HormoneSheet({
@@ -180,7 +180,7 @@ export default function HormoneSheet({
   cycleDay,
   showEditChrome,
   supabaseClient,
-  products = [],
+  skinRecList = [],
 }: HormoneSheetProps) {
   const [activeTab, setActiveTab] = useState(0)
   const [values, setValues] = useState<Record<string, string>>(() => ({ ...DEFAULTS_BY_KEY }))
@@ -288,12 +288,7 @@ export default function HormoneSheet({
   if (!isOpen) return null
 
   const accent = TAB_DEFS[activeTab]?.color ?? '#c4a8ff'
-  const phaseProducts = (products ?? []).filter((p: any) => {
-    const ht = p?.hormone_timing
-    if (Array.isArray(ht)) return ht.some((v: any) => String(v).includes(tabId))
-    if (typeof ht === 'string') return ht.includes(tabId)
-    return false
-  }).slice(0, 6)
+  const phaseProducts = (skinRecList ?? []).slice(0, 6)
 
   return (
     <div
