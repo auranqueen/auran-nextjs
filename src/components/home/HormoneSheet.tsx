@@ -72,31 +72,60 @@ const LABELS: Record<string, string> = {
   quote: '오랜한마디',
 }
 
-const PHASE_EXTRA_COPY: Record<string, { body: string; care: string; quote: string }> = {
+const PHASE_EXTRA_COPY: Record<string, { body: string; care: string; quote: string[] }> = {
   moon: {
     body: '프로게스테론·에스트로겐이 모두 낮아요. 피부 장벽이 약하고 예민한 시기예요. 트러블이 나기 쉽고 홍조나 건조함이 생길 수 있어요.',
     care: '자극적인 성분은 잠깐 쉬어가요. 저자극 클렌징과 진정 앰플로 장벽을 지켜주세요. 마사지나 필링은 이 시기엔 피해요.',
-    quote: '달빛기엔 피부한테 쉬어가는 시간을 줘요. 자극 줄이고 진정에만 집중해요 💜',
+    quote: [
+      '지금은 피부도 쉬어가는 시간이에요. 자극은 NO, 진정은 YES 💜',
+      '데미지케어 후 진정·보습에 집중할 타이밍이에요. 레이저·시술은 잠깐 쉬어요 🌙',
+      '몸이 리셋되는 중이에요. 피부 장벽 지키기에만 집중해요',
+    ],
   },
   gold: {
     body: '에스트로겐이 상승하면서 피부 장벽이 강해지고 흡수력이 최고조에 달해요. 피부가 맑아지고 탄력이 올라오는 시기예요.',
     care: '지금 쓰는 앰플·세럼이 평소보다 2배 효과예요. 미백·탄력 집중 케어 타이밍이에요. 흡수가 잘 되니 레이어링도 좋아요.',
-    quote: '황금기예요! 지금 앰플 꼭 챙기세요. 1년 중 가장 피부가 빛나는 시기예요 ✨',
+    quote: [
+      '황금기예요! 지금 앰플 안 쓰면 진짜 아까워요 ✨',
+      '피부과·관리실 가기 딱 좋은 타이밍이에요. 레이저·MTS·미백 시술 지금이에요 💜',
+      '에시드 관리·미백 집중 케어 최적 시기예요. 피부 흡수력 최고조!',
+    ],
   },
   bloom: {
     body: 'LH 호르몬 급증으로 배란 발생. 체온이 살짝 상승하고 에너지·자신감 최고조. 피지 분비가 늘어나기 시작해요.',
     care: '피지·모공 관리 집중. 가벼운 텍스처 제품으로 교체 추천해요. 무거운 크림보다 젤 타입이 좋아요.',
-    quote: '활짝 피었어요! 오늘 가장 빛나는 날이에요. 피지 관리만 잘 해줘요 🌸',
+    quote: [
+      '활짝 피었어요! 오늘 가장 빛나는 날이에요 🌸',
+      '레이저·MTS·데미지케어 하기 좋은 날이에요. 피부과 예약해봐요 💜',
+      '에너지 최고조! 시술 효과도 극대화되는 타이밍이에요 🌺',
+    ],
   },
   fall: {
     body: '프로게스테론이 증가하면서 피부가 건조해지고 트러블이 생기기 쉬워요. 예민함이 올라오고 부기가 나타날 수 있어요.',
     care: '수분 보충을 집중적으로 해줘요. 보습 레이어링이 핵심이에요. 자극 성분은 줄이고 진정 케어를 병행해요.',
-    quote: '물들기엔 수분 레이어링이 답이에요. 토너·에센스·크림 순서 꼭 지켜줘요 💧',
+    quote: [
+      '수분이 필요한 시기예요. 토너 한 번 더 레이어링해요 💧',
+      '시술·데미지케어는 잠깐 쉬어요. 진정·보습 집중 타이밍이에요',
+      '물들기엔 수분이 답이에요. 자극 줄이고 촉촉하게 채워줘요 🍂',
+    ],
   },
   meno: {
     body: '에스트로겐 감소로 피부 장벽이 얇아지고 건조함이 심해져요. 탄력 저하, 색소침착, 민감도 증가가 함께 올 수 있어요.',
     care: '영양 크림과 탄력 앰플을 함께 써줘요. 장벽 강화 성분(세라마이드·펩타이드)이 도움돼요. 선케어는 필수예요.',
-    quote: '갱년기 피부는 부지런한 케어가 차이를 만들어요. 매일 꾸준히가 가장 중요해요 💜',
+    quote: [
+      '매일 꾸준한 케어가 가장 강력한 무기예요 💜',
+      '에스트로겐은 줄었지만 케어로 충분히 커버할 수 있어요 ✨',
+      '갱년기 피부, 포기하지 마요. 오랜이 함께할게요 🌿',
+    ],
+  },
+  male: {
+    body: '테스토스테론 감소와 생활 습관 변화로 피부 밸런스가 쉽게 무너질 수 있어요.',
+    care: '수분·장벽·자외선 차단 기본 루틴을 꾸준히 유지하면 변화가 분명히 보여요.',
+    quote: [
+      '꾸준한 케어가 피부를 바꿔요. 오늘도 기본에 충실해요 💜',
+      '남성 피부도 수분·자외선 차단이 핵심이에요 ✨',
+      '피부 관리 시작하기 딱 좋은 날이에요 🌿',
+    ],
   },
 }
 
@@ -188,6 +217,7 @@ export default function HormoneSheet({
   const [loaded, setLoaded] = useState(false)
   const [saving, setSaving] = useState(false)
   const [previewMode, setPreviewMode] = useState(false)
+  const [randomQuote, setRandomQuote] = useState<Record<string, string>>({})
 
   const tabId = TAB_DEFS[activeTab]?.id ?? 'moon'
 
@@ -195,6 +225,16 @@ export default function HormoneSheet({
     if (!isOpen) return
     setActiveTab(phaseToTabIndex(currentPhase))
   }, [isOpen, currentPhase])
+
+  useEffect(() => {
+    const quotes = PHASE_EXTRA_COPY[tabId]?.quote
+    if (quotes?.length) {
+      setRandomQuote(prev => ({
+        ...prev,
+        [tabId]: quotes[Math.floor(Math.random() * quotes.length)],
+      }))
+    }
+  }, [tabId])
 
   useEffect(() => {
     if (!isOpen) return
@@ -409,61 +449,65 @@ export default function HormoneSheet({
                 </span>
               </div>
 
-              {keysForTab(tabId).map(fieldKey => {
-                const short = fieldKey.replace(/^(moon|gold|bloom|fall|meno|male)_/, '')
-                const label = LABELS[short] || short
-                const text = values[fieldKey] ?? ''
-                const isDirty = dirtyKeys.has(fieldKey)
-                const readOnly = !showEditChrome || previewMode
+              {showEditChrome ? (
+                <>
+                  {keysForTab(tabId).map(fieldKey => {
+                    const short = fieldKey.replace(/^(moon|gold|bloom|fall|meno|male)_/, '')
+                    const label = LABELS[short] || short
+                    const text = values[fieldKey] ?? ''
+                    const isDirty = dirtyKeys.has(fieldKey)
+                    const readOnly = !showEditChrome || previewMode
 
-                return (
-                  <div key={fieldKey} style={{ marginBottom: 16 }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        gap: 8,
-                        marginBottom: 6,
-                      }}
-                    >
-                      <span style={{ fontSize: 11, color: 'rgba(196,170,230,0.85)', fontWeight: 500 }}>{label}</span>
-                      {showEditChrome && !previewMode ? (
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setValues(prev => ({
-                              ...prev,
-                              [fieldKey]: DEFAULTS_BY_KEY[fieldKey] ?? '',
-                            }))
-                          }
+                    return (
+                      <div key={fieldKey} style={{ marginBottom: 16 }}>
+                        <div
                           style={{
-                            fontSize: 10,
-                            padding: '4px 8px',
-                            borderRadius: 6,
-                            border: `1px solid rgba(168,130,220,0.45)`,
-                            background: 'rgba(123,94,167,0.15)',
-                            color: '#e0d4ff',
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 8,
+                            marginBottom: 6,
                           }}
                         >
-                          기본값으로
-                        </button>
-                      ) : null}
-                    </div>
-                    <HormonePhaseEditable
-                      value={text}
-                      readOnly={readOnly}
-                      onChange={v => setValues(prev => ({ ...prev, [fieldKey]: v }))}
-                      isDirty={isDirty}
-                      showEditChrome={showEditChrome}
-                      previewMode={previewMode}
-                      minHeight={short === 'body' ? 72 : 56}
-                    />
-                  </div>
-                )
-              })}
+                          <span style={{ fontSize: 11, color: 'rgba(196,170,230,0.85)', fontWeight: 500 }}>{label}</span>
+                          {showEditChrome && !previewMode ? (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setValues(prev => ({
+                                  ...prev,
+                                  [fieldKey]: DEFAULTS_BY_KEY[fieldKey] ?? '',
+                                }))
+                              }
+                              style={{
+                                fontSize: 10,
+                                padding: '4px 8px',
+                                borderRadius: 6,
+                                border: `1px solid rgba(168,130,220,0.45)`,
+                                background: 'rgba(123,94,167,0.15)',
+                                color: '#e0d4ff',
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                              }}
+                            >
+                              기본값으로
+                            </button>
+                          ) : null}
+                        </div>
+                        <HormonePhaseEditable
+                          value={text}
+                          readOnly={readOnly}
+                          onChange={v => setValues(prev => ({ ...prev, [fieldKey]: v }))}
+                          isDirty={isDirty}
+                          showEditChrome={showEditChrome}
+                          previewMode={previewMode}
+                          minHeight={short === 'body' ? 72 : 56}
+                        />
+                      </div>
+                    )
+                  })}
+                </>
+              ) : null}
               {PHASE_EXTRA_COPY[tabId] ? (
                 <div style={{ marginTop: 4, display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '11px 13px' }}>
@@ -476,7 +520,9 @@ export default function HormoneSheet({
                   </div>
                   <div style={{ background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '11px 13px' }}>
                     <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>오랜 한마디</div>
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.65 }}>{PHASE_EXTRA_COPY[tabId].quote}</div>
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.65 }}>
+                      {randomQuote[tabId] ?? PHASE_EXTRA_COPY[tabId]?.quote?.[0]}
+                    </div>
                   </div>
                 </div>
               ) : null}
