@@ -97,6 +97,15 @@ export default function OwnerChatRoomPage() {
   const [showGradePopup, setShowGradePopup] = useState(false)
   const [customerGrade, setCustomerGrade] = useState<string>('PETAL')
   const [customerTotalPurchase, setCustomerTotalPurchase] = useState<number>(0)
+  const [customerSkinInfo, setCustomerSkinInfo] = useState<{
+    skin_type: string | null
+    skin_concerns: string[]
+    hormone_phase: string | null
+    points: number
+    is_founder: boolean
+    avatar_url: string | null
+  } | null>(null)
+  const [showHistoryList, setShowHistoryList] = useState(false)
   const [channels, setChannels] = useState<{ id: string; title: string; preview_text: string; last_message_at: string | null; unread_count: number }[]>([])
   const [channelsLoading, setChannelsLoading] = useState(true)
 
@@ -176,6 +185,34 @@ export default function OwnerChatRoomPage() {
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable for this effect
+  }, [customerUserId])
+
+  useEffect(() => {
+    if (!customerUserId) return
+    const load = async () => {
+      const { data: uRow } = await supabase.from('users').select('auth_id,points,is_founder').eq('id', customerUserId).maybeSingle()
+      if (!uRow) return
+      const authId = uRow.auth_id
+      const [profileRes, cycleRes] = await Promise.all([
+        supabase.from('profiles').select('skin_type,skin_concerns,avatar_url').eq('auth_id', authId).maybeSingle(),
+        supabase
+          .from('skin_cycle_analysis')
+          .select('hormone_stage')
+          .eq('auth_id', authId)
+          .order('analysis_date', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ])
+      setCustomerSkinInfo({
+        skin_type: (profileRes.data as any)?.skin_type ?? null,
+        skin_concerns: (profileRes.data as any)?.skin_concerns ?? [],
+        hormone_phase: cycleRes.data?.hormone_stage ?? null,
+        points: uRow.points ?? 0,
+        is_founder: uRow.is_founder ?? false,
+        avatar_url: profileRes.data?.avatar_url ?? null,
+      })
+    }
+    void load()
   }, [customerUserId])
 
   useEffect(() => {
@@ -1761,8 +1798,130 @@ export default function OwnerChatRoomPage() {
                 }
           }
         >
-          <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 8 }}>최근 주문 (10건)</div>
-          {historyOrders.length === 0 ? (
+          {customerSkinInfo && (
+            <div style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                {customerSkinInfo.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={customerSkinInfo.avatar_url}
+                    alt=""
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '2px solid rgba(192,132,252,0.3)',
+                      flexShrink: 0,
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: '50%',
+                      background: '#7B5EA7',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 16,
+                      color: '#fff',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {channelTitle?.slice(0, 1) ?? '고'}
+                  </div>
+                )}
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        color: '#C084FC',
+                        background: 'rgba(192,132,252,0.15)',
+                        padding: '1px 7px',
+                        borderRadius: 8,
+                      }}
+                    >
+                      ✦ {customerGrade || 'PETAL'}
+                    </span>
+                    {customerSkinInfo.is_founder && (
+                      <span
+                        style={{
+                          fontSize: 10,
+                          color: '#C9A96E',
+                          background: 'rgba(201,169,110,0.15)',
+                          padding: '1px 7px',
+                          borderRadius: 8,
+                        }}
+                      >
+                        👑 Founders
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 3 }}>
+                    누적 {customerTotalPurchase.toLocaleString()}원 · 토스트 {customerSkinInfo.points}T
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 8 }}>
+                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginBottom: 3 }}>호르몬 페이즈</div>
+                  <div style={{ fontSize: 11, color: '#C084FC' }}>
+                    {customerSkinInfo.hormone_phase === 'menstrual' && '🌙 달빛기'}
+                    {customerSkinInfo.hormone_phase === 'follicular' && '✨ 황금기'}
+                    {customerSkinInfo.hormone_phase === 'ovulation' && '🌸 만개기'}
+                    {customerSkinInfo.hormone_phase === 'luteal' && '🍂 물들기'}
+                    {!customerSkinInfo.hormone_phase && '— 미등록'}
+                  </div>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginBottom: 3 }}>피부타입</div>
+                  <div style={{ fontSize: 11, color: '#fff' }}>{customerSkinInfo.skin_type ?? '미등록'}</div>
+                </div>
+              </div>
+              {customerSkinInfo.skin_concerns.length > 0 && (
+                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginBottom: 5 }}>피부 고민</div>
+                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
+                    {customerSkinInfo.skin_concerns.map((c: string, i: number) => (
+                      <span
+                        key={i}
+                        style={{
+                          fontSize: 10,
+                          background: 'rgba(123,94,167,0.2)',
+                          color: 'rgba(255,255,255,0.7)',
+                          padding: '2px 8px',
+                          borderRadius: 10,
+                        }}
+                      >
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <div
+            onClick={() => setShowHistoryList((v) => !v)}
+            style={{
+              padding: '10px 14px',
+              fontSize: 12,
+              color: 'rgba(255,255,255,0.5)',
+              cursor: 'pointer',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: showHistoryList ? '1px solid rgba(255,255,255,0.07)' : 'none',
+            }}
+          >
+            <span>구매 히스토리</span>
+            <span style={{ fontSize: 10 }}>{showHistoryList ? '▲' : '▼'}</span>
+          </div>
+          {showHistoryList &&
+            (historyOrders.length === 0 ? (
             <div style={{ fontSize: 12, color: TEXT_MUTED }}>아직 구매 내역이 없어요</div>
           ) : (
             historyOrders.map((o) => {
@@ -1884,7 +2043,7 @@ export default function OwnerChatRoomPage() {
                 </div>
               )
             })
-          )}
+          ))}
         </div>
       ) : null}
 
