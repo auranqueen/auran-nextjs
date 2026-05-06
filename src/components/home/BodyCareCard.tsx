@@ -232,8 +232,8 @@ export default function BodyCareCard({
 
   if (!todayCard) {
     const filteredRecommended = (recommended ?? []).filter((p: any) => {
-      const ct: string[] = p.category_tags ?? []
-      return ct.includes(tab) || ct.some((t: string) => t.startsWith('_zone:' + tab))
+      const rc: string = p.routine_category ?? ''
+      return tab === 'body' ? rc === 'body' : rc !== 'body'
     })
     const visibleRecommended = (filteredRecommended.length > 0 ? filteredRecommended : (recommended ?? [])).slice(0, 6)
     return (
@@ -391,8 +391,8 @@ export default function BodyCareCard({
                 <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }} className="scroll-hide">
                   {(() => {
                     const filteredRecommended = (recommended ?? []).filter((p: any) => {
-                      const ct: string[] = p.category_tags ?? []
-                      return ct.includes(tab) || ct.some((t: string) => t.startsWith('_zone:' + tab))
+                      const rc: string = p.routine_category ?? ''
+                      return tab === 'body' ? rc === 'body' : rc !== 'body'
                     })
                     const visibleRecommended = (filteredRecommended.length > 0 ? filteredRecommended : (recommended ?? [])).slice(0, 6)
                     return visibleRecommended.map((p: any) => (
