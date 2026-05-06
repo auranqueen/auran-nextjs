@@ -197,6 +197,7 @@ type HormoneSheetProps = {
   onClose: () => void
   currentPhase: string
   cycleDay: number
+  hormoneCycle?: any
   showEditChrome: boolean
   supabaseClient: SupabaseClient
   onOpenSkinDiary?: () => void
@@ -207,6 +208,7 @@ export default function HormoneSheet({
   onClose,
   currentPhase,
   cycleDay,
+  hormoneCycle,
   showEditChrome,
   supabaseClient,
   onOpenSkinDiary,
@@ -218,6 +220,13 @@ export default function HormoneSheet({
   const [saving, setSaving] = useState(false)
   const [previewMode, setPreviewMode] = useState(false)
   const [randomQuote, setRandomQuote] = useState<Record<string, string>>({})
+  const [pendingStart, setPendingStart] = useState<{d:string,t:string}|null>(null)
+  const [pendingEnd, setPendingEnd] = useState<{d:string,t:string}|null>(null)
+  const [guideMsg, setGuideMsg] = useState('')
+  const [dateModalOpen, setDateModalOpen] = useState(false)
+  const [dateModalType, setDateModalType] = useState<'start'|'end'>('start')
+  const [dateModalVal, setDateModalVal] = useState('')
+  const [timeModalVal, setTimeModalVal] = useState('')
 
   const tabId = TAB_DEFS[activeTab]?.id ?? 'moon'
 
@@ -324,6 +333,65 @@ export default function HormoneSheet({
       setSaving(false)
     }
   }, [supabaseClient, values])
+
+  function fmtDate(ds: string){
+    const d = new Date(ds)
+    return `${d.getMonth()+1}월 ${d.getDate()}일`
+  }
+
+  function openDateModal(type: 'start'|'end'){
+    setDateModalType(type)
+    const now = new Date()
+    setDateModalVal(now.toISOString().split('T')[0])
+    setTimeModalVal(now.toTimeString().slice(0,5))
+    setDateModalOpen(true)
+  }
+
+  function onDateChange(d: string, t: string){
+    setDateModalVal(d)
+    setTimeModalVal(t)
+    if(dateModalType==='start') setPendingStart({d,t})
+    else setPendingEnd({d,t})
+  }
+
+  function closeDateModal(){
+    setDateModalOpen(false)
+    if(dateModalType==='start' && pendingStart){
+      setGuideMsg('날짜가 선택됐어요! 아래 "마법 시작됐어요" 버튼을 탭해줘요 💜')
+    } else if(dateModalType==='end' && pendingEnd){
+      setGuideMsg('날짜가 선택됐어요! 아래 "마법 끝났어요" 버튼을 탭해줘요 💜')
+    }
+  }
+
+  function confirmStart(){
+    if(!pendingStart){
+      setGuideMsg('마법 시작일 칸을 탭해서 날짜를 먼저 선택해줘요 💜')
+      return
+    }
+    void supabaseClient
+      .from('hormone_cycle')
+      .update({ last_period_date: `${pendingStart.d}T${pendingStart.t}:00` })
+      .eq('auth_id', (supabaseClient as any)._session?.user?.id ?? '')
+      .then(() => {
+        setGuideMsg('')
+        setPendingStart(null)
+      })
+  }
+
+  function confirmEnd(){
+    if(!pendingEnd){
+      setGuideMsg('마법 종료일 칸을 탭해서 날짜를 먼저 선택해줘요 💜')
+      return
+    }
+    void supabaseClient
+      .from('hormone_cycle')
+      .update({ period_end_date: `${pendingEnd.d}T${pendingEnd.t}:00` })
+      .eq('auth_id', (supabaseClient as any)._session?.user?.id ?? '')
+      .then(() => {
+        setGuideMsg('')
+        setPendingEnd(null)
+      })
+  }
 
   if (!isOpen) return null
 
@@ -436,6 +504,62 @@ export default function HormoneSheet({
         </div>
 
         <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 16px' }}>
+          <div style={{marginBottom:14,background:'#14121e',border:'0.5px solid rgba(123,94,167,0.35)',borderRadius:16,padding:'14px 15px'}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+              <span style={{fontSize:12,color:'#c4a7e7'}}>마법캘린더</span>
+              <span style={{fontSize:10,background:'rgba(201,169,110,0.15)',color:'#C9A96E',borderRadius:20,padding:'3px 8px'}}>
+                {hormoneCycle?.cycle_length ? `${hormoneCycle.cycle_length}일 주기` : '28일 주기 예측중'}
+              </span>
+            </div>
+            <div style={{display:'flex',gap:6,marginBottom:12}}>
+              <div style={{flex:1,background:'rgba(255,255,255,0.04)',borderRadius:10,padding:'8px 9px',border:'0.5px solid rgba(123,94,167,0.5)',cursor:'pointer'}} onClick={()=>openDateModal('start')}>
+                <div style={{fontSize:9,color:'rgba(255,255,255,0.35)',marginBottom:2}}>마법 시작일</div>
+                <div style={{fontSize:11,color:'#c4a7e7'}}>
+                  {pendingStart ? fmtDate(pendingStart.d) : hormoneCycle?.last_period_date ? fmtDate(hormoneCycle.last_period_date) : '탭해서 선택'}
+                </div>
+              </div>
+              <div style={{flex:1,background:'rgba(255,255,255,0.04)',borderRadius:10,padding:'8px 9px',border:`0.5px solid ${pendingEnd?'rgba(123,94,167,0.5)':'rgba(255,255,255,0.06)'}`,cursor:'pointer'}} onClick={()=>openDateModal('end')}>
+                <div style={{fontSize:9,color:'rgba(255,255,255,0.35)',marginBottom:2}}>마법 종료일</div>
+                <div style={{fontSize:11,color:'#c4a7e7'}}>
+                  {pendingEnd ? fmtDate(pendingEnd.d) : hormoneCycle?.period_end_date ? fmtDate(hormoneCycle.period_end_date) : '탭해서 선택'}
+                </div>
+              </div>
+              <div style={{flex:1,background:'rgba(255,255,255,0.04)',borderRadius:10,padding:'8px 9px',border:'0.5px solid rgba(255,255,255,0.06)'}}>
+                <div style={{fontSize:9,color:'rgba(255,255,255,0.35)',marginBottom:2}}>현재</div>
+                <div style={{fontSize:11,color:'#c4a7e7'}}>{currentPhase}</div>
+              </div>
+            </div>
+            {guideMsg ? (
+              <div style={{background:'rgba(123,94,167,0.12)',border:'0.5px solid rgba(123,94,167,0.35)',borderRadius:10,padding:'9px 12px',marginBottom:10,fontSize:11,color:'#c4a7e7',textAlign:'center',lineHeight:1.55}}>
+                {guideMsg}
+              </div>
+            ) : null}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7,marginBottom:10}}>
+              <button style={{padding:'11px 0',borderRadius:11,border:'none',fontSize:11,fontWeight:400,cursor:'pointer',background:pendingStart?'#7B5EA7':'rgba(123,94,167,0.4)',color:pendingStart?'#fff':'rgba(255,255,255,0.5)'}} onClick={confirmStart}>
+                마법 시작됐어요
+              </button>
+              <button style={{padding:'11px 0',borderRadius:11,fontSize:11,fontWeight:400,cursor:'pointer',background:pendingEnd?'rgba(123,94,167,0.4)':'rgba(255,255,255,0.07)',color:pendingEnd?'#c4a7e7':'rgba(255,255,255,0.6)',border:pendingEnd?'0.5px solid rgba(123,94,167,0.6)':'0.5px solid rgba(255,255,255,0.1)'}} onClick={confirmEnd}>
+                마법 끝났어요
+              </button>
+            </div>
+            <div style={{background:'rgba(201,169,110,0.08)',border:'0.5px solid rgba(201,169,110,0.2)',borderRadius:10,padding:'10px 12px'}}>
+              <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:7}}>
+                <span style={{fontSize:15,color:'#C9A96E'}}>📅</span>
+                <span style={{fontSize:11,color:'rgba(255,255,255,0.6)'}}>
+                  다음 마법 예상일&nbsp;
+                  <span style={{color:'#C9A96E'}}>
+                    {hormoneCycle?.last_period_date
+                      ? fmtDate(new Date(new Date(hormoneCycle.last_period_date).getTime() + (hormoneCycle.cycle_length||28)*24*60*60*1000).toISOString().split('T')[0])
+                      : '예측중'}
+                  </span>
+                </span>
+              </div>
+              <div style={{fontSize:11,color:'rgba(255,255,255,0.4)',lineHeight:1.65,paddingTop:7,borderTop:'0.5px solid rgba(201,169,110,0.15)'}}>
+                <span style={{color:'rgba(224,180,80,0.85)'}}>마법 시작·종료일 기록이 매우 중요해요.</span><br/>
+                내 주기 패턴이 쌓여서 다음엔 더 정확한<br/>케어 타이밍을 알려드릴게요 💜
+              </div>
+            </div>
+          </div>
           {!loaded ? (
             <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: 13, textAlign: 'center', padding: 24 }}>
               불러오는 중…
@@ -614,6 +738,33 @@ export default function HormoneSheet({
             >
               {saving ? '저장 중…' : '저장·발행'}
             </button>
+          </div>
+        ) : null}
+        {dateModalOpen ? (
+          <div style={{position:'fixed' as const,inset:0,background:'rgba(0,0,0,0.6)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:300,padding:24}} onClick={closeDateModal}>
+            <div style={{background:'#1e1c2a',borderRadius:18,padding:'22px 20px 20px',width:'100%',maxWidth:340,border:'0.5px solid rgba(123,94,167,0.3)'}} onClick={e=>e.stopPropagation()}>
+              <div style={{fontSize:14,color:'#fff',marginBottom:3}}>
+                {dateModalType==='start'?'마법 시작일':'마법 종료일'}
+              </div>
+              <div style={{fontSize:11,color:'rgba(255,255,255,0.35)',marginBottom:18}}>
+                날짜와 시간을 선택하면 카드에 바로 표시돼요
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:11}}>
+                <span style={{fontSize:11,color:'rgba(255,255,255,0.45)',minWidth:44}}>날짜</span>
+                <input type="date" value={dateModalVal}
+                  onChange={e=>onDateChange(e.target.value,timeModalVal)}
+                  style={{flex:1,background:'rgba(255,255,255,0.06)',border:'0.5px solid rgba(123,94,167,0.35)',borderRadius:9,padding:'9px 11px',color:'#fff',fontSize:12}}/>
+              </div>
+              <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:11}}>
+                <span style={{fontSize:11,color:'rgba(255,255,255,0.45)',minWidth:44}}>시간</span>
+                <input type="time" value={timeModalVal}
+                  onChange={e=>onDateChange(dateModalVal,e.target.value)}
+                  style={{flex:1,background:'rgba(255,255,255,0.06)',border:'0.5px solid rgba(123,94,167,0.35)',borderRadius:9,padding:'9px 11px',color:'#fff',fontSize:12}}/>
+              </div>
+              <button style={{width:'100%',padding:'12px 0',borderRadius:11,background:'rgba(255,255,255,0.06)',border:'none',color:'rgba(255,255,255,0.5)',fontSize:12,cursor:'pointer',fontWeight:400,marginTop:6}} onClick={closeDateModal}>
+                확인
+              </button>
+            </div>
           </div>
         ) : null}
       </div>
