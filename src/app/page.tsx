@@ -1929,100 +1929,6 @@ export default function CustomerHomePage() {
         </div>
       </div>
 
-      {/* ── TODAY'S SKIN ── */}
-      <div
-        onClick={() => setShowWeatherDetail(prev => !prev)}
-        style={{
-          margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER,
-          borderRadius: '16px', padding: '12px 16px', cursor: 'pointer',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '30px' }}>💧</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: '3px', display: 'flex', alignItems: 'center', gap: 4 }}>
-              TODAY&apos;S SKIN
-              {weather ? `· ${weather.city} ${weather.temp}°` : ''}
-              <span
-                onClick={e => {
-                  e.stopPropagation()
-                  const msg = SKIN_TOOLTIP_MSGS[Math.floor(Math.random() * SKIN_TOOLTIP_MSGS.length)]
-                  setSkinTooltipMsg(msg)
-                  setTimeout(() => setSkinTooltipMsg(''), 3000)
-                }}
-                style={{ cursor: 'pointer' }}
-              >?</span>
-            </div>
-            <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>
-              {profileSkinType || '피부타입을 설정해주세요'}
-            </div>
-            {profileSkinConcerns ? (
-              <div style={{ fontSize: 11, color: 'rgba(232,223,245,0.45)' }}>{profileSkinConcerns}</div>
-            ) : null}
-          </div>
-          <span style={{
-            fontSize: '13px', color: TEXT_MUTED,
-            display: 'inline-block', transition: 'transform 0.2s',
-            transform: showWeatherDetail ? 'rotate(90deg)' : 'rotate(0deg)',
-          }}>›</span>
-        </div>
-
-        {showWeatherDetail && (
-          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:10, lineHeight:1.6, textAlign:'center' }}>
-              {CARE_CHEER_MSGS[Math.floor(Math.random() * CARE_CHEER_MSGS.length)]}
-            </div>
-            {weather && (
-              <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
-                {[
-                  { label: '날씨', value: `${weather.temp}° ${weather.condition}` },
-                  { label: '미세먼지', value: weather.dust?.level, color: weather.dust?.level === '좋음' ? '#4CAF50' : weather.dust?.level === '보통' ? '#F5A623' : '#E53935' },
-                  { label: '초미세먼지', value: weather.fineDust?.level, color: weather.fineDust?.level === '좋음' ? '#4CAF50' : weather.fineDust?.level === '보통' ? '#F5A623' : '#E53935' },
-                  { label: '자외선', value: weather.uv?.level, color: weather.uv?.level === '낮음' ? '#4CAF50' : weather.uv?.level === '보통' ? '#8BC34A' : weather.uv?.level === '높음' ? '#FF9800' : '#E53935' },
-                  { label: '습도', value: `${weather.humidity}%` },
-                ].map((item, i) => (
-                  <div key={i} style={{ flex: 1, textAlign: 'center' }}>
-                    <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', marginBottom: 3 }}>{item.label}</div>
-                    <div style={{ fontSize: 11, color: (item as any).color || 'rgba(255,255,255,0.7)', fontWeight: 400 }}>{item.value}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-            {weather && (() => {
-              const warnings: string[] = []
-              if (weather.dust?.level === '나쁨' || weather.dust?.level === '매우나쁨')
-                warnings.push('미세먼지 ' + weather.dust.level + ' 😷 외출 후 꼭 더블클렌징이에요')
-              if (weather.fineDust?.level === '나쁨' || weather.fineDust?.level === '매우나쁨')
-                warnings.push('초미세먼지 ' + weather.fineDust.level + ' 🌫️ 딥클렌징 오늘 필수예요')
-              if (weather.uv?.level === '높음')
-                warnings.push('자외선 높음 ☀️ 선크림 지금 바로 덧발라요')
-              if (weather.uv?.level === '매우높음')
-                warnings.push('자외선 매우 높음 🔥 2시간마다 선크림 덧바르기')
-              if (weather.humidity < 40)
-                warnings.push('건조한 날씨 💧 보습 크림 한 겹 더 올려줘요')
-              return warnings.map((w, i) => (
-                <div key={i} style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 4, lineHeight: 1.5 }}>⚠ {w}</div>
-              ))
-            })()}
-            <div style={{ marginTop:10, paddingTop:10, borderTop:'1px solid rgba(255,255,255,0.06)', display:'flex', gap:6 }}>
-              <button
-                onClick={e => { e.stopPropagation(); setShowWeatherRec(true) }}
-                style={{ flex:1, background:'rgba(201,169,110,0.08)', border:'1px solid rgba(201,169,110,0.25)', borderRadius:20, padding:'6px 10px', fontSize:11, color:GOLD, cursor:'pointer' }}
-              >
-                ✦ 날씨 맞춤 추천
-              </button>
-              <button
-                onClick={e => { e.stopPropagation(); setShowSkinDiary(true) }}
-                style={{ flex:1, background:'rgba(123,94,167,0.08)', border:'1px solid rgba(123,94,167,0.25)', borderRadius:20, padding:'6px 10px', fontSize:11, color:'#c4a7e7', cursor:'pointer' }}
-              >
-                💜 오늘 기록하기
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* ── 호르몬 브리핑 · 오늘 체크인 · 케어 액션 (TODAY&apos;S SKIN 바로 아래) ── */}
       <div style={{ padding: '12px 16px 0' }}>
         <HormoneCard
@@ -2166,6 +2072,100 @@ export default function CustomerHomePage() {
           </div>
         ) : null}
 
+      </div>
+
+      {/* ── TODAY'S SKIN ── */}
+      <div
+        onClick={() => setShowWeatherDetail(prev => !prev)}
+        style={{
+          margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER,
+          borderRadius: '16px', padding: '12px 16px', cursor: 'pointer',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '30px' }}>💧</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: '9px', fontFamily: 'monospace', letterSpacing: '1px', color: TEXT_MUTED, marginBottom: '3px', display: 'flex', alignItems: 'center', gap: 4 }}>
+              TODAY&apos;S SKIN
+              {weather ? `· ${weather.city} ${weather.temp}°` : ''}
+              <span
+                onClick={e => {
+                  e.stopPropagation()
+                  const msg = SKIN_TOOLTIP_MSGS[Math.floor(Math.random() * SKIN_TOOLTIP_MSGS.length)]
+                  setSkinTooltipMsg(msg)
+                  setTimeout(() => setSkinTooltipMsg(''), 3000)
+                }}
+                style={{ cursor: 'pointer' }}
+              >?</span>
+            </div>
+            <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>
+              {profileSkinType || '피부타입을 설정해주세요'}
+            </div>
+            {profileSkinConcerns ? (
+              <div style={{ fontSize: 11, color: 'rgba(232,223,245,0.45)' }}>{profileSkinConcerns}</div>
+            ) : null}
+          </div>
+          <span style={{
+            fontSize: '13px', color: TEXT_MUTED,
+            display: 'inline-block', transition: 'transform 0.2s',
+            transform: showWeatherDetail ? 'rotate(90deg)' : 'rotate(0deg)',
+          }}>›</span>
+        </div>
+
+        {showWeatherDetail && (
+          <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize:11, color:'rgba(255,255,255,0.5)', marginBottom:10, lineHeight:1.6, textAlign:'center' }}>
+              {CARE_CHEER_MSGS[Math.floor(Math.random() * CARE_CHEER_MSGS.length)]}
+            </div>
+            {weather && (
+              <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
+                {[
+                  { label: '날씨', value: `${weather.temp}° ${weather.condition}` },
+                  { label: '미세먼지', value: weather.dust?.level, color: weather.dust?.level === '좋음' ? '#4CAF50' : weather.dust?.level === '보통' ? '#F5A623' : '#E53935' },
+                  { label: '초미세먼지', value: weather.fineDust?.level, color: weather.fineDust?.level === '좋음' ? '#4CAF50' : weather.fineDust?.level === '보통' ? '#F5A623' : '#E53935' },
+                  { label: '자외선', value: weather.uv?.level, color: weather.uv?.level === '낮음' ? '#4CAF50' : weather.uv?.level === '보통' ? '#8BC34A' : weather.uv?.level === '높음' ? '#FF9800' : '#E53935' },
+                  { label: '습도', value: `${weather.humidity}%` },
+                ].map((item, i) => (
+                  <div key={i} style={{ flex: 1, textAlign: 'center' }}>
+                    <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.3)', marginBottom: 3 }}>{item.label}</div>
+                    <div style={{ fontSize: 11, color: (item as any).color || 'rgba(255,255,255,0.7)', fontWeight: 400 }}>{item.value}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {weather && (() => {
+              const warnings: string[] = []
+              if (weather.dust?.level === '나쁨' || weather.dust?.level === '매우나쁨')
+                warnings.push('미세먼지 ' + weather.dust.level + ' 😷 외출 후 꼭 더블클렌징이에요')
+              if (weather.fineDust?.level === '나쁨' || weather.fineDust?.level === '매우나쁨')
+                warnings.push('초미세먼지 ' + weather.fineDust.level + ' 🌫️ 딥클렌징 오늘 필수예요')
+              if (weather.uv?.level === '높음')
+                warnings.push('자외선 높음 ☀️ 선크림 지금 바로 덧발라요')
+              if (weather.uv?.level === '매우높음')
+                warnings.push('자외선 매우 높음 🔥 2시간마다 선크림 덧바르기')
+              if (weather.humidity < 40)
+                warnings.push('건조한 날씨 💧 보습 크림 한 겹 더 올려줘요')
+              return warnings.map((w, i) => (
+                <div key={i} style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 4, lineHeight: 1.5 }}>⚠ {w}</div>
+              ))
+            })()}
+            <div style={{ marginTop:10, paddingTop:10, borderTop:'1px solid rgba(255,255,255,0.06)', display:'flex', gap:6 }}>
+              <button
+                onClick={e => { e.stopPropagation(); setShowWeatherRec(true) }}
+                style={{ flex:1, background:'rgba(201,169,110,0.08)', border:'1px solid rgba(201,169,110,0.25)', borderRadius:20, padding:'6px 10px', fontSize:11, color:GOLD, cursor:'pointer' }}
+              >
+                ✦ 날씨 맞춤 추천
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); setShowSkinDiary(true) }}
+                style={{ flex:1, background:'rgba(123,94,167,0.08)', border:'1px solid rgba(123,94,167,0.25)', borderRadius:20, padding:'6px 10px', fontSize:11, color:'#c4a7e7', cursor:'pointer' }}
+              >
+                💜 오늘 기록하기
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── 내 피부 맞춤 추천 ── */}
