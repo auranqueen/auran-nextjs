@@ -396,9 +396,9 @@ export default function WeatherRecommendSheet({
     displayThree.forEach(row => { init[String(row.id)] = true })
     setChecked(init)
   }, [displayThree])
-  const selectedCount = displayThree.filter(row => checked[String(row.id)]).length
+  const selectedCount = displayThree.filter(row => checked[String(row.id)] !== false).length
   const selectedTotal = displayThree.reduce((sum, row) => {
-    if (!checked[String(row.id)]) return sum
+    if (checked[String(row.id)] === false) return sum
     const p = row.products
     if (!p) return sum
     return sum + Number(p.sale_price ?? p.retail_price ?? 0)
@@ -848,29 +848,29 @@ export default function WeatherRecommendSheet({
                         border: showEditChrome ? '1px dashed rgba(155,125,232,0.4)' : undefined,
                       }}
                     >
-                      <button
-                        type="button"
+                      <div
                         onClick={e => {
                           e.stopPropagation()
-                          setChecked(prev => ({ ...prev, [String(row.id)]: !prev[String(row.id)] }))
+                          setChecked(prev => ({ ...prev, [rid]: !prev[rid] }))
                         }}
                         style={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: 6,
-                          border: checked[String(row.id)] ? '1.5px solid #7B5EA7' : '1.5px solid rgba(255,255,255,0.2)',
-                          background: checked[String(row.id)] ? '#7B5EA7' : 'transparent',
-                          color: '#fff',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          cursor: 'pointer',
-                          flexShrink: 0,
-                          fontFamily: 'inherit',
+                          width: 20, height: 20, borderRadius: 6,
+                          border: checked[rid] === false
+                            ? '1.5px solid rgba(255,255,255,0.2)'
+                            : '1.5px solid #7B5EA7',
+                          background: checked[rid] === false
+                            ? 'transparent' : '#7B5EA7',
+                          display: 'flex', alignItems: 'center',
+                          justifyContent: 'center', flexShrink: 0,
+                          cursor: 'pointer', marginRight: 8
                         }}
                       >
-                        {checked[String(row.id)] ? '✓' : ''}
-                      </button>
+                        {checked[rid] !== false && (
+                          <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                            <path d="M1 4L4 7.5L10 1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+                          </svg>
+                        )}
+                      </div>
                       {showEditChrome ? (
                         <div style={{ position: 'absolute', top: 6, right: 6, display: 'flex', gap: 4, zIndex: 3 }} onClick={e => e.stopPropagation()}>
                           <button
@@ -943,9 +943,11 @@ export default function WeatherRecommendSheet({
                           {sub ? (
                             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)', marginBottom: 4 }}>{sub}</div>
                           ) : null}
-                          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.38)', marginBottom: 2 }}>
-                            {(p as any)?.routine_category || row.concern_tag || ''}
-                          </div>
+                          {((p as any)?.routine_category || row.concern_tag) ? (
+                            <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.38)', marginBottom: 2 }}>
+                              {(p as any)?.routine_category || row.concern_tag}
+                            </div>
+                          ) : null}
                           <div
                             style={{
                               fontSize: 13,
