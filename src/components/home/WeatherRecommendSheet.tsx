@@ -3,6 +3,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCart } from '@/context/CartContext'
 
 const BG = '#17171e'
 const CARD_BG = '#1e1e26'
@@ -15,6 +16,16 @@ const TAG_WEATHER_BG = 'rgba(240,160,96,0.12)'
 const TAG_WEATHER_FG = '#f0a060'
 const TAG_SKIN_BG = 'rgba(155,125,232,0.12)'
 const TAG_SKIN_FG = '#9b7de8'
+const HOOK_COPY: Record<string, string> = {
+  황금기: '황금기 흡수력 지금이 피크예요. 오늘 바른 앰플이 365일 중 제일 효과 좋아요 ✦',
+  만개기: '지금 피부과 가면 시술 효과 2배예요. 집에서라도 이걸로 챙겨요 🌸',
+  달빛기: '생리기엔 피부 장벽이 얇아요. 지금 안 지키면 다음 주가 힘들어요 💜',
+  물들기: '지금 수분 안 채우면 다음 주 트러블 와요. 이 3가지가 방어막이에요 💧',
+  갱년기: '에스트로겐 줄어드는 지금, 매일 케어가 10년 후 피부를 바꿔요 💜',
+  자외선매우높음: '오늘 자외선 지수 매우높음. 지금 안 바르면 내일 피부가 달라요 ☀',
+  미세먼지나쁨: '미세먼지가 모공 속으로 들어가요. 오늘 클렌징이 제일 중요해요 🌫',
+  건조한날씨: '오늘 습도 30% 이하예요. 지금 안 채우면 저녁에 당겨요 💧',
+}
 
 const HORMONE_PHASE_COLORS: Record<string, string> = {
   달빛기: '#c4a8ff',
@@ -176,11 +187,13 @@ export default function WeatherRecommendSheet({
   showEditChrome = false,
 }: WeatherRecommendSheetProps) {
   const router = useRouter()
+  const cart = useCart()
   const [rows, setRows] = useState<MappingRow[]>([])
   const [routineProducts, setRoutineProducts] = useState<Record<string, MappingRow['products'] | null>>({})
   const [loading, setLoading] = useState(false)
   const [tab, setTab] = useState<'three' | 'routine'>('three')
   const [openReasonId, setOpenReasonId] = useState<string | null>(null)
+  const [checked, setChecked] = useState<Record<string, boolean>>({})
 
   const [formOpen, setFormOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -195,6 +208,14 @@ export default function WeatherRecommendSheet({
   const [saving, setSaving] = useState(false)
 
   const phaseLabel = useMemo(() => phaseLabelFromTrackAndDay(hormoneTrack, cycleDay), [hormoneTrack, cycleDay])
+  const hookMsg = (() => {
+    const phase = phaseLabelFromTrackAndDay?.(hormoneTrack, cycleDay) ?? ''
+    if (HOOK_COPY[phase]) return HOOK_COPY[phase]
+    if (weather?.uv?.level === '매우높음') return HOOK_COPY['자외선매우높음']
+    if (weather?.dust?.level === '나쁨' || weather?.dust?.level === '매우나쁨') return HOOK_COPY['미세먼지나쁨']
+    if ((weather?.humidity ?? 100) < 40) return HOOK_COPY['건조한날씨']
+    return '오늘 피부에 딱 맞는 케어를 골랐어요 💜'
+  })()
 
   const uvHigh = weather ? uvIsHigh(weather.uv?.level) : false
   const dustBad =
@@ -370,6 +391,18 @@ export default function WeatherRecommendSheet({
   }, [searchQ, supabaseClient])
 
   const displayThree = useMemo(() => pickRotatedThree(rows), [rows])
+  useEffect(() => {
+    const init: Record<string, boolean> = {}
+    displayThree.forEach(row => { init[String(row.id)] = true })
+    setChecked(init)
+  }, [displayThree])
+  const selectedCount = displayThree.filter(row => checked[String(row.id)]).length
+  const selectedTotal = displayThree.reduce((sum, row) => {
+    if (!checked[String(row.id)]) return sum
+    const p = row.products
+    if (!p) return sum
+    return sum + Number(p.sale_price ?? p.retail_price ?? 0)
+  }, 0)
 
   const weatherTags = useMemo(() => {
     const tags: string[] = []
@@ -778,7 +811,7 @@ export default function WeatherRecommendSheet({
                 fontFamily: 'inherit',
               }}
             >
-              오랜의 3선
+              {hookMsg}
             </button>
           </div>
         </div>
@@ -815,6 +848,29 @@ export default function WeatherRecommendSheet({
                         border: showEditChrome ? '1px dashed rgba(155,125,232,0.4)' : undefined,
                       }}
                     >
+                      <button
+                        type="button"
+                        onClick={e => {
+                          e.stopPropagation()
+                          setChecked(prev => ({ ...prev, [String(row.id)]: !prev[String(row.id)] }))
+                        }}
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: 6,
+                          border: checked[String(row.id)] ? '1.5px solid #7B5EA7' : '1.5px solid rgba(255,255,255,0.2)',
+                          background: checked[String(row.id)] ? '#7B5EA7' : 'transparent',
+                          color: '#fff',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer',
+                          flexShrink: 0,
+                          fontFamily: 'inherit',
+                        }}
+                      >
+                        {checked[String(row.id)] ? '✓' : ''}
+                      </button>
                       {showEditChrome ? (
                         <div style={{ position: 'absolute', top: 6, right: 6, display: 'flex', gap: 4, zIndex: 3 }} onClick={e => e.stopPropagation()}>
                           <button
@@ -887,6 +943,9 @@ export default function WeatherRecommendSheet({
                           {sub ? (
                             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)', marginBottom: 4 }}>{sub}</div>
                           ) : null}
+                          <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.38)', marginBottom: 2 }}>
+                            {(p as any)?.routine_category || row.concern_tag || ''}
+                          </div>
                           <div
                             style={{
                               fontSize: 13,
@@ -976,6 +1035,89 @@ export default function WeatherRecommendSheet({
                   )
                 })
               )}
+              {displayThree.length > 0 ? (
+                <>
+                  <div
+                    style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      border: '0.5px solid rgba(255,255,255,0.06)',
+                      borderRadius: 12,
+                      padding: '11px 13px',
+                      marginBottom: 10,
+                      marginTop: 8,
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>선택 {selectedCount}개</span>
+                    <span style={{ fontSize: 14, color: '#fff' }}>₩{selectedTotal.toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        displayThree.forEach(row => {
+                          if (!checked[String(row.id)]) return
+                          const p = row.products
+                          if (!p) return
+                          cart.addToCart({
+                            product_id: String(p.id),
+                            name: String(p.name || ''),
+                            price: Number(p.sale_price ?? p.retail_price ?? 0),
+                            thumb_img: String(p.storage_thumb_url || p.thumb_img || ''),
+                            quantity: 1,
+                          })
+                        })
+                        router.push('/cart')
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: '0.5px solid rgba(123,94,167,0.5)',
+                        color: '#c4a7e7',
+                        borderRadius: 12,
+                        padding: '12px 0',
+                        fontSize: 12,
+                        fontWeight: 400,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      선택 담기
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        displayThree.forEach(row => {
+                          if (!checked[String(row.id)]) return
+                          const p = row.products
+                          if (!p) return
+                          cart.addToCart({
+                            product_id: String(p.id),
+                            name: String(p.name || ''),
+                            price: Number(p.sale_price ?? p.retail_price ?? 0),
+                            thumb_img: String(p.storage_thumb_url || p.thumb_img || ''),
+                            quantity: 1,
+                          })
+                        })
+                        router.push('/checkout')
+                      }}
+                      style={{
+                        background: '#7B5EA7',
+                        color: '#fff',
+                        borderRadius: 12,
+                        padding: '12px 0',
+                        fontSize: 12,
+                        fontWeight: 400,
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                      }}
+                    >
+                      바로 구매
+                    </button>
+                  </div>
+                </>
+              ) : null}
           </div>
         </div>
       </div>

@@ -1720,6 +1720,31 @@ export default function CustomerHomePage() {
         )}
         <div style={{ display: 'flex', gap: '10px' }}>
           <button
+            onClick={() => router.push('/cart')}
+            style={{
+              width: '34px', height: '34px', borderRadius: '50%',
+              background: 'rgba(255,255,255,0.04)',
+              border: '1px solid rgba(255,255,255,0.08)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '15px', cursor: 'pointer',
+              position: 'relative',
+            }}
+          >
+            🛒
+            {cart.items.length > 0 ? (
+              <span style={{
+                position: 'absolute', top: -4, right: -4,
+                minWidth: 16, height: 16, borderRadius: 8,
+                background: '#7B5EA7', color: '#fff',
+                fontSize: 10, display: 'flex',
+                alignItems: 'center', justifyContent: 'center',
+                padding: '0 4px',
+              }}>
+                {cart.items.length}
+              </span>
+            ) : null}
+          </button>
+          <button
             onClick={() => setSearchOpen(true)}
             style={{
               width: '34px', height: '34px', borderRadius: '50%',
