@@ -2349,6 +2349,9 @@ export default function CustomerHomePage() {
                 const stepTitle = step.step_name || step.title || step.name || '단계'
                 const thumb = rp ? (rp.storage_thumb_url || rp.thumb_img) : ''
                 const priceNum = rp ? Number(rp.is_timesale ? (rp.sale_price ?? rp.retail_price) : rp.retail_price) || 0 : 0
+                const isSunStep = /선크림|선케어/.test(String(step.step_name || stepTitle || ''))
+                const isUvHigh = weather?.uv?.level === '높음' || weather?.uv?.level === '매우높음'
+                const showSunBadge = isSunStep && isUvHigh
                 return (
                   <div
                     key={sid || stepTitle}
@@ -2389,7 +2392,14 @@ export default function CustomerHomePage() {
                       {thumb ? <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🧴'}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 11, color: GOLD, marginBottom: 4 }}>{stepTitle}</div>
+                      <div style={{ fontSize: 11, color: GOLD, marginBottom: 4, display: 'flex', alignItems: 'center' }}>
+                        <span>{stepTitle}</span>
+                        {showSunBadge ? (
+                          <span style={{ fontSize: 9, background: 'rgba(224,140,60,0.2)', color: '#f0a060', borderRadius: 6, padding: '2px 7px', marginLeft: 6 }}>
+                            ☀ 오늘 필수
+                          </span>
+                        ) : null}
+                      </div>
                       {rp ? (
                         <>
                           <div style={{ fontSize: 12, color: '#fff', marginBottom: 4 }}>{rp.name}</div>
