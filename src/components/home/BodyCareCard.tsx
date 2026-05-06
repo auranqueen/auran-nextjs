@@ -116,9 +116,10 @@ export default function BodyCareCard({
   )
 
   const todayCard = useMemo(() => {
-    if (tabRows.length === 0) return null
-    const idx = new Date().getDate() % tabRows.length
-    return tabRows[idx] ?? null
+    const withProducts = tabRows.filter((r) => r.product_ids && r.product_ids.length > 0)
+    if (withProducts.length === 0) return null
+    const idx = new Date().getDate() % withProducts.length
+    return withProducts[idx] ?? null
   }, [tabRows])
 
   useEffect(() => {
@@ -312,7 +313,7 @@ export default function BodyCareCard({
           <div style={{ fontSize: 11, fontWeight: 400, color: TEXT_MUTED, marginBottom: 8, lineHeight: 1.55 }}>{todayCard.care}</div>
           <div style={{ borderLeft: `2px solid ${PURPLE}`, paddingLeft: 8, fontSize: 11, color: '#d6c7ea', marginBottom: 10, lineHeight: 1.5, fontWeight: 400 }}>{todayCard.quote}</div>
           <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
-            {products.length === 0 ? (
+            {products.length === 0 && (!recommended || recommended.length === 0) ? (
               <div style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 justifyContent: 'center', padding: '24px 16px', gap: 8, textAlign: 'center'
@@ -322,7 +323,7 @@ export default function BodyCareCard({
                   연결된 제품이 없어요
                 </span>
               </div>
-            ) : (
+            ) : products.length > 0 ? (
               finalProducts.map((p) => (
                 <div key={p.id} style={{ minWidth: 170, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 8, display: 'flex', gap: 8 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 8, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0 }}>
@@ -338,6 +339,39 @@ export default function BodyCareCard({
                   </div>
                 </div>
               ))
+            ) : (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: 12, color: '#aaa', marginBottom: 8, paddingLeft: 4 }}>
+                  점수 기반 추천 제품
+                </div>
+                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }} className="scroll-hide">
+                  {(() => {
+                    const filteredRecommended = (recommended ?? []).filter((p: any) => {
+                      const ct: string[] = p.category_tags ?? []
+                      return ct.includes(tab) || ct.some((t: string) => t.startsWith('_zone:' + tab))
+                    })
+                    const visibleRecommended = (filteredRecommended.length > 0 ? filteredRecommended : (recommended ?? [])).slice(0, 6)
+                    return visibleRecommended.map((p: any) => (
+                      <div key={p.id} style={{
+                        minWidth: 100, borderRadius: 10, overflow: 'hidden',
+                        background: 'rgba(255,255,255,0.04)', flexShrink: 0
+                      }}>
+                        {p.thumb_img && (
+                          <img src={p.thumb_img} alt={p.name} style={{ width: 100, height: 100, objectFit: 'cover' }} />
+                        )}
+                        <div style={{ padding: '6px 8px' }}>
+                          <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.3 }}>
+                            {p.name}
+                          </div>
+                          <div style={{ fontSize: 11, color: '#7B5EA7', marginTop: 2 }}>
+                            {p.sale_price?.toLocaleString()}원
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  })()}
+                </div>
+              </div>
             )}
           </div>
         </>
