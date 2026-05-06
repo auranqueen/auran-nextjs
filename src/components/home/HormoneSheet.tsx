@@ -170,6 +170,7 @@ type HormoneSheetProps = {
   cycleDay: number
   showEditChrome: boolean
   supabaseClient: SupabaseClient
+  onOpenSkinDiary?: () => void
 }
 
 export default function HormoneSheet({
@@ -179,6 +180,7 @@ export default function HormoneSheet({
   cycleDay,
   showEditChrome,
   supabaseClient,
+  onOpenSkinDiary,
 }: HormoneSheetProps) {
   const [activeTab, setActiveTab] = useState(0)
   const [values, setValues] = useState<Record<string, string>>(() => ({ ...DEFAULTS_BY_KEY }))
@@ -478,6 +480,26 @@ export default function HormoneSheet({
                   </div>
                 </div>
               ) : null}
+              <div style={{ marginTop: 16, paddingTop: 14, borderTop: '0.5px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>마법캘린더</div>
+                <button
+                  type="button"
+                  onClick={() => onOpenSkinDiary?.()}
+                  style={{
+                    width: '100%',
+                    padding: '11px 0',
+                    borderRadius: 12,
+                    background: 'rgba(123,94,167,0.2)',
+                    border: '0.5px solid rgba(123,94,167,0.4)',
+                    color: '#c4a7e7',
+                    fontSize: 12,
+                    marginTop: 14,
+                    cursor: 'pointer',
+                  }}
+                >
+                  마법캘린더 기록하기 💜
+                </button>
+              </div>
             </>
           )}
         </div>
