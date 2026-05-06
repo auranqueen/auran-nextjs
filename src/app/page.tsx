@@ -1106,8 +1106,25 @@ export default function CustomerHomePage() {
           if (pConcerns.includes('barrier') || pConcerns.includes('sensitivity')) score += 2
           if (pConcerns.includes('acne')) score += 1
           // hormone score
-          const pHormone: string[] = p.hormone_timing ?? []
-          if (pHormone.includes(hormonePhase)) score += 3
+          const phaseMap: Record<string, string> = {
+            달빛기: '생리기',
+            황금기: '여포기',
+            만개기: '배란기',
+            물들기: '황체기',
+          }
+          const dbPhase = phaseMap[hormonePhase ?? ''] ?? hormonePhase ?? ''
+          const rawHormone = p.hormone_timing ?? []
+          const pHormone: string[] = rawHormone.flatMap((v: unknown) => {
+            if (typeof v !== 'string') return []
+            const s = v.trim()
+            try {
+              const parsed = JSON.parse(s)
+              return Array.isArray(parsed) ? parsed.map(String) : [String(parsed)]
+            } catch {
+              return s ? [s] : []
+            }
+          })
+          if (pHormone.includes(dbPhase)) score += 3
           else if (pHormone.length > 0) score += 1
           // skin_type score
           if ((p.tag ?? '').includes(userSkinType) || (p.quiz_match ?? '').includes(userSkinType)) score += 2
