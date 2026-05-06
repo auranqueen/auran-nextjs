@@ -1955,6 +1955,7 @@ export default function CustomerHomePage() {
           }
           currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? '달빛기'}
           cycleDay={calcHormoneBriefing(hormoneCycle)?.cycleDay ?? 0}
+          hormoneCycle={hormoneCycle}
           supabaseClient={supabase}
           onOpenSkinDiary={() => {
             setShowSkinDiary(true)

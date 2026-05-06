@@ -18,6 +18,7 @@ type HormoneCardProps = {
   onEditSubClick?: () => void
   currentPhase: string
   cycleDay: number
+  hormoneCycle?: any
   supabaseClient: SupabaseClient
   onOpenSkinDiary?: () => void
 }
@@ -35,6 +36,7 @@ export default function HormoneCard({
   onEditSubClick,
   currentPhase,
   cycleDay,
+  hormoneCycle,
   supabaseClient,
   onOpenSkinDiary,
 }: HormoneCardProps) {
@@ -209,6 +211,7 @@ export default function HormoneCard({
         onClose={() => setSheetOpen(false)}
         currentPhase={currentPhase}
         cycleDay={cycleDay}
+        hormoneCycle={hormoneCycle}
         showEditChrome={showEditChrome}
         supabaseClient={supabaseClient}
         onOpenSkinDiary={onOpenSkinDiary}
