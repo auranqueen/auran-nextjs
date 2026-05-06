@@ -58,7 +58,7 @@ export default function SkinDiarySheet({ open, onClose, supabase, userId, hormon
     setTimeout(() => setSaved(false), 2000)
   }
 
-  const TAB_LABELS = ['오늘 상태', '피부 일지']
+  const TAB_LABELS = ['오늘 상태']
 
   return (
     <div style={{ position:'fixed', inset:0, zIndex:300, background:'rgba(0,0,0,0.8)', display:'flex', alignItems:'flex-end', justifyContent:'center', backdropFilter:'blur(6px)' }}
@@ -142,9 +142,6 @@ export default function SkinDiarySheet({ open, onClose, supabase, userId, hormon
             </div>
           )}
 
-          {tab === 1 && (
-            <SkinDiaryJournal supabase={supabase} userId={userId} />
-          )}
         </div>
       </div>
     </div>
