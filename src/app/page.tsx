@@ -2269,6 +2269,13 @@ export default function CustomerHomePage() {
         })}
       </div>
 
+      <SeasonRecommendSection
+        month={new Date().getMonth() + 1}
+        showEditChrome={showHomeEditChrome}
+        supabaseClient={supabase}
+        hormonePhase={hormonePhase}
+      />
+
       <div ref={routineMoreRef} id="home-routine-more" style={{ padding: routineExpanded ? '12px 16px 0' : '0 16px', marginTop: routineExpanded ? 4 : 0 }}>
         {routineExpanded ? (
           <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: '14px 14px 16px' }}>
@@ -2563,13 +2570,6 @@ export default function CustomerHomePage() {
           </div>
         ) : null}
       </div>
-
-      <SeasonRecommendSection
-        month={new Date().getMonth() + 1}
-        showEditChrome={showHomeEditChrome}
-        supabaseClient={supabase}
-        hormonePhase={hormonePhase}
-      />
 
       {/* ── BEST 랭킹 ── */}
       <div style={{ padding: '16px 16px 0' }}>
