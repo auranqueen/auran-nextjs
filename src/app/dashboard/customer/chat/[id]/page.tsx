@@ -92,6 +92,7 @@ export default function CustomerChatRoomPage() {
   const [recommendedProducts, setRecommendedProducts] = useState<{
     product_name: string
     created_at: string
+    product_id: string | null
   }[]>([])
 
   const scrollBottom = useCallback(() => {
@@ -159,9 +160,9 @@ export default function CustomerChatRoomPage() {
           try {
             const arr = JSON.parse(m.message ?? '[]')
             const first = Array.isArray(arr) ? arr[0] : arr
-            return { product_name: first?.name ?? '추천 제품', created_at: m.created_at }
+            return { product_name: first?.name ?? '추천 제품', created_at: m.created_at, product_id: first?.id ?? null }
           } catch {
-            return { product_name: '추천 제품', created_at: m.created_at }
+            return { product_name: '추천 제품', created_at: m.created_at, product_id: null }
           }
         })
         setRecommendedProducts(parsed)
@@ -850,28 +851,43 @@ export default function CustomerChatRoomPage() {
       <div
         style={{
           position: 'fixed',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          transform: slideOpen ? 'translateY(0)' : 'translateY(100%)',
-          transition: 'transform 0.3s ease',
+          top: '50%',
+          left: '50%',
+          transform: slideOpen ? 'translate(-50%, -50%)' : 'translate(-50%, -40%)',
+          opacity: slideOpen ? 1 : 0,
+          pointerEvents: slideOpen ? 'auto' : 'none',
+          transition: 'transform 0.25s ease, opacity 0.25s ease',
           background: '#16162a',
-          borderRadius: '16px 16px 0 0',
-          padding: '10px 16px 32px',
+          borderRadius: 18,
+          padding: '18px 16px 20px',
           zIndex: 50,
-          maxHeight: '70vh',
+          width: '88%',
+          maxWidth: 360,
+          maxHeight: '80vh',
           overflowY: 'auto',
         }}
       >
-        <div
-          style={{
-            width: 28,
-            height: 3,
-            background: 'rgba(255,255,255,0.2)',
-            borderRadius: 2,
-            margin: '0 auto 14px',
-          }}
-        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+          <span style={{ fontSize: 13, color: '#fff' }}>내 정보</span>
+          <button
+            onClick={() => setSlideOpen(false)}
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.1)',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'rgba(255,255,255,0.6)',
+              fontSize: 12,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            ✕
+          </button>
+        </div>
         {profileInfo ? (
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
@@ -940,43 +956,21 @@ export default function CustomerChatRoomPage() {
                   )
                 : 100
               return nextG ? (
-                <div
-                  style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    borderRadius: 10,
-                    padding: '10px 12px',
-                    marginBottom: 8,
-                  }}
-                >
+                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
                     <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>다음 등급 {nextG}</span>
                     <span style={{ fontSize: 10, color: '#C084FC' }}>{remain.toLocaleString()}원 남음</span>
                   </div>
-                  <div
-                    style={{
-                      height: 5,
-                      background: 'rgba(255,255,255,0.08)',
-                      borderRadius: 3,
-                      overflow: 'hidden',
-                      marginBottom: 4,
-                    }}
-                  >
+                  <div style={{ height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 3, overflow: 'hidden' }}>
                     <div style={{ width: `${prog}%`, height: '100%', background: '#7B5EA7', borderRadius: 3 }} />
                   </div>
                 </div>
               ) : null
             })()}
             {profileInfo.hormone_label && (
-              <div
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  borderRadius: 10,
-                  padding: '10px 12px',
-                  marginBottom: 8,
-                }}
-              >
+              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 12px', marginBottom: 8 }}>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>
-                  오늘의 피부 - {profileInfo.hormone_label}
+                  오늘의 피부 — {profileInfo.hormone_label}
                 </div>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>
                   {profileInfo.hormone_phase === 'menstrual' && '피지 줄고 피부 얇아지는 시기예요. 보습 집중 케어 타이밍!'}
@@ -989,24 +983,54 @@ export default function CustomerChatRoomPage() {
             {recommendedProducts.length > 0 && (
               <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 12px' }}>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>원장님 추천 제품</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {recommendedProducts.map((p, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div
+                      key={i}
+                      onClick={() => p.product_id && router.push('/products/' + p.product_id)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 8,
+                        cursor: p.product_id ? 'pointer' : 'default',
+                        padding: '6px 8px',
+                        borderRadius: 8,
+                        background: 'rgba(255,255,255,0.03)',
+                        border: '1px solid rgba(255,255,255,0.07)',
+                      }}
+                    >
                       <div
                         style={{
-                          width: 32,
-                          height: 32,
+                          width: 36,
+                          height: 36,
                           borderRadius: 6,
                           background: 'rgba(123,94,167,0.2)',
                           flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 16,
                         }}
-                      />
-                      <div>
-                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>{p.product_name}</div>
+                      >
+                        🧴
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            fontSize: 11,
+                            color: 'rgba(255,255,255,0.8)',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {p.product_name}
+                        </div>
                         <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>
                           {new Date(p.created_at).toLocaleDateString('ko-KR')} 추천
                         </div>
                       </div>
+                      {p.product_id && <span style={{ fontSize: 10, color: '#C084FC', flexShrink: 0 }}>보기 →</span>}
                     </div>
                   ))}
                 </div>
@@ -1014,9 +1038,7 @@ export default function CustomerChatRoomPage() {
             )}
           </>
         ) : (
-          <div style={{ padding: '20px 0', textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>
-            로딩중...
-          </div>
+          <div style={{ padding: '20px 0', textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>로딩중...</div>
         )}
       </div>
 
