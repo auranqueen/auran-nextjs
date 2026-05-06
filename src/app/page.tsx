@@ -2192,7 +2192,7 @@ export default function CustomerHomePage() {
             }}
             style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}
           >
-            더보기 ›
+            루틴 보기 ›
           </span>
         </div>
       </div>
