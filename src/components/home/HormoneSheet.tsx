@@ -369,30 +369,32 @@ export default function HormoneSheet({
     }
   }
 
-  function confirmStart(){
+  async function confirmStart(){
     if(!pendingStart){
       setGuideMsg('마법 시작일 칸을 탭해서 날짜를 먼저 선택해줘요 💜')
       return
     }
+    const uid = (await supabaseClient.auth.getUser()).data.user?.id ?? ''
     void supabaseClient
       .from('hormone_cycle')
       .update({ last_period_date: `${pendingStart.d}T${pendingStart.t}:00` })
-      .eq('auth_id', (supabaseClient as any)._session?.user?.id ?? '')
+      .eq('auth_id', uid)
       .then(() => {
         setGuideMsg('')
         setPendingStart(null)
       })
   }
 
-  function confirmEnd(){
+  async function confirmEnd(){
     if(!pendingEnd){
       setGuideMsg('마법 종료일 칸을 탭해서 날짜를 먼저 선택해줘요 💜')
       return
     }
+    const uid = (await supabaseClient.auth.getUser()).data.user?.id ?? ''
     void supabaseClient
       .from('hormone_cycle')
       .update({ period_end_date: `${pendingEnd.d}T${pendingEnd.t}:00` })
-      .eq('auth_id', (supabaseClient as any)._session?.user?.id ?? '')
+      .eq('auth_id', uid)
       .then(() => {
         setGuideMsg('')
         setPendingEnd(null)
@@ -662,26 +664,6 @@ export default function HormoneSheet({
                   </div>
                 </div>
               ) : null}
-              <div style={{ marginTop: 16, paddingTop: 14, borderTop: '0.5px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>마법캘린더</div>
-                <button
-                  type="button"
-                  onClick={() => onOpenSkinDiary?.()}
-                  style={{
-                    width: '100%',
-                    padding: '11px 0',
-                    borderRadius: 12,
-                    background: 'rgba(123,94,167,0.2)',
-                    border: '0.5px solid rgba(123,94,167,0.4)',
-                    color: '#c4a7e7',
-                    fontSize: 12,
-                    marginTop: 14,
-                    cursor: 'pointer',
-                  }}
-                >
-                  마법캘린더 기록하기 💜
-                </button>
-              </div>
             </>
           )}
         </div>
