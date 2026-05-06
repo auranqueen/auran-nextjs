@@ -252,6 +252,13 @@ export default function CustomerHomePage() {
   useEffect(() => {
     setMounted(true)
   }, [])
+  const [isPC, setIsPC] = useState(false)
+  useEffect(() => {
+    const check = () => setIsPC(window.innerWidth >= 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const [userName, setUserName] = useState('')
   const [greetingIndex, setGreetingIndex] = useState(
@@ -2074,7 +2081,7 @@ export default function CustomerHomePage() {
           </div>
         ) : (
           <>
-            {hormoneCycle && typeof window !== 'undefined' && window.innerWidth < 768 && (
+            {hormoneCycle && !isPC && (
               <BodyCareCard
                 currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? ''}
                 skinType={String((motivationProfile as any)?.skin_type ?? '')}
