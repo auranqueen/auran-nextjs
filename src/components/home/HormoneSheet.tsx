@@ -170,7 +170,6 @@ type HormoneSheetProps = {
   cycleDay: number
   showEditChrome: boolean
   supabaseClient: SupabaseClient
-  skinRecList?: any[]
 }
 
 export default function HormoneSheet({
@@ -180,7 +179,6 @@ export default function HormoneSheet({
   cycleDay,
   showEditChrome,
   supabaseClient,
-  skinRecList = [],
 }: HormoneSheetProps) {
   const [activeTab, setActiveTab] = useState(0)
   const [values, setValues] = useState<Record<string, string>>(() => ({ ...DEFAULTS_BY_KEY }))
@@ -288,7 +286,6 @@ export default function HormoneSheet({
   if (!isOpen) return null
 
   const accent = TAB_DEFS[activeTab]?.color ?? '#c4a8ff'
-  const phaseProducts = (skinRecList ?? []).slice(0, 6)
 
   return (
     <div
@@ -479,60 +476,6 @@ export default function HormoneSheet({
                     <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>오랜 한마디</div>
                     <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.65 }}>{PHASE_EXTRA_COPY[tabId].quote}</div>
                   </div>
-                </div>
-              ) : null}
-              {phaseProducts.length > 0 ? (
-                <div
-                  style={{
-                    display: 'flex',
-                    overflowX: 'auto',
-                    gap: 8,
-                    paddingBottom: 4,
-                    scrollbarWidth: 'none',
-                    marginTop: 12,
-                  }}
-                  className="scroll-hide"
-                >
-                  {phaseProducts.map((p: any, i: number) => {
-                    const thumb = p.storage_thumb_url || p.thumb_img
-                    const brandName = p.brands?.name || p.brand || ''
-                    const price = p.retail_price ?? p.sale_price
-                    return (
-                      <div
-                        key={p.id ?? i}
-                        style={{
-                          minWidth: 110,
-                          flexShrink: 0,
-                          background: 'rgba(255,255,255,0.04)',
-                          border: '0.5px solid rgba(255,255,255,0.07)',
-                          borderRadius: 12,
-                          overflow: 'hidden',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <div
-                          style={{
-                            aspectRatio: '1',
-                            background: 'rgba(255,255,255,0.03)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                        >
-                          {thumb ? (
-                            <img src={thumb} alt={p.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : null}
-                        </div>
-                        <div style={{ padding: '8px 10px 10px' }}>
-                          <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>{brandName}</div>
-                          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', lineHeight: 1.35 }}>{p.name}</div>
-                          <div style={{ fontSize: 12, color: '#C9A96E', marginTop: 4 }}>
-                            {price != null ? `${Number(price).toLocaleString()}원` : ''}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
                 </div>
               ) : null}
             </>

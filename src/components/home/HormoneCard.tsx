@@ -19,7 +19,6 @@ type HormoneCardProps = {
   currentPhase: string
   cycleDay: number
   supabaseClient: SupabaseClient
-  skinRecList?: any[]
 }
 
 const PHASE_ORDER = ['달빛기', '황금기', '만개기', '물들기']
@@ -36,7 +35,6 @@ export default function HormoneCard({
   currentPhase,
   cycleDay,
   supabaseClient,
-  skinRecList,
 }: HormoneCardProps) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const phaseIdx = PHASE_ORDER.indexOf(currentPhase)
@@ -211,7 +209,6 @@ export default function HormoneCard({
         cycleDay={cycleDay}
         showEditChrome={showEditChrome}
         supabaseClient={supabaseClient}
-        skinRecList={skinRecList ?? []}
       />
     </>
   )
