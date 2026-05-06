@@ -39,8 +39,6 @@ type Zone = 'face' | 'body' | 'scalp' | 'inner'
 const TABS: { key: Zone; label: string }[] = [
   { key: 'face', label: '💆 페이스' },
   { key: 'body', label: '🧴 바디' },
-  { key: 'scalp', label: '💇 두피' },
-  { key: 'inner', label: '🌿 이너뷰티' },
 ]
 
 const CARD_BG = 'rgba(255,255,255,0.03)'
@@ -88,6 +86,7 @@ export default function BodyCareCard({
   })
   const [pq, setPq] = useState('')
   const [picks, setPicks] = useState<ProductRow[]>([])
+  const [closed, setClosed] = useState(false)
 
   const fetchRows = useCallback(async () => {
     setLoading(true)
@@ -283,8 +282,26 @@ export default function BodyCareCard({
   }
 
   const finalProducts = products.length > 0 ? products : (recommended ?? []).slice(0, 6)
+  if (closed) return null
   return (
-    <div style={{ marginTop: 10, border: `1px solid ${CARD_BORDER}`, borderRadius: 12, background: CARD_BG, padding: 12 }}>
+    <div style={{ marginTop: 10, border: `1px solid ${CARD_BORDER}`, borderRadius: 12, background: CARD_BG, padding: 12, position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setClosed(true)}
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 8,
+          background: 'none',
+          border: 'none',
+          color: 'rgba(255,255,255,0.4)',
+          fontSize: 16,
+          cursor: 'pointer',
+          lineHeight: 1,
+        }}
+      >
+        ×
+      </button>
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
         {TABS.map((t) => (
           <button
