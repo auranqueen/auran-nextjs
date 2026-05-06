@@ -238,6 +238,29 @@ export default function BodyCareCard({
     const visibleRecommended = (filteredRecommended.length > 0 ? filteredRecommended : (recommended ?? [])).slice(0, 6)
     return (
       <div>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => {
+                setTab(t.key)
+                setClosed(false)
+              }}
+              style={{
+                fontSize: 12,
+                padding: '4px 12px',
+                borderRadius: 20,
+                border: 'none',
+                cursor: 'pointer',
+                background: tab === t.key ? '#7B5EA7' : 'rgba(255,255,255,0.08)',
+                color: tab === t.key ? '#fff' : 'rgba(255,255,255,0.5)',
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           justifyContent: 'center', padding: '32px 16px', gap: 12, textAlign: 'center'
