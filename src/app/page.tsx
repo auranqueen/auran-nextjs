@@ -1956,6 +1956,7 @@ export default function CustomerHomePage() {
           currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? '달빛기'}
           cycleDay={calcHormoneBriefing(hormoneCycle)?.cycleDay ?? 0}
           supabaseClient={supabase}
+          products={products}
         />
 
         {hormoneCycle === null ? (
