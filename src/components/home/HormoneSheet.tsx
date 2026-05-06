@@ -518,7 +518,12 @@ export default function HormoneSheet({
         <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 16px' }}>
           <div style={{marginBottom:14,background:'#14121e',border:'0.5px solid rgba(123,94,167,0.35)',borderRadius:16,padding:'14px 15px'}}>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
-              <span style={{fontSize:12,color:'#c4a7e7'}}>마법캘린더</span>
+              <span style={{fontSize:12,color:'#c4a7e7'}}>
+                마법캘린더
+                <span style={{fontSize:10,color:'rgba(201,169,110,0.7)',marginLeft:6}}>
+                  {new Date().getFullYear()}
+                </span>
+              </span>
               <span style={{fontSize:10,background:'rgba(201,169,110,0.15)',color:'#C9A96E',borderRadius:20,padding:'3px 8px'}}>
                 {hormoneCycle?.cycle_length ? `${hormoneCycle.cycle_length}일 주기` : '28일 주기 예측중'}
               </span>
