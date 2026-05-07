@@ -118,33 +118,33 @@ function scoreProduct(
 
   // 페이즈별 카테고리 보너스
   if (opts.phase === '황금기') {
-    if (rc === 'ampoule' || rc === 'serum') score += 5
-    if (rc === 'essence') score += 3
+    if (rc === 'ampoule' || rc === 'serum') score += 15
+    if (rc === 'essence') score += 8
   }
   if (opts.phase === '만개기') {
-    if (rc === 'serum' || rc === 'toner') score += 5
-    if (rc === 'essence') score += 3
+    if (rc === 'serum' || rc === 'toner') score += 15
+    if (rc === 'essence') score += 8
   }
   if (opts.phase === '달빛기') {
-    if (rc === 'serum' || rc === 'ampoule') score += 5
-    if (rc === 'cream') score += 2
+    if (rc === 'serum' || rc === 'ampoule') score += 15
+    if (rc === 'cream') score += 5
   }
   if (opts.phase === '물들기') {
-    if (rc === 'cream' || rc === 'essence') score += 5
-    if (rc === 'ampoule') score += 3
+    if (rc === 'cream' || rc === 'essence') score += 15
+    if (rc === 'ampoule') score += 8
   }
   if (opts.phase === '갱년기') {
-    if (rc === 'ampoule' || rc === 'cream') score += 5
+    if (rc === 'ampoule' || rc === 'cream') score += 15
   }
 
   // 날씨별 카테고리 보너스
   if (opts.uvHigh) {
-    if (rc === 'sunscreen') score += 8
-    if (rc === 'ampoule' || rc === 'serum') score += 2
+    if (rc === 'sunscreen') score += 20
+    if (rc === 'ampoule' || rc === 'serum') score += 5
   }
   if (opts.dustBad) {
-    if (rc === 'cleanser') score += 8
-    if (rc === 'toner') score += 3
+    if (rc === 'cleanser') score += 20
+    if (rc === 'toner') score += 8
   }
 
   return score
