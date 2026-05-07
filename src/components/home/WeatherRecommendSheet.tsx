@@ -247,8 +247,10 @@ export default function WeatherRecommendSheet({
           .limit(12)
         if (sData && sData.length > 0) {
           list = (sData as any[]).map(row => ({
+            ...row,
             id: String(row.id),
             product_id: row.product_id,
+            concern_tag: (row as any).step_tag || (row as any).concern_tag || '',
             products: row.products as MappingRow['products'],
             weather_tags: [],
             hormone_tags: [],
@@ -257,7 +259,7 @@ export default function WeatherRecommendSheet({
           }))
         } else {
           const sel =
-            'id, name, retail_price, sale_price, thumb_img, storage_thumb_url, tag, skin_types, is_exclusive'
+            'id, name, retail_price, sale_price, thumb_img, storage_thumb_url, tag, skin_types, is_exclusive, routine_category, concern_tags, hormone_timing, weather_tags, hormone_tags'
           let fb = await supabaseClient
             .from('products')
             .select(sel)
