@@ -206,6 +206,7 @@ export default function WeatherRecommendSheet({
   const [searchResults, setSearchResults] = useState<MappingRow['products'][]>([])
   const [searchLoading, setSearchLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
 
   const phaseLabel = useMemo(() => phaseLabelFromTrackAndDay(hormoneTrack, cycleDay), [hormoneTrack, cycleDay])
   const hookMsg = (() => {
@@ -460,6 +461,17 @@ export default function WeatherRecommendSheet({
     setSearchQ('')
     setSearchResults([])
     setFormOpen(true)
+  }
+
+  const updateCategory = async (productId: string, category: string) => {
+    const { error } = await supabaseClient
+      .from('products')
+      .update({ routine_category: category })
+      .eq('id', productId)
+    if (!error) {
+      setEditingCategoryId(null)
+      await load()
+    }
   }
 
   const saveMapping = async () => {
@@ -934,7 +946,68 @@ export default function WeatherRecommendSheet({
                             )}
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            {((displayThree[0].products as any)?.routine_category || displayThree[0].concern_tag) ? (
+                            {showEditChrome &&
+                            editingCategoryId === String(displayThree[0].products?.id) &&
+                            displayThree[0].products ? (
+                              <select
+                                value={(displayThree[0].products as any)?.routine_category || ''}
+                                onChange={e =>
+                                  void updateCategory(String(displayThree[0].products?.id), e.target.value)
+                                }
+                                onClick={e => e.stopPropagation()}
+                                style={{
+                                  fontSize: 9,
+                                  color: '#c4a7e7',
+                                  background: 'rgba(123,94,167,0.2)',
+                                  border: '0.5px solid rgba(123,94,167,0.5)',
+                                  borderRadius: 6,
+                                  padding: '2px 6px',
+                                  cursor: 'pointer',
+                                  marginBottom: 2,
+                                }}
+                              >
+                                {[
+                                  'cleanser',
+                                  'toner',
+                                  'essence',
+                                  'ampoule',
+                                  'serum',
+                                  'cream',
+                                  'mask',
+                                  'sunscreen',
+                                  'eye',
+                                  'exfoliant',
+                                  'body',
+                                  'lotion',
+                                  'aroma',
+                                  'set',
+                                  'tool',
+                                  'device',
+                                ].map(c => (
+                                  <option key={c} value={c}>
+                                    {c}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : showEditChrome &&
+                              ((displayThree[0].products as any)?.routine_category || displayThree[0].concern_tag) ? (
+                              <div
+                                onClick={e => {
+                                  e.stopPropagation()
+                                  setEditingCategoryId(String(displayThree[0].products?.id))
+                                }}
+                                style={{
+                                  fontSize: 9,
+                                  color: 'rgba(255,255,255,0.38)',
+                                  marginBottom: 2,
+                                  cursor: 'pointer',
+                                  textDecoration: 'underline',
+                                }}
+                              >
+                                {(displayThree[0].products as any)?.routine_category || displayThree[0].concern_tag}
+                              </div>
+                            ) : !showEditChrome &&
+                              ((displayThree[0].products as any)?.routine_category || displayThree[0].concern_tag) ? (
                               <div
                                 style={{
                                   fontSize: 9,
@@ -1210,7 +1283,61 @@ export default function WeatherRecommendSheet({
                                 <div style={{ width: '100%', height: '100%' }} />
                               )}
                             </div>
-                            {(p as any)?.routine_category || row.concern_tag ? (
+                            {showEditChrome && editingCategoryId === String(p?.id) && p ? (
+                              <select
+                                value={(p as any)?.routine_category || ''}
+                                onChange={e => void updateCategory(String(p?.id), e.target.value)}
+                                onClick={e => e.stopPropagation()}
+                                style={{
+                                  fontSize: 9,
+                                  color: '#c4a7e7',
+                                  background: 'rgba(123,94,167,0.2)',
+                                  border: '0.5px solid rgba(123,94,167,0.5)',
+                                  borderRadius: 6,
+                                  padding: '2px 6px',
+                                  cursor: 'pointer',
+                                  marginBottom: 2,
+                                }}
+                              >
+                                {[
+                                  'cleanser',
+                                  'toner',
+                                  'essence',
+                                  'ampoule',
+                                  'serum',
+                                  'cream',
+                                  'mask',
+                                  'sunscreen',
+                                  'eye',
+                                  'exfoliant',
+                                  'body',
+                                  'lotion',
+                                  'aroma',
+                                  'set',
+                                  'tool',
+                                  'device',
+                                ].map(c => (
+                                  <option key={c} value={c}>
+                                    {c}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : showEditChrome && ((p as any)?.routine_category || row.concern_tag) ? (
+                              <div
+                                onClick={e => {
+                                  e.stopPropagation()
+                                  setEditingCategoryId(String(p?.id))
+                                }}
+                                style={{
+                                  fontSize: 9,
+                                  color: 'rgba(255,255,255,0.28)',
+                                  cursor: 'pointer',
+                                  textDecoration: 'underline',
+                                }}
+                              >
+                                {(p as any)?.routine_category || row.concern_tag}
+                              </div>
+                            ) : !showEditChrome && ((p as any)?.routine_category || row.concern_tag) ? (
                               <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)' }}>
                                 {(p as any)?.routine_category || row.concern_tag}
                               </div>
