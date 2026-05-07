@@ -78,7 +78,7 @@ const MENU = [
       { label: '이상 감지·알림', href: '/admin/settings/anomaly', icon: '🚨' },
       { label: 'AURAN 설정', href: '/admin/settings/admin-settings', icon: '🧩' },
       { label: '타임세일 관리', href: '/admin/settings/flash-sale', icon: '⏱️' },
-      { label: '콘텐츠 관리', href: '/admin/settings/categories', icon: '📂' },
+      { label: '카테고리 관리', href: '/admin/settings/categories', icon: '📂' },
       { label: '로그인 기록', href: '/admin/logs', icon: '📋' },
       { label: '개인정보 접근 로그', href: '/admin/privacy', icon: '🔒' },
     ],
