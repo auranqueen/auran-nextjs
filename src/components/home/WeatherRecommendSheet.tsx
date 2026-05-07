@@ -274,55 +274,35 @@ export default function WeatherRecommendSheet({
       if (!wErr && wData && wData.length > 0) {
         list = wData as MappingRow[]
       } else {
-        const { data: sData } = await supabaseClient
-          .from('season_product_mapping')
-          .select('*, products(*)')
-          .eq('month', month)
+        const sel =
+          'id, name, retail_price, sale_price, thumb_img, storage_thumb_url, tag, skin_types, is_exclusive, routine_category, concern_tags, hormone_timing, weather_tags, hormone_tags'
+        let fb = await supabaseClient
+          .from('products')
+          .select(sel)
           .eq('is_active', true)
-          .order('priority', { ascending: true })
-          .limit(12)
-        if (sData && sData.length > 0) {
-          list = (sData as any[]).map(row => ({
-            ...row,
-            id: String(row.id),
-            product_id: row.product_id,
-            concern_tag: (row as any).step_tag || (row as any).concern_tag || '',
-            products: row.products as MappingRow['products'],
-            weather_tags: [],
-            hormone_tags: [],
-            skin_tags: [],
-            reason_text: row.concern_tag || '',
-          }))
-        } else {
-          const sel =
-            'id, name, retail_price, sale_price, thumb_img, storage_thumb_url, tag, skin_types, is_exclusive, routine_category, concern_tags, hormone_timing, weather_tags, hormone_tags'
-          let fb = await supabaseClient
+          .eq('status', 'approved')
+          .order('sales_count', { ascending: false })
+          .limit(9)
+        if (fb.error || !fb.data?.length) {
+          fb = await supabaseClient
             .from('products')
             .select(sel)
             .eq('is_active', true)
-            .eq('status', 'approved')
+            .eq('status', 'active')
             .order('sales_count', { ascending: false })
             .limit(9)
-          if (fb.error || !fb.data?.length) {
-            fb = await supabaseClient
-              .from('products')
-              .select(sel)
-              .eq('is_active', true)
-              .eq('status', 'active')
-              .order('sales_count', { ascending: false })
-              .limit(9)
-          }
-          const pData = fb.data
-          list = (pData || []).map((p: any) => ({
-            id: `auto-${p.id}`,
-            product_id: p.id,
-            products: p as MappingRow['products'],
-            weather_tags: [],
-            hormone_tags: [],
-            skin_tags: [],
-            reason_text: '',
-          }))
         }
+        const pData = fb.data
+        list = (pData || []).map((p: any) => ({
+          id: `auto-${p.id}`,
+          product_id: p.id,
+          concern_tag: '',
+          products: p as MappingRow['products'],
+          weather_tags: [],
+          hormone_tags: [],
+          skin_tags: [],
+          reason_text: '',
+        }))
       }
 
       const currentPhase = phaseLabelFromTrackAndDay?.(hormoneTrack, cycleDay) ?? ''
