@@ -825,259 +825,432 @@ export default function WeatherRecommendSheet({
                   오늘 맞춤 제품을 준비 중이에요
                 </div>
               ) : (
-                displayThree.map(row => {
-                  const p = row.products!
-                  const thumb = p.storage_thumb_url || p.thumb_img || ''
-                  const rid = String(row.id)
-                  const open = openReasonId === rid
-                  const sub =
-                    row.weather_tags?.length || row.hormone_tags?.length
-                      ? [...(row.weather_tags || []).slice(0, 2), ...(row.hormone_tags || []).slice(0, 1)].join(' · ')
-                      : row.concern_tag || ''
-                  return (
-                    <div
-                      key={rid}
-                      style={{
-                        position: 'relative',
-                        background: CARD_BG,
-                        borderRadius: 14,
-                        padding: 12,
-                        display: 'flex',
-                        gap: 12,
-                        alignItems: 'flex-start',
-                        border: showEditChrome ? '1px dashed rgba(155,125,232,0.4)' : undefined,
-                      }}
-                    >
+                <>
+                  {displayThree.length > 0 ? (
+                    <div style={{ position: 'relative', marginBottom: 8 }}>
                       <div
-                        onClick={e => {
-                          e.stopPropagation()
-                          setChecked(prev => ({ ...prev, [rid]: !prev[rid] }))
-                        }}
+                        onClick={() => router.push(`/products/${displayThree[0].products?.id}`)}
                         style={{
-                          width: 20, height: 20, borderRadius: 6,
-                          border: checked[rid] === false
-                            ? '1.5px solid rgba(255,255,255,0.2)'
-                            : '1.5px solid #7B5EA7',
-                          background: checked[rid] === false
-                            ? 'transparent' : '#7B5EA7',
-                          display: 'flex', alignItems: 'center',
-                          justifyContent: 'center', flexShrink: 0,
-                          cursor: 'pointer', marginRight: 8
-                        }}
-                      >
-                        {checked[rid] !== false && (
-                          <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
-                            <path d="M1 4L4 7.5L10 1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
-                          </svg>
-                        )}
-                      </div>
-                      {showEditChrome ? (
-                        <div style={{ position: 'absolute', top: 6, right: 6, display: 'flex', gap: 4, zIndex: 3 }} onClick={e => e.stopPropagation()}>
-                          <button
-                            type="button"
-                            onClick={() => openEditRow(row)}
-                            style={{
-                              fontSize: 9,
-                              padding: '2px 6px',
-                              borderRadius: 4,
-                              border: '1px solid rgba(123,108,192,0.5)',
-                              background: 'rgba(30,24,48,0.9)',
-                              color: '#c4b8f0',
-                              cursor: 'pointer',
-                              fontFamily: 'inherit',
-                            }}
-                          >
-                            수정
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void deleteRow(row.id)}
-                            style={{
-                              fontSize: 9,
-                              padding: '2px 6px',
-                              borderRadius: 4,
-                              border: '1px solid rgba(220,80,80,0.45)',
-                              background: 'rgba(40,20,20,0.85)',
-                              color: '#f0a0a0',
-                              cursor: 'pointer',
-                              fontFamily: 'inherit',
-                            }}
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={() => router.push(`/products/${p.id}`)}
-                        style={{
-                          display: 'flex',
-                          gap: 12,
-                          alignItems: 'center',
-                          flex: 1,
-                          background: 'none',
-                          border: 'none',
-                          padding: 0,
+                          background: CARD_BG,
+                          border: '0.5px solid rgba(123,94,167,0.5)',
+                          borderRadius: 14,
+                          padding: 13,
                           cursor: 'pointer',
-                          textAlign: 'left',
-                          fontFamily: 'inherit',
+                          position: 'relative',
                         }}
                       >
-                        <div
-                          style={{
-                            width: 60,
-                            height: 60,
-                            borderRadius: 12,
-                            overflow: 'hidden',
-                            background: 'rgba(255,255,255,0.04)',
-                            flexShrink: 0,
-                          }}
-                        >
-                          {thumb ? (
-                            <img src={thumb} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>🧴</div>
-                          )}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          {sub ? (
-                            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.38)', marginBottom: 4 }}>{sub}</div>
-                          ) : null}
-                          {((p as any)?.routine_category || row.concern_tag) ? (
-                            <div style={{ fontSize: '9px', color: 'rgba(255,255,255,0.38)', marginBottom: 2 }}>
-                              {(p as any)?.routine_category || row.concern_tag}
-                            </div>
-                          ) : null}
-                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 5 }}>
-                            <span style={{
-                              fontSize: 9, padding: '2px 7px', borderRadius: 20,
-                              background: 'rgba(123,94,167,0.25)', color: '#c4a7e7',
-                              border: '0.5px solid rgba(123,94,167,0.4)'
-                            }}>✦ AI 추천</span>
-                            {(row.hormone_tags ?? []).slice(0, 1).map((t: string) => (
-                              <span key={t} style={{
-                                fontSize: 9, padding: '2px 7px', borderRadius: 20,
-                                background: 'rgba(201,169,110,0.15)', color: '#C9A96E',
-                                border: '0.5px solid rgba(201,169,110,0.3)'
-                              }}>{t}</span>
-                            ))}
-                            {(row.weather_tags ?? []).slice(0, 1).map((t: string) => (
-                              <span key={t} style={{
-                                fontSize: 9, padding: '2px 7px', borderRadius: 20,
-                                background: 'rgba(224,140,60,0.2)', color: '#f0a060',
-                                border: '0.5px solid rgba(224,140,60,0.3)'
-                              }}>{t}</span>
-                            ))}
+                        {showEditChrome ? (
+                          <div style={{ position: 'absolute', top: 6, right: 6, display: 'flex', gap: 4, zIndex: 3 }} onClick={e => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => openEditRow(displayThree[0])}
+                              style={{
+                                fontSize: 9,
+                                padding: '2px 6px',
+                                borderRadius: 4,
+                                border: '1px solid rgba(123,108,192,0.5)',
+                                background: 'rgba(30,24,48,0.9)',
+                                color: '#c4b8f0',
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                              }}
+                            >
+                              수정
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => void deleteRow(displayThree[0].id)}
+                              style={{
+                                fontSize: 9,
+                                padding: '2px 6px',
+                                borderRadius: 4,
+                                border: '1px solid rgba(220,80,80,0.45)',
+                                background: 'rgba(40,20,20,0.85)',
+                                color: '#f0a0a0',
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                              }}
+                            >
+                              삭제
+                            </button>
+                          </div>
+                        ) : null}
+                        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                          <div
+                            onClick={e => {
+                              e.stopPropagation()
+                              setChecked(prev => ({
+                                ...prev,
+                                [String(displayThree[0].id)]: prev[String(displayThree[0].id)] === false ? true : false,
+                              }))
+                            }}
+                            style={{
+                              width: 22,
+                              height: 22,
+                              borderRadius: 7,
+                              flexShrink: 0,
+                              marginTop: 2,
+                              border:
+                                checked[String(displayThree[0].id)] !== false
+                                  ? '1.5px solid #7B5EA7'
+                                  : '1.5px solid rgba(255,255,255,0.2)',
+                              background:
+                                checked[String(displayThree[0].id)] !== false ? '#7B5EA7' : 'transparent',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            {checked[String(displayThree[0].id)] !== false ? (
+                              <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                                <path d="M1 4L4 7.5L10 1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+                              </svg>
+                            ) : null}
                           </div>
                           <div
                             style={{
-                              fontSize: 13,
-                              color: '#fff',
-                              lineHeight: 1.4,
-                              marginBottom: 6,
+                              width: 72,
+                              height: 72,
+                              borderRadius: 12,
                               overflow: 'hidden',
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              textOverflow: 'ellipsis',
+                              background: 'rgba(255,255,255,0.04)',
+                              flexShrink: 0,
                             }}
                           >
-                            {p.name}
+                            {displayThree[0].products &&
+                            (displayThree[0].products.storage_thumb_url || displayThree[0].products.thumb_img) ? (
+                              <img
+                                src={String(
+                                  displayThree[0].products.storage_thumb_url || displayThree[0].products.thumb_img || ''
+                                )}
+                                alt={displayThree[0].products.name}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              />
+                            ) : (
+                              <div style={{ width: '100%', height: '100%' }} />
+                            )}
                           </div>
-                          <div style={{ fontSize: 13, color: '#c9a96e' }}>₩{displayPrice(p).toLocaleString()}</div>
-                          {(row.reason_text?.trim() || true) ? (
-                            <div style={{
-                              background: 'rgba(123,94,167,0.1)',
-                              border: '0.5px solid rgba(123,94,167,0.2)',
-                              borderRadius: 9, padding: '7px 9px', marginTop: 7
-                            }}>
-                              <div style={{ fontSize: 9, color: '#9B7FCC', marginBottom: 3 }}>
-                                오랜이 고른 이유
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            {((displayThree[0].products as any)?.routine_category || displayThree[0].concern_tag) ? (
+                              <div
+                                style={{
+                                  fontSize: 9,
+                                  color: 'rgba(255,255,255,0.38)',
+                                  marginBottom: 2,
+                                }}
+                              >
+                                {(displayThree[0].products as any)?.routine_category || displayThree[0].concern_tag}
                               </div>
-                              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.55 }}>
-                                {row.reason_text?.trim()
-                                  ? row.reason_text.split('\n').map((line: string, i: number) => (
-                                      <div key={i}>· {line}</div>
-                                    ))
-                                  : buildReasonLines(p).map((line: string, i: number) => (
-                                      <div key={i}>· {line}</div>
-                                    ))
-                                }
-                              </div>
+                            ) : null}
+                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 5 }}>
+                              <span
+                                style={{
+                                  fontSize: 9,
+                                  padding: '2px 7px',
+                                  borderRadius: 20,
+                                  background: 'rgba(123,94,167,0.25)',
+                                  color: '#c4a7e7',
+                                  border: '0.5px solid rgba(123,94,167,0.4)',
+                                }}
+                              >
+                                ✦ AI 추천
+                              </span>
+                              {(displayThree[0].hormone_tags ?? []).slice(0, 1).map((t: string) => (
+                                <span
+                                  key={t}
+                                  style={{
+                                    fontSize: 9,
+                                    padding: '2px 7px',
+                                    borderRadius: 20,
+                                    background: 'rgba(201,169,110,0.15)',
+                                    color: '#C9A96E',
+                                    border: '0.5px solid rgba(201,169,110,0.3)',
+                                  }}
+                                >
+                                  {t}
+                                </span>
+                              ))}
+                              {(displayThree[0].weather_tags ?? []).slice(0, 1).map((t: string) => (
+                                <span
+                                  key={t}
+                                  style={{
+                                    fontSize: 9,
+                                    padding: '2px 7px',
+                                    borderRadius: 20,
+                                    background: 'rgba(224,140,60,0.2)',
+                                    color: '#f0a060',
+                                    border: '0.5px solid rgba(224,140,60,0.3)',
+                                  }}
+                                >
+                                  {t}
+                                </span>
+                              ))}
                             </div>
-                          ) : null}
+                            {(displayThree[0].products as any)?.brand_name ? (
+                              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)' }}>
+                                {String((displayThree[0].products as any).brand_name)}
+                              </div>
+                            ) : null}
+                            <div style={{ fontSize: 13, color: '#fff', lineHeight: 1.35, marginTop: 2 }}>
+                              {displayThree[0].products?.name ?? ''}
+                            </div>
+                            <div style={{ fontSize: 13, color: '#C9A96E', marginTop: 3 }}>
+                              {displayThree[0].products
+                                ? `₩${displayPrice(displayThree[0].products).toLocaleString()}`
+                                : ''}
+                            </div>
+                          </div>
                         </div>
-                      </button>
-                      <button
-                        type="button"
-                        title="추천 이유"
-                        onClick={e => {
-                          e.stopPropagation()
-                          setOpenReasonId(open ? null : rid)
-                        }}
-                        style={{
-                          position: 'absolute',
-                          right: 10,
-                          bottom: 10,
-                          width: 26,
-                          height: 26,
-                          borderRadius: 8,
-                          border: `1px solid ${BTN_Q_FG}`,
-                          background: BTN_Q,
-                          color: BTN_Q_FG,
-                          fontSize: 13,
-                          cursor: 'pointer',
-                          fontFamily: 'inherit',
-                          lineHeight: 1,
-                        }}
-                      >
-                        ?
-                      </button>
-                      {open ? (
-                        <div
+                        <button
+                          type="button"
+                          title="추천 이유"
+                          onClick={e => {
+                            e.stopPropagation()
+                            const rid0 = String(displayThree[0].id)
+                            setOpenReasonId(openReasonId === rid0 ? null : rid0)
+                          }}
                           style={{
                             position: 'absolute',
-                            left: 12,
-                            right: 12,
-                            bottom: '100%',
-                            marginBottom: 8,
-                            overflow: 'visible',
-                            zIndex: 10,
-                            background: REASON_BOX,
-                            borderLeft: `3px solid ${REASON_BORDER}`,
+                            right: 10,
+                            bottom: 10,
+                            width: 26,
+                            height: 26,
                             borderRadius: 8,
-                            padding: '10px 12px',
-                            fontSize: 11,
-                            color: 'rgba(255,255,255,0.82)',
-                            lineHeight: 1.55,
-                            boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+                            border: `1px solid ${BTN_Q_FG}`,
+                            background: BTN_Q,
+                            color: BTN_Q_FG,
+                            fontSize: 13,
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                            lineHeight: 1,
                           }}
                         >
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
-                            {weatherTags.slice(0, 2).map(t => (
-                              <span key={t} style={{ fontSize: 9, padding: '2px 6px', borderRadius: 6, background: TAG_WEATHER_BG, color: TAG_WEATHER_FG }}>
-                                {t}
-                              </span>
-                            ))}
-                            {skinType.trim() ? (
-                              <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 6, background: TAG_SKIN_BG, color: TAG_SKIN_FG }}>{skinType.trim()}</span>
-                            ) : null}
-                            {phaseLabel ? (
-                              <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 6, background: `${hormoneColor}33`, color: hormoneColor }}>
-                                {phaseLabel}
-                              </span>
-                            ) : null}
-                          </div>
-                          {row.reason_text?.trim()
-                            ? row.reason_text.split('\n').map((line, i) => <div key={i}>· {line}</div>)
-                            : buildReasonLines(p).map((line, i) => (
-                                <div key={i}>· {line}</div>
+                          ?
+                        </button>
+                        {openReasonId === String(displayThree[0].id) ? (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              left: 12,
+                              right: 12,
+                              bottom: '100%',
+                              marginBottom: 8,
+                              overflow: 'visible',
+                              zIndex: 10,
+                              background: REASON_BOX,
+                              borderLeft: `3px solid ${REASON_BORDER}`,
+                              borderRadius: 8,
+                              padding: '10px 12px',
+                              fontSize: 11,
+                              color: 'rgba(255,255,255,0.82)',
+                              lineHeight: 1.55,
+                              boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+                            }}
+                          >
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
+                              {weatherTags.slice(0, 2).map(t => (
+                                <span key={t} style={{ fontSize: 9, padding: '2px 6px', borderRadius: 6, background: TAG_WEATHER_BG, color: TAG_WEATHER_FG }}>
+                                  {t}
+                                </span>
                               ))}
+                              {skinType.trim() ? (
+                                <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 6, background: TAG_SKIN_BG, color: TAG_SKIN_FG }}>{skinType.trim()}</span>
+                              ) : null}
+                              {phaseLabel ? (
+                                <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 6, background: `${hormoneColor}33`, color: hormoneColor }}>
+                                  {phaseLabel}
+                                </span>
+                              ) : null}
+                            </div>
+                            {displayThree[0].reason_text?.trim()
+                              ? displayThree[0].reason_text.split('\n').map((line, i) => <div key={i}>· {line}</div>)
+                              : displayThree[0].products
+                                ? buildReasonLines(displayThree[0].products).map((line, i) => (
+                                    <div key={i}>· {line}</div>
+                                  ))
+                                : null}
+                          </div>
+                        ) : null}
+                      </div>
+                      <div
+                        style={{
+                          background: 'rgba(123,94,167,0.1)',
+                          border: '0.5px solid rgba(123,94,167,0.2)',
+                          borderRadius: 9,
+                          padding: '8px 10px',
+                          marginTop: 8,
+                        }}
+                      >
+                        <div style={{ fontSize: 9, color: '#9B7FCC', marginBottom: 3 }}>오랜이 고른 이유</div>
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.55 }}>
+                          {displayThree[0].reason_text?.trim()
+                            ? displayThree[0].reason_text.split('\n').map((line: string, i: number) => (
+                                <div key={i}>· {line}</div>
+                              ))
+                            : displayThree[0].products
+                              ? buildReasonLines(displayThree[0].products).map((line: string, i: number) => (
+                                  <div key={i}>· {line}</div>
+                                ))
+                              : null}
                         </div>
-                      ) : null}
+                      </div>
                     </div>
-                  )
-                })
+                  ) : null}
+                  {displayThree.length > 1 ? (
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+                      {displayThree.slice(1, 3).map(row => {
+                        const p = row.products
+                        const thumb = p ? p.storage_thumb_url || p.thumb_img || '' : ''
+                        const rid = String(row.id)
+                        return (
+                          <div
+                            key={rid}
+                            onClick={() => router.push(`/products/${p?.id}`)}
+                            style={{
+                              background: CARD_BG,
+                              border: '0.5px solid rgba(255,255,255,0.07)',
+                              borderRadius: 14,
+                              padding: 11,
+                              cursor: 'pointer',
+                              position: 'relative',
+                            }}
+                          >
+                            {showEditChrome ? (
+                              <div style={{ position: 'absolute', top: 6, left: 6, display: 'flex', gap: 4, zIndex: 3 }} onClick={e => e.stopPropagation()}>
+                                <button
+                                  type="button"
+                                  onClick={() => openEditRow(row)}
+                                  style={{
+                                    fontSize: 9,
+                                    padding: '2px 6px',
+                                    borderRadius: 4,
+                                    border: '1px solid rgba(123,108,192,0.5)',
+                                    background: 'rgba(30,24,48,0.9)',
+                                    color: '#c4b8f0',
+                                    cursor: 'pointer',
+                                    fontFamily: 'inherit',
+                                  }}
+                                >
+                                  수정
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void deleteRow(row.id)}
+                                  style={{
+                                    fontSize: 9,
+                                    padding: '2px 6px',
+                                    borderRadius: 4,
+                                    border: '1px solid rgba(220,80,80,0.45)',
+                                    background: 'rgba(40,20,20,0.85)',
+                                    color: '#f0a0a0',
+                                    cursor: 'pointer',
+                                    fontFamily: 'inherit',
+                                  }}
+                                >
+                                  삭제
+                                </button>
+                              </div>
+                            ) : null}
+                            <div
+                              style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'flex-start',
+                                marginBottom: 6,
+                              }}
+                            >
+                              <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                                <span
+                                  style={{
+                                    fontSize: 9,
+                                    padding: '2px 6px',
+                                    borderRadius: 20,
+                                    background: 'rgba(123,94,167,0.25)',
+                                    color: '#c4a7e7',
+                                  }}
+                                >
+                                  ✦ AI
+                                </span>
+                                {(row.weather_tags ?? []).slice(0, 1).map((t: string) => (
+                                  <span
+                                    key={t}
+                                    style={{
+                                      fontSize: 9,
+                                      padding: '2px 6px',
+                                      borderRadius: 20,
+                                      background: 'rgba(224,140,60,0.2)',
+                                      color: '#f0a060',
+                                    }}
+                                  >
+                                    {t}
+                                  </span>
+                                ))}
+                              </div>
+                              <div
+                                onClick={e => {
+                                  e.stopPropagation()
+                                  setChecked(prev => ({
+                                    ...prev,
+                                    [rid]: prev[rid] === false ? true : false,
+                                  }))
+                                }}
+                                style={{
+                                  width: 18,
+                                  height: 18,
+                                  borderRadius: 5,
+                                  flexShrink: 0,
+                                  border:
+                                    checked[rid] !== false
+                                      ? '1.5px solid #7B5EA7'
+                                      : '1.5px solid rgba(255,255,255,0.2)',
+                                  background: checked[rid] !== false ? '#7B5EA7' : 'transparent',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {checked[rid] !== false ? (
+                                  <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                                    <path d="M1 4L4 7.5L10 1" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" />
+                                  </svg>
+                                ) : null}
+                              </div>
+                            </div>
+                            <div
+                              style={{
+                                width: '100%',
+                                aspectRatio: '1',
+                                borderRadius: 9,
+                                overflow: 'hidden',
+                                background: 'rgba(255,255,255,0.04)',
+                                marginBottom: 7,
+                              }}
+                            >
+                              {thumb ? (
+                                <img src={thumb} alt={p?.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              ) : (
+                                <div style={{ width: '100%', height: '100%' }} />
+                              )}
+                            </div>
+                            {(p as any)?.routine_category || row.concern_tag ? (
+                              <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.28)' }}>
+                                {(p as any)?.routine_category || row.concern_tag}
+                              </div>
+                            ) : null}
+                            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', lineHeight: 1.35 }}>
+                              {p?.name ?? ''}
+                            </div>
+                            <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 3 }}>
+                              {p ? `₩${displayPrice(p).toLocaleString()}` : ''}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : null}
+                </>
               )}
               {displayThree.length > 0 ? (
                 <>
