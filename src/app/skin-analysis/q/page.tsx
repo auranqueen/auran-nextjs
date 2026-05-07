@@ -477,19 +477,45 @@ function SkinAnalysisQPageContent() {
             </div>
           )}
 
-          {/* 남성 → 면도 질문 */}
           {answers.gender === 'male' && (
-            <div style={{ background: 'rgba(100,160,240,0.05)', border: '1px solid rgba(100,160,240,0.15)', borderRadius: '12px', padding: '12px', marginBottom: '12px' }}>
-              <div style={{ fontSize: '9px', color: 'rgba(120,170,255,0.7)', fontFamily: 'monospace', marginBottom: '8px' }}>👨 남성 피부 특이사항</div>
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.7)', marginBottom: '8px' }}>면도로 인한 피부 자극이 있나요?</div>
-              <div style={{ display: 'flex', gap: '5px' }}>
-                {[{ val: 'often', label: '자주 있음' }, { val: 'sometimes', label: '가끔' }, { val: 'none', label: '없음' }, { val: 'no_shave', label: '면도안함' }].map(o => (
-                  <div key={o.val} onClick={() => setAnswers(a => ({ ...a, hormoneStatus: o.val === 'often' || o.val === 'sometimes' ? 'shaving' : 'no_shaving' }))}
-                    style={{ flex: 1, padding: '7px 4px', textAlign: 'center', borderRadius: '8px', fontSize: '9px', cursor: 'pointer', background: answers.hormoneStatus === 'shaving' && (o.val === 'often' || o.val === 'sometimes') ? 'rgba(100,160,240,0.1)' : CARD_BG, border: answers.hormoneStatus === 'shaving' && (o.val === 'often' || o.val === 'sometimes') ? '1.5px solid rgba(100,160,240,0.3)' : CARD_BORDER, color: TEXT_MUTED }}>
-                    {o.label}
-                  </div>
-                ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>
+                {userAge < 20
+                  ? '여드름 상태가 어느 정도인가요?'
+                  : userAge < 50
+                  ? '피지·유분 상태는 어떠신가요?'
+                  : '최근 피부 변화가 느껴지시나요?'}
               </div>
+              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.3)', marginBottom: '8px' }}>
+                {userAge < 20
+                  ? '요즘 피부 상태를 솔직하게 알려주세요'
+                  : userAge < 50
+                  ? '오후 2~3시 기준으로 생각해 주세요'
+                  : '1~2년 사이 변화 기준으로 알려주세요'}
+              </div>
+              {(userAge < 20
+                ? ['심한 편이에요 — 자주, 많이 올라와요', '가끔 나요 — 스트레스받으면 생겨요', '거의 없는 편이에요']
+                : userAge < 50
+                ? ['이마·코 T존만 번들거려요', '얼굴 전체가 번들거려요', '번들거림이 거의 없어요']
+                : ['예전보다 건조해졌어요', '탄력이 줄고 처진 느낌이에요', '큰 변화는 못 느끼겠어요']
+              ).map(opt => (
+                <div
+                  key={opt}
+                  onClick={() => setAnswers(a => ({ ...a, hormoneStatus: opt as HormoneStatus }))}
+                  style={{
+                    padding: '10px 14px', borderRadius: '12px', fontSize: '12px',
+                    cursor: 'pointer',
+                    background: answers.hormoneStatus === opt
+                      ? 'rgba(123,94,167,0.15)' : 'rgba(255,255,255,0.03)',
+                    border: `1px solid ${answers.hormoneStatus === opt
+                      ? '#7B5EA7' : 'rgba(255,255,255,0.08)'}`,
+                    color: answers.hormoneStatus === opt
+                      ? '#fff' : 'rgba(255,255,255,0.6)',
+                  }}
+                >
+                  {opt}
+                </div>
+              ))}
             </div>
           )}
         </div>
