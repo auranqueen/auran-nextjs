@@ -114,7 +114,15 @@ function SkinAnalysisQPageContent() {
   const isPregnant = answers.hormoneStatus === 'pregnant'
 
   const handleNext = async () => {
-    if (step < 5) { setStep(s => s + 1); return }
+    if (step < 5) {
+      if (step === 3 && answers.gender !== 'female') {
+        setAnswers(a => ({ ...a, hormoneStatus: 'unknown' }))
+        setStep(5)
+        return
+      }
+      setStep(s => s + 1)
+      return
+    }
     setSaving(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
