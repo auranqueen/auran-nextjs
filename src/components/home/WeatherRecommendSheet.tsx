@@ -1002,32 +1002,6 @@ export default function WeatherRecommendSheet({
                             </div>
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          title="추천 이유"
-                          onClick={e => {
-                            e.stopPropagation()
-                            const rid0 = String(displayThree[0].id)
-                            setOpenReasonId(openReasonId === rid0 ? null : rid0)
-                          }}
-                          style={{
-                            position: 'absolute',
-                            right: 10,
-                            bottom: 10,
-                            width: 26,
-                            height: 26,
-                            borderRadius: 8,
-                            border: `1px solid ${BTN_Q_FG}`,
-                            background: BTN_Q,
-                            color: BTN_Q_FG,
-                            fontSize: 13,
-                            cursor: 'pointer',
-                            fontFamily: 'inherit',
-                            lineHeight: 1,
-                          }}
-                        >
-                          ?
-                        </button>
                         {openReasonId === String(displayThree[0].id) ? (
                           <div
                             style={{
@@ -1320,7 +1294,11 @@ export default function WeatherRecommendSheet({
                             quantity: 1,
                           })
                         })
-                        router.push('/checkout')
+                        const ids = selectedRows
+                          .map(row => row.products?.id)
+                          .filter(Boolean)
+                          .join(',')
+                        router.push(ids ? `/checkout?products=${ids}` : '/checkout')
                       }}
                       style={{
                         background: '#7B5EA7',
