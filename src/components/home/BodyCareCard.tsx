@@ -304,7 +304,11 @@ export default function BodyCareCard({
     )
   }
 
-  const finalProducts = products.length > 0 ? products : (recommended ?? []).slice(0, 6)
+  const rawProducts = products.length > 0 ? products : (recommended ?? []).slice(0, 6)
+  const finalProducts = rawProducts.filter((p: any) => {
+    const rc = String(p.routine_category || '').toLowerCase()
+    return tab === 'body' ? rc === 'body' : rc !== 'body'
+  })
   if (closed) return null
   return (
     <div style={{ marginTop: 10, border: `1px solid ${CARD_BORDER}`, borderRadius: 12, background: CARD_BG, padding: 12, position: 'relative' }}>
