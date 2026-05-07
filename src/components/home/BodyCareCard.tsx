@@ -8,6 +8,7 @@ type BodyCareCardRow = {
   id: string
   phase_tags: string[] | null
   category_tags: string[] | null
+  category?: string
   title: string
   care: string
   quote: string
@@ -53,9 +54,13 @@ function pickPrice(p: ProductRow): number {
 }
 
 function categoryMatch(row: BodyCareCardRow, tab: Zone): boolean {
+  if (row.category && ['face', 'body', 'scalp', 'inner'].includes(row.category)) {
+    return row.category === tab
+  }
   const tags = Array.isArray(row.category_tags) ? row.category_tags : []
   const hasKnownZone =
-    tags.includes('face') || tags.includes('body') || tags.includes('scalp') || tags.includes('inner') ||
+    tags.includes('face') || tags.includes('body') ||
+    tags.includes('scalp') || tags.includes('inner') ||
     tags.includes('_zone:face') || tags.includes('_zone:body') || tags.includes('_zone:scalp') || tags.includes('_zone:inner')
   if (!hasKnownZone) return tab === 'face'
   return tags.includes(tab) || tags.includes(`_zone:${tab}`)

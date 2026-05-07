@@ -260,6 +260,7 @@ export default function AdminCareCardsPage() {
       const payload = {
         title: draft.title.trim(),
         phase_tags: phaseTagsPayload(draft.phase),
+        category: draft.category,
         category_tags,
         care: draft.care,
         quote: draft.quote,
