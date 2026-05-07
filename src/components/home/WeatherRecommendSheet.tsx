@@ -442,18 +442,92 @@ export default function WeatherRecommendSheet({
 
   const hormoneColor = phaseLabel ? HORMONE_PHASE_COLORS[phaseLabel] ?? '#9b7de8' : '#888'
 
+  const REASON_COPY: Record<string, string[]> = {
+    sunscreen: [
+      '자외선 매우높음, 지금 바로 덧바르세요 ☀',
+      '2시간마다 덧바르는 게 핵심이에요. 지금 챙겨요 ☀',
+      '오늘 자외선 지수 최고예요. 선크림 없이 나가면 내일 후회해요',
+    ],
+    ampoule: [
+      '황금기 흡수력 최고! 지금 바르면 2배 효과예요 ✨',
+      '1년 중 앰플이 제일 잘 먹히는 시기예요. 놓치지 마요',
+      '황금기에 고기능 앰플, 피부가 다 받아들여요 ✨',
+    ],
+    serum: [
+      '황금기 흡수력 최고! 지금 바르면 2배 효과예요 ✨',
+      '1년 중 세럼이 제일 잘 먹히는 시기예요. 놓치지 마요',
+      '황금기에 고기능 세럼, 피부가 다 받아들여요 ✨',
+    ],
+    cream: [
+      '물들기엔 보습 레이어링이 핵심이에요 💧',
+      '지금 크림 안 바르면 내일 당겨요. 꼭 챙겨요',
+      '물들기 건조함, 크림으로 마무리해야 버텨요 💧',
+    ],
+    cleanser: [
+      '미세먼지 많은 날 이중 세안이 피부를 지켜요',
+      '오늘 같은 날 클렌징 건너뛰면 모공이 막혀요',
+      '저자극 클렌징으로 미세먼지 완전히 씻어내요',
+    ],
+  }
+
+  function pickRandom(arr: string[]): string {
+    return arr[Math.floor(Math.random() * arr.length)]
+  }
+
   const buildReasonLines = (product: NonNullable<MappingRow['products']>) => {
     const lines: string[] = []
-    if (uvHigh) lines.push('자외선 강한 날 피부 장벽 보호에 추천해요')
-    if (dustBad) lines.push('미세먼지 많은 날 진정 케어에 도움돼요')
-    if (phaseLabel === '달빛기') lines.push('달빛기엔 자극 없는 순한 성분이 중요해요')
-    if (phaseLabel === '황금기') lines.push('황금기엔 고기능 성분 흡수력이 최고예요')
-    const st = skinType.trim()
-    if (st === '건성') lines.push('건성 피부 수분 보충에 맞게 골랐어요')
-    if (st === '지성') lines.push('지성 피부 피지 밸런스에 맞게 골랐어요')
-    if (lines.length === 0) {
-      lines.push(`${product.name}은(는) 오늘 조건에 맞춰 추천했어요`)
+    const rc = String((product as any)?.routine_category || '').toLowerCase()
+    const ct = Array.isArray((product as any)?.concern_tags)
+      ? ((product as any).concern_tags as string[])
+      : []
+
+    // 1순위: 카테고리 + 상황 조합
+    if (rc === 'sunscreen' && uvHigh) {
+      lines.push(pickRandom(REASON_COPY.sunscreen))
+    } else if (rc === 'cleanser' && dustBad) {
+      lines.push(pickRandom(REASON_COPY.cleanser))
+    } else if (rc === 'ampoule' && phaseLabel === '황금기') {
+      lines.push(pickRandom(REASON_COPY.ampoule))
+    } else if (rc === 'serum' && phaseLabel === '황금기') {
+      lines.push(pickRandom(REASON_COPY.serum))
+    } else if ((rc === 'cream' || rc === 'essence') && phaseLabel === '물들기') {
+      lines.push(pickRandom(REASON_COPY.cream))
+    } else if (rc === 'ampoule' || rc === 'serum') {
+      lines.push(pickRandom(REASON_COPY.ampoule))
+    } else if (rc === 'cream') {
+      lines.push(pickRandom(REASON_COPY.cream))
+    } else if (rc === 'cleanser') {
+      lines.push(pickRandom(REASON_COPY.cleanser))
+    } else if (rc === 'sunscreen') {
+      lines.push(pickRandom(REASON_COPY.sunscreen))
     }
+
+    // 2순위: 고민 태그
+    if (lines.length === 0) {
+      if (ct.includes('whitening') || ct.includes('brightness'))
+        lines.push('미백 케어에 도움되는 성분이 들어있어요')
+      else if (ct.includes('acne'))
+        lines.push('트러블 진정에 효과적인 성분이에요')
+      else if (ct.includes('dryness'))
+        lines.push('건조함을 채워주는 보습 성분이 풍부해요')
+      else if (ct.includes('elasticity'))
+        lines.push('탄력 케어 성분으로 피부를 탄탄하게 해줘요')
+      else if (ct.includes('pore'))
+        lines.push('모공 케어에 도움되는 성분이 들어있어요')
+      else if (ct.includes('sensitivity'))
+        lines.push('민감한 피부도 안심하고 쓸 수 있어요')
+      else if (ct.includes('barrier'))
+        lines.push('피부 장벽 강화에 도움되는 성분이에요')
+    }
+
+    // 3순위: 기본 fallback
+    if (lines.length === 0) {
+      if (uvHigh) lines.push('자외선 강한 날 피부 보호에 추천해요 ☀')
+      else if (dustBad) lines.push('미세먼지 많은 날 피부 진정에 도움돼요')
+      else if (phaseLabel) lines.push(`${phaseLabel} 피부 상태에 맞게 골랐어요 💜`)
+      else lines.push('오늘 피부 컨디션에 맞게 골랐어요 💜')
+    }
+
     return lines
   }
 
