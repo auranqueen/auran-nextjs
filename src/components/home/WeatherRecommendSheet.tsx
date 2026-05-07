@@ -1131,8 +1131,12 @@ export default function WeatherRecommendSheet({
                     <button
                       type="button"
                       onClick={() => {
-                        displayThree.forEach(row => {
-                          if (!checked[String(row.id)]) return
+                        const selectedRows = displayThree.filter(row =>
+                          checked[String(row.id)] !== false
+                        )
+                        if (selectedRows.length === 0) return
+                        cart.clear()
+                        selectedRows.forEach(row => {
                           const p = row.products
                           if (!p) return
                           cart.addToCart({
