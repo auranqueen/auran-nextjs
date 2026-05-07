@@ -102,7 +102,7 @@ function displayPrice(p: { retail_price?: number | null; sale_price?: number | n
 
 function scoreProduct(
   p: NonNullable<MappingRow['products']>,
-  opts: { uvHigh: boolean; dustBad: boolean; skinType: string }
+  opts: { uvHigh: boolean; dustBad: boolean; skinType: string; phase: string }
 ): number {
   let score = 0
   const tag = String(p.tag || '').toLowerCase()
@@ -114,6 +114,39 @@ function scoreProduct(
     const hit = arr.some(x => String(x).toLowerCase() === st || String(x).toLowerCase().includes(st) || st.includes(String(x).toLowerCase()))
     if (hit) score += 3
   }
+  const rc = String((p as any)?.routine_category || '').toLowerCase()
+
+  // 페이즈별 카테고리 보너스
+  if (opts.phase === '황금기') {
+    if (rc === 'ampoule' || rc === 'serum') score += 5
+    if (rc === 'essence') score += 3
+  }
+  if (opts.phase === '만개기') {
+    if (rc === 'serum' || rc === 'toner') score += 5
+    if (rc === 'essence') score += 3
+  }
+  if (opts.phase === '달빛기') {
+    if (rc === 'serum' || rc === 'ampoule') score += 5
+    if (rc === 'cream') score += 2
+  }
+  if (opts.phase === '물들기') {
+    if (rc === 'cream' || rc === 'essence') score += 5
+    if (rc === 'ampoule') score += 3
+  }
+  if (opts.phase === '갱년기') {
+    if (rc === 'ampoule' || rc === 'cream') score += 5
+  }
+
+  // 날씨별 카테고리 보너스
+  if (opts.uvHigh) {
+    if (rc === 'sunscreen') score += 8
+    if (rc === 'ampoule' || rc === 'serum') score += 2
+  }
+  if (opts.dustBad) {
+    if (rc === 'cleanser') score += 8
+    if (rc === 'toner') score += 3
+  }
+
   return score
 }
 
@@ -292,6 +325,7 @@ export default function WeatherRecommendSheet({
         }
       }
 
+      const currentPhase = phaseLabelFromTrackAndDay?.(hormoneTrack, cycleDay) ?? ''
       const scored = [...list].sort((a, b) => {
         const pa = a.products
         const pb = b.products
@@ -302,11 +336,13 @@ export default function WeatherRecommendSheet({
           uvHigh,
           dustBad: !!dustBad,
           skinType: skinType || '',
+          phase: currentPhase,
         })
         const sb = scoreProduct(pb, {
           uvHigh,
           dustBad: !!dustBad,
           skinType: skinType || '',
+          phase: currentPhase,
         })
         return sb - sa
       })
@@ -360,7 +396,7 @@ export default function WeatherRecommendSheet({
     } finally {
       setLoading(false)
     }
-  }, [supabaseClient, uvHigh, dustBad, skinType])
+  }, [supabaseClient, uvHigh, dustBad, skinType, hormoneTrack, cycleDay])
 
   useEffect(() => {
     if (!isOpen) return
