@@ -15,6 +15,7 @@ interface Product {
   status: string | null
   brand_id: string | null
   ingredient: string | null
+  ingredient_analyzed?: boolean | null
   brands?: { name: string } | null
 }
 
@@ -121,7 +122,8 @@ export default function AdminMarketingProductsClient() {
     meta: { display: 'flex', gap: 6, alignItems: 'center' },
     brandTxt: { fontSize: 11, color: 'rgba(255,255,255,0.35)' },
     catTag: { fontSize: 10, padding: '2px 7px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.3)', border: '0.5px solid rgba(255,255,255,0.08)' },
-    aiDot: { width: 6, height: 6, borderRadius: '50%', background: '#7B5EA7', flexShrink: 0 },
+    aiDotDone: { width: 6, height: 6, borderRadius: '50%', background: '#7B5EA7', flexShrink: 0 },
+    aiDotTodo: { width: 6, height: 6, borderRadius: '50%', background: '#C9A96E', flexShrink: 0 },
     right: { display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 },
     priceBox: { textAlign: 'right' as const },
     priceVal: { fontSize: 12, color: '#fff', fontWeight: 500 },
@@ -196,7 +198,13 @@ export default function AdminMarketingProductsClient() {
                 <div style={s.meta}>
                   <span style={s.brandTxt}>{p.brands?.name ?? '-'}</span>
                   {p.routine_category && <span style={s.catTag}>{p.routine_category}</span>}
-                  {p.ingredient && p.ingredient.length > 10 && <div style={s.aiDot} title="AI 분석 완료" />}
+                  {p.ingredient && p.ingredient.trim() ? (
+                    p.ingredient_analyzed === true ? (
+                      <div style={s.aiDotDone} title="AI 분석 완료" />
+                    ) : (
+                      <div style={s.aiDotTodo} title="전성분 있음 / 미분석" />
+                    )
+                  ) : null}
                 </div>
               </div>
               <div style={s.right}>
