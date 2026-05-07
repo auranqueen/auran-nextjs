@@ -1864,7 +1864,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         </div>
 
         {/* 브랜드 상세이미지 (Toast UI 에디터 작성 내용) */}
-        {detailHtml || showEditChrome ? (
+        {detailHtml || showEditChrome || Array.isArray((product as any).detail_imgs) && (product as any).detail_imgs.length > 0 ? (
           <div
             data-edit-field="detail_content"
             onClick={isEditMode ? (e) => { e.stopPropagation(); setEditingField({ field: 'detail_content', label: '상세 본문 수정', currentValue: detailHtml }) } : undefined}
