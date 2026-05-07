@@ -50,9 +50,7 @@ export default function SetPinPage() {
       const origin = typeof window !== 'undefined' ? window.location.origin : ''
       const target = redirect || '/'
       const to = origin ? `${origin}${target}` : target
-      setTimeout(() => {
-        window.location.href = to
-      }, 0)
+      window.location.replace(to)
       return
     } catch (e: any) {
       setError(e?.message || '저장에 실패했습니다.')

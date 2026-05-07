@@ -75,6 +75,33 @@ function SkinAnalysisQPageContent() {
   })
   const [saving, setSaving] = useState(false)
 
+  useEffect(() => {
+    let cancelled = false
+
+    const loadProfileGender = async () => {
+      const { data: authData } = await supabase.auth.getUser()
+      const userId = authData?.user?.id
+      if (!userId) return
+
+      const { data } = await supabase
+        .from('profiles')
+        .select('gender')
+        .eq('id', userId)
+        .maybeSingle()
+
+      const g = String((data as any)?.gender || '').toLowerCase()
+      if (cancelled) return
+      if (g === 'female' || g === 'male') {
+        setAnswers(prev => (prev.gender === g ? prev : { ...prev, gender: g as Gender }))
+      }
+    }
+
+    loadProfileGender()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const pad = (n: number) => String(n).padStart(2, '0')
 
   const toggleArr = (arr: string[], val: string, max = 99) => {
