@@ -1216,6 +1216,29 @@ export default function WeatherRecommendSheet({
                             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', lineHeight: 1.35 }}>
                               {p?.name ?? ''}
                             </div>
+                            {(row.reason_text?.trim() || (p ? buildReasonLines(p).length > 0 : false)) ? (
+                              <div style={{
+                                background: 'rgba(123,94,167,0.1)',
+                                border: '0.5px solid rgba(123,94,167,0.2)',
+                                borderRadius: 9, padding: '7px 9px', marginTop: 7
+                              }}>
+                                <div style={{ fontSize: 9, color: '#9B7FCC', marginBottom: 3 }}>
+                                  오랜이 고른 이유
+                                </div>
+                                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.55 }}>
+                                  {row.reason_text?.trim()
+                                    ? row.reason_text.split('\n').map((line: string, i: number) => (
+                                        <div key={i}>· {line}</div>
+                                      ))
+                                    : p
+                                      ? buildReasonLines(p).map((line: string, i: number) => (
+                                          <div key={i}>· {line}</div>
+                                        ))
+                                      : null
+                                  }
+                                </div>
+                              </div>
+                            ) : null}
                             <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 3 }}>
                               {p ? `₩${displayPrice(p).toLocaleString()}` : ''}
                             </div>
