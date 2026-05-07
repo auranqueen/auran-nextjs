@@ -948,6 +948,27 @@ export default function WeatherRecommendSheet({
                               {(p as any)?.routine_category || row.concern_tag}
                             </div>
                           ) : null}
+                          <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 5 }}>
+                            <span style={{
+                              fontSize: 9, padding: '2px 7px', borderRadius: 20,
+                              background: 'rgba(123,94,167,0.25)', color: '#c4a7e7',
+                              border: '0.5px solid rgba(123,94,167,0.4)'
+                            }}>✦ AI 추천</span>
+                            {(row.hormone_tags ?? []).slice(0, 1).map((t: string) => (
+                              <span key={t} style={{
+                                fontSize: 9, padding: '2px 7px', borderRadius: 20,
+                                background: 'rgba(201,169,110,0.15)', color: '#C9A96E',
+                                border: '0.5px solid rgba(201,169,110,0.3)'
+                              }}>{t}</span>
+                            ))}
+                            {(row.weather_tags ?? []).slice(0, 1).map((t: string) => (
+                              <span key={t} style={{
+                                fontSize: 9, padding: '2px 7px', borderRadius: 20,
+                                background: 'rgba(224,140,60,0.2)', color: '#f0a060',
+                                border: '0.5px solid rgba(224,140,60,0.3)'
+                              }}>{t}</span>
+                            ))}
+                          </div>
                           <div
                             style={{
                               fontSize: 13,
@@ -964,6 +985,27 @@ export default function WeatherRecommendSheet({
                             {p.name}
                           </div>
                           <div style={{ fontSize: 13, color: '#c9a96e' }}>₩{displayPrice(p).toLocaleString()}</div>
+                          {(row.reason_text?.trim() || true) ? (
+                            <div style={{
+                              background: 'rgba(123,94,167,0.1)',
+                              border: '0.5px solid rgba(123,94,167,0.2)',
+                              borderRadius: 9, padding: '7px 9px', marginTop: 7
+                            }}>
+                              <div style={{ fontSize: 9, color: '#9B7FCC', marginBottom: 3 }}>
+                                오랜이 고른 이유
+                              </div>
+                              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.55 }}>
+                                {row.reason_text?.trim()
+                                  ? row.reason_text.split('\n').map((line: string, i: number) => (
+                                      <div key={i}>· {line}</div>
+                                    ))
+                                  : buildReasonLines(p).map((line: string, i: number) => (
+                                      <div key={i}>· {line}</div>
+                                    ))
+                                }
+                              </div>
+                            </div>
+                          ) : null}
                         </div>
                       </button>
                       <button
