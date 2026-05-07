@@ -207,6 +207,8 @@ export default function WeatherRecommendSheet({
   const [searchLoading, setSearchLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
+  const [editingReasonId, setEditingReasonId] = useState<string | null>(null)
+  const [editingReasonText, setEditingReasonText] = useState('')
 
   const phaseLabel = useMemo(() => phaseLabelFromTrackAndDay(hormoneTrack, cycleDay), [hormoneTrack, cycleDay])
   const hookMsg = (() => {
@@ -471,6 +473,20 @@ export default function WeatherRecommendSheet({
     if (!error) {
       setEditingCategoryId(null)
       await load()
+    }
+  }
+
+  const updateReason = async (mappingRowId: string, text: string) => {
+    const { error } = await supabaseClient
+      .from('weather_product_mapping')
+      .update({ reason_text: text.trim() })
+      .eq('id', mappingRowId)
+    if (!error) {
+      setEditingReasonId(null)
+      setEditingReasonText('')
+      await load()
+    } else {
+      setEditingReasonId(null)
     }
   }
 
@@ -1131,18 +1147,98 @@ export default function WeatherRecommendSheet({
                           marginTop: 8,
                         }}
                       >
-                        <div style={{ fontSize: 9, color: '#9B7FCC', marginBottom: 3 }}>오랜이 고른 이유</div>
-                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.55 }}>
-                          {displayThree[0].reason_text?.trim()
-                            ? displayThree[0].reason_text.split('\n').map((line: string, i: number) => (
-                                <div key={i}>· {line}</div>
-                              ))
-                            : displayThree[0].products
-                              ? buildReasonLines(displayThree[0].products).map((line: string, i: number) => (
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            marginBottom: 3,
+                          }}
+                        >
+                          <div style={{ fontSize: 9, color: '#9B7FCC' }}>오랜이 고른 이유</div>
+                          {showEditChrome ? (
+                            <button
+                              type="button"
+                              onClick={e => {
+                                e.stopPropagation()
+                                const rid = String(displayThree[0].id)
+                                setEditingReasonId(rid)
+                                setEditingReasonText(
+                                  displayThree[0].reason_text?.trim() ||
+                                    (displayThree[0].products
+                                      ? buildReasonLines(displayThree[0].products).join('\n')
+                                      : '')
+                                )
+                              }}
+                              style={{
+                                fontSize: 10,
+                                color: '#9B7FCC',
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                padding: 0,
+                                lineHeight: 1,
+                              }}
+                            >
+                              ✏️
+                            </button>
+                          ) : null}
+                        </div>
+                        {editingReasonId === String(displayThree[0].id) ? (
+                          <>
+                            <textarea
+                              value={editingReasonText}
+                              onChange={e => setEditingReasonText(e.target.value)}
+                              onClick={e => e.stopPropagation()}
+                              rows={3}
+                              style={{
+                                width: '100%',
+                                fontSize: 11,
+                                color: 'rgba(255,255,255,0.8)',
+                                background: 'rgba(255,255,255,0.06)',
+                                border: '0.5px solid rgba(123,94,167,0.4)',
+                                borderRadius: 7,
+                                padding: '6px 8px',
+                                resize: 'none',
+                                fontFamily: 'inherit',
+                                lineHeight: 1.55,
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={e => {
+                                e.stopPropagation()
+                                void updateReason(String(displayThree[0].id), editingReasonText)
+                              }}
+                              style={{
+                                marginTop: 5,
+                                fontSize: 10,
+                                background: '#7B5EA7',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: 7,
+                                padding: '4px 10px',
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                                fontWeight: 400,
+                              }}
+                            >
+                              저장
+                            </button>
+                          </>
+                        ) : (
+                          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.55 }}>
+                            {displayThree[0].reason_text?.trim()
+                              ? displayThree[0].reason_text.split('\n').map((line: string, i: number) => (
                                   <div key={i}>· {line}</div>
                                 ))
-                              : null}
-                        </div>
+                              : displayThree[0].products
+                                ? buildReasonLines(displayThree[0].products).map((line: string, i: number) => (
+                                    <div key={i}>· {line}</div>
+                                  ))
+                                : null}
+                          </div>
+                        )}
                       </div>
                     </div>
                   ) : null}
@@ -1351,21 +1447,97 @@ export default function WeatherRecommendSheet({
                                 border: '0.5px solid rgba(123,94,167,0.2)',
                                 borderRadius: 9, padding: '7px 9px', marginTop: 7
                               }}>
-                                <div style={{ fontSize: 9, color: '#9B7FCC', marginBottom: 3 }}>
-                                  오랜이 고른 이유
+                                <div
+                                  style={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'flex-start',
+                                    marginBottom: 3,
+                                  }}
+                                >
+                                  <div style={{ fontSize: 9, color: '#9B7FCC' }}>오랜이 고른 이유</div>
+                                  {showEditChrome ? (
+                                    <button
+                                      type="button"
+                                      onClick={e => {
+                                        e.stopPropagation()
+                                        const rrid = String(row.id)
+                                        setEditingReasonId(rrid)
+                                        setEditingReasonText(
+                                          row.reason_text?.trim() ||
+                                            (p ? buildReasonLines(p).join('\n') : '')
+                                        )
+                                      }}
+                                      style={{
+                                        fontSize: 10,
+                                        color: '#9B7FCC',
+                                        background: 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        padding: 0,
+                                        lineHeight: 1,
+                                      }}
+                                    >
+                                      ✏️
+                                    </button>
+                                  ) : null}
                                 </div>
-                                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.55 }}>
-                                  {row.reason_text?.trim()
-                                    ? row.reason_text.split('\n').map((line: string, i: number) => (
-                                        <div key={i}>· {line}</div>
-                                      ))
-                                    : p
-                                      ? buildReasonLines(p).map((line: string, i: number) => (
+                                {editingReasonId === String(row.id) ? (
+                                  <>
+                                    <textarea
+                                      value={editingReasonText}
+                                      onChange={e => setEditingReasonText(e.target.value)}
+                                      onClick={e => e.stopPropagation()}
+                                      rows={3}
+                                      style={{
+                                        width: '100%',
+                                        fontSize: 11,
+                                        color: 'rgba(255,255,255,0.8)',
+                                        background: 'rgba(255,255,255,0.06)',
+                                        border: '0.5px solid rgba(123,94,167,0.4)',
+                                        borderRadius: 7,
+                                        padding: '6px 8px',
+                                        resize: 'none',
+                                        fontFamily: 'inherit',
+                                        lineHeight: 1.55,
+                                      }}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={e => {
+                                        e.stopPropagation()
+                                        void updateReason(String(row.id), editingReasonText)
+                                      }}
+                                      style={{
+                                        marginTop: 5,
+                                        fontSize: 10,
+                                        background: '#7B5EA7',
+                                        color: '#fff',
+                                        border: 'none',
+                                        borderRadius: 7,
+                                        padding: '4px 10px',
+                                        cursor: 'pointer',
+                                        fontFamily: 'inherit',
+                                        fontWeight: 400,
+                                      }}
+                                    >
+                                      저장
+                                    </button>
+                                  </>
+                                ) : (
+                                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', lineHeight: 1.55 }}>
+                                    {row.reason_text?.trim()
+                                      ? row.reason_text.split('\n').map((line: string, i: number) => (
                                           <div key={i}>· {line}</div>
                                         ))
-                                      : null
-                                  }
-                                </div>
+                                      : p
+                                        ? buildReasonLines(p).map((line: string, i: number) => (
+                                            <div key={i}>· {line}</div>
+                                          ))
+                                        : null
+                                    }
+                                  </div>
+                                )}
                               </div>
                             ) : null}
                             <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 3 }}>
