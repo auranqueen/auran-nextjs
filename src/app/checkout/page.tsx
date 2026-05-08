@@ -23,19 +23,6 @@ function toNum(v: any) {
   return Number.isFinite(n) ? n : 0
 }
 
-const TEST_PRODUCT = {
-  id: 'test-1',
-  name: '테스트 결제 상품',
-  retail_price: 100,
-  thumb_img: '',
-  brand_id: null as string | null,
-  brands: { name: 'TEST' },
-  is_timesale: false,
-  timesale_ends_at: null as string | null,
-  is_groupbuy: false,
-  sale_price: 100,
-}
-
 type UcRow = {
   id: string
   status: string
@@ -210,9 +197,14 @@ function CheckoutPageInner() {
           .gt('retail_price', 0)
         const fetched = rows || []
         const hasValidPrice = fetched.some((p: any) => toNum(p.retail_price) > 0)
-        setProducts(hasValidPrice ? fetched : [TEST_PRODUCT])
+        if (!hasValidPrice) {
+          router.replace('/')
+          return
+        }
+        setProducts(hasValidPrice ? fetched : [])
       } else {
-        setProducts([TEST_PRODUCT])
+        router.replace('/')
+        return
       }
       setLoading(false)
     }
