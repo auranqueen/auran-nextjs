@@ -201,6 +201,7 @@ export default function ProductDetailClient({
 
   const executeBuy = async () => {
     const qsOwner = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('prescription_owner_id') : null
+    const refUserId = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('ref') : null
     const localOwner = typeof window !== 'undefined' ? localStorage.getItem('prescription_owner_id') : null
     const prescriptionOwnerId = qsOwner || localOwner || null
 
@@ -209,6 +210,7 @@ export default function ProductDetailClient({
       qty: String(qty),
     })
     if (prescriptionOwnerId) params.set('prescription_owner_id', prescriptionOwnerId)
+    if (refUserId) params.set('ref', refUserId)
     const {
       data: { user },
     } = await supabase.auth.getUser()

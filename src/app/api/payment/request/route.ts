@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!publicUser?.id) return NextResponse.json({ error: 'user_row_missing' }, { status: 400 })
 
   const body = await req.json()
-  const { product_id, quantity, prescription_owner_id, payment_method, total_amount: bodyTotal, final_amount: bodyFinal, recipient_name, recipient_phone, address } = body
+  const { product_id, quantity, prescription_owner_id, payment_method, total_amount: bodyTotal, final_amount: bodyFinal, recipient_name, recipient_phone, address, referrer_user_id } = body
 
   const { data: product } = await supabase
     .from('products')
@@ -64,6 +64,18 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (!order) return NextResponse.json({ error: '주문 생성 실패', detail: orderError?.message, code: orderError?.code }, { status: 500 })
+
+  const { tryCreateServiceClient } = await import('@/lib/supabase/service')
+  const supabaseAdmin = tryCreateServiceClient() || supabase
+  if (referrer_user_id) {
+    await supabaseAdmin.from('share_logs').insert({
+      sharer_user_id: referrer_user_id,
+      product_id: product.id,
+      channel: 'link',
+      converted: true,
+      converted_at: new Date().toISOString(),
+    } as any)
+  }
 
   if (payment_method === 'bank_transfer') {
     const orderNo = String((order as { order_no?: string }).order_no || '')
