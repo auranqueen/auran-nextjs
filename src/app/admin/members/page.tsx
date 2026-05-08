@@ -291,7 +291,7 @@ export default function AdminMembersPage() {
             >
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {m.name} <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: 700 }}>({m.role})</span>
+                  {m.name || m.email?.split('@')[0] || '이름 없음'} <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', fontWeight: 700 }}>({m.role})</span>
                 </div>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontFamily: "'JetBrains Mono', monospace", marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {m.email}
