@@ -287,11 +287,11 @@ export default function OwnerChatRoomPage() {
       if (cancelled) return
       setOwnerUserId(uid)
 
-      const { data: ch, error: chErr } = await supabase
-        .from('chat_channels')
-        .select('id,title,owner_memo,user_id')
-        .eq('id', channelId)
-        .maybeSingle()
+      const [{ data: ch, error: chErr }, , { data: msgs }] = await Promise.all([
+        supabase.from('chat_channels').select('id,title,owner_memo,user_id').eq('id', channelId).maybeSingle(),
+        supabase.from('chat_channels').update({ unread_count: 0 }).eq('id', channelId),
+        supabase.from('consultation_messages').select('*').eq('channel_id', channelId).order('created_at', { ascending: true }),
+      ])
 
       if (cancelled) return
       if (chErr || !ch) {
@@ -302,14 +302,6 @@ export default function OwnerChatRoomPage() {
       setChannelTitle(String(ch.title || '상담'))
       setMemoText(String((ch as { owner_memo?: string | null }).owner_memo ?? ''))
       setCustomerUserId((ch as { user_id?: string | null }).user_id ? String((ch as { user_id: string }).user_id) : null)
-
-      await supabase.from('chat_channels').update({ unread_count: 0 }).eq('id', channelId)
-
-      const { data: msgs } = await supabase
-        .from('consultation_messages')
-        .select('*')
-        .eq('channel_id', channelId)
-        .order('created_at', { ascending: true })
 
       if (cancelled) return
       setMessages((msgs || []) as MsgRow[])
