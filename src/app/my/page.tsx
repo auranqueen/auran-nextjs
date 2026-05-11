@@ -33,6 +33,7 @@ export default function MyPage() {
   const [profileData, setProfileData] = useState<any>(null)
   const [avatarUrl, setAvatarUrl] = useState('')
   const [hormoneTrack, setHormoneTrack] = useState('general')
+  const [gender, setGender] = useState('')
   const [hormoneCycle, setHormoneCycle] = useState<any>(null)
   const [periodTipOpen, setPeriodTipOpen] = useState(false)
   const [periodTipText, setPeriodTipText] = useState(TOOLTIP_FALLBACKS.period_start)
@@ -104,7 +105,7 @@ export default function MyPage() {
           })
         supabase
           .from('profiles')
-          .select('grade, full_name, username, avatar_url, phone, birth_date, skin_type, skin_concerns, menstrual_cycle, drink_frequency, exercise_frequency, preferred_brands, special_dates')
+          .select('grade, full_name, username, avatar_url, phone, birth_date, skin_type, skin_concerns, menstrual_cycle, drink_frequency, exercise_frequency, preferred_brands, special_dates, gender')
           .eq('auth_id', data.user.id)
           .maybeSingle()
           .then(async ({ data: profile }) => {
@@ -112,6 +113,7 @@ export default function MyPage() {
             const pName = profile?.full_name || profile?.username
             if (pName) setUserName(pName)
             setProfileData(profile || null)
+            setGender(String((profile as any)?.gender || ''))
             const checks = [
               !!profile?.full_name,
               !!profile?.phone,
@@ -455,7 +457,7 @@ export default function MyPage() {
         </div>
         <div onClick={() => router.push('/my/profile')} style={{ fontSize: '11px', color: TEXT_DIM, cursor: 'pointer' }}>편집 ›</div>
       </div>
-      {isPeriodTrack(hormoneTrack) ? (
+      {isPeriodTrack(hormoneTrack) && gender !== 'male' ? (
         <div style={{ margin: '10px 16px 0', display: 'flex', alignItems: 'center', gap: 8 }}>
           <button
             type="button"
