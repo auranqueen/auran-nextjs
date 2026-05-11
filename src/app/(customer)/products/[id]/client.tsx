@@ -1223,7 +1223,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           ) : (
             activeMainImageUrl ? (
               <div style={{ position: 'absolute', inset: 0 }}>
-                <img src={activeMainImageUrl} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={activeMainImageUrl} alt={name} loading="eager" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
             ) : (
               <div style={{ fontSize: 80, color: '#555' }}>🧴</div>
@@ -1250,19 +1250,19 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             ) : null}
             <div onClick={() => setActiveThumb(0)} onMouseEnter={() => setActiveThumb(0)}
               style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === 0 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              {thumbUrl ? <img src={thumbUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ fontSize: 26 }}>🧴</div>}
+              {thumbUrl ? <img src={thumbUrl} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ fontSize: 26 }}>🧴</div>}
             </div>
           </div>
           {maxThumbs.map((url, i) => (
             <div key={i} onClick={() => setActiveThumb(i + 1)} onMouseEnter={() => setActiveThumb(i + 1)}
               style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === i + 1 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           ))}
           {galleryImgs.map((url, i) => (
             <div key={`g-${i}`} onClick={() => setActiveThumb(maxThumbs.length + i + 1)} onMouseEnter={() => setActiveThumb(maxThumbs.length + i + 1)}
               style={{ width: 58, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: `2px solid ${activeThumb === maxThumbs.length + i + 1 ? GOLD : 'transparent'}`, background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-              <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
           ))}
           {hasVideo && (
@@ -1825,7 +1825,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     </div>
                   ) : null}
                   {Array.isArray(rv.images) && rv.images[0] ? (
-                    <img src={rv.images[0]} alt="" style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />
+                    <img src={rv.images[0]} alt="" loading="lazy" style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />
                   ) : null}
                   <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
                     {rv.created_at ? String(rv.created_at).slice(0, 10) : ''}
@@ -1890,7 +1890,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               <div style={{ padding: '8px 0' }}>
                 {Array.isArray((product as any).detail_imgs) && (product as any).detail_imgs.length > 0
                   ? (product as any).detail_imgs.map((url: string, i: number) => (
-                      <img key={i} src={url} alt="" style={{ width: '100%', display: 'block', marginBottom: 4 }} />
+                      <img key={i} src={url} alt="" loading="lazy" style={{ width: '100%', display: 'block', marginBottom: 4 }} />
                     ))
                   : <div style={{ padding: '16px 0', color: '#666', fontSize: 12 }}>상세 이미지가 없어요</div>
                 }
@@ -2059,7 +2059,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       <div style={{ fontSize: 8, background: '#2a1f0e', color: GOLD, padding: '2px 6px', borderRadius: 4, display: 'inline-block', marginBottom: 6 }}>STEP {i + 1}</div>
                       <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {t.storage_thumb_url || t.thumb_img ? (
-                          <img src={t.storage_thumb_url || t.thumb_img || ''} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img src={t.storage_thumb_url || t.thumb_img || ''} alt={t.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : <div style={{ fontSize: 28 }}>📦</div>}
                       </div>
                       <div style={{ fontSize: 8, color: '#666' }}>{t.brands?.name || ''}</div>
@@ -2105,7 +2105,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   style={{ flexShrink: 0, width: 120, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center', cursor: 'pointer' }}>
                   <div style={{ marginBottom: 5, width: '100%', aspectRatio: '1/1', borderRadius: 8, overflow: 'hidden', background: '#1e1a14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {t.storage_thumb_url || t.thumb_img ? (
-                      <img src={t.storage_thumb_url || t.thumb_img || ''} alt={t.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={t.storage_thumb_url || t.thumb_img || ''} alt={t.name} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : <div style={{ fontSize: 28 }}>📦</div>}
                   </div>
                   <div style={{ fontSize: 11, lineHeight: 1.3, marginBottom: 4 }}>{t.name}</div>
@@ -2623,7 +2623,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               <div style={{ marginBottom: 8 }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
                   {thumbPreviewUrl ? (
-                    <img src={thumbPreviewUrl} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }} />
+                    <img src={thumbPreviewUrl} alt="" loading="lazy" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }} />
                   ) : (
                     <div style={{ fontSize: 36, lineHeight: 1 }}>🧴</div>
                   )}
