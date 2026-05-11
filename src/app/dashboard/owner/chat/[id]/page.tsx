@@ -314,6 +314,28 @@ export default function OwnerChatRoomPage() {
           (payload: { new?: MsgRow }) => {
             const row = payload?.new
             if (!row?.id) return
+            try {
+              const _ac = new (window.AudioContext || (window as any).webkitAudioContext)()
+              const _o = _ac.createOscillator()
+              const _g = _ac.createGain()
+              const _f = _ac.createBiquadFilter()
+              _f.type = 'lowpass'
+              _f.frequency.value = 800
+              _o.connect(_f); _f.connect(_g); _g.connect(_ac.destination)
+              _o.frequency.value = 110; _o.type = 'triangle'
+              _g.gain.setValueAtTime(0, _ac.currentTime)
+              _g.gain.linearRampToValueAtTime(0.4, _ac.currentTime + 0.05)
+              _g.gain.exponentialRampToValueAtTime(0.001, _ac.currentTime + 1.2)
+              _o.start(_ac.currentTime); _o.stop(_ac.currentTime + 1.2)
+              const _o2 = _ac.createOscillator()
+              const _g2 = _ac.createGain()
+              _o2.connect(_g2); _g2.connect(_ac.destination)
+              _o2.frequency.value = 138; _o2.type = 'triangle'
+              _g2.gain.setValueAtTime(0, _ac.currentTime + 0.15)
+              _g2.gain.linearRampToValueAtTime(0.25, _ac.currentTime + 0.2)
+              _g2.gain.exponentialRampToValueAtTime(0.001, _ac.currentTime + 1.0)
+              _o2.start(_ac.currentTime + 0.15); _o2.stop(_ac.currentTime + 1.0)
+            } catch {}
             setMessages((prev) => {
               if (prev.some((p) => p.id === row.id)) return prev
               return [...prev, row]

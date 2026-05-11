@@ -69,6 +69,7 @@ export default function MyProfilePage() {
   const [notifyRestock, setNotifyRestock] = useState(true)
   const [notifySale, setNotifySale] = useState(true)
   const [notifyBirthday, setNotifyBirthday] = useState(true)
+  const [notificationSound, setNotificationSound] = useState<string>('violet')
   const [specialDates, setSpecialDates] = useState<{ label: string; date: string; notify_days: number }[]>([])
 
   useEffect(() => {
@@ -124,6 +125,7 @@ export default function MyProfilePage() {
       setNotifyRestock(profile?.notify_restock !== false)
       setNotifySale(profile?.notify_sale !== false)
       setNotifyBirthday(profile?.notify_birthday !== false)
+      setNotificationSound(String((profile as { notification_sound?: string | null } | null)?.notification_sound ?? 'violet'))
       setSpecialDates(Array.isArray(profile?.special_dates) ? (profile?.special_dates as { label: string; date: string; notify_days: number }[]) : [])
       const { data: brandData, error: brandError } = await supabase.from('brands').select('id, name').eq('status', 'active').order('name')
       if (brandData) setBrands(brandData as { id: string; name: string }[])
@@ -172,6 +174,7 @@ export default function MyProfilePage() {
         notify_restock: notifyRestock,
         notify_sale: notifySale,
         notify_birthday: notifyBirthday,
+        notification_sound: notificationSound,
         special_dates: specialDates,
       } as any)
       .eq('auth_id', authId)
@@ -776,6 +779,38 @@ export default function MyProfilePage() {
           {toggleRow('재고알림', notifyRestock, setNotifyRestock)}
           {toggleRow('세일알림', notifySale, setNotifySale)}
           {toggleRow('생일쿠폰 알림', notifyBirthday, setNotifyBirthday)}
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>채팅 알림음</div>
+            {[
+              { id: 'violet', emoji: '💜', label: 'Violet Chime' },
+              { id: 'toast', emoji: '🍞', label: 'Toast Pop' },
+              { id: 'luxury', emoji: '✨', label: 'Gold Tone' },
+              { id: 'magic', emoji: '🌸', label: 'Magic Sparkle' },
+              { id: 'aube', emoji: '🌙', label: 'Aube Whisper' },
+            ].map((s) => (
+              <div
+                key={s.id}
+                onClick={() => setNotificationSound(s.id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '8px 12px',
+                  borderRadius: 10,
+                  marginBottom: 6,
+                  cursor: 'pointer',
+                  background: notificationSound === s.id ? 'rgba(123,94,167,0.15)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${notificationSound === s.id ? '#7B5EA7' : 'rgba(255,255,255,0.08)'}`,
+                }}
+              >
+                <span style={{ fontSize: 16 }}>{s.emoji}</span>
+                <span style={{ fontSize: 12, color: '#fff' }}>{s.label}</span>
+                {notificationSound === s.id ? (
+                  <span style={{ marginLeft: 'auto', fontSize: 10, color: '#7B5EA7' }}>선택됨 ✓</span>
+                ) : null}
+              </div>
+            ))}
+          </div>
         </section>
       </div>
 
