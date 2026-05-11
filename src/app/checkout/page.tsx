@@ -187,7 +187,29 @@ function CheckoutPageInner() {
       setGradeDiscount(Number.isFinite(gPct) ? gPct : 0)
       const { rows: ucs, error: ucErr } = await fetchUserCouponsWithCoupons(supabase, me.id, { status: 'unused' })
       if (ucErr) console.warn('[checkout] user_coupons', ucErr.message)
-      setUserCoupons((ucs || []) as UcRow[])
+
+      // 브랜드 상시 쿠폰 조회 후 가상 row로 주입
+      const { data: brandCoupons } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('is_active', true)
+        .eq('coupon_type', 'regular')
+        .eq('scope', 'brand')
+
+      const existingCouponIds = new Set((ucs || []).map((u: any) => u.coupon_id))
+      const virtualRows: UcRow[] = (brandCoupons || [])
+        .filter((c: any) => !existingCouponIds.has(c.id))
+        .map((c: any) => ({
+          id: `virtual_${c.id}`,
+          status: 'unused',
+          issued_at: null,
+          used_at: null,
+          expired_at: null,
+          coupon_id: c.id,
+          coupons: c,
+        })) as UcRow[]
+
+      setUserCoupons([...(ucs || []), ...virtualRows] as UcRow[])
       if (productIds.length > 0) {
         const { data: rows } = await supabase
           .from('products')
