@@ -83,6 +83,14 @@ const MENU = [
       { label: '개인정보 접근 로그', href: '/admin/privacy', icon: '🔒' },
     ],
   },
+  {
+    section: '── 원장 모드 ──',
+    items: [
+      { label: '원장 상담톡', href: '/admin/owner-chat', icon: '💬' },
+      { label: '내 원장 기능', href: '/admin/owner-mode', icon: '👩‍⚕️' },
+      { label: '고객 피부 현황', href: '/admin/owner-customers', icon: '📊' },
+    ],
+  },
 ] as const
 
 const pageTitleByPath = (path: string) => {
