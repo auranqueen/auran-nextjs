@@ -29,7 +29,7 @@ export default function AdminOwnerModePage() {
       <div style={{ fontSize: 9, color: '#C9A96E', letterSpacing: 3, fontFamily: 'monospace', marginBottom: 16 }}>내 원장 기능 바로가기</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
         {FUNCS.map(f => (
-          <div key={f.href} onClick={() => setActiveHref(f.href)}
+          <div key={f.title} onClick={() => setActiveHref(f.href)}
             style={{ padding: 20, borderRadius: 14, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', transition: 'all .2s' }}>
             <div style={{ fontSize: 28, marginBottom: 10 }}>{f.icon}</div>
             <div style={{ fontSize: 13, color: '#fff', marginBottom: 4 }}>{f.title}</div>
