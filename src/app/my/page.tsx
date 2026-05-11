@@ -118,7 +118,7 @@ export default function MyPage() {
             if ((profile as any)?.notification_sound) {
               setNotifSound(String((profile as any).notification_sound))
             }
-            setGender(String((profile as any)?.gender || ''))
+            if ((profile as any)?.gender) setGender(String((profile as any).gender))
             setAvatarUrl(profile?.avatar_url ? String(profile.avatar_url) : '')
             const checks = [
               !!profile?.full_name,
