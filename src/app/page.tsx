@@ -1338,7 +1338,34 @@ export default function CustomerHomePage() {
   }
 
   if (!mounted) return <Loading />
-  if (!dataReady) return <Loading />
+  if (!dataReady) return (
+    <div style={{ background: '#0d0b12', minHeight: '100vh', padding: '16px' }}>
+      {/* 헤더 */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <div style={{ width: 60, height: 14, borderRadius: 4, background: 'rgba(255,255,255,0.08)', animation: 'sk 1.5s infinite' }} />
+        <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', animation: 'sk 1.5s infinite' }} />
+      </div>
+      {/* 배너 */}
+      <div style={{ width: '100%', height: 100, borderRadius: 14, background: 'rgba(255,255,255,0.06)', marginBottom: 14, animation: 'sk 1.5s infinite' }} />
+      {/* 칩 */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        {[70,55,65,50,60].map((w,i) => (
+          <div key={i} style={{ width: w, height: 26, borderRadius: 20, background: 'rgba(255,255,255,0.06)', animation: 'sk 1.5s infinite' }} />
+        ))}
+      </div>
+      {/* 카드 3개 */}
+      {[1,2,3].map(i => (
+        <div key={i} style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 12 }}>
+          <div style={{ width: 56, height: 56, borderRadius: 12, background: 'rgba(255,255,255,0.06)', flexShrink: 0, animation: 'sk 1.5s infinite' }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ width: '70%', height: 12, borderRadius: 4, background: 'rgba(255,255,255,0.06)', marginBottom: 8, animation: 'sk 1.5s infinite' }} />
+            <div style={{ width: '40%', height: 10, borderRadius: 4, background: 'rgba(255,255,255,0.06)', animation: 'sk 1.5s infinite' }} />
+          </div>
+        </div>
+      ))}
+      <style>{`@keyframes sk{0%,100%{opacity:.5}50%{opacity:1}}`}</style>
+    </div>
+  )
 
   if (onboardingDone === false) {
     const concernOptions = [
