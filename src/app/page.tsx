@@ -464,14 +464,29 @@ export default function CustomerHomePage() {
     supabase.from('skin_concerns').select('*').order('sort_order').then(({ data }) => {
       if (data && data.length > 0) setConcerns(data)
     })
-    supabase
-      .from('categories')
-      .select('id,name,level,sort_order,banner_image_url,banner_text,banner_link')
-      .order('sort_order', { ascending: true })
-      .then(({ data }) => {
-        const rows = (data || []).filter((r: any) => !!(r.banner_image_url || r.banner_text))
-        setCategoryBanners(rows)
-      })
+    const _catCacheKey = 'auran_categories_v1'
+    const _catCached = sessionStorage.getItem(_catCacheKey)
+    if (_catCached) {
+      try {
+        const { data: _cd, ts } = JSON.parse(_catCached)
+        if (Date.now() - ts < 300000 && _cd?.length) {
+          setCategoryBanners(_cd)
+        } else {
+          sessionStorage.removeItem(_catCacheKey)
+        }
+      } catch { sessionStorage.removeItem(_catCacheKey) }
+    }
+    if (!sessionStorage.getItem(_catCacheKey)) {
+      supabase.from('categories')
+        .select('id,name,level,sort_order,banner_image_url,banner_text,banner_link')
+        .order('sort_order', { ascending: true })
+        .then(({ data }) => {
+          if (data?.length) {
+            setCategoryBanners(data)
+            sessionStorage.setItem(_catCacheKey, JSON.stringify({ data, ts: Date.now() }))
+          }
+        })
+    }
 
     void (async () => {
       let restrictExclusiveCatalog = true
@@ -626,9 +641,26 @@ export default function CustomerHomePage() {
       }
     })()
 
-    supabase.from('brands').select('*').limit(7).then(({ data }) => {
-      if (data && data.length > 0) setBrands(data)
-    })
+    const _brandCacheKey = 'auran_brands_v1'
+    const _brandCached = sessionStorage.getItem(_brandCacheKey)
+    if (_brandCached) {
+      try {
+        const { data: _bd, ts } = JSON.parse(_brandCached)
+        if (Date.now() - ts < 300000 && _bd?.length) {
+          setBrands(_bd)
+        } else {
+          sessionStorage.removeItem(_brandCacheKey)
+        }
+      } catch { sessionStorage.removeItem(_brandCacheKey) }
+    }
+    if (!sessionStorage.getItem(_brandCacheKey)) {
+      supabase.from('brands').select('*').limit(7).then(({ data }) => {
+        if (data?.length) {
+          setBrands(data)
+          sessionStorage.setItem(_brandCacheKey, JSON.stringify({ data, ts: Date.now() }))
+        }
+      })
+    }
 
     supabase
       .from('magazines')
