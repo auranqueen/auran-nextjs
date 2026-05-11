@@ -114,6 +114,7 @@ export default function MyPage() {
             if (pName) setUserName(pName)
             setProfileData(profile || null)
             setGender(String((profile as any)?.gender || ''))
+            setAvatarUrl(profile?.avatar_url ? String(profile.avatar_url) : '')
             const checks = [
               !!profile?.full_name,
               !!profile?.phone,
