@@ -23,6 +23,7 @@ type MsgRow = {
   id: string
   channel_id: string
   user_id: string
+  sender_id?: string | null
   message?: string | null
   content?: string | null
   image_url?: string | null
@@ -251,81 +252,86 @@ export default function CustomerChatRoomPage() {
           (payload: { new?: MsgRow }) => {
             const row = payload?.new
             if (!row?.id) return
-            try {
-              const _ac = new (window.AudioContext || (window as any).webkitAudioContext)()
-              const _s = notifSoundRef.current
-              if (_s === 'violet') {
-                ;[523, 659, 784, 1047].forEach((freq, i) => {
+            const _senderId = String(row?.sender_id || '')
+            if (_senderId && _senderId === uid) {
+              // 본인이 보낸 메시지면 알림음 안 냄
+            } else {
+              try {
+                const _ac = new (window.AudioContext || (window as any).webkitAudioContext)()
+                const _s = notifSoundRef.current
+                if (_s === 'violet') {
+                  ;[523, 659, 784, 1047].forEach((freq, i) => {
+                    const o = _ac.createOscillator(),
+                      g = _ac.createGain()
+                    o.connect(g)
+                    g.connect(_ac.destination)
+                    o.frequency.value = freq
+                    o.type = 'sine'
+                    const t = _ac.currentTime + i * 0.15
+                    g.gain.setValueAtTime(0, t)
+                    g.gain.linearRampToValueAtTime(0.3, t + 0.05)
+                    g.gain.exponentialRampToValueAtTime(0.001, t + 0.6)
+                    o.start(t)
+                    o.stop(t + 0.6)
+                  })
+                } else if (_s === 'toast') {
                   const o = _ac.createOscillator(),
                     g = _ac.createGain()
                   o.connect(g)
                   g.connect(_ac.destination)
-                  o.frequency.value = freq
+                  o.frequency.setValueAtTime(800, _ac.currentTime)
+                  o.frequency.exponentialRampToValueAtTime(1200, _ac.currentTime + 0.1)
                   o.type = 'sine'
-                  const t = _ac.currentTime + i * 0.15
-                  g.gain.setValueAtTime(0, t)
-                  g.gain.linearRampToValueAtTime(0.3, t + 0.05)
-                  g.gain.exponentialRampToValueAtTime(0.001, t + 0.6)
-                  o.start(t)
-                  o.stop(t + 0.6)
-                })
-              } else if (_s === 'toast') {
-                const o = _ac.createOscillator(),
-                  g = _ac.createGain()
-                o.connect(g)
-                g.connect(_ac.destination)
-                o.frequency.setValueAtTime(800, _ac.currentTime)
-                o.frequency.exponentialRampToValueAtTime(1200, _ac.currentTime + 0.1)
-                o.type = 'sine'
-                g.gain.setValueAtTime(0.4, _ac.currentTime)
-                g.gain.exponentialRampToValueAtTime(0.001, _ac.currentTime + 0.3)
-                o.start(_ac.currentTime)
-                o.stop(_ac.currentTime + 0.3)
-              } else if (_s === 'luxury') {
-                ;[440, 554, 659].forEach((freq, i) => {
+                  g.gain.setValueAtTime(0.4, _ac.currentTime)
+                  g.gain.exponentialRampToValueAtTime(0.001, _ac.currentTime + 0.3)
+                  o.start(_ac.currentTime)
+                  o.stop(_ac.currentTime + 0.3)
+                } else if (_s === 'luxury') {
+                  ;[440, 554, 659].forEach((freq, i) => {
+                    const o = _ac.createOscillator(),
+                      g = _ac.createGain()
+                    o.connect(g)
+                    g.connect(_ac.destination)
+                    o.frequency.value = freq
+                    o.type = 'triangle'
+                    const t = _ac.currentTime + i * 0.08
+                    g.gain.setValueAtTime(0, t)
+                    g.gain.linearRampToValueAtTime(0.25, t + 0.02)
+                    g.gain.exponentialRampToValueAtTime(0.001, t + 1.2)
+                    o.start(t)
+                    o.stop(t + 1.2)
+                  })
+                } else if (_s === 'magic') {
+                  ;[1047, 1319, 1568, 2093, 1568, 1319].forEach((freq, i) => {
+                    const o = _ac.createOscillator(),
+                      g = _ac.createGain()
+                    o.connect(g)
+                    g.connect(_ac.destination)
+                    o.frequency.value = freq
+                    o.type = 'sine'
+                    const t = _ac.currentTime + i * 0.1
+                    g.gain.setValueAtTime(0, t)
+                    g.gain.linearRampToValueAtTime(0.2, t + 0.03)
+                    g.gain.exponentialRampToValueAtTime(0.001, t + 0.25)
+                    o.start(t)
+                    o.stop(t + 0.25)
+                  })
+                } else {
                   const o = _ac.createOscillator(),
                     g = _ac.createGain()
                   o.connect(g)
                   g.connect(_ac.destination)
-                  o.frequency.value = freq
-                  o.type = 'triangle'
-                  const t = _ac.currentTime + i * 0.08
-                  g.gain.setValueAtTime(0, t)
-                  g.gain.linearRampToValueAtTime(0.25, t + 0.02)
-                  g.gain.exponentialRampToValueAtTime(0.001, t + 1.2)
-                  o.start(t)
-                  o.stop(t + 1.2)
-                })
-              } else if (_s === 'magic') {
-                ;[1047, 1319, 1568, 2093, 1568, 1319].forEach((freq, i) => {
-                  const o = _ac.createOscillator(),
-                    g = _ac.createGain()
-                  o.connect(g)
-                  g.connect(_ac.destination)
-                  o.frequency.value = freq
+                  o.frequency.setValueAtTime(392, _ac.currentTime)
+                  o.frequency.linearRampToValueAtTime(523, _ac.currentTime + 0.3)
                   o.type = 'sine'
-                  const t = _ac.currentTime + i * 0.1
-                  g.gain.setValueAtTime(0, t)
-                  g.gain.linearRampToValueAtTime(0.2, t + 0.03)
-                  g.gain.exponentialRampToValueAtTime(0.001, t + 0.25)
-                  o.start(t)
-                  o.stop(t + 0.25)
-                })
-              } else {
-                const o = _ac.createOscillator(),
-                  g = _ac.createGain()
-                o.connect(g)
-                g.connect(_ac.destination)
-                o.frequency.setValueAtTime(392, _ac.currentTime)
-                o.frequency.linearRampToValueAtTime(523, _ac.currentTime + 0.3)
-                o.type = 'sine'
-                g.gain.setValueAtTime(0, _ac.currentTime)
-                g.gain.linearRampToValueAtTime(0.15, _ac.currentTime + 0.1)
-                g.gain.exponentialRampToValueAtTime(0.001, _ac.currentTime + 1.5)
-                o.start(_ac.currentTime)
-                o.stop(_ac.currentTime + 1.5)
-              }
-            } catch {}
+                  g.gain.setValueAtTime(0, _ac.currentTime)
+                  g.gain.linearRampToValueAtTime(0.15, _ac.currentTime + 0.1)
+                  g.gain.exponentialRampToValueAtTime(0.001, _ac.currentTime + 1.5)
+                  o.start(_ac.currentTime)
+                  o.stop(_ac.currentTime + 1.5)
+                }
+              } catch {}
+            }
             setMessages((prev) => {
               if (prev.some((p) => p.id === row.id)) return prev
               return [...prev, row]
