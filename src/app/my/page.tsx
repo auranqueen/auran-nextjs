@@ -36,6 +36,8 @@ export default function MyPage() {
   const [gender, setGender] = useState('')
   const [hormoneCycle, setHormoneCycle] = useState<any>(null)
   const [periodTipOpen, setPeriodTipOpen] = useState(false)
+  const [notifSound, setNotifSound] = useState('violet')
+  const [soundSheetOpen, setSoundSheetOpen] = useState(false)
   const [periodTipText, setPeriodTipText] = useState(TOOLTIP_FALLBACKS.period_start)
   const [periodTipTitle, setPeriodTipTitle] = useState('생리 시작 안내')
   const [periodTipEnabled, setPeriodTipEnabled] = useState(true)
@@ -105,7 +107,7 @@ export default function MyPage() {
           })
         supabase
           .from('profiles')
-          .select('grade, full_name, username, avatar_url, phone, birth_date, skin_type, skin_concerns, menstrual_cycle, drink_frequency, exercise_frequency, preferred_brands, special_dates, gender')
+          .select('grade, full_name, username, avatar_url, phone, birth_date, skin_type, skin_concerns, menstrual_cycle, drink_frequency, exercise_frequency, preferred_brands, special_dates, gender, notification_sound')
           .eq('auth_id', data.user.id)
           .maybeSingle()
           .then(async ({ data: profile }) => {
@@ -113,6 +115,9 @@ export default function MyPage() {
             const pName = profile?.full_name || profile?.username
             if (pName) setUserName(pName)
             setProfileData(profile || null)
+            if ((profile as any)?.notification_sound) {
+              setNotifSound(String((profile as any).notification_sound))
+            }
             setGender(String((profile as any)?.gender || ''))
             setAvatarUrl(profile?.avatar_url ? String(profile.avatar_url) : '')
             const checks = [
@@ -269,6 +274,7 @@ export default function MyPage() {
     { icon: '❤️', label: '찜 목록', path: '/my/wishlist', badge: 0 },
     { icon: '⭐', label: '리뷰 관리', path: '/my/reviews', badge: 0 },
     { icon: '🔔', label: '알림 설정', path: '/my/notifications', badge: 0 },
+    { icon: '🔔', label: '채팅 알림음', action: () => setSoundSheetOpen(true), badge: 0 },
     { icon: '👤', label: '개인정보', path: '/my/profile', badge: 0 },
     { icon: '🔒', label: '보안 설정', path: '/my/security', badge: 0 },
     { icon: '📞', label: '고객센터', path: '/my/support', badge: 0 },
@@ -927,10 +933,21 @@ export default function MyPage() {
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '16px', overflow: 'hidden' }}>
           {menuItems.map((item, i) => (
-            <div key={i} onClick={() => router.push(item.path)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', borderBottom: i < menuItems.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', cursor: 'pointer' }}>
+            <div
+              key={i}
+              onClick={() => {
+                const it = item as { path?: string; action?: () => void }
+                if (typeof it.action === 'function') {
+                  it.action()
+                  return
+                }
+                if (it.path) router.push(it.path)
+              }}
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '14px 16px', borderBottom: i < menuItems.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', cursor: 'pointer' }}
+            >
               <span style={{ fontSize: '18px', width: '24px', textAlign: 'center' }}>{item.icon}</span>
               <span style={{ flex: 1, fontSize: '13px', color: 'rgba(255,255,255,0.75)' }}>{item.label}</span>
-              {item.badge > 0 && (
+              {(item.badge ?? 0) > 0 && (
                 <div style={{ background: GOLD, borderRadius: '10px', padding: '2px 7px', fontSize: '10px', color: BG, fontWeight: 400 }}>{item.badge}</div>
               )}
               <span style={{ fontSize: '14px', color: TEXT_DIM }}>›</span>
@@ -970,6 +987,65 @@ export default function MyPage() {
           </div>
         </>
       ) : null}
+
+      {soundSheetOpen && (
+        <>
+          <div
+            onClick={() => setSoundSheetOpen(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100 }}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: '#1a1625',
+              borderRadius: '20px 20px 0 0',
+              padding: '20px 16px 40px',
+              zIndex: 101,
+            }}
+          >
+            <div style={{ fontSize: 9, color: '#C9A96E', letterSpacing: 3, fontFamily: 'monospace', marginBottom: 16 }}>채팅 알림음 선택</div>
+            {[
+              { id: 'violet', emoji: '💜', label: 'Violet Chime', desc: '부드럽고 신비로운' },
+              { id: 'toast', emoji: '🍞', label: 'Toast Pop', desc: '밝고 경쾌한' },
+              { id: 'luxury', emoji: '✨', label: 'Gold Tone', desc: '고급스러운 단음' },
+              { id: 'magic', emoji: '🌸', label: 'Magic Sparkle', desc: '반짝이는 톤' },
+              { id: 'aube', emoji: '🌙', label: 'Aube Whisper', desc: '은은한 새벽 느낌' },
+            ].map((s) => (
+              <div
+                key={s.id}
+                onClick={async () => {
+                  setNotifSound(s.id)
+                  if (user?.id) {
+                    await supabase.from('profiles').update({ notification_sound: s.id } as any).eq('auth_id', user.id)
+                  }
+                  setSoundSheetOpen(false)
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '12px 14px',
+                  borderRadius: 12,
+                  marginBottom: 8,
+                  cursor: 'pointer',
+                  background: notifSound === s.id ? 'rgba(123,94,167,0.15)' : 'rgba(255,255,255,0.03)',
+                  border: `1px solid ${notifSound === s.id ? '#7B5EA7' : 'rgba(255,255,255,0.08)'}`,
+                }}
+              >
+                <span style={{ fontSize: 20 }}>{s.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, color: '#fff' }}>{s.label}</div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{s.desc}</div>
+                </div>
+                {notifSound === s.id ? <span style={{ fontSize: 10, color: '#7B5EA7' }}>선택됨 ✓</span> : null}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
     </div>
   )
