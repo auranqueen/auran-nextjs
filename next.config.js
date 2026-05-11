@@ -4,7 +4,7 @@ const nextConfig = {
     optimizePackageImports: ['@supabase/supabase-js'],
   },
   images: {
-    unoptimized: true,
+    unoptimized: false,
     domains: [
       'xxxxxxxxxxxxxxxx.supabase.co',
       'k.kakaocdn.net',
