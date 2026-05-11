@@ -108,7 +108,9 @@ export default function OwnerChatRoomPage() {
     avatar_url: string | null
   } | null>(null)
   const [showHistoryList, setShowHistoryList] = useState(false)
-  const [channels, setChannels] = useState<{ id: string; title: string; preview_text: string; last_message_at: string | null; unread_count: number }[]>([])
+  const [channels, setChannels] = useState<
+    { id: string; title: string; preview_text: string; last_message_at: string | null; unread_count: number; user_id?: string | null; customer_name?: string }[]
+  >([])
   const [channelsLoading, setChannelsLoading] = useState(true)
 
   const scrollBottom = useCallback(() => {
@@ -460,7 +462,7 @@ export default function OwnerChatRoomPage() {
         .then(({ data: roleData }) => {
           let q = supabase
             .from('chat_channels')
-            .select('id,title,preview_text,last_message_at,unread_count')
+            .select('id,title,preview_text,last_message_at,unread_count,user_id')
             .eq('channel_type', 'owner')
             .order('last_message_at', { ascending: false })
           if (roleData?.role !== 'admin') {
@@ -469,6 +471,26 @@ export default function OwnerChatRoomPage() {
           q.then(({ data }) => {
             setChannels(data ?? [])
             setChannelsLoading(false)
+            const userIds = (data ?? []).map((c: { user_id?: string | null }) => c.user_id).filter(Boolean) as string[]
+            if (userIds.length > 0) {
+              supabase
+                .from('users')
+                .select('id,name,email')
+                .in('id', userIds)
+                .then(({ data: uData }) => {
+                  const nameMap: Record<string, string> = {}
+                  for (const u of uData ?? []) {
+                    const row = u as { id: string; name?: string | null; email?: string | null }
+                    nameMap[row.id] = row.name || row.email?.split('@')[0] || '고객'
+                  }
+                  setChannels((prev) =>
+                    prev.map((c) => ({
+                      ...c,
+                      customer_name: nameMap[String(c.user_id ?? '')] || c.title || '고객',
+                    }))
+                  )
+                })
+            }
           })
         })
     })
@@ -816,7 +838,7 @@ export default function OwnerChatRoomPage() {
                   }}
                 >
                   <div style={{ fontSize: 13, color: isActive ? '#fff' : 'rgba(255,255,255,0.75)', marginBottom: 3, fontWeight: 500 }}>
-                    {ch.title || '고객'}
+                    {(ch as any).customer_name || ch.title || '고객'}
                   </div>
                   <div
                     style={{
