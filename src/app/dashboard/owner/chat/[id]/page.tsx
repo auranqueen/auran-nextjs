@@ -56,6 +56,8 @@ export default function OwnerChatRoomPage() {
   const [forbidden, setForbidden] = useState(false)
   const [channelTitle, setChannelTitle] = useState('상담')
   const [ownerUserId, setOwnerUserId] = useState<string | null>(null)
+  const [notifSound, setNotifSound] = useState('violet')
+  const notifSoundRef = useRef('violet')
   const [messages, setMessages] = useState<MsgRow[]>([])
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
@@ -188,13 +190,17 @@ export default function OwnerChatRoomPage() {
   }, [customerUserId])
 
   useEffect(() => {
+    notifSoundRef.current = notifSound
+  }, [notifSound])
+
+  useEffect(() => {
     if (!customerUserId) return
     const load = async () => {
       const { data: uRow } = await supabase.from('users').select('auth_id,points,is_founder').eq('id', customerUserId).maybeSingle()
       if (!uRow) return
       const authId = uRow.auth_id
       const [profileRes, cycleRes] = await Promise.all([
-        supabase.from('profiles').select('skin_type,skin_concerns,avatar_url').eq('auth_id', authId).maybeSingle(),
+        supabase.from('profiles').select('skin_type,skin_concerns,avatar_url,notification_sound').eq('auth_id', authId).maybeSingle(),
         supabase
           .from('skin_cycle_analysis')
           .select('hormone_stage')
@@ -203,8 +209,12 @@ export default function OwnerChatRoomPage() {
           .limit(1)
           .maybeSingle(),
       ])
+      const profile = profileRes.data as { notification_sound?: string | null } | null
+      if (profile?.notification_sound) {
+        setNotifSound(String(profile.notification_sound))
+      }
       setCustomerSkinInfo({
-        skin_type: (profileRes.data as any)?.skin_type ?? null,
+        skin_type: (profile as any)?.skin_type ?? null,
         skin_concerns: (profileRes.data as any)?.skin_concerns ?? [],
         hormone_phase: cycleRes.data?.hormone_stage ?? null,
         points: uRow.points ?? 0,
@@ -316,25 +326,60 @@ export default function OwnerChatRoomPage() {
             if (!row?.id) return
             try {
               const _ac = new (window.AudioContext || (window as any).webkitAudioContext)()
-              const _o = _ac.createOscillator()
-              const _g = _ac.createGain()
-              const _f = _ac.createBiquadFilter()
-              _f.type = 'lowpass'
-              _f.frequency.value = 800
-              _o.connect(_f); _f.connect(_g); _g.connect(_ac.destination)
-              _o.frequency.value = 110; _o.type = 'triangle'
-              _g.gain.setValueAtTime(0, _ac.currentTime)
-              _g.gain.linearRampToValueAtTime(0.4, _ac.currentTime + 0.05)
-              _g.gain.exponentialRampToValueAtTime(0.001, _ac.currentTime + 1.2)
-              _o.start(_ac.currentTime); _o.stop(_ac.currentTime + 1.2)
-              const _o2 = _ac.createOscillator()
-              const _g2 = _ac.createGain()
-              _o2.connect(_g2); _g2.connect(_ac.destination)
-              _o2.frequency.value = 138; _o2.type = 'triangle'
-              _g2.gain.setValueAtTime(0, _ac.currentTime + 0.15)
-              _g2.gain.linearRampToValueAtTime(0.25, _ac.currentTime + 0.2)
-              _g2.gain.exponentialRampToValueAtTime(0.001, _ac.currentTime + 1.0)
-              _o2.start(_ac.currentTime + 0.15); _o2.stop(_ac.currentTime + 1.0)
+              const playSound = (sound: string) => {
+                if (sound === 'violet') {
+                  const notes = [523, 659, 784, 1047]
+                  notes.forEach((freq, i) => {
+                    const o = _ac.createOscillator(); const g = _ac.createGain()
+                    o.connect(g); g.connect(_ac.destination)
+                    o.frequency.value = freq; o.type = 'sine'
+                    const t = _ac.currentTime + i * 0.15
+                    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.3, t + 0.05)
+                    g.gain.exponentialRampToValueAtTime(0.001, t + 0.6)
+                    o.start(t); o.stop(t + 0.6)
+                  })
+                } else if (sound === 'toast') {
+                  const o = _ac.createOscillator(); const g = _ac.createGain()
+                  o.connect(g); g.connect(_ac.destination)
+                  o.frequency.setValueAtTime(800, _ac.currentTime)
+                  o.frequency.exponentialRampToValueAtTime(1200, _ac.currentTime + 0.1)
+                  o.type = 'sine'
+                  g.gain.setValueAtTime(0.4, _ac.currentTime)
+                  g.gain.exponentialRampToValueAtTime(0.001, _ac.currentTime + 0.3)
+                  o.start(_ac.currentTime); o.stop(_ac.currentTime + 0.3)
+                } else if (sound === 'luxury') {
+                  [440, 554, 659].forEach((freq, i) => {
+                    const o = _ac.createOscillator(); const g = _ac.createGain()
+                    o.connect(g); g.connect(_ac.destination)
+                    o.frequency.value = freq; o.type = 'triangle'
+                    const t = _ac.currentTime + i * 0.08
+                    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.25, t + 0.02)
+                    g.gain.exponentialRampToValueAtTime(0.001, t + 1.2)
+                    o.start(t); o.stop(t + 1.2)
+                  })
+                } else if (sound === 'magic') {
+                  const freqs = [1047, 1319, 1568, 2093, 1568, 1319]
+                  freqs.forEach((freq, i) => {
+                    const o = _ac.createOscillator(); const g = _ac.createGain()
+                    o.connect(g); g.connect(_ac.destination)
+                    o.frequency.value = freq; o.type = 'sine'
+                    const t = _ac.currentTime + i * 0.1
+                    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.2, t + 0.03)
+                    g.gain.exponentialRampToValueAtTime(0.001, t + 0.25)
+                    o.start(t); o.stop(t + 0.25)
+                  })
+                } else if (sound === 'aube') {
+                  const o = _ac.createOscillator(); const g = _ac.createGain()
+                  o.connect(g); g.connect(_ac.destination)
+                  o.frequency.setValueAtTime(392, _ac.currentTime)
+                  o.frequency.linearRampToValueAtTime(523, _ac.currentTime + 0.3)
+                  o.type = 'sine'
+                  g.gain.setValueAtTime(0, _ac.currentTime); g.gain.linearRampToValueAtTime(0.15, _ac.currentTime + 0.1)
+                  g.gain.exponentialRampToValueAtTime(0.001, _ac.currentTime + 1.5)
+                  o.start(_ac.currentTime); o.stop(_ac.currentTime + 1.5)
+                }
+              }
+              playSound(notifSoundRef.current)
             } catch {}
             setMessages((prev) => {
               if (prev.some((p) => p.id === row.id)) return prev
