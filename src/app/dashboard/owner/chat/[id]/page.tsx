@@ -117,7 +117,9 @@ export default function OwnerChatRoomPage() {
     const el = scrollRef.current
     if (!el) return
     requestAnimationFrame(() => {
-      el.scrollTop = el.scrollHeight
+      requestAnimationFrame(() => {
+        el.scrollTop = el.scrollHeight
+      })
     })
   }, [])
 
