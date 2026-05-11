@@ -219,6 +219,7 @@ export default function MyProfilePage() {
         return
       }
       setAvatarUrl(`${publicUrl}?t=${Date.now()}`)
+      router.push('/my')
     }
     setUploading(false)
   }
