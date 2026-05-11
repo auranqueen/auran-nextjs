@@ -401,7 +401,7 @@ export default function MyPage() {
               }}
             />
           ) : (
-            <span style={{ fontSize: '28px' }}>👩</span>
+            <span style={{ fontSize: '28px' }}>{gender === 'male' ? '👨' : '👩'}</span>
           )}
         </div>
         <div style={{ flex: 1 }}>

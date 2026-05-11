@@ -350,39 +350,42 @@ export default function MyProfilePage() {
       <div style={{ padding: '16px 14px 0' }}>
         <div style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: 16, marginBottom: 12 }}>
           <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              style={{
-                width: 60,
-                height: 60,
-                borderRadius: '50%',
-                border: '2px solid rgba(201,169,110,0.3)',
-                overflow: 'hidden',
-                padding: 0,
-                cursor: 'pointer',
-                background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)',
-              }}
-            >
-              {avatarUrl ? (
-                <img
-                  src={avatarUrl}
-                  alt="프로필"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).style.display = 'none'
-                  }}
-                  style={{
-                    width: '60px',
-                    height: '60px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                    border: '2px solid rgba(123,94,167,0.4)',
-                  }}
-                />
-              ) : (
-                <span style={{ fontSize: '28px' }}>👩</span>
-              )}
-            </button>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', textAlign: 'center', marginBottom: 4 }}>사진 변경</div>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                style={{
+                  width: 60,
+                  height: 60,
+                  borderRadius: '50%',
+                  border: '2px solid rgba(201,169,110,0.3)',
+                  overflow: 'hidden',
+                  padding: 0,
+                  cursor: 'pointer',
+                  background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)',
+                }}
+              >
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt="프로필"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none'
+                    }}
+                    style={{
+                      width: '60px',
+                      height: '60px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '2px solid rgba(123,94,167,0.4)',
+                    }}
+                  />
+                ) : (
+                  <span style={{ fontSize: '28px' }}>👩</span>
+                )}
+              </button>
+            </div>
           </div>
           {uploading ? <div style={{ textAlign: 'center', marginTop: 8, fontSize: 11, color: '#9b7ec8' }}>업로드 중...</div> : null}
         </div>
