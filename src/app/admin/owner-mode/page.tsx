@@ -2,7 +2,7 @@
 import { useState } from 'react'
 
 const FUNCS = [
-  { icon: '💬', title: '고객 상담 채팅', desc: '고객과 1:1 상담', href: '/dashboard/owner/chat/redirect' },
+  { icon: '💬', title: '고객 상담 채팅', desc: '고객과 1:1 상담', href: '/dashboard/owner/charts' },
   { icon: '📊', title: '고객 피부 차트', desc: '피부 분석 & 시술 기록', href: '/dashboard/owner/charts' },
   { icon: '📅', title: '예약 현황', desc: '오늘 & 이번주 예약', href: '/dashboard/owner/charts' },
   { icon: '🏪', title: '스토어 관리', desc: '제품 & 재고 관리', href: '/dashboard/owner/store' },
