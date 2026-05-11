@@ -32,6 +32,14 @@ const MENU = [
     ],
   },
   {
+    section: '── 원장 모드 ──',
+    items: [
+      { label: '원장 상담톡', href: '/admin/owner-chat', icon: '💬' },
+      { label: '내 원장 기능', href: '/admin/owner-mode', icon: '👩‍⚕️' },
+      { label: '고객 피부 현황', href: '/admin/owner-customers', icon: '📊' },
+    ],
+  },
+  {
     section: 'SALES',
     items: [
       { label: '주문 내역', href: '/admin/orders', icon: '📦' },
@@ -81,14 +89,6 @@ const MENU = [
       { label: '타임세일 관리', href: '/admin/settings/flash-sale', icon: '⏱️' },
       { label: '로그인 기록', href: '/admin/logs', icon: '📋' },
       { label: '개인정보 접근 로그', href: '/admin/privacy', icon: '🔒' },
-    ],
-  },
-  {
-    section: '── 원장 모드 ──',
-    items: [
-      { label: '원장 상담톡', href: '/admin/owner-chat', icon: '💬' },
-      { label: '내 원장 기능', href: '/admin/owner-mode', icon: '👩‍⚕️' },
-      { label: '고객 피부 현황', href: '/admin/owner-customers', icon: '📊' },
     ],
   },
 ] as const
