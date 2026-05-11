@@ -388,16 +388,23 @@ export default function OwnerChatRoomPage() {
 
   useEffect(() => {
     if (!ownerUserId) return
-    supabase
-      .from('chat_channels')
-      .select('id,title,preview_text,last_message_at,unread_count')
-      .eq('channel_type', 'owner')
-      .eq('owner_id', ownerUserId)
-      .order('last_message_at', { ascending: false })
-      .then(({ data }) => {
-        setChannels(data ?? [])
-        setChannelsLoading(false)
-      })
+    supabase.auth.getUser().then(({ data: authData }) => {
+      supabase.from('users').select('role').eq('auth_id', authData.user?.id ?? '').maybeSingle()
+        .then(({ data: roleData }) => {
+          let q = supabase
+            .from('chat_channels')
+            .select('id,title,preview_text,last_message_at,unread_count')
+            .eq('channel_type', 'owner')
+            .order('last_message_at', { ascending: false })
+          if (roleData?.role !== 'admin') {
+            q = q.eq('owner_id', ownerUserId)
+          }
+          q.then(({ data }) => {
+            setChannels(data ?? [])
+            setChannelsLoading(false)
+          })
+        })
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client stable for this effect
   }, [ownerUserId])
 
