@@ -526,52 +526,29 @@ export default function CustomerHomePage() {
         'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive, step_tags,category_tags'
       const selNoCat =
         'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive, step_tags'
-      let res: { error: unknown; data: any[] | null } = await supabase.from('products').select(selFull).eq('is_active', true).limit(80)
-      console.log('products fetch 1:', res.error, res.data?.length)
-      if (res.error) {
-        res = await supabase.from('products').select(selNoCat).eq('is_active', true).limit(80)
-        console.log('products fetch 2:', res.error, res.data?.length)
-      }
-      if (res.error || !res.data?.length) {
-        res = await supabase.from('products').select(selFull).limit(80)
-      }
-      if (res.error) res = await supabase.from('products').select(selNoCat).limit(80)
-      if (res.error || !res.data?.length) {
-        const fb = await supabase
+      const [res, npRes, tsRes] = await Promise.all([
+        supabase.from('products').select(selFull).eq('is_active', true).limit(80),
+        supabase.from('products').select('*').order('created_at', { ascending: false }).limit(6),
+        supabase
           .from('products')
-          .select('id, name, retail_price, sale_price, is_timesale, thumb_img, tag, category_id, quiz_match, brands(name), is_exclusive')
-          .eq('status', 'active')
-          .limit(80)
-        console.log('products fetch fb:', fb.error, fb.data?.length)
-        if (fb.data && fb.data.length > 0) {
-          setProducts(
-            restrictExclusiveCatalog ? fb.data.filter((p: any) => p.is_exclusive !== true) : fb.data
-          )
-        }
-      } else if (res.data && res.data.length > 0) {
+          .select('id, name, brand_id, retail_price, sale_price, thumb_img, storage_thumb_url, timesale_ends_at, brands(name), is_exclusive')
+          .eq('is_timesale', true)
+          .gt('timesale_ends_at', new Date().toISOString())
+          .order('timesale_ends_at', { ascending: true })
+          .limit(3),
+      ])
+
+      if (res.data && res.data.length > 0) {
         setProducts(
           restrictExclusiveCatalog ? res.data.filter((p: any) => p.is_exclusive !== true) : res.data
         )
       }
-
-      const { data: npData } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(6)
-      if (npData && npData.length > 0) {
+      if (npRes.data && npRes.data.length > 0) {
         setNewProducts(
-          restrictExclusiveCatalog ? npData.filter((p: any) => p.is_exclusive !== true) : npData
+          restrictExclusiveCatalog ? npRes.data.filter((p: any) => p.is_exclusive !== true) : npRes.data
         )
       }
-
-      const { data: tsRaw } = await supabase
-        .from('products')
-        .select('id, name, brand_id, retail_price, sale_price, thumb_img, storage_thumb_url, timesale_ends_at, brands(name), is_exclusive')
-        .eq('is_timesale', true)
-        .gt('timesale_ends_at', new Date().toISOString())
-        .order('timesale_ends_at', { ascending: true })
-        .limit(3)
+      const tsRaw = tsRes.data ?? []
       const tsData =
         restrictExclusiveCatalog && tsRaw
           ? tsRaw.filter((p: any) => p.is_exclusive !== true)
