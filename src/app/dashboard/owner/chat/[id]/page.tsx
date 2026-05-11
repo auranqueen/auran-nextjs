@@ -1105,7 +1105,7 @@ export default function OwnerChatRoomPage() {
         </div>
       ) : null}
 
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 100px', minWidth: 0 }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 140px', minWidth: 0 }}>
         {messages.map((m) => {
           const mine = !m.is_from_customer
           const isImage = m.message_kind === 'image' && m.image_url

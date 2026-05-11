@@ -1016,12 +1016,12 @@ export default function MyPage() {
             ].map((s) => (
               <div
                 key={s.id}
-                onClick={async () => {
+                onClick={() => {
                   setNotifSound(s.id)
-                  if (user?.id) {
-                    await supabase.from('profiles').update({ notification_sound: s.id } as any).eq('auth_id', user.id)
-                  }
                   setSoundSheetOpen(false)
+                  if (user?.id) {
+                    supabase.from('profiles').update({ notification_sound: s.id } as any).eq('auth_id', user.id)
+                  }
                 }}
                 style={{
                   display: 'flex',
