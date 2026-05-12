@@ -167,6 +167,7 @@ function CheckoutPageInner() {
         setRecipientName(String(defaultAddr.recipient_name || defaultAddr.name || ''))
         setRecipientPhone(String(defaultAddr.phone || defaultAddr.recipient_phone || ''))
         setAddress(String(defaultAddr.address || ''))
+        setAddressDetail(String(defaultAddr.address_detail || ''))
       }
       setPoints(toNum(me.points))
       setBalance(toNum(me.charge_balance))
