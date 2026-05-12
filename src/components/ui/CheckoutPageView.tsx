@@ -490,7 +490,7 @@ export default function CheckoutPageView({
                         <span style={{ fontWeight: 500 }}>{c.name}</span>
                         <span>
                           {disc > 0 ? `-${disc.toLocaleString()}원` : ''}
-                          {minO > 0 ? ` · 최소 ${minO.toLocaleString()}원` : ''}
+                          {minO > 0 ? ` · ${minO.toLocaleString()}원 이상 구매시` : ''}
                         </span>
                       </span>
                     </label>
@@ -871,7 +871,7 @@ export default function CheckoutPageView({
                   style={{ width: '100%', textAlign: 'left', padding: 12, marginBottom: 8, borderRadius: 12, border: sel ? '1px solid rgba(201,168,76,0.6)' : '1px solid var(--border)', background: ok ? 'rgba(201,168,76,0.08)' : 'rgba(0,0,0,0.2)', color: ok ? '#fff' : 'rgba(255,255,255,0.35)', cursor: ok ? 'pointer' : 'not-allowed' }}>
                   <div style={{ fontWeight: 500, fontSize: 13 }}>{c.name}</div>
                   <div style={{ fontSize: 12, marginTop: 4, color: ok ? 'var(--gold)' : 'inherit' }}>{discLabel}</div>
-                  {!ok && <div style={{ fontSize: 11, marginTop: 6, color: '#888' }}>{expired ? '기간 만료' : subFail ? `최소 주문 ₩${minO.toLocaleString()} 미충족` : '이 상품에 적용 불가'}</div>}
+                  {!ok && <div style={{ fontSize: 11, marginTop: 6, color: '#888' }}>{expired ? '기간 만료' : subFail ? `₩${minO.toLocaleString()} 이상 구매시 적용` : '이 상품에 적용 불가'}</div>}
                 </button>
               )
             })}
