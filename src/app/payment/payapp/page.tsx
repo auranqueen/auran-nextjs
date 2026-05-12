@@ -89,7 +89,7 @@ function PayAppInner() {
           recipient_phone: decodeURIComponent(params.get('recipient_phone') || '') || null,
           address: (decodeURIComponent(params.get('address') || '') || '') + (addressDetailParam ? ' ' + addressDetailParam : '') || null,
           coupon_discount: couponDiscount,
-          user_coupon_id: params.get('user_coupon_id') || null,
+          user_coupon_id: (() => { const id = params.get('user_coupon_id'); return (id && !id.startsWith('virtual_')) ? id : null })(),
         }),
       })
       const orderData = await orderRes.json()
