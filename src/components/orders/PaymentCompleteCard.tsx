@@ -33,10 +33,16 @@ type PaymentCompleteCardProps = {
 }
 
 function productNames(items: any): string[] {
-  const arr = Array.isArray(items) ? items : []
-  return arr
-    .map((it: any) => String(it?.product_name || it?.name || it?.title || '').trim())
-    .filter(Boolean)
+  let arr = items
+  if (typeof arr === 'string') {
+    try {
+      arr = JSON.parse(arr)
+    } catch {
+      return ['상품']
+    }
+  }
+  if (!Array.isArray(arr)) return ['상품']
+  return arr.map((i: any) => i.product_name || i.name || i.title || '상품').filter(Boolean)
 }
 
 function TrackingButton({
@@ -488,6 +494,11 @@ export default function PaymentCompleteCard({
           ) : null}
           <button
             type="button"
+            onClick={() => {
+              const arr = typeof order.items === 'string' ? JSON.parse(order.items) : order.items
+              const productId = arr?.[0]?.product_id
+              if (productId) window.location.href = `/products/${productId}`
+            }}
             className="flex-1 rounded-xl border border-[#7B5EA7]/40 bg-[#7B5EA7]/20 py-2.5 text-xs text-[#e8d5ff] transition hover:bg-[#7B5EA7]/30"
             style={{ fontWeight: 500 }}
           >
