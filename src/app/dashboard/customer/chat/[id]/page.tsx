@@ -189,14 +189,14 @@ export default function CustomerChatRoomPage() {
   useEffect(() => {
     if (!internalUserId) return
     supabase
-      .from('point_transactions')
-      .select('id, points, description, created_at')
+      .from('toast_transactions')
+      .select('id, amount, transaction_type, description, created_at')
       .eq('user_id', internalUserId)
       .order('created_at', { ascending: false })
       .limit(10)
       .then(({ data }) => {
         if (data) {
-          const total = data.reduce((sum, t) => sum + (t.points || 0), 0)
+          const total = data.reduce((sum, t) => sum + (t.amount || 0), 0)
           setToastBalance(total)
           setToastHistory(data)
         }
@@ -1284,8 +1284,10 @@ export default function CustomerChatRoomPage() {
                         borderBottom: '1px solid rgba(255,255,255,0.05)',
                       }}
                     >
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{h.description || '적립'}</div>
-                      <div style={{ fontSize: 11, color: '#C9A96E' }}>+{(h.points || 0).toLocaleString()}T</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>
+                        {h.description || h.transaction_type || '적립'}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#C9A96E' }}>+{(h.amount || 0).toLocaleString()}T</div>
                     </div>
                   ))
                 )}
