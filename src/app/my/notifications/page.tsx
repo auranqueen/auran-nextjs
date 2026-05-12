@@ -86,7 +86,7 @@ export default function MyNotificationsPage() {
       }
       const { data } = await supabase
         .from('notifications')
-        .select('id,title,body,icon,is_read,created_at,type')
+        .select('id,title,body,icon,is_read,created_at,type,link')
         .eq('user_id', pid)
         .order('created_at', { ascending: false })
         .limit(maxDisplay)
@@ -110,7 +110,7 @@ export default function MyNotificationsPage() {
       await supabase.from('notifications').update({ is_read: true }).eq('id', n.id)
     }
     setItems((prev) => prev.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)))
-    const path = getDefaultLinkForType(n.type || undefined) || ''
+    const path = (n as any).link || getDefaultLinkForType(n.type || undefined) || ''
     if (path) router.push(path)
   }
 

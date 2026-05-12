@@ -44,6 +44,28 @@ function PayAppInner() {
         return
       }
 
+      const { data: { user: _u } } = await supabase.auth.getUser()
+      if (_u) {
+        const { data: _urow } = await supabase
+          .from('users').select('id').eq('auth_id', _u.id).maybeSingle()
+        if (_urow?.id) {
+          const { data: _existing } = await supabase
+            .from('orders')
+            .select('id, order_no')
+            .eq('customer_id', _urow.id)
+            .eq('payment_applied', false)
+            .eq('final_amount', amount)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          if (_existing?.id) {
+            await supabase.from('orders')
+              .update({ status: '취소' })
+              .eq('id', _existing.id)
+          }
+        }
+      }
+
       const shippingFee = Math.max(0, Math.floor(Number(params.get('shipping_fee') ?? 0)))
       const gradeDiscount = Math.max(0, Math.floor(Number(params.get('grade_discount') ?? 0)))
       const subtotalParam = Math.max(0, Math.floor(Number(params.get('subtotal') ?? 0)))
