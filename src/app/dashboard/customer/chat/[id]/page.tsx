@@ -104,6 +104,7 @@ export default function CustomerChatRoomPage() {
     hormone_phase: string | null
     hormone_label: string | null
   } | null>(null)
+  const [orderHistory, setOrderHistory] = useState<any[]>([])
   const [recommendedProducts, setRecommendedProducts] = useState<{
     product_name: string
     created_at: string
@@ -113,7 +114,7 @@ export default function CustomerChatRoomPage() {
   const [userCoupons, setUserCoupons] = useState<any[]>([])
   const [toastHistory, setToastHistory] = useState<any[]>([])
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [drawerTab, setDrawerTab] = useState<'toast' | 'coupon' | 'history'>('toast')
+  const [drawerTab, setDrawerTab] = useState<'toast' | 'coupon' | 'history' | 'orders'>('toast')
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -239,6 +240,16 @@ export default function CustomerChatRoomPage() {
               setUserCoupons([...base, ...virtualCoupons])
             }
           })
+      })
+    supabase
+      .from('orders')
+      .select('id, order_no, final_amount, status, created_at, items')
+      .eq('customer_id', internalUserId)
+      .eq('payment_applied', true)
+      .order('created_at', { ascending: false })
+      .limit(5)
+      .then(({ data }) => {
+        if (data) setOrderHistory(data)
       })
   }, [internalUserId])
 
@@ -1265,7 +1276,7 @@ export default function CustomerChatRoomPage() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-              {(['toast', 'coupon', 'history'] as const).map((t) => (
+              {(['toast', 'coupon', 'history', 'orders'] as const).map((t) => (
                 <div
                   key={t}
                   onClick={() => setDrawerTab(t)}
@@ -1278,7 +1289,7 @@ export default function CustomerChatRoomPage() {
                     color: drawerTab === t ? '#fff' : 'rgba(255,255,255,0.4)',
                   }}
                 >
-                  {t === 'toast' ? '🍞 토스트' : t === 'coupon' ? '🎟 쿠폰' : '📊 내역'}
+                  {t === 'toast' ? '🍞 토스트' : t === 'coupon' ? '🎟 쿠폰' : t === 'orders' ? '🛒 구매' : '📊 내역'}
                 </div>
               ))}
             </div>
@@ -1361,6 +1372,37 @@ export default function CustomerChatRoomPage() {
                         {toastLabel(String(h.transaction_type || ''), String(h.source_type || ''))}
                       </div>
                       <div style={{ fontSize: 11, color: '#C9A96E' }}>+{(h.amount || 0).toLocaleString()}T</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+            {drawerTab === 'orders' && (
+              <div>
+                {orderHistory.length === 0 ? (
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: 16 }}>
+                    구매 내역 없음
+                  </div>
+                ) : (
+                  orderHistory.map((o) => (
+                    <div key={o.id} style={{ padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontFamily: 'monospace' }}>{o.order_no}</div>
+                        <div style={{ fontSize: 10, color: '#C9A96E' }}>{o.status}</div>
+                      </div>
+                      <div style={{ fontSize: 12, color: '#fff', marginBottom: 2 }}>
+                        {(() => {
+                          try {
+                            const items = typeof o.items === 'string' ? JSON.parse(o.items) : o.items
+                            return items?.[0]?.product_name || '상품'
+                          } catch {
+                            return '상품'
+                          }
+                        })()}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+                        ₩{(o.final_amount || 0).toLocaleString()}
+                      </div>
                     </div>
                   ))
                 )}
