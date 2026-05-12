@@ -690,6 +690,7 @@ export default function CheckoutPageView({
                       setRecipientName(String(row.recipient_name || row.name || ''))
                       setRecipientPhone(String(row.phone || row.recipient_phone || ''))
                       setAddress(lineAddress)
+                      setAddressDetail(String(row.address_detail || row.detail || ''))
                     }}
                   />
                   <span style={{ lineHeight: 1.45 }}>
