@@ -100,6 +100,11 @@ export default function CustomerChatRoomPage() {
     created_at: string
     product_id: string | null
   }[]>([])
+  const [toastBalance, setToastBalance] = useState(0)
+  const [userCoupons, setUserCoupons] = useState<any[]>([])
+  const [toastHistory, setToastHistory] = useState<any[]>([])
+  const [drawerOpen, setDrawerOpen] = useState(false)
+  const [drawerTab, setDrawerTab] = useState<'toast' | 'coupon' | 'history'>('toast')
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -180,6 +185,31 @@ export default function CustomerChatRoomPage() {
     }
     void load()
   }, [internalUserId, channelId])
+
+  useEffect(() => {
+    if (!internalUserId) return
+    supabase
+      .from('point_transactions')
+      .select('id, points, description, created_at')
+      .eq('user_id', internalUserId)
+      .order('created_at', { ascending: false })
+      .limit(10)
+      .then(({ data }) => {
+        if (data) {
+          const total = data.reduce((sum, t) => sum + (t.points || 0), 0)
+          setToastBalance(total)
+          setToastHistory(data)
+        }
+      })
+    supabase
+      .from('user_coupons')
+      .select('*, coupons(*)')
+      .eq('user_id', internalUserId)
+      .eq('status', 'unused')
+      .then(({ data }) => {
+        if (data) setUserCoupons(data)
+      })
+  }, [internalUserId])
 
   useEffect(() => {
     if (!channelId) {
@@ -1130,6 +1160,179 @@ export default function CustomerChatRoomPage() {
         ) : (
           <div style={{ padding: '20px 0', textAlign: 'center', fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>로딩중...</div>
         )}
+      </div>
+
+      {/* 토스트 드로어 */}
+      {drawerOpen && (
+        <>
+          <div
+            onClick={() => setDrawerOpen(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 49 }}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: '#1a1625',
+              borderRadius: '20px 20px 0 0',
+              padding: '16px 16px 80px',
+              zIndex: 50,
+              boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
+            }}
+          >
+            <div
+              style={{
+                width: 32,
+                height: 3,
+                background: 'rgba(255,255,255,0.2)',
+                borderRadius: 2,
+                margin: '0 auto 14px',
+              }}
+            />
+            <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+              {(['toast', 'coupon', 'history'] as const).map((t) => (
+                <div
+                  key={t}
+                  onClick={() => setDrawerTab(t)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: 20,
+                    fontSize: 10,
+                    cursor: 'pointer',
+                    background: drawerTab === t ? '#7B5EA7' : 'rgba(255,255,255,0.05)',
+                    color: drawerTab === t ? '#fff' : 'rgba(255,255,255,0.4)',
+                  }}
+                >
+                  {t === 'toast' ? '🍞 토스트' : t === 'coupon' ? '🎟 쿠폰' : '📊 내역'}
+                </div>
+              ))}
+            </div>
+            {drawerTab === 'toast' && (
+              <div
+                style={{
+                  background: 'linear-gradient(135deg,rgba(201,169,110,0.15),rgba(123,94,167,0.1))',
+                  border: '1px solid rgba(201,169,110,0.25)',
+                  borderRadius: 12,
+                  padding: 14,
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 9,
+                    color: 'rgba(201,169,110,0.6)',
+                    fontFamily: 'monospace',
+                    marginBottom: 4,
+                  }}
+                >
+                  내 토스트 잔액
+                </div>
+                <div style={{ fontSize: 32, color: '#C9A96E' }}>
+                  {toastBalance.toLocaleString()}
+                  <span style={{ fontSize: 13, marginLeft: 4 }}>T</span>
+                </div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
+                  = ₩{(toastBalance * 100).toLocaleString()}
+                </div>
+              </div>
+            )}
+            {drawerTab === 'coupon' && (
+              <div>
+                {userCoupons.length === 0 ? (
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: 16 }}>
+                    보유 쿠폰 없음
+                  </div>
+                ) : (
+                  userCoupons.map((uc) => (
+                    <div
+                      key={uc.id}
+                      style={{
+                        background: 'rgba(123,94,167,0.1)',
+                        border: '1px solid rgba(123,94,167,0.2)',
+                        borderRadius: 10,
+                        padding: '10px 12px',
+                        marginBottom: 8,
+                      }}
+                    >
+                      <div style={{ fontSize: 11, color: '#9B7EC8' }}>{uc.coupons?.name || '쿠폰'}</div>
+                      <div style={{ fontSize: 14, color: '#fff', marginTop: 2 }}>
+                        {uc.coupons?.discount_rate || uc.coupons?.discount_value}% 할인
+                      </div>
+                      <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>
+                        {uc.expired_at ? `~ ${uc.expired_at.slice(0, 10)}` : '만료일 없음'}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+            {drawerTab === 'history' && (
+              <div>
+                {toastHistory.length === 0 ? (
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: 16 }}>
+                    내역 없음
+                  </div>
+                ) : (
+                  toastHistory.map((h) => (
+                    <div
+                      key={h.id}
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '7px 0',
+                        borderBottom: '1px solid rgba(255,255,255,0.05)',
+                      }}
+                    >
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{h.description || '적립'}</div>
+                      <div style={{ fontSize: 11, color: '#C9A96E' }}>+{(h.points || 0).toLocaleString()}T</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* 토스트 스트립 */}
+      <div
+        onClick={() => setDrawerOpen((o) => !o)}
+        style={{
+          position: 'fixed',
+          left: 0,
+          right: 0,
+          bottom: 'calc(env(safe-area-inset-bottom) + 64px)',
+          padding: '7px 16px',
+          background: 'rgba(201,169,110,0.06)',
+          borderTop: '1px solid rgba(201,169,110,0.12)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          cursor: 'pointer',
+          zIndex: 48,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 14 }}>🍞</span>
+          <span style={{ fontSize: 11, color: '#C9A96E' }}>{toastBalance.toLocaleString()}T 보유</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          {userCoupons.length > 0 && (
+            <span
+              style={{
+                background: 'rgba(123,94,167,0.2)',
+                color: '#9B7EC8',
+                fontSize: 9,
+                padding: '1px 6px',
+                borderRadius: 10,
+              }}
+            >
+              쿠폰 {userCoupons.length}
+            </span>
+          )}
+          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>{drawerOpen ? '∨' : '∧'}</span>
+        </div>
       </div>
 
       <div
