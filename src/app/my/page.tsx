@@ -81,11 +81,19 @@ export default function MyPage() {
               setPeriodTipTitle(String((tip as any)?.title || '생리 시작 안내'))
             }
           })
-        supabase.from('users').select('id, points, charge_balance').eq('auth_id', data.user.id).single().then(({ data }) => {
-          if (data) {
-            setPoint(data.points || 0)
-            setChargeBalance(data.charge_balance || 0)
-          }
+        supabase.from('users').select('id, points, charge_balance').eq('auth_id', data.user.id).single().then(({ data: meRow }) => {
+          if (!meRow) return
+          setPoint(meRow.points || 0)
+          setChargeBalance(meRow.charge_balance || 0)
+          supabase
+            .from('orders')
+            .select('*, order_items(*, products(*, brands(name)))')
+            .eq('customer_id', meRow.id)
+            .order('created_at', { ascending: false })
+            .limit(5)
+            .then(({ data: ord }) => {
+              if (ord) setOrders(ord)
+            })
         })
         supabase
           .from('point_transactions')
@@ -150,15 +158,6 @@ export default function MyPage() {
                 })
               }
             }
-          })
-        supabase
-          .from('orders')
-          .select('*, order_items(*, products(*, brands(name)))')
-          .eq('customer_id', data.user.id)
-          .order('created_at', { ascending: false })
-          .limit(5)
-          .then(({ data: ord }) => {
-            if (ord) setOrders(ord)
           })
         supabase
           .from('monthly_skin_reports')
