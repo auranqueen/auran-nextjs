@@ -103,5 +103,24 @@ export default async function MyCouponsPage() {
   }
 
   const rows = normalizeRows(data)
-  return <MyCouponsClient initialRows={rows} initialError={errMsg} />
+  const { data: brandCoupons } = await supabase
+    .from('coupons')
+    .select('id, name, code, discount_rate, discount_amount, scope_brand_ids')
+    .eq('is_active', true)
+    .eq('coupon_type', 'regular')
+    .eq('scope', 'brand')
+
+  const brandRows = (brandCoupons || []).map((c: any) => ({
+    id: `brand_${c.id}`,
+    status: 'unused',
+    issued_at: null,
+    used_at: null,
+    coupon_id: c.id,
+    coupons: c,
+    is_brand_coupon: true,
+  }))
+
+  const allRows = [...rows, ...brandRows]
+
+  return <MyCouponsClient initialRows={allRows as CouponBoxRow[]} initialError={errMsg} />
 }

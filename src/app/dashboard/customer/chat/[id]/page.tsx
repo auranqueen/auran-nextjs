@@ -216,7 +216,29 @@ export default function CustomerChatRoomPage() {
       .eq('user_id', internalUserId)
       .eq('status', 'unused')
       .then(({ data }) => {
-        if (data) setUserCoupons(data)
+        const base = data || []
+        setUserCoupons(base)
+        supabase
+          .from('coupons')
+          .select('id, name, code, discount_rate, discount_amount, scope_brand_ids')
+          .eq('is_active', true)
+          .eq('coupon_type', 'regular')
+          .eq('scope', 'brand')
+          .then(({ data: brandCoupons }) => {
+            if (brandCoupons && brandCoupons.length > 0) {
+              const virtualCoupons = brandCoupons.map((c: any) => ({
+                id: `brand_${c.id}`,
+                status: 'unused',
+                issued_at: null,
+                used_at: null,
+                expired_at: null,
+                coupon_id: c.id,
+                coupons: c,
+                is_brand_coupon: true,
+              }))
+              setUserCoupons([...base, ...virtualCoupons])
+            }
+          })
       })
   }, [internalUserId])
 
