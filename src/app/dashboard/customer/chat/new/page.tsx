@@ -36,6 +36,8 @@ export default function CustomerChatNewHelpPage() {
         .select('id')
         .eq('user_id', uid)
         .eq('channel_type', 'owner')
+        .order('created_at', { ascending: true })
+        .limit(1)
         .maybeSingle()
 
       let id: string | undefined
