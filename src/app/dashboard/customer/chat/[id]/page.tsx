@@ -1224,15 +1224,26 @@ export default function CustomerChatRoomPage() {
               boxShadow: '0 -8px 32px rgba(0,0,0,0.5)',
             }}
           >
-            <div
-              style={{
-                width: 32,
-                height: 3,
-                background: 'rgba(255,255,255,0.2)',
-                borderRadius: 2,
-                margin: '0 auto 14px',
-              }}
-            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ width: 32, height: 3, background: 'rgba(255,255,255,0.2)', borderRadius: 2 }} />
+              <div
+                onClick={() => setDrawerOpen(false)}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 16,
+                  color: 'rgba(255,255,255,0.5)',
+                  cursor: 'pointer',
+                }}
+              >
+                ×
+              </div>
+            </div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
               {(['toast', 'coupon', 'history'] as const).map((t) => (
                 <div
