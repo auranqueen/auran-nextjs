@@ -105,7 +105,7 @@ export default async function MyCouponsPage() {
   const rows = normalizeRows(data)
   const { data: brandCoupons } = await supabase
     .from('coupons')
-    .select('id, name, code, discount_rate, discount_amount, scope_brand_ids')
+    .select('id, name, code, discount_rate, discount_amount, discount_value, scope, scope_brand_ids, min_order, coupon_type, description')
     .eq('is_active', true)
     .eq('coupon_type', 'regular')
     .eq('scope', 'brand')
