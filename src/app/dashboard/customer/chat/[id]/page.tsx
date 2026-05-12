@@ -590,7 +590,7 @@ export default function CustomerChatRoomPage() {
         </button>
       </div>
 
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 100px' }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 160px' }}>
         {routineCards.length > 0 ? (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 8 }}>루틴 알림장</div>
@@ -1313,7 +1313,7 @@ export default function CustomerChatRoomPage() {
           position: 'fixed',
           left: 0,
           right: 0,
-          bottom: 'calc(env(safe-area-inset-bottom) + 110px)',
+          bottom: 'calc(env(safe-area-inset-bottom) + 130px)',
           padding: '7px 16px',
           background: 'rgba(201,169,110,0.06)',
           borderTop: '1px solid rgba(201,169,110,0.12)',
@@ -1353,7 +1353,7 @@ export default function CustomerChatRoomPage() {
           right: 0,
           bottom: 0,
           padding: '10px 12px calc(10px + env(safe-area-inset-bottom, 0px))',
-          paddingBottom: 'calc(env(safe-area-inset-bottom) + 110px)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 130px)',
           background: 'linear-gradient(180deg, transparent, #0D0B09 28%)',
           borderTop: '1px solid rgba(255,255,255,0.06)',
         }}
