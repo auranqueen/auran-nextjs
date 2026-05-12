@@ -9,6 +9,42 @@ export default function MyAddressesPage() {
   const router = useRouter()
   const [addresses, setAddresses] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [showForm, setShowForm] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [newPhone, setNewPhone] = useState('')
+  const [newAddress, setNewAddress] = useState('')
+  const [newDetail, setNewDetail] = useState('')
+
+  const addAddress = async () => {
+    if (!newName || !newPhone || !newAddress) return
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return
+    const { data: u } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+    if (!u?.id) return
+    const { data } = await supabase
+      .from('shipping_addresses')
+      .insert({
+        user_id: u.id,
+        recipient_name: newName,
+        phone: newPhone,
+        address: newAddress,
+        address_detail: newDetail || null,
+        is_default: addresses.length === 0,
+        label: '집',
+      } as any)
+      .select()
+      .maybeSingle()
+    if (data) {
+      setAddresses((prev) => [...prev, data])
+      setShowForm(false)
+      setNewName('')
+      setNewPhone('')
+      setNewAddress('')
+      setNewDetail('')
+    }
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -124,6 +160,87 @@ export default function MyAddressesPage() {
             )}
           </div>
         ))
+      )}
+      {!showForm ? (
+        <div style={{ position: 'fixed', bottom: 20, left: 16, right: 16 }}>
+          <button
+            type="button"
+            onClick={() => setShowForm(true)}
+            style={{
+              width: '100%',
+              padding: 14,
+              borderRadius: 14,
+              background: '#7B5EA7',
+              color: '#fff',
+              border: 'none',
+              fontSize: 14,
+              cursor: 'pointer',
+            }}
+          >
+            + 배송지 추가
+          </button>
+        </div>
+      ) : (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            background: '#1a1625',
+            borderRadius: '16px 16px 0 0',
+            padding: 20,
+            border: '1px solid rgba(123,94,167,0.3)',
+          }}
+        >
+          <div style={{ fontSize: 12, color: '#C9A96E', marginBottom: 12, fontFamily: 'monospace', letterSpacing: 2 }}>새 배송지</div>
+          {[
+            { placeholder: '받는 분 이름', value: newName, set: setNewName },
+            { placeholder: '연락처', value: newPhone, set: setNewPhone },
+            { placeholder: '주소', value: newAddress, set: setNewAddress },
+            { placeholder: '상세주소 (동/호수)', value: newDetail, set: setNewDetail },
+          ].map((f, i) => (
+            <input
+              key={i}
+              value={f.value}
+              onChange={(e) => f.set(e.target.value)}
+              placeholder={f.placeholder}
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: 10,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: '#fff',
+                fontSize: 12,
+                outline: 'none',
+                marginBottom: 8,
+                boxSizing: 'border-box' as const,
+              }}
+            />
+          ))}
+          <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              style={{
+                flex: 1,
+                padding: 12,
+                borderRadius: 10,
+                background: 'rgba(255,255,255,0.05)',
+                color: 'rgba(255,255,255,0.5)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              취소
+            </button>
+            <button type="button" onClick={addAddress} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#7B5EA7', color: '#fff', border: 'none', fontSize: 12, cursor: 'pointer' }}>
+              저장
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
