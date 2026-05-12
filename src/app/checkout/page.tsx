@@ -155,11 +155,52 @@ function CheckoutPageInner() {
       setMeId(me.id)
       setRecipientName(String((me as any).name || ''))
       setRecipientPhone(String((me as any).phone || ''))
-      const { data: shippingRows } = await supabase
-        .from('shipping_addresses')
-        .select('*')
-        .eq('user_id', me.id)
-        .order('is_default', { ascending: false })
+      setPoints(toNum(me.points))
+      setBalance(toNum(me.charge_balance))
+      setIsFounderUser(!!(me as { is_founder?: boolean }).is_founder)
+      const cg = String((me as any).customer_grade || '').trim()
+      setGradeName(cg)
+      const gKey = cg ? `grade_discount_${cg}` : ''
+      const gradeSettingPromise = cg
+        ? supabase
+            .from('admin_settings')
+            .select('value')
+            .eq('category', 'grade')
+            .eq('key', gKey)
+            .maybeSingle()
+        : Promise.resolve({ data: null as { value?: string } | null })
+      const productsPromise =
+        productIds.length > 0
+          ? supabase
+              .from('products')
+              .select('id,name,thumb_img,retail_price,brand_id,is_timesale,timesale_ends_at,is_groupbuy,sale_price')
+              .in('id', productIds)
+              .eq('status', 'active')
+              .gt('retail_price', 0)
+          : Promise.resolve({ data: null as unknown[] | null })
+
+      const [
+        { data: shippingRows },
+        { rows: ucs, error: ucErr },
+        { data: brandCoupons },
+        { data: gRow },
+        { data: productRows },
+      ] = await Promise.all([
+        supabase
+          .from('shipping_addresses')
+          .select('*')
+          .eq('user_id', me.id)
+          .order('is_default', { ascending: false }),
+        fetchUserCouponsWithCoupons(supabase, me.id, { status: 'unused' }),
+        supabase.from('coupons').select('*').eq('is_active', true).eq('coupon_type', 'regular').eq('scope', 'brand'),
+        gradeSettingPromise,
+        productsPromise,
+      ])
+      if (ucErr) console.warn('[checkout] user_coupons', ucErr.message)
+
+      const gPct = cg ? Number((gRow as any)?.value || 0) : 0
+      setGradeDiscount(Number.isFinite(gPct) ? gPct : 0)
+
       const rows = shippingRows || []
       setSavedAddresses(rows)
       const defaultAddr = rows.find((r: any) => r.is_default) || rows[0] || null
@@ -169,34 +210,8 @@ function CheckoutPageInner() {
         setAddress(String(defaultAddr.address || ''))
         setAddressDetail(String(defaultAddr.address_detail || ''))
       }
-      setPoints(toNum(me.points))
-      setBalance(toNum(me.charge_balance))
-      setIsFounderUser(!!(me as { is_founder?: boolean }).is_founder)
-      const cg = String((me as any).customer_grade || '').trim()
-      setGradeName(cg)
-      let gPct = 0
-      if (cg) {
-        const gKey = `grade_discount_${cg}`
-        const { data: gRow } = await supabase
-          .from('admin_settings')
-          .select('value')
-          .eq('category', 'grade')
-          .eq('key', gKey)
-          .maybeSingle()
-        gPct = Number((gRow as any)?.value || 0)
-      }
-      setGradeDiscount(Number.isFinite(gPct) ? gPct : 0)
-      const { rows: ucs, error: ucErr } = await fetchUserCouponsWithCoupons(supabase, me.id, { status: 'unused' })
-      if (ucErr) console.warn('[checkout] user_coupons', ucErr.message)
 
       // 브랜드 상시 쿠폰 조회 후 가상 row로 주입
-      const { data: brandCoupons } = await supabase
-        .from('coupons')
-        .select('*')
-        .eq('is_active', true)
-        .eq('coupon_type', 'regular')
-        .eq('scope', 'brand')
-
       const existingCouponIds = new Set((ucs || []).map((u: any) => u.coupon_id))
       const virtualRows: UcRow[] = (brandCoupons || [])
         .filter((c: any) => !existingCouponIds.has(c.id))
@@ -212,13 +227,7 @@ function CheckoutPageInner() {
 
       setUserCoupons([...(ucs || []), ...virtualRows] as UcRow[])
       if (productIds.length > 0) {
-        const { data: rows } = await supabase
-          .from('products')
-          .select('id,name,thumb_img,retail_price,brand_id,is_timesale,timesale_ends_at,is_groupbuy,sale_price')
-          .in('id', productIds)
-          .eq('status', 'active')
-          .gt('retail_price', 0)
-        const fetched = rows || []
+        const fetched = productRows || []
         const hasValidPrice = fetched.some((p: any) => toNum(p.retail_price) > 0)
         if (!hasValidPrice) {
           router.replace('/')

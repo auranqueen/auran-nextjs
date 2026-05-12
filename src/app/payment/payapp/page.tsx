@@ -46,23 +46,24 @@ function PayAppInner() {
 
       const { data: { user: _u } } = await supabase.auth.getUser()
       if (_u) {
-        const { data: _urow } = await supabase
-          .from('users').select('id').eq('auth_id', _u.id).maybeSingle()
-        if (_urow?.id) {
-          const { data: _existing } = await supabase
-            .from('orders')
-            .select('id, order_no')
-            .eq('customer_id', _urow.id)
-            .eq('payment_applied', false)
-            .eq('final_amount', amount)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-          if (_existing?.id) {
-            await supabase.from('orders')
-              .update({ status: '취소' })
-              .eq('id', _existing.id)
-          }
+        const duplicateOrderPromise = supabase
+          .from('orders')
+          .select('id, order_no, users!orders_customer_id_fkey!inner(auth_id)')
+          .eq('users.auth_id', _u.id)
+          .eq('payment_applied', false)
+          .eq('final_amount', amount)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+
+        const [{ data: _urow }, { data: _existing }] = await Promise.all([
+          supabase.from('users').select('id').eq('auth_id', _u.id).maybeSingle(),
+          duplicateOrderPromise,
+        ])
+        if (_urow?.id && _existing?.id) {
+          await supabase.from('orders')
+            .update({ status: '취소' })
+            .eq('id', _existing.id)
         }
       }
 
