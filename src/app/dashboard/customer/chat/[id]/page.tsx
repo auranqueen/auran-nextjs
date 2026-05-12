@@ -1302,7 +1302,7 @@ export default function CustomerChatRoomPage() {
           position: 'fixed',
           left: 0,
           right: 0,
-          bottom: 'calc(env(safe-area-inset-bottom) + 64px)',
+          bottom: 'calc(env(safe-area-inset-bottom) + 110px)',
           padding: '7px 16px',
           background: 'rgba(201,169,110,0.06)',
           borderTop: '1px solid rgba(201,169,110,0.12)',
@@ -1342,7 +1342,7 @@ export default function CustomerChatRoomPage() {
           right: 0,
           bottom: 0,
           padding: '10px 12px calc(10px + env(safe-area-inset-bottom, 0px))',
-          paddingBottom: 'calc(env(safe-area-inset-bottom) + 64px)',
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 110px)',
           background: 'linear-gradient(180deg, transparent, #0D0B09 28%)',
           borderTop: '1px solid rgba(255,255,255,0.06)',
         }}
