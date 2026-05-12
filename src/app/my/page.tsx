@@ -94,6 +94,63 @@ export default function MyPage() {
             .then(({ data: ord }) => {
               if (ord) setOrders(ord)
             })
+          supabase
+            .from('orders')
+            .select('id, items, status, tracking_no, courier, ordered_at, delivered_at')
+            .eq('customer_id', meRow.id)
+            .order('ordered_at', { ascending: false })
+            .limit(3)
+            .then(async ({ data: recentOrders }) => {
+              const rows = recentOrders || []
+              setRecentOrdersForRefill(rows)
+              const parsed: { order_id: string; product_id: string; delivered_at: string; fallback_name: string }[] = []
+              const uniqueIds = new Set<string>()
+              rows.forEach((o: any) => {
+                const items = Array.isArray(o.items) ? o.items : []
+                items.forEach((it: any) => {
+                  const pid = String(it?.product_id || it?.id || it?.productId || '').trim()
+                  if (!pid) return
+                  parsed.push({
+                    order_id: String(o.id),
+                    product_id: pid,
+                    delivered_at: String(o.delivered_at || ''),
+                    fallback_name: String(it?.product_name || it?.name || '제품'),
+                  })
+                  uniqueIds.add(pid)
+                })
+              })
+              if (parsed.length === 0) {
+                setRefills([])
+                return
+              }
+              const ids = Array.from(uniqueIds)
+              const { data: productRows } = await supabase
+                .from('products')
+                .select('id, name, avg_usage_days')
+                .in('id', ids)
+              const { data: trackingRows } = await supabase
+                .from('product_usage_tracking')
+                .select('product_id, order_id, started_at, avg_usage_days')
+                .eq('user_id', data.user.id)
+                .in('product_id', ids)
+              const productMap = new Map((productRows || []).map((p: any) => [String(p.id), p]))
+              const trackingMap = new Map((trackingRows || []).map((t: any) => [`${String(t.order_id)}:${String(t.product_id)}`, t]))
+              const merged = parsed.map((row) => {
+                const product = productMap.get(row.product_id)
+                const tracking = trackingMap.get(`${row.order_id}:${row.product_id}`)
+                const avgDays = Number(tracking?.avg_usage_days || product?.avg_usage_days || 60)
+                return {
+                  order_id: row.order_id,
+                  product_id: row.product_id,
+                  name: String(product?.name || row.fallback_name || '제품'),
+                  avg_usage_days: avgDays > 0 ? avgDays : 60,
+                  started_at: tracking?.started_at ? String(tracking.started_at) : '',
+                  delivered_at: row.delivered_at,
+                  status: String((rows.find((r: any) => String(r.id) === row.order_id)?.status as string) || ''),
+                }
+              })
+              setRefills(merged)
+            })
         })
         supabase
           .from('point_transactions')
@@ -187,63 +244,6 @@ export default function MyPage() {
                 if (!friendshipsError && Array.isArray(friendships)) setFriendFeed(friendships)
                 else setFriendFeed([])
               })
-          })
-        supabase
-          .from('orders')
-          .select('id, items, status, tracking_no, courier, ordered_at, delivered_at')
-          .eq('customer_id', data.user.id)
-          .order('ordered_at', { ascending: false })
-          .limit(3)
-          .then(async ({ data: recentOrders }) => {
-            const rows = recentOrders || []
-            setRecentOrdersForRefill(rows)
-            const parsed: { order_id: string; product_id: string; delivered_at: string; fallback_name: string }[] = []
-            const uniqueIds = new Set<string>()
-            rows.forEach((o: any) => {
-              const items = Array.isArray(o.items) ? o.items : []
-              items.forEach((it: any) => {
-                const pid = String(it?.product_id || it?.id || it?.productId || '').trim()
-                if (!pid) return
-                parsed.push({
-                  order_id: String(o.id),
-                  product_id: pid,
-                  delivered_at: String(o.delivered_at || ''),
-                  fallback_name: String(it?.product_name || it?.name || '제품'),
-                })
-                uniqueIds.add(pid)
-              })
-            })
-            if (parsed.length === 0) {
-              setRefills([])
-              return
-            }
-            const ids = Array.from(uniqueIds)
-            const { data: productRows } = await supabase
-              .from('products')
-              .select('id, name, avg_usage_days')
-              .in('id', ids)
-            const { data: trackingRows } = await supabase
-              .from('product_usage_tracking')
-              .select('product_id, order_id, started_at, avg_usage_days')
-              .eq('user_id', data.user.id)
-              .in('product_id', ids)
-            const productMap = new Map((productRows || []).map((p: any) => [String(p.id), p]))
-            const trackingMap = new Map((trackingRows || []).map((t: any) => [`${String(t.order_id)}:${String(t.product_id)}`, t]))
-            const merged = parsed.map((row) => {
-              const product = productMap.get(row.product_id)
-              const tracking = trackingMap.get(`${row.order_id}:${row.product_id}`)
-              const avgDays = Number(tracking?.avg_usage_days || product?.avg_usage_days || 60)
-              return {
-                order_id: row.order_id,
-                product_id: row.product_id,
-                name: String(product?.name || row.fallback_name || '제품'),
-                avg_usage_days: avgDays > 0 ? avgDays : 60,
-                started_at: tracking?.started_at ? String(tracking.started_at) : '',
-                delivered_at: row.delivered_at,
-                status: String((rows.find((r: any) => String(r.id) === row.order_id)?.status as string) || ''),
-              }
-            })
-            setRefills(merged)
           })
       } else {
         setOrders([])
