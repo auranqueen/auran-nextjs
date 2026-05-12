@@ -100,12 +100,6 @@ export default function CustomerChatRoomPage() {
     created_at: string
     product_id: string | null
   }[]>([])
-  const [notifSound, setNotifSound] = useState('violet')
-  const notifSoundRef = useRef('violet')
-
-  useEffect(() => {
-    notifSoundRef.current = notifSound
-  }, [notifSound])
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
