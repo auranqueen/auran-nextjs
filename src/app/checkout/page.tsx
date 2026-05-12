@@ -561,6 +561,7 @@ function CheckoutPageInner() {
         couponSheetOpen={couponSheetOpen}
         setCouponSheetOpen={setCouponSheetOpen}
         userCoupons={userCoupons}
+        setUserCoupons={setUserCoupons}
         authUid={authUid}
         orderLines={orderLines}
         shippingFee={shippingFee}

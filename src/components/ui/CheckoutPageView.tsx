@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type Dispatch, type SetStateAction } from 'react'
 import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -76,6 +76,7 @@ type Props = {
   couponSheetOpen: boolean
   setCouponSheetOpen: (v: boolean) => void
   userCoupons: CheckoutUcRow[]
+  setUserCoupons?: Dispatch<SetStateAction<CheckoutUcRow[]>>
   authUid: string | null
   orderLines: OrderLineForCoupon[]
   shippingFee?: number
@@ -138,6 +139,7 @@ export default function CheckoutPageView({
   couponSheetOpen,
   setCouponSheetOpen,
   userCoupons,
+  setUserCoupons,
   authUid,
   orderLines,
   shippingFee = 0,
@@ -867,7 +869,44 @@ export default function CheckoutPageView({
               const dv = (c.discount_value != null && Number(c.discount_value) !== 0) ? Number(c.discount_value) : dt === 'rate' ? Number(c.discount_rate || 0) : Number(c.discount_amount || 0)
               const discLabel = dt === 'rate' ? `${dv}% 할인` : `₩${dv.toLocaleString()} 할인`
               return (
-                <button key={uc.id} type="button" disabled={!ok} onClick={() => { if (!ok) return; setSelectedUserCouponId(uc.id); setCouponSheetOpen(false) }}
+                <button
+                  key={uc.id}
+                  type="button"
+                  disabled={!ok}
+                  onClick={async () => {
+                    if (!ok) return
+                    let finalId = uc.id
+                    if (String(uc.id).startsWith('virtual_')) {
+                      const { data: inserted } = await supabase
+                        .from('user_coupons')
+                        .upsert(
+                          {
+                            user_id: meId,
+                            coupon_id: uc.coupon_id,
+                            status: 'unused',
+                            issued_at: new Date().toISOString(),
+                          },
+                          { onConflict: 'user_id,coupon_id' }
+                        )
+                        .select('id')
+                        .maybeSingle()
+                      if (inserted?.id) {
+                        finalId = inserted.id
+                        setUserCoupons?.((prev) =>
+                          prev.map((row) =>
+                            row.id === uc.id
+                              ? {
+                                  ...row,
+                                  id: inserted.id,
+                                }
+                              : row
+                          )
+                        )
+                      }
+                    }
+                    setSelectedUserCouponId(finalId)
+                    setCouponSheetOpen(false)
+                  }}
                   style={{ width: '100%', textAlign: 'left', padding: 12, marginBottom: 8, borderRadius: 12, border: sel ? '1px solid rgba(201,168,76,0.6)' : '1px solid var(--border)', background: ok ? 'rgba(201,168,76,0.08)' : 'rgba(0,0,0,0.2)', color: ok ? '#fff' : 'rgba(255,255,255,0.35)', cursor: ok ? 'pointer' : 'not-allowed' }}>
                   <div style={{ fontWeight: 500, fontSize: 13 }}>{c.name}</div>
                   <div style={{ fontSize: 12, marginTop: 4, color: ok ? 'var(--gold)' : 'inherit' }}>{discLabel}</div>
