@@ -495,6 +495,7 @@ function CheckoutPageInner() {
         payment_method: 'bank_transfer',
         total_amount: subtotal,
         final_amount: payAppAmount,
+        toast_used: toastUsed,
         referrer_user_id: refUserId || undefined,
         recipient_name: recipientName || null,
         recipient_phone: recipientPhone || null,
