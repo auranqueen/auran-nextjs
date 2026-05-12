@@ -530,8 +530,10 @@ export default function CustomerChatRoomPage() {
       `}</style>
       <div
         style={{
-          position: 'sticky',
+          position: 'fixed',
           top: 0,
+          left: 0,
+          right: 0,
           zIndex: 20,
           background: 'linear-gradient(160deg,#0a0c0f,#111318)',
           borderBottom: '1px solid var(--border)',
@@ -573,24 +575,55 @@ export default function CustomerChatRoomPage() {
             {channelTitle}
           </div>
         </div>
-        <button
-          onClick={() => setSlideOpen((v) => !v)}
-          style={{
-            fontSize: 11,
-            color: '#C084FC',
-            background: slideOpen ? 'rgba(123,94,167,0.35)' : 'rgba(123,94,167,0.15)',
-            border: 'none',
-            borderRadius: 12,
-            padding: '4px 10px',
-            cursor: 'pointer',
-            flexShrink: 0,
-          }}
-        >
-          내 정보
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <div
+            onClick={() => setDrawerOpen((o) => !o)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              padding: '5px 10px',
+              borderRadius: 20,
+              background: 'rgba(201,169,110,0.1)',
+              border: '1px solid rgba(201,169,110,0.2)',
+              cursor: 'pointer',
+            }}
+          >
+            <span style={{ fontSize: 14 }}>🍞</span>
+            <span style={{ fontSize: 11, color: '#C9A96E' }}>{toastBalance.toLocaleString()}T</span>
+            {userCoupons.length > 0 && (
+              <span
+                style={{
+                  background: 'rgba(123,94,167,0.2)',
+                  color: '#9B7EC8',
+                  fontSize: 9,
+                  padding: '1px 5px',
+                  borderRadius: 10,
+                }}
+              >
+                {userCoupons.length}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={() => setSlideOpen((v) => !v)}
+            style={{
+              fontSize: 11,
+              color: '#C084FC',
+              background: slideOpen ? 'rgba(123,94,167,0.35)' : 'rgba(123,94,167,0.15)',
+              border: 'none',
+              borderRadius: 12,
+              padding: '4px 10px',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            내 정보
+          </button>
+        </div>
       </div>
 
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 160px' }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '80px 16px 160px' }}>
         {routineCards.length > 0 ? (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 8 }}>루틴 알림장</div>
@@ -1305,46 +1338,6 @@ export default function CustomerChatRoomPage() {
           </div>
         </>
       )}
-
-      {/* 토스트 스트립 */}
-      <div
-        onClick={() => setDrawerOpen((o) => !o)}
-        style={{
-          position: 'fixed',
-          left: 0,
-          right: 0,
-          bottom: 'calc(env(safe-area-inset-bottom) + 130px)',
-          padding: '7px 16px',
-          background: 'rgba(201,169,110,0.06)',
-          borderTop: '1px solid rgba(201,169,110,0.12)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          cursor: 'pointer',
-          zIndex: 48,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ fontSize: 14 }}>🍞</span>
-          <span style={{ fontSize: 11, color: '#C9A96E' }}>{toastBalance.toLocaleString()}T 보유</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          {userCoupons.length > 0 && (
-            <span
-              style={{
-                background: 'rgba(123,94,167,0.2)',
-                color: '#9B7EC8',
-                fontSize: 9,
-                padding: '1px 6px',
-                borderRadius: 10,
-              }}
-            >
-              쿠폰 {userCoupons.length}
-            </span>
-          )}
-          <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>{drawerOpen ? '∨' : '∧'}</span>
-        </div>
-      </div>
 
       <div
         style={{
