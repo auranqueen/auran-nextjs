@@ -400,11 +400,11 @@ function CheckoutPageInner() {
       return
     }
     if (needCharge > 0) {
-      router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}`)
+      router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}&user_coupon_id=${selectedUserCouponId || ''}`)
       setIsPaying(false)
       return
     }
-    router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}`)
+    router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&qty=1&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}&user_coupon_id=${selectedUserCouponId || ''}`)
     setIsPaying(false)
   }
 
@@ -440,7 +440,7 @@ function CheckoutPageInner() {
     }
     setPinOpen(false)
     setPinChecking(false)
-    router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&qty=1&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}`)
+    router.push(`/payment/payapp?product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&qty=1&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}&user_coupon_id=${selectedUserCouponId || ''}`)
     setIsPaying(false)
   }
 

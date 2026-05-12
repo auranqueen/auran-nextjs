@@ -89,6 +89,7 @@ function PayAppInner() {
           recipient_phone: decodeURIComponent(params.get('recipient_phone') || '') || null,
           address: (decodeURIComponent(params.get('address') || '') || '') + (addressDetailParam ? ' ' + addressDetailParam : '') || null,
           coupon_discount: couponDiscount,
+          user_coupon_id: params.get('user_coupon_id') || null,
         }),
       })
       const orderData = await orderRes.json()
