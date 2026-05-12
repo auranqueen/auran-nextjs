@@ -274,6 +274,7 @@ export default function MyPage() {
     { icon: '⭐', label: '리뷰 관리', path: '/my/reviews', badge: 0 },
     { icon: '🔔', label: '알림 설정', path: '/my/notifications', badge: 0 },
     { icon: '🔔', label: '채팅 알림음', action: () => setSoundSheetOpen(true), badge: 0 },
+    { icon: '🏠', label: '배송지 관리', path: '/my/addresses' },
     { icon: '👤', label: '개인정보', path: '/my/profile', badge: 0 },
     { icon: '🔒', label: '보안 설정', path: '/my/security', badge: 0 },
     { icon: '📞', label: '고객센터', path: '/my/support', badge: 0 },
@@ -384,7 +385,7 @@ export default function MyPage() {
       <header style={{ position: 'sticky', top: 0, zIndex: 40, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', background: 'rgba(13,11,9,0.95)', borderBottom: CARD_BORDER, backdropFilter: 'blur(12px)' }}>
         <span style={{ fontFamily: 'Georgia, serif', fontSize: '22px', fontWeight: 400, color: GOLD, letterSpacing: '6px' }}>AURAN</span>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button onClick={() => router.push('/my/settings')} style={{ width: '34px', height: '34px', borderRadius: '50%', background: CARD_BG, border: CARD_BORDER, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', cursor: 'pointer' }}>⚙️</button>
+          <button onClick={() => router.push('/my/profile')} style={{ width: '34px', height: '34px', borderRadius: '50%', background: CARD_BG, border: CARD_BORDER, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', cursor: 'pointer' }}>⚙️</button>
         </div>
       </header>
 
