@@ -77,6 +77,11 @@ export default function CustomerChatRoomPage() {
   const [forbidden, setForbidden] = useState(false)
   const [channelTitle, setChannelTitle] = useState('상담')
   const [internalUserId, setInternalUserId] = useState<string | null>(null)
+  const [notifSound, setNotifSound] = useState('violet')
+  const notifSoundRef = useRef('violet')
+  useEffect(() => {
+    notifSoundRef.current = notifSound
+  }, [notifSound])
   const [messages, setMessages] = useState<MsgRow[]>([])
   const [routineCards, setRoutineCards] = useState<RoutineCardRow[]>([])
   const [draft, setDraft] = useState('')
