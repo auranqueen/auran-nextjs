@@ -63,6 +63,15 @@ function parseRecommendItems(m: MsgRow): RecommendItem[] {
   }
 }
 
+function toastLabel(type: string, _source: string) {
+  if (type === 'gift') return '🍓 원장님 딸기잼 선물'
+  if (type === 'review') return '⭐ 리뷰 작성'
+  if (type === 'attendance') return '🧈 출석 체크인'
+  if (type === 'purchase') return '🛒 구매 적립'
+  if (type === 'signup') return '🎁 가입 환영'
+  return '🍞 토스트 적립'
+}
+
 export default function CustomerChatRoomPage() {
   const supabase = createClient()
   const router = useRouter()
@@ -190,7 +199,7 @@ export default function CustomerChatRoomPage() {
     if (!internalUserId) return
     supabase
       .from('toast_transactions')
-      .select('id, amount, transaction_type, description, created_at')
+      .select('id, amount, transaction_type, source_type, created_at')
       .eq('user_id', internalUserId)
       .order('created_at', { ascending: false })
       .limit(10)
@@ -1285,7 +1294,7 @@ export default function CustomerChatRoomPage() {
                       }}
                     >
                       <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>
-                        {h.description || h.transaction_type || '적립'}
+                        {toastLabel(String(h.transaction_type || ''), String(h.source_type || ''))}
                       </div>
                       <div style={{ fontSize: 11, color: '#C9A96E' }}>+{(h.amount || 0).toLocaleString()}T</div>
                     </div>
