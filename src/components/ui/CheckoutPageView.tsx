@@ -805,12 +805,13 @@ export default function CheckoutPageView({
                         onClick={async () => {
                           if (!meId) return
                           setAddressSaving(true)
-                          const finalAddress = `${newAddress.trim()} ${newAddressDetail.trim()}`.trim()
+                          const finalAddress = newAddress.trim()
                           const { error } = await supabase.from('shipping_addresses').insert({
                             user_id: meId,
                             recipient_name: newRecipientName.trim(),
                             phone: newRecipientPhone.trim(),
                             address: finalAddress,
+                            address_detail: newAddressDetail.trim() || null,
                             label: newAddressLabel,
                             is_default: savedAddresses.length === 0,
                           })

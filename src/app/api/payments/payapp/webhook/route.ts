@@ -522,7 +522,7 @@ export async function POST(req: NextRequest) {
       const orderClient = tryCreateServiceClient() || supabase
       const { data: orderRow } = await orderClient
         .from('orders')
-        .select('id,payment_applied,payment_status,final_amount,address,recipient_name,recipient_phone')
+        .select('id,payment_applied,payment_status,final_amount,address,address_detail,recipient_name,recipient_phone')
         .eq('id', intent.target_id)
         .maybeSingle()
 
@@ -540,6 +540,7 @@ export async function POST(req: NextRequest) {
           await orderClient.from('shipping_addresses').insert({
             user_id: intent.user_id,
             address: shipAddr,
+            address_detail: (orderRow as any).address_detail || null,
             recipient_name: shipName || null,
             phone: shipPhone || null,
             is_default: true,
