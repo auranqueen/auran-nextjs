@@ -521,7 +521,7 @@ export default function CustomerChatRoomPage() {
   }
 
   return (
-    <div style={{ height: '100dvh', overflow: 'hidden', background: BG, color: '#fff', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ height: '100dvh', overflow: 'hidden', background: BG, color: '#fff', display: 'flex', flexDirection: 'column', paddingTop: 64 }}>
       <style>{`
         @keyframes fadeOut {
           from { opacity: 1; }
@@ -623,7 +623,7 @@ export default function CustomerChatRoomPage() {
         </div>
       </div>
 
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '80px 16px 160px' }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 160px' }}>
         {routineCards.length > 0 ? (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 8 }}>루틴 알림장</div>
