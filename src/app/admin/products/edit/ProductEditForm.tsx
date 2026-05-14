@@ -333,10 +333,10 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
         const ep = Number(p.earn_points ?? 0)
         const epp = Number(p.earn_points_percent ?? 0)
         if (epp > 0 && ep === 0) {
-          setPurchaseMode('point')
+          setPurchaseMode('percent')
           setPurchaseVal(String(epp))
         } else {
-          setPurchaseMode('percent')
+          setPurchaseMode('point')
           setPurchaseVal(String(ep))
         }
       }
