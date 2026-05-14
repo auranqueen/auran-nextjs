@@ -190,7 +190,7 @@ export default function SeasonRecommendSection({
       }
 
       const sel =
-        'id, name, retail_price, sale_price, storage_thumb_url, thumb_img, tag, skin_types, sales_count, avg_rating, step_tags, func_tags'
+        'id, name, retail_price, sale_price, storage_thumb_url, thumb_img, tag, skin_types, sales_count, avg_rating, step_tags, func_tags, concern_tags, skin_tags, hormone_timing'
       const fb = await supabaseClient
         .from('products')
         .select(sel)
