@@ -17,6 +17,8 @@ interface Product {
   ingredient: string | null
   ingredient_analyzed?: boolean | null
   brands?: { name: string } | null
+  thumb_img?: string | null
+  storage_thumb_url?: string | null
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -192,7 +194,12 @@ export default function AdminMarketingProductsClient() {
           const sc = getStatusClass(p)
           return (
             <div key={p.id} style={s.card}>
-              <div style={s.imgBox}>🧴</div>
+              <div style={s.imgBox}>
+                {(p as any).thumb_img || (p as any).storage_thumb_url
+                  ? <img src={(p as any).storage_thumb_url || (p as any).thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} />
+                  : <span>🧴</span>
+                }
+              </div>
               <div style={s.info}>
                 <div style={s.name}>{p.name}</div>
                 <div style={s.meta}>
