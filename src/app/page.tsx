@@ -305,7 +305,17 @@ export default function CustomerHomePage() {
   const personalConcerns = useMemo(() => {
     const sc = (motivationProfile as any)?.skin_concerns
     if (!sc || !Array.isArray(sc) || sc.length === 0) return []
-    return sc.map((c: any) => String(c).toLowerCase())
+    const map: Record<string, string> = {
+      pore: '모공', elasticity: '탄력', wrinkle: '주름',
+      moisture: '수분', dryness: '건조', brightening: '미백',
+      whitening: '미백', trouble: '트러블', acne: '트러블',
+      sensitive: '민감', barrier: '장벽', exfoliation: '각질',
+      lifting: '탄력', antiaging: '탄력', pigmentation: '미백',
+    }
+    return sc.map((c: any) => {
+      const key = String(c).toLowerCase()
+      return map[key] || key
+    })
   }, [motivationProfile])
   const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null)
   const [obStep, setObStep] = useState(1)
