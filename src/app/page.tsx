@@ -860,6 +860,8 @@ export default function CustomerHomePage() {
   const concernList = concerns.length > 0 ? concerns : []
   const productList = products.length > 0 ? products : []
   const personalProductList = useMemo(() => {
+    console.log('[BEST] personalConcerns:', personalConcerns)
+    console.log('[BEST] sample concern_tags:', productList.slice(0,3).map((p:any) => p.concern_tags))
     if (personalConcerns.length === 0) return productList
     const scored = productList.map((p: any) => {
       const ct = (p.concern_tags || []).map((t: string) => t.toLowerCase())
