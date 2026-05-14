@@ -311,7 +311,24 @@ export default function SeasonRecommendSection({
           }))
       }
       const pickRows = rows.filter(r => rowMatchesFilters(r, '전체', '전체', false))
-      if (activeIssue === '전체') return pickRows
+      if (activeIssue === '전체') {
+        return rows
+          .map(r => r.products as any)
+          .filter(Boolean)
+          .sort((a: any, b: any) => (b.sales_count || 0) - (a.sales_count || 0))
+          .slice(0, 8)
+          .map((p: any, i: number): MappingRow => ({
+            id: `auto-pick-${p.id}`,
+            month,
+            product_id: p.id,
+            concern_tag: null,
+            step_tag: '',
+            func_tag: '',
+            priority: i,
+            is_active: true,
+            products: p as ProductLite,
+          }))
+      }
       if (!activeIssueBtnData) return pickRows
       return pickRows.filter(r => {
         const p = r.products
