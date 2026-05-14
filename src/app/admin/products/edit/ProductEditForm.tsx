@@ -194,6 +194,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   const detailFileRef = useRef<HTMLInputElement | null>(null)
   const ingredientPhotoRef = useRef<HTMLInputElement | null>(null)
   const ingredientPhotoFileRef = useRef<File | null>(null)
+  const [ingredientPhotoPreview, setIngredientPhotoPreview] = useState<string | null>(null)
   const workingIdRef = useRef<string | null>(null)
 
   useEffect(() => {
@@ -357,6 +358,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       setKeyIngredients(String(p.key_ingredients || ''))
       setSkinTypesProduct(Array.isArray(p.skin_types) ? (p.skin_types as unknown[]).map(x => String(x)) : [])
       setSkinConcernsProduct(Array.isArray(p.skin_concerns) ? (p.skin_concerns as unknown[]).map(x => String(x)) : [])
+      if (Array.isArray(p.skin_concerns) && p.skin_concerns.length > 0) setIngredientAnalyzeDone(true)
       setHormoneTimingProduct(p.hormone_timing != null && String(p.hormone_timing).trim() ? String(p.hormone_timing) : '')
       setClinicalResult(String(p.clinical_result || ''))
       setCertificationsText(String(p.certifications || ''))
@@ -1339,8 +1341,10 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
               capture="environment"
               style={{ display: 'none' }}
               onChange={e => {
-                ingredientPhotoFileRef.current = e.target.files?.[0] ?? null
+                const f = e.target.files?.[0] ?? null
+                ingredientPhotoFileRef.current = f
                 setIngredientAnalyzeDone(false)
+                if (f) setIngredientPhotoPreview(URL.createObjectURL(f))
               }}
             />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, width: '100%' }}>
@@ -1528,6 +1532,9 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
                     />
                   </>
                 ) : null}
+                {ingredientPhotoPreview && (
+                  <img src={ingredientPhotoPreview} alt="전성분" style={{ width: 80, height: 80, objectFit: 'cover', borderRadius: 8, marginRight: 8 }} />
+                )}
                 {ingredientAnalyzeDone ? (
                   <span style={{ fontSize: 12, color: 'rgba(201,168,76,0.95)' }}>✓ 분석 완료</span>
                 ) : null}
