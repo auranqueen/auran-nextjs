@@ -60,6 +60,13 @@ export default function HomeCurationClient({
 
   const saveMappings = async () => {
     for (const product of pendingProds) {
+      const existing = await supabase
+        .from('season_product_mapping')
+        .select('id')
+        .eq('month', month)
+        .eq('product_id', product.id)
+        .maybeSingle()
+      if (existing.data) continue
       const { error } = await supabase.from('season_product_mapping').insert({
         month, product_id: product.id,
         concern_tag: '',
