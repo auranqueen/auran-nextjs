@@ -278,9 +278,24 @@ export default function SeasonRecommendSection({
     const activeIssueBtnData = issueButtons.find(ib => ib.key === activeIssue)
     if (activeTab === 'pick') {
       if (isAuto) {
+        const btn = issueButtons.find(ib => ib.key === activeIssue)
         return rows
           .map(r => r.products as any)
           .filter(Boolean)
+          .filter((p: any) => {
+            if (!btn || activeIssue === '전체') return true
+            const stepTags = (p.step_tags || []).map((t: string) => t.toLowerCase())
+            const funcTags = (p.func_tags || []).map((t: string) => t.toLowerCase())
+            const concernTags = (p.concern_tags || []).map((t: string) => t.toLowerCase())
+            if (btn.step_tag) {
+              return stepTags.some((t: string) => t.includes(btn.step_tag!.toLowerCase()))
+            }
+            if (btn.func_tag) {
+              return funcTags.some((t: string) => t.includes(btn.func_tag!.toLowerCase())) ||
+                     concernTags.some((t: string) => t.includes(btn.func_tag!.toLowerCase()))
+            }
+            return true
+          })
           .sort((a: any, b: any) => (b.sales_count || 0) - (a.sales_count || 0))
           .slice(0, 8)
           .map((p: any, i: number): MappingRow => ({
