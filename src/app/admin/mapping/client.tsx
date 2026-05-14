@@ -33,6 +33,7 @@ export default function MappingClient({ rows, products }: { rows: any[], product
     if (error) return setMsg(error.message)
     setList([...list, data])
     setMsg('추가됐어요 ✦')
+    setProdSearch('')
   }
 
   const remove = async (id: string) => {
@@ -49,7 +50,7 @@ export default function MappingClient({ rows, products }: { rows: any[], product
   return (
     <div>
       {/* 추가 폼 */}
-      <div className="card" style={{ marginBottom: 16 }}>
+      <div className="card" style={{ marginBottom: 16, overflow: 'visible' }}>
         <div className="card-hdr">
           <div className="card-title">+ 매핑 추가</div>
         </div>
