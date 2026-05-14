@@ -449,7 +449,7 @@ export default function SeasonRecommendSection({
         }}
       >
         {([
-          { key: 'pick', label: '원장 픽' },
+          { key: 'pick', label: '오늘의 스킨 큐레이션' },
         ] as const).map(t => (
           <button
             key={t.key}
@@ -978,7 +978,7 @@ export default function SeasonRecommendSection({
         }}
       >
         {activeTab === 'pick'
-          ? '원장 픽 전체보기 →'
+          ? '전체보기 →'
           : activeTab === 'step'
             ? '단계별 전체보기 →'
             : '고민별 전체보기 →'}
