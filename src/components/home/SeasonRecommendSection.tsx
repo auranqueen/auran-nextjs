@@ -331,19 +331,25 @@ export default function SeasonRecommendSection({
       }
       if (!activeIssueBtnData) return pickRows
       return pickRows.filter(r => {
+        const issueLabel = activeIssue
+        if (r.func_tag && issueLabel && issueLabel !== '전체') {
+          if (r.func_tag === issueLabel) return true
+          if (String(r.func_tag).includes(String(issueLabel))) return true
+          if (String(issueLabel).includes(String(r.func_tag))) return true
+        }
         const p = r.products
         if (!p) return false
         if (activeIssueBtnData.step_tag) {
           const needle = String(activeIssueBtnData.step_tag)
           const tags = p.step_tags || []
-          if (!tags.some(t => String(t).toLowerCase().includes(needle.toLowerCase()))) return false
+          if (tags.some((t: any) => String(t).toLowerCase().includes(needle.toLowerCase()))) return true
         }
         if (activeIssueBtnData.func_tag) {
           const needle = String(activeIssueBtnData.func_tag)
-          const tags = p.func_tags || []
-          if (!tags.some(t => String(t).toLowerCase().includes(needle.toLowerCase()))) return false
+          const tags = (p.func_tags || []).concat((p as any).concern_tags || [])
+          if (tags.some((t: any) => String(t).toLowerCase().includes(needle.toLowerCase()))) return true
         }
-        return true
+        return false
       })
     }
     if (activeTab === 'step') {
