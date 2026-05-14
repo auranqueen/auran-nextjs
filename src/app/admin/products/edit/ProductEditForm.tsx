@@ -573,11 +573,11 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
     let earnPointsPercent: number | null = null
     const pv = Number(purchaseVal)
     if (purchaseMode === 'percent' && Number.isFinite(pv)) {
-      earnPoints = Math.floor(Math.max(0, pv))
-      earnPointsPercent = null
-    } else if ((purchaseMode === 'point' || purchaseMode === 'won') && Number.isFinite(pv)) {
       earnPoints = 0
       earnPointsPercent = Math.max(0, pv)
+    } else if ((purchaseMode === 'point' || purchaseMode === 'won') && Number.isFinite(pv)) {
+      earnPoints = Math.floor(Math.max(0, pv))
+      earnPointsPercent = null
     }
 
     const sharePts = Math.max(0, Math.floor(Number(shareVal) || 0))
