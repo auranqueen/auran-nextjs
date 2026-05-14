@@ -279,7 +279,7 @@ export default function SeasonRecommendSection({
     const activeIssueBtnData = issueButtons.find(ib => ib.label === activeIssue)
     if (activeTab === 'pick') {
       if (isAuto) {
-        const btn = issueButtons.find(ib => ib.key === activeIssue)
+        const btn = issueButtons.find(ib => ib.label === activeIssue)
         return rows
           .map(r => r.products as any)
           .filter(Boolean)
@@ -529,12 +529,12 @@ export default function SeasonRecommendSection({
                     borderRadius: 20,
                     fontSize: 11,
                     cursor: 'pointer',
-                    border: activeIssue === ib.key ? '1px solid rgba(123,94,167,0.6)' : '0.5px solid #2a2a36',
+                    border: activeIssue === ib.label ? '1px solid rgba(123,94,167,0.6)' : '0.5px solid #2a2a36',
                     fontFamily: 'inherit',
                     whiteSpace: 'nowrap',
                     flexShrink: 0,
-                    background: activeIssue === ib.key ? '#2a1a3e' : '#1e1e26',
-                    color: activeIssue === ib.key ? '#c4a8ff' : '#555',
+                    background: activeIssue === ib.label ? '#2a1a3e' : '#1e1e26',
+                    color: activeIssue === ib.label ? '#c4a8ff' : '#555',
                   }}
                 >
                   {ib.label}
