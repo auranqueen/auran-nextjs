@@ -92,7 +92,7 @@ export default function HomeCurationClient({
   const addIssueBtn = async () => {
     if (!newBtnLabel.trim()) return
     const key = `${month}_${Date.now()}`
-    const value = JSON.stringify({ key, label: newBtnLabel })
+    const value = JSON.stringify({ key, label: newBtnLabel, func_tag: newBtnLabel })
     await supabase.from('admin_settings').insert({ category: 'monthly_issue', key, value })
     setIssueButtons(prev => [...prev, { key, label: newBtnLabel }])
     setNewBtnLabel('')
