@@ -63,12 +63,6 @@ export default function MappingClient({ rows, products }: { rows: any[], product
             style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)' }}>
             {CONCERNS.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-          <input type="number" placeholder="점수 최소" value={form.score_range_min}
-            onChange={e => setForm({...form, score_range_min: +e.target.value})}
-            style={{ width: 80, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)' }} />
-          <input type="number" placeholder="점수 최대" value={form.score_range_max}
-            onChange={e => setForm({...form, score_range_max: +e.target.value})}
-            style={{ width: 80, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)' }} />
           <div style={{ flex: 1, minWidth: 200, position: 'relative' }}>
             <input
               value={prodSearch}
@@ -112,7 +106,7 @@ export default function MappingClient({ rows, products }: { rows: any[], product
         <table>
           <thead>
             <tr>
-              <th>월</th><th>고민</th><th>점수범위</th><th>제품명</th><th>우선순위</th><th>활성</th><th>삭제</th>
+              <th>월</th><th>고민</th><th>제품명</th><th>우선순위</th><th>활성</th><th>삭제</th>
             </tr>
           </thead>
           <tbody>
@@ -120,7 +114,6 @@ export default function MappingClient({ rows, products }: { rows: any[], product
               <tr key={r.id}>
                 <td><span className="b b-pu">{r.month}월</span></td>
                 <td>{r.concern_tag}</td>
-                <td className="mono">{r.score_range_min}~{r.score_range_max}</td>
                 <td>{r.products?.name || r.product_id}</td>
                 <td>P{r.priority}</td>
                 <td>
