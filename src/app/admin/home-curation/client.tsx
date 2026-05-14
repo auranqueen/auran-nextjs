@@ -50,6 +50,7 @@ export default function HomeCurationClient({
   const addMapping = async (product: any) => {
     const { data, error } = await supabase.from('season_product_mapping').insert({
       month, product_id: product.id,
+      concern_tag: '',
       func_tag: selectedIssue !== '전체' ? selectedIssue : null,
       priority: monthMappings.length + 1, is_active: true,
     }).select('*, products(id,name,thumb_img,storage_thumb_url)').maybeSingle()
