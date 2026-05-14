@@ -276,7 +276,7 @@ export default function SeasonRecommendSection({
   }, [searchQ, supabaseClient])
 
   const filtered = useMemo(() => {
-    const activeIssueBtnData = issueButtons.find(ib => ib.key === activeIssue)
+    const activeIssueBtnData = issueButtons.find(ib => ib.label === activeIssue)
     if (activeTab === 'pick') {
       if (isAuto) {
         const btn = issueButtons.find(ib => ib.key === activeIssue)
