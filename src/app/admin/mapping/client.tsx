@@ -15,6 +15,11 @@ export default function MappingClient({ rows, products }: { rows: any[], product
   })
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
+  const [prodSearch, setProdSearch] = useState('')
+  const [showProdList, setShowProdList] = useState(false)
+  const filteredProds = products.filter(p =>
+    String(p.name ?? '').toLowerCase().includes(prodSearch.toLowerCase())
+  ).slice(0, 20)
 
   const add = async () => {
     if (!form.product_id) return setMsg('제품을 선택해주세요')
@@ -63,11 +68,30 @@ export default function MappingClient({ rows, products }: { rows: any[], product
           <input type="number" placeholder="점수 최대" value={form.score_range_max}
             onChange={e => setForm({...form, score_range_max: +e.target.value})}
             style={{ width: 80, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)' }} />
-          <select value={form.product_id} onChange={e => setForm({...form, product_id: e.target.value})}
-            style={{ flex: 1, minWidth: 200, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)' }}>
-            <option value=''>제품 선택</option>
-            {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          <div style={{ flex: 1, minWidth: 200, position: 'relative' }}>
+            <input
+              value={prodSearch}
+              onChange={e => { setProdSearch(e.target.value); setShowProdList(true) }}
+              onFocus={() => setShowProdList(true)}
+              placeholder="제품명 검색..."
+              style={{ width: '100%', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)', boxSizing: 'border-box' }}
+            />
+            {showProdList && prodSearch && (
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8, maxHeight: 200, overflowY: 'auto', zIndex: 100 }}>
+                {filteredProds.length === 0
+                  ? <div style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-muted)' }}>검색 결과 없음</div>
+                  : filteredProds.map(p => (
+                    <div key={p.id}
+                      onClick={() => { setForm({...form, product_id: p.id}); setProdSearch(String(p.name ?? '')); setShowProdList(false) }}
+                      style={{ padding: '8px 12px', fontSize: 12, cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg3)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                    >{p.name}</div>
+                  ))
+                }
+              </div>
+            )}
+          </div>
           <input type="number" placeholder="우선순위" value={form.priority}
             onChange={e => setForm({...form, priority: +e.target.value})}
             style={{ width: 70, padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)' }} />
