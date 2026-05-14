@@ -536,7 +536,7 @@ export default function CustomerHomePage() {
         })
       } catch { /* 테이블 없음 등 */ }
       const selFull =
-        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive, step_tags,category_tags'
+        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive, step_tags, category_tags, hormone_timing, concern_tags, skin_tags'
       const selNoCat =
         'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive, step_tags'
       const [res, npRes, tsRes] = await Promise.all([
@@ -601,13 +601,10 @@ export default function CustomerHomePage() {
         )
       }
 
-      const { data: seaData } = await supabase
-        .from('season_product_mapping')
-        .select('*, products(*)')
-        .eq('month', new Date().getMonth() + 1)
-        .eq('is_active', true)
-        .order('priority', { ascending: true })
-        .limit(6)
+      const [{ data: seaData }, { data: gbData }] = await Promise.all([
+        supabase.from('season_product_mapping').select('*, products(*)').eq('month', new Date().getMonth() + 1).eq('is_active', true).order('priority', { ascending: true }).limit(6),
+        supabase.from('group_buys').select('*, product:products(id, name, retail_price, thumb_img, is_exclusive)').eq('is_active', true).limit(3),
+      ])
       if (seaData && seaData.length > 0) {
         const sea2 = restrictExclusiveCatalog
           ? seaData.filter((row: any) => row.products?.is_exclusive !== true)
@@ -615,11 +612,6 @@ export default function CustomerHomePage() {
         if (sea2.length > 0) setSeasonRecs(sea2)
       }
 
-      const { data: gbData } = await supabase
-        .from('group_buys')
-        .select('*, product:products(id, name, retail_price, thumb_img, is_exclusive)')
-        .eq('is_active', true)
-        .limit(3)
       if (gbData && gbData.length > 0) {
         const gb2 = restrictExclusiveCatalog
           ? gbData.filter((row: any) => row.product?.is_exclusive !== true)
