@@ -46,7 +46,10 @@ export default function HomeCurationClient({
     p.name?.toLowerCase().includes(concernProdSearch.toLowerCase())
   ).slice(0, 20)
 
-  const monthMappings = mappings.filter((m: any) => m.month === month)
+  const monthMappings = mappings.filter((m: any) =>
+    m.month === month &&
+    (selectedIssue === '전체' ? true : m.func_tag === selectedIssue)
+  )
 
   const addMapping = (product: any) => {
     if (pendingProds.find((p: any) => p.id === product.id)) return
