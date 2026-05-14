@@ -90,7 +90,6 @@ const MENU = [
     items: [
       { label: '포인트 설정', href: '/admin/settings/points', icon: '✨' },
       { label: '수수료·추천 설정', href: '/admin/settings/commission', icon: '💰' },
-      { label: '추천 매핑', href: '/admin/mapping', icon: '🧩' },
       { label: '충전 플랜', href: '/admin/charge', icon: '💳' },
       { label: '구독 관리', href: '/admin/subscriptions', icon: '🪪' },
       { label: '이상 감지·알림', href: '/admin/settings/anomaly', icon: '🚨' },
