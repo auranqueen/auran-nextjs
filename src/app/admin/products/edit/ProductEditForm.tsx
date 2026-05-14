@@ -160,6 +160,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   const [ptResults, setPtResults] = useState<{ id: string; name: string }[]>([])
   const [ptSelected, setPtSelected] = useState<{ id: string; name: string }[]>([])
   const [detailImages, setDetailImages] = useState<string[]>([])
+  const dragIndexRef = useRef<number | null>(null)
   const [selectedSkinTagIds, setSelectedSkinTagIds] = useState<string[]>([])
   const [showCategoryPicker, setShowCategoryPicker] = useState(false)
   const [categoryPickerTab, setCategoryPickerTab] = useState<'search' | 'select'>('select')
@@ -1649,9 +1650,25 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
             {detailImages.length > 0 ? (
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                 {detailImages.map((url, i) => (
-                  <div key={url + i} style={{ position: 'relative' }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={url} alt="" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8 }} />
+                  <div
+                    key={url + i}
+                    draggable
+                    onDragStart={() => { dragIndexRef.current = i }}
+                    onDragOver={e => e.preventDefault()}
+                    onDrop={() => {
+                      const from = dragIndexRef.current
+                      if (from === null || from === i) return
+                      setDetailImages(prev => {
+                        const next = [...prev]
+                        const [moved] = next.splice(from, 1)
+                        next.splice(i, 0, moved)
+                        return next
+                      })
+                      dragIndexRef.current = null
+                    }}
+                    style={{ position: 'relative', cursor: 'grab' }}
+                  >
+                    <img src={url} alt="" style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 8, pointerEvents: 'none' }} />
                     <button
                       type="button"
                       onClick={() => setDetailImages(prev => prev.filter((_, j) => j !== i))}
