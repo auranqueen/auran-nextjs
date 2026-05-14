@@ -155,9 +155,9 @@ export default function HomeCurationClient({
             <span style={lbl}>원장픽 제품 큐레이션 · {month}월</span>
             <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
               <select value={selectedIssue} onChange={e => setSelectedIssue(e.target.value)} style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg2)', color: '#fff', fontSize: 12 }}>
-                <option>전체</option>
+                <option value="전체">전체</option>
                 {issueButtons.filter((b: any) => b.key?.startsWith(`${month}_`)).map((b: any) => (
-                  <option key={b.key}>{b.label}</option>
+                  <option key={b.key} value={b.label}>{b.label}</option>
                 ))}
               </select>
               <div style={{ flex: 1, position: 'relative' }}>
