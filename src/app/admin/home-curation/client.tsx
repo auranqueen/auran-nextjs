@@ -48,11 +48,12 @@ export default function HomeCurationClient({
   const monthMappings = mappings.filter((m: any) => m.month === month)
 
   const addMapping = async (product: any) => {
-    const { data } = await supabase.from('season_product_mapping').insert({
+    const { data, error } = await supabase.from('season_product_mapping').insert({
       month, product_id: product.id,
       func_tag: selectedIssue !== '전체' ? selectedIssue : null,
       priority: monthMappings.length + 1, is_active: true,
     }).select('*, products(id,name,thumb_img,storage_thumb_url)').maybeSingle()
+    if (error) { console.error('[addMapping] error:', error); return }
     if (data) { setMappings(prev => [...prev, data]); setProdSearch(''); setShowProdDrop(false) }
   }
 
