@@ -152,7 +152,9 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   const [ingredientAnalyzeLoading, setIngredientAnalyzeLoading] = useState(false)
   const [ingredientAnalyzeDone, setIngredientAnalyzeDone] = useState(false)
   const [clinicalResult, setClinicalResult] = useState('')
+  const [clinicalRows, setClinicalRows] = useState<{ label: string; value: string }[]>([])
   const [certificationsText, setCertificationsText] = useState('')
+  const [certRows, setCertRows] = useState<string[]>([])
   const [perfectTogetherInput, setPerfectTogetherInput] = useState('')
   const [ptSearch, setPtSearch] = useState('')
   const [ptResults, setPtResults] = useState<{ id: string; name: string }[]>([])
@@ -364,6 +366,16 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       if (Array.isArray(p.skin_concerns) && p.skin_concerns.length > 0) setIngredientAnalyzeDone(true)
       setHormoneTimingProduct(p.hormone_timing != null && String(p.hormone_timing).trim() ? String(p.hormone_timing) : '')
       setClinicalResult(String(p.clinical_result || ''))
+      if (p.clinical_result) {
+        const parsed = String(p.clinical_result).split('\n').filter(Boolean).map(line => {
+          const m = line.trim().match(/^(.+)\s+(\d+(?:\.\d+)?%)\s*$/)
+          return m ? { label: m[1].trim(), value: m[2] } : { label: line.trim(), value: '' }
+        })
+        setClinicalRows(parsed)
+      }
+      if (p.certifications) {
+        setCertRows(String(p.certifications).split('\n').filter(Boolean))
+      }
       setCertificationsText(String(p.certifications || ''))
       setPerfectTogetherInput(
         Array.isArray(p.perfect_together) && (p.perfect_together as string[]).length
@@ -625,8 +637,8 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
             : null,
       skin_concerns: skinConcernsProduct.length ? skinConcernsProduct : null,
       hormone_timing: hormoneTimingProduct.trim() || null,
-      clinical_result: clinicalResult.trim() || null,
-      certifications: certificationsText.trim() || null,
+      clinical_result: clinicalRows.length > 0 ? clinicalRows.map(r => `${r.label} ${r.value}`.trim()).join('\n') : null,
+      certifications: certRows.filter(Boolean).join('\n') || null,
       perfect_together: perfectIds,
       detail_images: detailImgsClean,
       detail_imgs: detailImgsClean,
@@ -1545,25 +1557,32 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
               </div>
             </div>
           </label>
-          <label style={{ display: 'grid', gap: 6 }}>
+          <div style={{ display: 'grid', gap: 6 }}>
             <span style={labelStyle}>CLINICAL RESULT</span>
-            <textarea
-              value={clinicalResult}
-              onChange={e => setClinicalResult(e.target.value)}
-              rows={5}
-              style={{ ...inputStyle, minHeight: 100, resize: 'vertical' }}
-            />
-          </label>
-          <label style={{ display: 'grid', gap: 6 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 32px', gap: 4, marginBottom: 4 }}>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', paddingLeft: 2 }}>항목명</span>
+              <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>수치 (47%)</span>
+              <span />
+            </div>
+            {clinicalRows.map((r, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 32px', gap: 4, alignItems: 'center' }}>
+                <input value={r.label} onChange={e => { const next = [...clinicalRows]; next[i].label = e.target.value; setClinicalRows(next) }} placeholder="예: 8주 후 수분도 개선" style={inputStyle} />
+                <input value={r.value} onChange={e => { const next = [...clinicalRows]; next[i].value = e.target.value; setClinicalRows(next) }} placeholder="47%" style={inputStyle} />
+                <button type="button" onClick={() => setClinicalRows(prev => prev.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: 'rgba(255,100,100,0.6)', cursor: 'pointer', fontSize: 18 }}>×</button>
+              </div>
+            ))}
+            <button type="button" onClick={() => setClinicalRows(prev => [...prev, { label: '', value: '' }])} style={{ ...inputStyle, background: 'rgba(123,94,167,0.1)', color: '#c4a8ff', cursor: 'pointer', textAlign: 'center' }}>+ 항목 추가</button>
+          </div>
+          <div style={{ display: 'grid', gap: 6 }}>
             <span style={labelStyle}>CERTIFICATIONS</span>
-            <textarea
-              value={certificationsText}
-              onChange={e => setCertificationsText(e.target.value)}
-              rows={4}
-              placeholder="한 줄에 한 항목 (줄바꿈 구분)"
-              style={{ ...inputStyle, minHeight: 88, resize: 'vertical' }}
-            />
-          </label>
+            {certRows.map((c, i) => (
+              <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 32px', gap: 4, alignItems: 'center' }}>
+                <input value={c} onChange={e => { const next = [...certRows]; next[i] = e.target.value; setCertRows(next) }} placeholder="예: 더마테스트 완료" style={inputStyle} />
+                <button type="button" onClick={() => setCertRows(prev => prev.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: 'rgba(255,100,100,0.6)', cursor: 'pointer', fontSize: 18 }}>×</button>
+              </div>
+            ))}
+            <button type="button" onClick={() => setCertRows(prev => [...prev, ''])} style={{ ...inputStyle, background: 'rgba(123,94,167,0.1)', color: '#c4a8ff', cursor: 'pointer', textAlign: 'center' }}>+ 인증 추가</button>
+          </div>
           <label style={{ display: 'grid', gap: 6 }}>
             <span style={labelStyle}>PERFECT TOGETHER</span>
             <div style={{ display: 'flex', gap: 8 }}>
