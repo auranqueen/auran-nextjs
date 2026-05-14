@@ -721,7 +721,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
         const key = editId ? `auran_product_draft_${editId}` : 'auran_product_draft_new'
         localStorage.removeItem(key)
       }
-      router.push('/admin/marketing/products')
+      setMsg('저장 완료 ✓')
     } catch (e: unknown) {
       setMsg(e instanceof Error ? e.message : '오류')
     } finally {
