@@ -1,6 +1,6 @@
 'use client'
 import { createClient } from '@/lib/supabase/client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월']
 const curMonth = new Date().getMonth() + 1
@@ -15,7 +15,16 @@ export default function HomeCurationClient({
   const [month, setMonth] = useState(curMonth)
   const [mappings, setMappings] = useState(initialMappings)
   const [issueButtons, setIssueButtons] = useState(initialIssueButtons.map((r: any) => ({ key: r.key, ...JSON.parse(r.value) })))
-  const [concerns, setConcerns] = useState(initialConcerns.map((r: any) => ({ key: r.key, ...JSON.parse(r.value) })))
+  const [concerns, setConcerns] = useState<any[]>([])
+  useEffect(() => {
+    supabase.from('admin_settings')
+      .select('key,value')
+      .eq('category', 'concern_best')
+      .order('key')
+      .then(({ data }) => {
+        if (data) setConcerns(data.map((r: any) => ({ key: r.key, ...JSON.parse(r.value) })))
+      })
+  }, [])
   const [prodSearch, setProdSearch] = useState('')
   const [showProdDrop, setShowProdDrop] = useState(false)
   const [selectedIssue, setSelectedIssue] = useState('전체')
