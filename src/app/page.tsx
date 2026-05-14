@@ -555,7 +555,7 @@ export default function CustomerHomePage() {
       const selNoCat =
         'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive, step_tags'
       const [res, npRes, tsRes] = await Promise.all([
-        supabase.from('products').select(selFull).eq('is_active', true).limit(80),
+        supabase.from('products').select(selFull).eq('is_active', true).limit(200),
         supabase.from('products').select('*').order('created_at', { ascending: false }).limit(6),
         supabase
           .from('products')
@@ -871,7 +871,7 @@ export default function CustomerHomePage() {
     const matched = scored.filter((p: any) => p._score > 0)
       .sort((a: any, b: any) => b._score - a._score)
     return matched.length >= 4 ? matched : productList
-  }, [productList, personalConcerns])
+  }, [productList, personalConcerns, motivationProfile])
   const saleList = timeSales.length > 0 ? timeSales : []
   const groupBuyList = groupBuys.length > 0 ? groupBuys : []
   const salonList = salons.length > 0 ? salons : []
