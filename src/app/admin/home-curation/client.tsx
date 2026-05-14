@@ -71,6 +71,7 @@ export default function HomeCurationClient({
         month, product_id: product.id,
         concern_tag: '',
         func_tag: selectedIssue !== '전체' ? selectedIssue : null,
+        issue_key: selectedIssue !== '전체' ? selectedIssue : null,
         priority: monthMappings.length + pendingProds.indexOf(product) + 1,
         is_active: true,
       })

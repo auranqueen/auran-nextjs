@@ -39,6 +39,7 @@ type MappingRow = {
   concern_tag?: string | null
   step_tag?: string | null
   func_tag?: string | null
+  issue_key?: string | null
   priority: number
   is_active: boolean
   products: ProductLite | null
@@ -332,10 +333,8 @@ export default function SeasonRecommendSection({
       if (!activeIssueBtnData) return pickRows
       return pickRows.filter(r => {
         if (activeIssue === '전체') return true
-        const btnFuncTag = activeIssueBtnData?.func_tag ?? activeIssueBtnData?.label
-        if (!btnFuncTag) return false
-        if (!r.func_tag) return false
-        return String(r.func_tag).trim() === String(btnFuncTag).trim()
+        if (!r.issue_key) return false
+        return String(r.issue_key).trim() === String(activeIssue).trim()
       })
     }
     if (activeTab === 'step') {
