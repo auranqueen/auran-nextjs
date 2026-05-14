@@ -90,6 +90,12 @@ export default function HomeCurationClient({
     setMappings(prev => prev.filter((m: any) => m.id !== id))
   }
 
+  const removeAllMappings = async () => {
+    if (!confirm('이 달 매핑을 전체 삭제할까요?')) return
+    await supabase.from('season_product_mapping').delete().eq('month', month).eq('is_active', true)
+    setMappings([])
+  }
+
   const addIssueBtn = async () => {
     if (!newBtnLabel.trim()) return
     const key = `${month}_${Date.now()}`
@@ -195,6 +201,14 @@ export default function HomeCurationClient({
                 <button onClick={() => removeMapping(m.id)} style={{ fontSize: 11, color: 'rgba(255,100,100,0.7)', background: 'none', border: 'none', cursor: 'pointer' }}>삭제</button>
               </div>
             ))}
+            {monthMappings.length > 0 && (
+              <button
+                onClick={removeAllMappings}
+                style={{ marginTop: 8, fontSize: 11, color: 'rgba(255,100,100,0.7)', background: 'none', border: '1px solid rgba(255,100,100,0.3)', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}
+              >
+                전체 삭제
+              </button>
+            )}
             {pendingProds.length > 0 && (
               <>
                 <div style={{ fontSize: 10, color: '#C9A96E', margin: '10px 0 6px', fontFamily: 'monospace' }}>
