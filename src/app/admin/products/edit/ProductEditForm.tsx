@@ -154,6 +154,9 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   const [clinicalResult, setClinicalResult] = useState('')
   const [certificationsText, setCertificationsText] = useState('')
   const [perfectTogetherInput, setPerfectTogetherInput] = useState('')
+  const [ptSearch, setPtSearch] = useState('')
+  const [ptResults, setPtResults] = useState<{ id: string; name: string }[]>([])
+  const [ptSelected, setPtSelected] = useState<{ id: string; name: string }[]>([])
   const [detailImages, setDetailImages] = useState<string[]>([])
   const [selectedSkinTagIds, setSelectedSkinTagIds] = useState<string[]>([])
   const [showCategoryPicker, setShowCategoryPicker] = useState(false)
@@ -367,6 +370,10 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
           ? (p.perfect_together as string[]).join(', ')
           : ''
       )
+      if (Array.isArray(p.perfect_together) && p.perfect_together.length > 0) {
+        supabase.from('products').select('id, name').in('id', p.perfect_together as string[])
+          .then(({ data }) => { if (data) setPtSelected(data) })
+      }
       setDetailImages(
         Array.isArray(p.detail_images) && (p.detail_images as string[]).length
           ? [...(p.detail_images as string[])]
@@ -568,10 +575,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
 
     const thumbsClean = thumbImages.map(s => s.trim()).filter(Boolean)
     const quiz = encodeAdminMeta(optionsText, shipFee, shipMemo, selectedSkinTagIds, quizExisting)
-    const perfectIds = perfectTogetherInput
-      .split(',')
-      .map(s => s.trim())
-      .filter(s => isUuid(s))
+    const perfectIds = ptSelected.map(p => p.id)
     const detailImgsClean = detailImages.map(s => s.trim()).filter(Boolean)
 
     const resolvedCategoryId = catL5 || catL4 || catL3 || catL2 || catL1 || ''
@@ -1561,13 +1565,42 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
             />
           </label>
           <label style={{ display: 'grid', gap: 6 }}>
-            <span style={labelStyle}>PERFECT TOGETHER (제품 UUID, 쉼표 구분)</span>
-            <input
-              value={perfectTogetherInput}
-              onChange={e => setPerfectTogetherInput(e.target.value)}
-              placeholder="uuid, uuid, ..."
-              style={inputStyle}
-            />
+            <span style={labelStyle}>PERFECT TOGETHER</span>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={ptSearch}
+                onChange={async e => {
+                  setPtSearch(e.target.value)
+                  if (e.target.value.trim().length < 1) { setPtResults([]); return }
+                  const { data } = await supabase.from('products').select('id, name')
+                    .ilike('name', `%${e.target.value}%`).limit(8)
+                  setPtResults(data || [])
+                }}
+                placeholder="제품명 검색..."
+                style={{ ...inputStyle, flex: 1 }}
+              />
+            </div>
+            {ptResults.length > 0 && (
+              <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 8, overflow: 'hidden' }}>
+                {ptResults.map(r => (
+                  <div key={r.id} onClick={() => {
+                    if (!ptSelected.find(s => s.id === r.id)) setPtSelected(prev => [...prev, r])
+                    setPtResults([])
+                    setPtSearch('')
+                  }} style={{ padding: '8px 12px', fontSize: 12, color: '#fff', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    {r.name}
+                  </div>
+                ))}
+              </div>
+            )}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {ptSelected.map(p => (
+                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(123,94,167,0.2)', borderRadius: 20, padding: '4px 10px', fontSize: 11, color: '#c4a8ff' }}>
+                  {p.name}
+                  <span onClick={() => setPtSelected(prev => prev.filter(s => s.id !== p.id))} style={{ cursor: 'pointer', color: 'rgba(255,255,255,0.4)' }}>×</span>
+                </div>
+              ))}
+            </div>
           </label>
           <div style={{ display: 'grid', gap: 8 }}>
             <span style={labelStyle}>상세 이미지 (detail_images)</span>
