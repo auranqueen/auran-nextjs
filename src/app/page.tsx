@@ -294,7 +294,8 @@ export default function CustomerHomePage() {
   const [brandProductsLoading, setBrandProductsLoading] = useState(false)
   const [dataReady, setDataReady] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchFocused, setSearchFocused] = useState(false)
+  const [popularKeywords, setPopularKeywords] = useState<string[]>([])
   const [searchKeyword, setSearchKeyword] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
@@ -717,6 +718,21 @@ export default function CustomerHomePage() {
   }, [mounted, loadMotivationProfile])
 
   useEffect(() => {
+    supabase
+      .from('customer_search_logs')
+      .select('search_keyword')
+      .order('created_at', { ascending: false })
+      .limit(200)
+      .then(({ data }) => {
+        if (!data) return
+        const counts: Record<string, number> = {}
+        data.forEach((r: any) => { if (r.search_keyword) counts[r.search_keyword] = (counts[r.search_keyword] || 0) + 1 })
+        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([k]) => k)
+        setPopularKeywords(sorted)
+      })
+  }, [])
+
+  useEffect(() => {
     if (!mounted) return
     const keyword = searchKeyword.trim()
     if (keyword.length < 2) {
@@ -771,11 +787,11 @@ export default function CustomerHomePage() {
       }
       let searchQ = supabase
         .from('products')
-        .select('id, name, storage_thumb_url, thumb_img, retail_price, sale_price, is_timesale, brand_id')
+        .select('id, name, storage_thumb_url, thumb_img, retail_price, sale_price, is_timesale, brand_id, brands(name)')
         .or(`name.ilike.%${keyword}%, description.ilike.%${keyword}%`)
         .eq('is_active', true)
       if (restrictExclusiveCatalog) searchQ = searchQ.eq('is_exclusive', false)
-      const { data } = await searchQ.limit(10)
+      const { data } = await searchQ.limit(20)
       if (cancelled) return
       setSearchResults(data || [])
       setSearchLoading(false)
@@ -1799,18 +1815,6 @@ export default function CustomerHomePage() {
             ) : null}
           </button>
           <button
-            onClick={() => setSearchOpen(true)}
-            style={{
-              width: '34px', height: '34px', borderRadius: '50%',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '15px', cursor: 'pointer',
-            }}
-          >
-            🔍
-          </button>
-          <button
             onClick={() => setNotificationOpen(true)}
             style={{
               width: '34px', height: '34px', borderRadius: '50%',
@@ -1849,17 +1853,18 @@ export default function CustomerHomePage() {
       <NotificationPanel isOpen={notificationOpen} onClose={() => setNotificationOpen(false)} />
       <div
         style={{
-          maxHeight: searchOpen ? 420 : 0,
-          opacity: searchOpen ? 1 : 0,
+          maxHeight: 420,
+          opacity: 1,
           overflow: 'hidden',
-          transition: 'max-height 260ms ease, opacity 220ms ease',
-          padding: searchOpen ? '10px 16px 0' : '0 16px',
+          padding: '10px 16px 0',
         }}
       >
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <input
             value={searchKeyword}
             onChange={e => setSearchKeyword(e.target.value)}
+            onFocus={() => setSearchFocused(true)}
+            onBlur={() => setTimeout(() => setSearchFocused(false), 150)}
             placeholder="제품명, 브랜드 검색"
             style={{
               flex: 1,
@@ -1876,7 +1881,6 @@ export default function CustomerHomePage() {
           <button
             type="button"
             onClick={() => {
-              setSearchOpen(false)
               setSearchKeyword('')
               setSearchResults([])
             }}
@@ -1894,7 +1898,22 @@ export default function CustomerHomePage() {
             X
           </button>
         </div>
-        {searchOpen ? (
+        {searchFocused && !searchKeyword && popularKeywords.length > 0 && (
+          <div style={{ background: 'rgba(20,20,20,0.97)', borderRadius: 16, padding: '16px', marginBottom: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <span style={{ fontSize: 13, color: '#fff' }}>인기 쇼핑 키워드</span>
+            </div>
+            {popularKeywords.map((kw, i) => (
+              <div key={kw} onClick={() => { setSearchKeyword(kw); setSearchFocused(false) }}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0',
+                  borderBottom: i < popularKeywords.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none', cursor: 'pointer' }}>
+                <span style={{ fontSize: 13, color: '#7B5EA7', minWidth: 20 }}>{i + 1}</span>
+                <span style={{ fontSize: 14, color: '#fff' }}>{kw}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {searchKeyword.trim().length >= 2 ? (
           <div
             style={{
               marginTop: 8,
@@ -1910,42 +1929,33 @@ export default function CustomerHomePage() {
             ) : searchKeyword.trim().length >= 2 && searchResults.length === 0 ? (
               <div style={{ padding: 12, fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>검색 결과가 없어요</div>
             ) : (
-              searchResults.map((p: any) => {
-                const price = Number((p?.is_timesale ? p?.sale_price : p?.retail_price) ?? 0)
-                const thumb = p?.storage_thumb_url || p?.thumb_img || ''
-                return (
-                  <div
-                    key={p.id}
-                    onClick={() => {
-                      logProductNav(p)
-                      router.push(`/products/${p.id}`)
-                      setSearchOpen(false)
-                      setSearchKeyword('')
-                      setSearchResults([])
-                    }}
-                    style={{
-                      display: 'flex',
-                      gap: 10,
-                      alignItems: 'center',
-                      padding: '10px 12px',
-                      borderBottom: '1px solid rgba(255,255,255,0.06)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div style={{ width: 42, height: 42, borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {thumb ? (
-                        <img src={thumb} alt={p.name || ''} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', maxWidth: '100%', overflow: 'hidden' }} />
-                      ) : (
-                        <div style={{ fontSize: 18 }}>🧴</div>
-                      )}
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 4px', marginBottom: 8 }}>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>전체 {searchResults.length}개</span>
+                  <span style={{ fontSize: 11, color: '#C9A96E' }}>인기상품순</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '4px 0' }}>
+                  {searchResults.map((p: any) => (
+                    <div key={p.id} onClick={() => { logProductNav(p); router.push(`/products/${p.id}`); setSearchKeyword(''); setSearchResults([]) }}
+                      style={{ borderRadius: 12, overflow: 'hidden', background: 'rgba(255,255,255,0.04)', cursor: 'pointer' }}>
+                      <div style={{ aspectRatio: '1', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                        {(p.storage_thumb_url || p.thumb_img) &&
+                          <img src={p.storage_thumb_url || p.thumb_img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />}
+                      </div>
+                      <div style={{ padding: '8px 10px 10px' }}>
+                        <div style={{ fontSize: 10, color: '#C9A96E', marginBottom: 2 }}>{p.brands?.name || ''}</div>
+                        <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.4, marginBottom: 4,
+                          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
+                        <div style={{ fontSize: 12, color: '#fff' }}>
+                          {p.is_timesale && p.sale_price
+                            ? `${p.sale_price.toLocaleString()}원`
+                            : `${p.retail_price?.toLocaleString()}원`}
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: 13, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                      <div style={{ fontSize: 12, color: '#7B5EA7', marginTop: 2 }}>{price.toLocaleString()}원</div>
-                    </div>
-                  </div>
-                )
-              })
+                  ))}
+                </div>
+              </>
             )}
           </div>
         ) : null}
