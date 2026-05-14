@@ -77,7 +77,7 @@ export default function MappingClient({ rows, products }: { rows: any[], product
               style={{ width: '100%', padding: '6px 10px', borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg2)', color: 'var(--text)', boxSizing: 'border-box' }}
             />
             {showProdList && prodSearch && (
-              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8, maxHeight: 200, overflowY: 'auto', zIndex: 100 }}>
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 8, maxHeight: 200, overflowY: 'auto', zIndex: 9999 }}>
                 {filteredProds.length === 0
                   ? <div style={{ padding: '8px 12px', fontSize: 12, color: 'var(--text-muted)' }}>검색 결과 없음</div>
                   : filteredProds.map(p => (
