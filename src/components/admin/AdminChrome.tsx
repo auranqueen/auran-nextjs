@@ -61,9 +61,18 @@ const MENU = [
     ],
   },
   {
+    section: 'HOME',
+    items: [
+      { label: '홈 큐레이션', href: '/admin/home-curation', icon: '🏠' },
+      { label: '케어카드', href: '/admin/marketing/care-cards', icon: '💜' },
+      { label: '공동구매', href: '/admin/marketing/groupbuys', icon: '👥' },
+      { label: '타임세일', href: '/admin/settings/flash-sale', icon: '⚡' },
+      { label: '매거진', href: '/admin/magazine', icon: '📖' },
+    ],
+  },
+  {
     section: 'CONTENT',
     items: [
-      { label: '매거진', href: '/admin/magazine', icon: '📖' },
       { label: '🏆 컨테스트', href: '/admin/marketing/contests', icon: '🏆' },
       { label: "TODAY'S SKIN 공지", href: '/admin/skin-notices', icon: '💧' },
       { label: '공지·푸시 발송', href: '/admin/marketing/push', icon: '📢' },
@@ -86,7 +95,6 @@ const MENU = [
       { label: '구독 관리', href: '/admin/subscriptions', icon: '🪪' },
       { label: '이상 감지·알림', href: '/admin/settings/anomaly', icon: '🚨' },
       { label: 'AURAN 설정', href: '/admin/settings/admin-settings', icon: '🧩' },
-      { label: '타임세일 관리', href: '/admin/settings/flash-sale', icon: '⏱️' },
       { label: '로그인 기록', href: '/admin/logs', icon: '📋' },
       { label: '개인정보 접근 로그', href: '/admin/privacy', icon: '🔒' },
     ],
@@ -108,6 +116,7 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/revenue')) return '매출 분석'
   if (path.startsWith('/admin/settlement')) return '정산 일괄 처리'
   if (path.startsWith('/admin/mapping')) return '추천 매핑'
+  if (path.startsWith('/admin/home-curation')) return '홈 큐레이션'
   if (path.startsWith('/admin/charge')) return '충전 플랜'
   if (path.startsWith('/admin/subscriptions')) return '구독 관리'
   if (path.startsWith('/admin/invite')) return '초대 링크'
