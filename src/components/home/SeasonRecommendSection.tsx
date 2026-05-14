@@ -523,7 +523,7 @@ export default function SeasonRecommendSection({
                 <button
                   key={ib.key}
                   type="button"
-                  onClick={() => setActiveIssue(ib.key)}
+                  onClick={() => setActiveIssue(ib.label)}
                   style={{
                     padding: '6px 12px',
                     borderRadius: 20,
