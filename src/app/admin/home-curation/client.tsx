@@ -36,6 +36,7 @@ export default function HomeCurationClient({
   const [sectionSettings, setSectionSettings] = useState({
     ownerPick: true, concernBest: false, timesale: true, newProduct: true, moisture: false, magazine: true
   })
+  const [pendingProds, setPendingProds] = useState<any[]>([])
 
   const filteredProds = products.filter((p: any) =>
     p.name?.toLowerCase().includes(prodSearch.toLowerCase())
@@ -47,15 +48,30 @@ export default function HomeCurationClient({
 
   const monthMappings = mappings.filter((m: any) => m.month === month)
 
-  const addMapping = async (product: any) => {
-    const { data, error } = await supabase.from('season_product_mapping').insert({
-      month, product_id: product.id,
-      concern_tag: '',
-      func_tag: selectedIssue !== '전체' ? selectedIssue : null,
-      priority: monthMappings.length + 1, is_active: true,
-    }).select('*, products(id,name,thumb_img,storage_thumb_url)').maybeSingle()
-    if (error) { console.error('[addMapping] error:', error); return }
-    if (data) { setMappings(prev => [...prev, data]); setProdSearch(''); setShowProdDrop(false) }
+  const addMapping = (product: any) => {
+    if (pendingProds.find((p: any) => p.id === product.id)) return
+    setPendingProds(prev => [...prev, product])
+    setProdSearch('')
+    setShowProdDrop(false)
+  }
+
+  const saveMappings = async () => {
+    for (const product of pendingProds) {
+      const { error } = await supabase.from('season_product_mapping').insert({
+        month, product_id: product.id,
+        concern_tag: '',
+        func_tag: selectedIssue !== '전체' ? selectedIssue : null,
+        priority: monthMappings.length + pendingProds.indexOf(product) + 1,
+        is_active: true,
+      })
+      if (error) { console.error('[saveMappings] error:', error); continue }
+    }
+    const { data: fresh } = await supabase
+      .from('season_product_mapping')
+      .select('*, products(id,name,thumb_img,storage_thumb_url)')
+      .eq('month', month).eq('is_active', true).order('priority')
+    if (fresh) setMappings(fresh)
+    setPendingProds([])
   }
 
   const removeMapping = async (id: string) => {
@@ -168,6 +184,24 @@ export default function HomeCurationClient({
                 <button onClick={() => removeMapping(m.id)} style={{ fontSize: 11, color: 'rgba(255,100,100,0.7)', background: 'none', border: 'none', cursor: 'pointer' }}>삭제</button>
               </div>
             ))}
+            {pendingProds.length > 0 && (
+              <>
+                <div style={{ fontSize: 10, color: '#C9A96E', margin: '10px 0 6px', fontFamily: 'monospace' }}>
+                  추가 예정 {pendingProds.length}개
+                </div>
+                {pendingProds.map((p: any) => (
+                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid rgba(255,255,255,0.06)', opacity: 0.7 }}>
+                    <div style={{ flex: 1, fontSize: 12, color: '#C9A96E' }}>{p.name}</div>
+                    <button onClick={() => setPendingProds(prev => prev.filter((x: any) => x.id !== p.id))}
+                      style={{ fontSize: 11, color: 'rgba(255,100,100,0.7)', background: 'none', border: 'none', cursor: 'pointer' }}>취소</button>
+                  </div>
+                ))}
+                <button onClick={saveMappings}
+                  style={{ width: '100%', marginTop: 12, padding: '10px', borderRadius: 10, background: '#7B5EA7', color: '#fff', border: 'none', fontSize: 13, cursor: 'pointer' }}>
+                  저장하기 ({pendingProds.length}개)
+                </button>
+              </>
+            )}
             {monthMappings.length === 0 && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', padding: '12px 0' }}>제품을 추가해주세요</div>}
           </div>
         </div>
