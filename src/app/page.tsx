@@ -302,6 +302,11 @@ export default function CustomerHomePage() {
   const [myUserId, setMyUserId] = useState('')
   const [unreadCount, setUnreadCount] = useState(0)
   const [motivationProfile, setMotivationProfile] = useState<any>(null)
+  const personalConcerns = useMemo(() => {
+    const sc = (motivationProfile as any)?.skin_concerns
+    if (!sc || !Array.isArray(sc) || sc.length === 0) return []
+    return sc.map((c: any) => String(c).toLowerCase())
+  }, [motivationProfile])
   const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null)
   const [obStep, setObStep] = useState(1)
   const [obGender, setObGender] = useState('')
@@ -844,6 +849,19 @@ export default function CustomerHomePage() {
   // 폴백 적용
   const concernList = concerns.length > 0 ? concerns : []
   const productList = products.length > 0 ? products : []
+  const personalProductList = useMemo(() => {
+    if (personalConcerns.length === 0) return productList
+    const scored = productList.map((p: any) => {
+      const ct = (p.concern_tags || []).map((t: string) => t.toLowerCase())
+      const score = personalConcerns.filter(c =>
+        ct.some((t: string) => t.includes(c) || c.includes(t))
+      ).length
+      return { ...p, _score: score }
+    })
+    const matched = scored.filter((p: any) => p._score > 0)
+      .sort((a: any, b: any) => b._score - a._score)
+    return matched.length >= 4 ? matched : productList
+  }, [productList, personalConcerns])
   const saleList = timeSales.length > 0 ? timeSales : []
   const groupBuyList = groupBuys.length > 0 ? groupBuys : []
   const salonList = salons.length > 0 ? salons : []
@@ -2642,13 +2660,15 @@ export default function CustomerHomePage() {
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>
-            🏆 {concernList[selectedConcern]?.name} BEST
+            {personalConcerns.length > 0
+              ? `🏆 ${(motivationProfile as any)?.skin_concerns?.slice(0,2).join('·')} 맞춤 BEST`
+              : `🏆 ${concernList[selectedConcern]?.name} BEST`}
           </span>
           <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>더보기 ›</span>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
-        {productList.slice(0, 4).map((p: any, i: number) => {
+        {personalProductList.slice(0, 4).map((p: any, i: number) => {
           const rankColors = ['#C9A96E', 'rgba(180,180,180,0.8)', 'rgba(180,120,60,0.8)']
           return (
             <div key={i} style={{
