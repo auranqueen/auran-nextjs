@@ -860,8 +860,6 @@ export default function CustomerHomePage() {
   const concernList = concerns.length > 0 ? concerns : []
   const productList = products.length > 0 ? products : []
   const personalProductList = useMemo(() => {
-    console.log('[BEST] personalConcerns:', personalConcerns)
-    console.log('[BEST] sample concern_tags:', productList.slice(0,3).map((p:any) => p.concern_tags))
     if (personalConcerns.length === 0) return productList
     const scored = productList.map((p: any) => {
       const ct = (p.concern_tags || []).map((t: string) => t.toLowerCase())
@@ -2672,8 +2670,8 @@ export default function CustomerHomePage() {
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>
-            {personalConcerns.length > 0
-              ? `🏆 ${(motivationProfile as any)?.skin_concerns?.slice(0,2).join('·')} 맞춤 BEST`
+            {userName
+              ? `🏆 ${userName}님을 위한 BEST`
               : `🏆 ${concernList[selectedConcern]?.name} BEST`}
           </span>
           <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>더보기 ›</span>
