@@ -521,7 +521,9 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
     const ext = file.name.split('.').pop() || 'jpg'
     const path = `edit/${pid}/detail-${Date.now()}.${ext}`
     try {
-      const url = await uploadToStorage(file, path)
+      const { error: upErr } = await supabase.storage.from('product-images').upload(path, file, { upsert: true })
+      if (upErr) throw upErr
+      const url = `${supabaseUrl}/storage/v1/object/public/product-images/${path}`
       setDetailImages(prev => [...prev, url])
       setMsg('상세 이미지 업로드됨 · 저장으로 반영하세요')
     } catch (e: unknown) {
