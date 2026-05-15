@@ -44,7 +44,15 @@ export async function POST(req: NextRequest) {
     )
 
     const data = await res.json()
-    return NextResponse.json(data)
+    if (!res.ok) return NextResponse.json({ error: data.error || '분석 실패' }, { status: res.status })
+    const text = data.content?.[0]?.text || ''
+    try {
+      const clean = text.replace(/```json|```/g, '').trim()
+      const parsed = JSON.parse(clean)
+      return NextResponse.json(parsed)
+    } catch {
+      return NextResponse.json({ error: '응답 파싱 실패', raw: text }, { status: 500 })
+    }
   } catch (e: any) {
     return NextResponse.json(
       { error: e.message || 'AI 분석 실패' },
