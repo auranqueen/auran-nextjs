@@ -130,6 +130,37 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
     }
   }
 
+  // 딸기잼 share_logs 적립
+  const referrerUserId = (order as any).referrer_user_id
+  if (referrerUserId) {
+    const { data: shareLogs } = await supabase
+      .from('share_logs')
+      .select('id, reward_paid, reward_amount')
+      .eq('sharer_user_id', referrerUserId)
+      .eq('converted', true)
+      .eq('reward_paid', false)
+      .eq('order_id', orderId)
+      .limit(1)
+    if (shareLogs && shareLogs.length > 0) {
+      const log = shareLogs[0]
+      const jamAmount = log.reward_amount || shareAmount || 0
+      if (jamAmount > 0) {
+        await supabase.from('share_logs').update({
+          reward_paid: true,
+        }).eq('id', log.id)
+        await insertPointTx(supabase, {
+          user_id: referrerUserId,
+          amount: jamAmount,
+          type: 'share_jam',
+          description: '딸기잼 구매확정 적립',
+          order_id: orderId,
+          status: 'confirmed',
+        })
+        await addUserPointsByAuth(supabase, referrerUserId, jamAmount)
+      }
+    }
+  }
+
   const prescriptionOwnerAuthId = String((order as any).prescription_owner_id || '')
   if (prescriptionOwnerAuthId) {
     const { data: rateRow } = await supabase
