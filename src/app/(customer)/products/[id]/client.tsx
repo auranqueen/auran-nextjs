@@ -1021,6 +1021,41 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
 
   return (
     <div style={wrap}>
+      <div
+        onClick={() => setShareOpen((o) => !o)}
+        style={{
+          background: 'rgba(123,94,167,0.12)',
+          borderTop: '1px solid rgba(123,94,167,0.2)',
+          borderBottom: '1px solid rgba(123,94,167,0.2)',
+          padding: '10px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          cursor: 'pointer',
+          position: 'relative',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 18 }}>🍓</span>
+          <div>
+            <div style={{ fontSize: 12, color: '#c4a8ff', lineHeight: 1.4 }}>이렇게 좋은 제품 나만 쓰기 너무해</div>
+            <div style={{ fontSize: 11, color: 'rgba(201,169,110,0.9)', marginTop: 2 }}>
+              공유하면 딸기잼 {Math.floor(Number(product.share_points ?? 0)).toLocaleString()} 적립
+            </div>
+          </div>
+        </div>
+        <div style={{
+          fontSize: 11,
+          color: '#7B5EA7',
+          background: 'rgba(123,94,167,0.2)',
+          border: '1px solid rgba(123,94,167,0.3)',
+          borderRadius: 20,
+          padding: '5px 12px',
+          whiteSpace: 'nowrap',
+        }}>
+          공유하기
+        </div>
+      </div>
       {shareOpen ? (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 89, background: 'transparent' }}
@@ -1033,48 +1068,6 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         <div style={{ fontSize: 20, color: GOLD, cursor: 'pointer' }} onClick={() => router.back()}>←</div>
         <div style={{ fontSize: 15 }}>상품 상세</div>
         <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <div
-            onClick={() => setShareOpen((o) => !o)}
-            style={{
-              color: '#7B5EA7',
-              background: 'rgba(123,94,167,0.15)',
-              border: '1px solid rgba(123,94,167,0.3)',
-              borderRadius: '50%',
-              width: 32,
-              height: 32,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              fontSize: 18,
-              position: 'relative',
-            }}
-          >
-            ⎙
-            {!shareOpen && sharePts.length > 0 ? (
-              <span
-                style={{
-                  position: 'absolute',
-                  top: -4,
-                  right: -4,
-                  minWidth: 16,
-                  height: 16,
-                  padding: '0 4px',
-                  borderRadius: 8,
-                  background: '#c9a84c',
-                  color: '#000',
-                  fontSize: 9,
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  lineHeight: 1,
-                }}
-              >
-                {sharePts.length > 9 ? '9+' : sharePts.length}
-              </span>
-            ) : null}
-          </div>
           <div style={{ fontSize: 9, color: '#7B5EA7' }}>공유</div>
           {shareOpen ? (
             <div
