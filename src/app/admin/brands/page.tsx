@@ -132,7 +132,6 @@ export default function AdminBrandsPage() {
       .select(
         'id,name,brand_name_kr,origin_country,origin,description,manager_name,manager_title,manager_phone,contact,address,biz_no,ceo_name,bank_name,bank_account,bank_holder,extra_request,product_categories,settlement_cycle,price_range_min,price_range_max,promo_condition,applied_at,created_at,biz_doc_url,apply_status,approved_at,reject_reason,user_id,status,default_earn_points,logo_url'
       )
-      .not('user_id', 'is', null)
       .order('created_at', { ascending: false })
       .limit(500)
 
