@@ -3190,7 +3190,6 @@ export default function CustomerHomePage() {
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
           <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)' }}>브랜드별 보기</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 브랜드 ›</span>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {canSeeRenobel ? (
@@ -3224,7 +3223,21 @@ export default function CustomerHomePage() {
               </div>
             </div>
           )}
-          {brandList.filter((b: any) => !b.name?.toLowerCase().includes('르노벨') && !b.name?.toLowerCase().includes('renobel') && !(canSeeRenobel ? false : (b.name?.toLowerCase().includes('civasan') || b.name?.toLowerCase().includes('시바산')))).slice(0, canSeeRenobel ? 4 : 3).map((brand: any, i: number) => (
+          {canSeeRenobel && brands.find((b: any) => b.name?.toLowerCase().includes('시바산') || b.name?.toLowerCase().includes('civasan')) && (
+            <div
+              onClick={() => setSelectedBrand(brands.find((b: any) => b.name?.toLowerCase().includes('시바산') || b.name?.toLowerCase().includes('civasan')))}
+              style={{ background: 'rgba(123,94,167,0.06)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}
+            >
+              <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: 13, color: 'rgba(123,94,167,0.4)' }}>Civasan</span>
+              </div>
+              <div style={{ padding: '8px 10px 10px' }}>
+                <div style={{ fontSize: 12, color: '#fff', marginBottom: 2 }}>시바산</div>
+                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>Korea</div>
+              </div>
+            </div>
+          )}
+          {brandList.filter((b: any) => !b.name?.toLowerCase().includes('르노벨') && !b.name?.toLowerCase().includes('renobel') && !b.name?.toLowerCase().includes('civasan') && !b.name?.toLowerCase().includes('시바산')).slice(0, canSeeRenobel ? 4 : 3).map((brand: any, i: number) => (
             <div
               key={i}
               onClick={() => setSelectedBrand(brand)}
@@ -3258,6 +3271,7 @@ export default function CustomerHomePage() {
             </div>
           )}
           <div
+            onClick={() => setSelectedBrand({ id: '__all__', name: '전체 브랜드' } as any)}
             style={{ gridColumn: 'span 2', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
           >
             <div>
