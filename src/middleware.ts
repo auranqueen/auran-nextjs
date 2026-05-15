@@ -115,7 +115,7 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith('/dashboard/customer/chat') || pathname.startsWith('/dashboard/owner/chat') || pathname.startsWith('/dashboard/owner')) return NextResponse.next()
   const isDashboard = pathname.startsWith('/dashboard')
   const isAdmin = pathname.startsWith('/admin')
-  const isBrand = pathname.startsWith('/brand')
+  const isBrand = pathname.startsWith('/brand') && !pathname.startsWith('/brands')
   const softAuth = isSoftAuthPath(pathname)
   const isHome = pathname === '/'
   if (!isHome && !isSuperConsole && !isDashboard && !isAdmin && !isBrand && !isProtectedPath && !softAuth) return NextResponse.next()
