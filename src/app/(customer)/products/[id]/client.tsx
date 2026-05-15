@@ -1277,6 +1277,42 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         </div>
       </div>
 
+      {(() => {
+        const now = new Date()
+        const et = (product as any).event_title
+        const es = (product as any).event_starts_at
+        const ee = (product as any).event_ends_at
+        if (!et) return null
+        if (es && new Date(es) > now) return null
+        if (ee && new Date(ee) < now) return null
+        return (
+          <div style={{
+            background: 'rgba(201,169,110,0.08)',
+            borderTop: '1px solid rgba(201,169,110,0.2)',
+            borderBottom: '1px solid rgba(201,169,110,0.2)',
+            padding: '10px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 18 }}>{(product as any).event_emoji || '🎁'}</span>
+              <div>
+                <div style={{ fontSize: 12, color: '#C9A96E' }}>{et}</div>
+                {(product as any).event_desc && (
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>{(product as any).event_desc}</div>
+                )}
+              </div>
+            </div>
+            {ee && (
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
+                D-{Math.max(0, Math.ceil((new Date(ee).getTime() - now.getTime()) / 86400000))}
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
       {/* 제품 기본 정보 */}
       <div style={{ padding: '16px 18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 8, flexWrap: 'wrap' as const }}>
