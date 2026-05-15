@@ -1717,11 +1717,16 @@ export default function CustomerHomePage() {
         borderBottom: '1px solid rgba(255,255,255,0.06)',
         backdropFilter: 'blur(12px)',
       }}>
-        <span style={{
-          fontFamily: 'Georgia, serif',
-          fontSize: '22px', fontWeight: 400,
-          color: GOLD, letterSpacing: '6px',
-        }}>AURAN</span>
+        <span
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          style={{
+            fontFamily: 'Georgia, serif',
+            fontSize: '22px', fontWeight: 400,
+            color: GOLD, letterSpacing: '6px',
+            cursor: 'pointer',
+            userSelect: 'none',
+          }}
+        >AURAN</span>
         <button
           onClick={() => setShowRoleSwitcher(!showRoleSwitcher)}
           style={{
