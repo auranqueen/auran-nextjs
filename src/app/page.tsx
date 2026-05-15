@@ -3295,7 +3295,7 @@ export default function CustomerHomePage() {
         </>
       ) : null}
 
-      {homeContestBanner ? (
+      {false && homeContestBanner ? (
         <div
           style={{
             margin: '12px 16px 0',
