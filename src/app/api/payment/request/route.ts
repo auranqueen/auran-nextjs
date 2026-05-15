@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
       channel: 'link',
       converted: true,
       converted_at: new Date().toISOString(),
+      order_id: order.id,
     } as any)
   }
 
