@@ -700,7 +700,11 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
   const hasValidPrice = price > 0
   const retailPrice = Number(product.retail_price ?? (product as any).price ?? 0) || 0
   const origPrice = product.original_price ?? 0
-  const discount = product.discount_rate ?? 0
+  const discountFromDB = product.discount_rate ?? 0
+  const discountCalc = product.retail_price > 0 && price < product.retail_price
+    ? Math.round((1 - price / product.retail_price) * 100)
+    : 0
+  const discount = discountFromDB > 0 ? discountFromDB : discountCalc
   const rating = product.avg_rating ?? 4.9
   const reviewCount = reviews.length > 0 ? reviews.length : (product.review_count ?? 0)
   const repurchaseRate = product.repurchase_rate ?? 0
@@ -1575,16 +1579,14 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           </div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-          {(product.is_timesale || product.is_groupbuy) && discount > 0 ? (
+          {discount > 0 ? (
             <div style={{ background: '#c02030', color: '#fff', fontSize: 11, padding: '3px 8px', borderRadius: 999 }}>-{discount}%</div>
           ) : null}
           <div style={{ fontSize: 28, color: GOLD, fontWeight: product.is_groupbuy ? 900 : 700 }}>
             {hasValidPrice ? `${price.toLocaleString()}원` : '가격문의'}
           </div>
-          {product.is_groupbuy && retailPrice > 0 ? (
-            <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{retailPrice.toLocaleString()}원</div>
-          ) : discount > 0 ? (
-            <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{origPrice.toLocaleString()}원</div>
+          {discount > 0 && product.retail_price > price ? (
+            <div style={{ fontSize: 14, color: '#555', textDecoration: 'line-through' }}>{Number(product.retail_price).toLocaleString()}원</div>
           ) : null}
         </div>
         {(String(product.unit_type || '').trim() &&
