@@ -347,7 +347,7 @@ export default function ProductsListClient() {
               <span style={{ color: BRAND, fontSize: 14, fontWeight: 600 }}>{brandName}</span>
               <span style={{ fontSize: 12, color: '#666' }}>{items.length}개</span>
             </div>
-            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6, WebkitOverflowScrolling: 'touch' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 14px 6px' }}>
               {items.map((p: Row) => {
                 const hit =
                   !!phaseFocus.focus &&
@@ -359,8 +359,6 @@ export default function ProductsListClient() {
                     key={p.id}
                     style={{
                       position: 'relative',
-                      width: 115,
-                      flexShrink: 0,
                     }}
                   >
                     {pick && showEditChrome ? (
