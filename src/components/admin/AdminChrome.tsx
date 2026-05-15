@@ -68,6 +68,7 @@ const MENU = [
       { label: '공동구매', href: '/admin/marketing/groupbuys', icon: '👥' },
       { label: '타임세일', href: '/admin/settings/flash-sale', icon: '⚡' },
       { label: '매거진', href: '/admin/magazine', icon: '📖' },
+      { label: '스킨스타 영상', href: '/admin/marketing/skinstar', icon: '🌸' },
     ],
   },
   {

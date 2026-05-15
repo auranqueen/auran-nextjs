@@ -241,6 +241,48 @@ const HORMONE_GREETINGS: Record<string, ((name: string) => string)[]> = {
   ],
 }
 
+
+function SkinstarSection() {
+  const supabase = createClient()
+  const [videos, setVideos] = useState<any[]>([])
+  useEffect(() => {
+    void supabase
+      .from('skinstar_videos')
+      .select('*')
+      .eq('is_active', true)
+      .order('sort_order')
+      .limit(6)
+      .then(({ data }) => setVideos(data ?? []))
+  }, [])
+  if (videos.length === 0) {
+    return (
+      <div style={{ margin: '12px 16px 0', borderRadius: 16, border: '1px solid rgba(123,94,167,0.2)', background: 'rgba(123,94,167,0.06)', padding: '20px 16px', textAlign: 'center' }}>
+        <div style={{ fontSize: 24, marginBottom: 8 }}>🌸</div>
+        <div style={{ fontFamily: 'Georgia, serif', fontSize: 11, color: '#C9A96E', letterSpacing: 3, marginBottom: 6 }}>SKIN STAR</div>
+        <div style={{ fontSize: 14, color: '#fff', marginBottom: 4 }}>스킨스타 피드가 열려요</div>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', lineHeight: 1.7, marginBottom: 12 }}>당신의 귀한 피부 변화를<br />모두와 나눠보세요 💜</div>
+        <div style={{ display: 'inline-block', fontSize: 10, color: '#c4a8ff', background: 'rgba(123,94,167,0.15)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 20, padding: '4px 12px' }}>베타 오픈 후 공개 예정</div>
+      </div>
+    )
+  }
+  return (
+    <div style={{ margin: '12px 16px 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+        <div style={{ fontSize: 13, color: '#fff' }}>🌸 스킨스타</div>
+        <div style={{ fontSize: 11, color: '#7B5EA7' }}>전체 →</div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', scrollbarWidth: 'none' }}>
+        {videos.map(v => (
+          <div key={v.id} style={{ flexShrink: 0, width: 100, borderRadius: 12, overflow: 'hidden', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>
+            <video src={v.video_url} style={{ width: '100%', aspectRatio: '9/16', objectFit: 'cover' }} muted playsInline loop autoPlay />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+
 export default function CustomerHomePage() {
   const router = useRouter()
   const supabase = createClient()
@@ -3429,37 +3471,8 @@ export default function CustomerHomePage() {
         </div>
       </div>
 
-      {/* ── 브랜드 영상 ── */}
-      {/* TODO: brand_videos 테이블에서 is_active=true, order by sort_order */}
-      <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>🎬 브랜드 영상</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>전체 ›</span>
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
-        {[
-          { brand: 'CIVASAN', title: 'MESS CREAM 신제품 출시', duration: '2:34', isLive: true, bg: 'linear-gradient(135deg,#1a1510,#2a2015)', icon: '🧴' },
-          { brand: 'GERNETIC', title: '바이오 세럼 사용법', duration: '1:45', isLive: false, bg: 'linear-gradient(135deg,#0a1a10,#1a2a15)', icon: '🌿' },
-          { brand: 'AURAN', title: '살롱 케어 브이로그', duration: '3:12', isLive: false, bg: 'linear-gradient(135deg,#1a0a2a,#2a1540)', icon: '💆' },
-          { brand: 'THALAC', title: '마린 라인 소개', duration: '2:10', isLive: false, bg: 'linear-gradient(135deg,#0a1a2a,#1a2a3a)', icon: '🌊' },
-        ].map((v: any, i: number) => (
-          <div key={i} style={{ minWidth: i === 0 ? '230px' : '150px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', overflow: 'hidden', flexShrink: 0, cursor: 'pointer' }}>
-            <div style={{ height: i === 0 ? '130px' : '96px', background: v.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: i === 0 ? '48px' : '36px', position: 'relative' }}>
-              {v.icon}
-              <div style={{ position: 'absolute', width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '2px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>▶</div>
-              {v.isLive && (
-                <div style={{ position: 'absolute', top: '8px', left: '8px', background: 'rgba(220,60,60,0.85)', borderRadius: '5px', padding: '2px 7px', fontSize: '9px', color: '#fff' }}>LIVE</div>
-              )}
-              <div style={{ position: 'absolute', bottom: '7px', right: '7px', background: 'rgba(0,0,0,0.55)', borderRadius: '4px', padding: '2px 5px', fontSize: '9px', color: 'rgba(255,255,255,0.8)', fontFamily: 'monospace' }}>{v.duration}</div>
-            </div>
-            <div style={{ padding: '9px 11px' }}>
-              <div style={{ fontSize: '9px', fontFamily: 'monospace', color: 'rgba(201,169,110,0.6)', marginBottom: '2px' }}>{v.brand}</div>
-              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)', lineHeight: 1.4 }}>{v.title}</div>
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* ── 스킨스타 영상 ── */}
+      <SkinstarSection />
 
       {routineMentorOpen ? (
         <>
