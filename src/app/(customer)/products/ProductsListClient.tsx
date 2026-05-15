@@ -66,15 +66,19 @@ export default function ProductsListClient() {
   const step = sp.get('step') ? decodeURIComponent(sp.get('step')!) : ''
   const func = sp.get('func') ? decodeURIComponent(sp.get('func')!) : ''
   const pick = sp.get('pick') === 'true'
+  const brandId = sp.get('brand') || ''
 
   const currentMonth = useMemo(() => new Date().getMonth() + 1, [])
 
+  const [brandName, setBrandName] = useState('')
+
   const title = useMemo(() => {
+    if (brandId) return brandName || '제품'
     if (pick) return '원장 픽'
     if (step) return '단계별'
     if (func) return '고민별'
     return '제품'
-  }, [pick, step, func])
+  }, [brandId, brandName, pick, step, func])
 
   useEffect(() => {
     void supabase.auth.getSession().then(({ data: { session } }) => {
@@ -93,6 +97,14 @@ export default function ProductsListClient() {
 
   const load = useCallback(async () => {
     setLoading(true)
+    let brandName = ''
+    if (brandId) {
+      const { data: bData } = await supabase.from('brands').select('brand_name_kr, name').eq('id', brandId).single()
+      brandName = bData?.brand_name_kr || bData?.name || ''
+      setBrandName(brandName)
+    } else {
+      setBrandName('')
+    }
     const month = new Date().getMonth() + 1
     let list: Row[] = []
     const { data: { user } } = await supabase.auth.getUser()
@@ -108,7 +120,7 @@ export default function ProductsListClient() {
       setPhaseFocus({ phase: '', focus: '' })
     }
     const sel =
-      'id, name, retail_price, sale_price, storage_thumb_url, thumb_img, step_tags, func_tags, hormone_tags, brands(name)'
+      'id, name, brand_id, retail_price, sale_price, storage_thumb_url, thumb_img, step_tags, func_tags, hormone_tags, brands(name)'
 
     if (pick) {
       const { data: maps } = await supabase
@@ -130,6 +142,7 @@ export default function ProductsListClient() {
       list = (data as Row[]) || []
       if (step && step !== '전체') list = list.filter(p => tagMatch(p.step_tags, step))
       if (func && func !== '전체') list = list.filter(p => tagMatch(p.func_tags, func))
+      if (brandId) list = list.filter((p: any) => p.brand_id === brandId)
     }
 
     const br = hcRow ? calcHormoneBriefing(hcRow) : { phase: '', focus: '' }
@@ -144,7 +157,7 @@ export default function ProductsListClient() {
     scored.sort((a, b) => Number(b.hit) - Number(a.hit))
     setRows(scored.map(s => s.p))
     setLoading(false)
-  }, [supabase, pick, step, func])
+  }, [supabase, pick, step, func, brandId])
 
   useEffect(() => {
     void load()
