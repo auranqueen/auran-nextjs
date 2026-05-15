@@ -1072,7 +1072,10 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
       {/* 탑바 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: '#0d0b09', position: 'sticky', top: 0, zIndex: 90 }}>
         <div style={{ fontSize: 20, color: GOLD, cursor: 'pointer' }} onClick={() => router.back()}>←</div>
-        <div style={{ fontSize: 15 }}>상품 상세</div>
+        <div
+          onClick={() => router.push('/')}
+          style={{ fontFamily: 'Georgia, serif', fontSize: 16, color: '#C9A96E', letterSpacing: '4px', cursor: 'pointer' }}
+        >AURAN</div>
         <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ fontSize: 9, color: '#7B5EA7' }}>공유</div>
           {shareOpen ? (
