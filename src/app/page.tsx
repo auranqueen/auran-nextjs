@@ -3360,39 +3360,19 @@ export default function CustomerHomePage() {
       ) : null}
 
       {/* ── 히어로 배너 ── */}
-      <div style={{
-        margin: '12px 16px 0', height: '148px',
-        borderRadius: '20px', overflow: 'hidden',
-        background: 'linear-gradient(135deg,#1a0a2a,#2d1545)',
-        position: 'relative', display: 'flex',
-      }}>
-        <div style={{
-          position: 'relative', zIndex: 2, padding: '18px 20px',
-          height: '100%', display: 'flex', flexDirection: 'column',
-          justifyContent: 'space-between', flex: 1,
-        }}>
-          <div>
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: '4px',
-              background: 'rgba(255,255,255,0.1)', borderRadius: '20px',
-              padding: '3px 10px', fontSize: '10px', fontFamily: 'monospace',
-              color: 'rgba(255,255,255,0.7)', marginBottom: '7px',
-            }}>✦ 3월 · SPRING SKIN</div>
-            <div style={{ fontSize: '17px', fontWeight: 300, lineHeight: 1.5 }}>
-              봄 피부 변화,<br />
-              <em style={{ color: GOLD, fontStyle: 'normal' }}>AI가 먼저</em> 알아챕니다
-            </div>
+      <div style={{ margin: '12px 16px 0', height: 148, background: '#12062a', borderRadius: 16, padding: '18px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1px solid rgba(201,169,110,0.2)' }}>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+            <div style={{ fontSize: 9, color: '#C9A96E', letterSpacing: 2, border: '1px solid rgba(201,169,110,0.3)', borderRadius: 20, padding: '2px 8px', fontWeight: 400 }}>✦ 5.24 GRAND OPEN</div>
           </div>
-          <div style={{ display: 'flex', gap: '4px' }}>
-            <div style={{ width: '14px', height: '4px', borderRadius: '2px', background: GOLD }} />
-            <div style={{ width: '5px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.2)' }} />
-            <div style={{ width: '5px', height: '4px', borderRadius: '2px', background: 'rgba(255,255,255,0.2)' }} />
+          <div style={{ fontSize: 15, color: '#fff', lineHeight: 1.5, marginBottom: 8, fontWeight: 400 }}>
+            당신의 귀한 피부,<br />
+            <span style={{ color: '#C9A96E', fontWeight: 400 }}>호르몬 주기</span>에 맞는<br />
+            케어가 시작됩니다
           </div>
+          <div style={{ fontSize: 10, color: '#fff', background: 'rgba(201,169,110,0.2)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: 20, padding: '3px 10px', display: 'inline-block', fontWeight: 400 }}>베타 오픈 20% · ~6.7</div>
         </div>
-        <div style={{
-          position: 'absolute', right: '16px', top: '50%',
-          transform: 'translateY(-50%)', fontSize: '56px', opacity: 0.85,
-        }}>🌸</div>
+        <div style={{ fontSize: 36, marginLeft: 12 }}>🌸</div>
       </div>
       <div
         onClick={() => router.push('/my/skin-analysis')}
