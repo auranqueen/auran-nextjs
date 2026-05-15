@@ -138,11 +138,12 @@ export default function ProductsListClient() {
         })
         .filter(Boolean) as Row[]
     } else {
-      const { data } = await supabase.from('products').select(sel).eq('is_active', true).eq('status', 'active').limit(200)
+      let query = supabase.from('products').select(sel).eq('is_active', true).eq('status', 'active')
+      if (brandId) query = query.eq('brand_id', brandId)
+      const { data } = await query.limit(200)
       list = (data as Row[]) || []
       if (step && step !== '전체') list = list.filter(p => tagMatch(p.step_tags, step))
       if (func && func !== '전체') list = list.filter(p => tagMatch(p.func_tags, func))
-      if (brandId) list = list.filter((p: any) => p.brand_id === brandId)
     }
 
     const br = hcRow ? calcHormoneBriefing(hcRow) : { phase: '', focus: '' }
