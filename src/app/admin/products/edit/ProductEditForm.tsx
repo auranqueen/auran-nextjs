@@ -1516,6 +1516,21 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
                           if (nextC.length > 0) autoPayload.skin_concerns = nextC
                           if (nextS.length > 0) autoPayload.skin_types = nextS
                           if (htStr && htStr !== '[]') autoPayload.hormone_timing = htStr
+                          const CONCERN_TO_FUNC: Record<string, string> = {
+                            '탄력저하': '탄력·주름',
+                            '수분부족': '보습·수분',
+                            '미백/톤업': '미백·톤업',
+                            '민감': '진정·민감',
+                            '트러블': '트러블케어',
+                            '모공': '모공·피지',
+                            '안티에이징': '노화케어',
+                            '각질': '장벽·재생',
+                          }
+                          const funcTagsFromAI = Array.from(new Set(nextC.map((c: string) => CONCERN_TO_FUNC[c]).filter(Boolean)))
+                          if (funcTagsFromAI.length > 0) {
+                            autoPayload.func_tags = funcTagsFromAI
+                            setForm(prev => ({ ...prev, func_tags: funcTagsFromAI }))
+                          }
                           if (Object.keys(autoPayload).length > 0) {
                             await supabase.from('products').update(autoPayload).eq('id', pid)
                             setMsg('AI 분석 결과 자동 저장됨 ✓')
