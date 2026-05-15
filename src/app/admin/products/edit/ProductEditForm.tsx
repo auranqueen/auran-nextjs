@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { compressImage } from '@/lib/imageUpload'
 
-const TABS = ['기본정보', '옵션정보', '가격및재고', '포인트설정', '배송비', '상품이미지', '태그관리'] as const
+const TABS = ['기본정보', '옵션정보', '가격및재고', '포인트설정', '배송비', '상품이미지', '태그관리', '이벤트배너'] as const
 
 const ORIGINS = ['프랑스', '이탈리아', '독일', '스페인', '영국', '스위스', '이스라엘', '기타유럽', '한국', '일본', '기타'] as const
 const UNIT_TYPE_OPTIONS = ['ml당', 'g당', '100ml당', '100g당', '1개당'] as const
@@ -659,6 +659,11 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       ingredient_tags: t.ingredient_tags || [],
       medical_tags: t.medical_tags || [],
       ai_tag_status: t.ai_tag_status || 'pending',
+      event_title: (form as any).event_title || null,
+      event_desc: (form as any).event_desc || null,
+      event_emoji: (form as any).event_emoji || null,
+      event_starts_at: (form as any).event_starts_at || null,
+      event_ends_at: (form as any).event_ends_at || null,
       updated_at: new Date().toISOString(),
     }
   }
@@ -2018,6 +2023,67 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
               >
                 태그 저장 · 승인
               </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {tabIdx === 7 && (
+        <div style={{ display: 'grid', gap: 16 }}>
+          <div style={{ display: 'grid', gap: 6 }}>
+            <span style={labelStyle}>이벤트 이모지</span>
+            <input
+              value={(form as any).event_emoji || ''}
+              onChange={e => setForm(prev => ({ ...prev, event_emoji: e.target.value } as any))}
+              placeholder="🎁 🌿 ⚡ 🎉"
+              style={inputStyle}
+            />
+          </div>
+          <div style={{ display: 'grid', gap: 6 }}>
+            <span style={labelStyle}>이벤트 제목</span>
+            <input
+              value={(form as any).event_title || ''}
+              onChange={e => setForm(prev => ({ ...prev, event_title: e.target.value } as any))}
+              placeholder="예: 지금 구매하면 1+1!"
+              style={inputStyle}
+            />
+          </div>
+          <div style={{ display: 'grid', gap: 6 }}>
+            <span style={labelStyle}>이벤트 설명</span>
+            <input
+              value={(form as any).event_desc || ''}
+              onChange={e => setForm(prev => ({ ...prev, event_desc: e.target.value } as any))}
+              placeholder="예: ~ 5월 31일까지 한정"
+              style={inputStyle}
+            />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+            <div style={{ display: 'grid', gap: 6 }}>
+              <span style={labelStyle}>시작일</span>
+              <input
+                type="datetime-local"
+                value={(form as any).event_starts_at ? new Date((form as any).event_starts_at).toISOString().slice(0,16) : ''}
+                onChange={e => setForm(prev => ({ ...prev, event_starts_at: e.target.value ? new Date(e.target.value).toISOString() : null } as any))}
+                style={inputStyle}
+              />
+            </div>
+            <div style={{ display: 'grid', gap: 6 }}>
+              <span style={labelStyle}>종료일</span>
+              <input
+                type="datetime-local"
+                value={(form as any).event_ends_at ? new Date((form as any).event_ends_at).toISOString().slice(0,16) : ''}
+                onChange={e => setForm(prev => ({ ...prev, event_ends_at: e.target.value ? new Date(e.target.value).toISOString() : null } as any))}
+                style={inputStyle}
+              />
+            </div>
+          </div>
+          {(form as any).event_title && (
+            <div style={{ background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.2)', borderRadius: 12, padding: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 20 }}>{(form as any).event_emoji || '🎁'}</span>
+              <div>
+                <div style={{ fontSize: 13, color: '#C9A96E' }}>{(form as any).event_title}</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>{(form as any).event_desc}</div>
+              </div>
             </div>
           )}
         </div>
