@@ -744,6 +744,13 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         }`
       : ''
 
+  const isDiscount = product.is_groupbuy || product.is_timesale
+  const brandRate = Number((product.brands as any)?.share_rate ?? 3)
+  const overrideRate = (product as any).share_rate_override != null ? Number((product as any).share_rate_override) : null
+  const shareRate = isDiscount ? 2 : (overrideRate ?? brandRate)
+  const basePrice = Number(product.retail_price ?? 0)
+  const sharePtsAmount = Math.max(0, Math.floor(basePrice * shareRate / 100))
+
   const recordShare = async (channel: string) => {
     try {
       const authId = shareRefUserId
@@ -767,7 +774,6 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
       })
       if (logErr) console.warn('[recordShare] share_logs', logErr)
 
-      const sharePtsAmount = Math.max(0, Math.floor(Number(product.share_points ?? 0)))
       if (sharePtsAmount > 0) {
         const { data: uRow, error: ptsFetchErr } = await supabase
           .from('users')
@@ -1040,7 +1046,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           <div>
             <div style={{ fontSize: 12, color: '#c4a8ff', lineHeight: 1.4 }}>이렇게 좋은 제품 나만 쓰기 너무해</div>
             <div style={{ fontSize: 11, color: 'rgba(201,169,110,0.9)', marginTop: 2 }}>
-              공유하면 딸기잼 {Math.floor(Number(product.share_points ?? 0)).toLocaleString()} 적립
+              공유하면 딸기잼 {sharePtsAmount.toLocaleString()} 적립
             </div>
           </div>
         </div>

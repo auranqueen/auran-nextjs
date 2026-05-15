@@ -48,7 +48,7 @@ export default async function ProductDetailPage({ params }: { params: { id: stri
   const supabase = createClient()
   const { data: product } = await supabase
     .from('products')
-    .select('*, brands(name, logo_url, origin_country, origin, default_earn_points, access_tier), categories(target_tracks)')
+    .select('*, brands(name, logo_url, origin_country, origin, default_earn_points, access_tier, share_rate), categories(target_tracks)')
     .eq('id', params.id)
     .single()
 
