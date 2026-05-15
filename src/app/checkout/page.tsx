@@ -339,7 +339,8 @@ function CheckoutPageInner() {
   const LUMIERE_GRADES = ['LUMIÈRE', 'REINE', 'NOIR', 'CÉLESTE']
   const toastMaxUsageRate = LUMIERE_GRADES.includes(gradeName ?? '') ? 1.0 : 0.5
   const toastHalf = Math.min(Math.floor(toastTBalance * toastRate), Math.floor(afterCoupon * toastMaxUsageRate))
-  const toastUsed = (payWithToast && afterCoupon >= minToastOrderAmount)
+  const hasTimesaleOrGroupbuy = orderLines.some((l: any) => l.is_timesale === true || l.is_groupbuy === true)
+  const toastUsed = (payWithToast && afterCoupon >= minToastOrderAmount && !hasTimesaleOrGroupbuy)
     ? Math.min(Math.floor(toastTBalance * toastMaxUsageRate), afterCoupon)
     : 0
   const goodsAfterToast = Math.max(0, afterCoupon - toastUsed)
