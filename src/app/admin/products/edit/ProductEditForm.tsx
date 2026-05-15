@@ -1510,6 +1510,17 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
                         setSkinTypesProduct(nextS)
                         if (htStr) setHormoneTimingProduct(htStr)
                         setIngredientAnalyzeDone(true)
+                        const pid = workingIdRef.current
+                        if (pid) {
+                          const autoPayload: Record<string, unknown> = {}
+                          if (nextC.length > 0) autoPayload.skin_concerns = nextC
+                          if (nextS.length > 0) autoPayload.skin_types = nextS
+                          if (htStr) autoPayload.hormone_timing = htStr
+                          if (Object.keys(autoPayload).length > 0) {
+                            await supabase.from('products').update(autoPayload).eq('id', pid)
+                            setMsg('AI 분석 결과 자동 저장됨 ✓')
+                          }
+                        }
                       } catch (e: unknown) {
                         setMsg(e instanceof Error ? e.message : '분석 오류')
                       } finally {
