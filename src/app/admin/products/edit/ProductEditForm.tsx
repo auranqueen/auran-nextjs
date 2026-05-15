@@ -664,7 +664,6 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   }
 
   const onSave = async (tagOverride?: Partial<typeof form>) => {
-    console.log('포인트확인', purchaseMode, purchaseVal)
     setMsg('')
     if (!brandId) {
       setMsg('브랜드를 선택하세요')
