@@ -40,37 +40,37 @@ const nextConfig = {
       {
         source: '/',
         headers: [
-          { key: 'Cache-Control', value: 'no-store, max-age=0' },
+          { key: 'Cache-Control', value: 'public, s-maxage=30, stale-while-revalidate=60' },
         ],
       },
       {
         source: '/admin/marketing/products',
         headers: [
-          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
+          { key: 'Cache-Control', value: 'private, max-age=30' },
         ],
       },
       {
         source: '/dashboard/customer/:path*',
         headers: [
-          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
+          { key: 'Cache-Control', value: 'private, max-age=10' },
         ],
       },
       {
         source: '/products/:path*',
         headers: [
-          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
+          { key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=300' },
         ],
       },
       {
         source: '/brands/:path*',
         headers: [
-          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
+          { key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=300' },
         ],
       },
       {
         source: '/admin/:path*',
         headers: [
-          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
+          { key: 'Cache-Control', value: 'private, max-age=30' },
         ],
       },
       {
@@ -83,19 +83,13 @@ const nextConfig = {
       {
         source: '/checkout/:path*',
         headers: [
-          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
-        ],
-      },
-      {
-        source: '/products/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
+          { key: 'Cache-Control', value: 'private, no-store' },
         ],
       },
       {
         source: '/auth/:path*',
         headers: [
-          { key: 'Cache-Control', value: 'no-store, no-cache, must-revalidate, max-age=0' },
+          { key: 'Cache-Control', value: 'no-store' },
         ],
       },
     ]
