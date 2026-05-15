@@ -60,7 +60,8 @@ export default function AdminMarketingProductsClient() {
       tab === '전체' ||
       (tab === '판매중' && p.is_active && p.status === 'active') ||
       (tab === '미매핑' && (!p.routine_category || p.status === 'pending')) ||
-      (tab === '숨김' && (!p.is_active || p.status === 'hidden'))
+      (tab === '숨김' && (!p.is_active || p.status === 'hidden')) ||
+      (tab === 'AI분석완료' && (p as any).ai_tag_status === 'approved')
     const q = search.toLowerCase()
     const matchSearch = !q || p.name.toLowerCase().includes(q) || bname.toLowerCase().includes(q) || (p.tag ?? '').toLowerCase().includes(q)
     return matchBrand && matchTab && matchSearch
@@ -72,6 +73,7 @@ export default function AdminMarketingProductsClient() {
     미매핑: products.filter(p => !p.routine_category || p.status === 'pending').length,
     숨김: products.filter(p => !p.is_active || p.status === 'hidden').length,
     AI완료: products.filter(p => p.ingredient && p.ingredient.length > 10).length,
+    'AI분석완료': products.filter(p => (p as any).ai_tag_status === 'approved').length,
   }
 
   const toggleActive = async (p: Product) => {
@@ -176,7 +178,7 @@ export default function AdminMarketingProductsClient() {
       </div>
 
       <div style={s.tabs}>
-        {(['전체', '판매중', '미매핑', '숨김'] as const).map(t => (
+        {(['전체', '판매중', '미매핑', '숨김', 'AI분석완료'] as const).map(t => (
           <span key={t} style={t === '미매핑' ? (tab === t ? s.tabWarnOn : s.tabWarn) : tab === t ? s.tabOn : s.tabBase} onClick={() => setTab(t)}>
             {t} {counts[t as keyof typeof counts]}
           </span>
