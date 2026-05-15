@@ -370,8 +370,10 @@ function CheckoutPageInner() {
 
   const applicableCheckoutCoupons = useMemo(() => {
     if (!authUid) return []
+    const isTimesaleOrGroupbuy = orderLines.some((l: any) => l.is_timesale === true || l.is_groupbuy === true)
     return userCoupons.filter((u) => {
       if (!u.coupons || u.status !== 'unused') return false
+      if (isTimesaleOrGroupbuy) return false
       if (isCouponExpiredForUser({ status: u.status, expired_at: u.expired_at }, u.coupons)) return false
       if (!isCouponApplicableForOrder(u.coupons, orderLines, afterGrade, authUid)) return false
       return computeCouponDiscount(afterGrade, u.coupons, { maxPercent: maxCouponPct }) > 0
