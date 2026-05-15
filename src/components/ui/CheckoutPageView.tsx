@@ -84,6 +84,7 @@ type Props = {
   freeShippingThreshold?: number
   onPay: (allowCharge: boolean) => void
   onPayBankTransfer?: () => void | Promise<void>
+  hasTimesaleOrGroupbuy?: boolean
 }
 
 export default function CheckoutPageView({
@@ -147,6 +148,7 @@ export default function CheckoutPageView({
   freeShippingThreshold = 0,
   onPay,
   onPayBankTransfer,
+  hasTimesaleOrGroupbuy,
 }: Props) {
   const supabase = createClient()
   const remBalAfterToast = Math.max(0, balance)
@@ -384,6 +386,11 @@ export default function CheckoutPageView({
                   <span>-₩{gradeDiscountAmt.toLocaleString()}</span>
                 </div>
               ) : null}
+              {hasTimesaleOrGroupbuy && (
+                <div style={{ fontSize: 11, color: 'rgba(255,180,100,0.8)', background: 'rgba(255,150,50,0.08)', border: '1px solid rgba(255,150,50,0.2)', borderRadius: 8, padding: '6px 10px', marginBottom: 6 }}>
+                  타임세일·공구 상품은 토스트 사용이 불가해요
+                </div>
+              )}
               {toastUsed > 0 ? (
                 <div style={{ marginBottom: 6 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', color: '#c4a5f5', fontSize: 13 }}>
@@ -461,6 +468,11 @@ export default function CheckoutPageView({
               ) : null}
               <div style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <div style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.85)', marginBottom: 8 }}>🎟 쿠폰 선택</div>
+                {hasTimesaleOrGroupbuy && (
+                  <div style={{ fontSize: 11, color: 'rgba(255,180,100,0.8)', background: 'rgba(255,150,50,0.08)', border: '1px solid rgba(255,150,50,0.2)', borderRadius: 8, padding: '6px 10px', marginBottom: 8 }}>
+                    타임세일·공구 상품은 쿠폰 사용이 불가해요
+                  </div>
+                )}
                 <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10, fontSize: 12, color: 'rgba(255,255,255,0.9)', cursor: 'pointer' }}>
                   <input type="radio" name="checkout_coupon" checked={selectedUserCouponId === null} onChange={() => setSelectedUserCouponId(null)} />
                   <span>쿠폰 적용 안 함</span>

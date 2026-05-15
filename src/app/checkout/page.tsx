@@ -583,6 +583,7 @@ function CheckoutPageInner() {
         onPayBankTransfer={handleBankTransfer}
         groupbuyDiscount={groupbuyDiscount}
         timesaleDiscount={timesaleDiscount}
+        hasTimesaleOrGroupbuy={hasTimesaleOrGroupbuy}
       />
       {pinOpen ? (
         <div style={{ position: 'fixed', inset: 0, zIndex: 120, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
