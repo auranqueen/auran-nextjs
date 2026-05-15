@@ -3196,7 +3196,7 @@ export default function CustomerHomePage() {
       )}
 
       <div style={{ padding: '0 16px 20px' }}>
-        <div onClick={() => router.push('/brands')}
+        <div onClick={() => window.location.href = '/brands'}
           style={{ borderRadius: 16, background: 'rgba(245,240,255,0.06)', border: '1px solid rgba(123,94,167,0.2)', padding: '18px 20px', cursor: 'pointer' }}>
           <div style={{ fontSize: 10, color: '#7B5EA7', letterSpacing: 2, marginBottom: 5 }}>BRAND HALL</div>
           <div style={{ fontSize: 16, color: '#fff', marginBottom: 3 }}>브랜드관</div>
