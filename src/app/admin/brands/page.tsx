@@ -39,6 +39,7 @@ type BRow = {
   user_id?: string | null
   status?: string | null
   default_earn_points?: number | null
+  logo_url?: string | null
 }
 
 type DetailForm = {
@@ -64,6 +65,7 @@ type DetailForm = {
   apply_status: string
   reject_reason: string
   extra_request: string
+  logoUrl?: string
 }
 
 type ProductRow = {
@@ -128,7 +130,7 @@ export default function AdminBrandsPage() {
     const { data: bs, error } = await supabase
       .from('brands')
       .select(
-        'id,name,brand_name_kr,origin_country,origin,description,manager_name,manager_title,manager_phone,contact,address,biz_no,ceo_name,bank_name,bank_account,bank_holder,extra_request,product_categories,settlement_cycle,price_range_min,price_range_max,promo_condition,applied_at,created_at,biz_doc_url,apply_status,approved_at,reject_reason,user_id,status,default_earn_points'
+        'id,name,brand_name_kr,origin_country,origin,description,manager_name,manager_title,manager_phone,contact,address,biz_no,ceo_name,bank_name,bank_account,bank_holder,extra_request,product_categories,settlement_cycle,price_range_min,price_range_max,promo_condition,applied_at,created_at,biz_doc_url,apply_status,approved_at,reject_reason,user_id,status,default_earn_points,logo_url'
       )
       .not('user_id', 'is', null)
       .order('created_at', { ascending: false })
@@ -357,6 +359,7 @@ export default function AdminBrandsPage() {
       apply_status: normApply(b.apply_status) || 'pending',
       reject_reason: b.reject_reason || '',
       extra_request: ex,
+      logoUrl: b.logo_url || '',
     })
     setDetailBrand(b)
     setDetailTab('info')
@@ -397,6 +400,7 @@ export default function AdminBrandsPage() {
       apply_status: detailForm.apply_status,
       reject_reason: detailForm.apply_status === 'rejected' ? detailForm.reject_reason.trim() || null : null,
       extra_request: extra.trim() || null,
+      logo_url: detailForm.logoUrl || null,
     }
     const { error } = await supabase.from('brands').update(payload as any).eq('id', detailBrand.id)
     setDetailSaving(false)
@@ -932,6 +936,28 @@ export default function AdminBrandsPage() {
 
             {detailTab === 'info' ? (
               <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'grid', gap: 6, marginBottom: 16 }}>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>브랜드 로고</span>
+                  {detailForm?.logoUrl && (
+                    <img src={detailForm.logoUrl} style={{ width: 80, height: 80, objectFit: 'contain', background: '#fff', borderRadius: 8, padding: 6 }} alt="" />
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      const ext = file.name.split('.').pop()
+                      const path = `brand-logos/${Date.now()}.${ext}`
+                      const { data } = await supabase.storage.from('brand-assets').upload(path, file, { upsert: true })
+                      if (data) {
+                        const { data: urlData } = supabase.storage.from('brand-assets').getPublicUrl(path)
+                        setDetailForm((f: any) => f ? { ...f, logoUrl: urlData.publicUrl } : f)
+                      }
+                    }}
+                    style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}
+                  />
+                </div>
                 {(
                   [
                     ['브랜드명 (영문)', 'name', 'text'],

@@ -2277,6 +2277,9 @@ export default function CustomerHomePage() {
         )}
       </div>
 
+      {/* 내 피부 맞춤 추천 + 루틴 패널 — 베타 후 복구 예정 */}
+      {false && (
+      <>
       {/* ── 내 피부 맞춤 추천 ── */}
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -2689,6 +2692,7 @@ export default function CustomerHomePage() {
           </div>
         ) : null}
       </div>
+      </>)}
 
       {/* ── BEST 랭킹 ── */}
       <div style={{ padding: '16px 16px 0' }}>
@@ -3191,100 +3195,13 @@ export default function CustomerHomePage() {
         </div>
       )}
 
-      {/* ── 브랜드 벤토그리드 ── */}
-      <div style={{ padding: '16px 16px 0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-          <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.75)' }}>브랜드별 보기</span>
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          {canSeeRenobel ? (
-            <div
-              onClick={() => setSelectedBrand(brands.find((b: any) => b.name?.toLowerCase().includes('르노벨') || b.name?.toLowerCase().includes('renobel')))}
-              style={{ gridColumn: 'span 2', display: 'flex', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.35)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}
-            >
-              <div style={{ width: 110, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(201,169,110,0.06)' }}>
-                <span style={{ fontSize: 15, color: 'rgba(201,169,110,0.4)' }}>Rénobel</span>
-              </div>
-              <div style={{ padding: 12, flex: 1 }}>
-                <div style={{ fontSize: 9, background: 'rgba(201,169,110,0.2)', color: '#C9A96E', padding: '2px 8px', borderRadius: 10, display: 'inline-block', marginBottom: 6 }}>프리미엄 전용</div>
-                <div style={{ fontSize: 13, color: '#fff', marginBottom: 2 }}>르노벨</div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginBottom: 6 }}>Switzerland · 럭셔리</div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', lineHeight: 1.4 }}>스위스 알프스 프리미엄 케어</div>
-              </div>
-            </div>
-          ) : (
-            <div
-              onClick={() => setSelectedBrand(brands.find((b: any) => b.name?.toLowerCase().includes('civasan') || b.name?.toLowerCase().includes('시바산')))}
-              style={{ gridColumn: 'span 2', display: 'flex', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}
-            >
-              <div style={{ width: 110, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(123,94,167,0.06)' }}>
-                <span style={{ fontSize: 15, color: 'rgba(123,94,167,0.35)' }}>Civasan</span>
-              </div>
-              <div style={{ padding: 12, flex: 1 }}>
-                <div style={{ fontSize: 9, background: 'rgba(123,94,167,0.25)', color: '#c4a8ff', padding: '2px 8px', borderRadius: 10, display: 'inline-block', marginBottom: 6 }}>AURAN 추천</div>
-                <div style={{ fontSize: 13, color: '#fff', marginBottom: 2 }}>시바산</div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)', marginBottom: 6 }}>Korea · 메조테라피</div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', lineHeight: 1.4 }}>피부과 전문 성분, 집에서 살롱케어</div>
-              </div>
-            </div>
-          )}
-          {canSeeRenobel && brands.find((b: any) => b.name?.toLowerCase().includes('시바산') || b.name?.toLowerCase().includes('civasan')) && (
-            <div
-              onClick={() => setSelectedBrand(brands.find((b: any) => b.name?.toLowerCase().includes('시바산') || b.name?.toLowerCase().includes('civasan')))}
-              style={{ background: 'rgba(123,94,167,0.06)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}
-            >
-              <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: 13, color: 'rgba(123,94,167,0.4)' }}>Civasan</span>
-              </div>
-              <div style={{ padding: '8px 10px 10px' }}>
-                <div style={{ fontSize: 12, color: '#fff', marginBottom: 2 }}>시바산</div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>Korea</div>
-              </div>
-            </div>
-          )}
-          {brandList.filter((b: any) => !b.name?.toLowerCase().includes('르노벨') && !b.name?.toLowerCase().includes('renobel') && !b.name?.toLowerCase().includes('civasan') && !b.name?.toLowerCase().includes('시바산')).slice(0, canSeeRenobel ? 4 : 3).map((brand: any, i: number) => (
-            <div
-              key={i}
-              onClick={() => setSelectedBrand(brand)}
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}
-            >
-              <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.02)' }}>
-                {brand.logo_url ? (
-                  <img src={brand.logo_url} alt={brand.name || ''} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
-                ) : (
-                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.15)' }}>{brand.name?.[0] ?? '?'}</span>
-                )}
-              </div>
-              <div style={{ padding: '8px 10px 10px' }}>
-                <div style={{ fontSize: 12, color: '#fff', marginBottom: 2 }}>{brand.name}</div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>{brand.origin_country ?? ''}</div>
-              </div>
-            </div>
-          ))}
-          {!canSeeRenobel && (
-            <div
-              onClick={() => setSelectedBrand(brands.find((b: any) => b.name?.toLowerCase().includes('civasan') || b.name?.toLowerCase().includes('시바산')))}
-              style={{ background: 'rgba(123,94,167,0.04)', border: '1px solid rgba(123,94,167,0.15)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}
-            >
-              <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <span style={{ fontSize: 12, color: 'rgba(123,94,167,0.4)' }}>Civasan</span>
-              </div>
-              <div style={{ padding: '8px 10px 10px' }}>
-                <div style={{ fontSize: 12, color: '#fff', marginBottom: 2 }}>시바산</div>
-                <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.3)' }}>Korea</div>
-              </div>
-            </div>
-          )}
-          <div
-            onClick={() => setSelectedBrand({ id: '__all__', name: '전체 브랜드' } as any)}
-            style={{ gridColumn: 'span 2', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 14, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
-          >
-            <div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>더 많은 브랜드가 있어요</div>
-              <div style={{ fontSize: 12, color: '#7B5EA7' }}>전체 브랜드 보기 →</div>
-            </div>
-            <span style={{ fontSize: 22, color: 'rgba(255,255,255,0.08)' }}>+23</span>
-          </div>
+      <div style={{ padding: '0 16px 20px' }}>
+        <div onClick={() => router.push('/brands')}
+          style={{ borderRadius: 16, background: 'rgba(245,240,255,0.06)', border: '1px solid rgba(123,94,167,0.2)', padding: '18px 20px', cursor: 'pointer' }}>
+          <div style={{ fontSize: 10, color: '#7B5EA7', letterSpacing: 2, marginBottom: 5 }}>BRAND HALL</div>
+          <div style={{ fontSize: 16, color: '#fff', marginBottom: 3 }}>브랜드관</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 14 }}>에스테틱 명품 관리제품 공식스토어</div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', background: 'rgba(123,94,167,0.2)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 20, padding: '5px 13px', fontSize: 11, color: '#c4a8ff' }}>전체 브랜드 보기 →</div>
         </div>
       </div>
 
