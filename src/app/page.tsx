@@ -3195,7 +3195,7 @@ export default function CustomerHomePage() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {canSeeRenobel ? (
             <div
-              onClick={() => setSelectedBrand(brands.find((b: any) => b.name?.includes('르노벨') || b.name?.includes('Renobel') || b.name?.includes('Rénobel')))}
+              onClick={() => setSelectedBrand(brands.find((b: any) => b.name?.toLowerCase().includes('르노벨') || b.name?.toLowerCase().includes('renobel')))}
               style={{ gridColumn: 'span 2', display: 'flex', background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.35)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}
             >
               <div style={{ width: 110, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(201,169,110,0.06)' }}>
@@ -3210,7 +3210,7 @@ export default function CustomerHomePage() {
             </div>
           ) : (
             <div
-              onClick={() => setSelectedBrand(brands.find((b: any) => b.name?.includes('시바산') || b.name?.includes('Civasan')))}
+              onClick={() => setSelectedBrand(brands.find((b: any) => b.name?.toLowerCase().includes('civasan') || b.name?.toLowerCase().includes('시바산')))}
               style={{ gridColumn: 'span 2', display: 'flex', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.35)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}
             >
               <div style={{ width: 110, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(123,94,167,0.06)' }}>
@@ -3224,7 +3224,7 @@ export default function CustomerHomePage() {
               </div>
             </div>
           )}
-          {brandList.filter((b: any) => !b.name?.includes('르노벨') && !b.name?.includes('Renobel') && !b.name?.includes('Rénobel') && !(canSeeRenobel ? false : (b.name?.includes('시바산') || b.name?.includes('Civasan')))).slice(0, canSeeRenobel ? 4 : 3).map((brand: any, i: number) => (
+          {brandList.filter((b: any) => !b.name?.toLowerCase().includes('르노벨') && !b.name?.toLowerCase().includes('renobel') && !(canSeeRenobel ? false : (b.name?.toLowerCase().includes('civasan') || b.name?.toLowerCase().includes('시바산')))).slice(0, canSeeRenobel ? 4 : 3).map((brand: any, i: number) => (
             <div
               key={i}
               onClick={() => setSelectedBrand(brand)}
@@ -3245,7 +3245,7 @@ export default function CustomerHomePage() {
           ))}
           {!canSeeRenobel && (
             <div
-              onClick={() => setSelectedBrand(brands.find((b: any) => b.name?.includes('시바산') || b.name?.includes('Civasan')))}
+              onClick={() => setSelectedBrand(brands.find((b: any) => b.name?.toLowerCase().includes('civasan') || b.name?.toLowerCase().includes('시바산')))}
               style={{ background: 'rgba(123,94,167,0.04)', border: '1px solid rgba(123,94,167,0.15)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}
             >
               <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -3326,95 +3326,34 @@ export default function CustomerHomePage() {
                 로딩 중...
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {brandProducts.map((p: any) => {
-                  const step0 = Array.isArray(p.step_tags) ? String(p.step_tags[0] || '') : ''
-                  const func0 = Array.isArray(p.func_tags) ? String(p.func_tags[0] || '') : ''
-                  const tagText = [step0, func0].filter(Boolean).join(' · ')
-                  const price = Number(p.sale_price) > 0 ? Number(p.sale_price) : Number(p.retail_price || 0)
-                  return (
-                    <div
-                      key={String(p.id)}
-                      style={{
-                        display: 'flex',
-                        gap: 10,
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(255,255,255,0.08)',
-                        borderRadius: 12,
-                        padding: 10,
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: 80,
-                          height: 80,
-                          borderRadius: 10,
-                          overflow: 'hidden',
-                          background: 'rgba(255,255,255,0.08)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                        }}
-                      >
-                        {p.thumb_img ? (
-                          <img src={p.thumb_img} alt={p.name || ''} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>NO IMG</span>
-                        )}
+              <>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 16px 16px' }}>
+                  {brandProducts.map((p: any) => (
+                    <div key={p.id} onClick={() => router.push(`/products/${p.id}`)}
+                      style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, overflow: 'hidden', cursor: 'pointer' }}>
+                      <div style={{ aspectRatio: '1', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                        {(p.storage_thumb_url || p.thumb_img) ? (
+                          <img src={p.storage_thumb_url || p.thumb_img} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="" />
+                        ) : null}
                       </div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, color: '#fff', marginBottom: 4 }}>{p.name}</div>
-                        <div style={{ fontSize: 11, color: '#a988ff', marginBottom: 6 }}>{tagText || '-'}</div>
-                        <div style={{ fontSize: 13, color: '#fff', marginBottom: 8 }}>{price.toLocaleString()}원</div>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedBrand(null)
-                              router.push(`/products/${p.id}`)
-                            }}
-                            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.22)', background: 'transparent', color: '#fff', fontSize: 11, cursor: 'pointer' }}
-                          >
-                            상세보기
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              cart.addToCart({
-                                product_id: String(p.id),
-                                name: String(p.name || ''),
-                                price,
-                                thumb_img: String(p.thumb_img || ''),
-                                quantity: 1,
-                              })
-                              setHomeToast('장바구니에 담았어요')
-                            }}
-                            style={{ padding: '6px 10px', borderRadius: 8, border: '1px solid rgba(123,94,167,0.35)', background: 'rgba(123,94,167,0.2)', color: '#e8d9ff', fontSize: 11, cursor: 'pointer' }}
-                          >
-                            담기
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedBrand(null)
-                              router.push(`/checkout?product_id=${p.id}&qty=1`)
-                            }}
-                            style={{ padding: '6px 10px', borderRadius: 8, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 11, cursor: 'pointer' }}
-                          >
-                            바로구매
-                          </button>
+                      <div style={{ padding: '8px 10px 10px' }}>
+                        <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.4, marginBottom: 4,
+                          display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{p.name}</div>
+                        <div style={{ fontSize: 12, color: '#fff' }}>
+                          {p.is_timesale && p.sale_price
+                            ? `${Number(p.sale_price).toLocaleString()}원`
+                            : `${Number(p.retail_price).toLocaleString()}원`}
                         </div>
                       </div>
                     </div>
-                  )
-                })}
+                  ))}
+                </div>
                 {!brandProductsLoading && brandProducts.length === 0 ? (
                   <div style={{ color: 'rgba(255,255,255,0.6)', fontSize: 12, textAlign: 'center', padding: '10px 0' }}>
                     등록된 상품이 없어요
                   </div>
                 ) : null}
-              </div>
+              </>
             )}
           </div>
         </>
