@@ -618,110 +618,37 @@ export default function MyWorldPage() {
               background: '#f5f0ff',
             }}
           >
-            <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
-              <div style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '24%', background: '#f0ebff', borderBottom: '1px solid #9b7ec8' }} />
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: '18%',
-                  width: '38%',
-                  bottom: '36%',
-                  background: '#ede8f8',
-                  clipPath: 'polygon(0 0, 100% 12%, 100% 100%, 0 100%)',
-                  borderRight: '2px solid #9b7ec8',
-                }}
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  left: '22%',
-                  right: 0,
-                  top: '24%',
-                  bottom: '36%',
-                  background: '#f5f0ff',
-                  boxShadow: 'inset 0 0 0 1px #9b7ec8',
-                }}
-              />
-              <div className="myworld-room-floor" />
-              <div
-                style={{
-                  position: 'absolute',
-                  left: '14%',
-                  right: '14%',
-                  bottom: '10%',
-                  height: '20%',
-                  background: 'rgba(180,150,220,0.2)',
-                  borderRadius: 10,
-                  border: '1px solid #9b7ec8',
-                  zIndex: 1,
-                }}
-              />
-            </div>
-            {todayDone ? (
-              <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'rgba(123,94,167,0.08)', pointerEvents: 'none' }} />
-            ) : null}
-            <div style={{ position: 'absolute', top: 10, left: 12, fontSize: 9, color: '#6b5488', zIndex: 2 }}>Lv.{roomLevel} · 다음 레벨까지 제품 {Math.max(0, toNext)}개</div>
-            {!todayDone
-              ? particles.map((particle) => (
-                  <div
-                    key={`particle-${particle.id}`}
-                    style={{
-                      position: 'absolute',
-                      left: `${particle.left}%`,
-                      top: -20,
-                      fontSize: `${particle.size}px`,
-                      opacity: particle.opacity,
-                      animation: `snowfall ${particle.duration}s ease-in-out ${particle.delay}s infinite`,
-                      pointerEvents: 'none',
-                      zIndex: 2,
-                      ['--opacity' as any]: particle.opacity,
-                      ['--sway' as any]: `${particle.swayAmount}px`,
-                    }}
-                  >
-                    {particle.emoji}
-                  </div>
-                ))
-              : null}
-            {daysSinceRoutine >= 7 ? <div style={{ position: 'absolute', top: 40, left: 14, fontSize: 12, color: 'rgba(90,70,120,0.75)', zIndex: 2 }}>오래됐네요 😢</div> : null}
-            {daysSinceRoutine >= 14 ? <div style={{ position: 'absolute', top: 58, left: 14, fontSize: 12, color: 'rgba(90,70,120,0.75)', zIndex: 2 }}>피부가 그리워하고 있어요</div> : null}
-            {todayDone ? [0, 1, 2].map((i) => <div key={`star-${i}`} style={{ position: 'absolute', left: `${35 + i * 15}%`, top: `${35 + i * 9}px`, fontSize: 12, animation: 'twinkle 1.2s ease-in-out infinite' }}>✨</div>) : null}
-
-            <div style={{ position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)', fontSize: 36, zIndex: 2 }}>🛏️</div>
-            {roomLevel >= 2 ? <div style={{ position: 'absolute', bottom: 20, right: 20, fontSize: 32, zIndex: 2 }}>🪞</div> : null}
-            {roomLevel >= 3 ? <div style={{ position: 'absolute', top: 20, right: 20, fontSize: 24, zIndex: 2 }}>💡</div> : null}
-            {roomLevel >= 4 ? <div style={{ position: 'absolute', bottom: 20, left: 20, fontSize: 28, zIndex: 2 }}>🌿</div> : null}
-            {roomLevel >= 5 ? <div style={{ position: 'absolute', bottom: 20, left: 30, fontSize: 36, zIndex: 2 }}>🛋️</div> : null}
-            <div style={{ position: 'absolute', inset: 0, zIndex: 4, pointerEvents: 'none' }}>
-              <div className="mini-body">
-                {minimiSrc ? (
-                  <img src={minimiSrc} alt="minimi" style={{ width: 36, height: 42, objectFit: 'contain', display: 'block' }} />
-                ) : (
-                  <div style={{ width: 36, height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>
-                    🧍‍♀️
-                  </div>
-                )}
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'center',
+              zIndex: 2, background: '#0f0c14',
+            }}>
+              {([{t:'40px',l:'30px',s:22,d:4.2,delay:0},{t:'60px',r:'40px',s:16,d:3.8,delay:0.8},{b:'80px',l:'20px',s:14,d:4.5,delay:1.2},{b:'60px',r:'30px',s:18,d:3.6,delay:0.4}] as any[]).map((p,i) => (
+                <span key={i} style={{
+                  position:'absolute', fontSize:p.s,
+                  top:p.t, bottom:p.b, left:p.l, right:p.r,
+                  display:'inline-block',
+                  animation:`myroomFloat ${p.d}s ease-in-out ${p.delay}s infinite`,
+                  opacity:0.7,
+                }}>🌸</span>
+              ))}
+              <div style={{ fontFamily:'Georgia,serif', fontSize:10, color:'#C9A96E', letterSpacing:4, marginBottom:20 }}>MY ROOM</div>
+              <div style={{ fontSize:15, color:'#fff', lineHeight:1.7, textAlign:'center', marginBottom:12 }}>
+                나만의 피부 공간이<br />열립니다
               </div>
-              <div className="bubble-fix">
-                <div
-                  style={{
-                    transform: 'translate(-28px, -54px)',
-                    minWidth: 96,
-                    maxWidth: 140,
-                    background: 'rgba(255,255,255,0.92)',
-                    color: '#2a2338',
-                    borderRadius: 12,
-                    padding: '6px 8px',
-                    fontSize: 10,
-                    lineHeight: 1.35,
-                    textAlign: 'center',
-                    boxShadow: '0 2px 10px rgba(0,0,0,0.18)',
-                    border: '1px solid #9b7ec8',
-                  }}
-                >
-                  {minimiMent}
-                </div>
+              <div style={{ width:32, height:1, background:'rgba(201,169,110,0.3)', margin:'16px auto' }} />
+              <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', lineHeight:1.9, textAlign:'center', marginBottom:20 }}>
+                당신의 귀한 피부 여정이<br />
+                아름답게 담길 공간을 준비 중이에요<br /><br />
+                <span style={{ color:'rgba(201,169,110,0.6)' }}>호르몬 주기 · 스킨케어 히스토리</span><br />
+                <span style={{ color:'rgba(201,169,110,0.6)' }}>맑원장의 루틴까지</span>
               </div>
+              <div style={{ fontSize:10, color:'rgba(123,94,167,0.8)', border:'1px solid rgba(123,94,167,0.25)', borderRadius:20, padding:'5px 14px', letterSpacing:2 }}>
+                COMING SOON
+              </div>
+              <div style={{ marginTop:18, fontSize:18 }}>💜</div>
+              <style>{`@keyframes myroomFloat{0%,100%{transform:translateY(0) rotate(0deg);opacity:0.7}50%{transform:translateY(-12px) rotate(8deg);opacity:1}}`}</style>
             </div>
             <div style={{ position: 'absolute', bottom: 10, right: 12, fontSize: 11, color: '#6b4f9e', zIndex: 2 }}>오늘 피부점수 78 ✨</div>
           </div>
