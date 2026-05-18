@@ -286,20 +286,30 @@ export default function TotoAdminPage() {
             <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 5 }}>
               티어
             </div>
-            <select
-              value={form.tier}
-              onChange={e => setForm(f => ({ ...f, tier: e.target.value }))}
-              style={{
-                width: '100%', padding: '8px 10px', borderRadius: 8, fontSize: 13,
-                border: '0.5px solid var(--color-border-secondary)',
-                background: 'var(--color-background-primary)',
-                color: 'var(--color-text-primary)',
-              }}
-            >
+            {/* ===== [티어 선택] select → 버튼 그룹 (다크모드 가독성) ===== */}
+            {/* 앞으로 select 대신 버튼 그룹 사용 */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {tiers.map(t => (
-                <option key={t.value} value={t.value}>{t.label}</option>
+                <button
+                  key={t.value}
+                  onClick={() => setForm(f => ({ ...f, tier: t.value }))}
+                  style={{
+                    padding: '7px 14px',
+                    borderRadius: 20,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                    border: form.tier === t.value
+                      ? 'none'
+                      : '0.5px solid var(--color-border-secondary)',
+                    background: form.tier === t.value ? '#7B5EA7' : '#fff',
+                    color: form.tier === t.value ? '#fff' : '#333',
+                    fontWeight: form.tier === t.value ? 500 : 400,
+                  }}
+                >
+                  {t.label}
+                </button>
               ))}
-            </select>
+            </div>
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 5 }}>
