@@ -99,6 +99,8 @@ const MENU = [
       { label: '개인정보 접근 로그', href: '/admin/privacy', icon: '🔒' },
       // ===== [또또복권] gift_items 등록/관리 =====
       { label: '또또복권 관리', href: '/admin/toto', icon: '🎴' },
+      // ===== [스토어 구매 후기] =====
+      { label: '스토어 후기', href: '/admin/store-reviews', icon: '💜' },
       // ===== [비회원 상담톡] guest_consultations 목록 =====
       { label: '비회원 상담', href: '/admin/guest-consult', icon: '🤫' },
       // ===== [고객의 목소리 함] 버그/아이디어/칭찬 수신함 =====
