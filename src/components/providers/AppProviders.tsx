@@ -7,6 +7,7 @@ import { CartProvider } from '@/context/CartContext'
 import { createClient } from '@/lib/supabase/client'
 import { logUserBehavior, pathnameToPageViewKey } from '@/lib/skinAnalytics'
 import { AuthSessionProvider } from './AuthSessionProvider'
+import VoiceBoxButton from '@/components/VoiceBoxButton'
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || ''
@@ -52,6 +53,8 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         <CartProvider>
           <div style={showCustomerNav ? { paddingBottom: navPad } : undefined}>{children}</div>
           {showCustomerNav ? <DashboardBottomNav role="customer" /> : null}
+          {/* ===== [고객의 목소리 함] 플로팅 버튼 — customer role일 때만 표시 ===== */}
+          {showCustomerNav ? <VoiceBoxButton /> : null}
         </CartProvider>
       </AuthSessionProvider>
     </div>
