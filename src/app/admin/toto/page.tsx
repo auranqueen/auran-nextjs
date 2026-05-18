@@ -38,6 +38,10 @@ export default function TotoAdminPage() {
     stock: 10,
   })
 
+  // [제품 검색바] 검색어 + 드롭다운 열림 상태
+  const [productSearch, setProductSearch] = useState('')
+  const [showProductList, setShowProductList] = useState(false)
+
   const showToast = (msg: string) => {
     setToast(msg)
     setTimeout(() => setToast(''), 2000)
@@ -188,21 +192,92 @@ export default function TotoAdminPage() {
           <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 5 }}>
             제품 선택
           </div>
-          <select
-            value={form.product_id}
-            onChange={e => setForm(f => ({ ...f, product_id: e.target.value }))}
-            style={{
-              width: '100%', padding: '8px 10px', borderRadius: 8, fontSize: 13,
-              border: '0.5px solid var(--color-border-secondary)',
-              background: 'var(--color-background-primary)',
-              color: 'var(--color-text-primary)',
-            }}
-          >
-            <option value=''>제품을 선택해주세요</option>
-            {filteredProducts.map(p => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
+          {/* ===== [제품 검색바] select → 검색 입력 + 목록 드롭다운 ===== */}
+          {/* 흰 배경 + 검은 글씨로 다크모드 가독성 해결 */}
+          <div style={{ position: 'relative' }}>
+            <input
+              type='text'
+              value={productSearch}
+              onChange={e => {
+                setProductSearch(e.target.value)
+                setShowProductList(true)
+                // 검색어 바뀌면 선택 초기화
+                setForm(f => ({ ...f, product_id: '' }))
+              }}
+              onFocus={() => setShowProductList(true)}
+              placeholder='제품명 검색...'
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                borderRadius: 8,
+                fontSize: 13,
+                border: '0.5px solid var(--color-border-secondary)',
+                background: '#fff',
+                color: '#111',
+              }}
+            />
+            {/* 선택된 제품 표시 */}
+            {form.product_id && (
+              <div style={{
+                position: 'absolute', right: 10, top: '50%',
+                transform: 'translateY(-50%)',
+                fontSize: 11, color: '#7B5EA7',
+              }}>
+                ✓ 선택됨
+              </div>
+            )}
+            {/* 검색 결과 드롭다운 */}
+            {showProductList && (
+              <div style={{
+                position: 'absolute', top: '110%', left: 0, right: 0,
+                background: '#fff', border: '0.5px solid #ddd',
+                borderRadius: 10, zIndex: 100,
+                maxHeight: 220, overflowY: 'auto',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+              }}>
+                {filteredProducts
+                  .filter(p => productSearch === '' || p.name.toLowerCase().includes(productSearch.toLowerCase()))
+                  .slice(0, 30)
+                  .map(p => (
+                    <div
+                      key={p.id}
+                      onClick={() => {
+                        setForm(f => ({ ...f, product_id: p.id }))
+                        setProductSearch(p.name)
+                        setShowProductList(false)
+                      }}
+                      style={{
+                        padding: '10px 12px',
+                        fontSize: 13,
+                        color: '#111',
+                        cursor: 'pointer',
+                        borderBottom: '0.5px solid #f0f0f0',
+                        background: form.product_id === p.id ? '#f5f0ff' : '#fff',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#f5f0ff')}
+                      onMouseLeave={e => (e.currentTarget.style.background = form.product_id === p.id ? '#f5f0ff' : '#fff')}
+                    >
+                      {p.name}
+                    </div>
+                  ))
+                }
+                {filteredProducts.filter(p =>
+                  productSearch === '' || p.name.toLowerCase().includes(productSearch.toLowerCase())
+                ).length === 0 && (
+                  <div style={{ padding: '12px', fontSize: 12, color: '#999', textAlign: 'center' }}>
+                    검색 결과가 없어요
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          {/* 드롭다운 외부 클릭 시 닫기 */}
+          {showProductList && (
+            <div
+              onClick={() => setShowProductList(false)}
+              style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+            />
+          )}
         </div>
 
         {/* 티어 + 재고 */}
