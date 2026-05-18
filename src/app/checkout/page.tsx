@@ -173,7 +173,7 @@ function CheckoutPageInner() {
         productIds.length > 0
           ? supabase
               .from('products')
-              .select('id,name,thumb_img,retail_price,brand_id,is_timesale,timesale_ends_at,is_groupbuy,sale_price')
+              .select('id,name,thumb_img,retail_price,brand_id,is_timesale,timesale_ends_at,is_groupbuy,sale_price,event_title')
               .in('id', productIds)
               .eq('status', 'active')
               .gt('retail_price', 0)
