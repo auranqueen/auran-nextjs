@@ -9,6 +9,8 @@ import { Editor } from '@toast-ui/react-editor'
 import '@toast-ui/editor/dist/toastui-editor.css'
 import '@toast-ui/editor/dist/i18n/ko-kr'
 import ProductTagSection from '@/components/product/ProductTagSection'
+// ===== [상담톡] ConsultChat 컴포넌트 =====
+import ConsultChat from '@/components/ConsultChat'
 
 const GOLD = '#C9A96E'
 
@@ -161,6 +163,8 @@ export default function ProductDetailClient({
   )
   const [weather, setWeather] = useState<any>(null)
   const [hormonePhase, setHormonePhase] = useState<string>('')
+  // ===== [상담톡] 상담톡 열림 상태 =====
+  const [consultOpen, setConsultOpen] = useState(false)
   useEffect(() => {
     if (!product.is_timesale || !product.timesale_ends_at) {
       setSaleTimeLeft(0)
@@ -2264,6 +2268,38 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
 
       {/* 3버튼 */}
       <div style={{ position: 'fixed', bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* ===== [상담톡] 르노벨 전용 상담 버튼 ===== */}
+        {/* 르노벨 brand_id일 때만 노출 */}
+        {(product as any).brand_id === '90175aa9-70c8-4568-865a-195f11bd7859' && (
+          <button
+            onClick={() => setConsultOpen(true)}
+            style={{
+              width: '100%', padding: 13, borderRadius: 12,
+              border: 'none', background: '#2D1B5E',
+              color: '#C9A96E', fontSize: 14, cursor: 'pointer',
+              letterSpacing: -0.2, marginBottom: 8,
+            }}
+          >
+            맑원장이랑 향기 얘기해요 💜
+          </button>
+        )}
+
+        {/* ===== [상담톡] 일반 제품 상담 버튼 ===== */}
+        {/* 르노벨 아닌 경우 노출 */}
+        {(product as any).brand_id !== '90175aa9-70c8-4568-865a-195f11bd7859' && (
+          <button
+            onClick={() => setConsultOpen(true)}
+            style={{
+              width: '100%', padding: 11, borderRadius: 12,
+              border: '0.5px solid #AFA9EC',
+              background: 'transparent',
+              color: '#534AB7', fontSize: 13, cursor: 'pointer',
+              letterSpacing: -0.2, marginBottom: 8,
+            }}
+          >
+            이거 나한테 맞을까요? 🤫
+          </button>
+        )}
         {/* ===== [또또복권] 제품 상세 홍보 멘트 ===== */}
         {(() => {
           const projected = (cartTotal || 0) + (price || 0) * qty
@@ -2294,7 +2330,13 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         <div style={{ display: 'flex', gap: 8 }}>
         <button
           type="button"
-          onClick={() => {
+          onClick={async () => {
+            // [담기 버튼] 비회원이면 로그인 시트 열기
+            const { data: { session } } = await supabase.auth.getSession()
+            if (!session) {
+              setLoginSheetOpen(true)
+              return
+            }
             addToCart({
               product_id: product.id,
               name: product.name,
@@ -2623,6 +2665,20 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             </button>
           </div>
         </div>
+      )}
+
+      {/* ===== [상담톡] ConsultChat 팝업 ===== */}
+      {consultOpen && (
+        <ConsultChat
+          productId={product.id}
+          productName={product.name || ''}
+          brandId={(product as any).brand_id}
+          onClose={() => setConsultOpen(false)}
+          onLoginRequest={() => {
+            setConsultOpen(false)
+            setLoginSheetOpen(true)
+          }}
+        />
       )}
 
       {loginSheetOpen && (

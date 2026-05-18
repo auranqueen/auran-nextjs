@@ -1,0 +1,14 @@
+# AURAN robots.txt
+# 제품 페이지 검색 노출 허용
+
+User-agent: *
+Allow: /products/
+Allow: /brands/
+Disallow: /my/
+Disallow: /checkout/
+Disallow: /wallet/
+Disallow: /dashboard/
+Disallow: /admin/
+Disallow: /api/
+
+Sitemap: https://auran.kr/sitemap.xml
