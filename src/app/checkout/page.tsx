@@ -278,6 +278,7 @@ function CheckoutPageInner() {
           subtotal: unit * q,
           is_timesale: p.is_timesale === true,
           is_groupbuy: p.is_groupbuy === true,
+          event_title: p.event_title ?? null,
           is_event: false,
         }
       }),
@@ -292,7 +293,7 @@ function CheckoutPageInner() {
   let rnbAmount = 0
   let genAmount = 0
   orderLines.forEach((line: any) => {
-    if (line.is_groupbuy || line.is_timesale || line.is_flash_sale) return
+    if (line.is_groupbuy || line.is_timesale || line.is_flash_sale || line.event_title) return
     const amt = line.subtotal || 0
     if (line.brand_id === RENOBEL_ID) {
       rnbAmount += amt

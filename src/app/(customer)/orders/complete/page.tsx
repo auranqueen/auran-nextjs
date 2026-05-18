@@ -89,12 +89,12 @@ function OrderCompleteContent() {
       if (productIds.length > 0) {
         const { data: prods } = await supabase
           .from('products')
-          .select('id, brand_id, is_groupbuy, is_timesale, is_flash_sale')
+          .select('id, brand_id, is_groupbuy, is_timesale, is_flash_sale, event_title')
           .in('id', productIds)
         if (prods) {
           prods.forEach((p: any) => {
             // 공구/타임세일/플래시세일 제외
-            if (!p.is_groupbuy && !p.is_timesale && !p.is_flash_sale) {
+            if (!p.is_groupbuy && !p.is_timesale && !p.is_flash_sale && !p.event_title) {
               productBrandMap[p.id] = p.brand_id
             }
           })
