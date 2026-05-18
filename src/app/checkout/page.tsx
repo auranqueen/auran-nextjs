@@ -284,6 +284,40 @@ function CheckoutPageInner() {
     [orderedProducts, qtyList]
   )
 
+  // ===== [또또복권] 체크아웃 미달 안내 계산 =====
+  // orderLines에서 르노벨/통합 금액 분리
+  // 공구/타임세일/플래시세일 제외
+  const RENOBEL_ID = '90175aa9-70c8-4568-865a-195f11bd7859'
+
+  let rnbAmount = 0
+  let genAmount = 0
+  orderLines.forEach((line: any) => {
+    if (line.is_groupbuy || line.is_timesale || line.is_flash_sale) return
+    const amt = line.subtotal || 0
+    if (line.brand_id === RENOBEL_ID) {
+      rnbAmount += amt
+    } else {
+      genAmount += amt
+    }
+  })
+
+  // 다음 티어까지 부족 금액 계산
+  // 통합 티어: 20만/30만/50만/100만
+  const GEN_TIERS = [200000, 300000, 500000, 1000000]
+  const nextGenTier = GEN_TIERS.find(t => genAmount < t)
+  const generalShortage = nextGenTier !== undefined ? nextGenTier - genAmount : undefined
+  const generalProgress = nextGenTier
+    ? Math.min(100, Math.round((genAmount / nextGenTier) * 100))
+    : 100
+
+  // 르노벨 티어: 70만/120만/200만
+  const RNB_TIERS = [700000, 1200000, 2000000]
+  const nextRnbTier = RNB_TIERS.find(t => rnbAmount < t)
+  const rnobelShortage = nextRnbTier !== undefined ? nextRnbTier - rnbAmount : undefined
+  const rnobelProgress = nextRnbTier
+    ? Math.min(100, Math.round((rnbAmount / nextRnbTier) * 100))
+    : 100
+
   const { groupbuyDiscount, timesaleDiscount } = useMemo(() => {
     let gb = 0
     let ts = 0
@@ -584,6 +618,11 @@ function CheckoutPageInner() {
         groupbuyDiscount={groupbuyDiscount}
         timesaleDiscount={timesaleDiscount}
         hasTimesaleOrGroupbuy={hasTimesaleOrGroupbuy}
+        // ===== [또또복권] 미달 안내 props 전달 =====
+        generalShortage={generalShortage}
+        rnobelShortage={rnbAmount > 0 ? rnobelShortage : undefined}
+        generalProgress={generalProgress}
+        rnobelProgress={rnbAmount > 0 ? rnobelProgress : undefined}
       />
       {pinOpen ? (
         <div style={{ position: 'fixed', inset: 0, zIndex: 120, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>

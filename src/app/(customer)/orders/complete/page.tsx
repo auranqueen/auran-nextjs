@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { appendSkinCyclePurchased, logUserBehavior } from '@/lib/skinAnalytics'
+// ===== [또또복권] TotoLottery 컴포넌트 =====
+import TotoLottery from '@/components/TotoLottery'
 
 const BG = '#0D0B09'
 const GOLD = '#C9A96E'
@@ -35,6 +37,11 @@ function OrderCompleteContent() {
   const [purchaseRate, setPurchaseRate] = useState<number>(3)
   const [userPoints, setUserPoints] = useState<number | null>(null)
   const [orderToastUsed, setOrderToastUsed] = useState(0)
+  const [totoBrandType, setTotoBrandType] = useState<'general' | 'renobel' | 'both' | null>(null)
+  const [giftItems, setGiftItems] = useState<any[]>([])
+  const [generalTier, setGeneralTier] = useState<string | null>(null)
+  const [rnobelTier, setRnobelTier] = useState<string | null>(null)
+  const [totoUserId, setTotoUserId] = useState<string | null>(null)
 
   useEffect(() => {
     if (!orderId) {
@@ -68,6 +75,81 @@ function OrderCompleteContent() {
       } catch {
         items = []
       }
+
+      // ===== [또또복권] 르노벨/통합 금액 분리 계산 =====
+      // items의 product_id로 products 조인해서 brand_id 확인
+      // 르노벨 brand_id: 90175aa9-70c8-4568-865a-195f11bd7859
+      const RENOBEL_BRAND_ID = '90175aa9-70c8-4568-865a-195f11bd7859'
+
+      // items에서 product_id 목록 추출
+      const productIds = (items as any[]).map((it: any) => it.product_id).filter(Boolean)
+
+      // products 테이블에서 brand_id + 이벤트 여부 조회
+      let productBrandMap: Record<string, string> = {}
+      if (productIds.length > 0) {
+        const { data: prods } = await supabase
+          .from('products')
+          .select('id, brand_id, is_groupbuy, is_timesale, is_flash_sale')
+          .in('id', productIds)
+        if (prods) {
+          prods.forEach((p: any) => {
+            // 공구/타임세일/플래시세일 제외
+            if (!p.is_groupbuy && !p.is_timesale && !p.is_flash_sale) {
+              productBrandMap[p.id] = p.brand_id
+            }
+          })
+        }
+      }
+
+      // 르노벨 금액 / 통합 금액 분리 합산
+      let rnobelAmount = 0
+      let generalAmount = 0
+      ;(items as any[]).forEach((it: any) => {
+        const brandId = productBrandMap[it.product_id]
+        if (!brandId) return
+        const amt = (it.price || 0) * (it.quantity || 1)
+        if (brandId === RENOBEL_BRAND_ID) {
+          rnobelAmount += amt
+        } else {
+          generalAmount += amt
+        }
+      })
+
+      // 또또 티어 판단
+      // 르노벨: 70만/120만/200만
+      const rnobelTierVal = rnobelAmount >= 2000000 ? '2000000'
+        : rnobelAmount >= 1200000 ? '1200000'
+        : rnobelAmount >= 700000 ? '700000'
+        : null
+
+      // 통합: 20만/30만/50만/100만
+      const generalTierVal = generalAmount >= 1000000 ? '1000000'
+        : generalAmount >= 500000 ? '500000'
+        : generalAmount >= 300000 ? '300000'
+        : generalAmount >= 200000 ? '200000'
+        : null
+
+      // brandType 결정
+      const totoBrandTypeVal = rnobelTierVal && generalTierVal ? 'both'
+        : rnobelTierVal ? 'renobel'
+        : generalTierVal ? 'general'
+        : null
+
+      // gift_items 조회 (또또 발동 시에만)
+      let giftItemsVal: any[] = []
+      if (totoBrandTypeVal) {
+        const { data: gifts } = await supabase
+          .from('gift_items')
+          .select('*, product:products(name, thumb_img)')
+          .eq('is_active', true)
+          .in('brand_type', totoBrandTypeVal === 'both'
+            ? ['general', 'renobel']
+            : [totoBrandTypeVal]
+          )
+          .gt('stock', 0)
+        giftItemsVal = gifts || []
+      }
+
       const productName = items[0]?.product_name || '상품'
       const qty = Number(items[0]?.quantity || 1)
       const payTotal = num((order as { final_amount?: number }).final_amount, 0)
@@ -160,6 +242,11 @@ function OrderCompleteContent() {
         setPurchaseRate(num(bs?.setting_value, 3))
         setOrderToastUsed(num((order as { toast_used?: unknown }).toast_used, 0))
         setUserPoints(pointsForUser)
+        setTotoBrandType(totoBrandTypeVal)
+        setGiftItems(giftItemsVal)
+        setGeneralTier(generalTierVal)
+        setRnobelTier(rnobelTierVal)
+        setTotoUserId(loggedIn && user?.id ? user.id : null)
         setOrderMissing(false)
         setLoading(false)
       }
@@ -311,6 +398,18 @@ function OrderCompleteContent() {
               </div>
             )}
           </div>
+
+          {/* ===== [또또복권] 토스트 섹션 다음에 노출 ===== */}
+          {totoBrandType && giftItems.length >= 5 && orderId && totoUserId && (
+            <TotoLottery
+              orderId={orderId}
+              userId={totoUserId}
+              brandType={totoBrandType}
+              generalTier={generalTier || undefined}
+              rnobelTier={rnobelTier || undefined}
+              giftItems={giftItems}
+            />
+          )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {!isLoggedIn ? (

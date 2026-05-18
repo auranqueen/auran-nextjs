@@ -85,6 +85,12 @@ type Props = {
   onPay: (allowCharge: boolean) => void
   onPayBankTransfer?: () => void | Promise<void>
   hasTimesaleOrGroupbuy?: boolean
+  // ===== [또또복권] 체크아웃 미달 안내용 props =====
+  // 부모 checkout/page.tsx orderLines에서 brand_id 계산 후 전달
+  rnobelShortage?: number   // 르노벨 다음 티어까지 부족 금액 (없으면 undefined)
+  generalShortage?: number  // 통합 다음 티어까지 부족 금액 (없으면 undefined)
+  rnobelProgress?: number   // 0~100 진행률
+  generalProgress?: number  // 0~100 진행률
 }
 
 export default function CheckoutPageView({
@@ -149,6 +155,10 @@ export default function CheckoutPageView({
   onPay,
   onPayBankTransfer,
   hasTimesaleOrGroupbuy,
+  rnobelShortage,
+  generalShortage,
+  rnobelProgress,
+  generalProgress,
 }: Props) {
   const supabase = createClient()
   const remBalAfterToast = Math.max(0, balance)
@@ -667,6 +677,77 @@ export default function CheckoutPageView({
                 <span>최종 결제 필요금액</span>
                 <span>₩{needCharge.toLocaleString()}</span>
               </div>
+              {/* ===== [또또복권] 미달 안내 섹션 ===== */}
+              {(generalShortage || rnobelShortage) && (
+                <div style={{
+                  background: '#f5f0ff', borderRadius: 14,
+                  padding: '14px 16px', marginBottom: 12,
+                  border: '0.5px solid #AFA9EC',
+                }}>
+                  <div style={{ fontSize: 12, color: '#534AB7', marginBottom: 10, letterSpacing: -0.2 }}>
+                    또또복권까지 얼마나 남았을까요?
+                  </div>
+                  {generalShortage !== undefined && (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>오랜 또또</div>
+                        <div style={{ fontSize: 11, color: '#7B5EA7' }}>
+                          {generalShortage === 0
+                            ? '달성! 🎴'
+                            : `${(generalShortage / 10000).toFixed(0)}만원 남았어요`}
+                        </div>
+                      </div>
+                      <div style={{ height: 3, background: 'var(--color-border-tertiary)', borderRadius: 2, marginBottom: 10 }}>
+                        <div style={{ height: 3, borderRadius: 2, background: '#7B5EA7', width: `${generalProgress || 0}%` }} />
+                      </div>
+                    </>
+                  )}
+                  {rnobelShortage !== undefined && (
+                    <>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>르노벨 골든또또</div>
+                        <div style={{ fontSize: 11, color: '#C9A96E' }}>
+                          {rnobelShortage === 0
+                            ? '달성! ✦'
+                            : `${(rnobelShortage / 10000).toFixed(0)}만원 남았어요`}
+                        </div>
+                      </div>
+                      <div style={{ height: 3, background: 'var(--color-border-tertiary)', borderRadius: 2, marginBottom: 10 }}>
+                        <div style={{ height: 3, borderRadius: 2, background: '#C9A96E', width: `${rnobelProgress || 0}%` }} />
+                      </div>
+                    </>
+                  )}
+                  {(generalShortage ?? 0) > 0 && (
+                    <div style={{ fontSize: 11, color: '#7B5EA7', lineHeight: 1.7, marginBottom: 10 }}>
+                      {`오랜 또또까지 딱 ${((generalShortage ?? 0) / 10000).toFixed(0)}만원 남았어요 💜 지금 더 담으면 선물 카드가 열려요!`}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      onClick={() => window.history.back()}
+                      style={{
+                        flex: 1, padding: '10px 0', borderRadius: 10,
+                        border: '0.5px solid #7B5EA7', background: '#f5f0ff',
+                        color: '#534AB7', fontSize: 12, cursor: 'pointer',
+                      }}
+                    >
+                      더 담으러 가기
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onPay(true)}
+                      style={{
+                        flex: 1, padding: '10px 0', borderRadius: 10,
+                        border: 'none', background: '#7B5EA7',
+                        color: '#fff', fontSize: 12, cursor: 'pointer',
+                      }}
+                    >
+                      그냥 결제하기
+                    </button>
+                  </div>
+                </div>
+              )}
               <button
                 type="button"
                 onClick={() => {

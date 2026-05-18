@@ -80,7 +80,7 @@ export default function ProductDetailClient({
   exclusiveLocked?: boolean
 }) {
   const router = useRouter()
-  const { addToCart } = useCart()
+  const { addToCart, total: cartTotal } = useCart()
   const supabase = createClient()
   // [AI 분석카드] ? 아이콘 탭 시 카드 열고 닫기
   const [showAiCard, setShowAiCard] = useState(false)
@@ -2263,7 +2263,35 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
       </div>
 
       {/* 3버튼 */}
-      <div style={{ position: 'fixed', bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 8 }}>
+      <div style={{ position: 'fixed', bottom: 'calc(56px + env(safe-area-inset-bottom, 0px))', left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '12px 16px calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {/* ===== [또또복권] 제품 상세 홍보 멘트 ===== */}
+        {(() => {
+          const projected = (cartTotal || 0) + (price || 0) * qty
+          const isRnb = (product as { brand_id?: string }).brand_id === '90175aa9-70c8-4568-865a-195f11bd7859'
+          const tiers = isRnb
+            ? [700000, 1200000, 2000000]
+            : [200000, 300000, 500000, 1000000]
+          const totoName = isRnb ? '르노벨 골든또또 ✦' : '오랜 또또 💜'
+          const color = isRnb ? '#C9A96E' : '#7B5EA7'
+          const bg = isRnb ? '#fdf8ee' : '#f5f0ff'
+          const border = isRnb ? '#C9A96E' : '#AFA9EC'
+          const nextTier = tiers.find(t => projected < t)
+          if (!nextTier) return null
+          const shortage = nextTier - projected
+          const msg = shortage <= 0
+            ? `담으면 ${totoName} 달성이에요!`
+            : `담으면 ${totoName}까지 ${Math.ceil(shortage / 10000)}만원 남아요`
+          return (
+            <div style={{
+              marginBottom: 0, padding: '8px 12px', borderRadius: 10,
+              background: bg, border: `0.5px solid ${border}`,
+              fontSize: 12, color: color, letterSpacing: -0.2,
+            }}>
+              🎴 {msg}
+            </div>
+          )
+        })()}
+        <div style={{ display: 'flex', gap: 8 }}>
         <button
           type="button"
           onClick={() => {
@@ -2288,6 +2316,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           🎁 {maleMeno ? '여성 선물하기' : '선물하기'}
         </button>
         <button onClick={() => void handleBuy()} style={{ flex: 2, background: `linear-gradient(135deg,${GOLD},#a07840)`, border: 'none', color: '#000', fontSize: 16, padding: '15px 0', textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>지금 구매</button>
+        </div>
       </div>
 
       {giftSheetOpen && (
