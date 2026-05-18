@@ -1187,6 +1187,22 @@ export default function CustomerHomePage() {
         return true
       })
     }
+    skinRecPool = skinRecPool.filter((p: any) => {
+      // ===== [호르몬 추천 버그 수정] =====
+      // 1. 르노벨 잠금 제품 제외
+      //    canSeeRenobel false면 is_exclusive 제품 추천 제외
+      if (!canSeeRenobel && (p as any).is_exclusive) return false
+
+      // 2. 바디 제품 제외 (페이스 추천에 바디 나오는 버그)
+      //    categories.target_tracks에 'body'만 있으면 제외
+      //    페이스+바디 겸용은 포함
+      const targetTracks = (p as any).categories?.target_tracks || []
+      if (
+        targetTracks.length > 0 &&
+        targetTracks.every((t: string) => t === 'body')
+      ) return false
+      return true
+    })
     if (hormoneTrack && skinRecPool.length > 0) {
       const filteredByTrack = skinRecPool.filter((p: any) => {
         const arr = Array.isArray(p?.categories?.target_tracks) ? p.categories.target_tracks.map((x: any) => String(x)) : []
