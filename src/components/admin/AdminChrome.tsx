@@ -97,6 +97,8 @@ const MENU = [
       { label: 'AURAN 설정', href: '/admin/settings/admin-settings', icon: '🧩' },
       { label: '로그인 기록', href: '/admin/logs', icon: '📋' },
       { label: '개인정보 접근 로그', href: '/admin/privacy', icon: '🔒' },
+      // ===== [또또복권] gift_items 등록/관리 =====
+      { label: '또또복권 관리', href: '/admin/toto', icon: '🎴' },
       // ===== [고객의 목소리 함] 버그/아이디어/칭찬 수신함 =====
       { label: '목소리 함', href: '/admin/voice-box', icon: '💜' },
     ],
