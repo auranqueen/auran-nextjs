@@ -31,6 +31,8 @@ export default function MyWorldPage() {
   const [vanityItems, setVanityItems] = useState<any[]>([])
   const [routineLogs, setRoutineLogs] = useState<any[]>([])
   const [skinDiary, setSkinDiary] = useState<any[]>([])
+  // ===== [멤버 번호] =====
+  const [memberNo, setMemberNo] = useState<number | null>(null)
   const [guestbook, setGuestbook] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'room' | 'diary' | 'routine' | 'guestbook' | 'skin_record'>('room')
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
@@ -129,10 +131,12 @@ export default function MyWorldPage() {
 
       const { data: p } = await supabase
         .from('profiles')
-        .select('full_name, username, avatar_url, grade, skin_type, myworld_nickname, myworld_theme, myworld_bio')
+        .select('full_name, username, avatar_url, grade, skin_type, myworld_nickname, myworld_theme, myworld_bio, member_no')
         .eq('auth_id', auth.user.id)
         .maybeSingle()
       setProfile(p || null)
+      // ===== [멤버 번호 세팅] =====
+      if ((p as any)?.member_no) setMemberNo((p as any).member_no)
       if ((p as any)?.myworld_nickname) setMyworldNickname(String((p as any).myworld_nickname))
       if ((p as any)?.myworld_theme) setSelectedTheme(String((p as any).myworld_theme))
       setMyworldBio(String((p as any)?.myworld_bio || ''))
@@ -578,6 +582,52 @@ export default function MyWorldPage() {
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 16, color: '#e8e0f5' }}>{myworldNickname || profile?.username || profile?.full_name || '나의 공간'}</div>
           <div style={{ display: 'inline-block', marginTop: 2, padding: '2px 8px', borderRadius: 999, background: 'rgba(123,94,167,0.2)', color: '#c4a7e7', fontSize: 10 }}>{profile?.grade || 'PETAL'}</div>
+          {/* ===== [멤버십 카드] ===== */}
+          {(() => {
+            const grade = profile?.grade || 'AUBE'
+            const gradeMap: Record<string, {en:string, color:string, bg:string, border:string}> = {
+              'AUBE':    {en:'새벽 AUBE',    color:'#9090B8', bg:'#0d0d1a', border:'rgba(144,144,184,0.4)'},
+              'AURORE':  {en:'여명 AURORE',  color:'#9B7FCC', bg:'#120d20', border:'rgba(155,127,204,0.45)'},
+              'DOUCEUR': {en:'온기 DOUCEUR', color:'#AFA9EC', bg:'#150f2a', border:'rgba(175,169,236,0.5)'},
+              'LUMIÈRE': {en:'빛결 LUMIÈRE', color:'#C9A96E', bg:'#1a1208', border:'rgba(201,169,110,0.55)'},
+              'ESSENCE': {en:'향기 ESSENCE', color:'#E2C070', bg:'#1a1005', border:'rgba(226,192,112,0.6)'},
+              'LÉGENDE': {en:'전설 LÉGENDE', color:'#F0D080', bg:'#150d00', border:'rgba(240,208,128,0.65)'},
+              'CÉLESTE': {en:'천상 CÉLESTE', color:'#FFE090', bg:'#080808', border:'rgba(255,224,144,0.7)'},
+            }
+            const g = gradeMap[grade] || gradeMap['AUBE']
+            return (
+              <div style={{
+                background: g.bg,
+                border: `1.5px solid ${g.border}`,
+                borderRadius: 14,
+                padding: '14px 16px',
+                margin: '10px 16px 0',
+                position: 'relative',
+                overflow: 'hidden',
+              }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: g.color, opacity: 0.3 }} />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, background: g.color, opacity: 0.3 }} />
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 9, letterSpacing: 2, color: g.color, opacity: 0.5, marginBottom: 3 }}>AURAN</div>
+                    <div style={{ fontSize: 13, color: g.color, letterSpacing: 1 }}>{g.en}</div>
+                  </div>
+                  {memberNo && (
+                    <div style={{ fontSize: 11, color: g.color, opacity: 0.6 }}>
+                      #{String(memberNo).padStart(5, '0')}
+                    </div>
+                  )}
+                </div>
+                <div style={{ fontSize: 17, color: g.color, marginBottom: 2 }}>
+                  {profile?.full_name || user?.email?.split('@')[0] || '오랜아미'}
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 8 }}>
+                  <div style={{ fontSize: 10, color: g.color, opacity: 0.4 }}>피부도 처방받는 시대</div>
+                  <div style={{ fontSize: 10, color: g.color, opacity: 0.4 }}>auran.kr</div>
+                </div>
+              </div>
+            )
+          })()}
           <div style={{ fontSize: 10, color: 'rgba(196,167,231,0.5)', marginTop: 4 }}>일촌 0명 · 방명록 {guestbook.length}개</div>
         </div>
         <button onClick={() => setShowCustomize(true)} style={{ border: '1px solid rgba(123,94,167,0.4)', color: '#9b7ec8', fontSize: 11, background: 'transparent', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}>꾸미기 ✏️</button>
@@ -626,38 +676,6 @@ export default function MyWorldPage() {
               background: '#f5f0ff',
             }}
           >
-            <div style={{
-              position: 'absolute', inset: 0,
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-              zIndex: 2, background: '#0f0c14',
-            }}>
-              {([{t:'40px',l:'30px',s:22,d:4.2,delay:0},{t:'60px',r:'40px',s:16,d:3.8,delay:0.8},{b:'80px',l:'20px',s:14,d:4.5,delay:1.2},{b:'60px',r:'30px',s:18,d:3.6,delay:0.4}] as any[]).map((p,i) => (
-                <span key={i} style={{
-                  position:'absolute', fontSize:p.s,
-                  top:p.t, bottom:p.b, left:p.l, right:p.r,
-                  display:'inline-block',
-                  animation:`myroomFloat ${p.d}s ease-in-out ${p.delay}s infinite`,
-                  opacity:0.7,
-                }}>🌸</span>
-              ))}
-              <div style={{ fontFamily:'Georgia,serif', fontSize:10, color:'#C9A96E', letterSpacing:4, marginBottom:20 }}>MY ROOM</div>
-              <div style={{ fontSize:15, color:'#fff', lineHeight:1.7, textAlign:'center', marginBottom:12 }}>
-                나만의 피부 공간이<br />열립니다
-              </div>
-              <div style={{ width:32, height:1, background:'rgba(201,169,110,0.3)', margin:'16px auto' }} />
-              <div style={{ fontSize:11, color:'rgba(255,255,255,0.45)', lineHeight:1.9, textAlign:'center', marginBottom:20 }}>
-                당신의 귀한 피부 여정이<br />
-                아름답게 담길 공간을 준비 중이에요<br /><br />
-                <span style={{ color:'rgba(201,169,110,0.6)' }}>호르몬 주기 · 스킨케어 히스토리</span><br />
-                <span style={{ color:'rgba(201,169,110,0.6)' }}>맑원장의 루틴까지</span>
-              </div>
-              <div style={{ fontSize:10, color:'rgba(123,94,167,0.8)', border:'1px solid rgba(123,94,167,0.25)', borderRadius:20, padding:'5px 14px', letterSpacing:2 }}>
-                COMING SOON
-              </div>
-              <div style={{ marginTop:18, fontSize:18 }}>💜</div>
-              <style>{`@keyframes myroomFloat{0%,100%{transform:translateY(0) rotate(0deg);opacity:0.7}50%{transform:translateY(-12px) rotate(8deg);opacity:1}}`}</style>
-            </div>
             <div style={{ position: 'absolute', bottom: 10, right: 12, fontSize: 11, color: '#6b4f9e', zIndex: 2 }}>오늘 피부점수 78 ✨</div>
           </div>
 
@@ -960,6 +978,40 @@ export default function MyWorldPage() {
                 </div>
               </div>
             ))}
+            {/* ===== [제품 태그] ===== */}
+            {vanityItems.length > 0 && (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>
+                  오늘 쓴 제품 태그
+                </div>
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                  {vanityItems.map((v: any) => (
+                    <button
+                      key={v.id}
+                      onClick={() => {
+                        const tag = `#${v.name} `
+                        setDiaryMemo((prev: string) => prev.includes(tag) ? prev.replace(tag, '') : prev + tag)
+                      }}
+                      style={{
+                        fontSize: 11, padding: '4px 10px', borderRadius: 20,
+                        border: diaryMemo.includes(`#${v.name}`)
+                          ? '1px solid rgba(201,169,110,0.6)'
+                          : '1px solid rgba(255,255,255,0.1)',
+                        background: diaryMemo.includes(`#${v.name}`)
+                          ? 'rgba(201,169,110,0.1)'
+                          : 'transparent',
+                        color: diaryMemo.includes(`#${v.name}`)
+                          ? '#C9A96E'
+                          : 'rgba(255,255,255,0.4)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      #{v.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
             <textarea value={diaryMemo} onChange={(e) => setDiaryMemo(e.target.value)} placeholder="오늘 피부 한줄 기록..." rows={3} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, padding: 10, color: '#fff', fontSize: 13, marginBottom: 8 }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button
@@ -1091,34 +1143,88 @@ export default function MyWorldPage() {
             )}
           </div>
 
-          <div style={{ marginTop: 12, background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 14, padding: 12 }}>
-            <div style={{ fontSize: 12, color: '#c4a7e7', marginBottom: 8 }}>💜 피부 타임라인</div>
-            {[
-              ['2026.01', 62],
-              ['2026.02', 71],
-              ['2026.03', 78],
-            ].map(([m, p], i) => (
-              <div key={i} style={{ marginBottom: 8 }}>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)' }}>{m} → 수분 {p}%{i === 2 ? ' ✨' : ''}</div>
-                <div style={{ width: '100%', height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.1)' }}>
-                  <div style={{ width: `${p}%`, height: 5, borderRadius: 999, background: '#7B5EA7' }} />
+          {/* ===== [피부 연대기] DB 연동 ===== */}
+          {skinDiary.length >= 2 && (
+            <div style={{
+              marginTop: 12,
+              background: 'rgba(123,94,167,0.08)',
+              border: '1px solid rgba(123,94,167,0.2)',
+              borderRadius: 14,
+              padding: '14px 16px',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center',
+                justifyContent: 'space-between', marginBottom: 12,
+              }}>
+                <div style={{ fontSize: 13, color: '#c4a7e7' }}>💜 피부 연대기</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
+                  총 {skinDiary.length}개 기록
                 </div>
               </div>
-            ))}
-            <button
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(window.location.href)
-                  setToast('링크가 복사됐어요 💜')
-                } catch {
-                  setToast('공유 링크를 복사하지 못했어요')
-                }
-              }}
-              style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}
-            >
-              SNS 공유
-            </button>
-          </div>
+              {skinDiary.slice(0, 3).map((d: any, i: number) => (
+                <div key={d.id} style={{
+                  display: 'flex', gap: 10, marginBottom: 10,
+                  paddingBottom: 10,
+                  borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                }}>
+                  <div style={{
+                    width: 2, background: 'rgba(123,94,167,0.4)',
+                    borderRadius: 1, flexShrink: 0, alignSelf: 'stretch',
+                  }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      fontSize: 10, color: 'rgba(255,255,255,0.3)', marginBottom: 3,
+                    }}>
+                      {new Date(d.recorded_at).toLocaleDateString('ko-KR', {
+                        month: 'long', day: 'numeric',
+                      })}
+                    </div>
+                    {d.media_urls?.[0] && (
+                      <img
+                        src={d.media_urls[0]}
+                        alt=""
+                        style={{
+                          width: '100%', maxHeight: 120,
+                          objectFit: 'cover', borderRadius: 8,
+                          marginBottom: 5,
+                        }}
+                      />
+                    )}
+                    <div style={{
+                      fontSize: 12, color: 'rgba(255,255,255,0.65)',
+                      lineHeight: 1.6,
+                    }}>
+                      {d.memo?.slice(0, 60)}{(d.memo?.length || 0) > 60 ? '...' : ''}
+                    </div>
+                    {d.skin_status && (
+                      <div style={{ display: 'flex', gap: 4, marginTop: 5, flexWrap: 'wrap' }}>
+                        {d.skin_status.split(',').filter(Boolean).map((s: string) => (
+                          <span key={s} style={{
+                            fontSize: 10, padding: '2px 7px', borderRadius: 20,
+                            background: 'rgba(123,94,167,0.2)',
+                            color: '#c4a7e7',
+                            border: '1px solid rgba(123,94,167,0.3)',
+                          }}>
+                            {s}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {skinDiary.length > 3 && (
+                <div style={{
+                  textAlign: 'center', fontSize: 11,
+                  color: 'rgba(255,255,255,0.3)', marginTop: 4,
+                  cursor: 'pointer',
+                }}>
+                  더보기 ({skinDiary.length - 3}개 더)
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       ) : null}
 
