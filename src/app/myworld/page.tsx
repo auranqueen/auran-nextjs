@@ -32,7 +32,7 @@ export default function MyWorldPage() {
   const [routineLogs, setRoutineLogs] = useState<any[]>([])
   const [skinDiary, setSkinDiary] = useState<any[]>([])
   const [guestbook, setGuestbook] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState<'room' | 'diary' | 'routine' | 'guestbook'>('room')
+  const [activeTab, setActiveTab] = useState<'room' | 'diary' | 'routine' | 'guestbook' | 'skin_record'>('room')
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
   const [selectedMoods, setSelectedMoods] = useState<string[]>([])
   const [selectedSkinStatuses, setSelectedSkinStatuses] = useState<string[]>([])
@@ -252,6 +252,13 @@ export default function MyWorldPage() {
   const totalRoutine = morningItems.length + eveningItems.length
   const doneRoutine = Object.values(routineChecked).filter(Boolean).length
   const routinePct = Math.round((doneRoutine / totalRoutine) * 100)
+  // ===== [루틴 고도화] 제품 등록 state =====
+  // routines 테이블 연동 — 베타 후 DB 연동, 지금은 로컬 state
+  const [myRoutines, setMyRoutines] = useState<any[]>([])
+  const [routineSearch, setRoutineSearch] = useState('')
+  const [routineProducts, setRoutineProducts] = useState<any[]>([])
+  const [showRoutineSearch, setShowRoutineSearch] = useState(false)
+  const [editingSlot, setEditingSlot] = useState<'morning'|'evening'|'weekly'|null>(null)
 
   const contestRoomDDay = (endAt: string) => {
     const e = new Date(endAt)
@@ -582,6 +589,7 @@ export default function MyWorldPage() {
           ['diary', '피부일기'],
           ['routine', '루틴'],
           ['guestbook', '방명록'],
+          ['skin_record', '피부기록'],
         ].map(([key, label]) => (
           <button
             key={key}
@@ -1176,6 +1184,158 @@ export default function MyWorldPage() {
               style={{ width: '100%', marginTop: 4, borderRadius: 8, accentColor: '#7B5EA7' }}
             />
           </div>
+
+          {/* ===== [루틴 고도화] 제품 등록 카드 ===== */}
+          <div style={{
+            margin: '12px 16px 0',
+            background: 'var(--color-background-primary)',
+            border: '0.5px solid var(--color-border-tertiary)',
+            borderRadius: 14, padding: '14px 16px',
+          }}>
+            <div style={{ fontSize: 10, letterSpacing: 2, color: '#C9A96E', marginBottom: 6 }}>내 루틴 등록</div>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+              {(['morning','evening','weekly'] as const).map(slot => (
+                <button
+                  key={slot}
+                  onClick={() => setEditingSlot(editingSlot === slot ? null : slot)}
+                  style={{
+                    flex: 1, padding: '7px 0', borderRadius: 20, fontSize: 11,
+                    border: editingSlot === slot ? 'none' : '0.5px solid var(--color-border-secondary)',
+                    background: editingSlot === slot ? '#7B5EA7' : 'transparent',
+                    color: editingSlot === slot ? '#fff' : 'var(--color-text-secondary)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {slot === 'morning' ? '아침' : slot === 'evening' ? '저녁' : '주간'}
+                </button>
+              ))}
+            </div>
+            {editingSlot && (
+              <div style={{ position: 'relative' }}>
+                <input
+                  value={routineSearch}
+                  onChange={e => {
+                    setRoutineSearch(e.target.value)
+                    setShowRoutineSearch(true)
+                    if (e.target.value.length > 0) {
+                      supabase
+                        .from('products')
+                        .select('id, name, thumb_img')
+                        .ilike('name', `%${e.target.value}%`)
+                        .eq('is_active', true)
+                        .limit(10)
+                        .then(({ data }) => setRoutineProducts(data || []))
+                    }
+                  }}
+                  placeholder="제품 검색해서 추가..."
+                  style={{
+                    width: '100%', padding: '9px 12px', borderRadius: 10,
+                    border: '0.5px solid var(--color-border-secondary)',
+                    fontSize: 12, fontFamily: 'inherit',
+                    background: '#fff', color: '#111',
+                  }}
+                />
+                {showRoutineSearch && routineProducts.length > 0 && (
+                  <div style={{
+                    background: '#fff', border: '0.5px solid #ddd',
+                    borderRadius: 10, marginTop: 4, overflow: 'hidden',
+                  }}>
+                    {routineProducts.map(p => (
+                      <div
+                        key={p.id}
+                        onClick={() => {
+                          setMyRoutines(prev => [...prev, {
+                            slot: editingSlot,
+                            product_id: p.id,
+                            name: p.name,
+                          }])
+                          setRoutineSearch('')
+                          setShowRoutineSearch(false)
+                        }}
+                        style={{
+                          padding: '9px 12px', fontSize: 12, color: '#111',
+                          cursor: 'pointer', borderBottom: '0.5px solid #f5f5f5',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#f5f0ff')}
+                        onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                      >
+                        {p.name}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {showRoutineSearch && routineProducts.length > 0 && (
+                  <div
+                    onClick={() => setShowRoutineSearch(false)}
+                    style={{ position: 'fixed', inset: 0, zIndex: 99 }}
+                  />
+                )}
+              </div>
+            )}
+            {myRoutines.length > 0 && (
+              <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
+                {myRoutines.map((r, i) => (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '8px 10px', background: 'var(--color-background-secondary)',
+                    borderRadius: 8,
+                  }}>
+                    <div style={{
+                      width: 20, height: 20, borderRadius: '50%',
+                      background: '#7B5EA7', color: '#fff',
+                      fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>{i + 1}</div>
+                    <div style={{ flex: 1, fontSize: 12, color: 'var(--color-text-primary)' }}>
+                      {r.name}
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--color-text-secondary)' }}>
+                      {r.slot === 'morning' ? '아침' : r.slot === 'evening' ? '저녁' : '주간'}
+                    </div>
+                    <button
+                      onClick={() => setMyRoutines(prev => prev.filter((_, idx) => idx !== i))}
+                      style={{ fontSize: 11, color: 'var(--color-text-secondary)', background: 'none', border: 'none', cursor: 'pointer' }}
+                    >삭제</button>
+                  </div>
+                ))}
+                <button
+                  onClick={async () => {
+                    if (!user?.id || myRoutines.length === 0) return
+                    // routines 테이블에 저장
+                    const { data: routine } = await supabase
+                      .from('routines')
+                      .insert({
+                        user_id: user.id,
+                        title: editingSlot === 'morning' ? '아침 루틴' : editingSlot === 'evening' ? '저녁 루틴' : '주간 루틴',
+                        time_slot: editingSlot,
+                      })
+                      .select('id')
+                      .single()
+                    if (routine) {
+                      // routine_steps에 제품 순서 저장
+                      await supabase.from('routine_steps').insert(
+                        myRoutines.map((r, i) => ({
+                          routine_id: routine.id,
+                          product_id: r.product_id,
+                          product_name: r.name,
+                          step_order: i,
+                        }))
+                      )
+                    }
+                    setMyRoutines([])
+                    setEditingSlot(null)
+                  }}
+                  style={{
+                    width: '100%', padding: 11, borderRadius: 10,
+                    border: 'none', background: '#7B5EA7', color: '#fff',
+                    fontSize: 13, cursor: 'pointer', marginTop: 4,
+                  }}
+                >
+                  루틴 저장하기 💜
+                </button>
+              </div>
+            )}
+          </div>
+
         </div>
       ) : null}
 
@@ -1211,6 +1371,120 @@ export default function MyWorldPage() {
           </button>
         </div>
       ) : null}
+
+
+{/* ===== [피부 기록 탭] ===== */}
+{activeTab === 'skin_record' ? (
+  <div style={{ padding: '16px 16px 0' }}>
+    <div style={{ fontSize: 10, letterSpacing: 2, color: '#C9A96E', marginBottom: 6 }}>AURAN</div>
+    <div style={{ fontSize: 17, color: 'var(--color-text-primary)', marginBottom: 4, letterSpacing: -0.3 }}>
+      피부 기록 💜
+    </div>
+    <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 16, lineHeight: 1.6 }}>
+      매달 체크인하면 피부 변화가 보여요
+    </div>
+
+    {/* 이번달 체크인 */}
+    <div style={{
+      background: 'var(--color-background-primary)',
+      border: '0.5px solid var(--color-border-tertiary)',
+      borderRadius: 14, padding: '14px 16px', marginBottom: 12,
+    }}>
+      <div style={{ fontSize: 12, color: 'var(--color-text-primary)', marginBottom: 12 }}>
+        이번달 피부 체크인
+      </div>
+      {[
+        { key: 'moisture', label: '수분' },
+        { key: 'elasticity', label: '탄력' },
+        { key: 'trouble', label: '트러블' },
+      ].map(({ key, label }) => (
+        <div key={key} style={{ marginBottom: 12 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{label}</div>
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {[1,2,3,4,5].map(n => (
+              <button
+                key={n}
+                onClick={async () => {
+                  if (!user?.id) return
+                  const month = new Date().toISOString().slice(0, 7)
+                  await supabase.from('skin_records').upsert({
+                    user_id: user.id,
+                    record_month: month,
+                    [key]: n,
+                  }, { onConflict: 'user_id,record_month' })
+                }}
+                style={{
+                  flex: 1, height: 32, borderRadius: 8,
+                  border: '0.5px solid var(--color-border-secondary)',
+                  background: 'var(--color-background-secondary)',
+                  color: 'var(--color-text-secondary)',
+                  fontSize: 12, cursor: 'pointer',
+                }}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
+      <button
+        style={{
+          width: '100%', padding: 11, borderRadius: 10,
+          border: 'none', background: '#7B5EA7', color: '#fff',
+          fontSize: 13, cursor: 'pointer', marginTop: 4,
+        }}
+      >
+        이번달 기록 저장 💜
+      </button>
+    </div>
+
+    {/* 공유 카드 */}
+    <div style={{
+      background: '#2D1B5E',
+      border: '0.5px solid rgba(201,169,110,0.3)',
+      borderRadius: 14, padding: '16px', marginBottom: 12,
+    }}>
+      <div style={{ fontSize: 9, letterSpacing: 2, color: 'rgba(201,169,110,0.5)', marginBottom: 6 }}>AURAN · 피부 기록</div>
+      <div style={{ fontSize: 15, color: '#C9A96E', marginBottom: 4, letterSpacing: -0.2 }}>
+        오랜과 함께한 기록 💜
+      </div>
+      <div style={{ fontSize: 11, color: 'rgba(201,169,110,0.5)', marginBottom: 12 }}>
+        피부가 이렇게 달라졌어요
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        {[
+          { val: '-2살', lbl: '피부나이' },
+          { val: '+30%', lbl: '수분' },
+          { val: `${streakDays}일`, lbl: '루틴 스트릭' },
+        ].map(({ val, lbl }) => (
+          <div key={lbl} style={{
+            flex: 1, background: 'rgba(201,169,110,0.08)',
+            borderRadius: 8, padding: '8px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 16, color: '#C9A96E' }}>{val}</div>
+            <div style={{ fontSize: 9, color: 'rgba(201,169,110,0.5)', marginTop: 2 }}>{lbl}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+    <button
+      onClick={() => {
+        navigator.clipboard?.writeText('https://auran.kr/myworld/' + user?.id)
+        setToast('링크가 복사됐어요 💜')
+      }}
+      style={{
+        width: '100%', padding: 12, borderRadius: 10,
+        border: 'none', background: '#7B5EA7', color: '#fff',
+        fontSize: 13, cursor: 'pointer', marginBottom: 16,
+        letterSpacing: -0.2,
+      }}
+    >
+      공유 카드 만들기 💜
+    </button>
+  </div>
+) : null}
 
       {toast ? (
         <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 100, background: 'rgba(123,94,167,0.9)', color: '#fff', borderRadius: 20, padding: '10px 20px', fontSize: 12, zIndex: 60 }}>
