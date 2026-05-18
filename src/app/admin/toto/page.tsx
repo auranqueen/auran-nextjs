@@ -131,11 +131,9 @@ export default function TotoAdminPage() {
   const filtered = giftItems.filter(g => g.brand_type === tab)
   const tiers = tab === 'renobel' ? RENOBEL_TIERS : GENERAL_TIERS
 
-  // 탭별 제품 필터
-  // 르노벨 탭: 르노벨 브랜드 제품만 / 통합 탭: 전체
-  const filteredProducts = tab === 'renobel'
-    ? products.filter(p => p.brand_id === RENOBEL_BRAND_ID)
-    : products
+  // [또또복권 제품 필터] 탭 구분 없이 전체 제품 노출
+  // 르노벨 탭에서도 전 제품 선택 가능
+  const filteredProducts = products
 
   return (
     <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px 16px' }}>
