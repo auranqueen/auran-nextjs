@@ -15,6 +15,10 @@ type ReviewFormProps = {
     helpful_concerns?: string[] | null
     images?: string[] | null
   } | null
+  // ===== [스토어 후기] 추가 props =====
+  isStoreReview?: boolean       // 스토어 구매 후기 모드
+  storeOrderNo?: string         // 네이버 주문번호 (선택)
+  onOrderNoChange?: (v: string) => void
 }
 
 const GOLD = '#C9A96E'
@@ -39,7 +43,7 @@ function toKoreanSkinType(raw: string | null | undefined) {
   return v
 }
 
-export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormProps) {
+export function ReviewForm({ productId, onSuccess, initialReview, isStoreReview, storeOrderNo: storeOrderNoProp, onOrderNoChange }: ReviewFormProps) {
   const supabase = createClient()
   const router = useRouter()
   const { profile } = useUserProfile()
@@ -59,6 +63,12 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
   const [shareLikeReward, setShareLikeReward] = useState(0)
   const [shareFollowReward, setShareFollowReward] = useState(0)
   const [hideSkinTypeGuide, setHideSkinTypeGuide] = useState(false)
+  // ===== [스토어 후기] 제품 검색 state =====
+  const [storeProductSearch, setStoreProductSearch] = useState('')
+  const [storeProducts, setStoreProducts] = useState<any[]>([])
+  const [storeSelectedProduct, setStoreSelectedProduct] = useState<any>(null)
+  const [showStoreList, setShowStoreList] = useState(false)
+  const [storeOrderNo, setStoreOrderNo] = useState(storeOrderNoProp || '')
 
   useEffect(() => {
     const loadShareRewards = async () => {
@@ -191,6 +201,12 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
             is_best: false,
             helpful_count: 0,
             is_shared_community: isShared,
+            // [스토어 후기] store_order_no + is_store_review 필드
+            ...(isStoreReview ? {
+              store_order_no: storeOrderNo.trim() || null,
+              is_store_review: true,
+              is_verified: false,  // 어드민 승인 후 true로 변경
+            } : {}),
           } as any)
           .select('id')
           .single()
@@ -455,6 +471,34 @@ export function ReviewForm({ productId, onSuccess, initialReview }: ReviewFormPr
           </div>
         </>
       ) : null}
+
+      {isStoreReview && (
+        <div style={{ marginBottom: 12 }}>
+          {/* ===== [스토어 후기] 주문번호 입력 ===== */}
+          <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+            네이버 주문번호 (선택)
+          </div>
+          <input
+            value={storeOrderNo}
+            onChange={e => {
+              setStoreOrderNo(e.target.value)
+              onOrderNoChange?.(e.target.value)
+            }}
+            placeholder="주문번호 입력하시면 실구매 인증 배지가 붙어요 💜"
+            style={{
+              width: '100%', padding: '9px 12px', borderRadius: 10,
+              border: '0.5px solid var(--color-border-secondary)',
+              fontSize: 12, fontFamily: 'inherit',
+              background: 'var(--color-background-primary)',
+              color: 'var(--color-text-primary)',
+              marginBottom: 6,
+            }}
+          />
+          <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+            맑원장이 확인 후 토스트 2,000T 적립해드려요 💜
+          </div>
+        </div>
+      )}
 
       <button type="button" onClick={submit} disabled={!canSubmit}
         style={{ width: '100%', padding: '12px 14px', borderRadius: 10, border: 'none', background: PURPLE, color: '#fff', fontSize: 15, cursor: canSubmit ? 'pointer' : 'not-allowed', opacity: canSubmit ? 1 : 0.6 }}>

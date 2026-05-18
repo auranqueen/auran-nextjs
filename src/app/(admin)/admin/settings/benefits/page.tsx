@@ -44,6 +44,10 @@ const BENEFIT_KEY_LABEL: Record<string, string> = {
   review_photo_rate: '포토 리뷰 (%)',
   review_video_rate: '영상 리뷰 (%)',
   share_point_rate: '공유 적립률 (%)',
+  // ===== [리뷰 토스트 적립] 어드민에서 금액 설정 가능 =====
+  review_text_toast: '텍스트 리뷰 토스트 (T)',
+  review_photo_toast: '포토 리뷰 토스트 (T)',
+  review_video_toast: '영상 리뷰 토스트 (T)',
 }
 
 const DEFAULT_SALON_COMMISSION_KEY = 'default_salon_commission_rate'

@@ -148,7 +148,8 @@ export default function ProductDetailClient({
   const [hormoneSaveBusy, setHormoneSaveBusy] = useState(false)
   const [ptSearch, setPtSearch] = useState('')
   const [ptSearchHits, setPtSearchHits] = useState<{ id: string; name: string }[]>([])
-  const [storyTab, setStoryTab] = useState<'all' | 'review' | 'expert' | 'ambassador'>('all')
+  // [호르몬 필터 탭 추가] 달빛기/황금기/만개기/물들기
+  const [storyTab, setStoryTab] = useState<'all' | 'review' | 'expert' | 'ambassador' | '달빛기' | '황금기' | '만개기' | '물들기'>('all')
   const [showWriteSheet, setShowWriteSheet] = useState(false)
   const [writeContent, setWriteContent] = useState('')
   const [writeSkinType, setWriteSkinType] = useState<string | null>(null)
@@ -893,7 +894,10 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
     if (storyTab === 'ambassador') return reviews.filter(isAmb)
     if (storyTab === 'expert') return reviews.filter(isExp)
     return reviews.filter((r: any) => !isExp(r) && !isAmb(r))
-  })()
+  })().filter(rv => {
+    if (!['달빛기','황금기','만개기','물들기'].includes(storyTab)) return true
+    return rv.hormone_phase === storyTab
+  })
 
   const wrap: React.CSSProperties = {
     background: '#0d0b09', color: '#e8e4dc', maxWidth: 430,
@@ -1855,6 +1859,24 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             스토리 작성
           </button>
         </div>
+        {/* ===== [호르몬 필터 탭] ===== */}
+        <div style={{ display: 'flex', gap: 5, marginTop: 6, flexWrap: 'wrap' }}>
+          {(['달빛기','황금기','만개기','물들기'] as const).map(phase => (
+            <button
+              key={phase}
+              onClick={() => setStoryTab(storyTab === phase ? 'all' : phase)}
+              style={{
+                fontSize: 11, padding: '4px 10px', borderRadius: 20,
+                border: '0.5px solid var(--color-border-secondary)',
+                background: storyTab === phase ? '#7B5EA7' : 'transparent',
+                color: storyTab === phase ? '#fff' : 'var(--color-text-secondary)',
+                cursor: 'pointer',
+              }}
+            >
+              {phase}
+            </button>
+          ))}
+        </div>
 
         {/* 리뷰 요약 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
@@ -1943,6 +1965,36 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             <div ref={reviewScrollRef} style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, marginBottom: 12, WebkitOverflowScrolling: 'touch' as any, scrollSnapType: 'x mandatory' }}>
               {storyFiltered.map((rv, i) => (
                 <div key={rv.id || i} style={{ flexShrink: 0, width: 260, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 14, scrollSnapAlign: 'start' }}>
+                  {/* ===== [리뷰 뱃지] 오랜구매/스토어구매/실구매인증 ===== */}
+                  <div style={{ display: 'flex', gap: 4, marginBottom: 6, flexWrap: 'wrap' }}>
+                    {rv.is_store_review && (
+                      <span style={{
+                        fontSize: 10, padding: '2px 7px', borderRadius: 20,
+                        background: '#f5f0ff', color: '#534AB7',
+                        border: '0.5px solid #AFA9EC',
+                      }}>
+                        스토어 구매
+                      </span>
+                    )}
+                    {rv.is_verified && (
+                      <span style={{
+                        fontSize: 10, padding: '2px 7px', borderRadius: 20,
+                        background: '#f0faf6', color: '#085041',
+                        border: '0.5px solid #5DCAA5',
+                      }}>
+                        실구매 인증 💜
+                      </span>
+                    )}
+                    {!rv.is_store_review && (
+                      <span style={{
+                        fontSize: 10, padding: '2px 7px', borderRadius: 20,
+                        background: '#f5f0ff', color: '#7B5EA7',
+                        border: '0.5px solid #AFA9EC',
+                      }}>
+                        오랜 구매 💜
+                      </span>
+                    )}
+                  </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                     <span style={{ color: GOLD, fontSize: 13 }}>{'★'.repeat(Math.max(0, Number(rv.rating || 0)))}</span>
                     {rv.skin_type ? <span style={{ fontSize: 10, color: '#888', background: 'rgba(255,255,255,0.05)', padding: '2px 7px', borderRadius: 10 }}>{rv.skin_type}</span> : null}

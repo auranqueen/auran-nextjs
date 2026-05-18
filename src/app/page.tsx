@@ -444,6 +444,8 @@ export default function CustomerHomePage() {
   } | null>(null)
   const [homeEditSaving, setHomeEditSaving] = useState(false)
   const [sheetFields, setSheetFields] = useState({ d: '', d2: '', d3: '', d4: '', n: 0, b: true })
+  // ===== [홈 롤링 리뷰] DB 연동 =====
+  const [homeReviews, setHomeReviews] = useState<any[]>([])
 
   useEffect(() => {
     if (!homeEditSheet) return
@@ -522,6 +524,16 @@ export default function CustomerHomePage() {
     if (!mounted) return
     const supabase = createClient()
     void loadMotivationProfile()
+
+    // ===== [홈 롤링 리뷰] 베스트 후기 조회 =====
+    supabase
+      .from('reviews')
+      .select('*, author_user:users!reviews_author_id_fkey(name)')
+      .eq('status', '게시')
+      .eq('review_type', 'photo')
+      .order('helpful_count', { ascending: false })
+      .limit(3)
+      .then(({ data }) => setHomeReviews(data || []))
 
     supabase.from('skin_concerns').select('*').order('sort_order').then(({ data }) => {
       if (data && data.length > 0) setConcerns(data)
@@ -3060,12 +3072,16 @@ export default function CustomerHomePage() {
         <div style={{ display: 'flex', gap: '10px' }}>
           <span style={{ fontSize: '20px' }}>🧴</span>
           <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '11px', marginBottom: '3px' }}>⭐⭐⭐⭐⭐</div>
+            <div style={{ fontSize: '11px', marginBottom: '3px' }}>{homeReviews.length > 0 ? '★'.repeat(Math.max(0, Number(homeReviews[0].rating || 5))) : '⭐⭐⭐⭐⭐'}</div>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7 }}>
-              &quot;환절기에 이 크림 덕분에 피부 안 땅겼어요. 민감한 피부에도 자극 없이 쓸 수 있어요 💧&quot;
+              {homeReviews.length > 0
+                ? `"${String(homeReviews[0].content || '').slice(0, 60)}${String(homeReviews[0].content || '').length > 60 ? '...' : ''}"`
+                : '"환절기에 이 크림 덕분에 피부 안 땅겼어요. 민감한 피부에도 자극 없이 쓸 수 있어요 💧"'}
             </div>
             <div style={{ fontSize: '9px', color: TEXT_DIM, marginTop: '3px' }}>
-              {'건성피부 · ' + (motivationProfile?.full_name || '고객') + '님 · CIVASAN MESS CREAM'}
+              {homeReviews.length > 0
+                ? `${(homeReviews[0].author_user as { name?: string } | null)?.name || '오랜 회원'} · ${homeReviews[0].review_type === 'photo' ? '포토 리뷰' : '리뷰'}`
+                : '건성피부 · ' + (motivationProfile?.full_name || '고객') + '님 · CIVASAN MESS CREAM'}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px', gap: '6px' }}>
               <div style={{

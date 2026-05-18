@@ -8,6 +8,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+// ===== [ReviewForm 재활용] =====
+import { ReviewForm } from '@/components/reviews/ReviewForm'
 
 export default function StoreReviewPage() {
   const supabase = createClient()
@@ -198,7 +200,6 @@ export default function StoreReviewPage() {
 
   return (
     <div style={{ maxWidth: 400, margin: '0 auto', padding: '24px 20px' }}>
-      {/* 토스트 메시지 */}
       {toastMsg && (
         <div style={{
           position: 'fixed', top: 20, left: '50%', transform: 'translateX(-50%)',
@@ -209,18 +210,18 @@ export default function StoreReviewPage() {
         </div>
       )}
 
-      {/* 헤더 */}
+      {/* ===== [스토어 후기] ReviewForm 재활용 ===== */}
       <div style={{ fontSize: 10, letterSpacing: 3, color: GOLD, marginBottom: 6 }}>AURAN</div>
-      <div style={{ fontSize: 18, color: '#111', marginBottom: 4, letterSpacing: -0.3 }}>
+      <div style={{ fontSize: 18, color: 'var(--color-text-primary)', marginBottom: 4, letterSpacing: -0.3 }}>
         스토어 구매 후기 쓰기
       </div>
-      <div style={{ fontSize: 12, color: '#666', marginBottom: 24, lineHeight: 1.6 }}>
-        후기 작성 완료 시 토스트 10,000T 즉시 적립 💜
+      <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 20, lineHeight: 1.6 }}>
+        맑원장 확인 후 토스트 2,000T 적립돼요 💜
       </div>
 
       {/* 제품 검색 */}
       <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>구매하신 제품</div>
+        <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 6 }}>구매하신 제품</div>
         <div style={{ position: 'relative' }}>
           <input
             value={selectedProduct ? selectedProduct.name : productSearch}
@@ -238,9 +239,7 @@ export default function StoreReviewPage() {
             }}
           />
           {selectedProduct && (
-            <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: PURPLE }}>
-              ✓
-            </div>
+            <div style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: '#7B5EA7' }}>✓</div>
           )}
           {showProductList && products.length > 0 && !selectedProduct && (
             <div style={{
@@ -249,7 +248,7 @@ export default function StoreReviewPage() {
               borderRadius: 10, zIndex: 100, maxHeight: 200,
               overflowY: 'auto', boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
             }}>
-              {products.map(p => (
+              {products.map((p: any) => (
                 <div
                   key={p.id}
                   onClick={() => {
@@ -265,94 +264,24 @@ export default function StoreReviewPage() {
                   onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
                 >
                   {p.name}
-                  {p.brands?.name && (
-                    <span style={{ fontSize: 11, color: '#999', marginLeft: 6 }}>{p.brands.name}</span>
-                  )}
+                  {p.brands?.name && <span style={{ fontSize: 11, color: '#999', marginLeft: 6 }}>{p.brands.name}</span>}
                 </div>
               ))}
             </div>
           )}
         </div>
         {showProductList && products.length > 0 && (
-          <div
-            onClick={() => setShowProductList(false)}
-            style={{ position: 'fixed', inset: 0, zIndex: 99 }}
-          />
+          <div onClick={() => setShowProductList(false)} style={{ position: 'fixed', inset: 0, zIndex: 99 }} />
         )}
       </div>
 
-      {/* 별점 */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>별점</div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          {[1,2,3,4,5].map(star => (
-            <button
-              key={star}
-              onClick={() => setRating(star)}
-              style={{
-                width: 36, height: 36, borderRadius: '50%',
-                border: 'none', cursor: 'pointer',
-                background: star <= rating ? PURPLE : '#f0f0f0',
-                color: star <= rating ? '#fff' : '#ccc',
-                fontSize: 14,
-              }}
-            >
-              ★
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 후기 내용 */}
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>후기 내용</div>
-        <textarea
-          value={content}
-          onChange={e => setContent(e.target.value)}
-          placeholder="제품 사용 후기를 자유롭게 써주세요 💜"
-          rows={4}
-          style={{
-            width: '100%', padding: '10px 12px', borderRadius: 10,
-            border: '0.5px solid #ddd', fontSize: 13,
-            fontFamily: 'inherit', resize: 'none',
-            background: '#fff', color: '#111',
-          }}
+      {selectedProduct && (
+        <ReviewForm
+          productId={selectedProduct.id}
+          isStoreReview={true}
+          onSuccess={() => setStep('done')}
         />
-      </div>
-
-      {/* 네이버 주문번호 (선택) */}
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
-          네이버 주문번호 (선택)
-        </div>
-        <div style={{ fontSize: 11, color: '#999', marginBottom: 6, lineHeight: 1.6 }}>
-          입력하시면 실구매 인증 배지가 붙어요 💜
-        </div>
-        <input
-          value={orderNo}
-          onChange={e => setOrderNo(e.target.value)}
-          placeholder="주문번호 입력 (선택)"
-          style={{
-            width: '100%', padding: '10px 12px', borderRadius: 10,
-            border: '0.5px solid #ddd', fontSize: 13,
-            background: '#fff', color: '#111',
-          }}
-        />
-      </div>
-
-      <button
-        onClick={handleSubmit}
-        disabled={saving || !selectedProduct || !content.trim()}
-        style={{
-          width: '100%', padding: 14, borderRadius: 12,
-          border: 'none',
-          background: saving || !selectedProduct || !content.trim() ? '#ccc' : PURPLE,
-          color: '#fff', fontSize: 15, cursor: saving || !selectedProduct || !content.trim() ? 'not-allowed' : 'pointer',
-          letterSpacing: -0.2,
-        }}
-      >
-        {saving ? '저장 중...' : '후기 등록하고 토스트 받기 💜'}
-      </button>
+      )}
     </div>
   )
 }
