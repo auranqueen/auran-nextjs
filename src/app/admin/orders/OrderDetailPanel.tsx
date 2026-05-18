@@ -42,10 +42,32 @@ export default function OrderDetailPanel({ order, open, onClose }: Props) {
   const [savingShip, setSavingShip] = useState(false)
   const [savingMemo, setSavingMemo] = useState(false)
 
+  // ===== [또또복권] order_gifts 상태 =====
+  const [orderGift, setOrderGift] = useState<any>(null)
+  const [giftLoading, setGiftLoading] = useState(false)
+  const [sampleSelected, setSampleSelected] = useState('')
+  const [giftComment, setGiftComment] = useState('')
+  const [savingGift, setSavingGift] = useState(false)
+
   useEffect(() => {
     setCourier(order?.courier || 'CJ대한통운')
     setTrackingNo(String(order?.tracking_no || ''))
     setMemo(String(order?.admin_order_notes || ''))
+    // ===== [또또복권] order_gifts 조회 =====
+    if (order?.id) {
+      setGiftLoading(true)
+      supabase
+        .from('order_gifts')
+        .select('*, gift_item:gift_items(*, product:products(name, thumb_img))')
+        .eq('order_id', order.id)
+        .maybeSingle()
+        .then(({ data }) => {
+          setOrderGift(data)
+          setSampleSelected(data?.sample_selected || '')
+          setGiftComment(data?.owner_comment || '')
+          setGiftLoading(false)
+        })
+    }
   }, [order?.id])
 
   const paymentBadgeColor = useMemo(() => {
@@ -256,7 +278,216 @@ export default function OrderDetailPanel({ order, open, onClose }: Props) {
             {savingMemo ? '저장 중...' : '저장'}
           </button>
         </section>
+
+        {/* ===== [또또복권] 주문 상세 패널 — order_gifts 섹션 ===== */}
+        {/* 당첨 제품 + 고객 희망 샘플 + 원장 샘플 선정 + 팁카드 출력 */}
+        {giftLoading ? null : orderGift ? (
+          <div style={{
+            margin: '12px 0',
+            padding: '14px 16px',
+            borderRadius: 12,
+            border: `0.5px solid ${orderGift.brand_type === 'renobel' ? '#C9A96E' : '#AFA9EC'}`,
+            background: orderGift.brand_type === 'renobel' ? '#fdf8ee' : '#f9f7ff',
+          }}>
+            {/* 헤더 */}
+            <div style={{ fontSize: 10, letterSpacing: 2, color: orderGift.brand_type === 'renobel' ? '#C9A96E' : '#7B5EA7', marginBottom: 8 }}>
+              {orderGift.brand_type === 'renobel' ? '르노벨 골든또또 ✦' : '오랜 또또 💜'}
+            </div>
+
+            {/* 당첨 제품 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              {orderGift.gift_item?.product?.thumb_img && (
+                <img
+                  src={orderGift.gift_item.product.thumb_img}
+                  alt=''
+                  style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }}
+                />
+              )}
+              <div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 2 }}>당첨 제품</div>
+                <div style={{ fontSize: 13, color: 'var(--color-text-primary)' }}>
+                  {orderGift.gift_item?.product?.name || '제품 정보 없음'}
+                </div>
+              </div>
+            </div>
+
+            {/* 고객 피부 프로필 */}
+            {orderGift.user_id && (
+              <CustomerSkinProfile userId={orderGift.user_id} supabase={supabase} />
+            )}
+
+            {/* 고객 희망 샘플 */}
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                고객 희망 샘플
+              </div>
+              <div style={{
+                fontSize: 12, color: 'var(--color-text-primary)',
+                padding: '8px 10px', borderRadius: 8,
+                background: 'var(--color-background-primary)',
+                border: '0.5px solid var(--color-border-tertiary)',
+                minHeight: 32,
+              }}>
+                {orderGift.sample_request || '입력 없음 (맑원장이 직접 선정)'}
+              </div>
+            </div>
+
+            {/* 원장 샘플 선정 입력 */}
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                원장 선정 샘플
+              </div>
+              <input
+                value={sampleSelected}
+                onChange={e => setSampleSelected(e.target.value)}
+                placeholder='선정한 샘플 입력'
+                style={{
+                  width: '100%', padding: '8px 10px', borderRadius: 8,
+                  fontSize: 12, border: '0.5px solid var(--color-border-secondary)',
+                  background: 'var(--color-background-primary)',
+                  color: 'var(--color-text-primary)',
+                  fontFamily: 'inherit',
+                }}
+              />
+            </div>
+
+            {/* 원장 코멘트 입력 */}
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+                원장 코멘트
+              </div>
+              <textarea
+                value={giftComment}
+                onChange={e => setGiftComment(e.target.value)}
+                placeholder='고객에게 전달할 코멘트 입력'
+                rows={2}
+                style={{
+                  width: '100%', padding: '8px 10px', borderRadius: 8,
+                  fontSize: 12, border: '0.5px solid var(--color-border-secondary)',
+                  background: 'var(--color-background-primary)',
+                  color: 'var(--color-text-primary)',
+                  fontFamily: 'inherit', resize: 'none',
+                }}
+              />
+            </div>
+
+            {/* 저장 + 팁카드 출력 버튼 */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={async () => {
+                  if (savingGift) return
+                  setSavingGift(true)
+                  await supabase
+                    .from('order_gifts')
+                    .update({
+                      // [원장 선정 샘플 + 코멘트 저장]
+                      sample_selected: sampleSelected,
+                      owner_comment: giftComment,
+                    })
+                    .eq('id', orderGift.id)
+                  setSavingGift(false)
+                }}
+                disabled={savingGift}
+                style={{
+                  flex: 1, padding: '9px 0', borderRadius: 10,
+                  border: 'none', background: '#7B5EA7', color: '#fff',
+                  fontSize: 12, cursor: savingGift ? 'not-allowed' : 'pointer',
+                  opacity: savingGift ? 0.6 : 1,
+                }}
+              >
+                {savingGift ? '저장 중...' : '저장'}
+              </button>
+              <button
+                onClick={() => {
+                  // [팁카드 출력] 새 탭에서 인쇄 미리보기
+                  const won = orderGift.gift_item?.product?.name || ''
+                  const html = `
+            <html><head><title>팁카드</title>
+            <style>
+              body { font-family: 'Apple SD Gothic Neo', sans-serif; margin: 0; padding: 20px; }
+              .card { width: 86mm; min-height: 54mm; padding: 16px; border: 1px solid #C9A96E; border-radius: 8px; }
+              .eye { font-size: 9px; letter-spacing: 2px; color: #C9A96E; margin-bottom: 8px; }
+              .product { font-size: 14px; color: #111; margin-bottom: 10px; }
+              .comment { font-size: 11px; color: #534AB7; line-height: 1.7; border-top: 1px solid #eee; padding-top: 8px; }
+              .footer { font-size: 9px; color: #999; margin-top: 8px; text-align: right; }
+            </style></head>
+            <body>
+              <div class="card">
+                <div class="eye">✦ AURAN 처방 카드</div>
+                <div class="product">${won}</div>
+                <div class="comment">${giftComment || '맑원장 코멘트 없음'}</div>
+                <div class="footer">auran.kr</div>
+              </div>
+              <script>window.onload = () => window.print()</script>
+            </body></html>
+          `
+                  const w = window.open('', '_blank')
+                  if (w) { w.document.write(html); w.document.close() }
+                }}
+                style={{
+                  flex: 1, padding: '9px 0', borderRadius: 10,
+                  border: '0.5px solid #C9A96E', background: '#fdf8ee',
+                  color: '#854F0B', fontSize: 12, cursor: 'pointer',
+                }}
+              >
+                팁카드 출력 🖨️
+              </button>
+            </div>
+
+            {/* 발송 완료 체크 */}
+            <button
+              onClick={async () => {
+                await supabase
+                  .from('order_gifts')
+                  .update({ tip_card_sent: !orderGift.tip_card_sent })
+                  .eq('id', orderGift.id)
+                setOrderGift((g: any) => ({ ...g, tip_card_sent: !g.tip_card_sent }))
+              }}
+              style={{
+                width: '100%', marginTop: 8, padding: '8px 0', borderRadius: 10,
+                border: '0.5px solid var(--color-border-secondary)',
+                background: orderGift.tip_card_sent ? '#7B5EA7' : 'transparent',
+                color: orderGift.tip_card_sent ? '#fff' : 'var(--color-text-secondary)',
+                fontSize: 12, cursor: 'pointer',
+              }}
+            >
+              {orderGift.tip_card_sent ? '팁카드 발송 완료 ✓' : '팁카드 발송 완료 처리'}
+            </button>
+          </div>
+        ) : null}
       </aside>
+    </div>
+  )
+}
+
+// ===== [또또복권] 고객 피부 프로필 미니 컴포넌트 =====
+// order_gifts 섹션에서 userId로 고객 피부 데이터 표시
+function CustomerSkinProfile({ userId, supabase }: { userId: string, supabase: any }) {
+  const [profile, setProfile] = useState<any>(null)
+
+  useEffect(() => {
+    supabase
+      .from('profiles')
+      .select('skin_type, skin_concerns, hormone_phase, full_name')
+      .eq('id', userId)
+      .maybeSingle()
+      .then(({ data }: any) => setProfile(data))
+  }, [userId])
+
+  if (!profile) return null
+
+  return (
+    <div style={{
+      marginBottom: 10, padding: '8px 10px', borderRadius: 8,
+      background: 'var(--color-background-primary)',
+      border: '0.5px solid var(--color-border-tertiary)',
+      fontSize: 11, color: 'var(--color-text-secondary)',
+      lineHeight: 1.8,
+    }}>
+      <div>고객: {profile.full_name || '-'}</div>
+      <div>호르몬: {profile.hormone_phase || '-'}</div>
+      <div>피부타입: {profile.skin_type || '-'}</div>
+      <div>고민: {Array.isArray(profile.skin_concerns) ? profile.skin_concerns.join(', ') : (profile.skin_concerns || '-')}</div>
     </div>
   )
 }
