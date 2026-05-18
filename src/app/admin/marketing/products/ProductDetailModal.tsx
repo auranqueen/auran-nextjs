@@ -182,6 +182,8 @@ export default function ProductDetailModal({
     medical_tags: [],
     skin_types: [],
     ai_tag_status: 'pending',
+    // [원장 코멘트] AI owner_analysis 자동채움 → 원장 직접 수정 가능
+    owner_comment: '',
   })
   const [ingredientImg, setIngredientImg] = useState<string | null>(null)
   const [aiAnalyzing, setAiAnalyzing] = useState(false)
@@ -293,6 +295,8 @@ export default function ProductDetailModal({
       medical_tags: strArr(product.medical_tags),
       skin_types: Array.isArray(product.skin_types) ? (product.skin_types as unknown[]).map(x => String(x)) : [],
       ai_tag_status: String(product.ai_tag_status ?? 'pending'),
+      // [원장 코멘트] DB에서 불러온 값 세팅
+      owner_comment: product.owner_comment || '',
     })
     setDirty({ thumb: false, basic: false, detail: false, points: false, flash: false, tags: false })
     setModalTab('thumb')
@@ -611,6 +615,8 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         medical_tags: result.medical_tags?.length ? result.medical_tags : f.medical_tags,
         weather_tags: result.weather_tags?.length ? result.weather_tags : f.weather_tags,
         ai_tag_status: 'ai_suggested',
+        // [AI 초안] owner_analysis → owner_comment 자동 채움 (원장이 이후 수정 가능)
+        owner_comment: result.owner_analysis || f.owner_comment,
       }))
       setAiReason(result.reason || '')
       onToast('AI 분석 완료! 태그 확인 후 저장해주세요 ✦')
@@ -641,6 +647,8 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         medical_tags: tagForm.medical_tags || [],
         skin_types: tagForm.skin_types?.length ? tagForm.skin_types : null,
         ai_tag_status: 'approved',
+        // [원장 코멘트] products.owner_comment 컬럼에 저장
+        owner_comment: tagForm.owner_comment,
       })
       .eq('id', product.id)
     if (error) {
@@ -2401,6 +2409,34 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   >
                     {aiAnalyzing ? 'AI 분석 중...' : '✦ AI 전성분 분석 · 태그 자동 제안'}
                   </button>
+                  {/* ===== [원장 코멘트 입력창] ===== */}
+                  {/* AI owner_analysis 자동채움 → 원장 직접 수정 → owner_comment 컬럼 저장 */}
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>
+                      원장 코멘트 (AI 초안 자동입력 · 직접 수정 가능)
+                    </div>
+                    <textarea
+                      value={tagForm.owner_comment || ''}
+                      onChange={e => setTagForm((f: any) => ({
+                        ...f,
+                        // [원장 코멘트] 직접 수정 시 반영
+                        owner_comment: e.target.value
+                      }))}
+                      placeholder="맑원장 코멘트를 입력해주세요 (AI 분석 후 자동으로 채워져요)"
+                      rows={3}
+                      style={{
+                        width: '100%',
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        fontSize: 12,
+                        border: '1px solid rgba(123,94,167,0.4)',
+                        background: 'rgba(123,94,167,0.1)',
+                        color: '#fff',
+                        fontFamily: 'inherit',
+                        resize: 'vertical',
+                      }}
+                    />
+                  </div>
                   {aiReason && (
                     <div
                       style={{
