@@ -66,6 +66,10 @@ interface Product {
   tag?: string | null
   categories?: { target_tracks?: string[] | null } | null
   is_exclusive?: boolean | null
+  // [원장 코멘트] AI 분석 후 원장이 작성한 코멘트
+  owner_comment?: string
+  ai_tag_status?: string | null
+  concern_tags?: string[] | null
 }
 
 export default function ProductDetailClient({
@@ -78,6 +82,8 @@ export default function ProductDetailClient({
   const router = useRouter()
   const { addToCart } = useCart()
   const supabase = createClient()
+  // [AI 분석카드] ? 아이콘 탭 시 카드 열고 닫기
+  const [showAiCard, setShowAiCard] = useState(false)
   const [reviews, setReviews] = useState<any[]>([])
   const [reviewsLoading, setReviewsLoading] = useState(false)
   const [myReviewDoc, setMyReviewDoc] = useState<{
@@ -1527,6 +1533,95 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           supabaseClient={supabase}
           isSuperAdmin={isSuperAdmin}
         />
+        {/* ===== [AI 분석카드] ===== */}
+        {/* AI 전성분 분석 결과 + 원장 코멘트 노출 */}
+        {/* 조건: ai_tag_status가 있거나 owner_comment 있을 때만 표시 */}
+        {(product.ai_tag_status || product.owner_comment) && (
+          <div style={{ margin: '12px 0' }}>
+            {/* AI 뱃지 + ? 토글 버튼 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{
+                fontSize: 10,
+                padding: '2px 8px',
+                borderRadius: 20,
+                background: 'rgba(123,94,167,0.15)',
+                color: '#7B5EA7',
+                border: '1px solid rgba(123,94,167,0.3)',
+              }}>
+                ✦ AI 분석
+              </span>
+              <button
+                onClick={() => setShowAiCard(v => !v)}
+                style={{
+                  fontSize: 11,
+                  color: 'rgba(123,94,167,0.7)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                {showAiCard ? '닫기 ∧' : '분석 보기 ?'}
+              </button>
+            </div>
+
+            {/* 분석카드 본문 */}
+            {showAiCard && (
+              <div style={{
+                marginTop: 8,
+                padding: '14px 16px',
+                borderRadius: 12,
+                background: 'rgba(123,94,167,0.06)',
+                border: '1px solid rgba(123,94,167,0.15)',
+              }}>
+                {/* 원장 코멘트 */}
+                {product.owner_comment && (
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 10, color: '#7B5EA7', marginBottom: 4 }}>
+                      맑원장 코멘트
+                    </div>
+                    <div style={{ fontSize: 13, color: '#333', lineHeight: 1.6 }}>
+                      {product.owner_comment}
+                    </div>
+                  </div>
+                )}
+
+                {/* concern_tags */}
+                {product.concern_tags && product.concern_tags.length > 0 && (
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: 10, color: '#999', marginBottom: 4 }}>
+                      피부 고민
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                      {product.concern_tags.map((tag: string) => (
+                        <span key={tag} style={{
+                          fontSize: 11,
+                          padding: '2px 8px',
+                          borderRadius: 20,
+                          background: 'rgba(123,94,167,0.1)',
+                          color: '#7B5EA7',
+                        }}>
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 하단 면책 문구 */}
+                <div style={{
+                  marginTop: 10,
+                  fontSize: 10,
+                  color: '#bbb',
+                  borderTop: '1px solid rgba(0,0,0,0.06)',
+                  paddingTop: 8,
+                }}>
+                  AI 분석은 참고용입니다. 맑원장이 검수하고 있어요 💜
+                </div>
+              </div>
+            )}
+          </div>
+        )}
         {maleMeno ? (
           <div style={{ alignSelf: 'flex-start', marginBottom: 6, display: 'inline-block', background: 'rgba(123,94,167,0.2)', border: '1px solid rgba(123,94,167,0.4)', borderRadius: 20, padding: '4px 12px', fontSize: 11, color: '#e8d9ff' }}>
             남성 갱년기 피부에도 효과적이에요
