@@ -14,7 +14,7 @@ export default function VoiceBoxPage() {
     void (async () => {
       const { data } = await supabase
         .from('voice_box')
-        .select('*, profiles(nickname)')
+        .select('*, profiles(full_name)')
         .order('created_at', { ascending: false })
       setItems(data || [])
     })()
@@ -76,7 +76,7 @@ function VoiceBoxItem({ item }: { item: any }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
         <span style={{ fontSize: 11, color: t.color }}>{t.label}</span>
         <span style={{ fontSize: 11, color: '#ccc' }}>
-          {item.profiles?.nickname || '비회원'} · {item.page_url}
+          {item.profiles?.full_name || '비회원'} · {item.page_url}
         </span>
         <span style={{ fontSize: 11, color: '#ccc', marginLeft: 'auto' }}>
           {new Date(item.created_at).toLocaleDateString('ko-KR')}
