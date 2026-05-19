@@ -564,7 +564,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
     const { status, stock } = statusFromUi(saleUi, limited)
 
     const retail = Math.max(0, Math.floor(Number(retailPrice) || 0))
-    const saleP = salePrice.trim() === '' ? null : Math.max(0, Number(salePrice))
+    const saleP = salePrice.trim() === '' ? null : Math.max(0, Math.floor(Number(salePrice)))
     const hasTs = Boolean(timesaleStart && timesaleEnd)
     const tsStart = hasTs ? new Date(timesaleStart).toISOString() : null
     const tsEnd = hasTs ? new Date(timesaleEnd).toISOString() : null
@@ -681,6 +681,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
 
       if (!pid) {
         const resolvedCategoryId = catL5 || catL4 || catL3 || catL2 || catL1 || ''
+        const saleP = salePrice.trim() === '' ? null : Math.max(0, Math.floor(Number(salePrice)))
         const insertRow = {
           brand_id: brandId,
           category_id: resolvedCategoryId || null,
@@ -692,6 +693,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
           status: 'pending' as const,
           stock: 0,
           retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)),
+          sale_price: saleP,
           avg_usage_days: avgUsageDays.trim() === '' ? null : Math.max(1, Math.min(365, Math.floor(Number(avgUsageDays) || 0))),
           skin_types: null,
           skin_concerns: null,
