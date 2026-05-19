@@ -2352,33 +2352,6 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             이거 나한테 맞을까요? 🤫
           </button>
         )}
-        {/* ===== [또또복권] 제품 상세 홍보 멘트 ===== */}
-        {(() => {
-          const projected = (cartTotal || 0) + (price || 0) * qty
-          const isRnb = (product as { brand_id?: string }).brand_id === '90175aa9-70c8-4568-865a-195f11bd7859'
-          const tiers = isRnb
-            ? [700000, 1200000, 2000000]
-            : [200000, 300000, 500000, 1000000]
-          const totoName = isRnb ? '르노벨 골든또또 ✦' : '오랜 또또 💜'
-          const color = isRnb ? '#C9A96E' : '#7B5EA7'
-          const bg = isRnb ? '#fdf8ee' : '#f5f0ff'
-          const border = isRnb ? '#C9A96E' : '#AFA9EC'
-          const nextTier = tiers.find(t => projected < t)
-          if (!nextTier) return null
-          const shortage = nextTier - projected
-          const msg = shortage <= 0
-            ? `담으면 ${totoName} 달성이에요!`
-            : `담으면 ${totoName}까지 ${Math.ceil(shortage / 10000)}만원 남아요`
-          return (
-            <div style={{
-              marginBottom: 0, padding: '8px 12px', borderRadius: 10,
-              background: bg, border: `0.5px solid ${border}`,
-              fontSize: 12, color: color, letterSpacing: -0.2,
-            }}>
-              🎴 {msg}
-            </div>
-          )
-        })()}
         <div style={{ display: 'flex', gap: 8 }}>
         <button
           type="button"
