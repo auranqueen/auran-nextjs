@@ -295,14 +295,14 @@ export default function BodyCareCard({
             <div style={{ fontSize: 12, color: '#aaa', marginBottom: 8, paddingLeft: 4 }}>
               점수 기반 추천 제품
             </div>
-            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }} className="scroll-hide">
+            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }} className="scroll-hide">
               {visibleRecommended.map((p: any) => (
                 <div key={p.id} style={{
-                  minWidth: 100, borderRadius: 10, overflow: 'hidden',
-                  background: 'rgba(255,255,255,0.04)', flexShrink: 0
+                  width: 140, flexShrink: 0, borderRadius: 16, overflow: 'hidden',
+                  background: 'rgba(255,255,255,0.04)',
                 }}>
                   {(p.storage_thumb_url || p.thumb_img) && (
-                    <img src={p.storage_thumb_url || p.thumb_img} alt={p.name} style={{ width: 100, height: 100, objectFit: 'cover' }} />
+                    <img src={p.storage_thumb_url || p.thumb_img} alt={p.name} style={{ width: 140, height: 140, objectFit: 'cover' }} />
                   )}
                   <div style={{ padding: '6px 8px' }}>
                     <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.3 }}>
@@ -376,7 +376,7 @@ export default function BodyCareCard({
           <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 7 }}>{todayCard.title}</div>
           <div style={{ fontSize: 11, fontWeight: 400, color: TEXT_MUTED, marginBottom: 8, lineHeight: 1.55 }}>{todayCard.care}</div>
           <div style={{ borderLeft: `2px solid ${PURPLE}`, paddingLeft: 8, fontSize: 11, color: '#d6c7ea', marginBottom: 10, lineHeight: 1.5, fontWeight: 400 }}>{todayCard.quote}</div>
-          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 2 }}>
             {products.length === 0 && (!recommended || recommended.length === 0) ? (
               <div style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -389,8 +389,8 @@ export default function BodyCareCard({
               </div>
             ) : products.length > 0 ? (
               finalProducts.map((p) => (
-                <div key={p.id} style={{ minWidth: 170, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 8, display: 'flex', gap: 8 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 8, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0 }}>
+                <div key={p.id} style={{ width: 140, flexShrink: 0, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ width: 140, height: 140, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0 }}>
                     {(p.storage_thumb_url || p.thumb_img) ? <img src={p.storage_thumb_url || p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
                   </div>
                   <div style={{ minWidth: 0, flex: 1 }}>
@@ -408,7 +408,7 @@ export default function BodyCareCard({
                 <div style={{ fontSize: 12, color: '#aaa', marginBottom: 8, paddingLeft: 4 }}>
                   점수 기반 추천 제품
                 </div>
-                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }} className="scroll-hide">
+                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }} className="scroll-hide">
                   {(() => {
                     const filteredRecommended = (recommended ?? []).filter((p: any) => {
                       const rc: string = p.routine_category ?? ''
@@ -417,11 +417,11 @@ export default function BodyCareCard({
                     const visibleRecommended = filteredRecommended.slice(0, 6)
                     return visibleRecommended.map((p: any) => (
                       <div key={p.id} style={{
-                        minWidth: 100, borderRadius: 10, overflow: 'hidden',
-                        background: 'rgba(255,255,255,0.04)', flexShrink: 0
+                        width: 140, flexShrink: 0, borderRadius: 16, overflow: 'hidden',
+                        background: 'rgba(255,255,255,0.04)',
                       }}>
                         {(p.storage_thumb_url || p.thumb_img) && (
-                          <img src={p.storage_thumb_url || p.thumb_img} alt={p.name} style={{ width: 100, height: 100, objectFit: 'cover' }} />
+                          <img src={p.storage_thumb_url || p.thumb_img} alt={p.name} style={{ width: 140, height: 140, objectFit: 'cover' }} />
                         )}
                         <div style={{ padding: '6px 8px' }}>
                           <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.3 }}>
