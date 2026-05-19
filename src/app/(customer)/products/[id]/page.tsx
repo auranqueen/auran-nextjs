@@ -7,39 +7,29 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
   const supabase = createClient()
   const { data: product } = await supabase
     .from('products')
-    .select('name, description, storage_thumb_url, thumb_img, retail_price')
+    .select('name, storage_thumb_url, thumb_img')
     .eq('id', params.id)
     .maybeSingle()
 
-  if (!product) return {}
-
-  const imageUrl = product.storage_thumb_url || product.thumb_img || ''
-  const title = `${product.name} - AURAN`
-  const description = product.description || '오랜 뷰티 셀렉트샵'
-  const price = Number(product.retail_price || 0).toLocaleString()
+  const description = '내 피부 주기를 아는 유일한 플랫폼 💜 맑원장이 직접 고른 제품이에요.'
+  const imageUrl = product?.storage_thumb_url || product?.thumb_img || ''
 
   return {
-    title,
+    title: `${product?.name || '제품 상세'} · AURAN`,
     description,
     openGraph: {
-      title,
-      description: `${description} | ${price}원`,
-      images: imageUrl ? [{
-        url: imageUrl,
-        width: 800,
-        height: 800,
-        alt: product.name,
-        type: 'image/jpeg',
-      }] : [],
+      title: product?.name,
+      description,
+      images: imageUrl ? [{ url: imageUrl }] : [{ url: '/og-image.png' }],
       type: 'website',
       siteName: 'AURAN',
       locale: 'ko_KR',
     },
     twitter: {
       card: 'summary_large_image',
-      title,
+      title: product?.name || '제품 상세',
       description,
-      images: imageUrl ? [imageUrl] : [],
+      images: imageUrl ? [imageUrl] : ['/og-image.png'],
     },
   }
 }

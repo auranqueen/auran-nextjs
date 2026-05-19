@@ -3,12 +3,12 @@ import { AppProviders } from '@/components/providers/AppProviders'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'AURAN · AI 피부 분석 플랫폼',
-  description: '내 피부를 가장 잘 아는 AI 뷰티 플랫폼',
+  title: 'AURAN · 같은 화장품인데 어떤 날은 잘 받고 어떤 날은 왜 안 받지?',
+  description: '맑원장이 호르몬 주기에 맞게 직접 고른 제품과 루틴. 내 피부가 달라지는 이유, 여기 있어요.',
   metadataBase: new URL('https://auran.kr'),
   openGraph: {
-    title: 'AURAN · AI 피부 분석 플랫폼',
-    description: '내 피부를 가장 잘 아는 AI 뷰티 플랫폼',
+    title: 'AURAN · 같은 화장품인데 어떤 날은 잘 받고 어떤 날은 왜 안 받지?',
+    description: '맑원장이 호르몬 주기에 맞게 직접 고른 제품과 루틴. 내 피부가 달라지는 이유, 여기 있어요.',
     url: 'https://auran.kr',
     siteName: 'AURAN',
     images: [{ url: '/og-image.png', width: 1200, height: 630, alt: 'AURAN · AI 피부 분석 플랫폼' }],
