@@ -528,11 +528,11 @@ export default function CustomerHomePage() {
     // ===== [홈 롤링 리뷰] 베스트 후기 조회 =====
     supabase
       .from('reviews')
-      .select('*, author_user:users!reviews_author_id_fkey(name)')
+      .select('id, content, rating, images, video_url, review_type, author_user:users!reviews_author_id_fkey(name)')
       .eq('status', '게시')
-      .eq('review_type', 'photo')
+      .not('images', 'is', null)
       .order('helpful_count', { ascending: false })
-      .limit(3)
+      .limit(6)
       .then(({ data }) => setHomeReviews(data || []))
 
     supabase.from('skin_concerns').select('*').order('sort_order').then(({ data }) => {
@@ -3062,55 +3062,33 @@ export default function CustomerHomePage() {
       </div>
 
       {/* ── 포토·영상 리뷰 ── */}
-      {/* TODO: reviews 테이블 photo_url, video_url 있는 것만 조회 */}
+      {homeReviews.length > 0 && (
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>📸 포토·영상 리뷰</span>
-          <span onClick={() => router.push('/reviews')} style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>127개 ›</span>
-        </div>
-        {/* 일촌 추천 스트립 */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '9px 12px', background: CARD_BG, border: CARD_BORDER, borderRadius: '10px', marginBottom: '8px' }}>
-          <div style={{ display: 'flex' }}>
-            {['🌸','🌺','💜'].map((a, i) => (
-              <div key={i} style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', border: `1.5px solid ${BG}`, marginLeft: i > 0 ? '-6px' : '0' }}>{a}</div>
-            ))}
-          </div>
-          <span style={{ fontSize: '10px', color: TEXT_MUTED, flex: 1 }}>일촌 <span style={{ color: GOLD }}>소미님 외 2명</span>이 포토 리뷰를 남겼어요</span>
-          <span onClick={() => router.push('/reviews')} style={{ fontSize: '10px', color: GOLD, cursor: 'pointer' }}>보기</span>
+          <span onClick={() => router.push('/reviews')} style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>{homeReviews.length}개 ›</span>
         </div>
         {/* 포토 그리드 */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '3px', borderRadius: '14px', overflow: 'hidden' }}>
-          {[
-            { emoji: '🧴', bg: 'linear-gradient(135deg,#2a1a30,#1a1020)', badge: '일촌', isVid: false },
-            { emoji: '✨', bg: 'linear-gradient(135deg,#0a1a2a,#1a2a3a)', badge: '영상', isVid: true, dur: '0:24' },
-            { emoji: '🌿', bg: 'linear-gradient(135deg,#0a1a0a,#1a2a1a)', badge: '', isVid: false },
-            { emoji: '💧', bg: 'linear-gradient(135deg,#1a1020,#2a1830)', badge: '', isVid: false },
-            { emoji: '🎬', bg: 'linear-gradient(135deg,#1a0a2a,#2a1540)', badge: '영상', isVid: true, dur: '0:18' },
-            { emoji: '+122', bg: 'rgba(255,255,255,0.04)', badge: '', isVid: false, isMore: true },
-          ].map((item: any, i: number) => (
-            <div key={i} onClick={() => router.push('/reviews')} style={{ aspectRatio: '1', background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: item.isMore ? '14px' : '28px', position: 'relative', cursor: 'pointer', flexDirection: item.isMore ? 'column' : 'row', gap: item.isMore ? '2px' : '0' }}>
-              {item.isMore ? (
-                <>
-                  <span style={{ fontSize: '16px', color: 'rgba(255,255,255,0.5)' }}>{item.emoji}</span>
-                  <span style={{ fontSize: '9px', color: TEXT_DIM }}>더보기</span>
-                </>
+          {homeReviews.map((rv: any, i: number) => {
+            const thumb = Array.isArray(rv.images) && rv.images[0] ? String(rv.images[0]) : ''
+            const hasVideo = Boolean(String(rv.video_url || '').trim())
+            return (
+            <div key={rv.id ?? i} onClick={() => router.push('/reviews')} style={{ aspectRatio: '1', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', cursor: 'pointer', overflow: 'hidden' }}>
+              {thumb ? (
+                <img src={thumb} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
-                <>
-                  {item.emoji}
-                  {item.badge === '일촌' && <div style={{ position: 'absolute', top: '5px', left: '5px', background: 'rgba(201,169,110,0.85)', borderRadius: '4px', padding: '1px 5px', fontSize: '7px', color: BG }}>일촌</div>}
-                  {item.isVid && (
-                    <>
-                      <div style={{ position: 'absolute', top: '5px', left: '5px', background: 'rgba(60,120,220,0.9)', borderRadius: '4px', padding: '1px 5px', fontSize: '7px', color: '#fff' }}>영상</div>
-                      <div style={{ position: 'absolute', bottom: '5px', right: '5px', background: 'rgba(0,0,0,0.6)', borderRadius: '3px', padding: '1px 4px', fontSize: '8px', color: '#fff', fontFamily: 'monospace' }}>{item.dur}</div>
-                    </>
-                  )}
-                </>
+                <span style={{ fontSize: '28px' }}>🧴</span>
+              )}
+              {hasVideo && (
+                <div style={{ position: 'absolute', top: '5px', left: '5px', background: 'rgba(60,120,220,0.9)', borderRadius: '4px', padding: '1px 5px', fontSize: '7px', color: '#fff' }}>영상</div>
               )}
             </div>
-          ))}
+            )
+          })}
         </div>
       </div>
-
+      )}
       {/* ── 롤링 리뷰 ── */}
       <div style={{ margin: '16px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '12px 14px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
