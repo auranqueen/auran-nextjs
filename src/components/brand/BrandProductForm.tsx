@@ -51,6 +51,7 @@ export type BrandProductFormProps = {
 export default function BrandProductForm({ open, onClose, authUserId, brandId, brandName, onSubmitted, initialData }: BrandProductFormProps) {
   const supabase = createClient()
   const draftIdRef = useRef<string>(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : uid())
+  const submittedIdRef = useRef<string | null>(null)
   const editorRef = useRef<any>(null)
   const ingredientPhotoRef = useRef<HTMLInputElement | null>(null)
   const ingredientPhotoFileRef = useRef<File | null>(null)
@@ -466,8 +467,14 @@ export default function BrandProductForm({ open, onClose, authUserId, brandId, b
         updated_at: new Date().toISOString(),
       }
 
+      if (submittedIdRef.current) {
+        setMsg('이미 등록된 제품이에요. 중복 저장을 방지했어요.')
+        return
+      }
+
       const { data: created, error: insErr } = await supabase.from('products').insert(insertRow as any).select('id').single()
       if (insErr || !created?.id) throw new Error(insErr?.message || '등록 실패')
+      submittedIdRef.current = created.id
 
       const { data: admins } = await supabase.from('users').select('id').in('role', ['admin', 'master'])
       const rows = (admins || []).map((a: { id: string }) => ({
