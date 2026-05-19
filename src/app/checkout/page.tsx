@@ -354,19 +354,24 @@ function CheckoutPageInner() {
   // orderLines에서 르노벨/통합 금액 분리
   // 공구/타임세일/플래시세일 제외
   const RENOBEL_ID = '90175aa9-70c8-4568-865a-195f11bd7859'
-  const totoPayRatio = subtotal === 0 ? 1 : goodsAfterOran / subtotal
-
-  let rnbAmount = 0
-  let genAmount = 0
+  let rnbEligible = 0
+  let genEligible = 0
   orderLines.forEach((line: any) => {
     if (line.is_groupbuy || line.is_timesale || line.is_flash_sale || line.event_title) return
-    const amt = (line.subtotal || 0) * totoPayRatio
+    const amt = line.subtotal || 0
     if (line.brand_id === RENOBEL_ID) {
-      rnbAmount += amt
+      rnbEligible += amt
     } else {
-      genAmount += amt
+      genEligible += amt
     }
   })
+  const totalEligibleSubtotal = rnbEligible + genEligible
+  const genAmount = totalEligibleSubtotal === 0
+    ? goodsAfterOran
+    : (genEligible / totalEligibleSubtotal) * goodsAfterOran
+  const rnbAmount = totalEligibleSubtotal === 0
+    ? 0
+    : (rnbEligible / totalEligibleSubtotal) * goodsAfterOran
 
   // 다음 티어까지 부족 금액 계산
   // 통합 티어: 20만/30만/50만/100만
