@@ -706,7 +706,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
     ? (product.sale_price ?? (product as any).price ?? 0)
     : product.is_groupbuy
       ? (product.sale_price ?? (product as any).price ?? 0)
-      : (product.retail_price ?? (product as any).price ?? 0)
+      : (product.sale_price && product.sale_price > 0 && product.sale_price < product.retail_price
+          ? product.sale_price
+          : product.retail_price ?? (product as any).price ?? 0)
   const price = Number(priceRaw) || 0
   const hasValidPrice = price > 0
   const retailPrice = Number(product.retail_price ?? (product as any).price ?? 0) || 0
