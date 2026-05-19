@@ -171,7 +171,7 @@ export default function CheckoutPageView({
   const [useBankTransfer, setUseBankTransfer] = useState(false)
   const [receiptOn, setReceiptOn] = useState(true)
   const [receiptNum, setReceiptNum] = useState('')
-  const [newAddressOpen, setNewAddressOpen] = useState(false)
+  const [newAddressOpen, setNewAddressOpen] = useState(savedAddresses.length === 0)
   const [newRecipientName, setNewRecipientName] = useState('')
   const [newRecipientPhone, setNewRecipientPhone] = useState('')
   const [newAddress, setNewAddress] = useState('')
@@ -295,18 +295,44 @@ export default function CheckoutPageView({
               <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', marginBottom: 10 }}>배송 정보</div>
               {savedAddresses.length > 0 ? (
                 <div style={{ padding: 12, borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.2)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
-                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>기본 배송지</div>
-                    <button type="button" onClick={() => setAddressSheetOpen(true)} style={{ border: 'none', background: 'rgba(123,94,167,0.2)', color: '#d9c7ff', fontSize: 11, borderRadius: 8, padding: '5px 9px', cursor: 'pointer' }}>변경</button>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                    <span style={{ fontSize: 12, color: '#fff', fontWeight: 500 }}>{recipientName || '-'}</span>
-                    <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>· {recipientPhone || '-'}</span>
-                    {savedAddresses.some((a) => a.is_default === true && String(a.address || '') === String(address || '')) ? (
-                      <span style={{ fontSize: 10, color: '#fff', background: '#7B5EA7', borderRadius: 999, padding: '2px 7px' }}>기본</span>
-                    ) : null}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>{address || '-'}</div>
+                  {(() => {
+                    const defaultRow = savedAddresses.find((a: any) => a.is_default === true) || savedAddresses[0]
+                    const defName = String(defaultRow?.recipient_name || defaultRow?.name || '-')
+                    const defPhone = String(defaultRow?.phone || defaultRow?.recipient_phone || '-')
+                    const defAddr = String(defaultRow?.address || '-')
+                    const defDetail = String(defaultRow?.address_detail || defaultRow?.detail || '').trim()
+                    return (
+                      <>
+                        <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8 }}>기본 배송지</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                          <span style={{ fontSize: 12, color: '#fff', fontWeight: 500 }}>{defName}</span>
+                          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)' }}>· {defPhone}</span>
+                        </div>
+                        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>{defAddr}</div>
+                        {defDetail ? (
+                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5, marginTop: 4 }}>{defDetail}</div>
+                        ) : null}
+                      </>
+                    )
+                  })()}
+                  <button
+                    type="button"
+                    onClick={() => setAddressSheetOpen(true)}
+                    style={{
+                      width: '100%',
+                      marginTop: 10,
+                      marginBottom: 10,
+                      border: '1px solid rgba(255,255,255,0.15)',
+                      background: 'transparent',
+                      color: '#d9c7ff',
+                      fontSize: 12,
+                      borderRadius: 8,
+                      padding: '8px 0',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    다른 주소 선택 ▼
+                  </button>
                   <input
                     type="text"
                     placeholder="상세주소 (동/호수 등) *필수"
@@ -786,6 +812,7 @@ export default function CheckoutPageView({
                       setRecipientPhone(String(row.phone || row.recipient_phone || ''))
                       setAddress(lineAddress)
                       setAddressDetail(String(row.address_detail || row.detail || ''))
+                      setAddressSheetOpen(false)
                     }}
                   />
                   <span style={{ lineHeight: 1.45 }}>
@@ -804,7 +831,7 @@ export default function CheckoutPageView({
               onClick={() => setNewAddressOpen((v) => !v)}
               style={{ width: '100%', marginTop: 4, marginBottom: 8, border: '1px dashed rgba(255,255,255,0.2)', background: 'transparent', color: 'var(--text3)', borderRadius: 10, padding: '9px 0', cursor: 'pointer' }}
             >
-              + 새 배송지 추가
+              + 새 주소 추가
             </button>
             {newAddressOpen && (
               <div style={{ border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 10, marginBottom: 10 }}>
