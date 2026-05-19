@@ -530,7 +530,7 @@ export default function CustomerHomePage() {
       .from('reviews')
       .select('id, content, rating, images, video_url, review_type, author_user:users!reviews_author_id_fkey(name)')
       .eq('status', '게시')
-      .not('images', 'is', null)
+      .or('images.not.is.null,video_url.not.is.null')
       .order('helpful_count', { ascending: false })
       .limit(6)
       .then(({ data }) => setHomeReviews(data || []))
