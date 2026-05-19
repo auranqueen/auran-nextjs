@@ -334,9 +334,7 @@ export default function CheckoutPageView({
                     다른 주소 선택 ▼
                   </button>
                   {(() => {
-                    const defaultRow = savedAddresses.find((a: any) => a.is_default === true) || savedAddresses[0]
-                    const defDetail = String(defaultRow?.address_detail || defaultRow?.detail || '').trim()
-                    if (defDetail) return null
+                    if (savedAddresses.length > 0) return null
                     return (
                       <>
                         <input
