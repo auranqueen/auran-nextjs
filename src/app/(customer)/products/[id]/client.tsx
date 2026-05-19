@@ -735,13 +735,14 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
   const thumbImgs = product.thumb_images ?? []
   const galleryImgs = product.gallery_imgs ?? []
   const thumbUrl = product.storage_thumb_url || product.thumb_img || thumbImgs[0] || galleryImgs[0] || ''
+  const earnFixed = Number((product as any).earn_points ?? 0)
   const pointRateRaw = Number(
     (product as any).earn_points_percent > 0
       ? (product as any).earn_points_percent
       : ((product.brands as any)?.default_earn_points ?? 0)
   )
-  const pointRate = Number.isFinite(pointRateRaw) && pointRateRaw > 0 ? Math.min(100, Math.max(0, pointRateRaw)) : 1
-  const expectedPurchasePts = Math.floor((price * pointRate) / 100)
+  const pointRate = Number.isFinite(pointRateRaw) && pointRateRaw > 0 && pointRateRaw <= 100 ? pointRateRaw : 5
+  const expectedPurchasePts = earnFixed > 0 ? earnFixed : Math.floor((price * pointRate) / 100)
   const rt = product.review_points_text
   const rp = product.review_points_photo
   const rv = product.review_points_video
