@@ -12,7 +12,7 @@ export default function ReviewsPage() {
   useEffect(() => {
     let query = supabase
       .from('reviews')
-      .select('*, author:profiles(id, full_name, skin_type), product:products(id, name, thumb_img, retail_price)')
+      .select('*, product:products(id, name, thumb_img, retail_price)')
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
 
@@ -65,7 +65,7 @@ export default function ReviewsPage() {
             {/* 작성자 + 별점 */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>{review.author?.full_name || '익명'}</div>
+                <div style={{ fontSize: 13, fontWeight: 600 }}>{review.author?.full_name || '오랜 회원'}</div>
                 {review.skin_type && (
                   <span style={{
                     fontSize: 10, padding: '2px 8px', borderRadius: 10,
