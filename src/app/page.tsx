@@ -626,7 +626,7 @@ export default function CustomerHomePage() {
         let res = await supabase.from('products').select(selFull).eq('is_active', true).limit(200)
         if (res.error) {
           console.error('[home] products fetch (selFull):', res.error)
-          res = await supabase.from('products').select(selNoCat).eq('is_active', true).limit(200)
+          res = await supabase.from('products').select(selNoCat).eq('is_active', true).limit(200) as any
           if (res.error) {
             console.error('[home] products fetch (selNoCat):', res.error)
           }
