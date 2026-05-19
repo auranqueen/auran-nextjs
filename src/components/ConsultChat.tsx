@@ -43,9 +43,9 @@ export default function ConsultChat({
   useEffect(() => {
     const greeting = isRenobel
       ? '어서와요 🤫\n르노벨 찾아오셨네요 ㅎㅎ\n어떤 향기가 끌리세요? 💜'
-      : '맞아요 맞아요 🤫\n이거 잘 나가는 제품이에요!\n근데 피부마다 달라서요\n어떤 피부 고민 있으세요? 💜'
+      : `맞아요 맞아요 🤫\n${productName} 보고 오셨군요!\n근데 피부마다 달라서요\n어떤 피부 고민 있으세요? 💜`
     setMessages([{ role: 'bot', text: greeting }])
-  }, [isRenobel])
+  }, [isRenobel, productName])
 
   // 메시지 추가될 때 스크롤 아래로
   useEffect(() => {
@@ -101,6 +101,7 @@ export default function ConsultChat({
       overflow: 'hidden',
       boxShadow: '0 4px 24px rgba(0,0,0,0.15)',
       display: 'flex', flexDirection: 'column',
+      background: '#1a1a1a',
     }}>
       {/* 헤더 */}
       <div style={{ background: headerBg, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -124,7 +125,7 @@ export default function ConsultChat({
       <div
         ref={bodyRef}
         style={{
-          background: 'var(--color-background-secondary)',
+          background: '#1a1a1a',
           padding: 12, display: 'flex', flexDirection: 'column', gap: 8,
           maxHeight: 280, overflowY: 'auto',
         }}
