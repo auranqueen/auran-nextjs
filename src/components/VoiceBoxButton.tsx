@@ -45,7 +45,7 @@ export default function VoiceBoxButton() {
           onClick={() => setOpen(true)}
           style={{
             position: 'fixed',
-            bottom: 80,
+            bottom: 136,
             right: 16,
             zIndex: 999,
             width: 44,
@@ -117,7 +117,7 @@ export default function VoiceBoxButton() {
               ))}
               <button
                 onClick={() => setOpen(false)}
-                style={{ fontSize: 11, color: '#bbb', background: 'none', border: 'none', cursor: 'pointer', marginTop: 4 }}
+                style={{ fontSize: 11, color: '#555', background: 'none', border: 'none', cursor: 'pointer', marginTop: 4 }}
               >
                 닫기
               </button>
@@ -139,6 +139,7 @@ export default function VoiceBoxButton() {
                   borderRadius: 8,
                   border: '1px solid rgba(123,94,167,0.3)',
                   fontSize: 12,
+                  color: '#111',
                   fontFamily: 'inherit',
                   resize: 'none',
                   boxSizing: 'border-box',
