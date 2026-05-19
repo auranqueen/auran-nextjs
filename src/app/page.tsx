@@ -3071,7 +3071,8 @@ export default function CustomerHomePage() {
         {/* 포토 그리드 */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '3px', borderRadius: '14px', overflow: 'hidden' }}>
           {homeReviews.map((rv: any, i: number) => {
-            const thumb = Array.isArray(rv.images) && rv.images[0] ? String(rv.images[0]) : ''
+            const raw = rv.images[0]
+            const thumb = raw ? (typeof raw === 'string' ? raw : String(raw)) : ''
             const hasVideo = Boolean(String(rv.video_url || '').trim())
             return (
             <div key={rv.id ?? i} onClick={() => router.push('/reviews')} style={{ aspectRatio: '1', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', cursor: 'pointer', overflow: 'hidden' }}>
@@ -3096,7 +3097,11 @@ export default function CustomerHomePage() {
           <span onClick={() => router.push('/reviews')} style={{ fontSize: '10px', color: GOLD, cursor: 'pointer' }}>전체보기 →</span>
         </div>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <span style={{ fontSize: '20px' }}>🧴</span>
+          {homeReviews[0]?.images?.[0] ? (
+            <img src={homeReviews[0].images[0]} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
+          ) : (
+            <span style={{ fontSize: '20px' }}>🧴</span>
+          )}
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: '11px', marginBottom: '3px' }}>{homeReviews.length > 0 ? '★'.repeat(Math.max(0, Number(homeReviews[0].rating || 5))) : '⭐⭐⭐⭐⭐'}</div>
             <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.7 }}>
