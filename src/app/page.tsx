@@ -528,7 +528,7 @@ export default function CustomerHomePage() {
     // ===== [홈 롤링 리뷰] 베스트 후기 조회 =====
     supabase
       .from('reviews')
-      .select('id, content, rating, images, video_url, review_type, author_user:users!reviews_author_id_fkey(name)')
+      .select('id, content, rating, images, video_url, review_type')
       .eq('status', '게시')
       .or('images.not.is.null,video_url.not.is.null')
       .order('helpful_count', { ascending: false })
