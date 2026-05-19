@@ -568,6 +568,7 @@ export default function CustomerHomePage() {
         const { data: { session: _rex } } = await supabase.auth.getSession()
         const _raid = _rex?.user?.id
         if (_raid) {
+          restrictExclusiveCatalog = false
           const { data: _ruser } = await supabase.from('users').select('id,role,birthday,age_group,renobel_unlocked,customer_grade').eq('auth_id', _raid).maybeSingle()
           setUserRow(_ruser ?? null)
           if (_ruser?.id) {
@@ -616,8 +617,40 @@ export default function CustomerHomePage() {
         'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive, step_tags, category_tags, hormone_timing, concern_tags, skin_tags'
       const selNoCat =
         'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive, step_tags'
-      const [res, npRes, tsRes] = await Promise.all([
-        supabase.from('products').select(selFull).eq('is_active', true).limit(200),
+
+      const applyExclusiveFilter = (rows: any[]) =>
+        restrictExclusiveCatalog ? rows.filter((p: any) => p.is_exclusive !== true) : rows
+
+      let productRows: any[] | null = null
+      try {
+        let res = await supabase.from('products').select(selFull).eq('is_active', true).limit(200)
+        if (res.error) {
+          console.error('[home] products fetch (selFull):', res.error)
+          res = await supabase.from('products').select(selNoCat).eq('is_active', true).limit(200)
+          if (res.error) {
+            console.error('[home] products fetch (selNoCat):', res.error)
+          }
+        }
+        if (!res.error && res.data) productRows = res.data
+      } catch (err) {
+        console.error('[home] products fetch exception:', err)
+        try {
+          const fallback = await supabase.from('products').select(selNoCat).eq('is_active', true).limit(200)
+          if (fallback.error) {
+            console.error('[home] products fetch fallback (selNoCat):', fallback.error)
+          } else if (fallback.data) {
+            productRows = fallback.data
+          }
+        } catch (fallbackErr) {
+          console.error('[home] products fetch fallback exception:', fallbackErr)
+        }
+      }
+
+      if (productRows && productRows.length > 0) {
+        setProducts(applyExclusiveFilter(productRows))
+      }
+
+      const [npRes, tsRes] = await Promise.all([
         supabase.from('products').select('*').order('created_at', { ascending: false }).limit(6),
         supabase
           .from('products')
@@ -627,12 +660,6 @@ export default function CustomerHomePage() {
           .order('timesale_ends_at', { ascending: true })
           .limit(3),
       ])
-
-      if (res.data && res.data.length > 0) {
-        setProducts(
-          restrictExclusiveCatalog ? res.data.filter((p: any) => p.is_exclusive !== true) : res.data
-        )
-      }
       if (npRes.data && npRes.data.length > 0) {
         setNewProducts(
           restrictExclusiveCatalog ? npRes.data.filter((p: any) => p.is_exclusive !== true) : npRes.data
@@ -2779,7 +2806,14 @@ export default function CustomerHomePage() {
         {personalProductList.slice(0, 4).map((p: any, i: number) => {
           const rankColors = ['#C9A96E', 'rgba(180,180,180,0.8)', 'rgba(180,120,60,0.8)']
           return (
-            <div key={i} style={{
+            <div
+              key={p.id ?? i}
+              onClick={() => {
+                if (!p.id) return
+                logProductNav(p)
+                router.push(`/products/${p.id}`)
+              }}
+              style={{
               width: 140, background: CARD_BG, border: CARD_BORDER,
               borderRadius: '16px', overflow: 'hidden', cursor: 'pointer', flexShrink: 0,
             }}>
