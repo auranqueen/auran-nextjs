@@ -676,7 +676,7 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
     }
     setSaving(true)
     try {
-      let pid = editId
+      let pid = editId || workingIdRef.current || null
       let existingQuiz: string[] | null = null
 
       if (!pid) {
