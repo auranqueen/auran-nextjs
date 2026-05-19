@@ -12,7 +12,7 @@ export default function ReviewDetailPage() {
   useEffect(() => {
     supabase
       .from('reviews')
-      .select('*, author:profiles(id, full_name, skin_type), product:products(id, name, thumb_img, retail_price, brand_id)')
+      .select('*, author:users!reviews_author_id_fkey(id, name), product:products(id, name, thumb_img, retail_price, brand_id)')
       .eq('id', id)
       .single()
       .then(({ data }) => { if (data) setReview(data) })
@@ -59,7 +59,7 @@ export default function ReviewDetailPage() {
         {/* 작성자 정보 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700 }}>{review.author?.full_name || '익명'}</div>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>{review.author?.name || '오랜 회원'}</div>
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               {review.skin_type && (
                 <span style={{
