@@ -252,7 +252,7 @@ export default function BodyCareCard({
       const rc: string = p.routine_category ?? ''
       return tab === 'body' ? rc === 'body' : rc !== 'body'
     })
-    const visibleRecommended = (filteredRecommended.length > 0 ? filteredRecommended : (recommended ?? [])).slice(0, 6)
+    const visibleRecommended = filteredRecommended.slice(0, 6)
     return (
       <div>
         <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
@@ -301,8 +301,8 @@ export default function BodyCareCard({
                   minWidth: 100, borderRadius: 10, overflow: 'hidden',
                   background: 'rgba(255,255,255,0.04)', flexShrink: 0
                 }}>
-                  {p.thumb_img && (
-                    <img src={p.thumb_img} alt={p.name} style={{ width: 100, height: 100, objectFit: 'cover' }} />
+                  {(p.storage_thumb_url || p.thumb_img) && (
+                    <img src={p.storage_thumb_url || p.thumb_img} alt={p.name} style={{ width: 100, height: 100, objectFit: 'cover' }} />
                   )}
                   <div style={{ padding: '6px 8px' }}>
                     <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.3 }}>
@@ -321,7 +321,10 @@ export default function BodyCareCard({
     )
   }
 
-  const finalProducts = products.length > 0 ? products : (recommended ?? []).slice(0, 6)
+  const finalProducts = products.length > 0 ? products : (recommended ?? []).filter((p: any) => {
+    const rc: string = p.routine_category ?? ''
+    return tab === 'body' ? rc === 'body' : rc !== 'body'
+  }).slice(0, 6)
   if (closed) return null
   return (
     <div style={{ marginTop: 10, border: `1px solid ${CARD_BORDER}`, borderRadius: 12, background: CARD_BG, padding: 12, position: 'relative' }}>
@@ -388,7 +391,7 @@ export default function BodyCareCard({
               finalProducts.map((p) => (
                 <div key={p.id} style={{ minWidth: 170, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: 8, display: 'flex', gap: 8 }}>
                   <div style={{ width: 40, height: 40, borderRadius: 8, background: 'rgba(255,255,255,0.06)', overflow: 'hidden', flexShrink: 0 }}>
-                    {p.thumb_img ? <img src={p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                    {(p.storage_thumb_url || p.thumb_img) ? <img src={p.storage_thumb_url || p.thumb_img} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
                   </div>
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 11, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 400 }}>{p.name}</div>
@@ -411,14 +414,14 @@ export default function BodyCareCard({
                       const rc: string = p.routine_category ?? ''
                       return tab === 'body' ? rc === 'body' : rc !== 'body'
                     })
-                    const visibleRecommended = (filteredRecommended.length > 0 ? filteredRecommended : (recommended ?? [])).slice(0, 6)
+                    const visibleRecommended = filteredRecommended.slice(0, 6)
                     return visibleRecommended.map((p: any) => (
                       <div key={p.id} style={{
                         minWidth: 100, borderRadius: 10, overflow: 'hidden',
                         background: 'rgba(255,255,255,0.04)', flexShrink: 0
                       }}>
-                        {p.thumb_img && (
-                          <img src={p.thumb_img} alt={p.name} style={{ width: 100, height: 100, objectFit: 'cover' }} />
+                        {(p.storage_thumb_url || p.thumb_img) && (
+                          <img src={p.storage_thumb_url || p.thumb_img} alt={p.name} style={{ width: 100, height: 100, objectFit: 'cover' }} />
                         )}
                         <div style={{ padding: '6px 8px' }}>
                           <div style={{ fontSize: 11, color: '#fff', lineHeight: 1.3 }}>
