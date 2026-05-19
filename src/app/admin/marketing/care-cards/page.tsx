@@ -186,11 +186,11 @@ export default function AdminCareCardsPage() {
         setProductMeta({})
         return
       }
-      const { data } = await supabase.from('products').select('id, name').in('id', uniq)
+      const { data } = await supabase.from('products').select('id, name, clean_name').in('id', uniq)
       const m: Record<string, string> = {}
       for (const r of data || []) {
-        const p = r as ProductPick
-        m[p.id] = p.name
+        const p = r as ProductPick & { clean_name?: string | null }
+        m[p.id] = p.clean_name || p.name
       }
       setProductMeta(m)
     },
@@ -211,7 +211,7 @@ export default function AdminCareCardsPage() {
     const t = setTimeout(() => {
       void supabase
         .from('products')
-        .select('id, name')
+        .select('id, name, clean_name')
         .ilike('name', `%${q.slice(0, 80)}%`)
         .eq('is_active', true)
         .limit(15)
@@ -309,7 +309,7 @@ export default function AdminCareCardsPage() {
   const addProduct = (p: ProductPick) => {
     if (draft.product_ids.includes(p.id)) return
     setDraft(prev => ({ ...prev, product_ids: [...prev.product_ids, p.id] }))
-    setProductMeta(prev => ({ ...prev, [p.id]: p.name }))
+    setProductMeta(prev => ({ ...prev, [p.id]: (p as ProductPick & { clean_name?: string | null }).clean_name || p.name }))
     setPq('')
     setPicks([])
   }
@@ -629,7 +629,7 @@ function DraftForm({
                   cursor: 'pointer',
                 }}
               >
-                {p.name}
+                {(p as ProductPick & { clean_name?: string | null }).clean_name || p.name}
               </button>
             ))}
           </div>
