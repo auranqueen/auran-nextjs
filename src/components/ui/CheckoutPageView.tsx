@@ -901,12 +901,23 @@ export default function CheckoutPageView({
                           if (!meId) return
                           setAddressSaving(true)
                           const finalAddress = newAddress.trim()
+                          const finalDetail = newAddressDetail.trim() || null
+                          const isDuplicate = savedAddresses.some((a) => {
+                            const existingAddr = String(a.address ?? '').trim()
+                            const existingDetail = a.address_detail ? String(a.address_detail).trim() : null
+                            return existingAddr === finalAddress && existingDetail === finalDetail
+                          })
+                          if (isDuplicate) {
+                            alert('이미 등록된 주소예요')
+                            setAddressSaving(false)
+                            return
+                          }
                           const { error } = await supabase.from('shipping_addresses').insert({
                             user_id: meId,
                             recipient_name: newRecipientName.trim(),
                             phone: newRecipientPhone.trim(),
                             address: finalAddress,
-                            address_detail: newAddressDetail.trim() || null,
+                            address_detail: finalDetail,
                             label: newAddressLabel,
                             is_default: savedAddresses.length === 0,
                           })

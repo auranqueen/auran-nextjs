@@ -23,14 +23,25 @@ export default function MyAddressesPage() {
     if (!user) return
     const { data: u } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
     if (!u?.id) return
+    const addr = newAddress.trim()
+    const detail = newDetail.trim() || null
+    const isDuplicate = addresses.some((a) => {
+      const existingAddr = String(a.address ?? '').trim()
+      const existingDetail = a.address_detail ? String(a.address_detail).trim() : null
+      return existingAddr === addr && existingDetail === detail
+    })
+    if (isDuplicate) {
+      alert('이미 등록된 주소예요')
+      return
+    }
     const { data } = await supabase
       .from('shipping_addresses')
       .insert({
         user_id: u.id,
         recipient_name: newName,
         phone: newPhone,
-        address: newAddress,
-        address_detail: newDetail || null,
+        address: addr,
+        address_detail: detail,
         is_default: addresses.length === 0,
         label: '집',
       } as any)
