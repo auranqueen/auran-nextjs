@@ -333,6 +333,15 @@ export default function CheckoutPageView({
                   >
                     다른 주소 선택 ▼
                   </button>
+                  {(() => {
+                    const defaultRow = savedAddresses.find((a: any) => a.is_default === true) || savedAddresses[0]
+                    const defDetail = String(defaultRow?.address_detail || defaultRow?.detail || '').trim()
+                    return defDetail ? (
+                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', padding: '8px 0' }}>
+                        {defDetail}
+                      </div>
+                    ) : (
+                      <>
                   <input
                     type="text"
                     placeholder="상세주소 (동/호수 등) *필수"
@@ -350,9 +359,12 @@ export default function CheckoutPageView({
                       fontSize: 13,
                     }}
                   />
-                  {!addressDetail.trim() && (
-                    <div style={{ fontSize: 11, color: 'rgba(220,80,80,0.8)', marginTop: 4 }}>상세주소를 입력해주세요</div>
-                  )}
+                        {!addressDetail.trim() && (
+                          <div style={{ fontSize: 11, color: 'rgba(220,80,80,0.8)', marginTop: 4 }}>상세주소를 입력해주세요</div>
+                        )}
+                      </>
+                    )
+                  })()}
                 </div>
               ) : (
                 <>
