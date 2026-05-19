@@ -2799,7 +2799,6 @@ export default function CustomerHomePage() {
               ? `🏆 ${userName}님을 위한 BEST`
               : `🏆 ${concernList[selectedConcern]?.name} BEST`}
           </span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>더보기 ›</span>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', padding: '0 16px 4px', scrollbarWidth: 'none' }}>
