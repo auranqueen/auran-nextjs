@@ -466,9 +466,9 @@ export default function ProductDetailClient({
         await supabase.auth.getSession()
       if (!session?.user) return
       const { data: hc } = await supabase
-        .from('hormone_cycles')
+        .from('hormone_cycle')
         .select('track, cycle_start_date, cycle_length')
-        .eq('user_id', session.user.id)
+        .eq('auth_id', session.user.id)
         .maybeSingle()
       if (!hc) return
       const today = new Date()
