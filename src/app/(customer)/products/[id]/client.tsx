@@ -2208,7 +2208,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               <>
                 <div style={{ display: 'flex', gap: 10, overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
                   {perfectTogetherRows.map((t, i) => (
-                    <div key={t.id || i} style={{ flexShrink: 0, width: 110, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center', position: 'relative' }}>
+                    <div key={t.id || i} onClick={() => router.push(`/products/${t.id}`)} style={{ flexShrink: 0, width: 110, background: '#141210', border: '1px solid #201c16', borderRadius: 12, padding: 9, textAlign: 'center', position: 'relative', cursor: 'pointer' }}>
                       {showEditChrome ? (
                         <button
                           type="button"
@@ -2256,7 +2256,10 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       <div style={{ fontSize: 8, color: '#666' }}>{t.brands?.name || ''}</div>
                       <div style={{ fontSize: 10, lineHeight: 1.3 }}>{t.name}</div>
                       <div style={{ fontSize: 11, color: GOLD, marginTop: 3 }}>{Number(t.retail_price || 0).toLocaleString()}원</div>
-                      <div style={{ fontSize: 10, color: '#888', background: '#1e1a14', borderRadius: 5, padding: 4, marginTop: 5, cursor: 'pointer' }} onClick={() => router.push(`/products/${t.id}`)}>+ 담기</div>
+                      <div style={{ display: 'flex', gap: 4, marginTop: 5 }}>
+                        <div style={{ flex: 1, fontSize: 10, color: '#888', background: '#1e1a14', borderRadius: 5, padding: 4, cursor: 'pointer', textAlign: 'center' }} onClick={() => router.push(`/products/${t.id}`)}>+ 담기</div>
+                        <div style={{ flex: 1.3, padding: '7px 0', background: GOLD, borderRadius: '8px', fontSize: '9px', fontWeight: 400, color: '#000', textAlign: 'center', cursor: 'pointer' }} onClick={() => router.push(`/products/${t.id}`)}>구매</div>
+                      </div>
                     </div>
                   ))}
                 </div>

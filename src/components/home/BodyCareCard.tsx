@@ -416,9 +416,10 @@ export default function BodyCareCard({
                     })
                     const visibleRecommended = filteredRecommended.slice(0, 6)
                     return visibleRecommended.map((p: any) => (
-                      <div key={p.id} style={{
+                      <div key={p.id} onClick={() => router.push(`/products/${p.id}`)} style={{
                         width: 140, flexShrink: 0, borderRadius: 16, overflow: 'hidden',
                         background: 'rgba(255,255,255,0.04)',
+                        cursor: 'pointer',
                       }}>
                         {(p.storage_thumb_url || p.thumb_img) && (
                           <img src={p.storage_thumb_url || p.thumb_img} alt={p.name} style={{ width: 140, height: 140, objectFit: 'cover' }} />
@@ -430,6 +431,7 @@ export default function BodyCareCard({
                           <div style={{ fontSize: 11, color: '#7B5EA7', marginTop: 2 }}>
                             {p.sale_price?.toLocaleString()}원
                           </div>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); router.push(`/products/${p.id}`) }} style={{ marginTop: 6, width: '100%', borderRadius: 6, border: 'none', background: 'rgba(123,94,167,0.25)', color: '#e7dcf5', fontSize: 10, fontWeight: 500, padding: '4px 6px', cursor: 'pointer' }}>구매</button>
                         </div>
                       </div>
                     ))
