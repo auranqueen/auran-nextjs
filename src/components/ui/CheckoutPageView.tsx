@@ -336,13 +336,10 @@ export default function CheckoutPageView({
                   {(() => {
                     const defaultRow = savedAddresses.find((a: any) => a.is_default === true) || savedAddresses[0]
                     const defDetail = String(defaultRow?.address_detail || defaultRow?.detail || '').trim()
-                    return defDetail ? (
-                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', padding: '8px 0' }}>
-                        {defDetail}
-                      </div>
-                    ) : (
+                    if (defDetail) return null
+                    return (
                       <>
-                  <input
+                        <input
                     type="text"
                     placeholder="상세주소 (동/호수 등) *필수"
                     value={addressDetail}
