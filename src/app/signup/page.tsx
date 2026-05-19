@@ -1,5 +1,5 @@
 'use client'
-import { useState, Suspense } from 'react'
+import { useState, Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
@@ -32,9 +32,26 @@ function SignupForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const { getSettingNum } = useAdminSettings()
-  const signupWelcomePoint = getSettingNum('points_action', 'signup_welcome', 8888)
+  const [signupWelcomePoint, setSignupWelcomePoint] = useState(() =>
+    getSettingNum('points_action', 'signup_welcome', 8888)
+  )
 
   const supabase = createClient()
+
+  useEffect(() => {
+    void (async () => {
+      const { data: psRow } = await supabase
+        .from('point_settings')
+        .select('points')
+        .eq('action', 'signup')
+        .maybeSingle()
+      setSignupWelcomePoint(
+        psRow?.points
+          ? Math.max(0, Math.floor(Number(psRow.points)))
+          : getSettingNum('points_action', 'signup_welcome', 8888)
+      )
+    })()
+  }, [getSettingNum])
 
   const inp = (id: string, value: string, onChange: (v: string) => void, opts: any = {}) => (
     <input
