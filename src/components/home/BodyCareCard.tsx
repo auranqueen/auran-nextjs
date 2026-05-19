@@ -24,6 +24,14 @@ type ProductRow = {
   sale_price: number | null
   is_groupbuy: boolean | null
   thumb_img: string | null
+  routine_category?: string | null
+}
+
+function filterProductsByTab(list: ProductRow[], tab: Zone): ProductRow[] {
+  return list.filter((p) => {
+    const rc = p.routine_category ?? ''
+    return tab === 'body' ? rc === 'body' : rc !== 'body'
+  })
 }
 
 type Props = {
@@ -78,7 +86,11 @@ export default function BodyCareCard({
   const [rows, setRows] = useState<BodyCareCardRow[]>([])
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<Zone>('face')
-  const [products, setProducts] = useState<ProductRow[]>([])
+  const [fetchedCardProducts, setFetchedCardProducts] = useState<ProductRow[]>([])
+  const products = useMemo(
+    () => filterProductsByTab(fetchedCardProducts, tab),
+    [fetchedCardProducts, tab]
+  )
   const [editing, setEditing] = useState(false)
   const [isNew, setIsNew] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -129,14 +141,14 @@ export default function BodyCareCard({
   useEffect(() => {
     const ids = (todayCard?.product_ids || []).filter(Boolean)
     if (ids.length === 0) {
-      setProducts([])
+      setFetchedCardProducts([])
       return
     }
     void supabaseClient
       .from('products')
-      .select('id,name,retail_price,sale_price,is_groupbuy,thumb_img')
+      .select('id,name,retail_price,sale_price,is_groupbuy,thumb_img,routine_category')
       .in('id', ids)
-      .then(({ data }) => setProducts((data as ProductRow[]) || []))
+      .then(({ data }) => setFetchedCardProducts((data as ProductRow[]) || []))
   }, [todayCard, supabaseClient])
 
   useEffect(() => {
