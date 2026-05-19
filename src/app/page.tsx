@@ -475,7 +475,7 @@ export default function CustomerHomePage() {
     if (rules) setSafetyRules(rules)
 
     const profile = profileRes.data
-    let nameForHormoneLine = userName || '고객'
+    let nameForHormoneLine = '고객'
     if (profile) {
       setMotivationProfile(profile)
       setOnboardingDone((profile as any).onboarding_done === true)
@@ -518,7 +518,7 @@ export default function CustomerHomePage() {
         setPeriodTipTitle(String((tip as any)?.title || '생리 시작 안내'))
       }
     }
-  }, [userName])
+  }, [])
 
   useEffect(() => {
     if (!mounted) return
@@ -735,6 +735,8 @@ export default function CustomerHomePage() {
           )
         }
       }
+      setDataReady(true)
+      setLoading(false)
     })()
 
     const _brandCacheKey = 'auran_brands_v1'
@@ -800,10 +802,7 @@ export default function CustomerHomePage() {
         }
       )
     }
-
-    setDataReady(true)
-    setLoading(false)
-  }, [mounted, loadMotivationProfile])
+  }, [mounted])
 
   useEffect(() => {
     supabase
