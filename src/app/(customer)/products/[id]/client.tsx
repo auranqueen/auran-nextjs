@@ -112,6 +112,8 @@ export default function ProductDetailClient({
     { id: string; name: string; retail_price: number; thumb_img?: string | null; storage_thumb_url?: string | null; brands?: { name?: string } | null }[]
   >([])
   const [aiRecommendLine, setAiRecommendLine] = useState<string | null>(null)
+  const [purchasePointRateFallback, setPurchasePointRateFallback] = useState(5)
+  const [reviewDefaultPts, setReviewDefaultPts] = useState(200)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingField, setEditingField] = useState<{
@@ -336,6 +338,31 @@ export default function ProductDetailClient({
     setEditingHormone(null)
     setPtSearch('')
     setPtSearchHits([])
+  }, [product.id])
+
+  useEffect(() => {
+    let cancelled = false
+    setPurchasePointRateFallback(5)
+    setReviewDefaultPts(200)
+    void (async () => {
+      const { data } = await supabase
+        .from('point_settings')
+        .select('action, points')
+        .in('action', ['purchase', 'review'])
+      if (cancelled) return
+      for (const row of data || []) {
+        const n = Math.max(0, Math.floor(Number((row as { points?: unknown }).points ?? 0)))
+        if (row.action === 'purchase' && n > 0 && n <= 100) {
+          setPurchasePointRateFallback(n)
+        }
+        if (row.action === 'review' && n > 0) {
+          setReviewDefaultPts(n)
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [product.id])
 
   useEffect(() => {
@@ -741,7 +768,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
       ? (product as any).earn_points_percent
       : ((product.brands as any)?.default_earn_points ?? 0)
   )
-  const pointRate = Number.isFinite(pointRateRaw) && pointRateRaw > 0 && pointRateRaw <= 100 ? pointRateRaw : 5
+  const pointRate = Number.isFinite(pointRateRaw) && pointRateRaw > 0 && pointRateRaw <= 100 ? pointRateRaw : purchasePointRateFallback
   const expectedPurchasePts = earnFixed > 0 ? earnFixed : Math.floor((price * pointRate) / 100)
   const rt = product.review_points_text
   const rp = product.review_points_photo
@@ -2601,7 +2628,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 </>
               ) : (
                 <>
-                  기본 등록 <span style={{ color: GOLD }}>{product.review_points_text ?? 200}T</span>
+                  기본 등록 <span style={{ color: GOLD }}>{product.review_points_text ?? reviewDefaultPts}T</span>
                 </>
               )}
               {writeSkinType ? <span> + 피부타입 <span style={{ color: GOLD }}>+50T</span></span> : null}
@@ -2654,7 +2681,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     return
                   }
                   {
-                    const reviewToastAmt = Math.max(0, Math.floor(Number(product.review_points_text ?? 200)))
+                    const reviewToastAmt = Math.max(0, Math.floor(Number(product.review_points_text ?? reviewDefaultPts)))
                     const { error: ttErr } = await supabase.from('toast_transactions').insert({
                       user_id: urow.id,
                       amount: reviewToastAmt,
