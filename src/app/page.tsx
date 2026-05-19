@@ -635,7 +635,7 @@ export default function CustomerHomePage() {
       } catch (err) {
         console.error('[home] products fetch exception:', err)
         try {
-          const fallback = await supabase.from('products').select(selNoCat).eq('is_active', true).limit(200)
+          const fallback = await supabase.from('products').select(selNoCat).eq('is_active', true).limit(200) as any
           if (fallback.error) {
             console.error('[home] products fetch fallback (selNoCat):', fallback.error)
           } else if (fallback.data) {
