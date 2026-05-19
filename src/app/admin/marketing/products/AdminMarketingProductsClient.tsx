@@ -218,8 +218,8 @@ export default function AdminMarketingProductsClient() {
               </div>
               <div style={s.right}>
                 <div style={s.priceBox}>
-                  {p.retail_price > 0 && p.retail_price !== p.sale_price && <div style={s.priceOrig}>{p.retail_price.toLocaleString()}</div>}
-                  <div style={s.priceVal}>{p.sale_price.toLocaleString()}원</div>
+                  {p.retail_price > 0 && p.retail_price !== p.sale_price && <div style={s.priceOrig}>{(p.retail_price || 0).toLocaleString()}</div>}
+                  <div style={s.priceVal}>{(p.sale_price || p.retail_price || 0).toLocaleString()}원</div>
                 </div>
                 <span style={statusStyle(sc)}>{getStatusLabel(p)}</span>
                 <div style={{ display: 'flex', gap: 4 }}>
