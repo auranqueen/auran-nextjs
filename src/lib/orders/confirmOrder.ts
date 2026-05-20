@@ -37,7 +37,7 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
 
   const { data: order } = await supabase
     .from('orders')
-    .select('id,status,customer_id,items,referrer_user_id,share_toast_paid,prescription_owner_id,final_amount')
+    .select('id,status,customer_id,items,referrer_user_id,share_toast_paid,prescription_owner_id,final_amount,referral_reward_paid')
     .eq('id', orderId)
     .maybeSingle()
   if (!order?.id) return { ok: false, rewardAmount: 0, shareAmount: 0, autoConfirmDays }
@@ -129,6 +129,59 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
       } as any)
     }
   }
+
+  // ===== [가입 추천인 보상] 피추천인 첫 구매확정 시 추천인 5,000T =====
+  if (buyerAuthId && !(order as any).referral_reward_paid) {
+    const { data: buyerUser } = await supabase
+      .from('users')
+      .select('id, referred_by')
+      .eq('auth_id', buyerAuthId)
+      .maybeSingle()
+
+    if (buyerUser?.referred_by) {
+      const { count: confirmedCount } = await supabase
+        .from('orders')
+        .select('id', { count: 'exact', head: true })
+        .eq('customer_id', buyerAuthId)
+        .eq('status', '구매확정')
+
+      if (confirmedCount === 1) {
+        const { data: referrerUser } = await supabase
+          .from('users')
+          .select('id, auth_id')
+          .eq('id', buyerUser.referred_by)
+          .maybeSingle()
+
+        if (referrerUser?.auth_id) {
+          const referralReward = 5000
+
+          await addUserPointsByAuth(supabase, referrerUser.auth_id, referralReward)
+
+          await supabase.from('toast_transactions').insert({
+            user_id: referrerUser.auth_id,
+            amount: referralReward,
+            transaction_type: 'referral',
+            source_type: 'referral_reward',
+            reference_id: orderId,
+          } as any)
+
+          await supabase.from('orders')
+            .update({ referral_reward_paid: true } as any)
+            .eq('id', orderId)
+
+          await supabase.from('notifications').insert({
+            user_id: referrerUser.id,
+            type: 'promo',
+            title: '추천 보상이 적립됐어요 💜',
+            body: `내 추천으로 가입한 친구가 첫 구매를 완료했어요! +${referralReward.toLocaleString()}T`,
+            icon: '🎁',
+            is_read: false,
+          } as any)
+        }
+      }
+    }
+  }
+  // ===== [가입 추천인 보상 끝] =====
 
   // 딸기잼 share_logs 적립
   const referrerUserId = (order as any).referrer_user_id
