@@ -10,6 +10,11 @@ export async function requireAdmin(supabase: SupabaseServerClient) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/super-console/login')
 
+  const appRole = (user.app_metadata as { role?: string } | undefined)?.role
+    ?? (user as any)?.raw_app_meta_data?.role
+    ?? ''
+  if (appRole === 'super_admin') return { user, adminName: '맑원장' }
+
   // 0) service_role로 우선 검사 (RLS/정책 영향 제거)
   const svc = tryCreateServiceClient()
   if (svc) {
