@@ -447,6 +447,9 @@ export default function CustomerHomePage() {
   // ===== [홈 롤링 리뷰] DB 연동 =====
   const [homeReviews, setHomeReviews] = useState<any[]>([])
   const [quickConsultCount, setQuickConsultCount] = useState(0)
+  const [ownerChatOpen, setOwnerChatOpen] = useState(false)
+  const [quickConsultOpen, setQuickConsultOpen] = useState(false)
+  const [ownerChatUrl, setOwnerChatUrl] = useState('')
 
   useEffect(() => {
     if (!homeEditSheet) return
@@ -4132,40 +4135,106 @@ export default function CustomerHomePage() {
       ) : null}
 
       {isSuperAdmin ? (
-        <div style={{ position: 'fixed', right: 16, bottom: 88, zIndex: 90, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
-          {homeEditMode && (
-            <>
-              <button
-                type="button"
-                onClick={() => window.location.href = '/admin/owner-chat'}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
-              >
-                💬 상담톡
-              </button>
-              <button
-                type="button"
-                onClick={() => window.location.href = '/admin/guest-consult'}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
-              >
-                🙋 퀵상담 {quickConsultCount > 0 && `(${quickConsultCount})`}
-              </button>
-            </>
-          )}
-          <div style={{ position: 'relative' }}>
-            {quickConsultCount > 0 && !homeEditMode && (
-              <div style={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: '50%', background: '#E24B4A', color: '#fff', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, fontWeight: 500 }}>
-                {quickConsultCount > 9 ? '9+' : quickConsultCount}
+        <>
+          {/* 상담톡 팝업 */}
+          {ownerChatOpen && (
+            <div style={{
+              position: 'fixed', inset: 0, zIndex: 200,
+              display: 'flex', flexDirection: 'column',
+              background: '#0d0b12',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 16px',
+                borderBottom: '0.5px solid rgba(255,255,255,0.1)',
+                background: '#0d0b12',
+              }}>
+                <span style={{ color: '#C9A96E', fontSize: 14, letterSpacing: 1 }}>오랜 상담톡</span>
+                <button
+                  type="button"
+                  onClick={() => setOwnerChatOpen(false)}
+                  style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >✕</button>
               </div>
+              <iframe
+                src={ownerChatUrl || '/dashboard/owner/chat/redirect'}
+                style={{ flex: 1, border: 'none', width: '100%' }}
+              />
+            </div>
+          )}
+
+          {/* 퀵상담 팝업 */}
+          {quickConsultOpen && (
+            <div style={{
+              position: 'fixed', inset: 0, zIndex: 200,
+              display: 'flex', flexDirection: 'column',
+              background: '#0d0b12',
+            }}>
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '12px 16px',
+                borderBottom: '0.5px solid rgba(255,255,255,0.1)',
+                background: '#0d0b12',
+              }}>
+                <span style={{ color: '#C9A96E', fontSize: 14, letterSpacing: 1 }}>
+                  퀵상담 {quickConsultCount > 0 && `(${quickConsultCount})`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => { setQuickConsultOpen(false); setQuickConsultCount(0) }}
+                  style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >✕</button>
+              </div>
+              <iframe
+                src="/admin/guest-consult"
+                style={{ flex: 1, border: 'none', width: '100%' }}
+              />
+            </div>
+          )}
+
+          {/* FAB */}
+          <div style={{ position: 'fixed', right: 16, bottom: 88, zIndex: 90, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
+            {homeEditMode && (
+              <>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setHomeEditMode(false)
+                    setOwnerChatUrl('/dashboard/owner/chat/redirect')
+                    setOwnerChatOpen(true)
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                >
+                  💬 상담톡
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setHomeEditMode(false)
+                    setQuickConsultOpen(true)
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                >
+                  🙋 퀵상담 {quickConsultCount > 0 && `(${quickConsultCount})`}
+                </button>
+              </>
             )}
-            <button
-              type="button"
-              onClick={() => setHomeEditMode(v => !v)}
-              style={{ width: 52, height: 52, borderRadius: '50%', background: '#7B5EA7', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', padding: 0, lineHeight: 1 }}
-            >
-              {homeEditMode ? '✕' : '✏️'}
-            </button>
+            <div style={{ position: 'relative' }}>
+              {quickConsultCount > 0 && !homeEditMode && (
+                <div style={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: '50%', background: '#E24B4A', color: '#fff', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, fontWeight: 500 }}>
+                  {quickConsultCount > 9 ? '9+' : quickConsultCount}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setHomeEditMode(v => !v)}
+                style={{ width: 52, height: 52, borderRadius: '50%', background: '#7B5EA7', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', padding: 0, lineHeight: 1 }}
+              >
+                {homeEditMode ? '✕' : '✏️'}
+              </button>
+            </div>
           </div>
-        </div>
+        </>
       ) : null}
 
       {/* ── 푸터 ── */}
