@@ -37,6 +37,7 @@ const MENU = [
     items: [
       { label: '원장 상담톡', href: '/admin/owner-chat', icon: '💬' },
       { label: '내 원장 기능', href: '/admin/owner-mode', icon: '👩‍⚕️' },
+      { label: '회원 퀵상담', href: '/admin/guest-consult', icon: '🙋' },
       { label: '고객 피부 현황', href: '/admin/owner-customers', icon: '📊' },
     ],
   },
@@ -102,8 +103,6 @@ const MENU = [
       { label: '또또복권 관리', href: '/admin/toto', icon: '🎴' },
       // ===== [스토어 구매 후기] =====
       { label: '스토어 후기', href: '/admin/store-reviews', icon: '💜' },
-      // ===== [비회원 상담톡] guest_consultations 목록 =====
-      { label: '비회원 상담', href: '/admin/guest-consult', icon: '🤫' },
       // ===== [고객의 목소리 함] 버그/아이디어/칭찬 수신함 =====
       { label: '목소리 함', href: '/admin/voice-box', icon: '💜' },
     ],
@@ -127,6 +126,7 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/settlement')) return '정산 일괄 처리'
   if (path.startsWith('/admin/mapping')) return '추천 매핑'
   if (path.startsWith('/admin/home-curation')) return '홈 큐레이션'
+  if (path.startsWith('/admin/guest-consult')) return '회원 퀵상담'
   if (path.startsWith('/admin/charge')) return '충전 플랜'
   if (path.startsWith('/admin/subscriptions')) return '구독 관리'
   if (path.startsWith('/admin/invite')) return '초대 링크'
