@@ -129,6 +129,22 @@ function SignupForm() {
         // 인증 없이 즉시 세션 발급된 경우(설정에 따라): users 저장 후 완료
         const referralCode = Math.random().toString(36).slice(2, 8).toUpperCase()
         const status = role === 'customer' ? 'active' : 'pending'
+        let referredByUserId: string | null = null
+        if (inviteCode) {
+          const { data: inviteRow } = await supabase
+            .from('invite_links')
+            .select('created_by')
+            .eq('code', inviteCode)
+            .maybeSingle()
+          if (inviteRow?.created_by) {
+            const { data: referrerRow } = await supabase
+              .from('users')
+              .select('id')
+              .eq('auth_id', inviteRow.created_by)
+              .maybeSingle()
+            referredByUserId = referrerRow?.id ?? null
+          }
+        }
         const { data: newUserRow, error: newUserInsertErr } = await supabase
           .from('users')
           .insert({
@@ -139,6 +155,7 @@ function SignupForm() {
             role,
             provider: 'email',
             referral_code: referralCode,
+            referred_by: referredByUserId || null,
             status,
             points: 0,
             charge_balance: 0,
