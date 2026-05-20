@@ -3183,32 +3183,33 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
       ) : null}
 
       {isSuperAdmin ? (
-        <button
-          type="button"
-          onClick={() => setIsEditMode(v => !v)}
-          style={{
-            position: 'fixed',
-            right: 16,
-            bottom: 150,
-            width: 52,
-            height: 52,
-            borderRadius: '50%',
-            background: '#7B5EA7',
-            border: 'none',
-            color: '#fff',
-            fontSize: 20,
-            cursor: 'pointer',
-            zIndex: 50,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontFamily: 'inherit',
-            padding: 0,
-            lineHeight: 1,
-          }}
-        >
-          {isEditMode ? '✕' : '✏️'}
-        </button>
+        <div style={{ position: 'fixed', right: 16, bottom: 150, zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
+          {isEditMode && (
+            <>
+              <button
+                type="button"
+                onClick={() => window.location.href = '/admin/owner-chat'}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
+                💬 상담톡
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push('/admin/guest-consult')}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
+                🙋 퀵상담
+              </button>
+            </>
+          )}
+          <button
+            type="button"
+            onClick={() => setIsEditMode(v => !v)}
+            style={{ width: 52, height: 52, borderRadius: '50%', background: '#7B5EA7', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', padding: 0, lineHeight: 1 }}
+          >
+            {isEditMode ? '✕' : '✏️'}
+          </button>
+        </div>
       ) : null}
     </div>
   )

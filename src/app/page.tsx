@@ -446,6 +446,7 @@ export default function CustomerHomePage() {
   const [sheetFields, setSheetFields] = useState({ d: '', d2: '', d3: '', d4: '', n: 0, b: true })
   // ===== [홈 롤링 리뷰] DB 연동 =====
   const [homeReviews, setHomeReviews] = useState<any[]>([])
+  const [quickConsultCount, setQuickConsultCount] = useState(0)
 
   useEffect(() => {
     if (!homeEditSheet) return
@@ -1135,6 +1136,25 @@ export default function CustomerHomePage() {
       void supabase.removeChannel(ch)
     }
   }, [myUserId, mounted])
+
+  useEffect(() => {
+    if (!isSuperAdmin || !mounted) return
+    const loadCount = async () => {
+      const { count } = await supabase
+        .from('guest_consultations')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_read', false)
+      setQuickConsultCount(count ?? 0)
+    }
+    loadCount()
+    const ch = supabase
+      .channel('admin-quick-consult-count')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'guest_consultations' }, () => {
+        loadCount()
+      })
+      .subscribe()
+    return () => { void supabase.removeChannel(ch) }
+  }, [isSuperAdmin, mounted])
 
   useEffect(() => {
     const next: Record<string, boolean> = {}
@@ -4112,32 +4132,40 @@ export default function CustomerHomePage() {
       ) : null}
 
       {isSuperAdmin ? (
-        <button
-          type="button"
-          onClick={() => setHomeEditMode(v => !v)}
-          style={{
-            position: 'fixed',
-            right: 16,
-            bottom: 88,
-            width: 52,
-            height: 52,
-            borderRadius: '50%',
-            background: '#7B5EA7',
-            border: 'none',
-            color: '#fff',
-            fontSize: 20,
-            cursor: 'pointer',
-            zIndex: 90,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontFamily: 'inherit',
-            padding: 0,
-            lineHeight: 1,
-          }}
-        >
-          {homeEditMode ? '✕' : '✏️'}
-        </button>
+        <div style={{ position: 'fixed', right: 16, bottom: 88, zIndex: 90, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10 }}>
+          {homeEditMode && (
+            <>
+              <button
+                type="button"
+                onClick={() => window.location.href = '/admin/owner-chat'}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
+                💬 상담톡
+              </button>
+              <button
+                type="button"
+                onClick={() => window.location.href = '/admin/guest-consult'}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.15)', color: '#fff', borderRadius: 24, padding: '8px 16px', fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}
+              >
+                🙋 퀵상담 {quickConsultCount > 0 && `(${quickConsultCount})`}
+              </button>
+            </>
+          )}
+          <div style={{ position: 'relative' }}>
+            {quickConsultCount > 0 && !homeEditMode && (
+              <div style={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: '50%', background: '#E24B4A', color: '#fff', fontSize: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, fontWeight: 500 }}>
+                {quickConsultCount > 9 ? '9+' : quickConsultCount}
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => setHomeEditMode(v => !v)}
+              style={{ width: 52, height: 52, borderRadius: '50%', background: '#7B5EA7', border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', padding: 0, lineHeight: 1 }}
+            >
+              {homeEditMode ? '✕' : '✏️'}
+            </button>
+          </div>
+        </div>
       ) : null}
 
       {/* ── 푸터 ── */}
