@@ -21,7 +21,8 @@ function SignupForm() {
 
   const [step, setStep] = useState(1) // 1: 동의 2: 정보입력 3: 온보딩 4: 완료
   const [form, setForm] = useState({ name: '', email: '', password: '', passwordConfirm: '', phone: '' })
-  const [consent, setConsent] = useState({ required1: false, required2: false, marketing: false })
+  const [consent, setConsent] = useState({ required1: false, required2: false, marketing: false, research: false })
+  const [termsModalKey, setTermsModalKey] = useState<string | null>(null)
   const [track, setTrack] = useState<TrackType>('general')
   const [cycleLength, setCycleLength] = useState('28')
   const [lastPeriodDate, setLastPeriodDate] = useState('')
@@ -116,7 +117,7 @@ function SignupForm() {
           await supabase.from('hormone_cycle').upsert(payload, { onConflict: 'auth_id' })
           if (cycleType) {
             await supabase.from('profiles').upsert(
-              { auth_id: authData.user.id, email: form.email, cycle_type: cycleType } as any,
+              { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: consent.research } as any,
               { onConflict: 'auth_id' }
             )
           }
@@ -212,7 +213,7 @@ function SignupForm() {
         }
         if (cycleType) {
           await supabase.from('profiles').upsert(
-            { auth_id: authData.user.id, email: form.email, cycle_type: cycleType } as any,
+            { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: consent.research } as any,
             { onConflict: 'auth_id' }
           )
         }
@@ -268,6 +269,7 @@ function SignupForm() {
                 { key: 'required1', label: '[필수] 개인정보 수집·이용 동의', desc: '성명, 이메일, 피부 분석 정보 수집' },
                 { key: 'required2', label: '[필수] 민감정보 처리 동의', desc: '피부 타입 등 건강 관련 정보 처리' },
                 { key: 'marketing', label: '[선택] 마케팅 정보 수신 동의', desc: '이벤트·프로모션 알림 수신' },
+                { key: 'research', label: '[선택] 피부 연구 목적 익명 활용 동의', desc: '기록할수록 오랜이 나를 더 잘 알아가요 💜 호르몬·피부 데이터를 익명으로 연구에 활용합니다' },
               ].map(item => (
                 <label key={item.key} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '13px 14px', background: 'var(--bg3)', border: `1px solid ${(consent as any)[item.key] ? meta.color + '55' : 'var(--border)'}`, borderRadius: 12, cursor: 'pointer' }}>
                   <input
@@ -276,8 +278,17 @@ function SignupForm() {
                     onChange={e => setConsent(c => ({ ...c, [item.key]: e.target.checked }))}
                     style={{ marginTop: 2, accentColor: meta.color, width: 16, height: 16, flexShrink: 0 }}
                   />
-                  <div>
-                    <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{item.label}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                      <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{item.label}</div>
+                      <button
+                        type="button"
+                        onClick={e => { e.preventDefault(); e.stopPropagation(); setTermsModalKey(item.key) }}
+                        style={{ flexShrink: 0, background: 'none', border: 'none', padding: 0, fontSize: 10, color: meta.color, cursor: 'pointer', textDecoration: 'underline' }}
+                      >
+                        보기
+                      </button>
+                    </div>
                     <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{item.desc}</div>
                   </div>
                 </label>
@@ -285,13 +296,93 @@ function SignupForm() {
               <label style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 14px', background: `${meta.bg}`, border: `1px solid ${meta.border}`, borderRadius: 10, cursor: 'pointer' }}>
                 <input
                   type="checkbox"
-                  checked={consent.required1 && consent.required2 && consent.marketing}
-                  onChange={e => setConsent({ required1: e.target.checked, required2: e.target.checked, marketing: e.target.checked })}
+                  checked={consent.required1 && consent.required2 && consent.marketing && consent.research}
+                  onChange={e => setConsent({ required1: e.target.checked, required2: e.target.checked, marketing: e.target.checked, research: e.target.checked })}
                   style={{ accentColor: meta.color, width: 16, height: 16 }}
                 />
                 <span style={{ fontSize: 13, fontWeight: 700, color: meta.color }}>전체 동의</span>
               </label>
             </div>
+
+            {termsModalKey ? (
+              <div
+                onClick={() => setTermsModalKey(null)}
+                style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+              >
+                <div
+                  onClick={e => e.stopPropagation()}
+                  style={{ position: 'relative', background: 'var(--bg)', borderRadius: 16, padding: 24, maxHeight: '70vh', overflowY: 'auto', width: '100%', maxWidth: 420, boxSizing: 'border-box' }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setTermsModalKey(null)}
+                    style={{ position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    ✕
+                  </button>
+                  <div style={{ fontSize: 14, color: meta.color, fontWeight: 600, marginBottom: 12, paddingRight: 36 }}>
+                    {termsModalKey === 'required1' && '개인정보 수집·이용 동의'}
+                    {termsModalKey === 'required2' && '민감정보 처리 동의'}
+                    {termsModalKey === 'marketing' && '마케팅 정보 수신 동의'}
+                    {termsModalKey === 'research' && '피부 연구 목적 익명 활용 동의'}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.75, whiteSpace: 'pre-line' }}>
+                    {termsModalKey === 'required1' && `개인정보 수집·이용 동의
+
+수집 항목: 이름, 이메일, 비밀번호, 생년월일, 성별 (필수)
+프로필 사진, 피부타입, 피부 고민 (선택)
+
+수집 목적: 회원 식별 및 서비스 제공 / 주문·결제·배송 처리 / 고객 문의 응대
+
+보유 기간: 회원 탈퇴 시 즉시 파기
+단, 관계 법령에 따라 아래 기간 보존
+· 계약·청약철회 기록: 5년 (전자상거래법)
+· 대금결제·재화공급 기록: 5년 (전자상거래법)
+· 소비자 불만·분쟁처리 기록: 3년 (전자상거래법)
+· 접속 로그: 3개월 (통신비밀보호법)
+
+동의 거부 시 회원가입이 제한될 수 있습니다.`}
+                    {termsModalKey === 'required2' && `민감정보 처리 동의
+
+수집 항목: 호르몬 주기 정보, 피부 상태 기록, 건강 관련 고민
+
+수집 목적: 호르몬 주기 기반 개인화 피부 케어 서비스 제공 / 맞춤형 제품 추천
+
+보유 기간: 회원 탈퇴 시 즉시 파기
+
+위 민감정보는 서비스 제공 목적 외에 사용되지 않습니다.
+동의 거부 시 호르몬 주기 기반 맞춤 추천 서비스 이용이 제한될 수 있습니다.`}
+                    {termsModalKey === 'marketing' && `마케팅 정보 수신 동의
+
+수집 항목: 이메일, 휴대폰 번호
+
+활용 목적: 신제품·이벤트·프로모션 안내 / 맞춤형 혜택 및 할인 정보 발송
+
+발송 채널: 앱 푸시, 이메일, SMS/카카오 알림톡
+
+보유 기간: 동의 철회 시까지 (미이용 시 2년 후 파기 또는 재동의 요청)
+
+동의 거부 시에도 서비스 이용에 불이익이 없습니다.
+수신 동의 후에도 앱 설정에서 언제든지 철회 가능합니다.`}
+                    {termsModalKey === 'research' && `피부 연구 목적 익명 활용 동의
+
+수집 항목: 호르몬 주기, 피부 상태 기록, 루틴 이행 기록, 식욕·수면·기분 등 페이즈 경험 기록
+
+활용 목적: 호르몬 주기 기반 피부 과학 연구 / 서비스 추천 알고리즘 개선 / 학술 연구 및 논문 활용 (익명 처리 후)
+
+익명화 처리: 연구 활용 시 개인을 식별할 수 없도록 익명 처리 후 사용됩니다. 원본 개인정보와 분리 보관됩니다.
+
+제3자 제공: 익명 처리된 데이터에 한하여 대학 연구기관, 피부과학 연구팀에 제공될 수 있습니다.
+
+보유 기간: 동의 철회 시까지. 철회 후 익명 데이터는 연구 목적상 삭제되지 않을 수 있습니다.
+
+동의 거부 시 서비스 이용에 불이익이 없습니다.
+동의 후에도 마이페이지에서 언제든 철회 가능합니다.
+기록이 쌓일수록 오랜이 나를 더 잘 알아가요 💜`}
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             <button
               onClick={() => {
