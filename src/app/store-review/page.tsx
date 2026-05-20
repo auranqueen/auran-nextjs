@@ -81,12 +81,15 @@ export default function StoreReviewPage() {
       if (rvErr) throw rvErr
 
       // toast_transactions 10,000T 적립
-      await supabase.from('toast_transactions').insert({
-        user_id: userId,
-        amount: 10000,
-        transaction_type: 'review',
-        source_type: 'store_review_bonus',
-      } as any)
+      const { data: ttUserRow } = await supabase.from('users').select('id').eq('auth_id', userId).maybeSingle()
+      if (ttUserRow?.id) {
+        await supabase.from('toast_transactions').insert({
+          user_id: ttUserRow.id,
+          amount: 10000,
+          transaction_type: 'review',
+          source_type: 'store_review_bonus',
+        } as any)
+      }
 
       // users.toast_balance 업데이트
       const { data: uRow } = await supabase

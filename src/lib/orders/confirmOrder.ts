@@ -102,14 +102,17 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
     })
     await addUserPointsByAuth(supabase, referrerAuthId, shareAmount)
     {
-      const { error: ttErr } = await supabase.from('toast_transactions').insert({
-        user_id: referrerAuthId,
-        amount: shareAmount,
-        transaction_type: 'share_reward',
-        source_type: 'order',
-        reference_id: orderId,
-      } as any)
-      if (ttErr) console.warn('[confirmOrder] toast_transactions share_reward', ttErr)
+      const { data: refRow } = await supabase.from('users').select('id').eq('auth_id', referrerAuthId).maybeSingle()
+      if (refRow?.id) {
+        const { error: ttErr } = await supabase.from('toast_transactions').insert({
+          user_id: refRow.id,
+          amount: shareAmount,
+          transaction_type: 'share_reward',
+          source_type: 'order',
+          reference_id: orderId,
+        } as any)
+        if (ttErr) console.warn('[confirmOrder] toast_transactions share_reward', ttErr)
+      }
     }
     await supabase
       .from('orders')
@@ -158,7 +161,7 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
           await addUserPointsByAuth(supabase, referrerUser.auth_id, referralReward)
 
           await supabase.from('toast_transactions').insert({
-            user_id: referrerUser.auth_id,
+            user_id: referrerUser.id,
             amount: referralReward,
             transaction_type: 'referral',
             source_type: 'referral_reward',
