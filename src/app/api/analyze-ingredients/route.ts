@@ -81,6 +81,25 @@ owner_analysis: 맑원장 말투로 이 제품 한 줄 핵심 설명 (50자 이�
     try {
       const clean = text.replace(/```json|```/g, '').trim()
       const parsed = JSON.parse(clean)
+      // ai_recommendation_logs insert (fire and forget)
+      try {
+        const { createClient } = await import('@supabase/supabase-js')
+        const supabase = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!
+        )
+        const customerId = body.customer_id || null
+        if (customerId) {
+          await supabase.from('ai_recommendation_logs').insert({
+            customer_id: customerId,
+            recommended_product_ids: parsed.concern_tags || [],
+            hormone_phase: parsed.hormone_timing?.[0] || null,
+            skin_type: body.skin_type || null,
+            concerns: parsed.concern_tags || [],
+            prompt_version: 'v1',
+          })
+        }
+      } catch (_) {}
       return NextResponse.json(parsed)
     } catch {
       return NextResponse.json({ error: '응답 파싱 실패', raw: text }, { status: 500 })
