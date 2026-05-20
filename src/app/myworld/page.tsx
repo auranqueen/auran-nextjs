@@ -1552,6 +1552,11 @@ export default function MyWorldPage() {
       </button>
     </div>
 
+      <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 16, lineHeight: 1.6 }}>
+        기록할수록 오랜이 나를 더 잘 알아가요 💜<br />
+        페이즈마다 기록하면 딱 맞는 제품을 추천해드려요
+      </div>
+
     {/* 호르몬 페이즈 기록 */}
     <div style={{
       background: 'var(--color-background-primary)',
