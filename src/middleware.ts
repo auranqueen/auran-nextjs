@@ -184,7 +184,11 @@ export async function middleware(req: NextRequest) {
 
   // admin routes: admin only (and keeps session refreshed via middleware cookies)
   if (isAdmin) {
-    if (normalizedRole !== 'admin') {
+    const appRole = (user?.app_metadata as { role?: string } | undefined)?.role
+      ?? (user as any)?.raw_app_meta_data?.role
+      ?? ''
+    const isSuperAdmin = appRole === 'super_admin'
+    if (normalizedRole !== 'admin' && !isSuperAdmin) {
       const url = req.nextUrl.clone()
       url.pathname = '/super-console/login'
       url.searchParams.set('next', pathname)
