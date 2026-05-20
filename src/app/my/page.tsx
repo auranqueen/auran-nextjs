@@ -199,22 +199,6 @@ export default function MyPage() {
             ]
             const done = Math.round((checks.filter(Boolean).length / checks.length) * 100)
             setCompletion(done)
-            if (done === 100) {
-              const { data: alreadyBonus } = await supabase
-                .from('point_transactions')
-                .select('id')
-                .eq('user_id', data.user.id)
-                .eq('type', 'profile_complete')
-                .limit(1)
-              if (!alreadyBonus || alreadyBonus.length === 0) {
-                await supabase.from('point_transactions').insert({
-                  user_id: data.user.id,
-                  amount: 1000,
-                  type: 'profile_complete',
-                  description: '프로필 완성 보너스',
-                })
-              }
-            }
           })
         supabase
           .from('monthly_skin_reports')
@@ -297,7 +281,7 @@ export default function MyPage() {
         : completion < 80
           ? '🎁 생일·기념일을 등록하면 깜짝 선물과 특별 쿠폰이 준비돼요'
           : completion < 100
-            ? '✨ 조금만 더! 완성하면 1,000T + 맞춤 추천이 시작돼요'
+            ? '프로필을 완성할수록 맑원장의 추천이 나만을 위한 처방이 돼요 💜'
             : ''
   const incompleteHints = [
     !profileData?.skin_type ? '· 피부타입을 선택해주세요' : '',
@@ -512,7 +496,13 @@ export default function MyPage() {
         <div onClick={() => router.push('/my/profile')} style={{ margin: '10px 16px 0', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 14, padding: '14px 16px', cursor: 'pointer' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>프로필 완성도 {completion}%</div>
-            <div style={{ fontSize: 11, color: GOLD }}>완성 시 3,000T →</div>
+            <div style={{ fontSize: 11, color: GOLD }}>{completion <= 30
+                ? '아직 맑원장이 나를 잘 몰라요 🌱 조금만 알려주세요'
+                : completion <= 59
+                  ? '절반 왔어요! 입력할수록 추천이 정교해져요 ✨'
+                  : completion <= 79
+                    ? '거의 다 왔어요 💜 조금만 더하면 맞춤 케어 시작돼요'
+                    : '포기하지 마요! 완성하면 호르몬 주기까지 분석해드려요 🌙'}</div>
           </div>
           <div style={{ width: '100%', height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
             <div style={{ width: `${completion}%`, height: 6, borderRadius: 3, background: '#7B5EA7' }} />
