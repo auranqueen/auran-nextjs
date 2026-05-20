@@ -78,7 +78,28 @@ export default function AdminInvitePage() {
   const generate = async () => {
     const code = makeCode(modalRole)
     const url = `${baseUrl}/join/${modalRole}?ref=${code}`
-    const payload = { role: modalRole, code, note: modalNote || null, url, used_count: 0, is_active: true, created_at: new Date().toISOString() }
+
+    const { data: authData } = await supabase.auth.getUser()
+    let createdBy = null
+    if (authData?.user) {
+      const { data: u } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_id', authData.user.id)
+        .maybeSingle()
+      createdBy = u?.id || null
+    }
+
+    const payload = {
+      role: modalRole,
+      code,
+      note: modalNote || null,
+      url,
+      used_count: 0,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      created_by: createdBy,
+    }
     const { error } = await supabase.from('invite_links').insert(payload)
     if (error) {
       alert(error.message)
