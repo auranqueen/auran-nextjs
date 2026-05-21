@@ -122,25 +122,25 @@ function OnboardingInner() {
           <div>
             <label style={labelStyle}>성별 *</label>
             <div style={{ display: 'flex', gap: 8 }}>
-              {(['여성', '남성'] as const).map(g => (
+              {([['female', '여성'], ['male', '남성']] as const).map(([val, label]) => (
                 <button
-                  key={g}
+                  key={val}
                   type="button"
-                  onClick={() => { setGender(g); setCycleType(''); setTrack(''); setSkinType('') }}
+                  onClick={() => { setGender(val); setCycleType(''); setTrack(''); setSkinType('') }}
                   style={{
                     flex: 1, padding: '11px 0', borderRadius: 10, fontSize: 13,
-                    border: gender === g ? '1px solid #7B5EA7' : '1px solid var(--border)',
-                    background: gender === g ? 'rgba(123,94,167,0.08)' : 'var(--bg3)',
-                    color: gender === g ? '#7B5EA7' : 'var(--text)',
+                    border: gender === val ? '1px solid #7B5EA7' : '1px solid var(--border)',
+                    background: gender === val ? 'rgba(123,94,167,0.08)' : 'var(--bg3)',
+                    color: gender === val ? '#7B5EA7' : 'var(--text)',
                     cursor: 'pointer',
                   }}
-                >{g}</button>
+                >{label}</button>
               ))}
             </div>
           </div>
 
           {/* 여성 - 생리 주기 */}
-          {gender === '여성' && (
+          {gender === 'female' && (
             <div>
               <label style={labelStyle}>나의 생리 주기는?</label>
               <div style={{ display: 'grid', gap: 8 }}>
@@ -192,7 +192,7 @@ function OnboardingInner() {
           )}
 
           {/* 남성 - 피부 타입 */}
-          {gender === '남성' && (
+          {gender === 'male' && (
             <div>
               <label style={labelStyle}>피부 타입이 어때요?</label>
               <div style={{ display: 'grid', gap: 8 }}>
