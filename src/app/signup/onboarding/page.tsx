@@ -56,6 +56,7 @@ function OnboardingInner() {
       localStorage.setItem('auran_cycle_length', cycleLength)
       localStorage.setItem('auran_last_period', lastPeriodDate)
       localStorage.setItem('auran_skin_type', skinType)
+      localStorage.setItem('auran_onboarding_done', 'true')
 
       const appUrl = window.location.origin
       const callbackQuery = `?role=${role}`
