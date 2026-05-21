@@ -93,6 +93,26 @@ function AuthDoneInner() {
           localStorage.removeItem('auran_last_period')
         }
       } catch {}
+      // localStorage에서 birth_date/gender/skin_type 읽어서 profiles 저장
+      try {
+        const birthDate = localStorage.getItem('auran_birth_date')
+        const gender = localStorage.getItem('auran_gender')
+        const skinType = localStorage.getItem('auran_skin_type')
+        if (birthDate || gender || skinType) {
+          await supabase.from('profiles').upsert(
+            {
+              auth_id: data.session!.user.id,
+              ...(birthDate ? { birth_date: birthDate } : {}),
+              ...(gender ? { gender } : {}),
+              ...(skinType ? { skin_type: skinType } : {}),
+            },
+            { onConflict: 'auth_id' }
+          )
+          if (birthDate) localStorage.removeItem('auran_birth_date')
+          if (gender) localStorage.removeItem('auran_gender')
+          if (skinType) localStorage.removeItem('auran_skin_type')
+        }
+      } catch {}
       setSessionUserCreatedAt(createdAt)
       const { data: row } = await supabase.from('users').select('phone').eq('auth_id', data.session!.user.id).maybeSingle()
       const p = String(row?.phone || '').replace(/\D/g, '')
