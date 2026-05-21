@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, Suspense } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 const TERMS: Record<string, { title: string; content: string }> = {
@@ -61,7 +61,10 @@ const TERMS: Record<string, { title: string; content: string }> = {
 
 function ConsentInner() {
   const router = useRouter()
+  const params = useSearchParams()
   const supabase = createClient()
+  const role = params.get('role') || 'customer'
+  const provider = params.get('provider') || ''
   const [consent, setConsent] = useState({ required1: false, required2: false, marketing: false, research: false })
   const [modalKey, setModalKey] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -73,13 +76,34 @@ function ConsentInner() {
     if (!allRequired) { setError('필수 약관에 동의해주세요'); return }
     setLoading(true)
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.replace('/login'); return }
-      await supabase.from('profiles').upsert(
-        { auth_id: user.id, research_consent: consent.research },
-        { onConflict: 'auth_id' }
-      )
-      router.replace('/')
+      // localStorage에 동의 여부 저장 (로그인 전이라 세션 없음)
+      localStorage.setItem('auran_research_consent', consent.research ? 'true' : 'false')
+      localStorage.setItem('auran_marketing_consent', consent.marketing ? 'true' : 'false')
+
+      const appUrl = window.location.origin
+      const callbackQuery = `?role=${role}`
+
+      if (provider === 'kakao') {
+        await supabase.auth.signInWithOAuth({
+          provider: 'kakao',
+          options: {
+            redirectTo: `${appUrl}/auth/callback${callbackQuery}`,
+            scopes: 'profile_nickname profile_image',
+          }
+        })
+        return
+      }
+      if (provider === 'google') {
+        await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${appUrl}/auth/callback${callbackQuery}`,
+          }
+        })
+        return
+      }
+      // 이메일 가입
+      router.push(`/signup?role=${role}`)
     } catch {
       setError('오류가 발생했습니다. 다시 시도해주세요.')
     } finally {
