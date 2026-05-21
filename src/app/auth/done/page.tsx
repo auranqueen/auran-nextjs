@@ -72,6 +72,27 @@ function AuthDoneInner() {
           localStorage.removeItem('auran_research_consent')
         }
       } catch {}
+      // localStorage에서 hormone 데이터 읽어서 hormone_cycle 저장
+      try {
+        const cycleType = localStorage.getItem('auran_cycle_type')
+        const track = localStorage.getItem('auran_track')
+        const cycleLength = localStorage.getItem('auran_cycle_length')
+        const lastPeriod = localStorage.getItem('auran_last_period')
+        if (cycleType && track) {
+          const payload: any = {
+            auth_id: data.session!.user.id,
+            cycle_type: cycleType,
+            track,
+            cycle_length: cycleLength ? parseInt(cycleLength) : 28,
+            last_period_date: lastPeriod || null,
+          }
+          await supabase.from('hormone_cycle').upsert(payload, { onConflict: 'auth_id' })
+          localStorage.removeItem('auran_cycle_type')
+          localStorage.removeItem('auran_track')
+          localStorage.removeItem('auran_cycle_length')
+          localStorage.removeItem('auran_last_period')
+        }
+      } catch {}
       setSessionUserCreatedAt(createdAt)
       const { data: row } = await supabase.from('users').select('phone').eq('auth_id', data.session!.user.id).maybeSingle()
       const p = String(row?.phone || '').replace(/\D/g, '')
