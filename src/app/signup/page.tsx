@@ -299,7 +299,13 @@ function SignupForm() {
                 if (!(form as any).gender) { setError('성별을 선택해주세요'); return }
                 if (form.password !== form.passwordConfirm) { setError('비밀번호가 일치하지 않습니다'); return }
                 if (form.password.length < 6) { setError('비밀번호는 6자 이상이어야 합니다'); return }
-                setStep(2)
+                if ((form as any).gender === '남성') {
+                  setCycleType('male')
+                  setTrack('male')
+                  handleSignup()
+                } else {
+                  setStep(2)
+                }
               }}
               disabled={loading}
               style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.color, fontSize: 15, fontWeight: 700, marginTop: 20, opacity: loading ? 0.7 : 1 }}
@@ -311,90 +317,50 @@ function SignupForm() {
 
         {step === 2 && (
           <div>
-            <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 20, color: 'var(--text)', marginBottom: 6 }}>온보딩 트랙 선택</div>
+            <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 20, color: 'var(--text)', marginBottom: 6 }}>나의 생리 주기는?</div>
             <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 18 }}>맞춤 추천 정확도를 높이기 위한 마지막 단계예요</div>
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8 }}>나의 라이프 사이클</div>
             <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
-              {([
-                ['menstrual', '🌸 매달 생리를 해요'],
-                ['menopause', '🌙 생리가 불규칙하거나 거의 없어요'],
-                ['pregnant', '🤰 임신 중이에요'],
-                ['postpartum', '👶 출산한 지 얼마 안 됐어요'],
-                ['menopause_post', '🌿 생리가 완전히 끝났어요'],
-              ] as const).map(([k, lab]) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => { setCycleType(k); setTrack(k === 'menstrual' ? 'general' : k === 'menopause' ? 'menopause_peri' : k === 'pregnant' ? 'pregnant' : k === 'postpartum' ? 'postpartum' : 'menopause_post') }}
-                  style={{
-                    textAlign: 'left', padding: '13px 14px', borderRadius: 10,
-                    border: cycleType === k ? `1px solid ${meta.color}` : '1px solid var(--border)',
-                    background: cycleType === k ? meta.bg : 'var(--bg3)',
-                    color: cycleType === k ? meta.color : 'var(--text)',
-                    fontSize: 13, cursor: 'pointer',
-                  }}
-                >{lab}</button>
-              ))}
-              {(form as any).gender === '남성' && (
-                <button
-                  type="button"
-                  onClick={() => { setCycleType('male'); setTrack('male') }}
-                  style={{
-                    textAlign: 'left', padding: '13px 14px', borderRadius: 10,
-                    border: cycleType === 'male' ? `1px solid ${meta.color}` : '1px solid var(--border)',
-                    background: cycleType === 'male' ? meta.bg : 'var(--bg3)',
-                    color: cycleType === 'male' ? meta.color : 'var(--text)',
-                    fontSize: 13, cursor: 'pointer',
-                  }}
-                >👨 남성이에요</button>
-              )}
+              <button
+                type="button"
+                onClick={() => { setCycleType('menstrual'); setTrack('general') }}
+                style={{
+                  textAlign: 'left', padding: '13px 14px', borderRadius: 10,
+                  border: cycleType === 'menstrual' ? `1px solid ${meta.color}` : '1px solid var(--border)',
+                  background: cycleType === 'menstrual' ? meta.bg : 'var(--bg3)',
+                  color: cycleType === 'menstrual' ? meta.color : 'var(--text)',
+                  fontSize: 13, cursor: 'pointer',
+                }}
+              >🌸 생리 주기가 있어요</button>
+              <button
+                type="button"
+                onClick={() => { setCycleType('menopause'); setTrack('menopause_peri') }}
+                style={{
+                  textAlign: 'left', padding: '13px 14px', borderRadius: 10,
+                  border: cycleType === 'menopause' ? `1px solid ${meta.color}` : '1px solid var(--border)',
+                  background: cycleType === 'menopause' ? meta.bg : 'var(--bg3)',
+                  color: cycleType === 'menopause' ? meta.color : 'var(--text)',
+                  fontSize: 13, cursor: 'pointer',
+                }}
+              >🌙 생리 주기가 없어요</button>
             </div>
-            {(track === 'general' || track === 'menopause_peri') ? (
+            {track === 'general' ? (
               <div style={{ display: 'grid', gap: 10, marginTop: 14 }}>
-                {track === 'general' ? (
-                  <div><label style={labelStyle}>평균 주기 일수</label>{inp('cycle', cycleLength, setCycleLength, { inputMode: 'numeric', placeholder: '예: 28' })}</div>
-                ) : null}
+                <div><label style={labelStyle}>평균 주기 일수</label>{inp('cycle', cycleLength, setCycleLength, { inputMode: 'numeric', placeholder: '예: 28' })}</div>
                 <div><label style={labelStyle}>마지막 생리 시작일</label>{inp('lastPeriod', lastPeriodDate, setLastPeriodDate, { type: 'date' })}</div>
-              </div>
-            ) : null}
-            {track === 'pregnant' ? (
-              <div style={{ marginTop: 14 }}><label style={labelStyle}>출산 예정일</label>{inp('dueDate', dueDate, setDueDate, { type: 'date' })}</div>
-            ) : null}
-            {track === 'postpartum' ? (
-              <div style={{ display: 'grid', gap: 10, marginTop: 14 }}>
-                <div><label style={labelStyle}>출산일</label>{inp('deliveryDate', deliveryDate, setDeliveryDate, { type: 'date' })}</div>
-                <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12, color: 'var(--text)' }}>
-                  <input type="checkbox" checked={isBreastfeeding} onChange={e => setIsBreastfeeding(e.target.checked)} />
-                  모유수유 중
-                </label>
               </div>
             ) : null}
             {error && <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(217,79,79,0.1)', border: '1px solid rgba(217,79,79,0.3)', borderRadius: 8, fontSize: 12, color: '#e08080' }}>{error}</div>}
             <button
               onClick={() => {
-                if (!cycleType) {
-                  setError('라이프 사이클을 선택해주세요')
-                  return
-                }
-                if ((track === 'general' || track === 'menopause_peri') && !lastPeriodDate) {
-                  setError('마지막 생리 시작일을 입력해주세요')
-                  return
-                }
-                if (track === 'pregnant' && !dueDate) {
-                  setError('출산 예정일을 입력해주세요')
-                  return
-                }
-                if (track === 'postpartum' && !deliveryDate) {
-                  setError('출산일을 입력해주세요')
-                  return
-                }
+                if (!cycleType) { setError('생리 주기를 선택해주세요'); return }
+                if (track === 'general' && !lastPeriodDate) { setError('마지막 생리 시작일을 입력해주세요'); return }
                 setError('')
                 handleSignup()
               }}
               disabled={loading}
               style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.color, fontSize: 15, fontWeight: 700, marginTop: 20, opacity: loading ? 0.7 : 1 }}
             >
-              {loading ? '가입 중...' : '✅ 가입 완료'}
+              {loading ? '처리 중...' : '가입 완료'}
             </button>
           </div>
         )}
