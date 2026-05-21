@@ -44,15 +44,15 @@ function OnboardingInner() {
   const handleComplete = async () => {
     if (birthRawDigits.length !== 8) { setError('생년월일을 입력해주세요'); return }
     if (!gender) { setError('성별을 선택해주세요'); return }
-    if (gender === '여성' && !cycleType) { setError('생리 주기를 선택해주세요'); return }
-    if (gender === '여성' && track === 'general' && !lastPeriodDate) { setError('마지막 생리 시작일을 입력해주세요'); return }
-    if (gender === '남성' && !skinType) { setError('피부 타입을 선택해주세요'); return }
+    if (gender === 'female' && !cycleType) { setError('생리 주기를 선택해주세요'); return }
+    if (gender === 'female' && track === 'general' && !lastPeriodDate) { setError('마지막 생리 시작일을 입력해주세요'); return }
+    if (gender === 'male' && !skinType) { setError('피부 타입을 선택해주세요'); return }
     setLoading(true)
     try {
       localStorage.setItem('auran_birth_date', birthForDB || '')
       localStorage.setItem('auran_gender', gender)
-      localStorage.setItem('auran_cycle_type', gender === '여성' ? cycleType : 'male')
-      localStorage.setItem('auran_track', gender === '여성' ? track : 'male')
+      localStorage.setItem('auran_cycle_type', gender === 'female' ? cycleType : 'male')
+      localStorage.setItem('auran_track', gender === 'female' ? track : 'male')
       localStorage.setItem('auran_cycle_length', cycleLength)
       localStorage.setItem('auran_last_period', lastPeriodDate)
       localStorage.setItem('auran_skin_type', skinType)
