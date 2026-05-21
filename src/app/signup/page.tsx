@@ -304,63 +304,13 @@ function SignupForm() {
                   setTrack('male')
                   handleSignup()
                 } else {
-                  setStep(2)
+                  handleSignup()
                 }
               }}
               disabled={loading}
               style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.color, fontSize: 15, fontWeight: 700, marginTop: 20, opacity: loading ? 0.7 : 1 }}
             >
               다음 →
-            </button>
-          </div>
-        )}
-
-        {step === 2 && (
-          <div>
-            <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 20, color: 'var(--text)', marginBottom: 6 }}>나의 생리 주기는?</div>
-            <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 18 }}>맞춤 추천 정확도를 높이기 위한 마지막 단계예요</div>
-            <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
-              <button
-                type="button"
-                onClick={() => { setCycleType('menstrual'); setTrack('general') }}
-                style={{
-                  textAlign: 'left', padding: '13px 14px', borderRadius: 10,
-                  border: cycleType === 'menstrual' ? `1px solid ${meta.color}` : '1px solid var(--border)',
-                  background: cycleType === 'menstrual' ? meta.bg : 'var(--bg3)',
-                  color: cycleType === 'menstrual' ? meta.color : 'var(--text)',
-                  fontSize: 13, cursor: 'pointer',
-                }}
-              >🌸 생리 주기가 있어요</button>
-              <button
-                type="button"
-                onClick={() => { setCycleType('menopause'); setTrack('menopause_peri') }}
-                style={{
-                  textAlign: 'left', padding: '13px 14px', borderRadius: 10,
-                  border: cycleType === 'menopause' ? `1px solid ${meta.color}` : '1px solid var(--border)',
-                  background: cycleType === 'menopause' ? meta.bg : 'var(--bg3)',
-                  color: cycleType === 'menopause' ? meta.color : 'var(--text)',
-                  fontSize: 13, cursor: 'pointer',
-                }}
-              >🌙 생리 주기가 없어요</button>
-            </div>
-            {track === 'general' ? (
-              <div style={{ display: 'grid', gap: 10, marginTop: 14 }}>
-                <div><label style={labelStyle}>평균 주기 일수</label>{inp('cycle', cycleLength, setCycleLength, { inputMode: 'numeric', placeholder: '예: 28' })}</div>
-                <div><label style={labelStyle}>마지막 생리 시작일</label>{inp('lastPeriod', lastPeriodDate, setLastPeriodDate, { type: 'date' })}</div>
-              </div>
-            ) : null}
-            {error && <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(217,79,79,0.1)', border: '1px solid rgba(217,79,79,0.3)', borderRadius: 8, fontSize: 12, color: '#e08080' }}>{error}</div>}
-            <button
-              onClick={() => {
-                if (!cycleType) { setError('생리 주기를 선택해주세요'); return }
-                if (track === 'general' && !lastPeriodDate) { setError('마지막 생리 시작일을 입력해주세요'); return }
-                setError('')
-                handleSignup()
-              }}
-              disabled={loading}
-              style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.color, fontSize: 15, fontWeight: 700, marginTop: 20, opacity: loading ? 0.7 : 1 }}
-            >
-              {loading ? '처리 중...' : '가입 완료'}
             </button>
           </div>
         )}
