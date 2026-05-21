@@ -19,8 +19,8 @@ function SignupForm() {
   const inviteCode = params.get('ref') || ''
   const meta = ROLE_META[role] || ROLE_META.customer
 
-  const [step, setStep] = useState(1) // 1: 동의 2: 정보입력 3: 온보딩 4: 완료
-  const [form, setForm] = useState({ name: '', email: '', password: '', passwordConfirm: '', phone: '' })
+  const [step, setStep] = useState(1) // 1: 정보입력 2: 온보딩 3: 완료
+  const [form, setForm] = useState({ name: '', email: '', password: '', passwordConfirm: '', phone: '', gender: '' })
   const [consent, setConsent] = useState({ required1: false, required2: false, marketing: false, research: false })
   const [termsModalKey, setTermsModalKey] = useState<string | null>(null)
   const [track, setTrack] = useState<TrackType>('general')
@@ -218,7 +218,7 @@ function SignupForm() {
           )
         }
       }
-      setStep(4)
+      setStep(3)
     } catch (err: any) {
       setError(err.message.includes('already registered')
         ? '이미 가입된 이메일입니다. 로그인해주세요.'
@@ -234,23 +234,23 @@ function SignupForm() {
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       {/* 헤더 */}
       <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button onClick={() => step > 1 ? setStep(s => s - 1) : router.push(`/login?role=${role}`)}
+        <button onClick={() => step > 1 ? setStep(s => s - 1) : router.push(`/signup/consent?role=${role}`)}
           style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 22 }}>‹</button>
         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: meta.color }}>
           AURAN · {meta.label.toUpperCase()} 회원가입
         </div>
-        <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text3)' }}>{step}/4</div>
+        <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text3)' }}>{step}/3</div>
       </div>
 
       {/* 스텝 바 */}
       <div style={{ padding: '0 20px', marginBottom: 24 }}>
         <div style={{ display: 'flex', gap: 4 }}>
-          {[1,2,3,4].map(s => (
+          {[1,2,3].map(s => (
             <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: s <= step ? meta.color : 'var(--bg3)', transition: 'background 0.3s' }} />
           ))}
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-          {['약관 동의', '정보 입력', '온보딩', '가입 완료'].map((l, i) => (
+          {['정보 입력', '온보딩', '가입 완료'].map((l, i) => (
             <span key={i} style={{ fontSize: 9, color: i + 1 <= step ? meta.color : 'var(--text3)' }}>{l}</span>
           ))}
         </div>
@@ -258,153 +258,33 @@ function SignupForm() {
 
       <div style={{ flex: 1, padding: '0 24px 40px' }}>
 
-        {/* STEP 1: 약관 동의 */}
+        {/* STEP 1: 정보 입력 */}
         {step === 1 && (
-          <div>
-            <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 20, color: 'var(--text)', marginBottom: 6 }}>약관에 동의해주세요</div>
-            <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 24 }}>서비스 이용을 위해 필수 약관에 동의해주세요</div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              {[
-                { key: 'required1', label: '[필수] 개인정보 수집·이용 동의', desc: '성명, 이메일, 피부 분석 정보 수집' },
-                { key: 'required2', label: '[필수] 민감정보 처리 동의', desc: '피부 타입 등 건강 관련 정보 처리' },
-                { key: 'marketing', label: '[선택] 마케팅 정보 수신 동의', desc: '이벤트·프로모션 알림 수신' },
-                { key: 'research', label: '[선택] 피부 연구 목적 익명 활용 동의', desc: '기록할수록 오랜이 나를 더 잘 알아가요 💜 호르몬·피부 데이터를 익명으로 연구에 활용합니다' },
-              ].map(item => (
-                <label key={item.key} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '13px 14px', background: 'var(--bg3)', border: `1px solid ${(consent as any)[item.key] ? meta.color + '55' : 'var(--border)'}`, borderRadius: 12, cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={(consent as any)[item.key]}
-                    onChange={e => setConsent(c => ({ ...c, [item.key]: e.target.checked }))}
-                    style={{ marginTop: 2, accentColor: meta.color, width: 16, height: 16, flexShrink: 0 }}
-                  />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
-                      <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{item.label}</div>
-                      <button
-                        type="button"
-                        onClick={e => { e.preventDefault(); e.stopPropagation(); setTermsModalKey(item.key) }}
-                        style={{ flexShrink: 0, background: 'none', border: 'none', padding: 0, fontSize: 10, color: meta.color, cursor: 'pointer', textDecoration: 'underline' }}
-                      >
-                        보기
-                      </button>
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>{item.desc}</div>
-                  </div>
-                </label>
-              ))}
-              <label style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 14px', background: `${meta.bg}`, border: `1px solid ${meta.border}`, borderRadius: 10, cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={consent.required1 && consent.required2 && consent.marketing && consent.research}
-                  onChange={e => setConsent({ required1: e.target.checked, required2: e.target.checked, marketing: e.target.checked, research: e.target.checked })}
-                  style={{ accentColor: meta.color, width: 16, height: 16 }}
-                />
-                <span style={{ fontSize: 13, fontWeight: 700, color: meta.color }}>전체 동의</span>
-              </label>
-            </div>
-
-            {termsModalKey ? (
-              <div
-                onClick={() => setTermsModalKey(null)}
-                style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
-              >
-                <div
-                  onClick={e => e.stopPropagation()}
-                  style={{ position: 'relative', background: 'var(--bg)', borderRadius: 16, padding: 24, maxHeight: '70vh', overflowY: 'auto', width: '100%', maxWidth: 420, boxSizing: 'border-box' }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setTermsModalKey(null)}
-                    style={{ position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  >
-                    ✕
-                  </button>
-                  <div style={{ fontSize: 14, color: meta.color, fontWeight: 600, marginBottom: 12, paddingRight: 36 }}>
-                    {termsModalKey === 'required1' && '개인정보 수집·이용 동의'}
-                    {termsModalKey === 'required2' && '민감정보 처리 동의'}
-                    {termsModalKey === 'marketing' && '마케팅 정보 수신 동의'}
-                    {termsModalKey === 'research' && '피부 연구 목적 익명 활용 동의'}
-                  </div>
-                  <div style={{ fontSize: 12, color: 'var(--text)', lineHeight: 1.75, whiteSpace: 'pre-line' }}>
-                    {termsModalKey === 'required1' && `개인정보 수집·이용 동의
-
-수집 항목: 이름, 이메일, 비밀번호, 생년월일, 성별 (필수)
-프로필 사진, 피부타입, 피부 고민 (선택)
-
-수집 목적: 회원 식별 및 서비스 제공 / 주문·결제·배송 처리 / 고객 문의 응대
-
-보유 기간: 회원 탈퇴 시 즉시 파기
-단, 관계 법령에 따라 아래 기간 보존
-· 계약·청약철회 기록: 5년 (전자상거래법)
-· 대금결제·재화공급 기록: 5년 (전자상거래법)
-· 소비자 불만·분쟁처리 기록: 3년 (전자상거래법)
-· 접속 로그: 3개월 (통신비밀보호법)
-
-동의 거부 시 회원가입이 제한될 수 있습니다.`}
-                    {termsModalKey === 'required2' && `민감정보 처리 동의
-
-수집 항목: 호르몬 주기 정보, 피부 상태 기록, 건강 관련 고민
-
-수집 목적: 호르몬 주기 기반 개인화 피부 케어 서비스 제공 / 맞춤형 제품 추천
-
-보유 기간: 회원 탈퇴 시 즉시 파기
-
-위 민감정보는 서비스 제공 목적 외에 사용되지 않습니다.
-동의 거부 시 호르몬 주기 기반 맞춤 추천 서비스 이용이 제한될 수 있습니다.`}
-                    {termsModalKey === 'marketing' && `마케팅 정보 수신 동의
-
-수집 항목: 이메일, 휴대폰 번호
-
-활용 목적: 신제품·이벤트·프로모션 안내 / 맞춤형 혜택 및 할인 정보 발송
-
-발송 채널: 앱 푸시, 이메일, SMS/카카오 알림톡
-
-보유 기간: 동의 철회 시까지 (미이용 시 2년 후 파기 또는 재동의 요청)
-
-동의 거부 시에도 서비스 이용에 불이익이 없습니다.
-수신 동의 후에도 앱 설정에서 언제든지 철회 가능합니다.`}
-                    {termsModalKey === 'research' && `피부 연구 목적 익명 활용 동의
-
-수집 항목: 호르몬 주기, 피부 상태 기록, 루틴 이행 기록, 식욕·수면·기분 등 페이즈 경험 기록
-
-활용 목적: 호르몬 주기 기반 피부 과학 연구 / 서비스 추천 알고리즘 개선 / 학술 연구 및 논문 활용 (익명 처리 후)
-
-익명화 처리: 연구 활용 시 개인을 식별할 수 없도록 익명 처리 후 사용됩니다. 원본 개인정보와 분리 보관됩니다.
-
-제3자 제공: 익명 처리된 데이터에 한하여 대학 연구기관, 피부과학 연구팀에 제공될 수 있습니다.
-
-보유 기간: 동의 철회 시까지. 철회 후 익명 데이터는 연구 목적상 삭제되지 않을 수 있습니다.
-
-동의 거부 시 서비스 이용에 불이익이 없습니다.
-동의 후에도 마이페이지에서 언제든 철회 가능합니다.
-기록이 쌓일수록 오랜이 나를 더 잘 알아가요 💜`}
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            <button
-              onClick={() => {
-                if (!consent.required1 || !consent.required2) { setError('필수 약관에 동의해주세요'); return }
-                setError(''); setStep(2)
-              }}
-              style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.color, fontSize: 15, fontWeight: 700, marginTop: 20 }}
-            >
-              다음 →
-            </button>
-            {error && <div style={{ marginTop: 10, fontSize: 12, color: '#e08080', textAlign: 'center' }}>{error}</div>}
-          </div>
-        )}
-
-        {/* STEP 2: 정보 입력 */}
-        {step === 2 && (
           <div>
             <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 20, color: 'var(--text)', marginBottom: 6 }}>정보를 입력해주세요</div>
             <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 24 }}>{meta.icon} {meta.label}으로 가입합니다</div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              <div><label style={labelStyle}>이름 *</label>{inp('name', form.name, v => setForm(f => ({ ...f, name: v })), { placeholder: '실명 입력', required: true })}</div>
+              <div><label style={labelStyle}>이름 또는 닉네임 *</label>{inp('name', form.name, v => setForm(f => ({ ...f, name: v })), { placeholder: '실명 입력', required: true })}</div>
+              <div>
+                <label style={labelStyle}>성별 *</label>
+                <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                  {(['여성', '남성'] as const).map(g => (
+                    <button
+                      key={g}
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, gender: g }))}
+                      style={{
+                        flex: 1, padding: '11px 0', borderRadius: 10, fontSize: 13,
+                        border: (form as any).gender === g ? `1px solid ${meta.color}` : '1px solid var(--border)',
+                        background: (form as any).gender === g ? meta.bg : 'var(--bg3)',
+                        color: (form as any).gender === g ? meta.color : 'var(--text)',
+                        cursor: 'pointer',
+                      }}
+                    >{g}</button>
+                  ))}
+                </div>
+              </div>
               <div><label style={labelStyle}>이메일 *</label>{inp('email', form.email, v => setForm(f => ({ ...f, email: v })), { type: 'email', placeholder: 'example@email.com', required: true })}</div>
               <div><label style={labelStyle}>비밀번호 * (6자 이상)</label>{inp('pw', form.password, v => setForm(f => ({ ...f, password: v })), { type: 'password', placeholder: '6자 이상 입력', required: true })}</div>
               <div><label style={labelStyle}>비밀번호 확인 *</label>{inp('pw2', form.passwordConfirm, v => setForm(f => ({ ...f, passwordConfirm: v })), { type: 'password', placeholder: '비밀번호 재입력', required: true })}</div>
@@ -416,7 +296,10 @@ function SignupForm() {
             <button
               onClick={() => {
                 if (!form.name || !form.email || !form.password) { setError('필수 항목을 입력해주세요'); return }
-                setStep(3)
+                if (!(form as any).gender) { setError('성별을 선택해주세요'); return }
+                if (form.password !== form.passwordConfirm) { setError('비밀번호가 일치하지 않습니다'); return }
+                if (form.password.length < 6) { setError('비밀번호는 6자 이상이어야 합니다'); return }
+                setStep(2)
               }}
               disabled={loading}
               style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.color, fontSize: 15, fontWeight: 700, marginTop: 20, opacity: loading ? 0.7 : 1 }}
@@ -426,67 +309,45 @@ function SignupForm() {
           </div>
         )}
 
-        {step === 3 && (
+        {step === 2 && (
           <div>
             <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 20, color: 'var(--text)', marginBottom: 6 }}>온보딩 트랙 선택</div>
             <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 18 }}>맞춤 추천 정확도를 높이기 위한 마지막 단계예요</div>
             <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 8 }}>나의 라이프 사이클</div>
             <div style={{ display: 'grid', gap: 8, marginBottom: 16 }}>
-              {(
-                [
-                  ['menstrual', '🔮 생리 중이에요'],
-                  ['menopause', '🌸 폐경했어요'],
-                  ['pregnancy', '🤰 임신 중 / 출산했어요'],
-                  ['male', '👨 남성이에요'],
-                ] as const
-              ).map(([k, lab]) => (
-                <button
-                  key={k}
-                  type="button"
-                  onClick={() => setCycleType(k)}
-                  style={{
-                    textAlign: 'left',
-                    padding: '11px 12px',
-                    borderRadius: 10,
-                    border: cycleType === k ? '1px solid #7B5EA7' : '1px solid var(--border)',
-                    background: cycleType === k ? 'rgba(123,94,167,0.2)' : 'var(--bg3)',
-                    color: 'var(--text)',
-                    fontSize: 13,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {lab}
-                </button>
-              ))}
-            </div>
-            <div style={{ display: 'grid', gap: 8 }}>
               {([
-                ['general', '생리 중인 여성'],
-                ['menopause_peri', '갱년기 진입 - 불규칙'],
-                ['menopause_post', '폐경 완료'],
-                ['pregnant', '임신 중'],
-                ['postpartum', '출산 후'],
-                ['male', '남성'],
-                ['male_menopause', '남성 갱년기'],
-              ] as const).map(([k, label]) => (
+                ['menstrual', '🌸 매달 생리를 해요'],
+                ['menopause', '🌙 생리가 불규칙하거나 거의 없어요'],
+                ['pregnant', '🤰 임신 중이에요'],
+                ['postpartum', '👶 출산한 지 얼마 안 됐어요'],
+                ['menopause_post', '🌿 생리가 완전히 끝났어요'],
+              ] as const).map(([k, lab]) => (
                 <button
                   key={k}
                   type="button"
-                  onClick={() => setTrack(k)}
+                  onClick={() => { setCycleType(k); setTrack(k === 'menstrual' ? 'general' : k === 'menopause' ? 'menopause_peri' : k === 'pregnant' ? 'pregnant' : k === 'postpartum' ? 'postpartum' : 'menopause_post') }}
                   style={{
-                    textAlign: 'left',
-                    padding: '11px 12px',
-                    borderRadius: 10,
-                    border: `1px solid ${track === k ? meta.border : 'var(--border)'}`,
-                    background: track === k ? meta.bg : 'var(--bg3)',
-                    color: track === k ? meta.color : 'var(--text)',
-                    fontSize: 13,
-                    cursor: 'pointer',
+                    textAlign: 'left', padding: '13px 14px', borderRadius: 10,
+                    border: cycleType === k ? `1px solid ${meta.color}` : '1px solid var(--border)',
+                    background: cycleType === k ? meta.bg : 'var(--bg3)',
+                    color: cycleType === k ? meta.color : 'var(--text)',
+                    fontSize: 13, cursor: 'pointer',
                   }}
-                >
-                  {label}
-                </button>
+                >{lab}</button>
               ))}
+              {(form as any).gender === '남성' && (
+                <button
+                  type="button"
+                  onClick={() => { setCycleType('male'); setTrack('male') }}
+                  style={{
+                    textAlign: 'left', padding: '13px 14px', borderRadius: 10,
+                    border: cycleType === 'male' ? `1px solid ${meta.color}` : '1px solid var(--border)',
+                    background: cycleType === 'male' ? meta.bg : 'var(--bg3)',
+                    color: cycleType === 'male' ? meta.color : 'var(--text)',
+                    fontSize: 13, cursor: 'pointer',
+                  }}
+                >👨 남성이에요</button>
+              )}
             </div>
             {(track === 'general' || track === 'menopause_peri') ? (
               <div style={{ display: 'grid', gap: 10, marginTop: 14 }}>
@@ -538,8 +399,8 @@ function SignupForm() {
           </div>
         )}
 
-        {/* STEP 4: 완료 (이메일 인증 비활성 시에만 표시) */}
-        {step === 4 && (
+        {/* STEP 3: 완료 (이메일 인증 비활성 시에만 표시) */}
+        {step === 3 && (
           <div style={{ textAlign: 'center', paddingTop: 40 }}>
             <div style={{ fontSize: 60, marginBottom: 20 }}>🎉</div>
             <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 22, color: 'var(--text)', marginBottom: 8 }}>가입 완료!</div>
@@ -548,6 +409,10 @@ function SignupForm() {
             </div>
             <div style={{ padding: '12px 16px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 10, fontSize: 12, color: 'var(--gold)', marginBottom: 28 }}>
               {`환영해요! 🎉 +${signupWelcomePoint.toLocaleString()}P가 적립됐어요`}
+            </div>
+            <div style={{ padding: '14px 16px', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, fontSize: 12, color: '#7B5EA7', marginBottom: 16, lineHeight: 1.7, textAlign: 'left' }}>
+              💜 프로필을 완성하면 호르몬 사이클에 맞춘 케어가 더 정교해져요<br />
+              지금 바로 내 피부 타입과 고민을 알려주세요
             </div>
             <button
               onClick={() => router.push(`/login?role=${role}`)}
