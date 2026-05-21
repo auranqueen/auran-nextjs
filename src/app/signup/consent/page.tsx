@@ -72,7 +72,8 @@ function ConsentInner() {
 
   const allRequired = consent.required1 && consent.required2
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (providerOverride?: string) => {
+    const finalProvider = providerOverride !== undefined ? providerOverride : provider
     if (!allRequired) { setError('필수 약관에 동의해주세요'); return }
     setLoading(true)
     try {
@@ -83,7 +84,7 @@ function ConsentInner() {
       const appUrl = window.location.origin
       const callbackQuery = `?role=${role}`
 
-      if (provider === 'kakao') {
+      if (finalProvider === 'kakao') {
         await supabase.auth.signInWithOAuth({
           provider: 'kakao',
           options: {
@@ -93,7 +94,7 @@ function ConsentInner() {
         })
         return
       }
-      if (provider === 'google') {
+      if (finalProvider === 'google') {
         await supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
@@ -155,13 +156,30 @@ function ConsentInner() {
 
         {error && <div style={{ fontSize: 12, color: '#e08080', textAlign: 'center', marginBottom: 12 }}>{error}</div>}
 
-        <button
-          onClick={handleSubmit}
-          disabled={loading || !allRequired}
-          style={{ width: '100%', padding: 15, background: allRequired ? '#7B5EA7' : 'var(--bg3)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 12, color: allRequired ? '#fff' : 'var(--text3)', fontSize: 15, cursor: allRequired ? 'pointer' : 'default' }}
-        >
-          {loading ? '처리중...' : '동의하고 시작하기 💜'}
-        </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <button
+            onClick={() => { if (!allRequired) { setError('필수 약관에 동의해주세요'); return } handleSubmit('kakao') }}
+            disabled={loading}
+            style={{ width: '100%', padding: 14, background: '#FEE500', border: 'none', borderRadius: 12, color: '#3C1E1E', fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          >
+            💬 카카오로 시작하기
+          </button>
+          <button
+            onClick={() => { if (!allRequired) { setError('필수 약관에 동의해주세요'); return } handleSubmit('google') }}
+            disabled={loading}
+            style={{ width: '100%', padding: 14, background: '#fff', border: '1px solid #ddd', borderRadius: 12, color: '#333', fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          >
+            G 구글로 시작하기
+          </button>
+          <button
+            onClick={() => { if (!allRequired) { setError('필수 약관에 동의해주세요'); return } handleSubmit('') }}
+            disabled={loading}
+            style={{ width: '100%', padding: 14, background: 'var(--bg3)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 12, color: 'var(--text)', fontSize: 15, cursor: 'pointer' }}
+          >
+            {loading ? '처리중...' : '이메일로 시작하기'}
+          </button>
+        </div>
+        {error && <div style={{ fontSize: 12, color: '#e08080', textAlign: 'center', marginTop: 10 }}>{error}</div>}
       </div>
 
       {modalKey && (
