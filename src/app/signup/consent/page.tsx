@@ -84,27 +84,8 @@ function ConsentInner() {
       const appUrl = window.location.origin
       const callbackQuery = `?role=${role}`
 
-      if (finalProvider === 'kakao') {
-        await supabase.auth.signInWithOAuth({
-          provider: 'kakao',
-          options: {
-            redirectTo: `${appUrl}/auth/callback${callbackQuery}`,
-            scopes: 'profile_nickname profile_image',
-          }
-        })
-        return
-      }
-      if (finalProvider === 'google') {
-        await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: `${appUrl}/auth/callback${callbackQuery}`,
-          }
-        })
-        return
-      }
-      // 이메일 가입
-      router.push(`/signup?role=${role}`)
+      // 온보딩 페이지로 이동 (provider 전달)
+      router.push(`/signup/onboarding?provider=${finalProvider}&role=${role}`)
     } catch {
       setError('오류가 발생했습니다. 다시 시도해주세요.')
     } finally {
