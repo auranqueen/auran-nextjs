@@ -61,20 +61,17 @@ function AuthDoneInner() {
         data = retry
       }
       const createdAt = data.session!.user.created_at
-      // 신규 가입자 research_consent 체크
-      const age0 = Date.now() - new Date(data.session!.user.created_at).getTime()
-      const isNewUser = age0 >= 0 && age0 < 10 * 60 * 1000
-      if (isNewUser) {
-        const { data: profileRow } = await supabase
-          .from('profiles')
-          .select('research_consent')
-          .eq('auth_id', data.session!.user.id)
-          .maybeSingle()
-        if (profileRow?.research_consent === null || profileRow?.research_consent === undefined) {
-          router.replace('/signup/consent')
-          return
+      // localStorage에서 research_consent 읽어서 profiles 저장
+      try {
+        const rc = localStorage.getItem('auran_research_consent')
+        if (rc !== null) {
+          await supabase.from('profiles').upsert(
+            { auth_id: data.session!.user.id, research_consent: rc === 'true' },
+            { onConflict: 'auth_id' }
+          )
+          localStorage.removeItem('auran_research_consent')
         }
-      }
+      } catch {}
       setSessionUserCreatedAt(createdAt)
       const { data: row } = await supabase.from('users').select('phone').eq('auth_id', data.session!.user.id).maybeSingle()
       const p = String(row?.phone || '').replace(/\D/g, '')
