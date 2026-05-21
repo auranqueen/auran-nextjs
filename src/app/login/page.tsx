@@ -460,7 +460,7 @@ function LoginForm() {
         <div style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: 'var(--text3)' }}>
           계정이 없으신가요?{' '}
           <button
-            onClick={() => router.push(`/signup?role=${role}`)}
+            onClick={() => router.push(`/signup/consent?role=${role}`)}
             style={{ background: 'none', border: 'none', color: meta.accent, fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
           >
             회원가입 →
