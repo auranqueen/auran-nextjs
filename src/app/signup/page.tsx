@@ -20,7 +20,7 @@ function SignupForm() {
   const meta = ROLE_META[role] || ROLE_META.customer
 
   const [step, setStep] = useState(1) // 1: 정보입력 2: 온보딩 3: 완료
-  const [form, setForm] = useState({ name: '', email: '', password: '', passwordConfirm: '', phone: '', gender: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', passwordConfirm: '', phone: '' })
   const [consent, setConsent] = useState({ required1: false, required2: false, marketing: false, research: false })
   const [termsModalKey, setTermsModalKey] = useState<string | null>(null)
   const [track, setTrack] = useState<TrackType>('general')
@@ -117,7 +117,7 @@ function SignupForm() {
           await supabase.from('hormone_cycle').upsert(payload, { onConflict: 'auth_id' })
           if (cycleType) {
             await supabase.from('profiles').upsert(
-              { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: localStorage.getItem('auran_research_consent') === 'true' } as any,
+              { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: localStorage.getItem('auran_research_consent') === 'true', birth_date: localStorage.getItem('auran_birth_date') || null, gender: localStorage.getItem('auran_gender') || null, skin_type: localStorage.getItem('auran_skin_type') || null } as any,
               { onConflict: 'auth_id' }
             )
           }
@@ -213,7 +213,7 @@ function SignupForm() {
         }
         if (cycleType) {
           await supabase.from('profiles').upsert(
-            { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: localStorage.getItem('auran_research_consent') === 'true' } as any,
+            { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: localStorage.getItem('auran_research_consent') === 'true', birth_date: localStorage.getItem('auran_birth_date') || null, gender: localStorage.getItem('auran_gender') || null, skin_type: localStorage.getItem('auran_skin_type') || null } as any,
             { onConflict: 'auth_id' }
           )
         }
@@ -266,25 +266,6 @@ function SignupForm() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div><label style={labelStyle}>이름 또는 닉네임 *</label>{inp('name', form.name, v => setForm(f => ({ ...f, name: v })), { placeholder: '실명 입력', required: true })}</div>
-              <div>
-                <label style={labelStyle}>성별 *</label>
-                <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                  {(['여성', '남성'] as const).map(g => (
-                    <button
-                      key={g}
-                      type="button"
-                      onClick={() => setForm(f => ({ ...f, gender: g }))}
-                      style={{
-                        flex: 1, padding: '11px 0', borderRadius: 10, fontSize: 13,
-                        border: (form as any).gender === g ? `1px solid ${meta.color}` : '1px solid var(--border)',
-                        background: (form as any).gender === g ? meta.bg : 'var(--bg3)',
-                        color: (form as any).gender === g ? meta.color : 'var(--text)',
-                        cursor: 'pointer',
-                      }}
-                    >{g}</button>
-                  ))}
-                </div>
-              </div>
               <div><label style={labelStyle}>이메일 *</label>{inp('email', form.email, v => setForm(f => ({ ...f, email: v })), { type: 'email', placeholder: 'example@email.com', required: true })}</div>
               <div><label style={labelStyle}>비밀번호 * (6자 이상)</label>{inp('pw', form.password, v => setForm(f => ({ ...f, password: v })), { type: 'password', placeholder: '6자 이상 입력', required: true })}</div>
               <div><label style={labelStyle}>비밀번호 확인 *</label>{inp('pw2', form.passwordConfirm, v => setForm(f => ({ ...f, passwordConfirm: v })), { type: 'password', placeholder: '비밀번호 재입력', required: true })}</div>
@@ -296,16 +277,15 @@ function SignupForm() {
             <button
               onClick={() => {
                 if (!form.name || !form.email || !form.password) { setError('필수 항목을 입력해주세요'); return }
-                if (!(form as any).gender) { setError('성별을 선택해주세요'); return }
                 if (form.password !== form.passwordConfirm) { setError('비밀번호가 일치하지 않습니다'); return }
                 if (form.password.length < 6) { setError('비밀번호는 6자 이상이어야 합니다'); return }
-                if ((form as any).gender === '남성') {
+                const savedGender = localStorage.getItem('auran_gender') || ''
+                const savedCycleType = localStorage.getItem('auran_cycle_type') || ''
+                if (savedGender === '남성' || savedCycleType === 'male') {
                   setCycleType('male')
                   setTrack('male')
-                  handleSignup()
-                } else {
-                  handleSignup()
                 }
+                handleSignup()
               }}
               disabled={loading}
               style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.color, fontSize: 15, fontWeight: 700, marginTop: 20, opacity: loading ? 0.7 : 1 }}
