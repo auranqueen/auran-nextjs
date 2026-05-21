@@ -44,6 +44,11 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/dashboard/salon') ||
     pathname.startsWith('/owner/') ||
     pathname.startsWith('/brand')
+  const hideVoiceBox =
+    hideCustomerNav ||
+    pathname.startsWith('/signup') ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/auth')
   const showCustomerNav = !hideCustomerNav
   const navPad = 'calc(76px + env(safe-area-inset-bottom, 0px))'
 
@@ -54,7 +59,7 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
           <div style={showCustomerNav ? { paddingBottom: navPad } : undefined}>{children}</div>
           {showCustomerNav ? <DashboardBottomNav role="customer" /> : null}
           {/* ===== [고객의 목소리 함] 플로팅 버튼 — customer role일 때만 표시 ===== */}
-          {showCustomerNav ? <VoiceBoxButton /> : null}
+          {!hideVoiceBox ? <VoiceBoxButton /> : null}
         </CartProvider>
       </AuthSessionProvider>
     </div>
