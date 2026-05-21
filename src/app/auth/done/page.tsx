@@ -125,6 +125,15 @@ function AuthDoneInner() {
         }
         const age = Date.now() - new Date(createdAt).getTime()
         const isNewSignup = age >= 0 && age < 10 * 60 * 1000
+        if (isNewSignup) {
+          const onboardingDone = localStorage.getItem('auran_onboarding_done')
+          if (!onboardingDone) {
+            localStorage.removeItem('auran_onboarding_done')
+            router.replace('/signup/consent')
+            return
+          }
+          localStorage.removeItem('auran_onboarding_done')
+        }
         if (isNewSignup && !onboarded) {
           setPhase('theme')
           return
