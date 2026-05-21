@@ -117,7 +117,7 @@ function SignupForm() {
           await supabase.from('hormone_cycle').upsert(payload, { onConflict: 'auth_id' })
           if (cycleType) {
             await supabase.from('profiles').upsert(
-              { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: consent.research } as any,
+              { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: localStorage.getItem('auran_research_consent') === 'true' } as any,
               { onConflict: 'auth_id' }
             )
           }
@@ -213,7 +213,7 @@ function SignupForm() {
         }
         if (cycleType) {
           await supabase.from('profiles').upsert(
-            { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: consent.research } as any,
+            { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: localStorage.getItem('auran_research_consent') === 'true' } as any,
             { onConflict: 'auth_id' }
           )
         }
