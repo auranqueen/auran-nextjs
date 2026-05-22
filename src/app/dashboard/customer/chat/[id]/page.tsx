@@ -133,6 +133,9 @@ export default function CustomerChatRoomPage() {
   } | null>(null)
   const [cardModalPicks, setCardModalPicks] = useState<string[]>([])
   const [cardModalText, setCardModalText] = useState('')
+  const [inlineCardPicks, setInlineCardPicks] = useState<Record<string, string[]>>({})
+  const [inlineCardText, setInlineCardText] = useState<Record<string, string>>({})
+  const [inlineCardSent, setInlineCardSent] = useState<Record<string, boolean>>({})
   const [voiceOpen, setVoiceOpen] = useState(false)
   const [voiceType, setVoiceType] = useState<'bug' | 'idea' | 'praise' | null>(null)
   const [voiceContent, setVoiceContent] = useState('')
@@ -1041,6 +1044,7 @@ export default function CustomerChatRoomPage() {
             let card: {
               card_type?: string
               title?: string
+              desc?: string
               chips?: string[]
               selected_chips?: string[]
               text_content?: string
@@ -1052,9 +1056,27 @@ export default function CustomerChatRoomPage() {
               card = {}
             }
             const isSos = card.card_type === 'sos'
+            const libRow = CARD_LIB.find((c) => c.card_type === card.card_type)
+            const ownerCardLabels: Record<string, string> = {
+              hormone: '🌙 호르몬 주기',
+              skin: '✨ 피부 상태 체크',
+              routine_check: '📋 루틴 점검',
+              feedback: '⭐ 제품 피드백',
+              stress: '🧘 스트레스 체크',
+              custom: '✏️ 커스텀 카드',
+            }
+            const cardEmojiTitle = libRow
+              ? libRow.title
+              : card.card_type && ownerCardLabels[card.card_type]
+                ? `${ownerCardLabels[card.card_type]} · ${card.title || '카드'}`
+                : card.title || '카드'
             const selectedChips = Array.isArray(card.selected_chips) ? card.selected_chips : []
             const textContent = String(card.text_content ?? '').trim()
-            const cardBubble = (
+            const chipList = Array.isArray(card.chips) ? card.chips : []
+            const localPicks = inlineCardPicks[m.id] || []
+            const localText = inlineCardText[m.id] || ''
+            const localSent = !!inlineCardSent[m.id]
+            const cardBubble = mine ? (
               <div
                 style={{
                   borderRadius: 12,
@@ -1063,7 +1085,7 @@ export default function CustomerChatRoomPage() {
                   background: isSos ? 'rgba(252,235,235,0.08)' : 'rgba(254,229,0,0.08)',
                 }}
               >
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', marginBottom: 8 }}>{card.title || '카드'}</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', marginBottom: 8 }}>{cardEmojiTitle}</div>
                 {selectedChips.length > 0 ? (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
                     {selectedChips.map((c) => (
@@ -1099,6 +1121,117 @@ export default function CustomerChatRoomPage() {
                     {textContent}
                   </div>
                 ) : null}
+              </div>
+            ) : (
+              <div
+                style={{
+                  borderRadius: 12,
+                  border: `1px solid ${isSos ? 'rgba(163,45,45,0.45)' : 'rgba(254,229,0,0.45)'}`,
+                  padding: '12px 14px',
+                  background: isSos ? 'rgba(252,235,235,0.08)' : 'rgba(254,229,0,0.08)',
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', marginBottom: 4 }}>{cardEmojiTitle}</div>
+                {card.desc ? (
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>{card.desc}</div>
+                ) : null}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                  {chipList.map((c) => {
+                    const on = localPicks.includes(c)
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        disabled={localSent || sending}
+                        onClick={() => {
+                          if (localSent || sending) return
+                          setInlineCardPicks((prev) => {
+                            const cur = prev[m.id] || []
+                            return {
+                              ...prev,
+                              [m.id]: on ? cur.filter((x) => x !== c) : [...cur, c],
+                            }
+                          })
+                        }}
+                        style={{
+                          borderRadius: 999,
+                          border: on ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.15)',
+                          background: on ? 'rgba(123,94,167,0.15)' : 'transparent',
+                          color: on ? '#e8dff5' : 'rgba(255,255,255,0.4)',
+                          fontSize: 11,
+                          padding: '6px 10px',
+                          cursor: localSent || sending ? 'default' : 'pointer',
+                        }}
+                      >
+                        {c}
+                      </button>
+                    )
+                  })}
+                </div>
+                <textarea
+                  value={localText}
+                  disabled={localSent || sending}
+                  onChange={(e) => setInlineCardText((prev) => ({ ...prev, [m.id]: e.target.value }))}
+                  placeholder="하고 싶은 말을 자유롭게 적어주세요 (선택사항)"
+                  rows={3}
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    minHeight: 60,
+                    marginBottom: 10,
+                    borderRadius: 8,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#fff',
+                    fontSize: 12,
+                    padding: '10px 12px',
+                    resize: 'vertical',
+                  }}
+                />
+                <button
+                  type="button"
+                  disabled={sending || localSent || localPicks.length === 0}
+                  onClick={() => {
+                    void (async () => {
+                      if (inlineCardSent[m.id]) return
+                      if (!internalUserId || !channelId || sending || localPicks.length === 0) return
+                      setSending(true)
+                      try {
+                        await supabase.from('consultation_messages').insert({
+                          channel_id: channelId,
+                          sender_id: internalUserId,
+                          is_from_customer: true,
+                          message_kind: 'card_request',
+                          message: JSON.stringify({
+                            card_type: card.card_type,
+                            title: card.title,
+                            chips: card.chips,
+                            selected_chips: inlineCardPicks[m.id] || [],
+                            text_content: inlineCardText[m.id] || '',
+                            has_text: true,
+                          }),
+                        } as any)
+                        setInlineCardSent((prev) => ({ ...prev, [m.id]: true }))
+                      } finally {
+                        setSending(false)
+                      }
+                    })()
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '10px 0',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: '#FEE500',
+                    color: '#3A1D1D',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: sending || localSent || localPicks.length === 0 ? 'default' : 'pointer',
+                    opacity: sending || localSent || localPicks.length === 0 ? 0.5 : 1,
+                  }}
+                >
+                  전송
+                </button>
               </div>
             )
             if (mine) {
