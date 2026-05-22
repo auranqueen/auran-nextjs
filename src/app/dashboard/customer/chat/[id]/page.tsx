@@ -119,6 +119,10 @@ export default function CustomerChatRoomPage() {
   const [cycleDateInput, setCycleDateInput] = useState('')
   const [cycleSaving, setCycleSaving] = useState(false)
   const [customerAuthId, setCustomerAuthId] = useState<string | null>(null)
+  const [ownerInfo, setOwnerInfo] = useState<{
+    username: string
+    avatar_url: string | null
+  } | null>(null)
   const [showCardLib, setShowCardLib] = useState(false)
   const [cardModal, setCardModal] = useState<{
     card_type: string
@@ -201,6 +205,35 @@ export default function CustomerChatRoomPage() {
         hormone_phase: phase,
         hormone_label: phase ? (phaseMap[phase] ?? phase) : null,
       })
+      void supabase
+        .from('chat_channels')
+        .select('owner_id')
+        .eq('id', channelId)
+        .maybeSingle()
+        .then(({ data: chData }) => {
+          if (!(chData as { owner_id?: string | null } | null)?.owner_id) return
+          void supabase
+            .from('users')
+            .select('auth_id')
+            .eq('id', String((chData as { owner_id: string }).owner_id))
+            .maybeSingle()
+            .then(({ data: uData }) => {
+              if (!uData?.auth_id) return
+              void supabase
+                .from('profiles')
+                .select('username, avatar_url')
+                .eq('auth_id', uData.auth_id)
+                .maybeSingle()
+                .then(({ data: oData }) => {
+                  if (oData) {
+                    setOwnerInfo({
+                      username: oData.username ?? '원장님',
+                      avatar_url: oData.avatar_url ?? null,
+                    })
+                  }
+                })
+            })
+        })
       if (recRes.data) {
         const parsed = recRes.data.map((m: any) => {
           try {
@@ -893,34 +926,70 @@ export default function CustomerChatRoomPage() {
           </div>
         ) : null}
 
-        {messages.map((m) => {
+        {messages.map((m, index) => {
           const mine = Boolean(m.is_from_customer)
+          const prevMsg = messages[index - 1]
+          const showProfile = !mine && (!prevMsg || Boolean(prevMsg.is_from_customer))
           const isCoupon = m.message_kind === 'coupon' || m.message_kind === 'coupon_gift'
           const isImage = m.message_kind === 'image' && m.image_url
 
           if (m.message_kind === 'routine_card') {
             return (
-              <div key={m.id} style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 10 }}>
-                <div
-                  style={{
-                    maxWidth: '85%',
-                    borderRadius: 12,
-                    border: '1px solid rgba(123,94,167,0.55)',
-                    padding: '10px 14px',
-                    background: 'rgba(123,94,167,0.08)',
-                  }}
-                >
-                  <div style={{ fontSize: 11, color: '#e8dff5', marginBottom: 6 }}>💜 루틴 알림장</div>
+              <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+                {showProfile ? (
+                  ownerInfo?.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={ownerInfo.avatar_url}
+                      alt=""
+                      style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, marginTop: 2 }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        background: '#7B5EA7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 13,
+                        color: '#fff',
+                        flexShrink: 0,
+                        marginTop: 2,
+                      }}
+                    >
+                      {(ownerInfo?.username ?? '원').slice(0, 1)}
+                    </div>
+                  )
+                ) : (
+                  <div style={{ width: 40, flexShrink: 0 }} />
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, maxWidth: '85%' }}>
+                  {showProfile ? (
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{ownerInfo?.username ?? '원장님'}</span>
+                  ) : null}
                   <div
                     style={{
-                      fontSize: 13,
-                      color: '#f3e9ff',
-                      whiteSpace: 'pre-wrap',
-                      lineHeight: 1.6,
-                      wordBreak: 'break-word',
+                      borderRadius: 12,
+                      border: '1px solid rgba(123,94,167,0.55)',
+                      padding: '10px 14px',
+                      background: 'rgba(123,94,167,0.08)',
                     }}
                   >
-                    {msgText(m)}
+                    <div style={{ fontSize: 11, color: '#e8dff5', marginBottom: 6 }}>💜 루틴 알림장</div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: '#f3e9ff',
+                        whiteSpace: 'pre-wrap',
+                        lineHeight: 1.6,
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      {msgText(m)}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -985,53 +1054,97 @@ export default function CustomerChatRoomPage() {
             const isSos = card.card_type === 'sos'
             const selectedChips = Array.isArray(card.selected_chips) ? card.selected_chips : []
             const textContent = String(card.text_content ?? '').trim()
+            const cardBubble = (
+              <div
+                style={{
+                  borderRadius: 12,
+                  border: `1px solid ${isSos ? 'rgba(163,45,45,0.45)' : 'rgba(254,229,0,0.45)'}`,
+                  padding: '12px 14px',
+                  background: isSos ? 'rgba(252,235,235,0.08)' : 'rgba(254,229,0,0.08)',
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', marginBottom: 8 }}>{card.title || '카드'}</div>
+                {selectedChips.length > 0 ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {selectedChips.map((c) => (
+                      <span
+                        key={c}
+                        style={{
+                          borderRadius: 999,
+                          border: `1px solid ${isSos ? 'rgba(163,45,45,0.35)' : 'rgba(254,229,0,0.35)'}`,
+                          background: isSos ? 'rgba(252,235,235,0.15)' : 'rgba(254,229,0,0.15)',
+                          color: isSos ? '#FCEBEB' : '#FEE500',
+                          fontSize: 11,
+                          padding: '6px 10px',
+                        }}
+                      >
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                {textContent ? (
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: '#fff',
+                      lineHeight: 1.5,
+                      whiteSpace: 'pre-wrap',
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                    }}
+                  >
+                    {textContent}
+                  </div>
+                ) : null}
+              </div>
+            )
+            if (mine) {
+              return (
+                <div key={m.id} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                  <div style={{ maxWidth: '88%' }}>{cardBubble}</div>
+                </div>
+              )
+            }
             return (
-              <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
-                <div
-                  style={{
-                    maxWidth: '88%',
-                    borderRadius: 12,
-                    border: `1px solid ${isSos ? 'rgba(163,45,45,0.45)' : 'rgba(254,229,0,0.45)'}`,
-                    padding: '12px 14px',
-                    background: isSos ? 'rgba(252,235,235,0.08)' : 'rgba(254,229,0,0.08)',
-                  }}
-                >
-                  <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', marginBottom: 8 }}>{card.title || '카드'}</div>
-                  {selectedChips.length > 0 ? (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-                      {selectedChips.map((c) => (
-                        <span
-                          key={c}
-                          style={{
-                            borderRadius: 999,
-                            border: `1px solid ${isSos ? 'rgba(163,45,45,0.35)' : 'rgba(254,229,0,0.35)'}`,
-                            background: isSos ? 'rgba(252,235,235,0.15)' : 'rgba(254,229,0,0.15)',
-                            color: isSos ? '#FCEBEB' : '#FEE500',
-                            fontSize: 11,
-                            padding: '6px 10px',
-                          }}
-                        >
-                          {c}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
-                  {textContent ? (
+              <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+                {showProfile ? (
+                  ownerInfo?.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={ownerInfo.avatar_url}
+                      alt=""
+                      style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, marginTop: 2 }}
+                    />
+                  ) : (
                     <div
                       style={{
-                        fontSize: 12,
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        background: '#7B5EA7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 13,
                         color: '#fff',
-                        lineHeight: 1.5,
-                        whiteSpace: 'pre-wrap',
-                        padding: '8px 10px',
-                        borderRadius: 8,
-                        background: 'rgba(255,255,255,0.05)',
-                        border: '1px solid rgba(255,255,255,0.1)',
+                        flexShrink: 0,
+                        marginTop: 2,
                       }}
                     >
-                      {textContent}
+                      {(ownerInfo?.username ?? '원').slice(0, 1)}
                     </div>
+                  )
+                ) : (
+                  <div style={{ width: 40, flexShrink: 0 }} />
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, maxWidth: '88%' }}>
+                  {showProfile ? (
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{ownerInfo?.username ?? '원장님'}</span>
                   ) : null}
+                  {cardBubble}
                 </div>
               </div>
             )
@@ -1039,14 +1152,9 @@ export default function CustomerChatRoomPage() {
 
           if (m.message_kind === 'product_recommend') {
             const productItems = parseRecommendItems(m)
-            return (
-              <div
-                key={m.id}
-                style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginBottom: 10 }}
-              >
+            const productBubble = (
                 <div
                   style={{
-                    maxWidth: '85%',
                     borderRadius: mine ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
                     padding: 8,
                     background: mine ? 'rgba(123,94,167,0.45)' : 'rgba(201,169,110,0.15)',
@@ -1214,6 +1322,52 @@ export default function CustomerChatRoomPage() {
                     </div>
                   </div>
                 </div>
+            )
+            if (mine) {
+              return (
+                <div key={m.id} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                  <div style={{ maxWidth: '85%' }}>{productBubble}</div>
+                </div>
+              )
+            }
+            return (
+              <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+                {showProfile ? (
+                  ownerInfo?.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={ownerInfo.avatar_url}
+                      alt=""
+                      style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, marginTop: 2 }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        background: '#7B5EA7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 13,
+                        color: '#fff',
+                        flexShrink: 0,
+                        marginTop: 2,
+                      }}
+                    >
+                      {(ownerInfo?.username ?? '원').slice(0, 1)}
+                    </div>
+                  )
+                ) : (
+                  <div style={{ width: 40, flexShrink: 0 }} />
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, maxWidth: '85%' }}>
+                  {showProfile ? (
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{ownerInfo?.username ?? '원장님'}</span>
+                  ) : null}
+                  {productBubble}
+                </div>
               </div>
             )
           }
@@ -1244,8 +1398,7 @@ export default function CustomerChatRoomPage() {
                 cp = JSON.parse(m.message ?? '')
               } catch {}
               const isShip = !!cp.user_coupon_id
-              return (
-                <div key={m.id} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+              const couponGiftBubble = (
                   <div
                     style={{
                       background: 'rgba(123,94,167,0.15)',
@@ -1253,7 +1406,6 @@ export default function CustomerChatRoomPage() {
                       borderRadius: 12,
                       padding: '12px 14px 16px',
                       minWidth: 160,
-                      maxWidth: '70%',
                     }}
                   >
                     <div style={{ fontSize: 11, color: '#C084FC', marginBottom: 4 }}>🎁 쿠폰 도착</div>
@@ -1274,14 +1426,51 @@ export default function CustomerChatRoomPage() {
                       </div>
                     ) : null}
                   </div>
+              )
+              return (
+                <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+                  {showProfile ? (
+                    ownerInfo?.avatar_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={ownerInfo.avatar_url}
+                        alt=""
+                        style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, marginTop: 2 }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '50%',
+                          background: '#7B5EA7',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 13,
+                          color: '#fff',
+                          flexShrink: 0,
+                          marginTop: 2,
+                        }}
+                      >
+                        {(ownerInfo?.username ?? '원').slice(0, 1)}
+                      </div>
+                    )
+                  ) : (
+                    <div style={{ width: 40, flexShrink: 0 }} />
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, maxWidth: '85%' }}>
+                    {showProfile ? (
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{ownerInfo?.username ?? '원장님'}</span>
+                    ) : null}
+                    {couponGiftBubble}
+                  </div>
                 </div>
               )
             }
-            return (
-              <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
+            const couponBubble = (
                 <div
                   style={{
-                    maxWidth: '85%',
                     borderRadius: 12,
                     border: `1px solid ${GOLD}`,
                     padding: '10px 12px',
@@ -1294,15 +1483,59 @@ export default function CustomerChatRoomPage() {
                     <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 4 }}>{m.coupon_subtitle}</div>
                   ) : null}
                 </div>
+            )
+            if (mine) {
+              return (
+                <div key={m.id} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                  <div style={{ maxWidth: '85%' }}>{couponBubble}</div>
+                </div>
+              )
+            }
+            return (
+              <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+                {showProfile ? (
+                  ownerInfo?.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={ownerInfo.avatar_url}
+                      alt=""
+                      style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, marginTop: 2 }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        background: '#7B5EA7',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 13,
+                        color: '#fff',
+                        flexShrink: 0,
+                        marginTop: 2,
+                      }}
+                    >
+                      {(ownerInfo?.username ?? '원').slice(0, 1)}
+                    </div>
+                  )
+                ) : (
+                  <div style={{ width: 40, flexShrink: 0 }} />
+                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, maxWidth: '85%' }}>
+                  {showProfile ? (
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{ownerInfo?.username ?? '원장님'}</span>
+                  ) : null}
+                  {couponBubble}
+                </div>
               </div>
             )
           }
 
-          return (
-            <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
+          const defaultBubble = (
               <div
                 style={{
-                  maxWidth: '85%',
                   borderRadius: mine ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
                   padding: '10px 12px',
                   background: mine ? 'rgba(123,94,167,0.45)' : 'rgba(201,169,110,0.15)',
@@ -1315,6 +1548,52 @@ export default function CustomerChatRoomPage() {
                 ) : (
                   <div style={{ fontSize: 13, color: mine ? '#f3e9ff' : '#f5e6c8', lineHeight: 1.5 }}>{msgText(m)}</div>
                 )}
+              </div>
+          )
+          if (mine) {
+            return (
+              <div key={m.id} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                <div style={{ maxWidth: '85%' }}>{defaultBubble}</div>
+              </div>
+            )
+          }
+          return (
+            <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+              {showProfile ? (
+                ownerInfo?.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={ownerInfo.avatar_url}
+                    alt=""
+                    style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, marginTop: 2 }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      background: '#7B5EA7',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 13,
+                      color: '#fff',
+                      flexShrink: 0,
+                      marginTop: 2,
+                    }}
+                  >
+                    {(ownerInfo?.username ?? '원').slice(0, 1)}
+                  </div>
+                )
+              ) : (
+                <div style={{ width: 40, flexShrink: 0 }} />
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, maxWidth: '85%' }}>
+                {showProfile ? (
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{ownerInfo?.username ?? '원장님'}</span>
+                ) : null}
+                {defaultBubble}
               </div>
             </div>
           )
