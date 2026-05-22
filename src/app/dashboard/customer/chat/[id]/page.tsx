@@ -1517,34 +1517,32 @@ export default function CustomerChatRoomPage() {
               )
             })}
           </div>
-          {cardModal.has_text ? (
-            <textarea
-              value={cardModalText}
-              onChange={(e) => setCardModalText(e.target.value)}
-              placeholder="추가로 알려주세요"
-              rows={3}
-              style={{
-                width: '100%',
-                boxSizing: 'border-box',
-                minHeight: 60,
-                marginBottom: 12,
-                borderRadius: 8,
-                border: '1px solid rgba(255,255,255,0.12)',
-                background: 'rgba(255,255,255,0.05)',
-                color: '#fff',
-                fontSize: 12,
-                padding: '10px 12px',
-                resize: 'vertical',
-              }}
-            />
-          ) : null}
+          <textarea
+            value={cardModalText}
+            onChange={(e) => setCardModalText(e.target.value)}
+            placeholder="추가로 전하고 싶은 말이 있으면 적어주세요 (선택사항)"
+            rows={3}
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              minHeight: 60,
+              marginBottom: 12,
+              borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(255,255,255,0.05)',
+              color: '#fff',
+              fontSize: 12,
+              padding: '10px 12px',
+              resize: 'vertical',
+            }}
+          />
           <button
             type="button"
-            disabled={sending || (cardModalPicks.length === 0 && !cardModalText.trim())}
+            disabled={sending || cardModalPicks.length === 0}
             onClick={() => {
               void (async () => {
                 if (!internalUserId || !channelId || sending || !cardModal) return
-                if (cardModalPicks.length === 0 && !cardModalText.trim()) return
+                if (cardModalPicks.length === 0) return
                 setSending(true)
                 try {
                   await supabase.from('consultation_messages').insert({
@@ -1578,8 +1576,8 @@ export default function CustomerChatRoomPage() {
               color: cardModal.sos ? '#A32D2D' : '#3A1D1D',
               fontSize: 13,
               fontWeight: 600,
-              cursor: sending || (cardModalPicks.length === 0 && !cardModalText.trim()) ? 'default' : 'pointer',
-              opacity: sending || (cardModalPicks.length === 0 && !cardModalText.trim()) ? 0.5 : 1,
+              cursor: sending || cardModalPicks.length === 0 ? 'default' : 'pointer',
+              opacity: sending || cardModalPicks.length === 0 ? 0.5 : 1,
             }}
           >
             전송
