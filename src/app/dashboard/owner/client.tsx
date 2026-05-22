@@ -269,6 +269,7 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
             { icon: '🖊️', label: '샵 편집', color: 'rgba(76,173,126,0.08)', border: 'rgba(76,173,126,0.25)', tc: '#4cad7e', href: '/dashboard/owner/edit' },
             { icon: '📊', label: '매출 리포트', color: 'rgba(240,160,80,0.08)', border: 'rgba(240,160,80,0.25)', tc: '#f0a050', href: '/dashboard/owner/revenue' },
             { icon: '💳', label: '구독 관리', color: 'rgba(191,95,144,0.08)', border: 'rgba(191,95,144,0.2)', tc: '#bf5f90', href: '/dashboard/owner/subscription' },
+            { icon: '🧬', label: 'AI 학습', color: 'rgba(123,94,167,0.1)', border: 'rgba(123,94,167,0.3)', tc: '#7B5EA7', href: '/admin/hormone-phases' },
           ].map(m => (
             <button
               key={m.label}
