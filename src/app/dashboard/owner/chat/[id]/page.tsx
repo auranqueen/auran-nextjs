@@ -12,6 +12,14 @@ const TEXT_MUTED = 'rgba(255,255,255,0.45)'
 
 type ToolPanel = 'product' | 'routine' | 'coupon' | 'toast' | null
 
+const OWNER_CARD_LIB = [
+  { label: '🌙 호르몬 주기', card_type: 'hormone', title: '맞춤 피부 케어 시작해요!', desc: '마지막 생리 시작일을 알려주세요', chips: ['어제', '3일 전', '일주일 전', '2주 전'], has_text: true },
+  { label: '✨ 피부 상태 체크', card_type: 'skin', title: '오늘 피부 상태를 알려주세요', desc: '오늘 피부 컨디션을 선택해주세요', chips: ['🔥 뜨겁고 예민함', '💧 너무 건조함', '🫧 번들거림', '😣 트러블', '😊 컨디션 좋음', '🌫 칙칙함'], has_text: false },
+  { label: '📋 루틴 점검', card_type: 'routine_check', title: '루틴 점검해볼까요?', desc: '요즘 루틴 실천 여부를 알려주세요', chips: ['✅ 아침 루틴 함', '✅ 저녁 루틴 함', '❌ 자주 스킵해요', '⏰ 시간이 없어요'], has_text: false },
+  { label: '⭐ 제품 피드백', card_type: 'feedback', title: '제품 효과 어떠세요?', desc: '사용 중인 제품 피드백을 알려주세요', chips: ['효과 좋아요', '자극 있어요', '재구매 할게요', '변화 모르겠어요'], has_text: true },
+  { label: '🧘 스트레스 체크', card_type: 'stress', title: '요즘 생활 패턴이 어때요?', desc: '생활 패턴을 선택해주세요', chips: ['😴 수면 부족', '😰 스트레스 높음', '🍔 식단 불규칙', '😌 생활 패턴 양호'], has_text: false },
+] as const
+
 type BasketItem = { id: string; name: string; price: number; thumb: string }
 
 type ProductRow = { id: string; name: string; retail_price: number; thumb_img: string | null }
@@ -112,6 +120,15 @@ export default function OwnerChatRoomPage() {
     { id: string; title: string; preview_text: string; last_message_at: string | null; unread_count: number; user_id?: string | null; customer_name?: string }[]
   >([])
   const [channelsLoading, setChannelsLoading] = useState(true)
+  const [showCardLib, setShowCardLib] = useState(false)
+  const [showCustomCardForm, setShowCustomCardForm] = useState(false)
+  const [cardCustomTitle, setCardCustomTitle] = useState('')
+  const [cardCustomDesc, setCardCustomDesc] = useState('')
+  const [cardCustomChips, setCardCustomChips] = useState<string[]>([])
+  const [cardCustomChipInput, setCardCustomChipInput] = useState('')
+  const [cardPick, setCardPick] = useState<Record<string, string[]>>({})
+  const [cardExtra, setCardExtra] = useState<Record<string, string>>({})
+  const [cardSentDone, setCardSentDone] = useState<Record<string, boolean>>({})
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -1321,7 +1338,126 @@ export default function OwnerChatRoomPage() {
                       🍞 {msgText(m)}
                     </div>
                   </div>
-                ) : (
+                ) : m.message_kind === 'card_request' ? (() => {
+                  let card: { card_type?: string; title?: string; desc?: string; chips?: string[]; has_text?: boolean } = {}
+                  try {
+                    card = JSON.parse(String(m.message ?? ''))
+                  } catch {
+                    card = {}
+                  }
+                  const chips = Array.isArray(card.chips) ? card.chips : []
+                  const picks = cardPick[m.id] || []
+                  const extra = cardExtra[m.id] || ''
+                  const done = cardSentDone[m.id]
+                  return (
+                    <div
+                      style={{
+                        maxWidth: '88%',
+                        borderRadius: 12,
+                        border: '1px solid rgba(254,229,0,0.45)',
+                        padding: '12px 14px',
+                        background: 'rgba(254,229,0,0.08)',
+                      }}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 4 }}>{card.title || '카드'}</div>
+                      {card.desc ? <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 8 }}>{card.desc}</div> : null}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                        {chips.map((c) => {
+                          const on = picks.includes(c)
+                          return (
+                            <button
+                              key={c}
+                              type="button"
+                              disabled={done}
+                              onClick={() => {
+                                setCardPick((prev) => {
+                                  const cur = prev[m.id] || []
+                                  const next = on ? cur.filter((x) => x !== c) : [...cur, c]
+                                  return { ...prev, [m.id]: next }
+                                })
+                              }}
+                              style={{
+                                borderRadius: 999,
+                                border: on ? '1px solid #3A1D1D' : '1px solid rgba(255,255,255,0.15)',
+                                background: on ? '#FEE500' : 'rgba(255,255,255,0.06)',
+                                color: on ? '#3A1D1D' : '#e8dff5',
+                                fontSize: 11,
+                                padding: '6px 10px',
+                                cursor: done ? 'default' : 'pointer',
+                                opacity: done ? 0.5 : 1,
+                              }}
+                            >
+                              {c}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      {card.has_text ? (
+                        <textarea
+                          value={extra}
+                          disabled={done}
+                          onChange={(e) => setCardExtra((prev) => ({ ...prev, [m.id]: e.target.value }))}
+                          placeholder="추가로 알려주세요"
+                          rows={2}
+                          style={{
+                            width: '100%',
+                            boxSizing: 'border-box',
+                            marginBottom: 8,
+                            borderRadius: 8,
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            background: 'rgba(255,255,255,0.05)',
+                            color: '#fff',
+                            fontSize: 12,
+                            padding: '8px 10px',
+                            resize: 'vertical',
+                          }}
+                        />
+                      ) : null}
+                      <button
+                        type="button"
+                        disabled={done || sending || !customerUserId || (picks.length === 0 && !(card.has_text && extra.trim()))}
+                        onClick={() => {
+                          void (async () => {
+                            if (done || sending || !customerUserId || !channelId) return
+                            const body = [...picks, ...(extra.trim() ? [extra.trim()] : [])].join(', ')
+                            if (!body) return
+                            setSending(true)
+                            try {
+                              const { error } = await supabase.from('consultation_messages').insert({
+                                channel_id: channelId,
+                                sender_id: customerUserId,
+                                message: body,
+                                is_from_customer: true,
+                                message_kind: 'text',
+                              } as any)
+                              if (!error) {
+                                setCardSentDone((prev) => ({ ...prev, [m.id]: true }))
+                                setCardPick((prev) => ({ ...prev, [m.id]: [] }))
+                                setCardExtra((prev) => ({ ...prev, [m.id]: '' }))
+                              }
+                            } finally {
+                              setSending(false)
+                            }
+                          })()
+                        }}
+                        style={{
+                          width: '100%',
+                          padding: '9px 0',
+                          borderRadius: 8,
+                          border: 'none',
+                          background: '#FEE500',
+                          color: '#3A1D1D',
+                          fontSize: 12,
+                          fontWeight: 600,
+                          cursor: done || sending || !customerUserId ? 'default' : 'pointer',
+                          opacity: done || sending || !customerUserId || (picks.length === 0 && !(card.has_text && extra.trim())) ? 0.5 : 1,
+                        }}
+                      >
+                        {done ? '전송 완료' : '전송'}
+                      </button>
+                    </div>
+                  )
+                })() : (
                   <div style={{ fontSize: 13, color: mine ? '#f3e9ff' : '#f5e6c8', lineHeight: 1.5 }}>{msgText(m)}</div>
                 )}
               </div>
@@ -1348,6 +1484,224 @@ export default function OwnerChatRoomPage() {
           boxSizing: 'border-box',
         }}
       >
+        {showCardLib ? (
+          <div
+            style={{
+              marginTop: 8,
+              marginBottom: 0,
+              padding: 12,
+              maxHeight: 220,
+              overflowY: 'auto',
+              flexShrink: 0,
+              boxSizing: 'border-box',
+              WebkitOverflowScrolling: 'touch',
+            }}
+          >
+            {showCustomCardForm ? (
+              <div>
+                <input
+                  value={cardCustomTitle}
+                  onChange={(e) => setCardCustomTitle(e.target.value)}
+                  placeholder="카드 제목"
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    marginBottom: 8,
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#fff',
+                    fontSize: 12,
+                  }}
+                />
+                <input
+                  value={cardCustomDesc}
+                  onChange={(e) => setCardCustomDesc(e.target.value)}
+                  placeholder="카드 설명"
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    marginBottom: 8,
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#fff',
+                    fontSize: 12,
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                  <input
+                    value={cardCustomChipInput}
+                    onChange={(e) => setCardCustomChipInput(e.target.value)}
+                    placeholder="선택항목 입력"
+                    style={{
+                      flex: 1,
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: 'rgba(255,255,255,0.05)',
+                      color: '#fff',
+                      fontSize: 12,
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const t = cardCustomChipInput.trim()
+                      if (!t) return
+                      setCardCustomChips((prev) => (prev.includes(t) ? prev : [...prev, t]))
+                      setCardCustomChipInput('')
+                    }}
+                    style={{
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: '#FEE500',
+                      color: '#3A1D1D',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    추가
+                  </button>
+                </div>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomCardForm(false)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 0',
+                      borderRadius: 8,
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      background: 'transparent',
+                      color: TEXT_MUTED,
+                      fontSize: 11,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    disabled={sending || !cardCustomTitle.trim() || cardCustomChips.length === 0}
+                    onClick={() => {
+                      void (async () => {
+                        if (!ownerUserId || !channelId || sending || !cardCustomTitle.trim() || cardCustomChips.length === 0) return
+                        setSending(true)
+                        try {
+                          await supabase.from('consultation_messages').insert({
+                            channel_id: channelId,
+                            sender_id: ownerUserId,
+                            is_from_customer: false,
+                            message_kind: 'card_request',
+                            message: JSON.stringify({
+                              card_type: 'custom',
+                              title: cardCustomTitle.trim(),
+                              desc: cardCustomDesc.trim() || cardCustomTitle.trim(),
+                              chips: cardCustomChips,
+                              has_text: false,
+                            }),
+                          } as any)
+                          setShowCardLib(false)
+                          setShowCustomCardForm(false)
+                          setCardCustomTitle('')
+                          setCardCustomDesc('')
+                          setCardCustomChips([])
+                        } finally {
+                          setSending(false)
+                        }
+                      })()
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '8px 0',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: '#FEE500',
+                      color: '#3A1D1D',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      opacity: sending || !cardCustomTitle.trim() || cardCustomChips.length === 0 ? 0.5 : 1,
+                    }}
+                  >
+                    카드 보내기
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {OWNER_CARD_LIB.map((card) => (
+                  <button
+                    key={card.card_type}
+                    type="button"
+                    disabled={sending}
+                    onClick={() => {
+                      void (async () => {
+                        if (!ownerUserId || !channelId || sending) return
+                        setSending(true)
+                        try {
+                          await supabase.from('consultation_messages').insert({
+                            channel_id: channelId,
+                            sender_id: ownerUserId,
+                            is_from_customer: false,
+                            message_kind: 'card_request',
+                            message: JSON.stringify({
+                              card_type: card.card_type,
+                              title: card.title,
+                              desc: card.desc,
+                              chips: card.chips,
+                              has_text: card.has_text,
+                            }),
+                          } as any)
+                          setShowCardLib(false)
+                        } finally {
+                          setSending(false)
+                        }
+                      })()
+                    }}
+                    style={{
+                      borderRadius: 10,
+                      border: '1px solid rgba(254,229,0,0.35)',
+                      background: '#FEE500',
+                      color: '#3A1D1D',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: '10px 8px',
+                      cursor: sending ? 'default' : 'pointer',
+                      textAlign: 'left',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {card.label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setShowCustomCardForm(true)}
+                  disabled={sending}
+                  style={{
+                    borderRadius: 10,
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    background: 'rgba(255,255,255,0.06)',
+                    color: '#e8dff5',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    padding: '10px 8px',
+                    cursor: sending ? 'default' : 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  ✏️ 커스텀 카드
+                </button>
+              </div>
+            )}
+          </div>
+        ) : null}
         {toolPanel ? (
           <div
             style={{
@@ -1805,6 +2159,13 @@ export default function OwnerChatRoomPage() {
             </button>
             <button type="button" onClick={() => toggleTool('toast')} style={chipBtnStyle(toolPanel === 'toast')}>
               🍓 딸기잼 적립
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowCardLib((v) => !v)}
+              style={chipBtnStyle(showCardLib)}
+            >
+              🃏 카드함
             </button>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, width: '100%', minHeight: 0 }}>
