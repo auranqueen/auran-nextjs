@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
 import { cancelCommissionsForRefundOrder } from '@/lib/orders/applyOrderCommissions'
 
-type Tab = 'dashboard' | 'shipping' | 'brands' | 'members' | 'settlement' | 'refund' | 'logs'
+type Tab = 'dashboard' | 'shipping' | 'brands' | 'members' | 'settlement' | 'refund' | 'logs' | 'hormone'
 
 interface Props {
   profile: any; stats: any; pendingOrders: any[]; pendingBrands: any[]
@@ -88,6 +88,7 @@ export default function AdminClient({ profile, stats, pendingOrders, pendingBran
     { id: 'settlement', icon: '💰', label: '정산', count: stats.pendingSettlements },
     { id: 'refund', icon: '↩️', label: '환불', count: stats.pendingRefunds },
     { id: 'logs', icon: '📋', label: '로그' },
+    { id: 'hormone', icon: '🧬', label: 'AI학습' },
   ]
 
   return (
@@ -354,6 +355,19 @@ export default function AdminClient({ profile, stats, pendingOrders, pendingBran
                 {badge(l.role || '-', (RC as any)[l.role] || 'var(--text3)')}
               </div>
             ))}
+          </div>
+        )}
+
+        {tab === 'hormone' && (
+          <div style={{ padding: '0 0 80px' }}>
+            <iframe
+              src="/admin/hormone-phases"
+              style={{
+                width: '100%',
+                height: 'calc(100vh - 120px)',
+                border: 'none',
+              }}
+            />
           </div>
         )}
       </div>
