@@ -39,6 +39,7 @@ const MENU = [
       { label: '내 원장 기능', href: '/admin/owner-mode', icon: '👩‍⚕️' },
       { label: '회원 퀵상담', href: '/admin/guest-consult', icon: '🙋' },
       { label: '고객 피부 현황', href: '/admin/owner-customers', icon: '📊' },
+      { label: 'AI 학습', href: '/admin/hormone-phases', icon: '🧬' },
     ],
   },
   {
@@ -127,6 +128,7 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/mapping')) return '추천 매핑'
   if (path.startsWith('/admin/home-curation')) return '홈 큐레이션'
   if (path.startsWith('/admin/guest-consult')) return '회원 퀵상담'
+  if (path.startsWith('/admin/hormone-phases')) return '호르몬 AI 학습'
   if (path.startsWith('/admin/charge')) return '충전 플랜'
   if (path.startsWith('/admin/subscriptions')) return '구독 관리'
   if (path.startsWith('/admin/invite')) return '초대 링크'
