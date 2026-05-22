@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
 import { cancelCommissionsForRefundOrder } from '@/lib/orders/applyOrderCommissions'
+import HormonePhasesPage from '@/app/admin/hormone-phases/page'
 
 type Tab = 'dashboard' | 'shipping' | 'brands' | 'members' | 'settlement' | 'refund' | 'logs' | 'hormone'
 
@@ -358,18 +359,7 @@ export default function AdminClient({ profile, stats, pendingOrders, pendingBran
           </div>
         )}
 
-        {tab === 'hormone' && (
-          <div style={{ padding: '0 0 80px' }}>
-            <iframe
-              src="/admin/hormone-phases"
-              style={{
-                width: '100%',
-                height: 'calc(100vh - 120px)',
-                border: 'none',
-              }}
-            />
-          </div>
-        )}
+        {tab === 'hormone' && <HormonePhasesPage />}
       </div>
 
       {/* 토스트 */}
