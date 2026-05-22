@@ -10,13 +10,12 @@ const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
 const TEXT_MUTED = 'rgba(255,255,255,0.45)'
 
-const QUICK_CHIPS = [
-  { key: 'skin', label: '🔬 요즘 피부 고민있어요 😢' },
-  { key: 'routine', label: '🔄 나만의 루틴만들어주세요!' },
-  { key: 'recommend', label: '✨ 제품추천 도와주세요?' },
-  { key: 'photo', label: '📷 지금 피부사진전송' },
-  { key: 'sample', label: '🎁 이 샘플 받고싶어요' },
-  { key: 'sos', label: '🚨 피부 SOS타임이에요' },
+const CARD_LIB = [
+  { card_type: 'skin', title: '😣 피부 이상해요', chips: ['🔥 따갑고 예민함', '💧 너무 건조함', '😣 트러블 났어요', '🫧 번들거려요', '🌫 칙칙해졌어요'], has_text: false, sos: false },
+  { card_type: 'routine', title: '📋 루틴 점검해주세요', chips: ['아침 루틴 함', '저녁 루틴 함', '자주 스킵해요', '뭘 발라야 할지 모르겠어요'], has_text: false, sos: false },
+  { card_type: 'recommend', title: '💜 제품 추천해주세요', chips: ['진정 제품', '수분 제품', '피지 조절', '영양 크림', '특별 케어'], has_text: false, sos: false },
+  { card_type: 'sample', title: '🎁 샘플 받고싶어요', chips: ['시바산 토너', '르노벨 에센스', '제네틱 크림', '이타카 오일'], has_text: false, sos: false },
+  { card_type: 'sos', title: '🆘 피부 SOS', chips: ['갑자기 뒤집어짐', '새 제품 쓰고 반응', '시술 후 트러블', '극심한 건조함'], has_text: true, sos: true },
 ] as const
 
 type MsgRow = {
@@ -120,6 +119,13 @@ export default function CustomerChatRoomPage() {
   const [cycleDateInput, setCycleDateInput] = useState('')
   const [cycleSaving, setCycleSaving] = useState(false)
   const [customerAuthId, setCustomerAuthId] = useState<string | null>(null)
+  const [showCardLib, setShowCardLib] = useState(false)
+  const [cardCustomTitle, setCardCustomTitle] = useState('')
+  const [cardCustomChips, setCardCustomChips] = useState<string[]>([])
+  const [cardCustomChipInput, setCardCustomChipInput] = useState('')
+  const [showCustomCardForm, setShowCustomCardForm] = useState(false)
+  const [cardPick, setCardPick] = useState<Record<string, string[]>>({})
+  const [cardExtra, setCardExtra] = useState<Record<string, string>>({})
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -790,6 +796,130 @@ export default function CustomerChatRoomPage() {
                   >
                     {msgText(m)}
                   </div>
+                </div>
+              </div>
+            )
+          }
+
+          if (m.message_kind === 'card_request') {
+            let card: { card_type?: string; title?: string; chips?: string[]; has_text?: boolean } = {}
+            try {
+              card = JSON.parse(String(m.message ?? ''))
+            } catch {
+              card = {}
+            }
+            const chips = Array.isArray(card.chips) ? card.chips : []
+            const picks = cardPick[m.id] || []
+            const isSos = card.card_type === 'sos'
+            const chipBg = isSos ? '#FCEBEB' : '#FEE500'
+            const chipColor = isSos ? '#A32D2D' : '#3A1D1D'
+            const extra = cardExtra[m.id] || ''
+            return (
+              <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
+                <div
+                  style={{
+                    maxWidth: '88%',
+                    borderRadius: 12,
+                    border: `1px solid ${isSos ? 'rgba(163,45,45,0.45)' : 'rgba(254,229,0,0.45)'}`,
+                    padding: '12px 14px',
+                    background: isSos ? 'rgba(252,235,235,0.08)' : 'rgba(254,229,0,0.08)',
+                  }}
+                >
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 8 }}>{card.title || '카드'}</div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {chips.map((c) => {
+                      const on = picks.includes(c)
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => {
+                            setCardPick((prev) => {
+                              const cur = prev[m.id] || []
+                              const next = on ? cur.filter((x) => x !== c) : [...cur, c]
+                              return { ...prev, [m.id]: next }
+                            })
+                          }}
+                          style={{
+                            borderRadius: 999,
+                            border: on ? `1px solid ${chipColor}` : '1px solid rgba(255,255,255,0.15)',
+                            background: on ? chipBg : 'rgba(255,255,255,0.06)',
+                            color: on ? chipColor : '#e8dff5',
+                            fontSize: 11,
+                            padding: '6px 10px',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          {c}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {card.has_text ? (
+                    <textarea
+                      value={extra}
+                      onChange={(e) => setCardExtra((prev) => ({ ...prev, [m.id]: e.target.value }))}
+                      placeholder="추가로 알려주세요"
+                      rows={2}
+                      style={{
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        marginBottom: 8,
+                        borderRadius: 8,
+                        border: '1px solid rgba(255,255,255,0.12)',
+                        background: 'rgba(255,255,255,0.05)',
+                        color: '#fff',
+                        fontSize: 12,
+                        padding: '8px 10px',
+                        resize: 'vertical',
+                      }}
+                    />
+                  ) : null}
+                  <button
+                    type="button"
+                    disabled={sending || (picks.length === 0 && !(card.has_text && extra.trim()))}
+                    onClick={() => {
+                      void (async () => {
+                        if (!internalUserId || !channelId || sending) return
+                        const body = [...picks, ...(extra.trim() ? [extra.trim()] : [])].join(', ')
+                        if (!body) return
+                        setSending(true)
+                        try {
+                          const { error } = await supabase.from('consultation_messages').insert({
+                            channel_id: channelId,
+                            sender_id: internalUserId,
+                            message: body,
+                            is_from_customer: true,
+                            message_kind: 'text',
+                          } as any)
+                          if (!error) {
+                            await supabase.from('chat_channels').update({
+                              last_message_at: new Date().toISOString(),
+                              preview_text: body,
+                            }).eq('id', channelId)
+                            setCardPick((prev) => ({ ...prev, [m.id]: [] }))
+                            setCardExtra((prev) => ({ ...prev, [m.id]: '' }))
+                          }
+                        } finally {
+                          setSending(false)
+                        }
+                      })()
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '9px 0',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: isSos ? '#FCEBEB' : '#FEE500',
+                      color: isSos ? '#A32D2D' : '#3A1D1D',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: sending ? 'default' : 'pointer',
+                      opacity: sending || (picks.length === 0 && !(card.has_text && extra.trim())) ? 0.5 : 1,
+                    }}
+                  >
+                    전송
+                  </button>
                 </div>
               </div>
             )
@@ -1597,40 +1727,234 @@ export default function CustomerChatRoomPage() {
           borderTop: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        <div
-          className="quick-chip-scroll"
-          style={{
-            display: 'flex',
-            gap: 8,
-            overflowX: 'auto',
-            paddingBottom: 8,
-            marginBottom: 2,
-            msOverflowStyle: 'none',
-            scrollbarWidth: 'none',
-          }}
-        >
-          {QUICK_CHIPS.map((chip) => (
-            <button
-              key={chip.key}
-              type="button"
-              onClick={() => void sendQuickText(chip.label)}
-              disabled={sending}
-              style={{
-                flexShrink: 0,
-                borderRadius: 999,
-                border: '1px solid rgba(123,94,167,0.4)',
-                background: 'rgba(123,94,167,0.14)',
-                color: '#e8dff5',
-                fontSize: 12,
-                padding: '7px 10px',
-                cursor: sending ? 'default' : 'pointer',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {chip.label}
-            </button>
-          ))}
+        <div style={{ marginBottom: 8 }}>
+          <button
+            type="button"
+            onClick={() => {
+              setShowCardLib((v) => !v)
+              setShowCustomCardForm(false)
+            }}
+            disabled={sending}
+            style={{
+              borderRadius: 999,
+              border: '1px solid rgba(254,229,0,0.5)',
+              background: showCardLib ? '#FEE500' : 'rgba(254,229,0,0.15)',
+              color: showCardLib ? '#3A1D1D' : '#FEE500',
+              fontSize: 12,
+              fontWeight: 600,
+              padding: '7px 14px',
+              cursor: sending ? 'default' : 'pointer',
+            }}
+          >
+            카드함
+          </button>
         </div>
+        {showCardLib ? (
+          <div
+            className="card-lib-scroll"
+            style={{
+              marginBottom: 8,
+              maxHeight: 220,
+              overflowY: 'auto',
+              msOverflowStyle: 'none',
+              scrollbarWidth: 'none',
+            }}
+          >
+            {showCustomCardForm ? (
+              <div style={{ padding: '4px 0 8px' }}>
+                <input
+                  value={cardCustomTitle}
+                  onChange={(e) => setCardCustomTitle(e.target.value)}
+                  placeholder="카드 제목"
+                  style={{
+                    width: '100%',
+                    boxSizing: 'border-box',
+                    marginBottom: 8,
+                    padding: '8px 10px',
+                    borderRadius: 8,
+                    border: '1px solid rgba(255,255,255,0.12)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#fff',
+                    fontSize: 12,
+                  }}
+                />
+                <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                  <input
+                    value={cardCustomChipInput}
+                    onChange={(e) => setCardCustomChipInput(e.target.value)}
+                    placeholder="선택항목 입력"
+                    style={{
+                      flex: 1,
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: 'rgba(255,255,255,0.05)',
+                      color: '#fff',
+                      fontSize: 12,
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const t = cardCustomChipInput.trim()
+                      if (!t) return
+                      setCardCustomChips((prev) => (prev.includes(t) ? prev : [...prev, t]))
+                      setCardCustomChipInput('')
+                    }}
+                    style={{
+                      padding: '8px 10px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: '#FEE500',
+                      color: '#3A1D1D',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    추가
+                  </button>
+                </div>
+                {cardCustomChips.length > 0 ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {cardCustomChips.map((c) => (
+                      <span key={c} style={{ fontSize: 11, padding: '4px 8px', borderRadius: 999, background: '#FEE500', color: '#3A1D1D' }}>
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomCardForm(false)}
+                    style={{
+                      flex: 1,
+                      padding: '8px 0',
+                      borderRadius: 8,
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      background: 'transparent',
+                      color: TEXT_MUTED,
+                      fontSize: 11,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    disabled={sending || !cardCustomTitle.trim() || cardCustomChips.length === 0}
+                    onClick={() => {
+                      void (async () => {
+                        if (!internalUserId || !channelId || sending || !cardCustomTitle.trim() || cardCustomChips.length === 0) return
+                        setSending(true)
+                        try {
+                          await supabase.from('consultation_messages').insert({
+                            channel_id: channelId,
+                            sender_id: internalUserId,
+                            is_from_customer: true,
+                            message_kind: 'card_request',
+                            message: JSON.stringify({
+                              card_type: 'custom',
+                              title: cardCustomTitle.trim(),
+                              chips: cardCustomChips,
+                              has_text: false,
+                            }),
+                          } as any)
+                          setShowCardLib(false)
+                          setShowCustomCardForm(false)
+                          setCardCustomTitle('')
+                          setCardCustomChips([])
+                        } finally {
+                          setSending(false)
+                        }
+                      })()
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '8px 0',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: '#FEE500',
+                      color: '#3A1D1D',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      opacity: sending || !cardCustomTitle.trim() || cardCustomChips.length === 0 ? 0.5 : 1,
+                    }}
+                  >
+                    카드 보내기
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {CARD_LIB.map((card) => (
+                  <button
+                    key={card.card_type}
+                    type="button"
+                    disabled={sending}
+                    onClick={() => {
+                      void (async () => {
+                        if (!internalUserId || !channelId || sending) return
+                        setSending(true)
+                        try {
+                          await supabase.from('consultation_messages').insert({
+                            channel_id: channelId,
+                            sender_id: internalUserId,
+                            is_from_customer: true,
+                            message_kind: 'card_request',
+                            message: JSON.stringify({
+                              card_type: card.card_type,
+                              title: card.title,
+                              chips: card.chips,
+                              has_text: card.has_text,
+                            }),
+                          } as any)
+                          setShowCardLib(false)
+                        } finally {
+                          setSending(false)
+                        }
+                      })()
+                    }}
+                    style={{
+                      borderRadius: 10,
+                      border: card.sos ? '1px solid rgba(163,45,45,0.35)' : '1px solid rgba(254,229,0,0.35)',
+                      background: card.sos ? '#FCEBEB' : '#FEE500',
+                      color: card.sos ? '#A32D2D' : '#3A1D1D',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: '10px 8px',
+                      cursor: sending ? 'default' : 'pointer',
+                      textAlign: 'left',
+                      lineHeight: 1.4,
+                    }}
+                  >
+                    {card.title}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setShowCustomCardForm(true)}
+                  disabled={sending}
+                  style={{
+                    borderRadius: 10,
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    background: 'rgba(255,255,255,0.06)',
+                    color: '#e8dff5',
+                    fontSize: 11,
+                    fontWeight: 600,
+                    padding: '10px 8px',
+                    cursor: sending ? 'default' : 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  ✏️ 직접 만들기
+                </button>
+              </div>
+            )}
+          </div>
+        ) : null}
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
           <button
             type="button"
@@ -1697,7 +2021,7 @@ export default function CustomerChatRoomPage() {
         </div>
       </div>
       <style jsx global>{`
-        .quick-chip-scroll::-webkit-scrollbar {
+        .card-lib-scroll::-webkit-scrollbar {
           display: none;
         }
       `}</style>
