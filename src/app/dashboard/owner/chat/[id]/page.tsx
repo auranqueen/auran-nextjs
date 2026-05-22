@@ -420,7 +420,7 @@ export default function OwnerChatRoomPage() {
             const { error: askErr } = await supabase.from('consultation_messages').insert({
               channel_id: channelId,
               sender_id: uid,
-              message: '피부 상담을 더 정확하게 도와드리려고\n 마지막 생리 시작일을 여쭤봐도 될까요?\n (선택사항이에요 💜)',
+              message: '피부 상담을 더 정확하게 도와드리려고 마지막 생리 시작일을 여쭤봐도 될까요? (선택사항이에요 💜)',
               is_from_customer: false,
               message_kind: 'text',
             } as any)
