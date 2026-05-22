@@ -302,7 +302,7 @@ export default function OwnerChatRoomPage() {
       setOwnerUserId(uid)
 
       const [{ data: ch, error: chErr }, , { data: msgs }] = await Promise.all([
-        supabase.from('chat_channels').select('id,title,owner_memo,user_id,phase_asked').eq('id', channelId).maybeSingle(),
+        supabase.from('chat_channels').select('id,title,owner_memo,user_id').eq('id', channelId).maybeSingle(),
         supabase.from('chat_channels').update({ unread_count: 0 }).eq('id', channelId),
         supabase.from('consultation_messages').select('*').eq('channel_id', channelId).order('created_at', { ascending: true }),
       ])
@@ -405,31 +405,6 @@ export default function OwnerChatRoomPage() {
         .subscribe()
 
       rtRef.current = rt
-      const linkedCustomerId = (ch as { user_id?: string | null }).user_id ? String((ch as { user_id: string }).user_id) : null
-      if (linkedCustomerId && !(ch as { phase_asked?: boolean | null }).phase_asked) {
-        const { data: uRow } = await supabase.from('users').select('auth_id').eq('id', linkedCustomerId).maybeSingle()
-        if (uRow?.auth_id) {
-          const { data: cycleRow } = await supabase
-            .from('skin_cycle_analysis')
-            .select('hormone_stage')
-            .eq('auth_id', uRow.auth_id)
-            .order('analysis_date', { ascending: false })
-            .limit(1)
-            .maybeSingle()
-          if (!cycleRow?.hormone_stage) {
-            const { error: askErr } = await supabase.from('consultation_messages').insert({
-              channel_id: channelId,
-              sender_id: uid,
-              message: '피부 상담을 더 정확하게 도와드리려고 마지막 생리 시작일을 여쭤봐도 될까요? (선택사항이에요 💜)',
-              is_from_customer: false,
-              message_kind: 'text',
-            } as any)
-            if (!askErr) {
-              await supabase.from('chat_channels').update({ phase_asked: true } as any).eq('id', channelId)
-            }
-          }
-        }
-      }
       setLoading(false)
     }
 

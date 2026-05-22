@@ -115,6 +115,11 @@ export default function CustomerChatRoomPage() {
   const [toastHistory, setToastHistory] = useState<any[]>([])
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [drawerTab, setDrawerTab] = useState<'toast' | 'coupon' | 'history' | 'orders'>('toast')
+  const [showCycleBanner, setShowCycleBanner] = useState(false)
+  const [cycleModalOpen, setCycleModalOpen] = useState(false)
+  const [cycleDateInput, setCycleDateInput] = useState('')
+  const [cycleSaving, setCycleSaving] = useState(false)
+  const [customerAuthId, setCustomerAuthId] = useState<string | null>(null)
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -172,6 +177,8 @@ export default function CustomerChatRoomPage() {
         luteal: '물들기',
       }
       const phase = cycleRes.data?.hormone_stage ?? null
+      setCustomerAuthId(authId)
+      setShowCycleBanner(!phase)
       setProfileInfo({
         username: p?.username ?? '고객',
         avatar_url: p?.avatar_url ?? null,
@@ -654,6 +661,43 @@ export default function CustomerChatRoomPage() {
         </div>
       </div>
 
+      {showCycleBanner ? (
+        <div
+          style={{
+            flexShrink: 0,
+            padding: '10px 14px',
+            background: 'rgba(123,94,167,0.12)',
+            borderBottom: '1px solid rgba(123,94,167,0.35)',
+            fontSize: 12,
+            color: '#e8dff5',
+            lineHeight: 1.5,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 10,
+          }}
+        >
+          <span>생리 시작일을 입력하면 맞춤 상담을 받을 수 있어요 💜</span>
+          <button
+            type="button"
+            onClick={() => setCycleModalOpen(true)}
+            style={{
+              flexShrink: 0,
+              padding: '6px 10px',
+              borderRadius: 8,
+              border: 'none',
+              background: PURPLE,
+              color: '#fff',
+              fontSize: 11,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            입력하기
+          </button>
+        </div>
+      ) : null}
+
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '80px 16px 160px' }}>
         {routineCards.length > 0 ? (
           <div style={{ marginBottom: 16 }}>
@@ -1034,6 +1078,135 @@ export default function CustomerChatRoomPage() {
           )
         })}
       </div>
+
+      {cycleModalOpen ? (
+        <div
+          onClick={() => setCycleModalOpen(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 45 }}
+        />
+      ) : null}
+      {cycleModalOpen ? (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: '#16162a',
+            borderRadius: 16,
+            padding: '18px 16px 20px',
+            zIndex: 46,
+            width: '88%',
+            maxWidth: 340,
+            border: `1px solid ${PURPLE}55`,
+          }}
+        >
+          <div style={{ fontSize: 14, color: '#fff', marginBottom: 12, fontWeight: 600 }}>마지막 생리 시작일</div>
+          <input
+            type="date"
+            value={cycleDateInput}
+            onChange={(e) => setCycleDateInput(e.target.value)}
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              padding: '10px 12px',
+              borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.15)',
+              background: 'rgba(255,255,255,0.06)',
+              color: '#fff',
+              fontSize: 13,
+              marginBottom: 12,
+            }}
+          />
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => setCycleModalOpen(false)}
+              style={{
+                flex: 1,
+                padding: '10px 0',
+                borderRadius: 8,
+                border: '1px solid rgba(255,255,255,0.2)',
+                background: 'transparent',
+                color: TEXT_MUTED,
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              disabled={!cycleDateInput || cycleSaving || !customerAuthId}
+              onClick={() => {
+                void (async () => {
+                  if (!cycleDateInput || cycleSaving || !customerAuthId) return
+                  setCycleSaving(true)
+                  try {
+                    const s = new Date(cycleDateInput)
+                    if (Number.isNaN(s.getTime())) return
+                    const now = new Date()
+                    const diff = Math.floor(
+                      (new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() -
+                        new Date(s.getFullYear(), s.getMonth(), s.getDate()).getTime()) /
+                        86400000
+                    )
+                    const len = 28
+                    const d = ((diff % len) + len) % len
+                    const cycleDay = d + 1
+                    let hormone_stage = 'luteal'
+                    if (cycleDay >= 1 && cycleDay <= 5) hormone_stage = 'menstrual'
+                    else if (cycleDay <= 13) hormone_stage = 'follicular'
+                    else if (cycleDay <= 16) hormone_stage = 'ovulation'
+                    const todayIso = new Date().toISOString().slice(0, 10)
+                    const { error } = await supabase.from('skin_cycle_analysis').insert({
+                      auth_id: customerAuthId,
+                      record_date: cycleDateInput,
+                      analysis_date: todayIso,
+                      cycle_day: cycleDay,
+                      hormone_stage,
+                      checkin_condition: '',
+                      recommended_products: [],
+                      updated_at: new Date().toISOString(),
+                    } as any)
+                    if (error) return
+                    const phaseMap: Record<string, string> = {
+                      menstrual: '달빛기',
+                      follicular: '황금기',
+                      ovulation: '만개기',
+                      luteal: '물들기',
+                    }
+                    setProfileInfo((prev) =>
+                      prev
+                        ? { ...prev, hormone_phase: hormone_stage, hormone_label: phaseMap[hormone_stage] ?? hormone_stage }
+                        : prev
+                    )
+                    setShowCycleBanner(false)
+                    setCycleModalOpen(false)
+                  } finally {
+                    setCycleSaving(false)
+                  }
+                })()
+              }}
+              style={{
+                flex: 1,
+                padding: '10px 0',
+                borderRadius: 8,
+                border: 'none',
+                background: PURPLE,
+                color: '#fff',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: !cycleDateInput || cycleSaving ? 'default' : 'pointer',
+                opacity: !cycleDateInput || cycleSaving ? 0.5 : 1,
+              }}
+            >
+              {cycleSaving ? '저장 중…' : '저장'}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {slideOpen && (
         <div
