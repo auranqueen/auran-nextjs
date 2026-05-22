@@ -130,6 +130,15 @@ export default function OwnerChatRoomPage() {
     username: string
     avatar_url: string | null
   } | null>(null)
+  const [cardModal, setCardModal] = useState<{
+    card_type: string
+    title: string
+    desc?: string
+    chips: string[]
+    has_text: boolean
+  } | null>(null)
+  const [cardModalPicks, setCardModalPicks] = useState<string[]>([])
+  const [cardModalText, setCardModalText] = useState('')
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -1518,6 +1527,148 @@ export default function OwnerChatRoomPage() {
         })}
       </div>
 
+      {cardModal !== null ? (
+        <div
+          onClick={() => setCardModal(null)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 55 }}
+        />
+      ) : null}
+      {cardModal !== null ? (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            zIndex: 56,
+            background: '#16162a',
+            borderRadius: '16px 16px 0 0',
+            padding: '16px 16px 32px',
+            maxHeight: '70vh',
+            overflowY: 'auto',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+            <button
+              type="button"
+              onClick={() => setCardModal(null)}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.1)',
+                border: 'none',
+                color: 'rgba(255,255,255,0.6)',
+                fontSize: 14,
+                cursor: 'pointer',
+              }}
+            >
+              ✕
+            </button>
+          </div>
+          <div style={{ fontSize: 14, color: '#fff', fontWeight: 600, marginBottom: 4 }}>
+            {OWNER_CARD_LIB.find((c) => c.card_type === cardModal.card_type)?.label ?? '🃏 카드'} · {cardModal.title}
+          </div>
+          {cardModal.desc ? (
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>{cardModal.desc}</div>
+          ) : (
+            <div style={{ marginBottom: 12 }} />
+          )}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+            {cardModal.chips.map((c) => {
+              const on = cardModalPicks.includes(c)
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => {
+                    setCardModalPicks((prev) => (on ? prev.filter((x) => x !== c) : [...prev, c]))
+                  }}
+                  style={{
+                    borderRadius: 999,
+                    border: on ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.15)',
+                    background: on ? 'rgba(123,94,167,0.2)' : 'transparent',
+                    color: on ? '#e8dff5' : 'rgba(255,255,255,0.5)',
+                    fontSize: 11,
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {c}
+                </button>
+              )
+            })}
+          </div>
+          <textarea
+            value={cardModalText}
+            onChange={(e) => setCardModalText(e.target.value)}
+            placeholder="추가로 전하고 싶은 말이 있으면 적어주세요 (선택사항)"
+            rows={3}
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              minHeight: 60,
+              marginBottom: 12,
+              borderRadius: 8,
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(255,255,255,0.05)',
+              color: '#fff',
+              fontSize: 12,
+              padding: '10px 12px',
+              resize: 'vertical',
+            }}
+          />
+          <button
+            type="button"
+            disabled={sending || cardModalPicks.length === 0}
+            onClick={() => {
+              void (async () => {
+                if (!ownerUserId || !channelId || sending || !cardModal) return
+                if (cardModalPicks.length === 0) return
+                setSending(true)
+                try {
+                  await supabase.from('consultation_messages').insert({
+                    channel_id: channelId,
+                    sender_id: ownerUserId,
+                    is_from_customer: false,
+                    message_kind: 'card_request',
+                    message: JSON.stringify({
+                      card_type: cardModal.card_type,
+                      title: cardModal.title,
+                      desc: cardModal.desc,
+                      chips: cardModal.chips,
+                      selected_chips: cardModalPicks,
+                      text_content: cardModalText,
+                      has_text: cardModal.has_text,
+                    }),
+                  } as any)
+                  setCardModal(null)
+                  setCardModalPicks([])
+                  setCardModalText('')
+                } finally {
+                  setSending(false)
+                }
+              })()
+            }}
+            style={{
+              width: '100%',
+              padding: '12px 0',
+              borderRadius: 10,
+              border: 'none',
+              background: '#7B5EA7',
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: sending || cardModalPicks.length === 0 ? 'default' : 'pointer',
+              opacity: sending || cardModalPicks.length === 0 ? 0.5 : 1,
+            }}
+          >
+            전송
+          </button>
+        </div>
+      ) : null}
+
       <div
         style={{
           position: 'fixed',
@@ -1693,28 +1844,16 @@ export default function OwnerChatRoomPage() {
                     type="button"
                     disabled={sending}
                     onClick={() => {
-                      void (async () => {
-                        if (!ownerUserId || !channelId || sending) return
-                        setSending(true)
-                        try {
-                          await supabase.from('consultation_messages').insert({
-                            channel_id: channelId,
-                            sender_id: ownerUserId,
-                            is_from_customer: false,
-                            message_kind: 'card_request',
-                            message: JSON.stringify({
-                              card_type: card.card_type,
-                              title: card.title,
-                              desc: card.desc,
-                              chips: card.chips,
-                              has_text: card.has_text,
-                            }),
-                          } as any)
-                          setShowCardLib(false)
-                        } finally {
-                          setSending(false)
-                        }
-                      })()
+                      setCardModal({
+                        card_type: card.card_type,
+                        title: card.title,
+                        desc: card.desc,
+                        chips: [...card.chips],
+                        has_text: card.has_text,
+                      })
+                      setCardModalPicks([])
+                      setCardModalText('')
+                      setShowCardLib(false)
                     }}
                     style={{
                       borderRadius: 10,
