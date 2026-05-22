@@ -704,6 +704,36 @@ export default function CustomerChatRoomPage() {
         </div>
       ) : null}
 
+      <button
+        type="button"
+        onClick={() => {
+          setShowCardLib((v) => !v)
+          setShowCustomCardForm(false)
+        }}
+        disabled={sending}
+        aria-label="카드함"
+        style={{
+          position: 'fixed',
+          top: 70,
+          right: 16,
+          zIndex: 30,
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          background: showCardLib ? '#FEE500' : 'rgba(254,229,0,0.12)',
+          border: '1px solid #FEE500',
+          color: showCardLib ? '#3A1D1D' : '#FEE500',
+          fontSize: 16,
+          cursor: sending ? 'default' : 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 0,
+        }}
+      >
+        🃏
+      </button>
+
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '80px 16px 160px' }}>
         {routineCards.length > 0 ? (
           <div style={{ marginBottom: 16 }}>
@@ -1727,28 +1757,6 @@ export default function CustomerChatRoomPage() {
           borderTop: '1px solid rgba(255,255,255,0.06)',
         }}
       >
-        <div style={{ marginBottom: 8 }}>
-          <button
-            type="button"
-            onClick={() => {
-              setShowCardLib((v) => !v)
-              setShowCustomCardForm(false)
-            }}
-            disabled={sending}
-            style={{
-              borderRadius: 999,
-              border: '1px solid rgba(254,229,0,0.5)',
-              background: showCardLib ? '#FEE500' : 'rgba(254,229,0,0.15)',
-              color: showCardLib ? '#3A1D1D' : '#FEE500',
-              fontSize: 12,
-              fontWeight: 600,
-              padding: '7px 14px',
-              cursor: sending ? 'default' : 'pointer',
-            }}
-          >
-            카드함
-          </button>
-        </div>
         {showCardLib ? (
           <div
             className="card-lib-scroll"
