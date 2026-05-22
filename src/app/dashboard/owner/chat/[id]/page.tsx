@@ -126,6 +126,10 @@ export default function OwnerChatRoomPage() {
   const [cardCustomDesc, setCardCustomDesc] = useState('')
   const [cardCustomChips, setCardCustomChips] = useState<string[]>([])
   const [cardCustomChipInput, setCardCustomChipInput] = useState('')
+  const [ownerProfile, setOwnerProfile] = useState<{
+    username: string
+    avatar_url: string | null
+  } | null>(null)
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -270,6 +274,31 @@ export default function OwnerChatRoomPage() {
       cancelled = true
     }
   }, [customerUserId])
+
+  useEffect(() => {
+    if (!ownerUserId) return
+    void supabase
+      .from('users')
+      .select('auth_id')
+      .eq('id', ownerUserId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!data?.auth_id) return
+        void supabase
+          .from('profiles')
+          .select('username, avatar_url')
+          .eq('auth_id', data.auth_id)
+          .maybeSingle()
+          .then(({ data: p }) => {
+            if (p) {
+              setOwnerProfile({
+                username: p.username ?? '원장님',
+                avatar_url: p.avatar_url ?? null,
+              })
+            }
+          })
+      })
+  }, [ownerUserId])
 
   useEffect(() => {
     if (!showSkinLog || !customerUserId) return
@@ -1134,8 +1163,10 @@ export default function OwnerChatRoomPage() {
       ) : null}
 
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '12px 16px 140px', minWidth: 0 }}>
-        {messages.map((m) => {
+        {messages.map((m, index) => {
           const mine = !m.is_from_customer
+          const prevMsg = messages[index - 1]
+          const showProfile = !mine && (!prevMsg || !Boolean(prevMsg.is_from_customer))
           const isImage = m.message_kind === 'image' && m.image_url
           let productItems: { id: string; name: string; price: number; thumb: string }[] = []
           if (m.message_kind === 'product_recommend') {
@@ -1147,18 +1178,8 @@ export default function OwnerChatRoomPage() {
               productItems = []
             }
           }
-          return (
-            <div key={m.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginBottom: 10 }}>
-              <div
-                style={{
-                  maxWidth: '85%',
-                  borderRadius: mine ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                  padding:
-                    m.message_kind === 'product_recommend' || m.message_kind === 'routine_card' ? '8px 8px 14px' : '10px 12px 16px',
-                  background: mine ? 'rgba(123,94,167,0.45)' : 'rgba(201,169,110,0.15)',
-                  border: mine ? 'none' : '1px solid rgba(201,169,110,0.3)',
-                }}
-              >
+          const messageBody = (
+              <>
                 {isImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={m.image_url!} alt="" style={{ maxWidth: '100%', borderRadius: 8, display: 'block' }} />
@@ -1408,9 +1429,89 @@ export default function OwnerChatRoomPage() {
                       ) : null}
                     </div>
                   )
-                })() : (
+                })(                ) : (
                   <div style={{ fontSize: 13, color: mine ? '#f3e9ff' : '#f5e6c8', lineHeight: 1.5 }}>{msgText(m)}</div>
                 )}
+              </>
+          )
+
+          if (mine) {
+            return (
+              <div key={m.id} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                <div
+                  style={{
+                    maxWidth: '85%',
+                    borderRadius: '14px 14px 4px 14px',
+                    padding:
+                      m.message_kind === 'product_recommend' || m.message_kind === 'routine_card'
+                        ? '8px 8px 14px'
+                        : '10px 12px 16px',
+                    background: 'rgba(123,94,167,0.45)',
+                    border: 'none',
+                  }}
+                >
+                  {messageBody}
+                </div>
+              </div>
+            )
+          }
+
+          return (
+            <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+              {showProfile ? (
+                customerSkinInfo?.avatar_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={customerSkinInfo.avatar_url}
+                    alt=""
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      flexShrink: 0,
+                      marginTop: 2,
+                    }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      background: 'rgba(201,169,110,0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 13,
+                      color: '#C9A96E',
+                      flexShrink: 0,
+                      marginTop: 2,
+                    }}
+                  >
+                    {channelTitle?.slice(0, 1) ?? '고'}
+                  </div>
+                )
+              ) : (
+                <div style={{ width: 32, flexShrink: 0 }} />
+              )}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0, maxWidth: '85%' }}>
+                {showProfile ? (
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{channelTitle}</span>
+                ) : null}
+                <div
+                  style={{
+                    borderRadius: '14px 14px 14px 4px',
+                    padding:
+                      m.message_kind === 'product_recommend' || m.message_kind === 'routine_card'
+                        ? '8px 8px 14px'
+                        : '10px 12px 16px',
+                    background: 'rgba(201,169,110,0.15)',
+                    border: '1px solid rgba(201,169,110,0.3)',
+                  }}
+                >
+                  {messageBody}
+                </div>
               </div>
             </div>
           )
