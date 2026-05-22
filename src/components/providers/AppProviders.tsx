@@ -48,7 +48,8 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
     hideCustomerNav ||
     pathname.startsWith('/signup') ||
     pathname.startsWith('/login') ||
-    pathname.startsWith('/auth')
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/dashboard/customer/chat')
   const showCustomerNav = !hideCustomerNav
   const navPad = 'calc(76px + env(safe-area-inset-bottom, 0px))'
 
