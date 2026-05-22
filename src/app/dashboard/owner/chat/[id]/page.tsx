@@ -126,9 +126,6 @@ export default function OwnerChatRoomPage() {
   const [cardCustomDesc, setCardCustomDesc] = useState('')
   const [cardCustomChips, setCardCustomChips] = useState<string[]>([])
   const [cardCustomChipInput, setCardCustomChipInput] = useState('')
-  const [cardPick, setCardPick] = useState<Record<string, string[]>>({})
-  const [cardExtra, setCardExtra] = useState<Record<string, string>>({})
-  const [cardSentDone, setCardSentDone] = useState<Record<string, boolean>>({})
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -1339,16 +1336,28 @@ export default function OwnerChatRoomPage() {
                     </div>
                   </div>
                 ) : m.message_kind === 'card_request' ? (() => {
-                  let card: { card_type?: string; title?: string; desc?: string; chips?: string[]; has_text?: boolean } = {}
+                  let card: {
+                    card_type?: string
+                    title?: string
+                    desc?: string
+                    chips?: string[]
+                    selected_chips?: string[]
+                    text_content?: string
+                    has_text?: boolean
+                  } = {}
                   try {
                     card = JSON.parse(String(m.message ?? ''))
                   } catch {
                     card = {}
                   }
-                  const chips = Array.isArray(card.chips) ? card.chips : []
-                  const picks = cardPick[m.id] || []
-                  const extra = cardExtra[m.id] || ''
-                  const done = cardSentDone[m.id]
+                  const libRow = OWNER_CARD_LIB.find((c) => c.card_type === card.card_type)
+                  const emojiLine = libRow?.label ?? (card.card_type === 'custom' ? '✏️ 커스텀 카드' : '🃏 카드')
+                  const selectedChips = Array.isArray(card.selected_chips)
+                    ? card.selected_chips
+                    : Array.isArray(card.chips)
+                      ? card.chips
+                      : []
+                  const textContent = String(card.text_content ?? '').trim()
                   return (
                     <div
                       style={{
@@ -1359,102 +1368,44 @@ export default function OwnerChatRoomPage() {
                         background: 'rgba(254,229,0,0.08)',
                       }}
                     >
+                      <div style={{ fontSize: 12, fontWeight: 600, color: '#FEE500', marginBottom: 6 }}>{emojiLine}</div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#fff', marginBottom: 4 }}>{card.title || '카드'}</div>
                       {card.desc ? <div style={{ fontSize: 11, color: TEXT_MUTED, marginBottom: 8 }}>{card.desc}</div> : null}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-                        {chips.map((c) => {
-                          const on = picks.includes(c)
-                          return (
-                            <button
+                      {selectedChips.length > 0 ? (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                          {selectedChips.map((c) => (
+                            <span
                               key={c}
-                              type="button"
-                              disabled={done}
-                              onClick={() => {
-                                setCardPick((prev) => {
-                                  const cur = prev[m.id] || []
-                                  const next = on ? cur.filter((x) => x !== c) : [...cur, c]
-                                  return { ...prev, [m.id]: next }
-                                })
-                              }}
                               style={{
                                 borderRadius: 999,
-                                border: on ? '1px solid #3A1D1D' : '1px solid rgba(255,255,255,0.15)',
-                                background: on ? '#FEE500' : 'rgba(255,255,255,0.06)',
-                                color: on ? '#3A1D1D' : '#e8dff5',
+                                border: '1px solid rgba(254,229,0,0.35)',
+                                background: 'rgba(254,229,0,0.15)',
+                                color: '#f5e6c8',
                                 fontSize: 11,
                                 padding: '6px 10px',
-                                cursor: done ? 'default' : 'pointer',
-                                opacity: done ? 0.5 : 1,
                               }}
                             >
                               {c}
-                            </button>
-                          )
-                        })}
-                      </div>
-                      {card.has_text ? (
-                        <textarea
-                          value={extra}
-                          disabled={done}
-                          onChange={(e) => setCardExtra((prev) => ({ ...prev, [m.id]: e.target.value }))}
-                          placeholder="추가로 알려주세요"
-                          rows={2}
-                          style={{
-                            width: '100%',
-                            boxSizing: 'border-box',
-                            marginBottom: 8,
-                            borderRadius: 8,
-                            border: '1px solid rgba(255,255,255,0.12)',
-                            background: 'rgba(255,255,255,0.05)',
-                            color: '#fff',
-                            fontSize: 12,
-                            padding: '8px 10px',
-                            resize: 'vertical',
-                          }}
-                        />
+                            </span>
+                          ))}
+                        </div>
                       ) : null}
-                      <button
-                        type="button"
-                        disabled={done || sending || !customerUserId || (picks.length === 0 && !(card.has_text && extra.trim()))}
-                        onClick={() => {
-                          void (async () => {
-                            if (done || sending || !customerUserId || !channelId) return
-                            const body = [...picks, ...(extra.trim() ? [extra.trim()] : [])].join(', ')
-                            if (!body) return
-                            setSending(true)
-                            try {
-                              const { error } = await supabase.from('consultation_messages').insert({
-                                channel_id: channelId,
-                                sender_id: customerUserId,
-                                message: body,
-                                is_from_customer: true,
-                                message_kind: 'text',
-                              } as any)
-                              if (!error) {
-                                setCardSentDone((prev) => ({ ...prev, [m.id]: true }))
-                                setCardPick((prev) => ({ ...prev, [m.id]: [] }))
-                                setCardExtra((prev) => ({ ...prev, [m.id]: '' }))
-                              }
-                            } finally {
-                              setSending(false)
-                            }
-                          })()
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '9px 0',
-                          borderRadius: 8,
-                          border: 'none',
-                          background: '#FEE500',
-                          color: '#3A1D1D',
-                          fontSize: 12,
-                          fontWeight: 600,
-                          cursor: done || sending || !customerUserId ? 'default' : 'pointer',
-                          opacity: done || sending || !customerUserId || (picks.length === 0 && !(card.has_text && extra.trim())) ? 0.5 : 1,
-                        }}
-                      >
-                        {done ? '전송 완료' : '전송'}
-                      </button>
+                      {card.has_text && textContent ? (
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: '#fff',
+                            lineHeight: 1.5,
+                            whiteSpace: 'pre-wrap',
+                            padding: '8px 10px',
+                            borderRadius: 8,
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                          }}
+                        >
+                          {textContent}
+                        </div>
+                      ) : null}
                     </div>
                   )
                 })() : (
