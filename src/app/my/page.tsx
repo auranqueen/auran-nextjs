@@ -566,6 +566,10 @@ export default function MyPage() {
             사용내역
           </button>
         </div>
+        <div style={{ marginTop: 10, fontSize: '10px', color: 'rgba(196,167,231,0.5)', lineHeight: 1.6 }}>
+          💡 5만원 이상 구매 시 토스트 사용 가능해요<br />
+          LUMIÈRE 이상 등급은 전액 사용 가능해요
+        </div>
         {expiringPoint > 0 ? (
           <div style={{ marginTop: 8, fontSize: '10px', color: 'rgba(255,180,80,0.8)' }}>
             ⚠️ {expiringPoint.toLocaleString()} P 12월 31일 소멸 예정
