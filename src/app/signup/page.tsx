@@ -173,7 +173,7 @@ function SignupForm() {
             user_id: newUserRow.id,
             amount: signupWelcomePoint,
             transaction_type: 'signup',
-            source_type: 'signup_bonus',
+            source_type: 'signup',
           } as any)
           if (ttErr) console.warn('[toast_transactions signup]', ttErr)
         }

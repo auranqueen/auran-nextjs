@@ -340,7 +340,7 @@ export default function MyPage() {
               user_id: uRow.id,
               amount: attPts,
               transaction_type: 'attendance',
-              source_type: 'checkin',
+              source_type: 'attendance',
             } as any)
             if (ttErr) console.warn('[toast_transactions attendance]', ttErr)
           }

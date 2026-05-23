@@ -192,7 +192,7 @@ export async function POST(req: NextRequest) {
                 user_id: intent.user_id,
                 amount: chargeToast,
                 transaction_type: 'charge',
-                source_type: 'charge',
+                source_type: 'system',
                 source_id: intent.id,
                 reference_id: intent.id,
               } as any)
