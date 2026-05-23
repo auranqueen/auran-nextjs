@@ -583,22 +583,36 @@ export default function MyProfilePage() {
           <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 10, color: GOLD }}>피부 정보</div>
           <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 6 }}>피부타입</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-            {['지성', '건성', '복합성', '민감성', '중성'].map((x) => (
-              <button key={x} type="button" className="btn" onClick={() => setSkinType(x)} style={selBtn(skinType === x)}>
-                {x}
-              </button>
-            ))}
+            <div style={{
+              padding: '6px 12px',
+              borderRadius: 8,
+              background: skinType ? 'rgba(123,94,167,0.15)' : 'rgba(255,255,255,0.04)',
+              border: skinType ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.08)',
+              color: skinType ? '#9b7ec8' : 'rgba(255,255,255,0.3)',
+              fontSize: 12,
+            }}>
+              {skinType || 'AI 분석 후 자동으로 채워져요 💜'}
+            </div>
           </div>
           <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 6 }}>피부 고민</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-            {['수분부족', '모공', '트러블', '색소침착', '탄력', '민감', '미백', '주름'].map((x) => {
-              const on = skinConcerns.includes(x)
-              return (
-                <button key={x} type="button" className="btn" onClick={() => setSkinConcerns((p) => (p.includes(x) ? p.filter((v) => v !== x) : [...p, x]))} style={selBtn(on)}>
-                  {x}
-                </button>
-              )
-            })}
+            {skinConcerns.length > 0 ? skinConcerns.map((x) => (
+              <div key={x} style={{ ...selBtn(true), cursor: 'default' }}>
+                {x}
+              </div>
+            )) : (
+              <div style={{
+                padding: '6px 12px',
+                borderRadius: 8,
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                color: 'rgba(255,255,255,0.3)',
+                fontSize: 12,
+                cursor: 'default',
+              }}>
+                AI 분석 후 자동으로 채워져요 💜
+              </div>
+            )}
           </div>
           <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 6 }}>알레르기 성분</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
