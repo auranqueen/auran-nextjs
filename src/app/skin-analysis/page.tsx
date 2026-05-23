@@ -23,6 +23,8 @@ export default function SkinAnalysisPage() {
   const [isLocked, setIsLocked] = useState(false)
   const [lockMsg, setLockMsg] = useState('')
   const [isFirstAnalysis, setIsFirstAnalysis] = useState(true)
+  const [userId, setUserId] = useState('')
+  const [userGrade, setUserGrade] = useState('PETAL')
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -55,6 +57,8 @@ export default function SkinAnalysisPage() {
 
       const now = new Date()
       const grade = gradeData?.grade || 'PETAL'
+      setUserId(data.user.id)
+      setUserGrade(grade)
       if (grade !== 'CÉLESTE') {
         const limit: Record<string, number> = { PETAL: 1, BLOOM: 1, VELVET: 1, 'LUMIÈRE': 2, REINE: 1, NOIR: 2 }
         const period = ['REINE', 'NOIR'].includes(grade) ? 'week' : 'month'
@@ -95,6 +99,7 @@ export default function SkinAnalysisPage() {
   const analyzeImage = async (imageBase64: string) => {
     setAnalyzing(true)
     try {
+      if (!userId) return
       // TODO: 실제 AI 분석 API 호출
       // 현재는 랜덤 시뮬레이션
       await new Promise(r => setTimeout(r, 1500))
@@ -115,7 +120,28 @@ export default function SkinAnalysisPage() {
         pore: String(scores.pore),
         age: String(userAge),
       })
-      router.push(`/skin-analysis/q?${params.toString()}`)
+      await supabase.from('skin_analysis_logs').insert({
+        user_id: userId,
+        grade: userGrade,
+        analyzed_at: new Date().toISOString(),
+      })
+      if (!isFirstAnalysis) {
+        await supabase.from('skin_analyses').insert({
+          user_id: userId,
+          moisture_score: scores.moisture,
+          oil_score: scores.oil,
+          sensitivity_score: scores.sensitivity,
+          elasticity_score: scores.elasticity,
+          pigmentation_score: scores.pigmentation,
+          pore_score: scores.pore,
+          condition: null,
+          concern_area: null,
+          free_text: null,
+        })
+        router.push(`/skin-analysis/result?${params.toString()}`)
+      } else {
+        router.push(`/skin-analysis/q?${params.toString()}`)
+      }
     } finally {
       setAnalyzing(false)
     }
