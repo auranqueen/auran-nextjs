@@ -16,6 +16,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
     { data: pendingSettlements },
     { data: recentLogs },
     { data: recentMembers },
+    { data: recentAnalysisLogs },
   ] = await Promise.all([
     supabase.from('users').select('*', { count: 'exact', head: true }),
     supabase.from('orders').select('*', { count: 'exact', head: true }),
@@ -23,6 +24,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
     supabase.from('settlements').select('id,target_name,amount,net_amount,status,target_role,period_start,period_end').eq('status', '정산대기').order('created_at', { ascending: false }).limit(10),
     supabase.from('login_logs').select('*').order('created_at', { ascending: false }).limit(10),
     supabase.from('users').select('id,name,email,role,status,points,created_at,last_login_at').order('created_at', { ascending: false }).limit(8),
+    supabase.from('skin_analysis_logs').select('*, profiles(full_name, username, email)').order('analyzed_at', { ascending: false }).limit(5),
   ])
 
   const [{ count: customerCount }, { count: partnerCount }, { count: ownerCount }, { count: brandCount }] = await Promise.all([
@@ -413,6 +415,41 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
                 ))}
                 {(recentLogs || []).length === 0 ? (
                   <tr><td colSpan={3} style={{ color: 'var(--text3)' }}>로그가 없습니다.</td></tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="card">
+            <div className="card-hdr">
+              <div className="card-title">AI 피부분석 내역</div>
+              <a className="btn btn-gy" href="/admin/analysis-logs">전체 →</a>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>고객명</th>
+                  <th>등급</th>
+                  <th>토스트차감</th>
+                  <th>분석일시</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(recentAnalysisLogs || []).map((l: any) => {
+                  const p = Array.isArray(l.profiles) ? l.profiles[0] : l.profiles
+                  const name = p?.full_name || p?.username || p?.email || '-'
+                  const toast = Number(l.toast_used || 0)
+                  return (
+                    <tr key={l.id}>
+                      <td>{name}</td>
+                      <td><span className="b b-gy">{l.grade || '-'}</span></td>
+                      <td className="mono">{toast > 0 ? `${toast}T` : '무료'}</td>
+                      <td className="mono">{l.analyzed_at ? new Date(l.analyzed_at).toLocaleString('ko-KR') : '-'}</td>
+                    </tr>
+                  )
+                })}
+                {(recentAnalysisLogs || []).length === 0 ? (
+                  <tr><td colSpan={4} style={{ color: 'var(--text3)' }}>분석 내역이 없습니다.</td></tr>
                 ) : null}
               </tbody>
             </table>

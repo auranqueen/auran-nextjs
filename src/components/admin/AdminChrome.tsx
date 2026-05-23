@@ -99,6 +99,7 @@ const MENU = [
       { label: '이상 감지·알림', href: '/admin/settings/anomaly', icon: '🚨' },
       { label: 'AURAN 설정', href: '/admin/settings/admin-settings', icon: '🧩' },
       { label: '로그인 기록', href: '/admin/logs', icon: '📋' },
+      { label: 'AI 분석 내역', href: '/admin/analysis-logs', icon: '🔬' },
       { label: '개인정보 접근 로그', href: '/admin/privacy', icon: '🔒' },
       // ===== [또또복권] gift_items 등록/관리 =====
       { label: '또또복권 관리', href: '/admin/toto', icon: '🎴' },
@@ -139,6 +140,7 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/settings/flash-sale')) return '타임세일 관리'
   if (path.startsWith('/admin/settings/categories')) return '콘텐츠 관리'
   if (path.startsWith('/admin/logs')) return '로그인 기록'
+  if (path.startsWith('/admin/analysis-logs')) return 'AI 분석 내역'
   if (path.startsWith('/admin/privacy')) return '개인정보 접근 로그'
   if (path.startsWith('/admin/coupons')) return '쿠폰 관리'
   if (path.startsWith('/admin/marketing/contests')) return '컨테스트 관리'
