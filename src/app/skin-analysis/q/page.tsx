@@ -89,7 +89,7 @@ function SkinAnalysisQPageContent() {
 
       const { data } = await supabase
         .from('profiles')
-        .select('gender')
+        .select('gender, skin_type')
         .eq('id', userId)
         .maybeSingle()
 
@@ -98,6 +98,8 @@ function SkinAnalysisQPageContent() {
       if (g === 'female' || g === 'male') {
         setAnswers(prev => (prev.gender === g ? prev : { ...prev, gender: g as Gender }))
       }
+      const st = String((data as any)?.skin_type ?? '')
+      if (st) setAnswers(prev => ({ ...prev, skinType: st }))
     }
 
     loadProfileGender()
@@ -193,7 +195,7 @@ function SkinAnalysisQPageContent() {
         elasticity: String(finalScores.elasticity),
         pigmentation: String(finalScores.pigmentation),
         pore: String(finalScores.pore),
-        skinType: answers.skinType || 'unknown',
+        skinType: answers.skinType || '',
         event: answers.event,
         age: String(userAge),
         gender: answers.gender,
@@ -207,7 +209,7 @@ function SkinAnalysisQPageContent() {
         moisture: String(aiScores.moisture), oil: String(aiScores.oil),
         sensitivity: String(aiScores.sensitivity), elasticity: String(aiScores.elasticity),
         pigmentation: String(aiScores.pigmentation), pore: String(aiScores.pore),
-        skinType: answers.skinType || 'unknown',
+        skinType: answers.skinType || '',
         event: answers.event, age: String(userAge), gender: answers.gender,
         hormone: answers.hormoneStatus, pregnant: isPregnant ? '1' : '0',
       })
