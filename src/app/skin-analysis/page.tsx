@@ -20,6 +20,9 @@ export default function SkinAnalysisPage() {
   const [userAge, setUserAge] = useState(42)
   const [analyzing, setAnalyzing] = useState(false)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
+  const [isLocked, setIsLocked] = useState(false)
+  const [lockMsg, setLockMsg] = useState('')
+  const [isFirstAnalysis, setIsFirstAnalysis] = useState(true)
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -39,6 +42,38 @@ export default function SkinAnalysisPage() {
       if (birth) {
         const age = new Date().getFullYear() - new Date(birth).getFullYear()
         setUserAge(age)
+      }
+
+      const [{ data: gradeData }, { data: ordersData }, { data: analysesData }] = await Promise.all([
+        supabase.from('profiles').select('grade').eq('auth_id', data.user.id).maybeSingle(),
+        supabase.from('orders').select('id').eq('user_id', data.user.id).limit(1),
+        supabase.from('skin_analyses').select('id').eq('user_id', data.user.id).limit(1),
+      ])
+      if ((ordersData && ordersData.length > 0) || (analysesData && analysesData.length > 0)) {
+        setIsFirstAnalysis(false)
+      }
+
+      const now = new Date()
+      const grade = gradeData?.grade || 'PETAL'
+      if (grade !== 'CÉLESTE') {
+        const limit: Record<string, number> = { PETAL: 1, BLOOM: 1, VELVET: 1, 'LUMIÈRE': 2, REINE: 1, NOIR: 2 }
+        const period = ['REINE', 'NOIR'].includes(grade) ? 'week' : 'month'
+        const periodStart = period === 'week'
+          ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay()).toISOString()
+          : new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+        const { count } = await supabase
+          .from('skin_analysis_logs')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', data.user.id)
+          .gte('analyzed_at', periodStart)
+        const maxCount = limit[grade] ?? 1
+        if ((count ?? 0) >= maxCount) {
+          const daysLeft = period === 'week'
+            ? 6 - now.getDay()
+            : new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()
+          setIsLocked(true)
+          setLockMsg(`${period}|다음 분석까지 ${daysLeft}일 남았어요`)
+        }
       }
     })
   }, [])
@@ -97,7 +132,27 @@ export default function SkinAnalysisPage() {
   }
 
   return (
-    <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 300, color: '#fff', paddingBottom: '24px' }}>
+    <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 300, color: '#fff', paddingBottom: '24px', position: 'relative' }}>
+
+      {isLocked && (
+        <div style={{ position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(13,11,9,0.97)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', textAlign: 'center' }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
+          <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '8px', color: '#fff' }}>
+            {lockMsg.startsWith('week|') ? '이번 주 분석을 완료했어요' : '이번 달 분석을 완료했어요'}
+          </div>
+          <div style={{ fontSize: '13px', color: GOLD, marginBottom: '24px' }}>
+            {lockMsg.includes('|') ? lockMsg.split('|')[1] : lockMsg}
+          </div>
+          <div style={{ fontSize: '11px', color: TEXT_MUTED, lineHeight: 2, marginBottom: '28px', padding: '14px 16px', background: CARD_BG, border: CARD_BORDER, borderRadius: '12px', width: '100%' }}>
+            LUMIÈRE → 월 2회<br />
+            REINE → 주 1회<br />
+            CÉLESTE → 무제한
+          </div>
+          <button onClick={() => router.back()} style={{ width: '100%', padding: '13px', background: GOLD, borderRadius: '12px', fontSize: '13px', fontWeight: 400, color: BG, cursor: 'pointer', border: 'none', fontFamily: "'Noto Sans KR', sans-serif" }}>
+            돌아가기
+          </button>
+        </div>
+      )}
 
       {/* 탑바 */}
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(13,11,9,0.95)', borderBottom: CARD_BORDER }}>
@@ -168,8 +223,8 @@ export default function SkinAnalysisPage() {
 
       {/* 촬영 버튼 */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px', padding: '20px 16px 0' }}>
-        <button onClick={() => { fileInputRef.current!.accept = 'image/*'; fileInputRef.current!.click() }} style={{ width: '44px', height: '44px', borderRadius: '50%', background: CARD_BG, border: CARD_BORDER, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', cursor: 'pointer' }}>🖼</button>
-        <button onClick={() => { fileInputRef.current!.accept = 'image/*'; fileInputRef.current!.capture = 'user'; fileInputRef.current!.click() }} disabled={analyzing} style={{ width: '64px', height: '64px', borderRadius: '50%', background: analyzing ? 'rgba(201,169,110,0.4)' : 'linear-gradient(135deg,#C9A96E,#E8C88A)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', boxShadow: '0 4px 20px rgba(201,169,110,0.4)', cursor: analyzing ? 'not-allowed' : 'pointer', border: 'none' }}>📷</button>
+        <button onClick={() => { if (isLocked) { alert(lockMsg.includes('|') ? lockMsg.split('|')[1] : lockMsg); return }; fileInputRef.current!.accept = 'image/*'; fileInputRef.current!.click() }} style={{ width: '44px', height: '44px', borderRadius: '50%', background: CARD_BG, border: CARD_BORDER, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', cursor: 'pointer' }}>🖼</button>
+        <button onClick={() => { if (isLocked) { alert(lockMsg.includes('|') ? lockMsg.split('|')[1] : lockMsg); return }; fileInputRef.current!.accept = 'image/*'; fileInputRef.current!.capture = 'user'; fileInputRef.current!.click() }} disabled={analyzing} style={{ width: '64px', height: '64px', borderRadius: '50%', background: analyzing ? 'rgba(201,169,110,0.4)' : 'linear-gradient(135deg,#C9A96E,#E8C88A)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', boxShadow: '0 4px 20px rgba(201,169,110,0.4)', cursor: analyzing ? 'not-allowed' : 'pointer', border: 'none' }}>📷</button>
         <button style={{ width: '44px', height: '44px', borderRadius: '50%', background: CARD_BG, border: CARD_BORDER, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', cursor: 'pointer' }}>🔄</button>
       </div>
       <div style={{ textAlign: 'center', fontSize: '9px', color: TEXT_DIM, marginTop: '6px', fontFamily: 'monospace' }}>갤러리 · 촬영 · 전면전환</div>
