@@ -100,16 +100,25 @@ export default function SkinAnalysisPage() {
     setAnalyzing(true)
     try {
       if (!userId) return
-      // TODO: 실제 AI 분석 API 호출
-      // 현재는 랜덤 시뮬레이션
-      await new Promise(r => setTimeout(r, 1500))
+      const res = await fetch('/api/analyze-skin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64,
+          userAge,
+          skinType: '',
+          gender: '',
+        }),
+      })
+      const result = await res.json()
+      if (!res.ok || result.error) throw new Error(result.error || '분석 실패')
       const scores = {
-        moisture: Math.floor(Math.random() * 30 + 45),
-        oil: Math.floor(Math.random() * 40 + 20),
-        sensitivity: Math.floor(Math.random() * 40 + 50),
-        elasticity: Math.floor(Math.random() * 30 + 55),
-        pigmentation: Math.floor(Math.random() * 30 + 10),
-        pore: Math.floor(Math.random() * 40 + 20),
+        moisture: result.moisture ?? 55,
+        oil: result.oil ?? 40,
+        sensitivity: result.sensitivity ?? 70,
+        elasticity: result.elasticity ?? 65,
+        pigmentation: result.pigmentation ?? 25,
+        pore: result.pore ?? 40,
       }
       const params = new URLSearchParams({
         moisture: String(scores.moisture),
