@@ -77,10 +77,11 @@ function AuthDoneInner() {
         const _email = _user.email ||
           (_provider === 'kakao' && _kakaoId ? `kakao-${_kakaoId}@no-email.auran` : null) ||
           `${_user.id}@no-email.auran`
-        await supabase.from('users').upsert(
+        const { error: _usersErr } = await supabase.from('users').upsert(
           { auth_id: _user.id, email: _email },
           { onConflict: 'auth_id' }
         )
+        console.log('users upsert result:', _usersErr ? _usersErr : 'success', 'email:', _email)
       } catch (e) { console.error('users upsert error:', e) }
       // localStorage에서 research_consent 읽어서 profiles 저장
       try {
