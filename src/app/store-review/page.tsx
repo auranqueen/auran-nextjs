@@ -219,7 +219,7 @@ export default function StoreReviewPage() {
         스토어 구매 후기 쓰기
       </div>
       <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 20, lineHeight: 1.6 }}>
-        맑원장 확인 후 토스트 2,000T 적립돼요 💜
+        맑원장 확인 후 토스트 10,000T 적립돼요 💜
       </div>
 
       {/* 제품 검색 */}
