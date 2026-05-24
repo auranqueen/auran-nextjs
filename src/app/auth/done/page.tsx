@@ -68,10 +68,20 @@ function AuthDoneInner() {
         )
       } catch (e) { console.error('profiles upsert error:', e) }
       try {
-        await fetch('/api/auth/callback/complete?position=customer', {
-          credentials: 'same-origin',
-        })
-      } catch (e) { console.error('callback/complete error:', e) }
+        const _user = data.session!.user
+        const _provider = _user.app_metadata?.provider || 'email'
+        const _kakaoIdentity = _user.identities?.find((i: any) => i.provider === 'kakao')
+        const _kakaoId = _kakaoIdentity?.identity_data?.id
+          ? String(_kakaoIdentity.identity_data.id)
+          : _kakaoIdentity?.id ? String(_kakaoIdentity.id) : null
+        const _email = _user.email ||
+          (_provider === 'kakao' && _kakaoId ? `kakao-${_kakaoId}@no-email.auran` : null) ||
+          `${_user.id}@no-email.auran`
+        await supabase.from('users').upsert(
+          { auth_id: _user.id, email: _email },
+          { onConflict: 'auth_id' }
+        )
+      } catch (e) { console.error('users upsert error:', e) }
       // localStorage에서 research_consent 읽어서 profiles 저장
       try {
         const rc = localStorage.getItem('auran_research_consent')
