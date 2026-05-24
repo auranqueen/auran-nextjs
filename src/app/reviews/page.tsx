@@ -20,6 +20,7 @@ export default function ReviewsPage() {
   const [page, setPage] = useState<number>(1)
   const [hasMore, setHasMore] = useState<boolean>(true)
   const [loading, setLoading] = useState<boolean>(false)
+  const [sourceTab, setSourceTab] = useState<'auran'|'duchess'>('auran')
   const router = useRouter()
   const supabase = createClient()
 
@@ -70,6 +71,7 @@ export default function ReviewsPage() {
         .from('reviews')
         .select('*, author:users!reviews_author_id_fkey(id, name, avatar_url), product:products!reviews_target_id_fkey(id, name, thumb_img, retail_price)')
         .eq('status', '게시')
+        .eq('source', sourceTab === 'auran' ? 'auran' : 'duchess')
         .order('created_at', { ascending: false })
 
       if (filter === 'photo') query = query.not('images', 'is', null)
@@ -84,7 +86,7 @@ export default function ReviewsPage() {
       setLoading(false)
     })()
     return () => { cancelled = true }
-  }, [filter, phaseFilter, page])
+  }, [filter, phaseFilter, page, sourceTab])
 
   const dataReviews = reviews.filter((r) => r.skin_score_before && r.skin_score_after)
   const normalReviews = reviews.filter((r) => !r.skin_score_before || !r.skin_score_after)
@@ -98,7 +100,7 @@ export default function ReviewsPage() {
   }
 
   const renderCard = (review: any) => {
-    const authorName = review.author?.name || (review.source === 'naver' ? '스킨파우더룸 구매고객' : '오랜 회원')
+    const authorName = review.author?.name || (review.source === 'duchess' ? '자사몰 구매고객' : '오랜 회원')
     const initial = String(authorName).trim().charAt(0) || '오'
     const phaseStyle = phaseBadgeStyle(String(review.hormone_phase || ''))
     const scoreBefore = Number(review.skin_score_before)
@@ -282,7 +284,32 @@ export default function ReviewsPage() {
         <span style={{ fontSize: 16, fontWeight: 700 }}>전체 리뷰</span>
       </div>
 
-      {myPhase ? (
+      <div style={{
+        display: 'flex',
+        borderBottom: '0.5px solid rgba(255,255,255,0.08)',
+        margin: '0 20px'
+      }}>
+        {[
+          { key: 'auran', label: '오랜 리뷰' },
+          { key: 'duchess', label: '자사몰 리뷰' }
+        ].map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setSourceTab(key as 'auran'|'duchess')}
+            style={{
+              padding: '10px 14px',
+              fontSize: 13,
+              background: 'none',
+              border: 'none',
+              borderBottom: sourceTab === key ? '2px solid #C9A96E' : '2px solid transparent',
+              color: sourceTab === key ? '#C9A96E' : 'rgba(255,255,255,0.35)',
+              cursor: 'pointer',
+            }}
+          >{label}</button>
+        ))}
+      </div>
+
+      {sourceTab === 'auran' && myPhase ? (
         <div style={{
           background: 'rgba(123,94,167,0.1)',
           border: '0.5px solid rgba(123,94,167,0.25)',
@@ -296,7 +323,7 @@ export default function ReviewsPage() {
         </div>
       ) : null}
 
-      {/* 페이즈 필터 */}
+      {sourceTab === 'auran' ? (
       <div style={{ display: 'flex', gap: 6, padding: '12px 20px 8px', overflowX: 'auto' }}>
         {PHASE_OPTIONS.map((key) => {
           const selected = phaseFilter === key
@@ -322,6 +349,7 @@ export default function ReviewsPage() {
           )
         })}
       </div>
+      ) : null}
 
       {/* 필터 탭 */}
       <div style={{ display: 'flex', gap: 8, padding: '8px 20px 16px' }}>
