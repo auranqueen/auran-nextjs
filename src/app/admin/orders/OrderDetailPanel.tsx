@@ -399,6 +399,105 @@ export default function OrderDetailPanel({ order, open, onClose }: Props) {
               </button>
               <button
                 onClick={() => {
+                  const printHtml = `
+<html>
+<head>
+<title>AURAN 주문서</title>
+<style>
+  @media print { @page { size: A4; margin: 15mm; } }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; color: #111; }
+  .header { text-align: center; padding-bottom: 16px; border-bottom: 1px solid #C9A96E; margin-bottom: 20px; }
+  .logo { font-size: 18px; letter-spacing: 0.3em; color: #7B5EA7; }
+  .order-no { font-size: 11px; color: #999; margin-top: 4px; letter-spacing: 0.1em; }
+  .section { margin-bottom: 20px; }
+  .section-title { font-size: 11px; letter-spacing: 0.15em; color: #C9A96E; border-bottom: 0.5px solid #eee; padding-bottom: 6px; margin-bottom: 10px; }
+  .info-row { display: flex; gap: 8px; font-size: 12px; margin-bottom: 6px; }
+  .info-label { color: #999; width: 60px; flex-shrink: 0; }
+  .info-value { color: #111; flex: 1; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #f9f6ff; color: #7B5EA7; font-weight: 400; padding: 8px; text-align: left; border-bottom: 0.5px solid #e0d8f0; font-size: 11px; }
+  td { padding: 8px; border-bottom: 0.5px solid #f0edf8; vertical-align: top; }
+  .total-row { font-size: 13px; color: #7B5EA7; text-align: right; padding-top: 12px; border-top: 1px solid #C9A96E; margin-top: 8px; }
+  .tip-card { margin-top: 24px; padding: 16px; border: 1px solid #C9A96E; border-radius: 8px; page-break-inside: avoid; }
+  .tip-label { font-size: 9px; letter-spacing: 0.2em; color: #C9A96E; margin-bottom: 8px; }
+  .tip-title { font-size: 13px; color: #111; margin-bottom: 10px; }
+  .tip-content { font-size: 11px; color: #534AB7; line-height: 1.8; white-space: pre-wrap; border-top: 0.5px solid #eee; padding-top: 10px; }
+  .footer { text-align: right; font-size: 9px; color: #ccc; margin-top: 8px; }
+  .no-print { display: none; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">A U R A N</div>
+  <div class="order-no">주문번호 ${order?.order_no || order?.id || ''}</div>
+</div>
+<div class="section">
+  <div class="section-title">✦ 배송 정보</div>
+  <div class="info-row"><span class="info-label">받는 분</span><span class="info-value">${order?.recipient_name || '-'}</span></div>
+  <div class="info-row"><span class="info-label">연락처</span><span class="info-value">${order?.recipient_phone || '-'}</span></div>
+  <div class="info-row"><span class="info-label">주소</span><span class="info-value">${order?.address || '-'}</span></div>
+  <div class="info-row"><span class="info-label">주문일시</span><span class="info-value">${order?.ordered_at ? new Date(order.ordered_at).toLocaleString('ko-KR') : '-'}</span></div>
+  <div class="info-row"><span class="info-label">결제수단</span><span class="info-value">${order?.payment_method || '-'}</span></div>
+</div>
+<div class="section">
+  <div class="section-title">✦ 주문 상품</div>
+  <table>
+    <thead>
+      <tr>
+        <th>상품명</th>
+        <th style="width:50px;text-align:center">수량</th>
+        <th style="width:80px;text-align:right">금액</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${(Array.isArray(order?.items) ? order.items : []).map((item) =>
+        '<tr>' +
+        '<td>' + (item.product_name || item.name || '-') + '</td>' +
+        '<td style="text-align:center">' + (item.quantity || 1) + '</td>' +
+        '<td style="text-align:right">' + ((item.price || 0).toLocaleString()) + '원</td>' +
+        '</tr>'
+      ).join('')}
+    </tbody>
+  </table>
+  <div class="total-row">
+    ${order?.grade_discount ? '등급할인 -' + order.grade_discount.toLocaleString() + '원 &nbsp;' : ''}
+    ${order?.coupon_discount ? '쿠폰할인 -' + order.coupon_discount.toLocaleString() + '원 &nbsp;' : ''}
+    ${order?.toast_used ? '토스트 -' + order.toast_used.toLocaleString() + '원 &nbsp;' : ''}
+    ${order?.charge_used ? '충전금 -' + order.charge_used.toLocaleString() + '원 &nbsp;' : ''}
+    최종 결제 <strong>${(order?.final_amount || 0).toLocaleString()}원</strong>
+  </div>
+</div>
+<div class="tip-card" id="tip-section">
+  <div class="tip-label">✦ AURAN 맞춤 케어 팁</div>
+  <div class="tip-title">${order?.recipient_name || '고객'}님을 위한 맑원장 꿀팁</div>
+  <div class="tip-content" id="tip-content">맑원장 꿀팁을 입력하면 여기에 표시됩니다.</div>
+  <div class="footer">auran.kr · 맑원장</div>
+</div>
+<div class="no-print" style="display:block;margin-top:20px;padding:16px;background:#f9f6ff;border-radius:8px">
+  <div style="font-size:12px;color:#7B5EA7;margin-bottom:8px">맑원장 꿀팁 입력 (출력 전 작성)</div>
+  <textarea id="tip-input" style="width:100%;height:80px;font-size:12px;padding:8px;border:0.5px solid #C9A96E;border-radius:6px;resize:none;font-family:inherit" placeholder="${order?.recipient_name || '고객'}님 피부에 맞는 사용팁을 입력하세요..."></textarea>
+  <div style="display:flex;gap:8px;margin-top:8px">
+    <button onclick="document.getElementById('tip-content').textContent=document.getElementById('tip-input').value;document.querySelector('.no-print').style.display='none';window.print()" style="flex:1;padding:10px;background:#7B5EA7;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer">주문서 + 꿀팁 인쇄</button>
+    <button onclick="document.getElementById('tip-section').style.display='none';document.querySelector('.no-print').style.display='none';window.print()" style="flex:1;padding:10px;background:#f0ece0;color:#854F0B;border:0.5px solid #C9A96E;border-radius:6px;font-size:13px;cursor:pointer">주문서만 인쇄</button>
+  </div>
+</div>
+</body>
+</html>
+`
+                  const w = window.open('', '_blank')
+                  if (w) { w.document.write(printHtml); w.document.close() }
+                }}
+                style={{
+                  flex: 1, padding: '9px 0', borderRadius: 10,
+                  border: '0.5px solid #7B5EA7', background: '#f5f0ff',
+                  color: '#534AB7', fontSize: 12, cursor: 'pointer',
+                }}
+              >
+                주문서 출력 🖨️
+              </button>
+              <button
+                onClick={() => {
                   // [팁카드 출력] 새 탭에서 인쇄 미리보기
                   const won = orderGift.gift_item?.product?.name || ''
                   const html = `
