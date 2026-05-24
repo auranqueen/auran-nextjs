@@ -446,6 +446,7 @@ export default function CustomerHomePage() {
   const [sheetFields, setSheetFields] = useState({ d: '', d2: '', d3: '', d4: '', n: 0, b: true })
   // ===== [홈 롤링 리뷰] DB 연동 =====
   const [homeReviews, setHomeReviews] = useState<any[]>([])
+  const [homeReviewsTotal, setHomeReviewsTotal] = useState(0)
   const [quickConsultCount, setQuickConsultCount] = useState(0)
   const [ownerChatOpen, setOwnerChatOpen] = useState(false)
   const [quickConsultOpen, setQuickConsultOpen] = useState(false)
@@ -538,6 +539,13 @@ export default function CustomerHomePage() {
       .order('helpful_count', { ascending: false })
       .limit(6)
       .then(({ data }) => setHomeReviews(data || []))
+
+    supabase
+      .from('reviews')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', '게시')
+      .or('images.not.is.null,video_url.not.is.null')
+      .then(({ count }) => { if (count) setHomeReviewsTotal(count) })
 
     supabase.from('skin_concerns').select('*').order('sort_order').then(({ data }) => {
       if (data && data.length > 0) setConcerns(data)
@@ -2783,7 +2791,7 @@ export default function CustomerHomePage() {
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>📸 포토·영상 리뷰</span>
-          <span onClick={() => router.push('/reviews')} style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>{homeReviews.length}개 ›</span>
+          <span onClick={() => router.push('/reviews')} style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>{homeReviewsTotal}개 ›</span>
         </div>
         {/* 포토 그리드 */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '3px', borderRadius: '14px', overflow: 'hidden' }}>
@@ -2792,7 +2800,7 @@ export default function CustomerHomePage() {
             const thumb = raw ? (typeof raw === 'string' ? raw : String(raw)) : ''
             const hasVideo = Boolean(String(rv.video_url || '').trim())
             return (
-            <div key={rv.id ?? i} onClick={() => router.push('/reviews')} style={{ aspectRatio: '1', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', cursor: 'pointer', overflow: 'hidden' }}>
+            <div key={rv.id ?? i} onClick={() => router.push(`/reviews/${rv.id}`)} style={{ aspectRatio: '1', background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', cursor: 'pointer', overflow: 'hidden' }}>
               {thumb ? (
                 <img src={thumb} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               ) : (
