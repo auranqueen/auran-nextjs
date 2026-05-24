@@ -281,7 +281,7 @@ function SignupForm() {
                 if (form.password.length < 6) { setError('비밀번호는 6자 이상이어야 합니다'); return }
                 const savedGender = localStorage.getItem('auran_gender') || ''
                 const savedCycleType = localStorage.getItem('auran_cycle_type') || ''
-                if (savedGender === '남성' || savedCycleType === 'male') {
+                if (savedGender === '남성' || savedGender === 'male' || savedCycleType === 'male') {
                   setCycleType('male')
                   setTrack('male')
                 }
