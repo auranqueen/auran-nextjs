@@ -61,6 +61,16 @@ function AuthDoneInner() {
         data = retry
       }
       const createdAt = data.session!.user.created_at
+      try {
+        await supabase.from('profiles').upsert(
+          { auth_id: data.session!.user.id, email: data.session!.user.email ?? '' },
+          { onConflict: 'auth_id' }
+        )
+        await supabase.from('users').upsert(
+          { auth_id: data.session!.user.id, email: data.session!.user.email ?? '' },
+          { onConflict: 'auth_id' }
+        )
+      } catch {}
       // localStorage에서 research_consent 읽어서 profiles 저장
       try {
         const rc = localStorage.getItem('auran_research_consent')
