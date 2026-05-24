@@ -125,14 +125,10 @@ function AuthDoneInner() {
         }
         const age = Date.now() - new Date(createdAt).getTime()
         const isNewSignup = age >= 0 && age < 10 * 60 * 1000
-        if (isNewSignup) {
-          const onboardingDone = localStorage.getItem('auran_onboarding_done')
-          if (!onboardingDone) {
-            localStorage.removeItem('auran_onboarding_done')
-            router.replace('/signup/consent')
-            return
-          }
-          localStorage.removeItem('auran_onboarding_done')
+        const { data: profileRow } = await supabase.from('profiles').select('onboarding_done').eq('auth_id', data.session!.user.id).maybeSingle()
+        if (profileRow?.onboarding_done !== true) {
+          router.replace('/signup/consent')
+          return
         }
         if (isNewSignup && !onboarded) {
           setPhase('theme')
