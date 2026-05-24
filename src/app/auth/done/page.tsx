@@ -116,6 +116,15 @@ function AuthDoneInner() {
       setSessionUserCreatedAt(createdAt)
       const { data: row } = await supabase.from('users').select('phone').eq('auth_id', data.session!.user.id).maybeSingle()
       const p = String(row?.phone || '').replace(/\D/g, '')
+      const { data: profileRow } = await supabase
+        .from('profiles')
+        .select('onboarding_done')
+        .eq('auth_id', data.session!.user.id)
+        .maybeSingle()
+      if (profileRow?.onboarding_done !== true) {
+        router.replace('/signup/consent')
+        return
+      }
       if (p.length >= 10) {
         let onboarded = false
         try {
@@ -125,11 +134,6 @@ function AuthDoneInner() {
         }
         const age = Date.now() - new Date(createdAt).getTime()
         const isNewSignup = age >= 0 && age < 10 * 60 * 1000
-        const { data: profileRow } = await supabase.from('profiles').select('onboarding_done').eq('auth_id', data.session!.user.id).maybeSingle()
-        if (profileRow?.onboarding_done !== true) {
-          router.replace('/signup/consent')
-          return
-        }
         if (isNewSignup && !onboarded) {
           setPhase('theme')
           return
