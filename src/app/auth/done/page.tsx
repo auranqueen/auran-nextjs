@@ -121,6 +121,8 @@ function AuthDoneInner() {
         .select('onboarding_done')
         .eq('auth_id', data.session!.user.id)
         .maybeSingle()
+      console.log('profileRow:', profileRow)
+      console.log('onboarding_done:', profileRow?.onboarding_done)
       if (profileRow?.onboarding_done !== true) {
         router.replace('/signup/consent')
         return
