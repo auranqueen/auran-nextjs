@@ -102,7 +102,6 @@ function AuthDoneInner() {
           await supabase.from('profiles').upsert(
             {
               auth_id: data.session!.user.id,
-              onboarding_done: true,
               ...(birthDate ? { birth_date: birthDate } : {}),
               ...(gender ? { gender } : {}),
               ...(skinType ? { skin_type: skinType } : {}),
@@ -113,10 +112,6 @@ function AuthDoneInner() {
           if (gender) localStorage.removeItem('auran_gender')
           if (skinType) localStorage.removeItem('auran_skin_type')
         }
-        await supabase.from('profiles').upsert(
-          { auth_id: data.session!.user.id, onboarding_done: true },
-          { onConflict: 'auth_id' }
-        )
       } catch {}
       setSessionUserCreatedAt(createdAt)
       const { data: row } = await supabase.from('users').select('phone').eq('auth_id', data.session!.user.id).maybeSingle()
