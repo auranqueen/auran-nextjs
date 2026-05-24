@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 
 const PHASE_OPTIONS = ['전체', '달빛기', '황금기', '만개기', '물들기'] as const
 const PHASE_LABELS: Record<string, string> = {
-  전체: '전체',
+  전체: '전체페이즈',
   '달빛기': '🌙 달빛기',
   '황금기': '✨ 황금기',
   '만개기': '🌸 만개기',
@@ -98,7 +98,7 @@ export default function ReviewsPage() {
   }
 
   const renderCard = (review: any) => {
-    const authorName = review.author?.name || '오랜 회원'
+    const authorName = review.author?.name || (review.source === 'naver' ? '스킨파우더룸 구매고객' : '오랜 회원')
     const initial = String(authorName).trim().charAt(0) || '오'
     const phaseStyle = phaseBadgeStyle(String(review.hormone_phase || ''))
     const scoreBefore = Number(review.skin_score_before)
