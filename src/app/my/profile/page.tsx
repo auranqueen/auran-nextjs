@@ -183,7 +183,7 @@ export default function MyProfilePage() {
       alert(error.message)
       return
     }
-    router.push('/')
+    router.push('/my')
     setToast(profileCompletion === 100 ? '완성! 이제 오랜의 모든 기능을 누릴 수 있어요 💜' : '프로필이 저장됐습니다 💜')
     window.setTimeout(() => {
       setToast('')
