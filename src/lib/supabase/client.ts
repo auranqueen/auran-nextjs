@@ -16,21 +16,6 @@ export function createClient() {
       flowType: 'pkce',
       lock: immediateLock,
       lockAcquireTimeout: 2000,
-      storage: {
-        getItem: (key: string) => {
-          if (typeof document === 'undefined') return null
-          const match = document.cookie.match(new RegExp('(^| )' + key + '=([^;]+)'))
-          return match ? decodeURIComponent(match[2]) : null
-        },
-        setItem: (key: string, value: string) => {
-          if (typeof document === 'undefined') return
-          document.cookie = key + '=' + encodeURIComponent(value) + '; path=/; max-age=3600; SameSite=Lax; Secure'
-        },
-        removeItem: (key: string) => {
-          if (typeof document === 'undefined') return
-          document.cookie = key + '=; path=/; max-age=0'
-        },
-      },
     },
   })
 }
