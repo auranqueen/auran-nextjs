@@ -72,11 +72,11 @@ export default function MyProfilePage() {
   const [notificationSound, setNotificationSound] = useState<string>('violet')
   const [specialDates, setSpecialDates] = useState<{ label: string; date: string; notify_days: number }[]>([])
 
-  const [currentTheme, setCurrentTheme] = useState<'dark'|'light'>(
-    typeof document !== 'undefined' 
-      ? (document.documentElement.getAttribute('data-theme') as 'dark'|'light') || 'dark'
-      : 'dark'
-  )
+  const [currentTheme, setCurrentTheme] = useState<'dark'|'light'>('dark')
+  useEffect(() => {
+    const saved = localStorage.getItem('auran_theme') as 'dark'|'light' | null
+    if (saved) setCurrentTheme(saved)
+  }, [])
 
   useEffect(() => {
     const run = async () => {
