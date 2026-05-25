@@ -186,13 +186,13 @@ function SkinAnalysisResultPageContent() {
 
   // 폴백 추천 제품 (임신/일반 분기)
   const fallbackProducts = isPregnant ? [
-    { id: '667aaeb7-b29a-4ea6-bd52-6e4cafbcfef7', name: '순한 보습 크림 (무향)', brands: { name: 'SHOPBELLE' }, retail_price: 32000, icon: '🌿', match: 97, reason: '임신 안전 성분 확인 · 무향' },
-    { id: '667aaeb7-b29a-4ea6-bd52-6e4cafbcfef7', name: '마린 바디 오일 (튼살)', brands: { name: 'THALAC' }, retail_price: 58000, icon: '🌺', match: 95, reason: '배·가슴 튼살 예방 특화' },
-    { id: '667aaeb7-b29a-4ea6-bd52-6e4cafbcfef7', name: '라벤더 수면 바디오일', brands: { name: 'CIVASAN' }, retail_price: 52000, icon: '🌸', match: 92, reason: '라벤더·캐모마일 · 수면 개선' },
+    { id: 'd3b364e6-c6cc-41b3-ab41-16a6068881cf', name: '순한 보습 크림 (무향)', brands: { name: 'SHOPBELLE' }, retail_price: 32000, icon: '🌿', match: 97, reason: '임신 안전 성분 확인 · 무향' },
+    { id: '1e789580-cb27-4529-9abe-cb31d24571fb', name: '마린 바디 오일 (튼살)', brands: { name: 'THALAC' }, retail_price: 58000, icon: '🌺', match: 95, reason: '배·가슴 튼살 예방 특화' },
+    { id: 'cd961868-cefb-42b1-a569-543b86d172df', name: '라벤더 수면 바디오일', brands: { name: 'CIVASAN' }, retail_price: 52000, icon: '🌸', match: 92, reason: '라벤더·캐모마일 · 수면 개선' },
   ] : [
-    { id: '667aaeb7-b29a-4ea6-bd52-6e4cafbcfef7', name: 'MESS CREAM 50ml', brands: { name: 'CIVASAN' }, retail_price: 40600, icon: '🧴', match: 98, reason: `수분 ${scores.moisture}% → 75% 개선 예상` },
-    { id: '667aaeb7-b29a-4ea6-bd52-6e4cafbcfef7', name: '바이오 에센스 세럼', brands: { name: 'GERNETIC' }, retail_price: 94000, icon: '🌿', match: 91, reason: '세라마이드 복합체로 장벽 강화' },
-    { id: '667aaeb7-b29a-4ea6-bd52-6e4cafbcfef7', name: '칼라민 진정 크림', brands: { name: 'SHOPBELLE' }, retail_price: 44000, icon: '🌱', match: 87, reason: event === 'laser' ? '시술 후 진정 특화' : '민감 피부 저자극 처방' },
+    { id: 'd3b364e6-c6cc-41b3-ab41-16a6068881cf', name: 'MESS CREAM 50ml', brands: { name: 'CIVASAN' }, retail_price: 40600, icon: '🧴', match: 98, reason: `수분 ${scores.moisture}% → 75% 개선 예상` },
+    { id: '1e789580-cb27-4529-9abe-cb31d24571fb', name: '바이오 에센스 세럼', brands: { name: 'GERNETIC' }, retail_price: 94000, icon: '🌿', match: 91, reason: '세라마이드 복합체로 장벽 강화' },
+    { id: 'cd961868-cefb-42b1-a569-543b86d172df', name: '칼라민 진정 크림', brands: { name: 'SHOPBELLE' }, retail_price: 44000, icon: '🌱', match: 87, reason: event === 'laser' ? '시술 후 진정 특화' : '민감 피부 저자극 처방' },
   ]
 
   const displayProducts = products.length > 0 ? products.slice(0, 3) : fallbackProducts
