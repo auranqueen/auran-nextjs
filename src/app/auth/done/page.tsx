@@ -61,6 +61,9 @@ function AuthDoneInner() {
         data = retry
       }
       const createdAt = data.session!.user.created_at
+      await fetch(`/api/auth/callback/complete?position=customer`, {
+        credentials: 'same-origin',
+      })
       try {
         await supabase.from('profiles').upsert(
           { auth_id: data.session!.user.id, email: data.session!.user.email ?? '' },
