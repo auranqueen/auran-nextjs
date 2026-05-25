@@ -44,11 +44,35 @@ export async function GET(request: NextRequest) {
     )
   }
 
-  // PKCE: code_verifier는 브라우저 쿠키에만 있어 서버에서 교환 실패하는 경우가 있음 → /auth/exchange 에서 클라이언트 교환
   if (code) {
-    const next = request.nextUrl.clone()
-    next.pathname = '/auth/exchange'
-    return NextResponse.redirect(next)
+    const redirectParam = url.searchParams.get('redirect') || ''
+    let doneUrl = `${origin}/auth/done?position=${encodeURIComponent(position)}`
+    if (redirectParam.startsWith('/')) {
+      doneUrl += `&redirect=${encodeURIComponent(redirectParam)}`
+    }
+    let response = NextResponse.redirect(doneUrl)
+    const { createServerClient } = await import('@supabase/ssr')
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll: () => request.cookies.getAll(),
+          setAll: (cookiesToSet) => {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              response.cookies.set(name, value, options)
+            })
+          },
+        },
+      }
+    )
+    const { error: exchErr } = await supabase.auth.exchangeCodeForSession(code)
+    if (exchErr) {
+      return NextResponse.redirect(
+        `${origin}/login?error=${encodeURIComponent(exchErr.message)}`
+      )
+    }
+    return response
   }
 
   // PC: 이메일/폰 인증 후 리다이렉트가 해시(#access_token=...)로 올 수 있음. 서버는 해시를 못 받으므로 200 HTML로 해시 처리.
