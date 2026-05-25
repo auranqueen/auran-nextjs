@@ -256,7 +256,6 @@ export default function MyPage() {
     { icon: '🎫', label: '쿠폰함', path: '/my/coupons', badge: coupons.length },
     { icon: '❤️', label: '찜 목록', path: '/my/wishlist', badge: 0 },
     { icon: '⭐', label: '리뷰 관리', path: '/my/reviews', badge: 0 },
-    { icon: '🔔', label: '알림 설정', path: '/my/notifications', badge: 0 },
     { icon: '🔔', label: '채팅 알림음', action: () => setSoundSheetOpen(true), badge: 0 },
     { icon: '🏠', label: '배송지 관리', path: '/my/addresses' },
     { icon: '👤', label: '개인정보', path: '/my/profile', badge: 0 },
