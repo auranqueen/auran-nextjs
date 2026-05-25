@@ -121,7 +121,7 @@ export default function MyTrackPage() {
     if (!careStyle) return '케어스타일을 선택해주세요'
     if (procedureHistory.length === 0) return '시술 경험을 선택해주세요'
     if (!menstrualCycle) return '피부 변화 주기를 선택해주세요'
-    if (!periodPain) return '월경 컨디션을 선택해주세요'
+    if (!periodPain) return '마법 같은 그날 컨디션은요? 🔮를 선택해주세요'
     return ''
   }
 
@@ -402,7 +402,7 @@ export default function MyTrackPage() {
                 />
               </>
             )}
-            {section('7. 월경 컨디션', null, <>
+            {section('7. 마법 같은 그날 컨디션은요? 🔮', null, <>
               {chipRow(['편안해요', '약간 불편해요', '많이 불편해요'], periodPain, setPeriodPain)}
               <textarea
                 value={menstrualMemo}
