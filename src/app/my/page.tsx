@@ -292,9 +292,18 @@ export default function MyPage() {
   ].filter(Boolean).slice(0, 2)
   const trackLabelMap: Record<string, string> = {
     general: '🌙 호르몬 리듬 파악 중 · 더 채울수록 추천이 달라져요',
-    menopause_peri: '갱년기 진입',
-    menopause_post: '폐경',
-    pregnant: '임신',
+    menopause_peri: '✨ 새로운 피부 챕터 시작 · 정보 채울수록 케어가 정교해져요',
+    menopause_post: '🌿 피부 변화 시기예요 · 더 채울수록 딱 맞는 루틴 나와요',
+    pregnant: '🤰 소중한 시기예요 · 성분 하나하나 더 꼼꼼히 봐드릴게요',
+    postpartum: '🍼 회복 중인 피부예요 · 더 알려줄수록 맞춤 케어 시작돼요',
+    male: '💪 남성 피부 분석 중 · 더 알려줄수록 딱 맞는 제품 찾아드려요',
+    male_menopause: '🔥 피부 변화 감지 중 · 정보 채울수록 추천이 달라져요',
+  }
+  const trackNameMap: Record<string, string> = {
+    general: '일반 주기',
+    menopause_peri: '갱년기 초기',
+    menopause_post: '갱년기 이후',
+    pregnant: '임신 중',
     postpartum: '출산 후',
     male: '남성',
     male_menopause: '남성 갱년기',
@@ -481,7 +490,8 @@ export default function MyPage() {
 
       <div style={{ margin: '10px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: '12px 14px' }}>
         <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 6 }}>내 피부 트랙</div>
-        <div style={{ fontSize: 13, color: '#fff', marginBottom: 8 }}>{trackLabelMap[hormoneTrack] || hormoneTrack || '🔍 아직 비어있어요 · 입력할수록 맞춤 추천이 시작돼요'}</div>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>{trackNameMap[hormoneTrack] || hormoneTrack || '미설정'}</div>
+        <div style={{ fontSize: 13, color: '#fff', marginBottom: 14 }}>{trackLabelMap[hormoneTrack] || '🔍 아직 비어있어요 · 입력할수록 맞춤 추천이 시작돼요'}</div>
         <button
           type="button"
           onClick={() => router.push('/my/track')}
