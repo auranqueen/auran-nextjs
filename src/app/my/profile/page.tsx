@@ -797,7 +797,9 @@ export default function MyProfilePage() {
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               onClick={() => {
-                document.documentElement.setAttribute('data-theme', 'dark')
+                if (typeof document !== 'undefined') {
+                  document.documentElement.setAttribute('data-theme', 'dark')
+                }
                 localStorage.setItem('auran_theme', 'dark')
                 setCurrentTheme('dark')
               }}
@@ -807,7 +809,9 @@ export default function MyProfilePage() {
             </button>
             <button
               onClick={() => {
-                document.documentElement.setAttribute('data-theme', 'light')
+                if (typeof document !== 'undefined') {
+                  document.documentElement.setAttribute('data-theme', 'light')
+                }
                 localStorage.setItem('auran_theme', 'light')
                 setCurrentTheme('light')
               }}
