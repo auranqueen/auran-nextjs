@@ -516,42 +516,24 @@ export default function OwnerChatRoomPage() {
           q.then(({ data }) => {
             setChannels(data ?? [])
             setChannelsLoading(false)
-            const userIds = (data ?? []).map((c: { user_id?: string | null }) => c.user_id).filter(Boolean) as string[]
+            const userIds = (data ?? []).map((c: any) => String(c.user_id ?? '')).filter(Boolean)
             if (userIds.length > 0) {
-              supabase
-                .from('users')
-                .select('id,name,email,auth_id')
-                .in('id', userIds)
-                .then(async ({ data: uData }) => {
-                  const nameMap: Record<string, string> = {}
-                  const authIds: string[] = []
-                  for (const u of uData ?? []) {
-                    const row = u as { id: string; name?: string | null; email?: string | null; auth_id?: string | null }
-                    authIds.push((row as any).auth_id || '')
-                    nameMap[row.id] = row.name || row.email?.split('@')[0] || '고객'
-                  }
-                  const { data: pData } = await supabase
-                    .from('profiles')
-                    .select('auth_id,full_name,username')
-                    .in('auth_id', authIds)
-                  const profileMap: Record<string, { full_name?: string | null; username?: string | null }> = {}
-                  for (const p of pData ?? []) {
-                    profileMap[(p as any).auth_id] = p as any
-                  }
-                  for (const u of uData ?? []) {
-                    const row = u as any
-                    const profile = profileMap[row.auth_id || '']
-                    if (profile?.full_name || profile?.username) {
-                      nameMap[row.id] = profile.full_name || profile.username || nameMap[row.id]
-                    }
-                  }
+              fetch('/api/chat/customer-names', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'same-origin',
+                body: JSON.stringify({ userIds }),
+              })
+                .then((r) => r.json())
+                .then(({ names }: { names: Record<string, string> }) => {
                   setChannels((prev) =>
                     prev.map((c) => ({
                       ...c,
-                      customer_name: nameMap[String(c.user_id ?? '')] || c.title || '고객',
+                      customer_name: names[String(c.user_id ?? '')] || c.title || '고객',
                     }))
                   )
                 })
+                .catch(() => {})
             }
           })
         })
