@@ -14,6 +14,7 @@ pnpm-debug.log*
 
 # misc
 .DS_Store
+*.txt
 
 # image migration artifacts
 failed-images.json
