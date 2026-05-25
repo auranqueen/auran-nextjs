@@ -34,8 +34,10 @@ function AuthExchangeInner() {
     ;(async () => {
       const supabase = createClient()
       const { data: exData, error: exErr } = await supabase.auth.exchangeCodeForSession(code)
+      console.log('[exchange] exErr:', exErr, 'session:', !!exData?.session)
       if (cancelled) return
       if (exErr || !exData?.session) {
+        console.log('[exchange] 실패 → 홈으로')
         router.replace('/')
         return
       }
