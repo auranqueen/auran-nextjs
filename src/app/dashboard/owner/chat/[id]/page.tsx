@@ -520,14 +520,30 @@ export default function OwnerChatRoomPage() {
             if (userIds.length > 0) {
               supabase
                 .from('users')
-                .select('id,name,email,profiles(username,full_name)')
+                .select('id,name,email,auth_id')
                 .in('id', userIds)
-                .then(({ data: uData }) => {
+                .then(async ({ data: uData }) => {
                   const nameMap: Record<string, string> = {}
+                  const authIds: string[] = []
                   for (const u of uData ?? []) {
-                    const row = u as { id: string; name?: string | null; email?: string | null }
-                    const profile = (row as any).profiles
-                    nameMap[row.id] = row.name || profile?.full_name || profile?.username || row.email?.split('@')[0] || '고객'
+                    const row = u as { id: string; name?: string | null; email?: string | null; auth_id?: string | null }
+                    authIds.push((row as any).auth_id || '')
+                    nameMap[row.id] = row.name || row.email?.split('@')[0] || '고객'
+                  }
+                  const { data: pData } = await supabase
+                    .from('profiles')
+                    .select('auth_id,full_name,username')
+                    .in('auth_id', authIds)
+                  const profileMap: Record<string, { full_name?: string | null; username?: string | null }> = {}
+                  for (const p of pData ?? []) {
+                    profileMap[(p as any).auth_id] = p as any
+                  }
+                  for (const u of uData ?? []) {
+                    const row = u as any
+                    const profile = profileMap[row.auth_id || '']
+                    if (profile?.full_name || profile?.username) {
+                      nameMap[row.id] = profile.full_name || profile.username || nameMap[row.id]
+                    }
                   }
                   setChannels((prev) =>
                     prev.map((c) => ({
