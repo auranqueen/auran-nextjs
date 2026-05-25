@@ -213,7 +213,7 @@ export default function MyTrackPage() {
   }
 
   return (
-    <div style={{ background: BG, minHeight: '100vh', maxWidth: 390, margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 400, color: '#fff', paddingBottom: 88 }}>
+    <div style={{ background: BG, minHeight: '100vh', maxWidth: 390, margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 400, color: '#fff', paddingBottom: 160 }}>
       <header
         style={{
           position: 'sticky',
@@ -530,7 +530,7 @@ export default function MyTrackPage() {
           position: 'fixed',
           left: 0,
           right: 0,
-          bottom: 0,
+          bottom: 60,
           maxWidth: 390,
           margin: '0 auto',
           padding: '12px 14px 16px',
