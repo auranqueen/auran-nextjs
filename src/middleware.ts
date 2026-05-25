@@ -266,11 +266,13 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // auran-deploy 리다이렉트를 위해 모든 경로에서 실행. 정적/API 제외
   matcher: [
-    '/((?!_next/static|_next/image|favicon\\.ico|api/).*)',
-    '/super-console/:path*',
     '/dashboard/:path*',
     '/admin/:path*',
+    '/super-console/:path*',
+    '/my/:path*',
+    '/auth/:path*',
+    '/signup/:path*',
+    '/login',
   ],
 }
