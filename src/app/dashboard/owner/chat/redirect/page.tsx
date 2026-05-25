@@ -9,10 +9,19 @@ export default function OwnerChatRedirect() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (!data.user) {
-        router.replace('/login?role=owner')
+        router.replace('/super-console/login')
         return
+      }
+      const appRole = data.user.app_metadata?.role || ''
+      const isAdmin = appRole === 'admin' || appRole === 'super_admin'
+      if (!isAdmin) {
+        const { data: uRow } = await supabase.from('users').select('role').eq('auth_id', data.user.id).maybeSingle()
+        if (!uRow || uRow.role !== 'owner') {
+          router.replace('/super-console/login')
+          return
+        }
       }
       supabase
         .from('chat_channels')
