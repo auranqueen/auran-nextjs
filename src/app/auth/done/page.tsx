@@ -66,6 +66,12 @@ function AuthDoneInner() {
       })
       try {
         await supabase.from('profiles').upsert(
+          { auth_id: data.session!.user.id, onboarding_done: true },
+          { onConflict: 'auth_id' }
+        )
+      } catch (e) { console.error('onboarding_done upsert error:', e) }
+      try {
+        await supabase.from('profiles').upsert(
           { auth_id: data.session!.user.id, email: data.session!.user.email ?? '' },
           { onConflict: 'auth_id' }
         )
