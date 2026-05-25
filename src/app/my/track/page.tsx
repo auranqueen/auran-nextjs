@@ -66,6 +66,15 @@ export default function MyTrackPage() {
   const [environment, setEnvironment] = useState('')
   const [washCount, setWashCount] = useState('')
 
+  const [skinTypeMemo, setSkinTypeMemo] = useState('')
+  const [skinConcernMemo, setSkinConcernMemo] = useState('')
+  const [allergyMemo, setAllergyMemo] = useState('')
+  const [careMemo, setCareMemo] = useState('')
+  const [procedureMemo, setProcedureMemo] = useState('')
+  const [cycleMemo, setCycleMemo] = useState('')
+  const [menstrualMemo, setMenstrualMemo] = useState('')
+  const [lifestyleMemo, setLifestyleMemo] = useState('')
+
   useEffect(() => {
     const run = async () => {
       setLoading(true)
@@ -150,6 +159,14 @@ export default function MyTrackPage() {
         drink_frequency: drinkFrequency || null,
         exercise_frequency: exerciseFrequency || null,
         smoke,
+        skin_type_memo: skinTypeMemo,
+        skin_concern_memo: skinConcernMemo,
+        allergy_memo: allergyMemo,
+        care_memo: careMemo,
+        procedure_memo: procedureMemo,
+        cycle_memo: cycleMemo,
+        menstrual_memo: menstrualMemo,
+        lifestyle_memo: lifestyleMemo,
       } as any)
       .eq('auth_id', authId)
     setSaving(false)
@@ -241,25 +258,172 @@ export default function MyTrackPage() {
 
         {step === 1 ? (
           <>
-            {section('1. 피부타입', '하나만 선택해주세요', chipRow(['건성', '지성', '복합성', '민감성', '정상'], skinType, setSkinType))}
-            {section('2. 피부고민', '복수 선택 가능', chipRow(['피부 변화', '모공', '색소침착', '주름', '건조', '유분', '민감'], skinConcerns, (v) => setSkinConcerns((p) => toggleArr(p, v)), true))}
-            {section('3. 알레르기 성분', '복수 선택 가능', chipRow(['파라벤', '알코올', '향료', '실리콘', '없음'], allergyIngredients, (v) => setAllergyIngredients((p) => toggleArr(p, v)), true))}
+            {section('1. 피부타입', '하나만 선택해주세요', <>
+              {chipRow(['건성', '지성', '복합성', '민감성', '정상'], skinType, setSkinType)}
+              <textarea
+                value={skinTypeMemo}
+                onChange={(e) => setSkinTypeMemo(e.target.value)}
+                placeholder="더 자세히 알려주세요 (선택)"
+                style={{
+                  width: '100%',
+                  minHeight: 72,
+                  marginTop: 10,
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(123,94,167,0.3)',
+                  background: 'rgba(255,255,255,0.05)',
+                  color: 'var(--text)',
+                  fontSize: 13,
+                  resize: 'vertical',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </>)}
+            {section('2. 피부고민', '복수 선택 가능', <>
+              {chipRow(['피부 변화', '모공', '색소침착', '주름', '건조', '유분', '민감'], skinConcerns, (v) => setSkinConcerns((p) => toggleArr(p, v)), true)}
+              <textarea
+                value={skinConcernMemo}
+                onChange={(e) => setSkinConcernMemo(e.target.value)}
+                placeholder="더 자세히 알려주세요 (선택)"
+                style={{
+                  width: '100%',
+                  minHeight: 72,
+                  marginTop: 10,
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(123,94,167,0.3)',
+                  background: 'rgba(255,255,255,0.05)',
+                  color: 'var(--text)',
+                  fontSize: 13,
+                  resize: 'vertical',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </>)}
+            {section('3. 알레르기 성분', '복수 선택 가능', <>
+              {chipRow(['파라벤', '알코올', '향료', '실리콘', '없음'], allergyIngredients, (v) => setAllergyIngredients((p) => toggleArr(p, v)), true)}
+              <textarea
+                value={allergyMemo}
+                onChange={(e) => setAllergyMemo(e.target.value)}
+                placeholder="더 자세히 알려주세요 (선택)"
+                style={{
+                  width: '100%',
+                  minHeight: 72,
+                  marginTop: 10,
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(123,94,167,0.3)',
+                  background: 'rgba(255,255,255,0.05)',
+                  color: 'var(--text)',
+                  fontSize: 13,
+                  resize: 'vertical',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </>)}
             {section(
               '4. 케어스타일',
               null,
-              chipRow(['임신·수유 중이에요', '갱년기 케어 중이에요', '일반 케어로 할게요', '해당없어요'], careStyle, setCareStyle)
+              <>
+                {chipRow(['임신·수유 중이에요', '갱년기 케어 중이에요', '일반 케어로 할게요', '해당없어요'], careStyle, setCareStyle)}
+                <textarea
+                  value={careMemo}
+                  onChange={(e) => setCareMemo(e.target.value)}
+                  placeholder="더 자세히 알려주세요 (선택)"
+                  style={{
+                    width: '100%',
+                    minHeight: 72,
+                    marginTop: 10,
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    border: '1px solid rgba(123,94,167,0.3)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: 'var(--text)',
+                    fontSize: 13,
+                    resize: 'vertical',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </>
             )}
             {section(
               '5. 시술 경험',
               '복수 선택 가능',
-              chipRow(['보톡스·필러 경험', '레이저 시술 경험', '리프팅 시술 경험', '없음'], procedureHistory, (v) => setProcedureHistory((p) => toggleArr(p, v)), true)
+              <>
+                {chipRow(['보톡스·필러 경험', '레이저 시술 경험', '리프팅 시술 경험', '없음'], procedureHistory, (v) => setProcedureHistory((p) => toggleArr(p, v)), true)}
+                <textarea
+                  value={procedureMemo}
+                  onChange={(e) => setProcedureMemo(e.target.value)}
+                  placeholder="더 자세히 알려주세요 (선택)"
+                  style={{
+                    width: '100%',
+                    minHeight: 72,
+                    marginTop: 10,
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    border: '1px solid rgba(123,94,167,0.3)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: 'var(--text)',
+                    fontSize: 13,
+                    resize: 'vertical',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </>
             )}
             {section(
               '6. 피부 변화 주기',
               null,
-              chipRow(['생리 전에 많이 변해요', '불규칙해요', '항상 변화가 있어요', '없어요'], menstrualCycle, setMenstrualCycle)
+              <>
+                {chipRow(['생리 전에 많이 변해요', '불규칙해요', '항상 변화가 있어요', '없어요'], menstrualCycle, setMenstrualCycle)}
+                <textarea
+                  value={cycleMemo}
+                  onChange={(e) => setCycleMemo(e.target.value)}
+                  placeholder="더 자세히 알려주세요 (선택)"
+                  style={{
+                    width: '100%',
+                    minHeight: 72,
+                    marginTop: 10,
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    border: '1px solid rgba(123,94,167,0.3)',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: 'var(--text)',
+                    fontSize: 13,
+                    resize: 'vertical',
+                    outline: 'none',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </>
             )}
-            {section('7. 월경 컨디션', null, chipRow(['편안해요', '약간 불편해요', '많이 불편해요'], periodPain, setPeriodPain))}
+            {section('7. 월경 컨디션', null, <>
+              {chipRow(['편안해요', '약간 불편해요', '많이 불편해요'], periodPain, setPeriodPain)}
+              <textarea
+                value={menstrualMemo}
+                onChange={(e) => setMenstrualMemo(e.target.value)}
+                placeholder="더 자세히 알려주세요 (선택)"
+                style={{
+                  width: '100%',
+                  minHeight: 72,
+                  marginTop: 10,
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(123,94,167,0.3)',
+                  background: 'rgba(255,255,255,0.05)',
+                  color: 'var(--text)',
+                  fontSize: 13,
+                  resize: 'vertical',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </>)}
           </>
         ) : (
           <>
@@ -335,7 +499,28 @@ export default function MyTrackPage() {
                 </button>
               </div>
             )}
-            {section('13. 스트레스', null, chipRow(['낮음', '보통', '높음', '매우높음'], stressLevel, setStressLevel))}
+            {section('13. 스트레스', null, <>
+              {chipRow(['낮음', '보통', '높음', '매우높음'], stressLevel, setStressLevel)}
+              <textarea
+                value={lifestyleMemo}
+                onChange={(e) => setLifestyleMemo(e.target.value)}
+                placeholder="더 자세히 알려주세요 (선택)"
+                style={{
+                  width: '100%',
+                  minHeight: 72,
+                  marginTop: 10,
+                  padding: '10px 12px',
+                  borderRadius: 10,
+                  border: '1px solid rgba(123,94,167,0.3)',
+                  background: 'rgba(255,255,255,0.05)',
+                  color: 'var(--text)',
+                  fontSize: 13,
+                  resize: 'vertical',
+                  outline: 'none',
+                  boxSizing: 'border-box',
+                }}
+              />
+            </>)}
           </>
         )}
       </div>
