@@ -291,7 +291,7 @@ export default function MyPage() {
     !(profileData?.special_dates?.length > 0) ? '· 기념일을 1개 이상 등록해주세요' : '',
   ].filter(Boolean).slice(0, 2)
   const trackLabelMap: Record<string, string> = {
-    general: '일반 주기',
+    general: '🌙 호르몬 리듬 파악 중 · 더 채울수록 추천이 달라져요',
     menopause_peri: '갱년기 진입',
     menopause_post: '폐경',
     pregnant: '임신',
@@ -481,7 +481,7 @@ export default function MyPage() {
 
       <div style={{ margin: '10px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: '12px 14px' }}>
         <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 6 }}>내 피부 트랙</div>
-        <div style={{ fontSize: 13, color: '#fff', marginBottom: 8 }}>{trackLabelMap[hormoneTrack] || hormoneTrack || '미설정'}</div>
+        <div style={{ fontSize: 13, color: '#fff', marginBottom: 8 }}>{trackLabelMap[hormoneTrack] || hormoneTrack || '🔍 아직 비어있어요 · 입력할수록 맞춤 추천이 시작돼요'}</div>
         <button
           type="button"
           onClick={() => router.push('/my/track')}
