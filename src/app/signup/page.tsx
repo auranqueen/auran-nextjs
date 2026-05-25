@@ -17,6 +17,7 @@ function SignupForm() {
   const params = useSearchParams()
   const role = params.get('role') || 'customer'
   const inviteCode = params.get('ref') || ''
+  const mode = params.get('mode') || ''
   const meta = ROLE_META[role] || ROLE_META.customer
 
   const [step, setStep] = useState(1) // 1: 정보입력 2: 온보딩 3: 완료
@@ -36,6 +37,10 @@ function SignupForm() {
   const [signupWelcomePoint, setSignupWelcomePoint] = useState(() =>
     getSettingNum('points_action', 'signup_welcome', 8888)
   )
+
+  useEffect(() => {
+    if (mode === 'track') setStep(2)
+  }, [mode])
 
   const supabase = createClient()
 
@@ -123,6 +128,10 @@ function SignupForm() {
           }
         } catch {}
         // 이메일 인증 필요 시 세션이 없음 → 인증 대기 화면으로
+        if (mode === 'track') {
+          router.push('/')
+          return
+        }
         router.push(`/auth/verify-email?email=${encodeURIComponent(form.email)}&role=${encodeURIComponent(role)}`)
         return
       }
