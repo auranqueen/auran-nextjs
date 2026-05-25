@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/imageUpload'
+import { setStoredTheme } from '@/lib/theme'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
@@ -797,10 +798,7 @@ export default function MyProfilePage() {
           <div style={{ display: 'flex', gap: 10 }}>
             <button
               onClick={() => {
-                if (typeof document !== 'undefined') {
-                  document.documentElement.setAttribute('data-theme', 'dark')
-                }
-                localStorage.setItem('auran_theme', 'dark')
+                setStoredTheme('dark')
                 setCurrentTheme('dark')
               }}
               style={{ flex: 1, padding: '12px 0', borderRadius: 10, border: currentTheme === 'dark' ? '2px solid #7B5EA7' : '1px solid var(--border)', background: currentTheme === 'dark' ? '#7B5EA7' : 'var(--bg2)', color: currentTheme === 'dark' ? '#fff' : 'var(--text)', fontSize: 14, cursor: 'pointer' }}
@@ -809,10 +807,7 @@ export default function MyProfilePage() {
             </button>
             <button
               onClick={() => {
-                if (typeof document !== 'undefined') {
-                  document.documentElement.setAttribute('data-theme', 'light')
-                }
-                localStorage.setItem('auran_theme', 'light')
+                setStoredTheme('light')
                 setCurrentTheme('light')
               }}
               style={{ flex: 1, padding: '12px 0', borderRadius: 10, border: currentTheme === 'light' ? '2px solid #7B5EA7' : '1px solid var(--border)', background: currentTheme === 'light' ? '#7B5EA7' : 'var(--bg2)', color: currentTheme === 'light' ? '#fff' : 'var(--text)', fontSize: 14, cursor: 'pointer' }}
