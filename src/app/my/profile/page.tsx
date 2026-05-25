@@ -72,6 +72,12 @@ export default function MyProfilePage() {
   const [notificationSound, setNotificationSound] = useState<string>('violet')
   const [specialDates, setSpecialDates] = useState<{ label: string; date: string; notify_days: number }[]>([])
 
+  const [currentTheme, setCurrentTheme] = useState<'dark'|'light'>(
+    typeof document !== 'undefined' 
+      ? (document.documentElement.getAttribute('data-theme') as 'dark'|'light') || 'dark'
+      : 'dark'
+  )
+
   useEffect(() => {
     const run = async () => {
       setLoading(true)
@@ -784,6 +790,32 @@ export default function MyProfilePage() {
               </div>
             </>
           )}
+        </section>
+
+        <section style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 15, marginBottom: 12 }}>화면 테마</div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button
+              onClick={() => {
+                document.documentElement.setAttribute('data-theme', 'dark')
+                localStorage.setItem('auran_theme', 'dark')
+                setCurrentTheme('dark')
+              }}
+              style={{ flex: 1, padding: '12px 0', borderRadius: 10, border: currentTheme === 'dark' ? '2px solid var(--primary)' : '1px solid var(--border)', background: currentTheme === 'dark' ? 'var(--primary)' : 'var(--bg2)', color: currentTheme === 'dark' ? '#fff' : 'var(--text)', fontSize: 14, cursor: 'pointer' }}
+            >
+              🌙 다크 모드
+            </button>
+            <button
+              onClick={() => {
+                document.documentElement.setAttribute('data-theme', 'light')
+                localStorage.setItem('auran_theme', 'light')
+                setCurrentTheme('light')
+              }}
+              style={{ flex: 1, padding: '12px 0', borderRadius: 10, border: currentTheme === 'light' ? '2px solid var(--primary)' : '1px solid var(--border)', background: currentTheme === 'light' ? 'var(--primary)' : 'var(--bg2)', color: currentTheme === 'light' ? '#fff' : 'var(--text)', fontSize: 14, cursor: 'pointer' }}
+            >
+              ☀️ 라이트 모드
+            </button>
+          </div>
         </section>
 
         <section id="notify" style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: '10px 14px 14px', marginBottom: 12 }}>
