@@ -58,7 +58,7 @@ function OnboardingInner() {
       localStorage.setItem('auran_skin_type', skinType)
       localStorage.setItem('auran_onboarding_done', 'true')
 
-      const appUrl = window.location.origin
+      const appUrl = 'https://www.auran.kr'
       const callbackQuery = `?role=${role}`
 
       if (provider === 'kakao') {
