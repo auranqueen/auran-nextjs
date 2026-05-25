@@ -520,13 +520,14 @@ export default function OwnerChatRoomPage() {
             if (userIds.length > 0) {
               supabase
                 .from('users')
-                .select('id,name,email')
+                .select('id,name,email,profiles(username,full_name)')
                 .in('id', userIds)
                 .then(({ data: uData }) => {
                   const nameMap: Record<string, string> = {}
                   for (const u of uData ?? []) {
                     const row = u as { id: string; name?: string | null; email?: string | null }
-                    nameMap[row.id] = row.name || row.email?.split('@')[0] || '고객'
+                    const profile = (row as any).profiles
+                    nameMap[row.id] = row.name || profile?.full_name || profile?.username || row.email?.split('@')[0] || '고객'
                   }
                   setChannels((prev) =>
                     prev.map((c) => ({
