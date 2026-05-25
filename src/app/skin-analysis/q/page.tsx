@@ -166,6 +166,13 @@ function SkinAnalysisQPageContent() {
         pore: Math.max(5, Math.min(100, Math.round(aiScores.pore))),
       }
 
+      const skinScore = Math.round((finalScores.moisture + finalScores.elasticity - finalScores.sensitivity * 0.5 + (100 - finalScores.oil * 0.3)) / 3)
+      let skinAge = userAge
+      if (skinScore >= 80) skinAge = userAge - 3
+      else if (skinScore >= 60) skinAge = userAge
+      else if (skinScore >= 40) skinAge = userAge + 3
+      else skinAge = userAge + 5
+
       const { data: analysis } = await supabase.from('skin_analyses').insert({
         user_id: user.id,
         moisture_score: finalScores.moisture,
@@ -186,7 +193,48 @@ function SkinAnalysisQPageContent() {
         lifestyle_stress: answers.stress,
         age_at_analysis: userAge,
         is_pregnant: isPregnant,
+        skin_score: skinScore,
+        skin_age: skinAge,
+        skin_type: answers.skinType || null,
+        quiz_answers: {
+          moisture: finalScores.moisture,
+          oil: finalScores.oil,
+          sensitivity: finalScores.sensitivity,
+          elasticity: finalScores.elasticity,
+          pigmentation: finalScores.pigmentation,
+          pore: finalScores.pore,
+          event: answers.event,
+          condition: answers.condition,
+          hormone: answers.hormoneStatus,
+          age: userAge,
+          gender: answers.gender,
+          pregnant: isPregnant,
+        },
       }).select().single()
+
+      if (analysis?.id) {
+        const hormoneStatus = answers.hormoneStatus
+        const concernArea = answers.concernArea || []
+        const { data: prodRows } = await supabase
+          .from('products')
+          .select('id, hormone_tags, concern_tags')
+          .eq('is_active', true)
+          .eq('status', 'active')
+          .limit(120)
+        const matchedIds = (prodRows ?? [])
+          .filter((p: { id: string; hormone_tags?: string[] | null; concern_tags?: string[] | null }) => {
+            const ht = p.hormone_tags || []
+            const ct = p.concern_tags || []
+            const hormoneMatch = !!hormoneStatus && ht.includes(hormoneStatus)
+            const concernMatch = concernArea.length > 0 && concernArea.some((c: string) => ct.includes(c))
+            return hormoneMatch || concernMatch
+          })
+          .slice(0, 6)
+          .map((p: { id: string }) => p.id)
+        if (matchedIds.length > 0) {
+          await supabase.from('skin_analyses').update({ recommended_products: matchedIds }).eq('id', analysis.id)
+        }
+      }
 
       const params = new URLSearchParams({
         moisture: String(finalScores.moisture),
