@@ -484,7 +484,7 @@ export default function MyPage() {
         <div style={{ fontSize: 13, color: '#fff', marginBottom: 8 }}>{trackLabelMap[hormoneTrack] || hormoneTrack || '미설정'}</div>
         <button
           type="button"
-          onClick={() => router.push('/signup?mode=track')}
+          onClick={() => router.push('/my/track')}
           style={{ border: '1px solid rgba(123,94,167,0.4)', background: 'rgba(123,94,167,0.2)', color: '#e8d9ff', borderRadius: 999, padding: '6px 11px', fontSize: 11, cursor: 'pointer' }}
         >
           변경하기
