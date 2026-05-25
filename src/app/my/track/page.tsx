@@ -110,9 +110,9 @@ export default function MyTrackPage() {
     if (skinConcerns.length === 0) return '피부고민을 1개 이상 선택해주세요'
     if (allergyIngredients.length === 0) return '알레르기 성분을 선택해주세요'
     if (!careStyle) return '케어스타일을 선택해주세요'
-    if (procedureHistory.length === 0) return '시술 이력을 선택해주세요'
-    if (!menstrualCycle) return '트러블 주기를 선택해주세요'
-    if (!periodPain) return '생리통 정도를 선택해주세요'
+    if (procedureHistory.length === 0) return '시술 경험을 선택해주세요'
+    if (!menstrualCycle) return '피부 변화 주기를 선택해주세요'
+    if (!periodPain) return '월경 컨디션을 선택해주세요'
     return ''
   }
 
@@ -242,24 +242,24 @@ export default function MyTrackPage() {
         {step === 1 ? (
           <>
             {section('1. 피부타입', '하나만 선택해주세요', chipRow(['건성', '지성', '복합성', '민감성', '정상'], skinType, setSkinType))}
-            {section('2. 피부고민', '복수 선택 가능', chipRow(['트러블', '모공', '색소침착', '주름', '건조', '유분', '민감'], skinConcerns, (v) => setSkinConcerns((p) => toggleArr(p, v)), true))}
+            {section('2. 피부고민', '복수 선택 가능', chipRow(['피부 변화', '모공', '색소침착', '주름', '건조', '유분', '민감'], skinConcerns, (v) => setSkinConcerns((p) => toggleArr(p, v)), true))}
             {section('3. 알레르기 성분', '복수 선택 가능', chipRow(['파라벤', '알코올', '향료', '실리콘', '없음'], allergyIngredients, (v) => setAllergyIngredients((p) => toggleArr(p, v)), true))}
             {section(
               '4. 케어스타일',
               null,
-              chipRow(['임신/수유 중이에요', '갱년기 케어 중이에요', '일반 케어로 할게요', '해당없어요'], careStyle, setCareStyle)
+              chipRow(['임신·수유 중이에요', '갱년기 케어 중이에요', '일반 케어로 할게요', '해당없어요'], careStyle, setCareStyle)
             )}
             {section(
-              '5. 시술 이력',
+              '5. 시술 경험',
               '복수 선택 가능',
-              chipRow(['보톡스/필러', '레이저', '실리프팅', '없음'], procedureHistory, (v) => setProcedureHistory((p) => toggleArr(p, v)), true)
+              chipRow(['보톡스·필러 경험', '레이저 시술 경험', '리프팅 시술 경험', '없음'], procedureHistory, (v) => setProcedureHistory((p) => toggleArr(p, v)), true)
             )}
             {section(
-              '6. 트러블 주기',
+              '6. 피부 변화 주기',
               null,
-              chipRow(['생리 전에 심해요', '불규칙해요', '항상 있어요', '없어요'], menstrualCycle, setMenstrualCycle)
+              chipRow(['생리 전에 많이 변해요', '불규칙해요', '항상 변화가 있어요', '없어요'], menstrualCycle, setMenstrualCycle)
             )}
-            {section('7. 생리통 정도', null, chipRow(['없음', '약함', '심함'], periodPain, setPeriodPain))}
+            {section('7. 월경 컨디션', null, chipRow(['편안해요', '약간 불편해요', '많이 불편해요'], periodPain, setPeriodPain))}
           </>
         ) : (
           <>
@@ -283,13 +283,13 @@ export default function MyTrackPage() {
                 textAlign: 'left',
               }}
             >
-              {expandExtra ? '▾ 추가 질문 접기' : '▸ 추가 질문 펼치기 (피임약 · PMS · 수분 · 환경 · 세안)'}
+              {expandExtra ? '▾ 추가 질문 접기' : '▸ 추가 질문 펼치기 (호르몬 약 · 생리 전 피부 변화 · 수분 · 환경 · 세안)'}
             </button>
 
             {expandExtra ? (
               <>
-                {section('8. 피임약 복용', null, chipRow(['복용 중', '복용 안 함'], birthControl, setBirthControl))}
-                {section('9. PMS 증상', null, chipRow(['없음', '약함', '심함'], pmsLevel, setPmsLevel))}
+                {section('8. 호르몬 약 복용 여부', null, chipRow(['복용 중이에요', '복용 안 해요'], birthControl, setBirthControl))}
+                {section('9. 생리 전 피부 변화', null, chipRow(['변화 없어요', '약간 변해요', '많이 변해요'], pmsLevel, setPmsLevel))}
                 {section('14. 물 섭취량', null, chipRow(['적음(1L미만)', '보통(1~2L)', '많음(2L이상)'], waterIntake, setWaterIntake))}
                 {section(
                   '15. 주로 있는 환경',
