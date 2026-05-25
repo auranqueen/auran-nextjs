@@ -801,7 +801,7 @@ export default function MyProfilePage() {
                 localStorage.setItem('auran_theme', 'dark')
                 setCurrentTheme('dark')
               }}
-              style={{ flex: 1, padding: '12px 0', borderRadius: 10, border: currentTheme === 'dark' ? '2px solid var(--primary)' : '1px solid var(--border)', background: currentTheme === 'dark' ? 'var(--primary)' : 'var(--bg2)', color: currentTheme === 'dark' ? '#fff' : 'var(--text)', fontSize: 14, cursor: 'pointer' }}
+              style={{ flex: 1, padding: '12px 0', borderRadius: 10, border: currentTheme === 'dark' ? '2px solid #7B5EA7' : '1px solid var(--border)', background: currentTheme === 'dark' ? '#7B5EA7' : 'var(--bg2)', color: currentTheme === 'dark' ? '#fff' : 'var(--text)', fontSize: 14, cursor: 'pointer' }}
             >
               🌙 다크 모드
             </button>
@@ -811,7 +811,7 @@ export default function MyProfilePage() {
                 localStorage.setItem('auran_theme', 'light')
                 setCurrentTheme('light')
               }}
-              style={{ flex: 1, padding: '12px 0', borderRadius: 10, border: currentTheme === 'light' ? '2px solid var(--primary)' : '1px solid var(--border)', background: currentTheme === 'light' ? 'var(--primary)' : 'var(--bg2)', color: currentTheme === 'light' ? '#fff' : 'var(--text)', fontSize: 14, cursor: 'pointer' }}
+              style={{ flex: 1, padding: '12px 0', borderRadius: 10, border: currentTheme === 'light' ? '2px solid #7B5EA7' : '1px solid var(--border)', background: currentTheme === 'light' ? '#7B5EA7' : 'var(--bg2)', color: currentTheme === 'light' ? '#fff' : 'var(--text)', fontSize: 14, cursor: 'pointer' }}
             >
               ☀️ 라이트 모드
             </button>
