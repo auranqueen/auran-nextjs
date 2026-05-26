@@ -3973,9 +3973,13 @@ export default function CustomerHomePage() {
           <span style={{ fontSize: '9px', color: TEXT_DIM, fontFamily: 'monospace', marginLeft: '8px' }}>· DUCHESS.KR</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '14px', flexWrap: 'wrap' }}>
-          {['공지사항', 'FAQ', '1:1문의', '개인정보처리방침', '이용약관'].map((item, i) => (
-            <span key={i} style={{ fontSize: '10px', color: TEXT_DIM, cursor: 'pointer' }}>{item}</span>
-          ))}
+          {['공지사항', 'FAQ', '1:1문의', '개인정보처리방침', '이용약관'].map((item, i) =>
+            item === '개인정보처리방침' ? (
+              <a key={i} href="/privacy" style={{ color: 'inherit' }}>개인정보처리방침</a>
+            ) : (
+              <span key={i} style={{ fontSize: '10px', color: TEXT_DIM, cursor: 'pointer' }}>{item}</span>
+            )
+          )}
         </div>
         <div style={{ textAlign: 'center', fontSize: '10px', color: 'rgba(255,255,255,0.2)', lineHeight: 2 }}>
           <div>상호 : 주식회사 티엔씨 · 사업자등록번호 : 197-87-01357</div>
