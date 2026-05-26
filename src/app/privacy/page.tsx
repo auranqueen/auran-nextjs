@@ -64,8 +64,8 @@ export default function PrivacyPage() {
         <section style={{ marginBottom: 20 }}>
           <h2 style={{ fontSize: 13, fontWeight: 500, color: PRIMARY, margin: '0 0 8px' }}>1. 개인정보의 처리 목적</h2>
           <p style={{ fontSize: 12, lineHeight: 1.75, color: TEXT_MUTED, margin: 0 }}>
-            주식회사 티엔씨(이하 &quot;회사&quot;)는 AURAN 서비스 제공을 위해 다음 목적范围内에서 개인정보를 처리합니다.
-            회원 가입·로그인, AI 피부분석·맞춤 추천, 호르몬 주기 기반 케어, 상품 주문·결제, 원장 상담톡, 고객 문의 응대 및 서비스 개선 목적으로 처리합니다.
+            주식회사 티엔씨(이하 &quot;회사&quot;)는 AURAN 서비스 제공을 위해 다음 목적 범위 내에서 개인정보를 처리합니다.
+            회원 가입·로그인, AI 피부분석·맞춤 추천, 호르몬 주기 기반 케어, 상품 주문·결제, 원장 상담톡, 고객 문의 응대 및 서비스 개선.
           </p>
         </section>
 
