@@ -116,8 +116,8 @@ export default function PrivacyPage() {
           <p style={{ fontSize: 12, lineHeight: 1.75, color: TEXT_MUTED, margin: 0 }}>
             성명: AURAN 개인정보보호 담당<br />
             이메일:{' '}
-            <a href="mailto:queen8038@gmail.com" style={{ color: GOLD, textDecoration: 'none' }}>
-              queen8038@gmail.com
+            <a href="mailto:queen8039@gmail.com" style={{ color: GOLD, textDecoration: 'none' }}>
+              queen8039@gmail.com
             </a>
           </p>
         </section>
