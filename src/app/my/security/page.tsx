@@ -20,6 +20,8 @@ export default function MySecurityPage() {
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [loading, setLoading] = useState(true)
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false)
+  const [withdrawing, setWithdrawing] = useState(false)
 
   useEffect(() => {
     const run = async () => {
@@ -67,10 +69,23 @@ export default function MySecurityPage() {
     router.push('/login')
   }
 
-  const withdraw = () => {
-    const ok = window.confirm('정말 탈퇴하시겠어요? 모든 데이터가 삭제됩니다')
-    if (!ok) return
-    alert('계정 탈퇴는 고객센터를 통해 처리됩니다.')
+  const withdraw = async () => {
+    setWithdrawing(true)
+    try {
+      const res = await fetch('/api/delete-account', { method: 'POST' })
+      const data = await res.json()
+      if (data.success) {
+        await supabase.auth.signOut()
+        router.push('/login')
+      } else {
+        alert('탈퇴 처리 중 오류가 발생했습니다.')
+      }
+    } catch {
+      alert('탈퇴 처리 중 오류가 발생했습니다.')
+    } finally {
+      setWithdrawing(false)
+      setShowWithdrawModal(false)
+    }
   }
 
   return (
@@ -108,11 +123,56 @@ export default function MySecurityPage() {
           <button onClick={signOut} style={{ width: '100%', border: '1px solid rgba(220,100,100,0.4)', color: '#ef9a9a', background: 'rgba(220,80,80,0.1)', borderRadius: 10, padding: '10px 0', fontSize: 12, cursor: 'pointer', marginBottom: 8 }}>
             로그아웃
           </button>
-          <button onClick={withdraw} style={{ width: '100%', border: CARD_BORDER, color: TEXT_MUTED, background: 'transparent', borderRadius: 10, padding: '8px 0', fontSize: 11, cursor: 'pointer' }}>
-            계정 탈퇴
+          <button
+            onClick={() => setShowWithdrawModal(true)}
+            style={{
+              width: '100%',
+              padding: '12px',
+              background: 'transparent',
+              border: '0.5px solid rgba(255,255,255,0.1)',
+              borderRadius: 10,
+              color: 'rgba(255,255,255,0.3)',
+              fontSize: 13,
+              cursor: 'pointer',
+              marginTop: 8
+            }}
+          >
+            회원 탈퇴
           </button>
         </section>
       </div>
+
+      {showWithdrawModal ? (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div style={{ background: '#1a1a1a', borderRadius: 16, padding: '28px 24px', width: 'calc(100% - 48px)', maxWidth: 340 }}>
+            <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#fff' }}>잠깐, 정말 떠나실 건가요? 😢</div>
+            <div style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.7, marginBottom: 20, whiteSpace: 'pre-line' }}>
+              {`지금 만개기잖아요.
+피부가 가장 빛나는 이 시기에
+AURAN이 없어도 괜찮을까요?
+탈퇴하면 내 피부나이 기록,
+호르몬 맞춤 루틴,
+쌓아온 토스트가 전부 사라져요.
+다음 달빛기엔 누가 챙겨줄까요... 🥺`}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowWithdrawModal(false)}
+              style={{ width: '100%', padding: '13px', background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 10, fontSize: 13, cursor: 'pointer' }}
+            >
+              조금 더 있을게요 💜
+            </button>
+            <button
+              type="button"
+              onClick={withdraw}
+              disabled={withdrawing}
+              style={{ width: '100%', padding: '13px', marginTop: 8, background: 'transparent', border: '0.5px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.4)', borderRadius: 10, fontSize: 13, cursor: withdrawing ? 'not-allowed' : 'pointer' }}
+            >
+              그래도 떠날게요
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
