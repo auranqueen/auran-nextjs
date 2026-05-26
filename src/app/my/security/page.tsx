@@ -144,7 +144,24 @@ export default function MySecurityPage() {
 
       {showWithdrawModal ? (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div style={{ background: '#1a1a1a', borderRadius: 16, padding: '28px 24px', width: 'calc(100% - 48px)', maxWidth: 340 }}>
+          <div style={{ position: 'relative', background: '#1a1a1a', borderRadius: 16, padding: '28px 24px', width: 'calc(100% - 48px)', maxWidth: 340 }}>
+            <button
+              type="button"
+              onClick={() => setShowWithdrawModal(false)}
+              style={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                background: 'transparent',
+                border: 'none',
+                color: 'rgba(255,255,255,0.4)',
+                fontSize: 18,
+                cursor: 'pointer',
+                lineHeight: 1
+              }}
+            >
+              ✕
+            </button>
             <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#fff' }}>잠깐, 정말 떠나실 건가요? 😢</div>
             <div style={{ fontSize: 13, color: TEXT_MUTED, lineHeight: 1.7, marginBottom: 20, whiteSpace: 'pre-line' }}>
               {`지금 만개기잖아요.
