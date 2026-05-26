@@ -182,20 +182,6 @@ function LoginForm() {
     const callbackQuery = `?role=${encodeURIComponent(position)}${redirectQuery}`
 
     if (provider === 'kakao') {
-      const { data: sessionData } = await supabase.auth.getSession()
-      if (!sessionData.session) {
-        router.replace('/signup/consent')
-        return
-      }
-      const { data: profileCheck } = await supabase
-        .from('profiles')
-        .select('onboarding_done')
-        .eq('auth_id', sessionData.session.user.id)
-        .maybeSingle()
-      if (profileCheck?.onboarding_done !== true) {
-        router.replace('/signup/consent')
-        return
-      }
       setKakaoOAuthLoading(true)
       try {
         const { error } = await supabase.auth.signInWithOAuth({
