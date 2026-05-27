@@ -49,6 +49,10 @@ export default function AdminMarketingProductsClient() {
     setLoading(false)
   }, [])
 
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const toggleSelect = (id: string) => setSelectedIds(prev => { const next = new Set(Array.from(prev)); if (next.has(id)) next.delete(id); else next.add(id); return next })
+  const clearSelection = () => setSelectedIds(new Set())
+
   useEffect(() => {
     void load()
   }, [load])
@@ -187,15 +191,23 @@ export default function AdminMarketingProductsClient() {
 
       <div style={s.resultInfo}>{filtered.length}개 제품</div>
 
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+        <input type="checkbox" checked={selectedIds.size === filtered.length && filtered.length > 0} onChange={e => e.target.checked ? setSelectedIds(new Set(filtered.map(p => p.id))) : clearSelection()} style={{ cursor: 'pointer' }} />
+        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>선택됨: {selectedIds.size}/{filtered.length}</span>
+        <button style={{ marginLeft: 'auto', padding: '5px 12px', background: selectedIds.size > 0 ? '#e07898' : 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: 6, fontSize: 12, cursor: selectedIds.size > 0 ? 'pointer' : 'not-allowed', opacity: selectedIds.size > 0 ? 1 : 0.5 }} disabled={selectedIds.size === 0} onClick={async () => { if (confirm(`${selectedIds.size}개 제품을 정말 삭제할까요? 복구 불가능해요`)) { setLoading(true); for (const id of Array.from(selectedIds)) { await supabase.from('products').delete().eq('id', id) } await load(); clearSelection(); setLoading(false) } }}>일괄삭제</button>
+      </div>
+
       {loading ? (
         <div style={{ textAlign: 'center', padding: 32, fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>불러오는 중...</div>
       ) : filtered.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 32, fontSize: 13, color: 'rgba(255,255,255,0.3)' }}>제품이 없어요</div>
       ) : (
         filtered.map(p => {
+          const isSelected = selectedIds.has(p.id)
           const sc = getStatusClass(p)
           return (
-            <div key={p.id} style={s.card}>
+            <div key={p.id} style={{ ...s.card, position: 'relative', borderColor: isSelected ? '#7B5EA7' : 'rgba(255,255,255,0.1)', background: isSelected ? 'rgba(123,94,167,0.08)' : 'rgba(255,255,255,0.03)' }}>
+              <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(p.id)} style={{ position: 'absolute', top: 8, left: 8, cursor: 'pointer', width: 18, height: 18 }} />
               <div style={s.imgBox}>
                 {(p as any).thumb_img || (p as any).storage_thumb_url
                   ? <img src={(p as any).storage_thumb_url || (p as any).thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} />
