@@ -30,7 +30,7 @@ type OrderRow = {
   users?: { customer_grade?: string | null } | null
 }
 
-const SELECT_FULL = 'id, order_no, status, payment_status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, customer_id, address, recipient_name, recipient_phone, earn_points, toast_used, charge_used, items, shipping_fee, grade_discount, subtotal'
+const SELECT_FULL = 'id, order_no, status, payment_status, total_amount, final_amount, coupon_discount, point_used, tracking_no, courier, ordered_at, shipped_at, delivered_at, confirmed_at, auto_confirm_at, customer_id, address, recipient_name, recipient_phone, earn_points, toast_used, charge_used, items, shipping_fee, grade_discount, subtotal,order_items(product_name,quantity,subtotal,product_price)'
 
 const SELECT_FULL_NOUSER = SELECT_FULL
 
@@ -1311,6 +1311,117 @@ export default function AdminOrdersPage() {
                             ✅ 발송완료
                           </button>
                         ) : null}
+                        {/* 주문서 출력 */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const prodsHtml = ((o as any).order_items || [])
+                              .map((item: any) =>
+                                `<tr>
+                                  <td style="padding:6px 8px;border-bottom:1px solid #f5efe8;">
+                                    ${item.product_name}
+                                  </td>
+                                  <td style="padding:6px 8px;border-bottom:1px solid #f5efe8;text-align:center;">
+                                    ${item.quantity}개
+                                  </td>
+                                  <td style="padding:6px 8px;border-bottom:1px solid #f5efe8;text-align:right;">
+                                    ₩${(item.subtotal||0).toLocaleString()}
+                                  </td>
+                                </tr>`
+                              ).join('') ||
+                              '<tr><td colspan="3" style="padding:8px;color:#bbb;text-align:center;">상품 정보 없음</td></tr>'
+                            const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Serif KR','Apple SD Gothic Neo',sans-serif;
+       font-weight:300;padding:24px;color:#111;font-size:13px;}
+  h2{font-size:15px;color:#7B5EA7;margin-bottom:16px;
+     font-weight:400;letter-spacing:.06em;}
+  .sec{margin-bottom:16px;}
+  .lbl{font-size:9px;color:#bbb;letter-spacing:.15em;margin-bottom:4px;}
+  .val{font-size:13px;color:#333;line-height:1.8;}
+  table{width:100%;border-collapse:collapse;margin-top:6px;}
+  th{font-size:9px;color:#bbb;padding:6px 8px;
+     border-bottom:2px solid #eee;text-align:left;letter-spacing:.1em;}
+  th:nth-child(2){text-align:center;}
+  th:nth-child(3){text-align:right;}
+  .total{font-size:14px;color:#7B5EA7;text-align:right;
+         padding:10px 8px 0;letter-spacing:.02em;}
+  .tip{margin-top:16px;padding:12px 14px;
+       border:0.5px solid #C9A96E;border-radius:8px;
+       font-size:12px;color:#534AB7;line-height:1.9;}
+  .tip-lbl{font-size:9px;color:#C9A96E;letter-spacing:.15em;margin-bottom:6px;}
+  .footer{margin-top:20px;font-size:9px;color:#ccc;
+          text-align:right;letter-spacing:.06em;}
+  .no-print{margin-bottom:16px;display:flex;gap:8px;}
+  @media print{
+    .no-print{display:none!important;}
+    @page{margin:15mm;}
+  }
+</style></head><body>
+<div class="no-print">
+  <button onclick="window.print()"
+    style="padding:8px 20px;background:#7B5EA7;color:#fff;
+           border:none;border-radius:7px;font-size:12px;cursor:pointer;">
+    🖨️ 인쇄
+  </button>
+  <button onclick="window.close()"
+    style="padding:8px 16px;background:#f5f5f5;color:#666;
+           border:0.5px solid #ddd;border-radius:7px;
+           font-size:12px;cursor:pointer;">
+    닫기
+  </button>
+</div>
+<h2>✦ AURAN 주문서</h2>
+<div class="sec">
+  <div class="lbl">주문 정보</div>
+  <div class="val">
+    주문번호: ${o.order_no || o.id?.slice(0,8)}<br>
+    고객명: ${(o as any).profiles?.nickname || (o as any).profiles?.name || (o as any).recipient_name || ''}<br>
+    주문일: ${new Date((o as any).ordered_at || (o as any).created_at).toLocaleDateString('ko-KR',{year:'numeric',month:'long',day:'numeric'})}<br>
+    상태: ${o.status}
+  </div>
+</div>
+<div class="sec">
+  <div class="lbl">배송지</div>
+  <div class="val">
+    ${(o as any).recipient_name||''} ${(o as any).recipient_phone||''}<br>
+    ${(o as any).address||''}
+    ${(o as any).tracking_no?`<br>운송장: ${(o as any).courier||''} ${(o as any).tracking_no}`:''}
+  </div>
+</div>
+<div class="sec">
+  <div class="lbl">주문 상품</div>
+  <table>
+    <thead>
+      <tr><th>상품명</th><th>수량</th><th>금액</th></tr>
+    </thead>
+    <tbody>${prodsHtml}</tbody>
+  </table>
+  <div class="total">실결제 ₩${(o.final_amount||0).toLocaleString()}</div>
+</div>
+${(o as any).admin_memo?`
+<div class="tip">
+  <div class="tip-lbl">✦ 맑원장 꿀팁</div>
+  ${(o as any).admin_memo}
+</div>`:''}
+<div class="footer">auran.kr · 스킨파우더룸 · since 2006</div>
+</body></html>`
+                            const w = window.open('', '_blank')
+                            if (w) { w.document.write(html); w.document.close() }
+                            else alert('팝업이 차단됐어요. 브라우저 주소창 오른쪽 팝업 허용 후 다시 눌러주세요.')
+                          }}
+                          style={{
+                            padding:'4px 8px',borderRadius:6,
+                            border:'0.5px solid #C9A96E',background:'#fdf8ee',
+                            color:'#854F0B',fontSize:11,cursor:'pointer',
+                            whiteSpace:'nowrap'
+                          }}
+                        >
+                          🖨️ 주문서
+                        </button>
                         <button
                           type="button"
                           className="btn btn-gy"

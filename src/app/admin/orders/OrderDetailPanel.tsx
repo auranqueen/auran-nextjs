@@ -23,6 +23,7 @@ type OrderRow = {
   charge_used?: number | null
   toast_used?: number | null
   items?: any[] | null
+  order_items?: Array<{product_name:string;quantity:number;subtotal:number;product_price:number}> | null
   shipping_fee?: number | null
   grade_discount?: number | null
   subtotal?: number | null
@@ -279,6 +280,45 @@ export default function OrderDetailPanel({ order, open, onClose }: Props) {
           </button>
         </section>
 
+        <div style={{padding:'0 16px 12px'}}>
+          {/* 팁카드 출력 버튼 */}
+          <button
+            onClick={() => {
+              // [팁카드 출력] 새 탭에서 인쇄 미리보기
+              const won = (order?.order_items||[]).map((i:any)=>i.product_name).join(', ') || order?.order_no || ''
+              const html = `
+            <html><head><title>팁카드</title>
+            <style>
+              body { font-family: 'Apple SD Gothic Neo', sans-serif; margin: 0; padding: 20px; }
+              .card { width: 86mm; min-height: 54mm; padding: 16px; border: 1px solid #C9A96E; border-radius: 8px; }
+              .eye { font-size: 9px; letter-spacing: 2px; color: #C9A96E; margin-bottom: 8px; }
+              .product { font-size: 14px; color: #111; margin-bottom: 10px; }
+              .comment { font-size: 11px; color: #534AB7; line-height: 1.7; border-top: 1px solid #eee; padding-top: 8px; }
+              .footer { font-size: 9px; color: #999; margin-top: 8px; text-align: right; }
+            </style></head>
+            <body>
+              <div class="card">
+                <div class="eye">✦ AURAN 처방 카드</div>
+                <div class="product">${won}</div>
+                <div class="comment">${giftComment || '맑원장 코멘트 없음'}</div>
+                <div class="footer">auran.kr</div>
+              </div>
+              <script>window.onload = () => window.print()</script>
+            </body></html>
+          `
+              const w = window.open('', '_blank')
+              if (w) { w.document.write(html); w.document.close() }
+            }}
+            style={{
+              width: '100%', padding: '9px 0', borderRadius: 10,
+              border: '0.5px solid #C9A96E', background: '#fdf8ee',
+              color: '#854F0B', fontSize: 12, cursor: 'pointer',
+            }}
+          >
+            팁카드 출력 🖨️
+          </button>
+        </div>
+
         {/* ===== [또또복권] 주문 상세 패널 — order_gifts 섹션 ===== */}
         {/* 당첨 제품 + 고객 희망 샘플 + 원장 샘플 선정 + 팁카드 출력 */}
         {giftLoading ? null : orderGift ? (
@@ -495,41 +535,6 @@ export default function OrderDetailPanel({ order, open, onClose }: Props) {
                 }}
               >
                 주문서 출력 🖨️
-              </button>
-              <button
-                onClick={() => {
-                  // [팁카드 출력] 새 탭에서 인쇄 미리보기
-                  const won = orderGift.gift_item?.product?.name || ''
-                  const html = `
-            <html><head><title>팁카드</title>
-            <style>
-              body { font-family: 'Apple SD Gothic Neo', sans-serif; margin: 0; padding: 20px; }
-              .card { width: 86mm; min-height: 54mm; padding: 16px; border: 1px solid #C9A96E; border-radius: 8px; }
-              .eye { font-size: 9px; letter-spacing: 2px; color: #C9A96E; margin-bottom: 8px; }
-              .product { font-size: 14px; color: #111; margin-bottom: 10px; }
-              .comment { font-size: 11px; color: #534AB7; line-height: 1.7; border-top: 1px solid #eee; padding-top: 8px; }
-              .footer { font-size: 9px; color: #999; margin-top: 8px; text-align: right; }
-            </style></head>
-            <body>
-              <div class="card">
-                <div class="eye">✦ AURAN 처방 카드</div>
-                <div class="product">${won}</div>
-                <div class="comment">${giftComment || '맑원장 코멘트 없음'}</div>
-                <div class="footer">auran.kr</div>
-              </div>
-              <script>window.onload = () => window.print()</script>
-            </body></html>
-          `
-                  const w = window.open('', '_blank')
-                  if (w) { w.document.write(html); w.document.close() }
-                }}
-                style={{
-                  flex: 1, padding: '9px 0', borderRadius: 10,
-                  border: '0.5px solid #C9A96E', background: '#fdf8ee',
-                  color: '#854F0B', fontSize: 12, cursor: 'pointer',
-                }}
-              >
-                팁카드 출력 🖨️
               </button>
             </div>
 
