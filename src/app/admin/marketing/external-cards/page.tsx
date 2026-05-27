@@ -156,21 +156,26 @@ export default function ExternalCardsPage() {
   const [sampleSearch, setSampleSearch] = useState('')
   const [sampleResults, setSampleResults] = useState<any[]>([])
   const [routineCards, setRoutineCards] = useState<any[]>([])
+  const [routineSearch, setRoutineSearch] = useState<Record<string, string>>({})
+  const [routineSearchResults, setRoutineSearchResults] = useState<Record<string, any[]>>({})
   const [giftTiers, setGiftTiers] = useState<any[]>([])
   const [giftTiersR, setGiftTiersR] = useState<any[]>([])
   const [showRenobel, setShowRenobel] = useState(false)
   const [totoOn, setTotoOn] = useState(false)
   const [totoCard, setTotoCard] = useState({ ico: '', name: '', tip: '', memo: '' })
+  const [totoSearch, setTotoSearch] = useState('')
+  const [totoResults, setTotoResults] = useState<any[]>([])
   const [groupBuys, setGroupBuys] = useState<any[]>([])
   const [customEvents, setCustomEvents] = useState<any[]>([])
   const [selectedDayOn, setSelectedDayOn] = useState(true)
+  const [selectedDayIdx, setSelectedDayIdx] = useState<number>(new Date().getDay())
   const [loading, setLoading] = useState(false)
   const [giftSearch, setGiftSearch] = useState('')
   const [giftResults, setGiftResults] = useState<any[]>([])
   const [activeGiftTier, setActiveGiftTier] = useState<string | null>(null)
   const prodRef = useRef<HTMLDivElement>(null)
 
-  const dayEvent = DAY_EVENTS[new Date().getDay()]
+  const dayEvent = DAY_EVENTS[selectedDayIdx]
 
   useEffect(() => {
     const supabase = createClient()
@@ -250,6 +255,44 @@ export default function ExternalCardsPage() {
     else setGiftTiersR(upd(giftTiersR))
     setGiftSearch('')
     setGiftResults([])
+  }
+
+  async function searchRoutineProd(routineId: string, q: string) {
+    setRoutineSearch(prev => ({ ...prev, [routineId]: q }))
+    if (!q.trim()) { setRoutineSearchResults(prev => ({ ...prev, [routineId]: [] })); return }
+    const results = await searchProducts(q)
+    setRoutineSearchResults(prev => ({ ...prev, [routineId]: results }))
+  }
+
+  function addRoutineProd(routineId: string, prod: any) {
+    setRoutineCards(prev => prev.map(r =>
+      r.id === routineId
+        ? { ...r, prods: r.prods ? [...r.prods.filter((p: any) => p.id !== prod.id), { ...prod, tip: '' }] : [{ ...prod, tip: '' }] }
+        : r
+    ))
+    setRoutineSearch(prev => ({ ...prev, [routineId]: '' }))
+    setRoutineSearchResults(prev => ({ ...prev, [routineId]: [] }))
+  }
+
+  function removeRoutineProd(routineId: string, prodId: string) {
+    setRoutineCards(prev => prev.map(r =>
+      r.id === routineId ? { ...r, prods: (r.prods || []).filter((p: any) => p.id !== prodId) } : r
+    ))
+  }
+
+  function updateRoutineProdTip(routineId: string, prodId: string, tip: string) {
+    setRoutineCards(prev => prev.map(r =>
+      r.id === routineId
+        ? { ...r, prods: (r.prods || []).map((p: any) => p.id === prodId ? { ...p, tip } : p) }
+        : r
+    ))
+  }
+
+  async function searchTotoProd(q: string) {
+    setTotoSearch(q)
+    if (!q.trim()) { setTotoResults([]); return }
+    const results = await searchProducts(q)
+    setTotoResults(results)
   }
 
   const handlePrint = () => {
@@ -346,13 +389,61 @@ export default function ExternalCardsPage() {
       {/* 6. 루틴 케어 카드 */}
       <section style={{ marginBottom: 24 }}>
         <div style={secTitle}>6. 루틴 케어 카드</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
           {ROUTINE_PRESETS.map(r => (
-            <button key={r.id} type="button" onClick={() => setRoutineCards(prev => prev.find(x => x.id === r.id) ? prev.filter(x => x.id !== r.id) : [...prev, r])} style={{ padding: '6px 10px', borderRadius: 8, border: routineCards.find(x => x.id === r.id) ? '0.5px solid #7B5EA7' : '0.5px solid #ddd', background: routineCards.find(x => x.id === r.id) ? '#f5f0ff' : '#fff', fontSize: 11, cursor: 'pointer', color: '#111' }}>
-              {r.tag} {r.name}
-            </button>
+            <button key={r.id} type="button"
+              onClick={() => setRoutineCards(prev =>
+                prev.find(x => x.id === r.id)
+                  ? prev.filter(x => x.id !== r.id)
+                  : [...prev, { id: r.id, name: r.name, tag: r.tag, desc: r.desc, prods: [] }]
+              )}
+              style={{
+                padding: '6px 14px', borderRadius: 100,
+                border: routineCards.find(x => x.id === r.id) ? '1.5px solid #7B5EA7' : '0.5px solid #ddd',
+                background: routineCards.find(x => x.id === r.id) ? '#f5f0f8' : '#fff',
+                color: routineCards.find(x => x.id === r.id) ? '#7B5EA7' : '#888',
+                fontSize: 12, cursor: 'pointer',
+              }}
+            >{r.tag} {r.name}</button>
           ))}
         </div>
+        {routineCards.map(r => (
+          <div key={r.id} style={{ border: '0.5px solid #e8e0d8', borderRadius: 10, padding: 14, marginBottom: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+              <span style={{ fontSize: 12, color: '#7B5EA7' }}>{r.tag} {r.name}</span>
+              <button type="button" onClick={() => setRoutineCards(prev => prev.filter(x => x.id !== r.id))}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#bbb', fontSize: 16 }}>×</button>
+            </div>
+            <div style={{ fontSize: 10, color: '#888', marginBottom: 8, fontStyle: 'italic' }}>{r.desc}</div>
+            <input
+              value={routineSearch[r.id] || ''}
+              onChange={e => searchRoutineProd(r.id, e.target.value)}
+              placeholder="샘플 제품 검색..."
+              style={{ width: '100%', padding: '7px 10px', border: '0.5px solid #eee', borderRadius: 7, fontSize: 12, marginBottom: 6, boxSizing: 'border-box' as const }}
+            />
+            {(routineSearchResults[r.id] || []).length > 0 && (
+              <div style={{ border: '0.5px solid #C9A96E', borderRadius: 8, overflow: 'hidden', marginBottom: 6 }}>
+                {(routineSearchResults[r.id] || []).map((p: any) => (
+                  <div key={p.id} onClick={() => addRoutineProd(r.id, p)}
+                    style={{ padding: '8px 12px', fontSize: 12, cursor: 'pointer', borderBottom: '0.5px solid #f5efe8' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#fdf8f2')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                  >{p.name}</div>
+                ))}
+              </div>
+            )}
+            {(r.prods || []).map((p: any) => (
+              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '0.5px solid #f5efe8' }}>
+                <span style={{ flex: 1, fontSize: 12, color: '#333' }}>{p.name}</span>
+                <input value={p.tip || ''} onChange={e => updateRoutineProdTip(r.id, p.id, e.target.value)}
+                  placeholder="사용법 한 줄"
+                  style={{ width: 160, padding: '4px 7px', border: '0.5px solid #eee', borderRadius: 5, fontSize: 11 }} />
+                <button type="button" onClick={() => removeRoutineProd(r.id, p.id)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', fontSize: 14 }}>×</button>
+              </div>
+            ))}
+          </div>
+        ))}
       </section>
 
       {/* 7. 금액별 선물 */}
@@ -399,8 +490,29 @@ export default function ExternalCardsPage() {
         </label>
         {totoOn ? (
           <div style={{ display: 'grid', gap: 8 }}>
+            <input
+              value={totoSearch}
+              onChange={e => searchTotoProd(e.target.value)}
+              placeholder="당첨 선물 제품 검색..."
+              style={{ width: '100%', padding: '8px 12px', border: '0.5px solid #F0D878', borderRadius: 8, fontSize: 12, marginBottom: 6, boxSizing: 'border-box' as const, background: '#FFFDF6' }}
+            />
+            {totoResults.length > 0 && (
+              <div style={{ border: '0.5px solid #C9A96E', borderRadius: 8, overflow: 'hidden', marginBottom: 8 }}>
+                {totoResults.map((p: any) => (
+                  <div key={p.id}
+                    onClick={() => {
+                      setTotoCard(prev => ({ ...prev, name: p.name, ico: '🎁' }))
+                      setTotoSearch(p.name)
+                      setTotoResults([])
+                    }}
+                    style={{ padding: '8px 12px', fontSize: 12, cursor: 'pointer', borderBottom: '0.5px solid #f5efe8' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#fdf8f2')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                  >{p.name}</div>
+                ))}
+              </div>
+            )}
             <input value={totoCard.ico} onChange={e => setTotoCard({ ...totoCard, ico: e.target.value })} placeholder="아이콘 (이모지)" style={inp} />
-            <input value={totoCard.name} onChange={e => setTotoCard({ ...totoCard, name: e.target.value })} placeholder="당첨 제품명" style={inp} />
             <input value={totoCard.tip} onChange={e => setTotoCard({ ...totoCard, tip: e.target.value })} placeholder="사용 팁" style={inp} />
             <input value={totoCard.memo} onChange={e => setTotoCard({ ...totoCard, memo: e.target.value })} placeholder="메모" style={inp} />
           </div>
@@ -414,6 +526,19 @@ export default function ExternalCardsPage() {
           <input type="checkbox" checked={selectedDayOn} onChange={e => setSelectedDayOn(e.target.checked)} />
           날마다 행복데이 — {dayEvent.name}
         </label>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', margin: '8px 0' }}>
+          {[0, 1, 2, 3, 4, 5, 6].map(i => (
+            <button key={i} type="button"
+              onClick={() => setSelectedDayIdx(i)}
+              style={{
+                padding: '4px 10px', borderRadius: 100, fontSize: 11, cursor: 'pointer',
+                border: selectedDayIdx === i ? '1.5px solid #7B5EA7' : '0.5px solid #ddd',
+                background: selectedDayIdx === i ? '#f5f0f8' : '#fff',
+                color: selectedDayIdx === i ? '#7B5EA7' : '#888',
+              }}
+            >{['일', '월', '화', '수', '목', '금', '토'][i]}요일</button>
+          ))}
+        </div>
         {selectedDayOn ? (
           <div style={{ fontSize: 12, color: '#534AB7', lineHeight: 1.7, marginBottom: 12, padding: 10, border: '0.5px solid #eee', borderRadius: 8 }}>
             <div>{dayEvent.title}</div>
