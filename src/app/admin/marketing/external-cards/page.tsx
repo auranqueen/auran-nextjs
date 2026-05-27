@@ -64,49 +64,8 @@ async function searchProducts(q: string) {
   return data || []
 }
 
-function generateQRMatrix(text: string): boolean[][] {
-  const size = 21
-  const m: boolean[][] = Array.from({ length: size }, () => Array(size).fill(false))
-  let h = 0
-  for (let i = 0; i < text.length; i++) h = ((h << 5) - h + text.charCodeAt(i)) | 0
-  for (let y = 0; y < size; y++) {
-    for (let x = 0; x < size; x++) {
-      const v = (x * 7 + y * 11 + h + (x ^ y)) % 17
-      m[y][x] = v < 8
-    }
-  }
-  const drawFinder = (fx: number, fy: number) => {
-    for (let dy = 0; dy < 7; dy++) {
-      for (let dx = 0; dx < 7; dx++) {
-        const on = dx === 0 || dx === 6 || dy === 0 || dy === 6 || (dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4)
-        if (fy + dy < size && fx + dx < size) m[fy + dy][fx + dx] = on
-      }
-    }
-  }
-  drawFinder(0, 0)
-  drawFinder(size - 7, 0)
-  drawFinder(0, size - 7)
-  return m
-}
-
-function generateQRDataURL(text: string, size: number): string {
-  const matrix = generateQRMatrix(text)
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return ''
-  const n = matrix.length
-  const cell = size / n
-  ctx.fillStyle = '#fff'
-  ctx.fillRect(0, 0, size, size)
-  ctx.fillStyle = '#111'
-  for (let y = 0; y < n; y++) {
-    for (let x = 0; x < n; x++) {
-      if (matrix[y][x]) ctx.fillRect(x * cell, y * cell, cell, cell)
-    }
-  }
-  return canvas.toDataURL('image/png')
+function generateQRDataURL(text: string, _size: number): string {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(text)}&color=1A1714&bgcolor=ffffff&margin=2`
 }
 
 function esc(s: string) {
