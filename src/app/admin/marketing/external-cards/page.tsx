@@ -1005,6 +1005,35 @@ function ExternalCardsPage() {
             >{r.tag} {r.name}</button>
           ))}
         </div>
+        <button
+          type="button"
+          onClick={() => setRoutineCards(prev => [
+            ...prev,
+            {
+              id: `custom_${Date.now()}`,
+              name: '직접 입력',
+              tag: '✦ 커스텀',
+              desc: '',
+              prods: [],
+              routineTitle: '',
+              routineMemo: '',
+            },
+          ])}
+          style={{
+            marginTop: 10,
+            width: '100%',
+            padding: '8px 0',
+            borderRadius: 8,
+            border: '0.5px dashed #7B5EA7',
+            background: '#f5f0f8',
+            color: '#7B5EA7',
+            fontSize: 12,
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          + 루틴 카드 직접 추가
+        </button>
         {routineCards.map(r => (
           <div key={r.id} style={{ border: '0.5px solid #e8e0d8', borderRadius: 10, padding: 14, marginBottom: 10 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
