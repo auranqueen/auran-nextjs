@@ -1,7 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
 const GIFT_TIERS = [
@@ -185,7 +185,7 @@ ${events ? `<div class="sec"><div class="lbl">이벤트 안내</div>${events}</d
 </body></html>`
 }
 
-export default function ExternalCardsPage() {
+function ExternalCardsPage() {
   const searchParams = useSearchParams()
   const initMode    = searchParams.get('mode') || ''
   const initName    = searchParams.get('name') ? decodeURIComponent(searchParams.get('name')!) : ''
@@ -1044,5 +1044,13 @@ export default function ExternalCardsPage() {
         {loading ? '준비 중...' : '🖨️ 케어카드 인쇄하기'}
       </button>
     </div>
+  )
+}
+
+export default function ExternalCardsPageWrapper() {
+  return (
+    <Suspense fallback={<div style={{ padding: 40, textAlign: 'center', color: '#888' }}>로딩 중...</div>}>
+      <ExternalCardsPage />
+    </Suspense>
   )
 }
