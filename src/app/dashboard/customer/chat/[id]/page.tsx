@@ -940,7 +940,7 @@ export default function CustomerChatRoomPage() {
         </div>
       ) : null}
 
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '80px 16px 160px', paddingBottom: chatBanner ? 240 : 100 }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '80px 16px 160px', paddingBottom: chatBanner ? 170 : 100 }}>
         {routineCards.length > 0 ? (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 8 }}>루틴 알림장</div>
@@ -2567,107 +2567,6 @@ export default function CustomerChatRoomPage() {
               <div style={{ color: 'rgba(201,169,110,0.55)', fontSize: 15, zIndex: 1 }}>›</div>
             </div>
           )}
-          <div style={{ display: 'flex', padding: '8px 13px 4px' }}>
-            {chatQuickBtns.skin_report && (
-              <div
-                onClick={() => router.push('/dashboard/customer/skin-report')}
-                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '6px 4px 4px', borderRadius: 11, cursor: 'pointer' }}
-              >
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 11,
-                    background: 'rgba(123,94,167,0.18)',
-                    border: '1px solid rgba(123,94,167,0.28)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 15,
-                  }}
-                >
-                  📊
-                </div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 1.3 }}>
-                  내 피부
-                  <br />
-                  리포트
-                </div>
-              </div>
-            )}
-            {chatQuickBtns.owner_pick && (
-              <div
-                onClick={() => router.push('/dashboard/customer?tab=owner_pick')}
-                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '6px 4px 4px', borderRadius: 11, cursor: 'pointer' }}
-              >
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 11,
-                    background: 'rgba(201,169,110,0.15)',
-                    border: '1px solid rgba(201,169,110,0.25)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 15,
-                  }}
-                >
-                  ✨
-                </div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 1.3 }}>
-                  원장 픽
-                  <br />
-                  이번 달
-                </div>
-              </div>
-            )}
-            {chatQuickBtns.toast_wallet && (
-              <div
-                onClick={() => router.push('/dashboard/customer/toast')}
-                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '6px 4px 4px', borderRadius: 11, cursor: 'pointer' }}
-              >
-                <div
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: 11,
-                    background: 'rgba(74,222,128,0.1)',
-                    border: '1px solid rgba(74,222,128,0.22)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 15,
-                    position: 'relative',
-                  }}
-                >
-                  🍞
-                  {toastBalance > 0 && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: -3,
-                        right: -3,
-                        background: '#7B5EA7',
-                        color: '#fff',
-                        fontSize: 7,
-                        padding: '1.5px 4px',
-                        borderRadius: 8,
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {toastBalance.toLocaleString()}T
-                    </div>
-                  )}
-                </div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 1.3 }}>
-                  내 토스트
-                  <br />
-                  쓰기
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       )}
       <div
@@ -2675,7 +2574,7 @@ export default function CustomerChatRoomPage() {
           position: 'fixed',
           left: 0,
           right: 0,
-          bottom: chatBanner ? 'calc(env(safe-area-inset-bottom, 0px) + 110px)' : 0,
+          bottom: chatBanner ? 'calc(env(safe-area-inset-bottom, 0px) + 72px)' : 0,
           padding: '10px 12px calc(10px + env(safe-area-inset-bottom, 0px))',
           paddingBottom: chatBanner ? 'calc(env(safe-area-inset-bottom) + 8px)' : 'calc(env(safe-area-inset-bottom) + 60px)',
           background: 'linear-gradient(180deg, transparent, #0D0B09 28%)',
