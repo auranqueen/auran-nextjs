@@ -2574,7 +2574,7 @@ export default function CustomerChatRoomPage() {
           position: 'fixed',
           left: 0,
           right: 0,
-          bottom: chatBanner ? 'calc(env(safe-area-inset-bottom, 0px) + 72px)' : 0,
+          bottom: chatBanner ? 'calc(env(safe-area-inset-bottom, 0px) + 90px)' : 0,
           padding: '10px 12px calc(10px + env(safe-area-inset-bottom, 0px))',
           paddingBottom: chatBanner ? 'calc(env(safe-area-inset-bottom) + 8px)' : 'calc(env(safe-area-inset-bottom) + 60px)',
           background: 'linear-gradient(180deg, transparent, #0D0B09 28%)',
