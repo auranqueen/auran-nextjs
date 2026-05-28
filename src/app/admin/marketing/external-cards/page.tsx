@@ -57,8 +57,8 @@ async function searchProducts(q: string, brandId?: string) {
   const supabase = createClient()
   let query = supabase
     .from('products')
-    .select('id, name, thumbnail_url, brand_id, retail_price, sale_price')
-    .eq('status', 'active')
+    .select('id, name, thumbnail_url, brand_id')
+    .neq('status', 'deleted')
     .limit(12)
   if (q.trim()) query = query.ilike('name', `%${q}%`)
   if (brandId) query = query.eq('brand_id', brandId)
@@ -292,12 +292,12 @@ function ExternalCardsPage() {
     const supabase = createClient()
     supabase
       .from('group_buys')
-      .select('id, ends_at, gift_description, product:products(name)')
+      .select('id, ends_at, gift_title, gift_description, product:products(name)')
       .eq('is_active', true)
       .then(({ data }) => {
         if (data?.length) {
           setGroupBuys(data.map((g: any) => ({
-            name: g.product?.name || '공동구매',
+            name: g.gift_title || g.product?.name || '공동구매',
             desc: g.gift_description || '',
             period: g.ends_at ? String(g.ends_at).slice(0, 10) + ' 까지' : '',
             fromDB: true,
@@ -564,17 +564,28 @@ function ExternalCardsPage() {
   }
 
   const handlePrint = async () => {
-    setLoading(true)
-    await saveCardToDB()
-    const html = buildPrintHTML({
-      customerName, selProds, tipText, cmtText, bundleItems, sampleItems, routineCards,
-      giftTiers, giftTiersR, showRenobel, totosOn: totoOn, totosCard: totoCard,
-      groupBuys, customEvents, selectedDayOn, dayEvent,
-    })
+    // 팝업 차단 방지: 클릭 직후 바로 열기
     const w = window.open('', '_blank')
-    if (w) { w.document.write(html); w.document.close() }
-    else alert('팝업이 차단됐어요. 브라우저 주소창 오른쪽 팝업 허용 후 다시 눌러주세요.')
-    setLoading(false)
+    if (!w) {
+      alert('팝업이 차단됐어요. 브라우저 주소창 오른쪽 팝업 허용 후 다시 눌러주세요.')
+      return
+    }
+    setLoading(true)
+    try {
+      await saveCardToDB()
+      const html = buildPrintHTML({
+        customerName, selProds, tipText, cmtText, bundleItems, sampleItems, routineCards,
+        giftTiers, giftTiersR, showRenobel, totosOn: totoOn, totosCard: totoCard,
+        groupBuys, customEvents, selectedDayOn, dayEvent,
+      })
+      w.document.write(html)
+      w.document.close()
+    } catch (e) {
+      console.error('인쇄 실패:', e)
+      w.close()
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
