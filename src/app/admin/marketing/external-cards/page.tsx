@@ -1,7 +1,8 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 
 const GIFT_TIERS = [
   { id: 't20', label: '20만원 이상', gold: false },
@@ -185,9 +186,24 @@ ${events ? `<div class="sec"><div class="lbl">이벤트 안내</div>${events}</d
 }
 
 export default function ExternalCardsPage() {
-  const [customerName, setCustomerName] = useState('')
+  const searchParams = useSearchParams()
+  const initMode    = searchParams.get('mode') || ''
+  const initName    = searchParams.get('name') ? decodeURIComponent(searchParams.get('name')!) : ''
+  const initUserId  = searchParams.get('user_id') || ''
+  const initOrderId = searchParams.get('order_id') || ''
+  const initProds   = searchParams.get('prods') || ''
+  const [customerName, setCustomerName] = useState(initName)
+  const [customerId, setCustomerId] = useState(initUserId)
   const [customerHistory, setCustomerHistory] = useState<any>(null)
-  const [selProds, setSelProds] = useState<any[]>([])
+  const [selProds, setSelProds] = useState<any[]>(() => {
+    if (!initProds) return []
+    try {
+      return initProds.split(',').map((s: string) => {
+        const p = JSON.parse(decodeURIComponent(s))
+        return { name: p.name, qty: p.qty || 1, price: p.price || 0, id: p.name }
+      })
+    } catch { return [] }
+  })
   const [prodSearch, setProdSearch] = useState('')
   const [prodResults, setProdResults] = useState<any[]>([])
   const [tipText, setTipText] = useState('')
@@ -225,6 +241,23 @@ export default function ExternalCardsPage() {
   const dayEvent = DAY_EVENTS[selectedDayIdx]
 
   useEffect(() => {
+    if (!initName && !initProds) return
+    // URL 파라미터로 들어온 경우 임시저장 덮어쓰지 않음
+    if (initName) setCustomerName(initName)
+    if (initUserId) setCustomerId(initUserId)
+    if (initProds) {
+      try {
+        const parsed = initProds.split(',').map((s: string) => {
+          const p = JSON.parse(decodeURIComponent(s))
+          return { name: p.name, qty: p.qty || 1, price: p.price || 0, id: p.name }
+        })
+        setSelProds(parsed)
+      } catch {}
+    }
+  }, [])
+
+  useEffect(() => {
+    if (initName || initProds) return // URL 파라미터 우선
     const saved = localStorage.getItem('auran_care_card_draft')
     if (!saved) return
     try {
@@ -455,6 +488,28 @@ export default function ExternalCardsPage() {
         </div>
       )}
       <div style={{ fontSize: 16, color: '#7B5EA7', marginBottom: 20, fontWeight: 400 }}>외부고객 케어카드</div>
+      {initMode === 'member' && (
+        <div style={{
+          display:'inline-flex', alignItems:'center', gap:6,
+          padding:'4px 12px', borderRadius:100,
+          background:'#f5f0f8', border:'0.5px solid #7B5EA7',
+          fontSize:11, color:'#7B5EA7', marginBottom:12
+        }}>
+          💜 오랜 앱 회원 케어카드 모드
+          {initOrderId && <span style={{color:'#bbb', fontSize:10}}>· 주문 {initOrderId.slice(0,8)}</span>}
+        </div>
+      )}
+      {initMode === 'external' && (
+        <div style={{
+          display:'inline-flex', alignItems:'center', gap:6,
+          padding:'4px 12px', borderRadius:100,
+          background:'#fdf8ee', border:'0.5px solid #C9A96E',
+          fontSize:11, color:'#854F0B', marginBottom:12
+        }}>
+          📦 외부고객 케어카드 모드
+          {initOrderId && <span style={{color:'#bbb', fontSize:10}}>· 주문 {initOrderId.slice(0,8)}</span>}
+        </div>
+      )}
 
       <div style={{ marginBottom: 16, padding: '12px 16px', background: '#f9f7fc', borderRadius: 10, border: '0.5px solid #e8e0f0' }}>
         <div style={{ fontSize: 10, color: '#7B5EA7', letterSpacing: '.12em', marginBottom: 8 }}>브랜드 필터 — 선택하면 전체 검색창에 적용돼요</div>
