@@ -613,7 +613,20 @@ function ExternalCardsPage() {
           </div>
         </div>
       )}
-      <div style={{ fontSize: 16, color: '#7B5EA7', marginBottom: 20, fontWeight: 400 }}>{initMode === 'member' ? '내부고객 케어카드' : '외부고객 케어카드'}</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <span style={{ fontSize: 16, color: '#7B5EA7', fontWeight: 400 }}>{initMode === 'member' ? '내부고객 케어카드' : '외부고객 케어카드'}</span>
+        <button
+          type="button"
+          onClick={() => window.close()}
+          style={{
+            padding: '6px 14px', borderRadius: 7,
+            border: '0.5px solid #ddd', background: '#f5f5f5',
+            color: '#666', fontSize: 12, cursor: 'pointer',
+          }}
+        >
+          ✕ 닫기
+        </button>
+      </div>
       {initMode === 'member' && (
         <div style={{
           display:'inline-flex', alignItems:'center', gap:6,
