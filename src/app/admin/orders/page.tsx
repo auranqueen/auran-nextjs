@@ -693,6 +693,28 @@ export default function AdminOrdersPage() {
             <button type="button" className="btn btn-bl" onClick={downloadCjCsv}>
               📦 CJ송장 양식 다운
             </button>
+            <button
+              onClick={() => window.open('/admin/marketing/external-cards?mode=member', '_blank')}
+              style={{
+                padding:'7px 14px', borderRadius:7,
+                border:'1.5px solid #7B5EA7', background:'#f5f0f8',
+                color:'#7B5EA7', fontSize:12, cursor:'pointer',
+                whiteSpace:'nowrap' as const, marginLeft:6
+              }}
+            >
+              💜 내부 케어카드
+            </button>
+            <button
+              onClick={() => window.open('/admin/marketing/external-cards?mode=external', '_blank')}
+              style={{
+                padding:'7px 14px', borderRadius:7,
+                border:'1.5px solid #C9A96E', background:'#fdf8ee',
+                color:'#854F0B', fontSize:12, cursor:'pointer',
+                whiteSpace:'nowrap' as const, marginLeft:6
+              }}
+            >
+              📦 외부 케어카드
+            </button>
             {tab === '배송완료' ? (
               <button type="button" className="btn btn-gr" onClick={() => void bulkAutoConfirm()}>
                 D-0 자동확정 처리
@@ -1414,9 +1436,9 @@ ${(o as any).admin_memo?`
                             else alert('팝업이 차단됐어요. 브라우저 주소창 오른쪽 팝업 허용 후 다시 눌러주세요.')
                           }}
                           style={{
-                            padding:'4px 8px',borderRadius:6,
+                            padding:'6px 12px',borderRadius:6,
                             border:'0.5px solid #C9A96E',background:'#fdf8ee',
-                            color:'#854F0B',fontSize:11,cursor:'pointer',
+                            color:'#854F0B',fontSize:12,cursor:'pointer',
                             whiteSpace:'nowrap'
                           }}
                         >
@@ -1447,9 +1469,9 @@ ${(o as any).admin_memo?`
                             )
                           }}
                           style={{
-                            padding:'4px 8px',borderRadius:6,
+                            padding:'6px 12px',borderRadius:6,
                             border:'0.5px solid #7B5EA7',background:'#f5f0f8',
-                            color:'#7B5EA7',fontSize:11,cursor:'pointer',
+                            color:'#7B5EA7',fontSize:12,cursor:'pointer',
                             whiteSpace:'nowrap'
                           }}
                         >
@@ -1475,9 +1497,9 @@ ${(o as any).admin_memo?`
                             )
                           }}
                           style={{
-                            padding:'4px 8px',borderRadius:6,
+                            padding:'6px 12px',borderRadius:6,
                             border:'0.5px solid #C9A96E',background:'#fdf8ee',
-                            color:'#854F0B',fontSize:11,cursor:'pointer',
+                            color:'#854F0B',fontSize:12,cursor:'pointer',
                             whiteSpace:'nowrap'
                           }}
                         >
