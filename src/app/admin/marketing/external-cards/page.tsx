@@ -52,15 +52,16 @@ const inp = {
 const secTitle = { fontSize: 14, color: '#7B5EA7', marginBottom: 10, fontWeight: 400, letterSpacing: '.04em' }
 const lbl = { fontSize: 11, color: '#888', marginBottom: 4, fontWeight: 400 }
 
-async function searchProducts(q: string) {
-  if (!q.trim()) return []
+async function searchProducts(q: string, brandId?: string) {
   const supabase = createClient()
-  const { data } = await supabase
+  let query = supabase
     .from('products')
-    .select('id, name, thumb_img, retail_price, sale_price')
-    .ilike('name', `%${q}%`)
-    .eq('is_active', true)
-    .limit(8)
+    .select('id, name, thumbnail_url, brand_id, retail_price, sale_price')
+    .eq('status', 'active')
+    .limit(12)
+  if (q.trim()) query = query.ilike('name', `%${q}%`)
+  if (brandId) query = query.eq('brand_id', brandId)
+  const { data } = await query
   return data || []
 }
 
@@ -216,9 +217,36 @@ export default function ExternalCardsPage() {
   const [giftSearch, setGiftSearch] = useState('')
   const [giftResults, setGiftResults] = useState<any[]>([])
   const [activeGiftTier, setActiveGiftTier] = useState<string | null>(null)
+  const [showPreview, setShowPreview] = useState(false)
+  const [brandFilter, setBrandFilter] = useState('')
+  const [brandList, setBrandList] = useState<{ id: string; name: string }[]>([])
   const prodRef = useRef<HTMLDivElement>(null)
 
   const dayEvent = DAY_EVENTS[selectedDayIdx]
+
+  useEffect(() => {
+    const saved = localStorage.getItem('auran_care_card_draft')
+    if (!saved) return
+    try {
+      const d = JSON.parse(saved)
+      if (d.customerName) setCustomerName(d.customerName)
+      if (d.selProds) setSelProds(d.selProds)
+      if (d.tipText) setTipText(d.tipText)
+      if (d.cmtText) setCmtText(d.cmtText)
+      if (d.bundleItems) setBundleItems(d.bundleItems)
+      if (d.sampleItems) setSampleItems(d.sampleItems)
+      if (d.routineCards) setRoutineCards(d.routineCards)
+      if (d.giftTiers) setGiftTiers(d.giftTiers)
+      if (d.giftTiersR) setGiftTiersR(d.giftTiersR)
+      if (d.showRenobel !== undefined) setShowRenobel(d.showRenobel)
+      if (d.totoOn !== undefined) setTotoOn(d.totoOn)
+      if (d.totoCard) setTotoCard(d.totoCard)
+      if (d.groupBuys) setGroupBuys(d.groupBuys)
+      if (d.customEvents) setCustomEvents(d.customEvents)
+      if (d.selectedDayOn !== undefined) setSelectedDayOn(d.selectedDayOn)
+      if (d.selectedDayIdx !== undefined) setSelectedDayIdx(d.selectedDayIdx)
+    } catch {}
+  }, [])
 
   useEffect(() => {
     const supabase = createClient()
@@ -239,6 +267,16 @@ export default function ExternalCardsPage() {
   }, [])
 
   useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('brands')
+      .select('id, name')
+      .eq('is_active', true)
+      .order('name')
+      .then(({ data }) => { if (data) setBrandList(data) })
+  }, [])
+
+  useEffect(() => {
     const q = customerName.trim()
     if (q.length < 2) { setCustomerHistory(null); return }
     const t = setTimeout(async () => {
@@ -251,24 +289,30 @@ export default function ExternalCardsPage() {
 
   useEffect(() => {
     const q = prodSearch.trim()
-    if (q.length < 1) { setProdResults([]); return }
-    const t = setTimeout(() => { void searchProducts(q).then(setProdResults) }, 220)
+    if (q.length < 1 && !brandFilter) { setProdResults([]); return }
+    const t = setTimeout(() => {
+      void searchProducts(q, brandFilter || undefined).then(setProdResults)
+    }, 220)
     return () => clearTimeout(t)
-  }, [prodSearch])
+  }, [prodSearch, brandFilter])
 
   useEffect(() => {
     const q = bundleSearch.trim()
-    if (q.length < 1) { setBundleResults([]); return }
-    const t = setTimeout(() => { void searchProducts(q).then(setBundleResults) }, 220)
+    if (q.length < 1 && !brandFilter) { setBundleResults([]); return }
+    const t = setTimeout(() => {
+      void searchProducts(q, brandFilter || undefined).then(setBundleResults)
+    }, 220)
     return () => clearTimeout(t)
-  }, [bundleSearch])
+  }, [bundleSearch, brandFilter])
 
   useEffect(() => {
     const q = sampleSearch.trim()
-    if (q.length < 1) { setSampleResults([]); return }
-    const t = setTimeout(() => { void searchProducts(q).then(setSampleResults) }, 220)
+    if (q.length < 1 && !brandFilter) { setSampleResults([]); return }
+    const t = setTimeout(() => {
+      void searchProducts(q, brandFilter || undefined).then(setSampleResults)
+    }, 220)
     return () => clearTimeout(t)
-  }, [sampleSearch])
+  }, [sampleSearch, brandFilter])
 
   useEffect(() => {
     const q = giftSearch.trim()
@@ -376,7 +420,64 @@ export default function ExternalCardsPage() {
 
   return (
     <div style={{ background: '#fff', color: '#111', padding: 20, minHeight: '100vh', fontWeight: 400 }}>
+      {showPreview && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 9999,
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'center', overflowY: 'auto', padding: '20px 0' }}>
+          <div style={{ background: '#fff', borderRadius: 12, width: '90%', maxWidth: 720, margin: '0 auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+              padding: '14px 20px', borderBottom: '0.5px solid #eee', position: 'sticky', top: 0, background: '#fff', zIndex: 1 }}>
+              <span style={{ fontSize: 14, color: '#7B5EA7' }}>케어카드 미리보기</span>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" onClick={handlePrint}
+                  style={{ padding: '8px 18px', background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 7, fontSize: 12, cursor: 'pointer' }}>
+                  🖨️ 인쇄하기
+                </button>
+                <button type="button" onClick={() => setShowPreview(false)}
+                  style={{ padding: '8px 14px', background: '#f5f5f5', color: '#666', border: '0.5px solid #ddd', borderRadius: 7, fontSize: 12, cursor: 'pointer' }}>
+                  닫기
+                </button>
+              </div>
+            </div>
+            <div style={{ padding: 20 }}>
+              <iframe
+                srcDoc={buildPrintHTML({
+                  customerName, selProds, tipText, cmtText,
+                  bundleItems, sampleItems, routineCards,
+                  giftTiers, giftTiersR, showRenobel,
+                  totosOn: totoOn, totosCard: totoCard,
+                  groupBuys, customEvents, selectedDayOn, dayEvent,
+                })}
+                style={{ width: '100%', height: 800, border: 'none', borderRadius: 8 }}
+                title="케어카드 미리보기"
+              />
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ fontSize: 16, color: '#7B5EA7', marginBottom: 20, fontWeight: 400 }}>외부고객 케어카드</div>
+
+      <div style={{ marginBottom: 16, padding: '12px 16px', background: '#f9f7fc', borderRadius: 10, border: '0.5px solid #e8e0f0' }}>
+        <div style={{ fontSize: 10, color: '#7B5EA7', letterSpacing: '.12em', marginBottom: 8 }}>브랜드 필터 — 선택하면 전체 검색창에 적용돼요</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          <button type="button"
+            onClick={() => setBrandFilter('')}
+            style={{ padding: '4px 12px', borderRadius: 100, border: brandFilter === '' ? '1.5px solid #7B5EA7' : '0.5px solid #ddd',
+              background: brandFilter === '' ? '#7B5EA7' : '#fff',
+              color: brandFilter === '' ? '#fff' : '#888', fontSize: 11, cursor: 'pointer' }}>
+            전체
+          </button>
+          {brandList.map(b => (
+            <button key={b.id} type="button"
+              onClick={() => setBrandFilter(brandFilter === b.id ? '' : b.id)}
+              style={{ padding: '4px 12px', borderRadius: 100,
+                border: brandFilter === b.id ? '1.5px solid #7B5EA7' : '0.5px solid #ddd',
+                background: brandFilter === b.id ? '#f5f0f8' : '#fff',
+                color: brandFilter === b.id ? '#7B5EA7' : '#888', fontSize: 11, cursor: 'pointer' }}>
+              {b.name}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* 1. 고객 정보 */}
       <section style={{ marginBottom: 24 }}>
@@ -670,6 +771,28 @@ export default function ExternalCardsPage() {
       </section>
 
       {/* 10. 인쇄 */}
+      <button type="button"
+        onClick={() => {
+          const data = {
+            customerName, selProds, tipText, cmtText,
+            bundleItems, sampleItems, routineCards,
+            giftTiers, giftTiersR, showRenobel,
+            totoOn, totoCard, groupBuys, customEvents,
+            selectedDayOn, selectedDayIdx,
+          }
+          localStorage.setItem('auran_care_card_draft', JSON.stringify(data))
+          alert('임시저장 됐어요 💜')
+        }}
+        style={{ width: '100%', padding: '11px 0', borderRadius: 10, border: '0.5px solid #C9A96E',
+          background: '#FFFDF6', color: '#854F0B', fontSize: 13, cursor: 'pointer', marginBottom: 8 }}>
+        💾 임시저장
+      </button>
+      <button type="button"
+        onClick={() => setShowPreview(true)}
+        style={{ width: '100%', padding: '11px 0', borderRadius: 10, border: '0.5px solid #7B5EA7',
+          background: '#f5f0f8', color: '#7B5EA7', fontSize: 13, cursor: 'pointer', marginBottom: 8 }}>
+        👁 미리보기
+      </button>
       <button type="button" onClick={handlePrint} disabled={loading} style={{ width: '100%', padding: '14px 0', borderRadius: 10, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 14, fontWeight: 400, cursor: loading ? 'not-allowed' : 'pointer' }}>
         {loading ? '준비 중...' : '🖨️ 케어카드 인쇄하기'}
       </button>
