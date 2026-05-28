@@ -668,6 +668,28 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
     }
   }
 
+  const onDuplicate = async () => {
+    if (!editId) return
+    if (!confirm('이 제품을 복사하시겠어요?')) return
+    try {
+      const { data: origin, error: fetchErr } = await supabase
+        .from('products')
+        .select('*')
+        .eq('id', editId)
+        .single()
+      if (fetchErr || !origin) { alert('제품 조회 실패'); return }
+      const { id, created_at, updated_at, approved_at, deleted_at, sales_count, review_count, avg_rating, ...rest } = origin
+      const { error: insErr } = await supabase
+        .from('products')
+        .insert({ ...rest, name: rest.name + ' (복사본)', status: 'inactive', is_active: false })
+      if (insErr) { alert('복사 실패: ' + insErr.message); return }
+      alert('복사 완료! 제품 목록에서 확인하세요.')
+    } catch (e) {
+      alert('복사 중 오류 발생')
+    }
+  }
+  // [제품 복사] 신규 함수
+
   const onSave = async (tagOverride?: Partial<typeof form>) => {
     setMsg('')
     if (!brandId) {
@@ -2304,6 +2326,16 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
         >
           임시저장
         </button>
+        {editId && (
+          <button
+            type="button"
+            onClick={() => void onDuplicate()}
+            style={{ marginRight: 8 }}
+          >
+            복사하기
+          </button>
+        )}
+        {/* [제품 복사] 버튼 — 신규 제품(new)일 때는 숨김 */}
         <button
           type="button"
           onClick={() => {
