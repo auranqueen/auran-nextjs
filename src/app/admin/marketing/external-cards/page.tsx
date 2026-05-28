@@ -487,7 +487,7 @@ export default function ExternalCardsPage() {
           </div>
         </div>
       )}
-      <div style={{ fontSize: 16, color: '#7B5EA7', marginBottom: 20, fontWeight: 400 }}>외부고객 케어카드</div>
+      <div style={{ fontSize: 16, color: '#7B5EA7', marginBottom: 20, fontWeight: 400 }}>{initMode === 'member' ? '내부고객 케어카드' : '외부고객 케어카드'}</div>
       {initMode === 'member' && (
         <div style={{
           display:'inline-flex', alignItems:'center', gap:6,
@@ -495,7 +495,7 @@ export default function ExternalCardsPage() {
           background:'#f5f0f8', border:'0.5px solid #7B5EA7',
           fontSize:11, color:'#7B5EA7', marginBottom:12
         }}>
-          💜 오랜 앱 회원 케어카드 모드
+          💜 오랜 공식 멤버십 케어카드
           {initOrderId && <span style={{color:'#bbb', fontSize:10}}>· 주문 {initOrderId.slice(0,8)}</span>}
         </div>
       )}
