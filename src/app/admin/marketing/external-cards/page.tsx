@@ -92,7 +92,8 @@ type PrintPayload = {
 }
 
 function buildPrintHTML(p: PrintPayload): string {
-  const qr = generateQRDataURL('https://www.auran.kr', 120)
+  const qrChat = generateQRDataURL('https://auran.kr/chat?ref=care_card', 80)
+  const qrReview = generateQRDataURL('https://auran.kr/review?ref=care_card', 80)
   const prods = p.selProds.map(x => `<tr><td>${esc(x.name)}</td><td style="text-align:center">${x.qty || 1}</td><td style="text-align:right">₩${Number(x.price || 0).toLocaleString()}</td></tr>`).join('')
   const bundle = p.bundleItems.map(x => `<div class="chip">${esc(x.name)}${x.tip ? `<div class="sub">${esc(x.tip)}</div>` : ''}</div>`).join('')
   const samples = p.sampleItems.map(x => `<span class="badge">${esc(x.name)}</span>`).join(' ')
@@ -119,7 +120,14 @@ function buildPrintHTML(p: PrintPayload): string {
   .sub { font-size: 11px; color: #534AB7; line-height: 1.7; margin-top: 4px; }
   .tag { font-size: 9px; color: #C9A96E; margin-bottom: 4px; }
   .badge { display: inline-block; border: 0.5px solid #C9A96E; border-radius: 12px; padding: 3px 8px; margin: 2px; font-size: 10px; }
-  .qr { float: right; width: 80px; }
+  .qr-row { display:flex; gap:20px; align-items:center; padding:14px 22px; border-top:0.5px solid #f5efe8; background:#fdf8f2; }
+  .qr-item { display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .qr-img { width:70px; height:70px; background:#fff; border:0.5px solid #eee; border-radius:6px; padding:3px; }
+  .qr-img img { width:100%; height:100%; display:block; }
+  .qr-lbl { font-size:10px; text-align:center; }
+  .qr-txt { flex:1; padding-left:12px; }
+  .qr-txt-main { font-family:'Cormorant Garamond',serif; font-style:italic; font-size:14px; color:#7B5EA7; margin-bottom:4px; }
+  .qr-txt-sub { font-size:11px; color:#888; line-height:1.9; }
   .footer { text-align: right; font-size: 9px; color: #bbb; margin-top: 20px; }
 </style></head><body>
 <div class="no-print" style="margin-bottom:16px;">
@@ -130,7 +138,21 @@ function buildPrintHTML(p: PrintPayload): string {
 <div class="sec"><div class="lbl">고객</div><div>${esc(p.customerName || '고객')}님</div></div>
 <div class="sec"><div class="lbl">구매 제품</div><table><thead><tr><th>상품</th><th>수량</th><th>금액</th></tr></thead><tbody>${prods || '<tr><td colspan="3">없음</td></tr>'}</tbody></table></div>
 <div class="sec"><div class="lbl">사용법 · 팁</div><div>${esc(p.tipText)}</div></div>
-<div class="sec"><div class="lbl">맑원장 코멘트</div><div class="sub">${esc(p.cmtText)}</div><img class="qr" src="${qr}" alt="QR" /></div>
+<div class="sec"><div class="lbl">맑원장 코멘트</div><div class="sub">${esc(p.cmtText)}</div></div>
+<div class="qr-row">
+  <div class="qr-item">
+    <div class="qr-img"><img src="${qrChat}" alt="상담톡 QR"></div>
+    <span class="qr-lbl" style="color:#7B5EA7;">상담톡 바로가기</span>
+  </div>
+  <div class="qr-item">
+    <div class="qr-img"><img src="${qrReview}" alt="리뷰 QR"></div>
+    <span class="qr-lbl" style="color:#C9A96E;">리뷰 바로쓰기</span>
+  </div>
+  <div class="qr-txt">
+    <div class="qr-txt-main">내 피부, 이제 전문가랑 같이 봐요</div>
+    <div class="qr-txt-sub">📦 배송 문의도 오랜 상담톡으로 편하게 주세요<br>⭐ 리뷰 남기고 토스트 포인트 받아가세요<br>💜 맑원장님이 직접 답변 드려요</div>
+  </div>
+</div>
 ${bundle ? `<div class="sec"><div class="lbl">함께 쓰면 좋은 제품</div>${bundle}</div>` : ''}
 ${samples ? `<div class="sec"><div class="lbl">동봉 샘플</div>${samples}</div>` : ''}
 ${routines ? `<div class="sec"><div class="lbl">루틴 케어</div>${routines}</div>` : ''}
