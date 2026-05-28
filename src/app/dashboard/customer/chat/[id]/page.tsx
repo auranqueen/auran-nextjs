@@ -940,7 +940,7 @@ export default function CustomerChatRoomPage() {
         </div>
       ) : null}
 
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '80px 16px 160px', paddingBottom: chatBanner ? 220 : 100 }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '80px 16px 160px', paddingBottom: chatBanner ? 320 : 100 }}>
         {routineCards.length > 0 ? (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 8 }}>루틴 알림장</div>
@@ -2490,8 +2490,8 @@ export default function CustomerChatRoomPage() {
             position: 'fixed',
             left: 0,
             right: 0,
-            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 60px)',
-            zIndex: 49,
+            bottom: '0px',
+            zIndex: 48,
             background: '#0D0B09',
             borderTop: '1px solid rgba(255,255,255,0.06)',
           }}
@@ -2680,9 +2680,9 @@ export default function CustomerChatRoomPage() {
           position: 'fixed',
           left: 0,
           right: 0,
-          bottom: 0,
+          bottom: chatBanner ? 'calc(env(safe-area-inset-bottom, 0px) + 148px)' : 0,
           padding: '10px 12px calc(10px + env(safe-area-inset-bottom, 0px))',
-          paddingBottom: chatBanner ? 'calc(env(safe-area-inset-bottom) + 190px)' : 'calc(env(safe-area-inset-bottom) + 60px)',
+          paddingBottom: chatBanner ? 'calc(env(safe-area-inset-bottom) + 10px)' : 'calc(env(safe-area-inset-bottom) + 60px)',
           background: 'linear-gradient(180deg, transparent, #0D0B09 28%)',
           borderTop: '1px solid rgba(255,255,255,0.06)',
         }}
