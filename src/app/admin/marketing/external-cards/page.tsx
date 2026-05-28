@@ -628,7 +628,10 @@ function ExternalCardsPage() {
         <span style={{ fontSize: 16, color: '#7B5EA7', fontWeight: 400 }}>{initMode === 'member' ? '내부고객 케어카드' : '외부고객 케어카드'}</span>
         <button
           type="button"
-          onClick={() => window.close()}
+          onClick={() => {
+            if (window.opener) window.close()
+            else window.history.back()
+          }}
           style={{
             padding: '6px 14px', borderRadius: 7,
             border: '0.5px solid #ddd', background: '#f5f5f5',
@@ -820,7 +823,7 @@ function ExternalCardsPage() {
           <div style={{ fontSize: 10, color: '#C9A96E', letterSpacing: '.12em', marginBottom: 10 }}>
             배송 정보 (선택)
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
             <div>
               <div style={lbl}>연락처</div>
               <input value={recipientPhone} onChange={e => setRecipientPhone(e.target.value)}
@@ -841,16 +844,16 @@ function ExternalCardsPage() {
                 ))}
               </div>
             </div>
-          </div>
-          <div style={{ marginBottom: 8 }}>
-            <div style={lbl}>주소</div>
-            <input value={recipientAddress} onChange={e => setRecipientAddress(e.target.value)}
-              placeholder="배송지 주소" style={inp} />
-          </div>
-          <div>
-            <div style={lbl}>송장번호</div>
-            <input value={trackingNo} onChange={e => setTrackingNo(e.target.value)}
-              placeholder="송장번호 직접 입력" style={inp} />
+            <div>
+              <div style={lbl}>송장번호</div>
+              <input value={trackingNo} onChange={e => setTrackingNo(e.target.value)}
+                placeholder="송장번호 직접 입력" style={inp} />
+            </div>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <div style={lbl}>주소</div>
+              <input value={recipientAddress} onChange={e => setRecipientAddress(e.target.value)}
+                placeholder="배송지 주소" style={inp} />
+            </div>
           </div>
         </div>
         {saveStatus === 'saved' && (
