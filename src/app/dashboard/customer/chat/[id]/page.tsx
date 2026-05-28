@@ -141,6 +141,20 @@ export default function CustomerChatRoomPage() {
   const [voiceContent, setVoiceContent] = useState('')
   const [voiceSending, setVoiceSending] = useState(false)
   const [voiceDone, setVoiceDone] = useState(false)
+  const [chatBanner, setChatBanner] = useState<{
+    enabled: boolean
+    event_enabled: boolean
+    main_text: string
+    sub_text: string
+    phase_auto: boolean
+    link: string
+    expires_at: string
+  } | null>(null)
+  const [chatQuickBtns, setChatQuickBtns] = useState<{
+    skin_report: boolean
+    owner_pick: boolean
+    toast_wallet: boolean
+  }>({ skin_report: true, owner_pick: true, toast_wallet: true })
 
   const scrollBottom = useCallback(() => {
     const el = scrollRef.current
@@ -248,6 +262,25 @@ export default function CustomerChatRoomPage() {
           }
         })
         setRecommendedProducts(parsed)
+      }
+      const { data: bannerRows } = await supabase
+        .from('admin_settings')
+        .select('key, value')
+        .in('key', ['chat_banner_enabled', 'chat_banner_event_enabled', 'chat_banner', 'chat_quick_btns'])
+      if (bannerRows) {
+        const map = Object.fromEntries(bannerRows.map((r) => [r.key, r.value]))
+        if (map.chat_banner_enabled === 'true' && map.chat_banner) {
+          const b = typeof map.chat_banner === 'string' ? JSON.parse(map.chat_banner) : map.chat_banner
+          setChatBanner({
+            enabled: map.chat_banner_enabled === 'true',
+            event_enabled: map.chat_banner_event_enabled === 'true',
+            ...b,
+          })
+        }
+        if (map.chat_quick_btns) {
+          const q = typeof map.chat_quick_btns === 'string' ? JSON.parse(map.chat_quick_btns) : map.chat_quick_btns
+          setChatQuickBtns(q)
+        }
       }
     }
     void load()
@@ -907,7 +940,7 @@ export default function CustomerChatRoomPage() {
         </div>
       ) : null}
 
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '80px 16px 160px' }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '80px 16px 160px', paddingBottom: chatBanner ? 220 : 100 }}>
         {routineCards.length > 0 ? (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 8 }}>루틴 알림장</div>
@@ -2450,6 +2483,197 @@ export default function CustomerChatRoomPage() {
         </>
       )}
 
+      {chatBanner && (
+        <div
+          style={{
+            position: 'fixed',
+            left: 0,
+            right: 0,
+            bottom: 'calc(env(safe-area-inset-bottom, 0px) + 60px)',
+            zIndex: 49,
+            background: '#0D0B09',
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px 0' }}>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
+            <span
+              style={{
+                fontSize: 9,
+                color: 'rgba(255,255,255,0.18)',
+                letterSpacing: '0.1em',
+                fontFamily: 'var(--font-cormorant, serif)',
+                textTransform: 'uppercase',
+              }}
+            >
+              이달의 혜택
+            </span>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.05)' }} />
+          </div>
+          {chatBanner.event_enabled && (
+            <div
+              onClick={() => chatBanner.link && router.push(chatBanner.link)}
+              style={{
+                margin: '8px 13px 0',
+                height: 62,
+                borderRadius: 13,
+                background: 'linear-gradient(120deg, #1e0d38 0%, #3b1d68 55%, #5a3490 100%)',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '0 14px',
+                gap: 10,
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: chatBanner.link ? 'pointer' : 'default',
+              }}
+            >
+              <div
+                style={{
+                  position: 'absolute',
+                  right: -16,
+                  top: -16,
+                  width: 70,
+                  height: 70,
+                  borderRadius: '50%',
+                  background: 'rgba(201,169,110,0.1)',
+                }}
+              />
+              {chatBanner.phase_auto && phase && (
+                <div
+                  style={{
+                    background: 'rgba(201,169,110,0.18)',
+                    border: '1px solid rgba(201,169,110,0.35)',
+                    color: '#C9A96E',
+                    fontSize: 9,
+                    padding: '2.5px 7px',
+                    borderRadius: 20,
+                    fontFamily: 'var(--font-cormorant, serif)',
+                    letterSpacing: '0.04em',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    zIndex: 1,
+                  }}
+                >
+                  {phaseMap[phase] ?? phase}
+                </div>
+              )}
+              <div style={{ flex: 1, zIndex: 1 }}>
+                <div style={{ fontSize: 12, color: '#fff', fontWeight: 400, lineHeight: 1.35 }}>{chatBanner.main_text}</div>
+                <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.4)', marginTop: 2, fontFamily: 'var(--font-cormorant, serif)' }}>
+                  {chatBanner.sub_text}
+                </div>
+              </div>
+              <div style={{ color: 'rgba(201,169,110,0.55)', fontSize: 15, zIndex: 1 }}>›</div>
+            </div>
+          )}
+          <div style={{ display: 'flex', padding: '8px 13px 4px' }}>
+            {chatQuickBtns.skin_report && (
+              <div
+                onClick={() => router.push('/dashboard/customer/skin-report')}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '8px 4px 6px', borderRadius: 11, cursor: 'pointer' }}
+              >
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 11,
+                    background: 'rgba(123,94,167,0.18)',
+                    border: '1px solid rgba(123,94,167,0.28)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 17,
+                  }}
+                >
+                  📊
+                </div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 1.3 }}>
+                  내 피부
+                  <br />
+                  리포트
+                </div>
+                <div style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.25)', textAlign: 'center' }}>이달 분석</div>
+              </div>
+            )}
+            {chatQuickBtns.owner_pick && (
+              <div
+                onClick={() => router.push('/dashboard/customer?tab=owner_pick')}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '8px 4px 6px', borderRadius: 11, cursor: 'pointer' }}
+              >
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 11,
+                    background: 'rgba(201,169,110,0.15)',
+                    border: '1px solid rgba(201,169,110,0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 17,
+                  }}
+                >
+                  ✨
+                </div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 1.3 }}>
+                  원장 픽
+                  <br />
+                  이번 달
+                </div>
+                <div style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.25)', textAlign: 'center' }}>내 단계 맞춤</div>
+              </div>
+            )}
+            {chatQuickBtns.toast_wallet && (
+              <div
+                onClick={() => router.push('/dashboard/customer/toast')}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '8px 4px 6px', borderRadius: 11, cursor: 'pointer' }}
+              >
+                <div
+                  style={{
+                    width: 38,
+                    height: 38,
+                    borderRadius: 11,
+                    background: 'rgba(74,222,128,0.1)',
+                    border: '1px solid rgba(74,222,128,0.22)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 17,
+                    position: 'relative',
+                  }}
+                >
+                  🍞
+                  {toastBalance > 0 && (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: -3,
+                        right: -3,
+                        background: '#7B5EA7',
+                        color: '#fff',
+                        fontSize: 7,
+                        padding: '1.5px 4px',
+                        borderRadius: 8,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {toastBalance.toLocaleString()}T
+                    </div>
+                  )}
+                </div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', textAlign: 'center', lineHeight: 1.3 }}>
+                  내 토스트
+                  <br />
+                  쓰기
+                </div>
+                <div style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.25)', textAlign: 'center' }}>
+                  {toastBalance > 0 ? `₩${(toastBalance * 100).toLocaleString()} 보유` : '잔액 없음'}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       <div
         style={{
           position: 'fixed',
@@ -2457,7 +2681,7 @@ export default function CustomerChatRoomPage() {
           right: 0,
           bottom: 0,
           padding: '10px 12px calc(10px + env(safe-area-inset-bottom, 0px))',
-          paddingBottom: 'calc(env(safe-area-inset-bottom) + 60px)',
+          paddingBottom: chatBanner ? 'calc(env(safe-area-inset-bottom) + 190px)' : 'calc(env(safe-area-inset-bottom) + 60px)',
           background: 'linear-gradient(180deg, transparent, #0D0B09 28%)',
           borderTop: '1px solid rgba(255,255,255,0.06)',
         }}
