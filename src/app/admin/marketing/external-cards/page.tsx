@@ -97,7 +97,27 @@ function buildPrintHTML(p: PrintPayload): string {
   const prods = p.selProds.map(x => `<tr><td>${esc(x.name)}</td><td style="text-align:center">${x.qty || 1}</td><td style="text-align:right">₩${Number(x.price || 0).toLocaleString()}</td></tr>`).join('')
   const bundle = p.bundleItems.map(x => `<div class="chip">${esc(x.name)}${x.tip ? `<div class="sub">${esc(x.tip)}</div>` : ''}</div>`).join('')
   const samples = p.sampleItems.map(x => `<span class="badge">${esc(x.name)}</span>`).join(' ')
-  const routines = p.routineCards.map(x => `<div class="box"><div class="tag">${esc(x.tag || '')}</div><div>${esc(x.name)}</div><div class="sub">${esc(x.desc || '')}</div></div>`).join('')
+  const routines = (p.routineCards || []).map((x: any) => `
+  <div style="border:0.5px solid #e8e0d8;border-radius:10px;overflow:hidden;margin-bottom:10px;">
+    <div style="background:#7B5EA7;padding:8px 14px;">
+      <span style="font-size:8px;color:rgba(255,255,255,.7);letter-spacing:.12em;">${esc(x.tag || '')}</span>
+      <span style="font-family:'Cormorant Garamond',serif;font-style:italic;font-size:13px;color:#fff;margin-left:6px;">${esc(x.name || '')}</span>
+    </div>
+    <div style="padding:10px 14px;">
+      ${x.routineTitle ? `<div style="font-size:12px;color:#333;margin-bottom:6px;font-family:'Cormorant Garamond',serif;font-style:italic;">${esc(x.routineTitle)}</div>` : ''}
+      <div style="font-size:9px;color:#534AB7;margin-bottom:8px;font-style:italic;">${esc(x.desc || '')}</div>
+      ${(x.prods || []).map((prod: any) => `
+        <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:0.5px solid #f5efe8;">
+          <div style="flex:1;font-size:11px;color:#333;">${esc(prod.name)}</div>
+          ${prod.tip ? `<div style="font-size:9px;color:#888;line-height:1.5;">${esc(prod.tip)}</div>` : ''}
+        </div>`).join('')}
+      ${x.routineMemo ? `
+        <div style="margin-top:10px;padding:10px 12px;background:#f9f7fc;border-radius:8px;border-left:2px solid #7B5EA7;">
+          <div style="font-size:8px;color:#C9A96E;letter-spacing:.15em;margin-bottom:5px;">✦ 원장님 루틴 멘트</div>
+          <div style="font-size:11px;color:#534AB7;line-height:1.8;">${esc(x.routineMemo)}</div>
+        </div>` : ''}
+    </div>
+  </div>`).join('')
   const gifts = [...p.giftTiers, ...(p.showRenobel ? p.giftTiersR : [])].map(x => `<div class="gift"><strong>${esc(x.label)}</strong>${(x.items || []).map((i: any) => esc(i.name)).join(', ')}</div>`).join('')
   const events = [
     p.selectedDayOn ? `<div class="evt"><div class="evt-t">${esc(p.dayEvent.title)}</div><div class="sub">${esc(p.dayEvent.sub)}</div></div>` : '',
@@ -503,6 +523,34 @@ export default function ExternalCardsPage() {
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ddd', fontSize: 14 }}>×</button>
               </div>
             ))}
+            <div style={{ marginTop: 10, borderTop: '0.5px solid #f5efe8', paddingTop: 10 }}>
+              <div style={{ fontSize: 9, color: '#C9A96E', letterSpacing: '.15em', marginBottom: 5 }}>
+                ✦ 관리실 루틴 예시 제목
+              </div>
+              <input
+                value={r.routineTitle || ''}
+                onChange={e => setRoutineCards(prev => prev.map(x =>
+                  x.id === r.id ? { ...x, routineTitle: e.target.value } : x
+                ))}
+                placeholder="예: 부티나고 찬란하게 빛내줄 황금기 집중 루틴"
+                style={{ width: '100%', padding: '7px 10px', border: '0.5px solid #eee',
+                  borderRadius: 7, fontSize: 12, marginBottom: 8, boxSizing: 'border-box' as const }}
+              />
+              <div style={{ fontSize: 9, color: '#C9A96E', letterSpacing: '.15em', marginBottom: 5 }}>
+                ✦ 원장님 루틴 멘트
+              </div>
+              <textarea
+                value={r.routineMemo || ''}
+                onChange={e => setRoutineCards(prev => prev.map(x =>
+                  x.id === r.id ? { ...x, routineMemo: e.target.value } : x
+                ))}
+                placeholder="이 루틴을 추천하는 이유, 주의점, 함께 쓰는 팁을 자유롭게 적어주세요"
+                rows={3}
+                style={{ width: '100%', padding: '7px 10px', border: '0.5px solid #eee',
+                  borderRadius: 7, fontSize: 12, resize: 'none' as const,
+                  lineHeight: 1.7, boxSizing: 'border-box' as const }}
+              />
+            </div>
           </div>
         ))}
       </section>
