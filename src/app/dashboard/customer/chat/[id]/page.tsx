@@ -935,9 +935,52 @@ export default function CustomerChatRoomPage() {
           const showProfile = !mine && (!prevMsg || Boolean(prevMsg.is_from_customer))
           const isCoupon = m.message_kind === 'coupon' || m.message_kind === 'coupon_gift'
           const isImage = m.message_kind === 'image' && m.image_url
+          const kstDate = new Date(new Date(m.created_at).getTime() + 9 * 60 * 60 * 1000)
+          const kstYear = kstDate.getUTCFullYear()
+          const kstMonth = kstDate.getUTCMonth() + 1
+          const kstDay = kstDate.getUTCDate()
+          const kstWeek = ['일', '월', '화', '수', '목', '금', '토'][kstDate.getUTCDay()]
+          const kstDayKey = Date.UTC(kstYear, kstMonth - 1, kstDay)
+          const prevKstDate = prevMsg ? new Date(new Date(prevMsg.created_at).getTime() + 9 * 60 * 60 * 1000) : null
+          const prevKstDayKey = prevKstDate
+            ? Date.UTC(prevKstDate.getUTCFullYear(), prevKstDate.getUTCMonth(), prevKstDate.getUTCDate())
+            : null
+          const showDateDivider = prevKstDayKey !== kstDayKey
+          const nowKst = new Date(Date.now() + 9 * 60 * 60 * 1000)
+          const nowKstDayKey = Date.UTC(nowKst.getUTCFullYear(), nowKst.getUTCMonth(), nowKst.getUTCDate())
+          const dayDiff = Math.floor((nowKstDayKey - kstDayKey) / (24 * 60 * 60 * 1000))
+          const dateText = dayDiff === 0
+            ? `오늘 · ${kstYear}년 ${kstMonth}월 ${kstDay}일 ${kstWeek}요일`
+            : dayDiff === 1
+              ? `어제 · ${kstYear}년 ${kstMonth}월 ${kstDay}일 ${kstWeek}요일`
+              : `${kstYear}년 ${kstMonth}월 ${kstDay}일 ${kstWeek}요일`
+          const hour24 = kstDate.getUTCHours()
+          const minute = String(kstDate.getUTCMinutes()).padStart(2, '0')
+          const timeText = `${hour24 >= 12 ? '오후' : '오전'} ${hour24 % 12 || 12}:${minute}`
+          const ownerTimeNode = (
+            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)', marginTop: '3px', display: 'block' }}>
+              {timeText}
+            </span>
+          )
+          const mineTimeNode = (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end', marginTop: '3px' }}>
+              {(m as any).is_read === true ? <span style={{ fontSize: '9px', color: '#C9A96E' }}>읽음</span> : null}
+              <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)' }}>{timeText}</span>
+            </div>
+          )
+          const dateDividerNode = showDateDivider ? (
+            <div key={`d-${m.id}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0 8px' }}>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
+              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.28)', fontFamily: 'var(--font-cormorant)', letterSpacing: '0.03em', whiteSpace: 'nowrap', padding: '0 4px' }}>
+                {dateText}
+              </span>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
+            </div>
+          ) : null
 
           if (m.message_kind === 'routine_card') {
-            return (
+            return [
+              dateDividerNode,
               <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
                 {showProfile ? (
                   ownerInfo?.avatar_url ? (
@@ -993,18 +1036,22 @@ export default function CustomerChatRoomPage() {
                     >
                       {msgText(m)}
                     </div>
+                    {mine ? mineTimeNode : ownerTimeNode}
                   </div>
                 </div>
-              </div>
-            )
+              </div>,
+            ]
           }
 
           if (m.message_kind === 'toast_gift') {
-            return (
+            return [
+              dateDividerNode,
               <div
                 key={m.id}
                 style={{
                   display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: 10,
                   width: '100%',
@@ -1036,8 +1083,9 @@ export default function CustomerChatRoomPage() {
                     {msgText(m)}
                   </div>
                 </div>
-              </div>
-            )
+                {mine ? mineTimeNode : ownerTimeNode}
+              </div>,
+            ]
           }
 
           if (m.message_kind === 'card_request') {
@@ -1077,171 +1125,179 @@ export default function CustomerChatRoomPage() {
             const localText = inlineCardText[m.id] || ''
             const localSent = !!inlineCardSent[m.id]
             const cardBubble = mine ? (
-              <div
-                style={{
-                  borderRadius: 12,
-                  border: `1px solid ${isSos ? 'rgba(163,45,45,0.45)' : 'rgba(254,229,0,0.45)'}`,
-                  padding: '12px 14px',
-                  background: isSos ? 'rgba(252,235,235,0.08)' : 'rgba(254,229,0,0.08)',
-                }}
-              >
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', marginBottom: 8 }}>{cardEmojiTitle}</div>
-                {selectedChips.length > 0 ? (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-                    {selectedChips.map((c) => (
-                      <span
-                        key={c}
-                        style={{
-                          borderRadius: 999,
-                          border: `1px solid ${isSos ? 'rgba(163,45,45,0.35)' : 'rgba(254,229,0,0.35)'}`,
-                          background: isSos ? 'rgba(252,235,235,0.15)' : 'rgba(254,229,0,0.15)',
-                          color: isSos ? '#FCEBEB' : '#FEE500',
-                          fontSize: 11,
-                          padding: '6px 10px',
-                        }}
-                      >
-                        {c}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-                {textContent ? (
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: '#fff',
-                      lineHeight: 1.5,
-                      whiteSpace: 'pre-wrap',
-                      padding: '8px 10px',
-                      borderRadius: 8,
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                    }}
-                  >
-                    {textContent}
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <div
-                style={{
-                  borderRadius: 12,
-                  border: `1px solid ${isSos ? 'rgba(163,45,45,0.45)' : 'rgba(254,229,0,0.45)'}`,
-                  padding: '12px 14px',
-                  background: isSos ? 'rgba(252,235,235,0.08)' : 'rgba(254,229,0,0.08)',
-                }}
-              >
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', marginBottom: 4 }}>{cardEmojiTitle}</div>
-                {card.desc ? (
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>{card.desc}</div>
-                ) : null}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
-                  {chipList.map((c) => {
-                    const on = localPicks.includes(c)
-                    return (
-                      <button
-                        key={c}
-                        type="button"
-                        disabled={localSent || sending}
-                        onClick={() => {
-                          if (localSent || sending) return
-                          setInlineCardPicks((prev) => {
-                            const cur = prev[m.id] || []
-                            return {
-                              ...prev,
-                              [m.id]: on ? cur.filter((x) => x !== c) : [...cur, c],
-                            }
-                          })
-                        }}
-                        style={{
-                          borderRadius: 999,
-                          border: on ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.15)',
-                          background: on ? 'rgba(123,94,167,0.15)' : 'transparent',
-                          color: on ? '#e8dff5' : 'rgba(255,255,255,0.4)',
-                          fontSize: 11,
-                          padding: '6px 10px',
-                          cursor: localSent || sending ? 'default' : 'pointer',
-                        }}
-                      >
-                        {c}
-                      </button>
-                    )
-                  })}
-                </div>
-                <textarea
-                  value={localText}
-                  disabled={localSent || sending}
-                  onChange={(e) => setInlineCardText((prev) => ({ ...prev, [m.id]: e.target.value }))}
-                  placeholder="하고 싶은 말을 자유롭게 적어주세요 (선택사항)"
-                  rows={3}
+              <div>
+                <div
                   style={{
-                    width: '100%',
-                    boxSizing: 'border-box',
-                    minHeight: 60,
-                    marginBottom: 10,
-                    borderRadius: 8,
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    background: 'rgba(255,255,255,0.05)',
-                    color: '#fff',
-                    fontSize: 12,
-                    padding: '10px 12px',
-                    resize: 'vertical',
-                  }}
-                />
-                <button
-                  type="button"
-                  disabled={sending || localSent || localPicks.length === 0}
-                  onClick={() => {
-                    void (async () => {
-                      if (inlineCardSent[m.id]) return
-                      if (!internalUserId || !channelId || sending || localPicks.length === 0) return
-                      setSending(true)
-                      try {
-                        await supabase.from('consultation_messages').insert({
-                          channel_id: channelId,
-                          sender_id: internalUserId,
-                          is_from_customer: true,
-                          message_kind: 'card_request',
-                          message: JSON.stringify({
-                            card_type: card.card_type,
-                            title: card.title,
-                            chips: card.chips,
-                            selected_chips: inlineCardPicks[m.id] || [],
-                            text_content: inlineCardText[m.id] || '',
-                            has_text: true,
-                          }),
-                        } as any)
-                        setInlineCardSent((prev) => ({ ...prev, [m.id]: true }))
-                      } finally {
-                        setSending(false)
-                      }
-                    })()
-                  }}
-                  style={{
-                    width: '100%',
-                    padding: '10px 0',
-                    borderRadius: 8,
-                    border: 'none',
-                    background: '#FEE500',
-                    color: '#3A1D1D',
-                    fontSize: 12,
-                    fontWeight: 600,
-                    cursor: sending || localSent || localPicks.length === 0 ? 'default' : 'pointer',
-                    opacity: sending || localSent || localPicks.length === 0 ? 0.5 : 1,
+                    borderRadius: 12,
+                    border: `1px solid ${isSos ? 'rgba(163,45,45,0.45)' : 'rgba(254,229,0,0.45)'}`,
+                    padding: '12px 14px',
+                    background: isSos ? 'rgba(252,235,235,0.08)' : 'rgba(254,229,0,0.08)',
                   }}
                 >
-                  전송
-                </button>
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', marginBottom: 8 }}>{cardEmojiTitle}</div>
+                  {selectedChips.length > 0 ? (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                      {selectedChips.map((c) => (
+                        <span
+                          key={c}
+                          style={{
+                            borderRadius: 999,
+                            border: `1px solid ${isSos ? 'rgba(163,45,45,0.35)' : 'rgba(254,229,0,0.35)'}`,
+                            background: isSos ? 'rgba(252,235,235,0.15)' : 'rgba(254,229,0,0.15)',
+                            color: isSos ? '#FCEBEB' : '#FEE500',
+                            fontSize: 11,
+                            padding: '6px 10px',
+                          }}
+                        >
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                  {textContent ? (
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: '#fff',
+                        lineHeight: 1.5,
+                        whiteSpace: 'pre-wrap',
+                        padding: '8px 10px',
+                        borderRadius: 8,
+                        background: 'rgba(255,255,255,0.05)',
+                        border: '1px solid rgba(255,255,255,0.1)',
+                      }}
+                    >
+                      {textContent}
+                    </div>
+                  ) : null}
+                </div>
+                {mineTimeNode}
+              </div>
+            ) : (
+              <div>
+                <div
+                  style={{
+                    borderRadius: 12,
+                    border: `1px solid ${isSos ? 'rgba(163,45,45,0.45)' : 'rgba(254,229,0,0.45)'}`,
+                    padding: '12px 14px',
+                    background: isSos ? 'rgba(252,235,235,0.08)' : 'rgba(254,229,0,0.08)',
+                  }}
+                >
+                  <div style={{ fontSize: 12, fontWeight: 600, color: '#fff', marginBottom: 4 }}>{cardEmojiTitle}</div>
+                  {card.desc ? (
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>{card.desc}</div>
+                  ) : null}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+                    {chipList.map((c) => {
+                      const on = localPicks.includes(c)
+                      return (
+                        <button
+                          key={c}
+                          type="button"
+                          disabled={localSent || sending}
+                          onClick={() => {
+                            if (localSent || sending) return
+                            setInlineCardPicks((prev) => {
+                              const cur = prev[m.id] || []
+                              return {
+                                ...prev,
+                                [m.id]: on ? cur.filter((x) => x !== c) : [...cur, c],
+                              }
+                            })
+                          }}
+                          style={{
+                            borderRadius: 999,
+                            border: on ? '1px solid #7B5EA7' : '1px solid rgba(255,255,255,0.15)',
+                            background: on ? 'rgba(123,94,167,0.15)' : 'transparent',
+                            color: on ? '#e8dff5' : 'rgba(255,255,255,0.4)',
+                            fontSize: 11,
+                            padding: '6px 10px',
+                            cursor: localSent || sending ? 'default' : 'pointer',
+                          }}
+                        >
+                          {c}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  <textarea
+                    value={localText}
+                    disabled={localSent || sending}
+                    onChange={(e) => setInlineCardText((prev) => ({ ...prev, [m.id]: e.target.value }))}
+                    placeholder="하고 싶은 말을 자유롭게 적어주세요 (선택사항)"
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      minHeight: 60,
+                      marginBottom: 10,
+                      borderRadius: 8,
+                      border: '1px solid rgba(255,255,255,0.12)',
+                      background: 'rgba(255,255,255,0.05)',
+                      color: '#fff',
+                      fontSize: 12,
+                      padding: '10px 12px',
+                      resize: 'vertical',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    disabled={sending || localSent || localPicks.length === 0}
+                    onClick={() => {
+                      void (async () => {
+                        if (inlineCardSent[m.id]) return
+                        if (!internalUserId || !channelId || sending || localPicks.length === 0) return
+                        setSending(true)
+                        try {
+                          await supabase.from('consultation_messages').insert({
+                            channel_id: channelId,
+                            sender_id: internalUserId,
+                            is_from_customer: true,
+                            message_kind: 'card_request',
+                            message: JSON.stringify({
+                              card_type: card.card_type,
+                              title: card.title,
+                              chips: card.chips,
+                              selected_chips: inlineCardPicks[m.id] || [],
+                              text_content: inlineCardText[m.id] || '',
+                              has_text: true,
+                            }),
+                          } as any)
+                          setInlineCardSent((prev) => ({ ...prev, [m.id]: true }))
+                        } finally {
+                          setSending(false)
+                        }
+                      })()
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '10px 0',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: '#FEE500',
+                      color: '#3A1D1D',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      cursor: sending || localSent || localPicks.length === 0 ? 'default' : 'pointer',
+                      opacity: sending || localSent || localPicks.length === 0 ? 0.5 : 1,
+                    }}
+                  >
+                    전송
+                  </button>
+                </div>
+                {ownerTimeNode}
               </div>
             )
             if (mine) {
-              return (
+              return [
+                dateDividerNode,
                 <div key={m.id} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
                   <div style={{ maxWidth: '88%' }}>{cardBubble}</div>
-                </div>
-              )
+                </div>,
+              ]
             }
-            return (
+            return [
+              dateDividerNode,
               <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
                 {showProfile ? (
                   ownerInfo?.avatar_url ? (
@@ -1279,21 +1335,22 @@ export default function CustomerChatRoomPage() {
                   ) : null}
                   {cardBubble}
                 </div>
-              </div>
-            )
+              </div>,
+            ]
           }
 
           if (m.message_kind === 'product_recommend') {
             const productItems = parseRecommendItems(m)
             const productBubble = (
-                <div
-                  style={{
-                    borderRadius: mine ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                    padding: 8,
-                    background: mine ? 'rgba(123,94,167,0.45)' : 'rgba(201,169,110,0.15)',
-                    border: mine ? 'none' : '1px solid rgba(201,169,110,0.3)',
-                  }}
-                >
+                <div>
+                  <div
+                    style={{
+                      borderRadius: mine ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                      padding: 8,
+                      background: mine ? 'rgba(123,94,167,0.45)' : 'rgba(201,169,110,0.15)',
+                      border: mine ? 'none' : '1px solid rgba(201,169,110,0.3)',
+                    }}
+                  >
                   <div
                     style={{
                       maxWidth: 260,
@@ -1454,16 +1511,19 @@ export default function CustomerChatRoomPage() {
                       </button>
                     </div>
                   </div>
+                  {mine ? mineTimeNode : ownerTimeNode}
                 </div>
             )
             if (mine) {
-              return (
+              return [
+                dateDividerNode,
                 <div key={m.id} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
                   <div style={{ maxWidth: '85%' }}>{productBubble}</div>
-                </div>
-              )
+                </div>,
+              ]
             }
-            return (
+            return [
+              dateDividerNode,
               <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
                 {showProfile ? (
                   ownerInfo?.avatar_url ? (
@@ -1501,12 +1561,13 @@ export default function CustomerChatRoomPage() {
                   ) : null}
                   {productBubble}
                 </div>
-              </div>
-            )
+              </div>,
+            ]
           }
 
           if (m.message_kind === 'order_paid') {
-            return (
+            return [
+              dateDividerNode,
               <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, padding: '12px 0' }}>
                 <div style={{ background: '#EEEDFE', borderRadius: 12, padding: '12px 16px', maxWidth: '80%', textAlign: 'center' }}>
                   <div style={{ fontSize: 13, color: '#3C3489', fontWeight: 500 }}>💜 주문이 확인됐어요</div>
@@ -1514,14 +1575,15 @@ export default function CustomerChatRoomPage() {
                     {m.content || '결제가 완료됐어요'}
                   </div>
                 </div>
+                {mine ? mineTimeNode : ownerTimeNode}
                 <div
                   style={{ fontSize: 12, color: '#7B5EA7', border: '0.5px solid #AFA9EC', borderRadius: 8, padding: '5px 14px', cursor: 'pointer' }}
                   onClick={() => router.push('/my/orders')}
                 >
                   주문 상세보기 →
                 </div>
-              </div>
-            )
+              </div>,
+            ]
           }
 
           if (isCoupon) {
@@ -1532,15 +1594,16 @@ export default function CustomerChatRoomPage() {
               } catch {}
               const isShip = !!cp.user_coupon_id
               const couponGiftBubble = (
-                  <div
-                    style={{
-                      background: 'rgba(123,94,167,0.15)',
-                      border: '1px solid rgba(123,94,167,0.4)',
-                      borderRadius: 12,
-                      padding: '12px 14px 16px',
-                      minWidth: 160,
-                    }}
-                  >
+                  <div>
+                    <div
+                      style={{
+                        background: 'rgba(123,94,167,0.15)',
+                        border: '1px solid rgba(123,94,167,0.4)',
+                        borderRadius: 12,
+                        padding: '12px 14px 16px',
+                        minWidth: 160,
+                      }}
+                    >
                     <div style={{ fontSize: 11, color: '#C084FC', marginBottom: 4 }}>🎁 쿠폰 도착</div>
                     <div style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>
                       {isShip ? '배송비 무료' : String(cp.name ?? '')}
@@ -1558,9 +1621,12 @@ export default function CustomerChatRoomPage() {
                         ~ {new Date(String(cp.expires_at)).toLocaleDateString('ko-KR')} 까지
                       </div>
                     ) : null}
+                    </div>
+                    {ownerTimeNode}
                   </div>
               )
-              return (
+              return [
+                dateDividerNode,
                 <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
                   {showProfile ? (
                     ownerInfo?.avatar_url ? (
@@ -1598,33 +1664,38 @@ export default function CustomerChatRoomPage() {
                     ) : null}
                     {couponGiftBubble}
                   </div>
-                </div>
-              )
+                </div>,
+              ]
             }
             const couponBubble = (
-                <div
-                  style={{
-                    borderRadius: 12,
-                    border: `1px solid ${GOLD}`,
-                    padding: '10px 12px',
-                    background: 'rgba(201,169,110,0.08)',
-                  }}
-                >
-                  <div style={{ fontSize: 12, color: GOLD, marginBottom: 4 }}>쿠폰</div>
-                  <div style={{ fontSize: 13, color: '#fff' }}>{m.coupon_title || msgText(m) || '쿠폰이 도착했어요'}</div>
-                  {m.coupon_subtitle ? (
-                    <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 4 }}>{m.coupon_subtitle}</div>
-                  ) : null}
+                <div>
+                  <div
+                    style={{
+                      borderRadius: 12,
+                      border: `1px solid ${GOLD}`,
+                      padding: '10px 12px',
+                      background: 'rgba(201,169,110,0.08)',
+                    }}
+                  >
+                    <div style={{ fontSize: 12, color: GOLD, marginBottom: 4 }}>쿠폰</div>
+                    <div style={{ fontSize: 13, color: '#fff' }}>{m.coupon_title || msgText(m) || '쿠폰이 도착했어요'}</div>
+                    {m.coupon_subtitle ? (
+                      <div style={{ fontSize: 11, color: TEXT_MUTED, marginTop: 4 }}>{m.coupon_subtitle}</div>
+                    ) : null}
+                  </div>
+                  {mine ? mineTimeNode : ownerTimeNode}
                 </div>
             )
             if (mine) {
-              return (
+              return [
+                dateDividerNode,
                 <div key={m.id} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
                   <div style={{ maxWidth: '85%' }}>{couponBubble}</div>
-                </div>
-              )
+                </div>,
+              ]
             }
-            return (
+            return [
+              dateDividerNode,
               <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
                 {showProfile ? (
                   ownerInfo?.avatar_url ? (
@@ -1662,35 +1733,40 @@ export default function CustomerChatRoomPage() {
                   ) : null}
                   {couponBubble}
                 </div>
-              </div>
-            )
+              </div>,
+            ]
           }
 
           const defaultBubble = (
-              <div
-                style={{
-                  borderRadius: mine ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
-                  padding: '10px 12px',
-                  background: mine ? 'rgba(123,94,167,0.45)' : 'rgba(201,169,110,0.15)',
-                  border: mine ? 'none' : '1px solid rgba(201,169,110,0.3)',
-                }}
-              >
-                {isImage ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={m.image_url!} alt="" style={{ maxWidth: '100%', borderRadius: 8, display: 'block' }} />
-                ) : (
-                  <div style={{ fontSize: 13, color: mine ? '#f3e9ff' : '#f5e6c8', lineHeight: 1.5 }}>{msgText(m)}</div>
-                )}
+              <div>
+                <div
+                  style={{
+                    borderRadius: mine ? '14px 14px 4px 14px' : '14px 14px 14px 4px',
+                    padding: '10px 12px',
+                    background: mine ? 'rgba(123,94,167,0.45)' : 'rgba(201,169,110,0.15)',
+                    border: mine ? 'none' : '1px solid rgba(201,169,110,0.3)',
+                  }}
+                >
+                  {isImage ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={m.image_url!} alt="" style={{ maxWidth: '100%', borderRadius: 8, display: 'block' }} />
+                  ) : (
+                    <div style={{ fontSize: 13, color: mine ? '#f3e9ff' : '#f5e6c8', lineHeight: 1.5 }}>{msgText(m)}</div>
+                  )}
+                </div>
+                {mine ? mineTimeNode : ownerTimeNode}
               </div>
           )
           if (mine) {
-            return (
+            return [
+              dateDividerNode,
               <div key={m.id} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
                 <div style={{ maxWidth: '85%' }}>{defaultBubble}</div>
-              </div>
-            )
+              </div>,
+            ]
           }
-          return (
+          return [
+            dateDividerNode,
             <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
               {showProfile ? (
                 ownerInfo?.avatar_url ? (
@@ -1728,8 +1804,8 @@ export default function CustomerChatRoomPage() {
                 ) : null}
                 {defaultBubble}
               </div>
-            </div>
-          )
+            </div>,
+          ]
         })}
       </div>
 
