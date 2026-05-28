@@ -1422,6 +1422,67 @@ ${(o as any).admin_memo?`
                         >
                           🖨️ 주문서
                         </button>
+                        {/* 내부고객 케어카드 */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const prods = ((o as any).order_items || [])
+                              .map((item: any) => encodeURIComponent(
+                                JSON.stringify({
+                                  name: item.product_name,
+                                  qty: item.quantity,
+                                  price: item.product_price || item.subtotal || 0
+                                })
+                              )).join(',')
+                            const name = encodeURIComponent(
+                              (o as any).profiles?.nickname ||
+                              (o as any).profiles?.name ||
+                              (o as any).recipient_name || ''
+                            )
+                            const uid = o.customer_id || ''
+                            const oid = o.id || ''
+                            window.open(
+                              `/admin/marketing/external-cards?mode=member&name=${name}&user_id=${uid}&order_id=${oid}&prods=${prods}`,
+                              '_blank'
+                            )
+                          }}
+                          style={{
+                            padding:'4px 8px',borderRadius:6,
+                            border:'0.5px solid #7B5EA7',background:'#f5f0f8',
+                            color:'#7B5EA7',fontSize:11,cursor:'pointer',
+                            whiteSpace:'nowrap'
+                          }}
+                        >
+                          💜 케어카드
+                        </button>
+                        {/* 외부고객 케어카드 */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const prods = ((o as any).order_items || [])
+                              .map((item: any) => encodeURIComponent(
+                                JSON.stringify({
+                                  name: item.product_name,
+                                  qty: item.quantity,
+                                  price: item.product_price || item.subtotal || 0
+                                })
+                              )).join(',')
+                            const name = encodeURIComponent((o as any).recipient_name || '')
+                            const oid = o.id || ''
+                            window.open(
+                              `/admin/marketing/external-cards?mode=external&name=${name}&order_id=${oid}&prods=${prods}`,
+                              '_blank'
+                            )
+                          }}
+                          style={{
+                            padding:'4px 8px',borderRadius:6,
+                            border:'0.5px solid #C9A96E',background:'#fdf8ee',
+                            color:'#854F0B',fontSize:11,cursor:'pointer',
+                            whiteSpace:'nowrap'
+                          }}
+                        >
+                          📦 외부카드
+                        </button>
                         <button
                           type="button"
                           className="btn btn-gy"
