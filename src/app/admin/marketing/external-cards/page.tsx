@@ -404,11 +404,42 @@ function ExternalCardsPage() {
     if (q.length < 2) { setCustomerHistory(null); return }
     const t = setTimeout(async () => {
       const supabase = createClient()
-      const { data } = await supabase.from('users').select('id, full_name, skin_type, skin_concerns').ilike('full_name', `%${q}%`).limit(1).maybeSingle()
-      setCustomerHistory(data)
+      // users 기본 정보 조회
+      const { data: userData } = await supabase
+        .from('users')
+        .select('id, full_name, phone, email, skin_type, skin_concerns')
+        .ilike('full_name', `%${q}%`)
+        .limit(1)
+        .maybeSingle()
+      if (!userData) { setCustomerHistory(null); return }
+      // mode=member 일 때 orders 누적 조회
+      if (initMode === 'member' && userData.id) {
+        const { data: ordersData } = await supabase
+          .from('orders')
+          .select('id, final_amount, ordered_at, recipient_name, recipient_phone, address, order_items(product_name, quantity, product_price)')
+          .eq('customer_id', userData.id)
+          .order('ordered_at', { ascending: false })
+          .limit(20)
+        const totalAmt = (ordersData || []).reduce((s: number, o: any) => s + (o.final_amount || 0), 0)
+        const latestOrder = ordersData?.[0]
+        setCustomerHistory({
+          ...userData,
+          orders: ordersData || [],
+          totalAmt,
+          orderCount: (ordersData || []).length,
+          // 최근 주문에서 배송정보 자동 채우기
+          latestPhone: latestOrder?.recipient_phone || userData.phone || '',
+          latestAddress: latestOrder?.address || '',
+        })
+        // 배송정보 자동 채우기
+        if (latestOrder?.recipient_phone) setRecipientPhone(latestOrder.recipient_phone)
+        if (latestOrder?.address) setRecipientAddress(latestOrder.address)
+      } else {
+        setCustomerHistory(userData)
+      }
     }, 300)
     return () => clearTimeout(t)
-  }, [customerName])
+  }, [customerName, initMode])
 
   useEffect(() => {
     void searchExternalCustomers(customerName)
@@ -684,14 +715,81 @@ function ExternalCardsPage() {
             💜 오랜 공식 멤버십 고객
           </div>
         )}
-        {/* 기존 customerHistory 표시 유지 */}
-        {customerHistory ? (
+        {customerHistory && initMode === 'member' && (
+          <div style={{ marginTop: 10, background: '#f9f7fc',
+            border: '0.5px solid #e8e0f0', borderRadius: 10, padding: 14 }}>
+            <div style={{ fontSize: 10, color: '#7B5EA7', letterSpacing: '.12em', marginBottom: 10 }}>
+              💜 오랜 공식 멤버 정보
+            </div>
+            {/* 기본 정보 */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+              <div>
+                <div style={lbl}>이름</div>
+                <div style={{ fontSize: 12, color: '#333' }}>{customerHistory.full_name || '-'}</div>
+              </div>
+              <div>
+                <div style={lbl}>연락처</div>
+                <div style={{ fontSize: 12, color: '#333' }}>{customerHistory.latestPhone || customerHistory.phone || '-'}</div>
+              </div>
+              <div>
+                <div style={lbl}>피부타입</div>
+                <div style={{ fontSize: 12, color: '#333' }}>{customerHistory.skin_type || '-'}</div>
+              </div>
+              <div>
+                <div style={lbl}>피부고민</div>
+                <div style={{ fontSize: 12, color: '#333' }}>
+                  {Array.isArray(customerHistory.skin_concerns) && customerHistory.skin_concerns.length
+                    ? customerHistory.skin_concerns.join(', ') : '-'}
+                </div>
+              </div>
+            </div>
+            {/* 구매 누계 */}
+            <div style={{ display: 'flex', gap: 12, padding: '10px 0',
+              borderTop: '0.5px solid #e8e0f0', borderBottom: '0.5px solid #e8e0f0',
+              marginBottom: 10 }}>
+              <div style={{ flex: 1, textAlign: 'center' as const }}>
+                <div style={{ fontSize: 16, color: '#7B5EA7' }}>
+                  ₩{(customerHistory.totalAmt || 0).toLocaleString()}
+                </div>
+                <div style={{ fontSize: 9, color: '#bbb', marginTop: 2 }}>누적 구매액</div>
+              </div>
+              <div style={{ flex: 1, textAlign: 'center' as const }}>
+                <div style={{ fontSize: 16, color: '#7B5EA7' }}>{customerHistory.orderCount || 0}회</div>
+                <div style={{ fontSize: 9, color: '#bbb', marginTop: 2 }}>총 주문 횟수</div>
+              </div>
+              <div style={{ flex: 1, textAlign: 'center' as const }}>
+                <div style={{ fontSize: 16, color: '#7B5EA7' }}>
+                  {customerHistory.orders?.[0]
+                    ? new Date(customerHistory.orders[0].ordered_at).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })
+                    : '-'}
+                </div>
+                <div style={{ fontSize: 9, color: '#bbb', marginTop: 2 }}>최근 구매</div>
+              </div>
+            </div>
+            {/* 최근 주문 내역 */}
+            {(customerHistory.orders || []).slice(0, 5).map((o: any) => (
+              <div key={o.id} style={{ display: 'flex', justifyContent: 'space-between',
+                padding: '6px 0', borderBottom: '0.5px solid #f5efe8', fontSize: 11 }}>
+                <div style={{ color: '#888', fontSize: 10, minWidth: 60 }}>
+                  {new Date(o.ordered_at).toLocaleDateString('ko-KR', { month: 'numeric', day: 'numeric' })}
+                </div>
+                <div style={{ flex: 1, color: '#333', lineHeight: 1.5 }}>
+                  {(o.order_items || []).map((i: any) => i.product_name).join(', ')}
+                </div>
+                <div style={{ color: '#7B5EA7', whiteSpace: 'nowrap' as const, marginLeft: 8 }}>
+                  ₩{(o.final_amount || 0).toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {customerHistory && initMode !== 'member' && (
           <div style={{ marginTop: 8, fontSize: 12, color: '#534AB7', lineHeight: 1.6 }}>
             오랜 회원: {customerHistory.full_name || '-'} · 피부타입 {customerHistory.skin_type || '-'}
             {Array.isArray(customerHistory.skin_concerns) && customerHistory.skin_concerns.length
               ? ` · ${customerHistory.skin_concerns.join(', ')}` : ''}
           </div>
-        ) : null}
+        )}
         {/* 배송 정보 */}
         <div style={{ background: '#fafafa', border: '0.5px solid #eee',
           borderRadius: 10, padding: 14, marginTop: 10 }}>
