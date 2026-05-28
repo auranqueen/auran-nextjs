@@ -940,7 +940,7 @@ export default function CustomerChatRoomPage() {
         </div>
       ) : null}
 
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '80px 16px 160px', paddingBottom: chatBanner ? 320 : 100 }}>
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '80px 16px 160px', paddingBottom: chatBanner ? 240 : 100 }}>
         {routineCards.length > 0 ? (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 8 }}>루틴 알림장</div>
@@ -2571,19 +2571,19 @@ export default function CustomerChatRoomPage() {
             {chatQuickBtns.skin_report && (
               <div
                 onClick={() => router.push('/dashboard/customer/skin-report')}
-                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '8px 4px 6px', borderRadius: 11, cursor: 'pointer' }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '6px 4px 4px', borderRadius: 11, cursor: 'pointer' }}
               >
                 <div
                   style={{
-                    width: 38,
-                    height: 38,
+                    width: 32,
+                    height: 32,
                     borderRadius: 11,
                     background: 'rgba(123,94,167,0.18)',
                     border: '1px solid rgba(123,94,167,0.28)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 17,
+                    fontSize: 15,
                   }}
                 >
                   📊
@@ -2593,25 +2593,24 @@ export default function CustomerChatRoomPage() {
                   <br />
                   리포트
                 </div>
-                <div style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.25)', textAlign: 'center' }}>이달 분석</div>
               </div>
             )}
             {chatQuickBtns.owner_pick && (
               <div
                 onClick={() => router.push('/dashboard/customer?tab=owner_pick')}
-                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '8px 4px 6px', borderRadius: 11, cursor: 'pointer' }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '6px 4px 4px', borderRadius: 11, cursor: 'pointer' }}
               >
                 <div
                   style={{
-                    width: 38,
-                    height: 38,
+                    width: 32,
+                    height: 32,
                     borderRadius: 11,
                     background: 'rgba(201,169,110,0.15)',
                     border: '1px solid rgba(201,169,110,0.25)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 17,
+                    fontSize: 15,
                   }}
                 >
                   ✨
@@ -2621,25 +2620,24 @@ export default function CustomerChatRoomPage() {
                   <br />
                   이번 달
                 </div>
-                <div style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.25)', textAlign: 'center' }}>내 단계 맞춤</div>
               </div>
             )}
             {chatQuickBtns.toast_wallet && (
               <div
                 onClick={() => router.push('/dashboard/customer/toast')}
-                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '8px 4px 6px', borderRadius: 11, cursor: 'pointer' }}
+                style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '6px 4px 4px', borderRadius: 11, cursor: 'pointer' }}
               >
                 <div
                   style={{
-                    width: 38,
-                    height: 38,
+                    width: 32,
+                    height: 32,
                     borderRadius: 11,
                     background: 'rgba(74,222,128,0.1)',
                     border: '1px solid rgba(74,222,128,0.22)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 17,
+                    fontSize: 15,
                     position: 'relative',
                   }}
                 >
@@ -2667,9 +2665,6 @@ export default function CustomerChatRoomPage() {
                   <br />
                   쓰기
                 </div>
-                <div style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.25)', textAlign: 'center' }}>
-                  {toastBalance > 0 ? `₩${(toastBalance * 100).toLocaleString()} 보유` : '잔액 없음'}
-                </div>
               </div>
             )}
           </div>
@@ -2680,9 +2675,9 @@ export default function CustomerChatRoomPage() {
           position: 'fixed',
           left: 0,
           right: 0,
-          bottom: chatBanner ? 'calc(env(safe-area-inset-bottom, 0px) + 148px)' : 0,
+          bottom: chatBanner ? 'calc(env(safe-area-inset-bottom, 0px) + 110px)' : 0,
           padding: '10px 12px calc(10px + env(safe-area-inset-bottom, 0px))',
-          paddingBottom: chatBanner ? 'calc(env(safe-area-inset-bottom) + 10px)' : 'calc(env(safe-area-inset-bottom) + 60px)',
+          paddingBottom: chatBanner ? 'calc(env(safe-area-inset-bottom) + 8px)' : 'calc(env(safe-area-inset-bottom) + 60px)',
           background: 'linear-gradient(180deg, transparent, #0D0B09 28%)',
           borderTop: '1px solid rgba(255,255,255,0.06)',
         }}
