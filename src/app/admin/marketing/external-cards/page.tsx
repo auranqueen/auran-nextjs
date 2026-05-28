@@ -243,6 +243,9 @@ function ExternalCardsPage() {
   const [recipientPhone, setRecipientPhone] = useState('')
   const [recipientAddress, setRecipientAddress] = useState('')
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [routinePresets, setRoutinePresets] = useState<Record<string, { prods: { name: string, tip: string, id?: string }[] }>>({})
+  const [presetSaving, setPresetSaving] = useState(false)
+  const [presetSettingId, setPresetSettingId] = useState<string | null>(null)
   const prodRef = useRef<HTMLDivElement>(null)
 
   const dayEvent = DAY_EVENTS[selectedDayIdx]
@@ -315,6 +318,40 @@ function ExternalCardsPage() {
       .order('name')
       .then(({ data }) => { if (data) setBrandList(data) })
   }, [])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase
+      .from('admin_settings')
+      .select('id, value')
+      .eq('key', 'routine_card_presets')
+      .single()
+      .then(({ data }) => {
+        if (data?.value) {
+          try {
+            setRoutinePresets(JSON.parse(data.value))
+            setPresetSettingId(data.id)
+          } catch {}
+        }
+      })
+  }, [])
+
+  async function saveRoutinePresets(presets: Record<string, { prods: { name: string, tip: string, id?: string }[] }>) {
+    if (!presetSettingId) return
+    setPresetSaving(true)
+    const supabase = createClient()
+    try {
+      await supabase
+        .from('admin_settings')
+        .update({ value: JSON.stringify(presets), updated_at: new Date().toISOString() })
+        .eq('id', presetSettingId)
+      setRoutinePresets(presets)
+    } catch (e) {
+      console.error('프리셋 저장 실패:', e)
+    } finally {
+      setPresetSaving(false)
+    }
+  }
 
   async function searchExternalCustomers(q: string) {
     if (!q.trim()) { setCustomerResults([]); setShowCustomerDD(false); return }
@@ -945,11 +982,19 @@ function ExternalCardsPage() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
           {ROUTINE_PRESETS.map(r => (
             <button key={r.id} type="button"
-              onClick={() => setRoutineCards(prev =>
-                prev.find(x => x.id === r.id)
-                  ? prev.filter(x => x.id !== r.id)
-                  : [...prev, { id: r.id, name: r.name, tag: r.tag, desc: r.desc, prods: [] }]
-              )}
+              onClick={() => setRoutineCards(prev => {
+                if (prev.find(x => x.id === r.id)) {
+                  return prev.filter(x => x.id !== r.id)
+                }
+                // 프리셋에서 샘플 자동 세팅
+                const preset = routinePresets[r.id]
+                const presetProds = preset?.prods || []
+                return [...prev, {
+                  id: r.id, name: r.name, tag: r.tag, desc: r.desc,
+                  prods: presetProds,
+                  routineTitle: '', routineMemo: '',
+                }]
+              })}
               style={{
                 padding: '6px 14px', borderRadius: 100,
                 border: routineCards.find(x => x.id === r.id) ? '1.5px solid #7B5EA7' : '0.5px solid #ddd',
@@ -1025,6 +1070,41 @@ function ExternalCardsPage() {
             </div>
           </div>
         ))}
+        {routineCards.length > 0 && (
+          <div style={{
+            marginTop: 12, padding: '10px 14px',
+            background: '#f9f7fc', border: '0.5px solid #e8e0f0',
+            borderRadius: 8, display: 'flex',
+            justifyContent: 'space-between', alignItems: 'center',
+          }}>
+            <span style={{ fontSize: 11, color: '#888' }}>
+              지금 제품 구성을 기본값으로 저장하면 다음에도 자동 세팅돼요
+            </span>
+            <button
+              type="button"
+              onClick={async () => {
+                // 현재 루틴 카드 구성을 프리셋으로 저장
+                const newPresets = { ...routinePresets }
+                routineCards.forEach((card: any) => {
+                  newPresets[card.id] = { prods: (card.prods || []).map((p: any) => ({
+                    name: p.name, tip: p.tip || '', id: p.id || '',
+                  })) }
+                })
+                await saveRoutinePresets(newPresets)
+                alert('기본 샘플 세트가 저장됐어요 💜')
+              }}
+              disabled={presetSaving}
+              style={{
+                padding: '6px 14px', borderRadius: 7,
+                border: '1.5px solid #7B5EA7', background: '#f5f0f8',
+                color: '#7B5EA7', fontSize: 11, cursor: 'pointer',
+                whiteSpace: 'nowrap' as const, marginLeft: 12,
+              }}
+            >
+              {presetSaving ? '저장 중...' : '💜 기본값으로 저장'}
+            </button>
+          </div>
+        )}
       </section>
 
       {/* 7. 금액별 선물 */}
