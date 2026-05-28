@@ -57,7 +57,7 @@ async function searchProducts(q: string, brandId?: string) {
   const supabase = createClient()
   let query = supabase
     .from('products')
-    .select('id, name, thumbnail_url, brand_id')
+    .select('id, name, thumb_img, storage_thumb_url, brand_id')
     .neq('status', 'deleted')
     .limit(12)
   if (q.trim()) query = query.ilike('name', `%${q}%`)
