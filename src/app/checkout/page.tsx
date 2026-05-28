@@ -367,7 +367,7 @@ function CheckoutPageInner() {
   })
   const totalEligibleSubtotal = rnbEligible + genEligible
   const genAmount = totalEligibleSubtotal === 0
-    ? goodsAfterOran
+    ? 0
     : (genEligible / totalEligibleSubtotal) * goodsAfterOran
   const rnbAmount = totalEligibleSubtotal === 0
     ? 0
