@@ -193,7 +193,6 @@ export default function ExternalCardsPage() {
   const initOrderId = searchParams.get('order_id') || ''
   const initProds   = searchParams.get('prods') || ''
   const [customerName, setCustomerName] = useState(initName)
-  const [customerId, setCustomerId] = useState(initUserId)
   const [customerHistory, setCustomerHistory] = useState<any>(null)
   const [selProds, setSelProds] = useState<any[]>(() => {
     if (!initProds) return []
@@ -236,6 +235,14 @@ export default function ExternalCardsPage() {
   const [showPreview, setShowPreview] = useState(false)
   const [brandFilter, setBrandFilter] = useState('')
   const [brandList, setBrandList] = useState<{ id: string; name: string }[]>([])
+  const [customerId, setCustomerId] = useState<string | null>(null)
+  const [customerResults, setCustomerResults] = useState<any[]>([])
+  const [showCustomerDD, setShowCustomerDD] = useState(false)
+  const [courier, setCourier] = useState('')
+  const [trackingNo, setTrackingNo] = useState('')
+  const [recipientPhone, setRecipientPhone] = useState('')
+  const [recipientAddress, setRecipientAddress] = useState('')
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const prodRef = useRef<HTMLDivElement>(null)
 
   const dayEvent = DAY_EVENTS[selectedDayIdx]
@@ -309,6 +316,89 @@ export default function ExternalCardsPage() {
       .then(({ data }) => { if (data) setBrandList(data) })
   }, [])
 
+  async function searchExternalCustomers(q: string) {
+    if (!q.trim()) { setCustomerResults([]); setShowCustomerDD(false); return }
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('external_customers')
+      .select('id, name, phone, address, auran_user_id')
+      .ilike('name', `%${q}%`)
+      .limit(8)
+    setCustomerResults(data || [])
+    setShowCustomerDD(true)
+  }
+
+  function selectExternalCustomer(c: any) {
+    setCustomerId(c.id)
+    setCustomerName(c.name)
+    setRecipientPhone(c.phone || '')
+    setRecipientAddress(c.address || '')
+    setCustomerResults([])
+    setShowCustomerDD(false)
+  }
+
+  async function saveCardToDB() {
+    if (!customerName.trim()) return
+    setSaveStatus('saving')
+    const supabase = createClient()
+    try {
+      let cid = customerId
+      // external_customers upsert
+      if (!cid) {
+        const { data: existing } = await supabase
+          .from('external_customers')
+          .select('id, auran_user_id')
+          .eq('name', customerName.trim())
+          .maybeSingle()
+        if (existing) {
+          cid = existing.id
+          await supabase
+            .from('external_customers')
+            .update({
+              phone: recipientPhone || null,
+              address: recipientAddress || null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('id', cid)
+        } else {
+          const { data: newC } = await supabase
+            .from('external_customers')
+            .insert({
+              name: customerName.trim(),
+              phone: recipientPhone || null,
+              address: recipientAddress || null,
+            })
+            .select('id')
+            .single()
+          if (newC) cid = newC.id
+        }
+        if (cid) setCustomerId(cid)
+      }
+      // external_care_cards insert
+      const cardData = {
+        selProds, tipText, cmtText, bundleItems, sampleItems,
+        routineCards, giftTiers, giftTiersR, showRenobel,
+        totoOn, totoCard, groupBuys, customEvents,
+        selectedDayOn, selectedDayIdx,
+      }
+      await supabase.from('external_care_cards').insert({
+        customer_id: cid,
+        customer_name: customerName.trim(),
+        courier: courier || null,
+        tracking_no: trackingNo || null,
+        recipient_name: customerName.trim(),
+        recipient_phone: recipientPhone || null,
+        recipient_address: recipientAddress || null,
+        card_data: cardData,
+      })
+      setSaveStatus('saved')
+      localStorage.removeItem('auran_care_card_draft')
+    } catch (e) {
+      console.error('케어카드 저장 실패:', e)
+      setSaveStatus('idle')
+    }
+  }
+
   useEffect(() => {
     const q = customerName.trim()
     if (q.length < 2) { setCustomerHistory(null); return }
@@ -318,6 +408,10 @@ export default function ExternalCardsPage() {
       setCustomerHistory(data)
     }, 300)
     return () => clearTimeout(t)
+  }, [customerName])
+
+  useEffect(() => {
+    void searchExternalCustomers(customerName)
   }, [customerName])
 
   useEffect(() => {
@@ -438,8 +532,9 @@ export default function ExternalCardsPage() {
     setTotoResults(results)
   }
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     setLoading(true)
+    await saveCardToDB()
     const html = buildPrintHTML({
       customerName, selProds, tipText, cmtText, bundleItems, sampleItems, routineCards,
       giftTiers, giftTiersR, showRenobel, totosOn: totoOn, totosCard: totoCard,
@@ -537,14 +632,110 @@ export default function ExternalCardsPage() {
       {/* 1. 고객 정보 */}
       <section style={{ marginBottom: 24 }}>
         <div style={secTitle}>1. 고객 정보</div>
-        <div style={lbl}>고객 이름</div>
-        <input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="고객 이름 입력" style={inp} />
+        {/* 고객명 검색 */}
+        <div style={{ marginBottom: 10 }}>
+          <div style={lbl}>고객 이름</div>
+          <div style={{ position: 'relative' }}>
+            <input
+              value={customerName}
+              onChange={e => {
+                setCustomerName(e.target.value)
+                setCustomerId(null)
+              }}
+              placeholder="이름 입력 또는 기존 고객 검색..."
+              style={inp}
+            />
+            {showCustomerDD && customerResults.length > 0 && (
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0,
+                background: '#fff', border: '0.5px solid #C9A96E', borderRadius: 10,
+                zIndex: 40, boxShadow: '0 6px 24px rgba(0,0,0,.1)',
+                maxHeight: 220, overflowY: 'auto' as const }}>
+                {customerResults.map((c: any) => (
+                  <div key={c.id} onClick={() => selectExternalCustomer(c)}
+                    style={{ padding: '10px 14px', fontSize: 12, cursor: 'pointer',
+                      borderBottom: '0.5px solid #f5efe8', display: 'flex',
+                      justifyContent: 'space-between', alignItems: 'center' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#fdf8f2')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ color: '#111' }}>{c.name}</span>
+                      {c.auran_user_id && (
+                        <span style={{ fontSize: 9, color: '#7B5EA7',
+                          background: '#f5f0f8', border: '0.5px solid #7B5EA7',
+                          borderRadius: 6, padding: '1px 6px' }}>
+                          💜 오랜 공식 멤버
+                        </span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 10, color: '#bbb' }}>{c.phone || ''}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        {/* 오랜 공식 멤버 배지 */}
+        {customerId && customerResults.find((c: any) => c.id === customerId)?.auran_user_id && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
+            padding: '3px 10px', borderRadius: 100,
+            background: '#f5f0f8', border: '0.5px solid #7B5EA7',
+            fontSize: 11, color: '#7B5EA7', marginBottom: 10 }}>
+            💜 오랜 공식 멤버십 고객
+          </div>
+        )}
+        {/* 기존 customerHistory 표시 유지 */}
         {customerHistory ? (
           <div style={{ marginTop: 8, fontSize: 12, color: '#534AB7', lineHeight: 1.6 }}>
-            기존 고객: {customerHistory.full_name || '-'} · 피부타입 {customerHistory.skin_type || '-'}
-            {Array.isArray(customerHistory.skin_concerns) && customerHistory.skin_concerns.length ? ` · ${customerHistory.skin_concerns.join(', ')}` : ''}
+            오랜 회원: {customerHistory.full_name || '-'} · 피부타입 {customerHistory.skin_type || '-'}
+            {Array.isArray(customerHistory.skin_concerns) && customerHistory.skin_concerns.length
+              ? ` · ${customerHistory.skin_concerns.join(', ')}` : ''}
           </div>
         ) : null}
+        {/* 배송 정보 */}
+        <div style={{ background: '#fafafa', border: '0.5px solid #eee',
+          borderRadius: 10, padding: 14, marginTop: 10 }}>
+          <div style={{ fontSize: 10, color: '#C9A96E', letterSpacing: '.12em', marginBottom: 10 }}>
+            배송 정보 (선택)
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+            <div>
+              <div style={lbl}>연락처</div>
+              <input value={recipientPhone} onChange={e => setRecipientPhone(e.target.value)}
+                placeholder="010-0000-0000" style={inp} />
+            </div>
+            <div>
+              <div style={lbl}>택배사</div>
+              <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' as const }}>
+                {['CJ대한통운', '롯데택배', '한진택배', '우체국', '로젠택배'].map(c => (
+                  <button key={c} type="button" onClick={() => setCourier(courier === c ? '' : c)}
+                    style={{ padding: '4px 8px', borderRadius: 6,
+                      border: courier === c ? '1.5px solid #7B5EA7' : '0.5px solid #ddd',
+                      background: courier === c ? '#f5f0f8' : '#fff',
+                      color: courier === c ? '#7B5EA7' : '#888',
+                      fontSize: 10, cursor: 'pointer' }}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div style={{ marginBottom: 8 }}>
+            <div style={lbl}>주소</div>
+            <input value={recipientAddress} onChange={e => setRecipientAddress(e.target.value)}
+              placeholder="배송지 주소" style={inp} />
+          </div>
+          <div>
+            <div style={lbl}>송장번호</div>
+            <input value={trackingNo} onChange={e => setTrackingNo(e.target.value)}
+              placeholder="송장번호 직접 입력" style={inp} />
+          </div>
+        </div>
+        {saveStatus === 'saved' && (
+          <div style={{ marginTop: 8, fontSize: 11, color: '#7B5EA7', textAlign: 'center' as const }}>
+            💜 저장됐어요
+          </div>
+        )}
       </section>
 
       {/* 2. 구매 제품 */}
@@ -834,6 +1025,7 @@ export default function ExternalCardsPage() {
             giftTiers, giftTiersR, showRenobel,
             totoOn, totoCard, groupBuys, customEvents,
             selectedDayOn, selectedDayIdx,
+            courier, trackingNo, recipientPhone, recipientAddress,
           }
           localStorage.setItem('auran_care_card_draft', JSON.stringify(data))
           alert('임시저장 됐어요 💜')
