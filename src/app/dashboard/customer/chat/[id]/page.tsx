@@ -1544,6 +1544,7 @@ export default function CustomerChatRoomPage() {
                       </button>
                     </div>
                   </div>
+                  </div>
                   {mine ? mineTimeNode : ownerTimeNode}
                 </div>
             )
@@ -2538,7 +2539,7 @@ export default function CustomerChatRoomPage() {
                   background: 'rgba(201,169,110,0.1)',
                 }}
               />
-              {chatBanner.phase_auto && phase && (
+              {chatBanner.phase_auto && profileInfo?.hormone_phase && (
                 <div
                   style={{
                     background: 'rgba(201,169,110,0.18)',
@@ -2554,7 +2555,7 @@ export default function CustomerChatRoomPage() {
                     zIndex: 1,
                   }}
                 >
-                  {phaseMap[phase] ?? phase}
+                  {profileInfo.hormone_label ?? profileInfo.hormone_phase}
                 </div>
               )}
               <div style={{ flex: 1, zIndex: 1 }}>
