@@ -161,6 +161,10 @@ export default function CheckoutPageView({
   generalProgress,
 }: Props) {
   const supabase = createClient()
+  const hasEligibleItem = orderLines.some(
+    (l: any) => !l.is_groupbuy && !l.is_timesale && !l.is_flash_sale && !l.event_title
+  )
+  // [또또복권] 일반 상품 존재 여부
   const remBalAfterToast = Math.max(0, balance)
   const oranCapLocal = Math.min(remBalAfterToast, Math.max(0, afterCoupon - toastUsed))
   const toastTBalance = points + Math.floor(balance / Math.max(1, toastRate))
@@ -707,7 +711,7 @@ export default function CheckoutPageView({
                 <span>₩{needCharge.toLocaleString()}</span>
               </div>
               {/* ===== [또또복권] 미달 안내 섹션 ===== */}
-              {(generalShortage || rnobelShortage) && (
+              {hasEligibleItem && (generalShortage || rnobelShortage) && (
                 <div style={{
                   background: '#f5f0ff', borderRadius: 14,
                   padding: '14px 16px', marginBottom: 12,
