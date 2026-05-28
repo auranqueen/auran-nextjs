@@ -170,6 +170,7 @@ export default function ExternalCardsPage() {
   const [prodSearch, setProdSearch] = useState('')
   const [prodResults, setProdResults] = useState<any[]>([])
   const [tipText, setTipText] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
   const [cmtText, setCmtText] = useState('')
   const [bundleItems, setBundleItems] = useState<any[]>([])
   const [bundleSearch, setBundleSearch] = useState('')
@@ -260,6 +261,29 @@ export default function ExternalCardsPage() {
     setSelProds(prev => [...prev, { id: p.id, name: p.name, price: p.sale_price || p.retail_price || 0, qty: 1 }])
     setProdSearch('')
     setProdResults([])
+  }
+
+  async function generateAiTip() {
+    const prodNames = selProds.map((p: any) => p.name).join(', ')
+    if (!prodNames) return
+    setAiLoading(true)
+    try {
+      const res = await fetch('/api/generate-tip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productName: prodNames,
+          description: '',
+          ingredients: '',
+        }),
+      })
+      const data = await res.json()
+      if (data.tip) setTipText(data.tip)
+    } catch {
+      setTipText('소량을 덜어 가볍게 눌러 흡수시켜 주세요 💜 꾸준히 사용하시면 더 좋은 결과를 느끼실 수 있어요.')
+    } finally {
+      setAiLoading(false)
+    }
   }
 
   const toggleGiftTier = (tier: typeof GIFT_TIERS[0], renobel = false) => {
@@ -374,6 +398,21 @@ export default function ExternalCardsPage() {
       <section style={{ marginBottom: 24 }}>
         <div style={secTitle}>3. 사용법 · 팁</div>
         <div style={lbl}>사용법 / 팁</div>
+        <button
+          type="button"
+          onClick={generateAiTip}
+          disabled={aiLoading || selProds.length === 0}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            padding: '7px 16px', marginBottom: 8,
+            background: '#f5f0f8', border: '0.5px solid #e0d8f0',
+            borderRadius: 100, fontSize: 11, color: '#7B5EA7',
+            cursor: selProds.length === 0 ? 'not-allowed' : 'pointer',
+            opacity: selProds.length === 0 ? 0.5 : 1,
+          }}
+        >
+          {aiLoading ? '✦ 생성 중...' : '✦ AI 팁 자동생성'}
+        </button>
         <textarea value={tipText} onChange={e => setTipText(e.target.value)} rows={3} placeholder="제품 사용법과 팁" style={{ ...inp, resize: 'vertical' }} />
         <div style={{ ...lbl, marginTop: 10 }}>맑원장 코멘트</div>
         <textarea value={cmtText} onChange={e => setCmtText(e.target.value)} rows={2} placeholder="고객에게 전달할 코멘트" style={{ ...inp, resize: 'vertical' }} />
