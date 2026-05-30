@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { createPayAppPayment } from '@/lib/payments/payapp'
+import KakaoShareButton from '@/components/membership/KakaoShareButton'
 
 const C = {
   purple: '#7B5EA7', gold: '#C9A96E', goldDark: '#A07F4A', cream: '#FAF6F0',
@@ -96,6 +97,7 @@ export default function MembershipCheckoutPage() {
         <button onClick={handlePay} disabled={!selected || !agreed || paying} style={{ width: '100%', marginTop: 14, background: !agreed || paying ? '#C9BFD8' : C.purple, border: 'none', color: '#fff', borderRadius: 9, padding: 14, fontSize: 14, fontFamily: 'inherit', cursor: !agreed || paying ? 'default' : 'pointer' }}>
           {paying ? '결제창으로 이동 중...' : '결제하고 시작하기'}
         </button>
+        <KakaoShareButton />
       </div>
     </div>
   )
