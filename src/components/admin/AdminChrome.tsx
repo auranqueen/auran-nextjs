@@ -61,6 +61,7 @@ const MENU = [
       { label: '케어카드 관리', href: '/admin/marketing/care-cards', icon: '💠' },
       { label: '공동구매 관리', href: '/admin/marketing/groupbuys', icon: '🛒' },
       { label: '외부고객 케어카드', href: '/admin/marketing/external-cards', icon: '🖨️' },
+      { label: '채팅 배너 관리', href: '/admin/chat-banner', icon: '📢' },
       { label: '쿠폰 관리', href: '/admin/coupons', icon: '🎫' },
     ],
   },
@@ -150,6 +151,7 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/marketing/care-cards')) return '케어카드 관리'
   if (path.startsWith('/admin/commissions')) return '커미션 관리'
   if (path.startsWith('/admin/magazine')) return '매거진 관리'
+  if (path.startsWith('/admin/chat-banner')) return '채팅 배너 관리'
   return 'Admin Console'
 }
 
