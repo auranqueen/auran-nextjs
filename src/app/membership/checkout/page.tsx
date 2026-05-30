@@ -98,6 +98,14 @@ export default function MembershipCheckoutPage() {
           {paying ? '결제창으로 이동 중...' : '결제하고 시작하기'}
         </button>
         <KakaoShareButton />
+        <div style={{ textAlign: 'center', marginTop: 14 }}>
+          <span
+            onClick={() => { window.location.href = '/membership/gift' }}
+            style={{ fontSize: 13, color: '#A07F4A', cursor: 'pointer', borderBottom: '0.5px solid rgba(160,127,74,0.4)', paddingBottom: 2 }}
+          >
+            선물로 보내기 🎁
+          </span>
+        </div>
       </div>
     </div>
   )
