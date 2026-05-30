@@ -149,6 +149,45 @@ export async function POST(req: NextRequest) {
         } as any)
       }
 
+
+      // ★ 멤버십 결제 완료 — 기존 분기 그대로 두고 이 블록만 추가
+      if (intent.kind === 'membership' && intent.user_id && intent.target_id) {
+        const client = tryCreateServiceClient() || supabase
+        const planId = String(intent.target_id)
+        const { data: plan } = await client
+          .from('membership_plans')
+          .select('shipments_per_year, interval_months')
+          .eq('id', planId)
+          .maybeSingle()
+        const total = Number(plan?.shipments_per_year ?? 6)
+        const interval = Number(plan?.interval_months ?? 2)
+        const now = new Date()
+        const expires = new Date(now); expires.setFullYear(expires.getFullYear() + 1)
+        const next = new Date(now); next.setMonth(next.getMonth() + interval)
+        const { data: existingMembership } = await client
+          .from('user_memberships').select('id').eq('source_id', intent.id).maybeSingle()
+        if (!existingMembership) {
+          await client.from('user_memberships').insert({
+            user_id: intent.user_id,
+            plan_id: planId,
+            status: 'active',
+            started_at: now.toISOString(),
+            expires_at: expires.toISOString(),
+            shipments_total: total,
+            shipments_remaining: total,
+            next_shipment_date: next.toISOString().slice(0, 10),
+            source_type: 'payment_intent',
+            source_id: intent.id,
+          } as any)
+          await client.from('notifications').insert({
+            user_id: intent.user_id,
+            type: 'promo',
+            title: 'ORÆN PRIVÉ 멤버십이 시작됐어요 💜',
+            body: '두 달마다, 오랜이 고른 리추얼이 도착해요',
+            is_read: false,
+          } as any)
+        }
+      }
       // domain apply: charge => increase charge_balance + 5% 포인트 적립 + 알림
       if (intent.kind === 'charge' && intent.user_id) {
         const amount = Number(intent.amount || 0)
