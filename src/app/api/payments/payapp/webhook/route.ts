@@ -188,6 +188,37 @@ export async function POST(req: NextRequest) {
           } as any)
         }
       }
+
+      // ★ 멤버십 "선물" 결제 완료 — 기존 분기 그대로 두고 이 블록만 추가
+      if (intent.kind === 'membership_gift' && intent.target_id) {
+        const client = tryCreateServiceClient() || supabase
+        const giftId = String(intent.target_id)
+        const { data: gift } = await client
+          .from('membership_gifts')
+          .select('id, gifted_by, claim_token, status')
+          .eq('id', giftId)
+          .maybeSingle()
+        if (gift && gift.status === 'pending') {
+          await client
+            .from('membership_gifts')
+            .update({
+              status: 'paid',
+              source_type: 'payment_intent',
+              source_id: intent.id,
+            })
+            .eq('id', giftId)
+            .eq('status', 'pending')
+          if (gift.gifted_by) {
+            await client.from('notifications').insert({
+              user_id: gift.gifted_by,
+              type: 'promo',
+              title: 'ORÆN PRIVÉ 선물이 준비됐어요 🎁',
+              body: '받는 분께 이 링크를 보내주세요: https://auran.kr/membership/claim/' + gift.claim_token,
+              is_read: false,
+            } as any)
+          }
+        }
+      }
       // domain apply: charge => increase charge_balance + 5% 포인트 적립 + 알림
       if (intent.kind === 'charge' && intent.user_id) {
         const amount = Number(intent.amount || 0)
