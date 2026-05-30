@@ -228,6 +228,17 @@ export async function middleware(req: NextRequest) {
       admin: '/admin',
     }
     const target = normalizedRole && map[normalizedRole] ? map[normalizedRole] : '/dashboard/customer'
+    if (pathname.startsWith('/dashboard/admin')) {
+      const appRole = (user as any)?.app_metadata?.role ?? ''
+      const isSuperAdmin = appRole === 'super_admin'
+      if (normalizedRole !== 'admin' && !isSuperAdmin) {
+        const redirectUrl = req.nextUrl.clone()
+        redirectUrl.pathname = '/'
+        redirectUrl.search = ''
+        return redirectPreservingSupabaseCookies(res, NextResponse.redirect(redirectUrl))
+      }
+      return res
+    }
     if (target === '/admin') {
       // admin은 대시보드 경로로 접근 시 홈으로 보내고 슈퍼콘솔로만 진입
       const url = req.nextUrl.clone()
