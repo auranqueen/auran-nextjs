@@ -43,6 +43,13 @@ const MENU = [
     ],
   },
   {
+    section: 'ORÆN PRIVÉ',
+    items: [
+      { label: '리추얼 템플릿', href: '/admin/membership/templates', icon: '💜' },
+      { label: '멤버·큐레이션', href: '/admin/membership/members', icon: '🌙' },
+    ],
+  },
+  {
     section: 'SALES',
     items: [
       { label: '주문 내역', href: '/admin/orders', icon: '📦' },

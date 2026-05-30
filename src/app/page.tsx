@@ -2514,6 +2514,28 @@ export default function CustomerHomePage() {
         supabaseClient={supabase}
         hormonePhase={hormonePhase}
       />
+      {/* ORÆN PRIVÉ 멤버십 진입 */}
+      <div
+        onClick={() => { window.location.href = '/membership/checkout' }}
+        style={{
+          marginTop: 14,
+          cursor: 'pointer',
+          borderRadius: 14,
+          padding: '18px',
+          background: 'linear-gradient(135deg, #2A2433 0%, #3A2F45 100%)',
+          border: '0.5px solid rgba(201,169,110,0.45)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, letterSpacing: 3, color: '#C9A96E' }}>ORÆN PRIVÉ</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 6, lineHeight: 1.6 }}>
+              두 달마다, 오랜이 직접 고른 리추얼이 도착해요
+            </div>
+          </div>
+          <div style={{ fontSize: 20, color: '#C9A96E' }}>→</div>
+        </div>
+      </div>
 
       {/* ── BEST 랭킹 ── */}
       <div style={{ padding: '16px 16px 0' }}>
