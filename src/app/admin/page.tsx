@@ -37,16 +37,42 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
   // 이달 매출
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-  const { data: monthlyOrders } = await supabase.from('orders').select('final_amount').gte('ordered_at', monthStart).not('status', 'in', '("취소","환불")')
-  const monthlyRevenue = (monthlyOrders || []).reduce((s, o) => s + (o.final_amount || 0), 0)
-
   const kstYmd = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
   const dayStartIso = new Date(`${kstYmd}T00:00:00+09:00`).toISOString()
+  const insight = searchParams?.insight || ''
 
-  const { data: skinToday } = await supabase
-    .from('skin_cycle_analysis')
-    .select('auth_id, checkin_condition, hormone_stage')
-    .eq('record_date', kstYmd)
+  const [
+    { data: monthlyOrders },
+    { data: skinToday },
+    { data: behClicks },
+    { data: behPurch },
+    { data: hcAll },
+    { data: searchRaw },
+    { count: pendingPromote },
+  ] = await Promise.all([
+    supabase.from('orders').select('final_amount').gte('ordered_at', monthStart).not('status', 'in', '("취소","환불")'),
+    supabase
+      .from('skin_cycle_analysis')
+      .select('auth_id, checkin_condition, hormone_stage')
+      .eq('record_date', kstYmd),
+    supabase.from('user_behavior_logs').select('id').eq('action_type', 'product_click').gte('created_at', dayStartIso),
+    supabase.from('user_behavior_logs').select('id, metadata').eq('action_type', 'purchase').gte('created_at', dayStartIso),
+    insight === 'tracks'
+      ? supabase.from('hormone_cycle').select('track')
+      : supabase.from('hormone_cycle').select('track').limit(500),
+    supabase
+      .from('customer_search_logs')
+      .select('search_keyword, count, source, created_at')
+      .eq('source', '검색')
+      .gte('created_at', monthStart),
+    supabase
+      .from('customer_search_logs')
+      .select('*', { count: 'exact', head: true })
+      .eq('source', '검색')
+      .eq('is_promoted', false),
+  ])
+
+  const monthlyRevenue = (monthlyOrders || []).reduce((s, o) => s + (o.final_amount || 0), 0)
   const checkinTodayUsers = new Set((skinToday || []).map((r: any) => String(r.auth_id || '')).filter(Boolean)).size
   const goldenTodayUsers = new Set(
     (skinToday || [])
@@ -54,14 +80,10 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
       .map((r: any) => String(r.auth_id || ''))
       .filter(Boolean)
   ).size
-
-  const { data: behClicks } = await supabase.from('user_behavior_logs').select('id').eq('action_type', 'product_click').gte('created_at', dayStartIso)
-  const { data: behPurch } = await supabase.from('user_behavior_logs').select('id, metadata').eq('action_type', 'purchase').gte('created_at', dayStartIso)
   const clickCnt = (behClicks || []).length
   const purchaseCompleteCnt = (behPurch || []).filter((r: any) => String((r.metadata as any)?.flow || '') === 'order_complete').length
   const conversionPct = clickCnt > 0 ? Math.round((purchaseCompleteCnt / clickCnt) * 1000) / 10 : 0
 
-  const { data: hcAll } = await supabase.from('hormone_cycle').select('track')
   const trackDist: Record<string, number> = {}
   for (const r of hcAll || []) {
     const t = String((r as { track?: string }).track || 'general')
@@ -79,11 +101,6 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
     })
     .join(', ')
 
-  const { data: searchRaw } = await supabase
-    .from('customer_search_logs')
-    .select('search_keyword, count, source, created_at')
-    .eq('source', '검색')
-    .gte('created_at', monthStart)
   const kwAgg: Record<string, number> = {}
   for (const r of searchRaw || []) {
     const k = String((r as { search_keyword?: string }).search_keyword || '').trim()
@@ -94,13 +111,6 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
 
-  const { count: pendingPromote } = await supabase
-    .from('customer_search_logs')
-    .select('*', { count: 'exact', head: true })
-    .eq('source', '검색')
-    .eq('is_promoted', false)
-
-  const insight = searchParams?.insight || ''
   let insightRows: { title: string; rows: any[] } | null = null
   if (insight === 'checkin_today') insightRows = { title: '오늘 체크인 기록', rows: skinToday || [] }
   else if (insight === 'golden_today')
