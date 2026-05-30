@@ -426,7 +426,9 @@ export default function OwnerChatRoomPage() {
                   o.start(_ac.currentTime); o.stop(_ac.currentTime + 1.5)
                 }
               }
-              playSound(notifSoundRef.current)
+              if (row.is_from_customer === true) {
+                playSound(notifSoundRef.current)
+              }
             } catch {}
             setMessages((prev) => {
               if (prev.some((p) => p.id === row.id)) return prev
@@ -1166,6 +1168,47 @@ export default function OwnerChatRoomPage() {
           const mine = !m.is_from_customer
           const prevMsg = messages[index - 1]
           const showProfile = !mine && (!prevMsg || !Boolean(prevMsg.is_from_customer))
+          const kstDate = new Date(new Date(m.created_at).getTime() + 9 * 60 * 60 * 1000)
+          const kstYear = kstDate.getUTCFullYear()
+          const kstMonth = kstDate.getUTCMonth() + 1
+          const kstDay = kstDate.getUTCDate()
+          const kstWeek = ['일', '월', '화', '수', '목', '금', '토'][kstDate.getUTCDay()]
+          const kstDayKey = Date.UTC(kstYear, kstMonth - 1, kstDay)
+          const prevKstDate = prevMsg ? new Date(new Date(prevMsg.created_at).getTime() + 9 * 60 * 60 * 1000) : null
+          const prevKstDayKey = prevKstDate
+            ? Date.UTC(prevKstDate.getUTCFullYear(), prevKstDate.getUTCMonth(), prevKstDate.getUTCDate())
+            : null
+          const showDateDivider = prevKstDayKey !== kstDayKey
+          const nowKst = new Date(Date.now() + 9 * 60 * 60 * 1000)
+          const nowKstDayKey = Date.UTC(nowKst.getUTCFullYear(), nowKst.getUTCMonth(), nowKst.getUTCDate())
+          const dayDiff = Math.floor((nowKstDayKey - kstDayKey) / (24 * 60 * 60 * 1000))
+          const dateText = dayDiff === 0
+            ? `오늘 · ${kstYear}년 ${kstMonth}월 ${kstDay}일 ${kstWeek}요일`
+            : dayDiff === 1
+              ? `어제 · ${kstYear}년 ${kstMonth}월 ${kstDay}일 ${kstWeek}요일`
+              : `${kstYear}년 ${kstMonth}월 ${kstDay}일 ${kstWeek}요일`
+          const hour24 = kstDate.getUTCHours()
+          const minute = String(kstDate.getUTCMinutes()).padStart(2, '0')
+          const timeText = `${hour24 >= 12 ? '오후' : '오전'} ${hour24 % 12 || 12}:${minute}`
+          const dateDividerNode = showDateDivider ? (
+            <div key={`d-${m.id}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0 8px' }}>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
+              <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.28)', letterSpacing: '0.03em', whiteSpace: 'nowrap', padding: '0 4px' }}>
+                {dateText}
+              </span>
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
+            </div>
+          ) : null
+          const ownerTimeNode = (
+            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)', marginTop: '3px', display: 'block' }}>
+              {timeText}
+            </span>
+          )
+          const customerTimeNode = (
+            <span style={{ fontSize: '9px', color: 'rgba(255,255,255,0.25)', marginTop: '3px', display: 'block' }}>
+              {timeText}
+            </span>
+          )
           const isImage = m.message_kind === 'image' && m.image_url
           let productItems: { id: string; name: string; price: number; thumb: string }[] = []
           if (m.message_kind === 'product_recommend') {
@@ -1428,7 +1471,7 @@ export default function OwnerChatRoomPage() {
                       ) : null}
                     </div>
                   )
-                })(                ) : (
+                })() : (
                   <div style={{ fontSize: 13, color: mine ? '#f3e9ff' : '#f5e6c8', lineHeight: 1.5 }}>{msgText(m)}</div>
                 )}
               </>
@@ -1436,27 +1479,34 @@ export default function OwnerChatRoomPage() {
 
           if (mine) {
             return (
-              <div key={m.id} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
-                <div
-                  style={{
-                    maxWidth: '85%',
-                    borderRadius: '14px 14px 4px 14px',
-                    padding:
-                      m.message_kind === 'product_recommend' || m.message_kind === 'routine_card'
-                        ? '8px 8px 14px'
-                        : '10px 12px 16px',
-                    background: 'rgba(123,94,167,0.45)',
-                    border: 'none',
-                  }}
-                >
-                  {messageBody}
+              <>
+                {dateDividerNode}
+                <div key={m.id} style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', maxWidth: '85%' }}>
+                    <div
+                      style={{
+                        borderRadius: '14px 14px 4px 14px',
+                        padding:
+                          m.message_kind === 'product_recommend' || m.message_kind === 'routine_card'
+                            ? '8px 8px 14px'
+                            : '10px 12px 16px',
+                        background: 'rgba(123,94,167,0.45)',
+                        border: 'none',
+                      }}
+                    >
+                      {messageBody}
+                    </div>
+                    {ownerTimeNode}
+                  </div>
                 </div>
-              </div>
+              </>
             )
           }
 
           return (
-            <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
+            <>
+              {dateDividerNode}
+              <div key={m.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 10 }}>
               {showProfile ? (
                 customerSkinInfo?.avatar_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -1511,8 +1561,10 @@ export default function OwnerChatRoomPage() {
                 >
                   {messageBody}
                 </div>
+                {customerTimeNode}
               </div>
             </div>
+            </>
           )
         })}
       </div>
