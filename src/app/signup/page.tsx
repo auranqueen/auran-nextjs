@@ -31,6 +31,7 @@ function SignupForm() {
   const [deliveryDate, setDeliveryDate] = useState('')
   const [isBreastfeeding, setIsBreastfeeding] = useState(false)
   const [cycleType, setCycleType] = useState<string | null>(null)
+  const [menopauseReason, setMenopauseReason] = useState('')
   useEffect(() => {
     const t = localStorage.getItem('auran_track')
     const c = localStorage.getItem('auran_cycle_type')
@@ -40,6 +41,8 @@ function SignupForm() {
     if (c) setCycleType(c)
     if (cl) setCycleLength(cl)
     if (lp) setLastPeriodDate(lp)
+    const mr = localStorage.getItem('auran_menopause_reason')
+    if (mr) setMenopauseReason(mr)
   }, [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -127,6 +130,7 @@ function SignupForm() {
             delivery_date: track === 'postpartum' ? (deliveryDate || null) : null,
             breastfeeding: track === 'postpartum' ? isBreastfeeding : null,
             expected_period_date: expectedPeriodDate,
+            menopause_reason: (track === 'menopause_peri' || track === 'menopause_post') ? (menopauseReason || null) : null,
             updated_at: new Date().toISOString(),
           }
           await supabase.from('hormone_cycle').upsert(payload, { onConflict: 'auth_id' })
@@ -224,6 +228,7 @@ function SignupForm() {
           delivery_date: track === 'postpartum' ? (deliveryDate || null) : null,
           breastfeeding: track === 'postpartum' ? isBreastfeeding : null,
           expected_period_date: expectedPeriodDate,
+          menopause_reason: (track === 'menopause_peri' || track === 'menopause_post') ? (menopauseReason || null) : null,
           updated_at: new Date().toISOString(),
         }
         const { error: hcErr } = await supabase.from('hormone_cycle').upsert(payload, { onConflict: 'auth_id' })
