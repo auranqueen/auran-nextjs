@@ -34,6 +34,8 @@ export default function SegmentSlot({ track, reason }: { track?: string | null; 
   const [checked, setChecked] = useState<Record<string, boolean>>({})
   const [trig, setTrig] = useState<string | null>(null)
   const [loaded, setLoaded] = useState(false)
+  const [confirmSwitch, setConfirmSwitch] = useState(false)
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -54,6 +56,20 @@ export default function SegmentSlot({ track, reason }: { track?: string | null; 
     }
     load()
   }, [])
+
+  const switchToCycle = async () => {
+    setBusy(true)
+    const sb = createClient()
+    const { data: { user } } = await sb.auth.getUser()
+    if (user) {
+      const today = new Date().toISOString().slice(0, 10)
+      await sb.from('hormone_cycle').update({ track: 'general', cycle_type: 'menstrual', menopause_reason: null, last_period_date: today, updated_at: new Date().toISOString() }).eq('auth_id', user.id)
+      await sb.from('profiles').update({ cycle_type: 'menstrual' }).eq('auth_id', user.id)
+      window.location.reload()
+      return
+    }
+    setBusy(false)
+  }
 
   if (segment === 'cycle' || !loaded) return null
 
@@ -140,6 +156,19 @@ export default function SegmentSlot({ track, reason }: { track?: string | null; 
       {reason === 'unknown' && (
         <div style={{ fontSize: 11, color: W6, marginTop: 12, lineHeight: 1.6 }}>괜찮으시면 병원에서 한번 살펴보는 것도 좋아요.</div>
       )}
+      <div style={{ marginTop: 16, borderTop: '0.5px solid rgba(255,255,255,0.1)', paddingTop: 12 }}>
+        {!confirmSwitch ? (
+          <span onClick={() => setConfirmSwitch(true)} style={{ fontSize: 12, color: G, cursor: 'pointer' }}>혹시 생리가 다시 시작됐나요?</span>
+        ) : (
+          <div>
+            <div style={{ fontSize: 12, color: W, lineHeight: 1.6 }}>월경 리듬으로 바꿀게요. 오늘 날짜로 기록돼요.</div>
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <span onClick={() => { if (!busy) switchToCycle() }} style={{ fontSize: 13, color: '#221C2E', background: G, borderRadius: 8, padding: '7px 14px', cursor: busy ? 'default' : 'pointer' }}>{busy ? '바꾸는 중...' : '전환하기'}</span>
+              <span onClick={() => setConfirmSwitch(false)} style={{ fontSize: 13, color: W6, border: '0.5px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '7px 14px', cursor: 'pointer' }}>취소</span>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
