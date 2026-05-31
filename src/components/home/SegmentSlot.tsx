@@ -25,7 +25,7 @@ function pickDaily(arr: any[]) {
   return arr[day % arr.length]
 }
 
-export default function SegmentSlot({ track }: { track?: string | null }) {
+export default function SegmentSlot({ track, reason }: { track?: string | null; reason?: string | null }) {
   const segment = trackToSegment(track)
   const [mentions, setMentions] = useState<any[]>([])
   const [routines, setRoutines] = useState<any[]>([])
@@ -57,7 +57,13 @@ export default function SegmentSlot({ track }: { track?: string | null }) {
 
   if (segment === 'cycle' || !loaded) return null
 
-  const mention = pickDaily(mentions)
+  let pool = mentions
+  if (segment === 'transition') {
+    const targetTone = reason === 'natural' ? 'celebrate' : 'care'
+    const filtered = mentions.filter((m: any) => m.tone === targetTone)
+    pool = filtered.length ? filtered : mentions
+  }
+  const mention = pickDaily(pool)
   const wrap: React.CSSProperties = { marginTop: 14 }
   const card: React.CSSProperties = { background: CARD, borderRadius: 14, padding: '14px 14px' }
 
@@ -104,7 +110,6 @@ export default function SegmentSlot({ track }: { track?: string | null }) {
     )
   }
 
-  // transition
   return (
     <div style={wrap}>
       {mention && <div style={{ fontSize: 16, color: W }}>{mention.text}</div>}
@@ -131,6 +136,9 @@ export default function SegmentSlot({ track }: { track?: string | null }) {
             </div>
           ))}
         </div>
+      )}
+      {reason === 'unknown' && (
+        <div style={{ fontSize: 11, color: W6, marginTop: 12, lineHeight: 1.6 }}>괜찮으시면 병원에서 한번 살펴보는 것도 좋아요.</div>
       )}
     </div>
   )
