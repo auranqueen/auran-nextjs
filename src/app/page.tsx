@@ -1856,7 +1856,7 @@ export default function CustomerHomePage() {
       </div>
 
       {/* ── 호르몬 브리핑 · 오늘 체크인 · 케어 액션 (TODAY&apos;S SKIN 바로 아래) ── */}
-      <div style={{ padding: '12px 16px 0' }}>{trackToSegment(hormoneTrack) !== 'cycle' ? (<SegmentSlot track={hormoneTrack} />) : (<>
+      <div style={{ padding: '12px 16px 0' }}>{trackToSegment(hormoneTrack) !== 'cycle' ? (<SegmentSlot track={hormoneTrack} reason={(hormoneCycle as any)?.menopause_reason ?? null} />) : (<>
         <HormoneCard
           hormoneMainLine={hormoneMainLine}
           hormoneSubLine={hormoneSubLine}
