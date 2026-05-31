@@ -108,6 +108,7 @@ function AuthDoneInner() {
         const track = localStorage.getItem('auran_track')
         const cycleLength = localStorage.getItem('auran_cycle_length')
         const lastPeriod = localStorage.getItem('auran_last_period')
+        const menopauseReason = localStorage.getItem('auran_menopause_reason')
         if (cycleType && track) {
           const payload: any = {
             auth_id: data.session!.user.id,
@@ -115,12 +116,14 @@ function AuthDoneInner() {
             track,
             cycle_length: cycleLength ? parseInt(cycleLength) : 28,
             last_period_date: lastPeriod || null,
+            menopause_reason: (track === 'menopause_peri' || track === 'menopause_post') ? (menopauseReason || null) : null,
           }
           await supabase.from('hormone_cycle').upsert(payload, { onConflict: 'auth_id' })
           localStorage.removeItem('auran_cycle_type')
           localStorage.removeItem('auran_track')
           localStorage.removeItem('auran_cycle_length')
           localStorage.removeItem('auran_last_period')
+          localStorage.removeItem('auran_menopause_reason')
         }
       } catch {}
       // localStorage에서 birth_date/gender/skin_type 읽어서 profiles 저장
