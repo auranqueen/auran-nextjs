@@ -76,6 +76,7 @@ const MENU = [
     section: 'HOME',
     items: [
       { label: '홈 큐레이션', href: '/admin/home-curation', icon: '🏠' },
+      { label: '세그먼트 케어', href: '/admin/segment-care', icon: '🌗' },
       { label: '케어카드', href: '/admin/marketing/care-cards', icon: '💜' },
       { label: '공동구매', href: '/admin/marketing/groupbuys', icon: '👥' },
       { label: '타임세일', href: '/admin/settings/flash-sale', icon: '⚡' },
