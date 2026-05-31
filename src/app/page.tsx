@@ -15,6 +15,8 @@ import SeasonRecommendSection from
   '@/components/home/SeasonRecommendSection'
 import BodyCareCard from '@/components/home/BodyCareCard'
 import WeatherRecommendSheet from '@/components/home/WeatherRecommendSheet'
+import SegmentSlot from '@/components/home/SegmentSlot'
+import { trackToSegment } from '@/lib/segment'
 
 const getSeoulToday = () => {
   const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
@@ -1854,7 +1856,7 @@ export default function CustomerHomePage() {
       </div>
 
       {/* ── 호르몬 브리핑 · 오늘 체크인 · 케어 액션 (TODAY&apos;S SKIN 바로 아래) ── */}
-      <div style={{ padding: '12px 16px 0' }}>
+      <div style={{ padding: '12px 16px 0' }}>{trackToSegment(hormoneTrack) !== 'cycle' ? (<SegmentSlot track={hormoneTrack} />) : (<>
         <HormoneCard
           hormoneMainLine={hormoneMainLine}
           hormoneSubLine={hormoneSubLine}
@@ -2002,7 +2004,7 @@ export default function CustomerHomePage() {
           </div>
         ) : null}
 
-      </div>
+      </>)}</div>
 
       {/* ── TODAY'S SKIN ── */}
       <div
