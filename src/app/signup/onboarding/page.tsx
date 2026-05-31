@@ -16,6 +16,7 @@ function OnboardingInner() {
   const [track, setTrack] = useState('')
   const [cycleLength, setCycleLength] = useState('28')
   const [lastPeriodDate, setLastPeriodDate] = useState('')
+  const [menopauseReason, setMenopauseReason] = useState('')
   const [skinType, setSkinType] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -53,6 +54,7 @@ function OnboardingInner() {
       localStorage.setItem('auran_gender', gender)
       localStorage.setItem('auran_cycle_type', gender === 'female' ? cycleType : 'male')
       localStorage.setItem('auran_track', gender === 'female' ? track : 'male')
+      localStorage.setItem('auran_menopause_reason', (gender === 'female' && cycleType === 'menopause') ? menopauseReason : '')
       localStorage.setItem('auran_cycle_length', cycleLength)
       localStorage.setItem('auran_last_period', lastPeriodDate)
       localStorage.setItem('auran_skin_type', skinType)
@@ -167,7 +169,31 @@ function OnboardingInner() {
                   }}
                 >🌙 생리 주기가 없어요</button>
               </div>
-              {track === 'general' && (
+              {cycleType === 'menopause' && (
+                <div style={{ marginTop: 12 }}>
+                  <label style={labelStyle}>괜찮으시면 알려주세요 (선택)</label>
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {[
+                      { v: 'natural', t: '자연스럽게 멈췄어요' },
+                      { v: 'surgical', t: '수술·치료 후예요' },
+                      { v: 'unknown', t: '잘 모르겠어요' },
+                    ].map((o) => (
+                      <button
+                        key={o.v}
+                        type="button"
+                        onClick={() => setMenopauseReason(o.v)}
+                        style={{
+                          textAlign: 'left', padding: '13px 14px', borderRadius: 10,
+                          border: menopauseReason === o.v ? '1px solid #7B5EA7' : '1px solid var(--border)',
+                          background: menopauseReason === o.v ? 'rgba(123,94,167,0.08)' : 'var(--bg3)',
+                          color: menopauseReason === o.v ? '#7B5EA7' : 'var(--text)',
+                          fontSize: 13, cursor: 'pointer',
+                        }}
+                      >{o.t}</button>
+                    ))}
+                  </div>
+                </div>
+              )}              {track === 'general' && (
                 <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
                   <div>
                     <label style={labelStyle}>평균 주기 일수</label>
