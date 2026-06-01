@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useCart } from '@/context/CartContext'
 import ProductClient from '@/app/(customer)/products/[id]/client'
+import SkinReportButton from '@/components/skin/SkinReportButton'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
@@ -223,6 +224,7 @@ function SkinAnalysisResultPageContent() {
         <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>분석 결과</span>
         <button onClick={() => router.push('/myworld')} style={{ fontSize: '11px', color: GOLD, cursor: 'pointer', background: 'none', border: 'none' }}>저장 ›</button>
       </header>
+      <SkinReportButton />
 
       {/* 임신 모드 배너 */}
       {isPregnant && (
