@@ -30,7 +30,6 @@ export default function MyPage() {
   const [coupons, setCoupons] = useState<any[]>([])
   const [refills, setRefills] = useState<any[]>([])
   const [recentOrdersForRefill, setRecentOrdersForRefill] = useState<any[]>([])
-  const [tracker, setTracker] = useState({ water: 6, uv: 3, sleep: 7.5, routine: 75 })
   const [completion, setCompletion] = useState(0)
   const [profileData, setProfileData] = useState<any>(null)
   const [avatarUrl, setAvatarUrl] = useState('')
@@ -860,37 +859,6 @@ export default function MyPage() {
               </div>
             ))
           })()}
-        </div>
-      </div>
-
-      {/* BEAUTY TRACKER */}
-      <div style={{ margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '18px', padding: '14px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <span style={{ fontSize: '10px', fontFamily: 'monospace', letterSpacing: '1.5px', color: TEXT_MUTED }}>BEAUTY TRACKER</span>
-          <span style={{ fontSize: '9px', color: TEXT_DIM, fontFamily: 'monospace' }}>
-            {new Date().toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })}
-          </span>
-        </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {[
-            { icon: '💧', val: `${tracker.water}`, unit: '/8', label: '수분 섭취', pct: (tracker.water / 8) * 100, color: '#6ab0e0' },
-            { icon: '🌞', val: `UV`, unit: `${tracker.uv}`, label: '자외선', pct: tracker.uv * 20, color: '#f0c040' },
-            { icon: '😴', val: `${tracker.sleep}`, unit: 'h', label: '수면', pct: (tracker.sleep / 10) * 100, color: '#a080e0' },
-            { icon: '🧴', val: `${tracker.routine}`, unit: '%', label: '루틴', pct: tracker.routine, color: GOLD },
-          ].map((item, i) => (
-            <div key={i} style={{ flex: 1, background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '10px 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
-              <span style={{ fontSize: '18px' }}>{item.icon}</span>
-              <span style={{ fontSize: '13px', fontWeight: 400 }}>{item.val}<span style={{ fontSize: '9px', fontWeight: 300 }}>{item.unit}</span></span>
-              <span style={{ fontSize: '9px', color: TEXT_MUTED, textAlign: 'center' }}>{item.label}</span>
-              <div style={{ width: '100%', height: '2px', borderRadius: '2px', background: 'rgba(255,255,255,0.08)' }}>
-                <div style={{ height: '100%', width: `${item.pct}%`, background: item.color, borderRadius: '2px' }} />
-              </div>
-            </div>
-          ))}
-        </div>
-        <div style={{ marginTop: '10px', fontSize: '9px', color: TEXT_DIM, textAlign: 'center' }}>
-          {/* TODO: user_daily_tracker 테이블 연동 */}
-          탭하여 오늘 기록 업데이트
         </div>
       </div>
 
