@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { TOOLTIP_FALLBACKS, isPeriodTrack } from '@/lib/hormoneUtils'
 import RhythmFix from '@/components/home/RhythmFix'
+import SkinReportCard from '@/components/my/SkinReportCard'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
@@ -502,6 +503,7 @@ export default function MyPage() {
         </button>
       </div>
 
+      <SkinReportCard />
       <RhythmFix />
       {completion < 100 ? (
         <div onClick={() => router.push('/my/profile')} style={{ margin: '10px 16px 0', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 14, padding: '14px 16px', cursor: 'pointer' }}>
