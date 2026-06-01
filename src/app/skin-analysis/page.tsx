@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { computeComposite, computeSkinAge } from '@/lib/skinAge'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
@@ -135,6 +136,13 @@ export default function SkinAnalysisPage() {
         analyzed_at: new Date().toISOString(),
       })
       if (!isFirstAnalysis) {
+        let _age: number | null = null
+        try {
+          const { data: _p } = await supabase.from('profiles').select('birth_date').eq('auth_id', userId).maybeSingle()
+          if (_p?.birth_date) _age = new Date().getFullYear() - new Date(_p.birth_date).getFullYear()
+        } catch {}
+        const _composite = computeComposite(scores as any)
+        const _skinAge = computeSkinAge(_composite, _age)
         await supabase.from('skin_analyses').insert({
           user_id: userId,
           moisture_score: scores.moisture,
@@ -146,6 +154,9 @@ export default function SkinAnalysisPage() {
           condition: null,
           concern_area: null,
           free_text: null,
+          age_at_analysis: _age,
+          skin_score: _composite,
+          skin_age: _skinAge,
         })
         router.push(`/skin-analysis/result?${params.toString()}`)
       } else {
