@@ -214,7 +214,7 @@ export default function MyWorldPage() {
         ;(likes || []).forEach((l: any) => {
           const did = String(l.diary_id)
           nextLikeCount[did] = (nextLikeCount[did] || 0) + 1
-          if (String(l.user_id) === String(auth.user.id)) nextLiked[did] = true
+          if (String(l.user_id) === String(auth.user?.id)) nextLiked[did] = true
         })
         ;(comments || []).forEach((c: any) => {
           const did = String(c.diary_id)
