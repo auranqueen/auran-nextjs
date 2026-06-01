@@ -132,7 +132,8 @@ export default function MyWorldPage() {
 
   useEffect(() => {
     const run = async () => {
-      const { data: auth } = await supabase.auth.getUser()
+      const { data: { session } } = await supabase.auth.getSession()
+      const auth = { user: session?.user ?? null }
       if (!auth.user) return
       setUser(auth.user)
 
