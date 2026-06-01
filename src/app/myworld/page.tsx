@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useUserProfile } from '@/hooks/useUserProfile'
 import { compressImage } from '@/lib/imageUpload'
+import Avatar from '@/components/ui/Avatar'
 
 const BG = '#0D0B09'
 const GOLD = '#C9A96E'
@@ -579,11 +580,7 @@ export default function MyWorldPage() {
 
       <div style={{ background: 'linear-gradient(135deg, rgba(123,94,167,0.2), rgba(80,50,120,0.1))', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 18, padding: 16, margin: '12px 16px 0', display: 'flex', alignItems: 'center', gap: 10 }}>
         <div style={{ width: 60, height: 60, borderRadius: '50%', overflow: 'hidden', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="" style={{ width: 60, height: 60, objectFit: 'cover' }} />
-          ) : (
-            <span style={{ fontSize: 28 }}>👩</span>
-          )}
+          <Avatar url={profile?.avatar_url ?? null} name={myworldNickname || profile?.username || profile?.full_name} size={60} />
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 16, color: '#e8e0f5' }}>{myworldNickname || profile?.username || profile?.full_name || '나의 공간'}</div>
