@@ -1,8 +1,8 @@
 'use client'
-
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { trackToSegment } from '@/lib/segment'
+import RhythmFix from '@/components/home/RhythmFix'
 
 const G = '#C9A96E'
 const CARD = '#2D2740'
@@ -41,7 +41,7 @@ export default function SegmentSlot({ track, reason }: { track?: string | null; 
     const load = async () => {
       const sb = createClient()
       const seg = trackToSegment(track)
-      if (seg === 'cycle') { setLoaded(true); return }
+      if (seg === 'cycle' || seg === 'unknown') { setLoaded(true); return }
       const m = await sb.from('segment_mentions').select('*').eq('segment', seg).eq('is_active', true).order('sort_order', { ascending: true })
       setMentions(m.data || [])
       if (seg === 'male') {
@@ -73,6 +73,16 @@ export default function SegmentSlot({ track, reason }: { track?: string | null; 
 
   if (segment === 'cycle' || !loaded) return null
 
+  if (segment === 'unknown') {
+    return (
+      <div style={{ marginTop: 14 }}>
+        <div style={{ fontSize: 14, color: W }}>맞춤 화면을 준비할게요.</div>
+        <div style={{ fontSize: 12, color: W6, marginTop: 4 }}>내 리듬을 골라주시면 바로 맞춰드려요.</div>
+        <RhythmFix />
+      </div>
+    )
+  }
+
   let pool = mentions
   if (segment === 'transition') {
     const targetTone = reason === 'natural' ? 'celebrate' : 'care'
@@ -80,6 +90,7 @@ export default function SegmentSlot({ track, reason }: { track?: string | null; 
     pool = filtered.length ? filtered : mentions
   }
   const mention = pickDaily(pool)
+
   const wrap: React.CSSProperties = { marginTop: 14 }
   const card: React.CSSProperties = { background: CARD, borderRadius: 14, padding: '14px 14px' }
 
@@ -118,7 +129,7 @@ export default function SegmentSlot({ track, reason }: { track?: string | null; 
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
           {Object.keys(TRIGGERS).map((t) => {
             const on = trig === t
-            return <span key={t} onClick={() => setTrig(on ? null : t)} style={{ fontSize: 12, color: on ? G : W6, border: `0.5px solid ${on ? 'rgba(201,169,110,0.6)' : 'rgba(255,255,255,0.2)'}`, borderRadius: 16, padding: '5px 12px', cursor: 'pointer' }}>{t}</span>
+            return <span key={t} onClick={() => setTrig(on ? null : t)} style={{ fontSize: 12, color: on ? G : W6, border: '0.5px solid ' + (on ? 'rgba(201,169,110,0.6)' : 'rgba(255,255,255,0.2)'), borderRadius: 16, padding: '5px 12px', cursor: 'pointer' }}>{t}</span>
           })}
         </div>
         {trig && <div style={{ fontSize: 11, color: 'rgba(201,169,110,0.85)', marginTop: 10 }}>{TRIGGERS[trig]}</div>}
@@ -133,7 +144,7 @@ export default function SegmentSlot({ track, reason }: { track?: string | null; 
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
         {symptoms.map((s) => {
           const on = sym && sym.id === s.id
-          return <span key={s.id} onClick={() => setSym(s)} style={{ fontSize: 12, color: on ? G : W6, border: `0.5px solid ${on ? 'rgba(201,169,110,0.6)' : 'rgba(255,255,255,0.2)'}`, borderRadius: 16, padding: '5px 12px', cursor: 'pointer' }}>{s.symptom}</span>
+          return <span key={s.id} onClick={() => setSym(s)} style={{ fontSize: 12, color: on ? G : W6, border: '0.5px solid ' + (on ? 'rgba(201,169,110,0.6)' : 'rgba(255,255,255,0.2)'), borderRadius: 16, padding: '5px 12px', cursor: 'pointer' }}>{s.symptom}</span>
         })}
       </div>
       {sym && (sym.sub_options || []).length > 0 && (
