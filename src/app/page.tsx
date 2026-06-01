@@ -17,6 +17,7 @@ import BodyCareCard from '@/components/home/BodyCareCard'
 import WeatherRecommendSheet from '@/components/home/WeatherRecommendSheet'
 import SegmentSlot from '@/components/home/SegmentSlot'
 import { trackToSegment } from '@/lib/segment'
+import Avatar from '@/components/ui/Avatar'
 
 const getSeoulToday = () => {
   const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
@@ -473,7 +474,7 @@ export default function CustomerHomePage() {
     if (!user) return
 
     const [profileRes, hcRes, tipRes, rulesRes] = await Promise.all([
-      supabase.from('profiles').select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at, roles, active_role, onboarding_done, onboarding_step').eq('auth_id', user.id).maybeSingle(),
+      supabase.from('profiles').select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at, roles, active_role, onboarding_done, onboarding_step, avatar_url').eq('auth_id', user.id).maybeSingle(),
       supabase.from('hormone_cycle').select('*').eq('auth_id', user.id).maybeSingle(),
       supabase.from('help_tooltips').select('title,content,is_active').eq('key', 'period_start').maybeSingle(),
       supabase.from('safety_rules').select('condition_type, condition_value, rule_type, rule_value').eq('is_active', true),
@@ -1809,13 +1810,9 @@ export default function CustomerHomePage() {
             {userName ? homeGreetingForUser : '오랜에 오셨군요 💜'}
           </div>
         </div>
-        <div style={{
-          width: '40px', height: '40px', borderRadius: '50%',
-          background: 'rgba(255,255,255,0.06)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '20px',
-        }}>👩</div>
+        {userName && (
+          <Avatar url={(motivationProfile as any)?.avatar_url ?? null} name={userName} size={40} />
+        )}
       </div>
 
       {/* 원장님 대화카드 */}
