@@ -6,6 +6,7 @@ import { Suspense } from 'react'
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { computeComposite, computeSkinAge } from '@/lib/skinAge'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
@@ -166,6 +167,8 @@ function SkinAnalysisQPageContent() {
         pore: Math.max(5, Math.min(100, Math.round(aiScores.pore))),
       }
 
+      const _composite = computeComposite(finalScores as any)
+      const _skinAge = computeSkinAge(_composite, userAge)
       const { data: analysis } = await supabase.from('skin_analyses').insert({
         user_id: user.id,
         moisture_score: finalScores.moisture,
@@ -185,6 +188,8 @@ function SkinAnalysisQPageContent() {
         lifestyle_uv: answers.uv,
         lifestyle_stress: answers.stress,
         age_at_analysis: userAge,
+          skin_score: _composite,
+          skin_age: _skinAge,
         is_pregnant: isPregnant,
       }).select().single()
 
