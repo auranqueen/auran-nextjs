@@ -689,7 +689,7 @@ export default function MyWorldPage() {
           if (!user?.id) return
           await supabase.from('phase_experience_logs').insert({
             customer_id: user.id,
-            phase: selectedPhase || null,
+            phase: hormonePhase || selectedPhase || null,
             skin_state: phaseSkinState,
             mood: phaseMood,
             sleep: phaseSleep,
