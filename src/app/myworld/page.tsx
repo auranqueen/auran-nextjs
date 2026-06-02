@@ -30,6 +30,7 @@ export default function MyWorldPage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [hormoneRow, setHormoneRow] = useState<any>(null)
+  const [recordCount, setRecordCount] = useState(0)
   const [deliveredOrders, setDeliveredOrders] = useState<any[]>([])
   const [vanityItems, setVanityItems] = useState<any[]>([])
   const [routineLogs, setRoutineLogs] = useState<any[]>([])
@@ -153,6 +154,9 @@ export default function MyWorldPage() {
       setProfile(p || null)
       const { data: hc } = await supabase.from('hormone_cycle').select('*').eq('auth_id', auth.user.id).maybeSingle()
       setHormoneRow(hc || null)
+      const { count: _diaryCnt } = await supabase.from('skin_diary').select('id', { count: 'exact', head: true }).eq('user_id', auth.user.id)
+      const { count: _phaseCnt } = await supabase.from('phase_experience_logs').select('id', { count: 'exact', head: true }).eq('customer_id', auth.user.id)
+      setRecordCount((_diaryCnt || 0) + (_phaseCnt || 0))
       // ===== [멤버 번호 세팅] =====
       if ((p as any)?.member_no) setMemberNo((p as any).member_no)
       if ((p as any)?.myworld_nickname) setMyworldNickname(String((p as any).myworld_nickname))
@@ -728,8 +732,8 @@ export default function MyWorldPage() {
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
         {[
-          { val: '-2살', lbl: '피부나이' },
-          { val: '+30%', lbl: '수분' },
+          { val: `${recordCount}개`, lbl: '기록' },
+          { val: `D+${user?.created_at ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000) : 0}`, lbl: '함께한 날' },
           { val: `${streakDays}일`, lbl: '루틴 스트릭' },
         ].map(({ val, lbl }) => (
           <div key={lbl} style={{
