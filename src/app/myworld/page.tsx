@@ -597,6 +597,165 @@ export default function MyWorldPage() {
           <div style={{ fontSize: 15, color: '#e8e0f5' }}>{myworldNickname || profile?.username || profile?.full_name || '나의 공간'}</div>
           <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 2 }}>{profile?.grade || 'AUBE'} · 일촌 0 · 방명록 {guestbook.length}</div>
           {hormonePhase ? <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 2 }}>🌙 {hormonePhase}</div> : null}
+    {/* 호르몬 페이즈 기록 */}
+    <div style={{
+      background: 'var(--color-background-primary)',
+      border: '0.5px solid var(--color-border-tertiary)',
+      borderRadius: 14, padding: '14px 16px', marginBottom: 12, marginTop: 12,
+    }}>
+      {/* 피부 상태 */}
+      <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 6 }}>피부가 어때요? (복수선택)</div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+        {['맑아요', '예민해요', '건조해요', '트러블'].map(s => (
+          <button key={s} onClick={() => setPhaseSkinState(prev =>
+            prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]
+          )}
+            style={{
+              padding: '6px 12px', borderRadius: 8, fontSize: 11,
+              border: phaseSkinState.includes(s) ? '1px solid #7B5EA7' : '0.5px solid var(--color-border-secondary)',
+              background: phaseSkinState.includes(s) ? '#7B5EA7' : 'var(--color-background-secondary)',
+              color: phaseSkinState.includes(s) ? '#fff' : 'var(--color-text-secondary)',
+              cursor: 'pointer',
+            }}
+          >{s}</button>
+        ))}
+      </div>
+
+      {/* 기분 */}
+      <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 6 }}>기분은요?</div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+        {['안정적', '활기차요', '예민해요', '우울해요'].map(m => (
+          <button key={m} onClick={() => setPhaseMood(m)}
+            style={{
+              padding: '6px 12px', borderRadius: 8, fontSize: 11,
+              border: phaseMood === m ? '1px solid #7B5EA7' : '0.5px solid var(--color-border-secondary)',
+              background: phaseMood === m ? '#7B5EA7' : 'var(--color-background-secondary)',
+              color: phaseMood === m ? '#fff' : 'var(--color-text-secondary)',
+              cursor: 'pointer',
+            }}
+          >{m}</button>
+        ))}
+      </div>
+
+      {/* 수면 */}
+      <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 6 }}>수면은요?</div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+        {['잘 잤어요', '뒤척였어요', '너무 많이 잠'].map(s => (
+          <button key={s} onClick={() => setPhaseSleep(s)}
+            style={{
+              flex: 1, padding: '7px 0', borderRadius: 8, fontSize: 11,
+              border: phaseSleep === s ? '1px solid #7B5EA7' : '0.5px solid var(--color-border-secondary)',
+              background: phaseSleep === s ? '#7B5EA7' : 'var(--color-background-secondary)',
+              color: phaseSleep === s ? '#fff' : 'var(--color-text-secondary)',
+              cursor: 'pointer',
+            }}
+          >{s}</button>
+        ))}
+      </div>
+
+      {/* 식욕 */}
+      <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 6 }}>식욕은요?</div>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+        {['평소같아요', '폭발했어요', '없어요'].map(a => (
+          <button key={a} onClick={() => setPhaseAppetite(a)}
+            style={{
+              flex: 1, padding: '7px 0', borderRadius: 8, fontSize: 11,
+              border: phaseAppetite === a ? '1px solid #7B5EA7' : '0.5px solid var(--color-border-secondary)',
+              background: phaseAppetite === a ? '#7B5EA7' : 'var(--color-background-secondary)',
+              color: phaseAppetite === a ? '#fff' : 'var(--color-text-secondary)',
+              cursor: 'pointer',
+            }}
+          >{a}</button>
+        ))}
+      </div>
+
+      {/* 한줄 메모 */}
+      <input
+        value={phaseMemo}
+        onChange={e => setPhaseMemo(e.target.value)}
+        placeholder="이번 페이즈 한줄 메모 (선택)"
+        style={{
+          width: '100%', padding: '9px 12px', borderRadius: 8, fontSize: 12,
+          border: '0.5px solid var(--color-border-secondary)',
+          background: 'var(--color-background-secondary)',
+          color: 'var(--color-text-primary)', marginBottom: 12,
+          boxSizing: 'border-box',
+        }}
+      />
+
+      {/* 저장 버튼 */}
+      <button
+        onClick={async () => {
+          if (!user?.id) return
+          await supabase.from('phase_experience_logs').insert({
+            customer_id: user.id,
+            phase: selectedPhase || null,
+            skin_state: phaseSkinState,
+            mood: phaseMood,
+            sleep: phaseSleep,
+            appetite: phaseAppetite,
+            memo: phaseMemo,
+          })
+          setSelectedPhase('')
+          setPhaseSkinState([])
+          setPhaseMood('')
+          setPhaseSleep('')
+          setPhaseAppetite('')
+          setPhaseMemo('')
+        }}
+        style={{
+          width: '100%', padding: 11, borderRadius: 10,
+          border: 'none', background: '#7B5EA7', color: '#fff',
+          fontSize: 13, cursor: 'pointer',
+        }}
+      >
+        기록하기 💜
+      </button>
+    </div>
+
+    {/* 공유 카드 */}
+    <div style={{
+      background: '#2D1B5E',
+      border: '0.5px solid rgba(201,169,110,0.3)',
+      borderRadius: 14, padding: '16px', marginBottom: 12,
+    }}>
+      <div style={{ fontSize: 9, letterSpacing: 2, color: 'rgba(201,169,110,0.5)', marginBottom: 6 }}>AURAN · 피부 기록</div>
+      <div style={{ fontSize: 15, color: '#C9A96E', marginBottom: 4, letterSpacing: -0.2 }}>
+        오랜과 함께한 기록 💜
+      </div>
+      <div style={{ fontSize: 11, color: 'rgba(201,169,110,0.5)', marginBottom: 12 }}>
+        피부가 이렇게 달라졌어요
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        {[
+          { val: '-2살', lbl: '피부나이' },
+          { val: '+30%', lbl: '수분' },
+          { val: `${streakDays}일`, lbl: '루틴 스트릭' },
+        ].map(({ val, lbl }) => (
+          <div key={lbl} style={{
+            flex: 1, background: 'rgba(201,169,110,0.08)',
+            borderRadius: 8, padding: '8px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 16, color: '#C9A96E' }}>{val}</div>
+            <div style={{ fontSize: 9, color: 'rgba(201,169,110,0.5)', marginTop: 2 }}>{lbl}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+    <button
+      onClick={() => {
+        navigator.clipboard?.writeText('https://auran.kr/myworld/' + user?.id)
+        setToast('링크가 복사됐어요 💜')
+      }}
+      style={{
+        width: '100%', padding: 12, borderRadius: 10,
+        border: 'none', background: '#7B5EA7', color: '#fff',
+        fontSize: 13, cursor: 'pointer', marginBottom: 16,
+        letterSpacing: -0.2,
+      }}
+    >
+      공유 카드 만들기 💜
+    </button>
         </div>
         <button onClick={() => setShowCustomize(true)} style={{ border: '1px solid rgba(123,94,167,0.4)', color: '#9b7ec8', fontSize: 11, background: 'transparent', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}>꾸미기 ✏️</button>
       </div>
