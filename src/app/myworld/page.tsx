@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useUserProfile } from '@/hooks/useUserProfile'
 import { compressImage } from '@/lib/imageUpload'
 import Avatar from '@/components/ui/Avatar'
+import { calcHormoneBriefing } from '@/lib/hormoneUtils'
 
 const BG = '#0D0B09'
 const GOLD = '#C9A96E'
@@ -28,6 +29,7 @@ export default function MyWorldPage() {
   const [toast, setToast] = useState('')
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
+  const [hormoneRow, setHormoneRow] = useState<any>(null)
   const [deliveredOrders, setDeliveredOrders] = useState<any[]>([])
   const [vanityItems, setVanityItems] = useState<any[]>([])
   const [routineLogs, setRoutineLogs] = useState<any[]>([])
@@ -149,6 +151,8 @@ export default function MyWorldPage() {
         .eq('auth_id', auth.user.id)
         .maybeSingle()
       setProfile(p || null)
+      const { data: hc } = await supabase.from('hormone_cycle').select('*').eq('auth_id', auth.user.id).maybeSingle()
+      setHormoneRow(hc || null)
       // ===== [멤버 번호 세팅] =====
       if ((p as any)?.member_no) setMemberNo((p as any).member_no)
       if ((p as any)?.myworld_nickname) setMyworldNickname(String((p as any).myworld_nickname))
@@ -248,6 +252,7 @@ export default function MyWorldPage() {
   const latestRoutineDate = routineLogs[0]?.completed_at ? new Date(routineLogs[0].completed_at) : null
   const daysSinceRoutine = latestRoutineDate ? Math.floor((Date.now() - latestRoutineDate.getTime()) / 86400000) : 999
   const todayDone = latestRoutineDate ? latestRoutineDate.toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10) : false
+  const hormonePhase = hormoneRow ? calcHormoneBriefing(hormoneRow).phase : null
   const minimiTalkLevel = daysSinceRoutine >= 5 ? 1 : roomLevel >= 4 ? 3 : 2
   const minimiMentGroups: Record<number, string[]> = {
     1: ['루틴 해줘요~ 🥺', '낙엽이 쌓여요 🍂', '저 좀 추워요...'],
@@ -591,6 +596,7 @@ export default function MyWorldPage() {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 15, color: '#e8e0f5' }}>{myworldNickname || profile?.username || profile?.full_name || '나의 공간'}</div>
           <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 2 }}>{profile?.grade || 'AUBE'} · 일촌 0 · 방명록 {guestbook.length}</div>
+          {hormonePhase ? <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 2 }}>🌙 {hormonePhase}</div> : null}
         </div>
         <button onClick={() => setShowCustomize(true)} style={{ border: '1px solid rgba(123,94,167,0.4)', color: '#9b7ec8', fontSize: 11, background: 'transparent', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}>꾸미기 ✏️</button>
       </div>
