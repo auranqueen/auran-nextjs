@@ -1498,67 +1498,6 @@ export default function MyWorldPage() {
       매달 체크인하면 피부 변화가 보여요
     </div>
 
-    {/* 이번달 체크인 */}
-    <div style={{
-      background: 'var(--color-background-primary)',
-      border: '0.5px solid var(--color-border-tertiary)',
-      borderRadius: 14, padding: '14px 16px', marginBottom: 12,
-    }}>
-      <div style={{ fontSize: 12, color: 'var(--color-text-primary)', marginBottom: 12 }}>
-        이번달 피부 체크인
-      </div>
-      {[
-        { key: 'moisture', label: '수분' },
-        { key: 'elasticity', label: '탄력' },
-        { key: 'trouble', label: '트러블' },
-      ].map(({ key, label }) => (
-        <div key={key} style={{ marginBottom: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-            <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{label}</div>
-          </div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {[1,2,3,4,5].map(n => (
-              <button
-                key={n}
-                onClick={async () => {
-                  if (!user?.id) return
-                  const month = new Date().toISOString().slice(0, 7)
-                  await supabase.from('skin_records').upsert({
-                    user_id: user.id,
-                    record_month: month,
-                    [key]: n,
-                  }, { onConflict: 'user_id,record_month' })
-                }}
-                style={{
-                  flex: 1, height: 32, borderRadius: 8,
-                  border: '0.5px solid var(--color-border-secondary)',
-                  background: 'var(--color-background-secondary)',
-                  color: 'var(--color-text-secondary)',
-                  fontSize: 12, cursor: 'pointer',
-                }}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
-      <button
-        style={{
-          width: '100%', padding: 11, borderRadius: 10,
-          border: 'none', background: '#7B5EA7', color: '#fff',
-          fontSize: 13, cursor: 'pointer', marginTop: 4,
-        }}
-      >
-        이번달 기록 저장 💜
-      </button>
-    </div>
-
-      <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 16, lineHeight: 1.6 }}>
-        기록할수록 오랜이 나를 더 잘 알아가요 💜<br />
-        페이즈마다 기록하면 딱 맞는 제품을 추천해드려요
-      </div>
-
     {/* 호르몬 페이즈 기록 */}
     <div style={{
       background: 'var(--color-background-primary)',
