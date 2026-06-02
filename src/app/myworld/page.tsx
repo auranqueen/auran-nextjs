@@ -1504,25 +1504,6 @@ export default function MyWorldPage() {
       border: '0.5px solid var(--color-border-tertiary)',
       borderRadius: 14, padding: '14px 16px', marginBottom: 12, marginTop: 12,
     }}>
-      <div style={{ fontSize: 12, color: 'var(--color-text-primary)', marginBottom: 12 }}>
-        🌙 지금 어떤 페이즈예요?
-      </div>
-
-      {/* 페이즈 선택 */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
-        {['달빛기', '황금기', '만개기', '물들기'].map(p => (
-          <button key={p} onClick={() => setSelectedPhase(p)}
-            style={{
-              flex: 1, padding: '7px 0', borderRadius: 8, fontSize: 11,
-              border: selectedPhase === p ? '1px solid #7B5EA7' : '0.5px solid var(--color-border-secondary)',
-              background: selectedPhase === p ? '#7B5EA7' : 'var(--color-background-secondary)',
-              color: selectedPhase === p ? '#fff' : 'var(--color-text-secondary)',
-              cursor: 'pointer',
-            }}
-          >{p}</button>
-        ))}
-      </div>
-
       {/* 피부 상태 */}
       <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginBottom: 6 }}>피부가 어때요? (복수선택)</div>
       <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
@@ -1606,10 +1587,10 @@ export default function MyWorldPage() {
       {/* 저장 버튼 */}
       <button
         onClick={async () => {
-          if (!user?.id || !selectedPhase) return
+          if (!user?.id) return
           await supabase.from('phase_experience_logs').insert({
             customer_id: user.id,
-            phase: selectedPhase,
+            phase: selectedPhase || null,
             skin_state: phaseSkinState,
             mood: phaseMood,
             sleep: phaseSleep,
