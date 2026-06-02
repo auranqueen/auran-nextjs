@@ -579,63 +579,61 @@ export default function MyWorldPage() {
         <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>👁 127</div>
       </header>
 
-      <div style={{ background: 'linear-gradient(135deg, rgba(123,94,167,0.2), rgba(80,50,120,0.1))', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 18, padding: 16, margin: '12px 16px 0', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 60, height: 60, borderRadius: '50%', overflow: 'hidden', background: 'linear-gradient(135deg,#ffd6e8,#e8d6ff)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Avatar url={profile?.avatar_url ?? userProfile?.avatar_url ?? null} name={myworldNickname || profile?.username || profile?.full_name || '나의 공간'} size={60} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 16, color: '#e8e0f5' }}>{myworldNickname || profile?.username || profile?.full_name || '나의 공간'}</div>
-          <div style={{ display: 'inline-block', marginTop: 2, padding: '2px 8px', borderRadius: 999, background: 'rgba(123,94,167,0.2)', color: '#c4a7e7', fontSize: 10 }}>{profile?.grade || 'PETAL'}</div>
-          {/* ===== [멤버십 카드] ===== */}
-          {(() => {
-            const grade = profile?.grade || 'AUBE'
-            const gradeMap: Record<string, {en:string, color:string, bg:string, border:string}> = {
-              'AUBE':    {en:'새벽 AUBE',    color:'#9090B8', bg:'#0d0d1a', border:'rgba(144,144,184,0.4)'},
-              'AURORE':  {en:'여명 AURORE',  color:'#9B7FCC', bg:'#120d20', border:'rgba(155,127,204,0.45)'},
-              'DOUCEUR': {en:'온기 DOUCEUR', color:'#AFA9EC', bg:'#150f2a', border:'rgba(175,169,236,0.5)'},
-              'LUMIÈRE': {en:'빛결 LUMIÈRE', color:'#C9A96E', bg:'#1a1208', border:'rgba(201,169,110,0.55)'},
-              'ESSENCE': {en:'향기 ESSENCE', color:'#E2C070', bg:'#1a1005', border:'rgba(226,192,112,0.6)'},
-              'LÉGENDE': {en:'전설 LÉGENDE', color:'#F0D080', bg:'#150d00', border:'rgba(240,208,128,0.65)'},
-              'CÉLESTE': {en:'천상 CÉLESTE', color:'#FFE090', bg:'#080808', border:'rgba(255,224,144,0.7)'},
-            }
-            const g = gradeMap[grade] || gradeMap['AUBE']
-            return (
-              <div style={{
-                background: g.bg,
-                border: `1.5px solid ${g.border}`,
-                borderRadius: 14,
-                padding: '14px 16px',
-                margin: '10px 16px 0',
-                position: 'relative',
-                overflow: 'hidden',
-              }}>
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: g.color, opacity: 0.3 }} />
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, background: g.color, opacity: 0.3 }} />
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <div>
-                    <div style={{ fontSize: 9, letterSpacing: 2, color: g.color, opacity: 0.5, marginBottom: 3 }}>AURAN</div>
-                    <div style={{ fontSize: 13, color: g.color, letterSpacing: 1 }}>{g.en}</div>
-                  </div>
-                  {memberNo && (
-                    <div style={{ fontSize: 11, color: g.color, opacity: 0.6 }}>
-                      #{String(memberNo).padStart(5, '0')}
-                    </div>
-                  )}
-                </div>
-                <div style={{ fontSize: 17, color: g.color, marginBottom: 2 }}>
-                  {profile?.full_name || user?.email?.split('@')[0] || '오랜아미'}
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 8 }}>
-                  <div style={{ fontSize: 10, color: g.color, opacity: 0.4 }}>피부도 처방받는 시대</div>
-                  <div style={{ fontSize: 10, color: g.color, opacity: 0.4 }}>auran.kr</div>
-                </div>
-              </div>
-            )
-          })()}
-          <div style={{ fontSize: 10, color: 'rgba(196,167,231,0.5)', marginTop: 4 }}>일촌 0명 · 방명록 {guestbook.length}개</div>
+      {/* ── 슬림 주인 카드 ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '12px 16px 0', padding: '12px 14px', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 16 }}>
+        <Avatar url={profile?.avatar_url ?? userProfile?.avatar_url ?? null} name={myworldNickname || profile?.username || profile?.full_name || '나의 공간'} size={44} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, color: '#e8e0f5' }}>{myworldNickname || profile?.username || profile?.full_name || '나의 공간'}</div>
+          <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 2 }}>{profile?.grade || 'AUBE'} · 일촌 0 · 방명록 {guestbook.length}</div>
         </div>
         <button onClick={() => setShowCustomize(true)} style={{ border: '1px solid rgba(123,94,167,0.4)', color: '#9b7ec8', fontSize: 11, background: 'transparent', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}>꾸미기 ✏️</button>
       </div>
+      {/* ── 멤버십 카드 (분리) ── */}
+      {(() => {
+        const grade = profile?.grade || 'AUBE'
+        const gradeMap: Record<string, {en:string, color:string, bg:string, border:string}> = {
+          'AUBE':    {en:'새벽 AUBE',    color:'#9090B8', bg:'#0d0d1a', border:'rgba(144,144,184,0.4)'},
+          'AURORE':  {en:'여명 AURORE',  color:'#9B7FCC', bg:'#120d20', border:'rgba(155,127,204,0.45)'},
+          'DOUCEUR': {en:'온기 DOUCEUR', color:'#AFA9EC', bg:'#150f2a', border:'rgba(175,169,236,0.5)'},
+          'LUMIÈRE': {en:'빛결 LUMIÈRE', color:'#C9A96E', bg:'#1a1208', border:'rgba(201,169,110,0.55)'},
+          'ESSENCE': {en:'향기 ESSENCE', color:'#E2C070', bg:'#1a1005', border:'rgba(226,192,112,0.6)'},
+          'LÉGENDE': {en:'전설 LÉGENDE', color:'#F0D080', bg:'#150d00', border:'rgba(240,208,128,0.65)'},
+          'CÉLESTE': {en:'천상 CÉLESTE', color:'#FFE090', bg:'#080808', border:'rgba(255,224,144,0.7)'},
+        }
+        const g = gradeMap[grade] || gradeMap['AUBE']
+        return (
+          <div style={{
+            background: g.bg,
+            border: `1.5px solid ${g.border}`,
+            borderRadius: 14,
+            padding: '14px 16px',
+            margin: '12px 16px 0',
+            position: 'relative',
+            overflow: 'hidden',
+          }}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: g.color, opacity: 0.3 }} />
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1, background: g.color, opacity: 0.3 }} />
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div>
+                <div style={{ fontSize: 9, letterSpacing: 2, color: g.color, opacity: 0.5, marginBottom: 3 }}>AURAN</div>
+                <div style={{ fontSize: 13, color: g.color, letterSpacing: 1 }}>{g.en}</div>
+              </div>
+              {memberNo && (
+                <div style={{ fontSize: 11, color: g.color, opacity: 0.6 }}>
+                  #{String(memberNo).padStart(5, '0')}
+                </div>
+              )}
+            </div>
+            <div style={{ fontSize: 17, color: g.color, marginBottom: 2 }}>
+              {profile?.full_name || user?.email?.split('@')[0] || '오랜아미'}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 8 }}>
+              <div style={{ fontSize: 10, color: g.color, opacity: 0.4 }}>피부도 처방받는 시대</div>
+              <div style={{ fontSize: 10, color: g.color, opacity: 0.4 }}>auran.kr</div>
+            </div>
+          </div>
+        )
+      })()}
 
       <div style={{ display: 'flex', margin: '14px 16px 0', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         {[
