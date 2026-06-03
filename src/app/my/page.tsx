@@ -23,6 +23,7 @@ export default function MyPage() {
   const [grade, setGrade] = useState('')
   const [point, setPoint] = useState(0)
   const [chargeBalance, setChargeBalance] = useState(0)
+  const [membership, setMembership] = useState<any>(null)
   const [pointHistory, setPointHistory] = useState<any[]>([])
   const [expiringPoint, setExpiringPoint] = useState(0)
   const [friendFeed, setFriendFeed] = useState<any[]>([])
@@ -86,6 +87,13 @@ export default function MyPage() {
           if (!meRow) return
           setPoint(meRow.points || 0)
           setChargeBalance(meRow.charge_balance || 0)
+          supabase
+            .from('user_memberships')
+            .select('id, status, next_shipment_date, shipments_remaining, shipments_total, source_type, membership_plans(name)')
+            .eq('user_id', meRow.id)
+            .eq('status', 'active')
+            .maybeSingle()
+            .then(({ data: mem }) => { if (mem) setMembership(mem) })
           supabase
             .from('orders')
             .select('*, order_items(*, products(*, brands(name)))')
@@ -261,6 +269,7 @@ export default function MyPage() {
     { icon: '🏠', label: '배송지 관리', path: '/my/addresses' },
     { icon: '👤', label: '개인정보', path: '/my/profile', badge: 0 },
     { icon: '🔒', label: '보안 설정', path: '/my/security', badge: 0 },
+    { icon: '🎁', label: '선물함', path: '/my/gifts', badge: 0 },
     { icon: '📞', label: '고객센터', path: '/my/support', badge: 0 },
   ]
 
@@ -609,6 +618,27 @@ export default function MyPage() {
           </div>
         </div>
       ) : null}
+
+      {membership && (
+        <div style={{ margin: '12px 16px 0', background: 'rgba(201,169,110,0.06)', border: '0.5px solid rgba(201,169,110,0.25)', borderRadius: 14, padding: '14px 16px' }}>
+          <div style={{ fontSize: 9, letterSpacing: 2, color: '#C9A96E', marginBottom: 8, opacity: 0.7 }}>ORÆN PRIVÉ</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 13, color: '#F0E8FF' }}>{(membership.membership_plans as any)?.name || '멤버십'} 구독 중</div>
+              <div style={{ fontSize: 11, color: '#9B7EC8', marginTop: 4 }}>
+                다음 배송일 · {membership.next_shipment_date ? new Date(membership.next_shipment_date).toLocaleDateString('ko-KR') : '미정'}
+              </div>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 22, color: '#C9A96E' }}>{membership.shipments_remaining}</div>
+              <div style={{ fontSize: 10, color: '#9B7EC8' }}>회 남음</div>
+            </div>
+          </div>
+          {membership.source_type === 'membership_gift' && (
+            <div style={{ fontSize: 10, color: '#C9A96E', marginTop: 8, opacity: 0.7 }}>🎁 선물로 받은 멤버십이에요</div>
+          )}
+        </div>
+      )}
 
       {/* 소진 알림 */}
       <div style={{ margin: '12px 16px 0', background: 'rgba(220,100,40,0.08)', border: '1px solid rgba(220,120,60,0.2)', borderRadius: '16px', padding: '14px 16px' }}>
