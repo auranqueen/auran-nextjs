@@ -53,6 +53,11 @@ function OnboardingInner() {
       localStorage.setItem('auran_birth_date', birthForDB || '')
       localStorage.setItem('auran_gender', gender)
       localStorage.setItem('auran_cycle_type', gender === 'female' ? cycleType : 'male')
+      localStorage.setItem('auran_hormone_cycle_applicable',
+        gender === 'male' ? 'false' :
+        cycleType === 'menstrual' ? 'true' :
+        menopauseReason === 'natural' ? 'false' : 'null'
+      )
       localStorage.setItem('auran_track', gender === 'female' ? track : 'male')
       localStorage.setItem('auran_menopause_reason', (gender === 'female' && cycleType === 'menopause') ? menopauseReason : '')
       localStorage.setItem('auran_cycle_length', cycleLength)

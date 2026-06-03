@@ -131,6 +131,7 @@ function AuthDoneInner() {
         const birthDate = localStorage.getItem('auran_birth_date')
         const gender = localStorage.getItem('auran_gender')
         const skinType = localStorage.getItem('auran_skin_type')
+        const hca = localStorage.getItem('auran_hormone_cycle_applicable')
         if (birthDate || gender || skinType) {
           await supabase.from('profiles').upsert(
             {
@@ -138,10 +139,13 @@ function AuthDoneInner() {
               ...(birthDate ? { birth_date: birthDate } : {}),
               ...(gender ? { gender } : {}),
               ...(skinType ? { skin_type: skinType } : {}),
+              ...(hca === 'true' ? { hormone_cycle_applicable: true } :
+                  hca === 'false' ? { hormone_cycle_applicable: false } : {}),
             },
             { onConflict: 'auth_id' }
           )
           if (birthDate) localStorage.removeItem('auran_birth_date')
+          if (hca !== null) localStorage.removeItem('auran_hormone_cycle_applicable')
           if (gender) localStorage.removeItem('auran_gender')
           if (skinType) localStorage.removeItem('auran_skin_type')
         }
