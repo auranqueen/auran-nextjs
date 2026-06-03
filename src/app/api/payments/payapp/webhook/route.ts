@@ -191,7 +191,7 @@ export async function POST(req: NextRequest) {
       }
 
       // 멤버십 결제 누적구매액 + 등급 자동 승급
-      if (intent.user_id && intent.amount) {
+      if (intent.kind === 'membership' && intent.user_id && intent.amount) {
         try {
           const client = tryCreateServiceClient() || supabase
           await addToPurchaseAmount(intent.user_id, intent.amount, client)
