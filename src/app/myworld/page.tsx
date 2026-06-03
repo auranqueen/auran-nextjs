@@ -1262,10 +1262,18 @@ export default function MyWorldPage() {
     }}>
       <div style={{ fontSize: 9, letterSpacing: 2, color: 'rgba(201,169,110,0.5)', marginBottom: 6 }}>AURAN · 피부 기록</div>
       <div style={{ fontSize: 15, color: '#C9A96E', marginBottom: 4, letterSpacing: -0.2 }}>
-        오랜과 함께한 기록 💜
+        {(profile as any)?.gender === 'male'
+          ? '오늘 피부 상태 기록해요 💪'
+          : (profile as any)?.hormone_cycle_applicable === false
+          ? '탄력 케어 함께 기록해요 💊'
+          : '오랜과 함께한 기록 💜'}
       </div>
       <div style={{ fontSize: 11, color: 'rgba(201,169,110,0.5)', marginBottom: 12 }}>
-        피부가 이렇게 달라졌어요
+        {(profile as any)?.gender === 'male'
+          ? '피지조절부터 탄력까지 관리해요'
+          : (profile as any)?.hormone_cycle_applicable === false
+          ? '수분과 탄력이 이렇게 달라졌어요'
+          : '피부가 이렇게 달라졌어요'}
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
         {[
