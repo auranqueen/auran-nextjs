@@ -51,6 +51,8 @@ export async function POST(req: NextRequest) {
   const base = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin
   const returnurl = kind === 'order'
     ? `${base}/api/payments/payapp/return?order_id=${targetId}`
+    : kind === 'membership_gift'
+    ? `${base}/membership/gift/complete?gift_id=${targetId}`
     : `${base}/api/payments/payapp/return`
   const sandbox = process.env.PAYAPP_SANDBOX === 'true' || process.env.PAYAPP_TEST_MODE === 'true'
 
