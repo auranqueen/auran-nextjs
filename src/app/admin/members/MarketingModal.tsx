@@ -94,14 +94,14 @@ export default function MarketingModal({ open, onClose, members }: { open: boole
   )
 
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }}>
-      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 600, margin: '0 auto', background: '#111', borderRadius: '20px 20px 0 0', maxHeight: '92vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px 16px' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 600, background: '#111', borderRadius: 16, maxHeight: '90vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* 헤더 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 18px 12px', borderBottom: `0.5px solid ${C.border}`, flexShrink: 0 }}>
           <div style={{ fontSize: 14, color: C.gold }}>📊 마케팅 인텔리전스</div>
           <div style={{ display: 'flex', gap: 8 }}>
             <button onClick={() => window.print()} style={{ padding: '6px 14px', background: C.card, border: `0.5px solid ${C.border}`, color: C.muted, borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>🖨️ 출력</button>
-            <button onClick={onClose} style={{ padding: '6px 14px', background: C.card, border: `0.5px solid ${C.border}`, color: C.muted, borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>닫기</button>
+            <button onClick={onClose} style={{ padding: '7px 16px', background: '#333', border: 'none', color: '#fff', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>✕ 닫기</button>
           </div>
         </div>
         {/* 탭 */}
@@ -113,7 +113,7 @@ export default function MarketingModal({ open, onClose, members }: { open: boole
           ))}
         </div>
         {/* 본문 */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
           {loading ? <div style={{ textAlign: 'center', color: C.muted, padding: 40 }}>불러오는 중...</div> : (
             <>
               {/* 멤버십 탭 */}
