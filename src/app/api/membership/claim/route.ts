@@ -96,3 +96,28 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true })
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const { token, name, phone, address, detail } = await req.json()
+    if (!token || !name || !phone || !address) {
+      return NextResponse.json({ error: 'missing fields' }, { status: 400 })
+    }
+    const client = tryCreateServiceClient()
+    if (!client) return NextResponse.json({ error: 'service_unavailable' }, { status: 503 })
+    const { error } = await client
+      .from('membership_gifts')
+      .update({
+        shipping_name: name,
+        shipping_phone: phone,
+        shipping_address: address,
+        shipping_detail: detail || null,
+        shipping_status: 'address_received',
+      })
+      .eq('claim_token', token)
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ ok: true })
+  } catch (e: any) {
+    return NextResponse.json({ error: e.message }, { status: 500 })
+  }
+}
