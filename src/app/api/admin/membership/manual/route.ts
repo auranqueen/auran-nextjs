@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/app/admin/_auth'
+import { addToPurchaseAmount, autoUpgradeGrade } from '@/lib/gradeUtils'
 
 export async function GET(req: Request) {
   try {
@@ -69,6 +70,17 @@ export async function POST(req: Request) {
       link_url: claimToken ? `/membership/claim/${claimToken}` : '/my/gifts',
       is_read: false,
     } as any)
+    try {
+      const { data: planRow } = await supabase
+        .from('membership_plans')
+        .select('price')
+        .eq('id', plan_id)
+        .maybeSingle()
+      if (planRow?.price && shipments_total) {
+        await addToPurchaseAmount(user_id, planRow.price * shipments_total, supabase)
+      }
+      await autoUpgradeGrade(user_id, supabase)
+    } catch (_) {}
     return Response.json({ ok: true, membership_id: mem.id })
   } catch (e: any) {
     return Response.json({ error: e.message }, { status: 500 })
