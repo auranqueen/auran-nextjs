@@ -80,6 +80,9 @@ export async function POST(req: NextRequest) {
     cycle_no: cycleNo,
     bundle_template_id: (tpl as any).id,
     curated_product_ids: scored.map((s) => s.id),
+    care_card: {
+      reasons: Object.fromEntries(scored.map((s: any) => [s.id, s._reasons || []])),
+    },
     status: '발송완료',
     shipped_at: new Date().toISOString(),
   } as any).select('id').single()

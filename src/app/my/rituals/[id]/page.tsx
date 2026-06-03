@@ -9,6 +9,7 @@ type Product = { id: string; name: string; description: string | null; key_ingre
 type Shipment = {
   id: string; cycle_no: number; status: string; shipped_at: string
   curated_product_ids: string[]
+  care_card?: { reasons?: Record<string, string[]> } | null
   bundle_templates: { theme_name: string; target_phase: string | null; usage_guide: string | null; owner_tip: string | null } | null
 }
 
@@ -26,7 +27,7 @@ export default function RitualDetailPage() {
     const load = async () => {
       const { data: s } = await supabase
         .from('membership_shipments')
-        .select('id, cycle_no, status, shipped_at, curated_product_ids, bundle_templates(theme_name, target_phase, usage_guide, owner_tip)')
+        .select('id, cycle_no, status, shipped_at, curated_product_ids, care_card, bundle_templates(theme_name, target_phase, usage_guide, owner_tip)')
         .eq('id', id)
         .maybeSingle()
       if (!s) { setLoading(false); return }
@@ -81,6 +82,16 @@ export default function RitualDetailPage() {
                 핵심 성분 · {p.key_ingredients}
               </div>
             )}
+            {shipment.care_card?.reasons?.[p.id]?.length ? (
+              <div style={{ marginTop: 8 }}>
+                <div style={{ fontSize: 10, color: '#9B7EC8', marginBottom: 4 }}>✨ 추천 이유</div>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {shipment.care_card.reasons[p.id].map((r: string, i: number) => (
+                    <span key={i} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 12, background: 'rgba(123,94,167,0.15)', color: '#9B7EC8' }}>{r}</span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
         ))}
       </div>
