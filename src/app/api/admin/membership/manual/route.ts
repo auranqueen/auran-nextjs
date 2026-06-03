@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/app/admin/_auth'
 import { addToPurchaseAmount, autoUpgradeGrade } from '@/lib/gradeUtils'
+import { sendPpurioAlimtalk } from '@/lib/ppurio/sendAlimtalk'
 
 export async function GET(req: Request) {
   try {
@@ -61,15 +62,45 @@ export async function POST(req: Request) {
       } as any)
       .select('id, claim_token')
       .single()
-    const claimToken = (gift as any)?.claim_token
+    // 배송지 등록 여부 확인
+    const { data: addrRow } = await supabase
+      .from('shipping_addresses')
+      .select('id')
+      .eq('user_id', user_id)
+      .eq('is_default', true)
+      .maybeSingle()
+    const hasAddress = !!addrRow
+    const notifyBody = hasAddress
+      ? `첫 배송일은 ${next_shipment_date}입니다. 오랜이 정성껏 준비할게요 💜`
+      : `배송지를 등록해주세요. 첫 리추얼을 보내드릴게요!`
+    const notifyLink = hasAddress ? '/my' : '/my/addresses'
     await supabase.from('notifications').insert({
       user_id,
       type: 'promo',
       title: 'ORÆN PRIVÉ 멤버십이 시작됐어요 💜',
-      body: '배송지를 등록해주세요. 첫 리추얼을 보내드릴게요!',
-      link_url: claimToken ? `/membership/claim/${claimToken}` : '/my/gifts',
+      body: notifyBody,
+      link_url: notifyLink,
       is_read: false,
     } as any)
+    // 알림톡 발송
+    try {
+      const { data: userRow } = await supabase
+        .from('users')
+        .select('phone, name')
+        .eq('id', user_id)
+        .maybeSingle()
+      if ((userRow as any)?.phone) {
+        const name = (userRow as any)?.name || '고객'
+        const msg = hasAddress
+          ? `[ORÆN PRIVÉ] ${name}님, 멤버십이 시작됐어요 💜\n\n첫 배송일: ${next_shipment_date}\n오랜이 정성껏 리추얼을 준비할게요.`
+          : `[ORÆN PRIVÉ] ${name}님, 멤버십이 시작됐어요 💜\n\n배송지를 등록해주세요:\nhttps://auran.kr/my/addresses`
+        await sendPpurioAlimtalk({
+          phone: (userRow as any).phone,
+          message: msg,
+          title: 'ORÆN PRIVÉ 멤버십 시작',
+        })
+      }
+    } catch (_) {}
     try {
       const { data: planRow } = await supabase
         .from('membership_plans')
