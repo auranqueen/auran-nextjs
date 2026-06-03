@@ -244,6 +244,27 @@ const HORMONE_GREETINGS: Record<string, ((name: string) => string)[]> = {
   ],
 }
 
+const MALE_ACTIVE_GREETINGS: ((name: string) => string)[] = [
+  (name) => `${name}님 오늘도 열심히 했죠? 피부도 같이 챙겨요 💪`,
+  (name) => `${name}님 번들거림 없는 하루 만들어드릴게요 ✨`,
+  (name) => `${name}님 남자 피부도 관리가 전부예요 💆`,
+]
+const MALE_GENTLE_GREETINGS: ((name: string) => string)[] = [
+  (name) => `${name}님 경험이 쌓일수록 피부도 깊어져요 🌿`,
+  (name) => `${name}님 오늘은 탄력 한 스푼 더 얹어봐요 💜`,
+  (name) => `${name}님 온화해진 만큼, 피부도 더 섬세하게 챙겨요 🌿`,
+]
+const AGE_CARE_GREETINGS: ((name: string) => string)[] = [
+  (name) => `${name}님 변화는 두려운 게 아니에요 💊 오랜이 알고 있어요`,
+  (name) => `${name}님 지금 이 피부에 가장 필요한 것, 찾아드릴게요 💜`,
+  (name) => `${name}님 내 피부, 아직 충분히 아름다워요 🌸`,
+]
+const HORMONE_NORMAL_GREETINGS: ((name: string) => string)[] = [
+  (name) => `${name}님 생리는 없어도, 내 몸의 리듬은 살아있어요 💜`,
+  (name) => `${name}님 오늘도 당신만의 황금기예요 ✨`,
+  (name) => `${name}님 호르몬 리듬에 맞춰 오랜이 함께해요 🌙`,
+]
+
 
 function SkinstarSection() {
   const supabase = createClient()
@@ -1437,6 +1458,14 @@ export default function CustomerHomePage() {
       greeting = GREETINGS_WEATHER['dust'](userName)
     } else if (isRaining && rand < 0.2) {
       greeting = GREETINGS_WEATHER['rain'](userName)
+    } else if (userGender === 'male' && rand < 0.5) {
+      const isMaleActive = !motivationProfile || !(motivationProfile as any).birth_date ||
+        new Date().getFullYear() - new Date((motivationProfile as any).birth_date).getFullYear() < 45
+      const arr = isMaleActive ? MALE_ACTIVE_GREETINGS : MALE_GENTLE_GREETINGS
+      greeting = arr[Math.floor(Math.random() * arr.length)](userName)
+    } else if (userHca === false && rand < 0.5) {
+      const arr = AGE_CARE_GREETINGS
+      greeting = arr[Math.floor(Math.random() * arr.length)](userName)
     } else if (hormonePhase && hormoneCycle && hormoneTrack === 'general' && rand < 0.4) {
       const arr = HORMONE_GREETINGS[hormonePhase]
       if (Array.isArray(arr) && arr.length > 0) {
@@ -1861,7 +1890,28 @@ export default function CustomerHomePage() {
       </div>
 
       {/* ── 호르몬 브리핑 · 오늘 체크인 · 케어 액션 (TODAY&apos;S SKIN 바로 아래) ── */}
-      <div style={{ padding: '12px 16px 0' }}>{trackToSegment(hormoneTrack) !== 'cycle' ? (<SegmentSlot track={hormoneTrack} reason={(hormoneCycle as any)?.menopause_reason ?? null} />) : (<>
+      <div style={{ padding: '12px 16px 0' }}>
+        {userGender === 'male' ? (
+          <div style={{ background: 'rgba(123,94,167,0.06)', border: '0.5px solid rgba(123,94,167,0.2)', borderRadius: 14, padding: '18px 16px', margin: '0 0 12px' }}>
+            <div style={{ fontSize: 22, marginBottom: 8 }}>💪</div>
+            <div style={{ fontSize: 14, color: 'var(--text)', marginBottom: 4 }}>
+              {(() => { const isMaleActive = !motivationProfile || !(motivationProfile as any).birth_date || new Date().getFullYear() - new Date((motivationProfile as any).birth_date).getFullYear() < 45; const arr = isMaleActive ? MALE_ACTIVE_GREETINGS : MALE_GENTLE_GREETINGS; return arr[Math.floor(Math.random() * arr.length)](userName) })()}
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(232,223,245,0.5)', marginTop: 4 }}>
+              {(() => { const isMaleActive = !motivationProfile || !(motivationProfile as any).birth_date || new Date().getFullYear() - new Date((motivationProfile as any).birth_date).getFullYear() < 45; return isMaleActive ? '피지조절 · 클렌징 · 진정 추천' : '탄력 · 안티에이징 · 보습 추천' })()}
+            </div>
+          </div>
+        ) : userHca === false ? (
+          <div style={{ background: 'rgba(123,94,167,0.06)', border: '0.5px solid rgba(123,94,167,0.2)', borderRadius: 14, padding: '18px 16px', margin: '0 0 12px' }}>
+            <div style={{ fontSize: 22, marginBottom: 8 }}>💊</div>
+            <div style={{ fontSize: 14, color: 'var(--text)', marginBottom: 4 }}>
+              {AGE_CARE_GREETINGS[Math.floor(Math.random() * AGE_CARE_GREETINGS.length)](userName)}
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(232,223,245,0.5)', marginTop: 4 }}>탄력 · 수분 · 콜라겐 재생 추천</div>
+          </div>
+        ) : trackToSegment(hormoneTrack) !== 'cycle' ? (
+          <SegmentSlot track={hormoneTrack} reason={(hormoneCycle as any)?.menopause_reason ?? null} />
+        ) : (<>
         <HormoneCard
           hormoneMainLine={hormoneMainLine}
           hormoneSubLine={hormoneSubLine}
