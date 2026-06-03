@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useSearchParams } from 'next/navigation'
+import MarketingModal from './MarketingModal'
 
 type Member = {
   id: string
@@ -45,6 +46,7 @@ export default function AdminMembersPage() {
   const [mMemo, setMMemo] = useState('')
   const [mBusy, setMBusy] = useState(false)
   const [mMsg, setMMsg] = useState('')
+  const [showMarketing, setShowMarketing] = useState(false)
   const [gradeEdit, setGradeEdit] = useState('')
   const [gradeSaved, setGradeSaved] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
@@ -252,7 +254,12 @@ export default function AdminMembersPage() {
           <div style={{ fontSize: 16, fontWeight: 900, color: '#fff' }}>전체 회원</div>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 4 }}>검색/상세/정지</div>
         </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>총 {members.length}명</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>총 {members.length}명</div>
+          <button onClick={() => setShowMarketing(true)} style={{ padding: '5px 12px', background: 'rgba(201,169,110,0.15)', border: '0.5px solid rgba(201,169,110,0.4)', color: '#C9A96E', borderRadius: 16, fontSize: 11, cursor: 'pointer' }}>
+            📊 마케팅
+          </button>
+        </div>
       </div>
 
       <div style={{ marginBottom: 12 }}>
@@ -760,6 +767,7 @@ export default function AdminMembersPage() {
           </div>
         </div>
       )}
+      <MarketingModal open={showMarketing} onClose={() => setShowMarketing(false)} members={members} />
     </div>
   )
 }
