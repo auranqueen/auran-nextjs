@@ -21,5 +21,11 @@ export default async function MembershipMembersPage() {
     .eq('is_active', true)
     .order('display_order', { ascending: true })
 
-  return <MembersClient memberships={(memberships ?? []) as any} templates={(templates ?? []) as any} />
+  const { data: plans } = await supabase
+    .from('membership_plans')
+    .select('id,name,price')
+    .eq('is_active', true)
+    .order('display_order', { ascending: true })
+
+  return <MembersClient memberships={(memberships ?? []) as any} templates={(templates ?? []) as any} plans={(plans ?? []) as any} />
 }
