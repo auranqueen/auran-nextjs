@@ -123,6 +123,9 @@ export default function ProductsListClient() {
     })()
     const { data: { user } } = await supabase.auth.getUser()
     let hcRow: any = null
+    let localGender: string | null = null
+    let localHca: boolean | null = null
+    let localIds = new Set<string>()
     if (user) {
       const { data: hc } = await supabase.from('hormone_cycle').select('*').eq('auth_id', user.id).maybeSingle()
       hcRow = hc
@@ -133,12 +136,15 @@ export default function ProductsListClient() {
         .select('gender, hormone_cycle_applicable')
         .eq('auth_id', user.id)
         .maybeSingle()
-      setUserGender((pRow as any)?.gender ?? null)
-      setUserHca(
+      const g = (pRow as any)?.gender ?? null
+      localGender = g
+      setUserGender(g)
+      const h =
         (pRow as any)?.hormone_cycle_applicable === true ? true :
         (pRow as any)?.hormone_cycle_applicable === false ? false :
         null
-      )
+      localHca = h
+      setUserHca(h)
       const { data: uRow } = await supabase
         .from('users')
         .select('id')
@@ -150,6 +156,7 @@ export default function ProductsListClient() {
           .select('product_id, orders!inner(customer_id)')
           .eq('orders.customer_id', uRow.id)
         const ids = new Set<string>((items || []).map((i: any) => i.product_id).filter(Boolean))
+        localIds = ids
         setPurchasedIds(ids)
       }
       setPhaseFocus(b ? { phase: b.phase, focus: b.focus } : { phase: '', focus: '' })
@@ -190,17 +197,17 @@ export default function ProductsListClient() {
     const scored = list.map(p => {
       let s = 0
       const htags = (p.hormone_tags || []).map(String)
-      if (userGender === 'male') {
+      if (localGender === 'male') {
         if (htags.some(t => t.includes('남성') || t.includes('전연령'))) s += 3
-      } else if (userHca === false) {
+      } else if (localHca === false) {
         if (htags.some(t => t.includes('갱년기') || t.includes('전연령'))) s += 3
       } else if (phase) {
         if (htags.some(t => t.includes(phase) || t.includes('전연령'))) s += 3
       }
       const gt = p.gender_tag || '공용'
       if (gt === '공용') s += 2
-      else if (gt === '남성' && userGender === 'male') s += 2
-      else if (gt === '여성' && userGender !== 'male') s += 2
+      else if (gt === '남성' && localGender === 'male') s += 2
+      else if (gt === '여성' && localGender !== 'male') s += 2
       const stags = (p.season_tags || []).map(String)
       if (stags.some(t => t.includes(season) || t.includes('전계절'))) s += 2
       if (p.created_at) {
@@ -208,7 +215,7 @@ export default function ProductsListClient() {
         if (days <= 30) s += 1
       }
       if (maxSales > 0 && (p.sales_count ?? 0) >= maxSales * 0.8) s += 1
-      if (purchasedIds.has(p.id)) s -= 10
+      if (localIds.has(p.id)) s -= 10
       return { p, s }
     })
     scored.sort((a, b) => b.s - a.s)
