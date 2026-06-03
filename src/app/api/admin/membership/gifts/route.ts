@@ -5,15 +5,16 @@ export async function PATCH(req: Request) {
   try {
     const supabase = createClient()
     await requireAdmin(supabase)
-    const { id, tracking_no, courier } = await req.json()
-    if (!id || !tracking_no || !courier) {
+    const { id, tracking_no, courier, delivery_type } = await req.json()
+    if (!id || !courier) {
       return Response.json({ error: 'missing fields' }, { status: 400 })
     }
     const { error } = await supabase
       .from('membership_gifts')
       .update({
         shipping_status: 'shipped',
-        tracking_no,
+        delivery_type: delivery_type || 'courier',
+        tracking_no: tracking_no || null,
         courier,
         shipped_at: new Date().toISOString(),
       })
@@ -29,7 +30,7 @@ export async function PATCH(req: Request) {
         user_id: giftRow.claimed_by,
         type: 'promo',
         title: '선물이 발송됐어요 🚚',
-        body: `${courier} ${tracking_no} · 배송이 시작됐어요 💜`,
+        body: delivery_type === 'direct' ? '직접 전달됐어요 💜' : delivery_type === 'quick' ? `퀵으로 출발했어요 🛵 · ${courier}` : `${courier} ${tracking_no} · 출발했어요 📦`,
         is_read: false,
       } as any)
     }
