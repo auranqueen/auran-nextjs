@@ -148,7 +148,7 @@ export default function MyWorldPage() {
 
       const { data: p } = await supabase
         .from('profiles')
-        .select('full_name, username, avatar_url, grade, skin_type, myworld_nickname, myworld_theme, myworld_bio, member_no')
+        .select('full_name, username, avatar_url, grade, skin_type, myworld_nickname, myworld_theme, myworld_bio, member_no, gender, hormone_cycle_applicable')
         .eq('auth_id', auth.user.id)
         .maybeSingle()
       setProfile(p || null)
@@ -600,7 +600,13 @@ export default function MyWorldPage() {
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 15, color: '#e8e0f5' }}>{myworldNickname || profile?.username || profile?.full_name || '나의 공간'}</div>
           <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 2 }}>{profile?.grade || 'AUBE'} · 일촌 0 · 방명록 {guestbook.length}</div>
-          {hormonePhase ? <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 2 }}>🌙 {hormonePhase}</div> : null}
+          {(profile as any)?.gender === 'male' ? (
+            <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 2 }}>💪 피지조절 관리 중</div>
+          ) : (profile as any)?.hormone_cycle_applicable === false ? (
+            <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 2 }}>💊 탄력 케어 중</div>
+          ) : hormonePhase ? (
+            <div style={{ fontSize: 11, color: '#C9A96E', marginTop: 2 }}>🌙 {hormonePhase}</div>
+          ) : null}
         </div>
         <button onClick={() => setShowCustomize(true)} style={{ border: '1px solid rgba(123,94,167,0.4)', color: '#9b7ec8', fontSize: 11, background: 'transparent', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}>꾸미기 ✏️</button>
       </div>
