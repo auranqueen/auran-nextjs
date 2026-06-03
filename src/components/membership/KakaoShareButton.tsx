@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 
-const KAKAO_JS_KEY = process.env.NEXT_PUBLIC_KAKAO_JS_KEY
+const KAKAO_JS_KEY = process.env.NEXT_PUBLIC_KAKAO_APP_KEY || process.env.NEXT_PUBLIC_KAKAO_JS_KEY
 const SHARE_IMAGE = 'https://auran.kr/oraen-prive-kakao.png'
 const SHARE_LINK = 'https://auran.kr/membership/checkout'
 

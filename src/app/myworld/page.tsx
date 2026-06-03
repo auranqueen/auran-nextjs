@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useUserProfile } from '@/hooks/useUserProfile'
 import { compressImage } from '@/lib/imageUpload'
 import Avatar from '@/components/ui/Avatar'
+import ShareBottomSheet from '@/components/ShareBottomSheet'
 import { calcHormoneBriefing } from '@/lib/hormoneUtils'
 
 const BG = '#0D0B09'
@@ -30,6 +31,7 @@ export default function MyWorldPage() {
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
   const [hormoneRow, setHormoneRow] = useState<any>(null)
+  const [shareSheetOpen, setShareSheetOpen] = useState(false)
   const [recordCount, setRecordCount] = useState(0)
   const [deliveredOrders, setDeliveredOrders] = useState<any[]>([])
   const [vanityItems, setVanityItems] = useState<any[]>([])
@@ -1142,7 +1144,7 @@ export default function MyWorldPage() {
                     >
                       📋 링크 복사
                     </button>
-                    <button style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '6px 8px', fontSize: 10, cursor: 'pointer' }}>💬 카카오</button>
+                    <button onClick={() => setShareSheetOpen(true)} style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '6px 8px', fontSize: 10, cursor: 'pointer' }}>💬 카카오</button>
                     <button style={{ border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a7e7', borderRadius: 8, padding: '6px 8px', fontSize: 10, cursor: 'pointer' }}>📷 인스타</button>
                   </div>
                 ) : null}
@@ -1255,7 +1257,7 @@ export default function MyWorldPage() {
           )}
 
     {/* 공유 카드 */}
-    <div style={{
+    <div id="myworld-share-card" style={{
       background: '#2D1B5E',
       border: '0.5px solid rgba(201,169,110,0.3)',
       borderRadius: 14, padding: '16px', marginBottom: 12,
@@ -1293,8 +1295,7 @@ export default function MyWorldPage() {
     </div>
     <button
       onClick={() => {
-        navigator.clipboard?.writeText('https://auran.kr/myworld/' + user?.id)
-        setToast('링크가 복사됐어요 💜')
+        setShareSheetOpen(true)
       }}
       style={{
         width: '100%', padding: 12, borderRadius: 10,
@@ -1308,6 +1309,19 @@ export default function MyWorldPage() {
 
         </div>
       ) : null}
+
+      <ShareBottomSheet
+        open={shareSheetOpen}
+        onClose={() => setShareSheetOpen(false)}
+        cardDomId="myworld-share-card"
+        payload={{
+          link: `https://auran.kr/myworld/${user?.id}`,
+          title: `${myworldNickname || (profile as any)?.full_name || '오랜 멤버'}님의 피부 기록`,
+          description: `D+${user?.created_at ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000) : 0} 함께 케어 중 💜`,
+          imageUrl: (profile as any)?.avatar_url ?? null,
+          buttonTitle: '피부 기록 보기',
+        }}
+      />
 
       {activeTab === 'routine' ? (
         <div style={{ margin: '12px 16px 0' }}>
