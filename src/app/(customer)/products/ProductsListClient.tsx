@@ -55,8 +55,12 @@ function tagMatch(tags: string[] | null | undefined, q: string) {
   return (tags || []).some(t => String(t).replace(/[·・•\s]/g, '').toLowerCase().includes(n))
 }
 
-function dramaticLine(p: Row, phase: string, focus: string, hormoneMatch: boolean) {
-  if (hormoneMatch) return `지금 ${phase} · ${focus.split('/')[0]}에 어울려요`
+function dramaticLine(p: Row, phase: string, focus: string, hormoneMatch: boolean, gender?: string | null, hca?: boolean | null) {
+  if (hormoneMatch) {
+    if (gender === 'male') return `남성 피부 맞춤 · 피지조절에 어울려요`
+    if (hca === false) return `탄력 케어 맞춤 · 수분에 어울려요`
+    return `지금 ${phase} · ${focus.split('/')[0]}에 어울려요`
+  }
   const s = p.step_tags?.[0]
   const f = p.func_tags?.[0]
   if (s && f) return `${s} × ${f} — 오늘의 한 줄`
@@ -491,10 +495,14 @@ export default function ProductsListClient() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, padding: '0 14px 6px' }}>
               {items.map((p: Row) => {
                 const hit =
-                  !!phaseFocus.focus &&
-                  (p.hormone_tags || []).some((t: string) =>
-                    phaseFocus.focus.split('/').some(k => k.trim() && String(t).includes(k.trim()))
-                  )
+                  userGender === 'male'
+                    ? (p.func_tags || []).some(t => ['피지', '클렌징', '진정'].some(k => String(t).includes(k)))
+                    : userHca === false
+                    ? (p.func_tags || []).some(t => ['탄력', '수분', '콜라겐'].some(k => String(t).includes(k)))
+                    : !!phaseFocus.focus &&
+                      (p.hormone_tags || []).some((t: string) =>
+                        phaseFocus.focus.split('/').some(k => k.trim() && String(t).includes(k.trim()))
+                      )
                 return (
                   <div
                     key={p.id}
@@ -550,7 +558,7 @@ export default function ProductsListClient() {
                       <div style={{ fontSize: 10, color: '#fff', lineHeight: 1.3, minHeight: 26, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{p.name}</div>
                       <div style={{ fontSize: 11, color: '#c9a96e', marginTop: 4 }}>₩{priceOf(p).toLocaleString()}</div>
                       <div style={{ fontSize: 8, color: 'rgba(255,255,255,0.38)', marginTop: 4, lineHeight: 1.35 }}>
-                        {dramaticLine(p, phaseFocus.phase, phaseFocus.focus, hit)}
+                        {dramaticLine(p, phaseFocus.phase, phaseFocus.focus, hit, userGender, userHca)}
                       </div>
                     </Link>
                   </div>
