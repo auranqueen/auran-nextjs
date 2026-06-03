@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendWalletChargeCompleteAlimtalkIfEnabled } from '@/lib/payments/sendWalletChargeCompleteAlimtalk'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
+import { addToPurchaseAmount, autoUpgradeGrade } from '@/lib/gradeUtils'
 
 function mustEnv(name: string): string {
   const v = process.env[name]
@@ -187,6 +188,15 @@ export async function POST(req: NextRequest) {
             is_read: false,
           } as any)
         }
+      }
+
+      // 멤버십 결제 누적구매액 + 등급 자동 승급
+      if (intent.user_id && intent.amount) {
+        try {
+          const client = tryCreateServiceClient() || supabase
+          await addToPurchaseAmount(intent.user_id, intent.amount, client)
+          await autoUpgradeGrade(intent.user_id, client)
+        } catch (_) {}
       }
 
       // ★ 멤버십 "선물" 결제 완료 — 기존 분기 그대로 두고 이 블록만 추가
