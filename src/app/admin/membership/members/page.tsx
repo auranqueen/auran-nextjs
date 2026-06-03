@@ -11,7 +11,7 @@ export default async function MembershipMembersPage() {
   const { data: memberships } = await supabase
     .from('user_memberships')
     .select(
-      'id,user_id,status,shipments_total,shipments_remaining,next_shipment_date,plan_id,users!user_memberships_user_id_fkey(name),membership_plans(name)'
+      'id,user_id,status,shipments_total,shipments_remaining,next_shipment_date,plan_id,source_type,users!user_memberships_user_id_fkey(name),membership_plans(name)'
     )
     .order('created_at', { ascending: false })
 

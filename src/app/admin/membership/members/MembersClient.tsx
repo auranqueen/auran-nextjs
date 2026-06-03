@@ -11,7 +11,7 @@ const SERIF = "'Cormorant Garamond', Georgia, serif"
 
 type Membership = {
   id: string; user_id: string; status: string; shipments_total: number; shipments_remaining: number
-  next_shipment_date: string | null; users: { name: string } | null; membership_plans: { name: string } | null
+  next_shipment_date: string | null; source_type?: string | null; users: { name: string } | null; membership_plans: { name: string } | null
 }
 type Tpl = { id: string; theme_name: string; target_phase: string | null }
 type Scored = { id: string; name: string; retail_price: number | null; _score: number; _reasons: string[] }
@@ -63,6 +63,9 @@ export default function MembersClient({ memberships: initial, templates }: { mem
               <div onClick={() => open(m.id)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 9 }}>
                   <span style={{ fontSize: 15, color: C.plum }}>{m.users?.name || '회원'}</span>
+                  {m.source_type === 'membership_gift' && (
+                    <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 10, background: 'rgba(201,169,110,0.15)', color: '#C9A96E', marginLeft: 6 }}>선물수령</span>
+                  )}
                   <span style={{ fontSize: 11, color: C.goldDark, background: C.goldSoft, borderRadius: 5, padding: '2px 8px' }}>{m.membership_plans?.name || '멤버'}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
