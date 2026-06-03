@@ -637,6 +637,12 @@ export default function MyPage() {
           {membership.source_type === 'membership_gift' && (
             <div style={{ fontSize: 10, color: '#C9A96E', marginTop: 8, opacity: 0.7 }}>🎁 선물로 받은 멤버십이에요</div>
           )}
+          <div
+            onClick={() => router.push('/my/rituals')}
+            style={{ marginTop: 10, fontSize: 12, color: '#7B5EA7', cursor: 'pointer', textAlign: 'center', padding: '7px 0', borderTop: '0.5px solid rgba(123,94,167,0.15)' }}
+          >
+            지난 리추얼 보기 →
+          </div>
         </div>
       )}
 

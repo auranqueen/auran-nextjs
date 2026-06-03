@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 import { curateBundle } from '@/lib/membership/curate'
+import { sendPpurioAlimtalk } from '@/lib/ppurio/sendAlimtalk'
 
 async function adminUser(supabase: any) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -73,7 +74,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'no_shipments_left' }, { status: 400 })
   }
   const cycleNo = (um.shipments_total ?? 6) - (um.shipments_remaining ?? 0) + 1
-  const { error: insErr } = await client.from('membership_shipments').insert({
+  const { data: shipment, error: insErr } = await client.from('membership_shipments').insert({
     user_membership_id: um.id,
     user_id: um.user_id,
     cycle_no: cycleNo,
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
     curated_product_ids: scored.map((s) => s.id),
     status: '발송완료',
     shipped_at: new Date().toISOString(),
-  } as any)
+  } as any).select('id').single()
   if (insErr) return NextResponse.json({ ok: false, error: insErr.message }, { status: 500 })
 
   const remaining = (um.shipments_remaining ?? 1) - 1
@@ -95,6 +96,27 @@ export async function POST(req: NextRequest) {
       status: remaining > 0 ? 'active' : 'expired',
     })
     .eq('id', um.id)
+
+  try {
+    const shipmentId = (shipment as any)?.id
+    const productNames = scored.slice(0, 3).map((p: any) => p.name).join(', ') + (scored.length > 3 ? ' 외' : '')
+    await client.from('notifications').insert({
+      user_id: um.user_id,
+      type: 'promo',
+      title: `${cycleNo}회차 리추얼이 출발했어요 💜`,
+      body: productNames,
+      link_url: shipmentId ? `/my/rituals/${shipmentId}` : '/my',
+      is_read: false,
+    } as any)
+    const { data: userRow } = await client.from('users').select('phone').eq('id', um.user_id).maybeSingle()
+    if ((userRow as any)?.phone) {
+      await sendPpurioAlimtalk({
+        phone: (userRow as any).phone,
+        message: `[ORÆN PRIVÉ] ${cycleNo}회차 리추얼이 출발했어요 💜\n\n${scored.map((p: any) => p.name).join('\n')}\n\n앱에서 사용법과 원장님 팁을 확인해보세요!`,
+        title: 'ORÆN PRIVÉ 리추얼 발송',
+      }).catch(() => {})
+    }
+  } catch (_) {}
 
   return NextResponse.json({ ok: true, shipped: true, cycle_no: cycleNo, remaining })
 }
