@@ -110,6 +110,14 @@ export default function GiftsPage() {
               {g.shipping_name && <div style={{ fontSize: 11, color: '#9B7EC8', marginBottom: 4 }}>받는 분: {g.shipping_name}</div>}
               {g.shipping_status && <div style={{ fontSize: 10, color: '#7B5EA7' }}>{SHIP_LABEL[g.shipping_status] || g.shipping_status}</div>}
               {g.tracking_no && <div style={{ fontSize: 10, color: '#1D9E75', marginTop: 4 }}>{g.courier} {g.tracking_no}</div>}
+              {(!g.shipping_status || g.shipping_status === 'pending') && g.claim_token && (
+                <button
+                  onClick={() => router.push('/membership/claim/' + g.claim_token)}
+                  style={{ marginTop: 8, padding: '8px 16px', background: '#7B5EA7', border: 'none', color: '#fff', borderRadius: 8, fontSize: 12, cursor: 'pointer', display: 'block', width: '100%' }}
+                >
+                  📦 배송지 입력하기
+                </button>
+              )}
               {g.status === 'paid' && g.claim_token && (
                 <button
                   onClick={() => { navigator.clipboard?.writeText('https://auran.kr/membership/claim/' + g.claim_token); alert('링크 복사됐어요 💜') }}
