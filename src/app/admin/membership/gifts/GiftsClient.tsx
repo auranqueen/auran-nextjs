@@ -36,9 +36,9 @@ const SHIP_COLOR: Record<string, string> = {
   shipped: '#1D9E75',
   delivered: '#C9A96E',
 }
-export default function GiftsClient() {
+export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] }) {
   const supabase = createClient()
-  const [rows, setRows] = useState<GiftRow[]>([])
+  const [rows, setRows] = useState<GiftRow[]>(initialGifts)
   const [loading, setLoading] = useState(true)
   const [tab, setTab] = useState<'address_received' | 'shipped' | 'all'>('address_received')
   const [selected, setSelected] = useState<GiftRow | null>(null)
@@ -65,28 +65,19 @@ export default function GiftsClient() {
   const handleShip = async () => {
     if (!selected || !trackingNo) return
     setSaving(true)
-    const { error } = await supabase
-      .from('membership_gifts')
-      .update({
-        shipping_status: 'shipped',
-        tracking_no: trackingNo,
-        courier,
-        shipped_at: new Date().toISOString(),
-      })
-      .eq('id', selected.id)
-    if (!error) {
-      await supabase.from('notifications').insert({
-        user_id: null,
-        type: 'gift_shipped',
-        message: `선물이 발송됐어요! ${courier} ${trackingNo}`,
-        link: null,
-      })
+    const res = await fetch('/api/admin/membership/gifts', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: selected.id, tracking_no: trackingNo, courier }),
+    })
+    if (res.ok) {
       showToast('발송 처리 완료!')
       setSelected(null)
       setTrackingNo('')
       void load()
     } else {
-      showToast('오류: ' + error.message)
+      const d = await res.json()
+      showToast('오류: ' + (d.error || ''))
     }
     setSaving(false)
   }
