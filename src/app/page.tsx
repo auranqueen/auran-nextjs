@@ -294,6 +294,8 @@ export default function CustomerHomePage() {
 
   const [mounted, setMounted] = useState(false)
   const [hormonePhase, setHormonePhase] = useState<string>('')
+  const [userGender, setUserGender] = useState<string | null>(null)
+  const [userHca, setUserHca] = useState<boolean | null>(null)
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -474,7 +476,7 @@ export default function CustomerHomePage() {
     if (!user) return
 
     const [profileRes, hcRes, tipRes, rulesRes] = await Promise.all([
-      supabase.from('profiles').select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at, roles, active_role, onboarding_done, onboarding_step, avatar_url').eq('auth_id', user.id).maybeSingle(),
+      supabase.from('profiles').select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at, roles, active_role, onboarding_done, onboarding_step, avatar_url, gender, hormone_cycle_applicable').eq('auth_id', user.id).maybeSingle(),
       supabase.from('hormone_cycle').select('*').eq('auth_id', user.id).maybeSingle(),
       supabase.from('help_tooltips').select('title,content,is_active').eq('key', 'period_start').maybeSingle(),
       supabase.from('safety_rules').select('condition_type, condition_value, rule_type, rule_value').eq('is_active', true),
@@ -486,6 +488,12 @@ export default function CustomerHomePage() {
     let nameForHormoneLine = '고객'
     if (profile) {
       setMotivationProfile(profile)
+      setUserGender((profile as any).gender ?? null)
+      setUserHca(
+        (profile as any).hormone_cycle_applicable === true ? true :
+        (profile as any).hormone_cycle_applicable === false ? false :
+        null
+      )
       setOnboardingDone((profile as any).onboarding_done === true)
       const displayName = (profile as { full_name?: string | null }).full_name || '고객'
       nameForHormoneLine = displayName
