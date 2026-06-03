@@ -1988,7 +1988,11 @@ export default function CustomerHomePage() {
                 color: '#fff', fontSize: 12, cursor: 'pointer',
               }}
             >
-              마법캘린더 입력하기
+              {userGender === 'male'
+                ? '내 피부 사이클 기록'
+                : (userHca as boolean | null) === false
+                ? '케어 루틴 기록'
+                : '마법캘린더 입력하기'}
             </button>
           </div>
         ) : (
