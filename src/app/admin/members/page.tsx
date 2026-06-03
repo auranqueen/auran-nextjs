@@ -517,9 +517,9 @@ export default function AdminMembersPage() {
                           ))}
                         </div>
                         <input type="date" value={mDate} onChange={e => setMDate(e.target.value)}
-                          style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(123,94,167,0.25)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}/>
+                          style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(123,94,167,0.25)', fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff' }}/>
                         <input value={mMemo} onChange={e => setMMemo(e.target.value)} placeholder="메모 (예: 300만원 송금 확인)"
-                          style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(123,94,167,0.25)', fontSize: 13, fontFamily: 'inherit', outline: 'none' }}/>
+                          style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(123,94,167,0.25)', fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff' }}/>
                         {mMsg && <div style={{ fontSize: 12, color: mMsg.includes('완료') ? '#5B8A6B' : '#A33' }}>{mMsg}</div>}
                         <button
                           onClick={async () => {
