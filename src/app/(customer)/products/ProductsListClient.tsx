@@ -6,6 +6,17 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
+const SHOP_HOOK: Record<string, string[]> = {
+  male_active:  ['오늘도 열심히 했죠? 피부도 같이 💪', '번들거림 없는 하루 만들어요 ✨', '클렌징이 전부예요 남자 피부는 💆'],
+  male_gentle:  ['경험이 쌓일수록 피부도 깊어져요 🌿', '탄력 한 스푼 더 얹어봐요 💜', '온화해진 만큼 피부도 섬세하게 🌿'],
+  age_care:     ['탱탱함은 포기 못하죠 💪 지금 집중!', '수분과 탄력이 이렇게 달라져요 🌸', '지금 피부에 콜라겐을 채워요 💊'],
+  '달빛기':     ['순하고 편안하게, 오늘 피부도 쉬어요 🌙', '자극 줄이는 게 최고예요 달빛기엔 💜', '진정 케어 타이밍이에요 🌙'],
+  '황금기':     ['지금 바르면 두 배로 흡수돼요 ✨', '황금기엔 영양을 듬뿍 채워요 🌟', '오늘이 타이밍! 집중 케어 ✨'],
+  '만개기':     ['지금 피부 컨디션 최고예요 🌸', '빛나는 피부 지속하기 💫', '만개기엔 광채 케어가 어울려요 🌸'],
+  '물들기':     ['예민한 피부야, 진정해 🍂', '트러블 미리 잡아요 💜', '이번 주 피부 달래줄 제품들이에요 🍂'],
+  default:      ['오늘 피부에 꼭 필요한 것들이에요 💜', '당신만을 위한 큐레이션이에요 ✨', '피부가 고마워할 제품들이에요 🌸'],
+}
+
 const BG = '#0f0f12'
 const CARD = '#1e1e26'
 const BRAND = '#7b6cc0'
@@ -69,6 +80,7 @@ export default function ProductsListClient() {
   const [userGender, setUserGender] = useState<string | null>(null)
   const [userHca, setUserHca] = useState<boolean | null>(null)
   const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set())
+  const [searchQuery, setSearchQuery] = useState('')
 
   const step = sp.get('step') ? decodeURIComponent(sp.get('step')!) : ''
   const func = sp.get('func') ? decodeURIComponent(sp.get('func')!) : ''
@@ -227,15 +239,24 @@ export default function ProductsListClient() {
     void load()
   }, [load])
 
+  const filteredRows = useMemo(() => {
+    if (!searchQuery || searchQuery.length < 2) return rows
+    const q = searchQuery.toLowerCase()
+    return rows.filter(p =>
+      p.name?.toLowerCase().includes(q) ||
+      (p.brands as any)?.name?.toLowerCase().includes(q)
+    )
+  }, [rows, searchQuery])
+
   const grouped = useMemo(() => {
     const m = new Map<string, Row[]>()
-    for (const p of rows) {
+    for (const p of filteredRows) {
       const name = p.brands?.name?.trim() || '기타'
       if (!m.has(name)) m.set(name, [])
       m.get(name)!.push(p)
     }
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0], 'ko'))
-  }, [rows])
+  }, [filteredRows])
 
   const deletePickProduct = async (productId: string) => {
     const { error } = await supabase
@@ -251,8 +272,64 @@ export default function ProductsListClient() {
       <header style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <button type="button" onClick={() => router.back()} style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 18 }}>←</button>
         <div style={{ flex: 1, fontSize: 16, fontWeight: 600 }}>{title}</div>
-        {hormoneBadge ? <span style={{ fontSize: 11, padding: '4px 10px', borderRadius: 999, background: BADGE_BG, color: BADGE_FG }}>{hormoneBadge}</span> : null}
+        {(() => {
+          const badge =
+            userGender === 'male' ? '💪 피지조절' :
+            userHca === false ? '💊 탄력케어' :
+            hormoneBadge || null
+          return badge ? <span style={{ fontSize: 11, padding: '4px 10px', borderRadius: 999, background: BADGE_BG, color: BADGE_FG }}>{badge}</span> : null
+        })()}
       </header>
+      {/* 검색바 */}
+      <div style={{ padding: '10px 14px 0', display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#1a1a22', borderRadius: 10, padding: '8px 12px', gap: 8, border: '1px solid rgba(255,255,255,0.08)' }}>
+          <span style={{ fontSize: 14, opacity: 0.5 }}>🔍</span>
+          <input
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="제품명, 브랜드 검색"
+            style={{ flex: 1, background: 'none', border: 'none', outline: 'none', color: '#e8e8ec', fontSize: 13 }}
+          />
+          {searchQuery && (
+            <button onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', color: '#aaa', cursor: 'pointer', fontSize: 14, padding: 0 }}>✕</button>
+          )}
+        </div>
+      </div>
+      {/* 큐레이션 배너 */}
+      {!searchQuery && rows.length > 0 && (
+        <div style={{ padding: '14px 14px 0' }}>
+          <div style={{ background: 'rgba(123,94,167,0.08)', border: '0.5px solid rgba(123,94,167,0.25)', borderRadius: 14, padding: '14px' }}>
+            <div style={{ fontSize: 11, color: 'rgba(201,169,110,0.6)', marginBottom: 4, letterSpacing: 1 }}>
+              {userGender === 'male' ? '피지조절 · 클렌징 추천' : userHca === false ? '탄력 · 수분 · 콜라겐 추천' : hormoneBadge ? `${hormoneBadge} 맞춤 추천` : '오늘의 추천'}
+            </div>
+            <div style={{ fontSize: 13, color: '#e8e0f5', marginBottom: 12 }}>
+              {(() => {
+                const key = userGender === 'male' ? 'male_active' : userHca === false ? 'age_care' : (hormoneBadge || 'default')
+                const arr = SHOP_HOOK[key] || SHOP_HOOK.default
+                return arr[Math.floor(Math.random() * arr.length)]
+              })()}
+            </div>
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+              {rows.slice(0, 3).map(p => (
+                <div
+                  key={p.id}
+                  onClick={() => router.push(`/products/${p.id}`)}
+                  style={{ flexShrink: 0, width: 100, cursor: 'pointer' }}
+                >
+                  <div style={{ width: 100, height: 100, borderRadius: 10, overflow: 'hidden', background: '#1a1a22', marginBottom: 6 }}>
+                    {(p.storage_thumb_url || p.thumb_img) ? (
+                      <img src={p.storage_thumb_url || p.thumb_img || ''} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>🧴</div>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#c4a8ff', lineClamp: 2, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{p.name}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {addProdOpen && pick && showEditChrome ? (
         <div
