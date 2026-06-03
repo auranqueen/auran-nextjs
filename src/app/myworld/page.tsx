@@ -266,7 +266,13 @@ export default function MyWorldPage() {
   const minimiMent = minimiMentGroups[minimiTalkLevel][minimiSpeechIndex % minimiMentGroups[minimiTalkLevel].length]
 
   const moodGroups = [
-    { label: '신체/호르몬', items: ['🩸 생리중', '😣 생리전 예민', '😪 수면부족', '🍺 어젯밤 음주', '💊 약 복용중', '🏃 운동후'] },
+    { label: '신체/호르몬', items:
+      (profile as any)?.gender === 'male'
+        ? ['🪒 면도후', '😤 피지많음', '🔴 트러블', '😪 수면부족', '🏃 운동후', '💊 약 복용중']
+        : (profile as any)?.hormone_cycle_applicable === false
+        ? ['😓 건조함', '🍎 홍조', '🤕 각질', '😪 수면부족', '💊 약 복용중', '🏃 운동후']
+        : ['🩸 생리중', '😣 생리전 예민', '😪 수면부족', '🍺 어젯밤 음주', '💊 약 복용중', '🏃 운동후']
+    },
     { label: '감정/멘탈', items: ['😤 스트레스MAX', '😢 울었어요', '😊 설레는날', '🎉 특별한날', '😴 너무피곤해', '🧘 마음평온'] },
     { label: '환경', items: ['☀️ 야외활동많음', '✈️ 여행중', '🏢 에어컨오래씀', '😷 마스크오래씀', '🌫️ 미세먼지심함'] },
   ]
