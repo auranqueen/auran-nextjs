@@ -1466,6 +1466,9 @@ export default function CustomerHomePage() {
     } else if (userHca === false && rand < 0.5) {
       const arr = AGE_CARE_GREETINGS
       greeting = arr[Math.floor(Math.random() * arr.length)](userName)
+    } else if (userHca === true && !hormonePhase && rand < 0.5) {
+      const arr = HORMONE_NORMAL_GREETINGS
+      greeting = arr[Math.floor(Math.random() * arr.length)](userName)
     } else if (hormonePhase && hormoneCycle && hormoneTrack === 'general' && rand < 0.4) {
       const arr = HORMONE_GREETINGS[hormonePhase]
       if (Array.isArray(arr) && arr.length > 0) {
