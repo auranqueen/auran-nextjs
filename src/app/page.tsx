@@ -1850,9 +1850,25 @@ export default function CustomerHomePage() {
             {userName ? homeGreetingForUser : '오랜에 오셨군요 💜'}
           </div>
         </div>
-        {userName && (
-          <Avatar url={(motivationProfile as any)?.avatar_url ?? null} name={userName} size={40} />
-        )}
+        <div
+          onClick={() => router.push(myUserId ? '/my' : '/login')}
+          style={{ cursor: 'pointer', flexShrink: 0 }}
+        >
+          {myUserId ? (
+            <Avatar
+              url={(motivationProfile as any)?.avatar_url ?? null}
+              name={userName || '·'}
+              size={40}
+            />
+          ) : (
+            <div style={{
+              width: 40, height: 40, borderRadius: '50%',
+              background: 'linear-gradient(135deg, #7B5EA7, #C9A96E)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 20, lineHeight: 1,
+            }}>🌙</div>
+          )}
+        </div>
       </div>
 
       {/* 원장님 대화카드 */}

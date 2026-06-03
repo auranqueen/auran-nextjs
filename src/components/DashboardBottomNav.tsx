@@ -11,7 +11,7 @@ const NAV: Record<Role, { icon: string; label: string; href: string }[]> = {
     { icon: '🛍️', label: '샵', href: '/products' },
     { icon: '🔬', label: 'AI', href: '/skin-analysis' },
     { icon: '💬', label: '커뮤니티', href: '/community' },
-    { icon: '👑', label: 'MY', href: '/mypage' },
+    { icon: '🌙', label: 'MyWorld', href: '/myworld' },
   ],
   partner: [
     { icon: '🏠', label: '홈', href: '/dashboard/partner' },
