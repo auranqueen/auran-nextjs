@@ -23,6 +23,10 @@ type Row = {
   func_tags?: string[] | null
   hormone_tags?: string[] | null
   brands?: { name?: string | null } | null
+  gender_tag?: string | null
+  season_tags?: string[] | null
+  sales_count?: number | null
+  created_at?: string | null
   /** pick 목록 전용: season_product_mapping 행 id */
   mapping_id?: string | null
   season_priority?: number | null
@@ -62,6 +66,9 @@ export default function ProductsListClient() {
   const [addProdSearch, setAddProdSearch] = useState('')
   const [addProdResults, setAddProdResults] = useState<any[]>([])
   const [addProdSearchLoading, setAddProdSearchLoading] = useState(false)
+  const [userGender, setUserGender] = useState<string | null>(null)
+  const [userHca, setUserHca] = useState<boolean | null>(null)
+  const [purchasedIds, setPurchasedIds] = useState<Set<string>>(new Set())
 
   const step = sp.get('step') ? decodeURIComponent(sp.get('step')!) : ''
   const func = sp.get('func') ? decodeURIComponent(sp.get('func')!) : ''
@@ -107,6 +114,13 @@ export default function ProductsListClient() {
     }
     const month = new Date().getMonth() + 1
     let list: Row[] = []
+    const season = (() => {
+      const m = new Date().getMonth() + 1
+      if (m >= 3 && m <= 5) return '봄'
+      if (m >= 6 && m <= 8) return '여름'
+      if (m >= 9 && m <= 11) return '가을'
+      return '겨울'
+    })()
     const { data: { user } } = await supabase.auth.getUser()
     let hcRow: any = null
     if (user) {
@@ -114,13 +128,37 @@ export default function ProductsListClient() {
       hcRow = hc
       const b = hc ? calcHormoneBriefing(hc) : null
       setHormoneBadge(b?.phase ?? '')
+      const { data: pRow } = await supabase
+        .from('profiles')
+        .select('gender, hormone_cycle_applicable')
+        .eq('auth_id', user.id)
+        .maybeSingle()
+      setUserGender((pRow as any)?.gender ?? null)
+      setUserHca(
+        (pRow as any)?.hormone_cycle_applicable === true ? true :
+        (pRow as any)?.hormone_cycle_applicable === false ? false :
+        null
+      )
+      const { data: uRow } = await supabase
+        .from('users')
+        .select('id')
+        .eq('auth_id', user.id)
+        .maybeSingle()
+      if (uRow?.id) {
+        const { data: items } = await supabase
+          .from('order_items')
+          .select('product_id, orders!inner(customer_id)')
+          .eq('orders.customer_id', uRow.id)
+        const ids = new Set<string>((items || []).map((i: any) => i.product_id).filter(Boolean))
+        setPurchasedIds(ids)
+      }
       setPhaseFocus(b ? { phase: b.phase, focus: b.focus } : { phase: '', focus: '' })
     } else {
       setHormoneBadge('')
       setPhaseFocus({ phase: '', focus: '' })
     }
     const sel =
-      'id, name, brand_id, retail_price, sale_price, storage_thumb_url, thumb_img, step_tags, func_tags, hormone_tags, brands(name)'
+      'id, name, brand_id, retail_price, sale_price, storage_thumb_url, thumb_img, step_tags, func_tags, hormone_tags, gender_tag, season_tags, sales_count, created_at, brands(name)'
 
     if (pick) {
       const { data: maps } = await supabase
@@ -147,15 +185,33 @@ export default function ProductsListClient() {
     }
 
     const br = hcRow ? calcHormoneBriefing(hcRow) : { phase: '', focus: '' }
-    const scored = list.map(p => ({
-      p,
-      hit:
-        (p.hormone_tags || []).length > 0 &&
-        (p.hormone_tags || []).some(t =>
-          br.focus.split('/').some(k => k.trim() && String(t).includes(k.trim())) || !!(br.phase && String(t).includes(br.phase))
-        ),
-    }))
-    scored.sort((a, b) => Number(b.hit) - Number(a.hit))
+    const phase = br.phase ?? ''
+    const maxSales = Math.max(0, ...list.map(p => p.sales_count ?? 0))
+    const scored = list.map(p => {
+      let s = 0
+      const htags = (p.hormone_tags || []).map(String)
+      if (userGender === 'male') {
+        if (htags.some(t => t.includes('남성') || t.includes('전연령'))) s += 3
+      } else if (userHca === false) {
+        if (htags.some(t => t.includes('갱년기') || t.includes('전연령'))) s += 3
+      } else if (phase) {
+        if (htags.some(t => t.includes(phase) || t.includes('전연령'))) s += 3
+      }
+      const gt = p.gender_tag || '공용'
+      if (gt === '공용') s += 2
+      else if (gt === '남성' && userGender === 'male') s += 2
+      else if (gt === '여성' && userGender !== 'male') s += 2
+      const stags = (p.season_tags || []).map(String)
+      if (stags.some(t => t.includes(season) || t.includes('전계절'))) s += 2
+      if (p.created_at) {
+        const days = (Date.now() - new Date(p.created_at).getTime()) / 86400000
+        if (days <= 30) s += 1
+      }
+      if (maxSales > 0 && (p.sales_count ?? 0) >= maxSales * 0.8) s += 1
+      if (purchasedIds.has(p.id)) s -= 10
+      return { p, s }
+    })
+    scored.sort((a, b) => b.s - a.s)
     setRows(scored.map(s => s.p))
     setLoading(false)
   }, [supabase, pick, step, func, brandId])
