@@ -98,7 +98,51 @@ export async function POST(req: Request) {
           phone: (userRow as any).phone,
           message: msg,
           title: 'ORÆN PRIVÉ 멤버십 시작',
-        })
+        }).catch(() => {})
+      }
+      // 상담톡 안내 메시지 발송
+      const { data: channelRow } = await supabase
+        .from('chat_channels')
+        .select('id')
+        .eq('user_id', user_id)
+        .eq('channel_type', 'owner')
+        .maybeSingle()
+      let channelId = (channelRow as any)?.id
+      if (!channelId) {
+        const { data: newCh } = await supabase
+          .from('chat_channels')
+          .insert({
+            user_id,
+            channel_type: 'owner',
+            title: '원장님 상담',
+            preview_text: 'ORÆN PRIVÉ 멤버십이 시작됐어요 💜',
+            unread_count: 1,
+            is_online: false,
+          } as any)
+          .select('id')
+          .maybeSingle()
+        channelId = (newCh as any)?.id
+      }
+      if (channelId) {
+        const chatMsg = hasAddress
+          ? `안녕하세요 💜 ORÆN PRIVÉ 멤버십이 시작됐어요!\n\n첫 배송일은 ${next_shipment_date}입니다.\n오랜이 정성껏 리추얼을 준비할게요.\n\n궁금한 점은 언제든 말씀해주세요 🌙`
+          : `안녕하세요 💜 ORÆN PRIVÉ 멤버십이 시작됐어요!\n\n배송지를 등록해주세요:\nauran.kr/my/addresses\n\n등록 완료 후 첫 리추얼을 보내드릴게요 🌙`
+        await supabase.from('consultation_messages').insert({
+          channel_id: channelId,
+          sender_id: user_id,
+          message: chatMsg,
+          message_kind: 'text',
+          is_from_customer: false,
+        } as any)
+        await supabase
+          .from('chat_channels')
+          .update({
+            last_message: 'ORÆN PRIVÉ 멤버십이 시작됐어요 💜',
+            last_message_at: new Date().toISOString(),
+            unread_count: 1,
+            preview_text: 'ORÆN PRIVÉ 멤버십이 시작됐어요 💜',
+          })
+          .eq('id', channelId)
       }
     } catch (_) {}
     try {
