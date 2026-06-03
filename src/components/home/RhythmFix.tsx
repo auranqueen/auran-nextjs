@@ -16,7 +16,12 @@ export default function RhythmFix() {
     const hc: any = { track, cycle_type: cycleType, menopause_reason: reason, updated_at: new Date().toISOString() }
     if (track === 'general') hc.last_period_date = today
     await sb.from('hormone_cycle').update(hc).eq('auth_id', user.id)
-    await sb.from('profiles').update({ cycle_type: cycleType }).eq('auth_id', user.id)
+    await sb.from('profiles').update({
+      cycle_type: cycleType,
+      ...(cycleType === 'menstrual' ? { hormone_cycle_applicable: true } :
+          cycleType === 'male' ? { hormone_cycle_applicable: false } :
+          cycleType === 'menopause' && reason === 'natural' ? { hormone_cycle_applicable: false } : {}),
+    }).eq('auth_id', user.id)
     window.location.reload()
   }
   const report = async () => {
