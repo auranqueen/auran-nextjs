@@ -160,6 +160,24 @@ export async function PATCH(req: NextRequest) {
       })
       .eq('claim_token', token)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    try {
+      const { data: giftD } = await client
+        .from('membership_gifts')
+        .select('gifted_by')
+        .eq('claim_token', token)
+        .maybeSingle()
+      const ownerId = (giftD as any)?.gifted_by
+      if (ownerId) {
+        await client.from('notifications').insert({
+          user_id: ownerId,
+          type: 'promo',
+          title: '배송지가 등록됐어요 📦',
+          body: '받는 분이 배송지를 등록했어요. 발송을 준비해주세요!',
+          link_url: '/admin/membership/gifts',
+          is_read: false,
+        } as any)
+      }
+    } catch (_) {}
     return NextResponse.json({ ok: true })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })

@@ -309,6 +309,22 @@ export async function POST(req: NextRequest) {
               body: '받는 분께 이 링크를 보내주세요: https://auran.kr/membership/claim/' + gift.claim_token,
               is_read: false,
             } as any)
+            // 선물 받을 사람 알림 + 알림톡 + 상담톡은 claim 수령 시 처리됨
+            // 보낸 사람 알림톡 추가
+            try {
+              const { data: senderRow } = await client
+                .from('users')
+                .select('phone, name')
+                .eq('id', gift.gifted_by)
+                .maybeSingle()
+              if ((senderRow as any)?.phone) {
+                await sendPpurioAlimtalk({
+                  phone: (senderRow as any).phone,
+                  message: `[ORÆN PRIVÉ] 선물 결제가 완료됐어요 🎁\n\n아래 링크를 받는 분께 보내주세요:\nhttps://auran.kr/membership/claim/${gift.claim_token}`,
+                  title: 'ORÆN PRIVÉ 선물 발송',
+                }).catch(() => {})
+              }
+            } catch (_) {}
           }
         }
       }

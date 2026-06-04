@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { confirmOrderById } from '@/lib/orders/confirmOrder'
 import OrderDetailPanel from './OrderDetailPanel'
+import { sendPpurioAlimtalk } from '@/lib/ppurio/sendAlimtalk'
 
 type TabKey = '전체' | '주문확인' | '발송준비' | '배송중' | '배송완료' | '취소/환불'
 
@@ -344,6 +345,16 @@ export default function AdminOrdersPage() {
     }
   }
 
+  const tryAlimtalkCustomer = async (customerId: string | null | undefined, message: string) => {
+    if (!customerId) return
+    try {
+      const { data: uRow } = await supabase.from('users').select('phone, name').eq('id', customerId).maybeSingle()
+      if ((uRow as any)?.phone) {
+        await sendPpurioAlimtalk({ phone: (uRow as any).phone, message, title: '배송 안내' }).catch(() => {})
+      }
+    } catch (_) {}
+  }
+
   const shipFromModal = async () => {
     const idList = shipBulkIds && shipBulkIds.length ? shipBulkIds : modalId ? [modalId] : []
     const firstRow = idList.length ? rows.find((r) => r.id === idList[0]) : null
@@ -418,6 +429,10 @@ export default function AdminOrdersPage() {
           extraMsg
         await tryNotifyCustomer(ro.customer_id, '🚚 발송 안내', notifyBody)
       }
+      await tryAlimtalkCustomer(
+        firstRow?.customer_id,
+        `[AURAN] 주문하신 상품이 출발했어요 🚚\n${courier} ${tracking}\n배송 완료 시 알려드릴게요 💜`
+      )
       setRows((prev) =>
         prev.map((r) =>
           idSet.has(r.id) ? { ...r, status: '배송중', tracking_no: tracking, courier, shipped_at: now, admin_order_notes: notesPayload } : r
