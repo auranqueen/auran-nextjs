@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { sendWalletChargeCompleteAlimtalkIfEnabled } from '@/lib/payments/sendWalletChargeCompleteAlimtalk'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 import { addToPurchaseAmount, autoUpgradeGrade } from '@/lib/gradeUtils'
+import { sendPpurioAlimtalk } from '@/lib/ppurio/sendAlimtalk'
 
 function mustEnv(name: string): string {
   const v = process.env[name]
@@ -187,6 +188,88 @@ export async function POST(req: NextRequest) {
             body: '두 달마다, 오랜이 고른 리추얼이 도착해요',
             is_read: false,
           } as any)
+          // 상담톡 + 알림톡
+          try {
+            const client2 = tryCreateServiceClient() || supabase
+            const userId = intent.user_id
+            // 배송지 확인
+            const { data: addrRow } = await client2
+              .from('shipping_addresses')
+              .select('id')
+              .eq('user_id', userId)
+              .eq('is_default', true)
+              .maybeSingle()
+            const hasAddress = !!addrRow
+            // 다음 배송일
+            const { data: memRow } = await client2
+              .from('user_memberships')
+              .select('next_shipment_date')
+              .eq('user_id', userId)
+              .eq('status', 'active')
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle()
+            const nextDate = (memRow as any)?.next_shipment_date || ''
+            // 상담톡
+            let channelId: string | null = null
+            const { data: chRow } = await client2
+              .from('chat_channels')
+              .select('id')
+              .eq('user_id', userId)
+              .eq('channel_type', 'owner')
+              .maybeSingle()
+            channelId = (chRow as any)?.id || null
+            if (!channelId) {
+              const { data: newCh } = await client2
+                .from('chat_channels')
+                .insert({
+                  user_id: userId,
+                  channel_type: 'owner',
+                  title: '원장님 상담',
+                  preview_text: 'ORÆN PRIVÉ 멤버십이 시작됐어요 💜',
+                  unread_count: 1,
+                  is_online: false,
+                } as any)
+                .select('id')
+                .maybeSingle()
+              channelId = (newCh as any)?.id || null
+            }
+            if (channelId) {
+              const chatMsg = hasAddress
+                ? `안녕하세요 💜 ORÆN PRIVÉ 멤버십 결제가 완료됐어요!\n\n첫 배송일은 ${nextDate}입니다.\n오랜이 정성껏 리추얼을 준비할게요.\n\n궁금한 점은 언제든 말씀해주세요 🌙`
+                : `안녕하세요 💜 ORÆN PRIVÉ 멤버십 결제가 완료됐어요!\n\n배송지를 등록해주세요:\nauran.kr/my/addresses\n\n등록 완료 후 첫 리추얼을 보내드릴게요 🌙`
+              await client2.from('consultation_messages').insert({
+                channel_id: channelId,
+                sender_id: userId,
+                message: chatMsg,
+                message_kind: 'text',
+                is_from_customer: false,
+              } as any)
+              await client2.from('chat_channels').update({
+                last_message: 'ORÆN PRIVÉ 멤버십이 시작됐어요 💜',
+                last_message_at: new Date().toISOString(),
+                unread_count: 1,
+                preview_text: 'ORÆN PRIVÉ 멤버십이 시작됐어요 💜',
+              }).eq('id', channelId)
+            }
+            // 알림톡
+            const { data: userRow } = await client2
+              .from('users')
+              .select('phone, name')
+              .eq('id', userId)
+              .maybeSingle()
+            if ((userRow as any)?.phone) {
+              const name = (userRow as any)?.name || '고객'
+              const alimMsg = hasAddress
+                ? `[ORÆN PRIVÉ] ${name}님, 멤버십 결제가 완료됐어요 💜\n\n첫 배송일: ${nextDate}\n오랜이 정성껏 리추얼을 준비할게요.`
+                : `[ORÆN PRIVÉ] ${name}님, 멤버십 결제가 완료됐어요 💜\n\n배송지를 등록해주세요:\nhttps://auran.kr/my/addresses`
+              await sendPpurioAlimtalk({
+                phone: (userRow as any).phone,
+                message: alimMsg,
+                title: 'ORÆN PRIVÉ 멤버십 시작',
+              }).catch(() => {})
+            }
+          } catch (_) {}
         }
       }
 
