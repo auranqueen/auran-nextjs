@@ -256,6 +256,9 @@ export default function AdminMembersPage() {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>총 {members.length}명</div>
+          <button onClick={() => window.location.href = '/admin/membership/members'} style={{ padding: '8px 16px', background: 'rgba(123,94,167,0.2)', border: '1px solid rgba(123,94,167,0.5)', color: '#9B7EC8', borderRadius: 8, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            💜 멤버십 큐레이션 →
+          </button>
           <button onClick={() => setShowMarketing(true)} style={{ padding: '5px 12px', background: 'rgba(201,169,110,0.15)', border: '0.5px solid rgba(201,169,110,0.4)', color: '#C9A96E', borderRadius: 16, fontSize: 11, cursor: 'pointer' }}>
             📊 마케팅
           </button>
