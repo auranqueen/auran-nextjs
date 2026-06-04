@@ -35,6 +35,10 @@ export default function MembersClient({
   const [templates, setTemplates] = useState<Tpl[]>(initialTpls)
   const [openId, setOpenId] = useState<string | null>(null)
   const [shipDates, setShipDates] = useState<Record<string, string>>({})
+  const [deliveryTypes, setDeliveryTypes] = useState<Record<string, string>>({})
+  const [couriers, setCouriers] = useState<Record<string, string>>({})
+  const [trackingNos, setTrackingNos] = useState<Record<string, string>>({})
+  const [quickCompanies, setQuickCompanies] = useState<Record<string, string>>({})
   const [tplId, setTplId] = useState<string | null>(null)
   const [preview, setPreview] = useState<{ theme: string; phase: string | null; products: Scored[] } | null>(null)
   const [busy, setBusy] = useState(false)
@@ -76,7 +80,7 @@ export default function MembersClient({
     setBusy(true); setMsg(null)
     const res = await fetch('/api/admin/membership/curate', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_membership_id: mId, bundle_template_id: tplId, action, ship_date: shipDates[mId] || undefined }),
+      body: JSON.stringify({ user_membership_id: mId, bundle_template_id: tplId, action, ship_date: shipDates[mId] || undefined, delivery_type: deliveryTypes[mId] || 'courier', courier: couriers[mId] || 'CJ대한통운', tracking_no: trackingNos[mId] || undefined, quick_company: quickCompanies[mId] || undefined }),
     })
     const json = await res.json().catch(() => ({}))
     setBusy(false)
@@ -415,6 +419,31 @@ export default function MembersClient({
                     <input type="date" value={shipDates[m.id] || new Date().toISOString().slice(0, 10)}
                       onChange={e => setShipDates(prev => ({ ...prev, [m.id]: e.target.value }))}
                       style={{ width: '100%', padding: '8px 10px', background: '#fff', border: `0.5px solid ${C.line}`, borderRadius: 8, fontSize: 13, color: '#111', cursor: 'pointer' }} />
+                  </div>
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, color: C.faint, marginBottom: 6 }}>배송 방법</div>
+                    <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                      {(['courier', 'quick', 'direct'] as const).map(dt => (
+                        <button key={dt} onClick={() => setDeliveryTypes(prev => ({ ...prev, [m.id]: dt }))}
+                          style={{ padding: '5px 12px', borderRadius: 6, fontSize: 12, cursor: 'pointer', border: '0.5px solid rgba(123,94,167,0.3)', background: (deliveryTypes[m.id] || 'courier') === dt ? C.purple : 'transparent', color: (deliveryTypes[m.id] || 'courier') === dt ? '#fff' : C.muted }}>
+                          {dt === 'courier' ? '📦 택배' : dt === 'quick' ? '🛵 퀵' : '🤝 직접전달'}
+                        </button>
+                      ))}
+                    </div>
+                    {(deliveryTypes[m.id] || 'courier') === 'courier' && (
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <select value={couriers[m.id] || 'CJ대한통운'} onChange={e => setCouriers(prev => ({ ...prev, [m.id]: e.target.value }))}
+                          style={{ padding: '7px 10px', background: '#fff', border: `0.5px solid ${C.line}`, borderRadius: 8, fontSize: 12, color: '#111', cursor: 'pointer' }}>
+                          {['CJ대한통운','롯데택배','한진택배','우체국택배','로젠택배'].map(c => <option key={c}>{c}</option>)}
+                        </select>
+                        <input value={trackingNos[m.id] || ''} onChange={e => setTrackingNos(prev => ({ ...prev, [m.id]: e.target.value }))}
+                          placeholder="운송장 번호" style={{ flex: 1, padding: '7px 10px', background: '#fff', border: `0.5px solid ${C.line}`, borderRadius: 8, fontSize: 12, color: '#111' }} />
+                      </div>
+                    )}
+                    {(deliveryTypes[m.id] || 'courier') === 'quick' && (
+                      <input value={quickCompanies[m.id] || ''} onChange={e => setQuickCompanies(prev => ({ ...prev, [m.id]: e.target.value }))}
+                        placeholder="퀵 업체명" style={{ width: '100%', padding: '7px 10px', background: '#fff', border: `0.5px solid ${C.line}`, borderRadius: 8, fontSize: 12, color: '#111' }} />
+                    )}
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button onClick={() => call(m.id, 'preview')} disabled={busy}

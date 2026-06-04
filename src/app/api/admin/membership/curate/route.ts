@@ -26,6 +26,10 @@ export async function POST(req: NextRequest) {
   const templateId = String(body?.bundle_template_id || '')
   const action = body?.action === 'ship' ? 'ship' : 'preview'
   const shipDate = body?.ship_date ? String(body.ship_date) : null
+  const deliveryType = body?.delivery_type ? String(body.delivery_type) : 'courier'
+  const courierName = body?.courier ? String(body.courier) : 'CJ대한통운'
+  const trackingNo = body?.tracking_no ? String(body.tracking_no) : null
+  const quickCompany = body?.quick_company ? String(body.quick_company) : null
   if (!membershipId || !templateId) {
     return NextResponse.json({ ok: false, error: 'missing_params' }, { status: 400 })
   }
@@ -86,6 +90,9 @@ export async function POST(req: NextRequest) {
     },
     status: '발송완료',
     shipped_at: (shipDate ? new Date(shipDate) : new Date()).toISOString(),
+    delivery_type: deliveryType,
+    courier: deliveryType === 'courier' ? courierName : deliveryType === 'quick' ? quickCompany : '직접전달',
+    tracking_no: deliveryType === 'courier' ? trackingNo : null,
   } as any).select('id').single()
   if (insErr) return NextResponse.json({ ok: false, error: insErr.message }, { status: 500 })
 
