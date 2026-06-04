@@ -267,15 +267,19 @@ export default function MembersClient({
               <input value={editTpl.theme_name} onChange={e => setEditTpl({ ...editTpl, theme_name: e.target.value })}
                 placeholder="테마명" style={{ padding: '9px 12px', borderRadius: 8, border: `1px solid ${C.line}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff' }}/>
               <div>
-                <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>호르몬 페이즈</div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {PHASES.map(p => <button key={p} onClick={() => setEditTpl({ ...editTpl, target_phase: editTpl.target_phase === p ? null : p })} style={pill(editTpl.target_phase === p)}>{p}</button>)}
-                </div>
+                {(editTpl.target_gender || 'all') !== 'male' && (
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>호르몬 페이즈</div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {PHASES.map(p => <button key={p} onClick={() => setEditTpl({ ...editTpl, target_phase: editTpl.target_phase === p ? null : p })} style={pill(editTpl.target_phase === p)}>{p}</button>)}
+                    </div>
+                  </div>
+                )}
                 <div style={{ marginTop: 10 }}>
                   <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>대상 성별</div>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {(['all', 'female', 'male'] as const).map(g => (
-                      <button key={g} onClick={() => setEditTpl({ ...editTpl, target_gender: g })}
+                      <button key={g} onClick={() => setEditTpl({ ...editTpl, target_gender: g, target_phase: g === 'male' ? null : editTpl.target_phase })}
                         style={{ padding: '5px 14px', borderRadius: 6, fontSize: 12, cursor: 'pointer', border: '0.5px solid rgba(123,94,167,0.3)', background: (editTpl.target_gender || 'all') === g ? C.purple : 'transparent', color: (editTpl.target_gender || 'all') === g ? '#fff' : C.muted }}>
                         {g === 'all' ? '전체' : g === 'female' ? '여성' : '남성'}
                       </button>
@@ -391,17 +395,22 @@ export default function MembersClient({
                   </div>
                   <div style={{ fontSize: 11, color: C.faint, marginBottom: 7 }}>이번 회차 리추얼 선택</div>
                   <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 12 }}>
-                    {templates.filter(t => {
-                      if (!t.is_active) return false
-                      const g = genderMap[m.user_id] || null
-                      const tg = t.target_gender || 'all'
-                      if (!g || g === 'other' || tg === 'all') return true
-                      if ((g === 'F' || g === 'Trans_MtF') && tg === 'female') return true
-                      if ((g === 'M' || g === 'Trans_FtM') && tg === 'male') return true
-                      return false
-                    }).map(t => (
-                      <button key={t.id} onClick={() => { setTplId(t.id); setPreview(null) }} style={pill(tplId === t.id)}>{t.theme_name}</button>
-                    ))}
+                    {(() => {
+                      const isMale = (genderMap[m.user_id] === 'M' || genderMap[m.user_id] === 'Trans_FtM')
+                      return templates.filter(t => {
+                        if (!t.is_active) return false
+                        const g = genderMap[m.user_id] || null
+                        const tg = t.target_gender || 'all'
+                        if (!g || g === 'other' || tg === 'all') return true
+                        if ((g === 'F' || g === 'Trans_MtF') && tg === 'female') return true
+                        if ((g === 'M' || g === 'Trans_FtM') && tg === 'male') return true
+                        return false
+                      }).map(t => (
+                        <button key={t.id} onClick={() => { setTplId(t.id); setPreview(null) }} style={pill(tplId === t.id)}>
+                          {t.theme_name}{!isMale && t.target_phase ? ` · ${t.target_phase}` : ''}
+                        </button>
+                      ))
+                    })()}
                   </div>
 
                   {/* 선택된 템플릿 상세 인라인 */}
