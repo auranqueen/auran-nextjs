@@ -426,8 +426,8 @@ export default function MembersClient({
                           <div style={{ fontSize: 10, color: C.muted, marginBottom: 4 }}>구성 제품</div>
                           {selectedTpl.product_ids.map(pid => (
                             <div key={pid} style={{ fontSize: 12, color: C.plum, padding: '4px 0', borderBottom: `0.5px solid rgba(123,94,167,0.1)` }}>
-                              {productMap[pid]?.name || pid}
-                              {productMap[pid]?.description && <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>{productMap[pid].description}</div>}
+                              {localProductMap[pid]?.name || pid}
+                              {localProductMap[pid]?.description && <div style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>{localProductMap[pid].description}</div>}
                             </div>
                           ))}
                         </div>
