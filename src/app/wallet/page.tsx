@@ -23,6 +23,7 @@ function WalletPageInner() {
   const [selectedAmount, setSelectedAmount] = useState<number | null>(500000)
   const [customAmount, setCustomAmount] = useState<string>('')
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false)
+  const [toastHistory, setToastHistory] = useState<any[]>([])
   const paymentSuccessHandled = useRef(false)
   const { getSettingNum } = useAdminSettings()
 
@@ -63,6 +64,21 @@ function WalletPageInner() {
       }
 
       await fetchProfile(authUser.id)
+      const { data: uRow } = await supabase.from('users').select('id').eq('auth_id', authUser.id).maybeSingle()
+      let internalUserId = uRow?.id as string | undefined
+      if (!internalUserId) {
+        const { data: pf } = await supabase.from('profiles').select('id').eq('auth_id', authUser.id).maybeSingle()
+        internalUserId = (pf?.id as string) || authUser.id
+      }
+      if (internalUserId) {
+        const { data: th } = await supabase
+          .from('toast_transactions')
+          .select('id,amount,transaction_type,source_type,created_at')
+          .eq('user_id', internalUserId)
+          .order('created_at', { ascending: false })
+          .limit(20)
+        setToastHistory(th || [])
+      }
       try {
         const res = await fetch('/api/auth/pin/status', { credentials: 'same-origin' })
         const data = await res.json()
@@ -216,6 +232,38 @@ function WalletPageInner() {
                 </div>
               </div>
             </div>
+            {toastHistory.length > 0 && (
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8, letterSpacing: 1 }}>토스트 내역</div>
+                {toastHistory.map(tx => {
+                  const isEarn = tx.amount > 0
+                  const label: Record<string, string> = {
+                    attendance: '출석 체크',
+                    order: '구매 적립',
+                    charge: '충전',
+                    use: '사용',
+                    refund: '환불',
+                    manual: '지급',
+                    skin_analysis: 'AI 분석',
+                    event: '이벤트',
+                  }
+                  const srcLabel = label[tx.source_type] || tx.source_type || tx.transaction_type
+                  const d = new Date(tx.created_at)
+                  const dateStr = `${d.getMonth()+1}/${d.getDate()}`
+                  return (
+                    <div key={tx.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '9px 12px', background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, marginBottom: 6 }}>
+                      <div>
+                        <div style={{ fontSize: 13, color: 'var(--text)' }}>{srcLabel}</div>
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>{dateStr}</div>
+                      </div>
+                      <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, color: isEarn ? '#C9A96E' : '#9b7ec8' }}>
+                        {isEarn ? '+' : ''}{tx.amount.toLocaleString()}T
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
             {hasPin === false && (
               <div style={{ marginBottom: 14, padding: 12, background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 12 }}>
                 <p style={{ fontSize: 12, color: 'var(--text)', marginBottom: 8 }}>🔐 충전·정산을 위해 결제 PIN을 설정해주세요.</p>
