@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import DashboardHeader from '@/components/DashboardHeader'
 import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 
-type Product = { id: string; name: string; description: string | null; key_ingredients: string | null }
+type Product = { id: string; name: string; description: string | null; key_ingredients: string | null; thumb_img: string | null; storage_thumb_url: string | null }
 type Shipment = {
   id: string; cycle_no: number; status: string; shipped_at: string
   curated_product_ids: string[]
@@ -36,7 +36,7 @@ export default function RitualDetailPage() {
       if (ids.length > 0) {
         const { data: prods } = await supabase
           .from('products')
-          .select('id, name, description, key_ingredients')
+          .select('id, name, description, key_ingredients, thumb_img, storage_thumb_url')
           .in('id', ids)
         setProducts((prods as Product[]) || [])
       }
@@ -75,6 +75,14 @@ export default function RitualDetailPage() {
         <div style={{ fontSize: 11, color: '#9B7EC8', marginBottom: 10 }}>이번 리추얼 구성</div>
         {products.map(p => (
           <div key={p.id} style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(123,94,167,0.15)', borderRadius: 12, padding: '14px', marginBottom: 10 }}>
+            {(p.storage_thumb_url || p.thumb_img) && (
+              <img
+                src={p.storage_thumb_url || p.thumb_img || ''}
+                alt={p.name}
+                style={{ width: '100%', height: 160, objectFit: 'cover', borderRadius: 8, marginBottom: 10 }}
+                onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+              />
+            )}
             <div style={{ fontSize: 14, color: '#F0E8FF', marginBottom: 6 }}>{p.name}</div>
             {p.description && <div style={{ fontSize: 12, color: '#9B7EC8', marginBottom: 6, lineHeight: 1.6 }}>{p.description}</div>}
             {p.key_ingredients && (
