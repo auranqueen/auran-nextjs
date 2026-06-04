@@ -28,6 +28,9 @@ export default function RitualsPage() {
   const [shipments, setShipments] = useState<Shipment[]>([])
   const [membership, setMembership] = useState<Membership | null>(null)
   const [loading, setLoading] = useState(true)
+  const [grades, setGrades] = useState<any[]>([])
+  const [showUpgrade, setShowUpgrade] = useState(false)
+  const [showDetail, setShowDetail] = useState<any>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -51,6 +54,11 @@ export default function RitualsPage() {
       ])
       setMembership((mem as any) || null)
       setShipments((ships as any) || [])
+      const { data: gradeData } = await supabase
+        .from('grade_settings')
+        .select('grade_name, grade_order, min_amount, discount_rate, invite_only')
+        .order('grade_order', { ascending: true })
+      setGrades((gradeData || []) as any[])
       setLoading(false)
     }
     load()
@@ -135,11 +143,11 @@ export default function RitualsPage() {
 
             {/* 회차 스케줄 */}
             <div style={{ fontSize: 11, color: '#9B7EC8', marginBottom: 10, letterSpacing: 1 }}>리추얼 스케줄</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
               {schedule.map(({ cycle, state, date, shipment }) => (
                 <div
                   key={cycle}
-                  onClick={() => shipment && router.push('/my/rituals/' + shipment.id)}
+                  onClick={() => shipment && setShowDetail(shipment)}
                   style={{
                     background: state === 'done' ? 'rgba(29,158,117,0.06)' : 'rgba(255,255,255,0.03)',
                     border: `0.5px solid ${state === 'done' ? 'rgba(29,158,117,0.2)' : state === 'next' ? 'rgba(201,169,110,0.25)' : 'rgba(255,255,255,0.06)'}`,
@@ -181,9 +189,86 @@ export default function RitualsPage() {
                 </div>
               ))}
             </div>
+            {(membership.status === 'expired' || membership.shipments_remaining === 0) && (
+              <div style={{ marginTop: 16, background: 'rgba(123,94,167,0.08)', border: '0.5px solid rgba(123,94,167,0.25)', borderRadius: 14, padding: '16px' }}>
+                <div style={{ fontSize: 14, color: '#F0E8FF', marginBottom: 4 }}>멤버십을 더 특별하게 💜</div>
+                <div style={{ fontSize: 12, color: '#9B7EC8', lineHeight: 1.5, marginBottom: 10 }}>ESSENTIEL을 경험한 당신, 다음 단계로 업그레이드해보세요</div>
+                <div style={{ fontSize: 13, color: '#7B5EA7', marginTop: 4, opacity: 0.6 }}>마지막</div>
+                <button
+                  type="button"
+                  onClick={() => setShowUpgrade(true)}
+                  style={{ width: '100%', marginTop: 12, padding: 11, background: '#7B5EA7', border: 'none', color: '#fff', borderRadius: 9, fontSize: 13, cursor: 'pointer' }}
+                >
+                  멤버십 업그레이드 보기 ↗
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
+      {/* 상세 팝업 */}
+      {showDetail && (
+        <div onClick={() => setShowDetail(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, background: '#111', borderRadius: '16px 16px 0 0', maxHeight: '88vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '0.5px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+              <div>
+                <div style={{ fontSize: 10, color: '#C9A96E', letterSpacing: 2, marginBottom: 2 }}>ORÆN PRIVÉ · {showDetail.cycle_no}회차</div>
+                <div style={{ fontSize: 14, color: '#F0E8FF' }}>{(showDetail.bundle_templates as any)?.theme_name || '리추얼'}</div>
+              </div>
+              <button onClick={() => setShowDetail(null)} style={{ padding: '6px 14px', background: '#333', border: 'none', color: '#fff', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>✕ 닫기</button>
+            </div>
+            <div style={{ overflowY: 'auto', padding: '14px 16px', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+              <div style={{ fontSize: 11, color: '#9B7EC8', marginBottom: 4 }}>{(showDetail.bundle_templates as any)?.target_phase || ''}</div>
+              <div style={{ fontSize: 11, color: '#555', marginBottom: 14 }}>{showDetail.shipped_at ? new Date(showDetail.shipped_at).toLocaleDateString('ko-KR') + ' 발송' : ''}</div>
+              <button onClick={() => { setShowDetail(null); router.push('/my/rituals/' + showDetail.id) }}
+                style={{ width: '100%', padding: 11, background: '#7B5EA7', border: 'none', color: '#fff', borderRadius: 9, fontSize: 13, cursor: 'pointer', marginBottom: 14 }}>
+                제품 상세 · 사용법 보기 →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 업그레이드 팝업 */}
+      {showUpgrade && (
+        <div onClick={() => setShowUpgrade(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 480, background: '#111', borderRadius: '16px 16px 0 0', maxHeight: '88vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', borderBottom: '0.5px solid rgba(255,255,255,0.08)', flexShrink: 0 }}>
+              <div>
+                <div style={{ fontSize: 10, color: '#C9A96E', letterSpacing: 2, marginBottom: 2 }}>멤버십 업그레이드</div>
+                <div style={{ fontSize: 14, color: '#F0E8FF' }}>당신의 피부, 더 특별하게 💜</div>
+              </div>
+              <button onClick={() => setShowUpgrade(false)} style={{ padding: '6px 14px', background: '#333', border: 'none', color: '#fff', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>✕ 닫기</button>
+            </div>
+            <div style={{ overflowY: 'auto', padding: '14px 16px', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
+              <div style={{ background: 'rgba(123,94,167,0.1)', borderRadius: 10, padding: '10px 12px', marginBottom: 14, fontSize: 12, color: '#9B7EC8', lineHeight: 1.6 }}>
+                ESSENTIEL을 경험한 당신,<br/>이제 피부가 더 많은 것을 원하고 있어요 ✨
+              </div>
+              {grades.filter(g => !g.invite_only && g.grade_name !== 'PETAL').map((g) => (
+                <div key={g.grade_name} style={{ background: g.grade_name === 'VELVET' ? 'rgba(123,94,167,0.08)' : 'rgba(255,255,255,0.03)', border: `0.5px solid ${g.grade_name === 'VELVET' ? '#7B5EA7' : 'rgba(255,255,255,0.08)'}`, borderRadius: 12, padding: '14px', marginBottom: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 14, color: g.grade_name === 'VELVET' ? '#9B7EC8' : '#e8e0f5' }}>{g.grade_name}</span>
+                      {g.grade_name === 'VELVET' && <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, background: '#7B5EA7', color: '#fff' }}>추천</span>}
+                    </div>
+                    <span style={{ fontSize: 11, color: '#C9A96E' }}>₩{(g.min_amount || 0).toLocaleString()}/년~</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#9B7EC8', marginBottom: 4 }}>할인 {g.discount_rate}% · 토스트 적립 향상</div>
+                  {g.grade_name === 'VELVET' && (
+                    <button onClick={() => { setShowUpgrade(false); router.push('/membership') }}
+                      style={{ width: '100%', marginTop: 10, padding: 10, background: '#7B5EA7', border: 'none', color: '#fff', borderRadius: 9, fontSize: 12, cursor: 'pointer' }}>
+                      VELVET 시작하기 ↗
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button onClick={() => { setShowUpgrade(false); router.push('/dashboard/customer/chat') }}
+                style={{ width: '100%', padding: 11, background: 'transparent', border: '1px solid rgba(123,94,167,0.4)', color: '#9B7EC8', borderRadius: 9, fontSize: 12, cursor: 'pointer', marginTop: 4 }}>
+                원장님께 상담 신청하기 💜
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
