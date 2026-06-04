@@ -41,6 +41,7 @@ export default function MembersClient({
   const [memberships, setMemberships] = useState<Membership[]>(initial)
   const [templates, setTemplates] = useState<Tpl[]>(initialTpls)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [localProductMap, setLocalProductMap] = useState<Record<string, ProductInfo>>(productMap)
   const [shipDates, setShipDates] = useState<Record<string, string>>({})
   const [deliveryTypes, setDeliveryTypes] = useState<Record<string, string>>({})
   const [couriers, setCouriers] = useState<Record<string, string>>({})
@@ -307,7 +308,7 @@ export default function MembersClient({
                 {tplSearchResults.length > 0 && (
                   <div style={{ border: `1px solid ${C.line}`, borderRadius: 8, marginTop: 4 }}>
                     {tplSearchResults.map(p => (
-                      <div key={p.id} onClick={() => { if (!editTpl.product_ids.includes(p.id)) setEditTpl({ ...editTpl, product_ids: [...editTpl.product_ids, p.id] }); setTplSearch(''); setTplSearchResults([]) }}
+                      <div key={p.id} onClick={() => { if (!editTpl.product_ids.includes(p.id)) { setEditTpl({ ...editTpl, product_ids: [...editTpl.product_ids, p.id] }); setLocalProductMap(prev => ({ ...prev, [p.id]: { id: p.id, name: p.name, description: null, key_ingredients: null } })) } setTplSearch(''); setTplSearchResults([]) }}
                         style={{ padding: '8px 12px', fontSize: 12, cursor: 'pointer', color: '#111', borderBottom: `0.5px solid ${C.line}`, background: '#fff' }}>
                         {p.name}
                       </div>
@@ -320,8 +321,8 @@ export default function MembersClient({
                 {editTpl.product_ids.map(pid => (
                   <div key={pid} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `0.5px solid ${C.line}` }}>
                     <div>
-                      <div style={{ fontSize: 12, color: C.plum }}>{productMap[pid]?.name || pid}</div>
-                      {productMap[pid]?.key_ingredients && <div style={{ fontSize: 10, color: C.gold }}>성분: {productMap[pid].key_ingredients}</div>}
+                      <div style={{ fontSize: 12, color: C.plum }}>{localProductMap[pid]?.name || pid}</div>
+                      {localProductMap[pid]?.key_ingredients && <div style={{ fontSize: 10, color: C.gold }}>성분: {localProductMap[pid].key_ingredients}</div>}
                     </div>
                     <button onClick={() => setEditTpl({ ...editTpl, product_ids: editTpl.product_ids.filter(id => id !== pid) })}
                       style={{ fontSize: 11, color: '#A33', background: 'none', border: 'none', cursor: 'pointer' }}>삭제</button>
@@ -362,6 +363,7 @@ export default function MembersClient({
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {memberships.map(m => {
           const opened = openId === m.id
+          const isMale = (genderMap[m.user_id] === 'M' || genderMap[m.user_id] === 'Trans_FtM')
           return (
             <div key={m.id} style={{ background: '#fff', border: `0.5px solid ${opened ? C.purple : C.line}`, borderRadius: 12, padding: 15 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -417,7 +419,7 @@ export default function MembersClient({
                   {selectedTpl && tplId && (
                     <div style={{ background: C.purpleSoft, borderRadius: 10, padding: '12px 14px', marginBottom: 12 }}>
                       <div style={{ fontSize: 11, color: C.purple, marginBottom: 8 }}>
-                        {selectedTpl.theme_name}{selectedTpl.target_phase ? ` · ${selectedTpl.target_phase}` : ''}
+                        {selectedTpl.theme_name}{(!isMale && selectedTpl.target_phase) ? ` · ${selectedTpl.target_phase}` : ''}
                       </div>
                       {selectedTpl.product_ids.length > 0 && (
                         <div style={{ marginBottom: 8 }}>
