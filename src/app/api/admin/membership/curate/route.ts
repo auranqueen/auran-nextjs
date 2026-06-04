@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
   const membershipId = String(body?.user_membership_id || '')
   const templateId = String(body?.bundle_template_id || '')
   const action = body?.action === 'ship' ? 'ship' : 'preview'
+  const shipDate = body?.ship_date ? String(body.ship_date) : null
   if (!membershipId || !templateId) {
     return NextResponse.json({ ok: false, error: 'missing_params' }, { status: 400 })
   }
@@ -84,7 +85,7 @@ export async function POST(req: NextRequest) {
       reasons: Object.fromEntries(scored.map((s: any) => [s.id, s._reasons || []])),
     },
     status: '발송완료',
-    shipped_at: new Date().toISOString(),
+    shipped_at: (shipDate ? new Date(shipDate) : new Date()).toISOString(),
   } as any).select('id').single()
   if (insErr) return NextResponse.json({ ok: false, error: insErr.message }, { status: 500 })
 

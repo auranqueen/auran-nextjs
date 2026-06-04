@@ -19,21 +19,22 @@ type Membership = {
 type Tpl = {
   id: string; theme_name: string; target_phase: string | null
   product_ids: string[]; usage_guide: string | null; owner_tip: string | null
-  is_active: boolean; display_order: number
+  is_active: boolean; display_order: number; target_gender?: string | null
 }
 type Plan = { id: string; name: string; price: number }
 type ProductInfo = { id: string; name: string; description: string | null; key_ingredients: string | null }
 type Scored = { id: string; name: string; retail_price: number | null; _score: number; _reasons: string[] }
 
 export default function MembersClient({
-  memberships: initial, templates: initialTpls, plans, productMap,
+  memberships: initial, templates: initialTpls, plans, productMap, genderMap = {},
 }: {
-  memberships: Membership[]; templates: Tpl[]; plans: Plan[]; productMap: Record<string, ProductInfo>
+  memberships: Membership[]; templates: Tpl[]; plans: Plan[]; productMap: Record<string, ProductInfo>; genderMap?: Record<string, string>
 }) {
   const supabase = createClient()
   const [memberships, setMemberships] = useState<Membership[]>(initial)
   const [templates, setTemplates] = useState<Tpl[]>(initialTpls)
   const [openId, setOpenId] = useState<string | null>(null)
+  const [shipDates, setShipDates] = useState<Record<string, string>>({})
   const [tplId, setTplId] = useState<string | null>(null)
   const [preview, setPreview] = useState<{ theme: string; phase: string | null; products: Scored[] } | null>(null)
   const [busy, setBusy] = useState(false)
@@ -75,7 +76,7 @@ export default function MembersClient({
     setBusy(true); setMsg(null)
     const res = await fetch('/api/admin/membership/curate', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_membership_id: mId, bundle_template_id: tplId, action }),
+      body: JSON.stringify({ user_membership_id: mId, bundle_template_id: tplId, action, ship_date: shipDates[mId] || undefined }),
     })
     const json = await res.json().catch(() => ({}))
     setBusy(false)
@@ -336,7 +337,15 @@ export default function MembersClient({
                   </div>
                   <div style={{ fontSize: 11, color: C.faint, marginBottom: 7 }}>이번 회차 리추얼 선택</div>
                   <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 12 }}>
-                    {templates.filter(t => t.is_active).map(t => (
+                    {templates.filter(t => {
+                      if (!t.is_active) return false
+                      const g = genderMap[m.user_id] || null
+                      const tg = t.target_gender || 'all'
+                      if (!g || g === 'other' || tg === 'all') return true
+                      if ((g === 'F' || g === 'Trans_MtF') && tg === 'female') return true
+                      if ((g === 'M' || g === 'Trans_FtM') && tg === 'male') return true
+                      return false
+                    }).map(t => (
                       <button key={t.id} onClick={() => { setTplId(t.id); setPreview(null) }} style={pill(tplId === t.id)}>{t.theme_name}</button>
                     ))}
                   </div>
@@ -389,6 +398,12 @@ export default function MembersClient({
                   )}
 
                   {msg && <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>{msg}</div>}
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontSize: 11, color: C.faint, marginBottom: 4 }}>발송 예정일</div>
+                    <input type="date" value={shipDates[m.id] || new Date().toISOString().slice(0, 10)}
+                      onChange={e => setShipDates(prev => ({ ...prev, [m.id]: e.target.value }))}
+                      style={{ width: '100%', padding: '8px 10px', background: '#fff', border: `0.5px solid ${C.line}`, borderRadius: 8, fontSize: 13, color: '#111', cursor: 'pointer' }} />
+                  </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button onClick={() => call(m.id, 'preview')} disabled={busy}
                       style={{ flex: 1, background: 'transparent', border: `0.5px solid rgba(123,94,167,0.3)`, color: C.muted, borderRadius: 8, padding: 10, fontSize: 13, fontFamily: 'inherit', cursor: 'pointer' }}>

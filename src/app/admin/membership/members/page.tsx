@@ -17,7 +17,7 @@ export default async function MembershipMembersPage() {
       .select('id,user_id,status,shipments_total,shipments_remaining,next_shipment_date,plan_id,source_type,users!user_memberships_user_id_fkey(name),membership_plans(name)')
       .order('created_at', { ascending: false }),
     supabase.from('bundle_templates')
-      .select('id,theme_name,target_phase,product_ids,usage_guide,owner_tip,is_active,display_order')
+      .select('id,theme_name,target_phase,target_gender,product_ids,usage_guide,owner_tip,is_active,display_order')
       .order('display_order', { ascending: true }),
     supabase.from('membership_plans')
       .select('id,name,price')
@@ -26,6 +26,15 @@ export default async function MembershipMembersPage() {
   ])
 
   const ids = Array.from(new Set((templates ?? []).flatMap((t: any) => t.product_ids ?? [])))
+  const memberUserIds = Array.from(new Set((memberships ?? []).map((m: any) => m.user_id).filter(Boolean)))
+  let genderMap: Record<string, string> = {}
+  if (memberUserIds.length) {
+    const { data: gProfiles } = await supabase
+      .from('profiles')
+      .select('user_id,gender')
+      .in('user_id', memberUserIds)
+    genderMap = Object.fromEntries((gProfiles ?? []).filter((p: any) => p.gender).map((p: any) => [p.user_id, p.gender]))
+  }
   let productMap: Record<string, { id: string; name: string; description: string | null; key_ingredients: string | null }> = {}
   if (ids.length) {
     const { data: prods } = await supabase.from('products').select('id,name,description,key_ingredients').in('id', ids as string[])
@@ -38,6 +47,7 @@ export default async function MembershipMembersPage() {
       templates={(templates ?? []) as any}
       plans={(plans ?? []) as any}
       productMap={productMap}
+      genderMap={genderMap}
     />
   )
 }
