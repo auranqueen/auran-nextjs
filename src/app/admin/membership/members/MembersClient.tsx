@@ -108,6 +108,7 @@ export default function MembersClient({
       usage_guide: editTpl.usage_guide,
       owner_tip: editTpl.owner_tip,
       is_active: editTpl.is_active,
+      target_gender: editTpl.target_gender || 'all',
     }).eq('id', editTpl.id)
     setSavingTpl(false)
     if (error) { setTplMsg('저장 실패: ' + error.message); return }
@@ -246,6 +247,17 @@ export default function MembersClient({
                 <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>호르몬 페이즈</div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {PHASES.map(p => <button key={p} onClick={() => setEditTpl({ ...editTpl, target_phase: editTpl.target_phase === p ? null : p })} style={pill(editTpl.target_phase === p)}>{p}</button>)}
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 6 }}>대상 성별</div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {(['all', 'female', 'male'] as const).map(g => (
+                      <button key={g} onClick={() => setEditTpl({ ...editTpl, target_gender: g })}
+                        style={{ padding: '5px 14px', borderRadius: 6, fontSize: 12, cursor: 'pointer', border: '0.5px solid rgba(123,94,167,0.3)', background: (editTpl.target_gender || 'all') === g ? C.purple : 'transparent', color: (editTpl.target_gender || 'all') === g ? '#fff' : C.muted }}>
+                        {g === 'all' ? '전체' : g === 'female' ? '여성' : '남성'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div>
