@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
+import { sendPpurioAlimtalk } from '@/lib/ppurio/sendAlimtalk'
 
 // 선물 정보 조회 (토큰으로, 표시용)
 export async function GET(req: NextRequest) {
@@ -93,6 +94,49 @@ export async function POST(req: NextRequest) {
     .update({ status: 'claimed', claimed_by: recipientId, claimed_at: new Date().toISOString() })
     .eq('id', gift.id)
     .eq('status', 'paid')
+
+  try {
+    const { data: userRow } = await client
+      .from('users')
+      .select('phone, name, id')
+      .eq('id', recipientId)
+      .maybeSingle()
+    const name = (userRow as any)?.name || '고객'
+    // 알림톡
+    if ((userRow as any)?.phone) {
+      await sendPpurioAlimtalk({
+        phone: (userRow as any).phone,
+        message: `[ORÆN PRIVÉ] ${name}님, 선물 멤버십을 수령했어요 💜\n\n배송지를 등록해주세요:\nhttps://auran.kr/my/addresses\n첫 리추얼이 곧 출발할 예정이에요!`,
+        title: 'ORÆN PRIVÉ 선물 수령 완료',
+      }).catch(() => {})
+    }
+    // 상담톡
+    let channelId: string | null = null
+    const { data: chRow } = await client
+      .from('chat_channels')
+      .select('id')
+      .eq('user_id', recipientId)
+      .eq('channel_type', 'owner')
+      .maybeSingle()
+    channelId = (chRow as any)?.id || null
+    if (!channelId) {
+      const { data: newCh } = await client
+        .from('chat_channels')
+        .insert({ user_id: recipientId, channel_type: 'owner', title: '원장님 상담', preview_text: 'ORÆN PRIVÉ 선물 멤버십이 도착했어요 🎁', unread_count: 1, is_online: false } as any)
+        .select('id').maybeSingle()
+      channelId = (newCh as any)?.id || null
+    }
+    if (channelId) {
+      await client.from('consultation_messages').insert({
+        channel_id: channelId,
+        sender_id: recipientId,
+        message: `${name}님, ORÆN PRIVÉ 선물 멤버십을 수령하셨어요 🎁\n\n배송지를 등록해주시면 첫 리추얼을 보내드릴게요:\nauran.kr/my/addresses\n\n궁금한 점은 언제든 말씀해주세요 💜`,
+        message_kind: 'text',
+        is_from_customer: false,
+      } as any)
+      await client.from('chat_channels').update({ last_message: 'ORÆN PRIVÉ 선물 멤버십이 도착했어요 🎁', last_message_at: new Date().toISOString(), unread_count: 1, preview_text: 'ORÆN PRIVÉ 선물 멤버십이 도착했어요 🎁' }).eq('id', channelId)
+    }
+  } catch (_) {}
 
   return NextResponse.json({ ok: true })
 }

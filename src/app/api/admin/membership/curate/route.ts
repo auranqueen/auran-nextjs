@@ -121,5 +121,26 @@ export async function POST(req: NextRequest) {
     }
   } catch (_) {}
 
+  try {
+    const client3 = tryCreateServiceClient() || supabase
+    const { data: chRow2 } = await client3.from('chat_channels').select('id').eq('user_id', um.user_id).eq('channel_type', 'owner').maybeSingle()
+    let chId2: string | null = (chRow2 as any)?.id || null
+    if (!chId2) {
+      const { data: newCh2 } = await client3.from('chat_channels').insert({ user_id: um.user_id, channel_type: 'owner', title: '원장님 상담', preview_text: `${cycleNo}회차 리추얼이 출발했어요 💜`, unread_count: 1, is_online: false } as any).select('id').maybeSingle()
+      chId2 = (newCh2 as any)?.id || null
+    }
+    if (chId2) {
+      const productList = scored.slice(0, 3).map((p: any) => `· ${p.name}`).join('\n')
+      await client3.from('consultation_messages').insert({
+        channel_id: chId2,
+        sender_id: um.user_id,
+        message: `${cycleNo}회차 리추얼이 출발했어요 💜\n\n${productList}${scored.length > 3 ? '\n· 외 ' + (scored.length - 3) + '개' : ''}\n\n사용법과 원장님 팁은 앱에서 확인해보세요!\nauran.kr/my/rituals`,
+        message_kind: 'text',
+        is_from_customer: false,
+      } as any)
+      await client3.from('chat_channels').update({ last_message: `${cycleNo}회차 리추얼이 출발했어요 💜`, last_message_at: new Date().toISOString(), unread_count: 1, preview_text: `${cycleNo}회차 리추얼이 출발했어요 💜` }).eq('id', chId2)
+    }
+  } catch (_) {}
+
   return NextResponse.json({ ok: true, shipped: true, cycle_no: cycleNo, remaining })
 }

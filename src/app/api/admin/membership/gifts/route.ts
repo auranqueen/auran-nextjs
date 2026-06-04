@@ -52,6 +52,28 @@ export async function PATCH(req: Request) {
         await sendPpurioAlimtalk({ phone, message: alimMsg, title: 'ORÆN PRIVÉ 발송 안내' }).catch(() => {})
       }
     } catch (_) {}
+    try {
+      const { data: giftRow2 } = await supabase.from('membership_gifts').select('claimed_by, shipping_name').eq('id', id).maybeSingle()
+      const claimedBy = (giftRow2 as any)?.claimed_by
+      const shipName = (giftRow2 as any)?.shipping_name || '고객'
+      if (claimedBy) {
+        const { data: chRow3 } = await supabase.from('chat_channels').select('id').eq('user_id', claimedBy).eq('channel_type', 'owner').maybeSingle()
+        let chId3: string | null = (chRow3 as any)?.id || null
+        if (!chId3) {
+          const { data: newCh3 } = await supabase.from('chat_channels').insert({ user_id: claimedBy, channel_type: 'owner', title: '원장님 상담', preview_text: '선물이 출발했어요 💜', unread_count: 1, is_online: false } as any).select('id').maybeSingle()
+          chId3 = (newCh3 as any)?.id || null
+        }
+        if (chId3) {
+          const delivMsg = delivery_type === 'direct'
+            ? `${shipName}님, 선물이 직접 전달됐어요 💜\n소중히 사용해주세요!`
+            : delivery_type === 'quick'
+            ? `${shipName}님, 선물이 퀵으로 출발했어요 🛵\n업체: ${courier}\n곧 도착할 예정이에요 💜`
+            : `${shipName}님, 선물이 출발했어요 📦\n${courier} ${tracking_no}\n배송 조회 후 수령해주세요 💜`
+          await supabase.from('consultation_messages').insert({ channel_id: chId3, sender_id: claimedBy, message: delivMsg, message_kind: 'text', is_from_customer: false } as any)
+          await supabase.from('chat_channels').update({ last_message: '선물이 출발했어요 💜', last_message_at: new Date().toISOString(), unread_count: 1, preview_text: '선물이 출발했어요 💜' }).eq('id', chId3)
+        }
+      }
+    } catch (_) {}
     return Response.json({ ok: true })
   } catch (e: any) {
     return Response.json({ error: e.message }, { status: 500 })
