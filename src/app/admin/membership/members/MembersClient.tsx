@@ -328,8 +328,8 @@ export default function MembersClient({
           const opened = openId === m.id
           return (
             <div key={m.id} style={{ background: '#fff', border: `0.5px solid ${opened ? C.purple : C.line}`, borderRadius: 12, padding: 15 }}>
-              <div onClick={() => open(m.id)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 9 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div onClick={() => open(m.id)} style={{ display: 'flex', alignItems: 'baseline', gap: 9, flex: 1, cursor: 'pointer' }}>
                   <span style={{ fontSize: 15, color: C.plum }}>{m.users?.name || '회원'}</span>
                   {m.source_type === 'membership_gift' && (
                     <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 10, background: 'rgba(201,169,110,0.15)', color: C.gold }}>선물수령</span>
@@ -344,6 +344,12 @@ export default function MembersClient({
                   <span style={{ fontSize: 11, color: m.status === 'active' ? C.green : C.faint, background: m.status === 'active' ? C.greenSoft : 'transparent', borderRadius: 5, padding: '2px 7px' }}>
                     {m.status === 'active' ? '활성' : m.status === 'expired' ? '소진' : m.status}
                   </span>
+                  {opened && (
+                    <button onClick={e => { e.stopPropagation(); open(m.id) }}
+                      style={{ padding: '4px 12px', background: 'transparent', border: `0.5px solid ${C.line}`, color: C.muted, borderRadius: 6, fontSize: 11, cursor: 'pointer', marginLeft: 8, flexShrink: 0 }}>
+                      닫기
+                    </button>
+                  )}
                 </div>
               </div>
               {opened && (
@@ -413,7 +419,14 @@ export default function MembersClient({
                     </div>
                   )}
 
-                  {msg && <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>{msg}</div>}
+                  {msg && (
+                    <div style={{ fontSize: 12, marginBottom: 10, padding: '8px 12px', borderRadius: 8,
+                      background: msg.includes('완료') ? 'rgba(91,138,107,0.1)' : 'rgba(201,169,110,0.1)',
+                      color: msg.includes('완료') ? C.green : C.gold,
+                      border: `0.5px solid ${msg.includes('완료') ? 'rgba(91,138,107,0.3)' : 'rgba(201,169,110,0.3)'}` }}>
+                      {msg.includes('완료') ? '✓ ' : '⚠ '}{msg}
+                    </div>
+                  )}
                   <div style={{ marginBottom: 10 }}>
                     <div style={{ fontSize: 11, color: C.faint, marginBottom: 4 }}>발송 예정일</div>
                     <input type="date" value={shipDates[m.id] || new Date().toISOString().slice(0, 10)}
