@@ -152,7 +152,7 @@ export async function POST(req: Request) {
         .eq('id', plan_id)
         .maybeSingle()
       if (planRow?.price && shipments_total) {
-        await addToPurchaseAmount(user_id, planRow.price * shipments_total, supabase)
+        await addToPurchaseAmount(user_id, planRow.price, supabase)
       }
       await autoUpgradeGrade(user_id, supabase)
     } catch (_) {}
