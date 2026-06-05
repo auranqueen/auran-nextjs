@@ -1,5 +1,6 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -9,15 +10,16 @@ import { TOOLTIP_FALLBACKS, calcHormoneBriefing, isPeriodTrack } from '@/lib/hor
 import { logUserBehavior, upsertSkinCycleDaily } from '@/lib/skinAnalytics'
 import NoticePanel from '@/components/NoticePanel'
 import Loading from './loading'
-import SkinDiarySheet from '@/components/skin-diary/SkinDiarySheet'
 import HormoneCard from '@/components/home/HormoneCard'
 import SeasonRecommendSection from
   '@/components/home/SeasonRecommendSection'
 import BodyCareCard from '@/components/home/BodyCareCard'
-import WeatherRecommendSheet from '@/components/home/WeatherRecommendSheet'
 import SegmentSlot from '@/components/home/SegmentSlot'
 import { trackToSegment } from '@/lib/segment'
 import Avatar from '@/components/ui/Avatar'
+
+const SkinDiarySheet = dynamic(() => import('@/components/skin-diary/SkinDiarySheet'), { ssr: false })
+const WeatherRecommendSheet = dynamic(() => import('@/components/home/WeatherRecommendSheet'), { ssr: false })
 
 const getSeoulToday = () => {
   const s = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
@@ -563,6 +565,14 @@ export default function CustomerHomePage() {
     void loadMotivationProfile()
 
     // ===== [홈 롤링 리뷰] 베스트 후기 조회 =====
+    const _rvCacheKey = 'auran_reviews_v1'
+    const _rvCached = sessionStorage.getItem(_rvCacheKey)
+    if (_rvCached) {
+      try {
+        const { data: _rv, ts } = JSON.parse(_rvCached)
+        if (Date.now() - ts < 300000 && _rv?.length) setHomeReviews(_rv)
+      } catch (_) {}
+    }
     supabase
       .from('reviews')
       .select('id, content, rating, images, video_url, review_type')
@@ -570,7 +580,12 @@ export default function CustomerHomePage() {
       .or('images.not.is.null,video_url.not.is.null')
       .order('helpful_count', { ascending: false })
       .limit(6)
-      .then(({ data }) => setHomeReviews(data || []))
+      .then(({ data }) => {
+        if (data?.length) {
+          setHomeReviews(data)
+          try { sessionStorage.setItem('auran_reviews_v1', JSON.stringify({ data, ts: Date.now() })) } catch (_) {}
+        }
+      })
 
     supabase
       .from('reviews')
@@ -667,15 +682,28 @@ export default function CustomerHomePage() {
 
       let productRows: any[] | null = null
       try {
-        let res = await supabase.from('products').select(selFull).eq('is_active', true).limit(200)
-        if (res.error) {
-          console.error('[home] products fetch (selFull):', res.error)
-          res = await supabase.from('products').select(selNoCat).eq('is_active', true).limit(200) as any
-          if (res.error) {
-            console.error('[home] products fetch (selNoCat):', res.error)
-          }
+        const _prodCacheKey = 'auran_products_v1'
+        const _prodCached = sessionStorage.getItem(_prodCacheKey)
+        if (_prodCached) {
+          try {
+            const { data: _pd, ts } = JSON.parse(_prodCached)
+            if (Date.now() - ts < 180000 && _pd?.length) {
+              setProducts(applyExclusiveFilter(_pd))
+              productRows = _pd
+            }
+          } catch (_) {}
         }
-        if (!res.error && res.data) productRows = res.data
+        if (!productRows) {
+          let res = await supabase.from('products').select(selFull).eq('is_active', true).limit(200)
+          if (res.error) {
+            console.error('[home] products fetch (selFull):', res.error)
+            res = await supabase.from('products').select(selNoCat).eq('is_active', true).limit(200) as any
+            if (res.error) {
+              console.error('[home] products fetch (selNoCat):', res.error)
+            }
+          }
+          if (!res.error && res.data) productRows = res.data
+        }
       } catch (err) {
         console.error('[home] products fetch exception:', err)
         try {
@@ -692,6 +720,7 @@ export default function CustomerHomePage() {
 
       if (productRows && productRows.length > 0) {
         setProducts(applyExclusiveFilter(productRows))
+        try { sessionStorage.setItem('auran_products_v1', JSON.stringify({ data: productRows, ts: Date.now() })) } catch (_) {}
       }
 
       const [npRes, tsRes] = await Promise.all([
