@@ -274,7 +274,7 @@ export default function MyPage() {
     { icon: '📦', label: '주문내역', path: '/my/orders', badge: orders.length > 0 ? orders.filter((o: any) => o.status === '배송중').length : 0 },
     { icon: '🎫', label: '쿠폰함', path: '/my/coupons', badge: coupons.length },
     { icon: '❤️', label: '찜 목록', path: '/my/wishlist', badge: 0 },
-    { icon: '⭐', label: '리뷰 관리', path: '/my/reviews', badge: 0 },
+    { icon: '⭐', label: '리뷰 관리', path: '/my/reviews', badge: orders.filter((o: any) => !(o.reviews?.length) && o.status === '구매확정').length },
     { icon: '🔔', label: '채팅 알림음', action: () => setSoundSheetOpen(true), badge: 0 },
     { icon: '🏠', label: '배송지 관리', path: '/my/addresses' },
     { icon: '👤', label: '개인정보', path: '/my/profile', badge: 0 },
