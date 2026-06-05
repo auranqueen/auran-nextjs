@@ -816,6 +816,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         sharer_user_id: userRow.id,
         product_id: product.id,
         channel,
+        ip_address: (typeof window !== 'undefined'
+          ? document.cookie.match(/auran_ip=([^;]+)/)?.[1] ?? null
+          : null),
       })
       if (logErr) console.warn('[recordShare] share_logs', logErr)
 
