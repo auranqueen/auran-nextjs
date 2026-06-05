@@ -1,0 +1,380 @@
+'use client'
+import { useEffect, useState, useMemo } from 'react'
+import { createClient } from '@/lib/supabase/client'
+const COURIERS = ['CJ대한통운','롯데택배','한진택배','우체국택배','로젠택배','직접전달','퀵배송']
+const CHANNELS = ['네이버 스마트스토어','더치스 쇼핑몰','블로그 공구','인스타 DM','카카오 문의','기타']
+const ALIMTALK_COPIES = [
+  (name: string) => `${name}님 💜\n\n이 제품, 제대로 쓰고 계신가요?\n\n바르는 순서 하나만 바꿔도\n효과가 2배 달라져요.\n\n거울 보는 게 설레지는 상담이에요.\n맑원장이 직접 챙겨드릴게요.\n\n지금 가입하면 10,000T 드려요 👉 auran.kr`,
+  (name: string) => `${name}님 💜\n\n${name}님이 더 예뻐지는 상담이에요.\n\n좋은 제품도 내 피부 사이클을\n모르면 반만 써요.\n\n맑원장이 직접 챙겨드릴게요.\n가입하면 10,000T도 드려요 👉 auran.kr`,
+  (name: string) => `${name}님 💜\n\n"피부 어떻게 관리해요?"\n주변에서 먼저 물어보는 피부,\n만들어드릴게요.\n\n맑원장이 ${name}님 피부만\n직접 챙겨드리는 상담이에요 👉 auran.kr`,
+  (name: string) => `${name}님 💜\n\n"이거 어떻게 쓰는 거예요?"\n그 질문, 저한테 해주세요.\n\n이번엔 진짜로 바뀌는 상담이에요.\n20년 노하우로 같이 해결해요 👉 auran.kr`,
+  (name: string) => `${name}님 💜\n\n혼자 고민하던 피부,\n이제 맑원장이랑 같이 해결해요.\n\n${name}님 피부가 설레기 시작하는\n상담이에요. 가입 선물 10,000T 👉 auran.kr`,
+  (name: string) => `${name}님 💜\n\n내일 아침 거울이 달라 보이는\n상담이에요.\n\n맑원장이 ${name}님 피부만 생각하며\n직접 봐드릴게요 👉 auran.kr`,
+]
+const C = { purple:'#7B5EA7', gold:'#C9A96E', muted:'#8A7E92', line:'rgba(123,94,167,0.15)', green:'#5B8A6B' }
+type ProductRow = { id: string; name: string; brand: string; orig: number; custom: number }
+type Card = {
+  id: string; customer_name: string; phone: string | null; address: string | null
+  channel: string; products: ProductRow[]; total_amount: number
+  delivery_type: string; tracking_no: string | null; shipped_at: string | null; estimated_arrival: string | null
+  am_routine: string | null; pm_routine: string | null; tip: string | null
+  status: string; auran_joined: boolean; created_at: string
+}
+export default function ExternalCardsV2Page() {
+  const supabase = createClient()
+  const [tab, setTab] = useState<'write'|'history'|'stats'>('write')
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [address, setAddress] = useState('')
+  const [channel, setChannel] = useState('네이버 스마트스토어')
+  const [products, setProducts] = useState<ProductRow[]>([])
+  const [productSearch, setProductSearch] = useState('')
+  const [productResults, setProductResults] = useState<any[]>([])
+  const [courier, setCourier] = useState('CJ대한통운')
+  const [trackingNo, setTrackingNo] = useState('')
+  const [shippedAt, setShippedAt] = useState('')
+  const [arrivalAt, setArrivalAt] = useState('')
+  const [amRoutine, setAmRoutine] = useState('')
+  const [pmRoutine, setPmRoutine] = useState('')
+  const [tip, setTip] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [msg, setMsg] = useState('')
+  const [cards, setCards] = useState<Card[]>([])
+  const [historySearch, setHistorySearch] = useState('')
+  const [historyStatus, setHistoryStatus] = useState('전체')
+  const [loadingCards, setLoadingCards] = useState(false)
+  const [openCardId, setOpenCardId] = useState<string | null>(null)
+  const totalAmount = useMemo(() => products.reduce((s, p) => s + p.custom, 0), [products])
+  useEffect(() => {
+    if (tab === 'history' || tab === 'stats') fetchCards()
+  }, [tab])
+  const fetchCards = async () => {
+    setLoadingCards(true)
+    const { data } = await supabase.from('external_care_cards_v2').select('*').order('created_at', { ascending: false })
+    setCards((data || []) as Card[])
+    setLoadingCards(false)
+  }
+  const searchProducts = async (q: string) => {
+    setProductSearch(q)
+    if (q.length < 2) { setProductResults([]); return }
+    const { data } = await supabase.from('products')
+      .select('id,name,retail_price,brands(name)')
+      .ilike('name', `%${q}%`)
+      .eq('is_active', true)
+      .limit(6)
+    setProductResults(data || [])
+  }
+  const addProduct = (p: any) => {
+    if (products.find(x => x.id === p.id)) return
+    setProducts(prev => [...prev, { id: p.id, name: p.name, brand: (p.brands as any)?.name || '', orig: p.retail_price || 0, custom: p.retail_price || 0 }])
+    setProductSearch(''); setProductResults([])
+  }
+  const updatePrice = (id: string, val: string) => {
+    const n = parseInt(val.replace(/[^0-9]/g, '')) || 0
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, custom: n } : p))
+  }
+  const reset = () => {
+    setName(''); setPhone(''); setAddress(''); setChannel('네이버 스마트스토어')
+    setProducts([]); setCourier('CJ대한통운'); setTrackingNo('')
+    setShippedAt(''); setArrivalAt(''); setAmRoutine(''); setPmRoutine(''); setTip('')
+  }
+  const save = async (andPrint = false) => {
+    if (!name.trim()) { setMsg('고객명을 입력해주세요'); return }
+    setSaving(true); setMsg('')
+    const { error } = await supabase.from('external_care_cards_v2').insert({
+      customer_name: name.trim(), phone: phone || null, address: address || null, channel,
+      products: products as any, total_amount: totalAmount,
+      delivery_type: courier, tracking_no: trackingNo || null,
+      shipped_at: shippedAt || null, estimated_arrival: arrivalAt || null,
+      am_routine: amRoutine || null, pm_routine: pmRoutine || null, tip: tip || null,
+      status: trackingNo ? '발송완료' : '준비중',
+    } as any)
+    setSaving(false)
+    if (error) { setMsg('저장 실패: ' + error.message); return }
+    setMsg('✓ 저장 완료!')
+    if (andPrint) printCard()
+    reset()
+    setTimeout(() => setMsg(''), 3000)
+  }
+  const sendAlimtalk = async (card: Card) => {
+    if (!card.phone) { alert('전화번호가 없어요'); return }
+    const copyFn = ALIMTALK_COPIES[Math.floor(Math.random() * ALIMTALK_COPIES.length)]
+    const message = copyFn(card.customer_name)
+    try {
+      const res = await fetch('/api/alimtalk/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: card.phone, message, title: 'AURAN 오랜 · 맑원장' }),
+      })
+      const json = await res.json()
+      if (json.ok) alert('알림톡 발송 완료!')
+      else alert('발송 실패: ' + json.error)
+    } catch { alert('발송 중 오류가 발생했어요') }
+  }
+  const markJoined = async (id: string) => {
+    await supabase.from('external_care_cards_v2').update({ auran_joined: true }).eq('id', id)
+    setCards(prev => prev.map(c => c.id === id ? { ...c, auran_joined: true } : c))
+  }
+  const printCard = () => {
+    const productList = products.map(p => `<tr><td>${p.name}</td><td style="text-align:right">₩${p.custom.toLocaleString()}</td></tr>`).join('')
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AURAN 케어카드</title>
+<style>
+@media print{@page{size:A4;margin:15mm}}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;color:#111;font-size:12px}
+.hdr{text-align:center;padding-bottom:12px;border-bottom:1px solid #C9A96E;margin-bottom:16px}
+.logo{font-family:Georgia,serif;font-size:20px;letter-spacing:.35em;color:#7B5EA7;font-style:italic}
+.hdr-sub{font-size:10px;color:#999;margin-top:3px}
+.greeting{background:#f9f6ff;border-left:3px solid #7B5EA7;padding:10px 14px;border-radius:0 6px 6px 0;margin-bottom:14px;font-size:10px;color:#534AB7;line-height:1.7}
+.greeting strong{color:#2a1f3d;font-size:12px}
+.sec{margin-bottom:14px}
+.sec-title{font-size:10px;letter-spacing:.15em;color:#C9A96E;border-bottom:.5px solid #eee;padding-bottom:5px;margin-bottom:8px}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th{background:#f9f6ff;color:#7B5EA7;font-weight:400;padding:7px 8px;text-align:left;border-bottom:.5px solid #e0d8f0;font-size:10px}
+td{padding:7px 8px;border-bottom:.5px solid #f0edf8}
+.total{text-align:right;font-size:12px;color:#7B5EA7;padding-top:8px;border-top:1px solid #C9A96E;margin-top:6px}
+.delivery{background:#f9f6ff;border-radius:6px;padding:9px 12px;margin-bottom:14px;display:flex;gap:20px;font-size:11px}
+.d-label{font-size:9px;color:#999;margin-bottom:2px}
+.routine-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px}
+.routine-box{background:#f9f6ff;border-radius:6px;padding:8px 10px}
+.routine-time{font-size:9px;letter-spacing:.15em;color:#9B7EC8;margin-bottom:4px}
+.routine-step{font-size:10px;color:#534AB7;line-height:1.8;white-space:pre-wrap}
+.tip-text{font-size:10px;color:#534AB7;line-height:1.7;border-top:.5px solid #eee;padding-top:8px;margin-top:4px}
+.join{background:#0f0c18;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+.j-eye{font-size:9px;letter-spacing:.12em;color:#C9A96E;margin-bottom:4px}
+.j-copy{font-family:Georgia,serif;font-size:12px;color:#fff;font-style:italic;line-height:1.4;margin-bottom:4px}
+.j-sub{font-size:9px;color:rgba(255,255,255,.35);margin-bottom:6px}
+.j-pill{font-size:9px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:4px;margin-bottom:3px}
+.j-dot{width:2px;height:2px;border-radius:50%;background:#C9A96E;display:inline-block}
+.qr{width:54px;height:54px;background:#fff;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#7B5EA7;text-align:center;padding:3px;flex-shrink:0}
+.ot{border:.5px solid rgba(123,94,167,.3);border-radius:8px;overflow:hidden;margin-bottom:8px}
+.ot-head{background:#7B5EA7;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ot-title{font-family:Georgia,serif;font-size:13px;color:#fff;line-height:1.35}
+.ot-title em{font-style:italic;color:#FAE8C0}
+.ot-sub{font-size:9px;color:rgba(255,255,255,.5);margin-top:3px}
+.bubbles{display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0}
+.bq{font-size:9px;padding:4px 8px;border-radius:8px 8px 2px 8px;background:rgba(255,255,255,.15);color:rgba(255,255,255,.85);max-width:100px;line-height:1.4;text-align:right}
+.ba{font-size:9px;padding:4px 8px;border-radius:8px 8px 8px 2px;background:#FAE8C0;color:#3d2a00;max-width:100px;line-height:1.4}
+.ot-body{background:#f3effa;padding:11px 14px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.steps{display:flex;flex-direction:column;gap:5px}
+.step{display:flex;align-items:center;gap:6px;font-size:9px;color:#4a3d6a}
+.snum{width:16px;height:16px;border-radius:50%;background:#7B5EA7;color:#fff;font-size:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ot-hint{font-size:9px;color:#9B7EC8;padding-left:22px;margin-top:2px}
+.ot-qr{width:48px;height:48px;background:#fff;border:.5px solid rgba(123,94,167,.2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#7B5EA7;text-align:center;padding:3px;flex-shrink:0}
+.ot-free{font-size:8px;padding:2px 7px;border-radius:10px;background:rgba(123,94,167,.12);color:#7B5EA7;text-align:center;margin-top:3px}
+.review{border:1px solid rgba(201,169,110,.3);border-radius:8px;padding:9px 13px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.rv-title{font-size:10px;color:#2a1f3d;margin-bottom:2px}
+.rv-sub{font-size:9px;color:#999;line-height:1.5;margin-bottom:4px}
+.rv-pill{font-size:9px;padding:2px 6px;border-radius:8px;background:#f9f6ff;color:#7B5EA7;border:.5px solid rgba(123,94,167,.2);margin-right:4px}
+.rv-qr{width:40px;height:40px;background:#f9f6ff;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#7B5EA7;text-align:center;flex-shrink:0}
+.footer{text-align:right;font-size:9px;color:#ccc;margin-top:10px}
+</style></head><body>
+<div class="hdr"><div class="logo">A U R A N</div><div class="hdr-sub">스킨파우더룸 · 맑원장 피부 케어 가이드</div></div>
+<div class="greeting"><strong>${name}님, 소중한 구매 감사드려요 💜</strong><br>맑원장이 직접 이 제품 쓰는 방법을 알려드릴게요. 쓰다가 모르는 게 생기면 바로 물어봐요.</div>
+${products.length ? `<div class="sec"><div class="sec-title">✦ 구매하신 제품</div><table><thead><tr><th>상품명</th><th style="text-align:right">금액</th></tr></thead><tbody>${productList}</tbody></table><div class="total">합계 <strong>₩${totalAmount.toLocaleString()}</strong></div></div>` : ''}
+${(courier || trackingNo) ? `<div class="delivery">${courier ? `<div><div class="d-label">택배사</div>${courier}</div>` : ''}${trackingNo ? `<div><div class="d-label">송장번호</div>${trackingNo}</div>` : ''}${shippedAt ? `<div><div class="d-label">발송일</div>${shippedAt}</div>` : ''}${arrivalAt ? `<div><div class="d-label">도착예정</div>${arrivalAt}</div>` : ''}</div>` : ''}
+${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤 사용 루틴</div><div class="routine-grid">${amRoutine ? `<div class="routine-box"><div class="routine-time">AM · 아침</div><div class="routine-step">${amRoutine}</div></div>` : ''}${pmRoutine ? `<div class="routine-box"><div class="routine-time">PM · 저녁</div><div class="routine-step">${pmRoutine}</div></div>` : ''}</div>${tip ? `<div class="tip-text">💜 ${tip}</div>` : ''}</div>` : ''}
+<div class="join"><div><div class="j-eye">✦ 피부 주치의 플랫폼 AURAN</div><div class="j-copy">원장님과 직접 소통하며<br>내 피부를 바꿔보세요</div><div class="j-sub">AI 피부 분석 · 호르몬 사이클 케어</div><div class="j-pill"><span class="j-dot"></span>가입 즉시 10,000T 즉시 지급</div><div class="j-pill"><span class="j-dot"></span>구매 루틴 앱에서 저장·관리</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:4px"><div class="qr">auran.kr<br>QR</div><div style="font-size:8px;color:rgba(255,255,255,.3)">카카오 가입</div></div></div>
+<div class="ot"><div class="ot-head"><div><div class="ot-title">제품 쓰다 막히면<br><em>맑원장님께 직접 물어보세요</em></div><div class="ot-sub">오랜톡 · 맑원장 1:1 상담</div></div><div class="bubbles"><div class="bq">세럼이랑 크림<br>순서 맞나요?</div><div class="ba">세럼 먼저요!<br>흡수 후 크림 발라요</div></div></div><div class="ot-body"><div class="steps"><div class="step"><div class="snum">1</div>위 QR 스캔 → AURAN 카카오 가입</div><div class="step"><div class="snum">2</div>앱 하단 채팅 탭 터치</div><div class="step"><div class="snum">3</div>맑원장님께 바로 질문하기</div><div class="ot-hint">맑원장이 직접 챙겨드릴게요 💜</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div class="ot-qr">상담<br>QR</div><div style="font-size:8px;color:#9B7EC8;text-align:center">상담 바로가기</div></div></div></div>
+<div class="review"><div><div class="rv-title">솔직한 후기 남기고 토스트 받으세요</div><div class="rv-sub">내 후기 한 줄이 비슷한 피부 고민 가진 분께 큰 도움이 돼요</div><div><span class="rv-pill">텍스트 1,000T</span><span class="rv-pill">사진 3,000T</span><span class="rv-pill">영상 5,000T</span></div></div><div class="rv-qr">리뷰<br>QR</div></div>
+<div class="footer">auran.kr · 오랜톡 · 맑원장 · 스킨파우더룸</div>
+</body></html>`
+    const w = window.open('', '_blank')
+    if (w) { w.document.write(html); w.document.close() }
+  }
+  const filteredCards = useMemo(() => cards.filter(c => {
+    const matchSearch = !historySearch || c.customer_name.includes(historySearch) || (c.tracking_no || '').includes(historySearch)
+    const matchStatus = historyStatus === '전체' || c.status === historyStatus
+    return matchSearch && matchStatus
+  }), [cards, historySearch, historyStatus])
+  const stats = useMemo(() => {
+    const thisMonth = new Date().toISOString().slice(0, 7)
+    const monthCards = cards.filter(c => c.created_at.startsWith(thisMonth))
+    const joined = cards.filter(c => c.auran_joined).length
+    const channelMap: Record<string, number> = {}
+    cards.forEach(c => { channelMap[c.channel] = (channelMap[c.channel] || 0) + 1 })
+    const topChannel = Object.entries(channelMap).sort((a, b) => b[1] - a[1])
+    const prodMap: Record<string, { name: string; cnt: number }> = {}
+    cards.forEach(c => { (c.products || []).forEach((p: any) => { if (!prodMap[p.id]) prodMap[p.id] = { name: p.name, cnt: 0 }; prodMap[p.id].cnt++ }) })
+    const topProds = Object.values(prodMap).sort((a, b) => b.cnt - a.cnt).slice(0, 5)
+    return { monthCount: monthCards.length, totalAmt: monthCards.reduce((s, c) => s + (c.total_amount || 0), 0), joined, topChannel, topProds }
+  }, [cards])
+  const inp = { width: '100%', padding: '8px 10px', background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#e8e0f5', fontSize: 12, fontFamily: 'inherit' } as React.CSSProperties
+  return (
+    <div style={{ padding: '18px 18px 60px', maxWidth: 600, margin: '0 auto', fontFamily: '-apple-system,sans-serif', background: '#0d0d0d', minHeight: '100vh', color: '#e8e0f5' }}>
+      <div style={{ fontSize: 15, color: '#F0E8FF', marginBottom: 3 }}>외부고객 케어카드 v2</div>
+      <div style={{ fontSize: 10, color: '#444', marginBottom: 14 }}>더치스 · 스마트스토어 · 블로그공구</div>
+      <div style={{ display: 'flex', borderBottom: '0.5px solid rgba(255,255,255,0.08)', marginBottom: 18 }}>
+        {(['write','history','stats'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)} style={{ padding: '9px 16px', fontSize: 12, cursor: 'pointer', background: 'transparent', border: 'none', color: tab === t ? '#fff' : '#444', borderBottom: tab === t ? '2px solid #7B5EA7' : '2px solid transparent', fontFamily: 'inherit' }}>
+            {t === 'write' ? '카드 작성' : t === 'history' ? '발송 현황' : '통계'}
+          </button>
+        ))}
+      </div>
+      {tab === 'write' && (
+        <div>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, marginBottom: 8 }}>✦ 고객 정보</div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+              <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>고객명</div><input style={inp} value={name} onChange={e => setName(e.target.value)} placeholder="예) 김민지" /></div>
+              <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>연락처</div><input style={inp} value={phone} onChange={e => setPhone(e.target.value)} placeholder="010-0000-0000" /></div>
+            </div>
+            <div style={{ marginBottom: 8 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>배송 주소</div><input style={inp} value={address} onChange={e => setAddress(e.target.value)} placeholder="서울시 강남구..." /></div>
+            <div><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>구매 채널</div><select style={inp} value={channel} onChange={e => setChannel(e.target.value)}>{CHANNELS.map(c => <option key={c}>{c}</option>)}</select></div>
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, marginBottom: 8 }}>✦ 구매 제품</div>
+            <div style={{ position: 'relative', marginBottom: 8 }}>
+              <input style={inp} value={productSearch} onChange={e => searchProducts(e.target.value)} placeholder="제품명 검색..." autoComplete="off" />
+              {productResults.length > 0 && (
+                <div style={{ position: 'absolute', top: 'calc(100% + 3px)', left: 0, right: 0, background: '#1a1830', border: '0.5px solid rgba(123,94,167,0.4)', borderRadius: 9, overflow: 'hidden', zIndex: 20 }}>
+                  {productResults.map(p => (
+                    <div key={p.id} onClick={() => addProduct(p)} style={{ padding: '9px 12px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', borderBottom: '0.5px solid rgba(255,255,255,0.05)' }}>
+                      <div><div style={{ fontSize: 12, color: '#e8e0f5' }}>{p.name}</div><div style={{ fontSize: 10, color: '#555', marginTop: 1 }}>{(p.brands as any)?.name}</div></div>
+                      <div style={{ fontSize: 11, color: C.gold }}>₩{(p.retail_price || 0).toLocaleString()}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            {products.map(p => (
+              <div key={p.id} style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 9, padding: '10px 12px', marginBottom: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div><div style={{ fontSize: 12, color: '#e8e0f5', marginBottom: 2 }}>{p.name}</div><div style={{ fontSize: 10, color: '#555' }}>{p.brand}</div></div>
+                  <div style={{ fontSize: 11, color: '#333', cursor: 'pointer', padding: '2px 6px' }} onClick={() => setProducts(prev => prev.filter(x => x.id !== p.id))}>✕</div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <div style={{ fontSize: 10, color: '#555', whiteSpace: 'nowrap' }}>판매가</div>
+                  <div style={{ fontSize: 10, color: '#333', whiteSpace: 'nowrap' }}>스토어 ₩{p.orig.toLocaleString()}</div>
+                  <input style={{ flex: 1, padding: '5px 9px', background: 'rgba(201,169,110,0.08)', border: '0.5px solid rgba(201,169,110,0.25)', borderRadius: 7, color: C.gold, fontSize: 12, textAlign: 'right', minWidth: 0, fontFamily: 'inherit' }}
+                    defaultValue={p.custom.toLocaleString()}
+                    onChange={e => updatePrice(p.id, e.target.value)}
+                  />
+                  <div style={{ fontSize: 11, color: C.gold, whiteSpace: 'nowrap' }}>원</div>
+                  <div style={{ fontSize: 9, padding: '2px 6px', borderRadius: 10, background: p.custom !== p.orig ? 'rgba(201,169,110,0.15)' : 'rgba(255,255,255,0.04)', color: p.custom !== p.orig ? C.gold : '#333' }}>
+                    {p.custom !== p.orig ? '수정됨' : '스토어가'}
+                  </div>
+                </div>
+              </div>
+            ))}
+            {products.length > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '9px 12px', background: 'rgba(123,94,167,0.07)', border: '0.5px solid rgba(123,94,167,0.2)', borderRadius: 8, marginTop: 2 }}>
+                <div style={{ fontSize: 11, color: '#9B7EC8' }}>합계</div>
+                <div style={{ fontSize: 15, color: C.gold }}>₩{totalAmount.toLocaleString()}</div>
+              </div>
+            )}
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ background: 'rgba(123,94,167,0.06)', border: '0.5px solid rgba(123,94,167,0.2)', borderRadius: 10, padding: 12 }}>
+              <div style={{ fontSize: 10, letterSpacing: '.12em', color: '#9B7EC8', marginBottom: 10 }}>✦ 배송 정보</div>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>택배사</div><select style={inp} value={courier} onChange={e => setCourier(e.target.value)}>{COURIERS.map(c => <option key={c}>{c}</option>)}</select></div>
+                <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>송장번호</div><input style={inp} value={trackingNo} onChange={e => setTrackingNo(e.target.value)} placeholder="1234567890" /></div>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>발송일</div><input style={inp} type="date" value={shippedAt} onChange={e => setShippedAt(e.target.value)} /></div>
+                <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>도착 예정일</div><input style={inp} type="date" value={arrivalAt} onChange={e => setArrivalAt(e.target.value)} /></div>
+              </div>
+            </div>
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, marginBottom: 8 }}>✦ 맞춤 루틴</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: 9 }}>
+                <div style={{ fontSize: 9, color: '#9B7EC8', letterSpacing: '.1em', marginBottom: 5 }}>AM · 아침</div>
+                <textarea style={{ ...inp, height: 80, resize: 'none' } as React.CSSProperties} value={amRoutine} onChange={e => setAmRoutine(e.target.value)} placeholder={'1. 클렌저\n2. 세럼\n3. 크림\n4. 선크림'} />
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: 9 }}>
+                <div style={{ fontSize: 9, color: '#9B7EC8', letterSpacing: '.1em', marginBottom: 5 }}>PM · 저녁</div>
+                <textarea style={{ ...inp, height: 80, resize: 'none' } as React.CSSProperties} value={pmRoutine} onChange={e => setPmRoutine(e.target.value)} placeholder={'1. 오일클렌징\n2. 폼\n3. 세럼\n4. 크림'} />
+              </div>
+            </div>
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, marginBottom: 8 }}>✦ 원장님 꿀팁</div>
+            <textarea style={{ ...inp, height: 80, resize: 'none' } as React.CSSProperties} value={tip} onChange={e => setTip(e.target.value)} placeholder="고객님 피부에 맞는 맞춤 팁 입력..." />
+          </div>
+          {msg && <div style={{ fontSize: 12, padding: '8px 12px', borderRadius: 8, marginBottom: 10, background: msg.includes('✓') ? 'rgba(91,138,107,0.1)' : 'rgba(220,80,80,0.1)', color: msg.includes('✓') ? C.green : '#dc5050', border: `0.5px solid ${msg.includes('✓') ? 'rgba(91,138,107,0.3)' : 'rgba(220,80,80,0.3)'}` }}>{msg}</div>}
+          <div style={{ display: 'flex', gap: 8, paddingTop: 16, borderTop: '0.5px solid rgba(255,255,255,0.06)' }}>
+            <button onClick={reset} style={{ flex: 1, padding: 11, borderRadius: 9, fontSize: 12, cursor: 'pointer', background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.12)', color: '#888', fontFamily: 'inherit' }}>초기화</button>
+            <button onClick={() => save(false)} disabled={saving} style={{ flex: 1, padding: 11, borderRadius: 9, fontSize: 12, cursor: 'pointer', background: 'rgba(123,94,167,0.2)', border: '0.5px solid rgba(123,94,167,0.4)', color: '#9B7EC8', fontFamily: 'inherit' }}>{saving ? '저장 중...' : '저장만'}</button>
+            <button onClick={() => save(true)} disabled={saving} style={{ flex: 1, padding: 11, borderRadius: 9, fontSize: 12, cursor: 'pointer', background: '#7B5EA7', border: 'none', color: '#fff', fontFamily: 'inherit' }}>저장 + 출력 🖨</button>
+          </div>
+        </div>
+      )}
+      {tab === 'history' && (
+        <div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <input style={{ ...inp, flex: 1 }} value={historySearch} onChange={e => setHistorySearch(e.target.value)} placeholder="고객명 · 송장번호 검색" />
+            <select style={{ ...inp, width: 100 }} value={historyStatus} onChange={e => setHistoryStatus(e.target.value)}>
+              {['전체','준비중','발송완료'].map(s => <option key={s}>{s}</option>)}
+            </select>
+          </div>
+          {loadingCards ? <div style={{ fontSize: 12, color: '#444' }}>불러오는 중...</div> :
+            filteredCards.length === 0 ? <div style={{ fontSize: 12, color: '#444' }}>데이터가 없어요</div> :
+            filteredCards.map(c => (
+              <div key={c.id}>
+                <div onClick={() => setOpenCardId(openCardId === c.id ? null : c.id)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'rgba(255,255,255,0.03)', border: `0.5px solid ${openCardId === c.id ? 'rgba(123,94,167,0.4)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 9, marginBottom: 6, cursor: 'pointer' }}>
+                  <div>
+                    <div style={{ fontSize: 13, color: '#e8e0f5', marginBottom: 2 }}>{c.customer_name}</div>
+                    <div style={{ fontSize: 10, color: '#444' }}>{c.delivery_type}{c.tracking_no ? ` · ${c.tracking_no}` : ''} · {c.created_at.slice(0,10)}</div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
+                    <div style={{ fontSize: 12, color: C.gold }}>₩{(c.total_amount || 0).toLocaleString()}</div>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      <div style={{ fontSize: 9, padding: '2px 8px', borderRadius: 20, background: c.status === '발송완료' ? 'rgba(91,138,107,0.2)' : 'rgba(201,169,110,0.12)', color: c.status === '발송완료' ? C.green : C.gold }}>{c.status}</div>
+                      {c.auran_joined && <div style={{ fontSize: 9, padding: '2px 8px', borderRadius: 20, background: 'rgba(123,94,167,0.2)', color: '#9B7EC8' }}>가입✓</div>}
+                    </div>
+                  </div>
+                </div>
+                {openCardId === c.id && (
+                  <div style={{ background: 'rgba(123,94,167,0.07)', border: '0.5px solid rgba(123,94,167,0.25)', borderRadius: 9, padding: 14, marginBottom: 10, marginTop: -4 }}>
+                    <div style={{ fontSize: 11, color: '#9B7EC8', marginBottom: 10 }}>{c.customer_name}님 상세</div>
+                    {c.phone && <div style={{ fontSize: 11, color: '#555', marginBottom: 4 }}>연락처 <span style={{ color: '#e8e0f5' }}>{c.phone}</span></div>}
+                    {c.address && <div style={{ fontSize: 11, color: '#555', marginBottom: 4 }}>주소 <span style={{ color: '#e8e0f5' }}>{c.address}</span></div>}
+                    <div style={{ fontSize: 11, color: '#555', marginBottom: 10 }}>채널 <span style={{ color: '#e8e0f5' }}>{c.channel}</span></div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {!c.auran_joined && <button onClick={() => markJoined(c.id)} style={{ padding: '6px 12px', borderRadius: 7, fontSize: 11, cursor: 'pointer', background: 'rgba(91,138,107,0.2)', border: '0.5px solid rgba(91,138,107,0.35)', color: C.green, fontFamily: 'inherit' }}>AURAN 가입 확인 ✓</button>}
+                      {c.phone && <button onClick={() => sendAlimtalk(c)} style={{ padding: '6px 12px', borderRadius: 7, fontSize: 11, cursor: 'pointer', background: 'rgba(201,169,110,0.15)', border: '0.5px solid rgba(201,169,110,0.35)', color: C.gold, fontFamily: 'inherit' }}>알림톡 재발송</button>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))
+          }
+        </div>
+      )}
+      {tab === 'stats' && (
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 16 }}>
+            {[['이번달 발송', stats.monthCount + '건'], ['이번달 금액', '₩' + Math.round(stats.totalAmt / 10000) + '만'], ['AURAN 가입', stats.joined + '명']].map(([l, n]) => (
+              <div key={l} style={{ background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 20, color: C.gold, marginBottom: 3 }}>{n}</div>
+                <div style={{ fontSize: 10, color: '#444' }}>{l}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, marginBottom: 10 }}>✦ 채널별 발송</div>
+          {stats.topChannel.slice(0, 5).map(([ch, cnt], i) => (
+            <div key={ch} style={{ marginBottom: 10 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#555', marginBottom: 4 }}><span>{ch}</span><span>{cnt}건</span></div>
+              <div style={{ height: 5, background: 'rgba(255,255,255,0.06)', borderRadius: 3 }}>
+                <div style={{ height: 5, borderRadius: 3, background: ['#7B5EA7','#C9A96E','#9B7EC8','#5B8A6B','#555'][i], width: `${Math.round(cnt / Math.max(...stats.topChannel.map(x => x[1] as number)) * 100)}%` }} />
+              </div>
+            </div>
+          ))}
+          {stats.topProds.length > 0 && <>
+            <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, margin: '16px 0 10px' }}>✦ 많이 보낸 제품 TOP 5</div>
+            {stats.topProds.map((p, i) => (
+              <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 9, marginBottom: 6 }}>
+                <div style={{ fontSize: 13, color: C.gold, minWidth: 20 }}>{i + 1}</div>
+                <div style={{ flex: 1, fontSize: 12, color: '#e8e0f5' }}>{p.name}</div>
+                <div style={{ fontSize: 12, color: '#555' }}>{p.cnt}건</div>
+              </div>
+            ))}
+          </>}
+        </div>
+      )}
+    </div>
+  )
+}
