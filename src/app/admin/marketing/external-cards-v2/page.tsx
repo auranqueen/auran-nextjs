@@ -220,7 +220,12 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
               <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>연락처</div><input style={inp} value={phone} onChange={e => setPhone(e.target.value)} placeholder="010-0000-0000" /></div>
             </div>
             <div style={{ marginBottom: 8 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>배송 주소</div><input style={inp} value={address} onChange={e => setAddress(e.target.value)} placeholder="서울시 강남구..." /></div>
-            <div><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>구매 채널</div><select style={inp} value={channel} onChange={e => setChannel(e.target.value)}>{CHANNELS.map(c => <option key={c}>{c}</option>)}</select></div>
+            <div><div style={{ fontSize: 10, color: '#555', marginBottom: 6 }}>구매 채널</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {CHANNELS.map(c => (
+                <button key={c} onClick={() => setChannel(c)} style={{ padding: '6px 12px', borderRadius: 20, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', background: channel === c ? '#7B5EA7' : 'transparent', color: channel === c ? '#fff' : '#666', border: `0.5px solid ${channel === c ? '#7B5EA7' : 'rgba(255,255,255,0.15)'}` }}>{c}</button>
+              ))}
+            </div></div>
           </div>
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, marginBottom: 8 }}>✦ 구매 제품</div>
@@ -268,7 +273,12 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
             <div style={{ background: 'rgba(123,94,167,0.06)', border: '0.5px solid rgba(123,94,167,0.2)', borderRadius: 10, padding: 12 }}>
               <div style={{ fontSize: 10, letterSpacing: '.12em', color: '#9B7EC8', marginBottom: 10 }}>✦ 배송 정보</div>
               <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>택배사</div><select style={inp} value={courier} onChange={e => setCourier(e.target.value)}>{COURIERS.map(c => <option key={c}>{c}</option>)}</select></div>
+                <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 6 }}>택배사</div>
+                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                  {COURIERS.map(c => (
+                    <button key={c} onClick={() => setCourier(c)} style={{ padding: '5px 10px', borderRadius: 20, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', background: courier === c ? '#7B5EA7' : 'transparent', color: courier === c ? '#fff' : '#666', border: `0.5px solid ${courier === c ? '#7B5EA7' : 'rgba(255,255,255,0.15)'}` }}>{c}</button>
+                  ))}
+                </div></div>
                 <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>송장번호</div><input style={inp} value={trackingNo} onChange={e => setTrackingNo(e.target.value)} placeholder="1234567890" /></div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
@@ -306,9 +316,11 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
         <div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
             <input style={{ ...inp, flex: 1 }} value={historySearch} onChange={e => setHistorySearch(e.target.value)} placeholder="고객명 · 송장번호 검색" />
-            <select style={{ ...inp, width: 100 }} value={historyStatus} onChange={e => setHistoryStatus(e.target.value)}>
-              {['전체','준비중','발송완료'].map(s => <option key={s}>{s}</option>)}
-            </select>
+            <div style={{ display: 'flex', gap: 5 }}>
+              {['전체','준비중','발송완료'].map(s => (
+                <button key={s} onClick={() => setHistoryStatus(s)} style={{ padding: '7px 12px', borderRadius: 20, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', background: historyStatus === s ? '#7B5EA7' : 'transparent', color: historyStatus === s ? '#fff' : '#666', border: `0.5px solid ${historyStatus === s ? '#7B5EA7' : 'rgba(255,255,255,0.15)'}` }}>{s}</button>
+              ))}
+            </div>
           </div>
           {loadingCards ? <div style={{ fontSize: 12, color: '#444' }}>불러오는 중...</div> :
             filteredCards.length === 0 ? <div style={{ fontSize: 12, color: '#444' }}>데이터가 없어요</div> :
