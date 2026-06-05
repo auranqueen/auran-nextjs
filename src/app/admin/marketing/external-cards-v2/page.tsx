@@ -156,7 +156,20 @@ export default function ExternalCardsV2Page() {
     } catch { alert('발송 중 오류가 발생했어요') }
   }
   const markJoined = async (id: string) => {
-    await supabase.from('external_care_cards_v2').update({ auran_joined: true }).eq('id', id)
+    const card = cards.find(c => c.id === id)
+    if (!card) return
+    const custRes = await supabase.from('external_customers').select('id').ilike('name', card.customer_name).maybeSingle()
+    const customerId = (custRes.data as any)?.id
+    if (customerId) {
+      const res = await fetch('/api/admin/external-customers/link', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customer_id: customerId }),
+      })
+      const json = await res.json()
+      alert(json.message || (json.ok ? '완료!' : '오류: ' + json.error))
+    } else {
+      await supabase.from('external_care_cards_v2').update({ auran_joined: true }).eq('id', id)
+    }
     setCards(prev => prev.map(c => c.id === id ? { ...c, auran_joined: true } : c))
   }
   const printCard = () => {
@@ -462,7 +475,15 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
                   <div style={{ fontSize: 11, color: '#555', marginBottom: 10 }}>채널 <span style={{ color: '#e8e0f5' }}>{c.channel}</span> · {c.visit_count}회 · 합계 <span style={{ color: '#C9A96E' }}>₩{(c.total_amount || 0).toLocaleString()}</span></div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {!c.auran_joined && (
-                      <button onClick={async () => { await supabase.from('external_customers').update({ auran_joined: true }).eq('id', c.id); fetchCustomers() }}
+                      <button onClick={async () => {
+                        const res = await fetch('/api/admin/external-customers/link', {
+                          method: 'POST', headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ customer_id: c.id }),
+                        })
+                        const json = await res.json()
+                        alert(json.message || (json.ok ? '완료!' : '오류: ' + json.error))
+                        fetchCustomers()
+                      }}
                         style={{ padding: '6px 12px', borderRadius: 7, fontSize: 11, cursor: 'pointer', background: 'rgba(91,138,107,0.2)', border: '0.5px solid rgba(91,138,107,0.35)', color: '#5B8A6B', fontFamily: 'inherit' }}>AURAN 가입 확인 ✓</button>
                     )}
                     {c.phone && (
