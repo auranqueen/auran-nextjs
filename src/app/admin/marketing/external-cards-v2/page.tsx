@@ -22,7 +22,7 @@ type Card = {
 }
 export default function ExternalCardsV2Page() {
   const supabase = createClient()
-  const [tab, setTab] = useState<'write'|'history'|'stats'>('write')
+  const [tab, setTab] = useState<'write'|'history'|'stats'|'customers'|'marketing'>('write')
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
@@ -44,15 +44,39 @@ export default function ExternalCardsV2Page() {
   const [historyStatus, setHistoryStatus] = useState('전체')
   const [loadingCards, setLoadingCards] = useState(false)
   const [openCardId, setOpenCardId] = useState<string | null>(null)
+  const [custSearch, setCustSearch] = useState('')
+  const [custResults, setCustResults] = useState<any[]>([])
+  const [customers, setCustomers] = useState<any[]>([])
+  const [openCustId, setOpenCustId] = useState<string | null>(null)
   const totalAmount = useMemo(() => products.reduce((s, p) => s + p.custom, 0), [products])
   useEffect(() => {
     if (tab === 'history' || tab === 'stats') fetchCards()
+    if (tab === 'customers' || tab === 'marketing') fetchCustomers()
   }, [tab])
   const fetchCards = async () => {
     setLoadingCards(true)
     const { data } = await supabase.from('external_care_cards_v2').select('*').order('created_at', { ascending: false })
     setCards((data || []) as Card[])
     setLoadingCards(false)
+  }
+  const fetchCustomers = async () => {
+    const { data } = await supabase.from('external_customers')
+      .select('*')
+      .order('total_amount', { ascending: false })
+    setCustomers(data || [])
+  }
+  const searchCustomers = async (q: string) => {
+    setCustSearch(q)
+    if (q.length < 1) { setCustResults([]); return }
+    const { data } = await supabase.from('external_customers')
+      .select('id,name,phone,address,channel,total_amount,visit_count,auran_joined')
+      .ilike('name', `%${q}%`)
+      .limit(5)
+    setCustResults(data || [])
+  }
+  const selectCustomer = (c: any) => {
+    setName(c.name); setPhone(c.phone || ''); setAddress(c.address || ''); setChannel(c.channel || '네이버 스마트스토어')
+    setCustSearch(''); setCustResults([])
   }
   const searchProducts = async (q: string) => {
     setProductSearch(q)
@@ -81,6 +105,25 @@ export default function ExternalCardsV2Page() {
   const save = async (andPrint = false) => {
     if (!name.trim()) { setMsg('고객명을 입력해주세요'); return }
     setSaving(true); setMsg('')
+    let customerId: string | null = null
+    const existCust = await supabase.from('external_customers')
+      .select('id,total_amount,visit_count').ilike('name', name.trim()).maybeSingle()
+    if ((existCust.data as any)?.id) {
+      customerId = (existCust.data as any).id
+      await supabase.from('external_customers').update({
+        phone: phone || undefined, address: address || undefined, channel,
+        total_amount: ((existCust.data as any).total_amount || 0) + totalAmount,
+        visit_count: ((existCust.data as any).visit_count || 0) + 1,
+        last_purchase_at: new Date().toISOString(), updated_at: new Date().toISOString(),
+      }).eq('id', customerId)
+    } else {
+      const { data: newCust } = await supabase.from('external_customers').insert({
+        name: name.trim(), phone: phone || null, address: address || null, channel,
+        total_amount: totalAmount, visit_count: 1,
+        last_purchase_at: new Date().toISOString(),
+      } as any).select('id').single()
+      customerId = (newCust as any)?.id || null
+    }
     const { error } = await supabase.from('external_care_cards_v2').insert({
       customer_name: name.trim(), phone: phone || null, address: address || null, channel,
       products: products as any, total_amount: totalAmount,
@@ -88,6 +131,7 @@ export default function ExternalCardsV2Page() {
       shipped_at: shippedAt || null, estimated_arrival: arrivalAt || null,
       am_routine: amRoutine || null, pm_routine: pmRoutine || null, tip: tip || null,
       status: trackingNo ? '발송완료' : '준비중',
+      customer_id: customerId,
     } as any)
     setSaving(false)
     if (error) { setMsg('저장 실패: ' + error.message); return }
@@ -205,9 +249,9 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
       <div style={{ fontSize: 15, color: '#F0E8FF', marginBottom: 3 }}>외부고객 케어카드 v2</div>
       <div style={{ fontSize: 10, color: '#444', marginBottom: 14 }}>더치스 · 스마트스토어 · 블로그공구</div>
       <div style={{ display: 'flex', borderBottom: '0.5px solid rgba(255,255,255,0.08)', marginBottom: 18 }}>
-        {(['write','history','stats'] as const).map(t => (
+        {(['write','history','customers','marketing','stats'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} style={{ padding: '9px 16px', fontSize: 12, cursor: 'pointer', background: 'transparent', border: 'none', color: tab === t ? '#fff' : '#444', borderBottom: tab === t ? '2px solid #7B5EA7' : '2px solid transparent', fontFamily: 'inherit' }}>
-            {t === 'write' ? '카드 작성' : t === 'history' ? '발송 현황' : '통계'}
+            {t === 'write' ? '카드 작성' : t === 'history' ? '발송 현황' : t === 'customers' ? '고객 관리' : t === 'marketing' ? '마케팅' : '통계'}
           </button>
         ))}
       </div>
@@ -216,7 +260,24 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, marginBottom: 8 }}>✦ 고객 정보</div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-              <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>고객명</div><input style={inp} value={name} onChange={e => setName(e.target.value)} placeholder="예) 김민지" /></div>
+              <div style={{ flex: 1, position: 'relative' }}>
+                <div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>고객명</div>
+                <input style={inp} value={name}
+                  onChange={e => { setName(e.target.value); searchCustomers(e.target.value) }}
+                  placeholder="예) 김민지 (기존 고객 자동완성)" autoComplete="off" />
+                {custResults.length > 0 && (
+                  <div style={{ position: 'absolute', top: 'calc(100% + 3px)', left: 0, right: 0, background: '#1a1830', border: '0.5px solid rgba(123,94,167,0.4)', borderRadius: 9, overflow: 'hidden', zIndex: 20 }}>
+                    <div style={{ padding: '6px 12px', fontSize: 10, color: '#555', borderBottom: '0.5px solid rgba(255,255,255,0.05)' }}>기존 고객</div>
+                    {custResults.map((c: any) => (
+                      <div key={c.id} onClick={() => selectCustomer(c)}
+                        style={{ padding: '9px 12px', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', borderBottom: '0.5px solid rgba(255,255,255,0.05)' }}>
+                        <div><div style={{ fontSize: 12, color: '#e8e0f5' }}>{c.name}</div><div style={{ fontSize: 10, color: '#555', marginTop: 1 }}>{c.channel} · {c.visit_count}회 구매</div></div>
+                        <div style={{ fontSize: 11, color: '#C9A96E' }}>₩{(c.total_amount || 0).toLocaleString()}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>연락처</div><input style={inp} value={phone} onChange={e => setPhone(e.target.value)} placeholder="010-0000-0000" /></div>
             </div>
             <div style={{ marginBottom: 8 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>배송 주소</div><input style={inp} value={address} onChange={e => setAddress(e.target.value)} placeholder="서울시 강남구..." /></div>
@@ -354,6 +415,118 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
               </div>
             ))
           }
+        </div>
+      )}
+      {tab === 'customers' && (
+        <div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+            <input style={{ ...inp, flex: 1 }} placeholder="고객명 · 전화번호 검색"
+              onChange={async e => {
+                const q = e.target.value
+                if (!q) { fetchCustomers(); return }
+                const { data } = await supabase.from('external_customers')
+                  .select('*').ilike('name', `%${q}%`).order('total_amount', { ascending: false })
+                setCustomers(data || [])
+              }} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 16 }}>
+            {[['전체', customers.length + '명'], ['AURAN 가입', customers.filter(c => c.auran_joined).length + '명'], ['누적 합계', '₩' + Math.round(customers.reduce((s: number, c: any) => s + (c.total_amount || 0), 0) / 10000) + '만']].map(([l, n]) => (
+              <div key={l} style={{ background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 20, color: '#C9A96E', marginBottom: 3 }}>{n}</div>
+                <div style={{ fontSize: 10, color: '#444' }}>{l}</div>
+              </div>
+            ))}
+          </div>
+          {customers.map((c: any) => (
+            <div key={c.id}>
+              <div onClick={() => setOpenCustId(openCustId === c.id ? null : c.id)}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '11px 13px', background: 'rgba(255,255,255,0.03)', border: `0.5px solid ${openCustId === c.id ? 'rgba(123,94,167,0.4)' : 'rgba(255,255,255,0.07)'}`, borderRadius: 10, marginBottom: 6, cursor: 'pointer' }}>
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span style={{ fontSize: 13, color: '#e8e0f5' }}>{c.name}</span>
+                    <span style={{ fontSize: 9, padding: '2px 7px', borderRadius: 10, background: c.auran_joined ? 'rgba(91,138,107,0.2)' : 'rgba(255,255,255,0.04)', color: c.auran_joined ? '#5B8A6B' : '#555' }}>{c.auran_joined ? 'AURAN가입' : '미가입'}</span>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#444', display: 'flex', gap: 10 }}>
+                    <span>{c.channel}</span>
+                    <span>{c.visit_count}회 구매</span>
+                    {c.phone && <span>{c.phone}</span>}
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, color: '#C9A96E' }}>₩{(c.total_amount || 0).toLocaleString()}</div>
+              </div>
+              {openCustId === c.id && (
+                <div style={{ background: 'rgba(123,94,167,0.07)', border: '0.5px solid rgba(123,94,167,0.25)', borderRadius: 10, padding: 14, marginBottom: 10, marginTop: -4 }}>
+                  <div style={{ fontSize: 11, color: '#9B7EC8', marginBottom: 10 }}>{c.name}님 상세</div>
+                  {c.phone && <div style={{ fontSize: 11, color: '#555', marginBottom: 4 }}>연락처 <span style={{ color: '#e8e0f5' }}>{c.phone}</span></div>}
+                  {c.address && <div style={{ fontSize: 11, color: '#555', marginBottom: 4 }}>주소 <span style={{ color: '#e8e0f5' }}>{c.address}</span></div>}
+                  <div style={{ fontSize: 11, color: '#555', marginBottom: 10 }}>채널 <span style={{ color: '#e8e0f5' }}>{c.channel}</span> · {c.visit_count}회 · 합계 <span style={{ color: '#C9A96E' }}>₩{(c.total_amount || 0).toLocaleString()}</span></div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {!c.auran_joined && (
+                      <button onClick={async () => { await supabase.from('external_customers').update({ auran_joined: true }).eq('id', c.id); fetchCustomers() }}
+                        style={{ padding: '6px 12px', borderRadius: 7, fontSize: 11, cursor: 'pointer', background: 'rgba(91,138,107,0.2)', border: '0.5px solid rgba(91,138,107,0.35)', color: '#5B8A6B', fontFamily: 'inherit' }}>AURAN 가입 확인 ✓</button>
+                    )}
+                    {c.phone && (
+                      <button onClick={async () => {
+                        const fn = ALIMTALK_COPIES[Math.floor(Math.random() * ALIMTALK_COPIES.length)]
+                        const res = await fetch('/api/alimtalk/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: c.phone, message: fn(c.name), title: 'AURAN 오랜 · 맑원장' }) })
+                        const json = await res.json()
+                        alert(json.ok ? '알림톡 발송 완료!' : '발송 실패: ' + json.error)
+                      }} style={{ padding: '6px 12px', borderRadius: 7, fontSize: 11, cursor: 'pointer', background: 'rgba(201,169,110,0.15)', border: '0.5px solid rgba(201,169,110,0.35)', color: '#C9A96E', fontFamily: 'inherit' }}>알림톡 발송</button>
+                    )}
+                    <button onClick={() => { setTab('write'); setName(c.name); setPhone(c.phone || ''); setAddress(c.address || ''); setChannel(c.channel || '네이버 스마트스토어') }}
+                      style={{ padding: '6px 12px', borderRadius: 7, fontSize: 11, cursor: 'pointer', background: 'rgba(123,94,167,0.2)', border: '0.5px solid rgba(123,94,167,0.4)', color: '#9B7EC8', fontFamily: 'inherit' }}>새 케어카드 작성</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {tab === 'marketing' && (
+        <div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 16 }}>
+            {[
+              ['미가입', customers.filter(c => !c.auran_joined).length + '명', '#dc5050'],
+              ['VIP 30만+', customers.filter(c => (c.total_amount || 0) >= 300000).length + '명', '#C9A96E'],
+              ['재구매 2회+', customers.filter(c => (c.visit_count || 0) >= 2).length + '명', '#9B7EC8'],
+            ].map(([l, n, color]) => (
+              <div key={l} style={{ background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 12, textAlign: 'center' }}>
+                <div style={{ fontSize: 20, color, marginBottom: 3 }}>{n}</div>
+                <div style={{ fontSize: 10, color: '#444' }}>{l}</div>
+              </div>
+            ))}
+          </div>
+          {[
+            { title: 'AURAN 미가입 고객', sub: '발송 후 아직 가입 안 한 고객 → 알림톡 재발송 타겟', list: customers.filter(c => !c.auran_joined) },
+            { title: 'VIP 고객 (₩30만+)', sub: '누적 구매 30만원 이상 · 멤버십 전환 최우선 타겟', list: customers.filter(c => (c.total_amount || 0) >= 300000) },
+            { title: '재구매 고객 (2회+)', sub: '충성 고객 → 오랜톡 상담 유도', list: customers.filter(c => (c.visit_count || 0) >= 2) },
+          ].map(seg => (
+            <div key={seg.title} style={{ padding: '12px 13px', background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, marginBottom: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                <div>
+                  <div style={{ fontSize: 13, color: '#e8e0f5', marginBottom: 2 }}>{seg.title}</div>
+                  <div style={{ fontSize: 10, color: '#444' }}>{seg.sub}</div>
+                </div>
+                <button onClick={async () => {
+                  const targets = seg.list.filter(c => c.phone)
+                  if (!targets.length) { alert('전화번호 있는 고객이 없어요'); return }
+                  if (!confirm(`${targets.length}명에게 알림톡을 발송할까요?`)) return
+                  let ok = 0
+                  for (const c of targets) {
+                    const fn = ALIMTALK_COPIES[Math.floor(Math.random() * ALIMTALK_COPIES.length)]
+                    const res = await fetch('/api/alimtalk/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: c.phone, message: fn(c.name), title: 'AURAN 오랜 · 맑원장' }) })
+                    const json = await res.json(); if (json.ok) ok++
+                  }
+                  alert(`${ok}명 발송 완료!`)
+                }} style={{ padding: '6px 14px', borderRadius: 7, fontSize: 11, cursor: 'pointer', background: '#7B5EA7', border: 'none', color: '#fff', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
+                  알림톡 발송 ({seg.list.filter(c => c.phone).length}명)
+                </button>
+              </div>
+              <div style={{ fontSize: 10, color: '#555' }}>
+                {seg.list.slice(0, 3).map(c => c.name).join(' · ')}{seg.list.length > 3 ? ` 외 ${seg.list.length - 3}명` : ''}
+              </div>
+            </div>
+          ))}
         </div>
       )}
       {tab === 'stats' && (
