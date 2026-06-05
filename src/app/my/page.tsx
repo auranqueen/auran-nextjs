@@ -28,6 +28,7 @@ export default function MyPage() {
   const [expiringPoint, setExpiringPoint] = useState(0)
   const [friendFeed, setFriendFeed] = useState<any[]>([])
   const [orders, setOrders] = useState<any[]>([])
+  const [reviewedOrderIds, setReviewedOrderIds] = useState<Set<string>>(new Set())
   const [coupons, setCoupons] = useState<any[]>([])
   const [refills, setRefills] = useState<any[]>([])
   const [recentOrdersForRefill, setRecentOrdersForRefill] = useState<any[]>([])
@@ -96,12 +97,21 @@ export default function MyPage() {
             .then(({ data: mem }) => { if (mem) setMembership(mem) })
           supabase
             .from('orders')
-            .select('*, order_items(*, products(*, brands(name)))')
+            .select('*, order_items(*, products(*, brands(name))), reviews(id)')
             .eq('customer_id', meRow.id)
             .order('created_at', { ascending: false })
             .limit(5)
             .then(({ data: ord }) => {
-              if (ord) setOrders(ord)
+              if (ord) {
+                setOrders(ord)
+                setReviewedOrderIds(
+                  new Set(
+                    ord
+                      .filter((o: any) => Array.isArray(o.reviews) && o.reviews.length > 0)
+                      .map((o: any) => String(o.id))
+                  )
+                )
+              }
             })
           supabase
             .from('orders')
@@ -756,6 +766,21 @@ export default function MyPage() {
           </>
         )}
       </div>
+
+      {orders.length > 0 && orders.some(o => !(o as any).reviews?.length && o.status === '구매확정') && (
+        <div style={{background:'#EEEDFE',borderRadius:12,padding:'14px 16px',marginBottom:10,display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <div>
+            <div style={{fontSize:13,fontWeight:500,color:'#3C3489'}}>리뷰 쓰면 토스트가 돌아와요</div>
+            <div style={{fontSize:11,color:'#534AB7',marginTop:2}}>구매확정 상품에 리뷰를 남겨보세요 +50T</div>
+          </div>
+          <button
+            onClick={() => router.push('/my/reviews')}
+            style={{background:'#7B5EA7',color:'#fff',border:'none',borderRadius:8,padding:'7px 14px',fontSize:12,cursor:'pointer'}}
+          >
+            리뷰 작성
+          </button>
+        </div>
+      )}
 
       {/* 구매 히스토리 */}
       <div style={{ padding: '16px 16px 0' }}>
