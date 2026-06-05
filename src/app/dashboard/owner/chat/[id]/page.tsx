@@ -107,6 +107,7 @@ export default function OwnerChatRoomPage() {
   const [showGradePopup, setShowGradePopup] = useState(false)
   const [customerGrade, setCustomerGrade] = useState<string>('PETAL')
   const [customerTotalPurchase, setCustomerTotalPurchase] = useState<number>(0)
+  const [externalHistory, setExternalHistory] = useState<any[]>([])
   const [customerSkinInfo, setCustomerSkinInfo] = useState<{
     skin_type: string | null
     skin_concerns: string[]
@@ -268,6 +269,19 @@ export default function OwnerChatRoomPage() {
       if (!cancelled && orderData) {
         const total = orderData.reduce((sum, o) => sum + (o.final_amount || 0), 0)
         setCustomerTotalPurchase(total)
+        const { data: extCust } = await supabase
+          .from('external_customers')
+          .select('id,total_amount,visit_count')
+          .eq('auran_user_id', customerUserId)
+          .maybeSingle()
+        if ((extCust as any)?.id) {
+          const { data: extCards } = await supabase
+            .from('external_care_cards_v2')
+            .select('id,products,total_amount,delivery_type,shipped_at,am_routine,pm_routine,tip,created_at')
+            .eq('customer_id', (extCust as any).id)
+            .order('created_at', { ascending: false })
+          if (!cancelled) setExternalHistory(extCards || [])
+        }
       }
     })()
     return () => {
@@ -2465,6 +2479,27 @@ export default function OwnerChatRoomPage() {
                         {c}
                       </span>
                     ))}
+                  </div>
+                </div>
+              )}
+              {externalHistory.length > 0 && (
+                <div style={{ marginTop: 12, paddingTop: 12, borderTop: '0.5px solid rgba(255,255,255,0.07)' }}>
+                  <div style={{ fontSize: 10, letterSpacing: '.12em', color: '#C9A96E', marginBottom: 8 }}>✦ AURAN 합류 전 구매</div>
+                  {externalHistory.map((h: any, i: number) => (
+                    <div key={h.id} style={{ padding: '8px 10px', background: 'rgba(201,169,110,0.05)', border: '0.5px solid rgba(201,169,110,0.15)', borderRadius: 8, marginBottom: 6 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <div style={{ fontSize: 10, color: '#555' }}>{h.shipped_at ? new Date(h.shipped_at).toLocaleDateString('ko-KR') : new Date(h.created_at).toLocaleDateString('ko-KR')}</div>
+                        <div style={{ fontSize: 11, color: '#C9A96E' }}>₩{(h.total_amount || 0).toLocaleString()}</div>
+                      </div>
+                      {(h.products || []).slice(0, 2).map((p: any) => (
+                        <div key={p.id} style={{ fontSize: 10, color: '#9B7EC8', marginBottom: 1 }}>· {p.name}</div>
+                      ))}
+                      {(h.products || []).length > 2 && <div style={{ fontSize: 10, color: '#555' }}>외 {(h.products || []).length - 2}개</div>}
+                      {h.tip && <div style={{ fontSize: 10, color: '#666', marginTop: 4, borderTop: '0.5px solid rgba(255,255,255,0.05)', paddingTop: 4 }}>💜 {h.tip}</div>}
+                    </div>
+                  ))}
+                  <div style={{ fontSize: 10, color: '#555', textAlign: 'right' }}>
+                    총 {externalHistory.length}회 · ₩{externalHistory.reduce((s: number, h: any) => s + (h.total_amount || 0), 0).toLocaleString()}
                   </div>
                 </div>
               )}
