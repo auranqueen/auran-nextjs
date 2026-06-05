@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useUserProfile } from '@/hooks/useUserProfile'
+import { calcHormoneBriefing } from '@/lib/hormoneUtils'
 import { useRouter } from 'next/navigation'
 
 type ReviewFormProps = {
@@ -47,6 +48,24 @@ export function ReviewForm({ productId, onSuccess, initialReview, isStoreReview,
   const supabase = createClient()
   const router = useRouter()
   const { profile } = useUserProfile()
+  const [hormonePhase, setHormonePhase] = useState<string | null>(null)
+  const [hormoneTrack, setHormoneTrack] = useState<string | null>(null)
+  useEffect(() => {
+    const fetchHormone = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { data } = await supabase
+        .from('hormone_cycle')
+        .select('*')
+        .eq('auth_id', user.id)
+        .maybeSingle()
+      if (!data) return
+      const { phase, track } = calcHormoneBriefing(data)
+      setHormonePhase(phase)
+      setHormoneTrack(track)
+    }
+    void fetchHormone()
+  }, [])
   const [rating, setRating] = useState(0)
   const [content, setContent] = useState('')
   const [helpfulConcerns, setHelpfulConcerns] = useState<string[]>([])
@@ -195,6 +214,7 @@ export function ReviewForm({ productId, onSuccess, initialReview, isStoreReview,
             images: mergedImages,
             helpful_concerns: helpfulConcerns,
             skin_type: profile?.skin_type || null,
+            hormone_phase: hormonePhase || null,
             usage_period: selectedPeriod || null,
             effect_tags: selectedEffects.length > 0 ? selectedEffects : null,
             status: '게시',
@@ -300,6 +320,11 @@ export function ReviewForm({ productId, onSuccess, initialReview, isStoreReview,
           <div style={{ fontSize: 14, lineHeight: 1 }}>✨</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, color: '#c4a7e7' }}>{toKoreanSkinType(profile.skin_type)} 피부로 작성돼요</div>
+            {hormonePhase && hormoneTrack !== 'male' && (
+              <span style={{fontSize:11,color:'#534AB7',marginLeft:6}}>
+                · {hormonePhase}
+              </span>
+            )}
             <div style={{ fontSize: 10, color: 'rgba(196,167,231,0.5)', marginTop: 2 }}>내 피부타입이 자동 적용돼요</div>
             {Array.isArray(profile.skin_concerns) && profile.skin_concerns.length > 0 ? (
               <div style={{ fontSize: 10, color: 'rgba(196,167,231,0.4)', marginTop: 2 }}>고민: {profile.skin_concerns.join(' · ')}</div>
