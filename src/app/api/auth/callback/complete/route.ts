@@ -112,7 +112,7 @@ export async function GET(request: NextRequest) {
           user_id: newUser.id,
           amount: 10000,
           transaction_type: 'earn',
-          source_type: 'signup_gift',
+          source_type: 'signup',
           reference_id: 'signup',
         } as any)
         await adminClient.from('users')
