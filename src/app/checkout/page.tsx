@@ -254,6 +254,8 @@ function CheckoutPageInner() {
           if (end > now) unit = toNum(p.sale_price)
         } else if (p.is_groupbuy) {
           unit = toNum(p.sale_price)
+        } else if (toNum(p.sale_price) > 0 && toNum(p.sale_price) < toNum(p.retail_price)) {
+          unit = toNum(p.sale_price)
         }
         return s + unit * q
       }, 0),
@@ -270,6 +272,8 @@ function CheckoutPageInner() {
           const end = new Date(p.timesale_ends_at)
           if (end > now) unit = toNum(p.sale_price)
         } else if (p.is_groupbuy) {
+          unit = toNum(p.sale_price)
+        } else if (toNum(p.sale_price) > 0 && toNum(p.sale_price) < toNum(p.retail_price)) {
           unit = toNum(p.sale_price)
         }
         return {
