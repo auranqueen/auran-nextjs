@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
   const productIds = Array.from(productIdSet)
   const { data: products } = await client
     .from('products')
-    .select('id,name,retail_price,brand_id,earn_points,is_timesale,is_groupbuy,is_event')
+    .select('id,name,retail_price,sale_price,timesale_ends_at,brand_id,earn_points,is_timesale,is_groupbuy,is_event')
     .eq('status', 'active')
     .in('id', productIds)
   const productMap = new Map((products || []).map((p: any) => [p.id, p]))
@@ -104,7 +104,16 @@ export async function POST(req: NextRequest) {
   for (const item of validItems) {
     const product = productMap.get(item.product_id)
     if (!product) return json({ ok: false, error: 'product_not_found', product_id: item.product_id }, 400)
-    const price = Number(product.retail_price) || 0
+    const retail = Number(product.retail_price) || 0
+    const sale = Number(product.sale_price) || 0
+    const now = new Date()
+    const price = (product.is_timesale && product.timesale_ends_at && new Date(product.timesale_ends_at) > now)
+      ? sale
+      : product.is_groupbuy
+      ? sale
+      : (sale > 0 && sale < retail)
+      ? sale
+      : retail
     const subtotal = price * item.quantity
     totalAmount += subtotal
     orderItemsRows.push({
@@ -185,7 +194,7 @@ export async function POST(req: NextRequest) {
     .from('orders')
     .insert({
       customer_id: me.id,
-      status: '결제대기',
+      status: '????',
       total_amount: totalAmount,
       point_used: pointUsed,
       charge_used: chargeUsed,

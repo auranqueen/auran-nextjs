@@ -250,6 +250,8 @@ export default function CheckoutPageView({
                 } else if (p.is_groupbuy) {
                   showPromo = true
                   lineUnit = sale
+                } else if (sale > 0 && sale < retail) {
+                  lineUnit = sale
                 }
                 const lineTotal = lineUnit * lineQty
                 const retailLine = retail * lineQty
