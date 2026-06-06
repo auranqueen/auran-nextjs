@@ -246,6 +246,8 @@ export default function CheckoutPageView({
                   if (end > now) {
                     showPromo = true
                     lineUnit = sale
+                  } else if (sale > 0 && sale < retail) {
+                    lineUnit = sale
                   }
                 } else if (p.is_groupbuy) {
                   showPromo = true
