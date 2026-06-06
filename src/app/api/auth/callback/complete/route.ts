@@ -99,6 +99,35 @@ export async function GET(request: NextRequest) {
     })
     const { insertSignupWelcomeNotification } = await import('@/lib/notifications/signupWelcome')
     await insertSignupWelcomeNotification(supabase, user.id)
+    try {
+      const { tryCreateAdminClient } = await import('@/lib/supabase/admin')
+      const adminClient = tryCreateAdminClient() || supabase
+      const { data: newUser } = await adminClient
+        .from('users')
+        .select('id')
+        .eq('auth_id', user.id)
+        .maybeSingle()
+      if (newUser?.id) {
+        await adminClient.from('toast_transactions').insert({
+          user_id: newUser.id,
+          amount: 10000,
+          transaction_type: 'earn',
+          source_type: 'signup_gift',
+          reference_id: 'signup',
+        } as any)
+        await adminClient.from('users')
+          .update({ points: 10000 })
+          .eq('id', newUser.id)
+        await adminClient.from('notifications').insert({
+          user_id: newUser.id,
+          type: 'toast',
+          title: '🎁 가입 선물 10,000T가 도착했어요!',
+          body: '오랜 합류 환영해요 💜 토스트 10,000T를 드릴게요. 지갑에서 확인해보세요!',
+          link_url: '/my',
+          is_read: false,
+        } as any)
+      }
+    } catch (e) { console.error('[signup gift]', e) }
     const { sendSignupAlimtalkIfNeeded } = await import('@/lib/signup/sendSignupAlimtalk')
     await sendSignupAlimtalkIfNeeded(user.id)
   }
