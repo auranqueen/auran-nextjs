@@ -316,6 +316,7 @@ export default function MyPage() {
     postpartum: '🍼 회복 중인 피부예요 · 더 알려줄수록 맞춤 케어 시작돼요',
     male: '💪 남성 피부 분석 중 · 더 알려줄수록 딱 맞는 제품 찾아드려요',
     male_menopause: '🔥 피부 변화 감지 중 · 정보 채울수록 추천이 달라져요',
+    irregular: '🌀 생리 불규칙 · 호르몬 변화 시기예요',
   }
   const trackNameMap: Record<string, string> = {
     general: '일반 주기',
@@ -325,6 +326,7 @@ export default function MyPage() {
     postpartum: '출산 후',
     male: '남성',
     male_menopause: '남성 갱년기',
+    irregular: '생리 불규칙',
   }
   const savePeriodStartedToday = async () => {
     if (!user?.id) return false

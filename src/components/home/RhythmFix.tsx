@@ -20,7 +20,10 @@ export default function RhythmFix() {
       cycle_type: cycleType,
       ...(cycleType === 'menstrual' ? { hormone_cycle_applicable: true } :
           cycleType === 'male' ? { hormone_cycle_applicable: false } :
-          cycleType === 'menopause' && reason === 'natural' ? { hormone_cycle_applicable: false } : {}),
+          cycleType === 'menopause' ? { hormone_cycle_applicable: false } :
+          cycleType === 'pregnant' ? { hormone_cycle_applicable: false } :
+          cycleType === 'postpartum' ? { hormone_cycle_applicable: false } :
+          cycleType === 'irregular' ? { hormone_cycle_applicable: false } : {}),
     }).eq('auth_id', user.id)
     window.location.reload()
   }
@@ -60,6 +63,9 @@ export default function RhythmFix() {
           <div style={{ fontSize: 13, color: P, marginBottom: 2 }}>내 리듬 다시 고르기</div>
           <button style={btn} disabled={busy} onClick={() => apply('general', 'menstrual', null)}>여성 · 생리 주기가 있어요</button>
           <button style={btn} disabled={busy} onClick={() => setShowMenoReason(true)}>여성 · 생리 주기가 없어요</button>
+          <button style={btn} disabled={busy} onClick={() => apply('irregular', 'irregular', null)}>여성 · 생리가 불규칙해요</button>
+          <button style={btn} disabled={busy} onClick={() => apply('pregnant', 'pregnant', null)}>임신 중이에요 🤰</button>
+          <button style={btn} disabled={busy} onClick={() => apply('postpartum', 'postpartum', null)}>출산·수유 중이에요 🤱</button>
           <button style={btn} disabled={busy} onClick={() => apply('male', 'male', null)}>남성</button>
           <span onClick={() => { if (!busy) report() }} style={{ fontSize: 12, color: P, cursor: 'pointer', textAlign: 'center', marginTop: 8 }}>그래도 안 맞으면 · 본사에 알리기</span>
           <span onClick={() => setOpen(false)} style={sub}>닫기</span>
