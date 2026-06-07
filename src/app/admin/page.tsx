@@ -164,54 +164,54 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 9, padding: '9px 15px', textAlign: 'center' }}>
+          <a href="/admin/orders" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 9, padding: '9px 15px', textAlign: 'center', textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: 'var(--blue)' }}>{totalOrders || 0}</div>
             <div style={{ fontSize: 9, color: 'var(--text3)' }}>전체 주문</div>
-          </div>
-          <div style={{ background: 'rgba(217,79,79,.08)', border: '1px solid rgba(217,79,79,.2)', borderRadius: 9, padding: '9px 15px', textAlign: 'center' }}>
+          </a>
+          <a href="/admin/shipping" style={{ background: 'rgba(217,79,79,.08)', border: '1px solid rgba(217,79,79,.2)', borderRadius: 9, padding: '9px 15px', textAlign: 'center', textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: 'var(--red)' }}>{pendingShip}</div>
             <div style={{ fontSize: 9, color: 'var(--text3)' }}>발송 대기</div>
-          </div>
-          <div style={{ background: 'rgba(201,168,76,.07)', border: '1px solid rgba(201,168,76,.18)', borderRadius: 9, padding: '9px 15px', textAlign: 'center' }}>
+          </a>
+          <a href="/admin/settlement" style={{ background: 'rgba(201,168,76,.07)', border: '1px solid rgba(201,168,76,.18)', borderRadius: 9, padding: '9px 15px', textAlign: 'center', textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: 'var(--gold)' }}>{pendingSettle}</div>
             <div style={{ fontSize: 9, color: 'var(--text3)' }}>정산 대기</div>
-          </div>
+          </a>
         </div>
       </div>
 
       <div className="sg sg-4">
-        <div className="sc">
+        <a href="/admin/customers" className="sc" style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
           <div className="lbl">💧 고객</div>
           <div className="val" style={{ color: 'var(--gold)' }}>
             {(customerCount || 0).toLocaleString()}
             <span style={{ fontSize: 13, color: 'var(--text3)' }}>명</span>
           </div>
           <div className="sub dim">role=customer</div>
-        </div>
-        <div className="sc">
+        </a>
+        <a href="/admin/partners" className="sc" style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
           <div className="lbl">💼 파트너스</div>
           <div className="val" style={{ color: 'var(--blue)' }}>
             {(partnerCount || 0).toLocaleString()}
             <span style={{ fontSize: 13, color: 'var(--text3)' }}>명</span>
           </div>
           <div className="sub dim">role=partner</div>
-        </div>
-        <div className="sc">
+        </a>
+        <a href="/admin/owners" className="sc" style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
           <div className="lbl">🏥 원장님</div>
           <div className="val" style={{ color: 'var(--pink)' }}>
             {(ownerCount || 0).toLocaleString()}
             <span style={{ fontSize: 13, color: 'var(--text3)' }}>개</span>
           </div>
           <div className="sub dim">role=owner</div>
-        </div>
-        <div className="sc">
+        </a>
+        <a href="/admin/brands" className="sc" style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
           <div className="lbl">🏭 브랜드사</div>
           <div className="val" style={{ color: 'var(--green)' }}>
             {(brandCount || 0).toLocaleString()}
             <span style={{ fontSize: 13, color: 'var(--text3)' }}>개</span>
           </div>
           <div className="sub dim">role=brand</div>
-        </div>
+        </a>
       </div>
 
       <div style={{ margin: '18px 0 12px', fontSize: 11, color: 'var(--text3)', letterSpacing: '.08em' }}>오늘 · 고객 행동 / 피부 사이클 (실시간)</div>
