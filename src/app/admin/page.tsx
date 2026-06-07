@@ -180,7 +180,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
       </div>
 
       <div className="sg sg-4">
-        <a href="/admin/customers" className="sc" style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
+        <a href="/admin/members?role=customer" className="sc" style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
           <div className="lbl">💧 고객</div>
           <div className="val" style={{ color: 'var(--gold)' }}>
             {(customerCount || 0).toLocaleString()}
@@ -188,7 +188,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
           </div>
           <div className="sub dim">role=customer</div>
         </a>
-        <a href="/admin/partners" className="sc" style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
+        <a href="/admin/members?role=partner" className="sc" style={{ textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
           <div className="lbl">💼 파트너스</div>
           <div className="val" style={{ color: 'var(--blue)' }}>
             {(partnerCount || 0).toLocaleString()}
