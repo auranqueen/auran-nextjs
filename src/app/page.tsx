@@ -1322,6 +1322,12 @@ export default function CustomerHomePage() {
             return !(p.concern_tags ?? []).includes(rule.rule_value)
           }
         }
+        if (rule.condition_type === 'track' && rule.condition_value === hormoneTrack) {
+          if (rule.rule_type === 'exclude_ingredient') {
+            const ingredients = (p.ingredients ?? '').toLowerCase()
+            return !ingredients.includes(rule.rule_value)
+          }
+        }
         return true
       })
     }
