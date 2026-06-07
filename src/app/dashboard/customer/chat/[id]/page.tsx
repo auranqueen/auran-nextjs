@@ -289,17 +289,21 @@ export default function CustomerChatRoomPage() {
   useEffect(() => {
     if (!internalUserId) return
     supabase
+      .from('users')
+      .select('points')
+      .eq('id', internalUserId)
+      .maybeSingle()
+      .then(({ data: uRow }) => {
+        if (uRow) setToastBalance(Number(uRow.points || 0))
+      })
+    supabase
       .from('toast_transactions')
       .select('id, amount, transaction_type, source_type, created_at')
       .eq('user_id', internalUserId)
       .order('created_at', { ascending: false })
-      .limit(10)
+      .limit(20)
       .then(({ data }) => {
-        if (data) {
-          const total = data.reduce((sum, t) => sum + (t.amount || 0), 0)
-          setToastBalance(total)
-          setToastHistory(data)
-        }
+        if (data) setToastHistory(data)
       })
     supabase
       .from('user_coupons')
@@ -2389,7 +2393,7 @@ export default function CustomerChatRoomPage() {
                   <span style={{ fontSize: 13, marginLeft: 4 }}>T</span>
                 </div>
                 <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-                  = ₩{(toastBalance * 100).toLocaleString()}
+                  = ₩{toastBalance.toLocaleString()}
                 </div>
               </div>
             )}
