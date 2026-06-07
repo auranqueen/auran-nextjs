@@ -37,12 +37,15 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
   // 이달 매출
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+  const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
+  const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
   const kstYmd = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
   const dayStartIso = new Date(`${kstYmd}T00:00:00+09:00`).toISOString()
   const insight = searchParams?.insight || ''
 
   const [
     { data: monthlyOrders },
+    { data: prevMonthOrders },
     { data: skinToday },
     { data: behClicks },
     { data: behPurch },
@@ -51,6 +54,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
     { count: pendingPromote },
   ] = await Promise.all([
     supabase.from('orders').select('final_amount').gte('ordered_at', monthStart).not('status', 'in', '("취소","환불")'),
+    supabase.from('orders').select('final_amount').gte('ordered_at', prevMonthStart).lt('ordered_at', prevMonthEnd).not('status', 'in', '("취소","환불")'),
     supabase
       .from('skin_cycle_analysis')
       .select('auth_id, checkin_condition, hormone_stage')
@@ -73,6 +77,8 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
   ])
 
   const monthlyRevenue = (monthlyOrders || []).reduce((s, o) => s + (o.final_amount || 0), 0)
+  const prevMonthRevenue = (prevMonthOrders || []).reduce((s, o) => s + (o.final_amount || 0), 0)
+  const revenueDiff = prevMonthRevenue > 0 ? Math.round(((monthlyRevenue - prevMonthRevenue) / prevMonthRevenue) * 100) : null
   const checkinTodayUsers = new Set((skinToday || []).map((r: any) => String(r.auth_id || '')).filter(Boolean)).size
   const goldenTodayUsers = new Set(
     (skinToday || [])
@@ -162,6 +168,11 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
           <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 32, fontWeight: 700, color: 'var(--gold2)' }}>
             {fmtMoney(monthlyRevenue).replace('₩', '₩')}
           </div>
+          {revenueDiff !== null && (
+            <div style={{ fontSize: 11, color: revenueDiff >= 0 ? 'var(--green)' : 'var(--red)', marginTop: 2 }}>
+              {revenueDiff >= 0 ? '▲' : '▼'} 전월 대비 {Math.abs(revenueDiff)}%
+            </div>
+          )}
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <a href="/admin/orders" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 9, padding: '9px 15px', textAlign: 'center', textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
