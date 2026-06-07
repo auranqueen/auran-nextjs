@@ -546,6 +546,7 @@ export default function ProductDetailModal({
   "ingredient_tags": [],
   "medical_tags": [],
   "weather_tags": [],
+  "age_tag": [],
   "reason": ""
 }
 
@@ -558,6 +559,7 @@ situation_tags: 여드름·뾰루지|피지·모공|좁쌀|가려움|벌레물�
 ingredient_tags: 비건|크루얼티프리|무향|무색소|천연·유기농|EWG그린|임산부안전|스테로이드프리|파라벤프리|레티놀함유|AHA함유|BHA함유|나이아신아마이드|세라마이드|히알루론산|펩타이드
 medical_tags: 아토피|건선|지루성피부염|로사세아|색소침착|흉터케어|보톡스후|필러후|레이저후|박피후|항암중
 weather_tags: 자외선높음|자외선매우높음|미세먼지나쁨|황사|건조한날|일교차큼|고온다습|전천후
+age_tag: 10대|20대|30대|40대|50대이상|전연령
 reason: 태그 선정 이유 한 줄
 
 주의:
@@ -590,7 +592,13 @@ gender_tag: '남성'
 공용 제품:
 위 조건 해당 없으면
 hormone_tags에 '갱년기'·'남성' 넣지 마
-해당 단계 없으면 '전연령' 추가`
+해당 단계 없으면 '전연령' 추가
+age_tag 기준:
+- 여드름·트러블케어·살리실산·징크 → '10대' 포함
+- 탄력·주름·펩타이드·콜라겐 → '40대','50대이상' 포함
+- 갱년기 성분(위 기준) → '50대이상' 포함
+- 데오도란트·체취케어·situation_tags에 체취케어 → age_tag '50대이상' + gender_tag '남성' or '공용' 검토
+- 특정 연령 타겟 없으면 '전연령' 추가`
 
       const res = await fetch('/api/analyze-ingredients', {
         method: 'POST',
@@ -614,6 +622,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         ingredient_tags: result.ingredient_tags?.length ? result.ingredient_tags : f.ingredient_tags,
         medical_tags: result.medical_tags?.length ? result.medical_tags : f.medical_tags,
         weather_tags: result.weather_tags?.length ? result.weather_tags : f.weather_tags,
+        age_tag: result.age_tag?.length ? result.age_tag : f.age_tag,
         ai_tag_status: 'ai_suggested',
         // [AI 초안] owner_analysis → owner_comment 자동 채움 (원장이 이후 수정 가능)
         owner_comment: result.owner_analysis || f.owner_comment,
