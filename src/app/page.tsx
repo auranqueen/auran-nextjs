@@ -946,9 +946,15 @@ export default function CustomerHomePage() {
         restrictExclusiveCatalog = true
       }
       try {
-        // 미완성 한글(자음/모음만) 필터 — 완성된 글자 없으면 저장 안 함
-        const hasCompleteChar = /[가-힣a-zA-Z0-9]/.test(keyword)
-        if (!hasCompleteChar || keyword.trim().length < 2) return
+        // 검색어 유효성 검사
+        // 1. 완성된 한글(가-힣) 또는 영문+숫자만 허용 (자음/모음, 특수문자 제외)
+        // 2. 한글 포함 시 최소 2글자, 영문만 있을 시 최소 3글자
+        const trimmed = keyword.trim()
+        const hasKorean = /[가-힣]/.test(trimmed)
+        const isOnlyEnglish = /^[a-zA-Z0-9\s]+$/.test(trimmed)
+        const isValid = /^[가-힣a-zA-Z0-9\s]+$/.test(trimmed) &&
+          (hasKorean ? trimmed.length >= 2 : isOnlyEnglish && trimmed.replace(/\s/g, '').length >= 3)
+        if (!isValid) return
         const kw = keyword.slice(0, 100)
         const { data: one } = await supabase
           .from('customer_search_logs')
