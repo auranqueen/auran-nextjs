@@ -946,6 +946,9 @@ export default function CustomerHomePage() {
         restrictExclusiveCatalog = true
       }
       try {
+        // 미완성 한글(자음/모음만) 필터 — 완성된 글자 없으면 저장 안 함
+        const hasCompleteChar = /[가-힣a-zA-Z0-9]/.test(keyword)
+        if (!hasCompleteChar || keyword.trim().length < 2) return
         const kw = keyword.slice(0, 100)
         const { data: one } = await supabase
           .from('customer_search_logs')
