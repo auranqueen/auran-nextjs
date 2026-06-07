@@ -501,7 +501,7 @@ export default function CustomerHomePage() {
     if (!user) return
 
     const [profileRes, hcRes, tipRes, rulesRes] = await Promise.all([
-      supabase.from('profiles').select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at, roles, active_role, onboarding_done, onboarding_step, avatar_url, gender, hormone_cycle_applicable').eq('auth_id', user.id).maybeSingle(),
+      supabase.from('profiles').select('skin_type, skin_concerns, menstrual_cycle, body_status, stress_level, exercise_frequency, full_name, grade, cycle_type, created_at, roles, active_role, onboarding_done, onboarding_step, avatar_url, gender, hormone_cycle_applicable, birth_date').eq('auth_id', user.id).maybeSingle(),
       supabase.from('hormone_cycle').select('*').eq('auth_id', user.id).maybeSingle(),
       supabase.from('help_tooltips').select('title,content,is_active').eq('key', 'period_start').maybeSingle(),
       supabase.from('safety_rules').select('condition_type, condition_value, rule_type, rule_value').eq('is_active', true),
@@ -1341,6 +1341,32 @@ export default function CustomerHomePage() {
       ) return false
       return true
     })
+    // gender 필터
+    const userGender = (motivationProfile as any)?.gender ?? ''
+    if (userGender === 'male') {
+      const g = skinRecPool.filter((p: any) => {
+        const gt = String(p.gender_tag ?? '공용')
+        return gt === '남성' || gt === '공용' || gt === ''
+      })
+      if (g.length > 0) skinRecPool = g
+    } else if (userGender === 'female') {
+      const g = skinRecPool.filter((p: any) => {
+        const gt = String(p.gender_tag ?? '공용')
+        return gt === '여성' || gt === '공용' || gt === ''
+      })
+      if (g.length > 0) skinRecPool = g
+    }
+    // age 점수 가산
+    const birthDate = (motivationProfile as any)?.birth_date
+    if (birthDate) {
+      const age = new Date().getFullYear() - new Date(birthDate).getFullYear()
+      const ageTag = age < 20 ? '10대' : age < 30 ? '20대' : age < 40 ? '30대' : age < 50 ? '40대' : '50대이상'
+      skinRecPool = skinRecPool.map((p: any) => {
+        const tags: string[] = Array.isArray(p.age_tag) ? p.age_tag : []
+        const bonus = tags.includes(ageTag) || tags.includes('전연령') ? 2 : 0
+        return { ...p, _score: (p._score ?? 0) + bonus }
+      }).sort((a: any, b: any) => (b._score ?? 0) - (a._score ?? 0))
+    }
     if (hormoneTrack && skinRecPool.length > 0) {
       const filteredByTrack = skinRecPool.filter((p: any) => {
         const arr = Array.isArray(p?.categories?.target_tracks) ? p.categories.target_tracks.map((x: any) => String(x)) : []
