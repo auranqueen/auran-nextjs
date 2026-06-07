@@ -62,12 +62,14 @@ function parseRecommendItems(m: MsgRow): RecommendItem[] {
   }
 }
 
-function toastLabel(type: string, _source: string) {
-  if (type === 'gift') return '🍓 원장님 딸기잼 선물'
-  if (type === 'review') return '⭐ 리뷰 작성'
-  if (type === 'attendance') return '🧈 출석 체크인'
-  if (type === 'purchase') return '🛒 구매 적립'
-  if (type === 'signup') return '🎁 가입 환영'
+function toastLabel(type: string, source: string) {
+  if (source === 'signup') return '🎁 가입 환영'
+  if (source === 'attendance') return '🧈 출석 체크인'
+  if (source === 'review') return '⭐ 리뷰 작성'
+  if (source === 'purchase') return '🛒 구매 적립'
+  if (source === 'gift') return '🍓 딸기잼 선물'
+  if (source === 'referral') return '🍓 추천인 적립'
+  if (type === 'spend') return '🛍 토스트 사용'
   return '🍞 토스트 적립'
 }
 

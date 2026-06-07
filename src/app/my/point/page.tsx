@@ -4,6 +4,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
+function toastLabel(type: string, source: string) {
+  if (source === 'signup') return '🎁 가입 환영'
+  if (source === 'attendance') return '🧈 출석 체크인'
+  if (source === 'review') return '⭐ 리뷰 작성'
+  if (source === 'purchase') return '🛒 구매 적립'
+  if (source === 'gift') return '🍓 딸기잼 선물'
+  if (source === 'referral') return '🍓 추천인 적립'
+  if (type === 'spend') return '🛍 토스트 사용'
+  return '🍞 토스트 적립'
+}
+
 const BG = '#0D0B09'
 const GOLD = '#C9A96E'
 const CARD_BG = 'rgba(255,255,255,0.03)'
@@ -13,8 +24,8 @@ const TEXT_MUTED = 'rgba(255,255,255,0.5)'
 type TransactionRow = {
   id: string
   amount: number
-  type: string | null
-  description: string | null
+  transaction_type: string | null
+  source_type: string | null
   created_at: string
 }
 
@@ -44,8 +55,8 @@ export default function MyPointPage() {
       setChargeBalance(Number(userRow?.charge_balance || 0))
 
       const { data: txData } = await supabase
-        .from('point_transactions')
-        .select('id, amount, type, description, created_at')
+        .from('toast_transactions')
+        .select('id, amount, transaction_type, source_type, created_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(50)
@@ -71,10 +82,10 @@ export default function MyPointPage() {
       setChargeUseRows(orderData || [])
 
       const { data: expireRows } = await supabase
-        .from('point_transactions')
+        .from('toast_transactions')
         .select('amount, type, description, created_at')
         .eq('user_id', user.id)
-        .or('type.eq.expire,description.ilike.%소멸%')
+        .eq('source_type', 'expire')
       const expiringAmount = ((expireRows as { amount: number }[] | null) || []).reduce((sum, r) => sum + Math.abs(Number(r.amount || 0)), 0)
       setExpiringPoints(expiringAmount)
 
@@ -85,10 +96,10 @@ export default function MyPointPage() {
   const filteredRows = useMemo(() => {
     const pointEarn = rows
       .filter((r) => Number(r.amount) > 0)
-      .map((r) => ({ icon: '🍞', desc: (r.description || '토스트 적립').replace(/포인트/g, '토스트'), amountText: `+${Math.abs(Number(r.amount)).toLocaleString()}T`, amountColor: '#6dba6d', created_at: r.created_at }))
+      .map((r) => ({ icon: '🍞', desc: toastLabel(r.transaction_type || '', r.source_type || ''), amountText: `+${Math.abs(Number(r.amount)).toLocaleString()}T`, amountColor: '#6dba6d', created_at: r.created_at }))
     const pointSpend = rows
       .filter((r) => Number(r.amount) < 0)
-      .map((r) => ({ icon: '🍞', desc: '토스트 사용', amountText: `-${Math.abs(Number(r.amount)).toLocaleString()}T`, amountColor: 'rgba(220,80,80,0.8)', created_at: r.created_at }))
+      .map((r) => ({ icon: '🍞', desc: toastLabel(r.transaction_type || '', r.source_type || ''), amountText: `-${Math.abs(Number(r.amount)).toLocaleString()}T`, amountColor: 'rgba(220,80,80,0.8)', created_at: r.created_at }))
     const chargeEarn = chargeRows
       .map((r: any) => ({ icon: '💳', desc: 'AURAN PAY 충전', amountText: `+₩${Math.abs(Number(r.amount || 0)).toLocaleString()}`, amountColor: '#9b7ec8', created_at: r.created_at }))
     const chargeSpend = chargeUseRows
