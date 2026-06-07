@@ -66,7 +66,9 @@ function OnboardingInner() {
       localStorage.setItem('auran_onboarding_done', 'true')
 
       const appUrl = 'https://www.auran.kr'
-      const callbackQuery = `?role=${role}`
+      const marketing = params.get('marketing') || 'false'
+      const research = params.get('research') || 'false'
+      const callbackQuery = `?role=${role}&marketing=${marketing}&research=${research}`
 
       if (provider === 'kakao') {
         await supabase.auth.signInWithOAuth({

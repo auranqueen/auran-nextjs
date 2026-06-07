@@ -13,7 +13,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
   }
 
-  const position = request.nextUrl.searchParams.get('position') || 'customer'
+  const searchParams = request.nextUrl.searchParams
+  const position = searchParams.get('position') || 'customer'
 
   const { data: existing } = await supabase
     .from('users')
@@ -65,6 +66,9 @@ export async function GET(request: NextRequest) {
       status,
       points: 0,
       charge_balance: 0,
+      marketing_agreed: searchParams.get('marketing') === 'true',
+      marketing_agreed_at: searchParams.get('marketing') === 'true' ? new Date().toISOString() : null,
+      research_consent: searchParams.get('research') === 'true',
     }
     const up = await supabase.from('users').upsert(basePayload, { onConflict: 'auth_id' })
     if (up.error) {

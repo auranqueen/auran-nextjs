@@ -85,6 +85,8 @@ export async function GET(request: NextRequest) {
   var q = new URLSearchParams(window.location.search);
   var role = q.get('role') || 'customer';
   var redirect = q.get('redirect') || '';
+  var marketing = q.get('marketing') || 'false';
+  var research = q.get('research') || 'false';
   var origin = window.location.origin || ${JSON.stringify(origin)};
   var supabaseUrl = ${JSON.stringify(supabaseUrl)};
   var supabaseKey = ${JSON.stringify(supabaseAnon)};
@@ -104,6 +106,8 @@ export async function GET(request: NextRequest) {
   supabase.auth.setSession({ access_token: access_token, refresh_token: refresh_token })
     .then(function() {
       var qs = '?position=' + encodeURIComponent(role);
+      qs += '&marketing=' + encodeURIComponent(marketing);
+      qs += '&research=' + encodeURIComponent(research);
       if (redirect && redirect.charAt(0) === '/') {
         qs += '&redirect=' + encodeURIComponent(redirect);
       }

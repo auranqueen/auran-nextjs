@@ -85,7 +85,7 @@ function ConsentInner() {
       const callbackQuery = `?role=${role}`
 
       // 온보딩 페이지로 이동 (provider 전달)
-      router.push(`/signup/onboarding?provider=${finalProvider}&role=${role}`)
+      router.push(`/signup/onboarding?provider=${finalProvider}&role=${role}&marketing=${consent.marketing ? 'true' : 'false'}&research=${consent.research ? 'true' : 'false'}`)
     } catch {
       setError('오류가 발생했습니다. 다시 시도해주세요.')
     } finally {
