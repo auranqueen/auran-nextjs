@@ -13,6 +13,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
     { count: totalUsers },
     { count: totalOrders },
     { data: pendingOrders },
+    { count: pendingDepositCount },
     { data: pendingSettlements },
     { data: recentLogs },
     { data: recentMembers },
@@ -21,6 +22,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
     supabase.from('users').select('*', { count: 'exact', head: true }),
     supabase.from('orders').select('*', { count: 'exact', head: true }),
     supabase.from('orders').select('id,order_no,status,total_amount,earn_points,points_awarded,tracking_no,courier,ordered_at,customer_id').in('status', ['주문확인', '발송준비']).order('ordered_at').limit(10),
+    supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', '입금대기'),
     supabase.from('settlements').select('id,target_name,amount,net_amount,status,target_role,period_start,period_end').eq('status', '정산대기').order('created_at', { ascending: false }).limit(10),
     supabase.from('login_logs').select('*').order('created_at', { ascending: false }).limit(10),
     supabase.from('users').select('id,name,email,role,status,points,created_at,last_login_at').order('created_at', { ascending: false }).limit(8),
@@ -178,6 +180,10 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
           <a href="/admin/orders" style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 9, padding: '9px 15px', textAlign: 'center', textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: 'var(--blue)' }}>{totalOrders || 0}</div>
             <div style={{ fontSize: 9, color: 'var(--text3)' }}>전체 주문</div>
+          </a>
+          <a href="/admin/orders" style={{ background: 'rgba(255,180,0,.08)', border: '1px solid rgba(255,180,0,.25)', borderRadius: 9, padding: '9px 15px', textAlign: 'center', textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: 'var(--gold)' }}>{pendingDepositCount ?? 0}</div>
+            <div style={{ fontSize: 9, color: 'var(--text3)' }}>입금 대기</div>
           </a>
           <a href="/admin/shipping" style={{ background: 'rgba(217,79,79,.08)', border: '1px solid rgba(217,79,79,.2)', borderRadius: 9, padding: '9px 15px', textAlign: 'center', textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: 'var(--red)' }}>{pendingShip}</div>
