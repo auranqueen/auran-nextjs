@@ -136,7 +136,7 @@ function SignupForm() {
           await supabase.from('hormone_cycle').upsert(payload, { onConflict: 'auth_id' })
           if (cycleType) {
             await supabase.from('profiles').upsert(
-              { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: localStorage.getItem('auran_research_consent') === 'true', birth_date: localStorage.getItem('auran_birth_date') || null, gender: localStorage.getItem('auran_gender') || null, skin_type: localStorage.getItem('auran_skin_type') || null } as any,
+              { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: localStorage.getItem('auran_research_consent') === 'true', marketing_agreed: localStorage.getItem('auran_marketing_consent') === 'true', birth_date: localStorage.getItem('auran_birth_date') || null, gender: localStorage.getItem('auran_gender') || null, skin_type: localStorage.getItem('auran_skin_type') || null } as any,
               { onConflict: 'auth_id' }
             )
           }
@@ -237,7 +237,7 @@ function SignupForm() {
         }
         if (cycleType) {
           await supabase.from('profiles').upsert(
-            { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: localStorage.getItem('auran_research_consent') === 'true', birth_date: localStorage.getItem('auran_birth_date') || null, gender: localStorage.getItem('auran_gender') || null, skin_type: localStorage.getItem('auran_skin_type') || null } as any,
+            { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: localStorage.getItem('auran_research_consent') === 'true', marketing_agreed: localStorage.getItem('auran_marketing_consent') === 'true', birth_date: localStorage.getItem('auran_birth_date') || null, gender: localStorage.getItem('auran_gender') || null, skin_type: localStorage.getItem('auran_skin_type') || null } as any,
             { onConflict: 'auth_id' }
           )
         }
