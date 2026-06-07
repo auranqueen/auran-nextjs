@@ -800,7 +800,10 @@ export async function POST(req: NextRequest) {
           .update({
             payment_status: 'paid',
             payment_applied: true,
-            status: '주문확인',
+            status: (() => {
+              const pt = String(data.pay_type ?? data.paymethod ?? '')
+              return pt === '3' ? '발송준비' : '주문확인'
+            })(),
             payment_method: (() => {
               const pt = String(data.pay_type ?? data.paymethod ?? '')
               const cardName = String(data.card_name ?? '').trim()
