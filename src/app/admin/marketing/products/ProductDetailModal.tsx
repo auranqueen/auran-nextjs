@@ -170,6 +170,7 @@ export default function ProductDetailModal({
     step_tags: [],
     func_tags: [],
     hormone_tags: [],
+    age_tag: [],
     weather_tags: [],
     season_tags: [],
     gender_tag: '',
@@ -283,6 +284,7 @@ export default function ProductDetailModal({
       step_tags: strArr(product.step_tags),
       func_tags: strArr(product.func_tags),
       hormone_tags: strArr(product.hormone_tags),
+      age_tag: strArr((product as any).age_tag),
       weather_tags: strArr(product.weather_tags),
       season_tags: strArr(product.season_tags),
       gender_tag: String(product.gender_tag ?? ''),
@@ -656,6 +658,7 @@ age_tag 기준:
         medical_tags: tagForm.medical_tags || [],
         skin_types: tagForm.skin_types?.length ? tagForm.skin_types : null,
         ai_tag_status: 'approved',
+        age_tag: tagForm.age_tag || [],
         // [원장 코멘트] products.owner_comment 컬럼에 저장
         owner_comment: tagForm.owner_comment,
       })
@@ -2531,6 +2534,11 @@ age_tag 기준:
                     label: '피부타입',
                     key: 'skin_types',
                     options: ['건성', '지성', '복합성', '민감성', '중성', '모든피부'],
+                  },
+                  {
+                    label: '연령대',
+                    key: 'age_tag',
+                    options: ['10대', '20대', '30대', '40대', '50대이상', '전연령'],
                   },
                   {
                     label: '날씨',
