@@ -675,7 +675,7 @@ export default function CustomerHomePage() {
         })
       } catch { /* 테이블 없음 등 */ }
       const selFull =
-        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive, step_tags, hormone_timing, concern_tags, skin_tags'
+        'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive, step_tags, hormone_timing, concern_tags, skin_tags,gender_tag,age_tag'
       const selNoCat =
         'id, name, retail_price, sale_price, is_timesale, thumb_img, storage_thumb_url, tag, category_id, quiz_match, routine_category, brands(name), is_exclusive, step_tags'
 
