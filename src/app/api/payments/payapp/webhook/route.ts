@@ -98,6 +98,19 @@ export async function POST(req: NextRequest) {
     return new NextResponse('SUCCESS', { status: 200 })
   }
 
+  // pay_state=10: 가상계좌 입금대기
+  if (payState === '10' || (payState as string | number) === 10) {
+    const client = tryCreateServiceClient() || supabase
+    if (intent.kind === 'order' && intent.target_id) {
+      await client
+        .from('orders')
+        .update({ status: '입금대기', payment_status: 'pending' })
+        .eq('id', intent.target_id)
+        .eq('payment_applied', false)
+    }
+    return new NextResponse('SUCCESS', { status: 200 })
+  }
+
   // PayApp pay_state: 4=paid, 9/64=cancel, 8/16/31=request cancel, 10=pending
   if (payState === '4' || (payState as string | number) === 4) {
     if (intent.status !== 'paid') {
@@ -468,7 +481,10 @@ export async function POST(req: NextRequest) {
             .from('orders')
             .update({
               payment_applied: true,
-              status: '주문확인',
+              status: (() => {
+                const pt = String(data.pay_type ?? data.paymethod ?? '')
+                return pt === '3' ? '발송준비' : '주문확인'
+              })(),
               payment_status: 'paid',
               payment_method: (() => {
                 const pt = String(data.pay_type ?? data.paymethod ?? '')
