@@ -558,6 +558,11 @@ export default function OwnerChatRoomPage() {
                       customer_name: names[String(c.user_id ?? '')] || c.title || '고객',
                     }))
                   )
+                  const cur = (data ?? []).find((c: any) => String(c.id) === channelId)
+                  if (cur?.user_id) {
+                    const nm = names[String(cur.user_id)]
+                    if (nm) setChannelTitle(nm)
+                  }
                 })
                 .catch(() => {})
             }
