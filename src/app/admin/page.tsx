@@ -132,12 +132,27 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
 
-  let insightRows: { title: string; rows: any[] } | null = null
-  if (insight === 'checkin_today') insightRows = { title: '오늘 체크인 기록', rows: skinToday || [] }
+  let insightRows: { title: string; rows: any[]; columns?: { key: string; label: string }[] } | null = null
+  if (insight === 'checkin_today') insightRows = {
+    title: '오늘 체크인 기록',
+    rows: skinToday || [],
+    columns: [
+      { key: 'auth_id', label: '고객ID' },
+      { key: 'checkin_condition', label: '체크인 상태' },
+      { key: 'hormone_stage', label: '호르몬 단계' },
+      { key: 'record_date', label: '날짜' },
+    ]
+  }
   else if (insight === 'golden_today')
     insightRows = {
       title: '오늘 황금기 기록',
       rows: (skinToday || []).filter((r: any) => String(r.hormone_stage || '').includes('여포')),
+      columns: [
+        { key: 'auth_id', label: '고객ID' },
+        { key: 'checkin_condition', label: '체크인 상태' },
+        { key: 'hormone_stage', label: '호르몬 단계' },
+        { key: 'record_date', label: '날짜' },
+      ]
     }
   else if (insight === 'product_clicks') {
     const { data } = await supabase
@@ -147,7 +162,11 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
       .gte('created_at', dayStartIso)
       .order('created_at', { ascending: false })
       .limit(100)
-    insightRows = { title: '오늘 상품 클릭 로그', rows: data || [] }
+    insightRows = { title: '오늘 상품 클릭 로그', rows: data || [], columns: [
+      { key: 'created_at', label: '시각' },
+      { key: 'action_type', label: '액션' },
+      { key: 'metadata', label: '상세' },
+    ]}
   } else if (insight === 'purchases_today') {
     const { data } = await supabase
       .from('user_behavior_logs')
@@ -156,8 +175,14 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
       .gte('created_at', dayStartIso)
       .order('created_at', { ascending: false })
       .limit(100)
-    insightRows = { title: '오늘 구매 관련 로그', rows: data || [] }
-  } else if (insight === 'tracks') insightRows = { title: '호르몬 트랙 (원본)', rows: hcAll || [] }
+    insightRows = { title: '오늘 구매 관련 로그', rows: data || [], columns: [
+      { key: 'created_at', label: '시각' },
+      { key: 'action_type', label: '액션' },
+      { key: 'metadata', label: '상세' },
+    ]}
+  } else if (insight === 'tracks') insightRows = { title: '호르몬 트랙 분포', rows: hcAll || [], columns: [
+    { key: 'track', label: '트랙' },
+  ]}
   else if (insight === 'search_top') insightRows = { title: '이번 달 검색어 TOP', rows: searchTop10.map(([keyword, total]) => ({ keyword, total })) }
   else if (insight === 'pending_tags') {
     const { data } = await supabase
@@ -330,9 +355,11 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
           <table>
             <thead>
               <tr>
-                {(insightRows.rows[0] && typeof insightRows.rows[0] === 'object'
-                  ? Object.keys(insightRows.rows[0])
-                  : ['value']
+                {(insightRows.columns
+                  ? insightRows.columns.map(c => c.label)
+                  : insightRows.rows[0] && typeof insightRows.rows[0] === 'object'
+                    ? Object.keys(insightRows.rows[0])
+                    : ['value']
                 ).map(k => (
                   <th key={k}>{k}</th>
                 ))}
@@ -348,8 +375,14 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
               ) : (
                 insightRows.rows.map((r, i) => (
                   <tr key={i}>
-                    {typeof r === 'object' && r !== null ? (
-                      Object.keys(insightRows.rows[0] as object).map(k => (
+                    {insightRows!.columns ? (
+                      insightRows!.columns.map(c => (
+                        <td key={c.key} className="mono" style={{ fontSize: 10, maxWidth: 220, wordBreak: 'break-all' }}>
+                          {String((r as any)[c.key] ?? '')}
+                        </td>
+                      ))
+                    ) : typeof r === 'object' && r !== null ? (
+                      Object.keys(insightRows!.rows[0] as object).map(k => (
                         <td key={k} className="mono" style={{ fontSize: 10, maxWidth: 220, wordBreak: 'break-all' }}>
                           {String((r as any)[k] ?? '')}
                         </td>
