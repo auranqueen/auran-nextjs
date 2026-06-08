@@ -929,7 +929,7 @@ export default function OwnerChatRoomPage() {
                   }}
                 >
                   <div style={{ fontSize: 13, color: isActive ? '#fff' : 'rgba(255,255,255,0.75)', marginBottom: 3, fontWeight: 500 }}>
-                    {(ch as any).customer_name || '···'}
+                    {(ch as any).customer_name || '　'}
                   </div>
                   <div
                     style={{
