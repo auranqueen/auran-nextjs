@@ -907,8 +907,20 @@ export default function CustomerHomePage() {
         if (!data) return
         const counts: Record<string, number> = {}
         data.forEach((r: any) => { if (r.search_keyword) counts[r.search_keyword] = (counts[r.search_keyword] || 0) + 1 })
-        const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([k]) => k)
-        setPopularKeywords(sorted)
+        // 3회 이상 검색된 완성어만 인기검색어로 노출
+        const sorted = Object.entries(counts)
+          .filter(([k, v]) => v >= 3 && /^[가-힣a-zA-Z0-9\s]+$/.test(k) && k.trim().length >= 2)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10)
+          .map(([k]) => k)
+        // 로그 기반 인기검색어 없으면 브랜드명으로 대체
+        if (sorted.length === 0) {
+          supabase.from('brands').select('name').limit(8).then(({ data: bData }) => {
+            if (bData) setPopularKeywords(bData.map((b: any) => b.name).filter(Boolean))
+          })
+        } else {
+          setPopularKeywords(sorted)
+        }
       })
   }, [])
 
