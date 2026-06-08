@@ -251,10 +251,28 @@ function ExternalCardsPage() {
   const dayEvent = DAY_EVENTS[selectedDayIdx]
 
   useEffect(() => {
-    if (!initName && !initProds) return
+    if (!initName && !initProds && !initOrderId) return
     // URL 파라미터로 들어온 경우 임시저장 덮어쓰지 않음
     if (initName) setCustomerName(initName)
     if (initUserId) setCustomerId(initUserId)
+    // order_id로 order_items 직접 조회 (prods URL 파라미터 실패 대비)
+    if (initOrderId && initMode === 'member') {
+      const supabase = createClient()
+      supabase
+        .from('order_items')
+        .select('product_id, product_name, product_price, quantity')
+        .eq('order_id', initOrderId)
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            setSelProds(data.map((item: any) => ({
+              id: item.product_id || item.product_name,
+              name: item.product_name || '',
+              qty: item.quantity || 1,
+              price: item.product_price || 0,
+            })))
+          }
+        })
+    }
     if (initProds) {
       try {
         const parsed = initProds.split(',').map((s: string) => {
