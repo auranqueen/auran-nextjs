@@ -377,7 +377,7 @@ export default function CustomerChatRoomPage() {
 
       const { data: ch, error: chErr } = await supabase
         .from('chat_channels')
-        .select('id,title,user_id')
+        .select('id,title,user_id,users(name)')
         .eq('id', channelId)
         .eq('user_id', uid)
         .maybeSingle()
@@ -388,7 +388,8 @@ export default function CustomerChatRoomPage() {
         setLoading(false)
         return
       }
-      setChannelTitle(String(ch.title || '상담'))
+      const userName = (ch as any).users?.name
+      setChannelTitle(userName ? `${userName}님` : String(ch.title || '상담'))
 
       await supabase.from('chat_channels').update({ unread_count: 0 }).eq('id', channelId).eq('user_id', uid)
 
