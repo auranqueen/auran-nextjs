@@ -700,7 +700,7 @@ export default function CustomerChatRoomPage() {
               textOverflow: 'ellipsis',
             }}
           >
-            {channelTitle}
+            {ownerInfo?.username ? `${ownerInfo.username}` : channelTitle}
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>

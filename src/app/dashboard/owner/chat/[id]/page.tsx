@@ -359,7 +359,7 @@ export default function OwnerChatRoomPage() {
       setOwnerUserId(uid)
 
       const [{ data: ch, error: chErr }, , { data: msgs }] = await Promise.all([
-        supabase.from('chat_channels').select('id,title,owner_memo,user_id').eq('id', channelId).maybeSingle(),
+        supabase.from('chat_channels').select('id,title,owner_memo,user_id,users(name)').eq('id', channelId).maybeSingle(),
         supabase.from('chat_channels').update({ unread_count: 0 }).eq('id', channelId),
         supabase.from('consultation_messages').select('*').eq('channel_id', channelId).order('created_at', { ascending: true }),
       ])
@@ -370,7 +370,8 @@ export default function OwnerChatRoomPage() {
         setLoading(false)
         return
       }
-      setChannelTitle(String(ch.title || '상담'))
+      const customerName = (ch as any).users?.name
+      setChannelTitle(customerName ? `${customerName}님` : String(ch.title || '상담'))
       setMemoText(String((ch as { owner_memo?: string | null }).owner_memo ?? ''))
       setCustomerUserId((ch as { user_id?: string | null }).user_id ? String((ch as { user_id: string }).user_id) : null)
 
