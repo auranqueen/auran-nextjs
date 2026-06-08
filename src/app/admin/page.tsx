@@ -16,6 +16,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
     { count: pendingDepositCount },
     { data: pendingSettlements },
     { data: recentLogs },
+    { data: activeMemberships },
     { data: recentMembers },
     { data: recentAnalysisLogs },
   ] = await Promise.all([
@@ -25,6 +26,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
     supabase.from('orders').select('*', { count: 'exact', head: true }).eq('status', '입금대기'),
     supabase.from('settlements').select('id,target_name,amount,net_amount,status,target_role,period_start,period_end').eq('status', '정산대기').order('created_at', { ascending: false }).limit(10),
     supabase.from('login_logs').select('*').order('created_at', { ascending: false }).limit(10),
+    supabase.from('user_memberships').select('id, plan_id, status, started_at, expires_at, membership_plans(name, price)').eq('status', 'active').order('started_at', { ascending: false }),
     supabase.from('users').select('id,name,email,role,status,points,created_at,last_login_at').order('created_at', { ascending: false }).limit(8),
     supabase.from('skin_analysis_logs').select('*, profiles(full_name, username, email)').order('analyzed_at', { ascending: false }).limit(5),
   ])
@@ -81,6 +83,17 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
   const monthlyRevenue = (monthlyOrders || []).reduce((s, o) => s + (o.final_amount || 0), 0)
   const prevMonthRevenue = (prevMonthOrders || []).reduce((s, o) => s + (o.final_amount || 0), 0)
   const revenueDiff = prevMonthRevenue > 0 ? Math.round(((monthlyRevenue - prevMonthRevenue) / prevMonthRevenue) * 100) : null
+  const activeMemberCount = (activeMemberships || []).length
+  const membershipRevenue = (activeMemberships || []).reduce((s: number, m: any) => {
+    const mp = Array.isArray(m.membership_plans) ? m.membership_plans[0] : m.membership_plans
+    return s + (mp?.price || 0)
+  }, 0)
+  const planDist: Record<string, number> = {}
+  for (const m of activeMemberships || []) {
+    const mp = Array.isArray((m as any).membership_plans) ? (m as any).membership_plans[0] : (m as any).membership_plans
+    const name = mp?.name || '알수없음'
+    planDist[name] = (planDist[name] || 0) + 1
+  }
   const checkinTodayUsers = new Set((skinToday || []).map((r: any) => String(r.auth_id || '')).filter(Boolean)).size
   const goldenTodayUsers = new Set(
     (skinToday || [])
@@ -414,6 +427,37 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
                 ))}
                 {(pendingSettlements || []).length === 0 ? (
                   <tr><td colSpan={3} style={{ color: 'var(--text3)' }}>정산 대기 건이 없습니다.</td></tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="card">
+            <div className="card-hdr">
+              <div className="card-title">💎 ORÆN PRIVÉ 멤버십</div>
+              <a className="btn btn-gy" href="/admin/membership/members">전체 →</a>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 11, color: 'var(--text3)' }}>활성 멤버</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 18, color: 'var(--gold)' }}>{activeMemberCount}명</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 11, color: 'var(--text3)' }}>멤버십 총액</span>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--gold2)' }}>{fmtMoney(membershipRevenue)}</span>
+              </div>
+            </div>
+            <table>
+              <thead><tr><th>플랜</th><th>인원</th></tr></thead>
+              <tbody>
+                {Object.entries(planDist).map(([plan, cnt]) => (
+                  <tr key={plan}>
+                    <td>{plan}</td>
+                    <td className="mono">{cnt as number}명</td>
+                  </tr>
+                ))}
+                {activeMemberCount === 0 ? (
+                  <tr><td colSpan={2} style={{ color: 'var(--text3)' }}>활성 멤버가 없습니다.</td></tr>
                 ) : null}
               </tbody>
             </table>
