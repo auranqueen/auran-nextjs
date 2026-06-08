@@ -378,7 +378,9 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
                     {insightRows!.columns ? (
                       insightRows!.columns.map(c => (
                         <td key={c.key} className="mono" style={{ fontSize: 10, maxWidth: 220, wordBreak: 'break-all' }}>
-                          {String((r as any)[c.key] ?? '')}
+                          {typeof (r as any)[c.key] === 'object' && (r as any)[c.key] !== null
+                            ? JSON.stringify((r as any)[c.key])
+                            : String((r as any)[c.key] ?? '')}
                         </td>
                       ))
                     ) : typeof r === 'object' && r !== null ? (
