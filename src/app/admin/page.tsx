@@ -271,7 +271,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
 
       <div style={{ margin: '18px 0 12px', fontSize: 11, color: 'var(--text3)', letterSpacing: '.08em' }}>오늘 · 고객 행동 / 피부 사이클 (실시간)</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10, marginBottom: 18 }}>
-        <a href="/admin?insight=checkin_today" className="card" style={{ padding: 12, textDecoration: 'none', color: 'inherit' }}>
+        <a href="/admin?insight=checkin_today#insight" className="card" style={{ padding: 12, textDecoration: 'none', color: 'inherit' }}>
           <div className="lbl">오늘 체크인 고객</div>
           <div className="val" style={{ color: 'var(--gold)' }}>
             {checkinTodayUsers}
@@ -279,7 +279,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
           </div>
           <div className="sub dim">skin_cycle_analysis · KST {kstYmd}</div>
         </a>
-        <a href="/admin?insight=golden_today" className="card" style={{ padding: 12, textDecoration: 'none', color: 'inherit' }}>
+        <a href="/admin?insight=golden_today#insight" className="card" style={{ padding: 12, textDecoration: 'none', color: 'inherit' }}>
           <div className="lbl">오늘 황금기 고객</div>
           <div className="val" style={{ color: 'var(--pink)' }}>
             {goldenTodayUsers}
@@ -288,7 +288,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
           <div className="sub dim">황금기 단계 기록</div>
         </a>
         <div className="card" style={{ padding: 12 }}>
-          <a href="/admin?insight=purchases_today" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <a href="/admin?insight=purchases_today#insight" style={{ textDecoration: 'none', color: 'inherit' }}>
             <div className="lbl">오늘 구매전환</div>
             <div className="val" style={{ color: 'var(--blue)' }}>
               {conversionPct}
@@ -296,14 +296,14 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
             </div>
             <div className="sub dim">구매확정 {purchaseCompleteCnt} / 클릭 {clickCnt}</div>
           </a>
-          <a className="btn btn-gy" href="/admin?insight=product_clicks" style={{ fontSize: 9, padding: '4px 8px', marginTop: 8, display: 'inline-block' }}>
+          <a className="btn btn-gy" href="/admin?insight=product_clicks#insight" style={{ fontSize: 9, padding: '4px 8px', marginTop: 8, display: 'inline-block' }}>
             클릭 로그 보기
           </a>
         </div>
         <div className="card" style={{ padding: 12 }}>
           <div className="lbl">트랙 분포</div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 6 }}>
-            <a href="/admin?insight=tracks" style={{ textDecoration: 'none' }}>
+            <a href="/admin?insight=tracks#insight" style={{ textDecoration: 'none' }}>
               <div
                 style={{
                   width: 64,
@@ -326,7 +326,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
             </div>
           </div>
         </div>
-        <a href="/admin?insight=search_top" className="card" style={{ padding: 12, textDecoration: 'none', color: 'inherit' }}>
+        <a href="/admin?insight=search_top#insight" className="card" style={{ padding: 12, textDecoration: 'none', color: 'inherit' }}>
           <div className="lbl">이번 달 검색 TOP10</div>
           <div className="val" style={{ fontSize: 13, color: 'var(--text)' }}>
             {searchTop10[0] ? `${searchTop10[0][0]} (${searchTop10[0][1]})` : '—'}
@@ -334,7 +334,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
           <div className="sub dim">customer_search_logs</div>
         </a>
         <div className="card" style={{ padding: 12 }}>
-          <a href="/admin?insight=pending_tags" style={{ textDecoration: 'none', color: 'inherit' }}>
+          <a href="/admin?insight=pending_tags#insight" style={{ textDecoration: 'none', color: 'inherit' }}>
             <div className="lbl">승격 대기 자연어</div>
             <div className="val" style={{ color: 'var(--gold)' }}>{pendingPromote ?? 0}</div>
           </a>
@@ -345,7 +345,7 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
       </div>
 
       {insightRows ? (
-        <div className="card" style={{ marginBottom: 18 }}>
+        <div id="insight" className="card" style={{ marginBottom: 18 }}>
           <div className="card-hdr">
             <div className="card-title">{insightRows.title}</div>
             <a className="btn btn-gy" href="/admin">
