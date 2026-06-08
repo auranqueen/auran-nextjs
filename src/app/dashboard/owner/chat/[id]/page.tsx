@@ -267,8 +267,18 @@ export default function OwnerChatRoomPage() {
         .eq('payment_applied', true)
         .eq('payment_status', 'paid')
       if (!cancelled && orderData) {
-        const total = orderData.reduce((sum, o) => sum + (o.final_amount || 0), 0)
-        setCustomerTotalPurchase(total)
+        const orderTotal = orderData.reduce((sum, o) => sum + (o.final_amount || 0), 0)
+        // 멤버십 결제 금액 합산
+        const { data: membershipData } = await supabase
+          .from('user_memberships')
+          .select('membership_plans(price)')
+          .eq('user_id', customerUserId)
+          .eq('status', 'active')
+        const membershipTotal = (membershipData || []).reduce((sum: number, m: any) => {
+          const price = Array.isArray(m.membership_plans) ? (m.membership_plans[0]?.price || 0) : (m.membership_plans?.price || 0)
+          return sum + price
+        }, 0)
+        setCustomerTotalPurchase(orderTotal + membershipTotal)
         const { data: extCust } = await supabase
           .from('external_customers')
           .select('id,total_amount,visit_count')
