@@ -381,6 +381,22 @@ export default function OwnerChatRoomPage() {
         return
       }
       setChannelTitle(String(ch.title || '상담'))
+      // 채널 로드 직후 고객 이름 바로 가져오기
+      if ((ch as { user_id?: string | null }).user_id) {
+        const uid = String((ch as { user_id: string }).user_id)
+        fetch('/api/chat/customer-names', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify({ userIds: [uid] }),
+        })
+          .then((r) => r.json())
+          .then(({ names }: { names: Record<string, string> }) => {
+            const nm = names[uid]
+            if (nm) setChannelTitle(nm)
+          })
+          .catch(() => {})
+      }
       setMemoText(String((ch as { owner_memo?: string | null }).owner_memo ?? ''))
       setCustomerUserId((ch as { user_id?: string | null }).user_id ? String((ch as { user_id: string }).user_id) : null)
 
