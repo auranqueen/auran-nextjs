@@ -19,7 +19,7 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
   const supabase = createClient()
   const [rows, setRows] = useState<GiftRow[]>(initialGifts)
   const [loading, setLoading] = useState(false)
-  const [tab, setTab] = useState<'address_received' | 'shipped' | 'all'>('address_received')
+  const [tab, setTab] = useState<'address_received' | 'shipped' | 'all'>('all')
   const [selected, setSelected] = useState<GiftRow | null>(null)
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('courier')
   const [courier, setCourier] = useState('CJ대한통운')

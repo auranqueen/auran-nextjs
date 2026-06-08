@@ -45,6 +45,7 @@ const MENU = [
   {
     section: 'ORÆN PRIVÉ',
     items: [
+      { label: '멤버 발송 관리', href: '/admin/membership/members', icon: '💎' },
       { label: '선물 배송 관리', href: '/admin/membership/gifts', icon: '🎁' },
     ],
   },
