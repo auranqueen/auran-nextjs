@@ -254,7 +254,35 @@ function ExternalCardsPage() {
     if (!initName && !initProds && !initOrderId) return
     // URL 파라미터로 들어온 경우 임시저장 덮어쓰지 않음
     if (initName) setCustomerName(initName)
-    if (initUserId) setCustomerId(initUserId)
+    if (initUserId) {
+      setCustomerId(initUserId)
+      // initUserId로 회원 정보 직접 조회 (이름 검색 우회)
+      const supabase2 = createClient()
+      supabase2
+        .from('users')
+        .select('id, name, full_name, phone, email, skin_type, skin_concerns, points, charge_balance')
+        .eq('auth_id', initUserId)
+        .maybeSingle()
+        .then(({ data: userData }) => {
+          if (!userData) {
+            // auth_id로 안 찾히면 id로 재시도
+            supabase2
+              .from('users')
+              .select('id, name, full_name, phone, email, skin_type, skin_concerns, points, charge_balance')
+              .eq('id', initUserId)
+              .maybeSingle()
+              .then(({ data: userData2 }) => {
+                if (userData2) {
+                  setCustomerHistory(userData2)
+                  if (!initName) setCustomerName(userData2.name || userData2.full_name || '')
+                }
+              })
+            return
+          }
+          setCustomerHistory(userData)
+          if (!initName) setCustomerName(userData.name || userData.full_name || '')
+        })
+    }
     // order_id로 order_items 직접 조회 (prods URL 파라미터 실패 대비)
     if (initOrderId && initMode === 'member') {
       const supabase = createClient()
