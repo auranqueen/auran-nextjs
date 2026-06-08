@@ -15,6 +15,8 @@ export default function CategoryPage() {
   const [rows, setRows] = useState<CatRow[]>([])
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
+  const [addingParentId, setAddingParentId] = useState<string>('none')
+  const [addingName, setAddingName] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
   const [saving, setSaving] = useState(false)
@@ -55,24 +57,34 @@ export default function CategoryPage() {
     await load()
   }
 
-  const addChild = async (parentId: string, level: number) => {
-    const name = prompt('카테고리 이름:')
-    if (!name?.trim()) return
+  const addChild = (parentId: string, _parentLevel: number) => {
+    setAddingParentId(parentId)
+    setAddingName('')
+  }
+  const confirmAddChild = async (parentId: string, parentLevel: number) => {
+    const name = addingName.trim()
+    if (!name) return
     const siblings = rows.filter(r => r.parent_id === parentId)
     const sort_order = siblings.length
     await supabase.from('categories').insert({
       name: name.trim(),
       parent_id: parentId,
-      level: level + 1,
+      level: parentLevel + 1,
       sort_order,
     })
     setExpanded(prev => ({ ...prev, [parentId]: true }))
+    setAddingParentId('none')
+    setAddingName('')
     await load()
   }
 
-  const addRoot = async () => {
-    const name = prompt('대카테고리 이름:')
-    if (!name?.trim()) return
+  const addRoot = () => {
+    setAddingParentId('root')
+    setAddingName('')
+  }
+  const confirmAddRoot = async () => {
+    const name = addingName.trim()
+    if (!name) return
     const roots = rows.filter(r => r.parent_id === null)
     await supabase.from('categories').insert({
       name: name.trim(),
@@ -80,6 +92,8 @@ export default function CategoryPage() {
       level: 1,
       sort_order: roots.length,
     })
+    setAddingParentId('none')
+    setAddingName('')
     await load()
   }
 
@@ -237,7 +251,7 @@ export default function CategoryPage() {
                 </button>
                 {row.level < 5 && (
                   <button
-                    onClick={() => void addChild(row.id, row.level)}
+                    onClick={() => addChild(row.id, row.level)}
                     style={{
                       fontSize: 11,
                       padding: '4px 8px',
@@ -271,6 +285,23 @@ export default function CategoryPage() {
             )}
           </div>
 
+          {addingParentId === row.id && (
+            <div style={{ marginLeft: (depth + 1) * 16, display: 'flex', gap: 6, marginBottom: 6, marginTop: 4 }}>
+              <input
+                autoFocus
+                value={addingName}
+                onChange={e => setAddingName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') void confirmAddChild(row.id, row.level)
+                  if (e.key === 'Escape') setAddingParentId('none')
+                }}
+                placeholder="카테고리 이름"
+                style={{ flex: 1, fontSize: 12, padding: '5px 8px', borderRadius: 7, border: '0.5px solid rgba(123,94,167,0.5)', background: 'rgba(255,255,255,0.06)', color: '#fff' }}
+              />
+              <button onClick={() => void confirmAddChild(row.id, row.level)} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 7, border: 'none', background: '#7B5EA7', color: '#fff', cursor: 'pointer' }}>추가</button>
+              <button onClick={() => setAddingParentId('none')} style={{ fontSize: 11, padding: '4px 8px', borderRadius: 7, border: '0.5px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>취소</button>
+            </div>
+          )}
           {isExpanded && renderTree(row.id, depth + 1)}
         </div>
       )
@@ -301,7 +332,7 @@ export default function CategoryPage() {
           </div>
         </div>
         <button
-          onClick={() => void addRoot()}
+          onClick={() => addRoot()}
           style={{
             padding: '9px 16px',
             borderRadius: 10,
@@ -320,6 +351,23 @@ export default function CategoryPage() {
         <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>불러오는 중...</div>
       ) : (
         <div>
+          {addingParentId === 'root' && (
+            <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+              <input
+                autoFocus
+                value={addingName}
+                onChange={e => setAddingName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') void confirmAddRoot()
+                  if (e.key === 'Escape') setAddingParentId('none')
+                }}
+                placeholder="대카테고리 이름"
+                style={{ flex: 1, fontSize: 13, padding: '7px 10px', borderRadius: 7, border: '0.5px solid rgba(123,94,167,0.5)', background: 'rgba(255,255,255,0.06)', color: '#fff' }}
+              />
+              <button onClick={() => void confirmAddRoot()} style={{ fontSize: 12, padding: '6px 14px', borderRadius: 7, border: 'none', background: '#7B5EA7', color: '#fff', cursor: 'pointer' }}>추가</button>
+              <button onClick={() => setAddingParentId('none')} style={{ fontSize: 12, padding: '6px 10px', borderRadius: 7, border: '0.5px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>취소</button>
+            </div>
+          )}
           {renderTree(null, 0)}
           {rows.filter(r => r.parent_id === null).length === 0 && (
             <div
