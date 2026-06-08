@@ -235,7 +235,7 @@ export default function CategoryPage() {
                 >
                   수정
                 </button>
-                {row.level < 4 && (
+                {row.level < 5 && (
                   <button
                     onClick={() => void addChild(row.id, row.level)}
                     style={{
