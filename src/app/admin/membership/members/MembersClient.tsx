@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 const C = {
@@ -20,8 +20,12 @@ const MALE_PRESETS: Record<string, { theme_name: string; usage_guide: string; ow
 
 type Membership = {
   id: string; user_id: string; status: string; shipments_total: number; shipments_remaining: number
-  next_shipment_date: string | null; source_type?: string | null
+  next_shipment_date: string | null; scheduled_at?: string | null; source_type?: string | null
   users: { name: string } | null; membership_plans: { name: string } | null
+}
+type MemberShipment = {
+  id: string; user_membership_id: string; cycle_no: number
+  status: string; shipped_at: string | null; scheduled_at: string | null
 }
 type Tpl = {
   id: string; theme_name: string; target_phase: string | null
@@ -80,6 +84,91 @@ export default function MembersClient({
   const [showShipmentHistory, setShowShipmentHistory] = useState(false)
   const [shipmentHistory, setShipmentHistory] = useState<ShipmentHistoryRow[]>([])
   const [historyLoading, setHistoryLoading] = useState(false)
+  const [memberShipments, setMemberShipments] = useState<Record<string, MemberShipment[]>>({})
+  const [showTomorrowPopup, setShowTomorrowPopup] = useState(false)
+  const [tomorrowNames, setTomorrowNames] = useState<string[]>([])
+
+  const fmtScheduleDate = (iso: string | null | undefined) => {
+    if (!iso) return ''
+    const d = iso.length === 10 ? new Date(`${iso}T12:00:00`) : new Date(iso)
+    return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('ko-KR')
+  }
+
+  const cycleLabel = (m: Membership, cycle: number) => {
+    const rows = memberShipments[m.id] || []
+    const shipped = rows.find((r) => r.cycle_no === cycle && r.status === '발송완료')
+    const completed = m.shipments_total - m.shipments_remaining
+    if (shipped?.shipped_at) {
+      return `${cycle}회차 ✅ 발송완료 (${fmtScheduleDate(shipped.shipped_at)})`
+    }
+    if (cycle === completed + 1) {
+      const prevSched = rows.find((r) => r.cycle_no === cycle - 1)?.scheduled_at
+      const sched = m.next_shipment_date || m.scheduled_at || prevSched
+      if (sched) return `${cycle}회차 📅 예정 (${fmtScheduleDate(sched)})`
+    }
+    return `${cycle}회차 ⏳ 예정일 미정`
+  }
+
+  useEffect(() => {
+    const run = async () => {
+      const mIds = initial.map((m) => m.id)
+      if (mIds.length) {
+        const { data } = await supabase
+          .from('membership_shipments')
+          .select('id, user_membership_id, cycle_no, status, shipped_at, scheduled_at')
+          .in('user_membership_id', mIds)
+          .order('cycle_no', { ascending: true })
+        const grouped: Record<string, MemberShipment[]> = {}
+        for (const row of (data as MemberShipment[]) || []) {
+          const mid = row.user_membership_id
+          if (!grouped[mid]) grouped[mid] = []
+          grouped[mid].push(row)
+        }
+        setMemberShipments(grouped)
+      }
+
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      const tomorrowStr = tomorrow.toISOString().slice(0, 10)
+      const dayStart = `${tomorrowStr}T00:00:00.000Z`
+      const dayAfter = new Date(tomorrow)
+      dayAfter.setDate(dayAfter.getDate() + 1)
+      const dayEnd = dayAfter.toISOString().slice(0, 10) + 'T00:00:00.000Z'
+
+      const { data: dueRows } = await supabase
+        .from('membership_shipments')
+        .select('id, scheduled_at, user_membership_id, users(name)')
+        .gte('scheduled_at', dayStart)
+        .lt('scheduled_at', dayEnd)
+
+      const { data: firstDue } = await supabase
+        .from('user_memberships')
+        .select('id, next_shipment_date, shipments_total, shipments_remaining, users(name)')
+        .eq('status', 'active')
+        .eq('next_shipment_date', tomorrowStr)
+        .gt('shipments_remaining', 0)
+
+      const names: string[] = []
+      const seen = new Set<string>()
+      for (const row of dueRows || []) {
+        const name = (Array.isArray((row as any).users) ? (row as any).users[0] : (row as any).users)?.name || '회원'
+        const key = `s:${(row as any).user_membership_id}:${name}`
+        if (!seen.has(key)) { seen.add(key); names.push(name) }
+      }
+      for (const row of firstDue || []) {
+        const completed = ((row as any).shipments_total || 0) - ((row as any).shipments_remaining || 0)
+        if (completed > 0) continue
+        const name = (Array.isArray((row as any).users) ? (row as any).users[0] : (row as any).users)?.name || '회원'
+        const key = `m:${(row as any).id}:${name}`
+        if (!seen.has(key)) { seen.add(key); names.push(name) }
+      }
+      if (names.length) {
+        setTomorrowNames(names)
+        setShowTomorrowPopup(true)
+      }
+    }
+    void run()
+  }, [])
 
   const pendingMemberships = memberships.filter(m => m.status === 'active' && m.shipments_remaining > 0)
   const ritualDeliveryLabel = (r: ShipmentHistoryRow) => r.delivery_type === 'direct' ? '직접전달' : r.delivery_type === 'quick' ? `퀵 · ${r.courier || ''}` : `택배 · ${r.courier || ''}`
@@ -119,7 +208,19 @@ export default function MembersClient({
     if (action === 'preview') {
       setPreview({ theme: json.theme, phase: json.phase, products: json.products })
     } else {
-      setMemberships(ms => ms.map(m => m.id === mId ? { ...m, shipments_remaining: json.remaining, status: json.remaining > 0 ? 'active' : 'expired' } : m))
+      setMemberships(ms => ms.map(m => m.id === mId ? {
+        ...m,
+        shipments_remaining: json.remaining,
+        status: json.remaining > 0 ? 'active' : 'expired',
+        next_shipment_date: json.next_shipment_date ?? m.next_shipment_date,
+        scheduled_at: json.scheduled_at ?? m.scheduled_at,
+      } : m))
+      const { data: fresh } = await supabase
+        .from('membership_shipments')
+        .select('id, user_membership_id, cycle_no, status, shipped_at, scheduled_at')
+        .eq('user_membership_id', mId)
+        .order('cycle_no', { ascending: true })
+      setMemberShipments((prev) => ({ ...prev, [mId]: (fresh as MemberShipment[]) || [] }))
       setMsg(`${json.cycle_no}회차 발송 완료 · 남은 ${json.remaining}회`)
       setPreview(null)
     }
@@ -417,6 +518,13 @@ export default function MembersClient({
                   )}
                 </div>
               </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 10 }}>
+                {Array.from({ length: m.shipments_total }, (_, idx) => idx + 1).map((cycle) => (
+                  <div key={`${m.id}-cycle-${cycle}`} style={{ fontSize: 11, color: C.ink, padding: '5px 10px', background: C.purpleSoft, borderRadius: 6 }}>
+                    {cycleLabel(m, cycle)}
+                  </div>
+                ))}
+              </div>
               {opened && (
                 <div style={{ marginTop: 14, borderTop: `0.5px solid ${C.line}`, paddingTop: 14 }}>
                   <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>
@@ -582,6 +690,20 @@ export default function MembersClient({
                 </table>
               </div>
             )}
+          </div>
+        </div>
+      ) : null}
+
+      {showTomorrowPopup ? (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 56, padding: 16 }} onClick={() => setShowTomorrowPopup(false)}>
+          <div style={{ width: '100%', maxWidth: 420, background: '#fff', borderRadius: 16, padding: 20 }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 15, color: C.plum, fontFamily: SERIF, marginBottom: 8 }}>내일 발송 예정 리추얼 ({tomorrowNames.length}건)</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+              {tomorrowNames.map((name, i) => (
+                <div key={`${name}-${i}`} style={{ fontSize: 13, color: C.ink, padding: '8px 10px', background: C.goldSoft, borderRadius: 8 }}>{name}</div>
+              ))}
+            </div>
+            <button type="button" onClick={() => setShowTomorrowPopup(false)} style={{ width: '100%', padding: 10, background: C.purple, border: 'none', color: '#fff', borderRadius: 9, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>확인</button>
           </div>
         </div>
       ) : null}

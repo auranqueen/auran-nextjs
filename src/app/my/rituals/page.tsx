@@ -10,6 +10,7 @@ type Shipment = {
   cycle_no: number
   status: string
   shipped_at: string
+  scheduled_at: string | null
   bundle_templates: { theme_name: string; target_phase: string | null } | null
 }
 
@@ -18,6 +19,7 @@ type Membership = {
   shipments_total: number
   shipments_remaining: number
   next_shipment_date: string | null
+  scheduled_at: string | null
   status: string
   membership_plans: { name: string } | null
 }
@@ -41,14 +43,14 @@ export default function RitualsPage() {
       if (!myId) { setLoading(false); return }
       const [{ data: mem }, { data: ships }] = await Promise.all([
         supabase.from('user_memberships')
-          .select('id, shipments_total, shipments_remaining, next_shipment_date, status, membership_plans(name)')
+          .select('id, shipments_total, shipments_remaining, next_shipment_date, scheduled_at, status, membership_plans(name)')
           .eq('user_id', myId)
           .in('status', ['active', 'expired'])
           .order('created_at', { ascending: false })
           .limit(1)
           .maybeSingle(),
         supabase.from('membership_shipments')
-          .select('id, cycle_no, status, shipped_at, bundle_templates(theme_name, target_phase)')
+          .select('id, cycle_no, status, shipped_at, scheduled_at, bundle_templates(theme_name, target_phase)')
           .eq('user_id', myId)
           .order('cycle_no', { ascending: true }),
       ])
@@ -65,28 +67,31 @@ export default function RitualsPage() {
   }, [])
 
   // 회차별 스케줄 계산
+  const fmtRitualDate = (iso: string | null | undefined) => {
+    if (!iso) return null
+    const d = iso.length === 10 ? new Date(`${iso}T12:00:00`) : new Date(iso)
+    return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('ko-KR')
+  }
+
   const buildSchedule = () => {
     if (!membership) return []
     const total = membership.shipments_total || 6
     const remaining = membership.shipments_remaining || 0
     const completed = total - remaining
-    const nextDate = membership.next_shipment_date ? new Date(membership.next_shipment_date) : null
+    const nextSchedRaw = membership.next_shipment_date || membership.scheduled_at || null
     const schedule = []
     for (let i = 1; i <= total; i++) {
       const shipped = shipments.find(s => s.cycle_no === i)
       let date: string | null = null
       let state: 'done' | 'next' | 'pending' | 'expired' = 'pending'
-      if (shipped) {
-        date = shipped.shipped_at ? new Date(shipped.shipped_at).toLocaleDateString('ko-KR') : null
+      if (shipped?.shipped_at) {
+        date = fmtRitualDate(shipped.shipped_at)
         state = 'done'
-      } else if (i === completed + 1 && nextDate) {
-        date = nextDate.toLocaleDateString('ko-KR')
-        state = membership.status === 'expired' ? 'expired' : 'next'
-      } else if (nextDate && i > completed + 1) {
-        const d = new Date(nextDate)
-        d.setMonth(d.getMonth() + (i - completed - 1) * 2)
-        date = d.toLocaleDateString('ko-KR')
-        state = membership.status === 'expired' ? 'expired' : 'pending'
+      } else if (i === completed + 1) {
+        const prevSched = shipments.find(s => s.cycle_no === i - 1)?.scheduled_at
+        const schedRaw = nextSchedRaw || prevSched
+        date = fmtRitualDate(schedRaw)
+        state = membership.status === 'expired' ? 'expired' : schedRaw ? 'next' : 'pending'
       }
       schedule.push({ cycle: i, state, date, shipment: shipped || null })
     }
@@ -102,9 +107,16 @@ export default function RitualsPage() {
     expired: { color: '#555', background: 'rgba(255,255,255,0.03)' },
   }[state] || {})
 
-  const stateLabel = (state: string) => ({
-    done: '✅ 발송완료',
-    next: '🔜 발송 예정',
+  const stateLabel = (state: string, cycle: number, date: string | null) => {
+    if (state === 'done') return date ? `${cycle}회차 수령완료 (${date})` : `${cycle}회차 수령완료`
+    if (state === 'next') return date ? `${cycle}회차 발송예정 (${date})` : `${cycle}회차 발송예정`
+    if (state === 'expired') return `${cycle}회차 종료`
+    return `${cycle}회차 예정`
+  }
+
+  const stateBadge = (state: string) => ({
+    done: '✅ 수령완료',
+    next: '📅 발송예정',
     pending: '⏳ 예정',
     expired: '종료',
   }[state] || '')
@@ -162,15 +174,15 @@ export default function RitualsPage() {
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                       <span style={{ fontSize: 14, color: state === 'done' ? '#F0E8FF' : state === 'next' ? '#C9A96E' : '#555' }}>
-                        {cycle}회차
+                        {stateLabel(state, cycle, date)}
                       </span>
                       <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, ...stateStyle(state) }}>
-                        {stateLabel(state)}
+                        {stateBadge(state)}
                       </span>
                     </div>
-                    {date && (
-                      <div style={{ fontSize: 11, color: state === 'done' ? '#1D9E75' : state === 'next' ? '#C9A96E' : '#444' }}>
-                        {state === 'done' ? '발송일 ' : '예정일 '}{date}
+                    {date && state === 'done' && (
+                      <div style={{ fontSize: 11, color: '#1D9E75' }}>
+                        발송일 {date}
                       </div>
                     )}
                     {shipment && (

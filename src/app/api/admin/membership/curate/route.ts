@@ -17,6 +17,12 @@ async function adminUser(supabase: any) {
   return null
 }
 
+function computeNextSchedule(from: Date): { dateStr: string; iso: string } {
+  const next = new Date(from)
+  next.setDate(next.getDate() + 30)
+  return { dateStr: next.toISOString().slice(0, 10), iso: next.toISOString() }
+}
+
 export async function POST(req: NextRequest) {
   const supabase = createClient()
   const admin = await adminUser(supabase)
@@ -80,6 +86,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'no_shipments_left' }, { status: 400 })
   }
   const cycleNo = (um.shipments_total ?? 6) - (um.shipments_remaining ?? 0) + 1
+  const shippedAt = shipDate ? new Date(shipDate) : new Date()
+  const remaining = (um.shipments_remaining ?? 1) - 1
+  const nextSched = remaining > 0 ? computeNextSchedule(shippedAt) : null
   const { data: shipment, error: insErr } = await client.from('membership_shipments').insert({
     user_membership_id: um.id,
     user_id: um.user_id,
@@ -90,21 +99,20 @@ export async function POST(req: NextRequest) {
       reasons: Object.fromEntries(scored.map((s: any) => [s.id, s._reasons || []])),
     },
     status: '발송완료',
-    shipped_at: (shipDate ? new Date(shipDate) : new Date()).toISOString(),
+    shipped_at: shippedAt.toISOString(),
+    scheduled_at: nextSched?.iso ?? null,
     delivery_type: deliveryType,
     courier: deliveryType === 'courier' ? courierName : deliveryType === 'quick' ? quickCompany : '직접전달',
     tracking_no: deliveryType === 'courier' ? trackingNo : null,
   } as any).select('id').single()
   if (insErr) return NextResponse.json({ ok: false, error: insErr.message }, { status: 500 })
 
-  const remaining = (um.shipments_remaining ?? 1) - 1
-  const next = new Date()
-  next.setMonth(next.getMonth() + 2)
   await client
     .from('user_memberships')
     .update({
       shipments_remaining: remaining,
-      next_shipment_date: remaining > 0 ? next.toISOString().slice(0, 10) : null,
+      next_shipment_date: nextSched?.dateStr ?? null,
+      scheduled_at: nextSched?.iso ?? null,
       status: remaining > 0 ? 'active' : 'expired',
     })
     .eq('id', um.id)
@@ -160,5 +168,12 @@ export async function POST(req: NextRequest) {
     }
   } catch (_) {}
 
-  return NextResponse.json({ ok: true, shipped: true, cycle_no: cycleNo, remaining })
+  return NextResponse.json({
+    ok: true,
+    shipped: true,
+    cycle_no: cycleNo,
+    remaining,
+    next_shipment_date: nextSched?.dateStr ?? null,
+    scheduled_at: nextSched?.iso ?? null,
+  })
 }
