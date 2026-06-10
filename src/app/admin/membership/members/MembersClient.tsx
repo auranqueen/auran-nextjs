@@ -20,7 +20,7 @@ const MALE_PRESETS: Record<string, { theme_name: string; usage_guide: string; ow
 
 type Membership = {
   id: string; user_id: string; status: string; shipments_total: number; shipments_remaining: number
-  next_shipment_date: string | null; scheduled_at?: string | null; source_type?: string | null
+  next_shipment_date: string | null; scheduled_at?: string | null; started_at?: string | null; source_type?: string | null
   users: { name: string } | null; membership_plans: { name: string } | null
 }
 type MemberShipment = {
@@ -96,6 +96,16 @@ export default function MembersClient({
     return Number.isNaN(d.getTime()) ? iso : d.toLocaleDateString('ko-KR')
   }
 
+  const calcCycleDate = (startedAt: string | null | undefined, cycle: number) => {
+    if (!startedAt || cycle < 1) return ''
+    const raw = String(startedAt)
+    const base = new Date(raw.length >= 10 ? `${raw.slice(0, 10)}T12:00:00` : raw)
+    if (Number.isNaN(base.getTime())) return ''
+    const d = new Date(base)
+    d.setDate(d.getDate() + (cycle - 1) * 30)
+    return d.toISOString().slice(0, 10)
+  }
+
   const cycleLabel = (m: Membership, cycle: number) => {
     const rows = memberShipments[m.id] || []
     const shipped = rows.find((r) => r.cycle_no === cycle && r.status === '발송완료')
@@ -108,8 +118,12 @@ export default function MembersClient({
       return `${cycle}회차 📅 예정 (${fmtScheduleDate(planned.scheduled_at)})`
     }
     if (cycle === completed + 1) {
-      const sched = m.next_shipment_date || m.scheduled_at
+      const sched = m.next_shipment_date || m.scheduled_at || calcCycleDate(m.started_at, cycle)
       if (sched) return `${cycle}회차 📅 예정 (${fmtScheduleDate(sched)})`
+    }
+    const autoSched = calcCycleDate(m.started_at, cycle)
+    if (autoSched && cycle > completed) {
+      return `${cycle}회차 📅 예정 (${fmtScheduleDate(autoSched)})`
     }
     return `${cycle}회차 ⏳ 예정일 미정`
   }
@@ -121,9 +135,11 @@ export default function MembersClient({
     const cycleDates: Record<number, string> = {}
     for (let c = currentCycle + 1; c <= m.shipments_total; c++) {
       const row = rows.find((r) => r.cycle_no === c)
-      cycleDates[c] = row?.scheduled_at ? String(row.scheduled_at).slice(0, 10) : ''
+      cycleDates[c] = row?.scheduled_at
+        ? String(row.scheduled_at).slice(0, 10)
+        : calcCycleDate(m.started_at, c)
     }
-    setShipModalNextDate(m.next_shipment_date || '')
+    setShipModalNextDate(m.next_shipment_date || calcCycleDate(m.started_at, currentCycle + 1))
     setShipModalCycleDates(cycleDates)
     setShipModalId(m.id)
   }
@@ -779,21 +795,47 @@ export default function MembersClient({
               <div style={{ fontSize: 12, color: C.muted, marginBottom: 14 }}>{modalM.users?.name || '회원'} · 남은 {modalM.shipments_remaining}회</div>
               {modalM.shipments_remaining > 1 && (
                 <>
-                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>다음 회차 발송일 (next_shipment_date)</div>
+                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    다음 회차 발송일 (next_shipment_date)
+                    <button
+                      type="button"
+                      title="날짜 수정"
+                      onClick={() => {
+                        const el = document.getElementById('ship-modal-next-date') as HTMLInputElement | null
+                        el?.showPicker?.()
+                        el?.focus()
+                      }}
+                      style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}
+                    >✏️</button>
+                  </div>
                   <input
+                    id="ship-modal-next-date"
                     type="date"
                     value={shipModalNextDate}
                     onChange={(e) => setShipModalNextDate(e.target.value)}
                     style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: 8, border: `1px solid ${C.line}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff', marginBottom: 12 }}
                   />
                   {futureCycles.length > 0 && (
-                    <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>회차별 예정일</div>
+                    <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>회차별 예정일 (started_at + 30일 간격, 수정 가능)</div>
                   )}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
                     {futureCycles.map((cycle) => (
                       <div key={`ship-modal-cycle-${cycle}`}>
-                        <div style={{ fontSize: 11, color: C.ink, marginBottom: 4 }}>{cycle}회차 예정일</div>
+                        <div style={{ fontSize: 11, color: C.ink, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {cycle}회차 예정일
+                          <button
+                            type="button"
+                            title="날짜 수정"
+                            onClick={() => {
+                              const el = document.getElementById(`ship-modal-cycle-${cycle}`) as HTMLInputElement | null
+                              el?.showPicker?.()
+                              el?.focus()
+                            }}
+                            style={{ padding: 0, border: 'none', background: 'transparent', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}
+                          >✏️</button>
+                        </div>
                         <input
+                          id={`ship-modal-cycle-${cycle}`}
                           type="date"
                           value={shipModalCycleDates[cycle] || ''}
                           onChange={(e) => setShipModalCycleDates((prev) => ({ ...prev, [cycle]: e.target.value }))}

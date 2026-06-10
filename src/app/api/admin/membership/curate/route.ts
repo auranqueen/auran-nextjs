@@ -23,6 +23,16 @@ function toScheduledIso(dateStr: string): string {
   return new Date(`${d}T12:00:00`).toISOString()
 }
 
+function cycleScheduledDateStr(startedAt: string | null | undefined, cycleNo: number): string | null {
+  if (!startedAt || cycleNo < 1) return null
+  const raw = String(startedAt)
+  const base = new Date(raw.length >= 10 ? `${raw.slice(0, 10)}T12:00:00` : raw)
+  if (Number.isNaN(base.getTime())) return null
+  const d = new Date(base)
+  d.setDate(d.getDate() + (cycleNo - 1) * 30)
+  return d.toISOString().slice(0, 10)
+}
+
 export async function POST(req: NextRequest) {
   const supabase = createClient()
   const admin = await adminUser(supabase)
@@ -46,7 +56,7 @@ export async function POST(req: NextRequest) {
 
   const { data: um } = await client
     .from('user_memberships')
-    .select('id,user_id,shipments_total,shipments_remaining')
+    .select('id,user_id,shipments_total,shipments_remaining,started_at')
     .eq('id', membershipId)
     .maybeSingle()
   if (!um) return NextResponse.json({ ok: false, error: 'membership_not_found' }, { status: 404 })
@@ -89,7 +99,17 @@ export async function POST(req: NextRequest) {
   const cycleNo = (um.shipments_total ?? 6) - (um.shipments_remaining ?? 0) + 1
   const shippedAt = new Date()
   const remaining = (um.shipments_remaining ?? 1) - 1
-  const nextDateStr = remaining > 0 ? nextShipmentDate : null
+  const startedAt = (um as { started_at?: string | null }).started_at
+  const overrideMap = new Map<number, string>()
+  for (const item of scheduledDatesRaw) {
+    const cn = Number((item as { cycle_no?: number })?.cycle_no)
+    const dateStr = String((item as { date?: string; scheduled_at?: string })?.date || (item as { scheduled_at?: string })?.scheduled_at || '').slice(0, 10)
+    if (cn && dateStr) overrideMap.set(cn, dateStr)
+  }
+  const nextCycle = cycleNo + 1
+  const nextDateStr = remaining > 0
+    ? (nextShipmentDate || overrideMap.get(nextCycle) || cycleScheduledDateStr(startedAt, nextCycle))
+    : null
   const nextScheduledIso = nextDateStr ? toScheduledIso(nextDateStr) : null
   const { data: shipment, error: insErr } = await client.from('membership_shipments').insert({
     user_membership_id: um.id,
@@ -108,10 +128,10 @@ export async function POST(req: NextRequest) {
   } as any).select('id').single()
   if (insErr) return NextResponse.json({ ok: false, error: insErr.message }, { status: 500 })
 
-  for (const item of scheduledDatesRaw) {
-    const cn = Number((item as any)?.cycle_no)
-    const dateStr = String((item as any)?.date || (item as any)?.scheduled_at || '').slice(0, 10)
-    if (!cn || cn <= cycleNo || !dateStr) continue
+  const totalCycles = um.shipments_total ?? 6
+  for (let cn = cycleNo + 1; cn <= totalCycles; cn++) {
+    const dateStr = overrideMap.get(cn) || cycleScheduledDateStr(startedAt, cn)
+    if (!dateStr) continue
     const schedIso = toScheduledIso(dateStr)
     const { data: exRow } = await client
       .from('membership_shipments')
@@ -119,12 +139,12 @@ export async function POST(req: NextRequest) {
       .eq('user_membership_id', um.id)
       .eq('cycle_no', cn)
       .maybeSingle()
-    if ((exRow as any)?.status === '발송완료') continue
-    if ((exRow as any)?.id) {
+    if ((exRow as { status?: string })?.status === '발송완료') continue
+    if ((exRow as { id?: string })?.id) {
       await client
         .from('membership_shipments')
-        .update({ scheduled_at: schedIso, status: '예정' } as any)
-        .eq('id', (exRow as any).id)
+        .update({ scheduled_at: schedIso, status: '예정' } as Record<string, unknown>)
+        .eq('id', (exRow as { id: string }).id)
     } else {
       await client.from('membership_shipments').insert({
         user_membership_id: um.id,
@@ -132,7 +152,7 @@ export async function POST(req: NextRequest) {
         cycle_no: cn,
         status: '예정',
         scheduled_at: schedIso,
-      } as any)
+      } as Record<string, unknown>)
     }
   }
 
