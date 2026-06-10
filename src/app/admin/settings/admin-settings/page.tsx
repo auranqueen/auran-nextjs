@@ -12,6 +12,40 @@ type SettingMeta = {
   defaultValue: string
 }
 
+const MEMBERSHIP_TRACK_ROWS = [
+  { id: 'general', label: '여성 생리주기 (general)' },
+  { id: 'menopause_peri', label: '갱년기 초기 (menopause_peri)' },
+  { id: 'menopause_post', label: '갱년기 이후 (menopause_post)' },
+  { id: 'pregnant', label: '임신 중 (pregnant)' },
+  { id: 'postpartum', label: '출산 후 (postpartum)' },
+  { id: 'male', label: '남성 일반 (male)' },
+  { id: 'male_menopause', label: '남성 갱년기 (male_menopause)' },
+  { id: 'irregular', label: '생리 불규칙 (irregular)' },
+] as const
+
+const DEFAULT_MESSAGE_TIPS: Record<string, string> = {
+  general: '호르몬 주기에 맞춘 케어가 중요합니다',
+  menopause_peri: '피부 변화 시기, 보습과 진정이 우선입니다',
+  menopause_post: '안정된 루틴으로 피부 재생을 돕습니다',
+  pregnant: '자극 없는 순한 제품으로 안전하게 관리하세요',
+  postpartum: '호르몬 변화로 예민한 피부, 진정 케어를 우선으로',
+  male: '남성 피부 특성에 맞춘 빠른 흡수 케어',
+  male_menopause: '호르몬 변화에 따른 피부 톤 관리가 필요합니다',
+  irregular: '생리 불규칙할 때는 진정과 보습 케어를 함께 챙기세요',
+}
+
+const DEFAULT_MESSAGE_TIPS_JSON = JSON.stringify(DEFAULT_MESSAGE_TIPS)
+
+function parseMessageTips(raw: string | undefined): Record<string, string> {
+  if (!raw) return { ...DEFAULT_MESSAGE_TIPS }
+  try {
+    const parsed = JSON.parse(raw) as Record<string, string>
+    return { ...DEFAULT_MESSAGE_TIPS, ...parsed }
+  } catch {
+    return { ...DEFAULT_MESSAGE_TIPS }
+  }
+}
+
 const META: Record<string, { label: string; keys: Record<string, SettingMeta> }> = {
   points_action: {
     label: '활동 포인트',
@@ -136,6 +170,23 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       gift_message_max_length: { label: '선물 메시지 최대 길이', unit: '자', type: 'number', defaultValue: '100' },
       max_gift_per_day: { label: '하루 최대 선물 수', unit: '건', type: 'number', defaultValue: '10' },
       gift_notification_enabled: { label: '선물 알림 활성화', unit: '', type: 'number', defaultValue: '1' },
+    },
+  },
+  membership_message: {
+    label: '멤버십 메시지 팁',
+    keys: {
+      gift_message_tips: {
+        label: '선물 메시지 팁',
+        unit: '',
+        type: 'json',
+        defaultValue: DEFAULT_MESSAGE_TIPS_JSON,
+      },
+      ritual_message_tips: {
+        label: '리추얼 메시지 팁',
+        unit: '',
+        type: 'json',
+        defaultValue: DEFAULT_MESSAGE_TIPS_JSON,
+      },
     },
   },
   checkout: {
@@ -440,6 +491,44 @@ export default function AdminSettingsAdminSettingsPage() {
                   </div>
                 )
               })
+            : active === 'membership_message'
+              ? (['gift_message_tips', 'ritual_message_tips'] as const).map((tipKey) => {
+                  const sectionLabel = tipKey === 'gift_message_tips' ? '선물 메시지 팁' : '리추얼 메시지 팁'
+                  const tips = parseMessageTips(settings.membership_message?.[tipKey])
+                  return (
+                    <div key={tipKey} style={{ padding: '14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ fontSize: 14, fontWeight: 900, color: '#c9a84c', marginBottom: 12 }}>{sectionLabel}</div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {MEMBERSHIP_TRACK_ROWS.map(({ id, label }) => (
+                          <div key={`${tipKey}-${id}`}>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: '#fff', marginBottom: 6 }}>{label}</div>
+                            <textarea
+                              value={tips[id] ?? ''}
+                              onChange={(e) => {
+                                const next = { ...parseMessageTips(settings.membership_message?.[tipKey]), [id]: e.target.value }
+                                set('membership_message', tipKey, JSON.stringify(next))
+                              }}
+                              rows={2}
+                              style={{
+                                width: '100%',
+                                boxSizing: 'border-box',
+                                background: 'rgba(0,0,0,0.25)',
+                                border: '1px solid rgba(255,255,255,0.12)',
+                                borderRadius: 12,
+                                padding: '10px 10px',
+                                color: '#fff',
+                                fontSize: 12,
+                                outline: 'none',
+                                resize: 'vertical',
+                                fontFamily: "'JetBrains Mono', monospace",
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })
             : rows.map(([key, meta]) => {
                 const current = settings[active]?.[key] ?? meta.defaultValue
                 const unit = meta.unit ? <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{meta.unit}</span> : null

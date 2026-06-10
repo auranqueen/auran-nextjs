@@ -128,7 +128,7 @@ export async function PATCH(req: Request) {
           chId3 = (newCh3 as any)?.id || null
         }
         if (chId3) {
-          const delivMsg = getGiftShipmentMessage(giftTrack, delivery_type || 'courier', giftTypeName, shipName, giftProducts)
+          const delivMsg = await getGiftShipmentMessage(giftTrack, delivery_type || 'courier', giftTypeName, shipName, giftProducts)
           const previewLine = `${giftTypeName} 선물이 출발했어요 💜`
           await supabase.from('consultation_messages').insert({ channel_id: chId3, sender_id: claimedBy, message: delivMsg, message_kind: 'text', is_from_customer: false } as any)
           await supabase.from('chat_channels').update({ last_message: previewLine, last_message_at: new Date().toISOString(), unread_count: 1, preview_text: previewLine }).eq('id', chId3)

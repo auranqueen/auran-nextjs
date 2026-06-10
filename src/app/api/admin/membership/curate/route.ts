@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 import { curateBundle } from '@/lib/membership/curate'
 import { sendPpurioAlimtalk } from '@/lib/ppurio/sendAlimtalk'
+import { getRitualShipmentMessage } from '@/lib/membershipMessage'
 
 async function adminUser(supabase: any) {
   const { data: { user } } = await supabase.auth.getUser()
@@ -138,11 +139,20 @@ export async function POST(req: NextRequest) {
       chId2 = (newCh2 as any)?.id || null
     }
     if (chId2) {
-      const productList = scored.slice(0, 3).map((p: any) => `· ${p.name}`).join('\n')
+      let ritualTrack = 'general'
+      if ((urow as any)?.auth_id) {
+        const { data: hcRitual } = await client3.from('hormone_cycle').select('track').eq('auth_id', (urow as any).auth_id).maybeSingle()
+        if ((hcRitual as any)?.track) ritualTrack = String((hcRitual as any).track)
+      }
+      const ritualMsg = await getRitualShipmentMessage(
+        ritualTrack,
+        cycleNo,
+        scored.map((p: any) => ({ name: String(p.name || '') })),
+      )
       await client3.from('consultation_messages').insert({
         channel_id: chId2,
         sender_id: um.user_id,
-        message: `${cycleNo}회차 리추얼이 출발했어요 💜\n\n${productList}${scored.length > 3 ? '\n· 외 ' + (scored.length - 3) + '개' : ''}\n\n사용법과 원장님 팁은 앱에서 확인해보세요!\nauran.kr/my/rituals`,
+        message: ritualMsg,
         message_kind: 'text',
         is_from_customer: false,
       } as any)
