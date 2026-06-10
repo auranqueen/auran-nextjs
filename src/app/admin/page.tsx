@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { requireAdmin } from './_auth'
 
-export default async function AdminPage({ searchParams }: { searchParams?: { insight?: string } }) {
+export default async function AdminPage() {
   const supabase = createClient()
   await requireAdmin(supabase as any)
 
@@ -45,7 +45,13 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
   const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
   const kstYmd = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
   const dayStartIso = new Date(`${kstYmd}T00:00:00+09:00`).toISOString()
-  const insight = searchParams?.insight || ''
+  const tomorrowDate = new Date()
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1)
+  const tomorrowStr = tomorrowDate.toISOString().slice(0, 10)
+  const tomorrowDayStart = `${tomorrowStr}T00:00:00.000Z`
+  const tomorrowDayAfter = new Date(tomorrowDate)
+  tomorrowDayAfter.setDate(tomorrowDayAfter.getDate() + 1)
+  const tomorrowDayEnd = tomorrowDayAfter.toISOString().slice(0, 10) + 'T00:00:00.000Z'
 
   const [
     { data: monthlyOrders },
@@ -56,18 +62,18 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
     { data: hcAll },
     { data: searchRaw },
     { count: pendingPromote },
+    { data: tomorrowShipRows },
+    { data: tomorrowMembershipRows },
   ] = await Promise.all([
     supabase.from('orders').select('final_amount').gte('ordered_at', monthStart).not('status', 'in', '("취소","환불")'),
     supabase.from('orders').select('final_amount').gte('ordered_at', prevMonthStart).lt('ordered_at', prevMonthEnd).not('status', 'in', '("취소","환불")'),
     supabase
       .from('skin_cycle_analysis')
-      .select('auth_id, checkin_condition, hormone_stage')
+      .select('auth_id, hormone_stage')
       .eq('record_date', kstYmd),
     supabase.from('user_behavior_logs').select('id').eq('action_type', 'product_click').gte('created_at', dayStartIso),
     supabase.from('user_behavior_logs').select('id, metadata').eq('action_type', 'purchase').gte('created_at', dayStartIso),
-    insight === 'tracks'
-      ? supabase.from('hormone_cycle').select('track')
-      : supabase.from('hormone_cycle').select('track').limit(500),
+    supabase.from('hormone_cycle').select('track').limit(500),
     supabase
       .from('customer_search_logs')
       .select('search_keyword, count, source, created_at')
@@ -78,6 +84,17 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
       .select('*', { count: 'exact', head: true })
       .eq('source', '검색')
       .eq('is_promoted', false),
+    supabase
+      .from('membership_shipments')
+      .select('id, cycle_no, user_membership_id, users(name)')
+      .gte('scheduled_at', tomorrowDayStart)
+      .lt('scheduled_at', tomorrowDayEnd),
+    supabase
+      .from('user_memberships')
+      .select('id, shipments_total, shipments_remaining, users(name)')
+      .eq('status', 'active')
+      .eq('next_shipment_date', tomorrowStr)
+      .gt('shipments_remaining', 0),
   ])
 
   const monthlyRevenue = (monthlyOrders || []).reduce((s, o) => s + (o.final_amount || 0), 0)
@@ -132,74 +149,59 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
 
-  let insightRows: { title: string; rows: any[]; columns?: { key: string; label: string }[] } | null = null
-  if (insight === 'checkin_today') insightRows = {
-    title: '오늘 체크인 기록',
-    rows: skinToday || [],
-    columns: [
-      { key: 'auth_id', label: '고객ID' },
-      { key: 'checkin_condition', label: '체크인 상태' },
-      { key: 'hormone_stage', label: '호르몬 단계' },
-      { key: 'record_date', label: '날짜' },
-    ]
-  }
-  else if (insight === 'golden_today')
-    insightRows = {
-      title: '오늘 황금기 기록',
-      rows: (skinToday || []).filter((r: any) => String(r.hormone_stage || '').includes('여포')),
-      columns: [
-        { key: 'auth_id', label: '고객ID' },
-        { key: 'checkin_condition', label: '체크인 상태' },
-        { key: 'hormone_stage', label: '호르몬 단계' },
-        { key: 'record_date', label: '날짜' },
-      ]
+  const tomorrowItems: { name: string; cycle: number }[] = []
+  const tomorrowSeen = new Set<string>()
+  for (const row of tomorrowShipRows || []) {
+    const r = row as { user_membership_id?: string; cycle_no?: number; users?: { name?: string } | { name?: string }[] }
+    const name = (Array.isArray(r.users) ? r.users[0] : r.users)?.name || '회원'
+    const cycle = Number(r.cycle_no) || 1
+    const key = `s:${r.user_membership_id}:${cycle}`
+    if (!tomorrowSeen.has(key)) {
+      tomorrowSeen.add(key)
+      tomorrowItems.push({ name, cycle })
     }
-  else if (insight === 'product_clicks') {
-    const { data } = await supabase
-      .from('user_behavior_logs')
-      .select('*')
-      .eq('action_type', 'product_click')
-      .gte('created_at', dayStartIso)
-      .order('created_at', { ascending: false })
-      .limit(100)
-    insightRows = { title: '오늘 상품 클릭 로그', rows: data || [], columns: [
-      { key: 'created_at', label: '시각' },
-      { key: 'action_type', label: '액션' },
-      { key: 'metadata', label: '상세' },
-    ]}
-  } else if (insight === 'purchases_today') {
-    const { data } = await supabase
-      .from('user_behavior_logs')
-      .select('*')
-      .eq('action_type', 'purchase')
-      .gte('created_at', dayStartIso)
-      .order('created_at', { ascending: false })
-      .limit(100)
-    insightRows = { title: '오늘 구매 관련 로그', rows: data || [], columns: [
-      { key: 'created_at', label: '시각' },
-      { key: 'action_type', label: '액션' },
-      { key: 'metadata', label: '상세' },
-    ]}
-  } else if (insight === 'tracks') insightRows = { title: '호르몬 트랙 분포', rows: hcAll || [], columns: [
-    { key: 'track', label: '트랙' },
-  ]}
-  else if (insight === 'search_top') insightRows = { title: '이번 달 검색어 TOP', rows: searchTop10.map(([keyword, total]) => ({ keyword, total })) }
-  else if (insight === 'pending_tags') {
-    const { data } = await supabase
-      .from('customer_search_logs')
-      .select('*')
-      .eq('source', '검색')
-      .eq('is_promoted', false)
-      .order('created_at', { ascending: false })
-      .limit(80)
-    insightRows = { title: '승격 대기 자연어 로그', rows: data || [] }
   }
+  for (const row of tomorrowMembershipRows || []) {
+    const r = row as { id?: string; shipments_total?: number; shipments_remaining?: number; users?: { name?: string } | { name?: string }[] }
+    const name = (Array.isArray(r.users) ? r.users[0] : r.users)?.name || '회원'
+    const cycle = (r.shipments_total || 0) - (r.shipments_remaining || 0) + 1
+    const key = `m:${r.id}:${cycle}`
+    if (!tomorrowSeen.has(key)) {
+      tomorrowSeen.add(key)
+      tomorrowItems.push({ name, cycle })
+    }
+  }
+  const tomorrowSummary = tomorrowItems.map((item) => `${item.name} · ${item.cycle}회차`).join(' · ')
 
   const pendingShip = (pendingOrders || []).length
   const pendingSettle = (pendingSettlements || []).length
+  const actionBtnStyle = { fontSize: 9, padding: '4px 8px', marginTop: 8, display: 'inline-block' } as const
 
   return (
     <div>
+      {tomorrowItems.length > 0 ? (
+        <a
+          href="/admin/membership/members"
+          style={{
+            display: 'block',
+            marginBottom: 16,
+            padding: '12px 16px',
+            borderRadius: 10,
+            background: 'rgba(123,94,167,0.15)',
+            border: '1px solid rgba(123,94,167,0.35)',
+            textDecoration: 'none',
+            color: 'inherit',
+          }}
+        >
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#c4b5fd', marginBottom: 4 }}>
+            내일 발송 예정 {tomorrowItems.length}건
+          </div>
+          <div style={{ fontSize: 11, color: 'var(--text2)', lineHeight: 1.5 }}>
+            {tomorrowSummary}
+          </div>
+        </a>
+      ) : null}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 16 }}>
         <div>
           <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: 'var(--text3)', letterSpacing: '.12em', marginBottom: 4 }}>
@@ -219,18 +221,21 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: 'var(--blue)' }}>{totalOrders || 0}</div>
             <div style={{ fontSize: 9, color: 'var(--text3)' }}>전체 주문</div>
           </a>
-          <a href="/admin/orders" style={{ background: 'rgba(255,180,0,.08)', border: '1px solid rgba(255,180,0,.25)', borderRadius: 9, padding: '9px 15px', textAlign: 'center', textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
+          <div style={{ background: 'rgba(255,180,0,.08)', border: '1px solid rgba(255,180,0,.25)', borderRadius: 9, padding: '9px 15px', textAlign: 'center' }}>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: 'var(--gold)' }}>{pendingDepositCount ?? 0}</div>
             <div style={{ fontSize: 9, color: 'var(--text3)' }}>입금 대기</div>
-          </a>
-          <a href="/admin/shipping" style={{ background: 'rgba(217,79,79,.08)', border: '1px solid rgba(217,79,79,.2)', borderRadius: 9, padding: '9px 15px', textAlign: 'center', textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
+            <a className="btn btn-gy" href="/admin/orders?status=pending" style={actionBtnStyle}>입금 확인 →</a>
+          </div>
+          <div style={{ background: 'rgba(217,79,79,.08)', border: '1px solid rgba(217,79,79,.2)', borderRadius: 9, padding: '9px 15px', textAlign: 'center' }}>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: 'var(--red)' }}>{pendingShip}</div>
             <div style={{ fontSize: 9, color: 'var(--text3)' }}>발송 대기</div>
-          </a>
-          <a href="/admin/settlement" style={{ background: 'rgba(201,168,76,.07)', border: '1px solid rgba(201,168,76,.18)', borderRadius: 9, padding: '9px 15px', textAlign: 'center', textDecoration: 'none', color: 'inherit', cursor: 'pointer' }}>
+            <a className="btn btn-gy" href="/admin/orders" style={actionBtnStyle}>주문 확인 →</a>
+          </div>
+          <div style={{ background: 'rgba(201,168,76,.07)', border: '1px solid rgba(201,168,76,.18)', borderRadius: 9, padding: '9px 15px', textAlign: 'center' }}>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: 'var(--gold)' }}>{pendingSettle}</div>
             <div style={{ fontSize: 9, color: 'var(--text3)' }}>정산 대기</div>
-          </a>
+            <a className="btn btn-gy" href="/admin/settlement" style={actionBtnStyle}>정산 확인 →</a>
+          </div>
         </div>
       </div>
 
@@ -271,49 +276,42 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
 
       <div style={{ margin: '18px 0 12px', fontSize: 11, color: 'var(--text3)', letterSpacing: '.08em' }}>오늘 · 고객 행동 / 피부 사이클 (실시간)</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10, marginBottom: 18 }}>
-        <a href="/admin?insight=checkin_today#insight" className="card" style={{ padding: 12, textDecoration: 'none', color: 'inherit' }}>
+        <div className="card" style={{ padding: 12 }}>
           <div className="lbl">오늘 체크인 고객</div>
           <div className="val" style={{ color: 'var(--gold)' }}>
             {checkinTodayUsers}
             <span style={{ fontSize: 12, color: 'var(--text3)' }}>명</span>
           </div>
           <div className="sub dim">skin_cycle_analysis · KST {kstYmd}</div>
-        </a>
-        <a href="/admin?insight=golden_today#insight" className="card" style={{ padding: 12, textDecoration: 'none', color: 'inherit' }}>
+        </div>
+        <div className="card" style={{ padding: 12 }}>
           <div className="lbl">오늘 황금기 고객</div>
           <div className="val" style={{ color: 'var(--pink)' }}>
             {goldenTodayUsers}
             <span style={{ fontSize: 12, color: 'var(--text3)' }}>명</span>
           </div>
           <div className="sub dim">황금기 단계 기록</div>
-        </a>
+        </div>
         <div className="card" style={{ padding: 12 }}>
-          <a href="/admin?insight=purchases_today#insight" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="lbl">오늘 구매전환</div>
-            <div className="val" style={{ color: 'var(--blue)' }}>
-              {conversionPct}
-              <span style={{ fontSize: 12, color: 'var(--text3)' }}>%</span>
-            </div>
-            <div className="sub dim">구매확정 {purchaseCompleteCnt} / 클릭 {clickCnt}</div>
-          </a>
-          <a className="btn btn-gy" href="/admin?insight=product_clicks#insight" style={{ fontSize: 9, padding: '4px 8px', marginTop: 8, display: 'inline-block' }}>
-            클릭 로그 보기
-          </a>
+          <div className="lbl">오늘 구매전환</div>
+          <div className="val" style={{ color: 'var(--blue)' }}>
+            {conversionPct}
+            <span style={{ fontSize: 12, color: 'var(--text3)' }}>%</span>
+          </div>
+          <div className="sub dim">구매확정 {purchaseCompleteCnt} / 클릭 {clickCnt}</div>
         </div>
         <div className="card" style={{ padding: 12 }}>
           <div className="lbl">트랙 분포</div>
           <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginTop: 6 }}>
-            <a href="/admin?insight=tracks#insight" style={{ textDecoration: 'none' }}>
-              <div
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: '50%',
-                  background: pieStops ? `conic-gradient(${pieStops})` : 'rgba(255,255,255,0.08)',
-                  border: '1px solid var(--border)',
-                }}
-              />
-            </a>
+            <div
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: '50%',
+                background: pieStops ? `conic-gradient(${pieStops})` : 'rgba(255,255,255,0.08)',
+                border: '1px solid var(--border)',
+              }}
+            />
             <div style={{ flex: 1, fontSize: 10, color: 'var(--text3)', lineHeight: 1.5 }}>
               {Object.entries(trackDist)
                 .sort((a, b) => b[1] - a[1])
@@ -326,79 +324,21 @@ export default async function AdminPage({ searchParams }: { searchParams?: { ins
             </div>
           </div>
         </div>
-        <a href="/admin?insight=search_top#insight" className="card" style={{ padding: 12, textDecoration: 'none', color: 'inherit' }}>
+        <div className="card" style={{ padding: 12 }}>
           <div className="lbl">이번 달 검색 TOP10</div>
           <div className="val" style={{ fontSize: 13, color: 'var(--text)' }}>
             {searchTop10[0] ? `${searchTop10[0][0]} (${searchTop10[0][1]})` : '—'}
           </div>
           <div className="sub dim">customer_search_logs</div>
-        </a>
+        </div>
         <div className="card" style={{ padding: 12 }}>
-          <a href="/admin?insight=pending_tags#insight" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div className="lbl">승격 대기 자연어</div>
-            <div className="val" style={{ color: 'var(--gold)' }}>{pendingPromote ?? 0}</div>
-          </a>
-          <a className="btn btn-gy" href="/admin/settings/categories" style={{ fontSize: 9, padding: '4px 8px', marginTop: 8, display: 'inline-block' }}>
+          <div className="lbl">승격 대기 자연어</div>
+          <div className="val" style={{ color: 'var(--gold)' }}>{pendingPromote ?? 0}</div>
+          <a className="btn btn-gy" href="/admin/settings/categories" style={actionBtnStyle}>
             태그 관리 →
           </a>
         </div>
       </div>
-
-      {insightRows ? (
-        <div id="insight" className="card" style={{ marginBottom: 18 }}>
-          <div className="card-hdr">
-            <div className="card-title">{insightRows.title}</div>
-            <a className="btn btn-gy" href="/admin">
-              닫기
-            </a>
-          </div>
-          <table>
-            <thead>
-              <tr>
-                {(insightRows.columns
-                  ? insightRows.columns.map(c => c.label)
-                  : insightRows.rows[0] && typeof insightRows.rows[0] === 'object'
-                    ? Object.keys(insightRows.rows[0])
-                    : ['value']
-                ).map(k => (
-                  <th key={k}>{k}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {insightRows.rows.length === 0 ? (
-                <tr>
-                  <td colSpan={4} style={{ color: 'var(--text3)' }}>
-                    데이터가 없습니다.
-                  </td>
-                </tr>
-              ) : (
-                insightRows.rows.map((r, i) => (
-                  <tr key={i}>
-                    {insightRows!.columns ? (
-                      insightRows!.columns.map(c => (
-                        <td key={c.key} className="mono" style={{ fontSize: 10, maxWidth: 220, wordBreak: 'break-all' }}>
-                          {typeof (r as any)[c.key] === 'object' && (r as any)[c.key] !== null
-                            ? JSON.stringify((r as any)[c.key])
-                            : String((r as any)[c.key] ?? '')}
-                        </td>
-                      ))
-                    ) : typeof r === 'object' && r !== null ? (
-                      Object.keys(insightRows!.rows[0] as object).map(k => (
-                        <td key={k} className="mono" style={{ fontSize: 10, maxWidth: 220, wordBreak: 'break-all' }}>
-                          {String((r as any)[k] ?? '')}
-                        </td>
-                      ))
-                    ) : (
-                      <td className="mono">{String(r)}</td>
-                    )}
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      ) : null}
 
       <div className="split s32">
         <div className="card">
