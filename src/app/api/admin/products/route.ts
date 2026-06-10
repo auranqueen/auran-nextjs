@@ -36,6 +36,19 @@ export async function GET(req: NextRequest) {
   const auth = await requireAdminApi()
   if (!auth.ok) return json({ ok: false, reason: auth.status === 401 ? 'not_logged_in' : 'forbidden' }, auth.status)
 
+  const q = (req.nextUrl.searchParams.get('q') || '').trim()
+  if (q) {
+    const { data: rows, error } = await auth.supabase
+      .from('products')
+      .select('id,name,thumb_img,retail_price,status,created_at,approved_at')
+      .eq('status', 'active')
+      .ilike('name', `%${q}%`)
+      .order('created_at', { ascending: false })
+      .limit(5)
+    if (error) return json({ ok: false, error: error.message }, 500)
+    return json({ ok: true, status: 'active', rows: rows || [] })
+  }
+
   const status = normalizeStatus(req.nextUrl.searchParams.get('status'))
 
   const { data: rows, error } = await auth.supabase

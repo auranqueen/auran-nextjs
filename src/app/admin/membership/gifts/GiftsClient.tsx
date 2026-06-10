@@ -53,22 +53,18 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
   const [selectedProducts, setSelectedProducts] = useState<{ id?: string; name: string }[]>([])
   const [createProductTab, setCreateProductTab] = useState<'list' | 'manual'>('list')
   const [createManualProducts, setCreateManualProducts] = useState('')
-  const [allProducts, setAllProducts] = useState<{ id: string; name: string }[]>([])
-  const [productsLoading, setProductsLoading] = useState(false)
+  const [createProductSearch, setCreateProductSearch] = useState('')
+  const [createProductResults, setCreateProductResults] = useState<{ id: string; name: string }[]>([])
 
-  const loadCreateProducts = async () => {
-    setProductsLoading(true)
-    const res = await fetch('/api/admin/products?status=active')
+  const searchCreateProducts = async (q: string) => {
+    if (!q.trim()) { setCreateProductResults([]); return }
+    const res = await fetch('/api/admin/products?q=' + encodeURIComponent(q.trim()))
     const json = await res.json().catch(() => ({}))
-    setAllProducts(((json.rows as { id: string; name: string }[]) || []).map(r => ({ id: r.id, name: r.name })))
-    setProductsLoading(false)
+    setCreateProductResults(((json.rows as { id: string; name: string }[]) || []).map(r => ({ id: r.id, name: r.name })))
   }
 
-  const toggleCreateProduct = (p: { id: string; name: string }) => {
-    setSelectedProducts(prev => {
-      const on = prev.some(x => x.id === p.id)
-      return on ? prev.filter(x => x.id !== p.id) : [...prev, { id: p.id, name: p.name }]
-    })
+  const removeSelectedProduct = (id: string) => {
+    setSelectedProducts(prev => prev.filter(x => x.id !== id))
   }
 
   const searchCreateUsers = async (q: string) => {
@@ -87,10 +83,11 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
     setSelectedProducts([])
     setCreateProductTab('list')
     setCreateManualProducts('')
+    setCreateProductSearch('')
+    setCreateProductResults([])
     void loadGiftTypes().then((active) => {
       if (active?.length) setCreateGiftTypeId(active[0].id)
     })
-    void loadCreateProducts()
   }
 
   const handleCreateGift = async () => {
@@ -519,23 +516,33 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
                 {createProductTab === 'list' ? (
                   <>
                     <div style={{ fontSize: 11, color: '#8A7E92', marginBottom: 8 }}>선물에 담을 제품을 선택하세요. (복수 선택 가능)</div>
-                    {productsLoading ? (
-                      <div style={{ fontSize: 12, color: '#888', padding: '12px 0' }}>제품 불러오는 중...</div>
-                    ) : allProducts.length === 0 ? (
-                      <div style={{ fontSize: 12, color: '#888', padding: '12px 0' }}>등록된 제품이 없어요</div>
-                    ) : (
-                      <div style={{ maxHeight: 160, overflowY: 'auto', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 8, padding: '4px 0' }}>
-                        {allProducts.map(p => {
-                          const checked = selectedProducts.some(x => x.id === p.id)
-                          return (
-                            <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', fontSize: 12, color: '#e8e0f5', cursor: 'pointer', borderBottom: '0.5px solid rgba(123,94,167,0.15)' }}>
-                              <input type="checkbox" checked={checked} onChange={() => toggleCreateProduct(p)} />
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        value={createProductSearch}
+                        onChange={e => { setCreateProductSearch(e.target.value); void searchCreateProducts(e.target.value) }}
+                        placeholder="제품명 검색"
+                        style={typeFieldStyle}
+                      />
+                      {createProductResults.length > 0 ? (
+                        <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', marginTop: 4, zIndex: 20, border: '1px solid rgba(123,94,167,0.3)', borderRadius: 8, overflow: 'hidden', background: '#1a1a22', boxShadow: '0 4px 12px rgba(0,0,0,0.35)' }}>
+                          {createProductResults.map(p => (
+                            <div
+                              key={p.id}
+                              onMouseDown={(e) => {
+                                e.preventDefault()
+                                if (selectedProducts.some(x => x.id === p.id)) return
+                                setSelectedProducts(prev => [...prev, { id: p.id, name: p.name }])
+                                setCreateProductResults([])
+                                setCreateProductSearch('')
+                              }}
+                              style={{ padding: '12px 14px', minHeight: 44, boxSizing: 'border-box', fontSize: 13, color: '#e8e0f5', cursor: 'pointer', borderBottom: '0.5px solid rgba(123,94,167,0.2)', display: 'flex', alignItems: 'center' }}
+                            >
                               {p.name}
-                            </label>
-                          )
-                        })}
-                      </div>
-                    )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
                   </>
                 ) : (
                   <>
@@ -543,14 +550,16 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
                     <textarea value={createManualProducts} onChange={e => setCreateManualProducts(e.target.value)} rows={3} placeholder="앰플, 에센스, 크림" style={{ ...typeFieldStyle, resize: 'vertical', minHeight: 72 }} />
                   </>
                 )}
-                {(selectedProducts.length > 0 || createManualProducts.trim()) ? (
-                  <div style={{ marginTop: 10, padding: '8px 10px', borderRadius: 8, background: 'rgba(123,94,167,0.12)' }}>
-                    <div style={{ fontSize: 10, color: '#9B7EC8', marginBottom: 4 }}>선택한 제품</div>
-                    <div style={{ fontSize: 12, color: '#e8e0f5', lineHeight: 1.5 }}>
-                      {[
-                        ...selectedProducts.map(p => p.name),
-                        ...createManualProducts.split(',').map(s => s.trim()).filter(Boolean),
-                      ].join(' · ')}
+                {selectedProducts.length > 0 ? (
+                  <div style={{ marginTop: 10 }}>
+                    <div style={{ fontSize: 10, color: '#9B7EC8', marginBottom: 6 }}>선택한 제품</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      {selectedProducts.map(p => (
+                        <div key={p.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, padding: '10px 12px', minHeight: 44, borderRadius: 8, background: 'rgba(123,94,167,0.12)' }}>
+                          <span style={{ fontSize: 13, color: '#e8e0f5', flex: 1 }}>{p.name}</span>
+                          <button type="button" onClick={() => removeSelectedProduct(p.id!)} style={{ flexShrink: 0, width: 32, height: 32, border: 'none', borderRadius: 6, background: 'rgba(0,0,0,0.25)', color: '#e08080', fontSize: 14, cursor: 'pointer' }} aria-label="제거">✕</button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 ) : null}
