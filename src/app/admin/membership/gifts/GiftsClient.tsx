@@ -50,6 +50,26 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
   const [createGiftTypeId, setCreateGiftTypeId] = useState('')
   const [createMessage, setCreateMessage] = useState('')
   const [createSaving, setCreateSaving] = useState(false)
+  const [selectedProducts, setSelectedProducts] = useState<{ id?: string; name: string }[]>([])
+  const [createProductTab, setCreateProductTab] = useState<'list' | 'manual'>('list')
+  const [createManualProducts, setCreateManualProducts] = useState('')
+  const [allProducts, setAllProducts] = useState<{ id: string; name: string }[]>([])
+  const [productsLoading, setProductsLoading] = useState(false)
+
+  const loadCreateProducts = async () => {
+    setProductsLoading(true)
+    const res = await fetch('/api/admin/products?status=active')
+    const json = await res.json().catch(() => ({}))
+    setAllProducts(((json.rows as { id: string; name: string }[]) || []).map(r => ({ id: r.id, name: r.name })))
+    setProductsLoading(false)
+  }
+
+  const toggleCreateProduct = (p: { id: string; name: string }) => {
+    setSelectedProducts(prev => {
+      const on = prev.some(x => x.id === p.id)
+      return on ? prev.filter(x => x.id !== p.id) : [...prev, { id: p.id, name: p.name }]
+    })
+  }
 
   const searchCreateUsers = async (q: string) => {
     if (q.length < 2) { setCreateUsers([]); return }
@@ -64,19 +84,30 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
     setCreateUsers([])
     setCreateUserId('')
     setCreateMessage('')
+    setSelectedProducts([])
+    setCreateProductTab('list')
+    setCreateManualProducts('')
     void loadGiftTypes().then((active) => {
       if (active?.length) setCreateGiftTypeId(active[0].id)
     })
+    void loadCreateProducts()
   }
 
   const handleCreateGift = async () => {
     if (!createUserId) { setToast('고객을 선택해주세요'); setTimeout(() => setToast(''), 2500); return }
     if (!createGiftTypeId) { setToast('선물 타입을 선택해주세요'); setTimeout(() => setToast(''), 2500); return }
+    const manualItems = createManualProducts.split(',').map(s => s.trim()).filter(Boolean).map(name => ({ name }))
+    const products = [...selectedProducts, ...manualItems]
     setCreateSaving(true)
     const res = await fetch('/api/admin/membership/gifts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ claimed_by: createUserId, gift_type_id: createGiftTypeId, message: createMessage.trim() || undefined }),
+      body: JSON.stringify({
+        claimed_by: createUserId,
+        gift_type_id: createGiftTypeId,
+        message: createMessage.trim() || undefined,
+        ...(products.length ? { products } : {}),
+      }),
     })
     const json = await res.json().catch(() => ({}))
     setCreateSaving(false)
@@ -452,7 +483,7 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
 
       {showCreateModal ? (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 55, padding: 16 }} onClick={() => setShowCreateModal(false)}>
-          <div style={{ width: '100%', maxWidth: 420, background: '#1a1a22', borderRadius: 16, padding: 20 }} onClick={e => e.stopPropagation()}>
+          <div style={{ width: '100%', maxWidth: 480, maxHeight: '90vh', overflow: 'auto', background: '#1a1a22', borderRadius: 16, padding: 20 }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <div style={{ fontSize: 15, color: '#C9A96E' }}>선물 생성</div>
               <button type="button" onClick={() => setShowCreateModal(false)} style={{ padding: '5px 12px', background: '#333', border: 'none', color: '#fff', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>✕ 닫기</button>
@@ -478,6 +509,53 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
               </div>
             ) : null}
             {createUserId ? <div style={{ fontSize: 11, color: '#9B7EC8', marginTop: 8 }}>선택됨 · {createSearch}</div> : null}
+            {createUserId ? (
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px solid rgba(123,94,167,0.2)' }}>
+                <div style={{ fontSize: 12, color: '#C9A96E', marginBottom: 10 }}>제품 선택</div>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                  <button type="button" onClick={() => setCreateProductTab('list')} style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', fontSize: 12, cursor: 'pointer', background: createProductTab === 'list' ? '#7B5EA7' : 'rgba(123,94,167,0.15)', color: createProductTab === 'list' ? '#fff' : '#9B7EC8' }}>제품 목록</button>
+                  <button type="button" onClick={() => setCreateProductTab('manual')} style={{ flex: 1, padding: '7px 0', borderRadius: 8, border: 'none', fontSize: 12, cursor: 'pointer', background: createProductTab === 'manual' ? '#7B5EA7' : 'rgba(123,94,167,0.15)', color: createProductTab === 'manual' ? '#fff' : '#9B7EC8' }}>직접 기재하기</button>
+                </div>
+                {createProductTab === 'list' ? (
+                  <>
+                    <div style={{ fontSize: 11, color: '#8A7E92', marginBottom: 8 }}>선물에 담을 제품을 선택하세요. (복수 선택 가능)</div>
+                    {productsLoading ? (
+                      <div style={{ fontSize: 12, color: '#888', padding: '12px 0' }}>제품 불러오는 중...</div>
+                    ) : allProducts.length === 0 ? (
+                      <div style={{ fontSize: 12, color: '#888', padding: '12px 0' }}>등록된 제품이 없어요</div>
+                    ) : (
+                      <div style={{ maxHeight: 160, overflowY: 'auto', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 8, padding: '4px 0' }}>
+                        {allProducts.map(p => {
+                          const checked = selectedProducts.some(x => x.id === p.id)
+                          return (
+                            <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', fontSize: 12, color: '#e8e0f5', cursor: 'pointer', borderBottom: '0.5px solid rgba(123,94,167,0.15)' }}>
+                              <input type="checkbox" checked={checked} onChange={() => toggleCreateProduct(p)} />
+                              {p.name}
+                            </label>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div style={{ fontSize: 11, color: '#8A7E92', marginBottom: 8 }}>제품명을 직접 입력하세요. (여러 개는 쉼표로 구분, 예: 앰플, 에센스, 크림)</div>
+                    <textarea value={createManualProducts} onChange={e => setCreateManualProducts(e.target.value)} rows={3} placeholder="앰플, 에센스, 크림" style={{ ...typeFieldStyle, resize: 'vertical', minHeight: 72 }} />
+                  </>
+                )}
+                {(selectedProducts.length > 0 || createManualProducts.trim()) ? (
+                  <div style={{ marginTop: 10, padding: '8px 10px', borderRadius: 8, background: 'rgba(123,94,167,0.12)' }}>
+                    <div style={{ fontSize: 10, color: '#9B7EC8', marginBottom: 4 }}>선택한 제품</div>
+                    <div style={{ fontSize: 12, color: '#e8e0f5', lineHeight: 1.5 }}>
+                      {[
+                        ...selectedProducts.map(p => p.name),
+                        ...createManualProducts.split(',').map(s => s.trim()).filter(Boolean),
+                      ].join(' · ')}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
             <div style={{ fontSize: 11, color: '#8A7E92', margin: '14px 0 6px' }}>선물 타입</div>
             <select value={createGiftTypeId} onChange={e => setCreateGiftTypeId(e.target.value)} style={{ ...typeFieldStyle, cursor: 'pointer' }}>
               {giftTypes.map(t => (

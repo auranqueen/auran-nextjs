@@ -6,10 +6,18 @@ export async function POST(req: Request) {
   try {
     const supabase = createClient()
     await requireAdmin(supabase)
-    const { claimed_by, gift_type_id, message } = await req.json()
+    const { claimed_by, gift_type_id, message, products } = await req.json()
     if (!claimed_by || !gift_type_id) {
       return Response.json({ error: 'missing fields' }, { status: 400 })
     }
+    const productRows = Array.isArray(products)
+      ? products
+          .map((p: any) => ({
+            ...(p?.id ? { id: String(p.id) } : {}),
+            name: String(p?.name || '').trim(),
+          }))
+          .filter((p: { name: string }) => p.name)
+      : []
     const { data: plan } = await supabase
       .from('membership_plans')
       .select('id, price')
@@ -31,6 +39,7 @@ export async function POST(req: Request) {
         message: message || null,
         sender_name: '어드민',
         shipping_status: 'pending',
+        ...(productRows.length ? { products: productRows } : {}),
       } as any)
       .select('id')
       .single()
