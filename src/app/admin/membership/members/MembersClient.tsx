@@ -51,7 +51,6 @@ export default function MembersClient({
   const [templates, setTemplates] = useState<Tpl[]>(initialTpls)
   const [openId, setOpenId] = useState<string | null>(null)
   const [localProductMap, setLocalProductMap] = useState<Record<string, ProductInfo>>(productMap)
-  const [shipDates, setShipDates] = useState<Record<string, string>>({})
   const [deliveryTypes, setDeliveryTypes] = useState<Record<string, string>>({})
   const [couriers, setCouriers] = useState<Record<string, string>>({})
   const [trackingNos, setTrackingNos] = useState<Record<string, string>>({})
@@ -87,6 +86,9 @@ export default function MembersClient({
   const [memberShipments, setMemberShipments] = useState<Record<string, MemberShipment[]>>({})
   const [showTomorrowPopup, setShowTomorrowPopup] = useState(false)
   const [tomorrowNames, setTomorrowNames] = useState<string[]>([])
+  const [shipModalId, setShipModalId] = useState<string | null>(null)
+  const [shipModalNextDate, setShipModalNextDate] = useState('')
+  const [shipModalCycleDates, setShipModalCycleDates] = useState<Record<number, string>>({})
 
   const fmtScheduleDate = (iso: string | null | undefined) => {
     if (!iso) return ''
@@ -97,16 +99,39 @@ export default function MembersClient({
   const cycleLabel = (m: Membership, cycle: number) => {
     const rows = memberShipments[m.id] || []
     const shipped = rows.find((r) => r.cycle_no === cycle && r.status === '발송완료')
+    const planned = rows.find((r) => r.cycle_no === cycle && r.status !== '발송완료')
     const completed = m.shipments_total - m.shipments_remaining
     if (shipped?.shipped_at) {
       return `${cycle}회차 ✅ 발송완료 (${fmtScheduleDate(shipped.shipped_at)})`
     }
+    if (planned?.scheduled_at) {
+      return `${cycle}회차 📅 예정 (${fmtScheduleDate(planned.scheduled_at)})`
+    }
     if (cycle === completed + 1) {
-      const prevSched = rows.find((r) => r.cycle_no === cycle - 1)?.scheduled_at
-      const sched = m.next_shipment_date || m.scheduled_at || prevSched
+      const sched = m.next_shipment_date || m.scheduled_at
       if (sched) return `${cycle}회차 📅 예정 (${fmtScheduleDate(sched)})`
     }
     return `${cycle}회차 ⏳ 예정일 미정`
+  }
+
+  const openShipModal = (m: Membership) => {
+    if (!tplId) { setMsg('리추얼을 먼저 선택하세요'); return }
+    const currentCycle = m.shipments_total - m.shipments_remaining + 1
+    const rows = memberShipments[m.id] || []
+    const cycleDates: Record<number, string> = {}
+    for (let c = currentCycle + 1; c <= m.shipments_total; c++) {
+      const row = rows.find((r) => r.cycle_no === c)
+      cycleDates[c] = row?.scheduled_at ? String(row.scheduled_at).slice(0, 10) : ''
+    }
+    setShipModalNextDate(m.next_shipment_date || '')
+    setShipModalCycleDates(cycleDates)
+    setShipModalId(m.id)
+  }
+
+  const closeShipModal = () => {
+    setShipModalId(null)
+    setShipModalNextDate('')
+    setShipModalCycleDates({})
   }
 
   useEffect(() => {
@@ -194,13 +219,28 @@ export default function MembersClient({
   })
 
   // 큐레이션
-  const call = async (mId: string, action: 'preview' | 'ship') => {
+  const call = async (
+    mId: string,
+    action: 'preview' | 'ship',
+    shipPayload?: { next_shipment_date: string; scheduled_dates: { cycle_no: number; date: string }[] },
+  ) => {
     if (!tplId) { setMsg('리추얼을 먼저 선택하세요'); return }
-    if (action === 'ship' && !confirm('이 리추얼을 발송 처리할까요?')) return
     setBusy(true); setMsg(null)
     const res = await fetch('/api/admin/membership/curate', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ user_membership_id: mId, bundle_template_id: tplId, action, ship_date: shipDates[mId] || undefined, delivery_type: deliveryTypes[mId] || 'courier', courier: couriers[mId] || 'CJ대한통운', tracking_no: trackingNos[mId] || undefined, quick_company: quickCompanies[mId] || undefined }),
+      body: JSON.stringify({
+        user_membership_id: mId,
+        bundle_template_id: tplId,
+        action,
+        delivery_type: deliveryTypes[mId] || 'courier',
+        courier: couriers[mId] || 'CJ대한통운',
+        tracking_no: trackingNos[mId] || undefined,
+        quick_company: quickCompanies[mId] || undefined,
+        ...(action === 'ship' && shipPayload ? {
+          next_shipment_date: shipPayload.next_shipment_date || undefined,
+          scheduled_dates: shipPayload.scheduled_dates,
+        } : {}),
+      }),
     })
     const json = await res.json().catch(() => ({}))
     setBusy(false)
@@ -223,7 +263,26 @@ export default function MembersClient({
       setMemberShipments((prev) => ({ ...prev, [mId]: (fresh as MemberShipment[]) || [] }))
       setMsg(`${json.cycle_no}회차 발송 완료 · 남은 ${json.remaining}회`)
       setPreview(null)
+      closeShipModal()
     }
+  }
+
+  const confirmShipModal = () => {
+    if (!shipModalId) return
+    const m = memberships.find((x) => x.id === shipModalId)
+    if (!m) return
+    const currentCycle = m.shipments_total - m.shipments_remaining + 1
+    const scheduled_dates = Object.entries(shipModalCycleDates)
+      .map(([c, d]) => ({ cycle_no: Number(c), date: d }))
+      .filter((x) => x.cycle_no > currentCycle && x.date)
+    if (m.shipments_remaining > 1 && !shipModalNextDate) {
+      setMsg('다음 회차 발송일을 입력해주세요')
+      return
+    }
+    void call(shipModalId, 'ship', {
+      next_shipment_date: shipModalNextDate,
+      scheduled_dates,
+    })
   }
 
   // 템플릿 제품 검색
@@ -606,12 +665,6 @@ export default function MembersClient({
                     </div>
                   )}
                   <div style={{ marginBottom: 10 }}>
-                    <div style={{ fontSize: 11, color: C.faint, marginBottom: 4 }}>발송 예정일</div>
-                    <input type="date" value={shipDates[m.id] || new Date().toISOString().slice(0, 10)}
-                      onChange={e => setShipDates(prev => ({ ...prev, [m.id]: e.target.value }))}
-                      style={{ width: '100%', padding: '8px 10px', background: '#fff', border: `0.5px solid ${C.line}`, borderRadius: 8, fontSize: 13, color: '#111', cursor: 'pointer' }} />
-                  </div>
-                  <div style={{ marginBottom: 10 }}>
                     <div style={{ fontSize: 11, color: C.faint, marginBottom: 6 }}>배송 방법</div>
                     <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
                       {(['courier', 'quick', 'direct'] as const).map(dt => (
@@ -641,7 +694,7 @@ export default function MembersClient({
                       style={{ flex: 1, background: 'transparent', border: `0.5px solid rgba(123,94,167,0.3)`, color: C.muted, borderRadius: 8, padding: 10, fontSize: 13, fontFamily: 'inherit', cursor: 'pointer' }}>
                       {busy ? '...' : '미리보기'}
                     </button>
-                    <button onClick={() => call(m.id, 'ship')} disabled={busy || m.shipments_remaining <= 0}
+                    <button onClick={() => openShipModal(m)} disabled={busy || m.shipments_remaining <= 0}
                       style={{ flex: 1, background: m.shipments_remaining <= 0 ? '#C9BFD8' : C.purple, border: 'none', color: '#fff', borderRadius: 8, padding: 10, fontSize: 13, fontFamily: 'inherit', cursor: m.shipments_remaining <= 0 ? 'default' : 'pointer' }}>
                       발송 처리
                     </button>
@@ -707,6 +760,58 @@ export default function MembersClient({
           </div>
         </div>
       ) : null}
+
+      {shipModalId ? (() => {
+        const modalM = memberships.find((x) => x.id === shipModalId)
+        if (!modalM) return null
+        const currentCycle = modalM.shipments_total - modalM.shipments_remaining + 1
+        const futureCycles = Array.from({ length: modalM.shipments_total - currentCycle }, (_, i) => currentCycle + 1 + i)
+        return (
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 57, padding: 16 }} onClick={closeShipModal}>
+            <div style={{ width: '100%', maxWidth: 440, maxHeight: '88vh', overflow: 'auto', background: '#fff', borderRadius: 16, padding: 20 }} onClick={(e) => e.stopPropagation()}>
+              <div style={{ fontSize: 15, color: C.plum, fontFamily: SERIF, marginBottom: 4 }}>{currentCycle}회차 발송 처리</div>
+              <div style={{ fontSize: 12, color: C.muted, marginBottom: 14 }}>{modalM.users?.name || '회원'} · 남은 {modalM.shipments_remaining}회</div>
+              {modalM.shipments_remaining > 1 && (
+                <>
+                  <div style={{ fontSize: 11, color: C.muted, marginBottom: 4 }}>다음 회차 발송일 (next_shipment_date)</div>
+                  <input
+                    type="date"
+                    value={shipModalNextDate}
+                    onChange={(e) => setShipModalNextDate(e.target.value)}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: 8, border: `1px solid ${C.line}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff', marginBottom: 12 }}
+                  />
+                  {futureCycles.length > 0 && (
+                    <div style={{ fontSize: 11, color: C.muted, marginBottom: 8 }}>회차별 예정일</div>
+                  )}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
+                    {futureCycles.map((cycle) => (
+                      <div key={`ship-modal-cycle-${cycle}`}>
+                        <div style={{ fontSize: 11, color: C.ink, marginBottom: 4 }}>{cycle}회차 예정일</div>
+                        <input
+                          type="date"
+                          value={shipModalCycleDates[cycle] || ''}
+                          onChange={(e) => setShipModalCycleDates((prev) => ({ ...prev, [cycle]: e.target.value }))}
+                          style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: 8, border: `1px solid ${C.line}`, fontSize: 13, fontFamily: 'inherit', outline: 'none', color: '#111', background: '#fff' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" onClick={closeShipModal} disabled={busy}
+                  style={{ flex: 1, padding: 11, background: 'transparent', border: `1px solid ${C.line}`, color: C.muted, borderRadius: 9, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  취소
+                </button>
+                <button type="button" onClick={confirmShipModal} disabled={busy}
+                  style={{ flex: 1, padding: 11, background: busy ? '#C9BFD8' : C.purple, border: 'none', color: '#fff', borderRadius: 9, fontSize: 13, cursor: busy ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+                  {busy ? '처리 중...' : '발송 확인'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )
+      })() : null}
     </div>
   )
 }

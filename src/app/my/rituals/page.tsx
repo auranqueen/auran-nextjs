@@ -76,50 +76,45 @@ export default function RitualsPage() {
   const buildSchedule = () => {
     if (!membership) return []
     const total = membership.shipments_total || 6
-    const remaining = membership.shipments_remaining || 0
-    const completed = total - remaining
-    const nextSchedRaw = membership.next_shipment_date || membership.scheduled_at || null
     const schedule = []
     for (let i = 1; i <= total; i++) {
-      const shipped = shipments.find(s => s.cycle_no === i)
+      const row = shipments.find((s) => s.cycle_no === i)
       let date: string | null = null
-      let state: 'done' | 'next' | 'pending' | 'expired' = 'pending'
-      if (shipped?.shipped_at) {
-        date = fmtRitualDate(shipped.shipped_at)
+      let state: 'done' | 'scheduled' | 'pending' = 'pending'
+      if (row?.shipped_at && row.status === '발송완료') {
+        date = fmtRitualDate(row.shipped_at)
         state = 'done'
-      } else if (i === completed + 1) {
-        const prevSched = shipments.find(s => s.cycle_no === i - 1)?.scheduled_at
-        const schedRaw = nextSchedRaw || prevSched
-        date = fmtRitualDate(schedRaw)
-        state = membership.status === 'expired' ? 'expired' : schedRaw ? 'next' : 'pending'
+      } else if (row?.scheduled_at) {
+        date = fmtRitualDate(row.scheduled_at)
+        state = 'scheduled'
+      } else if (i === membership.shipments_total - membership.shipments_remaining + 1) {
+        const fallback = membership.next_shipment_date || membership.scheduled_at
+        if (fallback) {
+          date = fmtRitualDate(fallback)
+          state = 'scheduled'
+        }
       }
-      schedule.push({ cycle: i, state, date, shipment: shipped || null })
+      schedule.push({ cycle: i, state, date, shipment: row?.status === '발송완료' ? row : null })
     }
     return schedule
   }
 
   const schedule = buildSchedule()
 
-  const stateStyle = (state: string): React.CSSProperties => ({
-    done: { color: '#1D9E75', background: 'rgba(29,158,117,0.1)' },
-    next: { color: '#C9A96E', background: 'rgba(201,169,110,0.12)' },
-    pending: { color: 'rgba(255,255,255,0.3)', background: 'rgba(255,255,255,0.05)' },
-    expired: { color: '#555', background: 'rgba(255,255,255,0.03)' },
-  }[state] || {})
-
-  const stateLabel = (state: string, cycle: number, date: string | null) => {
-    if (state === 'done') return date ? `${cycle}회차 수령완료 (${date})` : `${cycle}회차 수령완료`
-    if (state === 'next') return date ? `${cycle}회차 발송예정 (${date})` : `${cycle}회차 발송예정`
-    if (state === 'expired') return `${cycle}회차 종료`
+  const cycleLabel = (cycle: number, state: string, date: string | null) => {
+    if (state === 'done') return date ? `${cycle}회차 완료 (${date})` : `${cycle}회차 완료`
+    if (state === 'scheduled') return date ? `${cycle}회차 예정 (${date})` : `${cycle}회차 예정`
     return `${cycle}회차 예정`
   }
 
-  const stateBadge = (state: string) => ({
-    done: '✅ 수령완료',
-    next: '📅 발송예정',
-    pending: '⏳ 예정',
-    expired: '종료',
-  }[state] || '')
+  const bulbStyle = (state: string): React.CSSProperties => ({
+    width: 10,
+    height: 10,
+    borderRadius: '50%',
+    flexShrink: 0,
+    background: state === 'scheduled' ? '#7B5EA7' : '#444',
+    boxShadow: state === 'scheduled' ? '0 0 10px rgba(123,94,167,0.85)' : 'none',
+  })
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0c0f', color: '#e8e0f5', paddingBottom: 80 }}>
@@ -161,42 +156,33 @@ export default function RitualsPage() {
                   key={cycle}
                   onClick={() => shipment && setShowDetail(shipment)}
                   style={{
-                    background: state === 'done' ? 'rgba(29,158,117,0.06)' : 'rgba(255,255,255,0.03)',
-                    border: `0.5px solid ${state === 'done' ? 'rgba(29,158,117,0.2)' : state === 'next' ? 'rgba(201,169,110,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                    background: state === 'scheduled' ? 'rgba(123,94,167,0.08)' : 'rgba(255,255,255,0.03)',
+                    border: `0.5px solid ${state === 'scheduled' ? 'rgba(123,94,167,0.35)' : state === 'done' ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.06)'}`,
                     borderRadius: 12,
                     padding: '14px 16px',
                     cursor: shipment ? 'pointer' : 'default',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
+                    gap: 10,
                   }}
                 >
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <span style={{ fontSize: 14, color: state === 'done' ? '#F0E8FF' : state === 'next' ? '#C9A96E' : '#555' }}>
-                        {stateLabel(state, cycle, date)}
-                      </span>
-                      <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, ...stateStyle(state) }}>
-                        {stateBadge(state)}
-                      </span>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, minWidth: 0 }}>
+                    <div style={bulbStyle(state)} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 13, color: state === 'scheduled' ? '#C9A96E' : state === 'done' ? '#888' : '#555', lineHeight: 1.45 }}>
+                        {cycleLabel(cycle, state, date)}
+                      </div>
+                      {shipment && (
+                        <div style={{ fontSize: 11, color: '#7B5EA7', marginTop: 4 }}>
+                          {(shipment.bundle_templates as any)?.theme_name || ''}
+                          {(shipment.bundle_templates as any)?.target_phase ? ` · ${(shipment.bundle_templates as any).target_phase}` : ''}
+                        </div>
+                      )}
                     </div>
-                    {date && state === 'done' && (
-                      <div style={{ fontSize: 11, color: '#1D9E75' }}>
-                        발송일 {date}
-                      </div>
-                    )}
-                    {shipment && (
-                      <div style={{ fontSize: 11, color: '#7B5EA7', marginTop: 2 }}>
-                        {(shipment.bundle_templates as any)?.theme_name || ''}
-                        {(shipment.bundle_templates as any)?.target_phase ? ` · ${(shipment.bundle_templates as any).target_phase}` : ''}
-                      </div>
-                    )}
                   </div>
                   {shipment && (
-                    <div style={{ fontSize: 11, color: '#7B5EA7' }}>상세 →</div>
-                  )}
-                  {state === 'next' && !shipment && (
-                    <div style={{ fontSize: 10, color: '#C9A96E', opacity: 0.7 }}>준비중</div>
+                    <div style={{ fontSize: 11, color: '#7B5EA7', flexShrink: 0 }}>상세 →</div>
                   )}
                 </div>
               ))}

@@ -17,10 +17,10 @@ async function adminUser(supabase: any) {
   return null
 }
 
-function computeNextSchedule(from: Date): { dateStr: string; iso: string } {
-  const next = new Date(from)
-  next.setDate(next.getDate() + 30)
-  return { dateStr: next.toISOString().slice(0, 10), iso: next.toISOString() }
+function toScheduledIso(dateStr: string): string {
+  const d = String(dateStr || '').slice(0, 10)
+  if (!d) return ''
+  return new Date(`${d}T12:00:00`).toISOString()
 }
 
 export async function POST(req: NextRequest) {
@@ -32,7 +32,8 @@ export async function POST(req: NextRequest) {
   const membershipId = String(body?.user_membership_id || '')
   const templateId = String(body?.bundle_template_id || '')
   const action = body?.action === 'ship' ? 'ship' : 'preview'
-  const shipDate = body?.ship_date ? String(body.ship_date) : null
+  const nextShipmentDate = body?.next_shipment_date ? String(body.next_shipment_date).slice(0, 10) : null
+  const scheduledDatesRaw = Array.isArray(body?.scheduled_dates) ? body.scheduled_dates : []
   const deliveryType = body?.delivery_type ? String(body.delivery_type) : 'courier'
   const courierName = body?.courier ? String(body.courier) : 'CJ대한통운'
   const trackingNo = body?.tracking_no ? String(body.tracking_no) : null
@@ -86,9 +87,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'no_shipments_left' }, { status: 400 })
   }
   const cycleNo = (um.shipments_total ?? 6) - (um.shipments_remaining ?? 0) + 1
-  const shippedAt = shipDate ? new Date(shipDate) : new Date()
+  const shippedAt = new Date()
   const remaining = (um.shipments_remaining ?? 1) - 1
-  const nextSched = remaining > 0 ? computeNextSchedule(shippedAt) : null
+  const nextDateStr = remaining > 0 ? nextShipmentDate : null
+  const nextScheduledIso = nextDateStr ? toScheduledIso(nextDateStr) : null
   const { data: shipment, error: insErr } = await client.from('membership_shipments').insert({
     user_membership_id: um.id,
     user_id: um.user_id,
@@ -100,19 +102,46 @@ export async function POST(req: NextRequest) {
     },
     status: '발송완료',
     shipped_at: shippedAt.toISOString(),
-    scheduled_at: nextSched?.iso ?? null,
     delivery_type: deliveryType,
     courier: deliveryType === 'courier' ? courierName : deliveryType === 'quick' ? quickCompany : '직접전달',
     tracking_no: deliveryType === 'courier' ? trackingNo : null,
   } as any).select('id').single()
   if (insErr) return NextResponse.json({ ok: false, error: insErr.message }, { status: 500 })
 
+  for (const item of scheduledDatesRaw) {
+    const cn = Number((item as any)?.cycle_no)
+    const dateStr = String((item as any)?.date || (item as any)?.scheduled_at || '').slice(0, 10)
+    if (!cn || cn <= cycleNo || !dateStr) continue
+    const schedIso = toScheduledIso(dateStr)
+    const { data: exRow } = await client
+      .from('membership_shipments')
+      .select('id, status')
+      .eq('user_membership_id', um.id)
+      .eq('cycle_no', cn)
+      .maybeSingle()
+    if ((exRow as any)?.status === '발송완료') continue
+    if ((exRow as any)?.id) {
+      await client
+        .from('membership_shipments')
+        .update({ scheduled_at: schedIso, status: '예정' } as any)
+        .eq('id', (exRow as any).id)
+    } else {
+      await client.from('membership_shipments').insert({
+        user_membership_id: um.id,
+        user_id: um.user_id,
+        cycle_no: cn,
+        status: '예정',
+        scheduled_at: schedIso,
+      } as any)
+    }
+  }
+
   await client
     .from('user_memberships')
     .update({
       shipments_remaining: remaining,
-      next_shipment_date: nextSched?.dateStr ?? null,
-      scheduled_at: nextSched?.iso ?? null,
+      next_shipment_date: nextDateStr,
+      scheduled_at: nextScheduledIso,
       status: remaining > 0 ? 'active' : 'expired',
     })
     .eq('id', um.id)
@@ -173,7 +202,7 @@ export async function POST(req: NextRequest) {
     shipped: true,
     cycle_no: cycleNo,
     remaining,
-    next_shipment_date: nextSched?.dateStr ?? null,
-    scheduled_at: nextSched?.iso ?? null,
+    next_shipment_date: nextDateStr,
+    scheduled_at: nextScheduledIso,
   })
 }
