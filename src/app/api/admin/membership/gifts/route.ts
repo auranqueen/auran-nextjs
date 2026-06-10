@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/app/admin/_auth'
 import { sendPpurioAlimtalk } from '@/lib/ppurio/sendAlimtalk'
+import { getGiftShipmentMessage } from '@/lib/membershipMessage'
 
 export async function POST(req: Request) {
   try {
@@ -107,9 +108,18 @@ export async function PATCH(req: Request) {
       }
     } catch (_) {}
     try {
-      const { data: giftRow2 } = await supabase.from('membership_gifts').select('claimed_by, shipping_name').eq('id', id).maybeSingle()
+      const { data: giftRow2 } = await supabase.from('membership_gifts').select('claimed_by, shipping_name, products').eq('id', id).maybeSingle()
       const claimedBy = (giftRow2 as any)?.claimed_by
       const shipName = (giftRow2 as any)?.shipping_name || '고객'
+      const giftProducts = Array.isArray((giftRow2 as any)?.products) ? (giftRow2 as any).products as { name: string }[] : []
+      let giftTrack = 'general'
+      if (claimedBy) {
+        const { data: urowGift } = await supabase.from('users').select('auth_id').eq('id', claimedBy).maybeSingle()
+        if ((urowGift as any)?.auth_id) {
+          const { data: hcGift } = await supabase.from('hormone_cycle').select('track').eq('auth_id', (urowGift as any).auth_id).maybeSingle()
+          if ((hcGift as any)?.track) giftTrack = String((hcGift as any).track)
+        }
+      }
       if (claimedBy) {
         const { data: chRow3 } = await supabase.from('chat_channels').select('id').eq('user_id', claimedBy).eq('channel_type', 'owner').maybeSingle()
         let chId3: string | null = (chRow3 as any)?.id || null
@@ -118,11 +128,7 @@ export async function PATCH(req: Request) {
           chId3 = (newCh3 as any)?.id || null
         }
         if (chId3) {
-          const delivMsg = delivery_type === 'direct'
-            ? `${shipName}님, ${giftTypeName} 선물이 직접 전달됐어요 💜\n소중히 사용해주세요!`
-            : delivery_type === 'quick'
-            ? `${shipName}님, ${giftTypeName} 선물이 퀵으로 출발했어요 🛵\n업체: ${courier}\n곧 도착할 예정이에요 💜`
-            : `${shipName}님, ${giftTypeName} 선물이 출발했어요 💜\n${courier} ${tracking_no}\n배송 조회 후 수령해주세요 💜`
+          const delivMsg = getGiftShipmentMessage(giftTrack, delivery_type || 'courier', giftTypeName, shipName, giftProducts)
           const previewLine = `${giftTypeName} 선물이 출발했어요 💜`
           await supabase.from('consultation_messages').insert({ channel_id: chId3, sender_id: claimedBy, message: delivMsg, message_kind: 'text', is_from_customer: false } as any)
           await supabase.from('chat_channels').update({ last_message: previewLine, last_message_at: new Date().toISOString(), unread_count: 1, preview_text: previewLine }).eq('id', chId3)
