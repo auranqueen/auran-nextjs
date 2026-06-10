@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 type GiftTypeOpt = { id: string; name: string; emoji: string }
+type GiftTypeRow = GiftTypeOpt & { is_active: boolean; order: number; created_at?: string }
+const EMOJI_PRESETS = ['🎂', '🎉', '💝', '🌟', '🎁', '💐', '🎊', '💜', '🌸', '✨', '🎀', '💌']
 type GiftRow = {
   id: string; sender_name: string | null; message: string | null; amount: number
   status: string; shipping_status: string | null; shipping_name: string | null
@@ -31,6 +33,16 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
   const [toast, setToast] = useState('')
   const [giftTypes, setGiftTypes] = useState<GiftTypeOpt[]>([])
   const [giftTypeId, setGiftTypeId] = useState('')
+  const [showTypeModal, setShowTypeModal] = useState(false)
+  const [typeItems, setTypeItems] = useState<GiftTypeRow[]>([])
+  const [typeLoading, setTypeLoading] = useState(false)
+  const [typeMsg, setTypeMsg] = useState('')
+  const [typeFormOpen, setTypeFormOpen] = useState(false)
+  const [typeEditing, setTypeEditing] = useState<GiftTypeRow | null>(null)
+  const [formName, setFormName] = useState('')
+  const [formEmoji, setFormEmoji] = useState('🎁')
+  const [formActive, setFormActive] = useState(true)
+  const [typeSaving, setTypeSaving] = useState(false)
 
   const loadGiftTypes = async () => {
     const res = await fetch('/api/admin/gift-types')
@@ -38,6 +50,93 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
     const active = ((json.items as (GiftTypeOpt & { is_active?: boolean })[]) || []).filter((t) => t.is_active !== false)
     setGiftTypes(active)
     if (active.length && !giftTypeId) setGiftTypeId(active[0].id)
+  }
+
+  const loadTypeItems = async () => {
+    setTypeLoading(true)
+    const res = await fetch('/api/admin/gift-types')
+    const json = await res.json().catch(() => ({}))
+    setTypeItems(json.ok ? (json.items as GiftTypeRow[]) || [] : [])
+    setTypeLoading(false)
+  }
+
+  const openTypeModal = () => {
+    setShowTypeModal(true)
+    setTypeMsg('')
+    void loadTypeItems()
+  }
+
+  const openTypeAdd = () => {
+    setTypeEditing(null)
+    setFormName('')
+    setFormEmoji('🎁')
+    setFormActive(true)
+    setTypeFormOpen(true)
+  }
+
+  const openTypeEdit = (row: GiftTypeRow) => {
+    setTypeEditing(row)
+    setFormName(row.name)
+    setFormEmoji(row.emoji || '🎁')
+    setFormActive(row.is_active)
+    setTypeFormOpen(true)
+  }
+
+  const saveTypeForm = async () => {
+    if (!formName.trim()) {
+      setTypeMsg('이름을 입력해주세요')
+      return
+    }
+    setTypeSaving(true)
+    setTypeMsg('')
+    const res = await fetch('/api/admin/gift-types', {
+      method: typeEditing ? 'PATCH' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...(typeEditing ? { id: typeEditing.id } : {}),
+        name: formName.trim(),
+        emoji: formEmoji.trim() || '🎁',
+        is_active: formActive,
+      }),
+    })
+    const json = await res.json().catch(() => ({}))
+    setTypeSaving(false)
+    if (!json.ok) {
+      setTypeMsg(json.error || '저장 실패')
+      return
+    }
+    setTypeFormOpen(false)
+    void loadTypeItems()
+    void loadGiftTypes()
+  }
+
+  const removeType = async (row: GiftTypeRow) => {
+    if (!confirm(`"${row.name}" 타입을 삭제할까요?`)) return
+    const res = await fetch('/api/admin/gift-types', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: row.id }),
+    })
+    const json = await res.json().catch(() => ({}))
+    if (!json.ok) {
+      setTypeMsg(json.error || '삭제 실패')
+      return
+    }
+    void loadTypeItems()
+    void loadGiftTypes()
+  }
+
+  const moveTypeOrder = async (row: GiftTypeRow, dir: -1 | 1) => {
+    const sorted = [...typeItems].sort((a, b) => a.order - b.order)
+    const idx = sorted.findIndex((x) => x.id === row.id)
+    const swap = sorted[idx + dir]
+    if (!swap) return
+    await Promise.all([
+      fetch('/api/admin/gift-types', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: row.id, order: swap.order }) }),
+      fetch('/api/admin/gift-types', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: swap.id, order: row.order }) }),
+    ])
+    void loadTypeItems()
+    void loadGiftTypes()
   }
 
   const load = async () => {
@@ -88,7 +187,16 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0c0f', color: '#e8e0f5', padding: '20px 16px 80px' }}>
       <div style={{ maxWidth: 600, margin: '0 auto' }}>
-        <div style={{ fontSize: 16, color: '#C9A96E', marginBottom: 20, letterSpacing: 1 }}>ORÆN PRIVÉ · 선물 배송 관리</div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 12 }}>
+          <div style={{ fontSize: 16, color: '#C9A96E', letterSpacing: 1 }}>ORÆN PRIVÉ · 선물 배송 관리</div>
+          <button
+            type="button"
+            onClick={openTypeModal}
+            style={{ flexShrink: 0, padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(123,94,167,0.4)', background: 'rgba(123,94,167,0.15)', color: '#9B7EC8', fontSize: 12, cursor: 'pointer' }}
+          >
+            선물 타입 관리
+          </button>
+        </div>
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           {([['address_received','배송지입력완료'],['shipped','발송완료'],['all','전체']] as const).map(([k,l]) => (
             <button key={k} onClick={() => setTab(k)} style={{ padding: '6px 14px', borderRadius: 20, border: 'none', fontSize: 12, cursor: 'pointer', background: tab === k ? '#7B5EA7' : 'rgba(123,94,167,0.15)', color: tab === k ? '#fff' : '#9B7EC8' }}>{l}</button>
@@ -196,6 +304,89 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
       {toast && (
         <div style={{ position: 'fixed', bottom: 80, left: '50%', transform: 'translateX(-50%)', background: '#7B5EA7', color: '#fff', padding: '10px 20px', borderRadius: 20, fontSize: 13 }}>{toast}</div>
       )}
+
+      {showTypeModal ? (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 55, padding: 16 }} onClick={() => setShowTypeModal(false)}>
+          <div style={{ width: '100%', maxWidth: 640, maxHeight: '88vh', overflow: 'auto', background: '#1a1a22', borderRadius: 16, padding: 20 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ fontSize: 15, color: '#C9A96E' }}>선물 타입 관리</div>
+              <button type="button" onClick={() => setShowTypeModal(false)} style={{ padding: '5px 12px', background: '#333', border: 'none', color: '#fff', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>✕ 닫기</button>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+              <button type="button" onClick={openTypeAdd} style={{ padding: '7px 12px', borderRadius: 8, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}>+ 추가</button>
+            </div>
+            {typeMsg ? <div style={{ marginBottom: 10, padding: '8px 10px', borderRadius: 8, background: 'rgba(217,79,79,0.12)', color: '#e08080', fontSize: 12 }}>{typeMsg}</div> : null}
+            {typeLoading ? (
+              <div style={{ textAlign: 'center', color: '#888', padding: 32, fontSize: 13 }}>불러오는 중...</div>
+            ) : typeItems.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#888', padding: 32, fontSize: 13 }}>등록된 타입이 없어요</div>
+            ) : (
+              <div style={{ background: '#fff', borderRadius: 10, overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={typeTh}>순서</th>
+                      <th style={typeTh}>이모지</th>
+                      <th style={typeTh}>이름</th>
+                      <th style={typeTh}>활성</th>
+                      <th style={typeTh}>관리</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...typeItems].sort((a, b) => a.order - b.order).map(row => (
+                      <tr key={row.id}>
+                        <td style={typeTd}>
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            <button type="button" onClick={() => void moveTypeOrder(row, -1)} style={typeMiniBtn}>↑</button>
+                            <button type="button" onClick={() => void moveTypeOrder(row, 1)} style={typeMiniBtn}>↓</button>
+                          </div>
+                        </td>
+                        <td style={{ ...typeTd, fontSize: 18 }}>{row.emoji}</td>
+                        <td style={typeTd}>{row.name}</td>
+                        <td style={typeTd}>{row.is_active ? '✅' : '—'}</td>
+                        <td style={typeTd}>
+                          <button type="button" onClick={() => openTypeEdit(row)} style={{ ...typeMiniBtn, marginRight: 6 }}>수정</button>
+                          <button type="button" onClick={() => void removeType(row)} style={{ ...typeMiniBtn, color: '#A33' }}>삭제</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {typeFormOpen ? (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60, padding: 20 }} onClick={() => setTypeFormOpen(false)}>
+          <div style={{ width: '100%', maxWidth: 400, background: '#1a1a22', borderRadius: 14, padding: 20 }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 15, color: '#C9A96E', marginBottom: 16 }}>{typeEditing ? '타입 수정' : '타입 추가'}</div>
+            <div style={{ fontSize: 11, color: '#8A7E92', marginBottom: 6 }}>이름</div>
+            <input value={formName} onChange={e => setFormName(e.target.value)} placeholder="예: 생일 축하" style={typeFieldStyle} />
+            <div style={{ fontSize: 11, color: '#8A7E92', margin: '12px 0 6px' }}>이모지</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+              {EMOJI_PRESETS.map(em => (
+                <button key={em} type="button" onClick={() => setFormEmoji(em)} style={{ width: 36, height: 36, borderRadius: 8, border: formEmoji === em ? '2px solid #7B5EA7' : '1px solid rgba(255,255,255,0.12)', background: formEmoji === em ? 'rgba(123,94,167,0.2)' : 'transparent', fontSize: 18, cursor: 'pointer' }}>{em}</button>
+              ))}
+            </div>
+            <input value={formEmoji} onChange={e => setFormEmoji(e.target.value)} maxLength={8} style={typeFieldStyle} />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, fontSize: 13, color: '#e8e0f5', cursor: 'pointer' }}>
+              <input type="checkbox" checked={formActive} onChange={e => setFormActive(e.target.checked)} />
+              활성 (선물 발송 시 선택 가능)
+            </label>
+            <div style={{ display: 'flex', gap: 8, marginTop: 18 }}>
+              <button type="button" onClick={() => setTypeFormOpen(false)} style={{ flex: 1, padding: 12, borderRadius: 9, border: '1px solid #444', background: 'transparent', color: '#aaa', cursor: 'pointer' }}>취소</button>
+              <button type="button" disabled={typeSaving} onClick={() => void saveTypeForm()} style={{ flex: 1, padding: 12, borderRadius: 9, border: 'none', background: '#7B5EA7', color: '#fff', cursor: typeSaving ? 'default' : 'pointer' }}>{typeSaving ? '저장 중...' : '저장'}</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
+
+const typeTh: React.CSSProperties = { textAlign: 'left', fontSize: 11, color: '#8A7E92', padding: '10px 12px', borderBottom: '1px solid rgba(123,94,167,0.2)', fontWeight: 500 }
+const typeTd: React.CSSProperties = { fontSize: 13, color: '#2A2433', padding: '12px', borderBottom: '1px solid rgba(123,94,167,0.15)', verticalAlign: 'middle' }
+const typeMiniBtn: React.CSSProperties = { padding: '4px 8px', borderRadius: 6, border: '0.5px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#7B5EA7', fontSize: 11, cursor: 'pointer' }
+const typeFieldStyle: React.CSSProperties = { width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(123,94,167,0.3)', background: '#111', color: '#e8e0f5', fontSize: 13, outline: 'none' }

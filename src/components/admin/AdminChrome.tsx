@@ -47,7 +47,6 @@ const MENU = [
     items: [
       { label: '멤버 발송 관리', href: '/admin/membership/members', icon: '💎' },
       { label: '선물 배송 관리', href: '/admin/membership/gifts', icon: '🎁' },
-      { label: '선물 타입 관리', href: '/admin/membership/gift-types', icon: '🏷️' },
     ],
   },
   {
@@ -154,7 +153,6 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/logs')) return '로그인 기록'
   if (path.startsWith('/admin/analysis-logs')) return 'AI 분석 내역'
   if (path.startsWith('/admin/privacy')) return '개인정보 접근 로그'
-  if (path.startsWith('/admin/membership/gift-types')) return '선물 타입 관리'
   if (path.startsWith('/admin/coupons')) return '쿠폰 관리'
   if (path.startsWith('/admin/marketing/contests')) return '컨테스트 관리'
   if (path.startsWith('/admin/marketing/groupbuys')) return '공동구매 관리'
