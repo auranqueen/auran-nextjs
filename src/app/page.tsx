@@ -1954,14 +1954,17 @@ export default function CustomerHomePage() {
         </div>
         <div
           onClick={() => router.push(myUserId ? '/my' : '/login')}
-          style={{ cursor: 'pointer', flexShrink: 0 }}
+          style={{ cursor: 'pointer', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}
         >
           {myUserId ? (
-            <Avatar
-              url={(motivationProfile as any)?.avatar_url ?? null}
-              name={userName || '·'}
-              size={40}
-            />
+            <>
+              <Avatar
+                url={(motivationProfile as any)?.avatar_url ?? null}
+                name={userName || '·'}
+                size={40}
+              />
+              <span style={{ fontSize: 10, textAlign: 'center', color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>My</span>
+            </>
           ) : (
             <div style={{
               width: 40, height: 40, borderRadius: '50%',
