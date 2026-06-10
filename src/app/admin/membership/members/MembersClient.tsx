@@ -89,6 +89,9 @@ export default function MembersClient({
   const [shipModalId, setShipModalId] = useState<string | null>(null)
   const [shipModalNextDate, setShipModalNextDate] = useState('')
   const [shipModalCycleDates, setShipModalCycleDates] = useState<Record<number, string>>({})
+  const [editCycleKey, setEditCycleKey] = useState<string | null>(null)
+  const [editCycleDate, setEditCycleDate] = useState('')
+  const [scheduleBusy, setScheduleBusy] = useState<string | null>(null)
 
   const fmtScheduleDate = (iso: string | null | undefined) => {
     if (!iso) return ''
@@ -126,6 +129,56 @@ export default function MembersClient({
       return `${cycle}회차 📅 예정 (${fmtScheduleDate(autoSched)})`
     }
     return `${cycle}회차 ⏳ 예정일 미정`
+  }
+
+  const cycleScheduleDate = (m: Membership, cycle: number) => {
+    const rows = memberShipments[m.id] || []
+    const shipped = rows.find((r) => r.cycle_no === cycle && r.status === '발송완료')
+    if (shipped) return null
+    const planned = rows.find((r) => r.cycle_no === cycle && r.status !== '발송완료')
+    if (planned?.scheduled_at) return String(planned.scheduled_at).slice(0, 10)
+    const completed = m.shipments_total - m.shipments_remaining
+    if (cycle <= completed) return null
+    if (cycle === completed + 1) {
+      const sched = m.next_shipment_date || m.scheduled_at || calcCycleDate(m.started_at, cycle)
+      return sched ? String(sched).slice(0, 10) : null
+    }
+    const autoSched = calcCycleDate(m.started_at, cycle)
+    return autoSched || null
+  }
+
+  const saveCycleSchedule = async (mId: string, cycleNo: number, dateStr: string) => {
+    if (!dateStr) { setMsg('날짜를 입력해주세요'); return }
+    const busyKey = `${mId}-${cycleNo}`
+    setScheduleBusy(busyKey)
+    setMsg(null)
+    const res = await fetch('/api/admin/membership/curate', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update_schedule',
+        user_membership_id: mId,
+        cycle_no: cycleNo,
+        scheduled_at: dateStr,
+      }),
+    })
+    const json = await res.json().catch(() => ({}))
+    setScheduleBusy(null)
+    if (!json.ok) { setMsg(json.error || '예정일 저장 실패'); return }
+    setMemberships((ms) => ms.map((m) => m.id === mId ? {
+      ...m,
+      next_shipment_date: json.next_shipment_date ?? m.next_shipment_date,
+      scheduled_at: json.scheduled_at ?? m.scheduled_at,
+    } : m))
+    const { data: fresh } = await supabase
+      .from('membership_shipments')
+      .select('id, user_membership_id, cycle_no, status, shipped_at, scheduled_at')
+      .eq('user_membership_id', mId)
+      .order('cycle_no', { ascending: true })
+    setMemberShipments((prev) => ({ ...prev, [mId]: (fresh as MemberShipment[]) || [] }))
+    setEditCycleKey(null)
+    setEditCycleDate('')
+    setMsg(`${cycleNo}회차 예정일 저장 완료`)
   }
 
   const openShipModal = (m: Membership) => {
@@ -602,11 +655,59 @@ export default function MembersClient({
               {opened && (
                 <div style={{ marginTop: 14, borderTop: `0.5px solid ${C.line}`, paddingTop: 14 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
-                    {Array.from({ length: m.shipments_total }, (_, idx) => idx + 1).map((cycle) => (
-                      <div key={`${m.id}-cycle-${cycle}`} style={{ fontSize: 11, color: C.ink, padding: '5px 10px', background: C.purpleSoft, borderRadius: 6 }}>
-                        {cycleLabel(m, cycle)}
-                      </div>
-                    ))}
+                    {Array.from({ length: m.shipments_total }, (_, idx) => idx + 1).map((cycle) => {
+                      const schedDate = cycleScheduleDate(m, cycle)
+                      const editKey = `${m.id}-${cycle}`
+                      const isEditing = editCycleKey === editKey
+                      const busyThis = scheduleBusy === editKey
+                      return (
+                        <div key={`${m.id}-cycle-${cycle}`} style={{ fontSize: 11, color: C.ink, padding: '5px 10px', background: C.purpleSoft, borderRadius: 6 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                            <span style={{ flex: 1 }}>{cycleLabel(m, cycle)}</span>
+                            {schedDate && !isEditing && (
+                              <button
+                                type="button"
+                                title="예정일 수정"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setEditCycleKey(editKey)
+                                  setEditCycleDate(schedDate)
+                                }}
+                                style={{ padding: '2px 6px', border: `0.5px solid ${C.line}`, background: '#fff', borderRadius: 5, cursor: 'pointer', fontSize: 11, lineHeight: 1.2, flexShrink: 0 }}
+                              >
+                                ✏️
+                              </button>
+                            )}
+                          </div>
+                          {isEditing && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }} onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="date"
+                                value={editCycleDate}
+                                onChange={(e) => setEditCycleDate(e.target.value)}
+                                style={{ flex: 1, boxSizing: 'border-box', padding: '6px 8px', borderRadius: 6, border: `1px solid ${C.line}`, fontSize: 11, fontFamily: 'inherit', color: '#111', background: '#fff' }}
+                              />
+                              <button
+                                type="button"
+                                disabled={busyThis}
+                                onClick={() => void saveCycleSchedule(m.id, cycle, editCycleDate)}
+                                style={{ padding: '6px 10px', background: busyThis ? '#C9BFD8' : C.purple, border: 'none', color: '#fff', borderRadius: 6, fontSize: 11, cursor: busyThis ? 'wait' : 'pointer', fontFamily: 'inherit', flexShrink: 0 }}
+                              >
+                                {busyThis ? '...' : '저장'}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={busyThis}
+                                onClick={() => { setEditCycleKey(null); setEditCycleDate('') }}
+                                style={{ padding: '6px 8px', background: 'transparent', border: `0.5px solid ${C.line}`, color: C.muted, borderRadius: 6, fontSize: 11, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0 }}
+                              >
+                                취소
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                   <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>
                     남은 {m.shipments_remaining}회 · {m.next_shipment_date ? `다음 ${m.next_shipment_date}` : '예정일 없음'}

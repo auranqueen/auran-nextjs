@@ -226,3 +226,92 @@ export async function POST(req: NextRequest) {
     scheduled_at: nextScheduledIso,
   })
 }
+
+export async function PATCH(req: NextRequest) {
+  const supabase = createClient()
+  const admin = await adminUser(supabase)
+  if (!admin) return NextResponse.json({ ok: false, error: 'forbidden' }, { status: 403 })
+
+  const body = await req.json().catch(() => ({}))
+  const action = body?.action === 'update_schedule' ? 'update_schedule' : 'update_schedule'
+  if (action !== 'update_schedule') {
+    return NextResponse.json({ ok: false, error: 'invalid_action' }, { status: 400 })
+  }
+
+  const membershipId = String(body?.user_membership_id || '')
+  const cycleNo = Number(body?.cycle_no)
+  const dateStr = body?.scheduled_at ? String(body.scheduled_at).slice(0, 10) : ''
+  if (!membershipId || !cycleNo || !dateStr) {
+    return NextResponse.json({ ok: false, error: 'missing_params' }, { status: 400 })
+  }
+
+  const client = tryCreateServiceClient() || supabase
+  const { data: um } = await client
+    .from('user_memberships')
+    .select('id,user_id,shipments_total,shipments_remaining')
+    .eq('id', membershipId)
+    .maybeSingle()
+  if (!um) return NextResponse.json({ ok: false, error: 'membership_not_found' }, { status: 404 })
+
+  const completed = (um.shipments_total ?? 6) - (um.shipments_remaining ?? 0)
+  if (cycleNo <= completed) {
+    return NextResponse.json({ ok: false, error: 'cycle_already_shipped' }, { status: 400 })
+  }
+
+  const schedIso = toScheduledIso(dateStr)
+  const { data: exRow } = await client
+    .from('membership_shipments')
+    .select('id, status')
+    .eq('user_membership_id', membershipId)
+    .eq('cycle_no', cycleNo)
+    .maybeSingle()
+  if ((exRow as { status?: string })?.status === '발송완료') {
+    return NextResponse.json({ ok: false, error: 'cycle_already_shipped' }, { status: 400 })
+  }
+  if ((exRow as { id?: string })?.id) {
+    const { error: updErr } = await client
+      .from('membership_shipments')
+      .update({ scheduled_at: schedIso, status: '예정' } as Record<string, unknown>)
+      .eq('id', (exRow as { id: string }).id)
+    if (updErr) return NextResponse.json({ ok: false, error: updErr.message }, { status: 500 })
+  } else {
+    const { error: insErr } = await client.from('membership_shipments').insert({
+      user_membership_id: um.id,
+      user_id: um.user_id,
+      cycle_no: cycleNo,
+      status: '예정',
+      scheduled_at: schedIso,
+    } as Record<string, unknown>)
+    if (insErr) return NextResponse.json({ ok: false, error: insErr.message }, { status: 500 })
+  }
+
+  const todayStr = new Date().toISOString().slice(0, 10)
+  const { data: schedRows } = await client
+    .from('membership_shipments')
+    .select('cycle_no, scheduled_at, status')
+    .eq('user_membership_id', membershipId)
+    .neq('status', '발송완료')
+    .not('scheduled_at', 'is', null)
+    .order('scheduled_at', { ascending: true })
+
+  const upcoming = (schedRows || []).filter((r) => {
+    const d = String((r as { scheduled_at?: string }).scheduled_at || '').slice(0, 10)
+    return d >= todayStr && Number((r as { cycle_no?: number }).cycle_no) > completed
+  })
+  const nextDateStr = upcoming.length
+    ? String((upcoming[0] as { scheduled_at: string }).scheduled_at).slice(0, 10)
+    : dateStr
+  const nextScheduledIso = toScheduledIso(nextDateStr)
+
+  await client
+    .from('user_memberships')
+    .update({ next_shipment_date: nextDateStr, scheduled_at: nextScheduledIso })
+    .eq('id', membershipId)
+
+  return NextResponse.json({
+    ok: true,
+    cycle_no: cycleNo,
+    scheduled_at: schedIso,
+    next_shipment_date: nextDateStr,
+  })
+}
