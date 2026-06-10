@@ -29,6 +29,11 @@ type Tpl = {
   is_active: boolean; display_order: number; target_gender?: string | null
 }
 type Plan = { id: string; name: string; price: number }
+type ShipmentHistoryRow = {
+  id: string; status: string; shipped_at: string | null; delivery_type: string | null
+  courier: string | null; tracking_no: string | null
+  users: { name: string } | null; bundle_templates: { theme_name: string } | null
+}
 type ProductInfo = { id: string; name: string; description: string | null; key_ingredients: string | null }
 type Scored = { id: string; name: string; retail_price: number | null; _score: number; _reasons: string[] }
 
@@ -72,6 +77,24 @@ export default function MembersClient({
   const [mMemo, setMMemo] = useState('')
   const [mBusy, setMBusy] = useState(false)
   const [mMsg, setMMsg] = useState('')
+  const [showShipmentHistory, setShowShipmentHistory] = useState(false)
+  const [shipmentHistory, setShipmentHistory] = useState<ShipmentHistoryRow[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+
+  const pendingMemberships = memberships.filter(m => m.status === 'active' && m.shipments_remaining > 0)
+  const ritualDeliveryLabel = (r: ShipmentHistoryRow) => r.delivery_type === 'direct' ? '직접전달' : r.delivery_type === 'quick' ? `퀵 · ${r.courier || ''}` : `택배 · ${r.courier || ''}`
+
+  const openShipmentHistory = async () => {
+    setShowShipmentHistory(true)
+    setHistoryLoading(true)
+    const { data } = await supabase
+      .from('membership_shipments')
+      .select('id, status, shipped_at, delivery_type, courier, tracking_no, users(name), bundle_templates(theme_name)')
+      .eq('status', '발송완료')
+      .order('shipped_at', { ascending: false })
+    setShipmentHistory((data as unknown as ShipmentHistoryRow[]) || [])
+    setHistoryLoading(false)
+  }
 
   const open = (id: string) => { setOpenId(openId === id ? null : id); setTplId(null); setPreview(null); setMsg(null) }
 
@@ -184,6 +207,10 @@ export default function MembersClient({
         <button onClick={() => { setShowTplPanel(!showTplPanel); setShowManual(false); setEditTpl(null); setTplMsg('') }}
           style={{ padding: '7px 14px', background: showTplPanel ? C.purple : 'transparent', border: `1px solid ${C.purple}`, color: showTplPanel ? '#fff' : C.purple, borderRadius: 9, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
           {showTplPanel ? '닫기' : '📋 템플릿 관리'}
+        </button>
+        <button onClick={() => void openShipmentHistory()}
+          style={{ padding: '7px 14px', background: 'transparent', border: `1px solid ${C.green}`, color: C.green, borderRadius: 9, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}>
+          발송 내역
         </button>
       </div>
 
@@ -358,10 +385,10 @@ export default function MembersClient({
         </div>
       )}
 
-      {/* 멤버 목록 */}
-      {memberships.length === 0 && <div style={{ fontSize: 13, color: C.muted }}>아직 멤버가 없어요.</div>}
+      {/* 멤버 목록 — 배송 대기(active·잔여회차)만 */}
+      {pendingMemberships.length === 0 && <div style={{ fontSize: 13, color: C.muted }}>배송 대기 중인 멤버가 없어요.</div>}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {memberships.map(m => {
+        {pendingMemberships.map(m => {
           const opened = openId === m.id
           const isMale = (genderMap[m.user_id] === 'M' || genderMap[m.user_id] === 'Trans_FtM')
           return (
@@ -517,6 +544,50 @@ export default function MembersClient({
           )
         })}
       </div>
+
+      {showShipmentHistory ? (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 55, padding: 16 }} onClick={() => setShowShipmentHistory(false)}>
+          <div style={{ width: '100%', maxWidth: 720, maxHeight: '88vh', overflow: 'auto', background: '#fff', borderRadius: 16, padding: 20 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ fontSize: 15, color: C.plum, fontFamily: SERIF }}>발송 내역</div>
+              <button type="button" onClick={() => setShowShipmentHistory(false)} style={{ padding: '5px 12px', background: '#f0f0f0', border: 'none', color: C.muted, borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>✕ 닫기</button>
+            </div>
+            {historyLoading ? (
+              <div style={{ textAlign: 'center', color: C.muted, padding: 32, fontSize: 13 }}>불러오는 중...</div>
+            ) : shipmentHistory.length === 0 ? (
+              <div style={{ textAlign: 'center', color: C.muted, padding: 32, fontSize: 13 }}>발송 완료 내역이 없어요</div>
+            ) : (
+              <div style={{ border: `1px solid ${C.line}`, borderRadius: 10, overflow: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
+                  <thead>
+                    <tr>
+                      <th style={histTh}>수령자명</th>
+                      <th style={histTh}>리추얼명</th>
+                      <th style={histTh}>배송방식</th>
+                      <th style={histTh}>운송장</th>
+                      <th style={histTh}>배송일시</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {shipmentHistory.map(r => (
+                      <tr key={r.id}>
+                        <td style={histTd}>{(Array.isArray(r.users) ? r.users[0] : r.users)?.name || '-'}</td>
+                        <td style={histTd}>{(Array.isArray(r.bundle_templates) ? r.bundle_templates[0] : r.bundle_templates)?.theme_name || '-'}</td>
+                        <td style={histTd}>{ritualDeliveryLabel(r)}</td>
+                        <td style={histTd}>{r.delivery_type === 'courier' ? (r.tracking_no || '-') : '-'}</td>
+                        <td style={histTd}>{r.shipped_at ? new Date(r.shipped_at).toLocaleString('ko-KR') : '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
+
+const histTh: React.CSSProperties = { textAlign: 'left', fontSize: 11, color: '#8A7E92', padding: '10px 12px', borderBottom: `1px solid rgba(123,94,167,0.2)`, fontWeight: 500 }
+const histTd: React.CSSProperties = { fontSize: 13, color: '#2A2433', padding: '12px', borderBottom: `1px solid rgba(123,94,167,0.15)`, verticalAlign: 'middle' }

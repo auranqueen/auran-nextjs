@@ -23,7 +23,7 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
   const supabase = createClient()
   const [rows, setRows] = useState<GiftRow[]>(initialGifts)
   const [loading, setLoading] = useState(false)
-  const [tab, setTab] = useState<'address_received' | 'shipped' | 'all'>('all')
+  const [showShipmentHistory, setShowShipmentHistory] = useState(false)
   const [selected, setSelected] = useState<GiftRow | null>(null)
   const [deliveryType, setDeliveryType] = useState<DeliveryType>('courier')
   const [courier, setCourier] = useState('CJ대한통운')
@@ -193,11 +193,10 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
   }
   useEffect(() => { void load(); void loadGiftTypes() }, [])
 
-  const filtered = rows.filter(r =>
-    tab === 'all' ? true :
-    tab === 'address_received' ? r.shipping_status === 'address_received' :
-    r.shipping_status === 'shipped'
-  )
+  const filtered = rows.filter(r => r.shipping_status === 'address_received')
+  const shippedHistory = rows.filter(r => r.shipping_status === 'shipped')
+  const deliveryLabel = (r: GiftRow) => r.delivery_type === 'direct' ? '직접전달' : r.delivery_type === 'quick' ? `퀵 · ${r.courier || ''}` : `택배 · ${r.courier || ''}`
+  const giftName = (r: GiftRow) => { const gt = Array.isArray(r.gift_types) ? r.gift_types[0] : r.gift_types; return gt?.name ? `${gt.emoji || '🎁'} ${gt.name}` : '-' }
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
 
   const handleShip = async () => {
@@ -247,12 +246,14 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
             >
               선물 타입 관리
             </button>
+            <button
+              type="button"
+              onClick={() => setShowShipmentHistory(true)}
+              style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(29,158,117,0.4)', background: 'rgba(29,158,117,0.12)', color: '#1D9E75', fontSize: 12, cursor: 'pointer' }}
+            >
+              발송 내역
+            </button>
           </div>
-        </div>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          {([['address_received','배송지입력완료'],['shipped','발송완료'],['all','전체']] as const).map(([k,l]) => (
-            <button key={k} onClick={() => setTab(k)} style={{ padding: '6px 14px', borderRadius: 20, border: 'none', fontSize: 12, cursor: 'pointer', background: tab === k ? '#7B5EA7' : 'rgba(123,94,167,0.15)', color: tab === k ? '#fff' : '#9B7EC8' }}>{l}</button>
-          ))}
         </div>
         {loading ? (
           <div style={{ textAlign: 'center', color: '#555', padding: 40 }}>불러오는 중...</div>
@@ -400,6 +401,45 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
                           <button type="button" onClick={() => openTypeEdit(row)} style={{ ...typeMiniBtn, marginRight: 6 }}>수정</button>
                           <button type="button" onClick={() => void removeType(row)} style={{ ...typeMiniBtn, color: '#A33' }}>삭제</button>
                         </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+
+      {showShipmentHistory ? (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 55, padding: 16 }} onClick={() => setShowShipmentHistory(false)}>
+          <div style={{ width: '100%', maxWidth: 720, maxHeight: '88vh', overflow: 'auto', background: '#1a1a22', borderRadius: 16, padding: 20 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ fontSize: 15, color: '#C9A96E' }}>발송 내역</div>
+              <button type="button" onClick={() => setShowShipmentHistory(false)} style={{ padding: '5px 12px', background: '#333', border: 'none', color: '#fff', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>✕ 닫기</button>
+            </div>
+            {shippedHistory.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#888', padding: 32, fontSize: 13 }}>발송 완료 내역이 없어요</div>
+            ) : (
+              <div style={{ background: '#fff', borderRadius: 10, overflow: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
+                  <thead>
+                    <tr>
+                      <th style={typeTh}>수령자명</th>
+                      <th style={typeTh}>선물명</th>
+                      <th style={typeTh}>배송방식</th>
+                      <th style={typeTh}>운송장</th>
+                      <th style={typeTh}>배송일시</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {shippedHistory.map(r => (
+                      <tr key={r.id}>
+                        <td style={typeTd}>{r.shipping_name || '-'}</td>
+                        <td style={typeTd}>{giftName(r)}</td>
+                        <td style={typeTd}>{deliveryLabel(r)}</td>
+                        <td style={typeTd}>{r.delivery_type === 'courier' ? (r.tracking_no || '-') : '-'}</td>
+                        <td style={typeTd}>{r.shipped_at ? new Date(r.shipped_at).toLocaleString('ko-KR') : '-'}</td>
                       </tr>
                     ))}
                   </tbody>
