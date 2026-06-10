@@ -51,10 +51,10 @@ export async function PATCH(req: Request) {
       const name = (giftRow as any)?.shipping_name || '고객'
       if (phone) {
         const alimMsg = delivery_type === 'direct'
-          ? `[ORÆN PRIVÉ] ${name}님, 리추얼이 직접 전달됐어요 💜\n소중히 사용해주세요!`
+          ? `[ORÆN PRIVÉ] ${name}님, ${giftTypeName} 선물이 직접 전달됐어요 💜\n소중히 사용해주세요!`
           : delivery_type === 'quick'
-          ? `[ORÆN PRIVÉ] ${name}님, 리추얼이 퀵으로 출발했어요 🛵\n업체: ${courier}\n곧 도착할 예정이에요 💜`
-          : `[ORÆN PRIVÉ] ${name}님, 리추얼이 출발했어요 📦\n${courier} ${tracking_no}\n배송 조회 후 수령해주세요 💜`
+          ? `[ORÆN PRIVÉ] ${name}님, ${giftTypeName} 선물이 퀵으로 출발했어요 🛵\n업체: ${courier}\n곧 도착할 예정이에요 💜`
+          : `[ORÆN PRIVÉ] ${name}님, ${giftTypeName} 선물이 출발했어요 📦\n${courier} ${tracking_no}\n배송 조회 후 수령해주세요 💜`
         await sendPpurioAlimtalk({ phone, message: alimMsg, title: 'ORÆN PRIVÉ 발송 안내' }).catch(() => {})
       }
     } catch (_) {}
