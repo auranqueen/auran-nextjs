@@ -553,8 +553,14 @@ export default function MembersClient({
           const isMale = (genderMap[m.user_id] === 'M' || genderMap[m.user_id] === 'Trans_FtM')
           return (
             <div key={m.id} style={{ background: '#fff', border: `0.5px solid ${opened ? C.purple : C.line}`, borderRadius: 12, padding: 15 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div onClick={() => open(m.id)} style={{ display: 'flex', alignItems: 'baseline', gap: 9, flex: 1, cursor: 'pointer' }}>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => open(m.id)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(m.id) } }}
+                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 9, flex: 1 }}>
                   <span style={{ fontSize: 15, color: C.plum }}>{m.users?.name || '회원'}</span>
                   {m.source_type === 'membership_gift' && (
                     <span style={{ fontSize: 9, padding: '2px 6px', borderRadius: 10, background: 'rgba(201,169,110,0.15)', color: C.gold }}>선물수령</span>
@@ -577,15 +583,15 @@ export default function MembersClient({
                   )}
                 </div>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 10 }}>
-                {Array.from({ length: m.shipments_total }, (_, idx) => idx + 1).map((cycle) => (
-                  <div key={`${m.id}-cycle-${cycle}`} style={{ fontSize: 11, color: C.ink, padding: '5px 10px', background: C.purpleSoft, borderRadius: 6 }}>
-                    {cycleLabel(m, cycle)}
-                  </div>
-                ))}
-              </div>
               {opened && (
                 <div style={{ marginTop: 14, borderTop: `0.5px solid ${C.line}`, paddingTop: 14 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 14 }}>
+                    {Array.from({ length: m.shipments_total }, (_, idx) => idx + 1).map((cycle) => (
+                      <div key={`${m.id}-cycle-${cycle}`} style={{ fontSize: 11, color: C.ink, padding: '5px 10px', background: C.purpleSoft, borderRadius: 6 }}>
+                        {cycleLabel(m, cycle)}
+                      </div>
+                    ))}
+                  </div>
                   <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>
                     남은 {m.shipments_remaining}회 · {m.next_shipment_date ? `다음 ${m.next_shipment_date}` : '예정일 없음'}
                   </div>
