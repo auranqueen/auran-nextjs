@@ -12,11 +12,30 @@ export async function GET(req: Request) {
     if (!q || q.length < 2) return Response.json({ users: [] })
     const { data } = await supabase
       .from('users')
-      .select('id, name, email, role')
+      .select('id, name, email, role, user_memberships(status, shipments_remaining, shipments_total)')
       .eq('role', 'customer')
       .or(`name.ilike.%${q}%,email.ilike.%${q}%`)
       .limit(10)
-    return Response.json({ users: data || [] })
+    const users = (data || []).map((row) => {
+      const memberships = Array.isArray((row as { user_memberships?: unknown }).user_memberships)
+        ? (row as { user_memberships: { status?: string; shipments_remaining?: number; shipments_total?: number }[] }).user_memberships
+        : (row as { user_memberships?: { status?: string; shipments_remaining?: number; shipments_total?: number } | null }).user_memberships
+          ? [(row as { user_memberships: { status?: string; shipments_remaining?: number; shipments_total?: number } }).user_memberships]
+          : []
+      const membership = memberships.find((m) => m.status === 'active') || memberships[0]
+      return {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        role: row.role,
+        ...(membership ? {
+          status: membership.status,
+          shipments_remaining: membership.shipments_remaining,
+          shipments_total: membership.shipments_total,
+        } : {}),
+      }
+    })
+    return Response.json({ users })
   } catch (e: any) {
     return Response.json({ error: e.message }, { status: 500 })
   }

@@ -71,7 +71,7 @@ export default function MembersClient({
   // 수동 등록
   const [showManual, setShowManual] = useState(false)
   const [mSearch, setMSearch] = useState('')
-  const [mUsers, setMUsers] = useState<{ id: string; name: string; email: string }[]>([])
+  const [mUsers, setMUsers] = useState<{ id: string; name: string; email: string; shipments_remaining?: number; shipments_total?: number; status?: string }[]>([])
   const [mUserId, setMUserId] = useState('')
   const [mUserName, setMUserName] = useState('')
   const [mPlanId, setMPlanId] = useState('')
@@ -463,6 +463,7 @@ export default function MembersClient({
                     <div key={u.id} onClick={() => { setMUserId(u.id); setMUserName(u.name || ''); setMSearch(u.email); setMUsers([]) }}
                       style={{ padding: '8px 12px', fontSize: 12, cursor: 'pointer', borderBottom: `0.5px solid ${C.line}`, background: mUserId === u.id ? C.purpleSoft : '#fff', color: '#111' }}>
                       {u.name || '(이름없음)'} · {u.email}
+                      {u.shipments_remaining != null ? ` · 남은 ${u.shipments_remaining}회` : ''}
                     </div>
                   ))}
                 </div>
