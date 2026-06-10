@@ -33,6 +33,38 @@ function cycleScheduledDateStr(startedAt: string | null | undefined, cycleNo: nu
   return d.toISOString().slice(0, 10)
 }
 
+export async function GET(req: NextRequest) {
+  const supabase = createClient()
+  const admin = await adminUser(supabase)
+  if (!admin) return NextResponse.json({ ok: false, error: 'forbidden' }, { status: 403 })
+
+  const type = req.nextUrl.searchParams.get('type')
+  if (type !== 'history') {
+    return NextResponse.json({ ok: false, error: 'invalid_type' }, { status: 400 })
+  }
+
+  const client = tryCreateServiceClient() || supabase
+  const { data, error } = await client
+    .from('membership_shipments')
+    .select('id, cycle_no, status, shipped_at, delivery_type, courier, tracking_no, users(name), bundle_templates(theme_name)')
+    .eq('status', '발송완료')
+    .order('shipped_at', { ascending: false })
+
+  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
+
+  const rows = (data || []) as { shipped_at?: string | null }[]
+  const now = new Date()
+  const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const monthCount = rows.filter((r) => String(r.shipped_at || '').slice(0, 7) === monthKey).length
+
+  return NextResponse.json({
+    ok: true,
+    total: rows.length,
+    month_count: monthCount,
+    rows,
+  })
+}
+
 export async function POST(req: NextRequest) {
   const supabase = createClient()
   const admin = await adminUser(supabase)

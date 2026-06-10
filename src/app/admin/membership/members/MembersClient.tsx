@@ -34,7 +34,7 @@ type Tpl = {
 }
 type Plan = { id: string; name: string; price: number }
 type ShipmentHistoryRow = {
-  id: string; status: string; shipped_at: string | null; delivery_type: string | null
+  id: string; cycle_no?: number | null; status: string; shipped_at: string | null; delivery_type: string | null
   courier: string | null; tracking_no: string | null
   users: { name: string } | null; bundle_templates: { theme_name: string } | null
 }
@@ -82,6 +82,7 @@ export default function MembersClient({
   const [mMsg, setMMsg] = useState('')
   const [showShipmentHistory, setShowShipmentHistory] = useState(false)
   const [shipmentHistory, setShipmentHistory] = useState<ShipmentHistoryRow[]>([])
+  const [historySummary, setHistorySummary] = useState({ total: 0, monthCount: 0 })
   const [historyLoading, setHistoryLoading] = useState(false)
   const [memberShipments, setMemberShipments] = useState<Record<string, MemberShipment[]>>({})
   const [showTomorrowPopup, setShowTomorrowPopup] = useState(false)
@@ -270,13 +271,16 @@ export default function MembersClient({
   const openShipmentHistory = async () => {
     setShowShipmentHistory(true)
     setHistoryLoading(true)
-    const { data } = await supabase
-      .from('membership_shipments')
-      .select('id, status, shipped_at, delivery_type, courier, tracking_no, users(name), bundle_templates(theme_name)')
-      .eq('status', '발송완료')
-      .order('shipped_at', { ascending: false })
-    setShipmentHistory((data as unknown as ShipmentHistoryRow[]) || [])
+    const res = await fetch('/api/admin/membership/curate?type=history')
+    const json = await res.json().catch(() => ({}))
     setHistoryLoading(false)
+    if (!json.ok) {
+      setShipmentHistory([])
+      setHistorySummary({ total: 0, monthCount: 0 })
+      return
+    }
+    setShipmentHistory((json.rows as ShipmentHistoryRow[]) || [])
+    setHistorySummary({ total: json.total ?? 0, monthCount: json.month_count ?? 0 })
   }
 
   const open = (id: string) => { setOpenId(openId === id ? null : id); setTplId(null); setPreview(null); setMsg(null) }
@@ -832,34 +836,39 @@ export default function MembersClient({
       {showShipmentHistory ? (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 55, padding: 16 }} onClick={() => setShowShipmentHistory(false)}>
           <div style={{ width: '100%', maxWidth: 720, maxHeight: '88vh', overflow: 'auto', background: '#fff', borderRadius: 16, padding: 20 }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <div style={{ fontSize: 15, color: C.plum, fontFamily: SERIF }}>발송 내역</div>
               <button type="button" onClick={() => setShowShipmentHistory(false)} style={{ padding: '5px 12px', background: '#f0f0f0', border: 'none', color: C.muted, borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>✕ 닫기</button>
             </div>
+            {!historyLoading && shipmentHistory.length > 0 && (
+              <div style={{ fontSize: 12, color: C.muted, marginBottom: 14 }}>
+                총 발송 {historySummary.total}건 · 이번달 {historySummary.monthCount}건
+              </div>
+            )}
             {historyLoading ? (
               <div style={{ textAlign: 'center', color: C.muted, padding: 32, fontSize: 13 }}>불러오는 중...</div>
             ) : shipmentHistory.length === 0 ? (
               <div style={{ textAlign: 'center', color: C.muted, padding: 32, fontSize: 13 }}>발송 완료 내역이 없어요</div>
             ) : (
               <div style={{ border: `1px solid ${C.line}`, borderRadius: 10, overflow: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 560 }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 520 }}>
                   <thead>
                     <tr>
-                      <th style={histTh}>수령자명</th>
-                      <th style={histTh}>리추얼명</th>
+                      <th style={histTh}>고객명</th>
+                      <th style={histTh}>회차</th>
+                      <th style={histTh}>발송일</th>
                       <th style={histTh}>배송방식</th>
                       <th style={histTh}>운송장</th>
-                      <th style={histTh}>배송일시</th>
                     </tr>
                   </thead>
                   <tbody>
                     {shipmentHistory.map(r => (
                       <tr key={r.id}>
                         <td style={histTd}>{(Array.isArray(r.users) ? r.users[0] : r.users)?.name || '-'}</td>
-                        <td style={histTd}>{(Array.isArray(r.bundle_templates) ? r.bundle_templates[0] : r.bundle_templates)?.theme_name || '-'}</td>
+                        <td style={histTd}>{r.cycle_no ? `${r.cycle_no}회차` : '-'}</td>
+                        <td style={histTd}>{r.shipped_at ? new Date(r.shipped_at).toLocaleDateString('ko-KR') : '-'}</td>
                         <td style={histTd}>{ritualDeliveryLabel(r)}</td>
                         <td style={histTd}>{r.delivery_type === 'courier' ? (r.tracking_no || '-') : '-'}</td>
-                        <td style={histTd}>{r.shipped_at ? new Date(r.shipped_at).toLocaleString('ko-KR') : '-'}</td>
                       </tr>
                     ))}
                   </tbody>
