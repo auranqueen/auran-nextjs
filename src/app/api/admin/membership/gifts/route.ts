@@ -2,6 +2,45 @@ import { createClient } from '@/lib/supabase/server'
 import { requireAdmin } from '@/app/admin/_auth'
 import { sendPpurioAlimtalk } from '@/lib/ppurio/sendAlimtalk'
 
+export async function POST(req: Request) {
+  try {
+    const supabase = createClient()
+    await requireAdmin(supabase)
+    const { claimed_by, gift_type_id, message } = await req.json()
+    if (!claimed_by || !gift_type_id) {
+      return Response.json({ error: 'missing fields' }, { status: 400 })
+    }
+    const { data: plan } = await supabase
+      .from('membership_plans')
+      .select('id, price')
+      .eq('is_active', true)
+      .eq('tier_type', 'online')
+      .order('display_order')
+      .limit(1)
+      .maybeSingle()
+    if (!plan?.id) return Response.json({ error: 'no active plan' }, { status: 400 })
+    const { data: gift, error } = await supabase
+      .from('membership_gifts')
+      .insert({
+        plan_id: plan.id,
+        claimed_by,
+        gift_type_id,
+        amount: 0,
+        status: 'paid',
+        source_type: 'admin',
+        message: message || null,
+        sender_name: '어드민',
+        shipping_status: 'pending',
+      } as any)
+      .select('id')
+      .single()
+    if (error || !gift) return Response.json({ error: error?.message || 'insert failed' }, { status: 500 })
+    return Response.json({ ok: true, id: (gift as any).id })
+  } catch (e: any) {
+    return Response.json({ error: e.message }, { status: 500 })
+  }
+}
+
 export async function PATCH(req: Request) {
   try {
     const supabase = createClient()

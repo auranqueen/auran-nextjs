@@ -43,6 +43,48 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
   const [formEmoji, setFormEmoji] = useState('🎁')
   const [formActive, setFormActive] = useState(true)
   const [typeSaving, setTypeSaving] = useState(false)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [createSearch, setCreateSearch] = useState('')
+  const [createUsers, setCreateUsers] = useState<{ id: string; name: string | null; email: string }[]>([])
+  const [createUserId, setCreateUserId] = useState('')
+  const [createGiftTypeId, setCreateGiftTypeId] = useState('')
+  const [createMessage, setCreateMessage] = useState('')
+  const [createSaving, setCreateSaving] = useState(false)
+
+  const searchCreateUsers = async (q: string) => {
+    if (q.length < 2) { setCreateUsers([]); return }
+    const res = await fetch('/api/admin/membership/manual?q=' + encodeURIComponent(q))
+    const json = await res.json().catch(() => ({}))
+    setCreateUsers(json.users || [])
+  }
+
+  const openCreateModal = () => {
+    setShowCreateModal(true)
+    setCreateSearch('')
+    setCreateUsers([])
+    setCreateUserId('')
+    setCreateMessage('')
+    void loadGiftTypes().then((active) => {
+      if (active?.length) setCreateGiftTypeId(active[0].id)
+    })
+  }
+
+  const handleCreateGift = async () => {
+    if (!createUserId) { setToast('고객을 선택해주세요'); setTimeout(() => setToast(''), 2500); return }
+    if (!createGiftTypeId) { setToast('선물 타입을 선택해주세요'); setTimeout(() => setToast(''), 2500); return }
+    setCreateSaving(true)
+    const res = await fetch('/api/admin/membership/gifts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ claimed_by: createUserId, gift_type_id: createGiftTypeId, message: createMessage.trim() || undefined }),
+    })
+    const json = await res.json().catch(() => ({}))
+    setCreateSaving(false)
+    if (!json.ok) { setToast(json.error || '생성 실패'); setTimeout(() => setToast(''), 2500); return }
+    setToast('선물이 생성됐어요'); setTimeout(() => setToast(''), 2500)
+    setShowCreateModal(false)
+    void load()
+  }
 
   const loadGiftTypes = async () => {
     const res = await fetch('/api/admin/gift-types')
@@ -50,6 +92,7 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
     const active = ((json.items as (GiftTypeOpt & { is_active?: boolean })[]) || []).filter((t) => t.is_active !== false)
     setGiftTypes(active)
     if (active.length && !giftTypeId) setGiftTypeId(active[0].id)
+    return active
   }
 
   const loadTypeItems = async () => {
@@ -189,13 +232,22 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
       <div style={{ maxWidth: 600, margin: '0 auto' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, gap: 12 }}>
           <div style={{ fontSize: 16, color: '#C9A96E', letterSpacing: 1 }}>ORÆN PRIVÉ · 선물 배송 관리</div>
-          <button
-            type="button"
-            onClick={openTypeModal}
-            style={{ flexShrink: 0, padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(123,94,167,0.4)', background: 'rgba(123,94,167,0.15)', color: '#9B7EC8', fontSize: 12, cursor: 'pointer' }}
-          >
-            선물 타입 관리
-          </button>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            <button
+              type="button"
+              onClick={openCreateModal}
+              style={{ padding: '7px 12px', borderRadius: 8, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}
+            >
+              선물 생성
+            </button>
+            <button
+              type="button"
+              onClick={openTypeModal}
+              style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(123,94,167,0.4)', background: 'rgba(123,94,167,0.15)', color: '#9B7EC8', fontSize: 12, cursor: 'pointer' }}
+            >
+              선물 타입 관리
+            </button>
+          </div>
         </div>
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
           {([['address_received','배송지입력완료'],['shipped','발송완료'],['all','전체']] as const).map(([k,l]) => (
@@ -354,6 +406,49 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
                 </table>
               </div>
             )}
+          </div>
+        </div>
+      ) : null}
+
+      {showCreateModal ? (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 55, padding: 16 }} onClick={() => setShowCreateModal(false)}>
+          <div style={{ width: '100%', maxWidth: 420, background: '#1a1a22', borderRadius: 16, padding: 20 }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div style={{ fontSize: 15, color: '#C9A96E' }}>선물 생성</div>
+              <button type="button" onClick={() => setShowCreateModal(false)} style={{ padding: '5px 12px', background: '#333', border: 'none', color: '#fff', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>✕ 닫기</button>
+            </div>
+            <div style={{ fontSize: 11, color: '#8A7E92', marginBottom: 6 }}>고객 검색</div>
+            <input
+              value={createSearch}
+              onChange={e => { setCreateSearch(e.target.value); void searchCreateUsers(e.target.value) }}
+              placeholder="이름 또는 이메일 2자 이상"
+              style={typeFieldStyle}
+            />
+            {createUsers.length > 0 ? (
+              <div style={{ border: '1px solid rgba(123,94,167,0.3)', borderRadius: 8, marginTop: 6, overflow: 'hidden', maxHeight: 140, overflowY: 'auto' }}>
+                {createUsers.map(u => (
+                  <div
+                    key={u.id}
+                    onClick={() => { setCreateUserId(u.id); setCreateSearch(u.email); setCreateUsers([]) }}
+                    style={{ padding: '8px 12px', fontSize: 12, cursor: 'pointer', borderBottom: '0.5px solid rgba(123,94,167,0.2)', background: createUserId === u.id ? 'rgba(123,94,167,0.2)' : 'transparent', color: '#e8e0f5' }}
+                  >
+                    {u.name || '(이름없음)'} · {u.email}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+            {createUserId ? <div style={{ fontSize: 11, color: '#9B7EC8', marginTop: 8 }}>선택됨 · {createSearch}</div> : null}
+            <div style={{ fontSize: 11, color: '#8A7E92', margin: '14px 0 6px' }}>선물 타입</div>
+            <select value={createGiftTypeId} onChange={e => setCreateGiftTypeId(e.target.value)} style={{ ...typeFieldStyle, cursor: 'pointer' }}>
+              {giftTypes.map(t => (
+                <option key={t.id} value={t.id}>{t.emoji} {t.name}</option>
+              ))}
+            </select>
+            <div style={{ fontSize: 11, color: '#8A7E92', margin: '14px 0 6px' }}>메시지 (선택)</div>
+            <input value={createMessage} onChange={e => setCreateMessage(e.target.value)} placeholder="선물 메시지" style={typeFieldStyle} />
+            <button type="button" disabled={createSaving} onClick={() => void handleCreateGift()} style={{ width: '100%', marginTop: 18, padding: 13, background: createSaving ? '#444' : '#7B5EA7', border: 'none', color: '#fff', borderRadius: 9, fontSize: 14, cursor: createSaving ? 'default' : 'pointer' }}>
+              {createSaving ? '생성 중...' : '생성'}
+            </button>
           </div>
         </div>
       ) : null}
