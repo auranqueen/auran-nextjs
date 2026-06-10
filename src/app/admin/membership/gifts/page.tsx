@@ -10,7 +10,7 @@ export default async function AdminMembershipGiftsPage() {
 
   const { data: gifts } = await supabase
     .from('membership_gifts')
-    .select('id, sender_name, message, amount, status, shipping_status, shipping_name, shipping_phone, shipping_address, shipping_detail, tracking_no, courier, claim_token, gift_copy, created_at, shipped_at')
+    .select('id, sender_name, message, amount, status, shipping_status, shipping_name, shipping_phone, shipping_address, shipping_detail, tracking_no, courier, claim_token, gift_copy, created_at, shipped_at, gift_type_id, gift_types(name, emoji)')
     .order('created_at', { ascending: false })
 
   return <GiftsClient initialGifts={(gifts ?? []) as any} />

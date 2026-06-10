@@ -2,13 +2,15 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
+type GiftTypeOpt = { id: string; name: string; emoji: string }
 type GiftRow = {
   id: string; sender_name: string | null; message: string | null; amount: number
   status: string; shipping_status: string | null; shipping_name: string | null
   shipping_phone: string | null; shipping_address: string | null; shipping_detail: string | null
   tracking_no: string | null; courier: string | null; claim_token: string | null
   gift_copy: string | null; created_at: string; shipped_at: string | null
-  delivery_type: string | null
+  delivery_type: string | null; gift_type_id: string | null
+  gift_types?: { name: string; emoji: string } | null
 }
 const STATUS_LABEL: Record<string, string> = { pending: '결제대기', paid: '결제완료', claimed: '수령완료' }
 const SHIP_LABEL: Record<string, string> = { pending: '배송지 미입력', address_received: '배송지 입력완료', shipped: '발송완료', delivered: '배송완료' }
@@ -27,17 +29,27 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
   const [quickCompany, setQuickCompany] = useState('')
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
+  const [giftTypes, setGiftTypes] = useState<GiftTypeOpt[]>([])
+  const [giftTypeId, setGiftTypeId] = useState('')
+
+  const loadGiftTypes = async () => {
+    const res = await fetch('/api/admin/gift-types')
+    const json = await res.json().catch(() => ({}))
+    const active = ((json.items as (GiftTypeOpt & { is_active?: boolean })[]) || []).filter((t) => t.is_active !== false)
+    setGiftTypes(active)
+    if (active.length && !giftTypeId) setGiftTypeId(active[0].id)
+  }
 
   const load = async () => {
     setLoading(true)
     const { data } = await supabase
       .from('membership_gifts')
-      .select('id, sender_name, message, amount, status, shipping_status, shipping_name, shipping_phone, shipping_address, shipping_detail, tracking_no, courier, claim_token, gift_copy, created_at, shipped_at, delivery_type')
+      .select('id, sender_name, message, amount, status, shipping_status, shipping_name, shipping_phone, shipping_address, shipping_detail, tracking_no, courier, claim_token, gift_copy, created_at, shipped_at, delivery_type, gift_type_id, gift_types(name, emoji)')
       .order('created_at', { ascending: false })
-    setRows((data as GiftRow[]) || [])
+    setRows((data as unknown as GiftRow[]) || [])
     setLoading(false)
   }
-  useEffect(() => { void load() }, [])
+  useEffect(() => { void load(); void loadGiftTypes() }, [])
 
   const filtered = rows.filter(r =>
     tab === 'all' ? true :
@@ -50,6 +62,7 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
     if (!selected) return
     if (deliveryType === 'courier' && !trackingNo) { showToast('운송장 번호를 입력해주세요'); return }
     if (deliveryType === 'quick' && !quickCompany) { showToast('퀵 업체명을 입력해주세요'); return }
+    if (!giftTypeId) { showToast('선물 타입을 선택해주세요'); return }
     setSaving(true)
     const res = await fetch('/api/admin/membership/gifts', {
       method: 'PATCH',
@@ -59,6 +72,7 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
         delivery_type: deliveryType,
         tracking_no: deliveryType === 'courier' ? trackingNo : null,
         courier: deliveryType === 'courier' ? courier : deliveryType === 'quick' ? quickCompany : '직접전달',
+        gift_type_id: giftTypeId,
       }),
     })
     setSaving(false)
@@ -101,6 +115,14 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
                 {r.shipping_name} · {r.shipping_phone}<br/>{r.shipping_address} {r.shipping_detail || ''}
               </div>
             )}
+            {(() => {
+              const gt = Array.isArray(r.gift_types) ? r.gift_types[0] : r.gift_types
+              return gt?.name ? (
+                <div style={{ fontSize: 11, color: '#9B7EC8', marginBottom: 6 }}>
+                  {gt.emoji || '🎁'} {gt.name}
+                </div>
+              ) : null
+            })()}
             {r.gift_copy && <div style={{ fontSize: 11, color: '#C9A96E', marginBottom: 8 }}>"{r.gift_copy}"</div>}
             {r.tracking_no && (
               <div style={{ fontSize: 11, color: '#1D9E75' }}>
@@ -108,7 +130,7 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
               </div>
             )}
             {r.shipping_status === 'address_received' && (
-              <button onClick={() => { setSelected(r); setDeliveryType('courier'); setCourier('CJ대한통운'); setTrackingNo(''); setQuickCompany('') }}
+              <button onClick={() => { setSelected(r); setDeliveryType('courier'); setCourier('CJ대한통운'); setTrackingNo(''); setQuickCompany(''); setGiftTypeId(r.gift_type_id || giftTypes[0]?.id || '') }}
                 style={{ marginTop: 8, padding: '7px 16px', background: '#7B5EA7', border: 'none', color: '#fff', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}>
                 발송 처리
               </button>
@@ -127,6 +149,18 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
             <div style={{ fontSize: 12, color: '#9B7EC8', marginBottom: 14 }}>
               {selected.shipping_address} {selected.shipping_detail || ''}
             </div>
+            <div style={{ fontSize: 11, color: '#9B7EC8', marginBottom: 8 }}>선물 타입</div>
+            <select
+              value={giftTypeId}
+              onChange={e => setGiftTypeId(e.target.value)}
+              style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid rgba(123,94,167,0.3)', background: '#111', color: '#e8e0f5', fontSize: 13, marginBottom: 14 }}
+            >
+              {giftTypes.length === 0 ? (
+                <option value="">타입 없음 — 선물 타입 관리에서 추가하세요</option>
+              ) : giftTypes.map(t => (
+                <option key={t.id} value={t.id}>{t.emoji} {t.name}</option>
+              ))}
+            </select>
             <div style={{ fontSize: 11, color: '#9B7EC8', marginBottom: 8 }}>배송 방법</div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
               {(['courier','quick','direct'] as DeliveryType[]).map(t => (
