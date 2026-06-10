@@ -497,7 +497,7 @@ export default function GiftsClient({ initialGifts }: { initialGifts: GiftRow[] 
                 {createUsers.map(u => (
                   <div
                     key={u.id}
-                    onMouseDown={(e) => { e.preventDefault(); setCreateUserId(u.id); setCreateSearch(u.email); setCreateUsers([]) }}
+                    onMouseDown={(e) => { e.preventDefault(); setCreateUserId(u.id); setCreateSearch(u.name || u.email); setCreateUsers([]) }}
                     style={{ padding: '8px 12px', fontSize: 12, cursor: 'pointer', borderBottom: '0.5px solid rgba(123,94,167,0.2)', background: createUserId === u.id ? 'rgba(123,94,167,0.2)' : 'transparent', color: '#e8e0f5' }}
                   >
                     {u.name || '(이름없음)'} · {u.email}
