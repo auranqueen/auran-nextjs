@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import HormoneCard from '@/components/home/HormoneCard'
 import RhythmFix from '@/components/home/RhythmFix'
+import {
+  HormoneCalendarRecordModal,
+  HormoneCalendarRecordToast,
+  useHormoneCalendarRecord,
+} from '@/components/home/HormoneCalendarRecord'
 import { calcHormoneBriefing, isPeriodTrack } from '@/lib/hormoneUtils'
 import { computeComposite, computeSkinAge } from '@/lib/skinAge'
 
@@ -133,17 +138,14 @@ export default function HormoneCalendarPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [authChecked, setAuthChecked] = useState(false)
+  const [authId, setAuthId] = useState<string | null>(null)
   const [userName, setUserName] = useState('고객')
   const [hca, setHca] = useState<boolean | null>(null)
   const [hormoneCycle, setHormoneCycle] = useState<any>(null)
   const [skinLatest, setSkinLatest] = useState<any>(null)
   const [tipOpen, setTipOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'calendar' | 'record' | 'analysis'>('calendar')
-  const [recordOpen, setRecordOpen] = useState(false)
   const [analysisOpen, setAnalysisOpen] = useState(false)
-  const [recordPeriod, setRecordPeriod] = useState('')
-  const [recordCondition, setRecordCondition] = useState('')
-  const [recordMemo, setRecordMemo] = useState('')
 
   const supabase = createClient()
 
@@ -156,6 +158,7 @@ export default function HormoneCalendarPage() {
         return
       }
       setAuthChecked(true)
+      setAuthId(user.id)
 
       const [profileRes, hcRes, skinRes] = await Promise.all([
         sb
@@ -205,6 +208,13 @@ export default function HormoneCalendarPage() {
   const cycleLen = Math.max(21, Math.min(60, Number(hormoneCycle?.cycle_length || 28)))
   const hasCalendar = hormoneCycle != null && hca !== false && isPeriodTrack(String(hormoneCycle?.track || 'general'))
 
+  const record = useHormoneCalendarRecord({
+    authId,
+    hormoneCycle,
+    hasCalendar,
+    onCloseTab: () => setActiveTab('calendar'),
+  })
+
   const hormoneMainLine = calc
     ? `${userName}님, 지금 ${calc.phase} 예요 🌿`
     : `${userName}님의 호르몬 달력`
@@ -246,7 +256,7 @@ export default function HormoneCalendarPage() {
 
   const onTab = (tab: 'calendar' | 'record' | 'analysis') => {
     setActiveTab(tab)
-    if (tab === 'record') setRecordOpen(true)
+    if (tab === 'record') record.openTodayRecord()
     if (tab === 'analysis') setAnalysisOpen(true)
   }
 
@@ -370,28 +380,54 @@ export default function HormoneCalendarPage() {
             ))}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6 }}>
-            {calendarDays.map((cell, idx) => (
+            {calendarDays.map((cell, idx) => {
+              const cellIso = cell.date
+                ? `${cell.date.getFullYear()}-${String(cell.date.getMonth() + 1).padStart(2, '0')}-${String(cell.date.getDate()).padStart(2, '0')}`
+                : ''
+              const isSelected = cellIso === record.selectedDateIso
+              const hasRecord = cellIso ? record.recordedDates.has(cellIso) : false
+              return (
               <div
                 key={idx}
+                role={cell.date ? 'button' : undefined}
+                tabIndex={cell.date ? 0 : undefined}
+                onClick={cell.date ? () => { void record.openForDate(cell.date!) } : undefined}
+                onKeyDown={cell.date ? (e) => { if (e.key === 'Enter') void record.openForDate(cell.date!) } : undefined}
                 style={{
                   aspectRatio: '1',
                   borderRadius: 8,
                   background: cell.date ? cell.color : 'transparent',
-                  opacity: cell.date ? (cell.isToday ? 1 : 0.72) : 0,
+                  opacity: cell.date ? (cell.isToday || isSelected ? 1 : 0.72) : 0,
                   display: 'flex',
+                  flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: 11,
                   color: cell.date ? '#1a1028' : 'transparent',
-                  fontWeight: cell.isToday ? 600 : 400,
+                  fontWeight: cell.isToday || isSelected ? 600 : 400,
                   boxShadow: cell.isToday
                     ? `0 0 0 3px #fff, 0 0 0 5px ${cell.color}`
-                    : 'none',
+                    : isSelected
+                      ? `0 0 0 2px #fff, 0 0 0 4px ${P}`
+                      : 'none',
+                  cursor: cell.date ? 'pointer' : 'default',
+                  position: 'relative',
                 }}
               >
                 {cell.date ? cell.date.getDate() : ''}
+                {hasRecord ? (
+                  <span style={{
+                    position: 'absolute',
+                    bottom: 3,
+                    width: 4,
+                    height: 4,
+                    borderRadius: 999,
+                    background: '#2A2433',
+                  }} />
+                ) : null}
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       ) : null}
@@ -443,91 +479,8 @@ export default function HormoneCalendarPage() {
 
       {!hasCalendar ? <RhythmFix /> : null}
 
-      {recordOpen ? (
-        <Modal title="기록" onClose={() => { setRecordOpen(false); setActiveTab('calendar') }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
-              생리 상태
-              <input
-                value={recordPeriod}
-                onChange={(e) => setRecordPeriod(e.target.value)}
-                placeholder="예: 생리 2일차, 가벼운 양"
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: 6,
-                  padding: '10px 12px',
-                  borderRadius: 10,
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  background: 'rgba(255,255,255,0.06)',
-                  color: '#fff',
-                  fontSize: 13,
-                  fontFamily: 'inherit',
-                }}
-              />
-            </label>
-            <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
-              컨디션
-              <input
-                value={recordCondition}
-                onChange={(e) => setRecordCondition(e.target.value)}
-                placeholder="예: 피로, 붓기, 컨디션 좋음"
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: 6,
-                  padding: '10px 12px',
-                  borderRadius: 10,
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  background: 'rgba(255,255,255,0.06)',
-                  color: '#fff',
-                  fontSize: 13,
-                  fontFamily: 'inherit',
-                }}
-              />
-            </label>
-            <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
-              피부 메모
-              <textarea
-                value={recordMemo}
-                onChange={(e) => setRecordMemo(e.target.value)}
-                placeholder="오늘 피부 상태를 적어주세요"
-                rows={4}
-                style={{
-                  display: 'block',
-                  width: '100%',
-                  marginTop: 6,
-                  padding: '10px 12px',
-                  borderRadius: 10,
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  background: 'rgba(255,255,255,0.06)',
-                  color: '#fff',
-                  fontSize: 13,
-                  fontFamily: 'inherit',
-                  resize: 'vertical',
-                }}
-              />
-            </label>
-            <button
-              type="button"
-              onClick={() => { setRecordOpen(false); setActiveTab('calendar') }}
-              style={{
-                marginTop: 4,
-                padding: 12,
-                borderRadius: 10,
-                border: 'none',
-                background: P,
-                color: '#fff',
-                fontSize: 13,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              저장
-            </button>
-          </div>
-        </Modal>
-      ) : null}
+      <HormoneCalendarRecordModal open={record.recordOpen} selectedDateIso={record.selectedDateIso} recordPeriod={record.recordPeriod} setRecordPeriod={record.setRecordPeriod} recordCondition={record.recordCondition} setRecordCondition={record.setRecordCondition} recordMemo={record.recordMemo} setRecordMemo={record.setRecordMemo} saving={record.saving} onClose={record.closeRecord} onSave={() => { void record.saveRecord() }} />
+      <HormoneCalendarRecordToast message={record.toast} />
 
       {analysisOpen ? (
         <Modal title="분석" onClose={() => { setAnalysisOpen(false); setActiveTab('calendar') }}>
