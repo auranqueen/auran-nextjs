@@ -5,26 +5,37 @@ import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import BookingSalonListView from '@/components/ui/BookingSalonListView'
 import CustomerDashboardShell from '@/components/views/CustomerDashboardShell'
 import { createClient } from '@/lib/supabase/client'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 export default function BookingPage() {
   const supabase = createClient()
   const [loading, setLoading] = useState(true)
   const [salons, setSalons] = useState<any[]>([])
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     const run = async () => {
       setLoading(true)
       const { data } = await supabase
         .from('salons')
-        .select('id,name,address,phone,status')
-        .order('created_at', { ascending: false })
-        .limit(30)
+        .select('id,name,address,area,phone,status,avg_rating,review_count,avatar_url')
+        .eq('status', 'active')
+        .order('avg_rating', { ascending: false })
       setSalons(data || [])
       setLoading(false)
     }
     run()
   }, [])
+
+  const filteredSalons = useMemo(() => {
+    if (!searchQuery.trim()) return salons
+    const q = searchQuery.trim().toLowerCase()
+    return salons.filter(s =>
+      (s.name || '').toLowerCase().includes(q) ||
+      (s.area || '').toLowerCase().includes(q) ||
+      (s.address || '').toLowerCase().includes(q)
+    )
+  }, [salons, searchQuery])
 
   return (
     <CustomerDashboardShell>
@@ -45,9 +56,13 @@ export default function BookingPage() {
             등록된 살롱을 확인하고 예약을 진행하세요.
           </p>
         </div>
-        <BookingSalonListView loading={loading} salons={salons} />
+        <BookingSalonListView
+          loading={loading}
+          salons={filteredSalons}
+          searchQuery={searchQuery}
+          onSearch={setSearchQuery}
+        />
       </div>
     </CustomerDashboardShell>
   )
 }
-
