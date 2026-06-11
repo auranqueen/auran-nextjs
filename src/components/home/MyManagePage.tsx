@@ -330,8 +330,11 @@ export default function MyManagePage() {
           </div>
         ) : activeTab === 'bookings' ? (
           bookings.length === 0 ? (
-            <div style={{ textAlign: 'center', fontSize: 13, color: TEXT_SUB, padding: '40px 0' }}>
-              예약 내역이 없어요
+            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>🗓️</div>
+              <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>아직 예약 내역이 없어요</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginBottom: 24 }}>살롱 예약 후 내역이 표시돼요</div>
+              <a href="/booking" style={{ display: 'inline-block', padding: '10px 24px', borderRadius: 20, background: '#7B5EA7', color: '#fff', fontSize: 13, textDecoration: 'none' }}>살롱 예약하기</a>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -399,8 +402,10 @@ export default function MyManagePage() {
               })}
             </div>
             {filteredCoupons.length === 0 ? (
-              <div style={{ textAlign: 'center', fontSize: 13, color: TEXT_SUB, padding: '32px 0' }}>
-                보유한 쿠폰이 없어요
+              <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                <div style={{ fontSize: 48, marginBottom: 16 }}>🎫</div>
+                <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>보유한 쿠폰이 없어요</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>원장님께 관리권·쿠폰을 받으면 여기에 표시돼요</div>
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -438,8 +443,10 @@ export default function MyManagePage() {
             )}
           </>
         ) : careCards.length === 0 ? (
-          <div style={{ textAlign: 'center', fontSize: 13, color: TEXT_SUB, padding: '40px 0' }}>
-            케어카드가 없어요
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>💆</div>
+            <div style={{ fontSize: 15, color: 'rgba(255,255,255,0.7)', marginBottom: 8 }}>케어카드가 없어요</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>시술 완료 후 원장님이 발송한 케어카드가 여기에 표시돼요</div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
