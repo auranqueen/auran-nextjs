@@ -62,6 +62,62 @@ const SHORTCUTS = [
   { label: '더보기', emoji: '•••', href: '/', bg: '#f3f3f7', disabled: false },
 ] as const
 
+const btn3d = (bg: string, shadow: string): React.CSSProperties => ({
+  border: 'none',
+  borderRadius: 14,
+  padding: '14px 10px',
+  background: bg,
+  boxShadow: `0 4px 0 ${shadow}`,
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+  fontSize: 12,
+  color: '#2A2433',
+  textAlign: 'center' as const,
+  lineHeight: 1.4,
+})
+
+function ShortcutGrid() {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 12 }}>
+      {SHORTCUTS.map((item) => {
+        const inner = (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 6,
+            padding: '10px 4px',
+            borderRadius: 16,
+            background: item.bg,
+            opacity: item.disabled ? 0.35 : 1,
+            pointerEvents: item.disabled ? 'none' as const : 'auto' as const,
+          }}>
+            <div style={{
+              width: 50,
+              height: 50,
+              borderRadius: 16,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 22,
+              background: 'rgba(255,255,255,0.45)',
+            }}>
+              {item.emoji}
+            </div>
+            <span style={{ fontSize: 10, color: '#2A2433', fontWeight: 500 }}>{item.label}</span>
+          </div>
+        )
+        if (item.disabled) return <div key={item.label}>{inner}</div>
+        return (
+          <Link key={item.label} href={item.href} style={{ textDecoration: 'none' }}>
+            {inner}
+          </Link>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function HomeExtraSection() {
   const [loading, setLoading] = useState(true)
   const [latest, setLatest] = useState<SkinRow | null>(null)
@@ -75,15 +131,7 @@ export default function HomeExtraSection() {
       const { data: { user } } = await sb.auth.getUser()
       if (!user) {
         setLatest(null)
-        setLoading(false)
-        return
-      }
-      const { count } = await sb
-        .from('skin_analysis_logs')
-        .select('id', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-      if (!count) {
-        setLatest(null)
+        setPrevAge(null)
         setLoading(false)
         return
       }
@@ -96,6 +144,7 @@ export default function HomeExtraSection() {
       const rows = (data as SkinRow[]) || []
       if (!rows.length) {
         setLatest(null)
+        setPrevAge(null)
         setLoading(false)
         return
       }
@@ -104,155 +153,120 @@ export default function HomeExtraSection() {
         const a0 = skinAgeOf(rows[0])
         const a1 = skinAgeOf(rows[1])
         if (a0 != null && a1 != null) setPrevAge(a1 - a0)
+        else setPrevAge(null)
+      } else {
+        setPrevAge(null)
       }
       setLoading(false)
     }
     void load()
   }, [])
 
-  if (loading) {
-    return (
-      <div style={{ margin: '14px 16px 0' }}>
-        <div style={{ height: 72, borderRadius: 14, background: 'rgba(255,255,255,0.06)', animation: 'pulse 1.2s ease-in-out infinite' }} />
-      </div>
-    )
-  }
-
-  if (!latest) return null
-
-  const skinAge = skinAgeOf(latest)
-  const moisture = latest.moisture_score
-  const elasticity = latest.elasticity_score
-  const oilLabel = latest.oil_score == null
+  const skinAge = latest ? skinAgeOf(latest) : null
+  const moisture = latest?.moisture_score ?? null
+  const elasticity = latest?.elasticity_score ?? null
+  const oilLabel = latest?.oil_score == null
     ? '—'
     : latest.oil_score >= 55 ? '과다' : latest.oil_score <= 35 ? '부족' : '적정'
-
-  const btn3d = (bg: string, shadow: string): React.CSSProperties => ({
-    border: 'none',
-    borderRadius: 14,
-    padding: '14px 10px',
-    background: bg,
-    boxShadow: `0 4px 0 ${shadow}`,
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    fontSize: 12,
-    color: '#2A2433',
-    textAlign: 'center' as const,
-    lineHeight: 1.4,
-  })
 
   return (
     <>
       <style>{`.home-extra-3d:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--btn-shadow) !important; }`}</style>
       <div style={{ margin: '14px 16px 0' }}>
-        <div
-          style={{
-            background: 'rgba(255,255,255,0.06)',
-            border: '0.5px solid rgba(255,255,255,0.1)',
-            borderRadius: 14,
-            overflow: 'hidden',
-          }}
-        >
-          <button
-            type="button"
-            onClick={() => setIsExtraOpen((v) => !v)}
+        {loading ? (
+          <div style={{ height: 72, borderRadius: 14, background: 'rgba(255,255,255,0.06)', animation: 'pulse 1.2s ease-in-out infinite' }} />
+        ) : latest ? (
+          <div
             style={{
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 10,
-              padding: '14px 16px',
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              color: 'rgba(255,255,255,0.92)',
-              textAlign: 'left',
+              background: 'rgba(255,255,255,0.06)',
+              border: '0.5px solid rgba(255,255,255,0.1)',
+              borderRadius: 14,
+              overflow: 'hidden',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 14, fontWeight: 500 }}>📈 내 피부 변화</span>
-              {skinAge != null && (
-                <span style={{ fontFamily: 'Georgia, serif', fontSize: 22, color: '#C9A96E' }}>
-                  {skinAge}<span style={{ fontSize: 12, opacity: 0.7 }}>세</span>
-                </span>
-              )}
-              {prevAge != null && prevAge !== 0 && (
-                <span style={{
-                  fontSize: 10,
-                  padding: '3px 8px',
-                  borderRadius: 999,
-                  background: prevAge > 0 ? 'rgba(91,138,107,0.2)' : 'rgba(201,169,110,0.15)',
-                  color: prevAge > 0 ? '#8fd4a8' : '#C9A96E',
-                }}>
-                  {prevAge > 0 ? `▼ ${prevAge}세` : `▲ ${Math.abs(prevAge)}세`}
-                </span>
-              )}
-            </div>
-            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', flexShrink: 0 }}>
-              자세히 {isExtraOpen ? '▲' : '▼'}
-            </span>
-          </button>
-          <div style={{
-            maxHeight: isExtraOpen ? 320 : 0,
-            overflow: 'hidden',
-            transition: 'max-height 0.3s ease',
-          }}>
-            <div style={{ padding: '0 12px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              <button type="button" className="home-extra-3d" style={{ ...btn3d('#EEEDFE', '#AFA9EC'), ['--btn-shadow' as string]: '#AFA9EC' }} onClick={() => setPopKey('moisture')}>
-                💧 수분 {moisture != null ? `${moisture}%` : '—'}
-              </button>
-              <button type="button" className="home-extra-3d" style={{ ...btn3d('#FAEEDA', '#EF9F27'), ['--btn-shadow' as string]: '#EF9F27' }} onClick={() => setPopKey('oil')}>
-                🌿 유분 {oilLabel}
-              </button>
-              <button type="button" className="home-extra-3d" style={{ ...btn3d('#E1F5EE', '#5DCAA5'), ['--btn-shadow' as string]: '#5DCAA5' }} onClick={() => setPopKey('elasticity')}>
-                ✨ 탄력 {elasticity != null ? `${elasticity}%` : '—'}
-              </button>
-              <button type="button" className="home-extra-3d" style={{ ...btn3d('#FBEAF0', '#ED93B1'), ['--btn-shadow' as string]: '#ED93B1' }} onClick={() => setPopKey('whitening')}>
-                🌟 미백 타이밍
-              </button>
+            <button
+              type="button"
+              onClick={() => setIsExtraOpen((v) => !v)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 10,
+                padding: '14px 16px',
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                color: 'rgba(255,255,255,0.92)',
+                textAlign: 'left',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 14, fontWeight: 500 }}>📈 내 피부 변화</span>
+                {skinAge != null && (
+                  <span style={{ fontFamily: 'Georgia, serif', fontSize: 22, color: '#C9A96E' }}>
+                    {skinAge}<span style={{ fontSize: 12, opacity: 0.7 }}>세</span>
+                  </span>
+                )}
+                {prevAge != null && prevAge !== 0 && (
+                  <span style={{
+                    fontSize: 10,
+                    padding: '3px 8px',
+                    borderRadius: 999,
+                    background: prevAge > 0 ? 'rgba(91,138,107,0.2)' : 'rgba(201,169,110,0.15)',
+                    color: prevAge > 0 ? '#8fd4a8' : '#C9A96E',
+                  }}>
+                    {prevAge > 0 ? `▼ ${prevAge}세` : `▲ ${Math.abs(prevAge)}세`}
+                  </span>
+                )}
+              </div>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', flexShrink: 0 }}>
+                자세히 {isExtraOpen ? '▲' : '▼'}
+              </span>
+            </button>
+            <div style={{
+              maxHeight: isExtraOpen ? 320 : 0,
+              overflow: 'hidden',
+              transition: 'max-height 0.3s ease',
+            }}>
+              <div style={{ padding: '0 12px 14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <button type="button" className="home-extra-3d" style={{ ...btn3d('#EEEDFE', '#AFA9EC'), ['--btn-shadow' as string]: '#AFA9EC' }} onClick={() => setPopKey('moisture')}>
+                  💧 수분 {moisture != null ? `${moisture}%` : '—'}
+                </button>
+                <button type="button" className="home-extra-3d" style={{ ...btn3d('#FAEEDA', '#EF9F27'), ['--btn-shadow' as string]: '#EF9F27' }} onClick={() => setPopKey('oil')}>
+                  🌿 유분 {oilLabel}
+                </button>
+                <button type="button" className="home-extra-3d" style={{ ...btn3d('#E1F5EE', '#5DCAA5'), ['--btn-shadow' as string]: '#5DCAA5' }} onClick={() => setPopKey('elasticity')}>
+                  ✨ 탄력 {elasticity != null ? `${elasticity}%` : '—'}
+                </button>
+                <button type="button" className="home-extra-3d" style={{ ...btn3d('#FBEAF0', '#ED93B1'), ['--btn-shadow' as string]: '#ED93B1' }} onClick={() => setPopKey('whitening')}>
+                  🌟 미백 타이밍
+                </button>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <Link
+            href="/skin-analysis"
+            style={{
+              display: 'block',
+              textDecoration: 'none',
+              background: 'rgba(255,255,255,0.06)',
+              border: '0.5px solid rgba(255,255,255,0.1)',
+              borderRadius: 14,
+              padding: '14px 16px',
+              textAlign: 'center',
+              fontSize: 14,
+              fontWeight: 500,
+              color: 'rgba(255,255,255,0.92)',
+            }}
+          >
+            📷 첫 피부 분석하러 가기
+          </Link>
+        )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 12 }}>
-          {SHORTCUTS.map((item) => {
-            const inner = (
-              <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 6,
-                padding: '10px 4px',
-                borderRadius: 16,
-                background: item.bg,
-                opacity: item.disabled ? 0.35 : 1,
-                pointerEvents: item.disabled ? 'none' as const : 'auto' as const,
-              }}>
-                <div style={{
-                  width: 50,
-                  height: 50,
-                  borderRadius: 16,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 22,
-                  background: 'rgba(255,255,255,0.45)',
-                }}>
-                  {item.emoji}
-                </div>
-                <span style={{ fontSize: 10, color: '#2A2433', fontWeight: 500 }}>{item.label}</span>
-              </div>
-            )
-            if (item.disabled) return <div key={item.label}>{inner}</div>
-            return (
-              <Link key={item.label} href={item.href} style={{ textDecoration: 'none' }}>
-                {inner}
-              </Link>
-            )
-          })}
-        </div>
+        <ShortcutGrid />
       </div>
 
       {popKey ? (
