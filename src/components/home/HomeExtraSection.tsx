@@ -55,12 +55,19 @@ const SHORTCUTS = [
   { label: '피부분석', emoji: '📷', href: '/skin-analysis', bg: '#FAEEDA', disabled: false },
   { label: '상담톡', emoji: '💬', href: '/dashboard/customer/chat', bg: '#EEEDFE', disabled: false },
   { label: '살롱예약', emoji: '📅', href: '/booking', bg: '#E1F5EE', disabled: false },
-  { label: '관리권', emoji: '🎫', href: '/my/coupons', bg: '#EEEDFE', disabled: false },
+  { label: '관리권', emoji: '🎫', href: '/my/tickets', bg: '#EEEDFE', disabled: true },
   { label: '마이월드', emoji: '🌍', href: '/myworld', bg: '#FBEAF0', disabled: false },
-  { label: '또또복권', emoji: '🎁', href: '/', bg: '#E1F5EE', disabled: false },
+  { label: '또또복권', emoji: '🎁', href: '#', bg: '#E1F5EE', disabled: true },
   { label: '라이브', emoji: '📹', href: '#', bg: '#f0f0f0', disabled: true },
-  { label: '더보기', emoji: '•••', href: '/', bg: '#f3f3f7', disabled: false },
+  { label: '더보기', emoji: '•••', href: '/products', bg: '#f3f3f7', disabled: false },
 ] as const
+
+function shortcutHref(href: string, isLoggedIn: boolean): string {
+  if (href.startsWith('/my/') && !isLoggedIn) {
+    return `/login?role=customer&redirect=${encodeURIComponent(href)}`
+  }
+  return href
+}
 
 const btn3d = (bg: string, shadow: string): React.CSSProperties => ({
   border: 'none',
@@ -76,7 +83,7 @@ const btn3d = (bg: string, shadow: string): React.CSSProperties => ({
   lineHeight: 1.4,
 })
 
-function ShortcutGrid() {
+function ShortcutGrid({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 12 }}>
       {SHORTCUTS.map((item) => {
@@ -109,7 +116,7 @@ function ShortcutGrid() {
         )
         if (item.disabled) return <div key={item.label}>{inner}</div>
         return (
-          <Link key={item.label} href={item.href} style={{ textDecoration: 'none' }}>
+          <Link key={item.label} href={shortcutHref(item.href, isLoggedIn)} style={{ textDecoration: 'none' }}>
             {inner}
           </Link>
         )
@@ -120,6 +127,7 @@ function ShortcutGrid() {
 
 export default function HomeExtraSection() {
   const [loading, setLoading] = useState(true)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [latest, setLatest] = useState<SkinRow | null>(null)
   const [prevAge, setPrevAge] = useState<number | null>(null)
   const [isExtraOpen, setIsExtraOpen] = useState(false)
@@ -158,6 +166,7 @@ export default function HomeExtraSection() {
       try {
         const { data: { user } } = await sb.auth.getUser()
         if (cancelled) return
+        setIsLoggedIn(!!user)
         if (user) {
           await fetchSkin(user.id)
         } else {
@@ -179,6 +188,7 @@ export default function HomeExtraSection() {
     const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
       if (cancelled) return
       const user = session?.user
+      setIsLoggedIn(!!user)
       if (!user) {
         setLatest(null)
         setPrevAge(null)
@@ -308,7 +318,7 @@ export default function HomeExtraSection() {
           </Link>
         )}
 
-        <ShortcutGrid />
+        <ShortcutGrid isLoggedIn={isLoggedIn} />
       </div>
 
       {popKey ? (
