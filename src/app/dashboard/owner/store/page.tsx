@@ -7,10 +7,11 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import OwnerCouponProductTargetFields from '@/components/owner-store/OwnerCouponProductTargetFields'
+import SalonInfoForm from '@/components/owner-store/SalonInfoForm'
 
 const BG = '#0D0B09'
 
-type MainTab = 'products' | 'orders' | 'shipping' | 'coupons' | 'settlement'
+type MainTab = 'products' | 'orders' | 'shipping' | 'coupons' | 'settlement' | 'salon-info'
 type OrderSubTab = 'new' | 'processing' | 'shipping' | 'done' | 'cancel'
 
 const COURIERS = ['CJ대한통운', '한진', '로젠', '우체국'] as const
@@ -547,6 +548,7 @@ export default function OwnerStorePage() {
               ['shipping', '배송관리'],
               ['coupons', '쿠폰관리'],
               ['settlement', '정산'],
+              ['salon-info', '살롱정보'],
             ] as [MainTab, string][]
           ).map(([k, l]) => (
             <button
@@ -812,6 +814,8 @@ export default function OwnerStorePage() {
             )}
           </div>
         )}
+
+        {mainTab === 'salon-info' && <SalonInfoForm />}
       </div>
 
       {storeModal && (
