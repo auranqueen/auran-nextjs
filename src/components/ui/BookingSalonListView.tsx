@@ -1,5 +1,7 @@
 'use client'
 
+import Link from 'next/link'
+
 const CARD_BG = 'rgba(255,255,255,0.03)'
 const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
 const TEXT_MUTED = 'rgba(255,255,255,0.4)'
@@ -78,18 +80,22 @@ export default function BookingSalonListView({ loading, salons, searchQuery, onS
           const initial = (s.name || 'S').charAt(0).toUpperCase()
 
           return (
-            <div
+            <Link
               key={s.id}
-              style={{
-                background: CARD_BG,
-                border: CARD_BORDER,
-                borderRadius: 16,
-                padding: '13px 14px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-              }}
+              href={`/booking/${s.id}`}
+              style={{ display: 'block', textDecoration: 'none', color: 'inherit' }}
             >
+              <div
+                style={{
+                  background: CARD_BG,
+                  border: CARD_BORDER,
+                  borderRadius: 16,
+                  padding: '13px 14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}
+              >
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 {s.avatar_url ? (
                   <img
@@ -156,7 +162,8 @@ export default function BookingSalonListView({ loading, salons, searchQuery, onS
                   예약하기
                 </button>
               </div>
-            </div>
+              </div>
+            </Link>
           )
         })
       )}
