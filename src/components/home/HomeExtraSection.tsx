@@ -126,26 +126,21 @@ export default function HomeExtraSection() {
   const [popKey, setPopKey] = useState<PopKey>(null)
 
   useEffect(() => {
-    const load = async () => {
-      const sb = createClient()
-      const { data: { user } } = await sb.auth.getUser()
-      if (!user) {
-        setLatest(null)
-        setPrevAge(null)
-        setLoading(false)
-        return
-      }
+    const sb = createClient()
+    let cancelled = false
+
+    const fetchSkin = async (userId: string) => {
       const { data } = await sb
         .from('skin_analyses')
         .select('skin_age, skin_score, moisture_score, oil_score, sensitivity_score, elasticity_score, pigmentation_score, pore_score, age_at_analysis')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .limit(2)
+      if (cancelled) return
       const rows = (data as SkinRow[]) || []
       if (!rows.length) {
         setLatest(null)
         setPrevAge(null)
-        setLoading(false)
         return
       }
       setLatest(rows[0])
@@ -157,9 +152,56 @@ export default function HomeExtraSection() {
       } else {
         setPrevAge(null)
       }
-      setLoading(false)
     }
+
+    const load = async () => {
+      try {
+        const { data: { user } } = await sb.auth.getUser()
+        if (cancelled) return
+        if (user) {
+          await fetchSkin(user.id)
+        } else {
+          setLatest(null)
+          setPrevAge(null)
+        }
+      } catch {
+        if (!cancelled) {
+          setLatest(null)
+          setPrevAge(null)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+
     void load()
+
+    const { data: { subscription } } = sb.auth.onAuthStateChange((_event, session) => {
+      if (cancelled) return
+      const user = session?.user
+      if (!user) {
+        setLatest(null)
+        setPrevAge(null)
+        setLoading(false)
+        return
+      }
+      setLoading(true)
+      void fetchSkin(user.id)
+        .catch(() => {
+          if (!cancelled) {
+            setLatest(null)
+            setPrevAge(null)
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false)
+        })
+    })
+
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
   }, [])
 
   const skinAge = latest ? skinAgeOf(latest) : null
