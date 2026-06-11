@@ -52,18 +52,16 @@ const POP_CONTENT: Record<Exclude<PopKey, null>, { title: string; body: string }
 }
 
 const SHORTCUTS = [
-  { label: '피부분석', emoji: '📷', href: '/skin-analysis', bg: '#FAEEDA', disabled: false },
+  { label: '호르몬달력', emoji: '🌙', href: '/my/hormone', bg: '#EEEDFE', disabled: false },
+  { label: '내관리', emoji: '💆', href: '/my/manage', bg: '#E1F5EE', disabled: false },
   { label: '상담톡', emoji: '💬', href: '/dashboard/customer/chat', bg: '#EEEDFE', disabled: false },
-  { label: '살롱예약', emoji: '📅', href: '/booking', bg: '#E1F5EE', disabled: false },
-  { label: '관리권', emoji: '🎫', href: '/my/service-orders', bg: '#EEEDFE', disabled: false },
-  { label: '마이월드', emoji: '🌍', href: '/myworld', bg: '#FBEAF0', disabled: false },
-  { label: '또또복권', emoji: '🎁', href: '#', bg: '#E1F5EE', disabled: true },
+  { label: '스킨스타', emoji: '✨', href: '/myworld', bg: '#FBEAF0', disabled: false },
+  { label: '리뷰·커뮤니티', emoji: '📝', href: '/dashboard/customer/community', bg: '#FAEEDA', disabled: false },
   { label: '라이브', emoji: '📹', href: '#', bg: '#f0f0f0', disabled: true },
-  { label: '더보기', emoji: '•••', href: '/products', bg: '#f3f3f7', disabled: false },
 ] as const
 
 function getHref(href: string, isLoggedIn: boolean): string {
-  if (!isLoggedIn && href !== '/skin-analysis' && href !== '/booking') {
+  if (!isLoggedIn) {
     return `/login?role=customer&redirect=${encodeURIComponent(href)}`
   }
   return href
@@ -85,7 +83,7 @@ const btn3d = (bg: string, shadow: string): React.CSSProperties => ({
 
 function ShortcutGrid({ isLoggedIn }: { isLoggedIn: boolean }) {
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginTop: 12 }}>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginTop: 12 }}>
       {SHORTCUTS.map((item) => {
         const inner = (
           <div style={{
