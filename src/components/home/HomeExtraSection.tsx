@@ -55,15 +55,15 @@ const SHORTCUTS = [
   { label: '피부분석', emoji: '📷', href: '/skin-analysis', bg: '#FAEEDA', disabled: false },
   { label: '상담톡', emoji: '💬', href: '/dashboard/customer/chat', bg: '#EEEDFE', disabled: false },
   { label: '살롱예약', emoji: '📅', href: '/booking', bg: '#E1F5EE', disabled: false },
-  { label: '관리권', emoji: '🎫', href: '/my/tickets', bg: '#EEEDFE', disabled: true },
+  { label: '관리권', emoji: '🎫', href: '/my/service-orders', bg: '#EEEDFE', disabled: false },
   { label: '마이월드', emoji: '🌍', href: '/myworld', bg: '#FBEAF0', disabled: false },
   { label: '또또복권', emoji: '🎁', href: '#', bg: '#E1F5EE', disabled: true },
   { label: '라이브', emoji: '📹', href: '#', bg: '#f0f0f0', disabled: true },
   { label: '더보기', emoji: '•••', href: '/products', bg: '#f3f3f7', disabled: false },
 ] as const
 
-function shortcutHref(href: string, isLoggedIn: boolean): string {
-  if (href.startsWith('/my/') && !isLoggedIn) {
+function getHref(href: string, isLoggedIn: boolean): string {
+  if (!isLoggedIn && href !== '/skin-analysis' && href !== '/booking') {
     return `/login?role=customer&redirect=${encodeURIComponent(href)}`
   }
   return href
@@ -116,7 +116,7 @@ function ShortcutGrid({ isLoggedIn }: { isLoggedIn: boolean }) {
         )
         if (item.disabled) return <div key={item.label}>{inner}</div>
         return (
-          <Link key={item.label} href={shortcutHref(item.href, isLoggedIn)} style={{ textDecoration: 'none' }}>
+          <Link key={item.label} href={getHref(item.href, isLoggedIn)} style={{ textDecoration: 'none' }}>
             {inner}
           </Link>
         )
