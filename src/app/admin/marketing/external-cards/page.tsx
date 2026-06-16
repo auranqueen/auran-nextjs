@@ -240,6 +240,7 @@ function ExternalCardsPage() {
   const [brandFilter, setBrandFilter] = useState('')
   const [brandList, setBrandList] = useState<{ id: string; name: string }[]>([])
   const [customerId, setCustomerId] = useState<string | null>(null)
+  const [currentCardId, setCurrentCardId] = useState<string | null>(null)
   const [customerResults, setCustomerResults] = useState<any[]>([])
   const [showCustomerDD, setShowCustomerDD] = useState(false)
   const [courier, setCourier] = useState('')
@@ -439,6 +440,7 @@ function ExternalCardsPage() {
 
   function applyCardData(card: any) {
     const d = card.card_data || {}
+    setCurrentCardId(card.id || null)
     setCustomerName(card.customer_name || '')
     setCourier(card.courier || '')
     setTrackingNo(card.tracking_no || '')
@@ -506,16 +508,30 @@ function ExternalCardsPage() {
         totoOn, totoCard, groupBuys, customEvents,
         selectedDayOn, selectedDayIdx,
       }
-      await supabase.from('external_care_cards').upsert({
-        customer_id: cid,
-        customer_name: customerName.trim(),
-        courier: courier || null,
-        tracking_no: trackingNo || null,
-        recipient_name: customerName.trim(),
-        recipient_phone: recipientPhone || null,
-        recipient_address: recipientAddress || null,
-        card_data: cardData,
-      })
+      if (currentCardId) {
+        await supabase.from('external_care_cards').update({
+          customer_id: cid,
+          customer_name: customerName.trim(),
+          courier: courier || null,
+          tracking_no: trackingNo || null,
+          recipient_name: customerName.trim(),
+          recipient_phone: recipientPhone || null,
+          recipient_address: recipientAddress || null,
+          card_data: cardData,
+        }).eq('id', currentCardId)
+      } else {
+        const { data: inserted } = await supabase.from('external_care_cards').insert({
+          customer_id: cid,
+          customer_name: customerName.trim(),
+          courier: courier || null,
+          tracking_no: trackingNo || null,
+          recipient_name: customerName.trim(),
+          recipient_phone: recipientPhone || null,
+          recipient_address: recipientAddress || null,
+          card_data: cardData,
+        }).select('id').single()
+        if (inserted?.id) setCurrentCardId(inserted.id)
+      }
       setSaveStatus('saved')
       localStorage.removeItem('auran_care_card_draft')
     } catch (e) {
@@ -756,6 +772,15 @@ function ExternalCardsPage() {
           <div style={{ background: '#fff', borderRadius: 16, width: 480, maxHeight: '70vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div style={{ padding: '16px 20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 15, color: '#111' }}>저장된 케어카드</span>
+              <input
+                type="text"
+                placeholder="고객명 검색"
+                onChange={e => {
+                  const q = e.target.value.toLowerCase()
+                  setSavedCards(prev => prev.filter((c: any) => c.customer_name?.toLowerCase().includes(q)) )
+                }}
+                style={{ fontSize: 13, padding: '4px 10px', border: '1px solid #e0d5f0', borderRadius: 8, color: '#111', width: 140, background: '#fff' }}
+              />
               <button onClick={() => setShowCardList(false)} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#888' }}>✕</button>
             </div>
             <div style={{ overflowY: 'auto', flex: 1 }}>
@@ -785,6 +810,18 @@ function ExternalCardsPage() {
                     )}
                   </div>
                   <span style={{ fontSize: 12, color: '#7B5EA7' }}>불러오기 →</span>
+                  <button
+                    onClick={async (e) => {
+                      e.stopPropagation()
+                      if (!confirm('이 카드를 삭제할까요?')) return
+                      const supabase = createClient()
+                      await supabase.from('external_care_cards').delete().eq('id', card.id)
+                      setSavedCards(prev => prev.filter((c: any) => c.id !== card.id))
+                    }}
+                    style={{ fontSize: 11, color: '#e57373', background: 'none', border: 'none', cursor: 'pointer', marginLeft: 8 }}
+                  >
+                    삭제
+                  </button>
                 </div>
               ))}
             </div>
@@ -799,6 +836,13 @@ function ExternalCardsPage() {
           style={{ fontSize: 13, padding: '4px 12px', background: '#fff', border: '1px solid #c4b5d4', borderRadius: 8, color: '#7B5EA7', cursor: 'pointer', marginLeft: 12 }}
         >
           📋 저장된 카드
+        </button>
+        <button
+          type="button"
+          onClick={handlePrint}
+          style={{ fontSize: 13, padding: '4px 12px', background: '#7B5EA7', border: 'none', borderRadius: 8, color: '#fff', cursor: 'pointer', marginLeft: 8 }}
+        >
+          🖨️ 인쇄하기
         </button>
         <button
           type="button"
