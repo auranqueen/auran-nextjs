@@ -91,6 +91,10 @@ type PrintPayload = {
   customEvents: any[]
   selectedDayOn: boolean
   dayEvent: { name: string; title: string; sub: string }
+  courier?: string
+  trackingNo?: string
+  recipientPhone?: string
+  recipientAddress?: string
 }
 
 function buildPrintHTML(p: PrintPayload): string {
@@ -157,7 +161,7 @@ function buildPrintHTML(p: PrintPayload): string {
   <button onclick="window.close()" style="padding:8px 16px;background:#f5f5f5;color:#666;border:0.5px solid #ddd;border-radius:7px;font-size:12px;cursor:pointer;margin-left:8px;">닫기</button>
 </div>
 <h1>✦ AURAN 외부고객 케어카드</h1>
-<div class="sec"><div class="lbl">고객</div><div>${esc(p.customerName || '고객')}님</div></div>
+<div class="sec"><div class="lbl">고객</div><div>${esc(p.customerName || '고객')}님</div>${p.courier || p.trackingNo ? `<div style="margin-top:6px;font-size:11px;color:#666;">${p.courier ? `${esc(p.courier)} ` : ''}${p.trackingNo ? `송장번호: <strong>${esc(p.trackingNo)}</strong>` : ''}</div>` : ''}${p.recipientPhone ? `<div style="font-size:11px;color:#666;margin-top:3px;">연락처: ${esc(p.recipientPhone)}</div>` : ''}${p.recipientAddress ? `<div style="font-size:11px;color:#666;margin-top:3px;">주소: ${esc(p.recipientAddress)}</div>` : ''}</div>
 <div class="sec"><div class="lbl">구매 제품</div><table><thead><tr><th>상품</th><th>수량</th><th>금액</th></tr></thead><tbody>${prods || '<tr><td colspan="3">없음</td></tr>'}</tbody></table></div>
 <div class="sec"><div class="lbl">사용법 · 팁</div><div>${esc(p.tipText)}</div></div>
 <div class="sec"><div class="lbl">맑원장 코멘트</div><div class="sub">${esc(p.cmtText)}</div></div>
@@ -697,6 +701,7 @@ function ExternalCardsPage() {
       const html = buildPrintHTML({
         customerName, selProds, tipText, cmtText, bundleItems, sampleItems, routineCards,
         giftTiers, giftTiersR, showRenobel, totosOn: totoOn, totosCard: totoCard,
+        courier, trackingNo, recipientPhone, recipientAddress,
         groupBuys, customEvents, selectedDayOn, dayEvent,
       })
       w.document.write(html)
@@ -736,6 +741,7 @@ function ExternalCardsPage() {
                   bundleItems, sampleItems, routineCards,
                   giftTiers, giftTiersR, showRenobel,
                   totosOn: totoOn, totosCard: totoCard,
+                  courier, trackingNo, recipientPhone, recipientAddress,
                   groupBuys, customEvents, selectedDayOn, dayEvent,
                 })}
                 style={{ width: '100%', height: 800, border: 'none', borderRadius: 8 }}
@@ -769,6 +775,14 @@ function ExternalCardsPage() {
                     <div style={{ fontSize: 12, color: '#999', marginTop: 3 }}>
                       {new Date(card.created_at).toLocaleDateString('ko-KR')} · 제품 {card.card_data?.selProds?.length || 0}개
                     </div>
+                    {card.courier || card.tracking_no ? (
+                      <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>
+                        {card.courier && `${card.courier} `}{card.tracking_no && `송장: ${card.tracking_no}`}
+                      </div>
+                    ) : null}
+                    {card.recipient_phone && (
+                      <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>{card.recipient_phone}</div>
+                    )}
                   </div>
                   <span style={{ fontSize: 12, color: '#7B5EA7' }}>불러오기 →</span>
                 </div>
