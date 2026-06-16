@@ -44,6 +44,7 @@ export default function ExternalCardsV2Page() {
   const [historyStatus, setHistoryStatus] = useState('전체')
   const [loadingCards, setLoadingCards] = useState(false)
   const [openCardId, setOpenCardId] = useState<string | null>(null)
+  const [currentCardId, setCurrentCardId] = useState<string | null>(null)
   const [custSearch, setCustSearch] = useState('')
   const [custResults, setCustResults] = useState<any[]>([])
   const [customers, setCustomers] = useState<any[]>([])
@@ -98,6 +99,7 @@ export default function ExternalCardsV2Page() {
     setProducts(prev => prev.map(p => p.id === id ? { ...p, custom: n } : p))
   }
   const reset = () => {
+    setCurrentCardId(null)
     setName(''); setPhone(''); setAddress(''); setChannel('네이버 스마트스토어')
     setProducts([]); setCourier('CJ대한통운'); setTrackingNo('')
     setShippedAt(''); setArrivalAt(''); setAmRoutine(''); setPmRoutine(''); setTip('')
@@ -105,6 +107,7 @@ export default function ExternalCardsV2Page() {
   const save = async (andPrint = false) => {
     if (!name.trim()) { setMsg('고객명을 입력해주세요'); return }
     setSaving(true); setMsg('')
+    const isEdit = !!currentCardId
     let customerId: string | null = null
     const existCust = await supabase.from('external_customers')
       .select('id,total_amount,visit_count').ilike('name', name.trim()).maybeSingle()
@@ -124,15 +127,19 @@ export default function ExternalCardsV2Page() {
       } as any).select('id').single()
       customerId = (newCust as any)?.id || null
     }
-    const { error } = await supabase.from('external_care_cards_v2').insert({
-      customer_name: name.trim(), phone: phone || null, address: address || null, channel,
-      products: products as any, total_amount: totalAmount,
+    const cardPayload = {
+      customer_name: name.trim(), phone, address, channel,
+      products, total_amount: totalAmount,
       delivery_type: courier, tracking_no: trackingNo || null,
       shipped_at: shippedAt || null, estimated_arrival: arrivalAt || null,
-      am_routine: amRoutine || null, pm_routine: pmRoutine || null, tip: tip || null,
+      am_routine: amRoutine, pm_routine: pmRoutine, tip,
       status: trackingNo ? '발송완료' : '준비중',
       customer_id: customerId,
-    } as any)
+    }
+    const { error } = isEdit
+      ? await supabase.from('external_care_cards_v2').update(cardPayload as any).eq('id', currentCardId)
+      : await supabase.from('external_care_cards_v2').insert(cardPayload as any)
+    if (!isEdit) setCurrentCardId(null)
     setSaving(false)
     if (error) { setMsg('저장 실패: ' + error.message); return }
     setMsg('✓ 저장 완료!')
@@ -420,6 +427,38 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
                     {c.address && <div style={{ fontSize: 11, color: '#555', marginBottom: 4 }}>주소 <span style={{ color: '#e8e0f5' }}>{c.address}</span></div>}
                     <div style={{ fontSize: 11, color: '#555', marginBottom: 10 }}>채널 <span style={{ color: '#e8e0f5' }}>{c.channel}</span></div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <button
+                        onClick={() => {
+                          setName(c.customer_name || '')
+                          setPhone(c.phone || '')
+                          setAddress(c.address || '')
+                          setChannel(c.channel || '네이버 스마트스토어')
+                          setProducts(c.products || [])
+                          setCourier(c.delivery_type || 'CJ대한통운')
+                          setTrackingNo(c.tracking_no || '')
+                          setShippedAt(c.shipped_at || '')
+                          setArrivalAt(c.estimated_arrival || '')
+                          setAmRoutine(c.am_routine || '')
+                          setPmRoutine(c.pm_routine || '')
+                          setTip(c.tip || '')
+                          setCurrentCardId(c.id)
+                          setTab('write')
+                        }}
+                        style={{ marginRight: 8, padding: '6px 14px', background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
+                      >
+                        ✏️ 카드 수정
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!confirm(`${c.customer_name}님 카드를 삭제할까요?`)) return
+                          await supabase.from('external_care_cards_v2').delete().eq('id', c.id)
+                          setCards(prev => prev.filter(x => x.id !== c.id))
+                          setOpenCardId(null)
+                        }}
+                        style={{ marginRight: 8, padding: '6px 14px', background: '#fff', color: '#e57373', border: '1px solid #e57373', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
+                      >
+                        🗑️ 삭제
+                      </button>
                       {!c.auran_joined && <button onClick={() => markJoined(c.id)} style={{ padding: '6px 12px', borderRadius: 7, fontSize: 11, cursor: 'pointer', background: 'rgba(91,138,107,0.2)', border: '0.5px solid rgba(91,138,107,0.35)', color: C.green, fontFamily: 'inherit' }}>AURAN 가입 확인 ✓</button>}
                       {c.phone && <button onClick={() => sendAlimtalk(c)} style={{ padding: '6px 12px', borderRadius: 7, fontSize: 11, cursor: 'pointer', background: 'rgba(201,169,110,0.15)', border: '0.5px solid rgba(201,169,110,0.35)', color: C.gold, fontFamily: 'inherit' }}>알림톡 재발송</button>}
                     </div>
