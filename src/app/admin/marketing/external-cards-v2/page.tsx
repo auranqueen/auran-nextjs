@@ -183,7 +183,7 @@ export default function ExternalCardsV2Page() {
     const productList = products.map(p => `<tr><td>${p.name}</td><td style="text-align:right">₩${p.custom.toLocaleString()}</td></tr>`).join('')
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AURAN 케어카드</title>
 <style>
-@media print{@page{size:A4;margin:15mm}}
+@media print{@page{size:A4;margin:15mm}.no-print{display:none!important}}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;color:#111;font-size:12px}
 .hdr{text-align:center;padding-bottom:12px;border-bottom:1px solid #C9A96E;margin-bottom:16px}
@@ -233,6 +233,10 @@ td{padding:7px 8px;border-bottom:.5px solid #f0edf8}
 .rv-qr{width:40px;height:40px;background:#f9f6ff;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#7B5EA7;text-align:center;flex-shrink:0}
 .footer{text-align:right;font-size:9px;color:#ccc;margin-top:10px}
 </style></head><body>
+<div style="position:fixed;top:12px;right:16px;z-index:999;display:flex;gap:8px;" class="no-print">
+  <button onclick="window.print()" style="padding:8px 20px;background:#7B5EA7;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;">🖨️ 인쇄하기</button>
+  <button onclick="window.close()" style="padding:8px 16px;background:#f5f5f5;color:#666;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;">닫기</button>
+</div>
 <div class="hdr"><div class="logo">A U R A N</div><div class="hdr-sub">스킨파우더룸 · 맑원장 피부 케어 가이드</div></div>
 <div class="greeting"><strong>${name}님, 소중한 구매 감사드려요 💜</strong><br>맑원장이 직접 이 제품 쓰는 방법을 알려드릴게요. 쓰다가 모르는 게 생기면 바로 물어봐요.</div>
 ${products.length ? `<div class="sec"><div class="sec-title">✦ 구매하신 제품</div><table><thead><tr><th>상품명</th><th style="text-align:right">금액</th></tr></thead><tbody>${productList}</tbody></table><div class="total">합계 <strong>₩${totalAmount.toLocaleString()}</strong></div></div>` : ''}
