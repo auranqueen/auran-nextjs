@@ -246,6 +246,8 @@ function ExternalCardsPage() {
   const [routinePresets, setRoutinePresets] = useState<Record<string, { prods: { name: string, tip: string, id?: string }[] }>>({})
   const [presetSaving, setPresetSaving] = useState(false)
   const [presetSettingId, setPresetSettingId] = useState<string | null>(null)
+  const [showCardList, setShowCardList] = useState(false)
+  const [savedCards, setSavedCards] = useState<any[]>([])
   const prodRef = useRef<HTMLDivElement>(null)
 
   const dayEvent = DAY_EVENTS[selectedDayIdx]
@@ -420,6 +422,42 @@ function ExternalCardsPage() {
     setShowCustomerDD(false)
   }
 
+  async function loadSavedCards() {
+    const supabase = createClient()
+    const { data } = await supabase
+      .from('external_care_cards')
+      .select('id, customer_name, created_at, card_data, courier, tracking_no, recipient_phone, recipient_address')
+      .order('created_at', { ascending: false })
+      .limit(50)
+    if (data) setSavedCards(data)
+    setShowCardList(true)
+  }
+
+  function applyCardData(card: any) {
+    const d = card.card_data || {}
+    setCustomerName(card.customer_name || '')
+    setCourier(card.courier || '')
+    setTrackingNo(card.tracking_no || '')
+    setRecipientPhone(card.recipient_phone || '')
+    setRecipientAddress(card.recipient_address || '')
+    if (d.selProds) setSelProds(d.selProds)
+    if (d.tipText !== undefined) setTipText(d.tipText)
+    if (d.cmtText !== undefined) setCmtText(d.cmtText)
+    if (d.bundleItems) setBundleItems(d.bundleItems)
+    if (d.sampleItems) setSampleItems(d.sampleItems)
+    if (d.routineCards) setRoutineCards(d.routineCards)
+    if (d.giftTiers) setGiftTiers(d.giftTiers)
+    if (d.giftTiersR) setGiftTiersR(d.giftTiersR)
+    if (d.showRenobel !== undefined) setShowRenobel(d.showRenobel)
+    if (d.totoOn !== undefined) setTotoOn(d.totoOn)
+    if (d.totoCard) setTotoCard(d.totoCard)
+    if (d.groupBuys) setGroupBuys(d.groupBuys)
+    if (d.customEvents) setCustomEvents(d.customEvents)
+    if (d.selectedDayOn !== undefined) setSelectedDayOn(d.selectedDayOn)
+    if (d.selectedDayIdx !== undefined) setSelectedDayIdx(d.selectedDayIdx)
+    setShowCardList(false)
+  }
+
   async function saveCardToDB() {
     if (!customerName.trim()) return
     setSaveStatus('saving')
@@ -464,7 +502,7 @@ function ExternalCardsPage() {
         totoOn, totoCard, groupBuys, customEvents,
         selectedDayOn, selectedDayIdx,
       }
-      await supabase.from('external_care_cards').insert({
+      await supabase.from('external_care_cards').upsert({
         customer_id: cid,
         customer_name: customerName.trim(),
         courier: courier || null,
@@ -707,8 +745,47 @@ function ExternalCardsPage() {
           </div>
         </div>
       )}
+      {showCardList && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: 16, width: 480, maxHeight: '70vh', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '16px 20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 15, color: '#111' }}>저장된 케어카드</span>
+              <button onClick={() => setShowCardList(false)} style={{ background: 'none', border: 'none', fontSize: 18, cursor: 'pointer', color: '#888' }}>✕</button>
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {savedCards.length === 0 && (
+                <div style={{ padding: 32, textAlign: 'center', color: '#aaa', fontSize: 14 }}>저장된 카드가 없어요</div>
+              )}
+              {savedCards.map((card) => (
+                <div
+                  key={card.id}
+                  onClick={() => applyCardData(card)}
+                  style={{ padding: '14px 20px', borderBottom: '1px solid #f0f0f0', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#f9f5ff')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                >
+                  <div>
+                    <div style={{ fontSize: 14, color: '#111' }}>{card.customer_name}</div>
+                    <div style={{ fontSize: 12, color: '#999', marginTop: 3 }}>
+                      {new Date(card.created_at).toLocaleDateString('ko-KR')} · 제품 {card.card_data?.selProds?.length || 0}개
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 12, color: '#7B5EA7' }}>불러오기 →</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
         <span style={{ fontSize: 16, color: '#7B5EA7', fontWeight: 400 }}>{initMode === 'member' ? '내부고객 케어카드' : '외부고객 케어카드'}</span>
+        <button
+          type="button"
+          onClick={loadSavedCards}
+          style={{ fontSize: 13, padding: '4px 12px', background: '#fff', border: '1px solid #c4b5d4', borderRadius: 8, color: '#7B5EA7', cursor: 'pointer', marginLeft: 12 }}
+        >
+          📋 저장된 카드
+        </button>
         <button
           type="button"
           onClick={() => {
