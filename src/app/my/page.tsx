@@ -331,7 +331,7 @@ export default function MyPage() {
   }
   const savePeriodStartedToday = async () => {
     if (!user?.id) return false
-    const today = new Date().toISOString().slice(0, 10)
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
     const cycleLen = Math.max(21, Math.min(60, Number(hormoneCycle?.cycle_length || 28)))
     const next = new Date(today)
     next.setDate(next.getDate() + cycleLen)

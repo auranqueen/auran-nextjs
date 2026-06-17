@@ -29,7 +29,11 @@ export function calcCycleDay(lastPeriodDate: string | null | undefined, cycleLen
   if (!lastPeriodDate) return 0
   const s = new Date(lastPeriodDate)
   if (Number.isNaN(s.getTime())) return 0
-  const diff = Math.floor((new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime() - new Date(s.getFullYear(), s.getMonth(), s.getDate()).getTime()) / 86400000)
+  const toSeoulYmd = (d: Date) => {
+    const seoul = new Date(d.toLocaleString('en-US', { timeZone: 'Asia/Seoul' }))
+    return new Date(seoul.getFullYear(), seoul.getMonth(), seoul.getDate())
+  }
+  const diff = Math.floor((toSeoulYmd(now).getTime() - toSeoulYmd(s).getTime()) / 86400000)
   const len = Math.max(21, Math.min(60, Number(cycleLength || 28)))
   const d = ((diff % len) + len) % len
   return d + 1
