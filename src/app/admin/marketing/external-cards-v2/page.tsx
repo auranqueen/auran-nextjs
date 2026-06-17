@@ -267,7 +267,7 @@ export default function ExternalCardsV2Page() {
       </div>` : ''
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AURAN 케어카드</title>
 <style>
-@media print{@page{size:A4;margin:5mm}.no-print{display:none!important}body{font-size:9.5px!important}.sec{margin-bottom:5px!important}.join,.ot,.review{margin-bottom:5px!important}table th,table td{padding:3px 5px!important}}
+@media print{@page{size:A4;margin:5mm}.no-print{display:none!important}body{font-size:9.5px!important;overflow:hidden;max-height:287mm}.sec{margin-bottom:5px!important}.join,.ot,.review{margin-bottom:5px!important}table th,table td{padding:3px 5px!important}}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;color:#111;font-size:11px;line-height:1.5}
 .hdr{text-align:center;padding-bottom:6px;border-bottom:1px solid #C9A96E;margin-bottom:8px}
@@ -288,7 +288,7 @@ td{padding:7px 8px;border-bottom:.5px solid #f0edf8}
 .routine-time{font-size:9px;letter-spacing:.15em;color:#9B7EC8;margin-bottom:4px}
 .routine-step{font-size:10px;color:#534AB7;line-height:1.8;white-space:pre-wrap}
 .tip-text{font-size:10px;color:#534AB7;line-height:1.7;border-top:.5px solid #eee;padding-top:8px;margin-top:4px}
-.join{background:#2D5A3D;color:#fff;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+.join{background:#2D5A3D;color:#fff;border-radius:8px;padding:12px 16px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
 .j-eye{font-size:9px;letter-spacing:.12em;color:#C9A96E;margin-bottom:4px}
 .j-copy{font-family:Georgia,serif;font-size:12px;color:#fff;font-style:italic;line-height:1.4;margin-bottom:4px}
 .j-sub{font-size:9px;color:rgba(255,255,255,.35);margin-bottom:6px}
