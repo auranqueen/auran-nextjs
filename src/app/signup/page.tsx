@@ -118,7 +118,7 @@ function SignupForm() {
               ? (() => {
                   const d = new Date(lastPeriodDate)
                   d.setDate(d.getDate() + Math.max(21, Math.min(60, Number(cycleLength || 28))))
-                  return d.toISOString().slice(0, 10)
+                  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
                 })()
               : null
           const payload: any = {
@@ -216,7 +216,7 @@ function SignupForm() {
             ? (() => {
                 const d = new Date(lastPeriodDate)
                 d.setDate(d.getDate() + Math.max(21, Math.min(60, Number(cycleLength || 28))))
-                return d.toISOString().slice(0, 10)
+                return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
               })()
             : null
         const payload: any = {

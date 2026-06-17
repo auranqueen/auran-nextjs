@@ -45,8 +45,6 @@ function OnboardingInner() {
   const handleComplete = async () => {
     if (birthRawDigits.length !== 8) { setError('생년월일을 입력해주세요'); return }
     if (!gender) { setError('성별을 선택해주세요'); return }
-    if (gender === 'female' && !cycleType) { setError('생리 주기를 선택해주세요'); return }
-    if (gender === 'female' && track === 'general' && !lastPeriodDate) { setError('마지막 생리 시작일을 입력해주세요'); return }
     if (gender === 'male' && !skinType) { setError('피부 타입을 선택해주세요'); return }
     setLoading(true)
     try {
