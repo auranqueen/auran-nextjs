@@ -267,7 +267,7 @@ export default function ExternalCardsV2Page() {
       </div>` : ''
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AURAN 케어카드</title>
 <style>
-@media print{@page{size:A4;margin:4mm}.no-print{display:none!important}body{font-size:9px!important}.hdr{padding-bottom:3px!important;margin-bottom:4px!important}.greeting{margin-bottom:4px!important}.sec{margin-bottom:4px!important}.join{margin-bottom:4px!important;padding:6px 8px!important}.ot{margin-bottom:4px!important;padding:6px 8px!important}.review{margin-bottom:4px!important;padding:6px 8px!important}.delivery{margin-bottom:4px!important;padding:6px 8px!important}table th,table td{padding:2px 4px!important}.qr-img{width:50px!important;height:50px!important}img[width="54"]{width:44px!important;height:44px!important}img[width="48"]{width:40px!important;height:40px!important}img[width="40"]{width:34px!important;height:34px!important}}
+@media print{@page{size:A4;margin:4mm}html,body{height:100%;overflow:hidden!important}.no-print{display:none!important}body{font-size:9px!important;transform-origin:top left;transform:scale(0.9)}.hdr{padding-bottom:3px!important;margin-bottom:4px!important}.greeting{margin-bottom:4px!important}.sec{margin-bottom:4px!important}.join{margin-bottom:4px!important;padding:6px 8px!important}.ot{margin-bottom:4px!important;padding:6px 8px!important}.review{margin-bottom:4px!important;padding:6px 8px!important}.delivery{margin-bottom:4px!important;padding:6px 8px!important}table th,table td{padding:2px 4px!important}.qr-img{width:50px!important;height:50px!important}img[width="54"]{width:44px!important;height:44px!important}img[width="48"]{width:40px!important;height:40px!important}img[width="40"]{width:34px!important;height:34px!important}}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;color:#111;font-size:11px;line-height:1.5}
 .hdr{text-align:center;padding-bottom:6px;border-bottom:1px solid #C9A96E;margin-bottom:8px}
@@ -318,6 +318,19 @@ td{padding:7px 8px;border-bottom:.5px solid #f0edf8}
 .footer{text-align:right;font-size:9px;color:#ccc;margin-top:10px}
 </style></head><body>
 <div style="position:fixed;top:12px;right:16px;z-index:999;display:flex;gap:8px;" class="no-print">
+<script>
+window.addEventListener('beforeprint', function() {
+  var body = document.body;
+  var scale = Math.min(1, 287 / body.scrollHeight);
+  if (scale < 1) body.style.transform = 'scale(' + scale + ')';
+  body.style.transformOrigin = 'top left';
+  body.style.width = (100 / scale) + '%';
+});
+window.addEventListener('afterprint', function() {
+  document.body.style.transform = '';
+  document.body.style.width = '';
+});
+</script>
   <button onclick="window.print()" style="padding:8px 20px;background:#7B5EA7;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;">🖨️ 인쇄하기</button>
   <button onclick="window.close()" style="padding:8px 16px;background:#f5f5f5;color:#666;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;">닫기</button>
 </div>
