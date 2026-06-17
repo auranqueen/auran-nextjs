@@ -965,25 +965,15 @@ AURAN이 내 피부 패턴을
                     setCalToast('로그인 후 이용해 주세요')
                     return
                   }
-                  const cycleLen = Math.max(21, Math.min(60, Number(hormoneCycle?.cycle_length || 28)))
-                  const baseP = new Date(`${calSheetIso}T12:00:00+09:00`)
-                  const next = new Date(baseP)
-                  next.setDate(baseP.getDate() + cycleLen)
-                  const nextIso = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`
-                  const { error } = await supabase.from('hormone_cycle').upsert(
-                    {
-                      ...(hormoneCycle || {}),
-                      auth_id: uid,
-                      track: hormoneTrack,
-                      last_period_date: calSheetIso,
-                      period_started_at: calSheetIso,
-                      expected_period_date: nextIso,
-                      cycle_length: cycleLen,
-                      updated_at: new Date().toISOString(),
-                    } as any,
-                    { onConflict: 'auth_id' }
-                  )
-                  if (error) {
+                  try {
+                    const res = await fetch('/api/hormone/period-start', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ date: calSheetIso }),
+                    })
+                    const json = await res.json()
+                    if (!json.ok) throw new Error(json.error)
+                  } catch {
                     setCalToast('생리 시작 저장에 실패했어요')
                     return
                   }

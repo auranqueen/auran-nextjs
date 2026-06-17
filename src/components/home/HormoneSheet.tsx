@@ -376,16 +376,20 @@ export default function HormoneSheet({
       setGuideMsg('마법 시작일 칸을 탭해서 날짜를 먼저 선택해줘요 💜')
       return
     }
-    const uid = (await supabaseClient.auth.getUser()).data.user?.id ?? ''
-    void supabaseClient
-      .from('hormone_cycle')
-      .update({ last_period_date: pendingStart.d })
-      .eq('auth_id', uid)
-      .then(() => {
-        setGuideMsg('')
-        setPendingStart(null)
-        onRefreshCycle?.()
+    try {
+      const res = await fetch('/api/hormone/period-start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: pendingStart.d }),
       })
+      const json = await res.json()
+      if (!json.ok) throw new Error(json.error)
+      setGuideMsg('')
+      setPendingStart(null)
+      onRefreshCycle?.()
+    } catch {
+      setGuideMsg('저장에 실패했어요. 다시 시도해 주세요 💜')
+    }
   }
 
   async function confirmEnd(){

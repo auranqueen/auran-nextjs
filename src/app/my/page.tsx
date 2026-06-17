@@ -332,63 +332,27 @@ export default function MyPage() {
   const savePeriodStartedToday = async () => {
     if (!user?.id) return false
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
-    const cycleLen = Math.max(21, Math.min(60, Number(hormoneCycle?.cycle_length || 28)))
-    const next = new Date(today)
-    next.setDate(next.getDate() + cycleLen)
-    await supabase
-      .from('hormone_cycle')
-      .upsert(
-        {
-          auth_id: user.id,
-          track: hormoneTrack,
-          last_period_date: today,
-          period_started_at: today,
-          expected_period_date: next.toISOString().slice(0, 10),
-          cycle_length: cycleLen,
-          updated_at: new Date().toISOString(),
-        } as any,
-        { onConflict: 'auth_id' }
-      )
-    const { error: dcErr } = await supabase
-      .from('daily_checkin')
-      .insert({ auth_id: user.id, checkin_date: today, period_started: true } as any)
-    if (dcErr) {
-      console.warn('[daily_checkin]', dcErr)
-    } else {
-      try {
-        const { data: psRow } = await supabase.from('point_settings').select('points').eq('action', 'attendance').maybeSingle()
-        const attPts = Math.max(0, Math.floor(Number((psRow as { points?: unknown } | null)?.points ?? 100)))
-        const { data: uRow } = await supabase.from('users').select('id,points').eq('auth_id', user.id).maybeSingle()
-        if (uRow?.id) {
-          const nextPoints = (Number(uRow.points) || 0) + attPts
-          const { error: upErr } = await supabase.from('users').update({ points: nextPoints }).eq('id', uRow.id)
-          if (upErr) {
-            console.warn('[users attendance points]', upErr)
-          } else {
-            const { error: ttErr } = await supabase.from('toast_transactions').insert({
-              user_id: uRow.id,
-              amount: attPts,
-              transaction_type: 'attendance',
-              source_type: 'attendance',
-            } as any)
-            if (ttErr) console.warn('[toast_transactions attendance]', ttErr)
-          }
-        }
-      } catch (e) {
-        console.warn('[attendance reward]', e)
-      }
+    try {
+      const res = await fetch('/api/hormone/period-start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date: today }),
+      })
+      const json = await res.json()
+      if (!json.ok) { console.error('생리 시작 저장 실패:', json.error); return false }
+      setHormoneCycle((prev: any) => ({
+        ...prev,
+        last_period_date: today,
+        period_started_at: today,
+        cycle_length: json.cycle_length,
+        expected_period_date: json.expected_period_date,
+        ...(json.track_changed ? { track: json.track_changed } : {}),
+      }))
+      return true
+    } catch (e) {
+      console.error('생리 시작 저장 오류:', e)
+      return false
     }
-    setPeriodQuietNotice('')
-    setHormoneCycle((prev: any) => ({
-      ...(prev || {}),
-      auth_id: user.id,
-      last_period_date: today,
-      period_started_at: today,
-      expected_period_date: next.toISOString().slice(0, 10),
-      cycle_length: cycleLen,
-      track: hormoneTrack,
-    }))
-    return true
   }
 
   return (

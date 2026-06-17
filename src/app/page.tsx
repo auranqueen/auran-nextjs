@@ -1729,14 +1729,21 @@ export default function CustomerHomePage() {
             <button
               onClick={async () => {
                 if (!popupPeriodDate) return
-                const supabase = createClient()
-                const { data: { user } } = await supabase.auth.getUser()
-                if (!user) return
-                await supabase.from('hormone_cycle').update({
+                const res = await fetch('/api/hormone/period-start', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ date: popupPeriodDate }),
+                })
+                const json = await res.json()
+                if (!json.ok) { console.error('저장 실패:', json.error); return }
+                setHormoneCycle((prev: any) => ({
+                  ...prev,
                   last_period_date: popupPeriodDate,
-                  updated_at: new Date().toISOString(),
-                }).eq('auth_id', user.id)
-                setHormoneCycle((prev: any) => ({ ...prev, last_period_date: popupPeriodDate }))
+                  period_started_at: popupPeriodDate,
+                  cycle_length: json.cycle_length,
+                  expected_period_date: json.expected_period_date,
+                  ...(json.track_changed ? { track: json.track_changed } : {}),
+                }))
                 setShowPeriodPopup(false)
               }}
               style={{ width: '100%', padding: 14, borderRadius: 14, background: '#7B5EA7', color: '#fff', border: 'none', fontSize: 15, cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}
