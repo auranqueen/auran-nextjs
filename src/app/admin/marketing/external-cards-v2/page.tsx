@@ -712,6 +712,17 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
                     )}
                     <button onClick={() => { setTab('write'); setName(c.name); setPhone(c.phone || ''); setAddress(c.address || ''); setChannel(c.channel || '네이버 스마트스토어') }}
                       style={{ padding: '6px 12px', borderRadius: 7, fontSize: 11, cursor: 'pointer', background: 'rgba(123,94,167,0.2)', border: '0.5px solid rgba(123,94,167,0.4)', color: '#9B7EC8', fontFamily: 'inherit' }}>새 케어카드 작성</button>
+                    <button
+                      onClick={async () => {
+                        if (!confirm(`${c.name}님 고객 정보를 삭제할까요?\n케어카드 이력도 함께 삭제됩니다.`)) return
+                        await supabase.from('external_care_cards_v2').delete().eq('customer_name', c.name)
+                        await supabase.from('external_customers').delete().eq('id', c.id)
+                        setCustomers(prev => prev.filter(x => x.id !== c.id))
+                        setCards(prev => prev.filter(x => x.customer_name !== c.name))
+                        setOpenCustId(null)
+                      }}
+                      style={{ padding: '6px 12px', borderRadius: 7, fontSize: 11, cursor: 'pointer', background: 'rgba(229,115,115,0.1)', border: '0.5px solid rgba(229,115,115,0.4)', color: '#e57373', fontFamily: 'inherit' }}
+                    >🗑️ 고객 삭제</button>
                   </div>
                   {cards.filter(card => card.customer_name === c.name).length > 0 && (
                     <div style={{ marginTop: 10 }}>
@@ -729,6 +740,16 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
                               <span style={{ fontSize: 11, color: '#C9A96E' }}>₩{(card.total_amount || 0).toLocaleString()}</span>
                             </div>
                           </div>
+                          {(card.products || []).length > 0 && (
+                            <div style={{ marginTop: 6, paddingTop: 6, borderTop: '0.5px solid rgba(123,94,167,0.1)' }}>
+                              {(card.products || []).map((p: any, i: number) => (
+                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#888', padding: '2px 0' }}>
+                                  <span>{p.name}{p.usage ? ` · ${p.usage}` : ''}</span>
+                                  <span style={{ color: '#C9A96E', whiteSpace: 'nowrap', marginLeft: 8 }}>₩{(p.custom || 0).toLocaleString()}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           <div style={{ display: 'flex', gap: 6 }}>
                             <button
                               onClick={() => {
