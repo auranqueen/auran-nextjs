@@ -245,9 +245,9 @@ export default function ExternalCardsV2Page() {
     const reviewToastRows = products.length > 0 ? products.map(p => `
       <tr>
         <td style="font-size:10px">${p.name}</td>
-        <td style="text-align:center;font-size:10px">${Math.round(p.custom * p.reviewTextRate / 100).toLocaleString()}T</td>
-        <td style="text-align:center;font-size:10px">${Math.round(p.custom * p.reviewPhotoRate / 100).toLocaleString()}T</td>
-        <td style="text-align:center;font-size:10px">${Math.round(p.custom * p.reviewVideoRate / 100).toLocaleString()}T</td>
+        <td style="text-align:center;font-size:10px">${Math.round(p.custom * (p.reviewTextRate || 1) / 100).toLocaleString()}T</td>
+        <td style="text-align:center;font-size:10px">${Math.round(p.custom * (p.reviewPhotoRate || 2) / 100).toLocaleString()}T</td>
+        <td style="text-align:center;font-size:10px">${Math.round(p.custom * (p.reviewVideoRate || 3) / 100).toLocaleString()}T</td>
       </tr>`).join('') : `<tr><td colspan="4" style="font-size:10px;color:#999">텍스트 1,000T / 사진 3,000T / 영상 5,000T</td></tr>`
     const activeGifts = giftItems.filter(g => g.items.trim() && totalAmount >= g.threshold)
     const giftSection = activeGifts.length > 0 ? `
@@ -267,7 +267,7 @@ export default function ExternalCardsV2Page() {
       </div>` : ''
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AURAN 케어카드</title>
 <style>
-@media print{@page{size:A4;margin:8mm}.no-print{display:none!important}}
+@media print{@page{size:A4;margin:5mm}.no-print{display:none!important}body{font-size:9.5px!important}.sec{margin-bottom:5px!important}.join,.ot,.review{margin-bottom:5px!important}table th,table td{padding:3px 5px!important}}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;color:#111;font-size:11px;line-height:1.5}
 .hdr{text-align:center;padding-bottom:6px;border-bottom:1px solid #C9A96E;margin-bottom:8px}
@@ -288,7 +288,7 @@ td{padding:7px 8px;border-bottom:.5px solid #f0edf8}
 .routine-time{font-size:9px;letter-spacing:.15em;color:#9B7EC8;margin-bottom:4px}
 .routine-step{font-size:10px;color:#534AB7;line-height:1.8;white-space:pre-wrap}
 .tip-text{font-size:10px;color:#534AB7;line-height:1.7;border-top:.5px solid #eee;padding-top:8px;margin-top:4px}
-.join{background:#0f0c18;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
+.join{background:#2D5A3D;border-radius:8px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:8px}
 .j-eye{font-size:9px;letter-spacing:.12em;color:#C9A96E;margin-bottom:4px}
 .j-copy{font-family:Georgia,serif;font-size:12px;color:#fff;font-style:italic;line-height:1.4;margin-bottom:4px}
 .j-sub{font-size:9px;color:rgba(255,255,255,.35);margin-bottom:6px}
@@ -327,7 +327,7 @@ ${products.length ? `<div class="sec"><div class="sec-title">✦ 구매하신 �
 ${(courier || trackingNo) ? `<div class="delivery">${courier ? `<div><div class="d-label">택배사</div>${courier}</div>` : ''}${trackingNo ? `<div><div class="d-label">송장번호</div>${trackingNo}</div>` : ''}${shippedAt ? `<div><div class="d-label">발송일</div>${shippedAt}</div>` : ''}${arrivalAt ? `<div><div class="d-label">도착예정</div>${arrivalAt}</div>` : ''}</div>` : ''}
 ${giftSection}${bundleSection}${sampleSection}
 ${(amRoutine || pmRoutine || tip) ? `<div class="sec"><div class="sec-title">✦ 맞춤 사용 루틴</div><div class="routine-grid">${amRoutine ? `<div class="routine-box"><div class="routine-time">AM · 아침</div><div class="routine-step">${amRoutine}</div></div>` : ''}${pmRoutine ? `<div class="routine-box"><div class="routine-time">PM · 저녁</div><div class="routine-step">${pmRoutine}</div></div>` : ''}</div>${tip ? `<div class="tip-text">💜 ${tip}</div>` : ''}</div>` : ''}
-<div class="join"><div><div class="j-eye">✦ 호르몬 주기 기반 피부 케어 플랫폼 AURAN</div><div class="j-copy">내 피부 데이터로 만드는 맞춤 루틴</div><div class="j-sub">AI 피부 분석 · 호르몬 사이클 케어</div><div class="j-pill"><span class="j-dot"></span>가입 즉시 10,000T 즉시 지급</div><div class="j-pill"><span class="j-dot"></span>구매 루틴 앱에서 저장·관리</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:4px"><img src="${qrJoin}" width="54" height="54" style="display:block;border-radius:4px;" /><div style="font-size:8px;color:rgba(255,255,255,.3)">카카오 가입</div></div></div>
+<div class="join"><div><div style="font-size:9px;color:rgba(255,255,255,0.85);margin-bottom:6px;line-height:1.7;">달빛기 · 황금기 · 만개기 · 물들기<br>호르몬 주기에 따라 피부도 달라져요.<br>AURAN이 내 주기에 맞는 홈케어를 알려드려요.</div><div class="j-eye">✦ 호르몬 주기 기반 피부 케어 플랫폼 AURAN</div><div class="j-copy">내 피부 데이터로 만드는 맞춤 루틴</div><div class="j-sub">AI 피부 분석 · 호르몬 사이클 케어</div><div class="j-pill"><span class="j-dot"></span>가입 즉시 10,000T 즉시 지급</div><div class="j-pill"><span class="j-dot"></span>구매 루틴 앱에서 저장·관리</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:4px"><img src="${qrJoin}" width="54" height="54" style="display:block;border-radius:4px;" /><div style="font-size:8px;color:rgba(255,255,255,.3)">카카오 가입</div></div></div>
 <div class="ot"><div class="ot-head"><div><div class="ot-title">제품 쓰다 막히면<br><em>맑원장님께 직접 물어보세요</em></div><div class="ot-sub">오랜톡 · 맑원장 1:1 상담</div></div><div class="bubbles"><div class="bq">세럼이랑 크림<br>순서 맞나요?</div><div class="ba">세럼 먼저요!<br>흡수 후 크림 발라요</div></div></div><div class="ot-body"><div class="steps"><div class="step"><div class="snum">1</div>위 QR 스캔 → AURAN 카카오 가입</div><div class="step"><div class="snum">2</div>앱 하단 채팅 탭 터치</div><div class="step"><div class="snum">3</div>맑원장님께 바로 질문하기</div><div class="ot-hint">맑원장이 직접 챙겨드릴게요 💜</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><img src="${qrChat}" width="48" height="48" style="display:block;border-radius:4px;" /><div style="font-size:8px;color:#9B7EC8;text-align:center">상담 바로가기</div></div></div></div>
 <div class="review"><div><div class="rv-title">솔직한 후기 남기고 토스트 받으세요</div><div class="rv-sub">내 후기 한 줄이 비슷한 피부 고민 가진 분께 큰 도움이 돼요</div><div><table style="width:100%;border-collapse:collapse;margin-top:6px">
   <thead><tr>
