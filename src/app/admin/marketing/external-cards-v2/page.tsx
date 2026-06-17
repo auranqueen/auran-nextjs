@@ -267,7 +267,7 @@ export default function ExternalCardsV2Page() {
       </div>` : ''
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AURAN 케어카드</title>
 <style>
-@media print{@page{size:A4;margin:5mm}.no-print{display:none!important}body{font-size:9.5px!important;overflow:hidden;max-height:287mm}.sec{margin-bottom:5px!important}.join,.ot,.review{margin-bottom:5px!important}table th,table td{padding:3px 5px!important}}
+@media print{@page{size:A4;margin:4mm}.no-print{display:none!important}body{font-size:9px!important}.hdr{padding-bottom:3px!important;margin-bottom:4px!important}.greeting{margin-bottom:4px!important}.sec{margin-bottom:4px!important}.join{margin-bottom:4px!important;padding:6px 8px!important}.ot{margin-bottom:4px!important;padding:6px 8px!important}.review{margin-bottom:4px!important;padding:6px 8px!important}.delivery{margin-bottom:4px!important;padding:6px 8px!important}table th,table td{padding:2px 4px!important}.qr-img{width:50px!important;height:50px!important}img[width="54"]{width:44px!important;height:44px!important}img[width="48"]{width:40px!important;height:40px!important}img[width="40"]{width:34px!important;height:34px!important}}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Apple SD Gothic Neo','Noto Sans KR',sans-serif;color:#111;font-size:11px;line-height:1.5}
 .hdr{text-align:center;padding-bottom:6px;border-bottom:1px solid #C9A96E;margin-bottom:8px}
