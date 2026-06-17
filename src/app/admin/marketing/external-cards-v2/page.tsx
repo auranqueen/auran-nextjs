@@ -59,8 +59,8 @@ export default function ExternalCardsV2Page() {
   const [openCustId, setOpenCustId] = useState<string | null>(null)
   const totalAmount = useMemo(() => products.reduce((s, p) => s + p.custom, 0), [products])
   useEffect(() => {
+    if (tab === 'customers' || tab === 'marketing') { fetchCustomers(); fetchCards() }
     if (tab === 'history' || tab === 'stats') fetchCards()
-    if (tab === 'customers' || tab === 'marketing') fetchCustomers()
   }, [tab])
   const fetchCards = async () => {
     setLoadingCards(true)
@@ -335,9 +335,9 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
       <div style={{ fontSize: 15, color: '#F0E8FF', marginBottom: 3 }}>외부고객 케어카드 v2</div>
       <div style={{ fontSize: 10, color: '#444', marginBottom: 14 }}>더치스 · 스마트스토어 · 블로그공구</div>
       <div style={{ display: 'flex', borderBottom: '0.5px solid rgba(255,255,255,0.08)', marginBottom: 18 }}>
-        {(['write','history','customers','marketing','stats'] as const).map(t => (
+        {(['write','customers','marketing','stats'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)} style={{ padding: '9px 16px', fontSize: 12, cursor: 'pointer', background: 'transparent', border: 'none', color: tab === t ? '#fff' : '#444', borderBottom: tab === t ? '2px solid #7B5EA7' : '2px solid transparent', fontFamily: 'inherit' }}>
-            {t === 'write' ? '카드 작성' : t === 'history' ? '발송 현황' : t === 'customers' ? '고객 관리' : t === 'marketing' ? '마케팅' : '통계'}
+            {t === 'write' ? '카드 작성' : t === 'customers' ? '고객 관리' : t === 'marketing' ? '마케팅' : '통계'}
           </button>
         ))}
       </div>
@@ -649,6 +649,64 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
                     <button onClick={() => { setTab('write'); setName(c.name); setPhone(c.phone || ''); setAddress(c.address || ''); setChannel(c.channel || '네이버 스마트스토어') }}
                       style={{ padding: '6px 12px', borderRadius: 7, fontSize: 11, cursor: 'pointer', background: 'rgba(123,94,167,0.2)', border: '0.5px solid rgba(123,94,167,0.4)', color: '#9B7EC8', fontFamily: 'inherit' }}>새 케어카드 작성</button>
                   </div>
+                  {cards.filter(card => card.customer_name === c.name).length > 0 && (
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{ fontSize: 11, color: '#9B7EC8', marginBottom: 6 }}>케어카드 이력</div>
+                      {cards.filter(card => card.customer_name === c.name).map(card => (
+                        <div key={card.id} style={{ background: 'rgba(123,94,167,0.05)', border: '0.5px solid rgba(123,94,167,0.15)', borderRadius: 8, padding: '8px 12px', marginBottom: 6 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                            <div style={{ fontSize: 11, color: '#e8e0f5' }}>
+                              {new Date(card.created_at).toLocaleDateString('ko-KR')}
+                              {card.delivery_type && ` · ${card.delivery_type}`}
+                              {card.tracking_no && ` · ${card.tracking_no}`}
+                            </div>
+                            <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                              <span style={{ fontSize: 10, color: card.status === '발송완료' ? '#5B8A6B' : '#C9A96E', background: card.status === '발송완료' ? 'rgba(91,138,107,0.15)' : 'rgba(201,169,110,0.15)', padding: '2px 8px', borderRadius: 10 }}>{card.status}</span>
+                              <span style={{ fontSize: 11, color: '#C9A96E' }}>₩{(card.total_amount || 0).toLocaleString()}</span>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              onClick={() => {
+                                setName(card.customer_name || '')
+                                setPhone(card.phone || '')
+                                setAddress(card.address || '')
+                                setChannel(card.channel || '네이버 스마트스토어')
+                                setProducts(card.products || [])
+                                setCourier(card.delivery_type || 'CJ대한통운')
+                                setTrackingNo(card.tracking_no || '')
+                                setShippedAt(card.shipped_at || '')
+                                setArrivalAt(card.estimated_arrival || '')
+                                setAmRoutine(card.am_routine || '')
+                                setPmRoutine(card.pm_routine || '')
+                                setTip(card.tip || '')
+                                if ((card as any).gift_items) setGiftItems((card as any).gift_items)
+                                if ((card as any).bundle_prods) setBundleProds((card as any).bundle_prods)
+                                if ((card as any).sample_prods) setSampleProds((card as any).sample_prods)
+                                setCurrentCardId(card.id)
+                                setTab('write')
+                              }}
+                              style={{ fontSize: 11, padding: '3px 10px', background: '#7B5EA7', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+                            >✏️ 수정</button>
+                            <button
+                              onClick={async () => {
+                                if (!confirm(`${card.created_at.slice(0,10)} 카드를 삭제할까요?`)) return
+                                await supabase.from('external_care_cards_v2').delete().eq('id', card.id)
+                                setCards(prev => prev.filter(x => x.id !== card.id))
+                              }}
+                              style={{ fontSize: 11, padding: '3px 10px', background: 'none', color: '#e57373', border: '1px solid #e57373', borderRadius: 6, cursor: 'pointer' }}
+                            >🗑️</button>
+                            {card.phone && (
+                              <button
+                                onClick={() => sendAlimtalk(card)}
+                                style={{ fontSize: 11, padding: '3px 10px', background: 'rgba(201,169,110,0.15)', color: '#C9A96E', border: '0.5px solid rgba(201,169,110,0.35)', borderRadius: 6, cursor: 'pointer' }}
+                              >알림톡 재발송</button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
