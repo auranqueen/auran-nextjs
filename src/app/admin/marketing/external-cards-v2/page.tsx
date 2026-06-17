@@ -12,7 +12,7 @@ const ALIMTALK_COPIES = [
   (name: string) => `${name}님 💜\n\n내일 아침 거울이 달라 보이는\n상담이에요.\n\n맑원장이 ${name}님 피부만 생각하며\n직접 봐드릴게요 👉 auran.kr`,
 ]
 const C = { purple:'#7B5EA7', gold:'#C9A96E', muted:'#8A7E92', line:'rgba(123,94,167,0.15)', green:'#5B8A6B' }
-type ProductRow = { id: string; name: string; brand: string; orig: number; custom: number }
+type ProductRow = { id: string; name: string; brand: string; orig: number; custom: number; usage: string; reviewText: number; reviewPhoto: number; reviewVideo: number }
 type Card = {
   id: string; customer_name: string; phone: string | null; address: string | null
   channel: string; products: ProductRow[]; total_amount: number
@@ -45,6 +45,14 @@ export default function ExternalCardsV2Page() {
   const [loadingCards, setLoadingCards] = useState(false)
   const [openCardId, setOpenCardId] = useState<string | null>(null)
   const [currentCardId, setCurrentCardId] = useState<string | null>(null)
+  const [giftItems, setGiftItems] = useState<{label:string;threshold:number;items:string}[]>([
+    {label:'20만원 이상', threshold:200000, items:''},
+    {label:'30만원 이상', threshold:300000, items:''},
+    {label:'50만원 이상', threshold:500000, items:''},
+    {label:'100만원 이상', threshold:1000000, items:''},
+  ])
+  const [bundleProds, setBundleProds] = useState<{name:string;tip:string}[]>([])
+  const [sampleProds, setSampleProds] = useState<{name:string;tip:string}[]>([])
   const [custSearch, setCustSearch] = useState('')
   const [custResults, setCustResults] = useState<any[]>([])
   const [customers, setCustomers] = useState<any[]>([])
@@ -83,7 +91,7 @@ export default function ExternalCardsV2Page() {
     setProductSearch(q)
     if (q.length < 2) { setProductResults([]); return }
     const { data } = await supabase.from('products')
-      .select('id,name,retail_price,brands(name)')
+      .select('id,name,retail_price,owner_comment,review_points_text,review_points_photo,review_points_video,brands(name)')
       .ilike('name', `%${q}%`)
       .eq('is_active', true)
       .limit(6)
@@ -91,15 +99,26 @@ export default function ExternalCardsV2Page() {
   }
   const addProduct = (p: any) => {
     if (products.find(x => x.id === p.id)) return
-    setProducts(prev => [...prev, { id: p.id, name: p.name, brand: (p.brands as any)?.name || '', orig: p.retail_price || 0, custom: p.retail_price || 0 }])
+    setProducts(prev => [...prev, { id: p.id, name: p.name, brand: (p.brands as any)?.name || '', orig: p.retail_price || 0, custom: p.retail_price || 0, usage: p.owner_comment || '', reviewText: p.review_points_text || 1000, reviewPhoto: p.review_points_photo || 3000, reviewVideo: p.review_points_video || 5000 }])
     setProductSearch(''); setProductResults([])
   }
   const updatePrice = (id: string, val: string) => {
     const n = parseInt(val.replace(/[^0-9]/g, '')) || 0
     setProducts(prev => prev.map(p => p.id === id ? { ...p, custom: n } : p))
   }
+  const updateUsage = (id: string, val: string) => {
+    setProducts(prev => prev.map(p => p.id === id ? { ...p, usage: val } : p))
+  }
   const reset = () => {
     setCurrentCardId(null)
+    setGiftItems([
+      {label:'20만원 이상', threshold:200000, items:''},
+      {label:'30만원 이상', threshold:300000, items:''},
+      {label:'50만원 이상', threshold:500000, items:''},
+      {label:'100만원 이상', threshold:1000000, items:''},
+    ])
+    setBundleProds([])
+    setSampleProds([])
     setName(''); setPhone(''); setAddress(''); setChannel('네이버 스마트스토어')
     setProducts([]); setCourier('CJ대한통운'); setTrackingNo('')
     setShippedAt(''); setArrivalAt(''); setAmRoutine(''); setPmRoutine(''); setTip('')
@@ -134,6 +153,9 @@ export default function ExternalCardsV2Page() {
       shipped_at: shippedAt || null, estimated_arrival: arrivalAt || null,
       am_routine: amRoutine, pm_routine: pmRoutine, tip,
       status: trackingNo ? '발송완료' : '준비중',
+      gift_items: giftItems,
+      bundle_prods: bundleProds,
+      sample_prods: sampleProds,
       customer_id: customerId,
     }
     const { error } = isEdit
@@ -184,7 +206,34 @@ export default function ExternalCardsV2Page() {
     const qrJoin = qrBase + encodeURIComponent('https://auran.kr/join?ref=care_card')
     const qrChat = qrBase + encodeURIComponent('https://auran.kr/chat?ref=care_card')
     const qrReview = qrBase + encodeURIComponent('https://auran.kr/review?ref=care_card')
-    const productList = products.map(p => `<tr><td>${p.name}</td><td style="text-align:right">₩${p.custom.toLocaleString()}</td></tr>`).join('')
+    const productList = products.map(p => `
+      <tr>
+        <td>${p.name}${p.usage ? `<div style="font-size:9px;color:#7B5EA7;margin-top:2px;">✦ ${p.usage}</div>` : ''}</td>
+        <td style="text-align:right;white-space:nowrap">₩${p.custom.toLocaleString()}</td>
+      </tr>`).join('')
+    const reviewToastRows = products.length > 0 ? products.map(p => `
+      <tr>
+        <td style="font-size:10px">${p.name}</td>
+        <td style="text-align:center;font-size:10px">${p.reviewText.toLocaleString()}T</td>
+        <td style="text-align:center;font-size:10px">${p.reviewPhoto.toLocaleString()}T</td>
+        <td style="text-align:center;font-size:10px">${p.reviewVideo.toLocaleString()}T</td>
+      </tr>`).join('') : `<tr><td colspan="4" style="font-size:10px;color:#999">텍스트 1,000T / 사진 3,000T / 영상 5,000T</td></tr>`
+    const activeGifts = giftItems.filter(g => g.items.trim() && totalAmount >= g.threshold)
+    const giftSection = activeGifts.length > 0 ? `
+      <div class="sec">
+        <div class="sec-title">💝 금액별 선물</div>
+        ${activeGifts.map(g => `<div style="padding:4px 0;font-size:11px;border-bottom:0.5px solid #f5efe8"><span style="color:#C9A96E;font-size:10px">${g.label}</span> ${g.items}</div>`).join('')}
+      </div>` : ''
+    const bundleSection = bundleProds.length > 0 ? `
+      <div class="sec">
+        <div class="sec-title">✨ 함께 쓰면 좋은 제품</div>
+        ${bundleProds.map(b => `<div style="padding:4px 0;font-size:11px;border-bottom:0.5px solid #f5efe8">${b.name}${b.tip ? `<span style="color:#7B5EA7;font-size:10px;margin-left:6px">${b.tip}</span>` : ''}</div>`).join('')}
+      </div>` : ''
+    const sampleSection = sampleProds.length > 0 ? `
+      <div class="sec">
+        <div class="sec-title">🎁 동봉 샘플</div>
+        ${sampleProds.map(s => `<div style="padding:4px 0;font-size:11px;border-bottom:0.5px solid #f5efe8">${s.name}${s.tip ? `<span style="color:#7B5EA7;font-size:10px;margin-left:6px">${s.tip}</span>` : ''}</div>`).join('')}
+      </div>` : ''
     const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>AURAN 케어카드</title>
 <style>
 @media print{@page{size:A4;margin:8mm}.no-print{display:none!important}}
@@ -245,10 +294,19 @@ td{padding:7px 8px;border-bottom:.5px solid #f0edf8}
 <div class="greeting"><strong>${name}님, 소중한 구매 감사드려요 💜</strong><br>맑원장이 직접 이 제품 쓰는 방법을 알려드릴게요. 쓰다가 모르는 게 생기면 바로 물어봐요.</div>
 ${products.length ? `<div class="sec"><div class="sec-title">✦ 구매하신 제품</div><table><thead><tr><th>상품명</th><th style="text-align:right">금액</th></tr></thead><tbody>${productList}</tbody></table><div class="total">합계 <strong>₩${totalAmount.toLocaleString()}</strong></div></div>` : ''}
 ${(courier || trackingNo) ? `<div class="delivery">${courier ? `<div><div class="d-label">택배사</div>${courier}</div>` : ''}${trackingNo ? `<div><div class="d-label">송장번호</div>${trackingNo}</div>` : ''}${shippedAt ? `<div><div class="d-label">발송일</div>${shippedAt}</div>` : ''}${arrivalAt ? `<div><div class="d-label">도착예정</div>${arrivalAt}</div>` : ''}</div>` : ''}
+${giftSection}${bundleSection}${sampleSection}
 ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤 사용 루틴</div><div class="routine-grid">${amRoutine ? `<div class="routine-box"><div class="routine-time">AM · 아침</div><div class="routine-step">${amRoutine}</div></div>` : ''}${pmRoutine ? `<div class="routine-box"><div class="routine-time">PM · 저녁</div><div class="routine-step">${pmRoutine}</div></div>` : ''}</div>${tip ? `<div class="tip-text">💜 ${tip}</div>` : ''}</div>` : ''}
 <div class="join"><div><div class="j-eye">✦ 피부 주치의 플랫폼 AURAN</div><div class="j-copy">원장님과 직접 소통하며<br>내 피부를 바꿔보세요</div><div class="j-sub">AI 피부 분석 · 호르몬 사이클 케어</div><div class="j-pill"><span class="j-dot"></span>가입 즉시 10,000T 즉시 지급</div><div class="j-pill"><span class="j-dot"></span>구매 루틴 앱에서 저장·관리</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:4px"><img src="${qrJoin}" width="54" height="54" style="display:block;border-radius:4px;" /><div style="font-size:8px;color:rgba(255,255,255,.3)">카카오 가입</div></div></div>
 <div class="ot"><div class="ot-head"><div><div class="ot-title">제품 쓰다 막히면<br><em>맑원장님께 직접 물어보세요</em></div><div class="ot-sub">오랜톡 · 맑원장 1:1 상담</div></div><div class="bubbles"><div class="bq">세럼이랑 크림<br>순서 맞나요?</div><div class="ba">세럼 먼저요!<br>흡수 후 크림 발라요</div></div></div><div class="ot-body"><div class="steps"><div class="step"><div class="snum">1</div>위 QR 스캔 → AURAN 카카오 가입</div><div class="step"><div class="snum">2</div>앱 하단 채팅 탭 터치</div><div class="step"><div class="snum">3</div>맑원장님께 바로 질문하기</div><div class="ot-hint">맑원장이 직접 챙겨드릴게요 💜</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><img src="${qrChat}" width="48" height="48" style="display:block;border-radius:4px;" /><div style="font-size:8px;color:#9B7EC8;text-align:center">상담 바로가기</div></div></div></div>
-<div class="review"><div><div class="rv-title">솔직한 후기 남기고 토스트 받으세요</div><div class="rv-sub">내 후기 한 줄이 비슷한 피부 고민 가진 분께 큰 도움이 돼요</div><div><span class="rv-pill">텍스트 1,000T</span><span class="rv-pill">사진 3,000T</span><span class="rv-pill">영상 5,000T</span></div></div><img src="${qrReview}" width="40" height="40" style="display:block;border-radius:4px;" /></div>
+<div class="review"><div><div class="rv-title">솔직한 후기 남기고 토스트 받으세요</div><div class="rv-sub">내 후기 한 줄이 비슷한 피부 고민 가진 분께 큰 도움이 돼요</div><div><table style="width:100%;border-collapse:collapse;margin-top:6px">
+  <thead><tr>
+    <th style="font-size:9px;color:#999;text-align:left;padding:3px 0">제품</th>
+    <th style="font-size:9px;color:#999;text-align:center">텍스트</th>
+    <th style="font-size:9px;color:#999;text-align:center">사진</th>
+    <th style="font-size:9px;color:#999;text-align:center">영상</th>
+  </tr></thead>
+  <tbody>${reviewToastRows}</tbody>
+</table></div></div><img src="${qrReview}" width="40" height="40" style="display:block;border-radius:4px;" /></div>
 <div class="footer">auran.kr · 오랜톡 · 맑원장 · 스킨파우더룸</div>
 </body></html>`
     const w = window.open('', '_blank')
@@ -349,6 +407,13 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
                     {p.custom !== p.orig ? '수정됨' : '스토어가'}
                   </div>
                 </div>
+                <input
+                  type="text"
+                  placeholder="사용법 간단 메모"
+                  value={p.usage}
+                  onChange={e => updateUsage(p.id, e.target.value)}
+                  style={{fontSize:11,padding:'2px 6px',border:'1px solid #e0d5f0',borderRadius:6,color:'#111',width:'100%',marginTop:4,background:'#fff'}}
+                />
               </div>
             ))}
             {products.length > 0 && (
@@ -392,6 +457,43 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, marginBottom: 8 }}>✦ 원장님 꿀팁</div>
             <textarea style={{ ...inp, height: 80, resize: 'none' } as React.CSSProperties} value={tip} onChange={e => setTip(e.target.value)} placeholder="고객님 피부에 맞는 맞춤 팁 입력..." />
+          </div>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:12,color:'#C9A96E',marginBottom:6}}>💝 금액별 선물</div>
+            {giftItems.map((g,i) => (
+              <div key={i} style={{display:'flex',gap:8,alignItems:'center',marginBottom:4}}>
+                <span style={{fontSize:11,color:'#888',width:80,flexShrink:0}}>{g.label}</span>
+                <input
+                  type="text"
+                  placeholder="선물 내용 입력"
+                  value={g.items}
+                  onChange={e => setGiftItems(prev => prev.map((x,j) => j===i ? {...x,items:e.target.value} : x))}
+                  style={{flex:1,fontSize:11,padding:'4px 8px',border:'1px solid #e0d5f0',borderRadius:6,color:'#111',background:'#fff'}}
+                />
+              </div>
+            ))}
+          </div>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:12,color:'#C9A96E',marginBottom:6}}>✨ 함께 쓰면 좋은 제품</div>
+            {bundleProds.map((b,i) => (
+              <div key={i} style={{display:'flex',gap:6,marginBottom:4}}>
+                <input value={b.name} placeholder="제품명" onChange={e => setBundleProds(prev => prev.map((x,j) => j===i?{...x,name:e.target.value}:x))} style={{flex:2,fontSize:11,padding:'4px 8px',border:'1px solid #e0d5f0',borderRadius:6,color:'#111',background:'#fff'}} />
+                <input value={b.tip} placeholder="간단 사용법" onChange={e => setBundleProds(prev => prev.map((x,j) => j===i?{...x,tip:e.target.value}:x))} style={{flex:3,fontSize:11,padding:'4px 8px',border:'1px solid #e0d5f0',borderRadius:6,color:'#111',background:'#fff'}} />
+                <button onClick={() => setBundleProds(prev => prev.filter((_,j) => j!==i))} style={{fontSize:11,color:'#e57373',background:'none',border:'none',cursor:'pointer'}}>✕</button>
+              </div>
+            ))}
+            <button onClick={() => setBundleProds(prev => [...prev,{name:'',tip:''}])} style={{fontSize:11,color:'#7B5EA7',background:'none',border:'1px dashed #c4b5d4',borderRadius:6,padding:'3px 10px',cursor:'pointer'}}>+ 추가</button>
+          </div>
+          <div style={{marginBottom:12}}>
+            <div style={{fontSize:12,color:'#C9A96E',marginBottom:6}}>🎁 동봉 샘플</div>
+            {sampleProds.map((s,i) => (
+              <div key={i} style={{display:'flex',gap:6,marginBottom:4}}>
+                <input value={s.name} placeholder="샘플명" onChange={e => setSampleProds(prev => prev.map((x,j) => j===i?{...x,name:e.target.value}:x))} style={{flex:2,fontSize:11,padding:'4px 8px',border:'1px solid #e0d5f0',borderRadius:6,color:'#111',background:'#fff'}} />
+                <input value={s.tip} placeholder="간단 사용법" onChange={e => setSampleProds(prev => prev.map((x,j) => j===i?{...x,tip:e.target.value}:x))} style={{flex:3,fontSize:11,padding:'4px 8px',border:'1px solid #e0d5f0',borderRadius:6,color:'#111',background:'#fff'}} />
+                <button onClick={() => setSampleProds(prev => prev.filter((_,j) => j!==i))} style={{fontSize:11,color:'#e57373',background:'none',border:'none',cursor:'pointer'}}>✕</button>
+              </div>
+            ))}
+            <button onClick={() => setSampleProds(prev => [...prev,{name:'',tip:''}])} style={{fontSize:11,color:'#7B5EA7',background:'none',border:'1px dashed #c4b5d4',borderRadius:6,padding:'3px 10px',cursor:'pointer'}}>+ 추가</button>
           </div>
           {msg && <div style={{ fontSize: 12, padding: '8px 12px', borderRadius: 8, marginBottom: 10, background: msg.includes('✓') ? 'rgba(91,138,107,0.1)' : 'rgba(220,80,80,0.1)', color: msg.includes('✓') ? C.green : '#dc5050', border: `0.5px solid ${msg.includes('✓') ? 'rgba(91,138,107,0.3)' : 'rgba(220,80,80,0.3)'}` }}>{msg}</div>}
           <div style={{ display: 'flex', gap: 8, paddingTop: 16, borderTop: '0.5px solid rgba(255,255,255,0.06)' }}>
@@ -449,6 +551,9 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
                           setAmRoutine(c.am_routine || '')
                           setPmRoutine(c.pm_routine || '')
                           setTip(c.tip || '')
+                          if ((c as any).gift_items) setGiftItems((c as any).gift_items)
+                          if ((c as any).bundle_prods) setBundleProds((c as any).bundle_prods)
+                          if ((c as any).sample_prods) setSampleProds((c as any).sample_prods)
                           setCurrentCardId(c.id)
                           setTab('write')
                         }}
