@@ -327,7 +327,7 @@ ${products.length ? `<div class="sec"><div class="sec-title">✦ 구매하신 �
 ${(courier || trackingNo) ? `<div class="delivery">${courier ? `<div><div class="d-label">택배사</div>${courier}</div>` : ''}${trackingNo ? `<div><div class="d-label">송장번호</div>${trackingNo}</div>` : ''}${shippedAt ? `<div><div class="d-label">발송일</div>${shippedAt}</div>` : ''}${arrivalAt ? `<div><div class="d-label">도착예정</div>${arrivalAt}</div>` : ''}</div>` : ''}
 ${giftSection}${bundleSection}${sampleSection}
 ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤 사용 루틴</div><div class="routine-grid">${amRoutine ? `<div class="routine-box"><div class="routine-time">AM · 아침</div><div class="routine-step">${amRoutine}</div></div>` : ''}${pmRoutine ? `<div class="routine-box"><div class="routine-time">PM · 저녁</div><div class="routine-step">${pmRoutine}</div></div>` : ''}</div>${tip ? `<div class="tip-text">💜 ${tip}</div>` : ''}</div>` : ''}
-<div class="join"><div><div class="j-eye">✦ 피부 주치의 플랫폼 AURAN</div><div class="j-copy">원장님과 직접 소통하며<br>내 피부를 바꿔보세요</div><div class="j-sub">AI 피부 분석 · 호르몬 사이클 케어</div><div class="j-pill"><span class="j-dot"></span>가입 즉시 10,000T 즉시 지급</div><div class="j-pill"><span class="j-dot"></span>구매 루틴 앱에서 저장·관리</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:4px"><img src="${qrJoin}" width="54" height="54" style="display:block;border-radius:4px;" /><div style="font-size:8px;color:rgba(255,255,255,.3)">카카오 가입</div></div></div>
+<div class="join"><div><div class="j-eye">✦ 호르몬 주기 기반 피부 케어 플랫폼 AURAN</div><div class="j-copy">내 피부 데이터로 만드는 맞춤 루틴</div><div class="j-sub">AI 피부 분석 · 호르몬 사이클 케어</div><div class="j-pill"><span class="j-dot"></span>가입 즉시 10,000T 즉시 지급</div><div class="j-pill"><span class="j-dot"></span>구매 루틴 앱에서 저장·관리</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:4px"><img src="${qrJoin}" width="54" height="54" style="display:block;border-radius:4px;" /><div style="font-size:8px;color:rgba(255,255,255,.3)">카카오 가입</div></div></div>
 <div class="ot"><div class="ot-head"><div><div class="ot-title">제품 쓰다 막히면<br><em>맑원장님께 직접 물어보세요</em></div><div class="ot-sub">오랜톡 · 맑원장 1:1 상담</div></div><div class="bubbles"><div class="bq">세럼이랑 크림<br>순서 맞나요?</div><div class="ba">세럼 먼저요!<br>흡수 후 크림 발라요</div></div></div><div class="ot-body"><div class="steps"><div class="step"><div class="snum">1</div>위 QR 스캔 → AURAN 카카오 가입</div><div class="step"><div class="snum">2</div>앱 하단 채팅 탭 터치</div><div class="step"><div class="snum">3</div>맑원장님께 바로 질문하기</div><div class="ot-hint">맑원장이 직접 챙겨드릴게요 💜</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><img src="${qrChat}" width="48" height="48" style="display:block;border-radius:4px;" /><div style="font-size:8px;color:#9B7EC8;text-align:center">상담 바로가기</div></div></div></div>
 <div class="review"><div><div class="rv-title">솔직한 후기 남기고 토스트 받으세요</div><div class="rv-sub">내 후기 한 줄이 비슷한 피부 고민 가진 분께 큰 도움이 돼요</div><div><table style="width:100%;border-collapse:collapse;margin-top:6px">
   <thead><tr>
@@ -338,10 +338,22 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
   </tr></thead>
   <tbody>${reviewToastRows}</tbody>
 </table></div></div><img src="${qrReview}" width="40" height="40" style="display:block;border-radius:4px;" /></div>
-<div class="footer">auran.kr · 오랜톡 · 맑원장 · 스킨파우더룸</div>
+<div class="footer">auran.kr · 오랜톡 · 맑원장 · 스킨파우더룸 · ${new Date().toLocaleDateString('ko-KR')}</div>
 </body></html>`
+    const today = new Date().toLocaleDateString('ko-KR')
     const w = window.open('', '_blank')
-    if (w) { w.document.write(html); w.document.close() }
+    if (w) {
+      w.document.write(html)
+      w.document.close()
+      w.document.body.style.background = '#e8e8e8'
+      w.document.body.style.display = 'flex'
+      w.document.body.style.justifyContent = 'center'
+      w.document.body.style.padding = '20px'
+      const wrap = w.document.createElement('div')
+      wrap.style.cssText = 'background:#fff;width:210mm;min-height:297mm;padding:15mm;box-shadow:0 2px 16px rgba(0,0,0,0.15);'
+      while (w.document.body.firstChild) wrap.appendChild(w.document.body.firstChild)
+      w.document.body.appendChild(wrap)
+    }
   }
   const filteredCards = useMemo(() => cards.filter(c => {
     const matchSearch = !historySearch || c.customer_name.includes(historySearch) || (c.tracking_no || '').includes(historySearch)
