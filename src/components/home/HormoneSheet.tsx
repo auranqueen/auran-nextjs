@@ -379,7 +379,7 @@ export default function HormoneSheet({
     const uid = (await supabaseClient.auth.getUser()).data.user?.id ?? ''
     void supabaseClient
       .from('hormone_cycle')
-      .update({ last_period_date: `${pendingStart.d}T${pendingStart.t}:00` })
+      .update({ last_period_date: pendingStart.d })
       .eq('auth_id', uid)
       .then(() => {
         setGuideMsg('')

@@ -62,7 +62,7 @@ export default function SegmentSlot({ track, reason }: { track?: string | null; 
     const sb = createClient()
     const { data: { user } } = await sb.auth.getUser()
     if (user) {
-      const today = new Date().toISOString().slice(0, 10)
+      const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
       await sb.from('hormone_cycle').update({ track: 'general', cycle_type: 'menstrual', menopause_reason: null, last_period_date: today, updated_at: new Date().toISOString() }).eq('auth_id', user.id)
       await sb.from('profiles').update({ cycle_type: 'menstrual' }).eq('auth_id', user.id)
       window.location.reload()
