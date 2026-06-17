@@ -161,7 +161,7 @@ function OnboardingInner() {
                     color: cycleType === 'menstrual' ? '#7B5EA7' : 'var(--text)',
                     fontSize: 13, cursor: 'pointer',
                   }}
-                >🌸 생리 주기가 있어요</button>
+                >🌸 생리 있어요</button>
                 <button
                   type="button"
                   onClick={() => { setCycleType('menopause'); setTrack('menopause_peri') }}
@@ -172,7 +172,7 @@ function OnboardingInner() {
                     color: cycleType === 'menopause' ? '#7B5EA7' : 'var(--text)',
                     fontSize: 13, cursor: 'pointer',
                   }}
-                >🌙 생리 주기가 없어요</button>
+                >🌙 생리 없어요</button>
               </div>
               {cycleType === 'menopause' && (
                 <div style={{ marginTop: 12 }}>
@@ -196,26 +196,6 @@ function OnboardingInner() {
                         }}
                       >{o.t}</button>
                     ))}
-                  </div>
-                </div>
-              )}              {track === 'general' && (
-                <div style={{ display: 'grid', gap: 10, marginTop: 12 }}>
-                  <div>
-                    <label style={labelStyle}>평균 주기 일수</label>
-                    <input
-                      type="text" inputMode="numeric" value={cycleLength}
-                      onChange={e => setCycleLength(e.target.value)}
-                      placeholder="예: 28"
-                      style={{ width: '100%', padding: '11px 14px', borderRadius: 8, fontSize: 14, border: '1px solid var(--border)', background: 'var(--bg3)', color: 'var(--text)', boxSizing: 'border-box' as const }}
-                    />
-                  </div>
-                  <div>
-                    <label style={labelStyle}>마지막 생리 시작일</label>
-                    <input
-                      type="date" value={lastPeriodDate}
-                      onChange={e => setLastPeriodDate(e.target.value)}
-                      style={{ width: '100%', padding: '11px 14px', borderRadius: 8, fontSize: 14, border: '1px solid var(--border)', background: 'var(--bg3)', color: 'var(--text)', boxSizing: 'border-box' as const }}
-                    />
                   </div>
                 </div>
               )}
