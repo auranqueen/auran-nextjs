@@ -53,6 +53,10 @@ export default function ExternalCardsV2Page() {
   ])
   const [bundleProds, setBundleProds] = useState<{name:string;tip:string}[]>([])
   const [sampleProds, setSampleProds] = useState<{name:string;tip:string}[]>([])
+  const [bundleSearch, setBundleSearch] = useState('')
+  const [bundleResults, setBundleResults] = useState<any[]>([])
+  const [sampleSearch, setSampleSearch] = useState('')
+  const [sampleResults, setSampleResults] = useState<any[]>([])
   const [custSearch, setCustSearch] = useState('')
   const [custResults, setCustResults] = useState<any[]>([])
   const [customers, setCustomers] = useState<any[]>([])
@@ -106,6 +110,26 @@ export default function ExternalCardsV2Page() {
     const n = parseInt(val.replace(/[^0-9]/g, '')) || 0
     setProducts(prev => prev.map(p => p.id === id ? { ...p, custom: n } : p))
   }
+  const searchBundle = async (q: string) => {
+    setBundleSearch(q)
+    if (q.length < 2) { setBundleResults([]); return }
+    const { data } = await supabase.from('products')
+      .select('id,name,owner_comment')
+      .ilike('name', `%${q}%`)
+      .eq('is_active', true)
+      .limit(6)
+    setBundleResults(data || [])
+  }
+  const searchSample = async (q: string) => {
+    setSampleSearch(q)
+    if (q.length < 2) { setSampleResults([]); return }
+    const { data } = await supabase.from('products')
+      .select('id,name,owner_comment')
+      .ilike('name', `%${q}%`)
+      .eq('is_active', true)
+      .limit(6)
+    setSampleResults(data || [])
+  }
   const updateUsage = (id: string, val: string) => {
     setProducts(prev => prev.map(p => p.id === id ? { ...p, usage: val } : p))
   }
@@ -134,8 +158,8 @@ export default function ExternalCardsV2Page() {
       customerId = (existCust.data as any).id
       await supabase.from('external_customers').update({
         phone: phone || undefined, address: address || undefined, channel,
-        total_amount: ((existCust.data as any).total_amount || 0) + totalAmount,
-        visit_count: ((existCust.data as any).visit_count || 0) + 1,
+        total_amount: isEdit ? ((existCust.data as any).total_amount || 0) : ((existCust.data as any).total_amount || 0) + totalAmount,
+        visit_count: isEdit ? ((existCust.data as any).visit_count || 0) : ((existCust.data as any).visit_count || 0) + 1,
         last_purchase_at: new Date().toISOString(), updated_at: new Date().toISOString(),
       }).eq('id', customerId)
     } else {
@@ -475,6 +499,26 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
           </div>
           <div style={{marginBottom:12}}>
             <div style={{fontSize:12,color:'#C9A96E',marginBottom:6}}>✨ 함께 쓰면 좋은 제품</div>
+            <div style={{ position: 'relative', marginBottom: 8 }}>
+              <input
+                type="text"
+                placeholder="제품명 검색 후 추가"
+                value={bundleSearch}
+                onChange={e => searchBundle(e.target.value)}
+                style={{ width: '100%', fontSize: 11, padding: '6px 10px', border: '1px solid #e0d5f0', borderRadius: 8, color: '#111', background: '#fff' }}
+              />
+              {bundleResults.length > 0 && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #e0d5f0', borderRadius: 8, zIndex: 10, maxHeight: 160, overflowY: 'auto' }}>
+                  {bundleResults.map(p => (
+                    <div key={p.id} onClick={() => { setBundleProds(prev => [...prev, { name: p.name, tip: p.owner_comment || '' }]); setBundleSearch(''); setBundleResults([]) }}
+                      style={{ padding: '7px 12px', fontSize: 11, color: '#111', cursor: 'pointer', borderBottom: '0.5px solid #f0f0f0' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#f9f5ff')}
+                      onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                    >{p.name}</div>
+                  ))}
+                </div>
+              )}
+            </div>
             {bundleProds.map((b,i) => (
               <div key={i} style={{display:'flex',gap:6,marginBottom:4}}>
                 <input value={b.name} placeholder="제품명" onChange={e => setBundleProds(prev => prev.map((x,j) => j===i?{...x,name:e.target.value}:x))} style={{flex:2,fontSize:11,padding:'4px 8px',border:'1px solid #e0d5f0',borderRadius:6,color:'#111',background:'#fff'}} />
@@ -486,6 +530,26 @@ ${(amRoutine || pmRoutine) ? `<div class="sec"><div class="sec-title">✦ 맞춤
           </div>
           <div style={{marginBottom:12}}>
             <div style={{fontSize:12,color:'#C9A96E',marginBottom:6}}>🎁 동봉 샘플</div>
+            <div style={{ position: 'relative', marginBottom: 8 }}>
+              <input
+                type="text"
+                placeholder="샘플명 검색 후 추가"
+                value={sampleSearch}
+                onChange={e => searchSample(e.target.value)}
+                style={{ width: '100%', fontSize: 11, padding: '6px 10px', border: '1px solid #e0d5f0', borderRadius: 8, color: '#111', background: '#fff' }}
+              />
+              {sampleResults.length > 0 && (
+                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#fff', border: '1px solid #e0d5f0', borderRadius: 8, zIndex: 10, maxHeight: 160, overflowY: 'auto' }}>
+                  {sampleResults.map(p => (
+                    <div key={p.id} onClick={() => { setSampleProds(prev => [...prev, { name: p.name, tip: p.owner_comment || '' }]); setSampleSearch(''); setSampleResults([]) }}
+                      style={{ padding: '7px 12px', fontSize: 11, color: '#111', cursor: 'pointer', borderBottom: '0.5px solid #f0f0f0' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#f9f5ff')}
+                      onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                    >{p.name}</div>
+                  ))}
+                </div>
+              )}
+            </div>
             {sampleProds.map((s,i) => (
               <div key={i} style={{display:'flex',gap:6,marginBottom:4}}>
                 <input value={s.name} placeholder="샘플명" onChange={e => setSampleProds(prev => prev.map((x,j) => j===i?{...x,name:e.target.value}:x))} style={{flex:2,fontSize:11,padding:'4px 8px',border:'1px solid #e0d5f0',borderRadius:6,color:'#111',background:'#fff'}} />
