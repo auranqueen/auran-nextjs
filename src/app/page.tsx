@@ -414,6 +414,8 @@ export default function CustomerHomePage() {
   const [careBannerLine, setCareBannerLine] = useState('오늘은 미백앰플 집중투입 타이밍이에요 →')
   const [hormoneTrack, setHormoneTrack] = useState<string>('general')
   const [hormoneCycle, setHormoneCycle] = useState<any>(null)
+  const [showPeriodPopup, setShowPeriodPopup] = useState(false)
+  const [popupPeriodDate, setPopupPeriodDate] = useState('')
   const [periodTipText, setPeriodTipText] = useState(TOOLTIP_FALLBACKS.period_start)
   const [userBirthday, setUserBirthday] =
     useState<string | null>(null)
@@ -536,6 +538,9 @@ export default function CustomerHomePage() {
     const hc = hcRes.data
     if (hc) {
       setHormoneCycle(hc)
+      if ((hc as any)?.track === 'general' && !(hc as any)?.last_period_date) {
+        setShowPeriodPopup(true)
+      }
       setHormoneTrack(String((hc as any).track || 'general'))
       const calc = calcHormoneBriefing(hc)
       setHormonePhase(calc.phase)
@@ -1672,8 +1677,81 @@ export default function CustomerHomePage() {
       fontWeight: 300,
       color: '#fff',
       paddingBottom: '0',
+      position: 'relative' as const,
     }}>
       <style>{`@keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}.home-cal-yearly-month-btn{position:relative;isolation:isolate}.home-cal-yearly-month-btn::before,.home-cal-yearly-month-btn::after{pointer-events:none!important}`}</style>
+
+      {showPeriodPopup && (
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'rgba(0,0,0,0.8)',
+          zIndex: 999,
+          display: 'flex',
+          alignItems: 'flex-end',
+          justifyContent: 'center',
+          minHeight: '100vh',
+        }}>
+          <div style={{
+            background: '#181520',
+            borderRadius: '24px 24px 0 0',
+            padding: '32px 24px 48px',
+            width: '100%',
+            borderTop: '0.5px solid rgba(123,94,167,0.3)',
+          }}>
+            <div style={{ fontSize: 32, textAlign: 'center', marginBottom: 12 }}>🌙</div>
+            <div style={{ fontSize: 17, color: '#fff', fontWeight: 500, textAlign: 'center', marginBottom: 8, lineHeight: 1.5 }}>
+              마지막 생리 시작일을 알려주세요
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 1.8, marginBottom: 20 }}>
+              이 날짜 하나가 달빛기·황금기·만개기·물들기를 결정해요.<br />
+              기록해야 내 호르몬 케어가 시작돼요 💜
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 6, marginBottom: 20 }}>
+              {[
+                { name: '달빛기', desc: '진정 케어' },
+                { name: '황금기', desc: '영양 집중' },
+                { name: '만개기', desc: '모공 케어' },
+                { name: '물들기', desc: '트러블 예방' },
+              ].map(p => (
+                <div key={p.name} style={{ background: 'rgba(123,94,167,0.12)', borderRadius: 8, padding: '8px 10px', textAlign: 'center' }}>
+                  <div style={{ fontSize: 10, color: '#C9A96E', marginBottom: 2 }}>{p.name}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>{p.desc}</div>
+                </div>
+              ))}
+            </div>
+            <input
+              type="date"
+              value={popupPeriodDate}
+              onChange={e => setPopupPeriodDate(e.target.value)}
+              max={new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })}
+              style={{ width: '100%', padding: '13px 14px', borderRadius: 12, border: '0.5px solid rgba(123,94,167,0.4)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 14, marginBottom: 12, fontFamily: 'inherit', boxSizing: 'border-box' as const }}
+            />
+            <button
+              onClick={async () => {
+                if (!popupPeriodDate) return
+                const supabase = createClient()
+                const { data: { user } } = await supabase.auth.getUser()
+                if (!user) return
+                await supabase.from('hormone_cycle').update({
+                  last_period_date: popupPeriodDate,
+                  updated_at: new Date().toISOString(),
+                }).eq('auth_id', user.id)
+                setHormoneCycle((prev: any) => ({ ...prev, last_period_date: popupPeriodDate }))
+                setShowPeriodPopup(false)
+              }}
+              style={{ width: '100%', padding: 14, borderRadius: 14, background: '#7B5EA7', color: '#fff', border: 'none', fontSize: 15, cursor: 'pointer', marginBottom: 8, fontFamily: 'inherit' }}
+            >
+              기록하고 케어 시작하기 💜
+            </button>
+            <button
+              onClick={() => setShowPeriodPopup(false)}
+              style={{ width: '100%', padding: 10, borderRadius: 14, background: 'none', color: 'rgba(255,255,255,0.35)', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              나중에 할게요
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── 탑바 ── */}
       <header style={{
