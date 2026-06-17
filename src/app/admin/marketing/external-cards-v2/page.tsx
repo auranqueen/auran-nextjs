@@ -12,7 +12,7 @@ const ALIMTALK_COPIES = [
   (name: string) => `${name}님 💜\n\n내일 아침 거울이 달라 보이는\n상담이에요.\n\n맑원장이 ${name}님 피부만 생각하며\n직접 봐드릴게요 👉 auran.kr`,
 ]
 const C = { purple:'#7B5EA7', gold:'#C9A96E', muted:'#8A7E92', line:'rgba(123,94,167,0.15)', green:'#5B8A6B' }
-type ProductRow = { id: string; name: string; brand: string; orig: number; custom: number; usage: string; reviewText: number; reviewPhoto: number; reviewVideo: number }
+type ProductRow = { id: string; name: string; brand: string; orig: number; custom: number; usage: string; reviewTextRate: number; reviewPhotoRate: number; reviewVideoRate: number }
 type Card = {
   id: string; customer_name: string; phone: string | null; address: string | null
   channel: string; products: ProductRow[]; total_amount: number
@@ -103,7 +103,7 @@ export default function ExternalCardsV2Page() {
   }
   const addProduct = (p: any) => {
     if (products.find(x => x.id === p.id)) return
-    setProducts(prev => [...prev, { id: p.id, name: p.name, brand: (p.brands as any)?.name || '', orig: p.retail_price || 0, custom: p.retail_price || 0, usage: p.owner_comment || '', reviewText: p.review_points_text || 1000, reviewPhoto: p.review_points_photo || 3000, reviewVideo: p.review_points_video || 5000 }])
+    setProducts(prev => [...prev, { id: p.id, name: p.name, brand: (p.brands as any)?.name || '', orig: p.retail_price || 0, custom: p.retail_price || 0, usage: p.owner_comment || '', reviewTextRate: p.review_points_text || 1, reviewPhotoRate: p.review_points_photo || 2, reviewVideoRate: p.review_points_video || 3 }])
     setProductSearch(''); setProductResults([])
   }
   const updatePrice = (id: string, val: string) => {
@@ -245,9 +245,9 @@ export default function ExternalCardsV2Page() {
     const reviewToastRows = products.length > 0 ? products.map(p => `
       <tr>
         <td style="font-size:10px">${p.name}</td>
-        <td style="text-align:center;font-size:10px">${p.reviewText.toLocaleString()}T</td>
-        <td style="text-align:center;font-size:10px">${p.reviewPhoto.toLocaleString()}T</td>
-        <td style="text-align:center;font-size:10px">${p.reviewVideo.toLocaleString()}T</td>
+        <td style="text-align:center;font-size:10px">${Math.round(p.custom * p.reviewTextRate / 100).toLocaleString()}T</td>
+        <td style="text-align:center;font-size:10px">${Math.round(p.custom * p.reviewPhotoRate / 100).toLocaleString()}T</td>
+        <td style="text-align:center;font-size:10px">${Math.round(p.custom * p.reviewVideoRate / 100).toLocaleString()}T</td>
       </tr>`).join('') : `<tr><td colspan="4" style="font-size:10px;color:#999">텍스트 1,000T / 사진 3,000T / 영상 5,000T</td></tr>`
     const activeGifts = giftItems.filter(g => g.items.trim() && totalAmount >= g.threshold)
     const giftSection = activeGifts.length > 0 ? `
