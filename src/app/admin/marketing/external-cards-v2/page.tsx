@@ -158,7 +158,14 @@ export default function ExternalCardsV2Page() {
       customerId = (existCust.data as any).id
       await supabase.from('external_customers').update({
         phone: phone || undefined, address: address || undefined, channel,
-        total_amount: isEdit ? ((existCust.data as any).total_amount || 0) : ((existCust.data as any).total_amount || 0) + totalAmount,
+        total_amount: await (async () => {
+          const { data: allCards } = await supabase
+            .from('external_care_cards_v2')
+            .select('total_amount, id')
+            .eq('customer_id', customerId)
+          const saved = (allCards || []).reduce((s: number, x: any) => s + (x.total_amount || 0), 0)
+          return isEdit ? saved : saved + totalAmount
+        })(),
         visit_count: isEdit ? ((existCust.data as any).visit_count || 0) : ((existCust.data as any).visit_count || 0) + 1,
         last_purchase_at: new Date().toISOString(), updated_at: new Date().toISOString(),
       }).eq('id', customerId)
