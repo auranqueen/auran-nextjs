@@ -361,10 +361,6 @@ ${(amRoutine || pmRoutine || tip) ? `<div class="sec"><div class="sec-title">✦
       w.document.body.style.display = 'flex'
       w.document.body.style.justifyContent = 'center'
       w.document.body.style.padding = '20px'
-      const wrap = w.document.createElement('div')
-      wrap.style.cssText = 'background:#fff;width:210mm;min-height:297mm;padding:15mm;box-shadow:0 2px 16px rgba(0,0,0,0.15);'
-      while (w.document.body.firstChild) wrap.appendChild(w.document.body.firstChild)
-      w.document.body.appendChild(wrap)
     }
   }
   const filteredCards = useMemo(() => cards.filter(c => {
