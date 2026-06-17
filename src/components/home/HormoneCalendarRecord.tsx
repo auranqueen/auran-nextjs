@@ -258,6 +258,8 @@ export function useHormoneCalendarRecord({
 export function HormoneCalendarRecordModal({
   open,
   selectedDateIso,
+  currentPhase,
+  cycleDay,
   recordPeriod,
   setRecordPeriod,
   recordCondition,
@@ -268,6 +270,8 @@ export function HormoneCalendarRecordModal({
   onClose,
   onSave,
 }: {
+  currentPhase: string
+  cycleDay: number
   open: boolean
   selectedDateIso: string
   recordPeriod: string
@@ -284,26 +288,23 @@ export function HormoneCalendarRecordModal({
   return (
     <RecordModal title={`기록 · ${selectedDateIso}`} onClose={onClose}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
-          생리 상태
-          <input
-            value={recordPeriod}
-            onChange={(e) => setRecordPeriod(e.target.value)}
-            placeholder="예: 생리 2일차, 가벼운 양"
-            style={{
-              display: 'block',
-              width: '100%',
-              marginTop: 6,
-              padding: '10px 12px',
-              borderRadius: 10,
-              border: '1px solid rgba(255,255,255,0.12)',
-              background: 'rgba(255,255,255,0.06)',
-              color: '#fff',
-              fontSize: 13,
-              fontFamily: 'inherit',
-            }}
-          />
-        </label>
+        {currentPhase === '달빛기' && (
+          <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
+            생리 상태
+            <input
+              value={recordPeriod}
+              onChange={(e) => setRecordPeriod(e.target.value)}
+              placeholder={`생리 ${cycleDay}일차예요. 오늘 양은 어때요?`}
+              style={{ display: 'block', width: '100%', marginTop: 6, padding: '10px 14px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: '#fff', fontSize: 13 }}
+            />
+          </label>
+        )}
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', padding: '8px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.05)', lineHeight: 1.7 }}>
+          {currentPhase === '달빛기' && `🌙 생리 ${cycleDay}일차예요. 피부가 가장 예민한 시기예요. 자극은 최소로!`}
+          {currentPhase === '황금기' && `✨ 지금이 이번 달 피부 황금기예요! 오늘 컨디션 어때요?`}
+          {currentPhase === '만개기' && `🌸 배란기 피부, 유분 올라오고 있나요? 모공 케어 타이밍이에요.`}
+          {currentPhase === '물들기' && `⚠️ 생리 전 예민 구간이에요. 트러블 예보 중! 오늘 피부 체크해봐요.`}
+        </div>
         <label style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
           컨디션
           <input
