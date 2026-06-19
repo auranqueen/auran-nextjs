@@ -1,4 +1,5 @@
 'use client'
+import { useSearchParams } from 'next/navigation'
 import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 const COURIERS = ['CJ대한통운','롯데택배','한진택배','우체국택배','로젠택배','직접전달','퀵배송']
@@ -23,6 +24,7 @@ type Card = {
 export default function ExternalCardsV2Page() {
   const supabase = createClient()
   const [tab, setTab] = useState<'write'|'history'|'stats'|'customers'|'marketing'>('write')
+  const searchParams = useSearchParams()
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
@@ -62,6 +64,10 @@ export default function ExternalCardsV2Page() {
   const [customers, setCustomers] = useState<any[]>([])
   const [openCustId, setOpenCustId] = useState<string | null>(null)
   const totalAmount = useMemo(() => products.reduce((s, p) => s + p.custom, 0), [products])
+  useEffect(() => {
+    const qName = searchParams.get('name')
+    if (qName) setName(decodeURIComponent(qName))
+  }, [])
   useEffect(() => {
     if (tab === 'customers' || tab === 'marketing') { fetchCustomers(); fetchCards() }
     if (tab === 'history' || tab === 'stats') fetchCards()
