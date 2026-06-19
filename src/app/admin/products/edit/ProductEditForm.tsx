@@ -135,9 +135,9 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
   const [shareVal, setShareVal] = useState('')
   const [isFlashSaleState, setIsFlashSaleState] = useState(productKind === 'event')
 
-  const [reviewText, setReviewText] = useState('100')
-  const [reviewPhoto, setReviewPhoto] = useState('300')
-  const [reviewVideo, setReviewVideo] = useState('500')
+  const [reviewText, setReviewText] = useState('1')
+  const [reviewPhoto, setReviewPhoto] = useState('2')
+  const [reviewVideo, setReviewVideo] = useState('3')
 
   const [shipFee, setShipFee] = useState('')
   const [shipMemo, setShipMemo] = useState('')
@@ -343,9 +343,9 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
       setShareVal(String(p.share_points ?? ''))
       setIsFlashSaleState(!!p.is_flash_sale)
 
-      setReviewText(String(p.review_points_text ?? '100'))
-      setReviewPhoto(String(p.review_points_photo ?? '300'))
-      setReviewVideo(String(p.review_points_video ?? '500'))
+      setReviewText(String(p.review_points_text ?? '1'))
+      setReviewPhoto(String(p.review_points_photo ?? '2'))
+      setReviewVideo(String(p.review_points_video ?? '3'))
 
       const qm = Array.isArray(p.quiz_match) ? (p.quiz_match as string[]) : []
       const meta = parseAdminMeta(qm)
@@ -582,9 +582,9 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
 
     const sharePts = Math.max(0, Math.floor(Number(shareVal) || 0))
 
-    const rText = Math.max(0, Math.floor(Number(reviewText) || 0))
-    const rPhoto = Math.max(0, Math.floor(Number(reviewPhoto) || 0))
-    const rVideo = Math.max(0, Math.floor(Number(reviewVideo) || 0))
+    const rText = Math.min(100, Math.floor(Number(reviewText) || 1))
+    const rPhoto = Math.min(100, Math.floor(Number(reviewPhoto) || 2))
+    const rVideo = Math.min(100, Math.floor(Number(reviewVideo) || 3))
 
     const thumbsClean = thumbImages.map(s => s.trim()).filter(Boolean)
     const quiz = encodeAdminMeta(optionsText, shipFee, shipMemo, selectedSkinTagIds, quizExisting)
@@ -1265,11 +1265,11 @@ export default function ProductEditForm({ id: idProp, productKind = 'normal' }: 
             </span>
           </div>
           <div style={{ display: 'grid', gap: 6 }}>
-            <span style={labelStyle}>리뷰 포인트 (텍스트 / 포토 / 영상)</span>
+            <span style={labelStyle}>리뷰 토스트 비율 % (텍스트 / 사진 / 영상)</span>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-              <input value={reviewText} onChange={e => setReviewText(e.target.value.replace(/[^0-9]/g, ''))} style={inputStyle} placeholder="텍스트" />
-              <input value={reviewPhoto} onChange={e => setReviewPhoto(e.target.value.replace(/[^0-9]/g, ''))} style={inputStyle} placeholder="포토" />
-              <input value={reviewVideo} onChange={e => setReviewVideo(e.target.value.replace(/[^0-9]/g, ''))} style={inputStyle} placeholder="영상" />
+              <input value={reviewText} onChange={e => setReviewText(e.target.value.replace(/[^0-9]/g, ''))} style={inputStyle} placeholder="1" />
+              <input value={reviewPhoto} onChange={e => setReviewPhoto(e.target.value.replace(/[^0-9]/g, ''))} style={inputStyle} placeholder="2" />
+              <input value={reviewVideo} onChange={e => setReviewVideo(e.target.value.replace(/[^0-9]/g, ''))} style={inputStyle} placeholder="3" />
             </div>
           </div>
           <label style={{ display: 'grid', gap: 6 }}>
