@@ -82,7 +82,7 @@ export default function ProductDetailClient({
   exclusiveLocked?: boolean
 }) {
   const router = useRouter()
-  const { addToCart, total: cartTotal } = useCart()
+  const { addToCart, addItem, total: cartTotal } = useCart()
   const supabase = createClient()
   // [AI 분석카드] ? 아이콘 탭 시 카드 열고 닫기
   const [showAiCard, setShowAiCard] = useState(false)
@@ -160,6 +160,7 @@ export default function ProductDetailClient({
   const [writeUsagePeriod, setWriteUsagePeriod] = useState<string>('')
   const [writeRebuy, setWriteRebuy] = useState<boolean | null>(null)
   const [likedReviewIds, setLikedReviewIds] = useState<Set<string>>(new Set())
+  const [alsoBoughtIds, setAlsoBoughtIds] = useState<Set<string>>(new Set())
   const [writeEffectTags, setWriteEffectTags] = useState<string[]>([])
   const [writeSubmitting, setWriteSubmitting] = useState(false)
   const [userPurchasedProduct, setUserPurchasedProduct] = useState(false)
@@ -2074,6 +2075,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   {Array.isArray(rv.images) && rv.images[0] ? (
                     <img src={rv.images[0]} alt="" loading="lazy" style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />
                   ) : null}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <button
                     type="button"
                     onClick={async () => {
@@ -2102,12 +2104,59 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                       color: likedReviewIds.has(rv.id) ? GOLD : 'rgba(255,255,255,0.6)',
                       fontSize: 12,
                       cursor: 'pointer',
-                      marginBottom: 8,
                       fontFamily: 'inherit',
                     }}
                   >
                     👍 도움돼요 {rv.helpful_count ?? 0}
                   </button>
+                  <button
+                    onClick={async () => {
+                      if (alsoBoughtIds.has(rv.id)) return
+                      const res = await fetch('/api/reviews/also-buy', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ review_id: rv.id, product_id: product.id }),
+                      })
+                      const json = await res.json()
+                      if (json.needLogin) { alert('로그인이 필요해요'); return }
+                      if (json.already) { alert('이미 장바구니에 담았어요'); return }
+                      if (json.ok) {
+                        setAlsoBoughtIds(prev => {
+                          const next = new Set(prev)
+                          next.add(rv.id)
+                          return next
+                        })
+                        addItem({
+                          product_id: product.id,
+                          name: product.name,
+                          price: product.sale_price || product.retail_price || 0,
+                          thumb_img: product.thumb_img || '',
+                          brand_name: brand,
+                          quantity: 1,
+                        })
+                        alert('장바구니에 담겼어요 💜')
+                      }
+                    }}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: 20,
+                      border: alsoBoughtIds.has(rv.id)
+                        ? '0.5px solid rgba(201,169,110,0.4)'
+                        : '0.5px solid rgba(255,255,255,0.12)',
+                      background: alsoBoughtIds.has(rv.id)
+                        ? 'rgba(201,169,110,0.1)'
+                        : 'none',
+                      color: alsoBoughtIds.has(rv.id)
+                        ? '#C9A96E'
+                        : 'rgba(255,255,255,0.45)',
+                      fontSize: 11,
+                      cursor: alsoBoughtIds.has(rv.id) ? 'default' : 'pointer',
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    {alsoBoughtIds.has(rv.id) ? '✓ 담았어요' : '나도 살게요'}
+                  </button>
+                  </div>
                   <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
                     {rv.created_at ? String(rv.created_at).slice(0, 10) : ''}
                     {rv.usage_period ? ` · ${rv.usage_period} 사용` : ''}
