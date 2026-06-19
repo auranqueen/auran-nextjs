@@ -226,6 +226,9 @@ export async function POST(req: NextRequest) {
       product_price: row.product_price,
       quantity: row.quantity,
       subtotal: row.subtotal,
+      final_price: totalAmount > 0
+        ? Math.round(row.subtotal * finalAmount / totalAmount)
+        : row.subtotal,
     })
     if (itemErr) return json({ ok: false, error: 'order_item_failed', detail: itemErr.message }, 500)
   }
