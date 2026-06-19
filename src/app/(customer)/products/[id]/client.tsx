@@ -159,6 +159,10 @@ export default function ProductDetailClient({
   const [writeSkinType, setWriteSkinType] = useState<string | null>(null)
   const [writeUsagePeriod, setWriteUsagePeriod] = useState<string>('')
   const [writeRebuy, setWriteRebuy] = useState<boolean | null>(null)
+  const [writeImages, setWriteImages] = useState<string[]>([])
+  const [writeVideoUrl, setWriteVideoUrl] = useState<string>('')
+  const [uploadingImg, setUploadingImg] = useState(false)
+  const [uploadingVid, setUploadingVid] = useState(false)
   const [likedReviewIds, setLikedReviewIds] = useState<Set<string>>(new Set())
   const [alsoBoughtIds, setAlsoBoughtIds] = useState<Set<string>>(new Set())
   const [writeEffectTags, setWriteEffectTags] = useState<string[]>([])
@@ -914,6 +918,12 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
   const top4Effects = Object.entries(effectFreq).sort((a, b) => b[1] - a[1]).slice(0, 4)
   const longTermUsers = (periodFreq['1달'] || 0) + (periodFreq['3달 이상'] || 0)
   const longTermPct = reviews.length > 0 ? Math.round((longTermUsers / reviews.length) * 100) : 0
+  const hormoneStats = reviews.reduce((acc: Record<string, number>, rv: any) => {
+    if (rv.hormone_phase) acc[rv.hormone_phase] = (acc[rv.hormone_phase] || 0) + 1
+    return acc
+  }, {})
+  const rebuyCount = reviews.filter((rv: any) => rv.is_rebuy === true).length
+  const rebuyPct = reviews.length > 0 ? Math.round(rebuyCount / reviews.length * 100) : 0
 
   const sharePts = Array.isArray(product.share_copy_points)
     ? product.share_copy_points.map((x) => String(x || '').trim()).filter(Boolean)
@@ -2002,6 +2012,39 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 1달 이상 사용자 <span style={{ color: GOLD }}>{longTermPct}%</span>
               </div>
             ) : null}
+            {Object.keys(hormoneStats).length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 8 }}>호르몬기별 리뷰</div>
+                {(['달빛기','황금기','만개기','물들기'] as const).map(phase => {
+                  const cnt = hormoneStats[phase] || 0
+                  const pct = reviews.length > 0 ? Math.round(cnt / reviews.length * 100) : 0
+                  const colors: Record<string, string> = { '달빛기': '#c4a8ff', '황금기': '#f0c060', '만개기': '#e87b9b', '물들기': '#d4904a' }
+                  return cnt > 0 ? (
+                    <div key={phase} style={{ marginBottom: 6 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{phase}</span>
+                        <span style={{ fontSize: 11, color: colors[phase] }}>{cnt}건</span>
+                      </div>
+                      <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 4, height: 5, overflow: 'hidden' }}>
+                        <div style={{ width: `${pct}%`, height: '100%', background: colors[phase], borderRadius: 4 }} />
+                      </div>
+                    </div>
+                  ) : null
+                })}
+              </div>
+            )}
+            {rebuyPct > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>재구매 의향</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>또 살 거예요</span>
+                  <span style={{ fontSize: 11, color: '#7BC49A' }}>{rebuyPct}%</span>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 4, height: 5, overflow: 'hidden' }}>
+                  <div style={{ width: `${rebuyPct}%`, height: '100%', background: '#5B8A6B', borderRadius: 4 }} />
+                </div>
+              </div>
+            )}
           </div>
         ) : null}
 
@@ -2714,6 +2757,111 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                 )
               })}
             </div>
+            {/* 사용기간 */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>사용 기간</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {['1주 이내', '1개월', '3개월', '6개월+'].map(p => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setWriteUsagePeriod(prev => prev === p ? '' : p)}
+                    style={{
+                      padding: '6px 14px', borderRadius: 20, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                      border: writeUsagePeriod === p ? '0.5px solid #7B5EA7' : '0.5px solid rgba(255,255,255,0.12)',
+                      background: writeUsagePeriod === p ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.04)',
+                      color: writeUsagePeriod === p ? '#c4b5d4' : 'rgba(255,255,255,0.5)',
+                    }}
+                  >{p}</button>
+                ))}
+              </div>
+            </div>
+            {/* 재구매 의향 */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>이 제품 또 구매할 건가요?</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => setWriteRebuy(true)}
+                  style={{
+                    padding: '10px', borderRadius: 12, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                    border: writeRebuy === true ? '0.5px solid rgba(91,138,107,0.5)' : '0.5px solid rgba(255,255,255,0.1)',
+                    background: writeRebuy === true ? 'rgba(91,138,107,0.15)' : 'rgba(255,255,255,0.03)',
+                    color: writeRebuy === true ? '#7BC49A' : 'rgba(255,255,255,0.45)',
+                  }}
+                >또 살 거예요</button>
+                <button
+                  type="button"
+                  onClick={() => setWriteRebuy(false)}
+                  style={{
+                    padding: '10px', borderRadius: 12, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+                    border: writeRebuy === false ? '0.5px solid rgba(229,115,115,0.4)' : '0.5px solid rgba(255,255,255,0.1)',
+                    background: writeRebuy === false ? 'rgba(229,115,115,0.08)' : 'rgba(255,255,255,0.03)',
+                    color: writeRebuy === false ? '#e57373' : 'rgba(255,255,255,0.45)',
+                  }}
+                >아직 모르겠어요</button>
+              </div>
+            </div>
+            {/* 사진/영상 업로드 */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>사진 · 영상 첨부</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <label style={{
+                  background: 'rgba(255,255,255,0.03)', border: '0.5px dashed rgba(255,255,255,0.12)',
+                  borderRadius: 12, padding: '14px 8px', textAlign: 'center' as const, cursor: 'pointer',
+                  ...(writeImages.length > 0 ? { borderStyle: 'solid', borderColor: 'rgba(123,94,167,0.35)', background: 'rgba(123,94,167,0.08)' } : {}),
+                }}>
+                  <input type="file" accept="image/*" style={{ display: 'none' }} onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    setUploadingImg(true)
+                    try {
+                      const ext = file.name.split('.').pop()
+                      const path = `reviews/${product.id}/${Date.now()}.${ext}`
+                      const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true })
+                      if (!error) {
+                        const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(path)
+                        setWriteImages(prev => [...prev, urlData.publicUrl])
+                      }
+                    } finally {
+                      setUploadingImg(false)
+                    }
+                  }} />
+                  <div style={{ fontSize: 18, color: 'rgba(255,255,255,0.25)', marginBottom: 4 }}>📷</div>
+                  <div style={{ fontSize: 11, color: writeImages.length > 0 ? '#c4b5d4' : 'rgba(255,255,255,0.35)' }}>
+                    {uploadingImg ? '업로드 중...' : writeImages.length > 0 ? `${writeImages.length}장 첨부됨` : '사진 첨부'}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 2 }}>사용 전후 비교도 좋아요</div>
+                </label>
+                <label style={{
+                  background: 'rgba(255,255,255,0.03)', border: '0.5px dashed rgba(255,255,255,0.12)',
+                  borderRadius: 12, padding: '14px 8px', textAlign: 'center' as const, cursor: 'pointer',
+                  ...(writeVideoUrl ? { borderStyle: 'solid', borderColor: 'rgba(123,94,167,0.35)', background: 'rgba(123,94,167,0.08)' } : {}),
+                }}>
+                  <input type="file" accept="video/*" style={{ display: 'none' }} onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    setUploadingVid(true)
+                    try {
+                      const ext = file.name.split('.').pop()
+                      const path = `reviews/videos/${product.id}/${Date.now()}.${ext}`
+                      const { error } = await supabase.storage.from('product-images').upload(path, file, { upsert: true })
+                      if (!error) {
+                        const { data: urlData } = supabase.storage.from('product-images').getPublicUrl(path)
+                        setWriteVideoUrl(urlData.publicUrl)
+                      }
+                    } finally {
+                      setUploadingVid(false)
+                    }
+                  }} />
+                  <div style={{ fontSize: 18, color: 'rgba(255,255,255,0.25)', marginBottom: 4 }}>🎥</div>
+                  <div style={{ fontSize: 11, color: writeVideoUrl ? '#c4b5d4' : 'rgba(255,255,255,0.35)' }}>
+                    {uploadingVid ? '업로드 중...' : writeVideoUrl ? '영상 첨부됨' : '영상 첨부'}
+                  </div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', marginTop: 2 }}>사용감 영상이면 더 좋아요</div>
+                </label>
+              </div>
+            </div>
             <div
               style={{
                 fontSize: 11,
@@ -2782,6 +2930,9 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     content: writeContent.trim(),
                     skin_type: writeSkinType,
                     effect_tags: writeEffectTags.length ? writeEffectTags : null,
+                    is_rebuy: writeRebuy,
+                    images: writeImages.length ? writeImages : null,
+                    video_url: writeVideoUrl || null,
                     hormone_phase: hormonePhase || null,
                     usage_period: writeUsagePeriod || null,
                     status: '게시',
@@ -2809,6 +2960,10 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   }
                   setShowWriteSheet(false)
                   setWriteContent('')
+                  setWriteUsagePeriod('')
+                  setWriteRebuy(null)
+                  setWriteImages([])
+                  setWriteVideoUrl('')
                   setWriteSkinType(null)
                   setWriteEffectTags([])
                   await fetchReviews()
