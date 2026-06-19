@@ -114,6 +114,8 @@ export default function ProductDetailClient({
   const [aiRecommendLine, setAiRecommendLine] = useState<string | null>(null)
   const [purchasePointRateFallback, setPurchasePointRateFallback] = useState(5)
   const [reviewDefaultPts, setReviewDefaultPts] = useState(200)
+  const [purchaseItemFinalPrice, setPurchaseItemFinalPrice] = useState<number | null>(null)
+  const [purchasedOrderItem, setPurchasedOrderItem] = useState<any>(null)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingField, setEditingField] = useState<{
@@ -288,16 +290,28 @@ export default function ProductDetailClient({
         else if (typeof raw === 'string') { try { parsed = JSON.parse(raw) } catch {} }
         if (Array.isArray(parsed) && parsed.some(it => String(it?.product_id || '') === String(product.id))) purchased = true
       })
-      if (!purchased) {
-        const orderIds = (orders || []).map((o: any) => o.id).filter(Boolean)
-        if (orderIds.length > 0) {
-          const { data: orderItems } = await supabase
-            .from('order_items')
-            .select('product_id')
-            .eq('product_id', product.id)
-            .in('order_id', orderIds)
-          if (orderItems && orderItems.length > 0) purchased = true
-        }
+      const orderIds = (orders || []).map((o: any) => o.id).filter(Boolean)
+      if (!purchased && orderIds.length > 0) {
+        const { data: orderItems } = await supabase
+          .from('order_items')
+          .select('product_id,final_price,subtotal')
+          .eq('product_id', product.id)
+          .in('order_id', orderIds)
+        if (orderItems && orderItems.length > 0) purchased = true
+      }
+      if (orderIds.length > 0) {
+        const { data: fpRows } = await supabase
+          .from('order_items')
+          .select('final_price,subtotal')
+          .eq('product_id', product.id)
+          .in('order_id', orderIds)
+          .limit(1)
+        const fp = Number((fpRows?.[0] as any)?.final_price ?? (fpRows?.[0] as any)?.subtotal)
+        setPurchaseItemFinalPrice(fp > 0 ? fp : null)
+        setPurchasedOrderItem(fpRows?.[0] ?? null)
+      } else {
+        setPurchaseItemFinalPrice(null)
+        setPurchasedOrderItem(null)
       }
       setUserPurchasedProduct(purchased)
       const { data: meRow } = await supabase.from('users').select('id').eq('auth_id', session.user.id).maybeSingle()
@@ -780,6 +794,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
     Number.isFinite(Number(rt)) &&
     Number.isFinite(Number(rp)) &&
     Number.isFinite(Number(rv))
+  const reviewBasePrice = purchaseItemFinalPrice ?? price
   const detailHtml = ((product as any).detail_html || (product as any).detail_content) ? String((product as any).detail_html || (product as any).detail_content || '') : ''
   const total = (price * qty).toLocaleString() + '원'
   const shareLinkWithRef =
@@ -2623,15 +2638,15 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               토스트 적립 안내:{' '}
               {hasAllReviewToastNums ? (
                 <>
-                  기본 등록 <span style={{ color: GOLD }}>{Number(rt)}T</span>
+                  기본 등록 <span style={{ color: GOLD }}>{Math.round(reviewBasePrice * Number(rt) / 100)}T</span>
                   {' · '}
-                  포토 +<span style={{ color: GOLD }}>{Number(rp)}T</span>
+                  포토 +<span style={{ color: GOLD }}>{Math.round(reviewBasePrice * Number(rp) / 100)}T</span>
                   {' · '}
-                  영상 +<span style={{ color: GOLD }}>{Number(rv)}T</span>
+                  영상 +<span style={{ color: GOLD }}>{Math.round(reviewBasePrice * Number(rv) / 100)}T</span>
                 </>
               ) : (
                 <>
-                  기본 등록 <span style={{ color: GOLD }}>{product.review_points_text ?? reviewDefaultPts}T</span>
+                  기본 등록 <span style={{ color: GOLD }}>{Math.round(reviewBasePrice * Number(product.review_points_text ?? 1) / 100)}T</span>
                 </>
               )}
               {writeSkinType ? <span> + 피부타입 <span style={{ color: GOLD }}>+50T</span></span> : null}
@@ -2684,7 +2699,13 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     return
                   }
                   {
-                    const reviewToastAmt = Math.max(0, Math.floor(Number(product.review_points_text ?? reviewDefaultPts)))
+                    const orderFinalPrice = (purchasedOrderItem as any)?.final_price ?? 0
+                    const rtRate = Number(product.review_points_text ?? 1)
+                    const rpRate = Number(product.review_points_photo ?? 2)
+                    const rvRate = Number(product.review_points_video ?? 3)
+                    const reviewToastAmt = orderFinalPrice > 0
+                      ? Math.floor(orderFinalPrice * rtRate / 100)
+                      : Math.floor(Number(product.review_points_text ?? reviewDefaultPts))
                     const { error: ttErr } = await supabase.from('toast_transactions').insert({
                       user_id: urow.id,
                       amount: reviewToastAmt,

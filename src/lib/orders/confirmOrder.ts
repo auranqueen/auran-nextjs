@@ -37,7 +37,7 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
 
   const { data: order } = await supabase
     .from('orders')
-    .select('id,status,customer_id,items,referrer_user_id,share_toast_paid,prescription_owner_id,final_amount,referral_reward_paid')
+    .select('id,status,customer_id,items,referrer_user_id,share_toast_paid,prescription_owner_id,final_amount,referral_reward_paid,order_items(product_id,quantity,product_price,final_price)')
     .eq('id', orderId)
     .maybeSingle()
   if (!order?.id) return { ok: false, rewardAmount: 0, shareAmount: 0, autoConfirmDays }
@@ -46,18 +46,22 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
   const nowIso = new Date().toISOString()
   await supabase.from('orders').update({ status: '구매확정', confirmed_at: nowIso } as any).eq('id', orderId)
 
-  const items = Array.isArray((order as any).items) ? ((order as any).items as any[]) : []
+  const rawOrderItems = (order as any).order_items
+  const items = Array.isArray(rawOrderItems) && rawOrderItems.length > 0
+    ? rawOrderItems
+    : Array.isArray((order as any).items) ? ((order as any).items as any[]) : []
   const productIds = Array.from(
     new Set(items.map((it) => String(it?.product_id || it?.id || '').trim()).filter((v) => v.length > 0))
   )
-  let pMap: Record<string, { earn_rate: number; share_toast: number }> = {}
+  let pMap: Record<string, { earn_rate: number; earn_points_percent: number; share_toast: number }> = {}
   if (productIds.length > 0) {
-    const { data: prods } = await supabase.from('products').select('id,earn_rate,share_toast').in('id', productIds)
+    const { data: prods } = await supabase.from('products').select('id,earn_rate,earn_points_percent,share_toast').in('id', productIds)
     pMap = Object.fromEntries(
       ((prods || []) as any[]).map((p) => [
         String(p.id),
         {
           earn_rate: Number(p.earn_rate || 0),
+          earn_points_percent: Number(p.earn_points_percent || 0),
           share_toast: Number(p.share_toast || 0),
         },
       ])
@@ -69,11 +73,11 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
   items.forEach((it: any) => {
     const pid = String(it?.product_id || it?.id || '').trim()
     const qty = Math.max(1, Number(it?.quantity || 1))
-    const price = Number(it?.price || it?.retail_price || it?.amount || 0)
-    const meta = pMap[pid]
-    if (meta) {
-      rewardAmount += Math.floor((price * qty * Math.max(0, meta.earn_rate)) / 100)
-      shareAmount += Math.floor(Math.max(0, meta.share_toast) * qty)
+    const price = Number(it?.product_price || it?.price || it?.retail_price || it?.amount || 0)
+    const pm = pMap[pid]
+    if (pm) {
+      rewardAmount += Math.floor((it.final_price ?? price * qty) * (pm.earn_points_percent ?? pm.earn_rate ?? 0) / 100)
+      shareAmount += Math.floor(Math.max(0, pm.share_toast) * qty)
     }
   })
 

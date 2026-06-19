@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
   const productIds = Array.from(productIdSet)
   const { data: products } = await client
     .from('products')
-    .select('id,name,retail_price,sale_price,timesale_ends_at,brand_id,earn_points,is_timesale,is_groupbuy,is_event')
+    .select('id,name,retail_price,sale_price,timesale_ends_at,brand_id,earn_points,earn_points_percent,is_timesale,is_groupbuy,is_event')
     .eq('status', 'active')
     .in('id', productIds)
   const productMap = new Map((products || []).map((p: any) => [p.id, p]))
@@ -129,13 +129,6 @@ export async function POST(req: NextRequest) {
     })
   }
   if (totalAmount < 1) return json({ ok: false, error: 'invalid_total' }, 400)
-
-  let purchaseEarnPoints = 0
-  for (const row of orderItemsRows) {
-    const pr = productMap.get(row.product_id) as { earn_points?: number } | undefined
-    const pct = Math.max(0, Math.min(100, Math.floor(Number(pr?.earn_points ?? 0))))
-    purchaseEarnPoints += Math.floor((row.subtotal * pct) / 100)
-  }
 
   let couponDiscount = 0
   let validatedUserCouponId: string | null = null
@@ -189,6 +182,16 @@ export async function POST(req: NextRequest) {
   const pointUsed = Math.min(usePoints, afterCoupon)
   const chargeUsed = Math.min(useCharge, Math.max(0, afterCoupon - pointUsed))
   const finalAmount = Math.max(0, afterCoupon - pointUsed - chargeUsed)
+
+  let purchaseEarnPoints = 0
+  for (const row of orderItemsRows) {
+    const pr = productMap.get(row.product_id) as { earn_points?: number; earn_points_percent?: number } | undefined
+    const pct = Math.max(0, Math.min(100, Number(pr?.earn_points_percent ?? pr?.earn_points ?? 0)))
+    const itemFinalPrice = totalAmount > 0
+      ? Math.round(row.subtotal * finalAmount / totalAmount)
+      : row.subtotal
+    purchaseEarnPoints += Math.floor(itemFinalPrice * pct / 100)
+  }
 
   const { data: order, error: orderErr } = await client
     .from('orders')
