@@ -67,7 +67,7 @@ const MENU = [
       { label: '제품 관리', href: '/admin/marketing/products', icon: '🧴' },
       { label: '케어카드 관리', href: '/admin/marketing/care-cards', icon: '💠' },
       { label: '공동구매 관리', href: '/admin/marketing/groupbuys', icon: '🛒' },
-      { label: '외부고객 케어카드', href: '/admin/marketing/external-cards', icon: '🖨️' },
+      { label: '외부고객 케어카드', href: '/admin/marketing/external-cards-v2', icon: '🖨️' },
       { label: '외부고객 카드 v2', href: '/admin/marketing/external-cards-v2', icon: '🆕' },
       { label: '채팅 배너 관리', href: '/dashboard/admin/chat-banner', icon: '📢' },
       { label: '쿠폰 관리', href: '/admin/coupons', icon: '🎫' },

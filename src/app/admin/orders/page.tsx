@@ -709,7 +709,7 @@ export default function AdminOrdersPage() {
               📦 CJ송장 양식 다운
             </button>
             <button
-              onClick={() => window.open('/admin/marketing/external-cards?mode=member', '_blank')}
+              onClick={() => window.open('/admin/marketing/external-cards-v2', '_blank')}
               style={{
                 padding:'7px 14px', borderRadius:7,
                 border:'1.5px solid #7B5EA7', background:'#f5f0f8',
@@ -720,7 +720,7 @@ export default function AdminOrdersPage() {
               💜 내부 케어카드
             </button>
             <button
-              onClick={() => window.open('/admin/marketing/external-cards?mode=external', '_blank')}
+              onClick={() => window.open('/admin/marketing/external-cards-v2', '_blank')}
               style={{
                 padding:'7px 14px', borderRadius:7,
                 border:'1.5px solid #C9A96E', background:'#fdf8ee',
@@ -1479,7 +1479,7 @@ ${(o as any).admin_memo?`
                             const uid = o.customer_id || ''
                             const oid = o.id || ''
                             window.open(
-                              `/admin/marketing/external-cards?mode=member&name=${name}&user_id=${uid}&order_id=${oid}&prods=${prods}`,
+                              `/admin/marketing/external-cards-v2?name=${name}&user_id=${uid}&order_id=${oid}&prods=${prods}`,
                               '_blank'
                             )
                           }}
@@ -1507,7 +1507,7 @@ ${(o as any).admin_memo?`
                             const name = encodeURIComponent((o as any).recipient_name || '')
                             const oid = o.id || ''
                             window.open(
-                              `/admin/marketing/external-cards?mode=external&name=${name}&order_id=${oid}&prods=${prods}`,
+                              `/admin/marketing/external-cards-v2?name=${name}&order_id=${oid}&prods=${prods}`,
                               '_blank'
                             )
                           }}
