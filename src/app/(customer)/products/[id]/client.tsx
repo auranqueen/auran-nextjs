@@ -916,7 +916,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
   }
   const top3Concerns = Object.entries(concernFreq).sort((a, b) => b[1] - a[1]).slice(0, 3)
   const top4Effects = Object.entries(effectFreq).sort((a, b) => b[1] - a[1]).slice(0, 4)
-  const longTermUsers = (periodFreq['1달'] || 0) + (periodFreq['3달 이상'] || 0)
+  const longTermUsers = (periodFreq['1개월'] || 0) + (periodFreq['3개월'] || 0) + (periodFreq['6개월+'] || 0)
   const longTermPct = reviews.length > 0 ? Math.round((longTermUsers / reviews.length) * 100) : 0
   const hormoneStats = reviews.reduce((acc: Record<string, number>, rv: any) => {
     if (rv.hormone_phase) acc[rv.hormone_phase] = (acc[rv.hormone_phase] || 0) + 1
