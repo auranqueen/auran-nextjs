@@ -157,6 +157,9 @@ export default function ProductDetailClient({
   const [showWriteSheet, setShowWriteSheet] = useState(false)
   const [writeContent, setWriteContent] = useState('')
   const [writeSkinType, setWriteSkinType] = useState<string | null>(null)
+  const [writeUsagePeriod, setWriteUsagePeriod] = useState<string>('')
+  const [writeRebuy, setWriteRebuy] = useState<boolean | null>(null)
+  const [likedReviewIds, setLikedReviewIds] = useState<Set<string>>(new Set())
   const [writeEffectTags, setWriteEffectTags] = useState<string[]>([])
   const [writeSubmitting, setWriteSubmitting] = useState(false)
   const [userPurchasedProduct, setUserPurchasedProduct] = useState(false)
@@ -1861,7 +1864,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           ) : null}
         </div>
 
-        {/* 스토리 피드 탭 */}
+        {/* 리뷰 피드 탭 */}
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginBottom: 10 }}>
           {(
             [
@@ -1904,7 +1907,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
               fontFamily: 'inherit',
             }}
           >
-            스토리 작성
+            리뷰 작성
           </button>
         </div>
         {/* ===== [호르몬 필터 탭] ===== */}
@@ -2007,7 +2010,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>로딩중...</div>
           ) : storyFiltered.length === 0 ? (
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 12 }}>
-              {reviews.length === 0 ? '아직 리뷰가 없어요' : '이 탭에 해당하는 스토리가 없어요'}
+              {reviews.length === 0 ? '아직 리뷰가 없어요' : '이 탭에 해당하는 리뷰가 없어요'}
             </div>
           ) : (
             <div ref={reviewScrollRef} style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, marginBottom: 12, WebkitOverflowScrolling: 'touch' as any, scrollSnapType: 'x mandatory' }}>
@@ -2046,6 +2049,11 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
                     <span style={{ color: GOLD, fontSize: 13 }}>{'★'.repeat(Math.max(0, Number(rv.rating || 0)))}</span>
                     {rv.skin_type ? <span style={{ fontSize: 10, color: '#888', background: 'rgba(255,255,255,0.05)', padding: '2px 7px', borderRadius: 10 }}>{rv.skin_type}</span> : null}
+                    {rv.hormone_phase && (
+                      <span style={{ fontSize: 10, color: '#C9A96E', background: 'rgba(201,169,110,0.1)', border: '0.5px solid rgba(201,169,110,0.25)', borderRadius: 10, padding: '2px 8px', marginLeft: 4 }}>
+                        {rv.hormone_phase}
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', lineHeight: 1.6, marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' } as any}>
                     {rv.content || ''}
@@ -2066,6 +2074,40 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                   {Array.isArray(rv.images) && rv.images[0] ? (
                     <img src={rv.images[0]} alt="" loading="lazy" style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 8, marginBottom: 8 }} />
                   ) : null}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const res = await fetch('/api/reviews/like', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ review_id: rv.id }),
+                      })
+                      const json = await res.json()
+                      if (json.ok) {
+                        setLikedReviewIds(prev => {
+                          const next = new Set(prev)
+                          json.liked ? next.add(rv.id) : next.delete(rv.id)
+                          return next
+                        })
+                        setReviews((prev: any[]) => prev.map((r: any) =>
+                          r.id === rv.id ? { ...r, helpful_count: json.count } : r
+                        ))
+                      }
+                    }}
+                    style={{
+                      background: 'none',
+                      border: likedReviewIds.has(rv.id) ? '1px solid rgba(201,169,110,0.45)' : '1px solid rgba(255,255,255,0.15)',
+                      borderRadius: 20,
+                      padding: '6px 14px',
+                      color: likedReviewIds.has(rv.id) ? GOLD : 'rgba(255,255,255,0.6)',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                      marginBottom: 8,
+                      fontFamily: 'inherit',
+                    }}
+                  >
+                    👍 도움돼요 {rv.helpful_count ?? 0}
+                  </button>
                   <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)' }}>
                     {rv.created_at ? String(rv.created_at).slice(0, 10) : ''}
                     {rv.usage_period ? ` · ${rv.usage_period} 사용` : ''}
@@ -2541,7 +2583,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <div style={{ fontSize: 15, color: '#e8e4dc' }}>스토리 작성</div>
+              <div style={{ fontSize: 15, color: '#e8e4dc' }}>리뷰 작성</div>
               <button
                 type="button"
                 onClick={() => setShowWriteSheet(false)}
@@ -2669,7 +2711,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     return
                   }
                   if (!userPurchasedProduct) {
-                    alert('구매한 제품만 스토리를 작성할 수 있어요')
+                    alert('구매한 제품만 리뷰를 작성할 수 있어요')
                     return
                   }
                   if (myReviewDoc) {
@@ -2691,6 +2733,8 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     content: writeContent.trim(),
                     skin_type: writeSkinType,
                     effect_tags: writeEffectTags.length ? writeEffectTags : null,
+                    hormone_phase: hormonePhase || null,
+                    usage_period: writeUsagePeriod || null,
                     status: '게시',
                   })
                   setWriteSubmitting(false)
@@ -2726,7 +2770,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                     .eq('target_id', product.id)
                     .maybeSingle()
                   setMyReviewDoc(myReviewRow || null)
-                  alert('스토리가 등록됐어요!')
+                  alert('리뷰가 등록됐어요!')
                 })()
               }}
               style={{
