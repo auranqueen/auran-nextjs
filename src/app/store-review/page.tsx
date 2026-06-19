@@ -25,6 +25,7 @@ export default function StoreReviewPage() {
   const [orderNo, setOrderNo] = useState('')
   const [saving, setSaving] = useState(false)
   const [toastMsg, setToastMsg] = useState('')
+  const [earnedToast, setEarnedToast] = useState(0)
 
   const showToast = (msg: string) => {
     setToastMsg(msg)
@@ -76,6 +77,7 @@ export default function StoreReviewPage() {
         totalAmt >= 500000 ? 10000 :
         totalAmt >= 200000 ? 5000 :
         totalAmt >= 100000 ? 2000 : 1000
+      setEarnedToast(storeReviewToast)
       // store_reviews insert
       const { error: rvErr } = await supabase.from('store_reviews').insert({
         user_id: userId,
@@ -192,7 +194,7 @@ export default function StoreReviewPage() {
         후기 감사해요!
       </div>
       <div style={{ fontSize: 13, color: '#666', lineHeight: 1.7, marginBottom: 8 }}>
-        토스트 10,000T 적립됐어요 💜
+        토스트 {earnedToast.toLocaleString()}T 적립됐어요 💜
       </div>
       <div style={{ fontSize: 12, color: '#999', marginBottom: 32 }}>
         알림장에서 맑원장 메시지 확인해보세요
@@ -228,7 +230,7 @@ export default function StoreReviewPage() {
         스토어 구매 후기 쓰기
       </div>
       <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 20, lineHeight: 1.6 }}>
-        맑원장 확인 후 토스트 10,000T 적립돼요 💜
+        구매 금액에 따라 최대 10,000T 적립돼요 💜
       </div>
 
       {/* 제품 검색 */}
