@@ -2009,7 +2009,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             {/* 사용기간 */}
             {longTermPct > 0 ? (
               <div style={{ fontSize: 11, color: '#aaa' }}>
-                1달 이상 사용자 <span style={{ color: GOLD }}>{longTermPct}%</span>
+                1개월 이상 사용자 <span style={{ color: GOLD }}>{longTermPct}%</span>
               </div>
             ) : null}
             {Object.keys(hormoneStats).length > 0 && (
