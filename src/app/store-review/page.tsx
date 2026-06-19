@@ -62,7 +62,7 @@ export default function StoreReviewPage() {
   }, [productSearch])
 
   const handleSubmit = async () => {
-    if (!userId || !selectedProduct || !content.trim() || rating < 1) return
+    if (!userId || !selectedProduct) return
     setSaving(true)
     try {
       // store_reviews insert
@@ -73,8 +73,8 @@ export default function StoreReviewPage() {
         store_order_no: orderNo.trim() || null,
         // 주문번호 입력 시 인증 배지
         is_verified: !!orderNo.trim(),
-        rating,
-        content: content.trim(),
+        rating: rating >= 1 ? rating : 5,
+        content: content.trim() || '스토어 구매 후기',
         toast_given: true,
         toast_amount: 10000,
       })
@@ -122,7 +122,6 @@ export default function StoreReviewPage() {
         is_read: false,
       })
 
-      setStep('done')
     } catch (e) {
       showToast('저장 중 오류가 발생했어요. 다시 시도해주세요.')
     } finally {
@@ -282,7 +281,10 @@ export default function StoreReviewPage() {
         <ReviewForm
           productId={selectedProduct.id}
           isStoreReview={true}
-          onSuccess={() => setStep('done')}
+          onSuccess={async () => {
+            await handleSubmit()
+            setStep('done')
+          }}
         />
       )}
     </div>

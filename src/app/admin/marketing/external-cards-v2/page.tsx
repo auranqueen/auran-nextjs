@@ -236,7 +236,7 @@ export default function ExternalCardsV2Page() {
     const qrBase = 'https://api.qrserver.com/v1/create-qr-code/?size=80x80&data='
     const qrJoin = qrBase + encodeURIComponent('https://auran.kr/join?ref=care_card')
     const qrChat = qrBase + encodeURIComponent('https://auran.kr/chat?ref=care_card')
-    const qrReview = qrBase + encodeURIComponent('https://auran.kr/review?ref=care_card')
+    const qrReview = qrBase + encodeURIComponent('https://auran.kr/store-review?ref=care_card')
     const productList = products.map(p => `
       <tr>
         <td>${p.name}${p.usage ? `<div style="font-size:9px;color:#7B5EA7;margin-top:2px;">✦ ${p.usage}</div>` : ''}</td>
