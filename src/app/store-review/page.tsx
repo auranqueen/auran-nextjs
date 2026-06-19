@@ -65,6 +65,17 @@ export default function StoreReviewPage() {
     if (!userId || !selectedProduct) return
     setSaving(true)
     try {
+      const { data: ttUserRow } = await supabase.from('users').select('id').eq('auth_id', userId).maybeSingle()
+      const { data: extCust } = await supabase
+        .from('external_customers')
+        .select('total_amount')
+        .eq('auran_user_id', ttUserRow?.id ?? '')
+        .maybeSingle()
+      const totalAmt = (extCust as any)?.total_amount ?? 0
+      const storeReviewToast =
+        totalAmt >= 500000 ? 10000 :
+        totalAmt >= 200000 ? 5000 :
+        totalAmt >= 100000 ? 2000 : 1000
       // store_reviews insert
       const { error: rvErr } = await supabase.from('store_reviews').insert({
         user_id: userId,
@@ -76,16 +87,15 @@ export default function StoreReviewPage() {
         rating: rating >= 1 ? rating : 5,
         content: content.trim() || '스토어 구매 후기',
         toast_given: true,
-        toast_amount: 10000,
+        toast_amount: storeReviewToast,
       })
       if (rvErr) throw rvErr
 
       // toast_transactions 10,000T 적립
-      const { data: ttUserRow } = await supabase.from('users').select('id').eq('auth_id', userId).maybeSingle()
       if (ttUserRow?.id) {
         await supabase.from('toast_transactions').insert({
           user_id: ttUserRow.id,
-          amount: 10000,
+          amount: storeReviewToast,
           transaction_type: 'review',
           source_type: 'store_review_bonus',
         } as any)
@@ -100,7 +110,7 @@ export default function StoreReviewPage() {
       if (uRow) {
         await supabase
           .from('users')
-          .update({ toast_balance: (uRow.toast_balance || 0) + 10000 })
+          .update({ toast_balance: (uRow.toast_balance || 0) + storeReviewToast })
           .eq('id', userId)
       }
 
@@ -109,7 +119,7 @@ export default function StoreReviewPage() {
         user_id: userId,
         type: 'toast',
         title: '후기 작성 완료 💜',
-        message: `스토어 구매 후기 감사해요! 토스트 10,000T 적립됐어요 💜`,
+        message: `스토어 구매 후기 감사해요! 토스트 ${storeReviewToast.toLocaleString()}T 적립됐어요 💜`,
         is_read: false,
       })
 
@@ -147,7 +157,7 @@ export default function StoreReviewPage() {
       </div>
       <div style={{ fontSize: 13, color: '#666', lineHeight: 1.7, marginBottom: 32 }}>
         후기 작성하시면<br />
-        토스트 10,000T 즉시 적립돼요 💜<br />
+        구매 금액에 따라 최대 10,000T 적립돼요 💜<br />
         <span style={{ fontSize: 11, color: '#999' }}>가입하시면 호르몬 맞춤 케어도 받을 수 있어요</span>
       </div>
       <button
