@@ -424,6 +424,7 @@ export default function CustomerHomePage() {
   const [hormoneCycle, setHormoneCycle] = useState<any>(null)
   const [showPeriodPopup, setShowPeriodPopup] = useState(false)
   const [showDalbitPopup, setShowDalbitPopup] = useState(false)
+  const [dailyCareTip, setDailyCareTip] = useState<{ title: string; message: string; has_bath: boolean } | null>(null)
   const hormoneCardRef = useRef<HTMLDivElement>(null)
   const [showTrackPopup, setShowTrackPopup] = useState(false)
   const [popupPeriodDate, setPopupPeriodDate] = useState('')
@@ -549,6 +550,34 @@ export default function CustomerHomePage() {
     const hc = hcRes.data
     if (hc) {
       setHormoneCycle(hc)
+      // hormone_daily_tips 오늘 케어팁 조회
+      ;(async () => {
+        try {
+          const track = (hc as any)?.track || 'general'
+          const calc = calcHormoneBriefing(hc)
+          const cycleDay = calc?.cycleDay || 1
+          let query = supabase
+            .from('hormone_daily_tips')
+            .select('title, message, has_bath')
+            .eq('track', track)
+          if (track === 'pregnant') {
+            const trimester = (hc as any)?.pregnancy_start_date
+              ? (() => {
+                  const weeks = Math.floor((Date.now() - new Date((hc as any).pregnancy_start_date).getTime()) / (7 * 86400000))
+                  return weeks < 13 ? 1 : weeks < 28 ? 2 : 3
+                })()
+              : 1
+            const tipIdx = (cycleDay % 4) + 1
+            query = query.eq('cycle_day', tipIdx).eq('trimester', trimester)
+          } else {
+            query = query.eq('cycle_day', cycleDay).is('trimester', null)
+          }
+          const { data: tip } = await query.maybeSingle()
+          if (tip) setDailyCareTip(tip)
+        } catch (e) {
+          console.warn('dailyCareTip 조회 실패:', e)
+        }
+      })()
       // 달빛기 생리 기록 안내 팝업 (general 트랙 여성 전용)
       if (
         (hc as any)?.track === 'general' &&
@@ -2252,6 +2281,36 @@ export default function CustomerHomePage() {
           <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
             {userName ? homeGreetingForUser : '오렌이 기다리고 있었어요 💜'}
           </div>
+          {dailyCareTip && (
+            <div style={{
+              margin: '10px 0 4px',
+              padding: '14px 16px',
+              borderRadius: 14,
+              background: 'rgba(201,169,110,0.06)',
+              border: '0.5px solid rgba(201,169,110,0.2)',
+            }}>
+              <div style={{ fontSize: 10, color: 'rgba(201,169,110,0.6)', letterSpacing: '.08em', marginBottom: 5 }}>
+                TODAY'S CARE TIP
+              </div>
+              <div style={{ fontSize: 13, color: '#C9A96E', marginBottom: 5 }}>
+                {dailyCareTip.title}
+              </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', lineHeight: 1.7 }}>
+                {dailyCareTip.message}
+              </div>
+              {dailyCareTip.has_bath && (
+                <div style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  background: 'rgba(91,138,107,0.15)',
+                  border: '0.5px solid rgba(91,138,107,0.3)',
+                  borderRadius: 10, padding: '3px 8px',
+                  fontSize: 10, color: '#7BC49A', marginTop: 8,
+                }}>
+                  🛁 오늘 반신욕 추천
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <div
           onClick={() => router.push(myUserId ? '/my' : '/login')}
