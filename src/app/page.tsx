@@ -540,7 +540,9 @@ export default function CustomerHomePage() {
     if (hc) {
       setHormoneCycle(hc)
       if ((hc as any)?.track === 'general' && !(hc as any)?.last_period_date) {
-        setShowPeriodPopup(true)
+        if (!localStorage.getItem('auran_period_popup_skip')) {
+          setShowPeriodPopup(true)
+        }
       }
       if (
         (hc as any)?.track === 'menopause_peri' &&
@@ -1767,7 +1769,16 @@ export default function CustomerHomePage() {
         </button>
       ))}
       <button
-        onClick={() => setShowTrackPopup(false)}
+        onClick={async () => {
+          const supabase = createClient()
+          const { data: { user } } = await supabase.auth.getUser()
+          if (user) {
+            await supabase.from('hormone_cycle')
+              .update({ menopause_reason: 'skip', updated_at: new Date().toISOString() })
+              .eq('auth_id', user.id)
+          }
+          setShowTrackPopup(false)
+        }}
         style={{
           width: '100%', padding: 10, borderRadius: 14,
           background: 'none', color: 'rgba(255,255,255,0.35)',
@@ -1848,7 +1859,10 @@ export default function CustomerHomePage() {
               기록하고 케어 시작하기 💜
             </button>
             <button
-              onClick={() => setShowPeriodPopup(false)}
+              onClick={() => {
+                localStorage.setItem('auran_period_popup_skip', '1')
+                setShowPeriodPopup(false)
+              }}
               style={{ width: '100%', padding: 10, borderRadius: 14, background: 'none', color: 'rgba(255,255,255,0.35)', border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
             >
               나중에 할게요
