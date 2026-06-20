@@ -181,37 +181,37 @@ const CHECKIN_CYCLE_PREGNANCY = [
 ]
 
 const GREETINGS_MORNING = [
-  (name: string) => `${name}님 좋은 아침이에요 ☀️ 오늘 루틴 시작해볼까요?`,
-  (name: string) => `${name}님 아침 세안은 하셨나요? 🌿 상쾌하게 시작해요`,
-  (name: string) => `${name}님 오늘 하루도 빛나길 바라요 🌸`,
-  (name: string) => `좋은 아침이에요 ${name}님 💜 오늘도 피부 챙겨요`,
-  (name: string) => `${name}님 오늘 피부 컨디션 어때요? ✨`,
+  (name: string) => `${name}님 오늘 피부 컨디션 오렌이 이미 체크했어요 ☀️ 같이 시작해요`,
+  (name: string) => `아침부터 피부 챙기러 오셨군요 💜 ${name}님 오렌이 기다렸어요`,
+  (name: string) => `굿모닝 ${name}님 💜 오늘 호르몬 케어 오렌이 안내할게요`,
+  (name: string) => `${name}님 오늘 루틴 오렌이 준비했어요 🌿 시작해봐요`,
+  (name: string) => `${name}님 오셨어요! 오늘 피부 오렌이 눈여겨보고 있었어요 ✨`,
 ]
 
 const GREETINGS_AFTERNOON = [
-  (name: string) => `${name}님 오늘도 빛나시네요 💜`,
-  (name: string) => `${name}님 오늘 피부 어때요? 💜`,
-  (name: string) => `${name}님 오늘도 피부 챙기러 오셨네요 🌿`,
-  (name: string) => `${name}님 오늘 루틴은 준비됐나요? ✨`,
-  (name: string) => `오늘도 ${name}님 응원해요 💜`,
-  (name: string) => `${name}님 피부도 마음도 빛나는 하루 되세요 🌸`,
-  (name: string) => `${name}님 오늘도 최고예요 ✨`,
+  (name: string) => `${name}님 오셨군요 💜 오늘 피부 오렌이 눈여겨보고 있었어요`,
+  (name: string) => `드디어 오셨어요 ${name}님 ✨ 오늘 피부 이야기 해봐요`,
+  (name: string) => `${name}님 피부 걱정은 오렌한테 맡겨요 💜`,
+  (name: string) => `오렌이 ${name}님 기다리고 있었어요 🌿 오늘 뭐가 필요해요?`,
+  (name: string) => `${name}님 왔어요! 오늘 피부 어때요? 오렌이 도와드릴게요 💜`,
+  (name: string) => `${name}님 오늘도 빛나시네요 💜 오렌이 알아봤어요`,
+  (name: string) => `${name}님 오늘도 최고예요 ✨ 오렌이 응원해요`,
 ]
 
 const GREETINGS_EVENING = [
-  (name: string) => `${name}님 오늘 하루도 정말 애쓰셨어요 🌙 이제 나를 위한 시간이에요`,
-  (name: string) => `고생 많으셨어요 ${name}님 💜 저녁 케어로 하루 마무리해요`,
-  (name: string) => `오늘 힘드셨죠? 괜찮아요 🌿 피부 케어가 최고의 힐링이에요`,
-  (name: string) => `세상이 다 내 편인 저녁이에요 💜 오렌이 응원해요`,
-  (name: string) => `오늘도 열심히 사셨잖아요 ✨ 피부도 쉬어야 해요`,
-  (name: string) => `${name}님 수고하셨어요 🌙 저녁 루틴 시작해요`,
+  (name: string) => `오늘 하루 고생 많으셨어요 ${name}님 💜 이제 피부 쉬게 해줄 시간이에요`,
+  (name: string) => `${name}님 퇴근 후 제일 먼저 오렌 찾아주셨네요 🌙 고마워요`,
+  (name: string) => `오늘 피부 버티느라 수고했어요 ${name}님 💜 오렌이 마무리 도와드려요`,
+  (name: string) => `저녁 케어 타이밍이에요 ${name}님 🌿 오렌이 딱 기다리고 있었어요`,
+  (name: string) => `${name}님 수고하셨어요 🌙 저녁 루틴 오렌이랑 시작해요`,
+  (name: string) => `오늘도 열심히 사셨잖아요 ${name}님 ✨ 피부도 쉬어야 해요`,
 ]
 
 const GREETINGS_NIGHT = [
-  (name: string) => `${name}님 늦은 시간이네요 💜 수면 전 보습 잊지 마세요`,
-  (name: string) => `잠들기 전 크림 한 번만 더 발라줘요 🌙 ${name}님`,
-  (name: string) => `숙면이 최고의 피부 케어예요 💜 편안한 밤 되세요 ${name}님`,
-  (name: string) => `${name}님 오늘도 수고 많으셨어요 🌙 푹 쉬세요`,
+  (name: string) => `자기 전에 오렌 찾아주셨군요 ${name}님 💜 밤 케어가 내일 피부를 만들어요`,
+  (name: string) => `${name}님 이 시간에도 피부 챙기러 오셨어요? 오렌이 감동받았어요 🌙`,
+  (name: string) => `잠들기 전 오렌이랑 마무리해요 ${name}님 💜 숙면이 최고의 케어예요`,
+  (name: string) => `${name}님 오늘도 수고 많으셨어요 🌙 푹 쉬세요 오렌이 응원해요`,
 ]
 
 const GREETINGS_WEATHER: Record<string, (name: string) => string> = {
@@ -230,20 +230,28 @@ const GREETINGS_SEASON: Record<string, (name: string) => string> = {
 
 const HORMONE_GREETINGS: Record<string, ((name: string) => string)[]> = {
   '달빛기': [
-    (name) => `${name}님 오늘은 푹 쉬어요 💜`,
+    (name) => `${name}님 오늘은 푹 쉬어요 💜 오렌이 알고 있어요`,
     (name) => `달빛기엔 자극 줄이는 게 최고예요 🌙 ${name}님`,
+    (name) => `${name}님 오늘 진정 세럼만 써요. 오렌이 달빛기 케어 알려드릴게요 🌙`,
+    (name) => `${name}님 방어막이 가장 얇은 날이에요. 클렌징 부드럽게! 오렌이 챙겨드려요 💜`,
   ],
   '황금기': [
-    (name) => `${name}님 지금이 황금기예요 ✨`,
+    (name) => `${name}님 지금이 황금기예요 ✨ 오렌이 알고 있었어요`,
     (name) => `${name}님 지금 뭘 발라도 잘 흡수돼요 ✨ 집중 케어 타이밍이에요`,
+    (name) => `${name}님 앰플 골든타임이에요! 오렌이 딱 맞춰 알려드려요 ✨`,
+    (name) => `${name}님 황금기 흡수력 최고조예요. 오렌이랑 집중 케어 해봐요 💜`,
   ],
   '만개기': [
-    (name) => `${name}님 오늘 제일 빛나는 날이에요 🌸`,
+    (name) => `${name}님 오늘 제일 빛나는 날이에요 🌸 오렌이 알아봤어요`,
     (name) => `${name}님 오늘 피부 컨디션 최고예요 🌸 마음껏 빛내요`,
+    (name) => `${name}님 배란기예요! 모공 케어 타이밍 오렌이 알려드려요 🌸`,
+    (name) => `${name}님 만개기 유분 올라와요. 오렌이 모공 케어 도와드릴게요 💜`,
   ],
   '물들기': [
     (name) => `${name}님 예민한 날이죠, 오렌이 있어요 💜`,
     (name) => `${name}님 트러블 미리 잡아요 🍂 진정 케어 타이밍이에요`,
+    (name) => `${name}님 물들기예요. 새 제품 테스트 금지! 오렌이 지켜볼게요 💜`,
+    (name) => `${name}님 생리 예정일 가까워져요. 오렌이 미리 알려드렸어요 🍂`,
   ],
 }
 
@@ -2242,7 +2250,7 @@ export default function CustomerHomePage() {
       }}>
         <div>
           <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
-            {userName ? homeGreetingForUser : '오렌에 오셨군요 💜'}
+            {userName ? homeGreetingForUser : '오렌이 기다리고 있었어요 💜'}
           </div>
         </div>
         <div
