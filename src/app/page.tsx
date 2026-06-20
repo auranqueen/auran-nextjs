@@ -415,6 +415,8 @@ export default function CustomerHomePage() {
   const [hormoneTrack, setHormoneTrack] = useState<string>('general')
   const [hormoneCycle, setHormoneCycle] = useState<any>(null)
   const [showPeriodPopup, setShowPeriodPopup] = useState(false)
+  const [showDalbitPopup, setShowDalbitPopup] = useState(false)
+  const hormoneCardRef = useRef<HTMLDivElement>(null)
   const [showTrackPopup, setShowTrackPopup] = useState(false)
   const [popupPeriodDate, setPopupPeriodDate] = useState('')
   const [periodTipText, setPeriodTipText] = useState(TOOLTIP_FALLBACKS.period_start)
@@ -539,6 +541,23 @@ export default function CustomerHomePage() {
     const hc = hcRes.data
     if (hc) {
       setHormoneCycle(hc)
+      // 달빛기 생리 기록 안내 팝업 (general 트랙 여성 전용)
+      if (
+        (hc as any)?.track === 'general' &&
+        (hc as any)?.last_period_date &&
+        (hc as any)?.expected_period_date
+      ) {
+        const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
+        const expected = new Date((hc as any).expected_period_date)
+        const todayDate = new Date(today)
+        const diffDays = Math.floor((todayDate.getTime() - expected.getTime()) / 86400000)
+        if (diffDays >= -1 && diffDays <= 2) {
+          const todayKey = `auran_dalbit_popup_${today}`
+          if (!localStorage.getItem(todayKey)) {
+            setShowDalbitPopup(true)
+          }
+        }
+      }
       if ((hc as any)?.track === 'general' && !(hc as any)?.last_period_date) {
         if (!localStorage.getItem('auran_period_popup_skip')) {
           setShowPeriodPopup(true)
@@ -1789,6 +1808,83 @@ export default function CustomerHomePage() {
   </div>
 )}
 
+      {showDalbitPopup && hormoneTrack === 'general' && (
+  <div style={{
+    position: 'absolute', inset: 0,
+    background: 'rgba(0,0,0,0.8)',
+    zIndex: 999,
+    display: 'flex',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    minHeight: '100vh',
+  }}>
+    <div style={{
+      background: '#181520',
+      borderRadius: '24px 24px 0 0',
+      padding: '28px 24px 48px',
+      width: '100%',
+      borderTop: '0.5px solid rgba(123,94,167,0.3)',
+      position: 'relative',
+    }}>
+      <button
+        onClick={() => {
+          const todayKey = `auran_dalbit_popup_${new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })}`
+          localStorage.setItem(todayKey, '1')
+          setShowDalbitPopup(false)
+        }}
+        style={{
+          position: 'absolute', top: 16, right: 16,
+          background: 'none', border: 'none',
+          color: 'rgba(255,255,255,0.4)', fontSize: 20,
+          cursor: 'pointer', lineHeight: 1,
+        }}
+      >✕</button>
+      <div style={{ fontSize: 32, textAlign: 'center', marginBottom: 12 }}>🌙</div>
+      <div style={{ fontSize: 16, color: '#fff', fontWeight: 500, textAlign: 'center', marginBottom: 12, lineHeight: 1.5 }}>
+        생리가 시작되셨나요?
+      </div>
+      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', textAlign: 'center', lineHeight: 1.8, marginBottom: 24, wordBreak: 'keep-all' as const }}>
+        마법캘린더에 시작일을 기록해주시면<br />
+        호르몬 단계 적용이 되어<br />
+        <span style={{ color: '#C9A96E' }}>최적화된 홈케어가 시작됩니다</span>
+      </div>
+      <button
+        onClick={() => {
+          const todayKey = `auran_dalbit_popup_${new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })}`
+          localStorage.setItem(todayKey, '1')
+          setShowDalbitPopup(false)
+          setTimeout(() => {
+            hormoneCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          }, 300)
+        }}
+        style={{
+          width: '100%', padding: 14, borderRadius: 14,
+          background: '#7B5EA7', color: '#fff',
+          border: 'none', fontSize: 14, cursor: 'pointer',
+          fontFamily: 'inherit', marginBottom: 8,
+        }}
+      >
+        호르몬 카드에서 기록하기 💜
+      </button>
+      <button
+        onClick={() => {
+          const todayKey = `auran_dalbit_popup_${new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })}`
+          localStorage.setItem(todayKey, '1')
+          setShowDalbitPopup(false)
+        }}
+        style={{
+          width: '100%', padding: 10, borderRadius: 14,
+          background: 'none', color: 'rgba(255,255,255,0.35)',
+          border: 'none', fontSize: 13, cursor: 'pointer',
+          fontFamily: 'inherit',
+        }}
+      >
+        이미 기록했어요
+      </button>
+    </div>
+  </div>
+)}
+
       {showPeriodPopup && (
         <div style={{
           position: 'absolute', inset: 0,
@@ -2233,6 +2329,7 @@ export default function CustomerHomePage() {
         ) : trackToSegment(hormoneTrack) !== 'cycle' ? (
           <SegmentSlot track={hormoneTrack} reason={(hormoneCycle as any)?.menopause_reason ?? null} />
         ) : (<>
+        <div ref={hormoneCardRef}>
         <HormoneCard
           hormoneMainLine={hormoneMainLine}
           hormoneSubLine={hormoneSubLine}
@@ -2265,6 +2362,7 @@ export default function CustomerHomePage() {
           }}
           onRefreshCycle={() => void loadMotivationProfile()}
         />
+        </div>
 
         {hormoneCycle === null ? (
           <div style={{
