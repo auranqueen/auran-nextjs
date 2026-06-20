@@ -123,7 +123,7 @@ export default function OrderDetailPanel({ order, open, onClose }: Props) {
           `[AURAN] 주문이 발송됐습니다.\n` +
           `운송장번호: ${trackingNo.trim()}\n` +
           `주문번호: ${order.order_no}\n\n` +
-          `배송조회: https://auran.kr/track/\n` +
+          `배송조회: https://auran.kr/my/orders\n` +
           `문의: support@auran.kr`,
         icon: '🚚',
         is_read: false,
