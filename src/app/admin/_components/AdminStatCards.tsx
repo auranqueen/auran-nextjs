@@ -95,7 +95,7 @@ export default function AdminStatCards() {
     { id: 'hormone', icon: '🧬', label: '호르몬기 분포', value: `${hormoneTotal}명`, sub: `생리있음 ${trackCount['general'] || 0}명` },
     { id: 'review', icon: '⭐', label: '리뷰 현황 (이달)', value: `${totalReviews}건`, sub: `재구매 의향 ${rebuyPct}%` },
     { id: 'toast', icon: '🍞', label: '토스트 경제 (오늘)', value: `+${todayEarned.toLocaleString()}T`, sub: `사용 -${todayUsed.toLocaleString()}T` },
-    { id: 'external', icon: '👥', label: '외부고객 유입', value: `${totalExternal}명`, sub: `가입 전환 ${joinedPct}%` },
+    { id: 'external', icon: '👥', label: '외부고객 현황', value: `${totalExternal}명`, sub: `가입 전환 ${joinedPct}%` },
     { id: 'rebuy', icon: '🔄', label: '재구매율 (이달)', value: `${rebuyRate}%`, sub: `구매확정 기준` },
     { id: 'visit', icon: '💡', label: '오늘 방문자', value: `${visits.length}건`, sub: `행동 로그 기준` },
   ]
