@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import AdminStatCards from './_components/AdminStatCards'
 import { redirect } from 'next/navigation'
 import { requireAdmin } from './_auth'
 
@@ -528,6 +529,7 @@ export default async function AdminPage() {
               </tbody>
             </table>
           </div>
+        <AdminStatCards />
         </div>
       </div>
     </div>
