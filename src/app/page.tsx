@@ -1713,9 +1713,24 @@ export default function CustomerHomePage() {
         AURAN이 내 상태에 맞는 케어를 알려드려요 💜
       </div>
       {[
-        { label: '🌙 갱년기예요', track: 'menopause_peri', reason: 'natural' },
-        { label: '🤰 임신 중이에요', track: 'pregnant', reason: null },
-        { label: '👶 출산 후예요 (산후)', track: 'postpartum', reason: null },
+        {
+          label: '🌙 갱년기예요',
+          desc: '호르몬 변화에 맞는 피부 케어를 알려드려요',
+          track: 'menopause_peri',
+          reason: 'natural'
+        },
+        {
+          label: '🤰 임신 중이에요',
+          desc: '임신 주차별 케어 팁을 알려드려요\n주차는 나중에 마이페이지에서 입력할 수 있어요',
+          track: 'pregnant',
+          reason: null
+        },
+        {
+          label: '👶 출산 후예요',
+          desc: '산후 케어를 도와드려요\n출산일은 나중에 마이페이지에서 입력할 수 있어요',
+          track: 'postpartum',
+          reason: null
+        },
       ].map(opt => (
         <button
           key={opt.track}
@@ -1725,7 +1740,7 @@ export default function CustomerHomePage() {
             if (!user) return
             await supabase.from('hormone_cycle').update({
               track: opt.track,
-              ...(opt.reason ? { menopause_reason: opt.reason } : { menopause_reason: 'selected' }),
+              menopause_reason: opt.reason ?? 'selected',
               updated_at: new Date().toISOString(),
             }).eq('auth_id', user.id)
             setHormoneCycle((prev: any) => ({
@@ -1737,13 +1752,19 @@ export default function CustomerHomePage() {
             setShowTrackPopup(false)
           }}
           style={{
-            width: '100%', padding: 14, borderRadius: 14,
+            width: '100%', padding: '14px 16px', borderRadius: 14,
             background: 'rgba(123,94,167,0.12)',
             border: '0.5px solid rgba(123,94,167,0.3)',
-            color: '#fff', fontSize: 15, cursor: 'pointer',
-            fontFamily: 'inherit', marginBottom: 10, textAlign: 'left' as const,
+            color: '#fff', fontSize: 14, cursor: 'pointer',
+            fontFamily: 'inherit', marginBottom: 10,
+            textAlign: 'left' as const,
           }}
-        >{opt.label}</button>
+        >
+          <div style={{ marginBottom: 4 }}>{opt.label}</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6, whiteSpace: 'pre-line' as const }}>
+            {opt.desc}
+          </div>
+        </button>
       ))}
       <button
         onClick={() => setShowTrackPopup(false)}
