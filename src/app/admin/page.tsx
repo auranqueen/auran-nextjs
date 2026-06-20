@@ -380,6 +380,7 @@ export default async function AdminPage() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <AdminStatCards />
           <div className="card">
             <div className="card-hdr">
               <div className="card-title">💰 정산 대기</div>
@@ -529,7 +530,6 @@ export default async function AdminPage() {
               </tbody>
             </table>
           </div>
-        <AdminStatCards />
         </div>
       </div>
     </div>
