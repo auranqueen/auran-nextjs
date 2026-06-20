@@ -415,6 +415,7 @@ export default function CustomerHomePage() {
   const [hormoneTrack, setHormoneTrack] = useState<string>('general')
   const [hormoneCycle, setHormoneCycle] = useState<any>(null)
   const [showPeriodPopup, setShowPeriodPopup] = useState(false)
+  const [showTrackPopup, setShowTrackPopup] = useState(false)
   const [popupPeriodDate, setPopupPeriodDate] = useState('')
   const [periodTipText, setPeriodTipText] = useState(TOOLTIP_FALLBACKS.period_start)
   const [userBirthday, setUserBirthday] =
@@ -540,6 +541,12 @@ export default function CustomerHomePage() {
       setHormoneCycle(hc)
       if ((hc as any)?.track === 'general' && !(hc as any)?.last_period_date) {
         setShowPeriodPopup(true)
+      }
+      if (
+        (hc as any)?.track === 'menopause_peri' &&
+        !(hc as any)?.menopause_reason
+      ) {
+        setShowTrackPopup(true)
       }
       setHormoneTrack(String((hc as any).track || 'general'))
       const calc = calcHormoneBriefing(hc)
@@ -1680,6 +1687,75 @@ export default function CustomerHomePage() {
       position: 'relative' as const,
     }}>
       <style>{`@keyframes pulse{0%{opacity:.5}50%{opacity:1}100%{opacity:.5}}.home-cal-yearly-month-btn{position:relative;isolation:isolate}.home-cal-yearly-month-btn::before,.home-cal-yearly-month-btn::after{pointer-events:none!important}`}</style>
+
+      {showTrackPopup && (
+  <div style={{
+    position: 'absolute', inset: 0,
+    background: 'rgba(0,0,0,0.8)',
+    zIndex: 999,
+    display: 'flex',
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    minHeight: '100vh',
+  }}>
+    <div style={{
+      background: '#181520',
+      borderRadius: '24px 24px 0 0',
+      padding: '32px 24px 48px',
+      width: '100%',
+      borderTop: '0.5px solid rgba(123,94,167,0.3)',
+    }}>
+      <div style={{ fontSize: 32, textAlign: 'center', marginBottom: 12 }}>🌸</div>
+      <div style={{ fontSize: 17, color: '#fff', fontWeight: 500, textAlign: 'center', marginBottom: 8 }}>
+        현재 상태를 알려주세요
+      </div>
+      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', textAlign: 'center', marginBottom: 24, lineHeight: 1.7 }}>
+        AURAN이 내 상태에 맞는 케어를 알려드려요 💜
+      </div>
+      {[
+        { label: '🌙 갱년기예요', track: 'menopause_peri', reason: 'natural' },
+        { label: '🤰 임신 중이에요', track: 'pregnant', reason: null },
+        { label: '👶 출산 후예요 (산후)', track: 'postpartum', reason: null },
+      ].map(opt => (
+        <button
+          key={opt.track}
+          onClick={async () => {
+            const supabase = createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) return
+            await supabase.from('hormone_cycle').update({
+              track: opt.track,
+              ...(opt.reason ? { menopause_reason: opt.reason } : { menopause_reason: 'selected' }),
+              updated_at: new Date().toISOString(),
+            }).eq('auth_id', user.id)
+            setHormoneCycle((prev: any) => ({
+              ...prev,
+              track: opt.track,
+              menopause_reason: opt.reason ?? 'selected',
+            }))
+            setHormoneTrack(opt.track)
+            setShowTrackPopup(false)
+          }}
+          style={{
+            width: '100%', padding: 14, borderRadius: 14,
+            background: 'rgba(123,94,167,0.12)',
+            border: '0.5px solid rgba(123,94,167,0.3)',
+            color: '#fff', fontSize: 15, cursor: 'pointer',
+            fontFamily: 'inherit', marginBottom: 10, textAlign: 'left' as const,
+          }}
+        >{opt.label}</button>
+      ))}
+      <button
+        onClick={() => setShowTrackPopup(false)}
+        style={{
+          width: '100%', padding: 10, borderRadius: 14,
+          background: 'none', color: 'rgba(255,255,255,0.35)',
+          border: 'none', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+        }}
+      >나중에 할게요</button>
+    </div>
+  </div>
+)}
 
       {showPeriodPopup && (
         <div style={{
