@@ -191,14 +191,6 @@ function SignupForm() {
           .single()
         if (newUserInsertErr) {
           console.warn('[users insert]', newUserInsertErr)
-        } else if (newUserRow?.id) {
-          const { error: ttErr } = await supabase.from('toast_transactions').insert({
-            user_id: newUserRow.id,
-            amount: signupWelcomePoint,
-            transaction_type: 'signup',
-            source_type: 'signup',
-          } as any)
-          if (ttErr) console.warn('[toast_transactions signup]', ttErr)
         }
         if (inviteCode) {
           await supabase.from('invite_links').update({ used_count: supabase.rpc('increment', { row_id: inviteCode }) }).eq('code', inviteCode)
