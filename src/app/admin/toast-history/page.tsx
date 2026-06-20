@@ -18,15 +18,15 @@ const PERIOD_OPTIONS: { key: PeriodKey; label: string }[] = [
   { key: 'all', label: '전체' },
 ]
 
-const TYPE_FILTER_OPTIONS: { key: TypeFilterKey; label: string; db?: string }[] = [
+const TYPE_FILTER_OPTIONS: { key: TypeFilterKey; label: string; db?: string; sourceType?: string }[] = [
   { key: 'all', label: '전체' },
-  { key: 'signup', label: '가입', db: 'signup' },
-  { key: 'purchase', label: '구매', db: 'purchase' },
-  { key: 'attendance', label: '출석', db: 'attendance' },
-  { key: 'referral', label: '추천', db: 'referral' },
-  { key: 'review', label: '리뷰', db: 'review' },
-  { key: 'charge', label: '충전', db: 'charge' },
-  { key: 'use', label: '사용', db: 'use' },
+  { key: 'signup', label: '가입', sourceType: 'signup' },
+  { key: 'purchase', label: '구매', sourceType: 'order' },
+  { key: 'attendance', label: '출석', sourceType: 'attendance' },
+  { key: 'referral', label: '추천', sourceType: 'referral' },
+  { key: 'review', label: '리뷰', sourceType: 'review_bonus' },
+  { key: 'charge', label: '충전', sourceType: 'charge' },
+  { key: 'use', label: '사용', sourceType: 'use' },
 ]
 
 const TYPE_LABEL: Record<string, string> = {
@@ -180,7 +180,7 @@ export default function AdminToastHistoryPage() {
         })
       if (dateFrom) listQ = listQ.gte('created_at', dateFrom)
       if (dateTo) listQ = listQ.lte('created_at', dateTo)
-      if (typeOpt?.db) listQ = listQ.eq('transaction_type', typeOpt.db)
+      if ((typeOpt as any)?.sourceType) listQ = listQ.eq('source_type', (typeOpt as any).sourceType)
       if (userIds) listQ = listQ.in('user_id', userIds)
 
       const rangeFrom = page * PAGE_SIZE
@@ -195,7 +195,7 @@ export default function AdminToastHistoryPage() {
       let sumQ = supabase.from('toast_transactions').select('amount, user_id')
       if (dateFrom) sumQ = sumQ.gte('created_at', dateFrom)
       if (dateTo) sumQ = sumQ.lte('created_at', dateTo)
-      if (typeOpt?.db) sumQ = sumQ.eq('transaction_type', typeOpt.db)
+      if ((typeOpt as any)?.sourceType) sumQ = sumQ.eq('source_type', (typeOpt as any).sourceType)
       if (userIds) sumQ = sumQ.in('user_id', userIds)
       const { data: sumRows, error: sumErr } = await sumQ.limit(10000)
       if (sumErr) throw sumErr
@@ -388,7 +388,7 @@ export default function AdminToastHistoryPage() {
                       {page * PAGE_SIZE + idx + 1}
                     </td>
                     <td style={{ color: 'var(--text)' }}>{memberName}</td>
-                    <td style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>{typeLabel(r.transaction_type)}</td>
+                    <td style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>{TYPE_LABEL[r.source_type || ''] || TYPE_LABEL[r.transaction_type || ''] || r.source_type || r.transaction_type || '—'}</td>
                     <td className="mono" style={{ color: amt >= 0 ? GOLD : RED }}>
                       {amt >= 0 ? '+' : ''}
                       {amt.toLocaleString()}T
