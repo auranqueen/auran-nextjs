@@ -69,7 +69,7 @@ const LABELS: Record<string, string> = {
   body: '몸의변화',
   care: '케어포인트',
   fertility: '가임기안내',
-  quote: '오랜한마디',
+  quote: '오렌한마디',
 }
 
 const PHASE_EXTRA_COPY: Record<string, { body: string; care: string; quote: string[]; treatment: string }> = {
@@ -119,7 +119,7 @@ const PHASE_EXTRA_COPY: Record<string, { body: string; care: string; quote: stri
     quote: [
       '매일 꾸준한 케어가 가장 강력한 무기예요 💜',
       '에스트로겐은 줄었지만 케어로 충분히 커버할 수 있어요 ✨',
-      '갱년기 피부, 포기하지 마요. 오랜이 함께할게요 🌿',
+      '갱년기 피부, 포기하지 마요. 오렌이 함께할게요 🌿',
     ],
     treatment: '피부 재생력이 낮아져 시술 후 회복이 느릴 수 있어요. 자극 강도 낮은 시술부터 시작해요. 원장님과 상담 후 시술 타이밍 잡는 걸 추천해요 💜',
   },
@@ -670,7 +670,7 @@ export default function HormoneSheet({
                     </div>
                   </div>
                   <div style={{ background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '11px 13px' }}>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>오랜 한마디</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>오렌 한마디</div>
                     <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.65 }}>
                       {randomQuote[tabId] ?? PHASE_EXTRA_COPY[tabId]?.quote?.[0]}
                     </div>

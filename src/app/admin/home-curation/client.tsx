@@ -283,7 +283,7 @@ export default function HomeCurationClient({
         <div style={card}>
           <span style={lbl}>홈 섹션 노출 on/off</span>
           {[
-            { key: 'ownerPick', label: '오랜 픽 (원장픽)', desc: '이슈 버튼 + 제품 큐레이션' },
+            { key: 'ownerPick', label: '오렌 픽 (원장픽)', desc: '이슈 버튼 + 제품 큐레이션' },
             { key: 'concernBest', label: '고민별 BEST', desc: '제품 매핑된 고민만 표시' },
             { key: 'timesale', label: '타임세일 · 공동구매', desc: '' },
             { key: 'newProduct', label: '새로 나왔어요', desc: '신제품 섹션' },

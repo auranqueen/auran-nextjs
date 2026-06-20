@@ -33,7 +33,7 @@ type LearningRow = {
 }
 
 function sourceLabel(st: string | null | undefined) {
-  if (st === 'auran_chat') return '오랜상담톡'
+  if (st === 'auran_chat') return '오렌상담톡'
   if (st === 'external') return '외부상담'
   return st || '—'
 }

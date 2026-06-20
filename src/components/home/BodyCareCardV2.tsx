@@ -752,7 +752,7 @@ export default function BodyCareCardV2({
           </div>
 
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 4 }}>오랜한마디</div>
+            <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 4 }}>오렌한마디</div>
             <textarea
               value={form.quote}
               onChange={e => setForm(f => ({ ...f, quote: e.target.value }))}
@@ -990,7 +990,7 @@ export default function BodyCareCardV2({
               <div style={{ fontSize: 12, color: TEXT_MUTED, lineHeight: 1.55, whiteSpace: 'pre-wrap', marginBottom: 14 }}>
                 {sheetCard.care}
               </div>
-              <div style={{ fontSize: 11, fontWeight: 600, color: TEXT_MAIN, marginBottom: 6 }}>오랜한마디</div>
+              <div style={{ fontSize: 11, fontWeight: 600, color: TEXT_MAIN, marginBottom: 6 }}>오렌한마디</div>
               <div style={{ fontSize: 12, color: TEXT_MUTED, lineHeight: 1.55, whiteSpace: 'pre-wrap', marginBottom: 14 }}>
                 {sheetCard.quote}
               </div>

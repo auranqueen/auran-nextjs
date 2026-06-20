@@ -834,7 +834,7 @@ export default function CustomerChatRoomPage() {
             </div>
           ) : !voiceType ? (
             <>
-              <div style={{ fontSize: 13, color: '#333', marginBottom: 12 }}>오랜에게 말하기</div>
+              <div style={{ fontSize: 13, color: '#333', marginBottom: 12 }}>오렌에게 말하기</div>
               {[
                 { key: 'bug', label: '🐛 뭔가 안 돼요' },
                 { key: 'idea', label: '💡 이런 기능 있으면 좋겠어요' },

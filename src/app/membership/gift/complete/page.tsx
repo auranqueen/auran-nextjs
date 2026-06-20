@@ -62,7 +62,7 @@ export default function GiftCompletePage() {
           <div style={{ fontSize: 10, color: C.gold, letterSpacing: 3, marginBottom: 12 }}>ORÆN PRIVÉ</div>
           <div style={{ fontSize: 16, color: '#F0E8FF', lineHeight: 1.6, marginBottom: 8 }}>{copy}</div>
           <div style={{ fontSize: 11, color: '#9B7EC8' }}>
-            {senderName ? `${senderName}님이 선물했어요` : '오랜 멤버십 선물'}
+            {senderName ? `${senderName}님이 선물했어요` : '오렌 멤버십 선물'}
           </div>
         </div>
         <button

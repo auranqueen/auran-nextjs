@@ -207,7 +207,7 @@ export default function StoreReviewPage() {
           fontSize: 14, cursor: 'pointer', letterSpacing: -0.2,
         }}
       >
-        오랜 홈으로 가기
+        오렌 홈으로 가기
       </button>
     </div>
   )

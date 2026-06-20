@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
           user_id: newUser.id,
           type: 'toast',
           title: '🎁 가입 선물 10,000T가 도착했어요!',
-          body: '오랜 합류 환영해요 💜 토스트 10,000T를 드릴게요. 지갑에서 확인해보세요!',
+          body: '오렌 합류 환영해요 💜 토스트 10,000T를 드릴게요. 지갑에서 확인해보세요!',
           link_url: '/my',
           is_read: false,
         } as any)

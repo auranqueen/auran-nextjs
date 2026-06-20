@@ -2060,7 +2060,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             <div ref={reviewScrollRef} style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 8, marginBottom: 12, WebkitOverflowScrolling: 'touch' as any, scrollSnapType: 'x mandatory' }}>
               {storyFiltered.map((rv, i) => (
                 <div key={rv.id || i} style={{ flexShrink: 0, width: 260, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 14, scrollSnapAlign: 'start' }}>
-                  {/* ===== [리뷰 뱃지] 오랜구매/스토어구매/실구매인증 ===== */}
+                  {/* ===== [리뷰 뱃지] 오렌구매/스토어구매/실구매인증 ===== */}
                   <div style={{ display: 'flex', gap: 4, marginBottom: 6, flexWrap: 'wrap' }}>
                     {rv.is_store_review && (
                       <span style={{
@@ -2086,7 +2086,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
                         background: '#f5f0ff', color: '#7B5EA7',
                         border: '0.5px solid #AFA9EC',
                       }}>
-                        오랜 구매 💜
+                        오렌 구매 💜
                       </span>
                     )}
                   </div>
@@ -2592,7 +2592,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <div style={{ fontSize: 15, color: '#fff' }}>오랜일촌 선택</div>
+              <div style={{ fontSize: 15, color: '#fff' }}>오렌일촌 선택</div>
               <button
                 type="button"
                 onClick={() => setGiftSheetOpen(false)}
@@ -2604,7 +2604,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             {giftFriendsLoading ? (
               <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '16px 0' }}>불러오는 중...</div>
             ) : giftFriends.length === 0 ? (
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '16px 0' }}>오랜일촌이 없어요</div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '16px 0' }}>오렌일촌이 없어요</div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {giftFriends.map((f) => (

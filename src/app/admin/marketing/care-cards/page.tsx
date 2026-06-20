@@ -570,7 +570,7 @@ function DraftForm({
         />
       </div>
       <div>
-        {lbl('quote (오랜 한마디)')}
+        {lbl('quote (오렌 한마디)')}
         <textarea
           value={draft.quote}
           onChange={e => setDraft(d => ({ ...d, quote: e.target.value }))}

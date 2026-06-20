@@ -110,7 +110,7 @@ export default function MembershipGiftPage() {
 
         <div style={{ marginTop: 18 }}>
           <div style={{ fontSize: 11, color: C.faint, marginBottom: 5 }}>받는 분께 한마디 (선택)</div>
-          <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={2} placeholder="예: 요즘 고생 많았어. 오랜이 챙겨줄게 💜" style={{ ...field, resize: 'vertical' }} />
+          <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={2} placeholder="예: 요즘 고생 많았어. 오렌이 챙겨줄게 💜" style={{ ...field, resize: 'vertical' }} />
         </div>
         <div style={{ marginTop: 12 }}>
           <div style={{ fontSize: 11, color: C.faint, marginBottom: 5 }}>보내는 사람 이름 (선택)</div>

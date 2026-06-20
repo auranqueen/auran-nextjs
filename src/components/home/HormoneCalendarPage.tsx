@@ -531,7 +531,7 @@ export default function HormoneCalendarPage() {
                 내일쯤 달빛기가 시작될 것 같아요
               </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
-                생리가 시작되면 기록해주세요. 오랜이 다시 리셋해드려요.
+                생리가 시작되면 기록해주세요. 오렌이 다시 리셋해드려요.
               </div>
             </div>
           ) : null}

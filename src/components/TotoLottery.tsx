@@ -1,4 +1,4 @@
-// ===== [오랜 또또 / 르노벨 골든또또 공통 컴포넌트] =====
+// ===== [오렌 또또 / 르노벨 골든또또 공통 컴포넌트] =====
 // 결제 완료 페이지에서 사용
 // brand_type: 'general' | 'renobel' | 'both'
 // orderId: 주문 ID (order_gifts 저장용)
@@ -111,7 +111,7 @@ export default function TotoLottery({
           {isRenobel ? 'RENOBEL GOLDEN TOTO' : 'AURAN TOTO'}
         </div>
         <div style={{ fontSize: 17, color: 'var(--color-text-primary)', letterSpacing: -0.3, marginBottom: 4 }}>
-          {isRenobel ? '르노벨 골든또또 ✦' : '오랜 또또 💜'}
+          {isRenobel ? '르노벨 골든또또 ✦' : '오렌 또또 💜'}
         </div>
         <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
           {step === 'card' ? '카드 하나를 골라보세요' : step === 'result' ? '선물이 확정됐어요' : '알림장을 확인해보세요'}
@@ -138,7 +138,7 @@ export default function TotoLottery({
                 cursor: 'pointer',
               }}
             >
-              {t === 'general' ? '오랜 또또' : '르노벨 골든또또'}
+              {t === 'general' ? '오렌 또또' : '르노벨 골든또또'}
             </button>
           ))}
         </div>

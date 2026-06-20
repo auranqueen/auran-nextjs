@@ -331,7 +331,7 @@ export default function OrderDetailPanel({ order, open, onClose }: Props) {
           }}>
             {/* 헤더 */}
             <div style={{ fontSize: 10, letterSpacing: 2, color: orderGift.brand_type === 'renobel' ? '#C9A96E' : '#7B5EA7', marginBottom: 8 }}>
-              {orderGift.brand_type === 'renobel' ? '르노벨 골든또또 ✦' : '오랜 또또 💜'}
+              {orderGift.brand_type === 'renobel' ? '르노벨 골든또또 ✦' : '오렌 또또 💜'}
             </div>
 
             {/* 당첨 제품 */}

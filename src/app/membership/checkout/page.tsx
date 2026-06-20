@@ -66,7 +66,7 @@ export default function MembershipCheckoutPage() {
       <div style={{ maxWidth: 480, margin: '0 auto', padding: '24px 18px 40px' }}>
         <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
           <div style={{ fontFamily: SERIF, fontSize: 26, letterSpacing: 4, color: C.goldDark }}>ORÆN PRIVÉ</div>
-          <div style={{ fontSize: 11, color: C.goldDark, letterSpacing: 2, marginTop: 8 }}>오랜이 만든 홀리스틱 멤버십</div>
+          <div style={{ fontSize: 11, color: C.goldDark, letterSpacing: 2, marginTop: 8 }}>오렌이 만든 홀리스틱 멤버십</div>
           <div style={{ fontSize: 12, color: C.muted, marginTop: 6 }}>체크아웃</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 22 }}>

@@ -1,6 +1,6 @@
 'use client'
 // ===== [또또복권 관리] gift_items 등록/수정/삭제 =====
-// 오랜 또또(general) / 르노벨 골든또또(renobel) 상품 풀 관리
+// 오렌 또또(general) / 르노벨 골든또또(renobel) 상품 풀 관리
 // 재고 설정 + 활성화 여부 + 제품 연결
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
@@ -154,7 +154,7 @@ export default function TotoAdminPage() {
         또또복권 관리 🎴
       </div>
       <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 20 }}>
-        오랜 또또 / 르노벨 골든또또 상품 풀 등록 및 재고 관리
+        오렌 또또 / 르노벨 골든또또 상품 풀 등록 및 재고 관리
       </div>
 
       {/* 탭 */}
@@ -170,7 +170,7 @@ export default function TotoAdminPage() {
               color: tab === t ? '#fff' : 'var(--color-text-secondary)',
             }}
           >
-            {t === 'general' ? '오랜 또또 💜' : '르노벨 골든또또 ✦'}
+            {t === 'general' ? '오렌 또또 💜' : '르노벨 골든또또 ✦'}
           </button>
         ))}
       </div>

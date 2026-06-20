@@ -100,7 +100,7 @@ export default function ReviewsPage() {
   }
 
   const renderCard = (review: any) => {
-    const authorName = review.author?.name || (review.source === 'duchess' ? '자사몰 구매고객' : '오랜 회원')
+    const authorName = review.author?.name || (review.source === 'duchess' ? '자사몰 구매고객' : '오렌 회원')
     const initial = String(authorName).trim().charAt(0) || '오'
     const phaseStyle = phaseBadgeStyle(String(review.hormone_phase || ''))
     const scoreBefore = Number(review.skin_score_before)
@@ -290,7 +290,7 @@ export default function ReviewsPage() {
         margin: '0 20px'
       }}>
         {[
-          { key: 'auran', label: '오랜 리뷰' },
+          { key: 'auran', label: '오렌 리뷰' },
           { key: 'duchess', label: '자사몰 리뷰' }
         ].map(({ key, label }) => (
           <button

@@ -90,7 +90,7 @@ export async function POST(req: Request) {
       .maybeSingle()
     const hasAddress = !!addrRow
     const notifyBody = hasAddress
-      ? `첫 배송일은 ${next_shipment_date}입니다. 오랜이 정성껏 준비할게요 💜`
+      ? `첫 배송일은 ${next_shipment_date}입니다. 오렌이 정성껏 준비할게요 💜`
       : `배송지를 등록해주세요. 첫 리추얼을 보내드릴게요!`
     const notifyLink = hasAddress ? '/my' : '/my/addresses'
     await supabase.from('notifications').insert({
@@ -111,7 +111,7 @@ export async function POST(req: Request) {
       if ((userRow as any)?.phone) {
         const name = (userRow as any)?.name || '고객'
         const msg = hasAddress
-          ? `[ORÆN PRIVÉ] ${name}님, 멤버십이 시작됐어요 💜\n\n첫 배송일: ${next_shipment_date}\n오랜이 정성껏 리추얼을 준비할게요.`
+          ? `[ORÆN PRIVÉ] ${name}님, 멤버십이 시작됐어요 💜\n\n첫 배송일: ${next_shipment_date}\n오렌이 정성껏 리추얼을 준비할게요.`
           : `[ORÆN PRIVÉ] ${name}님, 멤버십이 시작됐어요 💜\n\n배송지를 등록해주세요:\nhttps://auran.kr/my/addresses`
         await sendPpurioAlimtalk({
           phone: (userRow as any).phone,
@@ -144,7 +144,7 @@ export async function POST(req: Request) {
       }
       if (channelId) {
         const chatMsg = hasAddress
-          ? `안녕하세요 💜 ORÆN PRIVÉ 멤버십이 시작됐어요!\n\n첫 배송일은 ${next_shipment_date}입니다.\n오랜이 정성껏 리추얼을 준비할게요.\n\n궁금한 점은 언제든 말씀해주세요 🌙`
+          ? `안녕하세요 💜 ORÆN PRIVÉ 멤버십이 시작됐어요!\n\n첫 배송일은 ${next_shipment_date}입니다.\n오렌이 정성껏 리추얼을 준비할게요.\n\n궁금한 점은 언제든 말씀해주세요 🌙`
           : `안녕하세요 💜 ORÆN PRIVÉ 멤버십이 시작됐어요!\n\n배송지를 등록해주세요:\nauran.kr/my/addresses\n\n등록 완료 후 첫 리추얼을 보내드릴게요 🌙`
         await supabase.from('consultation_messages').insert({
           channel_id: channelId,

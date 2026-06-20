@@ -55,7 +55,7 @@ const TERMS: Record<string, { title: string; content: string }> = {
 보유 기간: 동의 철회 시까지. 철회 후 익명 데이터는 연구 목적상 삭제되지 않을 수 있습니다.
 
 동의 거부 시 서비스 이용에 불이익이 없습니다.
-기록이 쌓일수록 오랜이 나를 더 잘 알아가요 💜`
+기록이 쌓일수록 오렌이 나를 더 잘 알아가요 💜`
   }
 }
 
@@ -103,7 +103,7 @@ function ConsentInner() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
-        <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 22, color: 'var(--text)', marginBottom: 6, textAlign: 'center' }}>오랜에 오신 걸 환영해요 💜</div>
+        <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 22, color: 'var(--text)', marginBottom: 6, textAlign: 'center' }}>오렌에 오신 걸 환영해요 💜</div>
         <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 28, textAlign: 'center' }}>서비스 이용을 위해 약관에 동의해주세요</div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>

@@ -59,7 +59,7 @@ export default function ReviewDetailPage() {
         {/* 작성자 정보 */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700 }}>{review.author?.name || '오랜 회원'}</div>
+            <div style={{ fontSize: 15, fontWeight: 700 }}>{review.author?.name || '오렌 회원'}</div>
             <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
               {review.skin_type && (
                 <span style={{

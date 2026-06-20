@@ -214,7 +214,7 @@ export default function ExternalCardsV2Page() {
       const res = await fetch('/api/alimtalk/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: card.phone, message, title: 'AURAN 오랜 · 맑원장' }),
+        body: JSON.stringify({ phone: card.phone, message, title: 'AURAN 오렌 · 맑원장' }),
       })
       const json = await res.json()
       if (json.ok) alert('알림톡 발송 완료!')
@@ -339,7 +339,7 @@ ${products.length ? `<div class="sec"><div class="sec-title">✦ 구매하신 �
 ${giftSection}${bundleSection}${sampleSection}
 ${(amRoutine || pmRoutine || tip) ? `<div class="sec"><div class="sec-title">✦ 맞춤 사용 루틴</div><div class="routine-grid">${amRoutine ? `<div class="routine-box"><div class="routine-time">AM · 아침</div><div class="routine-step">${amRoutine}</div></div>` : ''}${pmRoutine ? `<div class="routine-box"><div class="routine-time">PM · 저녁</div><div class="routine-step">${pmRoutine}</div></div>` : ''}</div>${tip ? `<div class="tip-text">💜 ${tip}</div>` : ''}</div>` : ''}
 <div class="join"><div style="display:flex;gap:10px;align-items:flex-start;"><div style="flex:1;"><div style="font-size:11px;font-weight:600;color:#2D5A3D;margin-bottom:4px;">생리 10일 전, 피부가 가장 뒤집힐 확률 87%</div><div style="font-size:8px;color:#555;margin-bottom:6px;">같은 제품도 호르몬 주기에 따라 효과가 완전히 달라져요.</div><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-bottom:6px;"><div style="background:#f0f7f3;border-radius:4px;padding:4px 5px;text-align:center;"><div style="font-size:7px;color:#C9A96E;">달빛기</div><div style="font-size:7px;color:#888;">생리중~직후</div><div style="font-size:8px;color:#2D5A3D;margin-top:2px;">진정</div></div><div style="background:#f0f7f3;border-radius:4px;padding:4px 5px;text-align:center;"><div style="font-size:7px;color:#C9A96E;">황금기</div><div style="font-size:7px;color:#888;">생리후 7~10일</div><div style="font-size:8px;color:#2D5A3D;margin-top:2px;">영양·미백</div></div><div style="background:#f0f7f3;border-radius:4px;padding:4px 5px;text-align:center;"><div style="font-size:7px;color:#C9A96E;">만개기</div><div style="font-size:7px;color:#888;">배란기</div><div style="font-size:8px;color:#2D5A3D;margin-top:2px;">모공·유분</div></div><div style="background:#f0f7f3;border-radius:4px;padding:4px 5px;text-align:center;"><div style="font-size:7px;color:#C9A96E;">물들기</div><div style="font-size:7px;color:#888;">생리전 7~10일</div><div style="font-size:8px;color:#2D5A3D;margin-top:2px;">트러블예방</div></div></div><div style="font-size:8px;color:#555;line-height:1.6;">AURAN이 내 호르몬 주기를 읽고 오늘 필요한 홈케어를 알려드려요. 💜</div><div style="margin-top:4px;"><div style="font-size:8px;color:#C9A96E;">• 가입 즉시 10,000T 지급</div><div style="font-size:8px;color:#777;">• 내 호르몬 주기 분석 · 맞춤 홈케어 루틴 제공</div></div></div><div style="text-align:center;flex-shrink:0;"><img src="${qrJoin}" width="52" height="52" style="display:block;border-radius:4px;border:1px solid #eee;" /><div style="font-size:7px;color:#888;margin-top:2px;">카카오 가입</div></div></div></div>
-<div class="ot"><div class="ot-head"><div><div class="ot-title">제품 쓰다 막히면<br><em>맑원장님께 직접 물어보세요</em></div><div class="ot-sub">오랜톡 · 맑원장 1:1 상담</div></div><div class="bubbles"><div class="bq">세럼이랑 크림<br>순서 맞나요?</div><div class="ba">세럼 먼저요!<br>흡수 후 크림 발라요</div></div></div><div class="ot-body"><div class="steps"><div class="step"><div class="snum">1</div>위 QR 스캔 → AURAN 카카오 가입</div><div class="step"><div class="snum">2</div>앱 하단 채팅 탭 터치</div><div class="step"><div class="snum">3</div>맑원장님께 바로 질문하기</div><div class="ot-hint">맑원장이 직접 챙겨드릴게요 💜</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><img src="${qrChat}" width="48" height="48" style="display:block;border-radius:4px;" /><div style="font-size:8px;color:#9B7EC8;text-align:center">상담 바로가기</div></div></div></div>
+<div class="ot"><div class="ot-head"><div><div class="ot-title">제품 쓰다 막히면<br><em>맑원장님께 직접 물어보세요</em></div><div class="ot-sub">오렌톡 · 맑원장 1:1 상담</div></div><div class="bubbles"><div class="bq">세럼이랑 크림<br>순서 맞나요?</div><div class="ba">세럼 먼저요!<br>흡수 후 크림 발라요</div></div></div><div class="ot-body"><div class="steps"><div class="step"><div class="snum">1</div>위 QR 스캔 → AURAN 카카오 가입</div><div class="step"><div class="snum">2</div>앱 하단 채팅 탭 터치</div><div class="step"><div class="snum">3</div>맑원장님께 바로 질문하기</div><div class="ot-hint">맑원장이 직접 챙겨드릴게요 💜</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><img src="${qrChat}" width="48" height="48" style="display:block;border-radius:4px;" /><div style="font-size:8px;color:#9B7EC8;text-align:center">상담 바로가기</div></div></div></div>
 <div class="review"><div><div class="rv-title">솔직한 후기 남기고 토스트 받으세요</div><div class="rv-sub">내 후기 한 줄이 비슷한 피부 고민 가진 분께 큰 도움이 돼요</div><div><table style="width:100%;border-collapse:collapse;margin-top:6px">
   <thead><tr>
   <th style="font-size:9px;color:#999;text-align:left;padding:3px 0">구매 합산금액</th>
@@ -347,7 +347,7 @@ ${(amRoutine || pmRoutine || tip) ? `<div class="sec"><div class="sec-title">✦
 </tr></thead>
   <tbody>${reviewToastRows}</tbody>
 </table></div></div><img src="${qrReview}" width="40" height="40" style="display:block;border-radius:4px;" /></div>
-<div class="footer">auran.kr · 오랜톡 · 맑원장 · 스킨파우더룸 · ${new Date().toLocaleDateString('ko-KR')}</div>
+<div class="footer">auran.kr · 오렌톡 · 맑원장 · 스킨파우더룸 · ${new Date().toLocaleDateString('ko-KR')}</div>
 </body></html>`
     const today = new Date().toLocaleDateString('ko-KR')
     const w = window.open('', '_blank')
@@ -725,7 +725,7 @@ ${(amRoutine || pmRoutine || tip) ? `<div class="sec"><div class="sec-title">✦
                     {c.phone && (
                       <button onClick={async () => {
                         const fn = ALIMTALK_COPIES[Math.floor(Math.random() * ALIMTALK_COPIES.length)]
-                        const res = await fetch('/api/alimtalk/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: c.phone, message: fn(c.name), title: 'AURAN 오랜 · 맑원장' }) })
+                        const res = await fetch('/api/alimtalk/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: c.phone, message: fn(c.name), title: 'AURAN 오렌 · 맑원장' }) })
                         const json = await res.json()
                         alert(json.ok ? '알림톡 발송 완료!' : '발송 실패: ' + json.error)
                       }} style={{ padding: '6px 12px', borderRadius: 7, fontSize: 11, cursor: 'pointer', background: 'rgba(201,169,110,0.15)', border: '0.5px solid rgba(201,169,110,0.35)', color: '#C9A96E', fontFamily: 'inherit' }}>알림톡 발송</button>
@@ -835,7 +835,7 @@ ${(amRoutine || pmRoutine || tip) ? `<div class="sec"><div class="sec-title">✦
           {[
             { title: 'AURAN 미가입 고객', sub: '발송 후 아직 가입 안 한 고객 → 알림톡 재발송 타겟', list: customers.filter(c => !c.auran_joined) },
             { title: 'VIP 고객 (₩30만+)', sub: '누적 구매 30만원 이상 · 멤버십 전환 최우선 타겟', list: customers.filter(c => (c.total_amount || 0) >= 300000) },
-            { title: '재구매 고객 (2회+)', sub: '충성 고객 → 오랜톡 상담 유도', list: customers.filter(c => (c.visit_count || 0) >= 2) },
+            { title: '재구매 고객 (2회+)', sub: '충성 고객 → 오렌톡 상담 유도', list: customers.filter(c => (c.visit_count || 0) >= 2) },
           ].map(seg => (
             <div key={seg.title} style={{ padding: '12px 13px', background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, marginBottom: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
@@ -850,7 +850,7 @@ ${(amRoutine || pmRoutine || tip) ? `<div class="sec"><div class="sec-title">✦
                   let ok = 0
                   for (const c of targets) {
                     const fn = ALIMTALK_COPIES[Math.floor(Math.random() * ALIMTALK_COPIES.length)]
-                    const res = await fetch('/api/alimtalk/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: c.phone, message: fn(c.name), title: 'AURAN 오랜 · 맑원장' }) })
+                    const res = await fetch('/api/alimtalk/send', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: c.phone, message: fn(c.name), title: 'AURAN 오렌 · 맑원장' }) })
                     const json = await res.json(); if (json.ok) ok++
                   }
                   alert(`${ok}명 발송 완료!`)

@@ -1245,7 +1245,7 @@ export default function WeatherRecommendSheet({
                             marginBottom: 3,
                           }}
                         >
-                          <div style={{ fontSize: 9, color: '#9B7FCC' }}>오랜이 고른 이유</div>
+                          <div style={{ fontSize: 9, color: '#9B7FCC' }}>오렌이 고른 이유</div>
                           {showEditChrome ? (
                             <button
                               type="button"
@@ -1545,7 +1545,7 @@ export default function WeatherRecommendSheet({
                                     marginBottom: 3,
                                   }}
                                 >
-                                  <div style={{ fontSize: 9, color: '#9B7FCC' }}>오랜이 고른 이유</div>
+                                  <div style={{ fontSize: 9, color: '#9B7FCC' }}>오렌이 고른 이유</div>
                                   {showEditChrome ? (
                                     <button
                                       type="button"

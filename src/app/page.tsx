@@ -202,7 +202,7 @@ const GREETINGS_EVENING = [
   (name: string) => `${name}님 오늘 하루도 정말 애쓰셨어요 🌙 이제 나를 위한 시간이에요`,
   (name: string) => `고생 많으셨어요 ${name}님 💜 저녁 케어로 하루 마무리해요`,
   (name: string) => `오늘 힘드셨죠? 괜찮아요 🌿 피부 케어가 최고의 힐링이에요`,
-  (name: string) => `세상이 다 내 편인 저녁이에요 💜 오랜이 응원해요`,
+  (name: string) => `세상이 다 내 편인 저녁이에요 💜 오렌이 응원해요`,
   (name: string) => `오늘도 열심히 사셨잖아요 ✨ 피부도 쉬어야 해요`,
   (name: string) => `${name}님 수고하셨어요 🌙 저녁 루틴 시작해요`,
 ]
@@ -242,7 +242,7 @@ const HORMONE_GREETINGS: Record<string, ((name: string) => string)[]> = {
     (name) => `${name}님 오늘 피부 컨디션 최고예요 🌸 마음껏 빛내요`,
   ],
   '물들기': [
-    (name) => `${name}님 예민한 날이죠, 오랜이 있어요 💜`,
+    (name) => `${name}님 예민한 날이죠, 오렌이 있어요 💜`,
     (name) => `${name}님 트러블 미리 잡아요 🍂 진정 케어 타이밍이에요`,
   ],
 }
@@ -258,14 +258,14 @@ const MALE_GENTLE_GREETINGS: ((name: string) => string)[] = [
   (name) => `${name}님 온화해진 만큼, 피부도 더 섬세하게 챙겨요 🌿`,
 ]
 const AGE_CARE_GREETINGS: ((name: string) => string)[] = [
-  (name) => `${name}님 변화는 두려운 게 아니에요 💊 오랜이 알고 있어요`,
+  (name) => `${name}님 변화는 두려운 게 아니에요 💊 오렌이 알고 있어요`,
   (name) => `${name}님 지금 이 피부에 가장 필요한 것, 찾아드릴게요 💜`,
   (name) => `${name}님 내 피부, 아직 충분히 아름다워요 🌸`,
 ]
 const HORMONE_NORMAL_GREETINGS: ((name: string) => string)[] = [
   (name) => `${name}님 생리는 없어도, 내 몸의 리듬은 살아있어요 💜`,
   (name) => `${name}님 오늘도 당신만의 황금기예요 ✨`,
-  (name) => `${name}님 호르몬 리듬에 맞춰 오랜이 함께해요 🌙`,
+  (name) => `${name}님 호르몬 리듬에 맞춰 오렌이 함께해요 🌙`,
 ]
 
 
@@ -2242,7 +2242,7 @@ export default function CustomerHomePage() {
       }}>
         <div>
           <div style={{ fontSize: '16px', fontWeight: 400, marginBottom: '3px' }}>
-            {userName ? homeGreetingForUser : '오랜에 오셨군요 💜'}
+            {userName ? homeGreetingForUser : '오렌에 오셨군요 💜'}
           </div>
         </div>
         <div
@@ -2378,7 +2378,7 @@ export default function CustomerHomePage() {
               피부사이클케어가 잠겨있어요
             </div>
             <div style={{ fontSize: 13, color: '#e8dff5', lineHeight: 1.65, marginBottom: 16 }}>
-              생리 첫날 오랜한테 귓속말 해주면<br />나만의 피부 사이클 케어가 깨어나요 ✨
+              생리 첫날 오렌한테 귓속말 해주면<br />나만의 피부 사이클 케어가 깨어나요 ✨
             </div>
             <button
               onClick={() => { setShowSkinDiary(true); setSkinDiaryInitialTab(1) }}
@@ -3011,7 +3011,7 @@ export default function CustomerHomePage() {
           <div>
             <div style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: 20, letterSpacing: 3, color: '#C9A96E' }}>ORÆN PRIVÉ</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', marginTop: 6, lineHeight: 1.6 }}>
-              두 달마다, 오랜이 직접 고른 리추얼이 도착해요
+              두 달마다, 오렌이 직접 고른 리추얼이 도착해요
             </div>
           </div>
           <div style={{ fontSize: 20, color: '#C9A96E' }}>→</div>
@@ -3339,7 +3339,7 @@ export default function CustomerHomePage() {
             </div>
             <div style={{ fontSize: '9px', color: TEXT_DIM, marginTop: '3px' }}>
               {homeReviews.length > 0
-                ? `${(homeReviews[0].author_user as { name?: string } | null)?.name || '오랜 회원'} · ${homeReviews[0].review_type === 'photo' ? '포토 리뷰' : '리뷰'}`
+                ? `${(homeReviews[0].author_user as { name?: string } | null)?.name || '오렌 회원'} · ${homeReviews[0].review_type === 'photo' ? '포토 리뷰' : '리뷰'}`
                 : '건성피부 · ' + (motivationProfile?.full_name || '고객') + '님 · CIVASAN MESS CREAM'}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', marginTop: '5px', gap: '6px' }}>
@@ -4381,7 +4381,7 @@ export default function CustomerHomePage() {
                 borderBottom: '0.5px solid rgba(255,255,255,0.1)',
                 background: '#0d0b12',
               }}>
-                <span style={{ color: '#C9A96E', fontSize: 14, letterSpacing: 1 }}>오랜 상담톡</span>
+                <span style={{ color: '#C9A96E', fontSize: 14, letterSpacing: 1 }}>오렌 상담톡</span>
                 <button
                   type="button"
                   onClick={() => setOwnerChatOpen(false)}

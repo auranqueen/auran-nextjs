@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       user_id: recipientId,
       type: 'promo',
       title: 'ORÆN PRIVÉ 멤버십이 시작됐어요 💜',
-      body: '두 달마다, 오랜이 고른 리추얼이 도착해요',
+      body: '두 달마다, 오렌이 고른 리추얼이 도착해요',
       is_read: false,
     } as any)
   }

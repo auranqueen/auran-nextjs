@@ -31,7 +31,7 @@ export default function KakaoShareButton() {
       objectType: 'feed',
       content: {
         title: 'ORÆN PRIVÉ',
-        description: '두 달마다, 오랜이 직접 고른 리추얼이 도착해요',
+        description: '두 달마다, 오렌이 직접 고른 리추얼이 도착해요',
         imageUrl: SHARE_IMAGE,
         link: { mobileWebUrl: SHARE_LINK, webUrl: SHARE_LINK },
       },

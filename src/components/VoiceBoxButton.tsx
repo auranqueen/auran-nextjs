@@ -88,7 +88,7 @@ export default function VoiceBoxButton() {
             // 유형 선택
             <>
               <div style={{ fontSize: 13, color: '#333', marginBottom: 12 }}>
-                오랜에게 말하기
+                오렌에게 말하기
               </div>
               {[
                 { key: 'bug', label: '🐛 뭔가 안 돼요' },

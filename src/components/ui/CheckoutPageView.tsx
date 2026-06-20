@@ -595,7 +595,7 @@ export default function CheckoutPageView({
 
               <div style={{ marginBottom: 10 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: payWithOran ? 8 : 0 }}>
-                  <span style={{ fontSize: 12, color: '#fff' }}>💳 오랜페이 · 잔액 ₩{balance.toLocaleString()}</span>
+                  <span style={{ fontSize: 12, color: '#fff' }}>💳 오렌페이 · 잔액 ₩{balance.toLocaleString()}</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -679,7 +679,7 @@ export default function CheckoutPageView({
                       lineHeight: 1.5,
                     }}
                   >
-                    <div>계좌번호: 신한은행 110-123-456789 예금주: (주)오랜</div>
+                    <div>계좌번호: 신한은행 110-123-456789 예금주: (주)오렌</div>
                     <div style={{ color: '#ff6b6b', marginTop: 6, fontWeight: 500 }}>입금기한: 24시간 이내</div>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, cursor: 'pointer' }}>
                       <input type="checkbox" checked={receiptOn} onChange={(e) => setReceiptOn(e.target.checked)} />
@@ -727,7 +727,7 @@ export default function CheckoutPageView({
                   {generalShortage !== undefined && (
                     <>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>오랜 또또</div>
+                        <div style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>오렌 또또</div>
                         <div style={{ fontSize: 11, color: '#7B5EA7' }}>
                           {generalShortage === 0
                             ? '달성! 🎴'
@@ -756,7 +756,7 @@ export default function CheckoutPageView({
                   )}
                   {(generalShortage ?? 0) > 0 && (
                     <div style={{ fontSize: 11, color: '#7B5EA7', lineHeight: 1.7, marginBottom: 10 }}>
-                      {`오랜 또또까지 딱 ${((generalShortage ?? 0) / 10000).toFixed(0)}만원 남았어요 💜 지금 더 담으면 선물 카드가 열려요!`}
+                      {`오렌 또또까지 딱 ${((generalShortage ?? 0) / 10000).toFixed(0)}만원 남았어요 💜 지금 더 담으면 선물 카드가 열려요!`}
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: 8 }}>

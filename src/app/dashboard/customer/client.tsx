@@ -594,7 +594,7 @@ export default function CustomerDashboardClient({
     const { data: rows } = await supabase.from('follows').select('following_id').eq('follower_id', resolvedMeId)
     const ids = (rows || []).map((r: any) => r.following_id).filter(Boolean)
     if (ids.length === 0) {
-      setToast('오랜일촌이 없어요')
+      setToast('오렌일촌이 없어요')
       return
     }
     const { data: users } = await supabase.from('users').select('id,name,avatar_url').in('id', ids)
@@ -1165,7 +1165,7 @@ export default function CustomerDashboardClient({
               padding: 14,
             }}
           >
-            <div style={{ fontSize: 14, color: '#fff', fontWeight: 800, marginBottom: 8 }}>오랜일촌에게 선물하기</div>
+            <div style={{ fontSize: 14, color: '#fff', fontWeight: 800, marginBottom: 8 }}>오렌일촌에게 선물하기</div>
             <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8 }}>
               {friends.map((f: any) => (
                 <button

@@ -417,7 +417,7 @@ export default function SeasonRecommendSection({
   return (
     <div style={{ marginTop: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
-        <div style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.92)' }}>오랜 픽 💜</div>
+        <div style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.92)' }}>오렌 픽 💜</div>
         {showEditChrome ? (
           <button
             type="button"

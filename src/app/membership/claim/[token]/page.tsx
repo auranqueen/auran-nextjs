@@ -1,7 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import { createPayAppPayment } from '@/lib/payments/payapp'
+import KakaoShareButton from '@/components/membership/KakaoShareButton'
 
 const C = {
   purple: '#7B5EA7', gold: '#C9A96E', goldDark: '#A07F4A', cream: '#FAF6F0',
@@ -9,129 +12,101 @@ const C = {
 }
 const SERIF = "'Cormorant Garamond', Georgia, serif"
 
-export default function ClaimPage() {
-  const params = useParams()
+type Plan = { id: string; name: string; price: number; perks: string[]; display_order: number }
+
+export default function MembershipCheckoutPage() {
   const router = useRouter()
-  const token = Array.isArray((params as any).token) ? (params as any).token[0] : ((params as any).token as string)
+  const [plans, setPlans] = useState<Plan[]>([])
+  const [selected, setSelected] = useState<string | null>(null)
+  const [agreed, setAgreed] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [info, setInfo] = useState<any>(null)
-  const [claiming, setClaiming] = useState(false)
-  const [done, setDone] = useState(false)
+  const [paying, setPaying] = useState(false)
   const [err, setErr] = useState<string | null>(null)
-  const [shipName, setShipName] = useState('')
-  const [shipPhone, setShipPhone] = useState('')
-  const [shipAddr, setShipAddr] = useState('')
-  const [shipDetail, setShipDetail] = useState('')
-  const [shipSaving, setShipSaving] = useState(false)
-  const [shipDone, setShipDone] = useState(false)
 
   useEffect(() => {
     const load = async () => {
-      try {
-        const res = await fetch('/api/membership/claim?token=' + encodeURIComponent(token))
-        const j = await res.json()
-        if (!j.ok) { setErr('선물을 찾을 수 없어요'); setLoading(false); return }
-        setInfo(j)
-      } catch { setErr('불러오지 못했어요') }
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('membership_plans')
+        .select('id,name,price,perks,display_order')
+        .eq('is_active', true)
+        .eq('tier_type', 'online')
+        .order('display_order', { ascending: true })
+      const rows = (data ?? []).map((p: any) => ({ ...p, perks: Array.isArray(p.perks) ? p.perks : [] })) as Plan[]
+      setPlans(rows)
+      if (rows.length) setSelected(rows[rows.length - 1].id)
       setLoading(false)
     }
-    if (token) load()
-    else { setErr('잘못된 링크예요'); setLoading(false) }
-  }, [token])
+    load()
+  }, [])
 
-  const claim = async () => {
-    setClaiming(true); setErr(null)
-    const res = await fetch('/api/membership/claim', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }),
-    })
-    const j = await res.json().catch(() => ({}))
-    setClaiming(false)
-    if (j.ok) { setDone(true); return }
-    if (j.error === 'not_logged_in') {
-      router.push('/login?role=customer&redirect=' + encodeURIComponent('/membership/claim/' + token))
-      return
-    }
-    if (j.error === 'already_claimed') { setErr('이미 받은 선물이에요'); return }
-    setErr('받기에 실패했어요. 잠시 후 다시 시도해주세요.')
+  const handlePay = async () => {
+    if (!selected || !agreed || paying) return
+    const plan = plans.find((p) => p.id === selected)
+    if (!plan) return
+    setPaying(true)
+    setErr(null)
+    const res = await createPayAppPayment({ kind: 'membership', amount: plan.price, target_id: plan.id } as any)
+    if (res.ok && res.pay_url) { window.location.href = res.pay_url; return }
+    if ((res as any).reason === 'not_logged_in') { router.push('/login?role=customer'); return }
+    setErr((res as any).error || '결제 요청에 실패했어요')
+    setPaying(false)
   }
 
-  const wrap = (children: React.ReactNode) => (
-    <div style={{ background: C.cream, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "'Helvetica Neue', Arial, sans-serif", color: C.plum, padding: 18 }}>
-      <div style={{ maxWidth: 420, width: '100%' }}>{children}</div>
-    </div>
-  )
-
-  if (loading) return wrap(<div style={{ textAlign: 'center', color: C.muted, fontFamily: SERIF }}>불러오는 중...</div>)
-  if (err && !info) return wrap(<div style={{ textAlign: 'center', color: C.muted }}>{err}</div>)
-
-  if (done) return wrap(
-    <div style={{ textAlign: 'center', padding: '40px 20px' }}>
-      <div style={{ fontSize: 40, marginBottom: 12 }}>🎁</div>
-      <div style={{ fontSize: 18, color: '#7B5EA7', marginBottom: 8 }}>멤버십이 시작됐어요!</div>
-      <div style={{ fontSize: 13, color: '#9B7EC8', marginBottom: 32, lineHeight: 1.7 }}>
-        배송지를 입력하면 첫 리추얼이 도착해요 💜
+  if (loading) {
+    return (
+      <div style={{ background: C.cream, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted, fontFamily: SERIF }}>
+        불러오는 중...
       </div>
-      {!shipDone ? (
-        <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <input value={shipName} onChange={e => setShipName(e.target.value)} placeholder="받으실 분 이름" style={{ width: '100%', boxSizing: 'border-box', padding: '11px 12px', borderRadius: 9, border: '1px solid rgba(123,94,167,0.3)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}/>
-          <input value={shipPhone} onChange={e => setShipPhone(e.target.value)} placeholder="연락처 (010-0000-0000)" style={{ width: '100%', boxSizing: 'border-box', padding: '11px 12px', borderRadius: 9, border: '1px solid rgba(123,94,167,0.3)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}/>
-          <input value={shipAddr} onChange={e => setShipAddr(e.target.value)} placeholder="주소" style={{ width: '100%', boxSizing: 'border-box', padding: '11px 12px', borderRadius: 9, border: '1px solid rgba(123,94,167,0.3)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}/>
-          <input value={shipDetail} onChange={e => setShipDetail(e.target.value)} placeholder="상세주소 (선택)" style={{ width: '100%', boxSizing: 'border-box', padding: '11px 12px', borderRadius: 9, border: '1px solid rgba(123,94,167,0.3)', fontSize: 13, outline: 'none', fontFamily: 'inherit' }}/>
-          <button
-            onClick={async () => {
-              if (!shipName || !shipPhone || !shipAddr) { alert('이름, 연락처, 주소를 입력해주세요'); return }
-              setShipSaving(true)
-              const res = await fetch('/api/membership/claim', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token, name: shipName, phone: shipPhone, address: shipAddr, detail: shipDetail }),
-              })
-              setShipSaving(false)
-              if (res.ok) { setShipDone(true) } else { alert('저장에 실패했어요. 다시 시도해주세요') }
-            }}
-            disabled={shipSaving}
-            style={{ width: '100%', padding: 13, background: shipSaving ? '#C9BFD8' : '#7B5EA7', border: 'none', color: '#fff', borderRadius: 9, fontSize: 14, cursor: shipSaving ? 'default' : 'pointer', fontFamily: 'inherit' }}
-          >
-            {shipSaving ? '저장 중...' : '배송지 저장하기 💜'}
-          </button>
-          <button onClick={() => router.push('/')} style={{ fontSize: 12, color: '#9B7EC8', background: 'none', border: 'none', cursor: 'pointer', marginTop: 4 }}>
-            나중에 입력할게요
-          </button>
-        </div>
-      ) : (
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 32, marginBottom: 12 }}>✅</div>
-          <div style={{ fontSize: 15, color: '#7B5EA7', marginBottom: 8 }}>배송지가 등록됐어요!</div>
-          <div style={{ fontSize: 13, color: '#9B7EC8', marginBottom: 24 }}>첫 리추얼이 곧 출발해요 💜</div>
-          <button onClick={() => router.push('/')} style={{ padding: '11px 32px', background: '#7B5EA7', border: 'none', color: '#fff', borderRadius: 9, fontSize: 13, cursor: 'pointer' }}>
-            오랜 시작하기
-          </button>
-        </div>
-      )}
-    </div>
-  )
+    )
+  }
 
-  const claimed = info?.status === 'claimed'
-  const notPaid = info?.status && info.status !== 'paid' && info.status !== 'claimed'
-
-  return wrap(
-    <div style={{ background: '#fff', border: `0.5px solid ${C.line}`, borderRadius: 16, padding: '28px 22px', textAlign: 'center' }}>
-      <div style={{ fontSize: 12, color: C.goldDark, letterSpacing: 2 }}>선물이 도착했어요 🎁</div>
-      <div style={{ fontFamily: SERIF, fontSize: 26, letterSpacing: 4, color: C.goldDark, marginTop: 10 }}>ORÆN PRIVÉ</div>
-      <div style={{ fontSize: 14, color: C.purple, marginTop: 6 }}>{info?.plan_name}</div>
-      {info?.sender_name && <div style={{ fontSize: 12, color: C.muted, marginTop: 14 }}>{info.sender_name} 님이 보냈어요</div>}
-      {info?.message && <div style={{ fontSize: 13, color: C.ink, marginTop: 8, lineHeight: 1.7, fontStyle: 'italic' }}>“{info.message}”</div>}
-      {err && <div style={{ fontSize: 12, color: '#A33', marginTop: 14 }}>{err}</div>}
-      {claimed ? (
-        <div style={{ fontSize: 13, color: C.muted, marginTop: 20 }}>이미 받은 선물이에요</div>
-      ) : notPaid ? (
-        <div style={{ fontSize: 13, color: C.muted, marginTop: 20 }}>아직 결제 확인 전이에요. 잠시 후 다시 열어주세요.</div>
-      ) : (
-        <button onClick={claim} disabled={claiming} style={{ width: '100%', marginTop: 22, background: claiming ? '#C9BFD8' : C.purple, border: 'none', color: '#fff', borderRadius: 9, padding: 14, fontSize: 14, fontFamily: 'inherit', cursor: claiming ? 'default' : 'pointer' }}>
-          {claiming ? '받는 중...' : '선물 받기'}
+  return (
+    <div style={{ background: C.cream, minHeight: '100vh', fontFamily: "'Helvetica Neue', Arial, sans-serif", color: C.plum }}>
+      <div style={{ maxWidth: 480, margin: '0 auto', padding: '24px 18px 40px' }}>
+        <div style={{ textAlign: 'center', padding: '8px 0 4px' }}>
+          <div style={{ fontFamily: SERIF, fontSize: 26, letterSpacing: 4, color: C.goldDark }}>ORÆN PRIVÉ</div>
+          <div style={{ fontSize: 11, color: C.goldDark, letterSpacing: 2, marginTop: 8 }}>오렌이 만든 홀리스틱 멤버십</div>
+          <div style={{ fontSize: 12, color: C.muted, marginTop: 6 }}>체크아웃</div>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 22 }}>
+          {plans.map((p) => {
+            const active = selected === p.id
+            return (
+              <button key={p.id} onClick={() => setSelected(p.id)} style={{ textAlign: 'left', background: '#fff', border: active ? `2px solid ${C.purple}` : `0.5px solid ${C.line}`, borderRadius: 12, padding: '16px 18px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <span style={{ fontFamily: SERIF, fontSize: 17, letterSpacing: 1.5, color: C.purple }}>{p.name}</span>
+                  <span style={{ fontSize: 13, color: C.goldDark }}>₩{p.price.toLocaleString()}</span>
+                </div>
+                <div style={{ fontSize: 11, color: C.faint, marginTop: 3 }}>연 6회 · 두 달마다 · 1년 선결제</div>
+                {p.perks.length > 0 && (
+                  <div style={{ fontSize: 13, color: C.ink, lineHeight: 1.8, marginTop: 10 }}>
+                    {p.perks.map((perk, i) => (<div key={i}>{perk}</div>))}
+                  </div>
+                )}
+              </button>
+            )
+          })}
+        </div>
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 20, cursor: 'pointer' }}>
+          <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} style={{ marginTop: 2, accentColor: C.purple }} />
+          <span style={{ fontSize: 13, color: C.ink, lineHeight: 1.6 }}>멤버십 이용약관과 환불·중도해지 규정에 동의합니다</span>
+        </label>
+        <div style={{ textAlign: 'center', fontSize: 11, color: C.faint, marginTop: 16, lineHeight: 1.7 }}>쿠폰과 토스트는 적용되지 않아요</div>
+        {err && (<div style={{ textAlign: 'center', fontSize: 12, color: '#A33', marginTop: 12 }}>{err}</div>)}
+        <button onClick={handlePay} disabled={!selected || !agreed || paying} style={{ width: '100%', marginTop: 14, background: !agreed || paying ? '#C9BFD8' : C.purple, border: 'none', color: '#fff', borderRadius: 9, padding: 14, fontSize: 14, fontFamily: 'inherit', cursor: !agreed || paying ? 'default' : 'pointer' }}>
+          {paying ? '결제창으로 이동 중...' : '결제하고 시작하기'}
         </button>
-      )}
-      <div style={{ fontSize: 11, color: C.faint, marginTop: 14, lineHeight: 1.6 }}>로그인 후 받을 수 있어요</div>
+        <KakaoShareButton />
+        <div style={{ textAlign: 'center', marginTop: 14 }}>
+          <span
+            onClick={() => { window.location.href = '/membership/gift' }}
+            style={{ fontSize: 13, color: '#A07F4A', cursor: 'pointer', borderBottom: '0.5px solid rgba(160,127,74,0.4)', paddingBottom: 2 }}
+          >
+            선물로 보내기 🎁
+          </span>
+        </div>
+      </div>
     </div>
   )
 }

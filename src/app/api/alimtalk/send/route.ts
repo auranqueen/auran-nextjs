@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const phone = String(body?.phone || '').replace(/[^0-9]/g, '')
   const message = String(body?.message || '').trim()
-  const title = String(body?.title || 'AURAN 오랜')
+  const title = String(body?.title || 'AURAN 오렌')
   if (!phone || phone.length < 10) return NextResponse.json({ ok: false, error: 'invalid_phone' }, { status: 400 })
   if (!message) return NextResponse.json({ ok: false, error: 'missing_message' }, { status: 400 })
   try {

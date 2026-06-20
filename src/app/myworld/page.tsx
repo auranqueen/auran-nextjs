@@ -655,7 +655,7 @@ export default function MyWorldPage() {
               )}
             </div>
             <div style={{ fontSize: 17, color: g.color, marginBottom: 2 }}>
-              {profile?.full_name || user?.email?.split('@')[0] || '오랜아미'}
+              {profile?.full_name || user?.email?.split('@')[0] || '오렌아미'}
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 8 }}>
               <div style={{ fontSize: 10, color: g.color, opacity: 0.4 }}>피부도 처방받는 시대</div>
@@ -1268,7 +1268,7 @@ export default function MyWorldPage() {
           ? '오늘 피부 상태 기록해요 💪'
           : (profile as any)?.hormone_cycle_applicable === false
           ? '탄력 케어 함께 기록해요 💊'
-          : '오랜과 함께한 기록 💜'}
+          : '오렌과 함께한 기록 💜'}
       </div>
       <div style={{ fontSize: 11, color: 'rgba(201,169,110,0.5)', marginBottom: 12 }}>
         {(profile as any)?.gender === 'male'
@@ -1316,7 +1316,7 @@ export default function MyWorldPage() {
         cardDomId="myworld-share-card"
         payload={{
           link: `https://auran.kr/myworld/${user?.id}`,
-          title: `${myworldNickname || (profile as any)?.full_name || '오랜 멤버'}님의 피부 기록`,
+          title: `${myworldNickname || (profile as any)?.full_name || '오렌 멤버'}님의 피부 기록`,
           description: `D+${user?.created_at ? Math.floor((Date.now() - new Date(user.created_at).getTime()) / 86400000) : 0} 함께 케어 중 💜`,
           imageUrl: (profile as any)?.avatar_url ?? null,
           buttonTitle: '피부 기록 보기',
