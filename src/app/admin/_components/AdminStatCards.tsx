@@ -22,8 +22,10 @@ export default function AdminStatCards() {
       supabase.from('external_customers').select('id,total_amount,auran_joined,auran_user_id'),
       supabase.from('orders').select('user_id,status').gte('created_at', monthStart),
       supabase.from('user_behavior_logs').select('id,metadata,created_at').gte('created_at', dayStart).order('created_at', { ascending: false }).limit(50),
-    ]).then(([hormone, reviews, toast, external, orders, visits]) => {
-      setData({ hormone: hormone.data, reviews: reviews.data, toast: toast.data, external: external.data, orders: orders.data, visits: visits.data })
+      supabase.from('visitor_logs').select('ip,referrer,user_agent,page,created_at').gte('created_at', dayStart).order('created_at', { ascending: false }).limit(100),
+      supabase.from('visitor_logs').select('id', { count: 'exact', head: true }).gte('created_at', new Date(new Date().setDate(new Date().getDate() - 1)).toISOString().slice(0, 10) + 'T00:00:00+09:00').lt('created_at', dayStart),
+    ]).then(([hormone, reviews, toast, external, orders, visits, todayVisitors, yesterdayResult]) => {
+      setData({ hormone: hormone.data, reviews: reviews.data, toast: toast.data, external: external.data, orders: orders.data, visits: visits.data, todayVisitors: todayVisitors.data, yesterdayCount: yesterdayResult.count ?? 0 })
       setLoading(false)
     })
   }, [])
@@ -98,7 +100,7 @@ export default function AdminStatCards() {
     { id: 'toast', icon: '🍞', label: '토스트 경제 (오늘)', value: `+${todayEarned.toLocaleString()}T`, sub: `사용 -${todayUsed.toLocaleString()}T` },
     { id: 'external', icon: '👥', label: '외부고객 현황', value: `${totalExternal}명`, sub: `가입 전환 ${joinedPct}%` },
     { id: 'rebuy', icon: '🔄', label: '재구매율 (이달)', value: `${rebuyRate}%`, sub: `구매확정 기준` },
-    { id: 'visit', icon: '💡', label: '오늘 방문자', value: `${visits.length}건`, sub: `행동 로그 기준` },
+    { id: 'visit', icon: '👁', label: '외부 방문자', value: `${(data.todayVisitors || []).length}명`, sub: `어제 ${data.yesterdayCount || 0}명` },
   ]
 
   return (
@@ -171,27 +173,40 @@ export default function AdminStatCards() {
 
           {open === 'visit' && (
             <div>
-              <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 8 }}>오늘 행동 로그 (최근 50건)</div>
+              <div style={{ display: 'flex', gap: 16, marginBottom: 12 }}>
+                <div style={{ fontSize: 13, color: 'var(--text2)' }}>오늘 <span style={{ fontWeight: 500, color: 'var(--text)' }}>{(data.todayVisitors || []).length}명</span></div>
+                <div style={{ fontSize: 13, color: 'var(--text2)' }}>어제 <span style={{ fontWeight: 500, color: 'var(--text)' }}>{data.yesterdayCount || 0}명</span></div>
+              </div>
               <table style={{ width: '100%', fontSize: 11, borderCollapse: 'collapse' }}>
                 <thead>
                   <tr style={{ borderBottom: '0.5px solid var(--border)' }}>
                     <th style={{ textAlign: 'left', padding: '4px 0', color: 'var(--text3)', fontWeight: 400 }}>시간</th>
+                    <th style={{ textAlign: 'left', padding: '4px 0', color: 'var(--text3)', fontWeight: 400 }}>IP</th>
+                    <th style={{ textAlign: 'left', padding: '4px 0', color: 'var(--text3)', fontWeight: 400 }}>접속경로</th>
                     <th style={{ textAlign: 'left', padding: '4px 0', color: 'var(--text3)', fontWeight: 400 }}>페이지</th>
-                    <th style={{ textAlign: 'left', padding: '4px 0', color: 'var(--text3)', fontWeight: 400 }}>액션</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {visits.map((v: any, i: number) => (
+                  {(data.todayVisitors || []).map((v: any, i: number) => (
                     <tr key={i} style={{ borderBottom: '0.5px solid var(--border)' }}>
-                      <td style={{ padding: '4px 0', color: 'var(--text3)' }}>
+                      <td style={{ padding: '4px 0', color: 'var(--text3)', whiteSpace: 'nowrap' }}>
                         {new Date(v.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                       </td>
-                      <td style={{ padding: '4px 0', color: 'var(--text2)' }}>{v.metadata?.page || '-'}</td>
-                      <td style={{ padding: '4px 0', color: 'var(--text2)' }}>{v.action_type || '-'}</td>
+                      <td style={{ padding: '4px 0', color: 'var(--text2)' }}>{v.ip || '-'}</td>
+                      <td style={{ padding: '4px 4px', color: 'var(--text2)', maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {v.referrer
+                          ? v.referrer.includes('naver') ? '네이버'
+                          : v.referrer.includes('google') ? '구글'
+                          : v.referrer.includes('kakao') ? '카카오'
+                          : v.referrer.includes('auran') ? '내부'
+                          : v.referrer.slice(0, 20)
+                          : '직접입력'}
+                      </td>
+                      <td style={{ padding: '4px 0', color: 'var(--text2)', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v.page || '-'}</td>
                     </tr>
                   ))}
-                  {visits.length === 0 && (
-                    <tr><td colSpan={3} style={{ padding: '8px 0', color: 'var(--text3)' }}>오늘 방문 기록이 없습니다</td></tr>
+                  {(data.todayVisitors || []).length === 0 && (
+                    <tr><td colSpan={4} style={{ padding: '8px 0', color: 'var(--text3)' }}>오늘 방문 기록이 없습니다</td></tr>
                   )}
                 </tbody>
               </table>

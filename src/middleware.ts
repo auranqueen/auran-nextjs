@@ -95,6 +95,26 @@ export async function middleware(req: NextRequest) {
   const isRSCRequest = req.headers.get('RSC') === '1'
   const isInternalRequest = !!req.headers.get('Next-Router-Prefetch')
   if (isRSCRequest || isInternalRequest) {
+    ;(async () => {
+      try {
+        const ip = (req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown').split(',')[0].trim()
+        const referrer = req.headers.get('referer') || req.headers.get('referrer') || ''
+        const userAgent = req.headers.get('user-agent') || ''
+        const page = req.nextUrl.pathname
+        const isAsset = /\.(ico|png|jpg|jpeg|svg|css|js|woff|woff2|ttf)$/.test(page)
+        const isApi = page.startsWith('/api/')
+        if (!isAsset && !isApi) {
+          await supabaseAdmin().from('visitor_logs').insert({
+            ip: ip.replace(/(\d+)$/, '***'),
+            referrer: referrer.slice(0, 500),
+            user_agent: userAgent.slice(0, 300),
+            page: page.slice(0, 200),
+          })
+        }
+      } catch (e) {
+        // 방문자 로그 실패해도 무시
+      }
+    })()
     return NextResponse.next()
   }
 
@@ -274,6 +294,14 @@ export async function middleware(req: NextRequest) {
   }
 
   return res
+}
+
+const supabaseAdmin = () => {
+  const { createClient } = require('@supabase/supabase-js')
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 }
 
 export const config = {
