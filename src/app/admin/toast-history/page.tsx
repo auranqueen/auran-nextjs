@@ -8,7 +8,7 @@ const GOLD = '#C9A96E'
 const RED = '#e57373'
 
 type PeriodKey = 'today' | 'yesterday' | 'week' | 'month' | 'all'
-type TypeFilterKey = 'all' | 'signup' | 'purchase' | 'attendance' | 'referral' | 'review' | 'charge' | 'use'
+type TypeFilterKey = 'all' | 'signup' | 'purchase' | 'attendance' | 'referral' | 'review' | 'store_review' | 'share_jam' | 'charge' | 'use'
 
 const PERIOD_OPTIONS: { key: PeriodKey; label: string }[] = [
   { key: 'today', label: '오늘' },
@@ -18,13 +18,15 @@ const PERIOD_OPTIONS: { key: PeriodKey; label: string }[] = [
   { key: 'all', label: '전체' },
 ]
 
-const TYPE_FILTER_OPTIONS: { key: TypeFilterKey; label: string; db?: string; sourceType?: string }[] = [
+const TYPE_FILTER_OPTIONS: { key: TypeFilterKey; label: string; sourceType?: string }[] = [
   { key: 'all', label: '전체' },
   { key: 'signup', label: '가입', sourceType: 'signup' },
   { key: 'purchase', label: '구매', sourceType: 'order' },
   { key: 'attendance', label: '출석', sourceType: 'attendance' },
   { key: 'referral', label: '추천', sourceType: 'referral' },
   { key: 'review', label: '리뷰', sourceType: 'review_bonus' },
+  { key: 'store_review', label: '스토어리뷰', sourceType: 'store_review_bonus' },
+  { key: 'share_jam', label: '🍓딸기잼', sourceType: 'share_jam' },
   { key: 'charge', label: '충전', sourceType: 'charge' },
   { key: 'use', label: '사용', sourceType: 'use' },
 ]
@@ -38,6 +40,9 @@ const TYPE_LABEL: Record<string, string> = {
   charge: '충전',
   use: '사용',
   share_reward: '공유보상',
+  share_jam: '🍓딸기잼',
+  store_review_bonus: '스토어리뷰',
+  order: '구매적립',
   share: '공유',
   gift: '선물',
 }
