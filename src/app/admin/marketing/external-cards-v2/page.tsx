@@ -248,13 +248,19 @@ export default function ExternalCardsV2Page() {
         <td>${p.name}${p.usage ? `<div style="font-size:9px;color:#7B5EA7;margin-top:2px;">✦ ${p.usage}</div>` : ''}</td>
         <td style="text-align:right;white-space:nowrap">₩${p.custom.toLocaleString()}</td>
       </tr>`).join('')
-    const reviewToastRows = products.length > 0 ? products.map(p => `
-      <tr>
-        <td style="font-size:10px">${p.name}</td>
-        <td style="text-align:center;font-size:10px">${Math.round(p.custom * (p.reviewTextRate || 1) / 100).toLocaleString()}T</td>
-        <td style="text-align:center;font-size:10px">${Math.round(p.custom * (p.reviewPhotoRate || 2) / 100).toLocaleString()}T</td>
-        <td style="text-align:center;font-size:10px">${Math.round(p.custom * (p.reviewVideoRate || 3) / 100).toLocaleString()}T</td>
-      </tr>`).join('') : `<tr><td colspan="4" style="font-size:10px;color:#999">텍스트 1,000T / 사진 3,000T / 영상 5,000T</td></tr>`
+    const storeReviewToast =
+      totalAmount >= 500000 ? 10000 :
+      totalAmount >= 200000 ? 5000 :
+      totalAmount >= 100000 ? 2000 : 1000
+    const reviewToastRows = `<tr>
+      <td colspan="2" style="font-size:11px;color:#555;padding:4px 0">
+        구매 합산금액 기준 리뷰 토스트
+      </td>
+    </tr>
+    <tr>
+      <td style="font-size:11px;color:#888">합산 ${totalAmount.toLocaleString()}원</td>
+      <td style="text-align:center;font-size:12px;color:#C9A96E;font-weight:500">${storeReviewToast.toLocaleString()}T</td>
+    </tr>`
     const activeGifts = giftItems.filter(g => g.items.trim() && totalAmount >= g.threshold)
     const giftSection = activeGifts.length > 0 ? `
       <div class="sec">
@@ -336,11 +342,9 @@ ${(amRoutine || pmRoutine || tip) ? `<div class="sec"><div class="sec-title">✦
 <div class="ot"><div class="ot-head"><div><div class="ot-title">제품 쓰다 막히면<br><em>맑원장님께 직접 물어보세요</em></div><div class="ot-sub">오랜톡 · 맑원장 1:1 상담</div></div><div class="bubbles"><div class="bq">세럼이랑 크림<br>순서 맞나요?</div><div class="ba">세럼 먼저요!<br>흡수 후 크림 발라요</div></div></div><div class="ot-body"><div class="steps"><div class="step"><div class="snum">1</div>위 QR 스캔 → AURAN 카카오 가입</div><div class="step"><div class="snum">2</div>앱 하단 채팅 탭 터치</div><div class="step"><div class="snum">3</div>맑원장님께 바로 질문하기</div><div class="ot-hint">맑원장이 직접 챙겨드릴게요 💜</div></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><img src="${qrChat}" width="48" height="48" style="display:block;border-radius:4px;" /><div style="font-size:8px;color:#9B7EC8;text-align:center">상담 바로가기</div></div></div></div>
 <div class="review"><div><div class="rv-title">솔직한 후기 남기고 토스트 받으세요</div><div class="rv-sub">내 후기 한 줄이 비슷한 피부 고민 가진 분께 큰 도움이 돼요</div><div><table style="width:100%;border-collapse:collapse;margin-top:6px">
   <thead><tr>
-    <th style="font-size:9px;color:#999;text-align:left;padding:3px 0">제품</th>
-    <th style="font-size:9px;color:#999;text-align:center">텍스트</th>
-    <th style="font-size:9px;color:#999;text-align:center">사진</th>
-    <th style="font-size:9px;color:#999;text-align:center">영상</th>
-  </tr></thead>
+  <th style="font-size:9px;color:#999;text-align:left;padding:3px 0">구매 합산금액</th>
+  <th style="font-size:9px;color:#999;text-align:center">리뷰 토스트</th>
+</tr></thead>
   <tbody>${reviewToastRows}</tbody>
 </table></div></div><img src="${qrReview}" width="40" height="40" style="display:block;border-radius:4px;" /></div>
 <div class="footer">auran.kr · 오랜톡 · 맑원장 · 스킨파우더룸 · ${new Date().toLocaleDateString('ko-KR')}</div>
