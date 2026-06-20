@@ -20,7 +20,7 @@ export default function AdminStatCards() {
       supabase.from('reviews').select('id,images,video_url,is_rebuy').gte('created_at', monthStart),
       supabase.from('toast_transactions').select('amount,transaction_type').gte('created_at', dayStart),
       supabase.from('external_customers').select('id,total_amount,auran_joined,auran_user_id'),
-      supabase.from('orders').select('user_id').eq('status', '구매확정').gte('created_at', monthStart),
+      supabase.from('orders').select('user_id,status').gte('created_at', monthStart),
       supabase.from('user_behavior_logs').select('id,metadata,created_at').gte('created_at', dayStart).order('created_at', { ascending: false }).limit(50),
     ]).then(([hormone, reviews, toast, external, orders, visits]) => {
       setData({ hormone: hormone.data, reviews: reviews.data, toast: toast.data, external: external.data, orders: orders.data, visits: visits.data })
@@ -62,7 +62,8 @@ export default function AdminStatCards() {
   const joinedPct = totalExternal > 0 ? Math.round(joinedExternal / totalExternal * 100) : 0
 
   // 재구매율
-  const userIds = orders.map((r: any) => r.user_id)
+  const confirmedOrders = (orders || []).filter((r: any) => r.status === '구매확정')
+  const userIds = confirmedOrders.map((r: any) => r.user_id)
   const uniqueUsers = new Set(userIds).size
   const rebuyUsers = userIds.filter((id: string, i: number) => userIds.indexOf(id) !== i).length
   const rebuyRate = uniqueUsers > 0 ? Math.round(rebuyUsers / uniqueUsers * 100) : 0
