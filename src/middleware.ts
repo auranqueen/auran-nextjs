@@ -313,5 +313,12 @@ export const config = {
     '/auth/:path*',
     '/signup/:path*',
     '/login',
+    '/',
+    '/products/:path*',
+    '/store/:path*',
+    '/store-review',
+    '/track/:path*',
+    '/join/:path*',
+    '/about/:path*',
   ],
 }
