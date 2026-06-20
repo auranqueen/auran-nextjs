@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import { AppProviders } from '@/components/providers/AppProviders'
 import './globals.css'
 
@@ -51,6 +52,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.ico" sizes="48x48" />
       </head>
+      <Script
+        src="https://www.googletagmanager.com/gtag/js?id=G-MRMP1GB6GJ"
+        strategy="afterInteractive"
+      />
+      <Script id="google-analytics" strategy="afterInteractive">
+        {`
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-MRMP1GB6GJ');
+  `}
+      </Script>
       <body style={{ margin: 0, padding: 0, background: '#0a0c0f' }}>
         <AppProviders>{children}</AppProviders>
       </body>
