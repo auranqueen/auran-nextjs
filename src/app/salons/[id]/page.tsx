@@ -335,6 +335,10 @@ export default function SalonHomePage() {
         dowIdx: date.getDay(),
       })
     }
+    while (days.length < 42) {
+      days.push({ iso: null, label: null, disabled: true, empty: true, dowIdx: 0 })
+    }
+    days.length = 42
     return days
   }, [bookingMonth])
 
@@ -459,6 +463,8 @@ export default function SalonHomePage() {
                   setBookingSalonName(String(salon.name || ''))
                   setBookingServiceName(undefined)
                   setBookingServicePrice(undefined)
+                  setBookingMonth({ year: new Date().getFullYear(), month: new Date().getMonth() })
+                  setBookingStep(1)
                   setShowBooking(true)
                 }}
                 style={{ width: '100%', padding: '7px 0', borderRadius: 9, border: 'none', background: PURPLE, color: '#fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
@@ -569,6 +575,8 @@ export default function SalonHomePage() {
                         setBookingSalonName(String(salon.name || ''))
                         setBookingServiceName(s.name)
                         setBookingServicePrice(s.price)
+                        setBookingMonth({ year: new Date().getFullYear(), month: new Date().getMonth() })
+                        setBookingStep(1)
                         setShowBooking(true)
                       }}
                       style={{ border: `1px solid ${PURPLE}`, background: 'transparent', color: PURPLE, borderRadius: 8, padding: '8px 14px', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
@@ -716,6 +724,8 @@ export default function SalonHomePage() {
               setBookingSalonName(String(salon.name || ''))
               setBookingServiceName(undefined)
               setBookingServicePrice(undefined)
+              setBookingMonth({ year: new Date().getFullYear(), month: new Date().getMonth() })
+              setBookingStep(1)
               setShowBooking(true)
             }}
             style={{ width: '100%', height: 48, borderRadius: 12, border: 'none', background: PURPLE, color: TEXT, fontSize: 15, cursor: 'pointer' }}
