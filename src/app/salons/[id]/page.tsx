@@ -53,6 +53,8 @@ type SalonRow = {
   open_hours?: Record<string, string> | null
   avg_rating?: number | null
   review_count?: number | null
+  staff_count?: number | null
+  room_count?: number | null
 }
 
 type ReviewRow = {
@@ -89,6 +91,22 @@ function calcPhase(lastPeriod: string | null | undefined): string | null {
   if (day < 13) return '황금기'
   if (day < 20) return '만개기'
   return '물들기'
+}
+
+async function fetchSlotCount(
+  supabase: ReturnType<typeof createClient>,
+  salonId: string,
+  date: string,
+  time: string,
+): Promise<number> {
+  const { count } = await supabase
+    .from('bookings')
+    .select('id', { count: 'exact', head: true })
+    .eq('salon_id', salonId)
+    .eq('booking_date', date)
+    .eq('booking_time', time)
+    .not('status', 'in', '("cancelled","rejected")')
+  return count ?? 0
 }
 
 function todayHours(openHours: Record<string, string> | null | undefined): string | null {
@@ -155,6 +173,7 @@ export default function SalonHomePage() {
   const [bookingStep, setBookingStep] = useState<1 | 2 | 3 | 4>(1)
   const [bookingDate, setBookingDate] = useState('')
   const [bookingTime, setBookingTime] = useState('')
+  const [slotCounts, setSlotCounts] = useState<Record<string, number>>({})
   const [bookingNotes, setBookingNotes] = useState('')
   const [bookingAgree, setBookingAgree] = useState(false)
   const [bookingSubmitting, setBookingSubmitting] = useState(false)
@@ -227,6 +246,7 @@ export default function SalonHomePage() {
     setBookingStep(1)
     setBookingDate('')
     setBookingTime('')
+    setSlotCounts({})
     setBookingNotes('')
     setBookingAgree(false)
   }, [showBooking])
@@ -910,8 +930,38 @@ export default function SalonHomePage() {
                           key={day.iso}
                           type="button"
                           onClick={() => {
-                            setBookingDate(day.iso)
-                            setBookingTime('')
+                            void (async () => {
+                              const dateStr = day.iso
+                              setBookingDate(dateStr)
+                              setBookingTime('')
+                              setSlotCounts({})
+                              const slots: string[] = []
+                              let openH = 9
+                              let closeH = 19
+                              const oh = salon.open_hours
+                              if (oh) {
+                                const d = new Date(dateStr + 'T12:00:00')
+                                const key = DAY_KEYS[d.getDay()]
+                                const ko = DAY_KO[d.getDay()]
+                                const raw = oh[key] || oh[ko] || oh.default || ''
+                                const m = String(raw).match(/(\d{1,2}):(\d{2})\s*[~\-]\s*(\d{1,2}):(\d{2})/)
+                                if (m) {
+                                  openH = Number(m[1])
+                                  closeH = Number(m[3])
+                                }
+                              }
+                              for (let h = openH; h < closeH; h++) {
+                                slots.push(`${String(h).padStart(2, '0')}:00`)
+                              }
+                              const sb = supabaseRef.current
+                              const counts: Record<string, number> = {}
+                              await Promise.all(
+                                slots.map(async (t) => {
+                                  counts[t] = await fetchSlotCount(sb, salon.id, dateStr, t)
+                                }),
+                              )
+                              setSlotCounts(counts)
+                            })()
                           }}
                           style={{
                             padding: '8px 0',
@@ -933,11 +983,21 @@ export default function SalonHomePage() {
                       <div style={{ fontSize: 12, color: TEXT_SUB, padding: '12px 0' }}>날짜를 먼저 선택해주세요</div>
                     ) : (
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                        {bookingTimeSlots.map((slot) => (
+                        {bookingTimeSlots.map((slot) => {
+                          const maxCapacity = Math.min(salon.staff_count ?? 1, salon.room_count ?? 1)
+                          const isFull = (slotCounts[slot] ?? 0) >= maxCapacity
+                          return (
                           <button
                             key={slot}
                             type="button"
-                            onClick={() => setBookingTime(slot)}
+                            disabled={isFull}
+                            onClick={() => {
+                              if (isFull) {
+                                setShareToast('이 시간은 마감됐어요. 상담으로 문의해보세요 💜')
+                                return
+                              }
+                              setBookingTime(slot)
+                            }}
                             style={{
                               padding: '10px 0',
                               borderRadius: 9,
@@ -945,12 +1005,14 @@ export default function SalonHomePage() {
                               background: bookingTime === slot ? PURPLE_LIGHT : CARD,
                               color: bookingTime === slot ? TEXT : TEXT_SUB,
                               fontSize: 13,
-                              cursor: 'pointer',
+                              cursor: isFull ? 'default' : 'pointer',
+                              opacity: isFull ? 0.35 : 1,
                             }}
                           >
-                            {slot}
+                            {slot}{isFull ? ' 마감' : ''}
                           </button>
-                        ))}
+                          )
+                        })}
                       </div>
                     )}
                   </>
@@ -1006,6 +1068,28 @@ export default function SalonHomePage() {
                     >
                       {bookingServiceName ? '다음 → 날짜 선택' : '시술을 먼저 선택해주세요'}
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowBooking(false)
+                        router.push(
+                          `/dashboard/customer/salon-chat/new?salon_id=${salon.id}&owner_id=${salon.owner_id || ''}`,
+                        )
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '11px',
+                        marginTop: 8,
+                        border: `0.5px solid ${PURPLE}`,
+                        background: 'transparent',
+                        borderRadius: 12,
+                        color: PURPLE,
+                        fontSize: 13,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      💬 상담으로 예약 문의하기
+                    </button>
                   </>
                 ) : null}
                 {bookingStep === 2 ? (
@@ -1028,6 +1112,7 @@ export default function SalonHomePage() {
                   </button>
                 ) : null}
                 {bookingStep === 3 ? (
+                  <>
                   <button
                     type="button"
                     disabled={!bookingAgree || bookingSubmitting}
@@ -1071,6 +1156,29 @@ export default function SalonHomePage() {
                   >
                     {bookingSubmitting ? '처리 중…' : '예약 확정하기'}
                   </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowBooking(false)
+                        router.push(
+                          `/dashboard/customer/salon-chat/new?salon_id=${salon.id}&owner_id=${salon.owner_id || ''}`,
+                        )
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '11px',
+                        marginTop: 8,
+                        border: `0.5px solid ${PURPLE}`,
+                        background: 'transparent',
+                        borderRadius: 12,
+                        color: PURPLE,
+                        fontSize: 13,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      💬 상담으로 예약 문의하기
+                    </button>
+                  </>
                 ) : null}
               </div>
             </>

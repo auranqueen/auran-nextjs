@@ -98,11 +98,21 @@ export default function OwnerDashClientV2() {
   const [showChatList, setShowChatList] = useState(false)
   const [showNewChat, setShowNewChat] = useState(false)
   const [chatChannelId, setChatChannelId] = useState<string | null>(null)
+  const [salonId, setSalonId] = useState<string>('')
+  const [staffCount, setStaffCount] = useState<number>(1)
+  const [roomCount, setRoomCount] = useState<number>(1)
+  const [capacityToast, setCapacityToast] = useState('')
 
   const nowLine = useMemo(() => {
     const d = new Date()
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
   }, [])
+
+  useEffect(() => {
+    if (!capacityToast) return
+    const t = setTimeout(() => setCapacityToast(''), 2000)
+    return () => clearTimeout(t)
+  }, [capacityToast])
 
   useEffect(() => {
     const run = async () => {
@@ -118,6 +128,13 @@ export default function OwnerDashClientV2() {
       if (!me?.id) return
       setOwnerId(String(me.id))
       setOwnerName(String(me.name || '원장님'))
+
+      const { data: salonRow } = await sb.from('salons').select('id,staff_count,room_count').eq('owner_id', me.id).maybeSingle()
+      if (salonRow?.id) {
+        setSalonId(String(salonRow.id))
+        setStaffCount(Number(salonRow.staff_count ?? 1))
+        setRoomCount(Number(salonRow.room_count ?? 1))
+      }
 
       const todayKey = new Date().toISOString().slice(0, 10)
       const monthKey = todayKey.slice(0, 7)
@@ -253,6 +270,14 @@ export default function OwnerDashClientV2() {
   const goalPct = monthGoal > 0 ? Math.min(100, Math.round((monthRevenue / monthGoal) * 100)) : 0
   const goalDone = monthRevenue >= monthGoal
 
+  const updateSalonCapacity = async (field: 'staff_count' | 'room_count', value: number) => {
+    if (!salonId) return
+    await supabaseRef.current.from('salons').update({ [field]: value }).eq('id', salonId)
+    if (field === 'staff_count') setStaffCount(value)
+    else setRoomCount(value)
+    setCapacityToast('저장됐어요 💜')
+  }
+
   const card: React.CSSProperties = { background: BG, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14 }
   const sectionLabel: React.CSSProperties = { fontSize: 13, fontWeight: 500, color: TEXT, marginBottom: 10, marginTop: 16 }
 
@@ -367,6 +392,79 @@ export default function OwnerDashClientV2() {
               )
             })
           )}
+        </div>
+
+        <div
+          style={{
+            background: '#ffffff',
+            border: '0.5px solid #ede9f7',
+            borderRadius: 12,
+            padding: 15,
+            marginBottom: 12,
+            marginTop: 16,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 13,
+              fontWeight: 500,
+              borderBottom: '0.5px solid #ede9f7',
+              paddingBottom: 8,
+              marginBottom: 12,
+            }}
+          >
+            예약 설정
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>관리사 수</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => void updateSalonCapacity('staff_count', n)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 20,
+                    border: staffCount === n ? '1.5px solid #7B5EA7' : '0.5px solid #ede9f7',
+                    background: staffCount === n ? '#EDE9F7' : 'transparent',
+                    color: staffCount === n ? '#7B5EA7' : '#888',
+                    fontSize: 12,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {n}명
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>관리룸 수</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => void updateSalonCapacity('room_count', n)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: 20,
+                    border: roomCount === n ? '1.5px solid #7B5EA7' : '0.5px solid #ede9f7',
+                    background: roomCount === n ? '#EDE9F7' : 'transparent',
+                    color: roomCount === n ? '#7B5EA7' : '#888',
+                    fontSize: 12,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {n}개
+                </button>
+              ))}
+            </div>
+          </div>
+          <div style={{ padding: '8px 10px', background: '#f9f8fc', borderRadius: 8, fontSize: 11, color: '#7B5EA7' }}>
+            동시 예약 가능: 최대 {Math.min(staffCount ?? 1, roomCount ?? 1)}건
+            <span style={{ color: '#888', marginLeft: 4 }}>(관리사·룸 중 적은 수 기준)</span>
+          </div>
         </div>
 
         <div style={sectionLabel}>지금 챙겨야 할 것들</div>
@@ -502,6 +600,12 @@ export default function OwnerDashClientV2() {
           router.push('/dashboard/owner/salon-chat/' + channelId)
         }}
       />
+
+      {capacityToast ? (
+        <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 100, background: PURPLE, color: '#fff', borderRadius: 12, padding: '10px 16px', fontSize: 13, zIndex: 50 }}>
+          {capacityToast}
+        </div>
+      ) : null}
     </div>
   )
 }
