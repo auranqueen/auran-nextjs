@@ -2,11 +2,16 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import SalonDashClient from '../salon/client'
+import OwnerDashClientV2 from './client-v2'
 
-export default async function OwnerDashboard() {
+export default async function OwnerDashboard({ searchParams }: { searchParams: { v?: string } }) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login?role=owner')
+
+  if (searchParams?.v === '2') {
+    return <OwnerDashClientV2 />
+  }
 
   const { data: profile } = await supabase.from('users').select('*').eq('auth_id', user.id).single()
   if (!profile) redirect('/login?role=owner')
