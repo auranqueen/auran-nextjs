@@ -27,12 +27,16 @@ const PHASE_TIP: Record<string, string> = {
 }
 
 type SalonService = {
+  id?: string
   name?: string
   price?: number
   duration_min?: number
   description?: string
   phase_tags?: string[]
   phase_tag?: string
+  thumbnail_url?: string
+  review_count?: number
+  avg_rating?: number
 }
 
 type SalonRow = {
@@ -141,6 +145,7 @@ export default function SalonHomePage() {
   const [phaseFilter, setPhaseFilter] = useState<string>('전체')
   const [reviewLimit, setReviewLimit] = useState(5)
   const [shareToast, setShareToast] = useState('')
+  const [showMapSheet, setShowMapSheet] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -286,55 +291,71 @@ export default function SalonHomePage() {
         </button>
       </header>
 
-      <div
-        style={{
-          height: 180,
-          background: salon.banner_url ? `url(${salon.banner_url}) center/cover no-repeat` : PURPLE_LIGHT,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          position: 'relative',
-        }}
-      >
-        {!salon.banner_url ? <span style={{ fontSize: 48 }}>💜</span> : null}
-        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: 16, background: 'linear-gradient(transparent, rgba(13,11,9,0.92))' }}>
-          <div style={{ fontSize: 18, fontWeight: 500 }}>{salonName}</div>
-          <div style={{ fontSize: 12, color: TEXT_SUB, marginTop: 4 }}>
-            {[salon.area, hoursToday ? `영업 ${hoursToday}` : null].filter(Boolean).join(' · ')}
+      <div style={{ padding: '12px 15px 0' }}>
+        <div style={{ fontSize: 17, fontWeight: 500, color: TEXT, marginBottom: 3 }}>{salon.name}</div>
+        <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 10 }}>
+          {salon.area} · {openNow ? '영업 중' : '영업 종료'}
+          {hoursToday && hoursToday.includes('~') ? ` · ${hoursToday.split('~')[1]?.trim()} 마감` : ''}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, alignItems: 'start' }}>
+          <div
+            style={{
+              width: '100%',
+              aspectRatio: '1/1',
+              borderRadius: 12,
+              background: salon.banner_url ? `url(${salon.banner_url}) center/cover no-repeat` : PURPLE_LIGHT,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              flexShrink: 0,
+            }}
+          >
+            {!salon.banner_url ? <span style={{ fontSize: 36 }}>💜</span> : null}
           </div>
-          {serviceTags.length ? (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-              {serviceTags.map((t) => (
-                <span key={t} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, background: SURFACE, color: TEXT_SUB }}>
-                  {t}
-                </span>
-              ))}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ color: GOLD, fontSize: 12 }}>★</span>
+              <span style={{ fontSize: 13, fontWeight: 500, color: GOLD }}>{salon.avg_rating?.toFixed(1) ?? '-'}</span>
+              <span style={{ fontSize: 11, color: TEXT_SUB }}>리뷰 {salon.review_count ?? 0}개</span>
             </div>
-          ) : null}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-            <span style={{ fontSize: 13, color: GOLD }}>★ {avgRating.toFixed(1)} ({reviewTotal}개)</span>
-            <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 20, background: openNow ? 'rgba(76,173,126,0.2)' : SURFACE, color: openNow ? '#4CAD7E' : TEXT_SUB }}>
-              {openNow ? '영업 중' : '영업 종료'}
-            </span>
+            {customerPhase ? (
+              <div style={{ background: 'rgba(123,94,167,0.2)', border: '0.5px solid rgba(123,94,167,0.4)', borderRadius: 9, padding: '7px 9px' }}>
+                <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 2 }}>지금 내 위상</div>
+                <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, padding: '2px 6px', borderRadius: 8, background: '#FFF7E6', color: '#854F0B', marginBottom: 2 }}>
+                  {PHASE_EMOJI[customerPhase]} {customerPhase}
+                </span>
+                <div style={{ fontSize: 11, color: GOLD, lineHeight: 1.4 }}>{PHASE_TIP[customerPhase]}</div>
+              </div>
+            ) : null}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              <button
+                type="button"
+                onClick={() => router.push(`/dashboard/customer/booking?salon_id=${salon.id}&salon_name=${encodeURIComponent(String(salon.name || ''))}`)}
+                style={{ width: '100%', padding: '7px 0', borderRadius: 9, border: 'none', background: PURPLE, color: '#fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+              >
+                📅 예약하기
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push(`/dashboard/customer/salon-chat/new?salon_id=${salon.id}&owner_id=${salon.owner_id || ''}`)}
+                style={{ width: '100%', padding: '7px 0', borderRadius: 9, border: '0.5px solid rgba(123,94,167,0.4)', background: 'rgba(123,94,167,0.15)', color: '#A98FD0', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+              >
+                💬 상담 요청
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowMapSheet(true)}
+                style={{ width: '100%', padding: '7px 0', borderRadius: 9, border: '0.5px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.65)', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+              >
+                📍 길찾기
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 8, padding: '12px 16px' }}>
-        <button type="button" onClick={() => router.push(bookingHref)} style={{ flex: 1, height: 44, borderRadius: 10, border: 'none', background: PURPLE, color: TEXT, fontSize: 14, cursor: 'pointer' }}>
-          예약하기
-        </button>
-        <button type="button" onClick={() => router.push(chatHref)} style={{ flex: 1, height: 44, borderRadius: 10, border: `1px solid ${PURPLE}`, background: 'transparent', color: PURPLE, fontSize: 14, cursor: 'pointer' }}>
-          상담 요청
-        </button>
-        {salon.phone ? (
-          <a href={`tel:${salon.phone}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 44, height: 44, borderRadius: 10, border: `1px solid ${BORDER}`, color: TEXT_SUB, fontSize: 12, textDecoration: 'none' }}>
-            전화
-          </a>
-        ) : null}
-      </div>
-
-      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, padding: '0 16px' }}>
+      <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, padding: '0 16px', marginTop: 12 }}>
         {(
           [
             ['menu', '시술 메뉴'],
@@ -379,19 +400,42 @@ export default function SalonHomePage() {
               services.map((s, idx) => {
                 const tag = (s.phase_tags && s.phase_tags[0]) || s.phase_tag || '전체'
                 return (
-                  <div key={`${s.name}-${idx}`} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14, marginBottom: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <span style={{ fontSize: 15, fontWeight: 500 }}>{s.name || '시술'}</span>
-                      <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, ...phaseBadgeStyle(String(tag)) }}>{tag}</span>
+                  <div key={`${s.name}-${idx}`} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div
+                      style={{
+                        width: 58,
+                        height: 58,
+                        borderRadius: 9,
+                        flexShrink: 0,
+                        background: s.thumbnail_url ? `url(${s.thumbnail_url}) center/cover no-repeat` : PURPLE_LIGHT,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 20,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {!s.thumbnail_url ? '💧' : null}
                     </div>
-                    {s.description ? <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 6, lineHeight: 1.5 }}>{s.description}</div> : null}
-                    <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 8 }}>{s.duration_min ? `${s.duration_min}분 · ` : ''}소요</div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 16, color: GOLD }}>{Number(s.price || 0).toLocaleString()}원</span>
-                      <button type="button" onClick={() => router.push(bookingHref)} style={{ border: `1px solid ${PURPLE}`, background: 'transparent', color: PURPLE, borderRadius: 8, padding: '8px 14px', fontSize: 12, cursor: 'pointer' }}>
-                        예약
-                      </button>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span style={{ fontSize: 15, fontWeight: 500 }}>{s.name || '시술'}</span>
+                        <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 20, ...phaseBadgeStyle(String(tag)) }}>{tag}</span>
+                      </div>
+                      {s.description ? <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 6, lineHeight: 1.5 }}>{s.description}</div> : null}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 16, color: GOLD }}>{Number(s.price || 0).toLocaleString()}원</span>
+                        {s.duration_min ? <span style={{ fontSize: 12, color: TEXT_SUB }}>{s.duration_min}분</span> : null}
+                        {Number(s.review_count || 0) > 0 ? (
+                          <span style={{ fontSize: 10, color: TEXT_SUB }}>
+                            ★{Number(s.avg_rating || 0).toFixed(1)} · 리뷰 {s.review_count}개
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
+                    <button type="button" onClick={() => router.push(bookingHref)} style={{ border: `1px solid ${PURPLE}`, background: 'transparent', color: PURPLE, borderRadius: 8, padding: '8px 14px', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>
+                      예약
+                    </button>
                   </div>
                 )
               })
@@ -535,6 +579,58 @@ export default function SalonHomePage() {
       {shareToast ? (
         <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 24, background: PURPLE, color: TEXT, borderRadius: 12, padding: '10px 16px', fontSize: 13, zIndex: 50 }}>
           {shareToast}
+        </div>
+      ) : null}
+
+      {showMapSheet ? (
+        <div
+          role="presentation"
+          onClick={() => setShowMapSheet(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'flex-end' }}
+        >
+          <div
+            role="presentation"
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: '#1A1A2E', borderRadius: '18px 18px 0 0', width: '100%', paddingBottom: 20 }}
+          >
+            <div style={{ width: 34, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.2)', margin: '11px auto 13px' }} />
+            <div style={{ fontSize: 14, fontWeight: 500, color: '#fff', padding: '0 15px 10px', borderBottom: '0.5px solid rgba(255,255,255,0.1)' }}>길찾기</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', padding: '8px 15px', borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}>
+              📍 {salon?.address || salon?.area}
+            </div>
+            <div style={{ padding: '10px 15px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+              {[
+                { name: '카카오맵', desc: '카카오맵으로 길찾기', emoji: '🗺', bg: '#FEE500', url: `kakaomap://route?ep=${encodeURIComponent(salon?.address || '')}` },
+                { name: '티맵', desc: '티맵으로 길찾기', emoji: '🧭', bg: '#E8F4FF', url: `tmap://route?goalname=${encodeURIComponent(String(salon?.name || ''))}` },
+                { name: '네이버 지도', desc: '네이버 지도로 길찾기', emoji: '🗾', bg: '#E8F5E9', url: `nmap://route?goalname=${encodeURIComponent(String(salon?.name || ''))}` },
+              ].map((app) => (
+                <div
+                  key={app.name}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    window.location.href = app.url
+                    setShowMapSheet(false)
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '10px 12px', borderRadius: 11, cursor: 'pointer', border: '0.5px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)' }}
+                >
+                  <div style={{ width: 34, height: 34, borderRadius: 8, background: app.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>{app.emoji}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, color: '#fff' }}>{app.name}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>{app.desc}</div>
+                  </div>
+                  <div style={{ color: 'rgba(255,255,255,0.25)', fontSize: 15 }}>›</div>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowMapSheet(false)}
+              style={{ width: 'calc(100% - 30px)', margin: '7px 15px 0', padding: 11, border: '0.5px solid rgba(255,255,255,0.13)', background: 'transparent', borderRadius: 11, color: 'rgba(255,255,255,0.55)', fontSize: 13, cursor: 'pointer' }}
+            >
+              취소
+            </button>
+          </div>
         </div>
       ) : null}
     </div>
