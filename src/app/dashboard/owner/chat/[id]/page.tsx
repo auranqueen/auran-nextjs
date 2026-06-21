@@ -5,10 +5,10 @@ import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
-const BG = '#0D0B09'
+const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
-const TEXT_MUTED = 'rgba(255,255,255,0.45)'
+const TEXT_MUTED = '#888888'
 
 type ToolPanel = 'product' | 'routine' | 'coupon' | 'toast' | null
 
@@ -1623,7 +1623,7 @@ export default function OwnerChatRoomPage() {
           zIndex: 40,
           padding: '10px 12px',
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 64px)',
-          background: '#0D0B09',
+          background: '#ffffff',
           borderTop: '1px solid rgba(255,255,255,0.08)',
           maxHeight: '72vh',
           display: 'flex',
