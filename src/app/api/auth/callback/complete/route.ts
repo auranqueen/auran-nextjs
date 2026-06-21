@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
         .select('id')
         .eq('auth_id', user.id)
         .maybeSingle()
-      if (newUser?.id) {
+      if (newUser?.id && dbRole !== 'owner' && dbRole !== 'partner' && dbRole !== 'brand') {
         await adminClient.from('toast_transactions').insert({
           user_id: newUser.id,
           amount: 10000,
@@ -130,6 +130,51 @@ export async function GET(request: NextRequest) {
           link_url: '/my',
           is_read: false,
         } as any)
+      }
+      // owner 가입 시 salons 자동 생성
+      if (dbRole === 'owner' && newUser?.id) {
+        try {
+          const { data: existingSalon } = await adminClient
+            .from('salons')
+            .select('id')
+            .eq('owner_id', newUser.id)
+            .maybeSingle()
+          if (!existingSalon) {
+            const { error: salonErr } = await adminClient.from('salons').insert({
+              owner_id: newUser.id,
+              name: displayName ? `${displayName} 샵` : '내 샵',
+              description: '',
+              area: '',
+              address: '',
+              phone: '',
+              services: [],
+              open_hours: {
+                mon: '10:00-20:00',
+                tue: '10:00-20:00',
+                wed: '10:00-20:00',
+                thu: '10:00-20:00',
+                fri: '10:00-20:00',
+                sat: '10:00-18:00',
+                sun: null,
+              },
+              status: 'inactive',
+              staff_count: 1,
+              room_count: 1,
+              review_count: 0,
+              avg_rating: 0,
+            })
+            if (!salonErr) {
+              await adminClient.from('notifications').insert({
+                user_id: newUser.id,
+                type: 'personal',
+                title: '🌸 오렌에 오신 걸 환영해요!',
+                body: '샵 설정에서 기본 정보를 등록하고 첫 고객을 맞이해보세요 💜',
+                link_url: '/dashboard/owner?v=2',
+                is_read: false,
+              } as any)
+            }
+          }
+        } catch (e) { console.error('[salon auto create]', e) }
       }
     } catch (e) { console.error('[signup gift]', e) }
     const { sendSignupAlimtalkIfNeeded } = await import('@/lib/signup/sendSignupAlimtalk')
