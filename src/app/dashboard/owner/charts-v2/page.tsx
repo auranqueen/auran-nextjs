@@ -72,7 +72,7 @@ function phaseEmoji(phase: string): string {
 
 function cycleStartFromProfile(profile: Record<string, unknown> | null | undefined): string | null {
   if (!profile) return null
-  const start = profile.menstrual_cycle_start ?? profile.menstrual_cycle
+  const start = profile.last_period_date
   return start ? String(start) : null
 }
 
@@ -175,6 +175,9 @@ export default function OwnerChartsV2Page() {
   const [treatmentAmount, setTreatmentAmount] = useState('')
   const [nextVisitDate, setNextVisitDate] = useState('')
   const [saving, setSaving] = useState(false)
+  const [showAddCustomer, setShowAddCustomer] = useState(false)
+  const [addQ, setAddQ] = useState('')
+  const [addHits, setAddHits] = useState<any[]>([])
 
   const activePhase = useMemo(() => {
     const start = cycleStartFromProfile(activeCustomer?.profile ?? null)
@@ -187,38 +190,56 @@ export default function OwnerChartsV2Page() {
     const todayKey = now.toISOString().slice(0, 10)
     const monthKey = todayKey.slice(0, 7)
 
-    const [{ data: charts }, { data: salonCustomers }, { data: externals }] = await Promise.all([
-      sb.from('treatment_charts').select('id,treatment_date,customer_signed_at,customer_id,treatment_items,treatment_name,products_used,before_photos,after_photos,hormone_phase').eq('owner_id', ownerId).order('treatment_date', { ascending: false }).limit(200),
-      sb.from('users').select('id,auth_id,name').eq('role', 'customer').limit(300),
-      sb.from('external_customers').select('id,name,visit_count,last_purchase_at,auran_user_id').order('updated_at', { ascending: false }).limit(300),
-    ])
+    const { data: charts } = await sb
+      .from('treatment_charts')
+      .select('id,treatment_date,customer_signed_at,customer_id,treatment_items,before_photos,after_photos')
+      .eq('owner_id', ownerId)
+      .order('treatment_date', { ascending: false })
+      .limit(200)
 
     const chartList = (charts as any[]) || []
-    const userList = (salonCustomers as any[]) || []
-    const extList = (externals as any[]) || []
+    const customerIds = Array.from(new Set(chartList.map((c) => String(c.customer_id || '')).filter(Boolean)))
 
-    const authIds = [
-      ...userList.map((u) => u.auth_id).filter(Boolean),
-      ...extList.map((e) => e.auran_user_id).filter(Boolean),
-    ]
+    let userList: any[] = []
+    if (customerIds.length) {
+      const { data: usersData } = await sb.from('users').select('id,name,auth_id').in('id', customerIds)
+      userList = (usersData as any[]) || []
+    }
+
+    const authIds = userList.map((u) => u.auth_id).filter(Boolean)
+    const userIds = userList.map((u) => u.id).filter(Boolean)
+
     let profileMap: Record<string, Record<string, unknown>> = {}
     if (authIds.length) {
       const { data: profiles } = await sb
         .from('profiles')
-        .select('auth_id,birth_date,skin_type,skin_concerns,menstrual_cycle,menstrual_cycle_start')
+        .select('auth_id,skin_type,skin_concerns,birth_date,body_status,allergy_ingredients')
         .in('auth_id', authIds)
       for (const p of (profiles as any[]) || []) {
         if (p.auth_id) profileMap[p.auth_id] = p
       }
     }
 
-    const visitByAuth: Record<string, { count: number; last: string | null }> = {}
+    let hormoneMap: Record<string, string> = {}
+    if (userIds.length) {
+      const { data: hcRows } = await sb
+        .from('hormone_cycle')
+        .select('user_id,last_period_date,created_at')
+        .in('user_id', userIds)
+        .order('created_at', { ascending: false })
+      for (const h of (hcRows as any[]) || []) {
+        const uid = String(h.user_id || '')
+        if (uid && !hormoneMap[uid] && h.last_period_date) hormoneMap[uid] = String(h.last_period_date)
+      }
+    }
+
+    const visitByCustomer: Record<string, { count: number; last: string | null }> = {}
     for (const c of chartList) {
       const cid = String(c.customer_id || '')
       if (!cid) continue
-      const prev = visitByAuth[cid] || { count: 0, last: null }
+      const prev = visitByCustomer[cid] || { count: 0, last: null }
       const d = String(c.treatment_date || '').slice(0, 10)
-      visitByAuth[cid] = {
+      visitByCustomer[cid] = {
         count: prev.count + 1,
         last: !prev.last || d > prev.last ? d : prev.last,
       }
@@ -226,29 +247,23 @@ export default function OwnerChartsV2Page() {
 
     const rows: CustomerRow[] = []
     for (const u of userList) {
-      const authId = String(u.auth_id || '')
+      const uid = String(u.id)
+      const authId = u.auth_id ? String(u.auth_id) : null
+      const prof = authId ? profileMap[authId] : null
+      const mergedProfile = prof
+        ? { ...prof, last_period_date: hormoneMap[uid] ?? null }
+        : hormoneMap[uid]
+          ? { last_period_date: hormoneMap[uid] }
+          : null
       rows.push({
-        key: `user-${u.id}`,
+        key: `user-${uid}`,
         kind: 'user',
-        id: String(u.id),
-        authId: authId || null,
-        name: String(u.name || '고객'),
-        profile: authId ? profileMap[authId] ?? null : null,
-        visitCount: authId ? visitByAuth[authId]?.count ?? 0 : 0,
-        lastVisit: authId ? visitByAuth[authId]?.last ?? null : null,
-      })
-    }
-    for (const e of extList) {
-      const authId = e.auran_user_id ? String(e.auran_user_id) : null
-      rows.push({
-        key: `ext-${e.id}`,
-        kind: 'external',
-        id: String(e.id),
+        id: uid,
         authId,
-        name: String(e.name || '외부고객'),
-        profile: authId ? profileMap[authId] ?? null : null,
-        visitCount: Number(e.visit_count || 0),
-        lastVisit: e.last_purchase_at ? String(e.last_purchase_at).slice(0, 10) : null,
+        name: String(u.name || '고객'),
+        profile: mergedProfile,
+        visitCount: visitByCustomer[uid]?.count ?? 0,
+        lastVisit: visitByCustomer[uid]?.last ?? null,
       })
     }
 
@@ -257,7 +272,7 @@ export default function OwnerChartsV2Page() {
       today: chartList.filter((x) => String(x.treatment_date || '').slice(0, 10) === todayKey).length,
       month: chartList.filter((x) => String(x.treatment_date || '').slice(0, 7) === monthKey).length,
       unsigned: chartList.filter((x) => !x.customer_signed_at).length,
-      totalCustomers: rows.length,
+      totalCustomers: customerIds.length,
     })
     setLoading(false)
   }, [])
@@ -371,28 +386,50 @@ export default function OwnerChartsV2Page() {
     resetForm()
 
     if (owner?.id) {
-      let skinQ = sb.from('customer_skin_profiles').select('*').eq('owner_id', owner.id)
-      if (row.kind === 'external') skinQ = skinQ.eq('external_customer_id', row.id)
-      else if (row.authId) skinQ = skinQ.eq('customer_id', row.authId)
-      const { data: skinProf } = await skinQ.maybeSingle()
-      if (skinProf) {
-        setSkinTypes((skinProf as any).skin_types || [])
-        setSkinConcerns((skinProf as any).skin_concerns || [])
-        setHormoneStatus(String((skinProf as any).hormone_status || ''))
-        setTreatmentExperience((skinProf as any).treatment_experience || [])
-        setAllergy(String((skinProf as any).allergy || ''))
+      const { data: lastChart } = await sb
+        .from('treatment_charts')
+        .select('skin_condition')
+        .eq('owner_id', owner.id)
+        .eq('customer_id', row.id)
+        .order('treatment_date', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if ((lastChart as any)?.skin_condition) {
+        try {
+          const parsed = JSON.parse(String((lastChart as any).skin_condition))
+          setSkinTypes(parsed.diagnosis_skin_type || [])
+          setSkinConcerns(parsed.diagnosis_concerns || [])
+          setHormoneStatus(String(parsed.hormone_status || ''))
+          setTreatmentExperience(parsed.experiences || [])
+          setAllergy(String(parsed.allergies || ''))
+        } catch {
+          /* ignore */
+        }
       }
+    }
+
+    if (row.authId) {
+      const [{ data: prof }, { data: hcRows }] = await Promise.all([
+        sb.from('profiles').select('skin_type,skin_concerns,birth_date,body_status,allergy_ingredients').eq('auth_id', row.authId).maybeSingle(),
+        sb.from('hormone_cycle').select('last_period_date').eq('user_id', row.id).order('created_at', { ascending: false }).limit(1),
+      ])
+      const hc = ((hcRows as any[]) || [])[0]
+      row.profile = {
+        ...((prof as any) || {}),
+        last_period_date: hc?.last_period_date ?? row.profile?.last_period_date ?? null,
+      }
+      setActiveCustomer({ ...row, profile: row.profile })
     }
 
     const golden = getNextGoldenDate(cycleStartFromProfile(row.profile))
     if (golden) setNextVisitDate(golden)
 
-    if (row.authId && owner?.id) {
+    if (owner?.id) {
       const { data: hist } = await sb
         .from('treatment_charts')
-        .select('id,treatment_date,treatment_name,treatment_items,products_used,before_photos,after_photos,hormone_phase')
+        .select('id,treatment_date,treatment_items,before_photos,after_photos')
         .eq('owner_id', owner.id)
-        .eq('customer_id', row.authId)
+        .eq('customer_id', row.id)
         .order('treatment_date', { ascending: false })
         .limit(historyExpanded ? 20 : 5)
       setHistory((hist as any[]) || [])
@@ -461,83 +498,44 @@ export default function OwnerChartsV2Page() {
 
   const submitChart = async () => {
     if (!owner?.id || !activeCustomer) return
-    if (!activeCustomer.authId && activeCustomer.kind === 'user') {
-      setToast('고객 정보가 없어 저장할 수 없습니다')
-      return
-    }
     setSaving(true)
     const sb = supabaseRef.current
     const chartId = crypto.randomUUID()
     const hormonePhase = activePhase !== '—' ? activePhase : null
 
     try {
-      const skinPayload: Record<string, unknown> = {
-        owner_id: owner.id,
-        skin_types: skinTypes,
-        skin_concerns: skinConcerns,
-        hormone_status: hormoneStatus || null,
-        treatment_experience: treatmentExperience,
-        allergy: allergy || null,
-        updated_at: new Date().toISOString(),
-      }
-      if (activeCustomer.kind === 'external') {
-        skinPayload.external_customer_id = activeCustomer.id
-        skinPayload.customer_id = activeCustomer.authId
-      } else {
-        skinPayload.customer_id = activeCustomer.authId
-        skinPayload.external_customer_id = null
-      }
-
-      const skinFilter =
-        activeCustomer.kind === 'external'
-          ? { owner_id: owner.id, external_customer_id: activeCustomer.id }
-          : { owner_id: owner.id, customer_id: activeCustomer.authId }
-
-      await sb.from('customer_skin_profiles').upsert(skinPayload as any, { onConflict: 'owner_id,external_customer_id' })
-
       const beforeUrls = await uploadBatch(beforeFiles, chartId, 'before')
       const afterUrls = await uploadBatch(afterFiles, chartId, 'after')
-      const items = treatmentName.trim() ? [treatmentName.trim(), ...treatmentAreas] : treatmentAreas
+      const productsUsed = selectedProducts.map((p) => ({ id: p.id, name: p.name, brand: p.brand ?? null }))
 
-      const chartCustomerId = activeCustomer.authId || activeCustomer.id
       const { error: chartErr } = await sb.from('treatment_charts').insert({
         id: chartId,
         owner_id: owner.id,
-        customer_id: chartCustomerId,
+        customer_id: activeCustomer.id,
         treatment_date: new Date().toISOString(),
-        treatment_name: treatmentName.trim() || null,
-        treatment_items: items,
-        treatment_areas: treatmentAreas,
-        products_used: selectedProducts.map((p) => ({ id: p.id, name: p.name, brand: p.brand ?? null })),
-        hormone_phase: hormonePhase,
-        skin_condition: skinReaction,
-        before_photos: beforeUrls,
-        after_photos: afterUrls,
+        treatment_items: {
+          name: treatmentName,
+          areas: treatmentAreas,
+          products: productsUsed,
+          hormone_phase: hormonePhase,
+        },
+        skin_condition: JSON.stringify({
+          diagnosis_skin_type: skinTypes,
+          diagnosis_concerns: skinConcerns,
+          hormone_status: hormoneStatus,
+          experiences: treatmentExperience,
+          allergies: allergy,
+        }),
         management_tips: reactionDetail,
         admin_memo: adminMemo,
-        treatment_amount: treatmentAmount ? Number(treatmentAmount) : null,
         next_visit_date: nextVisitDate || null,
+        before_photos: beforeUrls,
+        after_photos: afterUrls,
         share_type: 'private',
-        status: 'completed',
+        status: 'active',
       } as any)
 
       if (chartErr) throw chartErr
-
-      if (activeCustomer.kind === 'external') {
-        await sb
-          .from('external_customers')
-          .update({
-            visit_count: activeCustomer.visitCount + 1,
-            last_purchase_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq('id', activeCustomer.id)
-      } else if (activeCustomer.id) {
-        await sb
-          .from('users')
-          .update({ last_purchase_at: new Date().toISOString(), updated_at: new Date().toISOString() } as any)
-          .eq('id', activeCustomer.id)
-      }
 
       localStorage.removeItem(draftKey(owner.id, activeCustomer.key))
       setPopupOpen(false)
@@ -552,13 +550,13 @@ export default function OwnerChartsV2Page() {
   }
 
   const loadMoreHistory = async () => {
-    if (!owner?.id || !activeCustomer?.authId) return
+    if (!owner?.id || !activeCustomer?.id) return
     setHistoryExpanded(true)
     const { data } = await supabaseRef.current
       .from('treatment_charts')
-      .select('id,treatment_date,treatment_name,treatment_items,products_used,before_photos,after_photos,hormone_phase')
+      .select('id,treatment_date,treatment_items,before_photos,after_photos')
       .eq('owner_id', owner.id)
-      .eq('customer_id', activeCustomer.authId)
+      .eq('customer_id', activeCustomer.id)
       .order('treatment_date', { ascending: false })
       .limit(20)
     setHistory((data as any[]) || [])
@@ -570,6 +568,11 @@ export default function OwnerChartsV2Page() {
     ? (profile!.skin_concerns as string[]).join(', ')
     : profile?.skin_concerns
       ? String(profile.skin_concerns)
+      : '—'
+  const selfAllergies = Array.isArray(profile?.allergy_ingredients)
+    ? (profile!.allergy_ingredients as string[]).join(', ')
+    : profile?.allergy_ingredients
+      ? String(profile.allergy_ingredients)
       : '—'
 
   return (
@@ -609,7 +612,7 @@ export default function OwnerChartsV2Page() {
             ['오늘 차트', kpi.today],
             ['이번 달', kpi.month],
             ['미서명', kpi.unsigned],
-            ['전체 고객', kpi.totalCustomers],
+            ['담당 고객', kpi.totalCustomers],
           ].map(([label, val]) => (
             <div
               key={String(label)}
@@ -635,7 +638,16 @@ export default function OwnerChartsV2Page() {
             overflow: 'hidden',
           }}
         >
-          <div style={{ padding: '12px 14px', borderBottom: `1px solid ${BORDER}`, fontSize: 14, fontWeight: 500 }}>고객 목록</div>
+          <div style={{ padding: '12px 14px', borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+            <span style={{ fontSize: 14, fontWeight: 500 }}>고객 목록</span>
+            <button
+              type="button"
+              onClick={() => setShowAddCustomer(true)}
+              style={{ ...btnStyle(false), minHeight: 44, fontSize: 12 }}
+            >
+              + 고객 추가
+            </button>
+          </div>
           {loading ? (
             <div style={{ padding: 20, fontSize: 13, color: SUB }}>불러오는 중…</div>
           ) : (
@@ -687,6 +699,83 @@ export default function OwnerChartsV2Page() {
           )}
         </div>
       </div>
+
+      {showAddCustomer ? (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(26,26,46,0.35)', zIndex: 90, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ width: '100%', maxWidth: 360, background: BG, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 10 }}>신규 고객 추가</div>
+            <input
+              value={addQ}
+              onChange={(e) => setAddQ(e.target.value)}
+              placeholder="고객명 검색"
+              style={{ width: '100%', boxSizing: 'border-box', minHeight: 44, padding: '10px 12px', borderRadius: 12, border: `1px solid ${BORDER}`, fontSize: 13, marginBottom: 8 }}
+            />
+            <button
+              type="button"
+              onClick={async () => {
+                const q = addQ.trim()
+                if (q.length < 1) return
+                const { data } = await supabaseRef.current
+                  .from('users')
+                  .select('id,name,auth_id')
+                  .eq('role', 'customer')
+                  .ilike('name', `%${q}%`)
+                  .limit(15)
+                setAddHits((data as any[]) || [])
+              }}
+              style={{ ...btnStyle(false), width: '100%', marginBottom: 10 }}
+            >
+              검색
+            </button>
+            <div style={{ maxHeight: 220, overflowY: 'auto' }}>
+              {addHits.map((u) => (
+                <button
+                  key={u.id}
+                  type="button"
+                  onClick={async () => {
+                    const sb = supabaseRef.current
+                    const uid = String(u.id)
+                    const authId = u.auth_id ? String(u.auth_id) : null
+                    let mergedProfile: Record<string, unknown> | null = null
+                    if (authId) {
+                      const [{ data: prof }, { data: hcRows }] = await Promise.all([
+                        sb.from('profiles').select('skin_type,skin_concerns,birth_date,body_status,allergy_ingredients').eq('auth_id', authId).maybeSingle(),
+                        sb.from('hormone_cycle').select('last_period_date').eq('user_id', uid).order('created_at', { ascending: false }).limit(1),
+                      ])
+                      const hc = ((hcRows as any[]) || [])[0]
+                      mergedProfile = {
+                        ...((prof as any) || {}),
+                        last_period_date: hc?.last_period_date ?? null,
+                      }
+                    }
+                    const newRow: CustomerRow = {
+                      key: `user-${uid}`,
+                      kind: 'user',
+                      id: uid,
+                      authId,
+                      name: String(u.name || '고객'),
+                      profile: mergedProfile,
+                      visitCount: 0,
+                      lastVisit: null,
+                    }
+                    setCustomers((prev) => (prev.some((c) => c.id === uid) ? prev : [...prev, newRow]))
+                    setShowAddCustomer(false)
+                    setAddQ('')
+                    setAddHits([])
+                    void openPopup(newRow)
+                  }}
+                  style={{ ...btnStyle(false), width: '100%', textAlign: 'left', marginBottom: 6 }}
+                >
+                  {u.name}
+                </button>
+              ))}
+            </div>
+            <button type="button" onClick={() => { setShowAddCustomer(false); setAddQ(''); setAddHits([]) }} style={{ ...btnStyle(false), width: '100%', marginTop: 8 }}>
+              닫기
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       {popupOpen && activeCustomer ? (
         <>
@@ -743,6 +832,14 @@ export default function OwnerChartsV2Page() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span style={{ color: SUB }}>호르몬 위상</span>
                     <PhaseBadge phase={activePhase} />
+                  </div>
+                  <div>
+                    <span style={{ color: SUB }}>특이사항 </span>
+                    {profile?.body_status ? String(profile.body_status) : '—'}
+                  </div>
+                  <div>
+                    <span style={{ color: SUB }}>알레르기 </span>
+                    {selfAllergies}
                   </div>
                 </div>
               </section>
@@ -943,11 +1040,21 @@ export default function OwnerChartsV2Page() {
                 ) : (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {history.map((h) => {
-                      const hp = h.hormone_phase || '—'
-                      const prods = Array.isArray(h.products_used)
-                        ? (h.products_used as any[]).map((x) => x.name).filter(Boolean).join(', ')
-                        : ''
-                      const name = h.treatment_name || (h.treatment_items || []).join(', ')
+                      const items = h.treatment_items
+                      const hp =
+                        items && typeof items === 'object' && !Array.isArray(items)
+                          ? String((items as any).hormone_phase || '—')
+                          : '—'
+                      const prods =
+                        items && typeof items === 'object' && !Array.isArray(items) && Array.isArray((items as any).products)
+                          ? ((items as any).products as any[]).map((x) => x.name).filter(Boolean).join(', ')
+                          : ''
+                      const name =
+                        items && typeof items === 'object' && !Array.isArray(items)
+                          ? String((items as any).name || '—')
+                          : Array.isArray(items)
+                            ? items.join(', ')
+                            : '—'
                       return (
                         <div key={h.id} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 12 }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
