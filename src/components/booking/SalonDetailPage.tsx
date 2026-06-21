@@ -108,6 +108,14 @@ export default function SalonDetailPage() {
   const [selectedService, setSelectedService] = useState<SalonService | null>(null)
 
   useEffect(() => {
+    if (salon?.id) {
+      router.replace('/salons/' + salon.id)
+    } else if (!loading && !salon?.id) {
+      router.replace('/')
+    }
+  }, [salon?.id, loading, router])
+
+  useEffect(() => {
     if (!salonId) {
       setNotFound(true)
       setLoading(false)
