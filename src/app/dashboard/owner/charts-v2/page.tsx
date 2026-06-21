@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import CustomerPopup from './CustomerPopup'
 import ChartPopup from './ChartPopup'
 import InvitePopup from './InvitePopup'
+import NewChatPopup from '../salon-chat/NewChatPopup'
 
 const BG = '#ffffff'
 const CARD = '#f9f8fc'
@@ -112,6 +113,7 @@ export default function OwnerChartsV2Page() {
   const [showCustomerPopup, setShowCustomerPopup] = useState(false)
   const [showChartPopup, setShowChartPopup] = useState(false)
   const [showInvitePopup, setShowInvitePopup] = useState(false)
+  const [showSalonNewChat, setShowSalonNewChat] = useState(false)
   const [pickedCustomer, setPickedCustomer] = useState<any>(null)
 
   const refreshData = useCallback(async (ownerId: string) => {
@@ -396,10 +398,28 @@ export default function OwnerChartsV2Page() {
           }}
           customer={pickedCustomer}
           ownerId={owner.id}
+          onOpenSalonChat={(customer) => {
+            setShowChartPopup(false)
+            setPickedCustomer(customer)
+            setShowSalonNewChat(true)
+          }}
         />
       ) : null}
 
       <InvitePopup open={showInvitePopup} onClose={() => setShowInvitePopup(false)} customer={pickedCustomer} />
+
+      {owner?.id ? (
+        <NewChatPopup
+          open={showSalonNewChat}
+          onClose={() => setShowSalonNewChat(false)}
+          ownerId={owner.id}
+          preselectedCustomer={pickedCustomer}
+          onCreated={(channelId) => {
+            setShowSalonNewChat(false)
+            router.push('/dashboard/owner/salon-chat/' + channelId)
+          }}
+        />
+      ) : null}
 
       {toast ? (
         <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 24, background: POINT, color: '#fff', borderRadius: 12, padding: '12px 18px', fontSize: 13, fontWeight: 500, zIndex: 200 }}>

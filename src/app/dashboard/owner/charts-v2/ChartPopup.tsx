@@ -25,6 +25,7 @@ type Props = {
   onSaved: () => void
   customer: any
   ownerId: string
+  onOpenSalonChat?: (customer: any) => void
 }
 
 type Draft = {
@@ -125,7 +126,7 @@ function parseItems(raw: unknown) {
   return null
 }
 
-export default function ChartPopup({ open, onClose, onSaved, customer, ownerId }: Props) {
+export default function ChartPopup({ open, onClose, onSaved, customer, ownerId, onOpenSalonChat }: Props) {
   const supabaseRef = useRef(createClient())
   const [phase, setPhase] = useState('—')
   const [goldenHint, setGoldenHint] = useState('')
@@ -154,6 +155,7 @@ export default function ChartPopup({ open, onClose, onSaved, customer, ownerId }
   const [nextVisitDate, setNextVisitDate] = useState('')
   const [nameErr, setNameErr] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [chartSaved, setChartSaved] = useState(false)
   const [toast, setToast] = useState('')
 
   const memoData = useMemo(() => parseMemo(customer?.memo), [customer])
@@ -211,6 +213,7 @@ export default function ChartPopup({ open, onClose, onSaved, customer, ownerId }
     setNextVisitDate('')
     setNameErr(false)
     setHistoryExpanded(false)
+    setChartSaved(false)
   }
 
   useEffect(() => {
@@ -347,6 +350,8 @@ export default function ChartPopup({ open, onClose, onSaved, customer, ownerId }
 
       localStorage.removeItem(`chart_draft_${ownerId}_${customer.id}`)
       setToast('시술차트 저장 완료 💜')
+      setChartSaved(true)
+      if (onOpenSalonChat) return
       setTimeout(() => {
         onSaved()
         onClose()
@@ -577,13 +582,24 @@ export default function ChartPopup({ open, onClose, onSaved, customer, ownerId }
             ) : null}
           </div>
         </div>
-        <div style={{ position: 'sticky', bottom: 0, background: BG, padding: 16, borderTop: '1px solid #f0edf8', display: 'flex', gap: 10 }}>
-          <button type="button" onClick={saveDraft} style={{ flex: 1, height: 48, borderRadius: 10, border: `1px solid ${BORDER}`, background: BG, fontSize: 15, cursor: 'pointer' }}>
-            임시저장
-          </button>
-          <button type="button" disabled={saving} onClick={() => void submit()} style={{ flex: 1, height: 48, borderRadius: 10, border: 'none', background: POINT, color: '#fff', fontSize: 15, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
-            {saving ? '저장 중…' : '저장 완료'}
-          </button>
+        <div style={{ position: 'sticky', bottom: 0, background: BG, padding: 16, borderTop: '1px solid #f0edf8', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <button type="button" onClick={saveDraft} style={{ flex: 1, height: 48, borderRadius: 10, border: `1px solid ${BORDER}`, background: BG, fontSize: 15, cursor: 'pointer' }}>
+              임시저장
+            </button>
+            <button type="button" disabled={saving} onClick={() => void submit()} style={{ flex: 1, height: 48, borderRadius: 10, border: 'none', background: POINT, color: '#fff', fontSize: 15, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
+              {saving ? '저장 중…' : '저장 완료'}
+            </button>
+          </div>
+          {chartSaved && onOpenSalonChat ? (
+            <button
+              type="button"
+              onClick={() => onOpenSalonChat(customer)}
+              style={{ width: '100%', height: 48, borderRadius: 10, border: `1px solid ${BORDER}`, background: '#EDE9F7', color: POINT, fontSize: 15, cursor: 'pointer' }}
+            >
+              상담톡 시작하기
+            </button>
+          ) : null}
         </div>
       </div>
 

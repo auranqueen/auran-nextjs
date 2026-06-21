@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import SalonChatListPopup from './salon-chat/SalonChatListPopup'
+import NewChatPopup from './salon-chat/NewChatPopup'
 
 const BG = '#ffffff'
 const SURFACE = '#f9f8fc'
@@ -93,6 +95,9 @@ export default function OwnerDashClientV2() {
   const [churnAlerts, setChurnAlerts] = useState<ExtCustomer[]>([])
   const [partnerCount, setPartnerCount] = useState(0)
   const [activeTab, setActiveTab] = useState('home')
+  const [showChatList, setShowChatList] = useState(false)
+  const [showNewChat, setShowNewChat] = useState(false)
+  const [chatChannelId, setChatChannelId] = useState<string | null>(null)
 
   const nowLine = useMemo(() => {
     const d = new Date()
@@ -266,6 +271,7 @@ export default function OwnerDashClientV2() {
     { icon: '📦', label: '브랜드 발주', sub: tradeBrands.length ? `${tradeBrands[0]} 외 ${Math.max(0, tradeBrands.length - 1)}개` : '브랜드사를 설정해보세요', href: '/dashboard/owner/store' },
     { icon: '📊', label: '매출 분석', sub: revisitRate ? `재방문 ${revisitRate}%` : '-', href: '/dashboard/owner/store' },
     { icon: '🤝', label: '파트너스', sub: `유입 ${partnerCount}명`, href: '/dashboard/partner' },
+    { icon: '💬', label: '샵 상담톡', sub: '고객 1:1 상담', onClick: () => setShowChatList(true) },
   ]
 
   if (loading) {
@@ -444,7 +450,7 @@ export default function OwnerDashClientV2() {
             <button
               key={m.label}
               type="button"
-              onClick={() => router.push(m.href)}
+              onClick={() => ('onClick' in m && m.onClick ? m.onClick() : router.push((m as { href: string }).href))}
               style={{ ...card, textAlign: 'left', cursor: 'pointer', border: `1px solid ${BORDER}`, background: BG }}
             >
               <div style={{ width: 34, height: 34, borderRadius: '50%', background: PURPLE_LIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, marginBottom: 8 }}>
@@ -472,6 +478,30 @@ export default function OwnerDashClientV2() {
           </button>
         ))}
       </div>
+
+      <SalonChatListPopup
+        open={showChatList}
+        onClose={() => setShowChatList(false)}
+        ownerId={ownerId}
+        onOpenChat={(channelId) => {
+          setChatChannelId(channelId)
+          router.push('/dashboard/owner/salon-chat/' + channelId)
+        }}
+        onNewChat={() => {
+          setShowChatList(false)
+          setShowNewChat(true)
+        }}
+      />
+      <NewChatPopup
+        open={showNewChat}
+        onClose={() => setShowNewChat(false)}
+        ownerId={ownerId}
+        onCreated={(channelId) => {
+          setShowNewChat(false)
+          setChatChannelId(channelId)
+          router.push('/dashboard/owner/salon-chat/' + channelId)
+        }}
+      />
     </div>
   )
 }
