@@ -900,7 +900,7 @@ export default function OwnerChatRoomPage() {
           style={{
             width: 260,
             flexShrink: 0,
-            borderRight: '1px solid rgba(255,255,255,0.08)',
+            borderRight: '1px solid #ede9f7',
             overflowY: 'auto',
             background: 'rgba(0,0,0,0.2)',
             display: 'flex',
@@ -924,7 +924,7 @@ export default function OwnerChatRoomPage() {
                     cursor: 'pointer',
                     background: isActive ? 'rgba(123,94,167,0.25)' : 'transparent',
                     borderLeft: isActive ? '2px solid #7B5EA7' : '2px solid transparent',
-                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                    borderBottom: '1px solid #ede9f7',
                     transition: 'background 0.15s',
                   }}
                 >
@@ -987,7 +987,7 @@ export default function OwnerChatRoomPage() {
               width: 34,
               height: 34,
               borderRadius: 10,
-              background: 'rgba(255,255,255,0.06)',
+              background: '#f9f8fc',
               border: '1px solid var(--border)',
               color: 'var(--text2)',
               fontSize: 18,
@@ -1165,7 +1165,7 @@ export default function OwnerChatRoomPage() {
         <div
           style={{
             flexShrink: 0,
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            borderBottom: '1px solid #ede9f7',
             background: 'rgba(0,0,0,0.25)',
             padding: '10px 16px 12px',
             maxHeight: 200,
@@ -1185,7 +1185,7 @@ export default function OwnerChatRoomPage() {
                   key={String(l.id)}
                   style={{
                     marginBottom: 10,
-                    background: 'rgba(255,255,255,0.04)',
+                    background: '#f9f8fc',
                     padding: '10px 12px',
                     borderRadius: 8,
                     fontSize: 12,
@@ -1237,11 +1237,11 @@ export default function OwnerChatRoomPage() {
           const timeText = `${hour24 >= 12 ? '오후' : '오전'} ${hour24 % 12 || 12}:${minute}`
           const dateDividerNode = showDateDivider ? (
             <div key={`d-${m.id}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0 8px' }}>
-              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
+              <div style={{ flex: 1, height: '1px', background: '#ede9f7' }} />
               <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.28)', letterSpacing: '0.03em', whiteSpace: 'nowrap', padding: '0 4px' }}>
                 {dateText}
               </span>
-              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.07)' }} />
+              <div style={{ flex: 1, height: '1px', background: '#ede9f7' }} />
             </div>
           ) : null
           const ownerTimeNode = (
@@ -1316,7 +1316,7 @@ export default function OwnerChatRoomPage() {
                                 borderRadius: 8,
                                 objectFit: 'cover',
                                 flexShrink: 0,
-                                background: 'rgba(255,255,255,0.06)',
+                                background: '#f9f8fc',
                               }}
                             />
                           ) : (
@@ -1507,7 +1507,7 @@ export default function OwnerChatRoomPage() {
                             whiteSpace: 'pre-wrap',
                             padding: '8px 10px',
                             borderRadius: 8,
-                            background: 'rgba(255,255,255,0.05)',
+                            background: '#f9f8fc',
                             border: '1px solid rgba(255,255,255,0.1)',
                           }}
                         >
@@ -1624,7 +1624,7 @@ export default function OwnerChatRoomPage() {
           padding: '10px 12px',
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 64px)',
           background: '#ffffff',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
+          borderTop: '1px solid #ede9f7',
           maxHeight: '72vh',
           display: 'flex',
           flexDirection: 'column',
