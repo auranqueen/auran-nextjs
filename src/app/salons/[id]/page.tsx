@@ -1,7 +1,6 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { createPayAppPayment } from '@/lib/payments/payapp'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
@@ -1312,33 +1311,19 @@ export default function SalonHomePage() {
                       type="button"
                       disabled={!bookingServiceName || paymentLoading || bookingAmount < 1000}
                       onClick={() => {
-                        setPaymentLoading(true)
                         const svc = services.find((s) => s.name === bookingServiceName)
-                        const partnerFeeRate = (svc as { partner_fee_rate?: number })?.partner_fee_rate ?? 0
-                        const targetId = [
-                          salon.id,
-                          bookingServiceName || '',
-                          bookingServicePrice || 0,
-                          bookingSessions,
-                          partnerFeeRate,
-                        ].join('|')
-                        createPayAppPayment({
-                          kind: 'booking',
-                          amount: bookingAmount,
-                          target_id: targetId,
-                        })
-                          .then((res) => {
-                            if (res.ok && res.pay_url) {
-                              window.location.href = res.pay_url
-                            } else {
-                              setShareToast('결제 오류가 발생했어요. 다시 시도해주세요.')
-                              setPaymentLoading(false)
-                            }
-                          })
-                          .catch(() => {
-                            setShareToast('결제 오류가 발생했어요.')
-                            setPaymentLoading(false)
-                          })
+                        const partnerRate = (svc as any)?.partner_fee_rate ?? 0
+                        router.push(
+                          `/checkout/booking` +
+                            `?salon_id=${encodeURIComponent(salon.id)}` +
+                            `&salon_name=${encodeURIComponent(salon.name || '')}` +
+                            `&salon_area=${encodeURIComponent(salon.area || '')}` +
+                            `&service_name=${encodeURIComponent(bookingServiceName || '')}` +
+                            `&service_price=${bookingServicePrice || 0}` +
+                            `&service_cost=${bookingServicePrice || 0}` +
+                            `&partner_fee_rate=${partnerRate}` +
+                            `&sessions=${bookingSessions}`,
+                        )
                       }}
                       style={{
                         width: '100%',
