@@ -303,21 +303,40 @@ export default function SalonHomePage() {
 
   const visibleReviews = filteredReviews.slice(0, reviewLimit)
 
+  const [bookingMonth, setBookingMonth] = useState(() => {
+    const t = new Date()
+    return { year: t.getFullYear(), month: t.getMonth() }
+  })
   const bookingCalendarDays = useMemo(() => {
-    const days: { iso: string; label: number; dow: string }[] = []
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    for (let i = 1; i <= 30; i++) {
-      const d = new Date(today)
-      d.setDate(today.getDate() + i)
+    const { year, month } = bookingMonth
+    const firstDow = new Date(year, month, 1).getDay()
+    const lastDate = new Date(year, month + 1, 0).getDate()
+    const days: {
+      iso: string | null
+      label: number | null
+      disabled: boolean
+      empty: boolean
+      dowIdx: number
+    }[] = []
+    for (let i = 0; i < firstDow; i++) {
+      days.push({ iso: null, label: null, disabled: true, empty: true, dowIdx: i })
+    }
+    for (let d = 1; d <= lastDate; d++) {
+      const date = new Date(year, month, d)
+      date.setHours(0, 0, 0, 0)
+      const iso = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
       days.push({
-        iso: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
-        label: d.getDate(),
-        dow: DAY_KO[d.getDay()],
+        iso,
+        label: d,
+        disabled: date <= today,
+        empty: false,
+        dowIdx: date.getDay(),
       })
     }
     return days
-  }, [])
+  }, [bookingMonth])
 
   const bookingTimeSlots = useMemo(() => {
     const slots: string[] = []
@@ -924,14 +943,93 @@ export default function SalonHomePage() {
                         다음 황금기: {nextGoldenLabel} 예약 추천 ✨
                       </div>
                     ) : null}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 16 }}>
-                      {bookingCalendarDays.map((day) => (
+                    {bookingDate ? (
+                      <div style={{ fontSize: 14, fontWeight: 500, color: TEXT, marginBottom: 10, textAlign: 'center' }}>
+                        {(() => {
+                          const d = new Date(bookingDate + 'T12:00:00')
+                          return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${DAY_KO[d.getDay()]})`
+                        })()}
+                      </div>
+                    ) : null}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginBottom: 10,
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setBookingMonth((p) => {
+                            const d = new Date(p.year, p.month - 1, 1)
+                            return { year: d.getFullYear(), month: d.getMonth() }
+                          })
+                        }
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: '50%',
+                          border: `0.5px solid ${BORDER}`,
+                          background: 'transparent',
+                          color: TEXT,
+                          cursor: 'pointer',
+                          fontSize: 16,
+                        }}
+                      >
+                        ‹
+                      </button>
+                      <div style={{ fontSize: 13, color: TEXT, fontWeight: 500 }}>
+                        {bookingMonth.year}년 {bookingMonth.month + 1}월
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setBookingMonth((p) => {
+                            const d = new Date(p.year, p.month + 1, 1)
+                            return { year: d.getFullYear(), month: d.getMonth() }
+                          })
+                        }
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: '50%',
+                          border: `0.5px solid ${BORDER}`,
+                          background: 'transparent',
+                          color: TEXT,
+                          cursor: 'pointer',
+                          fontSize: 16,
+                        }}
+                      >
+                        ›
+                      </button>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 4 }}>
+                      {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => (
+                        <div
+                          key={d}
+                          style={{
+                            textAlign: 'center',
+                            fontSize: 10,
+                            padding: '4px 0',
+                            color: i === 0 ? '#F87171' : i === 6 ? '#60A5FA' : TEXT_SUB,
+                          }}
+                        >
+                          {d}
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 4, marginBottom: 16 }}>
+                      {bookingCalendarDays.map((day, idx) => (
                         <button
-                          key={day.iso}
+                          key={day.iso || `e-${idx}`}
                           type="button"
+                          disabled={day.disabled || day.empty}
                           onClick={() => {
+                            if (!day.iso || day.disabled) return
                             void (async () => {
-                              const dateStr = day.iso
+                              const dateStr = day.iso!
                               setBookingDate(dateStr)
                               setBookingTime('')
                               setSlotCounts({})
@@ -964,17 +1062,32 @@ export default function SalonHomePage() {
                             })()
                           }}
                           style={{
-                            padding: '8px 0',
+                            aspectRatio: '1/1',
                             borderRadius: 8,
-                            border: bookingDate === day.iso ? `1.5px solid ${PURPLE}` : `0.5px solid ${BORDER}`,
-                            background: bookingDate === day.iso ? PURPLE_LIGHT : CARD,
-                            color: bookingDate === day.iso ? TEXT : TEXT_SUB,
-                            fontSize: 11,
-                            cursor: 'pointer',
+                            border:
+                              bookingDate === day.iso
+                                ? `1.5px solid ${PURPLE}`
+                                : `0.5px solid ${day.empty ? 'transparent' : BORDER}`,
+                            background: day.empty ? 'transparent' : bookingDate === day.iso ? PURPLE_LIGHT : CARD,
+                            color: day.empty
+                              ? 'transparent'
+                              : day.disabled
+                                ? 'rgba(255,255,255,0.2)'
+                                : day.dowIdx === 0
+                                  ? '#F87171'
+                                  : day.dowIdx === 6
+                                    ? '#60A5FA'
+                                    : bookingDate === day.iso
+                                      ? TEXT
+                                      : TEXT_SUB,
+                            fontSize: 13,
+                            cursor: day.disabled || day.empty ? 'default' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                           }}
                         >
-                          <div style={{ fontSize: 9, opacity: 0.6 }}>{day.dow}</div>
-                          <div style={{ fontSize: 13, fontWeight: bookingDate === day.iso ? 500 : 400 }}>{day.label}</div>
+                          {day.empty ? '' : day.label}
                         </button>
                       ))}
                     </div>
