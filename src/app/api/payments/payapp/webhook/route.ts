@@ -409,6 +409,110 @@ export async function POST(req: NextRequest) {
           pointsAdded: pointsToAdd,
         })
       }
+      // 예약 결제 완료: purchases insert + 정산 계산
+      if (intent.kind === 'booking' && intent.user_id && intent.target_id) {
+        try {
+          const client = tryCreateServiceClient() || supabase
+          // target_id: "salonId|serviceName|servicePrice|sessions|partnerFeeRate"
+          const parts = String(intent.target_id).split('|')
+          const salonId = parts[0] || ''
+          const serviceName = parts[1] || ''
+          const servicePrice = Number(parts[2] || 0)
+          const totalSessions = Number(parts[3] || 1)
+          const partnerFeeRate = Number(parts[4] || 0)
+          const paymentAmount = Number(intent.amount || 0)
+          // 수수료 계산
+          const platformFeeRate = 8.8
+          const platformFee = Math.floor(paymentAmount * platformFeeRate / 100)
+          // 파트너스 확인 (고객의 partner_ref)
+          const { data: customerRow } = await client
+            .from('users')
+            .select('id, partner_ref')
+            .eq('id', intent.user_id)
+            .maybeSingle()
+          const partnerId = customerRow?.partner_ref || null
+          const partnerFee = partnerId && partnerFeeRate > 0
+            ? Math.floor(paymentAmount * partnerFeeRate / 100)
+            : 0
+          const partnerFeePerSession = totalSessions > 0
+            ? Math.floor(partnerFee / totalSessions)
+            : 0
+          const ownerAmount = paymentAmount - platformFee - partnerFee
+          // salon owner_id 조회
+          const { data: salonRow } = await client
+            .from('salons')
+            .select('owner_id')
+            .eq('id', salonId)
+            .maybeSingle()
+          // 중복 방지
+          const { data: existing } = await client
+            .from('purchases')
+            .select('id')
+            .eq('payment_id', String(intent.id))
+            .maybeSingle()
+          if (!existing) {
+            const { data: newPurchase } = await client
+              .from('purchases')
+              .insert({
+                customer_id: intent.user_id,
+                salon_id: salonId,
+                owner_id: salonRow?.owner_id || null,
+                service_name: serviceName,
+                service_price: servicePrice,
+                total_sessions: totalSessions,
+                used_sessions: 0,
+                remaining: totalSessions,
+                payment_id: String(intent.id),
+                payment_amount: paymentAmount,
+                platform_fee_rate: platformFeeRate,
+                platform_fee: platformFee,
+                partner_id: partnerId,
+                partner_fee_rate: partnerFeeRate,
+                partner_fee: partnerFee,
+                partner_fee_per_session: partnerFeePerSession,
+                partner_fee_paid: 0,
+                partner_fee_remaining: partnerFee,
+                owner_amount: ownerAmount,
+                status: 'active',
+                settlement_status: 'pending',
+                purchased_at: new Date().toISOString(),
+              })
+              .select('id')
+              .maybeSingle()
+            // 고객 알림
+            await client.from('notifications').insert({
+              user_id: intent.user_id,
+              type: 'payment',
+              title: '결제가 완료됐어요 💜',
+              body: `${serviceName} ${totalSessions}회권 · ₩${paymentAmount.toLocaleString()} 결제 완료. 이제 날짜를 예약해보세요!`,
+              link_url: `/salons/${salonId}?booking_paid=true&purchase_id=${newPurchase?.id || ''}`,
+              is_read: false,
+            } as any)
+            // 원장님 알림
+            if (salonRow?.owner_id) {
+              await client.from('notifications').insert({
+                user_id: salonRow.owner_id,
+                type: 'payment',
+                title: '새 시술권 결제 💜',
+                body: `${serviceName} ${totalSessions}회권 · 정산 예정 ₩${ownerAmount.toLocaleString()}`,
+                is_read: false,
+              } as any)
+            }
+            // 파트너스 알림
+            if (partnerId && partnerFee > 0) {
+              await client.from('notifications').insert({
+                user_id: partnerId,
+                type: 'payment',
+                title: '파트너스 수수료 발생 💜',
+                body: `${serviceName} ${totalSessions}회권 · 회차 완료마다 ₩${partnerFeePerSession.toLocaleString()}씩 정산 예정`,
+                is_read: false,
+              } as any)
+            }
+          }
+        } catch (e) {
+          console.error('[booking purchase insert]', e)
+        }
+      }
       // 주문 결제 완료: 알림만 (주문 상태는 이미 주문확인)
       if (intent.kind === 'order' && intent.target_id && intent.user_id) {
         const client = tryCreateServiceClient() || supabase

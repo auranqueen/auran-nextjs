@@ -53,6 +53,8 @@ export async function POST(req: NextRequest) {
     ? `${base}/api/payments/payapp/return?order_id=${targetId}`
     : kind === 'membership_gift'
     ? `${base}/membership/gift/complete?gift_id=${targetId}`
+    : kind === 'booking'
+    ? `${base}/api/payments/payapp/return?booking=true&salon_id=${(targetId || '').split('|')[0]}`
     : `${base}/api/payments/payapp/return`
   const sandbox = process.env.PAYAPP_SANDBOX === 'true' || process.env.PAYAPP_TEST_MODE === 'true'
 
@@ -118,7 +120,9 @@ export async function POST(req: NextRequest) {
     shopname,
     linkkey,
     linkval,
-    goodname: kind === 'charge' ? 'AURAN 홀리스틱 멤버십' : `AURAN 결제(${kind})`,
+    goodname: kind === 'charge' ? 'AURAN 홀리스틱 멤버십'
+      : kind === 'booking' ? `AURAN 시술 예약 결제`
+      : `AURAN 결제(${kind})`,
     price: String(Math.trunc(amount)),
     recvphone,
     memo: `AURAN ${kind}`,

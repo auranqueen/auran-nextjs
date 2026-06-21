@@ -1,6 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
+import { createPayAppPayment } from '@/lib/payments/payapp'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
@@ -25,6 +26,12 @@ const PHASE_TIP: Record<string, string> = {
   만개기: '리프팅 · 활력 케어를 추천해요',
   물들기: '수분 · 진정 케어로 균형을 잡아주세요',
 }
+
+const SESSION_PACKAGES = [
+  { sessions: 1, label: '1회권', desc: '1회 이용', discount: 0 },
+  { sessions: 5, label: '5회권', desc: '5회 이용', discount: 5 },
+  { sessions: 10, label: '10회권', desc: '10회 이용', discount: 10 },
+] as const
 
 type SalonService = {
   id?: string
@@ -170,7 +177,11 @@ export default function SalonHomePage() {
   const [bookingSalonName, setBookingSalonName] = useState<string>('')
   const [bookingServiceName, setBookingServiceName] = useState<string | undefined>(undefined)
   const [bookingServicePrice, setBookingServicePrice] = useState<number | undefined>(undefined)
-  const [bookingStep, setBookingStep] = useState<1 | 2 | 3 | 4>(1)
+  const [bookingStep, setBookingStep] = useState<1 | 2 | 3 | 4 | 5>(1)
+  const [bookingSessions, setBookingSessions] = useState(1)
+  const [purchaseId, setPurchaseId] = useState<string>('')
+  const [paymentLoading, setPaymentLoading] = useState(false)
+  const bookingPaidReturnRef = useRef(false)
   const [bookingDate, setBookingDate] = useState('')
   const [bookingTime, setBookingTime] = useState('')
   const [slotCounts, setSlotCounts] = useState<Record<string, number>>({})
@@ -242,8 +253,31 @@ export default function SalonHomePage() {
   }, [shareToast])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    const p = new URLSearchParams(window.location.search)
+    if (p.get('booking_paid') === 'true') {
+      bookingPaidReturnRef.current = true
+      const pid = p.get('purchase_id') || ''
+      setPurchaseId(pid)
+      setShowBooking(true)
+      setBookingStep(3)
+      setBookingMonth({
+        year: new Date().getFullYear(),
+        month: new Date().getMonth(),
+      })
+      window.history.replaceState({}, '', window.location.pathname)
+    }
+  }, [])
+
+  useEffect(() => {
     if (!showBooking) return
+    if (bookingPaidReturnRef.current) {
+      bookingPaidReturnRef.current = false
+      return
+    }
     setBookingStep(1)
+    setBookingSessions(1)
+    setPurchaseId('')
     setBookingDate('')
     setBookingTime('')
     setSlotCounts({})
@@ -252,7 +286,7 @@ export default function SalonHomePage() {
   }, [showBooking])
 
   useEffect(() => {
-    if (bookingStep !== 4 || !showBooking) return
+    if (bookingStep !== 5 || !showBooking) return
     setShareToast('예약 완료! 💜')
     const t = setTimeout(() => {
       setShowBooking(false)
@@ -262,6 +296,12 @@ export default function SalonHomePage() {
   }, [bookingStep, showBooking])
 
   const services = useMemo(() => parseServices(salon?.services), [salon?.services])
+  const bookingAmount = useMemo(() => {
+    const unit = Number(bookingServicePrice || 0)
+    const pkg = SESSION_PACKAGES.find((p) => p.sessions === bookingSessions)
+    const discount = pkg?.discount ?? 0
+    return Math.floor(unit * bookingSessions * (1 - discount / 100))
+  }, [bookingServicePrice, bookingSessions])
   const hoursToday = useMemo(() => todayHours(salon?.open_hours ?? null), [salon?.open_hours])
   const openNow = useMemo(() => isOpenNow(salon?.open_hours ?? null), [salon?.open_hours])
   const salonName = String(salon?.name || '샵')
@@ -799,7 +839,7 @@ export default function SalonHomePage() {
             <button
               type="button"
               onClick={() => {
-                if (bookingStep > 1 && bookingStep < 4) setBookingStep((bookingStep - 1) as 1 | 2 | 3 | 4)
+                if (bookingStep > 1 && bookingStep < 5) setBookingStep((bookingStep - 1) as 1 | 2 | 3 | 4 | 5)
                 else {
                   setShowBooking(false)
                   setBookingStep(1)
@@ -807,7 +847,7 @@ export default function SalonHomePage() {
               }}
               style={{ border: 'none', background: 'transparent', color: TEXT, fontSize: 14, cursor: 'pointer', minWidth: 44, textAlign: 'left' }}
             >
-              ← {bookingStep > 1 && bookingStep < 4 ? '이전' : '닫기'}
+              ← {bookingStep > 1 && bookingStep < 5 ? '이전' : '닫기'}
             </button>
             <div style={{ fontSize: 15, fontWeight: 500, color: TEXT }}>예약하기</div>
             <button
@@ -822,7 +862,7 @@ export default function SalonHomePage() {
             </button>
           </div>
 
-          {bookingStep < 4 ? (
+          {bookingStep < 5 ? (
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 15px', borderBottom: `0.5px solid ${BORDER}` }}>
                 <div
@@ -846,7 +886,7 @@ export default function SalonHomePage() {
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px 15px', borderBottom: `0.5px solid ${BORDER}` }}>
-                {([1, 2, 3] as const).map((n, idx) => (
+                {([1, 2, 3, 4, 5] as const).map((n, idx) => (
                   <div key={n} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <div
                       style={{
@@ -868,9 +908,9 @@ export default function SalonHomePage() {
                       {n}
                     </div>
                     <span style={{ fontSize: 11, color: bookingStep >= n ? (bookingStep === n ? TEXT : TEXT_SUB) : 'rgba(255,255,255,0.2)' }}>
-                      {n === 1 ? '시술' : n === 2 ? '날짜' : '확인'}
+                      {n === 1 ? '시술' : n === 2 ? '결제' : n === 3 ? '날짜' : n === 4 ? '확인' : '완료'}
                     </span>
-                    {idx < 2 ? <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 10 }}>→</span> : null}
+                    {idx < 4 ? <span style={{ color: 'rgba(255,255,255,0.15)', fontSize: 10 }}>→</span> : null}
                   </div>
                 ))}
               </div>
@@ -946,6 +986,51 @@ export default function SalonHomePage() {
                 ) : null}
 
                 {bookingStep === 2 ? (
+                  <>
+                    <div style={{ fontSize: 15, fontWeight: 500, color: TEXT, marginBottom: 12 }}>몇 회권을 구매할까요?</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {SESSION_PACKAGES.map((pkg) => {
+                        const unit = Number(bookingServicePrice || 0)
+                        const basePrice = unit * pkg.sessions
+                        const total = Math.floor(basePrice * (1 - pkg.discount / 100))
+                        const selected = bookingSessions === pkg.sessions
+                        return (
+                          <button
+                            key={pkg.sessions}
+                            type="button"
+                            onClick={() => setBookingSessions(pkg.sessions)}
+                            style={{
+                              textAlign: 'left',
+                              padding: '14px 15px',
+                              borderRadius: 12,
+                              border: selected ? `1.5px solid ${PURPLE}` : `0.5px solid ${BORDER}`,
+                              background: selected ? PURPLE_LIGHT : CARD,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                              <span style={{ fontSize: 14, fontWeight: 500, color: TEXT }}>{pkg.label}</span>
+                              {pkg.discount > 0 ? (
+                                <span style={{ fontSize: 10, color: GOLD, background: GOLD_LIGHT, padding: '2px 6px', borderRadius: 6 }}>
+                                  {pkg.discount}% 할인
+                                </span>
+                              ) : null}
+                            </div>
+                            <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 6 }}>{pkg.desc}</div>
+                            {pkg.discount > 0 ? (
+                              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', textDecoration: 'line-through', marginBottom: 2 }}>
+                                ₩{basePrice.toLocaleString()}
+                              </div>
+                            ) : null}
+                            <div style={{ fontSize: 15, fontWeight: 500, color: GOLD }}>₩{total.toLocaleString()}</div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </>
+                ) : null}
+
+                {bookingStep === 3 ? (
                   <>
                     <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 8 }}>날짜 선택</div>
                     {customerPhase && nextGoldenLabel ? (
@@ -1141,15 +1226,15 @@ export default function SalonHomePage() {
                   </>
                 ) : null}
 
-                {bookingStep === 3 ? (
+                {bookingStep === 4 ? (
                   <>
                     <div style={{ background: CARD, border: `0.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 15px', marginBottom: 14 }}>
                       <div style={{ fontSize: 13, fontWeight: 500, color: TEXT, marginBottom: 10 }}>{bookingSalonName}</div>
-                      <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 6 }}>시술 · {bookingServiceName}</div>
+                      <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 6 }}>시술 · {bookingServiceName} · {bookingSessions}회권</div>
                       <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 6 }}>
                         날짜 · {bookingDate ? fmtDate(bookingDate + 'T12:00:00') : '-'} {bookingTime}
                       </div>
-                      <div style={{ fontSize: 15, fontWeight: 500, color: GOLD }}>₩{Number(bookingServicePrice || 0).toLocaleString()}</div>
+                      <div style={{ fontSize: 15, fontWeight: 500, color: GOLD }}>₩{bookingAmount.toLocaleString()}</div>
                     </div>
                     <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 6 }}>요청사항</div>
                     <textarea
@@ -1189,7 +1274,7 @@ export default function SalonHomePage() {
                         cursor: bookingServiceName ? 'pointer' : 'default',
                       }}
                     >
-                      {bookingServiceName ? '다음 → 날짜 선택' : '시술을 먼저 선택해주세요'}
+                      {bookingServiceName ? '다음 → 회차 선택' : '시술을 먼저 선택해주세요'}
                     </button>
                     <button
                       type="button"
@@ -1216,10 +1301,87 @@ export default function SalonHomePage() {
                   </>
                 ) : null}
                 {bookingStep === 2 ? (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                      <span style={{ fontSize: 12, color: TEXT_SUB }}>
+                        {bookingServiceName} · {bookingSessions}회권
+                      </span>
+                      <span style={{ fontSize: 15, fontWeight: 500, color: GOLD }}>₩{bookingAmount.toLocaleString()}</span>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={!bookingServiceName || paymentLoading || bookingAmount < 1000}
+                      onClick={() => {
+                        setPaymentLoading(true)
+                        const svc = services.find((s) => s.name === bookingServiceName)
+                        const partnerFeeRate = (svc as { partner_fee_rate?: number })?.partner_fee_rate ?? 0
+                        const targetId = [
+                          salon.id,
+                          bookingServiceName || '',
+                          bookingServicePrice || 0,
+                          bookingSessions,
+                          partnerFeeRate,
+                        ].join('|')
+                        createPayAppPayment({
+                          kind: 'booking',
+                          amount: bookingAmount,
+                          target_id: targetId,
+                        })
+                          .then((res) => {
+                            if (res.ok && res.pay_url) {
+                              window.location.href = res.pay_url
+                            } else {
+                              setShareToast('결제 오류가 발생했어요. 다시 시도해주세요.')
+                              setPaymentLoading(false)
+                            }
+                          })
+                          .catch(() => {
+                            setShareToast('결제 오류가 발생했어요.')
+                            setPaymentLoading(false)
+                          })
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: 13,
+                        border: 'none',
+                        borderRadius: 12,
+                        background: bookingServiceName && !paymentLoading && bookingAmount >= 1000 ? PURPLE : SURFACE,
+                        color: bookingServiceName && !paymentLoading && bookingAmount >= 1000 ? '#fff' : 'rgba(255,255,255,0.3)',
+                        fontSize: 14,
+                        cursor: bookingServiceName && !paymentLoading && bookingAmount >= 1000 ? 'pointer' : 'default',
+                      }}
+                    >
+                      {paymentLoading ? '결제창으로 이동 중…' : `결제하기 ₩${bookingAmount.toLocaleString()}`}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowBooking(false)
+                        router.push(
+                          `/dashboard/customer/salon-chat/new?salon_id=${salon.id}&owner_id=${salon.owner_id || ''}`,
+                        )
+                      }}
+                      style={{
+                        width: '100%',
+                        padding: '11px',
+                        marginTop: 8,
+                        border: `0.5px solid ${PURPLE}`,
+                        background: 'transparent',
+                        borderRadius: 12,
+                        color: PURPLE,
+                        fontSize: 13,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      💬 상담으로 예약 문의하기
+                    </button>
+                  </>
+                ) : null}
+                {bookingStep === 3 ? (
                   <button
                     type="button"
                     disabled={!bookingDate || !bookingTime}
-                    onClick={() => setBookingStep(3)}
+                    onClick={() => setBookingStep(4)}
                     style={{
                       width: '100%',
                       padding: 13,
@@ -1234,7 +1396,7 @@ export default function SalonHomePage() {
                     예약 확인하기
                   </button>
                 ) : null}
-                {bookingStep === 3 ? (
+                {bookingStep === 4 ? (
                   <>
                   <button
                     type="button"
@@ -1256,6 +1418,7 @@ export default function SalonHomePage() {
                           booking_date: bookingDate,
                           booking_time: bookingTime,
                           notes: bookingNotes,
+                          purchase_id: purchaseId || null,
                           status: 'pending',
                         })
                         setBookingSubmitting(false)
@@ -1263,7 +1426,7 @@ export default function SalonHomePage() {
                           setShareToast('예약에 실패했어요')
                           return
                         }
-                        setBookingStep(4)
+                        setBookingStep(5)
                       })()
                     }}
                     style={{
@@ -1311,11 +1474,11 @@ export default function SalonHomePage() {
               <div style={{ fontSize: 18, fontWeight: 500, color: TEXT, marginBottom: 20 }}>예약이 완료됐어요!</div>
               <div style={{ width: '100%', maxWidth: 320, background: CARD, border: `0.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 15px', marginBottom: 24, textAlign: 'left' }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: TEXT, marginBottom: 8 }}>{bookingSalonName}</div>
-                <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 4 }}>{bookingServiceName}</div>
+                <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 4 }}>{bookingServiceName} · {bookingSessions}회권</div>
                 <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 4 }}>
                   {bookingDate ? fmtDate(bookingDate + 'T12:00:00') : ''} · {bookingTime}
                 </div>
-                <div style={{ fontSize: 14, fontWeight: 500, color: GOLD }}>₩{Number(bookingServicePrice || 0).toLocaleString()}</div>
+                <div style={{ fontSize: 14, fontWeight: 500, color: GOLD }}>₩{bookingAmount.toLocaleString()}</div>
               </div>
               <button
                 type="button"
