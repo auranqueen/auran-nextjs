@@ -31,6 +31,7 @@ type SalonService = {
   name?: string
   price?: number
   duration_min?: number
+  duration?: number
   description?: string
   phase_tags?: string[]
   phase_tag?: string
@@ -146,6 +147,11 @@ export default function SalonHomePage() {
   const [reviewLimit, setReviewLimit] = useState(5)
   const [shareToast, setShareToast] = useState('')
   const [showMapSheet, setShowMapSheet] = useState(false)
+  const [showBooking, setShowBooking] = useState(false)
+  const [bookingSalonId, setBookingSalonId] = useState<string>('')
+  const [bookingSalonName, setBookingSalonName] = useState<string>('')
+  const [bookingServiceName, setBookingServiceName] = useState<string | undefined>(undefined)
+  const [bookingServicePrice, setBookingServicePrice] = useState<number | undefined>(undefined)
 
   useEffect(() => {
     if (!id) return
@@ -248,7 +254,6 @@ export default function SalonHomePage() {
 
   const visibleReviews = filteredReviews.slice(0, reviewLimit)
 
-  const bookingHref = `/dashboard/customer/booking?salon_id=${encodeURIComponent(id)}&salon_name=${encodeURIComponent(salonName)}`
   const chatHref = `/dashboard/customer/salon-chat/new?salon_id=${encodeURIComponent(id)}&owner_id=${encodeURIComponent(ownerId)}`
 
   const share = async () => {
@@ -331,7 +336,13 @@ export default function SalonHomePage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               <button
                 type="button"
-                onClick={() => router.push(`/dashboard/customer/booking?salon_id=${salon.id}&salon_name=${encodeURIComponent(String(salon.name || ''))}`)}
+                onClick={() => {
+                  setBookingSalonId(salon.id)
+                  setBookingSalonName(String(salon.name || ''))
+                  setBookingServiceName(undefined)
+                  setBookingServicePrice(undefined)
+                  setShowBooking(true)
+                }}
                 style={{ width: '100%', padding: '7px 0', borderRadius: 9, border: 'none', background: PURPLE, color: '#fff', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
               >
                 📅 예약하기
@@ -425,7 +436,7 @@ export default function SalonHomePage() {
                       {s.description ? <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 6, lineHeight: 1.5 }}>{s.description}</div> : null}
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
                         <span style={{ fontSize: 16, color: GOLD }}>{Number(s.price || 0).toLocaleString()}원</span>
-                        {s.duration_min ? <span style={{ fontSize: 12, color: TEXT_SUB }}>{s.duration_min}분</span> : null}
+                        {(s.duration_min ?? s.duration) ? <span style={{ fontSize: 12, color: TEXT_SUB }}>{s.duration_min ?? s.duration}분</span> : null}
                         {Number(s.review_count || 0) > 0 ? (
                           <span style={{ fontSize: 10, color: TEXT_SUB }}>
                             ★{Number(s.avg_rating || 0).toFixed(1)} · 리뷰 {s.review_count}개
@@ -433,7 +444,17 @@ export default function SalonHomePage() {
                         ) : null}
                       </div>
                     </div>
-                    <button type="button" onClick={() => router.push(bookingHref)} style={{ border: `1px solid ${PURPLE}`, background: 'transparent', color: PURPLE, borderRadius: 8, padding: '8px 14px', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBookingSalonId(salon.id)
+                        setBookingSalonName(String(salon.name || ''))
+                        setBookingServiceName(s.name)
+                        setBookingServicePrice(s.price)
+                        setShowBooking(true)
+                      }}
+                      style={{ border: `1px solid ${PURPLE}`, background: 'transparent', color: PURPLE, borderRadius: 8, padding: '8px 14px', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
+                    >
                       예약
                     </button>
                   </div>
@@ -570,7 +591,17 @@ export default function SalonHomePage() {
 
       {tab === 'menu' ? (
         <div style={{ position: 'fixed', left: 0, right: 0, bottom: 0, padding: '12px 16px calc(12px + env(safe-area-inset-bottom))', background: BG, borderTop: `1px solid ${BORDER}` }}>
-          <button type="button" onClick={() => router.push(bookingHref)} style={{ width: '100%', height: 48, borderRadius: 12, border: 'none', background: PURPLE, color: TEXT, fontSize: 15, cursor: 'pointer' }}>
+          <button
+            type="button"
+            onClick={() => {
+              setBookingSalonId(salon.id)
+              setBookingSalonName(String(salon.name || ''))
+              setBookingServiceName(undefined)
+              setBookingServicePrice(undefined)
+              setShowBooking(true)
+            }}
+            style={{ width: '100%', height: 48, borderRadius: 12, border: 'none', background: PURPLE, color: TEXT, fontSize: 15, cursor: 'pointer' }}
+          >
             예약하기
           </button>
         </div>
@@ -630,6 +661,145 @@ export default function SalonHomePage() {
             >
               취소
             </button>
+          </div>
+        </div>
+      ) : null}
+
+      {showBooking ? (
+        <div
+          role="presentation"
+          onClick={() => setShowBooking(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300, display: 'flex', alignItems: 'flex-end' }}
+        >
+          <div
+            role="presentation"
+            onClick={(e) => e.stopPropagation()}
+            style={{ background: '#1A1A2E', borderRadius: '20px 20px 0 0', width: '100%', maxHeight: '92vh', overflowY: 'auto', paddingBottom: 24 }}
+          >
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.2)', margin: '12px auto 0' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 15px', borderBottom: '0.5px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ fontSize: 15, fontWeight: 500, color: '#fff' }}>예약하기</div>
+              <button type="button" onClick={() => setShowBooking(false)} style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', cursor: 'pointer', fontSize: 14 }}>
+                ×
+              </button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 15px', borderBottom: '0.5px solid rgba(255,255,255,0.06)' }}>
+              <div
+                style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 10,
+                  background: salon.banner_url ? `url(${salon.banner_url}) center/cover no-repeat` : PURPLE_LIGHT,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                {!salon.banner_url ? <span style={{ fontSize: 16 }}>💜</span> : null}
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: '#fff' }}>{bookingSalonName}</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>{salon.area}</div>
+              </div>
+            </div>
+            <div style={{ padding: '12px 15px 0' }}>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 8 }}>시술 선택</div>
+              {customerPhase ? (
+                <div style={{ background: 'rgba(123,94,167,0.12)', border: '0.5px solid rgba(123,94,167,0.25)', borderRadius: 9, padding: '8px 11px', marginBottom: 10 }}>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginBottom: 2 }}>지금 내 위상 기준 추천</div>
+                  <div style={{ fontSize: 12, color: GOLD }}>
+                    {PHASE_EMOJI[customerPhase]} {customerPhase} — {PHASE_TIP[customerPhase]}
+                  </div>
+                </div>
+              ) : null}
+              {services.map((svc) => (
+                <div
+                  key={svc.id || svc.name}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => {
+                    setBookingServiceName(svc.name)
+                    setBookingServicePrice(svc.price)
+                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid rgba(255,255,255,0.06)', cursor: 'pointer' }}
+                >
+                  <div
+                    style={{
+                      width: 52,
+                      height: 52,
+                      borderRadius: 9,
+                      flexShrink: 0,
+                      background: svc.thumbnail_url ? `url(${svc.thumbnail_url}) center/cover no-repeat` : PURPLE_LIGHT,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 18,
+                    }}
+                  >
+                    {!svc.thumbnail_url ? '💧' : null}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, color: '#fff', marginBottom: 2 }}>{svc.name}</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>{svc.description}</div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <span style={{ fontSize: 12, fontWeight: 500, color: GOLD }}>₩{Number(svc.price || 0).toLocaleString()}</span>
+                      {(svc.duration_min ?? svc.duration) ? (
+                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{svc.duration_min ?? svc.duration}분</span>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      flexShrink: 0,
+                      background: bookingServiceName === svc.name ? PURPLE : 'transparent',
+                      border: `1.5px solid ${bookingServiceName === svc.name ? PURPLE : 'rgba(255,255,255,0.2)'}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 11,
+                      color: '#fff',
+                    }}
+                  >
+                    {bookingServiceName === svc.name ? '✓' : null}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding: '12px 15px 0', borderTop: '0.5px solid rgba(255,255,255,0.08)', marginTop: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)' }}>{bookingServiceName || '시술을 선택해주세요'}</span>
+                <span style={{ fontSize: 15, fontWeight: 500, color: GOLD }}>{bookingServicePrice ? `₩${bookingServicePrice.toLocaleString()}` : ''}</span>
+              </div>
+              <button
+                type="button"
+                disabled={!bookingServiceName}
+                onClick={() => {
+                  setShowBooking(false)
+                  router.push(
+                    `/dashboard/customer/booking?salon_id=${bookingSalonId}` +
+                      `&salon_name=${encodeURIComponent(bookingSalonName)}` +
+                      `&service=${encodeURIComponent(bookingServiceName || '')}` +
+                      `&price=${bookingServicePrice || ''}`,
+                  )
+                }}
+                style={{
+                  width: '100%',
+                  padding: 13,
+                  border: 'none',
+                  borderRadius: 12,
+                  background: bookingServiceName ? PURPLE : 'rgba(255,255,255,0.1)',
+                  color: bookingServiceName ? '#fff' : 'rgba(255,255,255,0.3)',
+                  fontSize: 14,
+                  cursor: bookingServiceName ? 'pointer' : 'default',
+                }}
+              >
+                {bookingServiceName ? '날짜 · 시간 선택하기' : '시술을 먼저 선택해주세요'}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
