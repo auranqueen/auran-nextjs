@@ -101,7 +101,7 @@ export default function NewChatPopup({ open, onClose, ownerId, preselectedCustom
         .single()
       if (chErr || !ch?.id) return
       if (msg) {
-        await supabaseRef.current.from('messages').insert({
+        await supabaseRef.current.from('salon_messages').insert({
           channel_id: ch.id,
           sender_id: ownerId,
           sender_type: 'owner',

@@ -105,7 +105,7 @@ export default function SalonChatPage() {
 
       await sb.from('chat_channels').update({ unread_count: 0 }).eq('id', channelId)
 
-      const { data: msgs } = await sb.from('messages').select('*').eq('channel_id', channelId).order('created_at', { ascending: true })
+      const { data: msgs } = await sb.from('salon_messages').select('*').eq('channel_id', channelId).order('created_at', { ascending: true })
       if (cancelled) return
       setMessages((msgs as MsgRow[]) || [])
       setLoading(false)
@@ -126,7 +126,7 @@ export default function SalonChatPage() {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'messages',
+          table: 'salon_messages',
           filter: 'channel_id=eq.' + channelId,
         },
         (payload) => {
@@ -161,7 +161,7 @@ export default function SalonChatPage() {
     setSending(true)
     try {
       const now = new Date().toISOString()
-      await supabaseRef.current.from('messages').insert({
+      await supabaseRef.current.from('salon_messages').insert({
         channel_id: channelId,
         sender_id: ownerId,
         sender_type: 'owner',
@@ -191,13 +191,13 @@ export default function SalonChatPage() {
     try {
       const compressed = await compressImage(file, 'community')
       const path = `${ownerId}/${channelId}/${Date.now()}_${compressed.name.replace(/[^\w.-]+/g, '_')}`
-      const { error: upErr } = await supabaseRef.current.storage.from('chat-images').upload(path, compressed, { upsert: true })
+      const { error: upErr } = await supabaseRef.current.storage.from('salon-chat-images').upload(path, compressed, { upsert: true })
       if (upErr) return
-      const { data: pub } = supabaseRef.current.storage.from('chat-images').getPublicUrl(path)
+      const { data: pub } = supabaseRef.current.storage.from('salon-chat-images').getPublicUrl(path)
       const url = pub?.publicUrl
       if (!url) return
       const now = new Date().toISOString()
-      await supabaseRef.current.from('messages').insert({
+      await supabaseRef.current.from('salon_messages').insert({
         channel_id: channelId,
         sender_id: ownerId,
         sender_type: 'owner',
