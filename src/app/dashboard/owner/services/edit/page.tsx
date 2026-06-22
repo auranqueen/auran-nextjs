@@ -125,6 +125,7 @@ export default function OwnerServiceEditPage() {
   const [reviewToastText, setReviewToastText] = useState('100')
   const [reviewToastImage, setReviewToastImage] = useState('300')
   const [reviewToastVideo, setReviewToastVideo] = useState('500')
+  const [honeyToast, setHoneyToast] = useState('1000')
   const [homecareProducts, setHomecareProducts] = useState<HomecareProduct[]>([])
   const [productSearch, setProductSearch] = useState('')
   const [productHits, setProductHits] = useState<HomecareProduct[]>([])
@@ -189,6 +190,7 @@ export default function OwnerServiceEditPage() {
           setReviewToastText(String(found.review_toast_text ?? 100))
           setReviewToastImage(String(found.review_toast_image ?? 300))
           setReviewToastVideo(String(found.review_toast_video ?? 500))
+          setHoneyToast(String(found.honey_toast ?? 1000))
           setHomecareProducts(Array.isArray(found.homecare_products) ? (found.homecare_products as HomecareProduct[]) : [])
           setBookingEnabled(found.booking_enabled !== false)
           setIsPublic(found.is_public !== false)
@@ -299,6 +301,7 @@ export default function OwnerServiceEditPage() {
       review_toast_text: Number(reviewToastText),
       review_toast_image: Number(reviewToastImage),
       review_toast_video: Number(reviewToastVideo),
+      honey_toast: Number(honeyToast),
       homecare_products: homecareProducts,
       discount_5: pkgOn ? Number(discount5) : 0,
       discount_10: pkgOn ? Number(discount10) : 0,
@@ -647,6 +650,11 @@ export default function OwnerServiceEditPage() {
             <div><div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 4 }}>영상</div><input value={reviewToastVideo} onChange={(e) => setReviewToastVideo(e.target.value.replace(/[^\d]/g, ''))} style={{ width: '100%', padding: 8, borderRadius: 6, border: `1px solid ${BORDER}`, boxSizing: 'border-box' }} /></div>
           </div>
           <div style={{ fontSize: 12, color: TEXT_SUB, marginTop: 8 }}>기본값이에요. 수정하세요 💜</div>
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 4 }}>꿀 공유 토스트 🍯 (T)</div>
+            <input value={honeyToast} onChange={(e) => setHoneyToast(e.target.value.replace(/[^\d]/g, ''))} style={{ width: '100%', padding: 8, borderRadius: 6, border: `1px solid ${BORDER}`, boxSizing: 'border-box' }} />
+            <div style={{ fontSize: 11, color: TEXT_SUB, marginTop: 6, lineHeight: 1.5 }}>내 리뷰를 보고 다른 고객이 구매하면 리뷰 작성자에게 적립됩니다. 금액은 자유롭게 수정하세요.</div>
+          </div>
         </div>
 
         {/* 카드 11 */}
