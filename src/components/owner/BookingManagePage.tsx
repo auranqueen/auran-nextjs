@@ -252,17 +252,20 @@ export default function BookingManagePage() {
           .select('id')
           .eq('owner_id', ownerId)
           .eq('customer_id', booking.customer_id)
+          .eq('channel_type', 'salon')
           .order('created_at', { ascending: false })
           .limit(1)
           .single()
         if (channel?.id) {
           await supabaseRef.current
-            .from('consultation_messages')
+            .from('salon_messages')
             .insert({
               channel_id: channel.id,
               sender_id: ownerId,
-              content: msg,
-              message_type: 'text',
+              sender_type: 'owner',
+              body: msg,
+              is_from_customer: false,
+              message_kind: 'text',
             })
         }
       }
