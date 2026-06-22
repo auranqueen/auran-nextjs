@@ -240,6 +240,49 @@ export default function BookingManagePage() {
       }
     }
 
+    if (status === 'completed') {
+      const booking = rows.find(bk => bk.id === id)
+      if (booking?.customer_id) {
+        const { data: purchase } = await supabaseRef.current
+          .from('purchases')
+          .select('id, reviewer_id, honey_amount')
+          .eq('customer_id', booking.customer_id)
+          .eq('salon_id', salonId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
+        if (purchase?.reviewer_id) {
+          const { data: salonData } = await supabaseRef.current
+            .from('salons')
+            .select('services')
+            .eq('id', salonId)
+            .single()
+          const services = salonData?.services ?? []
+          const svc = Array.isArray(services)
+            ? services.find((s: any) => s.name === booking.service_name)
+            : null
+          const honeyAmt = svc?.honey_toast ?? 1000
+          await supabaseRef.current
+            .from('honey_logs')
+            .insert({
+              reviewer_id: purchase.reviewer_id,
+              buyer_id: booking.customer_id,
+              purchase_id: purchase.id,
+              salon_id: salonId,
+              service_name: booking.service_name,
+              amount: honeyAmt,
+            })
+          await supabaseRef.current
+            .from('profiles')
+            .update({ toast_balance: supabaseRef.current.rpc('increment_toast', { uid: purchase.reviewer_id, amt: honeyAmt }) })
+          await supabaseRef.current
+            .from('purchases')
+            .update({ honey_amount: honeyAmt })
+            .eq('id', purchase.id)
+        }
+      }
+    }
+
     if (status === 'completed' || status === 'cancelled') {
       const booking = rows.find(bk => bk.id === id)
       if (booking?.customer_id) {
