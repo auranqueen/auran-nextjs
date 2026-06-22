@@ -213,6 +213,33 @@ export default function BookingManagePage() {
       }
     }
 
+    if (status === 'completed' || status === 'cancelled') {
+      const booking = rows.find(bk => bk.id === id)
+      if (booking?.customer_id) {
+        const { data: userRow } = await supabaseRef.current
+          .from('users')
+          .select('phone, name')
+          .eq('id', booking.customer_id)
+          .single()
+        if (userRow?.phone) {
+          const svcName = booking.service_name ?? '관리'
+          const scheduledAt = (booking as { scheduled_at?: string | null }).scheduled_at
+            ?? (booking.booking_date ? `${booking.booking_date}T${booking.booking_time ?? '00:00'}` : null)
+          const dateStr = scheduledAt
+            ? new Date(scheduledAt).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+            : ''
+          const msg = status === 'completed'
+            ? `${userRow.name ?? '고객'}님, ${svcName} 관리가 완료됐어요 💜\n홈케어 잊지 마세요!`
+            : `${userRow.name ?? '고객'}님, ${dateStr} ${svcName} 예약이 취소됐어요.\n남은 회차는 그대로 유지됩니다.`
+          await fetch('/api/alimtalk/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: userRow.phone, message: msg, title: 'AURAN 예약 알림' }),
+          }).catch(() => {})
+        }
+      }
+    }
+
     showToast('저장됐어요 💜')
     await loadBookings(ownerId, tab, selectedDate)
   }
