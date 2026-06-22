@@ -187,42 +187,27 @@ export default function BookingManagePage() {
     }
 
     if (status === 'completed' || status === 'cancelled') {
-      const sb = supabaseRef.current
-      const { data: booking } = await sb
-        .from('bookings')
-        .select('purchase_id, customer_id, salon_id, service_name')
-        .eq('id', id)
-        .eq('owner_id', ownerId)
-        .maybeSingle()
-
-      if (booking) {
-        let purchase: { id: string; used_sessions: number | null; total_sessions: number | null } | null = null
-
-        if (booking.purchase_id) {
-          const { data } = await sb
-            .from('purchases')
-            .select('id, used_sessions, total_sessions')
-            .eq('id', booking.purchase_id)
-            .maybeSingle()
-          purchase = (data as { id: string; used_sessions: number | null; total_sessions: number | null }) || null
-        } else if (booking.customer_id && booking.salon_id) {
-          let q = sb
-            .from('purchases')
-            .select('id, used_sessions, total_sessions')
-            .eq('customer_id', booking.customer_id)
-            .eq('salon_id', booking.salon_id)
-          if (booking.service_name) q = q.eq('service_name', booking.service_name)
-          const { data } = await q.order('purchased_at', { ascending: false }).limit(1).maybeSingle()
-          purchase = (data as { id: string; used_sessions: number | null; total_sessions: number | null }) || null
-        }
-
-        if (purchase?.id) {
-          const used = Number(purchase.used_sessions) || 0
-          const total = Number(purchase.total_sessions) || 0
-          if (status === 'completed' && used < total) {
-            await sb.from('purchases').update({ used_sessions: used + 1 }).eq('id', purchase.id)
-          } else if (status === 'cancelled' && used > 0) {
-            await sb.from('purchases').update({ used_sessions: used - 1 }).eq('id', purchase.id)
+      const booking = rows.find(bk => bk.id === id)
+      if (booking?.customer_id) {
+        const { data: pur } = await supabaseRef.current
+          .from('purchases')
+          .select('id, used_sessions, total_sessions')
+          .eq('customer_id', booking.customer_id)
+          .eq('salon_id', salonId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
+        if (pur) {
+          if (status === 'completed' && pur.used_sessions < pur.total_sessions) {
+            await supabaseRef.current
+              .from('purchases')
+              .update({ used_sessions: pur.used_sessions + 1 })
+              .eq('id', pur.id)
+          } else if (status === 'cancelled' && pur.used_sessions > 0) {
+            await supabaseRef.current
+              .from('purchases')
+              .update({ used_sessions: pur.used_sessions - 1 })
+              .eq('id', pur.id)
           }
         }
       }
