@@ -73,7 +73,6 @@ type ReviewRow = {
   helpful_count?: number | null
   created_at: string
   author_id?: string | null
-  user_id?: string | null
   service_name?: string | null
   users?: { name?: string | null } | { name?: string | null }[] | null
 }
@@ -215,7 +214,7 @@ export default function SalonHomePage() {
 
       const { data: reviewRows } = await sb
         .from('reviews')
-        .select('id,rating,content,hormone_phase,skin_type,effect_tags,helpful_count,created_at,author_id,user_id,service_name,users(name)')
+        .select('id,rating,content,hormone_phase,skin_type,effect_tags,helpful_count,created_at,author_id,service_name,users(name)')
         .eq('target_id', id)
         .eq('status', 'approved')
         .order('created_at', { ascending: false })
@@ -711,7 +710,7 @@ export default function SalonHomePage() {
                         onClick={() => {
                           const params = new URLSearchParams({
                             service: r.service_name ?? '',
-                            reviewer_id: r.user_id ?? '',
+                            reviewer_id: r.author_id ?? '',
                           })
                           router.push(`/salons/${id}?${params.toString()}`)
                         }}
