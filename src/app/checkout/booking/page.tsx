@@ -33,6 +33,7 @@ function BookingCheckoutInner() {
   const serviceCostRaw = Number(search.get('service_cost') || 0)
   const serviceCost = serviceCostRaw > 0 ? serviceCostRaw : servicePrice
   const partnerFeeRate = Number(search.get('partner_fee_rate') || 0)
+  const reviewerId = search.get('reviewer_id') ?? ''
 
   const [sessions, setSessions] = useState(1)
   const [toastOn, setToastOn] = useState(false)
@@ -102,6 +103,7 @@ function BookingCheckoutInner() {
       serviceCost,
       toastUsed,
       marginAmount,
+      reviewerId,
     ].join('|')
     createPayAppPayment({
       kind: 'booking',

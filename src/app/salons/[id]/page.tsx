@@ -180,6 +180,7 @@ export default function SalonHomePage() {
   const [bookingStep, setBookingStep] = useState<1 | 2 | 3 | 4 | 5>(1)
   const [bookingSessions, setBookingSessions] = useState(1)
   const [purchaseId, setPurchaseId] = useState<string>('')
+  const [reviewerId, setReviewerId] = useState('')
   const [paymentLoading, setPaymentLoading] = useState(false)
   const bookingPaidReturnRef = useRef(false)
   const [bookingDate, setBookingDate] = useState('')
@@ -255,6 +256,8 @@ export default function SalonHomePage() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     const p = new URLSearchParams(window.location.search)
+    const reviewerIdParam = p.get('reviewer_id') || ''
+    if (reviewerIdParam) setReviewerId(reviewerIdParam)
     if (p.get('booking_paid') === 'true') {
       bookingPaidReturnRef.current = true
       const pid = p.get('purchase_id') || ''
@@ -1344,7 +1347,8 @@ export default function SalonHomePage() {
                             `&service_price=${bookingServicePrice || 0}` +
                             `&service_cost=${bookingServicePrice || 0}` +
                             `&partner_fee_rate=${partnerRate}` +
-                            `&sessions=${bookingSessions}`,
+                            `&sessions=${bookingSessions}` +
+                            `&reviewer_id=${encodeURIComponent(reviewerId)}`,
                         )
                       }}
                       style={{
