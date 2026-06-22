@@ -73,6 +73,8 @@ type ReviewRow = {
   helpful_count?: number | null
   created_at: string
   author_id?: string | null
+  user_id?: string | null
+  service_name?: string | null
   users?: { name?: string | null } | { name?: string | null }[] | null
 }
 
@@ -213,7 +215,7 @@ export default function SalonHomePage() {
 
       const { data: reviewRows } = await sb
         .from('reviews')
-        .select('id,rating,content,hormone_phase,skin_type,effect_tags,helpful_count,created_at,author_id,users(name)')
+        .select('id,rating,content,hormone_phase,skin_type,effect_tags,helpful_count,created_at,author_id,user_id,service_name,users(name)')
         .eq('target_id', id)
         .eq('status', 'approved')
         .order('created_at', { ascending: false })
@@ -703,7 +705,28 @@ export default function SalonHomePage() {
                       ))}
                     </div>
                     <div style={{ fontSize: 13, lineHeight: 1.6, color: TEXT_SUB }}>{r.content || ''}</div>
-                    <div style={{ fontSize: 11, color: TEXT_SUB, marginTop: 8 }}>도움돼요 {Number(r.helpful_count || 0)}</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                      <div style={{ fontSize: 11, color: TEXT_SUB }}>도움돼요 {Number(r.helpful_count || 0)}</div>
+                      <span
+                        onClick={() => {
+                          const params = new URLSearchParams({
+                            service: r.service_name ?? '',
+                            reviewer_id: r.user_id ?? '',
+                          })
+                          router.push(`/salons/${id}?${params.toString()}`)
+                        }}
+                        style={{
+                          cursor: 'pointer',
+                          fontSize: 12,
+                          color: '#C9A96E',
+                          border: '1px solid #C9A96E',
+                          borderRadius: 20,
+                          padding: '4px 12px',
+                        }}
+                      >
+                        나도 관리권 구매하기 🍯
+                      </span>
+                    </div>
                   </div>
                 )
               })
