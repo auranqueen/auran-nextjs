@@ -94,7 +94,6 @@ export default function OwnerServiceEditPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
-  const [aiLoading, setAiLoading] = useState(false)
   const [divPickerFor, setDivPickerFor] = useState<string | null>(null)
 
   const [name, setName] = useState('')
@@ -230,50 +229,6 @@ export default function OwnerServiceEditPage() {
     return data.publicUrl
   }
 
-  const handleAiFill = async () => {
-    if (name.trim().length < 2) return
-    setAiLoading(true)
-    try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1000,
-          messages: [{
-            role: 'user',
-            content: `당신은 한국 에스테틱 전문가입니다.
-아래 시술명으로 관리 프로그램 정보를 JSON으로 만들어주세요.
-시술명: "${name}"
-
-JSON만 반환 (마크다운 금지):
-{
-  "description": "한 줄 설명 (20자 내)",
-  "effect_tags": ["효과태그1","효과태그2","효과태그3"],
-  "phase_tags": ["all"] 또는 ["gold","moon"] 등,
-  "duration": 60,
-  "caution": "주의사항 (없으면 빈 문자열)"
-}`,
-          }],
-        }),
-      })
-      const data = await res.json()
-      const text = data.content?.[0]?.text || ''
-      const clean = text.replace(/```json|```/g, '').trim()
-      const parsed = JSON.parse(clean)
-      if (!description.trim() && parsed.description) setDescription(parsed.description)
-      if (!selectedTags.length && Array.isArray(parsed.effect_tags)) setSelectedTags(parsed.effect_tags.filter((t: string) => EFFECT_TAGS.includes(t)))
-      if (selectedPhases.length === 1 && selectedPhases[0] === 'all' && Array.isArray(parsed.phase_tags)) setSelectedPhases(parsed.phase_tags)
-      if (duration === 60 && parsed.duration) setDuration(Number(parsed.duration))
-      if (!caution.trim() && parsed.caution) setCaution(parsed.caution)
-      showToast('AI가 추천한 내용이에요. 수정해보세요 💜')
-    } catch {
-      /* AI unavailable */
-    } finally {
-      setAiLoading(false)
-    }
-  }
-
   const togglePhase = (id: string) => {
     if (id === 'all') {
       setSelectedPhases(['all'])
@@ -387,7 +342,6 @@ JSON만 반환 (마크다운 금지):
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
       <span style={{ width: 24, height: 24, borderRadius: '50%', background: PURPLE_LIGHT, color: PURPLE, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600 }}>{n}</span>
       <span style={{ fontSize: 15, fontWeight: 500, color: PURPLE_DARK }}>{title}</span>
-      {n === 1 && aiLoading ? <span style={{ fontSize: 12, color: TEXT_SUB }}>AI 분석 중…</span> : null}
     </div>
   )
 
@@ -410,14 +364,13 @@ JSON만 반환 (마크다운 금지):
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onBlur={() => void handleAiFill()}
-            placeholder="관리 프로그램명"
+            placeholder="예) 진정 수딩 에센스 팩"
             style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 10, fontSize: 14, boxSizing: 'border-box' }}
           />
           <input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="한 줄 설명"
+            placeholder="예) 민감한 피부를 위한 수딩 시술입니다. 진정 토너와..."
             style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 14, boxSizing: 'border-box' }}
           />
         </div>
@@ -472,13 +425,14 @@ JSON만 반환 (마크다운 금지):
             <br />
             고객이 리뷰에서 올리는 B/A도 함께 표시 💜
           </div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
             {(['title', 'subtitle', 'body', 'image', 'video', 'divider'] as const).map((t) => (
               <button key={t} type="button" onClick={() => addBlock(t)} style={chipStyle(false)}>
                 {t === 'title' ? '제목' : t === 'subtitle' ? '소제목' : t === 'body' ? '본문' : t === 'image' ? '이미지' : t === 'video' ? '영상' : '구분선'}
               </button>
             ))}
           </div>
+          <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 10 }}>구분선: 예) 실선 · 점선 · 도트 · 포인트(●) · 장식(✦)</div>
           {detailBlocks.map((block, idx) => (
             <div key={block.id} style={{ background: BG_CARD, borderRadius: 8, padding: 10, marginBottom: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -526,6 +480,7 @@ JSON만 반환 (마크다운 금지):
                   value={block.value}
                   onChange={(e) => setDetailBlocks((b) => b.map((x) => x.id === block.id ? { ...x, value: e.target.value } : x))}
                   rows={block.type === 'body' ? 4 : 2}
+                  placeholder={block.type === 'title' ? '예) 프로그램 소개' : block.type === 'subtitle' ? '예) 이런 분께 추천해요' : block.type === 'body' ? '예) 시술 과정과 효과를 자세히 적어주세요' : block.type === 'video' ? '예) https://youtube.com/watch?v=...' : ''}
                   style={{ width: '100%', padding: 8, borderRadius: 6, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box' }}
                 />
               )}
@@ -536,18 +491,18 @@ JSON만 반환 (마크다운 금지):
         {/* 카드 3 */}
         <div style={cardStyle}>
           {cardTitle(3, '가격 · 소요시간')}
-          <input value={price} onChange={(e) => setPrice(e.target.value.replace(/[^\d]/g, ''))} placeholder="노출 가격 (원)" style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 10, boxSizing: 'border-box' }} />
+          <input value={price} onChange={(e) => setPrice(e.target.value.replace(/[^\d]/g, ''))} placeholder="예) 100,000" style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 10, boxSizing: 'border-box' }} />
           <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, fontSize: 13 }}>
             <input type="checkbox" checked={costOn} onChange={(e) => setCostOn(e.target.checked)} />
             원가 입력
           </label>
           {costOn ? (
             <>
-              <input value={costPrice} onChange={(e) => setCostPrice(e.target.value.replace(/[^\d]/g, ''))} placeholder="원가" style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 6, boxSizing: 'border-box' }} />
+              <input value={costPrice} onChange={(e) => setCostPrice(e.target.value.replace(/[^\d]/g, ''))} placeholder="예) 40,000" style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 6, boxSizing: 'border-box' }} />
               <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 10 }}>마진 {marginPct}% (₩{(numPrice - numCost).toLocaleString()})</div>
             </>
           ) : null}
-          <div style={{ fontSize: 13, color: TEXT_SUB, marginBottom: 8 }}>소요시간</div>
+          <div style={{ fontSize: 13, color: TEXT_SUB, marginBottom: 8 }}>소요시간 <span style={{ fontSize: 11 }}>(예) 50분)</span></div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
             {DURATION_OPTIONS.map((d) => (
               <button key={d} type="button" onClick={() => setDuration(d)} style={chipStyle(duration === d)}>{d}분</button>
@@ -578,6 +533,7 @@ JSON만 반환 (마크다운 금지):
         {/* 카드 4 */}
         <div style={cardStyle}>
           {cardTitle(4, '호르몬 위상')}
+          <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 8 }}>예) 황금기·만개기에 추천하는 프로그램이면 해당 위상을 선택하세요</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             {PHASE_OPTIONS.map((p) => (
               <button
@@ -601,6 +557,7 @@ JSON만 반환 (마크다운 금지):
         {/* 카드 5 */}
         <div style={cardStyle}>
           {cardTitle(5, '효과 태그')}
+          <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 8 }}>예) 진정, 수딩, 촉촉, 밝음 — 아래에서 선택하세요</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {EFFECT_TAGS.map((tag) => (
               <button key={tag} type="button" onClick={() => toggleTag(tag)} style={chipStyle(selectedTags.includes(tag))}>{tag}</button>
@@ -632,7 +589,7 @@ JSON만 반환 (마크다운 금지):
               }} />
             </label>
           ) : (
-            <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="YouTube / Vimeo URL" style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, boxSizing: 'border-box' }} />
+            <input value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} placeholder="예) https://youtube.com/watch?v=..." style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, boxSizing: 'border-box' }} />
           )}
           {videoUrl ? <div style={{ fontSize: 11, color: TEXT_SUB, marginTop: 6, wordBreak: 'break-all' }}>{videoUrl}</div> : null}
         </div>
@@ -640,7 +597,7 @@ JSON만 반환 (마크다운 금지):
         {/* 카드 7 */}
         <div style={cardStyle}>
           {cardTitle(7, '주의사항')}
-          <textarea value={caution} onChange={(e) => setCaution(e.target.value)} rows={4} placeholder="시술 전후 주의사항" style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 14, boxSizing: 'border-box' }} />
+          <textarea value={caution} onChange={(e) => setCaution(e.target.value)} rows={4} placeholder={'예) • 민감한 피부는 패치 테스트 권장\n• 시술 후 24시간 보습 필수'} style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 14, boxSizing: 'border-box' }} />
         </div>
 
         {/* 카드 8 */}
@@ -667,11 +624,12 @@ JSON만 반환 (마크다운 금지):
           </label>
           {promoOn ? (
             <>
+              <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 8 }}>예) 시즌 특가 · 10% 할인 · 2026-03-01 ~ 2026-03-31</div>
               <select value={promoType} onChange={(e) => setPromoType(e.target.value)} style={{ width: '100%', padding: 10, borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 8 }}>
                 {PROMO_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
               <div style={{ fontSize: 13, marginBottom: 8 }}>
-                할인율 <input value={promoDiscount} onChange={(e) => setPromoDiscount(e.target.value.replace(/[^\d]/g, ''))} style={{ width: 48, marginLeft: 8, padding: 6, borderRadius: 6, border: `1px solid ${BORDER}` }} />%
+                할인율 <input value={promoDiscount} onChange={(e) => setPromoDiscount(e.target.value.replace(/[^\d]/g, ''))} placeholder="예) 10" style={{ width: 48, marginLeft: 8, padding: 6, borderRadius: 6, border: `1px solid ${BORDER}` }} />%
                 → ₩{Math.round(numPrice * (1 - Number(promoDiscount) / 100)).toLocaleString()}
               </div>
               <input type="date" value={promoStartDate} onChange={(e) => setPromoStartDate(e.target.value)} style={{ width: '100%', padding: 10, borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 8, boxSizing: 'border-box' }} />
@@ -694,7 +652,7 @@ JSON만 반환 (마크다운 금지):
         {/* 카드 11 */}
         <div style={cardStyle}>
           {cardTitle(11, '홈케어 추천 제품')}
-          <input value={productSearch} onChange={(e) => setProductSearch(e.target.value)} placeholder="제품명 검색" style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 8, boxSizing: 'border-box' }} />
+          <input value={productSearch} onChange={(e) => setProductSearch(e.target.value)} placeholder="예) 세라마이드 앰플" style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 8, boxSizing: 'border-box' }} />
           {productHits.map((p) => (
             <button key={p.id} type="button" onClick={() => {
               if (homecareProducts.some((h) => h.id === p.id)) return
