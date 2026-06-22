@@ -279,6 +279,27 @@ export default function BookingManagePage() {
             .from('purchases')
             .update({ honey_amount: honeyAmt })
             .eq('id', purchase.id)
+          const { data: reviewerChannel } = await supabaseRef.current
+            .from('chat_channels')
+            .select('id')
+            .eq('customer_id', purchase.reviewer_id)
+            .eq('channel_type', 'salon')
+            .eq('owner_id', ownerId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single()
+          if (reviewerChannel?.id) {
+            await supabaseRef.current
+              .from('salon_messages')
+              .insert({
+                channel_id: reviewerChannel.id,
+                sender_id: ownerId,
+                sender_type: 'owner',
+                body: `꿀 떨어졌어요 🍯 +${honeyAmt}T\n내 리뷰를 보고 누군가 관리권을 구매했어요!\n토스트가 적립됐습니다 💜`,
+                is_from_customer: false,
+                message_kind: 'text',
+              })
+          }
         }
       }
     }
