@@ -240,6 +240,34 @@ export default function BookingManagePage() {
       }
     }
 
+    if (status === 'completed' || status === 'cancelled') {
+      const booking = rows.find(bk => bk.id === id)
+      if (booking?.customer_id) {
+        const svcName = booking.service_name ?? '관리'
+        const msg = status === 'completed'
+          ? `${svcName} 관리가 완료됐어요 💜\n홈케어 잊지 마시고, 궁금한 점 있으면 언제든 말씀해 주세요!`
+          : `${svcName} 예약이 취소됐어요.\n남은 회차는 그대로 유지되니 편하실 때 다시 예약해 주세요 💜`
+        const { data: channel } = await supabaseRef.current
+          .from('chat_channels')
+          .select('id')
+          .eq('owner_id', ownerId)
+          .eq('customer_id', booking.customer_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
+        if (channel?.id) {
+          await supabaseRef.current
+            .from('consultation_messages')
+            .insert({
+              channel_id: channel.id,
+              sender_id: ownerId,
+              content: msg,
+              message_type: 'text',
+            })
+        }
+      }
+    }
+
     showToast('저장됐어요 💜')
     await loadBookings(ownerId, tab, selectedDate)
   }
