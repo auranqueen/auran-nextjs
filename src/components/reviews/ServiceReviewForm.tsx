@@ -22,6 +22,17 @@ const HORMONE_PHASES = [
 
 const EFFECT_TAGS = ['촉촉해요', '진정돼요', '흡수빨라요', '끈적임없어요', '자극없어요', '탄력있어요', '윤기돌아요', '트러블완화']
 
+const GOOD_TAG_CATEGORIES = [
+  { label: '기술·실력', chips: ['손이 능숙해요', '섬세하게 케어해줘요', '전문 지식이 풍부해요', '맞춤 관리를 해줘요'] },
+  { label: '환경·공간', chips: ['공간이 청결해요', '인테리어가 예뻐요', '향이 좋아요', '조용하고 편안해요', '주차가 편해요'] },
+  { label: '서비스·친절', chips: ['원장님이 친절해요', '설명을 잘 해줘요', '예약이 편해요', '시간을 잘 지켜요'] },
+  { label: '제품·재료', chips: ['정품을 사용해요', '고급 제품을 써요', '피부 자극이 없어요'] },
+  { label: '효과', chips: ['효과가 바로 느껴져요', '피부가 촉촉해졌어요', '트러블이 진정됐어요', '다음날도 지속돼요', '재방문 의사 있어요'] },
+] as const
+
+const CHIP_BORDER = 'rgba(255,255,255,0.08)'
+const CHIP_TEXT = '#888888'
+
 function publicUrl(path: string) {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
   return `${base}/storage/v1/object/public/salon-reviews/${path}`
@@ -51,6 +62,7 @@ export default function ServiceReviewForm() {
   const [afterFile, setAfterFile] = useState<File | null>(null)
   const [hormonePhase, setHormonePhase] = useState<string | null>(null)
   const [effectTags, setEffectTags] = useState<string[]>([])
+  const [goodTags, setGoodTags] = useState<string[]>([])
   const [isShared, setIsShared] = useState(true)
   const [textToast, setTextToast] = useState(100)
   const [imageToast, setImageToast] = useState(300)
@@ -114,6 +126,10 @@ export default function ServiceReviewForm() {
     setEffectTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
   }
 
+  const toggleGoodTag = (tag: string) => {
+    setGoodTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
+  }
+
   const onSubmit = async () => {
     if (!rating || !content.trim()) {
       setToastMsg('별점과 후기 내용을 입력해주세요')
@@ -174,6 +190,7 @@ export default function ServiceReviewForm() {
           video_url: videoUrl,
           hormone_phase: hormonePhase,
           effect_tags: effectTags.length ? effectTags : null,
+          helpful_concerns: goodTags.length ? goodTags : null,
           is_shared_community: isShared,
           status: '게시',
           helpful_count: 0,
@@ -348,6 +365,37 @@ export default function ServiceReviewForm() {
               </span>
             ))}
           </div>
+        </div>
+
+        <div style={cardStyle}>
+          <div style={{ fontSize: 13, marginBottom: 12 }}>이런 점이 좋았어요</div>
+          {GOOD_TAG_CATEGORIES.map((cat) => (
+            <div key={cat.label} style={{ marginBottom: 14 }}>
+              <div style={{ fontSize: 11, color: PURPLE, marginBottom: 8 }}>{cat.label}</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {cat.chips.map((chip) => {
+                  const selected = goodTags.includes(chip)
+                  return (
+                    <span
+                      key={chip}
+                      onClick={() => toggleGoodTag(chip)}
+                      style={{
+                        cursor: 'pointer',
+                        fontSize: 12,
+                        padding: '6px 12px',
+                        borderRadius: 20,
+                        border: `1px solid ${selected ? PURPLE : CHIP_BORDER}`,
+                        background: selected ? 'rgba(123,94,167,0.12)' : CARD,
+                        color: selected ? PURPLE : CHIP_TEXT,
+                      }}
+                    >
+                      {chip}
+                    </span>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
         </div>
 
         <div style={cardStyle}>
