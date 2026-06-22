@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { TOOLTIP_FALLBACKS, isPeriodTrack } from '@/lib/hormoneUtils'
 import RhythmFix from '@/components/home/RhythmFix'
 import SkinReportCard from '@/components/my/SkinReportCard'
+import MyBookingStatus from '@/components/customer/MyBookingStatus'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
@@ -929,6 +930,8 @@ export default function MyPage() {
           </div>
         )}
       </div>
+
+      <MyBookingStatus />
 
       {/* 메뉴 리스트 */}
       <div style={{ padding: '16px 16px 0' }}>
