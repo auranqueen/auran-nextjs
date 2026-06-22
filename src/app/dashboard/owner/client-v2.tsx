@@ -290,6 +290,7 @@ export default function OwnerDashClientV2() {
   ]
 
   const quickMenus = [
+    { icon: '📋', label: '관리 프로그램', sub: '등록 · 수정 · 관리', href: '/dashboard/owner/services' },
     { icon: '📋', label: '시술차트', sub: `오늘 ${todayChartCount}건 작성`, href: '/dashboard/owner/charts-v2' },
     { icon: '📅', label: '예약 관리', sub: `오늘 ${todayBookings.length}건`, href: '/dashboard/owner/bookings' },
     { icon: '👥', label: '고객 관리', sub: `${extCount}명`, href: '/dashboard/owner/charts-v2' },
