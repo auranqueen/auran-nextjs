@@ -164,7 +164,7 @@ export default function BookingManagePage() {
       }
       const oid = String(me.id)
       setOwnerId(oid)
-      const { data: salon } = await sb.from('salons').select('id').eq('owner_id', oid).maybeSingle()
+      const { data: salon } = await sb.from('salons').select('id, services').eq('owner_id', oid).maybeSingle()
       if (salon?.id) setSalonId(String(salon.id))
       await loadBookings(oid, tab, selectedDate)
       if (!cancelled) setLoading(false)
@@ -244,9 +244,22 @@ export default function BookingManagePage() {
       const booking = rows.find(bk => bk.id === id)
       if (booking?.customer_id) {
         const svcName = booking.service_name ?? '관리'
-        const msg = status === 'completed'
-          ? `${svcName} 관리가 완료됐어요 💜\n홈케어 잊지 마시고, 궁금한 점 있으면 언제든 말씀해 주세요!`
-          : `${svcName} 예약이 취소됐어요.\n남은 회차는 그대로 유지되니 편하실 때 다시 예약해 주세요 💜`
+        let msg: string
+        if (status === 'completed') {
+          const { data: salon } = await supabaseRef.current
+            .from('salons')
+            .select('id, services')
+            .eq('id', salonId)
+            .maybeSingle()
+          const services = salon?.services ?? []
+          const svc = Array.isArray(services)
+            ? services.find((s: { name?: string | null; review_toast_text?: number }) => s.name === booking.service_name)
+            : null
+          const toastAmt = svc?.review_toast_text ?? 100
+          msg = `${svcName} 관리가 완료됐어요 💜\n홈케어 잊지 마세요!\n\n리뷰 남기면 ${toastAmt}T 적립돼요 🍯\n👉 auran.kr/reviews/write?service=${encodeURIComponent(svcName)}`
+        } else {
+          msg = `${svcName} 예약이 취소됐어요.\n남은 회차는 그대로 유지되니 편하실 때 다시 예약해 주세요 💜`
+        }
         const { data: channel } = await supabaseRef.current
           .from('chat_channels')
           .select('id')
