@@ -17,11 +17,36 @@ type Row = {
   review: any | null
 }
 
+type SalonReviewRow = {
+  id: string
+  service_name?: string | null
+  rating?: number | null
+  content?: string | null
+  created_at?: string | null
+  images?: string[] | null
+  helpful_concerns?: string[] | null
+  target_id: string
+  salon_name: string
+}
+
+function fmtDate(iso?: string | null) {
+  if (!iso) return '—'
+  try {
+    return new Date(iso).toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' })
+  } catch {
+    return iso
+  }
+}
+
 export default function MyReviewsPage() {
   const router = useRouter()
   const supabase = createClient()
+  const [tab, setTab] = useState<'product' | 'salon'>('product')
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<Row[]>([])
+  const [salonRows, setSalonRows] = useState<SalonReviewRow[]>([])
+  const [salonLoading, setSalonLoading] = useState(false)
+  const [salonLoaded, setSalonLoaded] = useState(false)
   const [formProductId, setFormProductId] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState<{
     id: string
@@ -75,6 +100,58 @@ export default function MyReviewsPage() {
     void load()
   }, [])
 
+  const loadSalonReviews = async () => {
+    setSalonLoading(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user?.id) {
+      setSalonRows([])
+      setSalonLoading(false)
+      setSalonLoaded(true)
+      return
+    }
+    const { data: me } = await supabase.from('users').select('id').eq('auth_id', session.user.id).maybeSingle()
+    if (!me?.id) {
+      setSalonRows([])
+      setSalonLoading(false)
+      setSalonLoaded(true)
+      return
+    }
+    const { data: revs } = await supabase
+      .from('reviews')
+      .select('id, service_name, rating, content, created_at, images, helpful_concerns, target_id')
+      .eq('author_id', me.id)
+      .order('created_at', { ascending: false })
+    const list = revs || []
+    const targetIds = Array.from(new Set(list.map((r) => String((r as { target_id?: string }).target_id || '')).filter(Boolean)))
+    let salonMap: Record<string, string> = {}
+    if (targetIds.length > 0) {
+      const { data: salons } = await supabase.from('salons').select('id, name').in('id', targetIds)
+      for (const s of salons || []) {
+        salonMap[String((s as { id: string }).id)] = String((s as { name?: string }).name || '샵')
+      }
+    }
+    const merged: SalonReviewRow[] = list
+      .filter((r) => salonMap[String((r as { target_id?: string }).target_id || '')])
+      .map((r) => ({
+        id: String((r as { id: string }).id),
+        service_name: (r as SalonReviewRow).service_name,
+        rating: (r as SalonReviewRow).rating,
+        content: (r as SalonReviewRow).content,
+        created_at: (r as SalonReviewRow).created_at,
+        images: (r as SalonReviewRow).images,
+        helpful_concerns: (r as SalonReviewRow).helpful_concerns,
+        target_id: String((r as { target_id: string }).target_id),
+        salon_name: salonMap[String((r as { target_id: string }).target_id)] || '샵',
+      }))
+    setSalonRows(merged)
+    setSalonLoading(false)
+    setSalonLoaded(true)
+  }
+
+  useEffect(() => {
+    if (tab === 'salon' && !salonLoaded) void loadSalonReviews()
+  }, [tab, salonLoaded])
+
   return (
     <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 300, color: '#fff', paddingBottom: '96px' }}>
       <header style={{ position: 'sticky', top: 0, zIndex: 40, display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'rgba(13,11,9,0.95)', borderBottom: CARD_BORDER, backdropFilter: 'blur(12px)' }}>
@@ -82,7 +159,42 @@ export default function MyReviewsPage() {
         <span style={{ fontSize: 16, fontWeight: 400 }}>리뷰 관리</span>
       </header>
 
+      <div style={{ display: 'flex', background: BG, borderBottom: CARD_BORDER }}>
+        <span
+          onClick={() => setTab('product')}
+          style={{
+            flex: 1,
+            textAlign: 'center',
+            padding: '12px 0',
+            fontSize: 13,
+            cursor: 'pointer',
+            color: tab === 'product' ? PURPLE : '#888888',
+            borderBottom: tab === 'product' ? `2px solid ${PURPLE}` : '2px solid transparent',
+            fontWeight: 400,
+          }}
+        >
+          제품 리뷰
+        </span>
+        <span
+          onClick={() => setTab('salon')}
+          style={{
+            flex: 1,
+            textAlign: 'center',
+            padding: '12px 0',
+            fontSize: 13,
+            cursor: 'pointer',
+            color: tab === 'salon' ? PURPLE : '#888888',
+            borderBottom: tab === 'salon' ? `2px solid ${PURPLE}` : '2px solid transparent',
+            fontWeight: 400,
+          }}
+        >
+          관리 후기
+        </span>
+      </div>
+
       <div style={{ padding: '16px' }}>
+        {tab === 'product' ? (
+        <>
         {loading ? (
           <div style={{ fontSize: 13, color: TEXT_MUTED }}>불러오는 중...</div>
         ) : rows.length === 0 ? (
@@ -156,6 +268,84 @@ export default function MyReviewsPage() {
             )
           })
         )}
+        </>
+        ) : salonLoading ? (
+          <div style={{ fontSize: 13, color: TEXT_MUTED }}>불러오는 중...</div>
+        ) : salonRows.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px 0' }}>
+            <div style={{ fontSize: 13, color: TEXT_MUTED, marginBottom: 8 }}>아직 관리 후기가 없어요</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', lineHeight: 1.6 }}>관리 완료 후 원장님 상담톡에서 작성할 수 있어요</div>
+          </div>
+        ) : (
+          salonRows.map((row) => {
+            const stars = '★'.repeat(Math.min(5, Math.max(0, Number(row.rating) || 0)))
+            const concerns = Array.isArray(row.helpful_concerns) ? row.helpful_concerns : []
+            return (
+              <div
+                key={row.id}
+                style={{ marginBottom: 12, background: CARD_BG, border: CARD_BORDER, borderRadius: 14, padding: 14 }}
+              >
+                <div style={{ fontSize: 12, color: PURPLE, marginBottom: 4 }}>{row.salon_name}</div>
+                <div style={{ fontSize: 14, marginBottom: 6 }}>{row.service_name || '관리 프로그램'}</div>
+                <div style={{ fontSize: 13, color: GOLD, marginBottom: 8, letterSpacing: 1 }}>{stars || '—'}</div>
+                {concerns.length > 0 ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {concerns.map((c) => (
+                      <span
+                        key={c}
+                        style={{
+                          fontSize: 11,
+                          padding: '4px 10px',
+                          borderRadius: 20,
+                          border: `1px solid rgba(123,94,167,0.35)`,
+                          background: 'rgba(123,94,167,0.12)',
+                          color: PURPLE,
+                        }}
+                      >
+                        {c}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                <div
+                  style={{
+                    fontSize: 12,
+                    color: 'rgba(255,255,255,0.75)',
+                    lineHeight: 1.55,
+                    marginBottom: 8,
+                    overflow: 'hidden',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                  }}
+                >
+                  {row.content || ''}
+                </div>
+                <div style={{ fontSize: 11, color: TEXT_MUTED }}>{fmtDate(row.created_at)}</div>
+              </div>
+            )
+          })
+        )}
+
+        {tab === 'salon' ? (
+          <span
+            onClick={() => router.push('/my')}
+            style={{
+              display: 'block',
+              textAlign: 'center',
+              marginTop: 16,
+              padding: '12px 0',
+              borderRadius: 12,
+              background: PURPLE,
+              color: '#fff',
+              fontSize: 13,
+              cursor: 'pointer',
+              fontWeight: 400,
+            }}
+          >
+            관리 후기 작성하기
+          </span>
+        ) : null}
       </div>
     </div>
   )
