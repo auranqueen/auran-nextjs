@@ -192,7 +192,7 @@ export default function ServiceReviewForm() {
           effect_tags: effectTags.length ? effectTags : null,
           helpful_concerns: goodTags.length ? goodTags : null,
           is_shared_community: isShared,
-          status: '게시',
+          status: 'approved',
           helpful_count: 0,
         } as any)
         .select('id')
