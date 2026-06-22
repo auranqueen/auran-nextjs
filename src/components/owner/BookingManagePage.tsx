@@ -1,0 +1,437 @@
+'use client'
+
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+
+const BG = '#ffffff'
+const SURFACE = '#f9f8fc'
+const PURPLE = '#7B5EA7'
+const PURPLE_LIGHT = '#EDE9F7'
+const TEXT = '#1A1A2E'
+const TEXT_SUB = '#888888'
+const BORDER = '#ede9f7'
+
+type TabKey = 'today' | 'upcoming' | 'past'
+
+type BookingRow = {
+  id: string
+  booking_date?: string | null
+  booking_time?: string | null
+  service_name?: string | null
+  service_price?: number | null
+  status?: string | null
+  customer_name?: string | null
+  customer_id?: string | null
+  external_customer_id?: string | null
+  notes?: string | null
+  displayName?: string
+}
+
+function dateKey(d = new Date()) {
+  return d.toISOString().slice(0, 10)
+}
+
+function shiftDate(key: string, days: number) {
+  const d = new Date(`${key}T12:00:00`)
+  d.setDate(d.getDate() + days)
+  return dateKey(d)
+}
+
+function fmtDateKo(key: string) {
+  try {
+    return new Date(`${key}T12:00:00`).toLocaleDateString('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      month: 'long',
+      day: 'numeric',
+      weekday: 'short',
+    })
+  } catch {
+    return key
+  }
+}
+
+function fmtTime(t?: string | null) {
+  return String(t || '').slice(0, 5) || '—'
+}
+
+function statusLabel(status?: string | null) {
+  const s = String(status || '').toLowerCase()
+  if (s === 'pending') return '대기'
+  if (s === 'confirmed' || s === '예약확정') return '예약확정'
+  if (s === 'completed' || s === '완료') return '완료'
+  if (s === 'cancelled' || s === '취소') return '취소'
+  if (s === 'rejected' || s === '거절') return '거절'
+  return status || '예정'
+}
+
+function statusStyle(status?: string | null) {
+  const s = String(status || '').toLowerCase()
+  if (s === 'completed' || s === '완료') return { bg: PURPLE_LIGHT, color: PURPLE }
+  if (s === 'confirmed' || s === '예약확정') return { bg: 'rgba(76,173,126,0.12)', color: '#4cad7e' }
+  if (s === 'cancelled' || s === 'rejected' || s === '취소' || s === '거절') return { bg: SURFACE, color: TEXT_SUB }
+  return { bg: 'rgba(201,169,110,0.12)', color: '#C9A96E' }
+}
+
+function isDone(status?: string | null) {
+  const s = String(status || '').toLowerCase()
+  return s === 'completed' || s === '완료' || s === 'cancelled' || s === 'rejected' || s === '취소' || s === '거절'
+}
+
+export default function BookingManagePage() {
+  const router = useRouter()
+  const supabaseRef = useRef(createClient())
+
+  const [loading, setLoading] = useState(true)
+  const [ownerId, setOwnerId] = useState('')
+  const [salonId, setSalonId] = useState('')
+  const [tab, setTab] = useState<TabKey>('today')
+  const [selectedDate, setSelectedDate] = useState(dateKey())
+  const [rows, setRows] = useState<BookingRow[]>([])
+  const [msg, setMsg] = useState('')
+  const [showAdd, setShowAdd] = useState(false)
+  const [addName, setAddName] = useState('')
+  const [addService, setAddService] = useState('')
+  const [addPrice, setAddPrice] = useState('')
+  const [addDate, setAddDate] = useState(dateKey())
+  const [addTime, setAddTime] = useState('10:00')
+  const [saving, setSaving] = useState(false)
+
+  const showToast = (text: string) => {
+    setMsg(text)
+    setTimeout(() => setMsg(''), 2200)
+  }
+
+  const loadBookings = async (oid: string, currentTab: TabKey, dayKey: string) => {
+    const sb = supabaseRef.current
+    let q = sb
+      .from('bookings')
+      .select('id, booking_date, booking_time, service_name, service_price, status, customer_name, customer_id, external_customer_id, notes')
+      .eq('owner_id', oid)
+
+    if (currentTab === 'today') {
+      q = q.eq('booking_date', dayKey).order('booking_time', { ascending: true })
+    } else if (currentTab === 'upcoming') {
+      q = q.gte('booking_date', dateKey()).order('booking_date', { ascending: true }).order('booking_time', { ascending: true }).limit(80)
+    } else {
+      q = q.lt('booking_date', dateKey()).order('booking_date', { ascending: false }).order('booking_time', { ascending: false }).limit(80)
+    }
+
+    const { data } = await q
+    const list = (data as BookingRow[]) || []
+
+    const extIds = Array.from(new Set(list.map((b) => b.external_customer_id).filter(Boolean) as string[]))
+    const userIds = Array.from(new Set(list.map((b) => b.customer_id).filter(Boolean) as string[]))
+
+    const extMap = new Map<string, string>()
+    if (extIds.length) {
+      const { data: extRows } = await sb.from('external_customers').select('id, name').in('id', extIds)
+      for (const e of (extRows as { id: string; name?: string }[]) || []) extMap.set(e.id, String(e.name || ''))
+    }
+
+    const userMap = new Map<string, string>()
+    if (userIds.length) {
+      const { data: userRows } = await sb.from('users').select('id, name').in('id', userIds)
+      for (const u of (userRows as { id: string; name?: string }[]) || []) userMap.set(u.id, String(u.name || ''))
+    }
+
+    setRows(
+      list.map((b) => ({
+        ...b,
+        displayName:
+          b.customer_name ||
+          (b.external_customer_id ? extMap.get(b.external_customer_id) : '') ||
+          (b.customer_id ? userMap.get(b.customer_id) : '') ||
+          '고객',
+      })),
+    )
+  }
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const sb = supabaseRef.current
+      const { data: auth } = await sb.auth.getUser()
+      const user = auth.user
+      if (!user) {
+        router.push('/login?role=owner')
+        return
+      }
+      const { data: me } = await sb.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+      if (!me?.id || cancelled) {
+        if (!cancelled) setLoading(false)
+        return
+      }
+      const oid = String(me.id)
+      setOwnerId(oid)
+      const { data: salon } = await sb.from('salons').select('id').eq('owner_id', oid).maybeSingle()
+      if (salon?.id) setSalonId(String(salon.id))
+      await loadBookings(oid, tab, selectedDate)
+      if (!cancelled) setLoading(false)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [router, tab, selectedDate])
+
+  const updateStatus = async (id: string, status: string) => {
+    if (!ownerId) return
+    const { error } = await supabaseRef.current
+      .from('bookings')
+      .update({ status })
+      .eq('id', id)
+      .eq('owner_id', ownerId)
+    if (error) {
+      showToast('변경 실패')
+      return
+    }
+
+    if (status === 'completed' || status === 'cancelled') {
+      const sb = supabaseRef.current
+      const { data: booking } = await sb
+        .from('bookings')
+        .select('purchase_id, customer_id, salon_id, service_name')
+        .eq('id', id)
+        .eq('owner_id', ownerId)
+        .maybeSingle()
+
+      if (booking) {
+        let purchase: { id: string; used_sessions: number | null; total_sessions: number | null } | null = null
+
+        if (booking.purchase_id) {
+          const { data } = await sb
+            .from('purchases')
+            .select('id, used_sessions, total_sessions')
+            .eq('id', booking.purchase_id)
+            .maybeSingle()
+          purchase = (data as { id: string; used_sessions: number | null; total_sessions: number | null }) || null
+        } else if (booking.customer_id && booking.salon_id) {
+          let q = sb
+            .from('purchases')
+            .select('id, used_sessions, total_sessions')
+            .eq('customer_id', booking.customer_id)
+            .eq('salon_id', booking.salon_id)
+          if (booking.service_name) q = q.eq('service_name', booking.service_name)
+          const { data } = await q.order('purchased_at', { ascending: false }).limit(1).maybeSingle()
+          purchase = (data as { id: string; used_sessions: number | null; total_sessions: number | null }) || null
+        }
+
+        if (purchase?.id) {
+          const used = Number(purchase.used_sessions) || 0
+          const total = Number(purchase.total_sessions) || 0
+          if (status === 'completed' && used < total) {
+            await sb.from('purchases').update({ used_sessions: used + 1 }).eq('id', purchase.id)
+          } else if (status === 'cancelled' && used > 0) {
+            await sb.from('purchases').update({ used_sessions: used - 1 }).eq('id', purchase.id)
+          }
+        }
+      }
+    }
+
+    showToast('저장됐어요 💜')
+    await loadBookings(ownerId, tab, selectedDate)
+  }
+
+  const addBooking = async () => {
+    if (!ownerId || !salonId) {
+      showToast('샵 정보를 먼저 등록해주세요')
+      return
+    }
+    if (!addName.trim() || !addService.trim() || !addDate || !addTime) {
+      showToast('고객명·시술·날짜·시간을 입력해주세요')
+      return
+    }
+    setSaving(true)
+    const { error } = await supabaseRef.current.from('bookings').insert({
+      owner_id: ownerId,
+      salon_id: salonId,
+      customer_name: addName.trim(),
+      service_name: addService.trim(),
+      service_price: Number(addPrice.replace(/[^\d]/g, '')) || 0,
+      booking_date: addDate,
+      booking_time: addTime,
+      status: 'confirmed',
+    })
+    setSaving(false)
+    if (error) {
+      showToast('예약 추가 실패')
+      return
+    }
+    setShowAdd(false)
+    setAddName('')
+    setAddService('')
+    setAddPrice('')
+    showToast('예약이 추가됐어요 💜')
+    setTab('today')
+    setSelectedDate(addDate)
+    await loadBookings(ownerId, 'today', addDate)
+  }
+
+  const tabLabel = useMemo(() => {
+    if (tab === 'today') return fmtDateKo(selectedDate)
+    if (tab === 'upcoming') return '다가오는 예약'
+    return '지난 예약'
+  }, [tab, selectedDate])
+
+  const tabs: { key: TabKey; label: string }[] = [
+    { key: 'today', label: '오늘' },
+    { key: 'upcoming', label: '예정' },
+    { key: 'past', label: '지난' },
+  ]
+
+  return (
+    <div style={{ minHeight: '100vh', background: BG, color: TEXT, paddingBottom: 88 }}>
+      <div style={{ display: 'flex', alignItems: 'center', padding: '14px 16px', borderBottom: `0.5px solid ${BORDER}` }}>
+        <button type="button" onClick={() => router.push('/dashboard/owner?v=2')} style={{ border: 'none', background: 'transparent', fontSize: 14, color: PURPLE, cursor: 'pointer' }}>
+          ←
+        </button>
+        <div style={{ flex: 1, textAlign: 'center', fontSize: 16, fontWeight: 500 }}>예약 관리</div>
+        <button type="button" onClick={() => setShowAdd(true)} style={{ border: 'none', background: PURPLE, color: '#fff', borderRadius: 8, padding: '6px 12px', fontSize: 13, cursor: 'pointer' }}>
+          + 추가
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', margin: '0 16px', borderBottom: `1px solid ${BORDER}` }}>
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            style={{
+              flex: 1,
+              padding: '12px 0',
+              border: 'none',
+              background: 'transparent',
+              color: tab === t.key ? PURPLE : TEXT_SUB,
+              fontSize: 13,
+              cursor: 'pointer',
+              borderBottom: tab === t.key ? `2px solid ${PURPLE}` : '2px solid transparent',
+              marginBottom: -1,
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ padding: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          {tab === 'today' ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button type="button" onClick={() => setSelectedDate((d) => shiftDate(d, -1))} style={{ border: `1px solid ${BORDER}`, background: BG, borderRadius: 8, width: 32, height: 32, cursor: 'pointer' }}>‹</button>
+              <span style={{ fontSize: 14, fontWeight: 500 }}>{tabLabel}</span>
+              <button type="button" onClick={() => setSelectedDate((d) => shiftDate(d, 1))} style={{ border: `1px solid ${BORDER}`, background: BG, borderRadius: 8, width: 32, height: 32, cursor: 'pointer' }}>›</button>
+            </div>
+          ) : (
+            <span style={{ fontSize: 14, fontWeight: 500 }}>{tabLabel}</span>
+          )}
+          <span style={{ fontSize: 12, color: TEXT_SUB }}>{rows.length}건</span>
+        </div>
+
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 48, color: TEXT_SUB, fontSize: 13 }}>불러오는 중…</div>
+        ) : rows.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 16px', color: TEXT_SUB, fontSize: 13, lineHeight: 1.7 }}>
+            {tab === 'today' ? '이 날짜에 예약이 없어요 💜' : tab === 'upcoming' ? '다가오는 예약이 없어요' : '지난 예약 내역이 없어요'}
+            <br />
+            <button type="button" onClick={() => setShowAdd(true)} style={{ marginTop: 12, border: 'none', background: 'transparent', color: PURPLE, fontSize: 13, cursor: 'pointer' }}>
+              + 예약 추가하기
+            </button>
+          </div>
+        ) : (
+          rows.map((b) => {
+            const badge = statusStyle(b.status)
+            const done = isDone(b.status)
+            return (
+              <div
+                key={b.id}
+                style={{
+                  background: BG,
+                  border: `0.5px solid ${BORDER}`,
+                  borderRadius: 12,
+                  padding: 14,
+                  marginBottom: 10,
+                  opacity: done ? 0.72 : 1,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <div style={{ fontSize: 13, color: TEXT_SUB, minWidth: 44, paddingTop: 2 }}>{fmtTime(b.booking_time)}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 15, fontWeight: 500 }}>{b.displayName}</span>
+                      <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, background: badge.bg, color: badge.color }}>
+                        {statusLabel(b.status)}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 13, color: TEXT_SUB, marginTop: 4 }}>{b.service_name || '시술'}</div>
+                    {b.service_price ? (
+                      <div style={{ fontSize: 12, color: PURPLE, marginTop: 2 }}>₩{Number(b.service_price).toLocaleString()}</div>
+                    ) : null}
+                    {tab !== 'today' && b.booking_date ? (
+                      <div style={{ fontSize: 11, color: TEXT_SUB, marginTop: 4 }}>{fmtDateKo(b.booking_date)}</div>
+                    ) : null}
+                    {b.notes ? <div style={{ fontSize: 11, color: TEXT_SUB, marginTop: 6, lineHeight: 1.5 }}>{b.notes}</div> : null}
+                  </div>
+                </div>
+                {!done ? (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+                    {String(b.status || '').toLowerCase() === 'pending' ? (
+                      <>
+                        <button type="button" onClick={() => void updateStatus(b.id, 'confirmed')} style={{ flex: 1, minWidth: 72, padding: '8px 0', borderRadius: 8, border: `1px solid ${PURPLE}`, background: PURPLE_LIGHT, color: PURPLE, fontSize: 12, cursor: 'pointer' }}>
+                          확정
+                        </button>
+                        <button type="button" onClick={() => void updateStatus(b.id, 'rejected')} style={{ flex: 1, minWidth: 72, padding: '8px 0', borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, color: TEXT_SUB, fontSize: 12, cursor: 'pointer' }}>
+                          거절
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button type="button" onClick={() => void updateStatus(b.id, 'completed')} style={{ flex: 1, minWidth: 72, padding: '8px 0', borderRadius: 8, border: `1px solid ${PURPLE}`, background: PURPLE, color: '#fff', fontSize: 12, cursor: 'pointer' }}>
+                          완료
+                        </button>
+                        <button type="button" onClick={() => void updateStatus(b.id, 'cancelled')} style={{ flex: 1, minWidth: 72, padding: '8px 0', borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, color: TEXT_SUB, fontSize: 12, cursor: 'pointer' }}>
+                          취소
+                        </button>
+                      </>
+                    )}
+                    <button type="button" onClick={() => router.push('/dashboard/owner/charts-v2')} style={{ padding: '8px 12px', borderRadius: 8, border: `1px solid ${BORDER}`, background: BG, color: PURPLE, fontSize: 12, cursor: 'pointer' }}>
+                      차트
+                    </button>
+                  </div>
+                ) : null}
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      {showAdd ? (
+        <>
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100 }} onClick={() => setShowAdd(false)} />
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, maxWidth: 430, margin: '0 auto', background: BG, borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, zIndex: 101 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <div style={{ fontSize: 15, fontWeight: 500 }}>예약 추가</div>
+              <button type="button" onClick={() => setShowAdd(false)} style={{ border: 'none', background: 'transparent', fontSize: 18, color: TEXT_SUB, cursor: 'pointer' }}>×</button>
+            </div>
+            <input value={addName} onChange={(e) => setAddName(e.target.value)} placeholder="고객명 (예: 김민지)" style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 8, boxSizing: 'border-box', fontSize: 14 }} />
+            <input value={addService} onChange={(e) => setAddService(e.target.value)} placeholder="시술명 (예: 수분집중케어)" style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 8, boxSizing: 'border-box', fontSize: 14 }} />
+            <input value={addPrice} onChange={(e) => setAddPrice(e.target.value.replace(/[^\d]/g, ''))} placeholder="가격 (예: 90000)" style={{ width: '100%', padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, marginBottom: 8, boxSizing: 'border-box', fontSize: 14 }} />
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+              <input type="date" value={addDate} onChange={(e) => setAddDate(e.target.value)} style={{ padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 14, boxSizing: 'border-box' }} />
+              <input type="time" value={addTime} onChange={(e) => setAddTime(e.target.value)} style={{ padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 14, boxSizing: 'border-box' }} />
+            </div>
+            <button type="button" disabled={saving} onClick={() => void addBooking()} style={{ width: '100%', padding: 14, borderRadius: 10, border: 'none', background: PURPLE, color: '#fff', fontSize: 14, cursor: saving ? 'default' : 'pointer' }}>
+              {saving ? '저장 중…' : '예약 저장 💜'}
+            </button>
+          </div>
+        </>
+      ) : null}
+
+      {msg ? (
+        <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 24, background: PURPLE, color: '#fff', borderRadius: 12, padding: '10px 16px', fontSize: 13, zIndex: 110 }}>
+          {msg}
+        </div>
+      ) : null}
+    </div>
+  )
+}
