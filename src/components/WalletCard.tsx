@@ -151,7 +151,7 @@ export default function WalletCard({ point, chargeBalance, userId }: Props) {
             {popup === 'toast' && (
               <>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', padding: '12px 20px', borderBottom: '0.5px solid rgba(255,255,255,0.06)' }}>
-                  <span style={pillStyle('#e8c040','rgba(255,220,100,0.12)','rgba(255,220,100,0.3)')}>🧈 버터 — 충전 시 5% 적립</span>
+                  <span style={pillStyle('#e8c040','rgba(255,220,100,0.12)','rgba(255,220,100,0.3)')}>🧈 버터 — 카드 2% · 무통장 5%</span>
                   <span style={pillStyle('#e05070','rgba(220,80,100,0.12)','rgba(220,80,100,0.3)')}>🍓 딸기잼 — 친구 초대</span>
                   <span style={pillStyle('#ffb400','rgba(255,180,0,0.12)','rgba(255,180,0,0.3)')}>🍯 꿀 — 리뷰 작성</span>
                 </div>
