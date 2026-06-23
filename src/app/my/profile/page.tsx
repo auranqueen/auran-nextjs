@@ -193,6 +193,7 @@ export default function MyProfilePage() {
     // users 테이블 동기화
     await supabase.from('users').update({
       name: fullName,
+      avatar_url: avatarUrl || null,
     }).eq('auth_id', authId)
     router.push('/my')
     setToast(profileCompletion === 100 ? '완성! 이제 오렌의 모든 기능을 누릴 수 있어요 💜' : '프로필이 저장됐습니다 💜')
