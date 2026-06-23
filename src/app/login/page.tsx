@@ -70,7 +70,14 @@ function LoginForm() {
         setRememberEmail(checked)
       } catch {}
 
-      if (params.get('role') || redirectParam) return
+      if (redirectParam) return
+      const { data: { session: earlySession } } = await supabase.auth.getSession()
+      if (earlySession?.user && params.get('role')) {
+        const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
+        router.replace(redirectParam || positionToDashboardPath(stored || 'customer'))
+        return
+      }
+      if (params.get('role')) return
 
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) return
