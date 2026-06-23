@@ -146,7 +146,7 @@ function SignupForm() {
           router.push('/')
           return
         }
-        router.push(`/auth/verify-email?email=${encodeURIComponent(form.email)}&role=${encodeURIComponent(role)}`)
+        router.push(`/auth/done?position=${encodeURIComponent(role)}`)
         return
       }
       if (authData.user && authData.session) {
