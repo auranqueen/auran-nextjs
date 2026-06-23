@@ -89,7 +89,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) return
       supabase.from('users').select('role').eq('auth_id', data.user.id).single().then(({ data: u }) => {
-        setIsSuperAdmin(u?.role === 'admin')
+        setIsSuperAdmin(u?.role === 'admin' || u?.role === 'super_admin')
       })
     })
   }, [supabase])
@@ -293,7 +293,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     secTitle: { fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: 0.5, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 } as CSSProperties,
     lbl: { fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4, display: 'block' } as CSSProperties,
     inp: { background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 10px', color: '#e8e4dc', fontSize: 13, outline: 'none', width: '100%', boxSizing: 'border-box' as const } as CSSProperties,
-    sel: { background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 10px', color: '#e8e4dc', fontSize: 13, outline: 'none', width: '100%' } as CSSProperties,
+    sel: { background: '#1a1714', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 10px', color: '#e8e4dc', fontSize: 13, outline: 'none', width: '100%' } as CSSProperties,
     row2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 } as CSSProperties,
     row3: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 10 } as CSSProperties,
     f: { marginBottom: 10 } as CSSProperties,
@@ -343,7 +343,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
               <div><span style={S.lbl}>원산지</span><input style={S.inp} value={origin} onChange={e => setOrigin(e.target.value)} placeholder="프랑스" /></div>
             </div>
             <div style={S.row2}>
-              <div><span style={S.lbl}>카테고리</span><input style={S.inp} placeholder="카테고리" /></div>
+              <div><span style={S.lbl}>카테고리</span><input style={S.inp} value={origin} onChange={e => setOrigin(e.target.value)} placeholder="카테고리 (예: 마스크팩)" /></div>
               <div><span style={S.lbl}>제조사</span><input style={S.inp} value={manufacturer} onChange={e => setManufacturer(e.target.value)} placeholder="제조사명" /></div>
             </div>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
