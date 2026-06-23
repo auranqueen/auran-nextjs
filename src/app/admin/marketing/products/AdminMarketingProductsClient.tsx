@@ -150,9 +150,14 @@ export default function AdminMarketingProductsClient() {
     <div style={s.wrap}>
       <div style={s.top}>
         <h2 style={s.h2}>제품 관리</h2>
-        <button style={s.btnNew} onClick={() => router.push('/admin/products/edit')}>
-          + 새 제품 등록
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button style={s.btnNew} onClick={() => router.push('/admin/products/edit-v2')}>
+            + 새 제품 등록
+          </button>
+          <button style={{ ...s.btnNew, background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.4)', border: '0.5px solid rgba(255,255,255,0.1)', fontSize: 11 }} onClick={() => router.push('/admin/products/edit')}>
+            구 에디터
+          </button>
+        </div>
       </div>
 
       <div style={s.stats}>
@@ -239,7 +244,7 @@ export default function AdminMarketingProductsClient() {
                     style={s.actBtn}
                     onClick={e => {
                       e.stopPropagation()
-                      router.push(`/admin/products/edit?id=${p.id}`)
+                      router.push(`/admin/products/edit-v2?id=${p.id}`)
                     }}
                   >
                     ✏️
