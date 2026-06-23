@@ -66,6 +66,14 @@ export async function POST(req: NextRequest) {
     .eq('payment_applied', true)
     .gte('created_at', monthStart)
   const hasOrderThisMonth = (orderCount || 0) > 0
+  // 활성 멤버십 보유 시 상한 해제
+  const { count: membershipCount } = await client
+    .from('user_memberships')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userRow.id)
+    .eq('status', 'active')
+  const hasMembership = (membershipCount || 0) > 0
+  const hasOrderOrMembership = hasOrderThisMonth || hasMembership
 
   // 이번달 출석 토스트 합계
   const { data: monthToast } = await client
@@ -111,7 +119,7 @@ export async function POST(req: NextRequest) {
   if (newStreak === 30) { totalEarned += bonus30; bonusMessages.push(`30일 개근 보너스 +${bonus30}T 🎊`) }
 
   // D안: 구매 이력 없으면 월 1,000T 상한 적용
-  if (!hasOrderThisMonth) {
+  if (!hasOrderOrMembership) {
     const remaining = Math.max(0, noOrderCap - monthAttendanceTotal)
     if (remaining <= 0) {
       return NextResponse.json({ ok: true, toast_earned: 0, capped: true, streak: newStreak, message: '출석 완료! (이번달 구매 후 풀 적립 가능)' })
@@ -137,7 +145,7 @@ export async function POST(req: NextRequest) {
     title: `출석 체크 +${totalEarned}T 💜`,
     body: bonusMessages.length > 0
       ? bonusMessages.join(' ')
-      : !hasOrderThisMonth
+      : !hasOrderOrMembership
       ? `${newStreak}일째 출석 중 · 이번달 구매 시 풀 적립!`
       : `${newStreak}일 연속 출석 중이에요!`,
     is_read: false,
@@ -149,7 +157,7 @@ export async function POST(req: NextRequest) {
     streak: newStreak,
     total_checkin_days: newTotal,
     bonus_messages: bonusMessages,
-    capped: !hasOrderThisMonth,
+    capped: !hasOrderOrMembership,
     message: `출석 완료! +${totalEarned}T`,
   })
 }
