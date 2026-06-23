@@ -19,9 +19,18 @@ function WalletPageInner() {
   const [profile, setProfile] = useState<any | null>(null)
   const [hasPin, setHasPin] = useState<boolean | null>(null)
   const [charging, setCharging] = useState(false)
-  const [chargeMode, setChargeMode] = useState<'preset' | 'custom'>('preset')
-  const [selectedAmount, setSelectedAmount] = useState<number | null>(500000)
-  const [customAmount, setCustomAmount] = useState<string>('')
+  const chargeParam = Number(searchParams.get('charge') || '0')
+  const PRESETS = [300000, 500000, 1000000, 2000000]
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(
+    PRESETS.includes(chargeParam) ? chargeParam : chargeParam >= 1000 ? null : 500000
+  )
+  const [chargeInitCustom] = useState<string>(
+    chargeParam >= 1000 && !PRESETS.includes(chargeParam) ? String(chargeParam) : ''
+  )
+  const [customAmount, setCustomAmount] = useState<string>(chargeInitCustom)
+  const [chargeMode, setChargeMode] = useState<'preset' | 'custom'>(
+    chargeParam >= 1000 && !PRESETS.includes(chargeParam) ? 'custom' : 'preset'
+  )
   const [showPaymentSuccess, setShowPaymentSuccess] = useState(false)
   const [toastHistory, setToastHistory] = useState<any[]>([])
   const paymentSuccessHandled = useRef(false)
