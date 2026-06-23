@@ -10,32 +10,36 @@ function PayAppInner() {
   const didRun = useRef(false)
 
   useEffect(() => {
-    const lockKey = `payapp_lock_${params.get('product_id')}_${params.get('amount')}`
+    const productIdsRaw = params.get('products') || params.get('product_id') || ''
+    const productIdList = productIdsRaw.split(',').map(s => s.trim()).filter(Boolean)
+    const qtyListRaw = (params.get('qty') || '1').split(',').map(s => Math.max(1, Number(s) || 1))
+    const lockKey = `payapp_lock_${productIdsRaw}_${params.get('amount')}`
     if (sessionStorage.getItem(lockKey)) return
     sessionStorage.setItem(lockKey, '1')
     setTimeout(() => sessionStorage.removeItem(lockKey), 5000)
     if (!params.get('amount')) return
-    const productId = params.get('product_id')
-    const qty = Number(params.get('qty') || '1')
 
-    if (!productId) {
+    if (!productIdList.length) {
       router.push('/')
       return
     }
 
     const doPayment = async () => {
       const supabase = createClient()
-      const { data: product } = await supabase
+      const { data: productRows } = await supabase
         .from('products')
         .select('id, name, retail_price, sale_price')
-        .eq('id', productId)
-        .single()
+        .in('id', productIdList)
 
-      if (!product) {
+      if (!productRows?.length) {
         alert('제품 정보를 찾을 수 없어요')
         router.push('/')
         return
       }
+      const product = productRows[0]
+      const representName = productRows.length > 1
+        ? `${product.name} 외 ${productRows.length - 1}개`
+        : product.name
 
       const rawAmount = params.get('amount')
       const amount = Number(rawAmount)
@@ -78,8 +82,13 @@ function PayAppInner() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({
-          product_id: productId,
-          quantity: qty,
+          product_id: productIdList[0],
+          quantity: qtyListRaw[0],
+          products: productIdList.map((id, i) => ({
+            product_id: id,
+            quantity: qtyListRaw[i] ?? 1,
+          })),
+          represent_name: representName,
           payment_method: 'payapp',
           total_amount: amount,
           final_amount: amount,

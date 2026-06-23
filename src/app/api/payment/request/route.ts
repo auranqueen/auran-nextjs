@@ -67,6 +67,31 @@ export async function POST(req: NextRequest) {
 
   if (!order) return NextResponse.json({ error: '주문 생성 실패', detail: orderError?.message, code: orderError?.code }, { status: 500 })
 
+  // 다건 order_items insert
+  const multiProducts: { product_id: string; quantity: number }[] = body.products || [{ product_id: product_id, quantity: quantity }]
+  try {
+    const { tryCreateServiceClient } = await import('@/lib/supabase/service')
+    const adminClient = tryCreateServiceClient() || supabase
+    for (const item of multiProducts) {
+      const { data: itemProduct } = await adminClient
+        .from('products')
+        .select('id, name, retail_price, brand_id')
+        .eq('id', item.product_id)
+        .maybeSingle()
+      if (!itemProduct) continue
+      await adminClient.from('order_items').insert({
+        order_id: order.id,
+        product_id: itemProduct.id,
+        brand_id: itemProduct.brand_id || null,
+        product_name: itemProduct.name,
+        product_price: itemProduct.retail_price,
+        quantity: item.quantity,
+        subtotal: itemProduct.retail_price * item.quantity,
+        final_price: itemProduct.retail_price * item.quantity,
+      })
+    }
+  } catch (e) { console.error('order_items insert error:', e) }
+
   const { tryCreateServiceClient } = await import('@/lib/supabase/service')
   const supabaseAdmin = tryCreateServiceClient() || supabase
   if (referrer_user_id) {
