@@ -671,7 +671,7 @@ export default function MyProfilePage() {
                     setBrandSaving(true)
                     const { data: { user } } = await supabase.auth.getUser()
                     if (user) {
-                      await supabase.from('profiles').update({ preferred_brands: preferredBrands } as any).eq('auth_id', user.id)
+                      await supabase.from('profiles').upsert({ auth_id: user.id, preferred_brands: preferredBrands } as any, { onConflict: 'auth_id' })
                     }
                     setBrandSaving(false)
                     setBrandEditMode(false)
