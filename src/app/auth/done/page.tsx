@@ -155,7 +155,7 @@ function AuthDoneInner() {
       console.log('profileRow:', profileRow)
       console.log('onboarding_done:', profileRow?.onboarding_done)
       if (profileRow?.onboarding_done !== true) {
-        router.replace('/signup/consent')
+        router.replace('/signup/consent?role=customer')
         return
       }
       if (p.length >= 10) {
