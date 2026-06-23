@@ -199,7 +199,7 @@ export default function WalletCard({ point, chargeBalance, userId }: Props) {
             {popup === 'pay-charge' && (
               <div style={{ padding: '16px 20px' }}>
                 <div style={{ fontSize: 11, color: '#e8c040', background: 'rgba(255,220,100,0.08)', border: '0.5px solid rgba(255,220,100,0.2)', borderRadius: 10, padding: '10px 12px', marginBottom: 14, lineHeight: 1.6 }}>
-                  🧈 충전금의 5%가 버터로 적립돼요
+                  🧈 카드 결제 2% · 무통장 5% 버터로 적립돼요
                 </div>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>충전 금액 선택</div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
