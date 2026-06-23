@@ -540,41 +540,11 @@ export default function MyPage() {
 
       {/* AURAN POINT */}
       <WalletCard point={point} chargeBalance={chargeBalance} userId={user?.id ?? ''} />
-      <div style={{ display: 'none' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-          <div>
-            <div style={{ fontSize: '10px', color: 'rgba(196,167,231,0.7)' }}>🍞 토스트 P</div>
-            <div style={{ fontSize: '22px', color: '#c4a7e7' }}>{point.toLocaleString()}T</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '10px', color: 'rgba(196,167,231,0.7)' }}>💳 AURAN PAY</div>
-            <div style={{ fontSize: '22px', color: '#9b7ec8' }}>₩{chargeBalance.toLocaleString()}</div>
-          </div>
+      {expiringPoint > 0 ? (
+        <div style={{ marginTop: 8, fontSize: '10px', color: 'rgba(255,180,80,0.8)' }}>
+          ⚠️ {expiringPoint.toLocaleString()} P 12월 31일 소멸 예정
         </div>
-        <div style={{ display: 'flex', gap: 8, width: '100%', marginTop: 12 }}>
-          <button
-            onClick={() => router.push('/wallet')}
-            style={{ background: 'rgba(123,94,167,0.3)', border: '1px solid rgba(123,94,167,0.5)', color: '#c4a7e7', borderRadius: '10px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', flex: 1, textAlign: 'center', justifyContent: 'center' }}
-          >
-            충전하기
-          </button>
-          <button
-            onClick={() => router.push('/my/point')}
-            style={{ background: 'transparent', border: '1px solid rgba(196,167,231,0.2)', color: 'rgba(196,167,231,0.6)', borderRadius: '10px', padding: '8px 16px', fontSize: '12px', cursor: 'pointer', flex: 1, textAlign: 'center', justifyContent: 'center' }}
-          >
-            사용내역
-          </button>
-        </div>
-        <div style={{ marginTop: 10, fontSize: '10px', color: 'rgba(196,167,231,0.5)', lineHeight: 1.6 }}>
-          💡 5만원 이상 구매 시 토스트 사용 가능해요<br />
-          LUMIÈRE 이상 등급은 전액 사용 가능해요
-        </div>
-        </div>
-        {expiringPoint > 0 ? (
-          <div style={{ marginTop: 8, fontSize: '10px', color: 'rgba(255,180,80,0.8)' }}>
-            ⚠️ {expiringPoint.toLocaleString()} P 12월 31일 소멸 예정
-          </div>
-        ) : null}
+      ) : null}
 
       {pointHistory.length > 0 ? (
         <div style={{ margin: '10px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '12px 14px' }}>
