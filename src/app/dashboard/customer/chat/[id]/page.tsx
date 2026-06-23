@@ -359,16 +359,19 @@ export default function CustomerChatRoomPage() {
     let cancelled = false
 
     const run = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      let { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        router.replace('/login?role=customer')
+        await new Promise(r => setTimeout(r, 1000))
+        const { data: retry } = await supabase.auth.getUser()
+        user = retry.user
+      }
+      if (!user) {
+        router.replace('/login?role=customer&redirect=/dashboard/customer/chat/new')
         return
       }
       const { data: urow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
       if (!urow?.id) {
-        router.replace('/login?role=customer')
+        router.replace('/login?role=customer&redirect=/dashboard/customer/chat/new')
         return
       }
       const uid = String(urow.id)
