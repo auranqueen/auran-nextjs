@@ -544,6 +544,9 @@ function CheckoutPageInner() {
     }
     const productId = orderedProducts[0]?.id
     const qty = qtyList[0] ?? 1
+    const representName = orderedProducts.length > 1
+      ? `${orderedProducts[0]?.name} 외 ${orderedProducts.length - 1}개`
+      : orderedProducts[0]?.name
     const res = await fetch('/api/payment/request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -551,6 +554,11 @@ function CheckoutPageInner() {
       body: JSON.stringify({
         product_id: productId,
         quantity: qty,
+        products: orderedProducts.map((p, i) => ({
+          product_id: p.id,
+          quantity: qtyList[i] ?? 1,
+        })),
+        represent_name: representName,
         prescription_owner_id: null,
         payment_method: 'bank_transfer',
         total_amount: subtotal,
