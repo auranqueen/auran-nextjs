@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import PaymentAuthGuard from '@/components/PaymentAuthGuard'
 interface Props {
   point: number
   chargeBalance: number
@@ -43,6 +44,7 @@ export default function WalletCard({ point, chargeBalance, userId }: Props) {
   const [customAmt, setCustomAmt] = useState('')
   const [butterPreview, setButterPreview] = useState(0)
   const [loading, setLoading] = useState(false)
+  const [charging, setCharging] = useState(false)
   const openPopup = async (type: 'toast' | 'pay-history' | 'pay-charge') => {
     setPopup(type)
     if (type === 'toast' && toastTx.length === 0) {
@@ -220,12 +222,43 @@ export default function WalletCard({ point, chargeBalance, userId }: Props) {
                     <div style={{ fontSize: 10, color: '#e8c040', marginTop: 6 }}>버터 적립 예정: {butterPreview.toLocaleString()}T 🧈</div>
                   )}
                 </div>
-                <button
-                  disabled={selectedAmt < 1000}
-                  onClick={() => { setPopup(null); router.push(`/wallet?charge=${selectedAmt}`) }}
-                  style={{ width: '100%', padding: 13, borderRadius: 12, background: selectedAmt >= 1000 ? '#7b5ea7' : 'rgba(123,94,167,0.3)', border: 'none', color: selectedAmt >= 1000 ? '#fff' : 'rgba(255,255,255,0.3)', fontSize: 13, cursor: selectedAmt >= 1000 ? 'pointer' : 'default' }}>
-                  {selectedAmt >= 1000 ? `₩${selectedAmt.toLocaleString()} 충전하기 (카드결제)` : '충전하기'}
-                </button>
+                <PaymentAuthGuard
+                  title="결제 PIN 확인"
+                  requirePin
+                  onSuccess={async () => {
+                    if (selectedAmt < 1000) return
+                    setCharging(true)
+                    try {
+                      const res = await fetch('/api/payments/payapp/create', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({ kind: 'charge', amount: selectedAmt }),
+                      })
+                      const json = await res.json().catch(() => ({}))
+                      if (!json?.ok || !json?.pay_url) {
+                        alert('충전 요청에 실패했어요. 다시 시도해주세요.')
+                        return
+                      }
+                      try {
+                        sessionStorage.setItem('wallet_pending_charge_intent', json.intent_id || '')
+                        sessionStorage.setItem('wallet_pending_charge_krw', String(selectedAmt))
+                      } catch {}
+                      setPopup(null)
+                      window.location.href = json.pay_url
+                    } catch {
+                      alert('충전 요청에 실패했어요. 다시 시도해주세요.')
+                    } finally {
+                      setCharging(false)
+                    }
+                  }}
+                >
+                  <button
+                    disabled={selectedAmt < 1000 || charging}
+                    style={{ width: '100%', padding: 13, borderRadius: 12, background: selectedAmt >= 1000 ? '#7b5ea7' : 'rgba(123,94,167,0.3)', border: 'none', color: selectedAmt >= 1000 ? '#fff' : 'rgba(255,255,255,0.3)', fontSize: 13, cursor: selectedAmt >= 1000 ? 'pointer' : 'default' }}>
+                    {charging ? '결제창 여는 중...' : selectedAmt >= 1000 ? `₩${selectedAmt.toLocaleString()} 충전하기 (카드결제)` : '충전하기'}
+                  </button>
+                </PaymentAuthGuard>
               </div>
             )}
           </div>
