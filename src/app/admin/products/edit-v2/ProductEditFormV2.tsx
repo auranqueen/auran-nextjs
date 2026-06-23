@@ -21,6 +21,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const [brandId, setBrandId] = useState('')
   const [brands, setBrands] = useState<any[]>([])
   const [origin, setOrigin] = useState('')
+  const [categoryText, setCategoryText] = useState('')
   const [manufacturer, setManufacturer] = useState('')
   const [isFlashSale, setIsFlashSale] = useState(false)
   const [isGroupbuy, setIsGroupbuy] = useState(false)
@@ -107,6 +108,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       setKeywords(data.tag || '')
       setBrandId(data.brand_id || '')
       setOrigin(data.category || '')
+      setCategoryText(data.category || '')
       setManufacturer(data.ingredient || '')
       setRetailPrice(String(data.retail_price || ''))
       setSalePrice(String(data.sale_price || ''))
@@ -191,7 +193,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     name: name.trim().slice(0, 100) || '신규 상품',
     description: shortDesc.trim() || null,
     tag: keywords.trim() || null,
-    category: origin.trim() || null,
+    category: categoryText.trim() || null,
     ingredient: manufacturer.trim() || null,
     retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)),
     sale_price: salePrice.trim() === '' ? null : Math.max(0, Math.floor(Number(salePrice))),
@@ -343,7 +345,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
               <div><span style={S.lbl}>원산지</span><input style={S.inp} value={origin} onChange={e => setOrigin(e.target.value)} placeholder="프랑스" /></div>
             </div>
             <div style={S.row2}>
-              <div><span style={S.lbl}>카테고리</span><input style={S.inp} value={origin} onChange={e => setOrigin(e.target.value)} placeholder="카테고리 (예: 마스크팩)" /></div>
+              <div><span style={S.lbl}>카테고리</span><input style={S.inp} value={categoryText} onChange={e => setCategoryText(e.target.value)} placeholder="카테고리 (예: 마스크팩)" /></div>
               <div><span style={S.lbl}>제조사</span><input style={S.inp} value={manufacturer} onChange={e => setManufacturer(e.target.value)} placeholder="제조사명" /></div>
             </div>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
