@@ -46,6 +46,16 @@ export default function WalletCard({ point, chargeBalance, userId }: Props) {
   const [loading, setLoading] = useState(false)
   const [charging, setCharging] = useState(false)
   const openPopup = async (type: 'toast' | 'pay-history' | 'pay-charge') => {
+    if (type === 'pay-charge') {
+      const res = await fetch('/api/auth/pin/status', { credentials: 'same-origin' })
+      const data = await res.json().catch(() => ({}))
+      if (!data.hasPin) {
+        if (confirm('충전하려면 결제 PIN 설정이 필요해요.\nPIN 설정 페이지로 이동할까요?')) {
+          window.location.href = '/auth/set-pin?redirect=/my'
+        }
+        return
+      }
+    }
     setPopup(type)
     if (type === 'toast' && toastTx.length === 0) {
       const { data: meRow } = await supabase.from('users').select('id').eq('auth_id', userId).maybeSingle()
