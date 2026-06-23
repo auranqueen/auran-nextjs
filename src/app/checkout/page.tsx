@@ -135,11 +135,13 @@ function CheckoutPageInner() {
       const { data: sessionData } = await supabase.auth.getSession()
       let user = sessionData.session?.user ?? null
       if (!user) {
+        await new Promise(r => setTimeout(r, 1000))
         const { data: auth } = await supabase.auth.getUser()
         user = auth?.user ?? null
       }
       if (!user) {
         setLoading(false)
+        router.replace('/login?role=customer&redirect=/checkout?' + search?.toString())
         return
       }
       const { data: me } = await supabase
@@ -149,6 +151,7 @@ function CheckoutPageInner() {
         .maybeSingle()
       if (!me?.id) {
         setLoading(false)
+        router.replace('/login?role=customer&redirect=/checkout?' + search?.toString())
         return
       }
       setAuthUid(user.id)
