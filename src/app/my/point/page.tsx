@@ -54,19 +54,20 @@ export default function MyPointPage() {
       setPoint(Number(userRow?.points || 0))
       setChargeBalance(Number(userRow?.charge_balance || 0))
 
+      const { data: meForPay } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+      const internalId = meForPay?.id ?? ''
       const { data: txData } = await supabase
         .from('toast_transactions')
         .select('id, amount, transaction_type, source_type, created_at')
-        .eq('user_id', user.id)
+        .eq('user_id', internalId)
         .order('created_at', { ascending: false })
         .limit(50)
       setRows((txData as TransactionRow[]) || [])
 
-      const { data: meForPay } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
       const { data: payData } = await supabase
         .from('payment_intents')
         .select('amount, created_at')
-        .eq('user_id', meForPay?.id ?? '')
+        .eq('user_id', internalId)
         .eq('kind', 'charge')
         .eq('status', 'paid')
         .order('created_at', { ascending: false })
@@ -76,7 +77,7 @@ export default function MyPointPage() {
       const { data: orderData } = await supabase
         .from('orders')
         .select('charge_used, created_at')
-        .eq('customer_id', user.id)
+        .eq('customer_id', internalId)
         .gt('charge_used', 0)
         .order('created_at', { ascending: false })
         .limit(50)
@@ -85,7 +86,7 @@ export default function MyPointPage() {
       const { data: expireRows } = await supabase
         .from('toast_transactions')
         .select('amount, type, description, created_at')
-        .eq('user_id', user.id)
+        .eq('user_id', internalId)
         .eq('source_type', 'expire')
       const expiringAmount = ((expireRows as { amount: number }[] | null) || []).reduce((sum, r) => sum + Math.abs(Number(r.amount || 0)), 0)
       setExpiringPoints(expiringAmount)
