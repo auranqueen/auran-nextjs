@@ -158,7 +158,8 @@ export default function MyProfilePage() {
     const bodyStatusVal = bodyStatus.length ? bodyStatus.join(',') : null
     const { error } = await supabase
       .from('profiles')
-      .update({
+      .upsert({
+        auth_id: authId,
         full_name: fullName,
         username,
         phone,
@@ -183,13 +184,16 @@ export default function MyProfilePage() {
         notify_birthday: notifyBirthday,
         notification_sound: notificationSound,
         special_dates: specialDates,
-      } as any)
-      .eq('auth_id', authId)
+      } as any, { onConflict: 'auth_id' })
     setSaving(false)
     if (error) {
       alert(error.message)
       return
     }
+    // users 테이블 동기화
+    await supabase.from('users').update({
+      name: fullName,
+    }).eq('auth_id', authId)
     router.push('/my')
     setToast(profileCompletion === 100 ? '완성! 이제 오렌의 모든 기능을 누릴 수 있어요 💜' : '프로필이 저장됐습니다 💜')
     window.setTimeout(() => {
@@ -222,7 +226,7 @@ export default function MyProfilePage() {
         alert('사진 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.')
         return
       }
-      const { error: dbErr } = await supabase.from('profiles').update({ avatar_url: publicUrl } as any).eq('auth_id', user.id)
+      const { error: dbErr } = await supabase.from('profiles').upsert({ auth_id: user.id, avatar_url: publicUrl } as any, { onConflict: 'auth_id' })
       if (dbErr) {
         setUploading(false)
         alert('사진 업로드에 실패했습니다. 잠시 후 다시 시도해주세요.')
