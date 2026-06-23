@@ -63,7 +63,8 @@ const MENU = [
     section: 'PRODUCT',
     items: [
       { label: '카테고리 관리', href: '/admin/settings/categories', icon: '📂' },
-      { label: '제품 등록', href: '/admin/products/edit', icon: '📝' },
+      { label: '제품 등록 v2', href: '/admin/products/edit-v2', icon: '📝' },
+      { label: '제품 등록 (구)', href: '/admin/products/edit', icon: '📋' },
       { label: '제품 관리', href: '/admin/marketing/products', icon: '🧴' },
       { label: '케어카드 관리', href: '/admin/marketing/care-cards', icon: '💠' },
       { label: '공동구매 관리', href: '/admin/marketing/groupbuys', icon: '🛒' },
