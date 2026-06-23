@@ -181,6 +181,45 @@ export async function GET(request: NextRequest) {
     await sendSignupAlimtalkIfNeeded(user.id)
   }
 
+    // 기존 유저도 토스트 미지급 시 idempotent 지급
+    try {
+      const { tryCreateAdminClient } = await import('@/lib/supabase/admin')
+      const adminClient2 = tryCreateAdminClient() || supabase
+      const { data: anyUser } = await adminClient2
+        .from('users')
+        .select('id, role, points')
+        .eq('auth_id', user.id)
+        .maybeSingle()
+      if (anyUser?.id && !['owner','partner','brand'].includes(anyUser.role ?? '')) {
+        const { data: alreadyGiven } = await adminClient2
+          .from('toast_transactions')
+          .select('id')
+          .eq('user_id', anyUser.id)
+          .eq('reference_id', 'signup')
+          .maybeSingle()
+        if (!alreadyGiven) {
+          await adminClient2.from('toast_transactions').insert({
+            user_id: anyUser.id,
+            amount: 10000,
+            transaction_type: 'earn',
+            source_type: 'signup',
+            reference_id: 'signup',
+          } as any)
+          await adminClient2.from('users')
+            .update({ points: (anyUser.points ?? 0) + 10000 })
+            .eq('id', anyUser.id)
+          await adminClient2.from('notifications').insert({
+            user_id: anyUser.id,
+            type: 'toast',
+            title: '🎁 가입 선물 10,000T가 도착했어요!',
+            body: '오렌 합류 환영해요 💜 토스트 10,000T를 드릴게요. 지갑에서 확인해보세요!',
+            link_url: '/my',
+            is_read: false,
+          } as any)
+        }
+      }
+    } catch (e) { console.error('idempotent toast grant error:', e) }
+
   const rawRole = existingUser?.role ?? meta.role ?? (position === 'salon' ? 'owner' : position) ?? 'customer'
   const userRole = rawRole === 'salon' ? 'owner' : rawRole
   const finalPosition = userRole === 'owner' ? 'salon' : userRole
