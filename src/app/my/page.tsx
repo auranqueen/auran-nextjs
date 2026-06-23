@@ -8,6 +8,7 @@ import { TOOLTIP_FALLBACKS, isPeriodTrack } from '@/lib/hormoneUtils'
 import RhythmFix from '@/components/home/RhythmFix'
 import SkinReportCard from '@/components/my/SkinReportCard'
 import MyBookingStatus from '@/components/customer/MyBookingStatus'
+import WalletCard from '@/components/WalletCard'
 
 const GOLD = '#C9A96E'
 const BG = '#0D0B09'
@@ -538,7 +539,8 @@ export default function MyPage() {
       ) : null}
 
       {/* AURAN POINT */}
-      <div style={{ margin: '14px 16px 0', background: 'rgba(123,94,167,0.12)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: '18px', padding: '16px' }}>
+      <WalletCard point={point} chargeBalance={chargeBalance} userId={user?.id ?? ''} />
+      <div style={{ display: 'none' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: '10px', color: 'rgba(196,167,231,0.7)' }}>🍞 토스트 P</div>
@@ -567,12 +569,12 @@ export default function MyPage() {
           💡 5만원 이상 구매 시 토스트 사용 가능해요<br />
           LUMIÈRE 이상 등급은 전액 사용 가능해요
         </div>
+        </div>
         {expiringPoint > 0 ? (
           <div style={{ marginTop: 8, fontSize: '10px', color: 'rgba(255,180,80,0.8)' }}>
             ⚠️ {expiringPoint.toLocaleString()} P 12월 31일 소멸 예정
           </div>
         ) : null}
-      </div>
 
       {pointHistory.length > 0 ? (
         <div style={{ margin: '10px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '12px 14px' }}>

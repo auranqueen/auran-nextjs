@@ -62,10 +62,11 @@ export default function MyPointPage() {
         .limit(50)
       setRows((txData as TransactionRow[]) || [])
 
+      const { data: meForPay } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
       const { data: payData } = await supabase
         .from('payment_intents')
         .select('amount, created_at')
-        .eq('user_id', user.id)
+        .eq('user_id', meForPay?.id ?? '')
         .eq('kind', 'charge')
         .eq('status', 'paid')
         .order('created_at', { ascending: false })

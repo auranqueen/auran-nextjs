@@ -318,7 +318,7 @@ function WalletPageInner() {
                 {/* 방식 A: 고정 금액 버튼 */}
                 {chargeMode === 'preset' && (
                   <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-                    {[500000, 1000000, 2000000, 3000000].map(amt => {
+                    {[300000, 500000, 1000000, 2000000].map(amt => {
                       const active = selectedAmount === amt
                       return (
                         <button
