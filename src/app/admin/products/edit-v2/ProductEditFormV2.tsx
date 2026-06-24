@@ -308,6 +308,12 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     event_ends_at: eventEndsAt || null,
     medical_tags: medicalTags.trim() ? medicalTags.split(',').map(s => s.trim()).filter(Boolean) : [],
     body_part_tags: bodyPartTags.length ? bodyPartTags : [],
+    func_tags: [],
+    weather_tags: [],
+    situation_tags: [],
+    lifestyle_tags: [],
+    timing_tags: [],
+    event_tags: [],
   })
 
   const onSave = async () => {
