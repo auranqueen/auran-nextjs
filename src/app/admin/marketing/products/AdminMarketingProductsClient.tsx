@@ -93,7 +93,7 @@ export default function AdminMarketingProductsClient() {
     await load()
   }
 
-  const isDraft = (p: Product) => p.status === 'pending' && !p.routine_category && !p.is_active
+  const isDraft = (p: Product) => p.status === 'pending' && !p.routine_category
 
   const getStatusClass = (p: Product) => {
     if (isDraft(p)) return 'draft'
