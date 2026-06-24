@@ -1595,12 +1595,13 @@ export default function CustomerHomePage() {
         ''
     ).trim() || careBannerLine
   const hormonePhaseTipDesc = useMemo(() => {
+    if (userGender === 'male') return ''
     const s = `${hormoneMainLine}\n${hormoneSubLine}`
     for (const row of HORMONE_PHASE_TIP_ROWS) {
       if (s.includes(row[0])) return row[1]
     }
     return ''
-  }, [hormoneMainLine, hormoneSubLine])
+  }, [hormoneMainLine, hormoneSubLine, userGender])
   const homeGreetingForUser = useMemo(() => {
     if (!userName) return ''
     const hour = new Date().getHours()
@@ -2419,7 +2420,7 @@ export default function CustomerHomePage() {
               draft: hormoneSubLine,
             })
           }
-          currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? '달빛기'}
+          currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? (userGender === 'male' ? '남성' : '달빛기')}
           cycleDay={calcHormoneBriefing(hormoneCycle)?.cycleDay ?? 0}
           hormoneCycle={hormoneCycle}
           supabaseClient={supabase}
