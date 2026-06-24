@@ -17,6 +17,8 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const [saving, setSaving] = useState(false)
   const [msg, setMsg] = useState('')
   const [tmpSavedAt, setTmpSavedAt] = useState<string | null>(null)
+  const [showDraftPicker, setShowDraftPicker] = useState(false)
+  const [draftList, setDraftList] = useState<{ id: string; name: string; created_at: string }[]>([])
 
   const [name, setName] = useState('')
   const [shortDesc, setShortDesc] = useState('')
@@ -351,13 +353,15 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   }
 
   const loadDrafts = async () => {
-    const { data } = await supabase.from('products').select('id,name,updated_at').eq('status', 'pending').is('routine_category', null).order('updated_at', { ascending: false }).limit(20)
-    if (!data?.length) { alert('임시저장된 상품이 없습니다'); return }
-    const msg = data.map((p, i) => `${i + 1}. ${p.name || '(이름 없음)'}`).join('\n')
-    const n = prompt(`불러올 임시저장 상품 번호:\n${msg}`)
-    const idx = Number(n) - 1
-    if (!Number.isInteger(idx) || idx < 0 || idx >= data.length) return
-    router.push(`/admin/products/edit-v2?id=${data[idx].id}`)
+    const { data } = await supabase
+      .from('products')
+      .select('id, name, created_at')
+      .eq('status', 'pending')
+      .is('routine_category', null)
+      .order('created_at', { ascending: false })
+      .limit(20)
+    setDraftList(data || [])
+    setShowDraftPicker(true)
   }
 
   useEffect(() => {
@@ -698,7 +702,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
                 <span key={t} style={S.tag(stepTags.includes(t))} onClick={() => toggleArr(stepTags, t, setStepTags)}>{t}</span>
               ))}
                 <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'inline-block', margin: '3px 3px 0 0' }}
-                  onClick={() => { const v = prompt('루틴 단계 추가:'); if (v?.trim()) toggleArr(stepTags, v.trim(), setStepTags) }}>+ 추가</span>
+                  onClick={() => { const v = window.prompt('루틴 단계 추가:'); if (v?.trim()) setStepTags(prev => [...prev, v.trim()]) }}>+ 추가</span>
               </div>
             </div>
             <div><span style={S.lbl}>성분 태그 (콤마 구분)</span><input style={S.inp} value={ingredientTags} onChange={e => setIngredientTags(e.target.value)} placeholder="히알루론산, 나이아신아마이드" /></div>
@@ -788,6 +792,32 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
                       style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: on ? 'rgba(123,94,167,0.35)' : 'rgba(123,94,167,0.1)', border: `0.5px solid ${on ? 'rgba(123,94,167,0.6)' : 'rgba(123,94,167,0.25)'}`, color: '#c4a7e7', cursor: 'pointer' }}>{t.name}</span>
                   })}
                 </div>
+              </div>
+            </div>
+          )}
+          {showDraftPicker && (
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', zIndex: 999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowDraftPicker(false)}>
+              <div style={{ background: '#1a1714', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: 14, width: 'min(480px, 90vw)', maxHeight: '70vh', overflowY: 'auto', padding: 20 }} onClick={e => e.stopPropagation()}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                  <span style={{ fontSize: 14, color: '#e8e4dc' }}>임시저장 목록</span>
+                  <button type="button" onClick={() => setShowDraftPicker(false)} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 20, lineHeight: 1 }}>×</button>
+                </div>
+                {draftList.length === 0 && (
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '24px 0' }}>임시저장된 상품이 없어요</div>
+                )}
+                {draftList.map(d => (
+                  <div key={d.id}
+                    onClick={() => { window.location.href = `/admin/products/edit-v2?id=${d.id}` }}
+                    style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.08)', marginBottom: 8, cursor: 'pointer' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(123,94,167,0.12)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}>
+                    <div>
+                      <div style={{ fontSize: 13, color: '#e8e4dc', marginBottom: 3 }}>{d.name || '이름 없음'}</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{new Date(d.created_at).toLocaleDateString('ko-KR')} 임시저장</div>
+                    </div>
+                    <span style={{ fontSize: 12, color: '#c4a7e7', flexShrink: 0 }}>이어서 작업 →</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
