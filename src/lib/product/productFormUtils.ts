@@ -27,6 +27,7 @@ export async function insertNewProduct(supabase: ReturnType<typeof createClient>
   const { data, error } = await supabase.from('products').insert({
     ...payload,
     status: 'pending',
+    is_active: false,
     stock: 0,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
