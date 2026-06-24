@@ -287,6 +287,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     certifications: certifications || null,
     perfect_together: ptSelected.map(p => p.id),
     detail_images: detailImages,
+    detail_imgs: detailImages,
     is_active: isActive,
     is_exclusive: isExclusive,
     is_flash_sale: isFlashSale,
