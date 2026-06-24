@@ -218,7 +218,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       n[slot] = url
       return n
     })
-  }, [])
+  }, [brandId, name, retailPrice, isFlashSale])
 
   const handleVideoPick = useCallback(async (file: File) => {
     if (!workingIdRef.current) {
@@ -231,7 +231,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     const ext = file.name.split('.').pop() || 'mp4'
     const url = await uploadVideoToStorage(file, `edit/${workingIdRef.current}/video-${Date.now()}.${ext}`)
     setVideoUrl(url)
-  }, [])
+  }, [brandId, name, retailPrice, isFlashSale])
 
   const handleDetailImagePick = useCallback(async (file: File) => {
     if (!workingIdRef.current) {
@@ -244,7 +244,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     const ext = file.name.split('.').pop() || 'jpg'
     const url = await uploadVideoToStorage(file, `edit/${workingIdRef.current}/detail-${Date.now()}.${ext}`)
     setDetailImages(prev => [...prev, url])
-  }, [])
+  }, [brandId, name, retailPrice, isFlashSale])
 
   const buildPayload = () => ({
     brand_id: brandId || null,
