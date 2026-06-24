@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { uploadToStorage, uploadVideoToStorage, insertNewProduct, updateProduct } from '@/lib/product/productFormUtils'
 
 export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
@@ -22,6 +22,17 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const [brands, setBrands] = useState<any[]>([])
   const [origin, setOrigin] = useState('')
   const [categoryText, setCategoryText] = useState('')
+  const [allCategories, setAllCategories] = useState<{ id: string; name: string; parent_id: string | null; level: number; sort_order: number | null }[]>([])
+  const [catL1, setCatL1] = useState('')
+  const [catL2, setCatL2] = useState('')
+  const [catL3, setCatL3] = useState('')
+  const [catL4, setCatL4] = useState('')
+  const [catL5, setCatL5] = useState('')
+  const [productCategoryLeafId, setProductCategoryLeafId] = useState('')
+  const [selectedSkinTagIds, setSelectedSkinTagIds] = useState<string[]>([])
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false)
+  const [categoryPickerTab, setCategoryPickerTab] = useState<'search' | 'select'>('select')
+  const [categorySearch, setCategorySearch] = useState('')
   const [manufacturer, setManufacturer] = useState('')
   const [isFlashSale, setIsFlashSale] = useState(false)
   const [isGroupbuy, setIsGroupbuy] = useState(false)
@@ -86,6 +97,28 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     supabase.from('brands').select('id,name').order('name').then(({ data }) => setBrands(data || []))
   }, [supabase])
 
+  // categories 로드
+  useEffect(() => {
+    supabase.from('categories').select('id,name,parent_id,level,sort_order')
+      .order('sort_order', { ascending: true, nullsFirst: false })
+      .order('name', { ascending: true })
+      .then(({ data }) => setAllCategories((data || []) as typeof allCategories))
+  }, [])
+  // 리프 ID → catL1~5 역추적
+  useEffect(() => {
+    const leaf = productCategoryLeafId
+    if (!leaf || allCategories.length === 0) return
+    const chain: string[] = []
+    let cur = allCategories.find(c => c.id === leaf)
+    while (cur) {
+      chain.unshift(cur.id)
+      cur = cur.parent_id ? allCategories.find(c => c.id === cur!.parent_id) : undefined
+    }
+    const [l1, l2, l3, l4, l5] = chain
+    setCatL1(l1 || ''); setCatL2(l2 || ''); setCatL3(l3 || ''); setCatL4(l4 || ''); setCatL5(l5 || '')
+    setProductCategoryLeafId('')
+  }, [productCategoryLeafId, allCategories])
+  // 슈퍼어드민 체크
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       if (!data.user) return
@@ -137,6 +170,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       setSkinTypes(data.skin_types || [])
       setSeasonTags(data.season_tags || [])
       setIngredientTags((data.ingredient_tags || []).join(', '))
+      if (data.category_id) setProductCategoryLeafId(data.category_id)
       setIsActive(data.is_active ?? true)
       setIsTimesale(data.is_timesale ?? false)
       setIsGroupbuy(data.is_groupbuy ?? false)
@@ -193,6 +227,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     name: name.trim().slice(0, 100) || '신규 상품',
     description: shortDesc.trim() || null,
     tag: keywords.trim() || null,
+    category_id: catL5 || catL4 || catL3 || catL2 || catL1 || null,
     category: categoryText.trim() || null,
     ingredient: manufacturer.trim() || null,
     retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)),
@@ -308,6 +343,22 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     set(arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val])
   }
 
+  const catOpts = (parentId: string | null) =>
+    allCategories.filter(c => c.parent_id === parentId).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+  const catOpts1 = useMemo(() => catOpts(null), [allCategories])
+  const catOpts2 = useMemo(() => catOpts(catL1), [allCategories, catL1])
+  const catOpts3 = useMemo(() => catOpts(catL2), [allCategories, catL2])
+  const catOpts4 = useMemo(() => catOpts(catL3), [allCategories, catL3])
+  const catOpts5 = useMemo(() => catOpts(catL4), [allCategories, catL4])
+  const skinTagOptions = useMemo(() => allCategories.filter(c => c.level === 5), [allCategories])
+  const categorySearchRows = useMemo(() => {
+    if (!categorySearch.trim()) return []
+    return allCategories.filter(c => c.name.includes(categorySearch.trim())).slice(0, 80)
+  }, [allCategories, categorySearch])
+  const categoryBreadcrumb = useMemo(() => {
+    return [catL1, catL2, catL3, catL4, catL5].filter(Boolean).map(id => allCategories.find(c => c.id === id)?.name || '').filter(Boolean).join(' > ')
+  }, [allCategories, catL1, catL2, catL3, catL4, catL5])
+
   const ActionBar = () => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       {msg && <span style={{ fontSize: 12, color: msg.includes('완료') ? '#4cad7e' : '#e08080' }}>{msg}</span>}
@@ -345,7 +396,14 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
               <div><span style={S.lbl}>원산지</span><input style={S.inp} value={origin} onChange={e => setOrigin(e.target.value)} placeholder="프랑스" /></div>
             </div>
             <div style={S.row2}>
-              <div><span style={S.lbl}>카테고리</span><input style={S.inp} value={categoryText} onChange={e => setCategoryText(e.target.value)} placeholder="카테고리 (예: 마스크팩)" /></div>
+              <div>
+                <span style={S.lbl}>카테고리</span>
+                <button type="button" onClick={() => { setCategoryPickerTab('select'); setShowCategoryPicker(true) }}
+                  style={{ ...S.inp, textAlign: 'left' as const, cursor: 'pointer', background: '#1a1714' }}>
+                  {categoryBreadcrumb || '카테고리 선택'}
+                </button>
+                {categoryBreadcrumb && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>{categoryBreadcrumb}</div>}
+              </div>
               <div><span style={S.lbl}>제조사</span><input style={S.inp} value={manufacturer} onChange={e => setManufacturer(e.target.value)} placeholder="제조사명" /></div>
             </div>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
@@ -528,6 +586,60 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
             </div>
           )}
 
+          {/* 카테고리 피커 모달 */}
+          {showCategoryPicker && (
+            <div style={{ position: 'fixed', inset: 0, zIndex: 120, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowCategoryPicker(false)}>
+              <div style={{ background: '#141210', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: 14, width: 'min(980px, 92vw)', maxHeight: '80vh', overflowY: 'auto', padding: 20 }} onClick={e => e.stopPropagation()}>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  <button type="button" onClick={() => setCategoryPickerTab('select')} style={{ padding: '6px 14px', borderRadius: 8, background: categoryPickerTab === 'select' ? '#7b5ea7' : 'rgba(255,255,255,0.06)', border: 'none', color: '#fff', fontSize: 12, cursor: 'pointer' }}>카테고리 선택</button>
+                  <button type="button" onClick={() => setCategoryPickerTab('search')} style={{ padding: '6px 14px', borderRadius: 8, background: categoryPickerTab === 'search' ? '#7b5ea7' : 'rgba(255,255,255,0.06)', border: 'none', color: '#fff', fontSize: 12, cursor: 'pointer' }}>검색</button>
+                  <button type="button" onClick={() => setShowCategoryPicker(false)} style={{ marginLeft: 'auto', padding: '6px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.06)', border: 'none', color: 'rgba(255,255,255,0.5)', fontSize: 12, cursor: 'pointer' }}>닫기</button>
+                </div>
+                {categoryPickerTab === 'search' ? (
+                  <div>
+                    <input value={categorySearch} onChange={e => setCategorySearch(e.target.value)} placeholder="카테고리 검색..."
+                      style={{ ...S.inp, marginBottom: 12 }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {categorySearchRows.map(c => (
+                        <div key={c.id} onClick={() => { setProductCategoryLeafId(c.id); setShowCategoryPicker(false) }}
+                          style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', cursor: 'pointer', fontSize: 13, color: '#e8e4dc' }}>
+                          {c.name}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 8 }}>
+                    {[
+                      { opts: catOpts1, val: catL1, set: setCatL1, reset: [setCatL2, setCatL3, setCatL4, setCatL5] },
+                      { opts: catOpts2, val: catL2, set: setCatL2, reset: [setCatL3, setCatL4, setCatL5] },
+                      { opts: catOpts3, val: catL3, set: setCatL3, reset: [setCatL4, setCatL5] },
+                      { opts: catOpts4, val: catL4, set: setCatL4, reset: [setCatL5] },
+                      { opts: catOpts5, val: catL5, set: setCatL5, reset: [] as ((v: string) => void)[] },
+                    ].map((col, i) => (
+                      <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        {col.opts.map(c => (
+                          <div key={c.id} onClick={() => { col.set(c.id); col.reset.forEach(r => r('')) }}
+                            style={{ padding: '7px 10px', borderRadius: 8, fontSize: 12, cursor: 'pointer', background: col.val === c.id ? 'rgba(123,94,167,0.3)' : 'rgba(255,255,255,0.04)', color: col.val === c.id ? '#c4a7e7' : 'rgba(255,255,255,0.7)', border: `0.5px solid ${col.val === c.id ? 'rgba(123,94,167,0.5)' : 'rgba(255,255,255,0.06)'}` }}>
+                            {c.name}
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{ marginTop: 12, fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>선택 경로: {categoryBreadcrumb || '미선택'}</div>
+                <div style={{ marginTop: 8, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {skinTagOptions.map(t => {
+                    const on = selectedSkinTagIds.includes(t.id)
+                    return <span key={t.id} onClick={() => setSelectedSkinTagIds(prev => on ? prev.filter(x => x !== t.id) : [...prev, t.id])}
+                      style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: on ? 'rgba(123,94,167,0.35)' : 'rgba(123,94,167,0.1)', border: `0.5px solid ${on ? 'rgba(123,94,167,0.6)' : 'rgba(123,94,167,0.25)'}`, color: '#c4a7e7', cursor: 'pointer' }}>{t.name}</span>
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+          {/* 하단 액션바 */}
           <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.08)', padding: '16px 0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>{tmpSavedAt && `${tmpSavedAt} 임시저장됨`}</div>
             <ActionBar />
