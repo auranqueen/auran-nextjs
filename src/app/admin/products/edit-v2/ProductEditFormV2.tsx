@@ -682,10 +682,25 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
             <div style={{ marginTop: 10 }}>
               <span style={S.lbl}>상세 이미지</span>
               <div style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px dashed rgba(255,255,255,0.1)', borderRadius: 8, padding: 14, textAlign: 'center', cursor: 'pointer', fontSize: 12, color: 'rgba(255,255,255,0.25)' }} onClick={() => detailFileRef.current?.click()}>
-                + 상세 이미지 업로드
+                + 상세 이미지 업로드 (여러 장 가능)
                 <input ref={detailFileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => { Array.from(e.target.files || []).forEach(f => void handleDetailImagePick(f)) }} />
               </div>
-              {detailImages.length > 0 && <div style={{ marginTop: 6, fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{detailImages.length}개 업로드됨</div>}
+              {detailImages.length > 0 && (
+                <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {detailImages.map((url, i) => (
+                    <div key={i} style={{ position: 'relative', borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.08)' }}>
+                      <img src={url} alt={`상세 ${i + 1}`} style={{ width: '100%', display: 'block', borderRadius: 8 }} />
+                      <button
+                        type="button"
+                        onClick={() => setDetailImages(prev => prev.filter((_, j) => j !== i))}
+                        style={{ position: 'absolute', top: 8, right: 8, width: 26, height: 26, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        ×
+                      </button>
+                      <div style={{ position: 'absolute', bottom: 8, left: 8, fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'rgba(0,0,0,0.5)', color: 'rgba(255,255,255,0.6)' }}>{i + 1} / {detailImages.length}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
