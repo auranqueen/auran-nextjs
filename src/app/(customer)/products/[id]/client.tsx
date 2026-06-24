@@ -2276,16 +2276,14 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             {detailHtml ? (
               <div className="toastui-editor-contents" dangerouslySetInnerHTML={{ __html: detailHtml }}
                 style={{ padding: '16px 0', color: '#ffffff', marginBottom: 0 }} />
-            ) : (
+            ) : null}
+            {Array.isArray((product as any).detail_imgs) && (product as any).detail_imgs.length > 0 ? (
               <div style={{ padding: '8px 0' }}>
-                {Array.isArray((product as any).detail_imgs) && (product as any).detail_imgs.length > 0
-                  ? (product as any).detail_imgs.map((url: string, i: number) => (
-                      <img key={i} src={url} alt="" loading="lazy" style={{ width: '100%', display: 'block', marginBottom: 4 }} />
-                    ))
-                  : <div style={{ padding: '16px 0', color: '#666', fontSize: 12 }}>상세 이미지가 없어요</div>
-                }
+                {(product as any).detail_imgs.map((url: string, i: number) => (
+                  <img key={i} src={url} alt="" loading="lazy" style={{ width: '100%', display: 'block', marginBottom: 4 }} />
+                ))}
               </div>
-            )}
+            ) : (!detailHtml ? <div style={{ padding: '16px 0', color: '#666', fontSize: 12 }}>상세 이미지가 없어요</div> : null)}
           </div>
         ) : null}
 
