@@ -672,16 +672,24 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
             <div style={S.secTitle}>태그 / 호르몬 단계</div>
             {[
               { label: '피부 고민', items: ['보습', '진정', '미백', '탄력', '모공', '각질', '트러블'], arr: skinConcerns, set: setSkinConcerns, style: S.tag },
-              { label: '호르몬 단계', items: ['달빛기', '황금기', '만개기', '물들기'], arr: hormoneStages, set: setHormoneStages, style: S.goldTag },
-              { label: '루틴 단계', items: ['클렌징', '토너', '세럼', '크림', '선케어', '마스크팩'], arr: stepTags, set: setStepTags, style: S.tag },
-              { label: '피부 타입', items: ['건성', '지성', '복합성', '민감성', '중성'], arr: skinTypes, set: setSkinTypes, style: S.tag },
-              { label: '계절', items: ['봄', '여름', '가을', '겨울'], arr: seasonTags, set: setSeasonTags, style: S.tag },
+              { label: '호르몬 단계', items: ['전단계', '달빛기', '황금기', '만개기', '물들기'], arr: hormoneStages, set: setHormoneStages, style: S.goldTag },
+              { label: '피부 타입', items: ['건성', '지성', '복합성', '민감성', '중성', '여드름', '홍조', '특정'], arr: skinTypes, set: setSkinTypes, style: S.tag },
+              { label: '계절', items: ['전계절', '봄', '여름', '가을', '겨울', '시술후'], arr: seasonTags, set: setSeasonTags, style: S.tag },
             ].map(({ label, items, arr, set, style }) => (
               <div key={label} style={S.f}>
                 <span style={S.lbl}>{label}</span>
                 <div>{items.map(t => <span key={t} style={style(arr.includes(t))} onClick={() => toggleArr(arr, t, set)}>{t}</span>)}</div>
               </div>
             ))}
+            <div style={S.f}>
+              <span style={S.lbl}>루틴 단계</span>
+              <div>{['클렌징', '토너', '앰플', '세럼', '크림', '선케어', '마스크팩', '아로마오일', '바디입욕제', '바디버블', '바디팩', ...stepTags.filter(t => !['클렌징', '토너', '앰플', '세럼', '크림', '선케어', '마스크팩', '아로마오일', '바디입욕제', '바디버블', '바디팩'].includes(t))].map(t => (
+                <span key={t} style={S.tag(stepTags.includes(t))} onClick={() => toggleArr(stepTags, t, setStepTags)}>{t}</span>
+              ))}
+                <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'inline-block', margin: '3px 3px 0 0' }}
+                  onClick={() => { const v = prompt('루틴 단계 추가:'); if (v?.trim()) toggleArr(stepTags, v.trim(), setStepTags) }}>+ 추가</span>
+              </div>
+            </div>
             <div><span style={S.lbl}>성분 태그 (콤마 구분)</span><input style={S.inp} value={ingredientTags} onChange={e => setIngredientTags(e.target.value)} placeholder="히알루론산, 나이아신아마이드" /></div>
           </div>
 
