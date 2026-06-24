@@ -46,8 +46,6 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const [unitPrice, setUnitPrice] = useState('')
   const [stockInput, setStockInput] = useState('')
   const [avgUsageDays, setAvgUsageDays] = useState('')
-  const [shipFee, setShipFee] = useState('')
-  const [shipMemo, setShipMemo] = useState('')
 
   const [earnPointsPercent, setEarnPointsPercent] = useState('')
   const [shareVal, setShareVal] = useState('')
@@ -150,8 +148,6 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       setUnitPrice(String(data.unit_price || ''))
       setStockInput(String(data.stock || ''))
       setAvgUsageDays(String(data.avg_usage_days || ''))
-      setShipFee(String(data.shipping_fee || ''))
-      setShipMemo(data.shipping_memo || '')
       setEarnPointsPercent(String(data.earn_points_percent || ''))
       setShareVal(String(data.share_points || ''))
       setReviewText(String(data.review_points_text || ''))
@@ -235,6 +231,8 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     unit_price: unitPrice.trim() === '' ? null : Number(unitPrice),
     stock: stockInput.trim() === '' ? null : Math.max(0, Math.floor(Number(stockInput))),
     avg_usage_days: avgUsageDays.trim() === '' ? null : Math.max(1, Math.floor(Number(avgUsageDays))),
+    shipping_fee: 3500,
+    shipping_memo: '5만원 이상 무료배송 · 제주/도서산간 +5,000원',
     earn_points_percent: earnPointsPercent.trim() === '' ? null : Number(earnPointsPercent),
     share_points: shareVal.trim() === '' ? null : Math.floor(Number(shareVal)),
     review_points_text: reviewText.trim() === '' ? null : Math.floor(Number(reviewText)),
@@ -429,9 +427,19 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
               <div><span style={S.lbl}>단위가격</span><input style={S.inp} type="number" value={unitPrice} onChange={e => setUnitPrice(e.target.value)} placeholder="0" /></div>
               <div><span style={S.lbl}>평균 소진 (일)</span><input style={S.inp} type="number" value={avgUsageDays} onChange={e => setAvgUsageDays(e.target.value)} placeholder="30" /></div>
             </div>
-            <div style={S.row2}>
-              <div><span style={S.lbl}>배송비 (₩)</span><input style={S.inp} type="number" value={shipFee} onChange={e => setShipFee(e.target.value)} placeholder="3500" /></div>
-              <div><span style={S.lbl}>배송 메모</span><input style={S.inp} value={shipMemo} onChange={e => setShipMemo(e.target.value)} placeholder="제주 +3,000원" /></div>
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '12px 14px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
+                  <span>기본 배송비</span><span style={{ color: '#e8e4dc' }}>₩3,500</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
+                  <span>5만원 이상 구매 시</span><span style={{ color: '#4cad7e' }}>무료배송</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
+                  <span>제주 / 도서산간</span><span style={{ color: '#ffb400' }}>+₩5,000 추가</span>
+                </div>
+              </div>
+              <div style={{ marginTop: 8, fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>배송비는 자동 적용됩니다</div>
             </div>
           </div>
 
