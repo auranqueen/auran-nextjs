@@ -49,7 +49,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const [stockInput, setStockInput] = useState('')
   const [avgUsageDays, setAvgUsageDays] = useState('')
 
-  const [earnPointsPercent, setEarnPointsPercent] = useState('2')
+  const [earnPointsPercent, setEarnPointsPercent] = useState('3')
   const [shareVal, setShareVal] = useState('3')
   const [reviewText, setReviewText] = useState('2')
   const [reviewPhoto, setReviewPhoto] = useState('3')
@@ -164,7 +164,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       setUnitPrice(String(data.unit_price || ''))
       setStockInput(String(data.stock || ''))
       setAvgUsageDays(String(data.avg_usage_days || ''))
-      setEarnPointsPercent(String(data.earn_points_percent || '2'))
+      setEarnPointsPercent(String(Number(data.earn_points_percent) > 10 ? 3 : (data.earn_points_percent || 3)))
       setShareVal(String(data.share_points || '3'))
       setReviewText(String(data.review_points_text || '2'))
       setReviewPhoto(String(data.review_points_photo || '3'))
@@ -272,7 +272,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     avg_usage_days: avgUsageDays.trim() === '' ? null : Math.max(1, Math.floor(Number(avgUsageDays))),
     shipping_fee: 3500,
     shipping_memo: '5만원 이상 무료배송 · 제주/도서산간 +5,000원',
-    earn_points_percent: earnPointsPercent.trim() === '' ? null : Number(earnPointsPercent),
+    earn_points_percent: earnPointsPercent.trim() === '' ? 3 : Number(earnPointsPercent),
     share_points: shareVal.trim() === '' ? null : Math.floor(Number(shareVal)),
     review_points_text: reviewText.trim() === '' ? null : Math.floor(Number(reviewText)),
     review_points_photo: reviewPhoto.trim() === '' ? null : Math.floor(Number(reviewPhoto)),
