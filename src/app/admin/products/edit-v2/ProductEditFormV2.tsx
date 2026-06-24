@@ -61,6 +61,20 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const detailFileRef = useRef<HTMLInputElement | null>(null)
 
   const [detailContent, setDetailContent] = useState('')
+  // 옵션
+  const [useOpt1, setUseOpt1] = useState(false)
+  const [optName1, setOptName1] = useState('용량')
+  const [optInput1, setOptInput1] = useState('')
+  const [optVals1, setOptVals1] = useState<string[]>([])
+  const [useOpt2, setUseOpt2] = useState(false)
+  const [optName2, setOptName2] = useState('')
+  const [optInput2, setOptInput2] = useState('')
+  const [optVals2, setOptVals2] = useState<string[]>([])
+  // 사은품
+  const [useGift, setUseGift] = useState(false)
+  const [giftInput, setGiftInput] = useState('')
+  const [giftVals, setGiftVals] = useState<string[]>([])
+  const [giftMemo, setGiftMemo] = useState('')
 
   const [keyIngredients, setKeyIngredients] = useState('')
   const [ingredientText, setIngredientText] = useState('')
@@ -168,6 +182,12 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       setSeasonTags(data.season_tags || [])
       setIngredientTags((data.ingredient_tags || []).join(', '))
       if (data.category_id) setProductCategoryLeafId(data.category_id)
+      try {
+        const opts = data.options ? JSON.parse(data.options) : null
+        if (opts?.opt1) { setUseOpt1(true); setOptName1(opts.opt1.name || '용량'); setOptVals1(opts.opt1.vals || []) }
+        if (opts?.opt2) { setUseOpt2(true); setOptName2(opts.opt2.name || ''); setOptVals2(opts.opt2.vals || []) }
+        if (opts?.gift) { setUseGift(true); setGiftVals(opts.gift.vals || []); setGiftMemo(opts.gift.memo || '') }
+      } catch {}
       setIsActive(data.is_active ?? true)
       setIsExclusive(data.is_exclusive ?? false)
       setIsFlashSale(data.is_flash_sale ?? false)
@@ -257,6 +277,11 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     skin_types: skinTypes.length ? skinTypes : null,
     season_tags: seasonTags.length ? seasonTags : null,
     ingredient_tags: ingredientTags.trim() ? ingredientTags.split(',').map(s => s.trim()).filter(Boolean) : null,
+    options: JSON.stringify({
+      opt1: useOpt1 ? { name: optName1, vals: optVals1 } : null,
+      opt2: useOpt2 ? { name: optName2, vals: optVals2 } : null,
+      gift: useGift ? { vals: giftVals, memo: giftMemo } : null,
+    }),
     event_emoji: eventEmoji || null,
     event_title: eventTitle || null,
     event_desc: eventDesc || null,
@@ -443,6 +468,67 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
             </div>
           </div>
 
+          {/* 옵션 설정 */}
+          <div style={S.sec}>
+            <div style={S.secTitle}>옵션 설정</div>
+            {[
+              { n: 1, use: useOpt1, setUse: setUseOpt1, name: optName1, setName: setOptName1, input: optInput1, setInput: setOptInput1, vals: optVals1, setVals: setOptVals1, placeholder: '예: 30ml, 50ml, 100ml' },
+              { n: 2, use: useOpt2, setUse: setUseOpt2, name: optName2, setName: setOptName2, input: optInput2, setInput: setOptInput2, vals: optVals2, setVals: setOptVals2, placeholder: '예: 오리지널, 센시티브' },
+            ].map(({ n, use, setUse, name, setName, input, setInput, vals, setVals, placeholder }) => (
+              <div key={n} style={{ background: 'rgba(255,255,255,0.02)', border: '0.5px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: 12, marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: use ? 12 : 0 }}>
+                  <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>옵션 {n}</span>
+                  <button type="button" style={S.tog(use)} onClick={() => setUse(!use)} aria-label={`옵션${n}`} />
+                </div>
+                {use && (
+                  <>
+                    <div style={S.f}><span style={S.lbl}>옵션명</span><input style={S.inp} value={name} onChange={e => setName(e.target.value)} placeholder="예: 용량, 타입" /></div>
+                    <div>
+                      <span style={S.lbl}>옵션값 — 쉼표로 구분 입력 후 생성</span>
+                      <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                        <input style={{ ...S.inp, flex: 1 }} value={input} onChange={e => setInput(e.target.value)} placeholder={placeholder} />
+                        <button type="button" onClick={() => { const v = input.split(',').map(s => s.trim()).filter(Boolean); if (v.length) { setVals(v); setInput('') } }}
+                          style={{ padding: '7px 14px', borderRadius: 8, background: 'rgba(123,94,167,0.2)', border: '0.5px solid rgba(123,94,167,0.35)', color: '#c4a7e7', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>생성</button>
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                        {vals.map((v, i) => (
+                          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 20, background: 'rgba(123,94,167,0.15)', border: '0.5px solid rgba(123,94,167,0.3)', color: '#c4a7e7', fontSize: 12 }}>
+                            {v}<button type="button" onClick={() => setVals(prev => prev.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: 14, padding: 0 }}>×</button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+                {!use && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 4 }}>{n === 1 ? '단일 상품으로 판매' : '옵션 2 사용 시 켜주세요'}</div>}
+              </div>
+            ))}
+            <div style={{ background: 'rgba(201,169,110,0.04)', border: '0.5px solid rgba(201,169,110,0.12)', borderRadius: 10, padding: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: useGift ? 12 : 0 }}>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>🎁 사은품</span>
+                <button type="button" style={S.tog(useGift)} onClick={() => setUseGift(!useGift)} aria-label="사은품" />
+              </div>
+              {useGift && (
+                <>
+                  <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+                    <input style={{ ...S.inp, flex: 1 }} value={giftInput} onChange={e => setGiftInput(e.target.value)} placeholder="예: 미니 앰플, 샘플 키트" />
+                    <button type="button" onClick={() => { const v = giftInput.split(',').map(s => s.trim()).filter(Boolean); if (v.length) { setGiftVals(v); setGiftInput('') } }}
+                      style={{ padding: '7px 14px', borderRadius: 8, background: 'rgba(201,169,110,0.18)', border: '0.5px solid rgba(201,169,110,0.3)', color: '#c9a96e', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' as const }}>생성</button>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                    {giftVals.map((v, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 20, background: 'rgba(201,169,110,0.12)', border: '0.5px solid rgba(201,169,110,0.3)', color: '#c9a96e', fontSize: 12 }}>
+                        🎁 {v}<button type="button" onClick={() => setGiftVals(prev => prev.filter((_, j) => j !== i))} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: 14, padding: 0 }}>×</button>
+                      </div>
+                    ))}
+                  </div>
+                  <div><span style={S.lbl}>사은품 안내 문구</span><input style={S.inp} value={giftMemo} onChange={e => setGiftMemo(e.target.value)} placeholder="예: 5만원 이상 구매 시 증정" /></div>
+                </>
+              )}
+              {!useGift && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 4 }}>사은품 없음</div>}
+            </div>
+          </div>
+          {/* 포인트/토스트 */}
           <div style={S.sec}>
             <div style={S.secTitle}>포인트 / 토스트</div>
             <div style={S.row3}>
