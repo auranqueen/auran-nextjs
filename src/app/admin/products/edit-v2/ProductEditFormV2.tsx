@@ -47,11 +47,11 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const [stockInput, setStockInput] = useState('')
   const [avgUsageDays, setAvgUsageDays] = useState('')
 
-  const [earnPointsPercent, setEarnPointsPercent] = useState('')
-  const [shareVal, setShareVal] = useState('')
-  const [reviewText, setReviewText] = useState('')
-  const [reviewPhoto, setReviewPhoto] = useState('')
-  const [reviewVideo, setReviewVideo] = useState('')
+  const [earnPointsPercent, setEarnPointsPercent] = useState('2')
+  const [shareVal, setShareVal] = useState('3')
+  const [reviewText, setReviewText] = useState('2')
+  const [reviewPhoto, setReviewPhoto] = useState('3')
+  const [reviewVideo, setReviewVideo] = useState('3')
 
   const [thumbImages, setThumbImages] = useState<(string | null)[]>([null, null, null, null, null])
   const [videoUrl, setVideoUrl] = useState('')
@@ -446,14 +446,14 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
           <div style={S.sec}>
             <div style={S.secTitle}>포인트 / 토스트</div>
             <div style={S.row3}>
-              <div><span style={S.lbl}>구매 적립 (%)</span><input style={S.inp} type="number" value={earnPointsPercent} onChange={e => setEarnPointsPercent(e.target.value)} placeholder="5" /></div>
-              <div><span style={S.lbl}>공유 포인트</span><input style={S.inp} type="number" value={shareVal} onChange={e => setShareVal(e.target.value)} placeholder="100" /></div>
-              <div><span style={S.lbl}>리뷰 토스트 (%)</span><input style={S.inp} type="number" placeholder="3" /></div>
+              <div><span style={S.lbl}>구매 적립 (%)</span><input style={S.inp} type="number" value={earnPointsPercent} onChange={e => setEarnPointsPercent(e.target.value)} /></div>
+              <div><span style={S.lbl}>공유 포인트 (%)</span><input style={S.inp} type="number" value={shareVal} onChange={e => setShareVal(e.target.value)} /></div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6 }}><span style={{ ...S.lbl, fontSize: 10, color: 'rgba(255,255,255,0.25)' }}>수정 가능 · 기본값 적용됨</span></div>
             </div>
             <div style={S.row3}>
-              <div><span style={S.lbl}>텍스트 리뷰 (T)</span><input style={S.inp} type="number" value={reviewText} onChange={e => setReviewText(e.target.value)} placeholder="100" /></div>
-              <div><span style={S.lbl}>사진 리뷰 (T)</span><input style={S.inp} type="number" value={reviewPhoto} onChange={e => setReviewPhoto(e.target.value)} placeholder="300" /></div>
-              <div><span style={S.lbl}>영상 리뷰 (T)</span><input style={S.inp} type="number" value={reviewVideo} onChange={e => setReviewVideo(e.target.value)} placeholder="500" /></div>
+              <div><span style={S.lbl}>텍스트 리뷰 (%)</span><input style={S.inp} type="number" value={reviewText} onChange={e => setReviewText(e.target.value)} /></div>
+              <div><span style={S.lbl}>사진 리뷰 (%)</span><input style={S.inp} type="number" value={reviewPhoto} onChange={e => setReviewPhoto(e.target.value)} /></div>
+              <div><span style={S.lbl}>영상 리뷰 (%)</span><input style={S.inp} type="number" value={reviewVideo} onChange={e => setReviewVideo(e.target.value)} /></div>
             </div>
           </div>
 
