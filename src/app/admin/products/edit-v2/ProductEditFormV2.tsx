@@ -288,6 +288,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     perfect_together: ptSelected.map(p => p.id),
     detail_images: detailImages,
     detail_imgs: detailImages,
+    status: isActive ? 'active' : 'hidden',
     is_active: isActive,
     is_exclusive: isExclusive,
     is_flash_sale: isFlashSale,
