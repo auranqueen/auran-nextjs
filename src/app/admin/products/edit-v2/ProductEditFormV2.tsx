@@ -349,17 +349,29 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
 
   const onTmpSave = async () => {
     if (!brandId) { alert('브랜드를 먼저 선택해 주세요'); return }
-    if (!workingIdRef.current) {
-      try {
-        const pid = await insertNewProduct(supabase, { brand_id: brandId, name: name.trim() || '신규 상품', retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)), is_flash_sale: isFlashSale })
+    setSaving(true)
+    try {
+      let pid = editId || workingIdRef.current || null
+      if (!pid) {
+        pid = await insertNewProduct(supabase, {
+          brand_id: brandId,
+          name: name.trim() || '신규 상품',
+          retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)),
+          is_flash_sale: isFlashSale,
+        })
         workingIdRef.current = pid
-      } catch { alert('임시 저장 실패'); return }
-    }
-    const now = new Date()
-    setTmpSavedAt(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`)
-    const key = editId ? `auran_product_draft_${editId}` : 'auran_product_draft_new'
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(key, JSON.stringify({ name, shortDesc, retailPrice, salePrice }))
+      }
+      await updateProduct(supabase, pid!, {
+        ...buildPayload(),
+        status: 'pending',
+        is_active: false,
+      })
+      const now = new Date()
+      setTmpSavedAt(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`)
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : '임시저장 실패')
+    } finally {
+      setSaving(false)
     }
   }
 
