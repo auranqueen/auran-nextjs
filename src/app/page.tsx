@@ -1596,12 +1596,13 @@ export default function CustomerHomePage() {
     ).trim() || careBannerLine
   const hormonePhaseTipDesc = useMemo(() => {
     if (userGender === 'male') return ''
+    if (['menopause_peri', 'menopause_post', 'pregnant', 'postpartum', 'male_menopause'].includes(hormoneTrack ?? '')) return ''
     const s = `${hormoneMainLine}\n${hormoneSubLine}`
     for (const row of HORMONE_PHASE_TIP_ROWS) {
       if (s.includes(row[0])) return row[1]
     }
     return ''
-  }, [hormoneMainLine, hormoneSubLine, userGender])
+  }, [hormoneMainLine, hormoneSubLine, userGender, hormoneTrack])
   const homeGreetingForUser = useMemo(() => {
     if (!userName) return ''
     const hour = new Date().getHours()
