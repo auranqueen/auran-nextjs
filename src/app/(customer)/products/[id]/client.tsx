@@ -452,15 +452,32 @@ export default function ProductDetailClient({
     ;(async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user?.id) { if (!cancelled) setSameSkinTypeRows([]); return }
-      const { data: profile } = await supabase.from('profiles').select('skin_type').eq('auth_id', session.user.id).maybeSingle()
+      const { data: profile } = await supabase.from('profiles').select('skin_type,skin_concerns,hormone_phase').eq('auth_id', session.user.id).maybeSingle()
       const skinType = String((profile as any)?.skin_type || '').trim()
+      const skinConcerns: string[] = (profile as any)?.skin_concerns || []
+      const hormonePhase = String((profile as any)?.hormone_phase || '').trim()
       setMyProfileSkinType(skinType || null)
-      if (!skinType) { if (!cancelled) setSameSkinTypeRows([]); return }
       const { data } = await supabase.from('products')
-        .select('id,name,retail_price,thumb_img,storage_thumb_url,brands(name)')
-        .contains('skin_types', [skinType]).neq('id', product.id).eq('status', 'active').limit(4)
+        .select('id,name,retail_price,thumb_img,storage_thumb_url,brands(name),hormone_tags,skin_types,concern_tags')
+        .neq('id', product.id)
+        .eq('is_active', true)
+        .eq('status', 'active')
+        .limit(20)
       if (cancelled) return
-      setSameSkinTypeRows((data || []) as any[])
+      const scored = (data || []).map((p: any) => {
+        let score = 0
+        if (hormonePhase && Array.isArray(p.hormone_tags) && p.hormone_tags.includes(hormonePhase)) score += 3
+        if (skinConcerns.length && Array.isArray(p.concern_tags)) {
+          const overlap = skinConcerns.filter((c: string) => p.concern_tags.includes(c))
+          score += overlap.length * 2
+        }
+        if (skinType && Array.isArray(p.skin_types) && p.skin_types.includes(skinType)) score += 1
+        return { ...p, _score: score }
+      })
+        .filter((p: any) => p._score > 0)
+        .sort((a: any, b: any) => b._score - a._score)
+        .slice(0, 4)
+      setSameSkinTypeRows(scored)
     })()
     return () => { cancelled = true }
   }, [product.id])
@@ -2474,7 +2491,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         {/* 같은 피부타입 추천 */}
         {sameSkinTypeRows.length > 0 ? (
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, marginBottom: 12 }}>같은 피부타입이 선택한 제품</div>
+            <div style={{ fontSize: 10, color: '#888', letterSpacing: 2, marginBottom: 12 }}>지금 내 피부에 맞는 제품</div>
             <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' as any }}>
               {sameSkinTypeRows.map((t, i) => (
                 <div key={t.id || i} onClick={() => router.push(`/products/${t.id}`)}
