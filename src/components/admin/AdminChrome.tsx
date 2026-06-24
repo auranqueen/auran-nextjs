@@ -63,8 +63,7 @@ const MENU = [
     section: 'PRODUCT',
     items: [
       { label: '카테고리 관리', href: '/admin/settings/categories', icon: '📂' },
-      { label: '제품 등록 v2', href: '/admin/products/edit-v2', icon: '📝' },
-      { label: '제품 등록 (구)', href: '/admin/products/edit', icon: '📋' },
+      { label: '제품 등록', href: '/admin/products/edit-v2', icon: '📝' },
       { label: '제품 관리', href: '/admin/marketing/products', icon: '🧴' },
       { label: '케어카드 관리', href: '/admin/marketing/care-cards', icon: '💠' },
       { label: '공동구매 관리', href: '/admin/marketing/groupbuys', icon: '🛒' },
@@ -131,7 +130,7 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/shipping')) return '배송 관리'
   if (path.startsWith('/admin/orders')) return '주문 내역'
   if (path.startsWith('/admin/wallet-requests')) return '충전 승인'
-  if (path.startsWith('/admin/products/edit')) return '제품 등록'
+  if (path.startsWith('/admin/products/edit-v2')) return '제품 등록'
   if (path.startsWith('/admin/toast-history')) return '토스트 거래 내역'
   if (path.startsWith('/admin/members')) return '회원 관리'
   if (path.startsWith('/admin/owners')) return '원장님 관리'
