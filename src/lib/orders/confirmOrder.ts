@@ -73,26 +73,13 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
   items.forEach((it: any) => {
     const pid = String(it?.product_id || it?.id || '').trim()
     const qty = Math.max(1, Number(it?.quantity || 1))
-    const price = Number(it?.product_price || it?.price || it?.retail_price || it?.amount || 0)
     const pm = pMap[pid]
     if (pm) {
-      rewardAmount += Math.floor((it.final_price ?? price * qty) * (pm.earn_points_percent ?? pm.earn_rate ?? 0) / 100)
       shareAmount += Math.floor(Math.max(0, pm.share_toast) * qty)
     }
   })
-
+  // 구매자 토스트 적립은 결제완료(웹훅)에서 실결제금액 기준으로 처리됨
   const buyerAuthId = String((order as any).customer_id || '')
-  if (buyerAuthId && rewardAmount > 0) {
-    await insertPointTx(supabase, {
-      user_id: buyerAuthId,
-      amount: rewardAmount,
-      type: 'purchase_confirm',
-      description: '구매확정 적립',
-      order_id: orderId,
-      status: 'confirmed',
-    })
-    await addUserPointsByAuth(supabase, buyerAuthId, rewardAmount)
-  }
 
   const referrerAuthId = String((order as any).referrer_user_id || '')
   if (referrerAuthId && shareAmount > 0 && !(order as any).share_toast_paid) {
@@ -259,5 +246,5 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
 
   await applyCommissionsAfterOrderConfirm(supabase, orderId)
 
-  return { ok: true, rewardAmount, shareAmount, autoConfirmDays }
+  return { ok: true, rewardAmount: 0, shareAmount, autoConfirmDays }
 }
