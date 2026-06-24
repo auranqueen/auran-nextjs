@@ -38,7 +38,6 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const [categorySearch, setCategorySearch] = useState('')
   const [manufacturer, setManufacturer] = useState('')
   const [isFlashSale, setIsFlashSale] = useState(false)
-  const [isGroupbuy, setIsGroupbuy] = useState(false)
   const [isExclusive, setIsExclusive] = useState(false)
 
   const [retailPrice, setRetailPrice] = useState('')
@@ -84,7 +83,6 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const [ingredientTags, setIngredientTags] = useState('')
 
   const [isActive, setIsActive] = useState(true)
-  const [isTimesale, setIsTimesale] = useState(false)
 
   const [eventEmoji, setEventEmoji] = useState('')
   const [eventTitle, setEventTitle] = useState('')
@@ -175,8 +173,6 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       setIngredientTags((data.ingredient_tags || []).join(', '))
       if (data.category_id) setProductCategoryLeafId(data.category_id)
       setIsActive(data.is_active ?? true)
-      setIsTimesale(data.is_timesale ?? false)
-      setIsGroupbuy(data.is_groupbuy ?? false)
       setIsExclusive(data.is_exclusive ?? false)
       setIsFlashSale(data.is_flash_sale ?? false)
       setEventEmoji(data.event_emoji || '')
@@ -255,8 +251,6 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     perfect_together: ptSelected.map(p => p.id),
     detail_images: detailImages,
     is_active: isActive,
-    is_timesale: isTimesale,
-    is_groupbuy: isGroupbuy,
     is_exclusive: isExclusive,
     is_flash_sale: isFlashSale,
     skin_concerns: skinConcerns.length ? skinConcerns : null,
@@ -410,7 +404,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
               <div><span style={S.lbl}>제조사</span><input style={S.inp} value={manufacturer} onChange={e => setManufacturer(e.target.value)} placeholder="제조사명" /></div>
             </div>
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
-              {([['플래시세일', isFlashSale, setIsFlashSale], ['공동구매', isGroupbuy, setIsGroupbuy], ['AURAN 독점', isExclusive, setIsExclusive]] as const).map(([label, val, set]) => (
+              {([['플래시세일', isFlashSale, setIsFlashSale], ['AURAN 독점', isExclusive, setIsExclusive]] as const).map(([label, val, set]) => (
                 <label key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
                   <input type="checkbox" checked={val} onChange={e => set(e.target.checked)} style={{ accentColor: '#7b5ea7' }} />{label}
                 </label>
@@ -570,8 +564,6 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
             <div style={S.secTitle}>판매 설정</div>
             {[
               { label: '판매 상태', val: isActive, set: setIsActive },
-              { label: '타임세일', val: isTimesale, set: setIsTimesale },
-              { label: '공동구매', val: isGroupbuy, set: setIsGroupbuy },
               { label: 'AURAN 독점', val: isExclusive, set: setIsExclusive },
             ].map(({ label, val, set }) => (
               <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid rgba(255,255,255,0.05)' }}>
