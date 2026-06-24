@@ -350,6 +350,16 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     }
   }
 
+  const loadDrafts = async () => {
+    const { data } = await supabase.from('products').select('id,name,updated_at').eq('status', 'pending').is('routine_category', null).order('updated_at', { ascending: false }).limit(20)
+    if (!data?.length) { alert('임시저장된 상품이 없습니다'); return }
+    const msg = data.map((p, i) => `${i + 1}. ${p.name || '(이름 없음)'}`).join('\n')
+    const n = prompt(`불러올 임시저장 상품 번호:\n${msg}`)
+    const idx = Number(n) - 1
+    if (!Number.isInteger(idx) || idx < 0 || idx >= data.length) return
+    router.push(`/admin/products/edit-v2?id=${data[idx].id}`)
+  }
+
   useEffect(() => {
     if (ptInput.trim().length < 1) {
       setPtResults([])
@@ -402,6 +412,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       {msg && <span style={{ fontSize: 12, color: msg.includes('완료') ? '#4cad7e' : '#e08080' }}>{msg}</span>}
       <button type="button" onClick={() => void onTmpSave()} style={{ padding: '7px 14px', borderRadius: 8, background: 'transparent', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer' }}>임시저장</button>
+      {!editId && <button type="button" onClick={() => void loadDrafts()} style={{ padding: '7px 12px', borderRadius: 8, background: 'transparent', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.35)', fontSize: 11, cursor: 'pointer' }}>📋 불러오기</button>}
       <button type="button" onClick={() => void onSave()} disabled={saving} style={{ padding: '7px 18px', borderRadius: 8, background: '#7b5ea7', border: 'none', color: '#fff', fontSize: 13, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}>{saving ? '저장 중...' : '저장'}</button>
       <button type="button" onClick={() => router.push('/admin/marketing/products')} style={{ padding: '7px 14px', borderRadius: 8, background: 'transparent', border: '0.5px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.5)', fontSize: 13, cursor: 'pointer' }}>닫기</button>
     </div>
