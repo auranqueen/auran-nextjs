@@ -290,12 +290,12 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     is_active: isActive,
     is_exclusive: isExclusive,
     is_flash_sale: isFlashSale,
-    skin_concerns: skinConcerns.length ? skinConcerns : null,
-    hormone_tags: hormoneStages.length ? hormoneStages : null,
-    step_tags: stepTags.length ? stepTags : null,
-    skin_types: skinTypes.length ? skinTypes : null,
-    season_tags: seasonTags.length ? seasonTags : null,
-    ingredient_tags: ingredientTags.trim() ? ingredientTags.split(',').map(s => s.trim()).filter(Boolean) : null,
+    skin_concerns: skinConcerns.length ? skinConcerns : [],
+    hormone_tags: hormoneStages.length ? hormoneStages : [],
+    step_tags: stepTags.length ? stepTags : [],
+    skin_types: skinTypes.length ? skinTypes : [],
+    season_tags: seasonTags.length ? seasonTags : [],
+    ingredient_tags: ingredientTags.trim() ? ingredientTags.split(',').map(s => s.trim()).filter(Boolean) : [],
     options: JSON.stringify({
       opt1: useOpt1 ? { name: optName1, vals: optVals1 } : null,
       opt2: useOpt2 ? { name: optName2, vals: optVals2 } : null,
@@ -306,8 +306,8 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     event_desc: eventDesc || null,
     event_starts_at: eventStartsAt || null,
     event_ends_at: eventEndsAt || null,
-    medical_tags: medicalTags.trim() ? medicalTags.split(',').map(s => s.trim()).filter(Boolean) : null,
-    body_part_tags: bodyPartTags.length ? bodyPartTags : null,
+    medical_tags: medicalTags.trim() ? medicalTags.split(',').map(s => s.trim()).filter(Boolean) : [],
+    body_part_tags: bodyPartTags.length ? bodyPartTags : [],
   })
 
   const onSave = async () => {
