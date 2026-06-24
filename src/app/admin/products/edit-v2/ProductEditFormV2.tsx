@@ -4,6 +4,9 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { uploadToStorage, uploadVideoToStorage, insertNewProduct, updateProduct } from '@/lib/product/productFormUtils'
+import dynamic from 'next/dynamic'
+
+const ProductDetailEditor = dynamic(() => import('@/components/admin/ProductDetailEditor'), { ssr: false })
 
 export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const supabase = createClient()
@@ -471,7 +474,20 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
 
           <div style={S.sec}>
             <div style={S.secTitle}>상세 설명</div>
-            <textarea style={{ ...S.inp, minHeight: 200, resize: 'vertical' as const }} value={detailContent} onChange={e => setDetailContent(e.target.value)} placeholder="상세 설명 (HTML 가능)" />
+            <ProductDetailEditor
+              value={detailContent}
+              onChange={setDetailContent}
+              onImageUpload={async (file) => {
+                if (!workingIdRef.current) { alert('먼저 임시저장해 주세요'); return '' }
+                const ext = file.name.split('.').pop() || 'jpg'
+                return await uploadToStorage(file, `edit/${workingIdRef.current}/editor-${Date.now()}.${ext}`)
+              }}
+              onVideoUpload={async (file) => {
+                if (!workingIdRef.current) { alert('먼저 임시저장해 주세요'); return '' }
+                const ext = file.name.split('.').pop() || 'mp4'
+                return await uploadVideoToStorage(file, `edit/${workingIdRef.current}/editor-video-${Date.now()}.${ext}`)
+              }}
+            />
             <div style={{ marginTop: 10 }}>
               <span style={S.lbl}>상세 이미지</span>
               <div style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px dashed rgba(255,255,255,0.1)', borderRadius: 8, padding: 14, textAlign: 'center', cursor: 'pointer', fontSize: 12, color: 'rgba(255,255,255,0.25)' }} onClick={() => detailFileRef.current?.click()}>
