@@ -209,6 +209,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       try {
         const pid = await insertNewProduct(supabase, { brand_id: brandId, name: name.trim() || '신규 상품', retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)), is_flash_sale: isFlashSale })
         workingIdRef.current = pid
+        const now = new Date(); setTmpSavedAt(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`)
       } catch { alert('임시 저장 실패'); return }
     }
     const ext = file.name.split('.').pop() || 'jpg'
@@ -226,6 +227,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       try {
         const pid = await insertNewProduct(supabase, { brand_id: brandId, name: name.trim() || '신규 상품', retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)), is_flash_sale: isFlashSale })
         workingIdRef.current = pid
+        const now = new Date(); setTmpSavedAt(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`)
       } catch { alert('임시 저장 실패'); return }
     }
     const ext = file.name.split('.').pop() || 'mp4'
@@ -239,6 +241,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       try {
         const pid = await insertNewProduct(supabase, { brand_id: brandId, name: name.trim() || '신규 상품', retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)), is_flash_sale: isFlashSale })
         workingIdRef.current = pid
+        const now = new Date(); setTmpSavedAt(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`)
       } catch { alert('임시 저장 실패'); return }
     }
     const ext = file.name.split('.').pop() || 'jpg'
@@ -331,7 +334,14 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     }
   }
 
-  const onTmpSave = () => {
+  const onTmpSave = async () => {
+    if (!brandId) { alert('브랜드를 먼저 선택해 주세요'); return }
+    if (!workingIdRef.current) {
+      try {
+        const pid = await insertNewProduct(supabase, { brand_id: brandId, name: name.trim() || '신규 상품', retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)), is_flash_sale: isFlashSale })
+        workingIdRef.current = pid
+      } catch { alert('임시 저장 실패'); return }
+    }
     const now = new Date()
     setTmpSavedAt(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`)
     const key = editId ? `auran_product_draft_${editId}` : 'auran_product_draft_new'
@@ -391,7 +401,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const ActionBar = () => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       {msg && <span style={{ fontSize: 12, color: msg.includes('완료') ? '#4cad7e' : '#e08080' }}>{msg}</span>}
-      <button type="button" onClick={onTmpSave} style={{ padding: '7px 14px', borderRadius: 8, background: 'transparent', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer' }}>임시저장</button>
+      <button type="button" onClick={() => void onTmpSave()} style={{ padding: '7px 14px', borderRadius: 8, background: 'transparent', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer' }}>임시저장</button>
       <button type="button" onClick={() => void onSave()} disabled={saving} style={{ padding: '7px 18px', borderRadius: 8, background: '#7b5ea7', border: 'none', color: '#fff', fontSize: 13, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}>{saving ? '저장 중...' : '저장'}</button>
       <button type="button" onClick={() => router.push('/admin/marketing/products')} style={{ padding: '7px 14px', borderRadius: 8, background: 'transparent', border: '0.5px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.5)', fontSize: 13, cursor: 'pointer' }}>닫기</button>
     </div>
