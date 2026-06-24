@@ -581,13 +581,46 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
             <div style={S.secTitle}>상품 이미지</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 8, marginBottom: 12 }}>
               {thumbImages.map((url, i) => (
-                <div key={i} onClick={() => fileRefs.current[i]?.click()}
-                  style={{ aspectRatio: '1', background: i === 0 ? 'rgba(123,94,167,0.06)' : 'rgba(255,255,255,0.04)', border: `0.5px dashed ${i === 0 ? 'rgba(123,94,167,0.4)' : 'rgba(255,255,255,0.12)'}`, borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', overflow: 'hidden' }}>
-                  {url ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 10, color: i === 0 ? 'rgba(196,167,231,0.6)' : 'rgba(255,255,255,0.25)' }}>{i === 0 ? '대표' : '+'}</span>}
+                <div key={i} style={{ position: 'relative', aspectRatio: '1' }}
+                  draggable={!!url}
+                  onDragStart={e => e.dataTransfer.setData('text/plain', String(i))}
+                  onDragOver={e => e.preventDefault()}
+                  onDrop={e => {
+                    e.preventDefault()
+                    const from = Number(e.dataTransfer.getData('text/plain'))
+                    if (from === i) return
+                    setThumbImages(prev => {
+                      const next = [...prev]
+                      const tmp = next[from]
+                      next[from] = next[i]
+                      next[i] = tmp
+                      return next
+                    })
+                  }}>
+                  <div
+                    onClick={() => { if (!url) fileRefs.current[i]?.click() }}
+                    style={{ width: '100%', height: '100%', background: i === 0 ? 'rgba(123,94,167,0.06)' : 'rgba(255,255,255,0.04)', border: `0.5px dashed ${i === 0 ? 'rgba(123,94,167,0.4)' : 'rgba(255,255,255,0.12)'}`, borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: url ? 'grab' : 'pointer', overflow: 'hidden' }}>
+                    {url
+                      ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span style={{ fontSize: 10, color: i === 0 ? 'rgba(196,167,231,0.6)' : 'rgba(255,255,255,0.25)' }}>{i === 0 ? '대표' : '+'}</span>
+                    }
+                  </div>
+                  {url && (
+                    <button
+                      type="button"
+                      onClick={e => { e.stopPropagation(); setThumbImages(prev => { const next = [...prev]; next[i] = null; return next }) }}
+                      style={{ position: 'absolute', top: 3, right: 3, width: 18, height: 18, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
+                      ×
+                    </button>
+                  )}
+                  {url && i === 0 && (
+                    <div style={{ position: 'absolute', bottom: 3, left: 3, fontSize: 9, padding: '1px 5px', borderRadius: 4, background: 'rgba(123,94,167,0.7)', color: '#fff' }}>대표</div>
+                  )}
                   <input ref={el => { fileRefs.current[i] = el }} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) void handleImagePick(i, f) }} />
                 </div>
               ))}
             </div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginBottom: 8 }}>드래그로 순서 변경 · × 버튼으로 삭제</div>
             <div style={{ background: 'rgba(255,180,0,0.04)', border: '0.5px dashed rgba(255,180,0,0.2)', borderRadius: 8, padding: 12, textAlign: 'center', cursor: 'pointer', fontSize: 12, color: 'rgba(255,180,0,0.5)' }} onClick={() => videoRef.current?.click()}>
               {videoUrl ? '영상 업로드됨 ✓' : '+ 영상 업로드'}
               <input ref={videoRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) void handleVideoPick(f) }} />
