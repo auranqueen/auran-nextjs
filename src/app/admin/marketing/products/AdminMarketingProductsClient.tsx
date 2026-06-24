@@ -65,7 +65,8 @@ export default function AdminMarketingProductsClient() {
       (tab === '판매중' && p.is_active && p.status === 'active') ||
       (tab === '미매핑' && (!p.routine_category || p.status === 'pending')) ||
       (tab === '숨김' && (!p.is_active || p.status === 'hidden')) ||
-      (tab === 'AI분석완료' && (p as any).ai_tag_status === 'approved')
+      (tab === 'AI분석완료' && (p as any).ai_tag_status === 'approved') ||
+      (tab === '임시저장' && p.status === 'pending' && !p.routine_category && !p.is_active)
     const q = search.toLowerCase()
     const matchSearch = !q || p.name.toLowerCase().includes(q) || bname.toLowerCase().includes(q) || (p.tag ?? '').toLowerCase().includes(q)
     return matchBrand && matchTab && matchSearch
@@ -78,6 +79,7 @@ export default function AdminMarketingProductsClient() {
     숨김: products.filter(p => !p.is_active || p.status === 'hidden').length,
     AI완료: products.filter(p => p.ingredient && p.ingredient.length > 10).length,
     'AI분석완료': products.filter(p => (p as any).ai_tag_status === 'approved').length,
+    임시저장: products.filter(p => p.status === 'pending' && !p.routine_category && !p.is_active).length,
   }
 
   const toggleActive = async (p: Product) => {
@@ -91,13 +93,17 @@ export default function AdminMarketingProductsClient() {
     await load()
   }
 
+  const isDraft = (p: Product) => p.status === 'pending' && !p.routine_category && !p.is_active
+
   const getStatusClass = (p: Product) => {
+    if (isDraft(p)) return 'draft'
     if (!p.is_active || p.status === 'hidden') return 'hidden'
     if (!p.routine_category || p.status === 'pending') return 'unmapped'
     return 'active'
   }
 
   const getStatusLabel = (p: Product) => {
+    if (isDraft(p)) return '임시저장'
     if (!p.is_active || p.status === 'hidden') return '숨김'
     if (!p.routine_category || p.status === 'pending') return '미매핑'
     return '판매중'
@@ -143,6 +149,7 @@ export default function AdminMarketingProductsClient() {
   const statusStyle = (cls: string): React.CSSProperties => {
     if (cls === 'active') return { fontSize: 10, padding: '3px 8px', borderRadius: 20, background: 'rgba(29,158,117,0.1)', color: '#1D9E75', border: '0.5px solid rgba(29,158,117,0.2)' }
     if (cls === 'unmapped') return { fontSize: 10, padding: '3px 8px', borderRadius: 20, background: 'rgba(201,169,110,0.1)', color: '#C9A96E', border: '0.5px solid rgba(201,169,110,0.25)' }
+    if (cls === 'draft') return { fontSize: 10, padding: '3px 8px', borderRadius: 20, background: 'rgba(123,94,167,0.12)', color: '#c4a7e7', border: '0.5px solid rgba(123,94,167,0.3)' }
     return { fontSize: 10, padding: '3px 8px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', color: 'rgba(255,255,255,0.35)', border: '0.5px solid rgba(255,255,255,0.1)' }
   }
 
@@ -187,8 +194,8 @@ export default function AdminMarketingProductsClient() {
       </div>
 
       <div style={s.tabs}>
-        {(['전체', '판매중', '미매핑', '숨김', 'AI분석완료'] as const).map(t => (
-          <span key={t} style={t === '미매핑' ? (tab === t ? s.tabWarnOn : s.tabWarn) : tab === t ? s.tabOn : s.tabBase} onClick={() => setTab(t)}>
+        {(['전체', '판매중', '미매핑', '숨김', 'AI분석완료', '임시저장'] as const).map(t => (
+          <span key={t} style={t === '미매핑' || t === '임시저장' ? (tab === t ? s.tabWarnOn : s.tabWarn) : tab === t ? s.tabOn : s.tabBase} onClick={() => setTab(t)}>
             {t} {counts[t as keyof typeof counts]}
           </span>
         ))}
@@ -249,6 +256,7 @@ export default function AdminMarketingProductsClient() {
                   >
                     ✏️
                   </button>
+                  {tab !== '임시저장' && (
                   <button
                     style={s.actBtn}
                     onClick={e => {
@@ -258,6 +266,7 @@ export default function AdminMarketingProductsClient() {
                   >
                     {p.is_active ? '🙈' : '👁️'}
                   </button>
+                  )}
                   <button
                     style={s.actBtnDel}
                     onClick={e => {
