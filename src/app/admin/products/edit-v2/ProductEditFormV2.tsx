@@ -205,8 +205,11 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
 
   const handleImagePick = useCallback(async (slot: number, file: File) => {
     if (!workingIdRef.current) {
-      alert('먼저 임시저장해 주세요')
-      return
+      if (!brandId) { alert('브랜드를 먼저 선택해 주세요'); return }
+      try {
+        const pid = await insertNewProduct(supabase, { brand_id: brandId, name: name.trim() || '신규 상품', retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)), is_flash_sale: isFlashSale })
+        workingIdRef.current = pid
+      } catch { alert('임시 저장 실패'); return }
     }
     const ext = file.name.split('.').pop() || 'jpg'
     const url = await uploadToStorage(file, `edit/${workingIdRef.current}/${slot}-${Date.now()}.${ext}`)
@@ -219,8 +222,11 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
 
   const handleVideoPick = useCallback(async (file: File) => {
     if (!workingIdRef.current) {
-      alert('먼저 임시저장해 주세요')
-      return
+      if (!brandId) { alert('브랜드를 먼저 선택해 주세요'); return }
+      try {
+        const pid = await insertNewProduct(supabase, { brand_id: brandId, name: name.trim() || '신규 상품', retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)), is_flash_sale: isFlashSale })
+        workingIdRef.current = pid
+      } catch { alert('임시 저장 실패'); return }
     }
     const ext = file.name.split('.').pop() || 'mp4'
     const url = await uploadVideoToStorage(file, `edit/${workingIdRef.current}/video-${Date.now()}.${ext}`)
@@ -229,8 +235,11 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
 
   const handleDetailImagePick = useCallback(async (file: File) => {
     if (!workingIdRef.current) {
-      alert('먼저 임시저장해 주세요')
-      return
+      if (!brandId) { alert('브랜드를 먼저 선택해 주세요'); return }
+      try {
+        const pid = await insertNewProduct(supabase, { brand_id: brandId, name: name.trim() || '신규 상품', retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)), is_flash_sale: isFlashSale })
+        workingIdRef.current = pid
+      } catch { alert('임시 저장 실패'); return }
     }
     const ext = file.name.split('.').pop() || 'jpg'
     const url = await uploadVideoToStorage(file, `edit/${workingIdRef.current}/detail-${Date.now()}.${ext}`)
@@ -566,12 +575,24 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
               value={detailContent}
               onChange={setDetailContent}
               onImageUpload={async (file) => {
-                if (!workingIdRef.current) { alert('먼저 임시저장해 주세요'); return '' }
+                if (!workingIdRef.current) {
+                  if (!brandId) return ''
+                  try {
+                    const pid = await insertNewProduct(supabase, { brand_id: brandId, name: name.trim() || '신규 상품', retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)), is_flash_sale: isFlashSale })
+                    workingIdRef.current = pid
+                  } catch { return '' }
+                }
                 const ext = file.name.split('.').pop() || 'jpg'
                 return await uploadToStorage(file, `edit/${workingIdRef.current}/editor-${Date.now()}.${ext}`)
               }}
               onVideoUpload={async (file) => {
-                if (!workingIdRef.current) { alert('먼저 임시저장해 주세요'); return '' }
+                if (!workingIdRef.current) {
+                  if (!brandId) return ''
+                  try {
+                    const pid = await insertNewProduct(supabase, { brand_id: brandId, name: name.trim() || '신규 상품', retail_price: Math.max(0, Math.floor(Number(retailPrice) || 0)), is_flash_sale: isFlashSale })
+                    workingIdRef.current = pid
+                  } catch { return '' }
+                }
                 const ext = file.name.split('.').pop() || 'mp4'
                 return await uploadVideoToStorage(file, `edit/${workingIdRef.current}/editor-video-${Date.now()}.${ext}`)
               }}
