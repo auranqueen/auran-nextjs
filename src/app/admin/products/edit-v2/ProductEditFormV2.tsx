@@ -25,6 +25,8 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const [keywords, setKeywords] = useState('')
   const [brandId, setBrandId] = useState('')
   const [brands, setBrands] = useState<any[]>([])
+  const [showNewBrand, setShowNewBrand] = useState(false)
+  const [newBrandName, setNewBrandName] = useState('')
   const [origin, setOrigin] = useState('')
   const [categoryText, setCategoryText] = useState('')
   const [allCategories, setAllCategories] = useState<{ id: string; name: string; parent_id: string | null; level: number; sort_order: number | null }[]>([])
@@ -49,7 +51,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
   const [stockInput, setStockInput] = useState('')
   const [avgUsageDays, setAvgUsageDays] = useState('')
 
-  const [earnPointsPercent, setEarnPointsPercent] = useState('3')
+  const [earnPointsPercent, setEarnPointsPercent] = useState('5')
   const [shareVal, setShareVal] = useState('3')
   const [reviewText, setReviewText] = useState('2')
   const [reviewPhoto, setReviewPhoto] = useState('3')
@@ -164,7 +166,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
       setUnitPrice(String(data.unit_price || ''))
       setStockInput(String(data.stock || ''))
       setAvgUsageDays(String(data.avg_usage_days || ''))
-      setEarnPointsPercent(String(Number(data.earn_points_percent) > 10 ? 3 : (data.earn_points_percent || 3)))
+      setEarnPointsPercent(String(Number(data.earn_points_percent) > 10 ? 5 : (data.earn_points_percent || 5)))
       setShareVal(String(data.share_points || '3'))
       setReviewText(String(data.review_points_text || '2'))
       setReviewPhoto(String(data.review_points_photo || '3'))
@@ -272,7 +274,7 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
     avg_usage_days: avgUsageDays.trim() === '' ? null : Math.max(1, Math.floor(Number(avgUsageDays))),
     shipping_fee: 3500,
     shipping_memo: '5만원 이상 무료배송 · 제주/도서산간 +5,000원',
-    earn_points_percent: earnPointsPercent.trim() === '' ? 3 : Number(earnPointsPercent),
+    earn_points_percent: earnPointsPercent.trim() === '' ? 5 : Number(earnPointsPercent),
     share_points: shareVal.trim() === '' ? null : Math.floor(Number(shareVal)),
     review_points_text: reviewText.trim() === '' ? null : Math.floor(Number(reviewText)),
     review_points_photo: reviewPhoto.trim() === '' ? null : Math.floor(Number(reviewPhoto)),
@@ -466,11 +468,66 @@ export default function ProductEditFormV2({ id: idProp }: { id?: string }) {
             <div style={S.f}><span style={S.lbl}>짧은 설명</span><input style={S.inp} value={shortDesc} onChange={e => setShortDesc(e.target.value)} placeholder="한 줄 설명" /></div>
             <div style={S.f}><span style={S.lbl}>검색 키워드</span><input style={S.inp} value={keywords} onChange={e => setKeywords(e.target.value)} placeholder="보습, 진정, 마스크팩" /></div>
             <div style={S.row2}>
-              <div><span style={S.lbl}>브랜드</span>
-                <select style={S.sel} value={brandId} onChange={e => setBrandId(e.target.value)}>
-                  <option value="">선택</option>
-                  {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
+              <div>
+                <span style={S.lbl}>브랜드</span>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  <select style={{ ...S.sel, flex: 1 }} value={brandId} onChange={e => setBrandId(e.target.value)}>
+                    <option value="">선택</option>
+                    {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewBrand(v => !v)}
+                    style={{ padding: '0 10px', borderRadius: 6, border: '0.5px solid rgba(123,94,167,0.5)', background: 'rgba(123,94,167,0.1)', color: '#c4a7e7', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
+                  >
+                    + 새 브랜드
+                  </button>
+                </div>
+                {showNewBrand && (
+                  <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
+                    <input
+                      style={{ ...S.inp, flex: 1 }}
+                      value={newBrandName}
+                      onChange={e => setNewBrandName(e.target.value)}
+                      placeholder="브랜드명 입력"
+                    />
+                    <button
+                      type="button"
+                      disabled={!newBrandName.trim()}
+                      onClick={async () => {
+                        if (!newBrandName.trim()) return
+                        const { data, error } = await supabase
+                          .from('brands')
+                          .insert({
+                            name: newBrandName.trim(),
+                            apply_status: 'approved',
+                            welcome_shown: true,
+                            origin_country: '대한민국',
+                          })
+                          .select('id, name')
+                          .single()
+                        if (!error && data) {
+                          setBrands(prev => [...prev, data].sort((a, b) => a.name.localeCompare(b.name)))
+                          setBrandId(data.id)
+                          setNewBrandName('')
+                          setShowNewBrand(false)
+                        } else {
+                          alert('브랜드 추가 실패: ' + (error?.message || ''))
+                        }
+                      }}
+                      style={{ padding: '0 12px', borderRadius: 6, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
+                    >
+                      추가
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setShowNewBrand(false); setNewBrandName('') }}
+                      style={{ padding: '0 10px', borderRadius: 6, border: '0.5px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
+                    >
+                      취소
+                    </button>
+                  </div>
+                )}
               </div>
               <div><span style={S.lbl}>원산지</span><input style={S.inp} value={origin} onChange={e => setOrigin(e.target.value)} placeholder="프랑스" /></div>
             </div>
