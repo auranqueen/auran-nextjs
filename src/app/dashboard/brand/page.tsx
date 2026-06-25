@@ -15,6 +15,11 @@ const BrandTabProducts = dynamic(() => import('./tabs/BrandTabProducts'), { ssr:
 const BrandTabOwners = dynamic(() => import('./tabs/BrandTabOwners'), { ssr: false })
 const BrandTabOrders = dynamic(() => import('./tabs/BrandTabOrders'), { ssr: false })
 const BrandTabOrenTalk = dynamic(() => import('./tabs/BrandTabOrenTalk'), { ssr: false })
+const BrandTabLive = dynamic(() => import('./tabs/BrandTabLive'), { ssr: false })
+const BrandTabSample = dynamic(() => import('./tabs/BrandTabSample'), { ssr: false })
+const BrandTabCommunity = dynamic(() => import('./tabs/BrandTabCommunity'), { ssr: false })
+const BrandTabExpand = dynamic(() => import('./tabs/BrandTabExpand'), { ssr: false })
+const BrandTabData = dynamic(() => import('./tabs/BrandTabData'), { ssr: false })
 
 const BG = '#0f0d14'
 const ACC = '#7B5EA7'
@@ -47,7 +52,7 @@ export default function BrandDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<Row[]>([])
   const [tab, setTab] = useState<'pending' | 'active' | 'hidden'>('pending')
-  const [mainTab, setMainTab] = useState<'home' | 'products' | 'owners' | 'orders' | 'orentalk'>('home')
+  const [mainTab, setMainTab] = useState<'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'data'>('home')
   const [formOpen, setFormOpen] = useState(false)
   const [editProduct, setEditProduct] = useState<{ id: string } | null>(null)
   const [brands, setBrands] = useState<{ id: string; name: string; origin_country?: string | null }[]>([])
@@ -1282,6 +1287,11 @@ export default function BrandDashboardPage() {
           { key: 'owners', label: '원장님 관리', icon: '👥' },
           { key: 'orders', label: '발주', icon: '📦' },
           { key: 'orentalk', label: '오렌톡', icon: '💜' },
+          { key: 'live', label: '교육라이브', icon: '🎓' },
+          { key: 'sample', label: '샘플', icon: '🎁' },
+          { key: 'community', label: '커뮤니티', icon: '💬' },
+          { key: 'expand', label: '외연확장', icon: '🌐' },
+          { key: 'data', label: '데이터', icon: '📊' },
         ] as const).map(t => (
           <button
             key={t.key}
@@ -1335,6 +1345,36 @@ export default function BrandDashboardPage() {
         <BrandTabOrenTalk
           brandName={brandName}
           brandId={brandId}
+        />
+      )}
+      {mainTab === 'live' && (
+        <BrandTabLive
+          brandId={brandId}
+          brandName={brandName}
+        />
+      )}
+      {mainTab === 'sample' && (
+        <BrandTabSample
+          brandId={brandId}
+          brandName={brandName}
+        />
+      )}
+      {mainTab === 'community' && (
+        <BrandTabCommunity
+          brandId={brandId}
+          brandName={brandName}
+        />
+      )}
+      {mainTab === 'expand' && (
+        <BrandTabExpand
+          brandId={brandId}
+          brandName={brandName}
+        />
+      )}
+      {mainTab === 'data' && (
+        <BrandTabData
+          brandId={brandId}
+          brandName={brandName}
         />
       )}
     </div>
