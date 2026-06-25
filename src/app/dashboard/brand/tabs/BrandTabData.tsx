@@ -57,10 +57,12 @@ export default function BrandTabData({ brandId, brandName }: Props) {
         .not('trade_brands', 'is', null),
     ])
     // 연결 원장님 수
-    const cnt = (profiles || []).filter((p: any) => {
-      const brands = Array.isArray(p.trade_brands) ? p.trade_brands : (Array.isArray(p.preferred_brands) ? p.preferred_brands : [])
-      return brands.some((b: string) => b === brandName)
-    }).length
+      const cnt = (profiles || []).filter((p: any) => {
+        const brands = Array.isArray(p.trade_brands) && p.trade_brands.length > 0
+          ? p.trade_brands
+          : (Array.isArray(p.preferred_brands) ? p.preferred_brands : [])
+        return brands.some((b: string) => b === brandName)
+      }).length
     setOwnerCount(cnt)
     setKpi({
       orderCount: orderCount ?? 0,

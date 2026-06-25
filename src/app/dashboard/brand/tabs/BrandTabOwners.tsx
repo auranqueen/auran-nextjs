@@ -40,17 +40,19 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
       setLoading(true)
       const { data } = await supabase
         .from('profiles')
-        .select('id, name, salon_name, region, trade_brands, preferred_brands, grade, arete_member')
+        .select('id, full_name, owner_store_name, region, trade_brands, preferred_brands, grade, arete_member, phone, last_order_at, monthly_order')
         .not('trade_brands', 'is', null)
       if (data) {
         const matched = data.filter((p: any) => {
-          const brands = Array.isArray(p.trade_brands) ? p.trade_brands : (Array.isArray(p.preferred_brands) ? p.preferred_brands : [])
+          const brands = Array.isArray(p.trade_brands) && p.trade_brands.length > 0
+            ? p.trade_brands
+            : (Array.isArray(p.preferred_brands) ? p.preferred_brands : [])
           return brands.some((b: string) => b === brandName)
         })
         setOwners(matched.map((p: any) => ({
           id: p.id,
-          name: p.name || '이름 없음',
-          salon_name: p.salon_name || '-',
+          name: p.full_name || p.name || '이름 없음',
+          salon_name: p.owner_store_name || '-',
           region: p.region || '-',
           grade: p.grade || '취급점',
           arete: p.arete_member || false,

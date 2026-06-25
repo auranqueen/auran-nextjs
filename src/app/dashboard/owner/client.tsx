@@ -153,7 +153,7 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
   const [brandProducts, setBrandProducts] = useState<Array<{ id: string; name: string; thumb_img: string | null; brand_name: string }>>([])
   useEffect(() => {
     const fetchBrandProducts = async () => {
-      const tradeBrands: string[] = Array.isArray(profile.trade_brands)
+      const tradeBrands: string[] = Array.isArray(profile.trade_brands) && profile.trade_brands.length > 0
         ? profile.trade_brands.map(String)
         : Array.isArray((profile as any).preferred_brands)
           ? (profile as any).preferred_brands.map(String)

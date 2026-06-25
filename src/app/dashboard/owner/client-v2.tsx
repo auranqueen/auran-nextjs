@@ -166,7 +166,9 @@ export default function OwnerDashClientV2() {
       setExtCount(extTotal || 0)
       setUnreadChat(((channels as any[]) || []).reduce((s, c) => s + Number(c.unread_count || 0), 0))
 
-      const brands = (ownerProf as any)?.trade_brands || (ownerProf as any)?.preferred_brands
+      const brands = (Array.isArray((ownerProf as any)?.trade_brands) && (ownerProf as any).trade_brands.length > 0)
+        ? (ownerProf as any).trade_brands
+        : (ownerProf as any)?.preferred_brands
       setTradeBrands(Array.isArray(brands) ? brands.map(String) : [])
 
       // 거래 브랜드 제품 조회
