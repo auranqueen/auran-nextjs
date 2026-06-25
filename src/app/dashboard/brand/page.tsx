@@ -156,6 +156,7 @@ export default function BrandDashboardPage() {
       .from('products')
       .select('*, brands(id,name)')
       .eq('brand_user_id', user.id)
+      .eq('brand_id', bid ?? '')
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
     setRows((pr || []) as Row[])
