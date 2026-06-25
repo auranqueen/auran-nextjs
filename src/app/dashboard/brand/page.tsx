@@ -129,11 +129,12 @@ export default function BrandDashboardPage() {
       return
     }
     setUserPk(u.id)
-    const { data: b } = await supabase
+    const { data: brandList } = await supabase
       .from('brands')
       .select('id,name,apply_status,welcome_shown,manager_name,origin_country,settlement_cycle,approved_at,logo_url,created_at')
       .eq('user_id', u.id)
-      .maybeSingle()
+      .order('created_at', { ascending: true })
+    const b = brandList?.[0] || null
     const bid = (b as { id?: string } | null)?.id || null
     setBrandId(bid)
     setBrandRow((b as Record<string, unknown> | null) || null)
@@ -452,16 +453,18 @@ export default function BrandDashboardPage() {
     return 'rejected'
   }
 
-  const fetchRows = useCallback(async () => {
+  const fetchRows = useCallback(async (overrideBrandId?: string) => {
     if (!authId) return
+    const targetBrandId = overrideBrandId || brandId
     const { data: pr } = await supabase
       .from('products')
       .select('*, brands(id,name)')
       .eq('brand_user_id', authId)
+      .eq('brand_id', targetBrandId ?? '')
       .is('deleted_at', null)
       .order('created_at', { ascending: false })
     setRows((pr || []) as Row[])
-  }, [authId])
+  }, [authId, brandId])
 
   const approveOne = async (id: string) => {
     setBusyId(id)
@@ -1119,7 +1122,10 @@ export default function BrandDashboardPage() {
                   key={b.id}
                   onClick={() => {
                     setActiveBrandId(b.id)
+                    setBrandId(b.id)
+                    setBrandName(b.name)
                     setShowBrandDropdown(false)
+                    void fetchRows(b.id)
                   }}
                   style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, color: b.id === activeBrandId ? '#7B5EA7' : 'rgba(255,255,255,0.7)', background: b.id === activeBrandId ? 'rgba(123,94,167,0.1)' : 'transparent' }}
                 >
