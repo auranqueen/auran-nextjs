@@ -1219,10 +1219,11 @@ export default function BrandDashboardPage() {
                       .insert({
                         name: addBrandName,
                         name_en: addBrandNameEn || null,
-                        origin_country: addBrandCountry || null,
+                        origin_country: addBrandCountry || '대한민국',
                         user_id: user.id,
-                        apply_status: 'pending',
-                        status: 'pending',
+                        apply_status: 'approved',
+                        welcome_shown: true,
+                        manager_phone: addBrandContact || null,
                       })
                       .select('id')
                       .single()
@@ -1238,6 +1239,12 @@ export default function BrandDashboardPage() {
                         is_read: false,
                       })
                       setAddBrandDone(true)
+                      const newEntry = { id: newBrand.id, name: addBrandName, role: 'owner' }
+                      setMyBrands(prev => [...prev, newEntry])
+                      setActiveBrandId(newBrand.id)
+                      setBrandId(newBrand.id)
+                      setBrandName(addBrandName)
+                      void fetchRows(newBrand.id)
                     }
                     setAddBrandLoading(false)
                   }}
