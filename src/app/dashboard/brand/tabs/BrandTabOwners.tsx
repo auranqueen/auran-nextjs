@@ -40,7 +40,7 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
       setLoading(true)
       const { data } = await supabase
         .from('profiles')
-        .select('id, name, salon_name, region, trade_brands, preferred_brands')
+        .select('id, name, salon_name, region, trade_brands, preferred_brands, grade, arete_member')
         .not('trade_brands', 'is', null)
       if (data) {
         const matched = data.filter((p: any) => {

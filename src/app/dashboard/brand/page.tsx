@@ -1315,6 +1315,7 @@ export default function BrandDashboardPage() {
       {mainTab === 'home' && (
         <BrandTabHome
           brandName={brandName}
+          brandId={brandId}
           activeBrandId={activeBrandId}
           onTabChange={(t) => setMainTab(t as typeof mainTab)}
         />
