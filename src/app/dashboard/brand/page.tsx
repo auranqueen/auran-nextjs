@@ -10,6 +10,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { compressImage } from '@/lib/imageUpload'
 
 const BrandProductFormV2 = dynamic(() => import('@/components/brand/BrandProductFormV2'), { ssr: false })
+const BrandTabHome = dynamic(() => import('./tabs/BrandTabHome'), { ssr: false })
+const BrandTabProducts = dynamic(() => import('./tabs/BrandTabProducts'), { ssr: false })
+const BrandTabOwners = dynamic(() => import('./tabs/BrandTabOwners'), { ssr: false })
+const BrandTabOrders = dynamic(() => import('./tabs/BrandTabOrders'), { ssr: false })
+const BrandTabOrenTalk = dynamic(() => import('./tabs/BrandTabOrenTalk'), { ssr: false })
 
 const BG = '#0f0d14'
 const ACC = '#7B5EA7'
@@ -42,6 +47,7 @@ export default function BrandDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<Row[]>([])
   const [tab, setTab] = useState<'pending' | 'active' | 'hidden'>('pending')
+  const [mainTab, setMainTab] = useState<'home' | 'products' | 'owners' | 'orders' | 'orentalk'>('home')
   const [formOpen, setFormOpen] = useState(false)
   const [editProduct, setEditProduct] = useState<{ id: string } | null>(null)
   const [brands, setBrands] = useState<{ id: string; name: string; origin_country?: string | null }[]>([])
@@ -1268,104 +1274,68 @@ export default function BrandDashboardPage() {
         </div>
       )}
 
-      <div style={{ fontSize: 20, color: ACC, marginBottom: 6 }}>브랜드사 대시보드</div>
-      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', marginBottom: 18 }}>연결된 제품만 표시됩니다.</div>
-
-      <button
-        type="button"
-        onClick={() => setFormOpen(true)}
-        style={{
-          width: '100%',
-          marginBottom: 18,
-          padding: '12px 14px',
-          borderRadius: 12,
-          border: `1px solid ${ACC}`,
-          background: 'rgba(123,94,167,0.18)',
-          color: '#ebe3f7',
-          fontSize: 13,
-          cursor: 'pointer',
-        }}
-      >
-        + 새 제품 등록
-      </button>
-
-      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
-        {(
-          [
-            { key: 'pending' as const, label: '승인 대기' },
-            { key: 'active' as const, label: '판매중' },
-            { key: 'hidden' as const, label: '숨김' },
-          ] as const
-        ).map(t => (
+      {/* 상단 탭 네비 */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap', borderBottom: '0.5px solid rgba(255,255,255,0.07)', paddingBottom: 12 }}>
+        {([
+          { key: 'home', label: '홈', icon: '🏠' },
+          { key: 'products', label: '제품 관리', icon: '🧴' },
+          { key: 'owners', label: '원장님 관리', icon: '👥' },
+          { key: 'orders', label: '발주', icon: '📦' },
+          { key: 'orentalk', label: '오렌톡', icon: '💜' },
+        ] as const).map(t => (
           <button
             key={t.key}
             type="button"
-            onClick={() => setTab(t.key)}
+            onClick={() => setMainTab(t.key)}
             style={{
-              padding: '8px 14px',
-              borderRadius: 999,
-              border: tab === t.key ? `1px solid ${ACC}` : '1px solid rgba(255,255,255,0.12)',
-              background: tab === t.key ? 'rgba(123,94,167,0.15)' : 'transparent',
-              color: tab === t.key ? '#e4daf5' : 'rgba(255,255,255,0.45)',
               fontSize: 12,
+              padding: '5px 14px',
+              borderRadius: 20,
+              border: `0.5px solid ${mainTab === t.key ? '#7B5EA7' : 'rgba(255,255,255,0.1)'}`,
+              background: mainTab === t.key ? 'rgba(123,94,167,0.2)' : 'transparent',
+              color: mainTab === t.key ? '#c4a7e7' : 'rgba(255,255,255,0.3)',
               cursor: 'pointer',
             }}
           >
-            {t.label} ({counts[t.key]})
+            {t.icon} {t.label}
           </button>
         ))}
       </div>
-
-      {filtered.length === 0 ? (
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.35)', padding: 24, textAlign: 'center', border: '1px solid rgba(123,94,167,0.25)', borderRadius: 12 }}>
-          이 탭에 표시할 제품이 없습니다.
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {filtered.map(p => {
-            const b = badge(p)
-            return (
-              <div
-                key={p.id}
-                style={{
-                  display: 'flex',
-                  gap: 12,
-                  alignItems: 'center',
-                  padding: 12,
-                  borderRadius: 12,
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  background: 'rgba(255,255,255,0.03)',
-                }}
-              >
-                <div style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', flexShrink: 0, border: '1px solid rgba(255,255,255,0.08)' }}>
-                  <ProductThumbnail src={typeof p.thumb_img === 'string' ? p.thumb_img : null} alt={String(p.name || '')} size={56} />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, color: '#f2eef9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name || '이름 없음'}</div>
-                  <div style={{ marginTop: 6 }}>
-                    <span style={{ fontSize: 11, padding: '3px 8px', borderRadius: 999, background: b.c, border: `1px solid ${b.b}`, color: '#f5f0ff' }}>{b.t}</span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setEditProduct(p)}
-                  style={{
-                    flexShrink: 0,
-                    padding: '8px 12px',
-                    borderRadius: 10,
-                    border: `1px solid ${ACC}`,
-                    background: 'rgba(123,94,167,0.12)',
-                    color: '#dcccf2',
-                    fontSize: 12,
-                    cursor: 'pointer',
-                  }}
-                >
-                  수정
-                </button>
-              </div>
-            )
-          })}
-        </div>
+      {/* 탭 컨텐츠 */}
+      {mainTab === 'home' && (
+        <BrandTabHome
+          brandName={brandName}
+          activeBrandId={activeBrandId}
+          onTabChange={(t) => setMainTab(t as typeof mainTab)}
+        />
+      )}
+      {mainTab === 'products' && (
+        <BrandTabProducts
+          rows={rows}
+          tab={tab}
+          onTabChange={setTab}
+          onEdit={(p) => setEditProduct(p as { id: string })}
+          onNew={() => setFormOpen(true)}
+        />
+      )}
+      {mainTab === 'owners' && (
+        <BrandTabOwners
+          brandId={brandId}
+          brandName={brandName}
+          authId={authId}
+        />
+      )}
+      {mainTab === 'orders' && (
+        <BrandTabOrders
+          brandId={brandId}
+          brandName={brandName}
+        />
+      )}
+      {mainTab === 'orentalk' && (
+        <BrandTabOrenTalk
+          brandName={brandName}
+          brandId={brandId}
+        />
       )}
     </div>
   )
