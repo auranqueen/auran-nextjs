@@ -1,66 +1,247 @@
 'use client'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import type { CSSProperties } from 'react'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
-const GREEN = 'rgba(76,175,80,0.8)'
-interface Props {
-  brandId: string | null
-  brandName: string
+const BORDER = 'rgba(255,255,255,0.05)'
+const GRADES = ['전체', '메디슈티컬', '프리미엄전문점', '전문점', '취급점', '아레테클럽']
+const STATUS_MAP: Record<string, { label: string; color: string }> = {
+  scheduled: { label: '예정', color: 'rgba(100,181,246,0.8)' },
+  live:      { label: '진행중', color: 'rgba(229,57,53,0.85)' },
+  done:      { label: '완료', color: 'rgba(255,255,255,0.3)' },
+  cancelled: { label: '취소', color: 'rgba(229,57,53,0.5)' },
 }
-export default function BrandTabLive({ brandId, brandName }: Props) {
+interface Live {
+  id: string
+  title: string
+  description: string | null
+  platform: string
+  live_url: string | null
+  scheduled_at: string
+  status: string
+  registrant_count: number
+  viewer_count: number
+  target_grades: string[]
+  recording_url: string | null
+}
+interface Props {
+  brandName: string
+  brandId: string | null
+}
+export default function BrandTabLive({ brandName, brandId }: Props) {
+  const supabase = createClient()
+  const [lives, setLives] = useState<Live[]>([])
+  const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState('')
+  const [showForm, setShowForm] = useState(false)
+  const [title, setTitle] = useState('')
+  const [desc, setDesc] = useState('')
+  const [platform, setPlatform] = useState<'zoom' | 'prism'>('zoom')
+  const [liveUrl, setLiveUrl] = useState('')
+  const [scheduledAt, setScheduledAt] = useState('')
+  const [targetGrades, setTargetGrades] = useState<string[]>(['전체'])
+  const [saving, setSaving] = useState(false)
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
-  const sessions = [
-    { title: '신제품 사용법 라이브', date: '예정', viewers: '-', status: '준비중', statusColor: 'rgba(255,193,7,0.8)' },
-    { title: '피부 타입별 추천 루틴', date: '-', viewers: '-', status: '대기', statusColor: SUB },
-  ]
+  const fetchLives = useCallback(async () => {
+    if (!brandId) return
+    setLoading(true)
+    const { data } = await supabase
+      .from('brand_lives')
+      .select('id, title, description, platform, live_url, scheduled_at, status, registrant_count, viewer_count, target_grades, recording_url')
+      .eq('brand_id', brandId)
+      .order('scheduled_at', { ascending: false })
+      .limit(20)
+    setLives((data || []) as Live[])
+    setLoading(false)
+  }, [brandId])
+  useEffect(() => { void fetchLives() }, [fetchLives])
+  const toggleGrade = (g: string) => {
+    if (g === '전체') { setTargetGrades(['전체']); return }
+    setTargetGrades(prev => {
+      const without = prev.filter(x => x !== '전체')
+      return without.includes(g) ? without.filter(x => x !== g) || ['전체'] : [...without, g]
+    })
+  }
+  const submitLive = async () => {
+    if (!title.trim()) { showToast('제목을 입력해주세요'); return }
+    if (!scheduledAt) { showToast('일시를 입력해주세요'); return }
+    if (!brandId) { showToast('브랜드 정보가 없습니다'); return }
+    setSaving(true)
+    const { data, error } = await supabase
+      .from('brand_lives')
+      .insert({
+        brand_id: brandId,
+        title: title.trim(),
+        description: desc.trim() || null,
+        platform,
+        live_url: liveUrl.trim() || null,
+        scheduled_at: new Date(scheduledAt).toISOString(),
+        target_grades: targetGrades,
+        status: 'scheduled',
+      })
+      .select('id, title, description, platform, live_url, scheduled_at, status, registrant_count, viewer_count, target_grades, recording_url')
+      .single()
+    if (!error && data) {
+      setLives(prev => [data as Live, ...prev])
+      setTitle(''); setDesc(''); setLiveUrl(''); setScheduledAt('')
+      setTargetGrades(['전체']); setPlatform('zoom')
+      setShowForm(false)
+      showToast('라이브 예약 완료!')
+    } else {
+      showToast('저장 실패: ' + (error?.message || ''))
+    }
+    setSaving(false)
+  }
+  const updateStatus = async (id: string, status: string) => {
+    const { error } = await supabase
+      .from('brand_lives')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', id)
+    if (!error) {
+      setLives(prev => prev.map(l => l.id === id ? { ...l, status } : l))
+      showToast(STATUS_MAP[status]?.label + '!')
+    }
+  }
+  const copyLink = (url: string | null) => {
+    if (!url) { showToast('링크가 없어요'); return }
+    navigator.clipboard?.writeText(url).catch(() => {})
+    showToast('링크 복사됨!')
+  }
+  const formatDate = (iso: string) => {
+    const d = new Date(iso)
+    return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+  }
+  const upcoming = lives.filter(l => l.status === 'scheduled' || l.status === 'live')
+  const past = lives.filter(l => l.status === 'done' || l.status === 'cancelled')
   return (
     <div>
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>{toast}</div>
       )}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
-        <button
-          type="button"
-          onClick={() => showToast('라이브 일정 등록 준비 중')}
-          style={{ fontSize: 12, padding: '6px 14px', borderRadius: 8, border: 'none', background: PURPLE, color: '#fff', cursor: 'pointer' }}
-        >
-          + 라이브 예약
-        </button>
-      </div>
+      {/* 예정된 라이브 */}
       <div style={CARD}>
-        <div style={{ fontSize: 12, color: SUB, marginBottom: 12 }}>🎓 교육 라이브 · {brandName}</div>
-        {sessions.map((s, i) => (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < sessions.length - 1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none' }}>
-            <div style={{ width: 40, height: 40, borderRadius: 8, background: 'rgba(123,94,167,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>📹</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, color: TEXT, marginBottom: 2 }}>{s.title}</div>
-              <div style={{ fontSize: 11, color: SUB }}>{s.date} · 시청 {s.viewers}명</div>
-            </div>
-            <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: `${s.statusColor}22`, color: s.statusColor, flexShrink: 0 }}>{s.status}</span>
+        <div style={{ fontSize: 12, color: SUB, marginBottom: 12 }}>📡 예정된 라이브</div>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>불러오는 중...</div>
+        ) : upcoming.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>예정된 라이브가 없어요</div>
+        ) : (
+          upcoming.map((l, i) => {
+            const st = STATUS_MAP[l.status]
+            return (
+              <div key={l.id} style={{ padding: '12px 0', borderBottom: i < upcoming.length - 1 ? `0.5px solid ${BORDER}` : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 13, color: TEXT }}>{l.title}</span>
+                      <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: `${st.color}22`, color: st.color, border: `0.5px solid ${st.color}55` }}>{st.label}</span>
+                      <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: 'rgba(100,181,246,0.1)', color: 'rgba(100,181,246,0.8)' }}>{l.platform.toUpperCase()}</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: SUB, marginBottom: 3 }}>{formatDate(l.scheduled_at)}</div>
+                    <div style={{ fontSize: 11, color: SUB }}>등록 {l.registrant_count}명 · {l.target_grades.join(', ')}</div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  <button type="button" onClick={() => showToast('미등록 원장님 오렌톡 발송!')}
+                    style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '0.5px solid rgba(255,193,7,0.3)', background: 'rgba(255,193,7,0.08)', color: 'rgba(255,193,7,0.8)', cursor: 'pointer' }}>오렌톡</button>
+                  <button type="button" onClick={() => copyLink(l.live_url)}
+                    style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', cursor: 'pointer' }}>링크 복사</button>
+                  {l.status === 'scheduled' && (
+                    <button type="button" onClick={() => updateStatus(l.id, 'live')}
+                      style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '0.5px solid rgba(229,57,53,0.3)', background: 'rgba(229,57,53,0.08)', color: 'rgba(229,57,53,0.8)', cursor: 'pointer' }}>라이브 시작</button>
+                  )}
+                  {l.status === 'live' && (
+                    <button type="button" onClick={() => updateStatus(l.id, 'done')}
+                      style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '0.5px solid rgba(76,175,80,0.3)', background: 'rgba(76,175,80,0.08)', color: 'rgba(76,175,80,0.8)', cursor: 'pointer' }}>라이브 종료</button>
+                  )}
+                </div>
+              </div>
+            )
+          })
+        )}
+      </div>
+      {/* 새 라이브 예약 */}
+      {showForm ? (
+        <div style={CARD}>
+          <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>+ 새 라이브 예약</div>
+          <input value={title} onChange={e => setTitle(e.target.value)} placeholder="라이브 제목 *"
+            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '8px 10px', fontSize: 12, color: TEXT, outline: 'none', marginBottom: 8 }} />
+          <input value={scheduledAt} onChange={e => setScheduledAt(e.target.value)} type="datetime-local"
+            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '8px 10px', fontSize: 12, color: TEXT, outline: 'none', marginBottom: 8, colorScheme: 'dark' }} />
+          <input value={liveUrl} onChange={e => setLiveUrl(e.target.value)} placeholder="ZOOM/프리즘 링크 (선택)"
+            style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '8px 10px', fontSize: 12, color: TEXT, outline: 'none', marginBottom: 8 }} />
+          <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+            {(['zoom', 'prism'] as const).map(p => (
+              <button key={p} type="button" onClick={() => setPlatform(p)}
+                style={{ fontSize: 11, padding: '4px 12px', borderRadius: 20, border: `0.5px solid ${platform === p ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: platform === p ? 'rgba(123,94,167,0.2)' : 'transparent', color: platform === p ? '#c4a7e7' : SUB, cursor: 'pointer' }}>
+                {p === 'zoom' ? 'ZOOM' : 'AURAN 프리즘'}
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
+          <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>대상</div>
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
+            {GRADES.map(g => (
+              <button key={g} type="button" onClick={() => toggleGrade(g)}
+                style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, border: `0.5px solid ${targetGrades.includes(g) ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: targetGrades.includes(g) ? 'rgba(123,94,167,0.2)' : 'transparent', color: targetGrades.includes(g) ? '#c4a7e7' : SUB, cursor: 'pointer' }}>
+                {g}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button type="button" onClick={submitLive} disabled={saving}
+              style={{ flex: 1, padding: '8px', borderRadius: 8, border: 'none', background: saving ? 'rgba(123,94,167,0.4)' : PURPLE, color: '#fff', fontSize: 12, cursor: saving ? 'not-allowed' : 'pointer' }}>
+              {saving ? '저장 중...' : '예약하기'}
+            </button>
+            <button type="button" onClick={() => setShowForm(false)}
+              style={{ padding: '8px 14px', borderRadius: 8, border: '0.5px solid rgba(255,255,255,0.1)', background: 'transparent', color: SUB, fontSize: 12, cursor: 'pointer' }}>취소</button>
+          </div>
+        </div>
+      ) : (
+        <button type="button" onClick={() => setShowForm(true)}
+          style={{ width: '100%', padding: '10px', borderRadius: 8, border: `0.5px solid ${PURPLE}`, background: 'rgba(123,94,167,0.1)', color: '#c4a7e7', fontSize: 12, cursor: 'pointer', marginBottom: 10 }}>
+          + 새 라이브 예약
+        </button>
+      )}
+      {/* 교육 이수 */}
       <div style={CARD}>
-        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>💡 라이브 활용 팁</div>
-        <div style={{ fontSize: 11, color: SUB, lineHeight: 1.7 }}>
-          원장님 교육 라이브 후 발주 전환율이 평균 2.3배 높아요.<br />
-          신제품 출시 시 라이브 + 샘플 연계를 추천합니다.
+        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>🏅 교육 이수 관리</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.02)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 9, padding: 12 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(201,169,110,0.1)', border: '0.5px solid rgba(201,169,110,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🏆</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 12, color: TEXT, marginBottom: 2 }}>{brandName} 공인 에스테티션</div>
+            <div style={{ fontSize: 10, color: SUB, marginBottom: 6 }}>필수 교육 3회 이수 후 인증 배지 발급</div>
+            <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+              <div style={{ width: `${Math.min(100, (past.length / 3) * 100)}%`, height: '100%', background: 'rgba(201,169,110,0.6)', borderRadius: 2 }} />
+            </div>
+            <div style={{ fontSize: 10, color: SUB, marginTop: 4 }}>완료 {past.length}회 / 3회</div>
+          </div>
+          <button type="button" onClick={() => showToast('인증서 발급!')}
+            style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '0.5px solid rgba(201,169,110,0.35)', background: 'transparent', color: GOLD, cursor: 'pointer', flexShrink: 0 }}>발급</button>
         </div>
       </div>
-      <div style={{ ...CARD, marginBottom: 0 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, textAlign: 'center' }}>
-          {[{ l: '누적 라이브', v: '0회', c: PURPLE }, { l: '평균 시청', v: '-명', c: GOLD }, { l: '발주 전환', v: '-%', c: GREEN }].map(k => (
-            <div key={k.l}>
-              <div style={{ fontSize: 16, color: k.c, marginBottom: 4 }}>{k.v}</div>
-              <div style={{ fontSize: 10, color: SUB }}>{k.l}</div>
+      {/* 다시보기 */}
+      <div style={CARD}>
+        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>📼 다시보기</div>
+        {past.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>진행된 라이브가 없습니다</div>
+        ) : (
+          past.map((l, i) => (
+            <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < past.length - 1 ? `0.5px solid ${BORDER}` : 'none' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 12, color: TEXT, marginBottom: 2 }}>{l.title}</div>
+                <div style={{ fontSize: 11, color: SUB }}>시청 {l.viewer_count}명 · {formatDate(l.scheduled_at)}</div>
+              </div>
+              {l.recording_url && (
+                <button type="button" onClick={() => copyLink(l.recording_url)}
+                  style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '0.5px solid rgba(255,255,255,0.1)', background: 'transparent', color: SUB, cursor: 'pointer', flexShrink: 0 }}>링크</button>
+              )}
             </div>
-          ))}
-        </div>
+          ))
+        )}
       </div>
     </div>
   )
