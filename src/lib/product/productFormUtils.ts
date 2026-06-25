@@ -20,6 +20,7 @@ export async function uploadVideoToStorage(file: File, path: string): Promise<st
 
 export async function insertNewProduct(supabase: ReturnType<typeof createClient>, payload: {
   brand_id: string
+  brand_user_id?: string
   name: string
   retail_price: number
   is_flash_sale: boolean

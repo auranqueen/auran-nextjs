@@ -10,11 +10,12 @@ const ProductDetailEditor = dynamic(() => import('@/components/admin/ProductDeta
 interface BrandProductFormV2Props {
   brandId: string
   brandName: string
+  authUserId?: string
   productId?: string
   onSaved?: () => void
 }
 
-export default function BrandProductFormV2({ brandId: propBrandId, brandName, productId: propProductId, onSaved }: BrandProductFormV2Props) {
+export default function BrandProductFormV2({ brandId: propBrandId, brandName, authUserId, productId: propProductId, onSaved }: BrandProductFormV2Props) {
   const supabase = createClient()
   const editId = propProductId || null
   const workingIdRef = useRef<string | null>(null)
@@ -150,12 +151,12 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, pr
     if (workingIdRef.current) return workingIdRef.current
     if (!brandId) { alert('브랜드 정보가 없습니다'); return null }
     try {
-      const pid = await insertNewProduct(supabase, { brand_id: brandId, name: name.trim() || '신규 상품', retail_price: 0, is_flash_sale: false })
+      const pid = await insertNewProduct(supabase, { brand_id: brandId, brand_user_id: authUserId, name: name.trim() || '신규 상품', retail_price: 0, is_flash_sale: false })
       workingIdRef.current = pid
       const now = new Date(); setTmpSavedAt(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`)
       return pid
     } catch { alert('임시 저장 실패'); return null }
-  }, [brandId, name, supabase])
+  }, [authUserId, brandId, name, supabase])
 
   const handleImagePick = useCallback(async (slot: number, file: File) => {
     if (!await ensureWorkingProduct()) return
@@ -236,6 +237,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, pr
       if (!pid) {
         pid = await insertNewProduct(supabase, {
           brand_id: brandId,
+          brand_user_id: authUserId,
           name: name.trim().slice(0, 100) || '신규 상품',
           retail_price: 0,
           is_flash_sale: false,
@@ -264,6 +266,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, pr
       if (!pid) {
         pid = await insertNewProduct(supabase, {
           brand_id: brandId,
+          brand_user_id: authUserId,
           name: name.trim() || '신규 상품',
           retail_price: 0,
           is_flash_sale: false,
@@ -456,7 +459,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, pr
                 if (!workingIdRef.current) {
                   if (!brandId) return ''
                   try {
-                    const pid = await insertNewProduct(supabase, { brand_id: brandId, name: name.trim() || '신규 상품', retail_price: 0, is_flash_sale: false })
+                    const pid = await insertNewProduct(supabase, { brand_id: brandId, brand_user_id: authUserId, name: name.trim() || '신규 상품', retail_price: 0, is_flash_sale: false })
                     workingIdRef.current = pid
                   } catch { return '' }
                 }
@@ -467,7 +470,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, pr
                 if (!workingIdRef.current) {
                   if (!brandId) return ''
                   try {
-                    const pid = await insertNewProduct(supabase, { brand_id: brandId, name: name.trim() || '신규 상품', retail_price: 0, is_flash_sale: false })
+                    const pid = await insertNewProduct(supabase, { brand_id: brandId, brand_user_id: authUserId, name: name.trim() || '신규 상품', retail_price: 0, is_flash_sale: false })
                     workingIdRef.current = pid
                   } catch { return '' }
                 }

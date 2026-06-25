@@ -1088,6 +1088,7 @@ export default function BrandDashboardPage() {
         <BrandProductFormV2
           brandId={brandId!}
           brandName={brandName}
+          authUserId={authId!}
           productId={editProduct.id}
           onSaved={() => { setEditProduct(null); void fetchRows() }}
         />
@@ -1097,6 +1098,7 @@ export default function BrandDashboardPage() {
         <BrandProductFormV2
           brandId={brandId!}
           brandName={brandName}
+          authUserId={authId!}
           onSaved={() => { setFormOpen(false); void fetchRows() }}
         />
       )}
