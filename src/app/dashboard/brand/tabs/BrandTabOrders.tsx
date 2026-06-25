@@ -1,10 +1,14 @@
 'use client'
+import { useCallback, useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import type { CSSProperties } from 'react'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
+const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
 const GREEN = 'rgba(76,175,80,0.8)'
+const BORDER = 'rgba(255,255,255,0.05)'
 const PROMOS = [
   { key: '5+1', desc: '5개 구매 +1개 증정' },
   { key: '5+5', desc: '5개 구매 +5개 증정' },
@@ -19,13 +23,68 @@ const GRADE_PROMOS = [
   { grade: '전문점', color: '#9C7FD4', promos: '10+3 / 5+5', point: '구매액의 1.5%' },
   { grade: '취급점', color: '#64B5F6', promos: '10+1 / 5+1', point: '구매액의 1%' },
 ]
+const STATUS_MAP: Record<string, { label: string; color: string }> = {
+  pending:   { label: '접수 대기', color: 'rgba(255,193,7,0.8)' },
+  approved:  { label: '승인됨',    color: GREEN },
+  shipping:  { label: '배송중',    color: 'rgba(41,182,246,0.8)' },
+  done:      { label: '완료',      color: 'rgba(255,255,255,0.3)' },
+  cancelled: { label: '취소',      color: 'rgba(229,57,53,0.7)' },
+}
+interface OrderRow {
+  id: string
+  owner_name: string | null
+  salon_name: string | null
+  grade: string | null
+  status: string
+  items: Array<{ name: string; qty: number }>
+  promo_applied: string | null
+  points_earned: number
+  created_at: string
+}
 interface Props {
   brandId: string | null
   brandName: string
 }
 export default function BrandTabOrders({ brandId, brandName }: Props) {
+  const supabase = createClient()
+  const [orders, setOrders] = useState<OrderRow[]>([])
+  const [loading, setLoading] = useState(true)
+  const [toast, setToast] = useState('')
+  const [subTab, setSubTab] = useState<'pending' | 'all'>('pending')
+  const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
+  const fetchOrders = useCallback(async () => {
+    if (!brandId) return
+    setLoading(true)
+    const { data } = await supabase
+      .from('brand_orders')
+      .select('id, owner_name, salon_name, grade, status, items, promo_applied, points_earned, created_at')
+      .eq('brand_id', brandId)
+      .order('created_at', { ascending: false })
+      .limit(50)
+    setOrders((data || []) as OrderRow[])
+    setLoading(false)
+  }, [brandId])
+  useEffect(() => { void fetchOrders() }, [fetchOrders])
+  const updateStatus = async (id: string, status: string) => {
+    const { error } = await supabase
+      .from('brand_orders')
+      .update({ status, updated_at: new Date().toISOString() })
+      .eq('id', id)
+    if (!error) {
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o))
+      showToast(STATUS_MAP[status]?.label + ' 처리됨!')
+    }
+  }
+  const filtered = subTab === 'pending'
+    ? orders.filter(o => o.status === 'pending')
+    : orders
+  const pendingCount = orders.filter(o => o.status === 'pending').length
   return (
     <div>
+      {toast && (
+        <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>{toast}</div>
+      )}
+      {/* 등급별 프로모션 */}
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 12 }}>📊 등급별 프로모션 · 적립 포인트</div>
         <div style={{ overflowX: 'auto' }}>
@@ -54,6 +113,7 @@ export default function BrandTabOrders({ brandId, brandName }: Props) {
           💡 포인트는 시바산 제품 구매 시 1T = ₩1 · 현금 전환 불가
         </div>
       </div>
+      {/* 프로모션 종류 */}
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 12 }}>📋 프로모션 종류</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
@@ -65,12 +125,93 @@ export default function BrandTabOrders({ brandId, brandName }: Props) {
           ))}
         </div>
       </div>
+      {/* 접수된 발주 */}
       <div style={CARD}>
-        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>📥 접수된 발주</div>
-        <div style={{ textAlign: 'center', padding: 20, color: SUB, fontSize: 12 }}>
-          아직 접수된 발주가 없어요
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ fontSize: 12, color: SUB }}>
+            📥 발주 내역
+            {pendingCount > 0 && (
+              <span style={{ marginLeft: 6, fontSize: 11, padding: '1px 7px', borderRadius: 10, background: 'rgba(255,193,7,0.15)', color: 'rgba(255,193,7,0.9)' }}>
+                대기 {pendingCount}건
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {(['pending', 'all'] as const).map(t => (
+              <button key={t} type="button" onClick={() => setSubTab(t)}
+                style={{ fontSize: 11, padding: '2px 10px', borderRadius: 20, border: `0.5px solid ${subTab === t ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: subTab === t ? 'rgba(123,94,167,0.2)' : 'transparent', color: subTab === t ? '#c4a7e7' : SUB, cursor: 'pointer' }}>
+                {t === 'pending' ? '대기중' : '전체'}
+              </button>
+            ))}
+          </div>
         </div>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 20, color: SUB, fontSize: 12 }}>불러오는 중...</div>
+        ) : filtered.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 20, color: SUB, fontSize: 12 }}>
+            {subTab === 'pending' ? '대기중인 발주가 없어요' : '아직 접수된 발주가 없어요'}
+          </div>
+        ) : (
+          filtered.map((o, i) => {
+            const st = STATUS_MAP[o.status] || { label: o.status, color: SUB }
+            const items = Array.isArray(o.items) ? o.items : []
+            return (
+              <div key={o.id} style={{ padding: '12px 0', borderBottom: i < filtered.length - 1 ? `0.5px solid ${BORDER}` : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                      <span style={{ fontSize: 13, color: TEXT }}>{o.owner_name || '원장님'}</span>
+                      {o.grade && (
+                        <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: 'rgba(123,94,167,0.15)', color: '#c4a7e7', border: '0.5px solid rgba(123,94,167,0.3)' }}>{o.grade}</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 11, color: SUB }}>{o.salon_name || '-'} · {new Date(o.created_at).toLocaleDateString('ko-KR')}</div>
+                  </div>
+                  <span style={{ fontSize: 11, padding: '2px 9px', borderRadius: 10, background: `${st.color}22`, color: st.color, border: `0.5px solid ${st.color}55`, flexShrink: 0 }}>{st.label}</span>
+                </div>
+                {items.length > 0 && (
+                  <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>
+                    {items.map((it, ii) => `${it.name} ${it.qty}ea`).join(' · ')}
+                    {o.promo_applied && <span style={{ marginLeft: 6, color: GOLD }}>{o.promo_applied} 적용</span>}
+                  </div>
+                )}
+                {o.points_earned > 0 && (
+                  <div style={{ fontSize: 11, color: GREEN, marginBottom: 8 }}>포인트 {o.points_earned.toLocaleString()}T 적립</div>
+                )}
+                {o.status === 'pending' && (
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button type="button" onClick={() => updateStatus(o.id, 'approved')}
+                      style={{ fontSize: 11, padding: '4px 12px', borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', cursor: 'pointer' }}>
+                      승인
+                    </button>
+                    <button type="button" onClick={() => updateStatus(o.id, 'shipping')}
+                      style={{ fontSize: 11, padding: '4px 12px', borderRadius: 6, border: '0.5px solid rgba(41,182,246,0.3)', background: 'rgba(41,182,246,0.08)', color: 'rgba(41,182,246,0.8)', cursor: 'pointer' }}>
+                      배송중
+                    </button>
+                    <button type="button" onClick={() => updateStatus(o.id, 'cancelled')}
+                      style={{ fontSize: 11, padding: '4px 12px', borderRadius: 6, border: '0.5px solid rgba(229,57,53,0.3)', background: 'rgba(229,57,53,0.08)', color: 'rgba(229,57,53,0.7)', cursor: 'pointer' }}>
+                      취소
+                    </button>
+                  </div>
+                )}
+                {o.status === 'approved' && (
+                  <button type="button" onClick={() => updateStatus(o.id, 'shipping')}
+                    style={{ fontSize: 11, padding: '4px 12px', borderRadius: 6, border: '0.5px solid rgba(41,182,246,0.3)', background: 'rgba(41,182,246,0.08)', color: 'rgba(41,182,246,0.8)', cursor: 'pointer' }}>
+                    배송중으로 변경
+                  </button>
+                )}
+                {o.status === 'shipping' && (
+                  <button type="button" onClick={() => updateStatus(o.id, 'done')}
+                    style={{ fontSize: 11, padding: '4px 12px', borderRadius: 6, border: '0.5px solid rgba(76,175,80,0.3)', background: 'rgba(76,175,80,0.08)', color: GREEN, cursor: 'pointer' }}>
+                    배송 완료
+                  </button>
+                )}
+              </div>
+            )
+          })
+        )}
       </div>
+      {/* 아레테 포인트 */}
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>👑 아레테클럽 포인트 현황</div>
         <div style={{ fontSize: 11, color: SUB, padding: '8px 10px', background: 'rgba(201,169,110,0.04)', borderRadius: 7, border: '0.5px solid rgba(201,169,110,0.15)' }}>
