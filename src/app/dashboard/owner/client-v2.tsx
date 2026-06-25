@@ -91,6 +91,7 @@ export default function OwnerDashClientV2() {
   const [revisitRate, setRevisitRate] = useState(0)
   const [trendItems, setTrendItems] = useState<{ name: string; count: number }[]>([])
   const [tradeBrands, setTradeBrands] = useState<string[]>([])
+  const [brandProducts, setBrandProducts] = useState<Array<{ id: string; name: string; thumb_img: string | null; brand_name: string }>>([])
   const [hormoneAlerts, setHormoneAlerts] = useState<{ name: string; days: number }[]>([])
   const [churnAlerts, setChurnAlerts] = useState<ExtCustomer[]>([])
   const [partnerCount, setPartnerCount] = useState(0)
@@ -167,6 +168,34 @@ export default function OwnerDashClientV2() {
 
       const brands = (ownerProf as any)?.trade_brands || (ownerProf as any)?.preferred_brands
       setTradeBrands(Array.isArray(brands) ? brands.map(String) : [])
+
+      // 거래 브랜드 제품 조회
+      if (Array.isArray(brands) && brands.length > 0) {
+        const brandNames = brands.map(String)
+        const { data: brandRows } = await sb
+          .from('brands')
+          .select('id, name')
+          .in('name', brandNames)
+        if (brandRows && brandRows.length > 0) {
+          const brandIds = brandRows.map((b: { id: string }) => b.id)
+          const { data: prodRows } = await sb
+            .from('products')
+            .select('id, name, thumb_img, brands(name)')
+            .in('brand_id', brandIds)
+            .eq('status', 'active')
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(10)
+          if (prodRows) {
+            setBrandProducts(prodRows.map((p: any) => ({
+              id: p.id,
+              name: p.name || '',
+              thumb_img: p.thumb_img || null,
+              brand_name: p.brands?.name || '',
+            })))
+          }
+        }
+      }
 
       const goalVal = Number((goalRow as any)?.value)
       setMonthGoal(!Number.isNaN(goalVal) && goalVal > 0 ? goalVal : 5000000)
@@ -495,11 +524,87 @@ export default function OwnerDashClientV2() {
                 </div>
               ))}
               {tradeBrands.length > 0 ? (
-                <div style={{ padding: '10px 0', fontSize: 13, color: TEXT_SUB }}>거래 브랜드: {tradeBrands.join(', ')}</div>
+                <div style={{ paddingTop: 10 }}>
+                  <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 8 }}>
+                    거래 브랜드 제품
+                  </div>
+                  {brandProducts.length > 0 ? (
+                    <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+                      {brandProducts.map(prod => (
+                        <div
+                          key={prod.id}
+                          style={{
+                            flexShrink: 0,
+                            width: 100,
+                            borderRadius: 10,
+                            border: `1px solid ${BORDER}`,
+                            overflow: 'hidden',
+                            background: '#faf9fc',
+                          }}
+                        >
+                          <div style={{
+                            width: '100%',
+                            height: 80,
+                            background: '#ede9f7',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            overflow: 'hidden',
+                          }}>
+                            {prod.thumb_img ? (
+                              <img src={prod.thumb_img} alt={prod.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                              <span style={{ fontSize: 24 }}>🧴</span>
+                            )}
+                          </div>
+                          <div style={{ padding: '6px 8px' }}>
+                            <div style={{ fontSize: 10, color: '#7B5EA7', marginBottom: 2 }}>{prod.brand_name}</div>
+                            <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.4, wordBreak: 'keep-all' }}>{prod.name}</div>
+                          </div>
+                        </div>
+                      ))}
+                      <div
+                        style={{
+                          flexShrink: 0,
+                          width: 100,
+                          borderRadius: 10,
+                          border: `1px solid ${BORDER}`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: '#faf9fc',
+                          cursor: 'pointer',
+                          fontSize: 12,
+                          color: '#7B5EA7',
+                        }}
+                        onClick={() => router.push('/dashboard/owner/store')}
+                      >
+                        더보기 →
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 13, color: TEXT_SUB }}>
+                      거래 브랜드: {tradeBrands.join(', ')}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div style={{ padding: '12px 0', fontSize: 13, color: TEXT_SUB, lineHeight: 1.6 }}>
                   거래 브랜드사를 설정하면 이벤트 · 프로모션 알림을 받을 수 있어요
-                  <button type="button" onClick={() => router.push('/dashboard/owner/store')} style={{ display: 'block', marginTop: 8, border: 'none', background: 'transparent', color: PURPLE, fontSize: 13, cursor: 'pointer', padding: 0 }}>
+                  <br />
+                  <button
+                    type="button"
+                    onClick={() => router.push('/dashboard/owner/store')}
+                    style={{
+                      marginTop: 8,
+                      fontSize: 12,
+                      color: '#7B5EA7',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: 0,
+                    }}
+                  >
                     브랜드사 설정하기 →
                   </button>
                 </div>
