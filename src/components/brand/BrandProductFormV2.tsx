@@ -150,6 +150,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
   const ensureWorkingProduct = useCallback(async () => {
     if (workingIdRef.current) return workingIdRef.current
     if (!brandId) { alert('브랜드 정보가 없습니다'); return null }
+    if (!authUserId) { alert('로그인 정보가 없습니다'); return null }
     try {
       const pid = await insertNewProduct(supabase, { brand_id: brandId, brand_user_id: authUserId, name: name.trim() || '신규 상품', retail_price: 0, is_flash_sale: false })
       workingIdRef.current = pid
@@ -185,6 +186,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
 
   const buildPayload = () => ({
     brand_id: brandId || null,
+    brand_user_id: authUserId || null,
     name: name.trim().slice(0, 100) || '신규 상품',
     description: shortDesc.trim() || null,
     tag: keywords.trim() || null,
