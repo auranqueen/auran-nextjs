@@ -9,8 +9,7 @@ import type { CSSProperties } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { compressImage } from '@/lib/imageUpload'
 
-const BrandProductForm = dynamic(() => import('@/components/brand/BrandProductForm'), { ssr: false })
-const ProductDetailModal = dynamic(() => import('@/app/admin/marketing/products/ProductDetailModal'), { ssr: false })
+const BrandProductFormV2 = dynamic(() => import('@/components/brand/BrandProductFormV2'), { ssr: false })
 
 const BG = '#0f0d14'
 const ACC = '#7B5EA7'
@@ -44,7 +43,7 @@ export default function BrandDashboardPage() {
   const [rows, setRows] = useState<Row[]>([])
   const [tab, setTab] = useState<'pending' | 'active' | 'hidden'>('pending')
   const [formOpen, setFormOpen] = useState(false)
-  const [editProduct, setEditProduct] = useState<Row | null>(null)
+  const [editProduct, setEditProduct] = useState<{ id: string } | null>(null)
   const [brands, setBrands] = useState<{ id: string; name: string; origin_country?: string | null }[]>([])
   const [busyId, setBusyId] = useState<string | null>(null)
   const [toast, setToast] = useState('')
@@ -1086,29 +1085,21 @@ export default function BrandDashboardPage() {
       ) : null}
 
       {editProduct ? (
-        <ProductDetailModal
-          product={editProduct}
-          tab={listTabForModal(editProduct)}
-          busyId={busyId}
-          brands={brands}
-          onClose={() => setEditProduct(null)}
-          onApprove={approveOne}
-          onReject={rejectOne}
-          onToast={setToast}
-          onProductUpdated={handleProductUpdated}
-          onSaveFlash={saveFlashSale}
-          hideApprovalFooter
+        <BrandProductFormV2
+          brandId={brandId!}
+          brandName={brandName}
+          productId={editProduct.id}
+          onSaved={() => { setEditProduct(null); void fetchRows() }}
         />
       ) : null}
 
-      <BrandProductForm
-        open={formOpen}
-        onClose={() => setFormOpen(false)}
-        authUserId={authId}
-        brandId={brandId!}
-        brandName={brandName}
-        onSubmitted={() => void fetchRows()}
-      />
+      {formOpen && (
+        <BrandProductFormV2
+          brandId={brandId!}
+          brandName={brandName}
+          onSaved={() => { setFormOpen(false); void fetchRows() }}
+        />
+      )}
 
       {myBrands.length > 1 && (
         <div style={{ position: 'relative', marginBottom: 12 }}>
@@ -1285,9 +1276,9 @@ export default function BrandDashboardPage() {
       <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
         {(
           [
-            { key: 'pending' as const, label: 'PENDING' },
-            { key: 'active' as const, label: 'ACTIVE' },
-            { key: 'hidden' as const, label: 'HIDDEN' },
+            { key: 'pending' as const, label: '승인 대기' },
+            { key: 'active' as const, label: '판매중' },
+            { key: 'hidden' as const, label: '숨김' },
           ] as const
         ).map(t => (
           <button
