@@ -150,6 +150,42 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
     void run()
   }, [profile.id])
 
+  const [brandProducts, setBrandProducts] = useState<Array<{ id: string; name: string; thumb_img: string | null; brand_name: string }>>([])
+  useEffect(() => {
+    const fetchBrandProducts = async () => {
+      const tradeBrands: string[] = Array.isArray(profile.trade_brands)
+        ? profile.trade_brands.map(String)
+        : Array.isArray((profile as any).preferred_brands)
+          ? (profile as any).preferred_brands.map(String)
+          : []
+      if (tradeBrands.length === 0) return
+      const supabase = (await import('@/lib/supabase/client')).createClient()
+      const { data: brandRows } = await supabase
+        .from('brands')
+        .select('id, name')
+        .in('name', tradeBrands)
+      if (!brandRows || brandRows.length === 0) return
+      const brandIds = brandRows.map((b: { id: string }) => b.id)
+      const { data: prodRows } = await supabase
+        .from('products')
+        .select('id, name, thumb_img, brands(name)')
+        .in('brand_id', brandIds)
+        .eq('status', 'active')
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false })
+        .limit(10)
+      if (prodRows) {
+        setBrandProducts(prodRows.map((p: any) => ({
+          id: p.id,
+          name: p.name || '',
+          thumb_img: p.thumb_img || null,
+          brand_name: p.brands?.name || '',
+        })))
+      }
+    }
+    void fetchBrandProducts()
+  }, [profile.id])
+
   const elapsedText = (createdAt: string) => {
     const ms = Date.now() - new Date(createdAt || '').getTime()
     if (!Number.isFinite(ms) || ms < 0) return '-'
@@ -283,6 +319,39 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
             </button>
           ))}
         </div>
+
+      {brandProducts.length > 0 && (
+        <div style={{ margin: '16px 16px 0' }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: '#1A1A2E', marginBottom: 10 }}>거래 브랜드 제품</div>
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+            {brandProducts.map(prod => (
+              <div
+                key={prod.id}
+                style={{ flexShrink: 0, width: 100, borderRadius: 10, border: '1px solid #ede9f7', overflow: 'hidden', background: '#faf9fc', cursor: 'pointer' }}
+                onClick={() => router.push('/dashboard/owner/store')}
+              >
+                <div style={{ width: '100%', height: 80, background: '#ede9f7', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  {prod.thumb_img ? (
+                    <img src={prod.thumb_img} alt={prod.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <span style={{ fontSize: 24 }}>🧴</span>
+                  )}
+                </div>
+                <div style={{ padding: '6px 8px' }}>
+                  <div style={{ fontSize: 10, color: '#7B5EA7', marginBottom: 2 }}>{prod.brand_name}</div>
+                  <div style={{ fontSize: 11, color: '#1A1A2E', lineHeight: 1.4, wordBreak: 'keep-all', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{prod.name}</div>
+                </div>
+              </div>
+            ))}
+            <div
+              style={{ flexShrink: 0, width: 100, borderRadius: 10, border: '1px solid #ede9f7', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#faf9fc', cursor: 'pointer', fontSize: 12, color: '#7B5EA7', minHeight: 120 }}
+              onClick={() => router.push('/dashboard/owner/store')}
+            >
+              더보기 →
+            </div>
+          </div>
+        </div>
+      )}
 
       {subReady ? (
         <div style={{ margin: '12px 16px 0' }}>
