@@ -49,16 +49,17 @@ export default function BrandTabOrenTalk({ brandName, brandId }: Props) {
     if (!brandId) return
     const { data } = await supabase
       .from('notifications')
-      .select('id, type, message, created_at, is_read')
+      .select('id, type, body, created_at, is_read, data')
       .eq('type', 'brand_orentalk')
+      .contains('data', { brand_id: brandId })
       .order('created_at', { ascending: false })
       .limit(30)
     if (data) {
       setHistory(data.map((n: any) => ({
         id: n.id,
-        type: n.message?.startsWith('[자동]') ? 'auto' : 'manual',
-        target: n.target_label || '전체 원장님',
-        message: n.message?.replace('[자동] ', '').replace('[직접] ', '') || '',
+        type: n.body?.startsWith('[자동]') ? 'auto' : 'manual',
+        target: n.data?.target_label || '전체 원장님',
+        message: n.body?.replace('[자동] ', '').replace('[직접] ', '') || '',
         created_at: n.created_at,
         read_count: 0,
         total_count: 0,
@@ -80,9 +81,10 @@ export default function BrandTabOrenTalk({ brandName, brandId }: Props) {
       .from('notifications')
       .insert({
         type: 'brand_orentalk',
-        message: `[직접] ${msg.trim()}`,
+        body: `[직접] ${msg.trim()}`,
+        title: `${brandName} 오렌톡`,
         is_read: false,
-        target_label: target,
+        data: { brand_id: brandId, target_label: target },
       })
     if (!error) {
       setHistory(prev => [{
