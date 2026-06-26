@@ -328,7 +328,7 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
               <div
                 key={prod.id}
                 style={{ flexShrink: 0, width: 100, borderRadius: 10, border: '1px solid #ede9f7', overflow: 'hidden', background: '#faf9fc', cursor: 'pointer' }}
-                onClick={() => router.push('/dashboard/owner/store')}
+                onClick={() => router.push('/dashboard/owner/brand-orders')}
               >
                 <div style={{ width: '100%', height: 80, background: '#ede9f7', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                   {prod.thumb_img ? (
@@ -345,7 +345,7 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
             ))}
             <div
               style={{ flexShrink: 0, width: 100, borderRadius: 10, border: '1px solid #ede9f7', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#faf9fc', cursor: 'pointer', fontSize: 12, color: '#7B5EA7', minHeight: 120 }}
-              onClick={() => router.push('/dashboard/owner/store')}
+              onClick={() => router.push('/dashboard/owner/brand-orders')}
             >
               더보기 →
             </div>
