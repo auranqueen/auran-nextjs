@@ -8,16 +8,22 @@ const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
 const BORDER = 'rgba(255,255,255,0.05)'
-const GREEN = 'rgba(76,175,80,0.8)'
-const TARGETS = ['전체 원장님', '메디슈티컬', '프리미엄전문점', '전문점', '취급점', '아레테클럽']
-interface HistItem {
+const TARGETS = [
+  { key: 'all', label: '전체 원장님' },
+  { key: 'medi', label: '메디슈티컬' },
+  { key: 'premium', label: '프리미엄전문점' },
+  { key: 'spec', label: '전문점' },
+  { key: 'auth', label: '취급점' },
+  { key: 'arete', label: '아레테클럽' },
+]
+interface MsgRow {
   id: string
-  type: 'auto' | 'manual'
-  target: string
-  message: string
+  message_type: string
+  target_type: string
+  title: string | null
+  body: string
+  send_count: number
   created_at: string
-  read_count: number
-  total_count: number
 }
 interface AutoSetting {
   key: string
@@ -29,42 +35,32 @@ interface AutoSetting {
 interface Props {
   brandName: string
   brandId: string | null
+  authId: string | null
 }
-export default function BrandTabOrenTalk({ brandName, brandId }: Props) {
+export default function BrandTabOrenTalk({ brandName, brandId, authId }: Props) {
   const supabase = createClient()
   const [msg, setMsg] = useState('')
   const [toast, setToast] = useState('')
-  const [target, setTarget] = useState('전체 원장님')
+  const [target, setTarget] = useState('all')
   const [histFilter, setHistFilter] = useState<'all' | 'auto' | 'manual'>('all')
-  const [history, setHistory] = useState<HistItem[]>([])
+  const [history, setHistory] = useState<MsgRow[]>([])
   const [sending, setSending] = useState(false)
   const [autoSettings, setAutoSettings] = useState<AutoSetting[]>([
-    { key: 'order', icon: '📦', title: '발주 접수 자동 알림', desc: '발주 접수 시 원장님에게 자동 발송', enabled: true },
-    { key: 'noorder', icon: '🔄', title: '30일 미주문 유도', desc: '30일 미주문 원장님 자동 알림', enabled: true },
-    { key: 'sample', icon: '🎁', title: '신제품 샘플 안내', desc: '샘플 발송 시 자동 오렌톡', enabled: false },
-    { key: 'live', icon: '📡', title: '라이브 사전 알림', desc: 'D-3, D-1, 당일 1시간 전 자동 발송', enabled: true },
+    { key: 'auto_order', icon: '📦', title: '발주 접수 자동 알림', desc: '발주 접수 시 원장님에게 자동 발송', enabled: true },
+    { key: 'auto_noorder', icon: '🔄', title: '30일 미주문 유도', desc: '30일 미주문 원장님 자동 알림', enabled: true },
+    { key: 'auto_sample', icon: '🎁', title: '신제품 샘플 안내', desc: '샘플 발송 시 자동 오렌톡', enabled: false },
+    { key: 'auto_live', icon: '📡', title: '라이브 사전 알림', desc: 'D-3, D-1, 당일 1시간 전 자동 발송', enabled: true },
   ])
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const fetchHistory = useCallback(async () => {
     if (!brandId) return
     const { data } = await supabase
-      .from('notifications')
-      .select('id, type, body, created_at, is_read, data')
-      .eq('type', 'brand_orentalk')
-      .contains('data', { brand_id: brandId })
+      .from('brand_messages')
+      .select('id, message_type, target_type, title, body, send_count, created_at')
+      .eq('brand_id', brandId)
       .order('created_at', { ascending: false })
       .limit(30)
-    if (data) {
-      setHistory(data.map((n: any) => ({
-        id: n.id,
-        type: n.body?.startsWith('[자동]') ? 'auto' : 'manual',
-        target: n.data?.target_label || '전체 원장님',
-        message: n.body?.replace('[자동] ', '').replace('[직접] ', '') || '',
-        created_at: n.created_at,
-        read_count: 0,
-        total_count: 0,
-      })))
-    }
+    setHistory((data || []) as MsgRow[])
   }, [brandId])
   useEffect(() => { void fetchHistory() }, [fetchHistory])
   const toggleAuto = (key: string) => {
@@ -76,34 +72,35 @@ export default function BrandTabOrenTalk({ brandName, brandId }: Props) {
   }
   const sendMsg = async () => {
     if (!msg.trim()) { showToast('메시지를 입력해주세요'); return }
+    if (!brandId) { showToast('브랜드 정보가 없습니다'); return }
     setSending(true)
-    const { error } = await supabase
-      .from('notifications')
+    const targetLabel = TARGETS.find(t => t.key === target)?.label || '전체 원장님'
+    const { data, error } = await supabase
+      .from('brand_messages')
       .insert({
-        type: 'brand_orentalk',
-        body: `[직접] ${msg.trim()}`,
+        brand_id: brandId,
+        message_type: 'manual',
+        target_type: target,
         title: `${brandName} 오렌톡`,
-        is_read: false,
-        data: { brand_id: brandId, target_label: target },
+        body: msg.trim(),
+        send_count: 0,
       })
-    if (!error) {
-      setHistory(prev => [{
-        id: Date.now().toString(),
-        type: 'manual',
-        target,
-        message: msg.trim(),
-        created_at: new Date().toISOString(),
-        read_count: 0,
-        total_count: 0,
-      }, ...prev])
+      .select('id, message_type, target_type, title, body, send_count, created_at')
+      .single()
+    if (!error && data) {
+      setHistory(prev => [data as MsgRow, ...prev])
       setMsg('')
-      showToast('오렌톡 발송 완료!')
+      showToast(`${targetLabel}에게 오렌톡 발송 완료!`)
     } else {
-      showToast('발송 실패: ' + error.message)
+      showToast('발송 실패: ' + (error?.message || ''))
     }
     setSending(false)
   }
-  const filtered = histFilter === 'all' ? history : history.filter(h => h.type === histFilter)
+  const filtered = histFilter === 'all'
+    ? history
+    : history.filter(h => histFilter === 'auto'
+      ? h.message_type.startsWith('auto_')
+      : h.message_type === 'manual')
   const timeAgo = (iso: string) => {
     const diff = Date.now() - new Date(iso).getTime()
     const m = Math.floor(diff / 60000)
@@ -143,19 +140,19 @@ export default function BrandTabOrenTalk({ brandName, brandId }: Props) {
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
           {TARGETS.map(t => (
             <button
-              key={t}
+              key={t.key}
               type="button"
-              onClick={() => setTarget(t)}
-              style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, border: `0.5px solid ${target === t ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: target === t ? 'rgba(123,94,167,0.2)' : 'transparent', color: target === t ? '#c4a7e7' : SUB, cursor: 'pointer' }}
+              onClick={() => setTarget(t.key)}
+              style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, border: `0.5px solid ${target === t.key ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: target === t.key ? 'rgba(123,94,167,0.2)' : 'transparent', color: target === t.key ? '#c4a7e7' : SUB, cursor: 'pointer' }}
             >
-              {t}
+              {t.label}
             </button>
           ))}
         </div>
         <textarea
           value={msg}
           onChange={e => setMsg(e.target.value)}
-          placeholder={`${target}에게 보낼 메시지 입력...`}
+          placeholder={`${TARGETS.find(t => t.key === target)?.label || '전체 원장님'}에게 보낼 메시지 입력...`}
           style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: TEXT, minHeight: 80, resize: 'none', outline: 'none', marginBottom: 8 }}
         />
         <div style={{ display: 'flex', gap: 8 }}>
@@ -169,7 +166,7 @@ export default function BrandTabOrenTalk({ brandName, brandId }: Props) {
           </button>
           <button
             type="button"
-            onClick={() => showToast('카카오 알림톡 연동 필요')}
+            onClick={() => showToast('카카오 알림톡 연동 준비 중')}
             style={{ padding: '8px 12px', borderRadius: 8, border: '0.5px solid rgba(255,193,7,0.3)', background: 'rgba(255,193,7,0.08)', color: 'rgba(255,193,7,0.8)', fontSize: 12, cursor: 'pointer' }}
           >
             카카오
@@ -196,10 +193,13 @@ export default function BrandTabOrenTalk({ brandName, brandId }: Props) {
         ) : (
           filtered.map((h, i) => (
             <div key={h.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: i < filtered.length - 1 ? `0.5px solid ${BORDER}` : 'none' }}>
-              <span style={{ fontSize: 14, flexShrink: 0 }}>{h.type === 'auto' ? '🤖' : '✉️'}</span>
+              <span style={{ fontSize: 14, flexShrink: 0 }}>{h.message_type.startsWith('auto_') ? '🤖' : '✉️'}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, color: TEXT, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.message}</div>
-                <div style={{ fontSize: 11, color: SUB }}>{h.target}</div>
+                <div style={{ fontSize: 12, color: TEXT, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.body}</div>
+                <div style={{ fontSize: 11, color: SUB }}>
+                  {TARGETS.find(t => t.key === h.target_type)?.label || h.target_type}
+                  {h.send_count > 0 && ` · ${h.send_count}명`}
+                </div>
               </div>
               <div style={{ fontSize: 11, color: SUB, flexShrink: 0 }}>{timeAgo(h.created_at)}</div>
             </div>

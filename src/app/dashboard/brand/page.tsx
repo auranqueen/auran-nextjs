@@ -1346,6 +1346,7 @@ export default function BrandDashboardPage() {
         <BrandTabOrenTalk
           brandName={brandName}
           brandId={brandId}
+          authId={authId}
         />
       )}
       {mainTab === 'live' && (
