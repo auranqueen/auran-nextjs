@@ -30,6 +30,7 @@ export default function BrandTabData({ brandId, brandName }: Props) {
   const supabase = createClient()
   const [kpi, setKpi] = useState<KpiData>({ orderCount: 0, ownerCount: 0, productCount: 0, activeCount: 0 })
   const [orders, setOrders] = useState<OrderRow[]>([])
+  const [thisMonthOrders, setThisMonthOrders] = useState<Array<{ id: string; status: string; items: Array<{ name: string; qty: number }> }>>([])
   const [ownerCount, setOwnerCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [subTab, setSubTab] = useState<'orders' | 'products'>('orders')
@@ -42,7 +43,8 @@ export default function BrandTabData({ brandId, brandName }: Props) {
       { count: orderCount },
       { count: productCount },
       { count: activeCount },
-      { data: orderRows },
+      { data: thisMonthOrders },
+      { data: recentOrders },
       { data: profiles },
     ] = await Promise.all([
       supabase.from('brand_orders').select('id', { count: 'exact', head: true })
@@ -51,10 +53,11 @@ export default function BrandTabData({ brandId, brandName }: Props) {
         .eq('brand_id', brandId).is('deleted_at', null),
       supabase.from('products').select('id', { count: 'exact', head: true })
         .eq('brand_id', brandId).eq('status', 'active').is('deleted_at', null),
+      supabase.from('brand_orders').select('id, status, items')
+        .eq('brand_id', brandId).gte('created_at', firstDay),
       supabase.from('brand_orders').select('id, owner_name, status, items, created_at')
         .eq('brand_id', brandId).order('created_at', { ascending: false }).limit(10),
-      supabase.from('profiles').select('trade_brands, preferred_brands')
-        .not('trade_brands', 'is', null),
+      supabase.from('profiles').select('trade_brands, preferred_brands'),
     ])
     // 연결 원장님 수
       const cnt = (profiles || []).filter((p: any) => {
@@ -70,13 +73,14 @@ export default function BrandTabData({ brandId, brandName }: Props) {
       productCount: productCount ?? 0,
       activeCount: activeCount ?? 0,
     })
-    setOrders((orderRows || []) as OrderRow[])
+    setOrders((recentOrders || []) as OrderRow[])
+    setThisMonthOrders((thisMonthOrders || []) as Array<{ id: string; status: string; items: Array<{ name: string; qty: number }> }>)
     setLoading(false)
   }, [brandId, brandName])
   useEffect(() => { void fetchData() }, [fetchData])
   // 아이템별 집계
   const itemMap: Record<string, number> = {}
-  orders.forEach(o => {
+  thisMonthOrders.forEach(o => {
     const items = Array.isArray(o.items) ? o.items : []
     items.forEach(it => {
       itemMap[it.name] = (itemMap[it.name] || 0) + (it.qty || 1)
@@ -86,7 +90,7 @@ export default function BrandTabData({ brandId, brandName }: Props) {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
   // 상태별 집계
-  const statusCounts = orders.reduce((acc, o) => {
+  const statusCounts = thisMonthOrders.reduce((acc, o) => {
     acc[o.status] = (acc[o.status] || 0) + 1
     return acc
   }, {} as Record<string, number>)
