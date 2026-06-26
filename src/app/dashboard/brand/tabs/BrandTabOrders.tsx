@@ -73,6 +73,27 @@ export default function BrandTabOrders({ brandId, brandName }: Props) {
     if (!error) {
       setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o))
       showToast(STATUS_MAP[status]?.label + ' 처리됨!')
+      if ((status === 'approved' || status === 'shipping' || status === 'done') && brandId) {
+        const order = orders.find(o => o.id === id)
+        const msgMap: Record<string, string> = {
+          approved: `발주가 승인됐어요. ${order?.promo_applied ? order.promo_applied + ' 적용 완료.' : ''} 곧 발송 예정입니다.`,
+          shipping: `주문하신 제품이 발송됐어요. 곧 도착할 예정입니다.`,
+          done:     `배송이 완료됐어요. 제품을 확인해주세요 💜`,
+        }
+        const titleMap: Record<string, string> = {
+          approved: `${brandName} 발주 승인 완료`,
+          shipping: `${brandName} 발주 배송 시작`,
+          done:     `${brandName} 배송 완료`,
+        }
+        await supabase.from('brand_messages').insert({
+          brand_id: brandId,
+          message_type: `auto_order`,
+          target_type: 'all',
+          title: titleMap[status] || `${brandName} 발주 상태 변경`,
+          body: msgMap[status] || `발주 상태가 ${STATUS_MAP[status]?.label}으로 변경됐습니다.`,
+          send_count: 1,
+        })
+      }
     }
   }
   const filtered = subTab === 'pending'
