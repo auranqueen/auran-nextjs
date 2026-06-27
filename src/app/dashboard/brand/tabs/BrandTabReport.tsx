@@ -3,6 +3,9 @@ import { useState } from 'react'
 import dynamic from 'next/dynamic'
 const BrandReportCompare = dynamic(() => import('./BrandReportCompare'), { ssr: false })
 const BrandReportStaff = dynamic(() => import('./BrandReportStaff'), { ssr: false })
+const BrandReportHQ = dynamic(() => import('./BrandReportHQ'), { ssr: false })
+const BrandReportLogistics = dynamic(() => import('./BrandReportLogistics'), { ssr: false })
+const BrandReportMismatch = dynamic(() => import('./BrandReportMismatch'), { ssr: false })
 const PURPLE = '#7B5EA7'
 const SUB = 'rgba(255,255,255,0.3)'
 const SUBTABS = [
@@ -31,21 +34,9 @@ export default function BrandTabReport({ brandId, brandName }: Props) {
       </div>
       {sub === 'compare' && <BrandReportCompare brandId={brandId} />}
       {sub === 'staff' && <BrandReportStaff brandId={brandId} />}
-      {sub === 'hq' && (
-        <div style={{ padding: '40px 0', textAlign: 'center' as const, color: SUB, fontSize: 13 }}>
-          🏢 본사 기록 — 다음 단계 구현 예정
-        </div>
-      )}
-      {sub === 'logistics' && (
-        <div style={{ padding: '40px 0', textAlign: 'center' as const, color: SUB, fontSize: 13 }}>
-          🚛 물류 기록 — 다음 단계 구현 예정
-        </div>
-      )}
-      {sub === 'mismatch' && (
-        <div style={{ padding: '40px 0', textAlign: 'center' as const, color: SUB, fontSize: 13 }}>
-          🔍 불일치 감지 — 다음 단계 구현 예정
-        </div>
-      )}
+      {sub === 'hq' && <BrandReportHQ brandId={brandId} />}
+      {sub === 'logistics' && <BrandReportLogistics brandId={brandId} />}
+      {sub === 'mismatch' && <BrandReportMismatch brandId={brandId} />}
     </div>
   )
 }
