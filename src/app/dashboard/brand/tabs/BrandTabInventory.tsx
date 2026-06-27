@@ -7,6 +7,7 @@ const BrandInventoryScan = dynamic(() => import('./BrandInventoryScan'), { ssr: 
 const BrandInventoryQR = dynamic(() => import('./BrandInventoryQR'), { ssr: false })
 const BrandInventoryClose = dynamic(() => import('./BrandInventoryClose'), { ssr: false })
 const BrandInventoryStaff = dynamic(() => import('./BrandInventoryStaff'), { ssr: false })
+const BrandInventoryEmergency = dynamic(() => import('./BrandInventoryEmergency'), { ssr: false })
 const PURPLE = '#7B5EA7'
 const SUB = 'rgba(255,255,255,0.3)'
 const SUBTABS = [
@@ -16,6 +17,7 @@ const SUBTABS = [
   { key: 'qr', label: 'QR발행', icon: '🔲' },
   { key: 'close', label: '월마감', icon: '📊' },
   { key: 'staff', label: '물류직원', icon: '👥' },
+  { key: 'emergency', label: '비상출고', icon: '🚨' },
 ] as const
 type SubTab = typeof SUBTABS[number]['key']
 interface Props {
@@ -41,6 +43,7 @@ export default function BrandTabInventory({ brandId, brandName, authId }: Props)
       {sub === 'qr' && <BrandInventoryQR brandId={brandId} brandName={brandName} />}
       {sub === 'close' && <BrandInventoryClose brandId={brandId} />}
       {sub === 'staff' && <BrandInventoryStaff brandId={brandId} />}
+      {sub === 'emergency' && <BrandInventoryEmergency brandId={brandId} brandName={brandName} />}
     </div>
   )
 }
