@@ -40,6 +40,10 @@ interface OrderRow {
   promo_applied: string | null
   points_earned: number
   created_at: string
+  courier: string | null
+  tracking_no: string | null
+  shipped_at: string | null
+  logistics_staff: string | null
 }
 interface Props {
   brandId: string | null
@@ -51,13 +55,14 @@ export default function BrandTabOrders({ brandId, brandName }: Props) {
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState('')
   const [subTab, setSubTab] = useState<'pending' | 'all'>('pending')
+  const [trackingInputs, setTrackingInputs] = useState<Record<string, { courier: string; no: string }>>({})
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const fetchOrders = useCallback(async () => {
     if (!brandId) return
     setLoading(true)
     const { data } = await supabase
       .from('brand_orders')
-      .select('id, owner_name, salon_name, grade, status, items, promo_applied, points_earned, created_at')
+      .select('id, owner_name, salon_name, grade, status, items, promo_applied, points_earned, created_at, courier, tracking_no, shipped_at, logistics_staff')
       .eq('brand_id', brandId)
       .order('created_at', { ascending: false })
       .limit(50)
@@ -94,6 +99,44 @@ export default function BrandTabOrders({ brandId, brandName }: Props) {
           send_count: 1,
         })
       }
+    }
+  }
+  const shipOrder = async (order: OrderRow) => {
+    const input = trackingInputs[order.id]
+    if (!input?.courier || !input?.no.trim()) {
+      showToast('택배사와 운송장 번호를 입력해주세요')
+      return
+    }
+    if (!brandId) return
+    const now = new Date().toISOString()
+    const { error } = await supabase
+      .from('brand_orders')
+      .update({
+        status: 'shipping',
+        courier: input.courier,
+        tracking_no: input.no.trim(),
+        shipped_at: now,
+        updated_at: now,
+      })
+      .eq('id', order.id)
+    if (!error) {
+      setOrders(prev => prev.map(o =>
+        o.id === order.id
+          ? { ...o, status: 'shipping', courier: input.courier, tracking_no: input.no.trim(), shipped_at: now }
+          : o
+      ))
+      setTrackingInputs(prev => { const n = {...prev}; delete n[order.id]; return n })
+      await supabase.from('brand_messages').insert({
+        brand_id: brandId,
+        message_type: 'auto_order',
+        target_type: 'all',
+        title: `${brandName} 발주 배송 시작`,
+        body: `주문하신 제품이 발송됐어요. 택배사: ${input.courier} · 운송장: ${input.no.trim()}`,
+        send_count: 1,
+      })
+      showToast('배송 처리 완료! 원장님 오렌톡 자동 발송됨')
+    } else {
+      showToast('처리 실패: ' + error.message)
     }
   }
   const filtered = subTab === 'pending'
@@ -199,6 +242,44 @@ export default function BrandTabOrders({ brandId, brandName }: Props) {
                 {o.points_earned > 0 && (
                   <div style={{ fontSize: 11, color: GREEN, marginBottom: 8 }}>포인트 {o.points_earned.toLocaleString()}T 적립</div>
                 )}
+                {o.status === 'approved' && (
+                  <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>📦 운송장 입력 → 저장 시 자동 발송완료</div>
+                    <div style={{ display: 'flex', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
+                      {(['CJ대한통운','한진','로젠','우체국','롯데'] as const).map(c => (
+                        <button
+                          key={c}
+                          type="button"
+                          onClick={() => setTrackingInputs(prev => ({ ...prev, [o.id]: { courier: c, no: prev[o.id]?.no || '' } }))}
+                          style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6, border: `0.5px solid ${trackingInputs[o.id]?.courier === c ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: trackingInputs[o.id]?.courier === c ? 'rgba(123,94,167,0.2)' : 'transparent', color: trackingInputs[o.id]?.courier === c ? '#c4a7e7' : SUB, cursor: 'pointer' }}
+                        >
+                          {c}
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <input
+                        value={trackingInputs[o.id]?.no || ''}
+                        onChange={e => setTrackingInputs(prev => ({ ...prev, [o.id]: { courier: prev[o.id]?.courier || '', no: e.target.value } }))}
+                        placeholder="운송장 번호 입력"
+                        style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '7px 10px', fontSize: 12, color: TEXT, outline: 'none' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => shipOrder(o)}
+                        style={{ padding: '7px 14px', borderRadius: 7, border: 'none', background: PURPLE, color: '#fff', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
+                      >
+                        발송완료
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {o.status === 'shipping' && o.tracking_no && (
+                  <div style={{ marginTop: 6, fontSize: 11, color: 'rgba(41,182,246,0.8)' }}>
+                    📦 {o.courier} · {o.tracking_no}
+                    {o.shipped_at && <span style={{ color: SUB, marginLeft: 6 }}>{new Date(o.shipped_at).toLocaleDateString('ko-KR')} 발송</span>}
+                  </div>
+                )}
                 {o.status === 'pending' && (
                   <div style={{ display: 'flex', gap: 6 }}>
                     <button type="button" onClick={() => updateStatus(o.id, 'approved')}
@@ -214,12 +295,6 @@ export default function BrandTabOrders({ brandId, brandName }: Props) {
                       취소
                     </button>
                   </div>
-                )}
-                {o.status === 'approved' && (
-                  <button type="button" onClick={() => updateStatus(o.id, 'shipping')}
-                    style={{ fontSize: 11, padding: '4px 12px', borderRadius: 6, border: '0.5px solid rgba(41,182,246,0.3)', background: 'rgba(41,182,246,0.08)', color: 'rgba(41,182,246,0.8)', cursor: 'pointer' }}>
-                    배송중으로 변경
-                  </button>
                 )}
                 {o.status === 'shipping' && (
                   <button type="button" onClick={() => updateStatus(o.id, 'done')}

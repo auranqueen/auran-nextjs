@@ -30,6 +30,9 @@ interface Order {
   promo_applied: string | null
   points_earned: number
   created_at: string
+  courier: string | null
+  tracking_no: string | null
+  shipped_at: string | null
 }
 const GRADE_PROMOS: Record<string, { promos: string[]; point: number }> = {
   '메디슈티컬': { promos: ['10+10', '10+5'], point: 3 },
@@ -111,7 +114,7 @@ export default function BrandOrdersPage() {
     }
     const { data: orderRows } = await supabase
       .from('brand_orders')
-      .select('id, brand_id, status, items, promo_applied, points_earned, created_at, brands(name)')
+      .select('id, brand_id, status, items, promo_applied, points_earned, created_at, courier, tracking_no, shipped_at, brands(name)')
       .eq('profile_id', user.id)
       .order('created_at', { ascending: false })
       .limit(20)
@@ -124,6 +127,9 @@ export default function BrandOrdersPage() {
         promo_applied: o.promo_applied,
         points_earned: o.points_earned || 0,
         created_at: o.created_at,
+        courier: o.courier || null,
+        tracking_no: o.tracking_no || null,
+        shipped_at: o.shipped_at || null,
       })))
     }
     setLoading(false)
@@ -334,6 +340,12 @@ export default function BrandOrdersPage() {
                   </div>
                   {o.promo_applied && <div style={{ fontSize: 11, color: PURPLE }}>{o.promo_applied} 적용</div>}
                   {o.points_earned > 0 && <div style={{ fontSize: 11, color: '#1E6B40', marginTop: 2 }}>+{o.points_earned}T 적립 예정</div>}
+                  {o.tracking_no && (
+                    <div style={{ fontSize: 11, color: '#185FA5', marginTop: 4, padding: '4px 8px', background: '#E6F1FB', borderRadius: 6, display: 'inline-block' }}>
+                      📦 {o.courier} {o.tracking_no}
+                      {o.shipped_at && <span style={{ color: '#888', marginLeft: 6 }}>{new Date(o.shipped_at).toLocaleDateString('ko-KR')} 발송</span>}
+                    </div>
+                  )}
                 </div>
               )
             })
