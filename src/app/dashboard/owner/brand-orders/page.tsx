@@ -81,7 +81,12 @@ export default function BrandOrdersPage() {
     setOwnerName((ownerProf as any)?.full_name || (prof as any)?.name || '')
     setSalonName((ownerProf as any)?.owner_store_name || (prof as any)?.store_name || '')
     setOwnerProfileId((ownerProf as any)?.id || null)
-    const profileId = (ownerProf as any)?.id || null
+    if (!(ownerProf as any)?.id) {
+      showToast('프로필 정보를 불러올 수 없어요. 다시 시도해주세요.')
+      setLoading(false)
+      return
+    }
+    const profileId = (ownerProf as any).id as string
     const g = (ownerProf as any)?.grade || '취급점'
     setGrade(g)
     const tradeBrands: string[] = Array.isArray((ownerProf as any)?.trade_brands) && (ownerProf as any).trade_brands.length > 0
@@ -116,7 +121,7 @@ export default function BrandOrdersPage() {
     const { data: orderRows } = await supabase
       .from('brand_orders')
       .select('id, brand_id, status, items, promo_applied, points_earned, created_at, courier, tracking_no, shipped_at, brands(name)')
-      .eq('profile_id', profileId || user.id)
+      .eq('profile_id', profileId || '')
       .order('created_at', { ascending: false })
       .limit(20)
     if (orderRows) {
@@ -186,7 +191,7 @@ export default function BrandOrdersPage() {
     const pointsEarned = Math.floor(totalItems * (GRADE_PROMOS[grade]?.point || 1))
     const { error } = await supabase.from('brand_orders').insert({
       brand_id: brandRow.id,
-      profile_id: ownerProfileId || user.id,
+      profile_id: ownerProfileId || '',
       owner_name: ownerName,
       salon_name: salonName,
       grade,

@@ -200,12 +200,29 @@ export default function OwnerDashClientV2() {
         }
       }
 
-      const { data: bmData } = await sb
-        .from('brand_messages')
-        .select('id, title, body, message_type, created_at, brand_id, brands(name)')
-        .order('created_at', { ascending: false })
-        .limit(10)
-      setBrandMessages((bmData || []) as any[])
+      const myTradeBrands: string[] = Array.isArray((ownerProf as any)?.trade_brands) && (ownerProf as any).trade_brands.length > 0
+        ? (ownerProf as any).trade_brands
+        : (Array.isArray((ownerProf as any)?.preferred_brands) ? (ownerProf as any).preferred_brands : [])
+      if (myTradeBrands.length > 0) {
+        const { data: bRows } = await sb
+          .from('brands')
+          .select('id')
+          .in('name', myTradeBrands)
+        const brandIds = (bRows || []).map((b: { id: string }) => b.id)
+        if (brandIds.length > 0) {
+          const { data: bmData } = await sb
+            .from('brand_messages')
+            .select('id, title, body, message_type, created_at, brand_id, brands(name)')
+            .in('brand_id', brandIds)
+            .order('created_at', { ascending: false })
+            .limit(10)
+          setBrandMessages((bmData || []) as any[])
+        } else {
+          setBrandMessages([])
+        }
+      } else {
+        setBrandMessages([])
+      }
 
       const goalVal = Number((goalRow as any)?.value)
       setMonthGoal(!Number.isNaN(goalVal) && goalVal > 0 ? goalVal : 5000000)
