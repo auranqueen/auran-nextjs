@@ -57,41 +57,21 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
       }
       const { data: lotData } = await supabase
         .from('brand_inventory_lots')
-        .select('lot_number, remaining_qty, expires_at, status, brand_inventory(product_name)')
+        .select('lot_number, remaining_qty, expires_at, brand_inventory(product_name)')
         .eq('brand_id', brandId)
         .eq('status', 'active')
         .not('expires_at', 'is', null)
         .order('expires_at', { ascending: true })
       if (lotData) {
         const now2 = Date.now()
-        const expiring = (lotData as any[])
+        setExpiringLots((lotData as any[])
           .map(l => ({
-            product_name: (l.brand_inventory as { product_name?: string })?.product_name || '',
+            product_name: (l.brand_inventory as any)?.product_name || '',
             lot_number: l.lot_number,
             remaining_qty: l.remaining_qty,
             days: Math.floor((new Date(l.expires_at).getTime() - now2) / 86400000),
           }))
-          .filter(l => l.days <= 90)
-        setExpiringLots(expiring)
-        if (expiring.length > 0 && brandId) {
-          const { data: already } = await supabase
-            .from('brand_messages')
-            .select('id')
-            .eq('brand_id', brandId)
-            .ilike('title', '%유통기한 임박%')
-            .gte('created_at', new Date(Date.now() - 86400000).toISOString())
-            .maybeSingle()
-          if (!already) {
-            await supabase.from('brand_messages').insert({
-              brand_id: brandId,
-              message_type: 'auto_order',
-              target_type: 'all',
-              title: `⚠️ 유통기한 임박 로트 ${expiring.length}건`,
-              body: expiring.slice(0, 3).map(l => `${l.product_name} (${l.lot_number}): D-${l.days} · 잔여 ${l.remaining_qty}개`).join('\n') + (expiring.length > 3 ? `\n외 ${expiring.length - 3}건` : ''),
-              send_count: 1,
-            })
-          }
-        }
+          .filter(l => l.days <= 90))
       }
       setLoading(false)
     }
@@ -111,25 +91,17 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
     <div>
       {expiringLots.length > 0 && (
         <div style={{ marginBottom: 12 }}>
+          <div style={{ fontSize: 11, color: '#E53935', marginBottom: 6 }}>⚠️ 유통기한 임박 재고 {expiringLots.length}건</div>
           {expiringLots.slice(0, 3).map((lot, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: lot.days <= 30 ? 'rgba(229,57,53,0.08)' : 'rgba(201,169,110,0.08)', border: `0.5px solid ${lot.days <= 30 ? 'rgba(229,57,53,0.3)' : 'rgba(201,169,110,0.3)'}`, borderRadius: 8, marginBottom: 6, cursor: 'pointer' }}
-              onClick={() => onTabChange('inventory')}>
-              <span style={{ fontSize: 14, flexShrink: 0 }}>{lot.days <= 30 ? '🔴' : '🟡'}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <span style={{ fontSize: 12, color: lot.days <= 30 ? '#E53935' : '#C9A96E' }}>
-                  {lot.product_name} · {lot.lot_number} · 잔여 {lot.remaining_qty.toLocaleString()}개
-                </span>
-              </div>
-              <span style={{ fontSize: 11, color: lot.days <= 30 ? '#E53935' : '#C9A96E', fontWeight: 500, flexShrink: 0 }}>D-{lot.days}</span>
+            <div key={i} onClick={() => onTabChange('inventory')}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: lot.days <= 30 ? 'rgba(229,57,53,0.08)' : 'rgba(201,169,110,0.08)', border: `0.5px solid ${lot.days <= 30 ? 'rgba(229,57,53,0.3)' : 'rgba(201,169,110,0.3)'}`, borderRadius: 8, marginBottom: 5, cursor: 'pointer' }}>
+              <span style={{ fontSize: 13 }}>{lot.days <= 30 ? '🔴' : '🟡'}</span>
+              <span style={{ fontSize: 12, color: lot.days <= 30 ? '#E53935' : '#C9A96E', flex: 1, minWidth: 0 }}>{lot.product_name} · 잔여 {lot.remaining_qty.toLocaleString()}개</span>
+              <span style={{ fontSize: 11, color: lot.days <= 30 ? '#E53935' : '#C9A96E', flexShrink: 0 }}>D-{lot.days}</span>
             </div>
           ))}
-          {expiringLots.length > 3 && (
-            <div style={{ fontSize: 11, color: SUB, textAlign: 'center', marginBottom: 6 }}>
-              외 {expiringLots.length - 3}건 → 재고·물류 탭 확인
-            </div>
-          )}
           <button type="button" onClick={() => onTabChange('inventory')}
-            style={{ width: '100%', padding: '8px', borderRadius: 8, border: `0.5px solid ${PURPLE}`, background: 'rgba(123,94,167,0.08)', color: '#c4a7e7', fontSize: 12, cursor: 'pointer' }}>
+            style={{ width: '100%', padding: '7px', borderRadius: 7, border: '0.5px solid rgba(123,94,167,0.4)', background: 'rgba(123,94,167,0.08)', color: '#c4a7e7', fontSize: 12, cursor: 'pointer' }}>
             😊 기분좋게 처리하러 가기 →
           </button>
         </div>
