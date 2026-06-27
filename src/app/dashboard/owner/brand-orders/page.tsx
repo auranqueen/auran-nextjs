@@ -81,6 +81,7 @@ export default function BrandOrdersPage() {
     setOwnerName((ownerProf as any)?.full_name || (prof as any)?.name || '')
     setSalonName((ownerProf as any)?.owner_store_name || (prof as any)?.store_name || '')
     setOwnerProfileId((ownerProf as any)?.id || null)
+    const profileId = (ownerProf as any)?.id || null
     const g = (ownerProf as any)?.grade || '취급점'
     setGrade(g)
     const tradeBrands: string[] = Array.isArray((ownerProf as any)?.trade_brands) && (ownerProf as any).trade_brands.length > 0
@@ -115,7 +116,7 @@ export default function BrandOrdersPage() {
     const { data: orderRows } = await supabase
       .from('brand_orders')
       .select('id, brand_id, status, items, promo_applied, points_earned, created_at, courier, tracking_no, shipped_at, brands(name)')
-      .eq('profile_id', user.id)
+      .eq('profile_id', profileId || user.id)
       .order('created_at', { ascending: false })
       .limit(20)
     if (orderRows) {
@@ -166,11 +167,11 @@ export default function BrandOrdersPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { showToast('로그인이 필요합니다'); return }
     setSending(true)
-    const brandName = selectedBrand || cart[0]?.product.brand_name || ''
+    const cartBrandName = selectedBrand || cart[0]?.product.brand_name || ''
     const { data: brandRow } = await supabase
       .from('brands')
       .select('id')
-      .eq('name', brandName)
+      .eq('name', cartBrandName)
       .maybeSingle()
     if (!brandRow) { showToast('브랜드 정보를 찾을 수 없습니다'); setSending(false); return }
     const items = cart
@@ -185,12 +186,12 @@ export default function BrandOrdersPage() {
     const pointsEarned = Math.floor(totalItems * (GRADE_PROMOS[grade]?.point || 1))
     const { error } = await supabase.from('brand_orders').insert({
       brand_id: brandRow.id,
-      profile_id: user.id,
+      profile_id: ownerProfileId || user.id,
       owner_name: ownerName,
       salon_name: salonName,
       grade,
       status: 'pending',
-      items: items.map(i => ({ name: i.name, qty: i.qty })),
+      items: items.map(i => ({ name: i.name, qty: i.qty, bonus: i.bonus, promo: i.promo })),
       total_qty: totalItems,
       promo_applied: promoApplied,
       points_earned: pointsEarned,

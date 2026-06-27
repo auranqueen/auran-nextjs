@@ -94,6 +94,7 @@ export default function OwnerDashClientV2() {
   const [brandProducts, setBrandProducts] = useState<Array<{ id: string; name: string; thumb_img: string | null; brand_name: string }>>([])
   const [hormoneAlerts, setHormoneAlerts] = useState<{ name: string; days: number }[]>([])
   const [churnAlerts, setChurnAlerts] = useState<ExtCustomer[]>([])
+  const [brandMessages, setBrandMessages] = useState<any[]>([])
   const [partnerCount, setPartnerCount] = useState(0)
   const [activeTab, setActiveTab] = useState('home')
   const [showChatList, setShowChatList] = useState(false)
@@ -198,6 +199,13 @@ export default function OwnerDashClientV2() {
           }
         }
       }
+
+      const { data: bmData } = await sb
+        .from('brand_messages')
+        .select('id, title, body, message_type, created_at, brand_id, brands(name)')
+        .order('created_at', { ascending: false })
+        .limit(10)
+      setBrandMessages((bmData || []) as any[])
 
       const goalVal = Number((goalRow as any)?.value)
       setMonthGoal(!Number.isNaN(goalVal) && goalVal > 0 ? goalVal : 5000000)
@@ -325,7 +333,7 @@ export default function OwnerDashClientV2() {
     { icon: '📋', label: '시술차트', sub: `오늘 ${todayChartCount}건 작성`, href: '/dashboard/owner/charts-v2' },
     { icon: '📅', label: '예약 관리', sub: `오늘 ${todayBookings.length}건`, href: '/dashboard/owner/bookings' },
     { icon: '👥', label: '고객 관리', sub: `${extCount}명`, href: '/dashboard/owner/charts-v2' },
-    { icon: '📦', label: '브랜드 발주', sub: tradeBrands.length ? `${tradeBrands[0]} 외 ${Math.max(0, tradeBrands.length - 1)}개` : '브랜드사를 설정해보세요', href: '/dashboard/owner/store' },
+    { icon: '📦', label: '브랜드 발주', sub: tradeBrands.length ? `${tradeBrands[0]} 외 ${Math.max(0, tradeBrands.length - 1)}개` : '브랜드사를 설정해보세요', href: '/dashboard/owner/brand-orders' },
     { icon: '📊', label: '매출 분석', sub: revisitRate ? `재방문 ${revisitRate}%` : '-', href: '/dashboard/owner/store' },
     { icon: '🤝', label: '파트너스', sub: `유입 ${partnerCount}명`, href: '/dashboard/partner' },
     { icon: '💬', label: '샵 상담톡', sub: '고객 1:1 상담', onClick: () => setShowChatList(true) },
@@ -502,11 +510,26 @@ export default function OwnerDashClientV2() {
         <div style={sectionLabel}>지금 챙겨야 할 것들</div>
         <div style={card}>
           {hormoneAlerts.length === 0 && churnAlerts.length === 0 && tradeBrands.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 24, color: TEXT_SUB, fontSize: 13, lineHeight: 1.7 }}>
-              아직 알림이 없어요.
-              <br />
-              고객을 등록하면 자동으로 알림을 드려요 💜
-            </div>
+            brandMessages.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '20px 0', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
+                아직 알림이 없어요.
+              </div>
+            ) : (
+              brandMessages.map((m: any) => (
+                <div key={m.id} style={{ padding: '10px 0', borderBottom: '0.5px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                    <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 10, background: 'rgba(123,94,167,0.2)', color: '#c4a7e7' }}>
+                      {m.brands?.name || '브랜드'}
+                    </span>
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
+                      {new Date(m.created_at).toLocaleDateString('ko-KR')}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', marginBottom: 2 }}>{m.title}</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 }}>{m.body}</div>
+                </div>
+              ))
+            )
           ) : (
             <>
               {hormoneAlerts.map((a, i) => (
@@ -579,7 +602,7 @@ export default function OwnerDashClientV2() {
                           fontSize: 12,
                           color: '#7B5EA7',
                         }}
-                        onClick={() => router.push('/dashboard/owner/store')}
+                        onClick={() => router.push('/dashboard/owner/brand-orders')}
                       >
                         더보기 →
                       </div>
@@ -596,7 +619,7 @@ export default function OwnerDashClientV2() {
                   <br />
                   <button
                     type="button"
-                    onClick={() => router.push('/dashboard/owner/store')}
+                    onClick={() => router.push('/dashboard/owner/brand-orders')}
                     style={{
                       marginTop: 8,
                       fontSize: 12,
