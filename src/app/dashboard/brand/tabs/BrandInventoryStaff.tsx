@@ -10,16 +10,20 @@ const SUB = 'rgba(255,255,255,0.3)'
 const DANGER = '#E53935'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const ROLE_MAP: Record<string, { label: string; color: string; pin: number }> = {
-  ceo:      { label: '대표',   color: '#C9A96E',              pin: 6 },
-  director: { label: '이사',   color: '#E8A0BF',              pin: 6 },
-  manager:  { label: '과장',   color: PURPLE,                 pin: 4 },
-  staff:    { label: '담당자', color: 'rgba(41,182,246,0.8)', pin: 4 },
+  ceo:         { label: '대표',     color: '#C9A96E',              pin: 6 },
+  director:    { label: '이사',     color: '#E8A0BF',              pin: 6 },
+  manager:     { label: '과장',     color: PURPLE,                 pin: 4 },
+  staff:       { label: '담당자',   color: 'rgba(41,182,246,0.8)', pin: 4 },
+  ops_manager: { label: '물류팀장', color: '#4CAF50',              pin: 4 },
+  ops_staff:   { label: '물류직원', color: 'rgba(41,182,246,0.6)', pin: 4 },
 }
 const GRANT_ROLES: Record<string, string[]> = {
-  ceo:      ['director', 'manager', 'staff'],
-  director: ['manager', 'staff'],
-  manager:  ['staff'],
-  staff:    [],
+  ceo:         ['director', 'manager', 'staff', 'ops_manager', 'ops_staff'],
+  director:    ['manager', 'staff', 'ops_manager', 'ops_staff'],
+  manager:     ['staff'],
+  staff:       [],
+  ops_manager: ['ops_staff'],
+  ops_staff:   [],
 }
 interface StaffRow {
   id: string
@@ -41,7 +45,7 @@ export default function BrandInventoryStaff({ brandId, currentUserRole = 'ceo' }
   const [toast, setToast] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [newName, setNewName] = useState('')
-  const [newRole, setNewRole] = useState<'director' | 'manager' | 'staff'>('staff')
+  const [newRole, setNewRole] = useState<'director' | 'manager' | 'staff' | 'ops_manager' | 'ops_staff'>('staff')
   const [newPin, setNewPin] = useState('')
   const [saving, setSaving] = useState(false)
   const [editPinId, setEditPinId] = useState<string | null>(null)
@@ -163,7 +167,7 @@ export default function BrandInventoryStaff({ brandId, currentUserRole = 'ceo' }
               <div style={{ fontSize: 10, color: SUB, marginBottom: 5 }}>직책</div>
               <div style={{ display: 'flex', gap: 6 }}>
                 {canAddRole.map(r => (
-                  <button key={r} type="button" onClick={() => { setNewRole(r as 'director' | 'manager' | 'staff'); setNewPin('') }}
+                  <button key={r} type="button" onClick={() => { setNewRole(r as 'director' | 'manager' | 'staff' | 'ops_manager' | 'ops_staff'); setNewPin('') }}
                     style={{ flex: 1, padding: '6px', borderRadius: 6, border: `0.5px solid ${newRole === r ? ROLE_MAP[r]?.color : 'rgba(255,255,255,0.1)'}`, background: newRole === r ? `${ROLE_MAP[r]?.color}18` : 'transparent', color: newRole === r ? ROLE_MAP[r]?.color : SUB, fontSize: 12, cursor: 'pointer' }}>
                     {ROLE_MAP[r]?.label}
                   </button>
