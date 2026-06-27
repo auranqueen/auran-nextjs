@@ -351,6 +351,7 @@ export default function OwnerDashClientV2() {
     { icon: '📅', label: '예약 관리', sub: `오늘 ${todayBookings.length}건`, href: '/dashboard/owner/bookings' },
     { icon: '👥', label: '고객 관리', sub: `${extCount}명`, href: '/dashboard/owner/charts-v2' },
     { icon: '📦', label: '브랜드 발주', sub: tradeBrands.length ? `${tradeBrands[0]} 외 ${Math.max(0, tradeBrands.length - 1)}개` : '브랜드사를 설정해보세요', href: '/dashboard/owner/brand-orders' },
+    { icon: '💬', label: '브랜드 소식', href: '/dashboard/owner/brand-community' },
     { icon: '📊', label: '매출 분석', sub: revisitRate ? `재방문 ${revisitRate}%` : '-', href: '/dashboard/owner/store' },
     { icon: '🤝', label: '파트너스', sub: `유입 ${partnerCount}명`, href: '/dashboard/partner' },
     { icon: '💬', label: '샵 상담톡', sub: '고객 1:1 상담', onClick: () => setShowChatList(true) },
