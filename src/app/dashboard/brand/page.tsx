@@ -4,7 +4,7 @@ import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import { createClient } from '@/lib/supabase/client'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import type { CSSProperties } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { compressImage } from '@/lib/imageUpload'
@@ -38,6 +38,9 @@ type Row = Record<string, unknown> & { id: string; name?: string | null; status?
 export default function BrandDashboardPage() {
   const supabase = createClient()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const loginRole = searchParams.get('login_role') || 'director'
+  const isCEO = loginRole === 'ceo'
   const [authId, setAuthId] = useState<string | null>(null)
   const [userPk, setUserPk] = useState<string | null>(null)
   const [brandId, setBrandId] = useState<string | null>(null)
@@ -56,7 +59,7 @@ export default function BrandDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<Row[]>([])
   const [tab, setTab] = useState<'pending' | 'active' | 'hidden'>('pending')
-  const [mainTab, setMainTab] = useState<'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'data' | 'invoice' | 'inventory' | 'report' | 'returns'>('home')
+  const [mainTab, setMainTab] = useState<'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'data' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement'>('home')
   const [formOpen, setFormOpen] = useState(false)
   const [editProduct, setEditProduct] = useState<{ id: string } | null>(null)
   const [brands, setBrands] = useState<{ id: string; name: string; origin_country?: string | null }[]>([])
@@ -1300,6 +1303,7 @@ export default function BrandDashboardPage() {
           { key: 'inventory', label: '재고·물류', icon: '📦' },
           { key: 'report', label: '대조리포트', icon: '📋' },
           { key: 'returns', label: '반품·교환', icon: '↩️' },
+          ...(isCEO ? [{ key: 'settlement' as const, label: '정산', icon: '💰' }] : []),
         ] as const).map(t => (
           <button
             key={t.key}
@@ -1398,6 +1402,7 @@ export default function BrandDashboardPage() {
           brandId={brandId}
           brandName={brandName}
           authId={authId}
+          loginRole={loginRole}
         />
       )}
       {mainTab === 'report' && (

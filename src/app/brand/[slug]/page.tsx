@@ -9,6 +9,7 @@ interface BrandInfo {
   logo_url: string | null
   slug: string
   user_id: string
+  login_role: string
 }
 export default function BrandLoginPage() {
   const supabase = createClient()
@@ -27,7 +28,7 @@ export default function BrandLoginPage() {
     const loadBrand = async () => {
       const { data } = await supabase
         .from('brands')
-        .select('id, name, brand_name_kr, logo_url, slug, user_id')
+        .select('id, name, brand_name_kr, logo_url, slug, user_id, login_role')
         .eq('slug', slug)
         .maybeSingle()
       if (!data) { setNotFound(true); setLoadingBrand(false); return }
@@ -35,7 +36,7 @@ export default function BrandLoginPage() {
       setLoadingBrand(false)
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user && session.user.id === data.user_id) {
-        router.replace('/dashboard/brand')
+        router.replace(`/dashboard/brand?login_role=${data.login_role || 'director'}`)
       }
     }
     void loadBrand()
@@ -59,7 +60,7 @@ export default function BrandLoginPage() {
       setLoading(false)
       return
     }
-    router.replace('/dashboard/brand')
+    router.replace(`/dashboard/brand?login_role=${brand!.login_role || 'director'}`)
   }
   const BG = '#0f0d14'
   const CARD_BG = '#1a1520'
@@ -110,7 +111,9 @@ export default function BrandLoginPage() {
             {brand?.brand_name_kr || brand?.name} 전용 콘솔
           </div>
           <div style={{ fontSize: 12, color: SUB, marginBottom: 24, lineHeight: 1.6 }}>
-            AURAN에서 발급한 아이디와 비밀번호로 로그인해주세요
+            {brand?.login_role === 'ceo'
+              ? 'AURAN 대표 전용 계정으로 로그인해주세요'
+              : 'AURAN에서 발급한 담당자 계정으로 로그인해주세요'}
           </div>
           <form onSubmit={handleLogin}>
             <div style={{ marginBottom: 14 }}>

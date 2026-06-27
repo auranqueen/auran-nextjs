@@ -26,8 +26,9 @@ interface Props {
   brandId: string | null
   brandName: string
   authId: string | null
+  loginRole?: string
 }
-export default function BrandTabInventory({ brandId, brandName, authId }: Props) {
+export default function BrandTabInventory({ brandId, brandName, authId, loginRole = 'director' }: Props) {
   const [sub, setSub] = useState<SubTab>('stock')
   return (
     <div>
@@ -44,7 +45,7 @@ export default function BrandTabInventory({ brandId, brandName, authId }: Props)
       {sub === 'scan' && <BrandInventoryScan brandId={brandId} brandName={brandName} />}
       {sub === 'qr' && <BrandInventoryQR brandId={brandId} brandName={brandName} />}
       {sub === 'close' && <BrandInventoryClose brandId={brandId} />}
-      {sub === 'staff' && <BrandInventoryStaff brandId={brandId} />}
+      {sub === 'staff' && <BrandInventoryStaff brandId={brandId} currentUserRole={loginRole === 'ceo' ? 'ceo' : 'director'} />}
       {sub === 'emergency' && <BrandInventoryEmergency brandId={brandId} brandName={brandName} />}
       {sub === 'marketing' && <BrandInventoryMarketing brandId={brandId} brandName={brandName} />}
     </div>
