@@ -20,6 +20,7 @@ const BrandTabSample = dynamic(() => import('./tabs/BrandTabSample'), { ssr: fal
 const BrandTabCommunity = dynamic(() => import('./tabs/BrandTabCommunity'), { ssr: false })
 const BrandTabExpand = dynamic(() => import('./tabs/BrandTabExpand'), { ssr: false })
 const BrandTabData = dynamic(() => import('./tabs/BrandTabData'), { ssr: false })
+const BrandTabInvoice = dynamic(() => import('./tabs/BrandTabInvoice'), { ssr: false })
 
 const BG = '#0f0d14'
 const ACC = '#7B5EA7'
@@ -52,7 +53,7 @@ export default function BrandDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<Row[]>([])
   const [tab, setTab] = useState<'pending' | 'active' | 'hidden'>('pending')
-  const [mainTab, setMainTab] = useState<'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'data'>('home')
+  const [mainTab, setMainTab] = useState<'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'data' | 'invoice'>('home')
   const [formOpen, setFormOpen] = useState(false)
   const [editProduct, setEditProduct] = useState<{ id: string } | null>(null)
   const [brands, setBrands] = useState<{ id: string; name: string; origin_country?: string | null }[]>([])
@@ -1292,6 +1293,7 @@ export default function BrandDashboardPage() {
           { key: 'community', label: '커뮤니티', icon: '💬' },
           { key: 'expand', label: '외연확장', icon: '🌐' },
           { key: 'data', label: '데이터', icon: '📊' },
+          { key: 'invoice', label: '주문내역서', icon: '🖨️' },
         ] as const).map(t => (
           <button
             key={t.key}
@@ -1375,6 +1377,12 @@ export default function BrandDashboardPage() {
       )}
       {mainTab === 'data' && (
         <BrandTabData
+          brandId={brandId}
+          brandName={brandName}
+        />
+      )}
+      {mainTab === 'invoice' && (
+        <BrandTabInvoice
           brandId={brandId}
           brandName={brandName}
         />
