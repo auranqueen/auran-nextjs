@@ -10,22 +10,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { compressImage } from '@/lib/imageUpload'
 
 const BrandProductFormV2 = dynamic(() => import('@/components/brand/BrandProductFormV2'), { ssr: false })
-const BrandTabHome = dynamic(() => import('./tabs/BrandTabHome'), { ssr: false })
-const BrandTabProducts = dynamic(() => import('./tabs/BrandTabProducts'), { ssr: false })
-const BrandTabOwners = dynamic(() => import('./tabs/BrandTabOwners'), { ssr: false })
-const BrandTabOrders = dynamic(() => import('./tabs/BrandTabOrders'), { ssr: false })
-const BrandTabOrenTalk = dynamic(() => import('./tabs/BrandTabOrenTalk'), { ssr: false })
-const BrandTabLive = dynamic(() => import('./tabs/BrandTabLive'), { ssr: false })
-const BrandTabSample = dynamic(() => import('./tabs/BrandTabSample'), { ssr: false })
-const BrandTabCommunity = dynamic(() => import('./tabs/BrandTabCommunity'), { ssr: false })
-const BrandTabExpand = dynamic(() => import('./tabs/BrandTabExpand'), { ssr: false })
-const BrandTabData = dynamic(() => import('./tabs/BrandTabData'), { ssr: false })
-const BrandTabInvoice = dynamic(() => import('./tabs/BrandTabInvoice'), { ssr: false })
-const BrandTabInventory = dynamic(() => import('./tabs/BrandTabInventory'), { ssr: false })
 const BrandPinGate = dynamic(() => import('./components/BrandPinGate'), { ssr: false })
 const BrandWatermark = dynamic(() => import('./components/BrandWatermark'), { ssr: false })
-const BrandTabReport = dynamic(() => import('./tabs/BrandTabReport'), { ssr: false })
-const BrandTabReturns = dynamic(() => import('./tabs/BrandTabReturns'), { ssr: false })
+const BrandHubContent = dynamic(() => import('./components/BrandHubContent'), { ssr: false })
 
 const BG = '#0f0d14'
 const ACC = '#7B5EA7'
@@ -67,7 +54,6 @@ export default function BrandDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<Row[]>([])
   const [tab, setTab] = useState<'pending' | 'active' | 'hidden'>('pending')
-  const [mainTab, setMainTab] = useState<'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'data' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement'>('home')
   const [formOpen, setFormOpen] = useState(false)
   const [editProduct, setEditProduct] = useState<{ id: string } | null>(null)
   const [brands, setBrands] = useState<{ id: string; name: string; origin_country?: string | null }[]>([])
@@ -1311,137 +1297,20 @@ export default function BrandDashboardPage() {
         </div>
       )}
 
-      {/* 상단 탭 네비 */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap', borderBottom: '0.5px solid rgba(255,255,255,0.07)', paddingBottom: 12 }}>
-        {([
-          { key: 'home', label: '홈', icon: '🏠' },
-          { key: 'products', label: '제품 관리', icon: '🧴' },
-          { key: 'owners', label: '원장님 관리', icon: '👥' },
-          { key: 'orders', label: '발주', icon: '📦' },
-          { key: 'orentalk', label: '오렌톡', icon: '💜' },
-          { key: 'live', label: '교육라이브', icon: '🎓' },
-          { key: 'sample', label: '샘플', icon: '🎁' },
-          { key: 'community', label: '커뮤니티', icon: '💬' },
-          { key: 'expand', label: '외연확장', icon: '🌐' },
-          { key: 'data', label: '데이터', icon: '📊' },
-          { key: 'invoice', label: '주문내역서', icon: '🖨️' },
-          { key: 'inventory', label: '재고·물류', icon: '📦' },
-          { key: 'report', label: '대조리포트', icon: '📋' },
-          { key: 'returns', label: '반품·교환', icon: '↩️' },
-          ...(isCEO ? [{ key: 'settlement' as const, label: '정산', icon: '💰' }] : []),
-        ] as const).map(t => (
-          <button
-            key={t.key}
-            type="button"
-            onClick={() => setMainTab(t.key)}
-            style={{
-              fontSize: 12,
-              padding: '5px 14px',
-              borderRadius: 20,
-              border: `0.5px solid ${mainTab === t.key ? '#7B5EA7' : 'rgba(255,255,255,0.1)'}`,
-              background: mainTab === t.key ? 'rgba(123,94,167,0.2)' : 'transparent',
-              color: mainTab === t.key ? '#c4a7e7' : 'rgba(255,255,255,0.3)',
-              cursor: 'pointer',
-            }}
-          >
-            {t.icon} {t.label}
-          </button>
-        ))}
-      </div>
-      {/* 탭 컨텐츠 */}
-      {mainTab === 'home' && (
-        <BrandTabHome
-          brandName={brandName}
-          brandId={brandId}
-          activeBrandId={activeBrandId}
-          onTabChange={(t) => setMainTab(t as typeof mainTab)}
-        />
-      )}
-      {mainTab === 'products' && (
-        <BrandTabProducts
-          rows={rows}
-          tab={tab}
-          onTabChange={setTab}
-          onEdit={(p) => setEditProduct(p as { id: string })}
-          onNew={() => setFormOpen(true)}
-        />
-      )}
-      {mainTab === 'owners' && (
-        <BrandTabOwners
-          brandId={brandId}
-          brandName={brandName}
-          authId={authId}
-        />
-      )}
-      {mainTab === 'orders' && (
-        <BrandTabOrders
-          brandId={brandId}
-          brandName={brandName}
-        />
-      )}
-      {mainTab === 'orentalk' && (
-        <BrandTabOrenTalk
-          brandName={brandName}
-          brandId={brandId}
-          authId={authId}
-        />
-      )}
-      {mainTab === 'live' && (
-        <BrandTabLive
-          brandId={brandId}
-          brandName={brandName}
-        />
-      )}
-      {mainTab === 'sample' && (
-        <BrandTabSample
-          brandId={brandId}
-          brandName={brandName}
-        />
-      )}
-      {mainTab === 'community' && (
-        <BrandTabCommunity
-          brandId={brandId}
-          brandName={brandName}
-        />
-      )}
-      {mainTab === 'expand' && (
-        <BrandTabExpand
-          brandId={brandId}
-          brandName={brandName}
-        />
-      )}
-      {mainTab === 'data' && (
-        <BrandTabData
-          brandId={brandId}
-          brandName={brandName}
-        />
-      )}
-      {mainTab === 'invoice' && (
-        <BrandTabInvoice
-          brandId={brandId}
-          brandName={brandName}
-        />
-      )}
-      {mainTab === 'inventory' && (
-        <BrandTabInventory
-          brandId={brandId}
-          brandName={brandName}
-          authId={authId}
-          loginRole={loginRole}
-        />
-      )}
-      {mainTab === 'report' && (
-        <BrandTabReport
-          brandId={brandId}
-          brandName={brandName}
-        />
-      )}
-      {mainTab === 'returns' && (
-        <BrandTabReturns
-          brandId={brandId}
-          brandName={brandName}
-        />
-      )}
+      {/* 통합 허브 콘텐츠 */}
+      <BrandHubContent
+        brandId={brandId}
+        brandName={brandName}
+        activeBrandId={activeBrandId}
+        authId={authId}
+        isCEO={isCEO}
+        loginRole={loginRole}
+        rows={rows}
+        tab={tab}
+        onTabChange={setTab}
+        onEdit={(p) => setEditProduct(p as { id: string })}
+        onNew={() => setFormOpen(true)}
+      />
     </div>
   )
 }
