@@ -24,6 +24,7 @@ interface CartItem {
 }
 interface Order {
   id: string
+  brand_id: string | null
   brand_name: string
   status: string
   items: Array<{ name: string; qty: number }>
@@ -63,6 +64,12 @@ export default function BrandOrdersPage() {
   const [showPopup, setShowPopup] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
+  const [returnPopup, setReturnPopup] = useState<{ open: boolean; order: Order | null }>({ open: false, order: null })
+  const [returnType, setReturnType] = useState<'return' | 'exchange'>('return')
+  const [returnReason, setReturnReason] = useState('')
+  const [returnDetail, setReturnDetail] = useState('')
+  const [returnQty, setReturnQty] = useState(1)
+  const [returnSaving, setReturnSaving] = useState(false)
   const [toast, setToast] = useState('')
   const [tab, setTab] = useState<'shop' | 'orders'>('shop')
   const [ownerName, setOwnerName] = useState('')
@@ -128,6 +135,7 @@ export default function BrandOrdersPage() {
       setOrders(orderRows.map((o: any) => ({
         id: o.id,
         brand_name: o.brands?.name || '',
+        brand_id: o.brand_id || null,
         status: o.status,
         items: Array.isArray(o.items) ? o.items : [],
         promo_applied: o.promo_applied,
@@ -219,6 +227,33 @@ export default function BrandOrdersPage() {
       showToast('발주 실패: ' + error.message)
     }
     setSending(false)
+  }
+  const submitReturn = async () => {
+    if (!returnReason.trim()) { showToast('사유를 선택해주세요'); return }
+    if (!returnPopup.order?.brand_id) { showToast('브랜드 정보 없음'); return }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const { data: prof } = await supabase.from('profiles').select('id').eq('auth_id', user.id).maybeSingle()
+    setReturnSaving(true)
+    const { error } = await supabase.from('brand_returns').insert({
+      brand_id: returnPopup.order.brand_id,
+      order_id: returnPopup.order.id,
+      type: returnType,
+      reason_code: returnReason,
+      reason_detail: returnDetail.trim() || null,
+      qty: returnQty,
+      status: 'requested',
+      requested_by: (prof as { id?: string } | null)?.id || user.id,
+      photos: [],
+    })
+    if (!error) {
+      setReturnPopup({ open: false, order: null })
+      setReturnReason(''); setReturnDetail(''); setReturnQty(1)
+      showToast('반품·교환 신청 완료! 브랜드사 검토 중')
+    } else {
+      showToast('신청 실패: ' + error.message)
+    }
+    setReturnSaving(false)
   }
   const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
     pending:   { label: '대기중',   color: '#A07830', bg: '#FBF5E8' },
@@ -352,6 +387,13 @@ export default function BrandOrdersPage() {
                       {o.shipped_at && <span style={{ color: '#888', marginLeft: 6 }}>{new Date(o.shipped_at).toLocaleDateString('ko-KR')} 발송</span>}
                     </div>
                   )}
+                  {(o.status === 'shipping' || o.status === 'done') && (
+                    <button type="button"
+                      onClick={() => { setReturnPopup({ open: true, order: o }); setReturnQty(o.items.reduce((s, i) => s + i.qty, 0)) }}
+                      style={{ marginTop: 6, fontSize: 11, padding: '4px 10px', borderRadius: 5, border: '0.5px solid rgba(229,57,53,0.3)', background: 'rgba(229,57,53,0.06)', color: '#E53935', cursor: 'pointer', display: 'block' }}>
+                      반품·교환 신청
+                    </button>
+                  )}
                 </div>
               )
             })
@@ -407,6 +449,54 @@ export default function BrandOrdersPage() {
             <button type="button" onClick={submitOrder} disabled={sending}
               style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: sending ? `${PURPLE}80` : PURPLE, color: '#fff', fontSize: 14, cursor: sending ? 'not-allowed' : 'pointer', fontWeight: 500 }}>
               {sending ? '발주 요청 중...' : '발주 요청하기'}
+            </button>
+          </div>
+        </div>
+      )}
+      {returnPopup.open && returnPopup.order && (
+        <div
+          onClick={e => { if (e.target === e.currentTarget) setReturnPopup({ open: false, order: null }) }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div style={{ background: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 520, maxHeight: '85vh', overflowY: 'auto', padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ fontSize: 15, fontWeight: 500, color: '#1A1A2E' }}>반품·교환 신청</div>
+              <button type="button" onClick={() => setReturnPopup({ open: false, order: null })}
+                style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: '#888', lineHeight: 1 }}>✕</button>
+            </div>
+            <div style={{ fontSize: 12, color: '#888', marginBottom: 12 }}>
+              {returnPopup.order.brand_name} · {returnPopup.order.items.map(i => `${i.name} ${i.qty}ea`).join(', ')}
+            </div>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+              {(['return', 'exchange'] as const).map(t => (
+                <button key={t} type="button" onClick={() => setReturnType(t)}
+                  style={{ flex: 1, padding: '8px', borderRadius: 8, border: `1px solid ${returnType === t ? '#E53935' : '#eee'}`, background: returnType === t ? 'rgba(229,57,53,0.06)' : '#fff', color: returnType === t ? '#E53935' : '#888', fontSize: 13, cursor: 'pointer' }}>
+                  {t === 'return' ? '반품' : '교환'}
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>사유 선택 (필수)</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: 12 }}>
+              {['제품 불량·파손','오배송','수량 오류','유통기한 임박','단순 변심','배송 중 파손'].map(r => (
+                <button key={r} type="button" onClick={() => setReturnReason(r)}
+                  style={{ fontSize: 11, padding: '4px 10px', borderRadius: 20, border: `0.5px solid ${returnReason === r ? '#7B5EA7' : '#eee'}`, background: returnReason === r ? 'rgba(123,94,167,0.08)' : '#fff', color: returnReason === r ? '#7B5EA7' : '#888', cursor: 'pointer' }}>
+                  {r}
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>수량</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+              <button type="button" onClick={() => setReturnQty(q => Math.max(1, q-1))}
+                style={{ width: 32, height: 32, borderRadius: 6, border: '1px solid #eee', background: '#f9f9f9', fontSize: 16, cursor: 'pointer', color: '#333' }}>−</button>
+              <span style={{ fontSize: 16, fontWeight: 500, minWidth: 36, textAlign: 'center' as const, color: '#1A1A2E' }}>{returnQty}</span>
+              <button type="button" onClick={() => setReturnQty(q => q+1)}
+                style={{ width: 32, height: 32, borderRadius: 6, border: 'none', background: '#7B5EA7', color: '#fff', fontSize: 16, cursor: 'pointer' }}>+</button>
+            </div>
+            <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>상세 내용</div>
+            <textarea value={returnDetail} onChange={e => setReturnDetail(e.target.value)} placeholder="구체적인 상황을 입력해주세요"
+              style={{ width: '100%', minHeight: 60, border: '1px solid #eee', borderRadius: 8, padding: '8px 10px', fontSize: 12, resize: 'none', outline: 'none', marginBottom: 14, color: '#333' }} />
+            <button type="button" onClick={() => void submitReturn()} disabled={returnSaving}
+              style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: returnSaving ? 'rgba(123,94,167,0.4)' : '#7B5EA7', color: '#fff', fontSize: 14, cursor: returnSaving ? 'not-allowed' : 'pointer' }}>
+              {returnSaving ? '신청 중...' : '반품·교환 신청하기'}
             </button>
           </div>
         </div>
