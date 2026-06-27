@@ -119,6 +119,24 @@ export default function BrandTabSample({ brandName, brandId }: Props) {
         .from('brand_samples')
         .update({ send_count: (samples.find(s => s.id === sampleId)?.send_count || 0) + 1 })
         .eq('id', sampleId)
+      const { data: newSends } = await supabase
+        .from('brand_sample_sends')
+        .select('id, owner_name, salon_name, status, sent_at, created_at')
+        .eq('brand_id', brandId)
+        .order('created_at', { ascending: false })
+        .limit(20)
+      if (newSends) setSends(newSends as SendRow[])
+      if (brandId) {
+        const sample = samples.find(s => s.id === sampleId)
+        await supabase.from('brand_messages').insert({
+          brand_id: brandId,
+          message_type: 'auto_sample',
+          target_type: 'all',
+          title: `${sample?.product_name || '샘플'} 발송 안내`,
+          body: `${sample?.product_name || '신제품 샘플'}이 발송될 예정입니다. 확인해주세요 💜`,
+          send_count: 1,
+        })
+      }
       showToast('발송 요청 완료!')
     } else {
       showToast('발송 실패: ' + (error?.message || ''))
