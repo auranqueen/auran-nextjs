@@ -17,6 +17,8 @@ const ROLE_MAP: Record<string, { label: string; color: string; pin: number }> = 
   director: { label: '이사',   color: '#E8A0BF', pin: 6 },
   manager:  { label: '과장',   color: PURPLE,    pin: 4 },
   staff:    { label: '담당자', color: 'rgba(41,182,246,0.8)', pin: 4 },
+  ops_manager: { label: '물류팀장', color: '#4CAF50',              pin: 4 },
+  ops_staff:   { label: '물류직원', color: 'rgba(41,182,246,0.6)', pin: 4 },
 }
 interface Props {
   brandId: string | null
