@@ -135,10 +135,11 @@ export async function middleware(req: NextRequest) {
   if (pathname.startsWith('/dashboard/customer/chat') || pathname.startsWith('/dashboard/owner/chat') || pathname.startsWith('/dashboard/owner')) return NextResponse.next()
   const isDashboard = pathname.startsWith('/dashboard')
   const isAdmin = pathname.startsWith('/admin')
-  const isBrand = pathname.startsWith('/brand') && !pathname.startsWith('/brands')
+  const isBrand = pathname.startsWith('/brand') && !pathname.startsWith('/brands') && !pathname.match(/^\/brand\/[^/]+$/) && !pathname.match(/^\/brand\/[^/]+\//)
+  const isLogiLogin = pathname.match(/^\/logi\/[^/]+$/) !== null
   const softAuth = isSoftAuthPath(pathname)
   const isHome = pathname === '/'
-  if (!isHome && !isSuperConsole && !isDashboard && !isAdmin && !isBrand && !isProtectedPath && !softAuth) return NextResponse.next()
+  if (!isHome && !isSuperConsole && !isDashboard && !isAdmin && !isBrand && !isProtectedPath && !softAuth && !isLogiLogin) return NextResponse.next()
 
   // super-console 로그인 페이지는 예외(비로그인 접근 허용)
   if (pathname === '/super-console/login') return NextResponse.next()
