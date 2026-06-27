@@ -144,12 +144,13 @@ export default function BrandTabOrders({ brandId, brandName }: Props) {
       if (!alreadyLogged) {
         const items = Array.isArray(order.items) ? order.items : []
         for (const item of items) {
-          const { data: invRow } = await supabase
+          const invQuery = supabase
             .from('brand_inventory')
-            .select('id, total_stock')
+            .select('id, total_stock, safety_stock')
             .eq('brand_id', brandId)
-            .eq('product_name', item.name)
-            .maybeSingle()
+          const { data: invRow } = (item as any).product_id
+            ? await invQuery.eq('product_id', (item as any).product_id).maybeSingle()
+            : await invQuery.eq('product_name', item.name).maybeSingle()
           if (invRow) {
             await supabase.rpc('decrement_inventory_stock', {
               p_inventory_id: invRow.id,
@@ -167,13 +168,23 @@ export default function BrandTabOrders({ brandId, brandName }: Props) {
               staff_name: '발주 자동 출고',
               memo: `발주 출고: ${item.name} ${item.qty}개`,
             })
-            if (invRow.total_stock - item.qty <= 0) {
+            const afterQty = Math.max(0, invRow.total_stock - item.qty)
+            if (afterQty <= 0) {
               await supabase.from('brand_messages').insert({
                 brand_id: brandId,
                 message_type: 'auto_order',
                 target_type: 'all',
-                title: `⚠️ ${item.name} 재고 소진 임박`,
-                body: `${item.name} 재고가 ${Math.max(0, invRow.total_stock - item.qty)}개 남았습니다. 생산 발주를 검토해주세요.`,
+                title: `⚠️ ${item.name} 재고 소진`,
+                body: `${item.name} 재고가 모두 소진됐습니다. 즉시 생산 발주를 검토해주세요.`,
+                send_count: 1,
+              })
+            } else if (invRow.safety_stock > 0 && afterQty <= invRow.safety_stock) {
+              await supabase.from('brand_messages').insert({
+                brand_id: brandId,
+                message_type: 'auto_order',
+                target_type: 'all',
+                title: `⚠️ ${item.name} 안전재고 이하`,
+                body: `${item.name} 재고(${afterQty}개)가 안전재고(${invRow.safety_stock}개) 이하입니다. 생산 발주를 검토해주세요.`,
                 send_count: 1,
               })
             }
