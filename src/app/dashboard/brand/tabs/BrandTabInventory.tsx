@@ -18,8 +18,9 @@ type SubTab = typeof SUBTABS[number]['key']
 interface Props {
   brandId: string | null
   brandName: string
+  authId: string | null
 }
-export default function BrandTabInventory({ brandId, brandName }: Props) {
+export default function BrandTabInventory({ brandId, brandName, authId }: Props) {
   const [sub, setSub] = useState<SubTab>('stock')
   return (
     <div>
@@ -31,7 +32,7 @@ export default function BrandTabInventory({ brandId, brandName }: Props) {
           </button>
         ))}
       </div>
-      {sub === 'stock' && <BrandInventoryStock brandId={brandId} brandName={brandName} />}
+      {sub === 'stock' && <BrandInventoryStock brandId={brandId} brandName={brandName} authId={authId} />}
       {sub === 'lots' && <BrandInventoryLots brandId={brandId} />}
       {sub === 'scan' && <BrandInventoryScan brandId={brandId} brandName={brandName} />}
       {sub === 'qr' && (

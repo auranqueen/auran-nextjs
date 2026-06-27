@@ -19,8 +19,9 @@ interface InventoryRow {
 interface Props {
   brandId: string | null
   brandName: string
+  authId: string | null
 }
-export default function BrandInventoryStock({ brandId, brandName }: Props) {
+export default function BrandInventoryStock({ brandId, brandName, authId }: Props) {
   const supabase = createClient()
   const [items, setItems] = useState<InventoryRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -34,16 +35,27 @@ export default function BrandInventoryStock({ brandId, brandName }: Props) {
   const [newMoq, setNewMoq] = useState(1000)
   const [newLead, setNewLead] = useState(60)
   const [saving, setSaving] = useState(false)
+  const [brandProducts, setBrandProducts] = useState<Array<{ id: string; name: string }>>([])
+  const [selProductId, setSelProductId] = useState<string | null>(null)
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const loadItems = useCallback(async () => {
     if (!brandId) return
     setLoading(true)
-    const { data } = await supabase
-      .from('brand_inventory')
-      .select('id, product_name, total_stock, safety_stock, moq, lead_time_days, alert_contact, available_stock')
-      .eq('brand_id', brandId)
-      .order('product_name')
+    const [{ data }, { data: prodData }] = await Promise.all([
+      supabase
+        .from('brand_inventory')
+        .select('id, product_name, total_stock, safety_stock, moq, lead_time_days, alert_contact, available_stock')
+        .eq('brand_id', brandId)
+        .order('product_name'),
+      supabase
+        .from('products')
+        .select('id, name')
+        .eq('brand_id', brandId)
+        .is('deleted_at', null)
+        .order('name'),
+    ])
     setItems((data || []) as InventoryRow[])
+    setBrandProducts((prodData || []).map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })))
     setLoading(false)
   }, [brandId])
   useEffect(() => { void loadItems() }, [loadItems])
@@ -86,6 +98,7 @@ export default function BrandInventoryStock({ brandId, brandName }: Props) {
       .from('brand_inventory')
       .insert({
         brand_id: brandId,
+        product_id: selProductId || null,
         product_name: newProduct.trim(),
         total_stock: 0,
         available_stock: 0,
@@ -95,7 +108,7 @@ export default function BrandInventoryStock({ brandId, brandName }: Props) {
         lead_time_days: newLead,
       })
     if (!error) {
-      setNewProduct(''); setNewSafety(0); setNewMoq(1000); setNewLead(60)
+      setNewProduct(''); setNewSafety(0); setNewMoq(1000); setNewLead(60); setSelProductId(null)
       setShowAddForm(false)
       showToast('제품 재고 등록 완료!')
       void loadItems()
@@ -130,7 +143,22 @@ export default function BrandInventoryStock({ brandId, brandName }: Props) {
         </div>
         {showAddForm && (
           <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, marginBottom: 12 }}>
-            <input value={newProduct} onChange={e => setNewProduct(e.target.value)} placeholder="제품명"
+            {brandProducts.length > 0 && (
+              <div style={{ marginBottom: 8 }}>
+                <div style={{ fontSize: 10, color: SUB, marginBottom: 5 }}>등록된 제품에서 선택</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 5, marginBottom: 8 }}>
+                  {brandProducts.map(p => (
+                    <button key={p.id} type="button"
+                      onClick={() => { setSelProductId(p.id); setNewProduct(p.name) }}
+                      style={{ fontSize: 11, padding: '3px 9px', borderRadius: 6, border: `0.5px solid ${selProductId === p.id ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: selProductId === p.id ? 'rgba(123,94,167,0.2)' : 'transparent', color: selProductId === p.id ? '#c4a7e7' : SUB, cursor: 'pointer' }}>
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ fontSize: 10, color: SUB, marginBottom: 4 }}>또는 직접 입력</div>
+              </div>
+            )}
+            <input value={newProduct} onChange={e => { setNewProduct(e.target.value); setSelProductId(null) }} placeholder="제품명"
               style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '7px 10px', fontSize: 12, color: TEXT, outline: 'none', marginBottom: 8 }} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, marginBottom: 8 }}>
               {([

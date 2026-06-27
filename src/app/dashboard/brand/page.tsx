@@ -1393,6 +1393,7 @@ export default function BrandDashboardPage() {
         <BrandTabInventory
           brandId={brandId}
           brandName={brandName}
+          authId={authId}
         />
       )}
     </div>
