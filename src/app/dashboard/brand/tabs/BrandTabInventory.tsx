@@ -6,6 +6,7 @@ const BrandInventoryLots = dynamic(() => import('./BrandInventoryLots'), { ssr: 
 const BrandInventoryScan = dynamic(() => import('./BrandInventoryScan'), { ssr: false })
 const BrandInventoryQR = dynamic(() => import('./BrandInventoryQR'), { ssr: false })
 const BrandInventoryClose = dynamic(() => import('./BrandInventoryClose'), { ssr: false })
+const BrandInventoryStaff = dynamic(() => import('./BrandInventoryStaff'), { ssr: false })
 const PURPLE = '#7B5EA7'
 const SUB = 'rgba(255,255,255,0.3)'
 const SUBTABS = [
@@ -39,11 +40,7 @@ export default function BrandTabInventory({ brandId, brandName, authId }: Props)
       {sub === 'scan' && <BrandInventoryScan brandId={brandId} brandName={brandName} />}
       {sub === 'qr' && <BrandInventoryQR brandId={brandId} brandName={brandName} />}
       {sub === 'close' && <BrandInventoryClose brandId={brandId} />}
-      {sub === 'staff' && (
-        <div style={{ padding: '40px 0', textAlign: 'center' as const, color: SUB, fontSize: 13 }}>
-          👥 물류직원 관리 — 다음 단계 구현 예정
-        </div>
-      )}
+      {sub === 'staff' && <BrandInventoryStaff brandId={brandId} />}
     </div>
   )
 }
