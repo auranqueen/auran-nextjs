@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 const BrandInventoryStock = dynamic(() => import('./BrandInventoryStock'), { ssr: false })
 const BrandInventoryLots = dynamic(() => import('./BrandInventoryLots'), { ssr: false })
 const BrandInventoryScan = dynamic(() => import('./BrandInventoryScan'), { ssr: false })
+const BrandInventoryQR = dynamic(() => import('./BrandInventoryQR'), { ssr: false })
 const PURPLE = '#7B5EA7'
 const SUB = 'rgba(255,255,255,0.3)'
 const SUBTABS = [
@@ -35,11 +36,7 @@ export default function BrandTabInventory({ brandId, brandName, authId }: Props)
       {sub === 'stock' && <BrandInventoryStock brandId={brandId} brandName={brandName} authId={authId} />}
       {sub === 'lots' && <BrandInventoryLots brandId={brandId} />}
       {sub === 'scan' && <BrandInventoryScan brandId={brandId} brandName={brandName} />}
-      {sub === 'qr' && (
-        <div style={{ padding: '40px 0', textAlign: 'center' as const, color: SUB, fontSize: 13 }}>
-          🔲 QR 발행 — 다음 단계 구현 예정
-        </div>
-      )}
+      {sub === 'qr' && <BrandInventoryQR brandId={brandId} brandName={brandName} />}
       {sub === 'close' && (
         <div style={{ padding: '40px 0', textAlign: 'center' as const, color: SUB, fontSize: 13 }}>
           📊 월 마감 — 다음 단계 구현 예정
