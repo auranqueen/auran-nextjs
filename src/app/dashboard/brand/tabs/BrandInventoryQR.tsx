@@ -23,23 +23,21 @@ interface Props {
   brandId: string | null
   brandName: string
 }
-function generateQRSvg(data: string, size: number = 120): string {
-  const seed = data.split('').reduce((a, c) => a + c.charCodeAt(0), 0)
-  const n = 10
-  const cell = size / n
-  let rects = ''
-  for (let r = 0; r < n; r++) {
-    for (let c = 0; c < n; c++) {
-      const on =
-        (r === 0 || r === n-1 || c === 0 || c === n-1) ||
-        (r < 3 && c < 3 && !(r === 1 && c === 1)) ||
-        (r < 3 && c > n-4 && !(r === 1 && c === n-2)) ||
-        (r > n-4 && c < 3 && !(r === n-2 && c === 1)) ||
-        ((r * n + c + seed) % 3 === 0)
-      if (on) rects += `<rect x="${Math.round(c*cell)}" y="${Math.round(r*cell)}" width="${Math.round(cell)}" height="${Math.round(cell)}" fill="#1a1a2e"/>`
-    }
-  }
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><rect width="${size}" height="${size}" fill="#ffffff"/>${rects}</svg>`
+async function generateQRDataUrl(data: string): Promise<string> {
+  const QRCode = (await import('qrcode')).default
+  return QRCode.toDataURL(data, {
+    width: 160,
+    margin: 1,
+    color: { dark: '#1a1a2e', light: '#ffffff' },
+  })
+}
+function QRImage({ data, size = 80 }: { data: string; size?: number }) {
+  const [url, setUrl] = useState('')
+  useEffect(() => {
+    generateQRDataUrl(data).then(setUrl).catch(() => setUrl(''))
+  }, [data])
+  if (!url) return <div style={{ width: size, height: size, background: 'rgba(255,255,255,0.05)', borderRadius: 4 }} />
+  return <img src={url} alt="QR" width={size} height={size} style={{ borderRadius: 4, display: 'block' }} />
 }
 export default function BrandInventoryQR({ brandId, brandName }: Props) {
   const supabase = createClient()
@@ -113,9 +111,9 @@ export default function BrandInventoryQR({ brandId, brandName }: Props) {
     lot_number: lot?.lot_number || null,
     expires_at: lot?.expires_at || null,
   })
-  const printQR = (inv: InventoryRow, lot?: LotRow) => {
+  const printQR = async (inv: InventoryRow, lot?: LotRow) => {
     const data = qrData(inv, lot)
-    const svg = generateQRSvg(data, 160)
+    const qrUrl = await generateQRDataUrl(data)
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>QR - ${inv.product_name}</title>
     <style>
       @page { size: 100mm 60mm; margin: 0; }
@@ -130,7 +128,7 @@ export default function BrandInventoryQR({ brandId, brandName }: Props) {
     </style></head>
     <body>
       <div class="label">
-        ${svg}
+        <img src="${qrUrl}" width="120" height="120" style="display:block"/>
         <div class="info">
           <div class="brand">${brandName}</div>
           <div class="prod">${inv.product_name}</div>
@@ -143,15 +141,15 @@ export default function BrandInventoryQR({ brandId, brandName }: Props) {
     const w = window.open('', '_blank')
     if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 300) }
   }
-  const printAllQR = () => {
-    const labels = inventories.map(inv => {
+  const printAllQR = async () => {
+    const labels = await Promise.all(inventories.map(async inv => {
       const invLots = lots.filter(l => l.inventory_id === inv.id)
       if (invLots.length > 0) {
-        return invLots.map(lot => {
+        const lotLabels = await Promise.all(invLots.map(async lot => {
           const data = qrData(inv, lot)
-          const svg = generateQRSvg(data, 120)
+          const qrUrl = await generateQRDataUrl(data)
           return `<div class="label">
-            ${svg}
+            <img src="${qrUrl}" width="90" height="90" style="display:block;flex-shrink:0"/>
             <div class="info">
               <div class="brand">${brandName}</div>
               <div class="prod">${inv.product_name}</div>
@@ -159,19 +157,21 @@ export default function BrandInventoryQR({ brandId, brandName }: Props) {
               ${lot.expires_at ? `<div class="exp">유통기한: ${new Date(lot.expires_at).toLocaleDateString('ko-KR')}</div>` : ''}
             </div>
           </div>`
-        }).join('')
+        }))
+        return lotLabels.join('')
       }
       const data = qrData(inv)
-      const svg = generateQRSvg(data, 120)
+      const qrUrl = await generateQRDataUrl(data)
       return `<div class="label">
-        ${svg}
+        <img src="${qrUrl}" width="90" height="90" style="display:block;flex-shrink:0"/>
         <div class="info">
           <div class="brand">${brandName}</div>
           <div class="prod">${inv.product_name}</div>
           <div style="font-size:9px;color:#888">AURAN Brand Hub</div>
         </div>
       </div>`
-    }).join('')
+    }))
+    const labelsHtml = labels.join('')
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>QR 전체 출력</title>
     <style>
       @page { size: A4; margin: 10mm; }
@@ -185,7 +185,7 @@ export default function BrandInventoryQR({ brandId, brandName }: Props) {
       .lot { font-size: 9px; color: #444; }
       .exp { font-size: 9px; color: #E53935; }
     </style></head>
-    <body><div class="grid">${labels}</div></body></html>`
+    <body><div class="grid">${labelsHtml}</div></body></html>`
     const w = window.open('', '_blank')
     if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 300) }
   }
@@ -221,7 +221,7 @@ export default function BrandInventoryQR({ brandId, brandName }: Props) {
       <div style={CARD}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <span style={{ fontSize: 12, color: SUB }}>제품·로트별 QR 발행</span>
-          <button type="button" onClick={printAllQR}
+          <button type="button" onClick={() => void printAllQR()}
             style={{ fontSize: 11, padding: '4px 12px', borderRadius: 6, border: `0.5px solid ${PURPLE}`, background: 'rgba(123,94,167,0.15)', color: '#c4a7e7', cursor: 'pointer' }}>
             🖨️ 전체 출력 (A4)
           </button>
@@ -239,21 +239,21 @@ export default function BrandInventoryQR({ brandId, brandName }: Props) {
             <div key={inv.id} style={{ paddingBottom: 12, marginBottom: 12, borderBottom: '0.5px solid rgba(255,255,255,0.05)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                 <span style={{ fontSize: 13, color: TEXT }}>{inv.product_name}</span>
-                <button type="button" onClick={() => printQR(inv)}
+                <button type="button" onClick={() => void printQR(inv)}
                   style={{ fontSize: 11, padding: '3px 9px', borderRadius: 5, border: '0.5px solid rgba(255,255,255,0.1)', background: 'transparent', color: SUB, cursor: 'pointer' }}>
                   제품 QR 출력
                 </button>
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
                 <div style={{ background: '#fff', borderRadius: 6, padding: 6, display: 'inline-block' }}>
-                  <div dangerouslySetInnerHTML={{ __html: generateQRSvg(qrData(inv), 80) }} />
+                  <QRImage data={qrData(inv)} size={80} />
                   <div style={{ fontSize: 9, color: '#666', textAlign: 'center', marginTop: 3 }}>제품</div>
                 </div>
                 {invLots.map(lot => (
                   <div key={lot.id} style={{ textAlign: 'center' as const }}>
                     <div style={{ background: '#fff', borderRadius: 6, padding: 6, display: 'inline-block', cursor: 'pointer' }}
-                      onClick={() => printQR(inv, lot)}>
-                      <div dangerouslySetInnerHTML={{ __html: generateQRSvg(qrData(inv, lot), 80) }} />
+                      onClick={() => void printQR(inv, lot)}>
+                      <QRImage data={qrData(inv, lot)} size={80} />
                       <div style={{ fontSize: 9, color: '#666', textAlign: 'center', marginTop: 3 }}>
                         {lot.lot_number.slice(-6)}
                       </div>

@@ -48,7 +48,52 @@ export default function BrandInventoryScan({ brandId, brandName }: Props) {
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
   const barcodeRef = useRef<HTMLInputElement>(null)
+  const cameraVideoRef = useRef<HTMLVideoElement>(null)
+  const cameraScannerRef = useRef<{ reset: () => void } | null>(null)
+  const [cameraActive, setCameraActive] = useState(false)
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
+  const startCameraScan = async () => {
+    try {
+      const { BrowserMultiFormatReader } = await import('@zxing/library')
+      const reader = new BrowserMultiFormatReader()
+      cameraScannerRef.current = reader
+      setCameraActive(true)
+      const devices = await navigator.mediaDevices.enumerateDevices()
+      const videoDevices = devices.filter(d => d.kind === 'videoinput')
+      const deviceId = videoDevices.length > 0 ? videoDevices[videoDevices.length - 1].deviceId : undefined
+      if (cameraVideoRef.current) {
+        await reader.decodeFromVideoDevice(deviceId ?? null, cameraVideoRef.current, (result) => {
+          if (result) {
+            const text = result.getText()
+            stopCameraScan()
+            try {
+              const parsed = JSON.parse(text)
+              if (parsed.inventory_id) {
+                setSelInv(parsed.inventory_id)
+                if (parsed.lot_id) setSelLot(parsed.lot_id)
+                showToast(`스캔 완료: ${parsed.product_name} — ${parsed.lot_number || ''}`)
+              } else {
+                const matched = lots.find(l => l.lot_number === text.trim())
+                if (matched) { setSelInv(matched.inventory_id); setSelLot(matched.id); showToast(`스캔: ${(matched.brand_inventory as { product_name?: string })?.product_name}`) }
+                else showToast('스캔됨: ' + text)
+              }
+            } catch {
+              const matched = lots.find(l => l.lot_number === text.trim())
+              if (matched) { setSelInv(matched.inventory_id); setSelLot(matched.id); showToast(`스캔: ${(matched.brand_inventory as { product_name?: string })?.product_name}`) }
+              else showToast('스캔됨: ' + text)
+            }
+          }
+        })
+      }
+    } catch {
+      showToast('카메라 접근 실패. 권한을 확인해주세요.')
+      setCameraActive(false)
+    }
+  }
+  const stopCameraScan = () => {
+    if (cameraScannerRef.current) { cameraScannerRef.current.reset(); cameraScannerRef.current = null }
+    setCameraActive(false)
+  }
   const loadData = useCallback(async () => {
     if (!brandId) return
     const [{ data: invData }, { data: lotData }, { data: logData }] = await Promise.all([
@@ -61,6 +106,9 @@ export default function BrandInventoryScan({ brandId, brandName }: Props) {
     setLogs((logData || []) as unknown as LogRow[])
   }, [brandId])
   useEffect(() => { void loadData() }, [loadData])
+  useEffect(() => {
+    return () => { if (cameraScannerRef.current) { cameraScannerRef.current.reset(); cameraScannerRef.current = null } }
+  }, [])
   const filteredLots = lots.filter(l => l.inventory_id === selInv)
   const handleBarcodeInput = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && barcodeInput.trim()) {
@@ -158,10 +206,19 @@ export default function BrandInventoryScan({ brandId, brandName }: Props) {
           placeholder="스캔 후 자동 입력 (Enter로 확인)"
           style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: `0.5px solid ${barcodeInput ? PURPLE : 'rgba(255,255,255,0.1)'}`, borderRadius: 7, padding: '9px 10px', fontSize: 12, color: TEXT, outline: 'none', marginBottom: 8 }}
         />
-        <button type="button" onClick={() => showToast('카메라 스캔 — ZXing 구현 예정')}
+        <button type="button" onClick={() => void startCameraScan()}
           style={{ width: '100%', padding: '8px', borderRadius: 7, border: `0.5px solid ${PURPLE}`, background: 'rgba(123,94,167,0.1)', color: '#c4a7e7', fontSize: 12, cursor: 'pointer' }}>
           📷 카메라로 QR/바코드 스캔
         </button>
+        {cameraActive && (
+          <div style={{ marginTop: 8 }}>
+            <video ref={cameraVideoRef} style={{ width: '100%', borderRadius: 8, background: '#000' }} />
+            <button type="button" onClick={stopCameraScan}
+              style={{ width: '100%', marginTop: 6, padding: '7px', borderRadius: 6, border: '0.5px solid rgba(255,255,255,0.1)', background: 'transparent', color: SUB, fontSize: 12, cursor: 'pointer' }}>
+              스캔 중지
+            </button>
+          </div>
+        )}
       </div>
       <div style={CARD}>
         <div style={{ fontSize: 11, color: SUB, marginBottom: 8 }}>제품 선택</div>
