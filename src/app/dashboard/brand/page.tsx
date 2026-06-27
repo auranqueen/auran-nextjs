@@ -22,6 +22,8 @@ const BrandTabExpand = dynamic(() => import('./tabs/BrandTabExpand'), { ssr: fal
 const BrandTabData = dynamic(() => import('./tabs/BrandTabData'), { ssr: false })
 const BrandTabInvoice = dynamic(() => import('./tabs/BrandTabInvoice'), { ssr: false })
 const BrandTabInventory = dynamic(() => import('./tabs/BrandTabInventory'), { ssr: false })
+const BrandPinGate = dynamic(() => import('./components/BrandPinGate'), { ssr: false })
+const BrandWatermark = dynamic(() => import('./components/BrandWatermark'), { ssr: false })
 const BrandTabReport = dynamic(() => import('./tabs/BrandTabReport'), { ssr: false })
 const BrandTabReturns = dynamic(() => import('./tabs/BrandTabReturns'), { ssr: false })
 
@@ -41,6 +43,12 @@ export default function BrandDashboardPage() {
   const searchParams = useSearchParams()
   const loginRole = searchParams.get('login_role') || 'director'
   const isCEO = loginRole === 'ceo'
+  const [pinAuth, setPinAuth] = useState<{
+    id: string
+    name: string
+    role: string
+    permissions: string[]
+  } | null>(null)
   const [authId, setAuthId] = useState<string | null>(null)
   const [userPk, setUserPk] = useState<string | null>(null)
   const [brandId, setBrandId] = useState<string | null>(null)
@@ -556,6 +564,16 @@ export default function BrandDashboardPage() {
       <div style={{ minHeight: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: BG, color: 'rgba(255,255,255,0.45)', fontSize: 13 }}>
         불러오는 중…
       </div>
+    )
+  }
+
+  if (!pinAuth && brandId) {
+    return (
+      <BrandPinGate
+        brandId={brandId}
+        brandName={brandName}
+        onAuth={setPinAuth}
+      />
     )
   }
 
@@ -1105,6 +1123,13 @@ export default function BrandDashboardPage() {
           {toast}
         </div>
       ) : null}
+
+      {pinAuth && (
+        <BrandWatermark
+          staffName={pinAuth.name}
+          staffRole={pinAuth.role}
+        />
+      )}
 
       {editProduct ? (
         <BrandProductFormV2
