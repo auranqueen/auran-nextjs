@@ -22,6 +22,7 @@ const BrandTabExpand = dynamic(() => import('./tabs/BrandTabExpand'), { ssr: fal
 const BrandTabData = dynamic(() => import('./tabs/BrandTabData'), { ssr: false })
 const BrandTabInvoice = dynamic(() => import('./tabs/BrandTabInvoice'), { ssr: false })
 const BrandTabInventory = dynamic(() => import('./tabs/BrandTabInventory'), { ssr: false })
+const BrandTabReport = dynamic(() => import('./tabs/BrandTabReport'), { ssr: false })
 
 const BG = '#0f0d14'
 const ACC = '#7B5EA7'
@@ -54,7 +55,7 @@ export default function BrandDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<Row[]>([])
   const [tab, setTab] = useState<'pending' | 'active' | 'hidden'>('pending')
-  const [mainTab, setMainTab] = useState<'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'data' | 'invoice' | 'inventory'>('home')
+  const [mainTab, setMainTab] = useState<'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'data' | 'invoice' | 'inventory' | 'report'>('home')
   const [formOpen, setFormOpen] = useState(false)
   const [editProduct, setEditProduct] = useState<{ id: string } | null>(null)
   const [brands, setBrands] = useState<{ id: string; name: string; origin_country?: string | null }[]>([])
@@ -1296,6 +1297,7 @@ export default function BrandDashboardPage() {
           { key: 'data', label: '데이터', icon: '📊' },
           { key: 'invoice', label: '주문내역서', icon: '🖨️' },
           { key: 'inventory', label: '재고·물류', icon: '📦' },
+          { key: 'report', label: '대조리포트', icon: '📋' },
         ] as const).map(t => (
           <button
             key={t.key}
@@ -1394,6 +1396,12 @@ export default function BrandDashboardPage() {
           brandId={brandId}
           brandName={brandName}
           authId={authId}
+        />
+      )}
+      {mainTab === 'report' && (
+        <BrandTabReport
+          brandId={brandId}
+          brandName={brandName}
         />
       )}
     </div>
