@@ -134,31 +134,50 @@ export default function BrandTabOrders({ brandId, brandName }: Props) {
         body: `주문하신 제품이 발송됐어요. 택배사: ${input.courier} · 운송장: ${input.no.trim()}`,
         send_count: 1,
       })
-      const items = Array.isArray(order.items) ? order.items : []
-      for (const item of items) {
-        const { data: invRow } = await supabase
-          .from('brand_inventory')
-          .select('id, total_stock')
-          .eq('brand_id', brandId)
-          .eq('product_name', item.name)
-          .maybeSingle()
-        if (invRow) {
-          await supabase.rpc('decrement_inventory_stock', {
-            p_inventory_id: invRow.id,
-            p_qty: item.qty,
-          })
-          await supabase.from('brand_stock_logs').insert({
-            brand_id: brandId,
-            inventory_id: invRow.id,
-            type: 'out',
-            qty: item.qty,
-            before_qty: invRow.total_stock,
-            after_qty: Math.max(0, invRow.total_stock - item.qty),
-            ref_type: 'order',
-            ref_id: order.id,
-            staff_name: '발주 자동 출고',
-            memo: `발주 출고: ${item.name} ${item.qty}개`,
-          })
+      const { data: alreadyLogged } = await supabase
+        .from('brand_stock_logs')
+        .select('id')
+        .eq('brand_id', brandId)
+        .eq('ref_type', 'order')
+        .eq('ref_id', order.id)
+        .maybeSingle()
+      if (!alreadyLogged) {
+        const items = Array.isArray(order.items) ? order.items : []
+        for (const item of items) {
+          const { data: invRow } = await supabase
+            .from('brand_inventory')
+            .select('id, total_stock')
+            .eq('brand_id', brandId)
+            .eq('product_name', item.name)
+            .maybeSingle()
+          if (invRow) {
+            await supabase.rpc('decrement_inventory_stock', {
+              p_inventory_id: invRow.id,
+              p_qty: item.qty,
+            })
+            await supabase.from('brand_stock_logs').insert({
+              brand_id: brandId,
+              inventory_id: invRow.id,
+              type: 'out',
+              qty: item.qty,
+              before_qty: invRow.total_stock,
+              after_qty: Math.max(0, invRow.total_stock - item.qty),
+              ref_type: 'order',
+              ref_id: order.id,
+              staff_name: '발주 자동 출고',
+              memo: `발주 출고: ${item.name} ${item.qty}개`,
+            })
+            if (invRow.total_stock - item.qty <= 0) {
+              await supabase.from('brand_messages').insert({
+                brand_id: brandId,
+                message_type: 'auto_order',
+                target_type: 'all',
+                title: `⚠️ ${item.name} 재고 소진 임박`,
+                body: `${item.name} 재고가 ${Math.max(0, invRow.total_stock - item.qty)}개 남았습니다. 생산 발주를 검토해주세요.`,
+                send_count: 1,
+              })
+            }
+          }
         }
       }
       showToast('배송 처리 완료! 원장님 오렌톡 자동 발송됨')
