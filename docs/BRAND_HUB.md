@@ -12,6 +12,11 @@ auran.kr/logi/[slug] → 로그인 → PIN 게이트 → 물류 허브 대시보
 
 현재 파트너사: 시바산 (civasan) — auran.kr/brand/civasan
 
+브랜드사 등록 방식:
+AURAN이 직접 등록 (입점 신청 폼 없음)
+→ docs/DEPLOY.md 섹션 5 참고
+→ SQL 3줄 실행 후 접속 정보 전달
+
 ## 2. 로그인 구조
 
 brands 테이블:
