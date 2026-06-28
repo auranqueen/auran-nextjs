@@ -5,6 +5,10 @@
 
 ## 2026-06-28
 
+### BrandWatermark 포렌식 워터마크 변경
+- BrandWatermark.tsx — 20개 타일 → 중앙 1개
+- 육안 불가 (opacity 0.015), 캡처 후 밝기 올리면 식별 가능
+
 ### Brand Hub 문서화 (docs/)
 - docs/AI_CONTEXT.md 생성 — 프로젝트 전체 컨텍스트
 - docs/SECURITY.md 생성 — 보안 시스템
