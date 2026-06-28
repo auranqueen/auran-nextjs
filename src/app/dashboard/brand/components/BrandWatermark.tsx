@@ -31,22 +31,22 @@ export default function BrandWatermark({ staffName, staffRole }: Props) {
         zIndex: 9999,
         overflow: 'hidden',
       }}>
-      {Array.from({ length: 20 }).map((_, i) => (
-        <div key={i} style={{
-          position: 'absolute',
-          left: `${(i % 4) * 28 - 5}%`,
-          top: `${Math.floor(i / 4) * 22 + 5}%`,
-          transform: 'rotate(-25deg)',
-          fontSize: 11,
-          color: 'rgba(255,255,255,0.045)',
-          whiteSpace: 'nowrap',
-          userSelect: 'none',
-          fontFamily: 'monospace',
-          letterSpacing: 0.5,
-        }}>
-          {text}
-        </div>
-      ))}
+      <div style={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%) rotate(-25deg)',
+        fontSize: 14,
+        color: 'rgba(255,255,255,0.015)',
+        whiteSpace: 'nowrap',
+        userSelect: 'none',
+        fontFamily: 'monospace',
+        letterSpacing: 1.5,
+        textAlign: 'center',
+        pointerEvents: 'none',
+      }}>
+        {text}
+      </div>
     </div>
   )
 }
