@@ -5,6 +5,11 @@
 
 ## 2026-06-28
 
+### BrandApplyForm 분리
+- BrandApplyForm.tsx 신규 — 입점 신청 5단계 폼 + pending 대기 UI 추출
+- dashboard/brand/page.tsx 슬림화 (~656줄 감소, 500줄 규칙 복구)
+- apply 관련 state·uploadAsset·applySubmit 등 page.tsx에서 제거
+
 ### BrandWelcomePopup 분리
 - BrandWelcomePopup.tsx 신규 — 승인 후 웰컴 팝업 JSX 추출
 - dashboard/brand/page.tsx 슬림화 (~106줄 감소)
