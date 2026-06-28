@@ -20,10 +20,19 @@ export default function BrandLoginPage() {
   const [loadingBrand, setLoadingBrand] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [userId, setUserId] = useState('')
+  const [rememberUserId, setRememberUserId] = useState(false)
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPw, setShowPw] = useState(false)
+  useEffect(() => {
+    const saved = localStorage.getItem(`auran_brand_userid_${slug}`)
+    const savedRemember = localStorage.getItem(`auran_brand_remember_${slug}`)
+    if (saved && savedRemember === 'true') {
+      setUserId(saved)
+      setRememberUserId(true)
+    }
+  }, [slug])
   useEffect(() => {
     const loadBrand = async () => {
       const { data } = await supabase
@@ -59,6 +68,13 @@ export default function BrandLoginPage() {
       setError('이 브랜드 허브에 접근 권한이 없어요')
       setLoading(false)
       return
+    }
+    if (rememberUserId) {
+      localStorage.setItem(`auran_brand_userid_${slug}`, userId.trim())
+      localStorage.setItem(`auran_brand_remember_${slug}`, 'true')
+    } else {
+      localStorage.removeItem(`auran_brand_userid_${slug}`)
+      localStorage.removeItem(`auran_brand_remember_${slug}`)
     }
     router.replace(`/dashboard/brand?login_role=${brand!.login_role || 'director'}`)
   }
@@ -126,7 +142,7 @@ export default function BrandLoginPage() {
                 style={INPUT_STYLE}
               />
             </div>
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 14 }}>
               <div style={{ fontSize: 12, color: SUB, marginBottom: 6 }}>비밀번호</div>
               <div style={{ position: 'relative' }}>
                 <input
@@ -144,6 +160,13 @@ export default function BrandLoginPage() {
                   {showPw ? '🙈' : '👁'}
                 </button>
               </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20, cursor: 'pointer' }}
+              onClick={() => setRememberUserId(v => !v)}>
+              <div style={{ width: 18, height: 18, borderRadius: 4, border: `1.5px solid ${rememberUserId ? '#7B5EA7' : 'rgba(255,255,255,0.2)'}`, background: rememberUserId ? '#7B5EA7' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all .15s' }}>
+                {rememberUserId && <span style={{ color: '#fff', fontSize: 11, lineHeight: 1 }}>✓</span>}
+              </div>
+              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>아이디 기억하기</span>
             </div>
             {error && (
               <div style={{ background: 'rgba(229,57,53,0.08)', border: '0.5px solid rgba(229,57,53,0.3)', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: '#E53935', marginBottom: 14 }}>
