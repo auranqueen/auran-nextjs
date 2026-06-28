@@ -12,7 +12,6 @@ const BrandProductFormV2 = dynamic(() => import('@/components/brand/BrandProduct
 const BrandPinGate = dynamic(() => import('./components/BrandPinGate'), { ssr: false })
 const BrandWatermark = dynamic(() => import('./components/BrandWatermark'), { ssr: false })
 const BrandWelcomePopup = dynamic(() => import('./components/BrandWelcomePopup'), { ssr: false })
-const BrandApplyForm = dynamic(() => import('./components/BrandApplyForm'), { ssr: false })
 const BrandHubContent = dynamic(() => import('./components/BrandHubContent'), { ssr: false })
 
 const BG = '#0f0d14'
@@ -57,15 +56,7 @@ export default function BrandDashboardPage() {
   const [busyId, setBusyId] = useState<string | null>(null)
   const [toast, setToast] = useState('')
 
-  const applyStNorm = useMemo(() => {
-    const raw = brandRow?.apply_status
-    if (raw == null || raw === '') return ''
-    return String(raw).toLowerCase().trim()
-  }, [brandRow])
-
-  const needsApply = !brandId || (applyStNorm !== 'pending' && applyStNorm !== 'approved')
-  const isPending = applyStNorm === 'pending'
-  const isApproved = applyStNorm === 'approved'
+  const isApproved = brandRow?.apply_status != null && String(brandRow.apply_status).toLowerCase().trim() === 'approved'
   const showWelcome = isApproved && brandRow !== null && brandRow.welcome_shown === false
 
   const load = useCallback(async () => {
@@ -242,19 +233,6 @@ export default function BrandDashboardPage() {
         brandId={brandId}
         brandName={brandName}
         onAuth={setPinAuth}
-      />
-    )
-  }
-
-  if (needsApply || isPending) {
-    return (
-      <BrandApplyForm
-        brandId={brandId}
-        authId={authId}
-        userPk={userPk}
-        applyStNorm={applyStNorm}
-        brandRow={brandRow}
-        onComplete={load}
       />
     )
   }
