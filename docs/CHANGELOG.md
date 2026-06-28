@@ -5,6 +5,10 @@
 
 ## 2026-06-28
 
+### 입점 신청 폼 제거 (AURAN 직접 등록 전환)
+- BrandApplyForm.tsx 삭제 — 5단계 입점 신청·pending 대기 UI 제거
+- dashboard/brand/page.tsx — applyStNorm/needsApply/isPending 제거, isApproved 단순화
+
 ### BrandApplyForm 분리
 - BrandApplyForm.tsx 신규 — 입점 신청 5단계 폼 + pending 대기 UI 추출
 - dashboard/brand/page.tsx 슬림화 (~656줄 감소, 500줄 규칙 복구)
