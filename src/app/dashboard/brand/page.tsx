@@ -1032,7 +1032,7 @@ export default function BrandDashboardPage() {
                 )}
                 <span style={{ fontSize: 16, color: '#f0eaf8' }}>{displayName}</span>
               </div>
-              <div style={{ textAlign: 'center', fontSize: 17, color: ACC, marginBottom: 10 }}>AURAN 파트너가 되셨어요!</div>
+              <div style={{ textAlign: 'center', fontSize: 17, color: ACC, marginBottom: 10 }}>{displayName} Brand Hub 콘솔입니다</div>
               <div style={{ textAlign: 'center', marginBottom: 16 }}>
                 <span style={{ fontSize: 11, padding: '4px 10px', borderRadius: 999, border: `1px solid ${GOLD}`, color: GOLD }}>승인일 {approvedStr}</span>
               </div>
@@ -1054,7 +1054,7 @@ export default function BrandDashboardPage() {
                   {settleShow}
                 </div>
               </div>
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', textAlign: 'center', marginBottom: 14 }}>AURAN과 함께해 주셔서 감사해요 💜</div>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', textAlign: 'center', marginBottom: 14 }}>AURAN과 함께하는 {displayName}를 환영합니다 💜</div>
               <ol style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', paddingLeft: 18, marginBottom: 16, lineHeight: 1.6 }}>
                 <li>브랜드 정보 최종 확인</li>
                 <li>제품 등록 → 납품가 입력 후 승인 요청</li>
