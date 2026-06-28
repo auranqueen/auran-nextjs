@@ -5,6 +5,10 @@
 
 ## 2026-06-28
 
+### BrandWelcomePopup 분리
+- BrandWelcomePopup.tsx 신규 — 승인 후 웰컴 팝업 JSX 추출
+- dashboard/brand/page.tsx 슬림화 (~106줄 감소)
+
 ### 브랜드 웰컴 팝업 멘트 변경
 - dashboard/brand/page.tsx — 제목/감사 문구에 displayName 동적 표시
 - "AURAN 파트너가 되셨어요!" → "{displayName} Brand Hub 콘솔입니다"
