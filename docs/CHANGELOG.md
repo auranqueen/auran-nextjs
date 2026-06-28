@@ -5,6 +5,11 @@
 
 ## 2026-06-28
 
+### 브랜드 로그인 아이디 기억하기
+- brand/[slug]/page.tsx — localStorage 저장/불러오기
+- slug별 키: auran_brand_userid_{slug}, auran_brand_remember_{slug}
+- "아이디 기억하기" 체크박스 UI 추가
+
 ### BrandWatermark 포렌식 워터마크 변경
 - BrandWatermark.tsx — 20개 타일 → 중앙 1개
 - 육안 불가 (opacity 0.015), 캡처 후 밝기 올리면 식별 가능
