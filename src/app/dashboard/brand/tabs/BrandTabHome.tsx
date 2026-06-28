@@ -71,7 +71,7 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
             remaining_qty: l.remaining_qty,
             days: Math.floor((new Date(l.expires_at).getTime() - now2) / 86400000),
           }))
-          .filter(l => l.days <= 90))
+          .filter(l => l.days <= 330))
       }
       setLoading(false)
     }
@@ -91,18 +91,18 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
     <div>
       {expiringLots.length > 0 && (
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 11, color: '#E53935', marginBottom: 6 }}>⚠️ 유통기한 임박 재고 {expiringLots.length}건</div>
+          <div style={{ fontSize: 11, color: '#FF8C00', marginBottom: 6 }}>🟠 소진 관리 필요 재고 {expiringLots.length}건</div>
           {expiringLots.slice(0, 3).map((lot, i) => (
             <div key={i} onClick={() => onTabChange('inventory')}
-              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: lot.days <= 30 ? 'rgba(229,57,53,0.08)' : 'rgba(201,169,110,0.08)', border: `0.5px solid ${lot.days <= 30 ? 'rgba(229,57,53,0.3)' : 'rgba(201,169,110,0.3)'}`, borderRadius: 8, marginBottom: 5, cursor: 'pointer' }}>
-              <span style={{ fontSize: 13 }}>{lot.days <= 30 ? '🔴' : '🟡'}</span>
-              <span style={{ fontSize: 12, color: lot.days <= 30 ? '#E53935' : '#C9A96E', flex: 1, minWidth: 0 }}>{lot.product_name} · 잔여 {lot.remaining_qty.toLocaleString()}개</span>
-              <span style={{ fontSize: 11, color: lot.days <= 30 ? '#E53935' : '#C9A96E', flexShrink: 0 }}>D-{lot.days}</span>
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 12px', background: lot.days <= 30 ? 'rgba(229,57,53,0.08)' : lot.days <= 90 ? 'rgba(255,107,53,0.08)' : lot.days <= 180 ? 'rgba(201,169,110,0.08)' : 'rgba(255,140,0,0.08)', border: `0.5px solid ${lot.days <= 30 ? 'rgba(229,57,53,0.3)' : lot.days <= 90 ? 'rgba(255,107,53,0.3)' : lot.days <= 180 ? 'rgba(201,169,110,0.3)' : 'rgba(255,140,0,0.3)'}`, borderRadius: 8, marginBottom: 5, cursor: 'pointer' }}>
+              <span style={{ fontSize: 13 }}>{lot.days <= 30 ? '🚨' : lot.days <= 90 ? '🔴' : lot.days <= 180 ? '🟡' : '🟠'}</span>
+              <span style={{ fontSize: 12, color: lot.days <= 30 ? '#E53935' : lot.days <= 90 ? '#FF6B35' : lot.days <= 180 ? '#C9A96E' : '#FF8C00', flex: 1, minWidth: 0 }}>{lot.product_name} · 잔여 {lot.remaining_qty.toLocaleString()}개</span>
+              <span style={{ fontSize: 11, color: lot.days <= 30 ? '#E53935' : lot.days <= 90 ? '#FF6B35' : lot.days <= 180 ? '#C9A96E' : '#FF8C00', flexShrink: 0 }}>D-{lot.days}</span>
             </div>
           ))}
           <button type="button" onClick={() => onTabChange('inventory')}
             style={{ width: '100%', padding: '7px', borderRadius: 7, border: '0.5px solid rgba(123,94,167,0.4)', background: 'rgba(123,94,167,0.08)', color: '#c4a7e7', fontSize: 12, cursor: 'pointer' }}>
-            😊 기분좋게 처리하러 가기 →
+            🟠 소진 마케팅 기획하러 가기 →
           </button>
         </div>
       )}

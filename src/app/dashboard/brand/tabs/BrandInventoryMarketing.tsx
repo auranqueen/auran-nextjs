@@ -8,6 +8,7 @@ const SUB = 'rgba(255,255,255,0.3)'
 const DANGER = '#E53935'
 const GOLD = '#C9A96E'
 const GREEN = '#4CAF50'
+const ORANGE = '#FF8C00'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const EVT_TYPES = [
   { key: 'flash',    icon: '⚡', label: '번개 특가',     desc: '24시간 한정 최대 증정' },
@@ -77,11 +78,29 @@ export default function BrandInventoryMarketing({ brandId }: Props) {
     setLoading(false)
   }, [brandId])
   useEffect(() => { void loadData() }, [loadData])
-  const expiryLots = lots.filter(l => l.days !== null && l.days <= 90)
-  const cautionLots = lots.filter(l => l.days !== null && l.days > 90 && l.days <= 180)
-  const normalLots = lots.filter(l => l.days === null || l.days > 180)
-  const dColor = (days: number | null) => days === null ? GREEN : days <= 30 ? DANGER : days <= 180 ? GOLD : GREEN
-  const dIcon = (days: number | null) => days === null ? '🟢' : days <= 30 ? '🔴' : days <= 180 ? '🟡' : '🟢'
+  const emergencyLots = lots.filter(l => l.days !== null && l.days <= 30)
+  const urgentLots = lots.filter(l => l.days !== null && l.days > 30 && l.days <= 90)
+  const promoLots = lots.filter(l => l.days !== null && l.days > 90 && l.days <= 180)
+  const planLots = lots.filter(l => l.days !== null && l.days > 180 && l.days <= 330)
+  const normalLots = lots.filter(l => l.days === null || l.days > 330)
+  const expiryLots = [...emergencyLots, ...urgentLots]
+  const cautionLots = promoLots
+  const dColor = (days: number | null) => {
+    if (days === null) return GREEN
+    if (days <= 30) return DANGER
+    if (days <= 90) return '#FF6B35'
+    if (days <= 180) return GOLD
+    if (days <= 330) return ORANGE
+    return GREEN
+  }
+  const dIcon = (days: number | null) => {
+    if (days === null) return '🟢'
+    if (days <= 30) return '🚨'
+    if (days <= 90) return '🔴'
+    if (days <= 180) return '🟡'
+    if (days <= 330) return '🟠'
+    return '🟢'
+  }
   const genMsg = (lot: LotRow, evt: EvtKey, promo: string) => {
     const m: Record<EvtKey, string> = {
       flash:    `⚡ ${lot.days ? `D-${lot.days} ` : ''}한정!\n\n${lot.product_name} 긴급 특가\n${promo}\n\n잔여 ${lot.remaining_qty}개 · 소진 시 자동 종료\n지금 바로 발주하세요! 💜`,
@@ -158,7 +177,7 @@ export default function BrandInventoryMarketing({ brandId }: Props) {
       {toast && <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999, whiteSpace: 'nowrap' }}>{toast}</div>}
       <div style={{ display: 'flex', gap: 0, borderBottom: '0.5px solid rgba(255,255,255,0.07)', marginBottom: 14 }}>
         {([
-          { key: 'expiry', label: `🔴 임박 재고 (${expiryLots.length + cautionLots.length})` },
+          { key: 'expiry', label: `🟠 소진관리 (${planLots.length + promoLots.length + expiryLots.length})` },
           { key: 'normal', label: `🟢 정상 재고 (${normalLots.length})` },
           { key: 'bundle', label: '🎀 번들 구성' },
         ] as const).map(t => (
@@ -170,20 +189,33 @@ export default function BrandInventoryMarketing({ brandId }: Props) {
       </div>
       {viewMode === 'expiry' && (
         <>
-          {expiryLots.length === 0 && cautionLots.length === 0 ? (
-            <div style={CARD}><div style={{ textAlign: 'center', padding: '20px 0', color: GREEN, fontSize: 14 }}>✅ 임박 재고 없음 · 모든 로트 정상</div></div>
+          {planLots.length === 0 && promoLots.length === 0 && expiryLots.length === 0 ? (
+            <div style={CARD}><div style={{ textAlign: 'center', padding: '20px 0', color: GREEN, fontSize: 14 }}>✅ 소진 관리 대상 없음 · 모든 로트 정상</div></div>
           ) : (
             <>
-              {expiryLots.length > 0 && (
+              {emergencyLots.length > 0 && (
                 <div style={CARD}>
-                  <div style={{ fontSize: 12, color: DANGER, marginBottom: 10 }}>🔴 D-90 이내 긴급 처리 필요 ({expiryLots.length}건)</div>
-                  {expiryLots.map(lot => <LotCard key={lot.id} lot={lot} urgent={lot.days !== null && lot.days <= 30} />)}
+                  <div style={{ fontSize: 12, color: DANGER, marginBottom: 10 }}>🚨 D-30 이내 비상 처리 ({emergencyLots.length}건)</div>
+                  {emergencyLots.map(lot => <LotCard key={lot.id} lot={lot} urgent={true} />)}
                 </div>
               )}
-              {cautionLots.length > 0 && (
+              {urgentLots.length > 0 && (
                 <div style={CARD}>
-                  <div style={{ fontSize: 12, color: GOLD, marginBottom: 10 }}>🟡 D-90~180 주의 ({cautionLots.length}건)</div>
-                  {cautionLots.map(lot => <LotCard key={lot.id} lot={lot} urgent={false} />)}
+                  <div style={{ fontSize: 12, color: '#FF6B35', marginBottom: 10 }}>🔴 D-30~90 긴급 처리 ({urgentLots.length}건)</div>
+                  {urgentLots.map(lot => <LotCard key={lot.id} lot={lot} urgent={false} />)}
+                </div>
+              )}
+              {promoLots.length > 0 && (
+                <div style={CARD}>
+                  <div style={{ fontSize: 12, color: GOLD, marginBottom: 10 }}>🟡 D-90~180 본격 프로모션 ({promoLots.length}건)</div>
+                  {promoLots.map(lot => <LotCard key={lot.id} lot={lot} urgent={false} />)}
+                </div>
+              )}
+              {planLots.length > 0 && (
+                <div style={CARD}>
+                  <div style={{ fontSize: 12, color: ORANGE, marginBottom: 10 }}>🟠 D-180~330 소진 기획 시작 ({planLots.length}건)</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 10 }}>11개월 이내 · 지금부터 기획하면 브랜드 이미지 손상 없이 여유롭게 소진 가능</div>
+                  {planLots.map(lot => <LotCard key={lot.id} lot={lot} urgent={false} />)}
                 </div>
               )}
             </>
