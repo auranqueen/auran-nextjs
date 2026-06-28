@@ -5,6 +5,11 @@
 
 ## 2026-06-28
 
+### 브랜드 웰컴 팝업 멘트 변경
+- dashboard/brand/page.tsx — 제목/감사 문구에 displayName 동적 표시
+- "AURAN 파트너가 되셨어요!" → "{displayName} Brand Hub 콘솔입니다"
+- "AURAN과 함께해 주셔서 감사해요" → "AURAN과 함께하는 {displayName}를 환영합니다"
+
 ### 브랜드 로그인 아이디 기억하기
 - brand/[slug]/page.tsx — localStorage 저장/불러오기
 - slug별 키: auran_brand_userid_{slug}, auran_brand_remember_{slug}
