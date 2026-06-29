@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { CSSProperties } from 'react'
-const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
+const CARD: CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: 12, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.65)'
@@ -101,7 +101,7 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
             </div>
           ))}
           <button type="button" onClick={() => onTabChange('inventory')}
-            style={{ width: '100%', padding: '7px', borderRadius: 7, border: '0.5px solid rgba(123,94,167,0.4)', background: 'rgba(123,94,167,0.08)', color: '#c4a7e7', fontSize: 12, cursor: 'pointer' }}>
+            style={{ width: '100%', padding: '7px', borderRadius: 7, border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a8f0', fontSize: 12, cursor: 'pointer' }}>
             🟠 소진 마케팅 기획하러 가기 →
           </button>
         </div>
@@ -125,7 +125,7 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
               <button
                 type="button"
                 onClick={() => onTabChange(a.tab)}
-                style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: `0.5px solid ${PURPLE}`, background: 'rgba(123,94,167,0.15)', color: '#c4a7e7', cursor: 'pointer', flexShrink: 0, marginLeft: 8 }}
+                style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '1px solid rgba(123,94,167,0.35)', background: 'rgba(123,94,167,0.08)', color: '#c4a8f0', cursor: 'pointer', flexShrink: 0, marginLeft: 8 }}
               >
                 {a.action}
               </button>
@@ -141,7 +141,7 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
           topProducts.map((p, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < topProducts.length - 1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none' }}>
               <span style={{ fontSize: 12, color: TEXT }}>{p.name}</span>
-              <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: 'rgba(76,175,80,0.1)', color: 'rgba(76,175,80,0.8)' }}>판매중</span>
+              <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: 'rgba(60,184,100,0.12)', color: '#3db864' }}>판매중</span>
             </div>
           ))
         )}
