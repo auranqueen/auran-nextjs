@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
-const BG = '#ffffff'
+const BG = '#0D0B09'
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
 const TEXT_MUTED = '#888888'
@@ -1185,11 +1185,11 @@ export default function OwnerChatRoomPage() {
                   key={String(l.id)}
                   style={{
                     marginBottom: 10,
-                    background: '#f9f8fc',
+                    background: 'rgba(255,255,255,0.06)',
                     padding: '10px 12px',
                     borderRadius: 8,
                     fontSize: 12,
-                    color: 'rgba(255,255,255,0.82)',
+                    color: 'rgba(255,255,255,0.85)',
                     lineHeight: 1.55,
                   }}
                 >
@@ -1507,7 +1507,7 @@ export default function OwnerChatRoomPage() {
                             whiteSpace: 'pre-wrap',
                             padding: '8px 10px',
                             borderRadius: 8,
-                            background: '#f9f8fc',
+                            background: 'rgba(255,255,255,0.06)',
                             border: '1px solid rgba(255,255,255,0.1)',
                           }}
                         >
