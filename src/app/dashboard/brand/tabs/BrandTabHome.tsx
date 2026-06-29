@@ -25,6 +25,7 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
   const [recentOrders, setRecentOrders] = useState<Array<{ order_no: string; product_name: string; amount: number; status: string }>>([])
   const [sampleRequests, setSampleRequests] = useState<Array<{ owner_name: string; product_name: string; status: string }>>([])
   const [monthSales, setMonthSales] = useState<number>(0)
+  const [closedEvents, setClosedEvents] = useState<string[]>([])
   const [pendingOrders, setPendingOrders] = useState<number>(0)
   useEffect(() => {
     if (!brandId) return
@@ -243,20 +244,51 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
       {/* 2단: 마케팅 + 샘플발송 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <div style={{ ...CARD, marginBottom: 0, background: 'rgba(123,94,167,0.06)', border: '1px solid rgba(123,94,167,0.15)' }}>
-          <div style={{ fontSize: 10, color: SUB, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 10, color: SUB, marginBottom: 10, display: 'flex', justifyContent: 'space-between' }}>
             <span>📣 마케팅·이벤트</span>
             <span style={{ cursor: 'pointer' }} onClick={() => onTabChange('live')}>전체 ›</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-            <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(232,85,85,0.15)', color: '#e85555', flexShrink: 0 }}>진행중</span>
-            <span style={{ fontSize: 10, color: TEXT, flex: 1 }}>이달 프로모션 이벤트</span>
-            <button type="button" onClick={() => onTabChange('live')} style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a8f0', cursor: 'pointer' }}>관리</button>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0' }}>
-            <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(123,94,167,0.2)', color: '#c4a8f0', flexShrink: 0 }}>번들</span>
-            <span style={{ fontSize: 10, color: TEXT, flex: 1 }}>아레테클럽 번들 구성</span>
-            <button type="button" onClick={() => onTabChange('inventory')} style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a8f0', cursor: 'pointer' }}>구성</button>
-          </div>
+          {!closedEvents.includes('promo') && (
+            <div style={{ background: 'rgba(232,85,85,0.06)', border: '1px solid rgba(232,85,85,0.15)', borderRadius: 7, padding: '8px 10px', marginBottom: 7 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(232,85,85,0.2)', color: '#e85555' }}>진행중</span>
+                  <span style={{ fontSize: 11, color: TEXT }}>이달 프로모션 이벤트</span>
+                </div>
+                <button type="button" onClick={() => setClosedEvents(p => [...p, 'promo'])}
+                  style={{ background: 'none', border: 'none', color: SUB, fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: '0 2px' }}>×</button>
+              </div>
+              <div style={{ fontSize: 10, color: SUB, marginBottom: 7 }}>~6/30 · 참여 원장님 8명</div>
+              <button type="button" onClick={() => onTabChange('live')}
+                style={{ fontSize: 10, padding: '4px 10px', borderRadius: 5, border: '1px solid rgba(232,85,85,0.3)', background: 'transparent', color: '#e85555', cursor: 'pointer' }}>
+                관리하기 →
+              </button>
+            </div>
+          )}
+          {!closedEvents.includes('bundle') && (
+            <div style={{ background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 7, padding: '8px 10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(123,94,167,0.25)', color: '#c4a8f0' }}>번들</span>
+                  <span style={{ fontSize: 11, color: TEXT }}>아레테클럽 번들 구성</span>
+                </div>
+                <button type="button" onClick={() => setClosedEvents(p => [...p, 'bundle'])}
+                  style={{ background: 'none', border: 'none', color: SUB, fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: '0 2px' }}>×</button>
+              </div>
+              <div style={{ fontSize: 10, color: SUB, marginBottom: 7 }}>마감 D-12 · 발송 대상 12명</div>
+              <button type="button" onClick={() => onTabChange('inventory')}
+                style={{ fontSize: 10, padding: '4px 10px', borderRadius: 5, border: '1px solid rgba(123,94,167,0.35)', background: 'transparent', color: '#c4a8f0', cursor: 'pointer' }}>
+                번들 구성하기 →
+              </button>
+            </div>
+          )}
+          {closedEvents.length === 2 && (
+            <div style={{ textAlign: 'center', padding: 12, fontSize: 11, color: SUB }}>
+              진행중 이벤트가 없어요
+              <span style={{ display: 'block', fontSize: 10, marginTop: 4, cursor: 'pointer', color: '#7B5EA7' }}
+                onClick={() => setClosedEvents([])}>다시 보기</span>
+            </div>
+          )}
         </div>
         <div style={{ ...CARD, marginBottom: 0 }}>
           <div style={{ fontSize: 10, color: SUB, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>

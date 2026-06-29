@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 브랜드 홈 마케팅 카드 — 닫기·다시보기
+- dashboard/brand/tabs/BrandTabHome.tsx — 프로모션·번들 이벤트 카드 × 닫기, 전체 닫힘 시 「다시 보기」
+
 ### 브랜드 원장님 관리 — 등급·아레테·수기 등록
 - dashboard/brand/tabs/BrandTabOwners.tsx — 등급 변경·아레테 ON/OFF(brand_arete_members·brand_points 연동), 수기 원장님 등록 폼, 초대 링크 분리
 
