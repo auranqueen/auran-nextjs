@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 브랜드 허브 — 탭별 도움말 모달
+- dashboard/brand/components/BrandHubContent.tsx — 브랜드·물류 헤더 도움말 버튼, 탭별 flow/warn/tip/info 안내 모달
+
 ### 브랜드 허브 — 메인 탭 헤더(← 홈)
 - dashboard/brand/components/BrandHubContent.tsx — home 제외 브랜드 탭·물류 서브탭 상단 sticky 헤더, ← 홈/재고현황 복귀
 
