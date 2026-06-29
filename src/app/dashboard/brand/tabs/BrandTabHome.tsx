@@ -188,19 +188,6 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
           ))
         )}
       </div>
-      <div style={CARD}>
-        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>📦 이번달 TOP 제품</div>
-        {topProducts.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>제품을 등록하면 여기에 표시됩니다</div>
-        ) : (
-          topProducts.map((p, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: i < topProducts.length - 1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none' }}>
-              <span style={{ fontSize: 12, color: TEXT }}>{p.name}</span>
-              <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: 'rgba(60,184,100,0.12)', color: '#3db864' }}>판매중</span>
-            </div>
-          ))
-        )}
-      </div>
       {/* 3단: 오렌상담톡 + 최근주문 + 재고현황 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
         <div style={CARD}>

@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 브랜드 홈 TOP 제품 카드 제거
+- dashboard/brand/tabs/BrandTabHome.tsx — 「이번달 TOP 제품」 카드 섹션 삭제 (3단/2단 대시보드로 대체)
+
 ### 브랜드 홈 대시보드 확장
 - dashboard/brand/tabs/BrandTabHome.tsx — KPI 5개(이달 판매액·처리대기·임박재고 등), 오렌상담톡/최근주문/재고 3단·마케팅/샘플 2단 섹션 추가, Supabase fetch 연동
 
