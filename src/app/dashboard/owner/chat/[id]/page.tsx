@@ -2392,12 +2392,13 @@ export default function OwnerChatRoomPage() {
               ? {
                   width: 280,
                   flexShrink: 0,
-                  borderLeft: '1px solid rgba(255,255,255,0.08)',
+                  borderLeft: 'none',
                   borderBottom: 'none',
                   background: 'rgba(0,0,0,0.25)',
                   overflowY: 'auto',
                   padding: '16px',
                   maxHeight: 'calc(100dvh - 120px)',
+                  borderTop: 'none',
                 }
               : {
                   flexShrink: 0,

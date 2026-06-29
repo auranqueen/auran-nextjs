@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 원장 상담톡 우측 패널 세로줄 제거
+- owner/chat/[id]/page.tsx — PC 우측 패널 `borderLeft` 제거, `borderTop: none` 명시
+
 ### 원장 상담톡 우측 패널 높이 조정
 - owner/chat/[id]/page.tsx — PC 우측 패널 maxHeight `100dvh` → `calc(100dvh - 120px)` (입력바 영역 제외)
 
