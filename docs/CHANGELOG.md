@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 브랜드 원장님 관리 — 등급·아레테·수기 등록
+- dashboard/brand/tabs/BrandTabOwners.tsx — 등급 변경·아레테 ON/OFF(brand_arete_members·brand_points 연동), 수기 원장님 등록 폼, 초대 링크 분리
+
 ### 원장님 브랜드 라이브·반품 페이지 추가
 - dashboard/owner/client-v2.tsx — 빠른 메뉴에 브랜드 라이브·반품 신청 링크 추가
 - dashboard/owner/brand-live/page.tsx — 거래 브랜드 라이브 일정 조회·참여/다시보기
