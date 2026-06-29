@@ -900,7 +900,7 @@ export default function OwnerChatRoomPage() {
           style={{
             width: 260,
             flexShrink: 0,
-            borderRight: '1px solid #ede9f7',
+            borderRight: '1px solid rgba(255,255,255,0.08)',
             overflowY: 'auto',
             background: 'rgba(0,0,0,0.2)',
             display: 'flex',
@@ -924,7 +924,7 @@ export default function OwnerChatRoomPage() {
                     cursor: 'pointer',
                     background: isActive ? 'rgba(123,94,167,0.25)' : 'transparent',
                     borderLeft: isActive ? '2px solid #7B5EA7' : '2px solid transparent',
-                    borderBottom: '1px solid #ede9f7',
+                    borderBottom: '1px solid rgba(255,255,255,0.08)',
                     transition: 'background 0.15s',
                   }}
                 >
@@ -1165,7 +1165,7 @@ export default function OwnerChatRoomPage() {
         <div
           style={{
             flexShrink: 0,
-            borderBottom: '1px solid #ede9f7',
+            borderBottom: '1px solid rgba(255,255,255,0.08)',
             background: 'rgba(0,0,0,0.25)',
             padding: '10px 16px 12px',
             maxHeight: 200,
@@ -1237,11 +1237,11 @@ export default function OwnerChatRoomPage() {
           const timeText = `${hour24 >= 12 ? '오후' : '오전'} ${hour24 % 12 || 12}:${minute}`
           const dateDividerNode = showDateDivider ? (
             <div key={`d-${m.id}`} style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '12px 0 8px' }}>
-              <div style={{ flex: 1, height: '1px', background: '#ede9f7' }} />
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
               <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.28)', letterSpacing: '0.03em', whiteSpace: 'nowrap', padding: '0 4px' }}>
                 {dateText}
               </span>
-              <div style={{ flex: 1, height: '1px', background: '#ede9f7' }} />
+              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' }} />
             </div>
           ) : null
           const ownerTimeNode = (
@@ -1624,7 +1624,7 @@ export default function OwnerChatRoomPage() {
           padding: '10px 12px',
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 64px)',
           background: 'rgba(255,255,255,0.05)',
-          borderTop: '1px solid #ede9f7',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
           maxHeight: '72vh',
           display: 'flex',
           flexDirection: 'column',
