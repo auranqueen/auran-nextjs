@@ -1,6 +1,9 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
+
 export default function TopBar() {
+  const router = useRouter()
   return (
     <header style={{
       position: 'sticky',
@@ -14,13 +17,17 @@ export default function TopBar() {
       borderBottom: '1px solid rgba(255,255,255,0.06)',
       backdropFilter: 'blur(12px)',
     }}>
-      <span style={{
-        fontFamily: 'Cormorant Garamond, serif',
-        fontSize: '22px',
-        fontWeight: 400,
-        color: '#C9A96E',
-        letterSpacing: '6px',
-      }}>
+      <span
+        style={{
+          fontFamily: 'Cormorant Garamond, serif',
+          fontSize: '22px',
+          fontWeight: 400,
+          color: '#C9A96E',
+          letterSpacing: '6px',
+          cursor: 'pointer',
+        }}
+        onClick={() => router.push('/')}
+      >
         AURAN
       </span>
       <div style={{ display: 'flex', gap: '10px' }}>

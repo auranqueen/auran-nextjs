@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### TopBar AURAN 로고 홈 링크
+- home/TopBar.tsx — AURAN 로고 클릭 시 `router.push('/')` 홈 이동
+
 ### 원장 상담톡 쿠폰 서브폼 닫기 버튼
 - owner/chat/[id]/page.tsx — `showCouponForm` 패널 우상단 × 버튼 추가 (`setShowCouponForm(false)`)
 
