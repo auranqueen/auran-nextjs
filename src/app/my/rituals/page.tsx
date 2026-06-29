@@ -118,7 +118,7 @@ export default function RitualsPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0c0f', color: '#e8e0f5', paddingBottom: 80 }}>
-      <DashboardHeader title="나의 리추얼" right={<CustomerHeaderRight />} />
+      <DashboardHeader onBack={() => router.back()} title="나의 리추얼" right={<CustomerHeaderRight />} />
       <div style={{ padding: '16px' }}>
         {loading ? (
           <div style={{ textAlign: 'center', color: '#555', padding: 40 }}>불러오는 중...</div>

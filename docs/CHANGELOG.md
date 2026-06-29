@@ -5,6 +5,10 @@
 
 ## 2026-06-28
 
+### 마이페이지 서브화면 DashboardHeader 뒤로가기
+- notifications/page.tsx, rituals/page.tsx, coupons/MyCouponsClient.tsx — `DashboardHeader`에 `onBack={() => router.back()}` 추가
+- DashboardHeader.tsx — `onBack` optional prop 지원
+
 ### TopBar AURAN 로고 홈 링크
 - home/TopBar.tsx — AURAN 로고 클릭 시 `router.push('/')` 홈 이동
 

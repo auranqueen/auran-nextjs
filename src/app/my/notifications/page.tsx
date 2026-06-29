@@ -116,7 +116,7 @@ export default function MyNotificationsPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-      <DashboardHeader title="알림장" right={<CustomerHeaderRight />} />
+      <DashboardHeader onBack={() => router.back()} title="알림장" right={<CustomerHeaderRight />} />
       <div style={{ padding: '12px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
           <button

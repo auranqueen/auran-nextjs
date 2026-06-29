@@ -6,9 +6,11 @@ import Link from 'next/link'
 export default function DashboardHeader({
   title,
   right,
+  onBack,
 }: {
   title: string
   right?: React.ReactNode
+  onBack?: () => void
 }) {
   const router = useRouter()
 
@@ -42,7 +44,7 @@ export default function DashboardHeader({
         <button
           type="button"
           aria-label="뒤로가기"
-          onClick={() => router.back()}
+          onClick={() => (onBack ? onBack() : router.back())}
           style={{
             width: 34,
             height: 34,

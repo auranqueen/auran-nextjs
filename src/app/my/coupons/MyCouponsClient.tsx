@@ -255,7 +255,7 @@ export function MyCouponsClient({ initialRows, initialError }: MyCouponsClientPr
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
-      <DashboardHeader title="쿠폰함" right={<CustomerHeaderRight />} />
+      <DashboardHeader onBack={() => router.back()} title="쿠폰함" right={<CustomerHeaderRight />} />
       <div style={{ padding: '12px 16px 0' }}>
         <div
           style={{
