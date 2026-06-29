@@ -52,7 +52,7 @@ export default function RitualDetailPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0c0f', color: '#e8e0f5', paddingBottom: 80 }}>
-      <DashboardHeader title={`${shipment.cycle_no}회차 리추얼`} right={<CustomerHeaderRight />} />
+      <DashboardHeader onBack={() => router.back()} title={`${shipment.cycle_no}회차 리추얼`} right={<CustomerHeaderRight />} />
       <div style={{ padding: '16px' }}>
         <div style={{ background: 'rgba(201,169,110,0.06)', border: '0.5px solid rgba(201,169,110,0.2)', borderRadius: 14, padding: '16px', marginBottom: 16 }}>
           <div style={{ fontSize: 9, color: '#C9A96E', letterSpacing: 2, marginBottom: 8 }}>ORÆN PRIVÉ · {shipment.cycle_no}회차</div>
