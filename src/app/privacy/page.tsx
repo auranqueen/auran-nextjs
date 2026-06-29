@@ -106,6 +106,9 @@ export default function PrivacyPage() {
         <section style={{ marginBottom: 20 }}>
           <h2 style={{ fontSize: 13, fontWeight: 500, color: PRIMARY, margin: '0 0 8px' }}>5. 정보주체의 권리</h2>
           <p style={{ fontSize: 12, lineHeight: 1.75, color: TEXT_MUTED, margin: 0 }}>
+            회사는 서비스 운영, 분쟁 해결, 부정이용 방지 및 법령상 의무 이행을 목적으로 내부 관리자가 상담 내용 및 거래 이력을 열람할 수 있으며, 열람한 정보는 해당 목적 외에 사용하지 않습니다.
+            <br />
+            <br />
             이용자는 개인정보 열람·정정·삭제·처리정지·동의 철회를 요청할 수 있습니다.
             앱 내 MY &gt; 프로필 또는 고객센터를 통해 요청하실 수 있습니다.
           </p>
