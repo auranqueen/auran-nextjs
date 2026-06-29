@@ -2397,7 +2397,7 @@ export default function OwnerChatRoomPage() {
                   background: 'rgba(0,0,0,0.25)',
                   overflowY: 'auto',
                   padding: '16px',
-                  maxHeight: '100dvh',
+                  maxHeight: 'calc(100dvh - 120px)',
                 }
               : {
                   flexShrink: 0,
