@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 원장 상담톡 패널 닫기 버튼 추가
+- owner/chat/[id]/page.tsx — toolPanel·피부기록(showSkinLog)·커스텀 카드폼에 × 닫기 버튼 추가
+
 ### 원장 상담톡 카드함 패널 닫기 버튼
 - owner/chat/[id]/page.tsx — 카드함 패널 우상단 × 버튼 추가 (`setShowCardLib(false)`)
 

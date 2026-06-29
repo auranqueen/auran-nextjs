@@ -1161,6 +1161,21 @@ export default function OwnerChatRoomPage() {
         </div>
       </div>
 
+      {showSkinLog && <button
+  type="button"
+  onClick={() => setShowSkinLog(false)}
+  style={{
+    display: 'block',
+    marginLeft: 'auto',
+    marginBottom: 6,
+    background: 'none',
+    border: 'none',
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 18,
+    cursor: 'pointer',
+    lineHeight: 1,
+  }}
+>×</button>}
       {showSkinLog && customerUserId ? (
         <div
           style={{
@@ -1760,7 +1775,7 @@ export default function OwnerChatRoomPage() {
                       cursor: 'pointer',
                     }}
                   >
-                    취소
+                    ×
                   </button>
                   <button
                     type="button"
@@ -1892,6 +1907,21 @@ export default function OwnerChatRoomPage() {
               WebkitOverflowScrolling: 'touch',
             }}
           >
+            <button
+              type="button"
+              onClick={() => setToolPanel(null)}
+              style={{
+                display: 'block',
+                marginLeft: 'auto',
+                marginBottom: 6,
+                background: 'none',
+                border: 'none',
+                color: 'rgba(255,255,255,0.5)',
+                fontSize: 18,
+                cursor: 'pointer',
+                lineHeight: 1,
+              }}
+            >×</button>
         {toolPanel === 'product' ? (
           <div
             style={{
