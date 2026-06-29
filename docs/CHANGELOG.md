@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 원장 상담톡 PC 입력창 sticky 전환
+- owner/chat/[id]/page.tsx — PC에서 입력창 `position: fixed` → `sticky`, 중앙 컬럼 하단 고정·불투명 배경(`#0D0B09`)으로 좌우 세로선 겹침 제거
+
 ### 원장 상담톡 우측 패널 세로줄 제거
 - owner/chat/[id]/page.tsx — PC 우측 패널 `borderLeft` 제거, `borderTop: none` 명시
 
