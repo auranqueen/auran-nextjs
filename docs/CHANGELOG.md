@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 원장 상담톡 말풍선 가독성 수정
+- owner/chat/[id]/page.tsx — BG 다크 복원 (#0D0B09), 피부기록·카드 내부 밝은 배경+흰 텍스트 대비 수정
+
 ### 입점 신청 폼 제거 (AURAN 직접 등록 전환)
 - BrandApplyForm.tsx 삭제 — 5단계 입점 신청·pending 대기 UI 제거
 - dashboard/brand/page.tsx — applyStNorm/needsApply/isPending 제거, isApproved 단순화
