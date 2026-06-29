@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 브랜드 허브 — 메인 탭 헤더(← 홈)
+- dashboard/brand/components/BrandHubContent.tsx — home 제외 브랜드 탭·물류 서브탭 상단 sticky 헤더, ← 홈/재고현황 복귀
+
 ### 브랜드 홈 마케팅 카드 — 하드코딩 기간·수치 제거
 - dashboard/brand/tabs/BrandTabHome.tsx — 프로모션·번들 이벤트 카드의 임시 기간/참여 수 문구 삭제
 

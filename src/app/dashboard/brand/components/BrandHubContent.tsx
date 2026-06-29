@@ -141,6 +141,33 @@ export default function BrandHubContent({
       </div>
       {/* 메인 콘텐츠 */}
       <div style={{ flex: 1, overflowY: 'auto', minWidth: 0 }}>
+        {/* 공통 헤더 — home 제외 전 탭 */}
+        {systemMode === 'brand' && mainTab !== 'home' && (
+          <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#0a0908', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button type="button" onClick={() => setMainTab('home')}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
+              <i className="ti ti-arrow-left" style={{ fontSize: 13 }} aria-hidden="true" />
+              홈
+            </button>
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.15)' }}>›</span>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
+              {SB_SECTIONS.flatMap(s => s.items).find(i => i.key === mainTab)?.label ?? mainTab}
+            </span>
+          </div>
+        )}
+        {systemMode === 'logi' && logiTab !== 'stock' && (
+          <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#0a0908', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <button type="button" onClick={() => setLogiTab('stock')}
+              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
+              <i className="ti ti-arrow-left" style={{ fontSize: 13 }} aria-hidden="true" />
+              재고현황
+            </button>
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.15)' }}>›</span>
+            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
+              {LOGI_TABS.find(t => t.key === logiTab)?.label ?? logiTab}
+            </span>
+          </div>
+        )}
         {systemMode === 'logi' ? (
           <div style={{ padding: 16 }}>
             {logiTab === 'stock' && <BrandInventoryStock brandId={brandId} brandName={brandName} authId={null} />}
