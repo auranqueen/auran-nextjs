@@ -5,6 +5,11 @@
 
 ## 2026-06-28
 
+### 원장님 브랜드 라이브·반품 페이지 추가
+- dashboard/owner/client-v2.tsx — 빠른 메뉴에 브랜드 라이브·반품 신청 링크 추가
+- dashboard/owner/brand-live/page.tsx — 거래 브랜드 라이브 일정 조회·참여/다시보기
+- dashboard/owner/brand-returns/page.tsx — 반품 신청 폼·내역 조회
+
 ### 브랜드 홈 TOP 제품 카드 제거
 - dashboard/brand/tabs/BrandTabHome.tsx — 「이번달 TOP 제품」 카드 섹션 삭제 (3단/2단 대시보드로 대체)
 
