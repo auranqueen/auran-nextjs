@@ -1651,12 +1651,29 @@ export default function OwnerChatRoomPage() {
               marginBottom: 0,
               padding: 12,
               maxHeight: 220,
+              position: 'relative',
               overflowY: 'auto',
               flexShrink: 0,
               boxSizing: 'border-box',
               WebkitOverflowScrolling: 'touch',
             }}
           >
+            <button
+              type="button"
+              onClick={() => setShowCardLib(false)}
+              style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                background: 'none',
+                border: 'none',
+                color: 'rgba(255,255,255,0.5)',
+                fontSize: 18,
+                cursor: 'pointer',
+                lineHeight: 1,
+                zIndex: 1,
+              }}
+            >×</button>
             {showCustomCardForm ? (
               <div>
                 <input

@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 원장 상담톡 카드함 패널 닫기 버튼
+- owner/chat/[id]/page.tsx — 카드함 패널 우상단 × 버튼 추가 (`setShowCardLib(false)`)
+
 ### 원장 상담톡 PC 입력창 sticky 전환
 - owner/chat/[id]/page.tsx — PC에서 입력창 `position: fixed` → `sticky`, 중앙 컬럼 하단 고정·불투명 배경(`#0D0B09`)으로 좌우 세로선 겹침 제거
 
