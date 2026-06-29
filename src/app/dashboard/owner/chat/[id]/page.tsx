@@ -2134,7 +2134,22 @@ export default function OwnerChatRoomPage() {
             >
               + 새 쿠폰 만들기
             </button>
-            {showCouponForm ? (
+            {showCouponForm ? (<>
+            <button
+              type="button"
+              onClick={() => setShowCouponForm(false)}
+              style={{
+                display: 'block',
+                marginLeft: 'auto',
+                marginBottom: 6,
+                background: 'none',
+                border: 'none',
+                color: 'rgba(255,255,255,0.5)',
+                fontSize: 18,
+                cursor: 'pointer',
+                lineHeight: 1,
+              }}
+            >×</button>
               <div
                 style={{
                   display: 'flex',
@@ -2278,7 +2293,7 @@ export default function OwnerChatRoomPage() {
                   바로 발행하기
                 </button>
               </div>
-            ) : null}
+            </>) : null}
           </div>
         ) : null}
 
