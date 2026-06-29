@@ -21,6 +21,11 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
   const [topProducts, setTopProducts] = useState<Array<{ name: string; status: string }>>([])
   const [loading, setLoading] = useState(true)
   const [expiringLots, setExpiringLots] = useState<Array<{ product_name: string; lot_number: string; days: number; remaining_qty: number }>>([])
+  const [recentTalks, setRecentTalks] = useState<Array<{ owner_name: string; preview: string; unread: boolean; updated_at: string }>>([])
+  const [recentOrders, setRecentOrders] = useState<Array<{ order_no: string; product_name: string; amount: number; status: string }>>([])
+  const [sampleRequests, setSampleRequests] = useState<Array<{ owner_name: string; product_name: string; status: string }>>([])
+  const [monthSales, setMonthSales] = useState<number>(0)
+  const [pendingOrders, setPendingOrders] = useState<number>(0)
   useEffect(() => {
     if (!brandId) return
     const fetch = async () => {
@@ -73,14 +78,64 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
           }))
           .filter(l => l.days <= 330))
       }
+      // 오렌상담톡 최근 3건
+      const { data: talks } = await supabase
+        .from('chat_channels')
+        .select('id, last_message, last_message_at, unread_count, owner_id, users!owner_id(name)')
+        .eq('channel_type', 'owner')
+        .not('last_message', 'is', null)
+        .order('last_message_at', { ascending: false })
+        .limit(3)
+      if (talks) {
+        setRecentTalks(talks.map((t: any) => ({
+          owner_name: t.users?.name || '원장님',
+          preview: t.last_message || '',
+          unread: (t.unread_count || 0) > 0,
+          updated_at: t.last_message_at || '',
+        })))
+      }
+      // 최근 주문 4건
+      const { data: orders } = await supabase
+        .from('brand_orders')
+        .select('id, product_name, total_amount, status, created_at')
+        .eq('brand_id', brandId)
+        .order('created_at', { ascending: false })
+        .limit(4)
+      if (orders) {
+        setRecentOrders(orders.map((o: any) => ({
+          order_no: `#${String(o.id).slice(0, 8).toUpperCase()}`,
+          product_name: o.product_name || '-',
+          amount: o.total_amount || 0,
+          status: o.status || 'pending',
+        })))
+        setPendingOrders(orders.filter((o: any) => o.status === 'pending').length)
+      }
+      // 샘플 발송 최근 4건
+      const { data: samples } = await supabase
+        .from('brand_samples')
+        .select('owner_name, product_name, status')
+        .eq('brand_id', brandId)
+        .order('created_at', { ascending: false })
+        .limit(4)
+      if (samples) setSampleRequests(samples as any[])
+      // 이달 판매액 (orders 테이블)
+      const thisMonth = new Date(); thisMonth.setDate(1); thisMonth.setHours(0, 0, 0, 0)
+      const { data: salesData } = await supabase
+        .from('orders')
+        .select('final_price')
+        .gte('created_at', thisMonth.toISOString())
+        .in('status', ['paid', 'shipped', 'delivered'])
+      if (salesData) setMonthSales(salesData.reduce((sum: number, o: any) => sum + (o.final_price || 0), 0))
       setLoading(false)
     }
     void fetch()
   }, [brandId, brandName])
   const kpis = [
-    { label: '연결 원장님', value: loading ? '-' : `${ownerCount ?? 0}명`, color: PURPLE },
+    { label: '이달 판매액', value: loading ? '-' : `₩${(monthSales / 10000).toFixed(0)}만`, color: '#fff' },
+    { label: '처리대기 주문', value: loading ? '-' : `${pendingOrders}`, color: pendingOrders > 0 ? '#e8a500' : '#fff' },
+    { label: '임박재고 D-30', value: loading ? '-' : `${expiringLots.filter(l => l.days <= 30).length}`, color: expiringLots.filter(l => l.days <= 30).length > 0 ? '#e85555' : '#fff' },
+    { label: '활성 원장님', value: loading ? '-' : `${ownerCount ?? 0}명`, color: PURPLE },
     { label: '등록 제품', value: loading ? '-' : `${productCount ?? 0}개`, color: GOLD },
-    { label: '판매중', value: loading ? '-' : `${activeCount ?? 0}개`, color: '#a07fd4' },
   ]
   const alerts = [
     ...(productCount === 0 ? [{ text: '제품을 등록하고 원장님과 연결을 시작해보세요', action: '제품 등록', tab: 'products' }] : []),
@@ -106,11 +161,11 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
           </button>
         </div>
       )}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 8, marginBottom: 12 }}>
         {kpis.map(k => (
           <div key={k.label} style={{ ...CARD, textAlign: 'center', marginBottom: 0 }}>
-            <div style={{ fontSize: 20, color: k.color, marginBottom: 4 }}>{k.value}</div>
-            <div style={{ fontSize: 11, color: SUB }}>{k.label}</div>
+            <div style={{ fontSize: 18, color: k.color, marginBottom: 4, fontWeight: 500 }}>{k.value}</div>
+            <div style={{ fontSize: 10, color: SUB }}>{k.label}</div>
           </div>
         ))}
       </div>
@@ -145,6 +200,94 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
             </div>
           ))
         )}
+      </div>
+      {/* 3단: 오렌상담톡 + 최근주문 + 재고현황 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
+        <div style={CARD}>
+          <div style={{ fontSize: 10, color: SUB, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+            <span>💬 오렌상담톡</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => onTabChange('orentalk')}>전체 ›</span>
+          </div>
+          {recentTalks.length === 0 ? (
+            <div style={{ fontSize: 11, color: SUB, textAlign: 'center', padding: 12 }}>대화 없음</div>
+          ) : recentTalks.map((t, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: i < recentTalks.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+              <div style={{ width: 5, height: 5, borderRadius: '50%', background: t.unread ? '#e85555' : 'transparent', flexShrink: 0 }} />
+              <div style={{ fontSize: 10, color: GOLD, width: 52, flexShrink: 0 }}>{t.owner_name}</div>
+              <div style={{ fontSize: 10, color: TEXT, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.preview}</div>
+            </div>
+          ))}
+        </div>
+        <div style={CARD}>
+          <div style={{ fontSize: 10, color: SUB, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+            <span>🛒 최근 주문</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => onTabChange('orders')}>전체 ›</span>
+          </div>
+          {recentOrders.length === 0 ? (
+            <div style={{ fontSize: 11, color: SUB, textAlign: 'center', padding: 12 }}>주문 없음</div>
+          ) : recentOrders.map((o, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: i < recentOrders.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+              <div style={{ fontSize: 9, color: SUB, width: 44, flexShrink: 0 }}>{o.order_no}</div>
+              <div style={{ fontSize: 10, color: TEXT, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{o.product_name}</div>
+              <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 4, background: o.status === 'pending' ? 'rgba(232,165,0,0.15)' : 'rgba(60,184,100,0.12)', color: o.status === 'pending' ? '#e8a500' : '#3db864', flexShrink: 0 }}>
+                {o.status === 'pending' ? '대기' : '완료'}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div style={CARD}>
+          <div style={{ fontSize: 10, color: SUB, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+            <span>📦 재고 현황</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => onTabChange('inventory')}>전체 ›</span>
+          </div>
+          {expiringLots.length === 0 ? (
+            <div style={{ fontSize: 11, color: SUB, textAlign: 'center', padding: 12 }}>재고 없음</div>
+          ) : expiringLots.slice(0, 4).map((l, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: i < Math.min(expiringLots.length, 4) - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+              <div style={{ fontSize: 10, color: TEXT, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{l.product_name}</div>
+              <div style={{ width: 40, height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }}>
+                <div style={{ height: 3, borderRadius: 2, width: `${Math.min(100, l.remaining_qty / 10)}%`, background: l.days <= 30 ? '#e85555' : l.days <= 90 ? '#e8a500' : '#3db864' }} />
+              </div>
+              <div style={{ fontSize: 9, color: l.days <= 30 ? '#e85555' : l.days <= 90 ? '#e8a500' : '#3db864', flexShrink: 0 }}>D-{l.days}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* 2단: 마케팅 + 샘플발송 */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ ...CARD, marginBottom: 0, background: 'rgba(123,94,167,0.06)', border: '1px solid rgba(123,94,167,0.15)' }}>
+          <div style={{ fontSize: 10, color: SUB, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+            <span>📣 마케팅·이벤트</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => onTabChange('live')}>전체 ›</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+            <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(232,85,85,0.15)', color: '#e85555', flexShrink: 0 }}>진행중</span>
+            <span style={{ fontSize: 10, color: TEXT, flex: 1 }}>이달 프로모션 이벤트</span>
+            <button type="button" onClick={() => onTabChange('live')} style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a8f0', cursor: 'pointer' }}>관리</button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0' }}>
+            <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(123,94,167,0.2)', color: '#c4a8f0', flexShrink: 0 }}>번들</span>
+            <span style={{ fontSize: 10, color: TEXT, flex: 1 }}>아레테클럽 번들 구성</span>
+            <button type="button" onClick={() => onTabChange('inventory')} style={{ fontSize: 9, padding: '2px 7px', borderRadius: 4, border: '1px solid rgba(123,94,167,0.3)', background: 'transparent', color: '#c4a8f0', cursor: 'pointer' }}>구성</button>
+          </div>
+        </div>
+        <div style={{ ...CARD, marginBottom: 0 }}>
+          <div style={{ fontSize: 10, color: SUB, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+            <span>🎁 샘플 발송</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => onTabChange('sample')}>전체 ›</span>
+          </div>
+          {sampleRequests.length === 0 ? (
+            <div style={{ fontSize: 11, color: SUB, textAlign: 'center', padding: 12 }}>샘플 요청 없음</div>
+          ) : sampleRequests.map((s, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: i < sampleRequests.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none' }}>
+              <div style={{ fontSize: 10, color: TEXT, flex: 1 }}>{s.owner_name}</div>
+              <div style={{ fontSize: 9, color: SUB, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.product_name}</div>
+              <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 4, background: s.status === 'requested' ? 'rgba(232,165,0,0.15)' : 'rgba(60,184,100,0.12)', color: s.status === 'requested' ? '#e8a500' : '#3db864', flexShrink: 0 }}>
+                {s.status === 'requested' ? '요청' : '완료'}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )

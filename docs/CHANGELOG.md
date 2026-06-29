@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 브랜드 홈 대시보드 확장
+- dashboard/brand/tabs/BrandTabHome.tsx — KPI 5개(이달 판매액·처리대기·임박재고 등), 오렌상담톡/최근주문/재고 3단·마케팅/샘플 2단 섹션 추가, Supabase fetch 연동
+
 ### 브랜드 홈 탭 카드·버튼 다크 톤 정리
 - dashboard/brand/tabs/BrandTabHome.tsx — CARD 배경 `#1a1520` → 중립 `rgba(255,255,255,0.03)`, 알림·소진 마케팅 버튼 보라 배경 완화, 판매중 배지 초록 톤 조정
 
