@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 브랜드 홈 마케팅 카드 — 하드코딩 기간·수치 제거
+- dashboard/brand/tabs/BrandTabHome.tsx — 프로모션·번들 이벤트 카드의 임시 기간/참여 수 문구 삭제
+
 ### 브랜드 홈 마케팅 카드 — 닫기·다시보기
 - dashboard/brand/tabs/BrandTabHome.tsx — 프로모션·번들 이벤트 카드 × 닫기, 전체 닫힘 시 「다시 보기」
 

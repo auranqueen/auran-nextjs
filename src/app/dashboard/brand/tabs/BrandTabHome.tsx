@@ -258,7 +258,7 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
                 <button type="button" onClick={() => setClosedEvents(p => [...p, 'promo'])}
                   style={{ background: 'none', border: 'none', color: SUB, fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: '0 2px' }}>×</button>
               </div>
-              <div style={{ fontSize: 10, color: SUB, marginBottom: 7 }}>~6/30 · 참여 원장님 8명</div>
+              <div style={{ fontSize: 10, color: SUB, marginBottom: 7 }}></div>
               <button type="button" onClick={() => onTabChange('live')}
                 style={{ fontSize: 10, padding: '4px 10px', borderRadius: 5, border: '1px solid rgba(232,85,85,0.3)', background: 'transparent', color: '#e85555', cursor: 'pointer' }}>
                 관리하기 →
@@ -275,7 +275,7 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
                 <button type="button" onClick={() => setClosedEvents(p => [...p, 'bundle'])}
                   style={{ background: 'none', border: 'none', color: SUB, fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: '0 2px' }}>×</button>
               </div>
-              <div style={{ fontSize: 10, color: SUB, marginBottom: 7 }}>마감 D-12 · 발송 대상 12명</div>
+              <div style={{ fontSize: 10, color: SUB, marginBottom: 7 }}></div>
               <button type="button" onClick={() => onTabChange('inventory')}
                 style={{ fontSize: 10, padding: '4px 10px', borderRadius: 5, border: '1px solid rgba(123,94,167,0.35)', background: 'transparent', color: '#c4a8f0', cursor: 'pointer' }}>
                 번들 구성하기 →
