@@ -266,7 +266,7 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
             </div>
           )}
           {!closedEvents.includes('bundle') && (
-            <div style={{ background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 7, padding: '8px 10px' }}>
+            <div style={{ background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 7, padding: '8px 10px', marginBottom: 7 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(123,94,167,0.25)', color: '#c4a8f0' }}>번들</span>
@@ -282,7 +282,23 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
               </button>
             </div>
           )}
-          {closedEvents.length === 2 && (
+          {!closedEvents.includes('live') && (
+            <div style={{ background: 'rgba(59,130,246,0.05)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 7, padding: '8px 10px', marginBottom: 7 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 9, padding: '1px 6px', borderRadius: 4, background: 'rgba(59,130,246,0.2)', color: '#60a5fa' }}>예정</span>
+                  <span style={{ fontSize: 11, color: TEXT }}>예정된 라이브</span>
+                </div>
+                <button type="button" onClick={() => setClosedEvents(p => [...p, 'live'])}
+                  style={{ background: 'none', border: 'none', color: SUB, fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: '0 2px' }}>×</button>
+              </div>
+              <button type="button" onClick={() => onTabChange('live')}
+                style={{ fontSize: 10, padding: '4px 10px', borderRadius: 5, border: '1px solid rgba(59,130,246,0.25)', background: 'transparent', color: '#60a5fa', cursor: 'pointer' }}>
+                라이브 관리 →
+              </button>
+            </div>
+          )}
+          {closedEvents.length >= 3 && (
             <div style={{ textAlign: 'center', padding: 12, fontSize: 11, color: SUB }}>
               진행중 이벤트가 없어요
               <span style={{ display: 'block', fontSize: 10, marginTop: 4, cursor: 'pointer', color: '#7B5EA7' }}

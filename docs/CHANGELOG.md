@@ -5,6 +5,9 @@
 
 ## 2026-07-02
 
+### BrandTabHome 마케팅·이벤트 — 예정 라이브 카드 추가
+- dashboard/brand/tabs/BrandTabHome.tsx — closedEvents에 live 카드 추가, 전부 닫힘 시 다시 보기(3개 기준)
+
 ### 회원가입 아이디 문구·필드 통일 (UNIT PP)
 - signup/consent/page.tsx: `이메일로 시작하기` → `아이디로 시작하기`
 - signup/page.tsx: 가입 폼 라벨 `이메일 *` → `아이디 *`, input type `email`→`text`, placeholder `아이디`
