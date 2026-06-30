@@ -11,7 +11,7 @@ const CARD_BORDER = '1px solid rgba(255,255,255,0.07)'
 const TEXT_MUTED = 'rgba(255,255,255,0.55)'
 const TEXT_DIM = 'rgba(255,255,255,0.35)'
 
-const DELETE_CONTACT_EMAIL = 'queen8038@gmail.com'
+const DELETE_CONTACT_EMAIL = 'queen8039@gmail.com'
 
 export default function AccountDeletePage() {
   const router = useRouter()

@@ -181,7 +181,7 @@ export default function BrandLoginPage() {
             </button>
           </form>
           <div style={{ marginTop: 20, padding: '12px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, fontSize: 11, color: SUB, lineHeight: 1.7 }}>
-            아이디·비밀번호 문의: queen8038@gmail.com<br/>
+            아이디·비밀번호 문의: queen8039@gmail.com<br/>
             AURAN Brand Hub · {brand?.name}
           </div>
         </div>

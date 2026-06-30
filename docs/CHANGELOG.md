@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 문의 이메일 주소 변경
+- account-delete/page.tsx, logi/[slug]/page.tsx, brand/[slug]/page.tsx — queen8038 → queen8039@gmail.com
+
 ### 어드민 API — 이메일 하드코드 admin 우회 제거
 - api/admin/customer-grade, coupons, coupons/issue, coupon-campaigns — `admin@auran.kr` 이메일 폴백 인증 삭제, role 기반 검증만 유지
 
