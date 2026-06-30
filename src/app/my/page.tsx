@@ -20,6 +20,7 @@ const TEXT_DIM = 'rgba(255,255,255,0.25)'
 export default function MyPage() {
   const router = useRouter()
   const supabase = createClient()
+  const [myOwnerName, setMyOwnerName] = useState<string>('담당 원장님')
 
   const [user, setUser] = useState<any>(null)
   const [userName, setUserName] = useState('')
@@ -221,6 +222,25 @@ export default function MyPage() {
             ]
             const done = Math.round((checks.filter(Boolean).length / checks.length) * 100)
             setCompletion(done)
+            const { data: { user: authUser } } = await supabase.auth.getUser()
+            if (authUser) {
+              const { data: extLink } = await supabase
+                .from('external_customers')
+                .select('owner_id')
+                .eq('auran_user_id', authUser.id)
+                .limit(1)
+                .maybeSingle()
+              if (extLink?.owner_id) {
+                const { data: ownerProfile } = await supabase
+                  .from('profiles')
+                  .select('full_name, owner_store_name')
+                  .eq('id', extLink.owner_id)
+                  .maybeSingle()
+                if (ownerProfile) {
+                  setMyOwnerName(ownerProfile.full_name || ownerProfile.owner_store_name || '담당 원장님')
+                }
+              }
+            }
           })
         supabase
           .from('monthly_skin_reports')
@@ -301,7 +321,7 @@ export default function MyPage() {
         : completion < 80
           ? '🎁 생일·기념일을 등록하면 깜짝 선물과 특별 쿠폰이 준비돼요'
           : completion < 100
-            ? '프로필을 완성할수록 맑원장의 추천이 나만을 위한 처방이 돼요 💜'
+            ? `프로필을 완성할수록 ${myOwnerName}의 추천이 나만을 위한 케어플랜이 돼요 💜`
             : ''
   const incompleteHints = [
     !profileData?.skin_type ? '· 피부타입을 선택해주세요' : '',
@@ -495,7 +515,7 @@ export default function MyPage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.9)' }}>프로필 완성도 {completion}%</div>
             <div style={{ fontSize: 11, color: GOLD }}>{completion <= 30
-                ? '아직 맑원장이 나를 잘 몰라요 🌱 조금만 알려주세요'
+                ? `아직 ${myOwnerName}이 나를 잘 몰라요 🌱 조금만 알려주세요`
                 : completion <= 59
                   ? '절반 왔어요! 입력할수록 추천이 정교해져요 ✨'
                   : completion <= 79

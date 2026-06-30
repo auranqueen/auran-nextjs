@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 마이페이지 — 담당 원장님 이름 동적 표시
+- my/page.tsx — external_customers·profiles 연동으로 담당 원장명 조회, 하드코딩 「맑원장」 문구를 케어플랜 안내로 교체
+
 ### 브랜드 허브 — 탭별 도움말 모달
 - dashboard/brand/components/BrandHubContent.tsx — 브랜드·물류 헤더 도움말 버튼, 탭별 flow/warn/tip/info 안내 모달
 
