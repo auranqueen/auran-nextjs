@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 아이디·비밀번호 찾기 모달
+- FindAccountModal.tsx — SMS 인증 기반 아이디 찾기·비밀번호 재설정 UI (find-id/find-password API 연동)
+
 ### 아이디·비밀번호 찾기 API
 - api/auth/find-id — 휴대폰 SMS 인증 후 아이디 조회 (send/verify)
 - api/auth/find-password — 아이디+휴대폰 인증 후 비밀번호 재설정 (send/verify/reset)
