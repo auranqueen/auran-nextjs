@@ -79,6 +79,8 @@ export default function OwnerDashClientV2() {
 
   const [loading, setLoading] = useState(true)
   const [ownerName, setOwnerName] = useState('원장님')
+  const [ownerSlug, setOwnerSlug] = useState<string | null>(null)
+  const [ownerAvatar, setOwnerAvatar] = useState<string | null>(null)
   const [ownerId, setOwnerId] = useState('')
   const [todayBookings, setTodayBookings] = useState<(BookingRow & { displayName: string; phase: PhaseInfo | null })[]>([])
   const [todayChartCount, setTodayChartCount] = useState(0)
@@ -129,6 +131,9 @@ export default function OwnerDashClientV2() {
       const { data: me } = await sb.from('users').select('id,auth_id,name,role').eq('auth_id', user.id).maybeSingle()
       if (!me?.id) return
       setOwnerId(String(me.id))
+      const { data: profileRow } = await sb.from('profiles').select('slug, avatar_url').eq('auth_id', user.id).maybeSingle()
+      if (profileRow?.slug) setOwnerSlug(String(profileRow.slug))
+      if (profileRow?.avatar_url) setOwnerAvatar(String(profileRow.avatar_url))
       setOwnerName(String(me.name || '원장님'))
 
       const { data: salonRow } = await sb.from('salons').select('id,staff_count,room_count').eq('owner_id', me.id).maybeSingle()

@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 원장님 대시보드 client-v2 — slug·아바타 state
+- client-v2.tsx — profiles 조회로 ownerSlug·ownerAvatar state 추가 (slug 로그인·헤더 연동 준비)
+
 ### 원장님 slug 로그인 — 리다이렉트 경로 수정
 - owner/[slug]/page.tsx — 로그인·세션 자동 이동 경로 `/dashboard/owner/client-v2` → `/dashboard/owner?v=2` (실제 client-v2 진입 쿼리와 일치)
 
