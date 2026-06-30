@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 어드민 API — 이메일 하드코드 admin 우회 제거
+- api/admin/customer-grade, coupons, coupons/issue, coupon-campaigns — `admin@auran.kr` 이메일 폴백 인증 삭제, role 기반 검증만 유지
+
 ### 마이페이지 — 담당 원장님 이름 동적 표시
 - my/page.tsx — external_customers·profiles 연동으로 담당 원장명 조회, 하드코딩 「맑원장」 문구를 케어플랜 안내로 교체
 

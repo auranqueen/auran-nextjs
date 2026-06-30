@@ -24,7 +24,6 @@ async function requireAdminUser() {
     if ((p as { role?: string } | null)?.role === 'admin')
       return { ok: true as const, user, label: user.email || user.id }
   }
-  if (user.email === 'admin@auran.kr') return { ok: true as const, user, label: user.email }
   return { ok: false as const, status: 403 as const, user, label: '' }
 }
 

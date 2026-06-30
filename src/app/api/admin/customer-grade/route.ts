@@ -21,8 +21,6 @@ async function requireAdminApi() {
     if ((u as any)?.role === 'admin') return { ok: true as const, status: 200, supabase: svc, user }
     const { data: p } = await svc.from('profiles').select('role').eq('auth_id', user.id).maybeSingle()
     if ((p as any)?.role === 'admin') return { ok: true as const, status: 200, supabase: svc, user }
-  } else {
-    if (user.email === 'admin@auran.kr') return { ok: true as const, status: 200, supabase, user }
   }
 
   return { ok: false as const, status: 403, supabase, user }
