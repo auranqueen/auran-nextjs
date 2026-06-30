@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### slug 로그인 — 아이디/비밀번호 찾기 연동
+- owner/[slug]/page.tsx, brand/[slug]/page.tsx — FindAccountModal 인라인 연동, 이메일 문의 문구를 찾기 링크로 교체
+
 ### FindAccountModal — 인라인 컴포넌트로 전환
 - FindAccountModal.tsx — 전체 화면 모달 제거, 로그인 폼 내 인라인 패널 UI로 재작성
 

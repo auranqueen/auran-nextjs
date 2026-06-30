@@ -1,4 +1,5 @@
 'use client'
+import FindAccountModal from '@/components/FindAccountModal'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -25,6 +26,7 @@ export default function BrandLoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [showPw, setShowPw] = useState(false)
+  const [showFindModal, setShowFindModal] = useState(false)
   useEffect(() => {
     const saved = localStorage.getItem(`auran_brand_userid_${slug}`)
     const savedRemember = localStorage.getItem(`auran_brand_remember_${slug}`)
@@ -180,8 +182,9 @@ export default function BrandLoginPage() {
               {loading ? '로그인 중...' : '로그인하기'}
             </button>
           </form>
+          {showFindModal && <FindAccountModal onClose={() => setShowFindModal(false)} />}
           <div style={{ marginTop: 20, padding: '12px 14px', background: 'rgba(255,255,255,0.02)', borderRadius: 8, fontSize: 11, color: SUB, lineHeight: 1.7 }}>
-            아이디·비밀번호 문의: queen8039@gmail.com<br/>
+            <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setShowFindModal(v => !v)}>아이디·비밀번호를 잊으셨나요?</span><br/>
             AURAN Brand Hub · {brand?.name}
           </div>
         </div>
