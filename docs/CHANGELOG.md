@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 원장님 slug 로그인 — 리다이렉트 경로 수정
+- owner/[slug]/page.tsx — 로그인·세션 자동 이동 경로 `/dashboard/owner/client-v2` → `/dashboard/owner?v=2` (실제 client-v2 진입 쿼리와 일치)
+
 ### 원장님 slug 전용 로그인 페이지
 - owner/[slug]/page.tsx — profiles.slug 기반 원장님 전용 콘솔 로그인 (브랜드 허브 패턴)
 
