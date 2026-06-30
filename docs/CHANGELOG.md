@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### FindAccountModal — 인라인 컴포넌트로 전환
+- FindAccountModal.tsx — 전체 화면 모달 제거, 로그인 폼 내 인라인 패널 UI로 재작성
+
 ### 로그인 — 아이디/비밀번호 찾기 모달 연동
 - login/page.tsx — FindAccountModal 연동, 링크 문구 변경 및 SMS 인증 찾기 플로우 진입
 
