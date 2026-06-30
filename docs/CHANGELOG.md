@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 원장님 대시보드 client-v2 — 헤더 프로필 원형
+- client-v2.tsx — ownerAvatar·ownerSlug 연동 프로필 원형, slug 있을 때 `/owner/{slug}` 이동
+
 ### 원장님 대시보드 client-v2 — slug·아바타 state
 - client-v2.tsx — profiles 조회로 ownerSlug·ownerAvatar state 추가 (slug 로그인·헤더 연동 준비)
 

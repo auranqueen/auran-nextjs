@@ -372,9 +372,24 @@ export default function OwnerDashClientV2() {
   return (
     <div style={{ minHeight: '100vh', background: SURFACE, color: TEXT, paddingBottom: 88 }}>
       <div style={{ background: BG, padding: 16, borderBottom: `1px solid ${BORDER}` }}>
-        <div style={{ fontSize: 11, color: TEXT_SUB }}>안녕하세요</div>
-        <div style={{ fontSize: 17, fontWeight: 500, marginTop: 4 }}>{ownerName}님 💜</div>
-        <div style={{ fontSize: 12, color: PURPLE, marginTop: 8 }}>{summaryLine}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div
+            onClick={() => { if (ownerSlug) router.push(`/owner/${ownerSlug}`) }}
+            style={{
+              width: 52, height: 52, borderRadius: '50%', flexShrink: 0, cursor: ownerSlug ? 'pointer' : 'default',
+              background: ownerAvatar ? `url(${ownerAvatar}) center/cover` : PURPLE_LIGHT,
+              border: `1.5px solid ${PURPLE}`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, overflow: 'hidden',
+            }}
+          >
+            {!ownerAvatar && '🌸'}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, color: TEXT_SUB }}>안녕하세요</div>
+            <div style={{ fontSize: 17, fontWeight: 500, marginTop: 4 }}>{ownerName}님 💜</div>
+            <div style={{ fontSize: 12, color: PURPLE, marginTop: 8 }}>{summaryLine}</div>
+          </div>
+        </div>
       </div>
 
       <div style={{ padding: 16 }}>
