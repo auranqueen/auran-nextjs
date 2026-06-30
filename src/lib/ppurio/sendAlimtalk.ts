@@ -174,3 +174,66 @@ export async function sendAlimtalkSms(params: {
 }): Promise<SendResult> {
   return sendPpurioAlimtalk(params)
 }
+
+/** 일반 SMS 발송 (템플릿 승인 불필요, 인증번호 등 자유 텍스트용) */
+export async function sendPpurioSms(params: {
+  phone: string
+  message: string
+}): Promise<SendResult> {
+  const hasApiKey = !!process.env.PPURIO_API_KEY?.trim()
+  const from = process.env.PPURIO_FROM?.replace(/\D/g, '') || ''
+  if (!hasApiKey || !from) {
+    console.log('[ppurio] sms (dry-run: PPURIO_API_KEY or PPURIO_FROM unset)', {
+      to: params.phone,
+      message: params.message,
+    })
+    return { ok: true, skipped: true }
+  }
+  const cred = getAccountPassword()
+  if (!cred) {
+    console.log('[ppurio] sms (dry-run: need PPURIO_ACCOUNT + PPURIO_API_KEY)', {
+      to: params.phone,
+      messagePreview: params.message.slice(0, 120),
+    })
+    return { ok: true, skipped: true }
+  }
+  const to = String(params.phone || '').replace(/\D/g, '')
+  if (!to || to.length < 10) {
+    console.log('[ppurio] invalid phone', params.phone)
+    return { ok: false, skipped: true }
+  }
+  const token = await getAccessToken(cred.account, cred.password)
+  if (!token) return { ok: false, raw: 'token_failed' }
+  const refkey = randomUUID().replace(/-/g, '').slice(0, 32)
+  const isLong = Buffer.byteLength(params.message, 'utf8') > 90
+  const body = {
+    account: cred.account,
+    refkey,
+    type: isLong ? 'lms' : 'sms',
+    from,
+    to,
+    content: isLong
+      ? { lms: { subject: 'AURAN', message: params.message } }
+      : { sms: { message: params.message } },
+  }
+  try {
+    const res = await fetch(`${apiBase()}/v3/message`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json; charset=utf-8',
+        Authorization: buildAuthHeader(token),
+      },
+      body: JSON.stringify(body),
+    })
+    const text = await res.text()
+    if (!res.ok) {
+      console.error('[ppurio] sms send failed', res.status, text)
+      return { ok: false, raw: text }
+    }
+    return { ok: true, raw: text }
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : 'fetch_failed'
+    console.error('[ppurio] sms send error', msg)
+    return { ok: false, raw: msg }
+  }
+}

@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 뿌리오 일반 SMS 발송 함수 추가
+- sendAlimtalk.ts — `sendPpurioSms` 추가 (sms/lms 자유 텍스트, 인증번호 등 템플릿 없이 발송)
+
 ### 원장님 대시보드 client-v2 — 헤더 프로필 원형
 - client-v2.tsx — ownerAvatar·ownerSlug 연동 프로필 원형, slug 있을 때 `/owner/{slug}` 이동
 
