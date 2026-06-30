@@ -1,4 +1,5 @@
 'use client'
+import FindAccountModalImport from '@/components/FindAccountModal'
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -46,6 +47,7 @@ function LoginForm() {
   const [recentKakao, setRecentKakao] = useState(false)
   const [autoLogin, setAutoLogin] = useState(true)
   const [showReset, setShowReset] = useState(false)
+  const [showFindModal, setShowFindModal] = useState(false)
   const [resetEmail, setResetEmail] = useState('')
   const [resetSent, setResetSent] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
@@ -409,11 +411,12 @@ function LoginForm() {
             {loading ? '로그인 중...' : `${meta.label} 로그인`}
           </button>
           <div style={{textAlign:'right', marginTop:8}}>
-            <button type="button" onClick={() => setShowReset(v => !v)}
+            <button type="button" onClick={() => setShowFindModal(true)}
               style={{fontSize:12, color:'rgba(255,255,255,0.4)', background:'none', border:'none', cursor:'pointer', padding:0}}>
-              비밀번호를 잊으셨나요?
+              아이디/비밀번호를 잊으셨나요?
             </button>
           </div>
+          {showFindModal && <FindAccountModalImport onClose={() => setShowFindModal(false)} />}
           {showReset && (
             <div style={{marginTop:12, padding:'14px', borderRadius:12, background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)'}}>
               {resetSent ? (

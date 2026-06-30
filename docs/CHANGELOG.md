@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 로그인 — 아이디/비밀번호 찾기 모달 연동
+- login/page.tsx — FindAccountModal 연동, 링크 문구 변경 및 SMS 인증 찾기 플로우 진입
+
 ### 아이디·비밀번호 찾기 모달
 - FindAccountModal.tsx — SMS 인증 기반 아이디 찾기·비밀번호 재설정 UI (find-id/find-password API 연동)
 
