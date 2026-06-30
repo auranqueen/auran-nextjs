@@ -5,6 +5,9 @@
 
 ## 2026-06-28
 
+### 원장님 slug 전용 로그인 페이지
+- owner/[slug]/page.tsx — profiles.slug 기반 원장님 전용 콘솔 로그인 (브랜드 허브 패턴)
+
 ### 문의 이메일 주소 변경
 - account-delete/page.tsx, logi/[slug]/page.tsx, brand/[slug]/page.tsx — queen8038 → queen8039@gmail.com
 
