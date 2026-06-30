@@ -5,6 +5,11 @@
 
 ## 2026-06-28
 
+### 아이디·비밀번호 찾기 API
+- api/auth/find-id — 휴대폰 SMS 인증 후 아이디 조회 (send/verify)
+- api/auth/find-password — 아이디+휴대폰 인증 후 비밀번호 재설정 (send/verify/reset)
+- auth_verification_codes 테이블 + sendPpurioSms 연동
+
 ### 뿌리오 일반 SMS 발송 함수 추가
 - sendAlimtalk.ts — `sendPpurioSms` 추가 (sms/lms 자유 텍스트, 인증번호 등 템플릿 없이 발송)
 
