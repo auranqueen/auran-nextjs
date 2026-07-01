@@ -5,6 +5,10 @@
 
 ## 2026-06-03
 
+### 배너 영역 풀폭 가로 캐러셀 재구성 (UNIT K)
+- `banner_urls`/`banner_links`/`story_url` 실제 연결, 헤더 아래 21:9 풀폭 캐러셀
+- 프로필 grid 좌측 정사각형 배너 칸 제거, `EmptyBannerHook` 가로형 후킹 카드
+
 ### PC 반응형 + 배너 비율 + 회차 선택 중복 제거
 - **UNIT G:** salons/[id], checkout/booking 최상위 maxWidth:480 컨테이너, 결제 버튼 z-index
 - **UNIT H:** 배너 16:9·grid 160px 고정, EmptyBannerHook 첫방문 후킹 카드

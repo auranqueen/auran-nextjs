@@ -62,6 +62,10 @@ type SalonRow = {
   address?: string | null
   phone?: string | null
   banner_url?: string | null
+  banner_urls?: string[] | null
+  banner_links?: string[] | null
+  story_url?: string | null
+  story_type?: string | null
   services?: SalonService[] | null
   open_hours?: Record<string, string> | null
   avg_rating?: number | null
@@ -201,6 +205,9 @@ export default function SalonHomePage() {
   const [hormoneTrack, setHormoneTrack] = useState<string | null>(null)
   const [customerGender, setCustomerGender] = useState<string | null>(null)
   const [skinConcernFilter, setSkinConcernFilter] = useState<string | null>(null)
+  const [bannerIndex, setBannerIndex] = useState(0)
+  const [showStory, setShowStory] = useState(false)
+  const bannerTouchX = useRef(0)
 
   useEffect(() => {
     if (!id) return
@@ -316,6 +323,10 @@ export default function SalonHomePage() {
     return () => clearTimeout(t)
   }, [bookingStep, showBooking])
 
+  useEffect(() => {
+    setBannerIndex(0)
+  }, [id])
+
   const services = useMemo(() => parseServices(salon?.services), [salon?.services])
   const bookingAmount = useMemo(() => {
     const unit = Number(bookingServicePrice || 0)
@@ -325,6 +336,14 @@ export default function SalonHomePage() {
   }, [bookingServicePrice, bookingSessions])
   const hoursToday = useMemo(() => todayHours(salon?.open_hours ?? null), [salon?.open_hours])
   const openNow = useMemo(() => isOpenNow(salon?.open_hours ?? null), [salon?.open_hours])
+  const salonBannerUrls = useMemo(() => {
+    const raw = salon?.banner_urls
+    return Array.isArray(raw) ? raw.filter(Boolean).map(String) : []
+  }, [salon?.banner_urls])
+  const salonBannerLinks = useMemo(() => {
+    const raw = salon?.banner_links
+    return Array.isArray(raw) ? raw.map(String) : []
+  }, [salon?.banner_links])
   const salonName = String(salon?.name || '샵')
   const ownerId = salon?.owner_id ? String(salon.owner_id) : ''
 
@@ -488,29 +507,113 @@ export default function SalonHomePage() {
         </button>
       </header>
 
+      <div style={{ position: 'relative', width: '100%' }}>
+        {salonBannerUrls.length > 0 ? (
+          <div
+            role="presentation"
+            style={{ width: '100%', aspectRatio: '21/9', minHeight: 100, position: 'relative', overflow: 'hidden', cursor: 'pointer' }}
+            onTouchStart={(e) => { bannerTouchX.current = e.touches[0]?.clientX ?? 0 }}
+            onTouchEnd={(e) => {
+              const endX = e.changedTouches[0]?.clientX ?? 0
+              const dx = endX - bannerTouchX.current
+              if (Math.abs(dx) < 40) return
+              if (dx < 0) setBannerIndex((i) => Math.min(i + 1, salonBannerUrls.length - 1))
+              else setBannerIndex((i) => Math.max(i - 1, 0))
+            }}
+            onClick={() => {
+              const link = salonBannerLinks[bannerIndex] || 'none'
+              if (link === 'booking') {
+                setBookingSalonId(salon.id)
+                setBookingSalonName(String(salon.name || ''))
+                setBookingServiceName(undefined)
+                setBookingServicePrice(undefined)
+                setBookingMonth({ year: new Date().getFullYear(), month: new Date().getMonth() })
+                setBookingStep(1)
+                setShowBooking(true)
+              } else if (link === 'chat') {
+                router.push(`/dashboard/customer/salon-chat/new?salon_id=${salon.id}&owner_id=${salon.owner_id || ''}`)
+              } else if (link.startsWith('http')) {
+                window.open(link, '_blank', 'noopener,noreferrer')
+              }
+            }}
+          >
+            <div style={{ width: '100%', height: '100%', background: `url(${salonBannerUrls[bannerIndex]}) center/cover no-repeat` }} />
+            {salonBannerUrls.length > 1 ? (
+              <div style={{ position: 'absolute', bottom: 8, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 6 }}>
+                {salonBannerUrls.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    aria-label={`배너 ${i + 1}`}
+                    onClick={(e) => { e.stopPropagation(); setBannerIndex(i) }}
+                    style={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      border: 'none',
+                      padding: 0,
+                      background: i === bannerIndex ? PURPLE : 'rgba(255,255,255,0.4)',
+                      cursor: 'pointer',
+                    }}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ) : (
+          <EmptyBannerHook salonName={salon.name} />
+        )}
+        {salon.story_url ? (
+          <button
+            type="button"
+            onClick={() => setShowStory(true)}
+            aria-label="스토리 보기"
+            style={{
+              position: 'absolute',
+              bottom: 10,
+              left: 12,
+              width: 44,
+              height: 44,
+              borderRadius: '50%',
+              border: '2px solid #fff',
+              padding: 0,
+              overflow: 'hidden',
+              cursor: 'pointer',
+              zIndex: 5,
+              background: `url(${salon.story_url}) center/cover no-repeat`,
+            }}
+          />
+        ) : null}
+      </div>
+
+      {showStory && salon.story_url ? (
+        <div
+          role="presentation"
+          style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setShowStory(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setShowStory(false)}
+            style={{ position: 'absolute', top: 16, right: 16, width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.15)', color: TEXT, fontSize: 20, cursor: 'pointer' }}
+          >
+            ×
+          </button>
+          {salon.story_type === 'video' ? (
+            <video src={salon.story_url} controls autoPlay style={{ maxWidth: '100%', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()} />
+          ) : (
+            <img src={salon.story_url} alt="" style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain' }} onClick={(e) => e.stopPropagation()} />
+          )}
+        </div>
+      ) : null}
+
       <div style={{ padding: '12px 15px 0' }}>
         <div style={{ fontSize: 17, fontWeight: 500, color: TEXT, marginBottom: 3 }}>{salon.name}</div>
         <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 10 }}>
           {salon.area} · {openNow ? '영업 중' : '영업 종료'}
           {hoursToday && hoursToday.includes('~') ? ` · ${hoursToday.split('~')[1]?.trim()} 마감` : ''}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 10, alignItems: 'start' }}>
-          <div
-            style={{
-              width: '100%',
-              aspectRatio: '16/9',
-              borderRadius: 12,
-              background: salon.banner_url ? `url(${salon.banner_url}) center/cover no-repeat` : PURPLE_LIGHT,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'hidden',
-              flexShrink: 0,
-            }}
-          >
-            {!salon.banner_url ? <EmptyBannerHook salonName={salon.name} /> : null}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+        <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 7 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <span style={{ color: GOLD, fontSize: 12 }}>★</span>
               <span style={{ fontSize: 13, fontWeight: 500, color: GOLD }}>{salon.avg_rating?.toFixed(1) ?? '-'}</span>
@@ -565,7 +668,6 @@ export default function SalonHomePage() {
                 📍 길찾기
               </button>
             </div>
-          </div>
         </div>
       </div>
 

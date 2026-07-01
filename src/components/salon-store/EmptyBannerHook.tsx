@@ -16,32 +16,36 @@ export function EmptyBannerHook({ salonName }: Props) {
     <div
       style={{
         width: '100%',
-        height: '100%',
+        aspectRatio: '21/9',
+        minHeight: 100,
         display: 'flex',
-        flexDirection: 'column',
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-        padding: '10px 12px',
-        textAlign: 'center',
+        justifyContent: 'space-between',
+        padding: '14px 16px',
+        boxSizing: 'border-box',
         background: PURPLE_LIGHT,
-        gap: 8,
+        gap: 12,
       }}
     >
-      <div style={{ fontSize: 13, color: TEXT, lineHeight: 1.4 }}>{name} 첫 방문이신가요?</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14, color: TEXT, lineHeight: 1.35, marginBottom: 4 }}>{name} 첫 방문이신가요?</div>
+        <div style={{ fontSize: 11, color: TEXT_SUB, lineHeight: 1.4 }}>예약 시 첫 방문 할인이 자동 적용돼요</div>
+      </div>
       <span
         style={{
-          display: 'inline-block',
+          flexShrink: 0,
           fontSize: 11,
-          padding: '4px 10px',
+          padding: '6px 12px',
           borderRadius: 20,
           background: 'rgba(123,94,167,0.35)',
           border: `0.5px solid ${PURPLE}`,
           color: GOLD,
+          whiteSpace: 'nowrap',
         }}
       >
         첫 관리 10% 할인
       </span>
-      <div style={{ fontSize: 10, color: TEXT_SUB, lineHeight: 1.4 }}>예약 시 첫 방문 할인이 자동 적용돼요</div>
     </div>
   )
 }

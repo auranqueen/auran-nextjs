@@ -279,6 +279,7 @@ active_role = customer이면 brand role도 customer로 처리됨
 - 영업시간은 SalonInfoForm의 open_hours 재사용
 - 편집: /dashboard/owner/store-decoration (store/page.tsx 커머스 어드민과 별개)
 - 고객 화면 컴포넌트: src/components/salon-store/* (500줄 초과로 분리생성)
+- `salons.banner_url`(단수, 레거시)는 미사용 전환 — 고객 화면은 `banner_urls`(배열)·`banner_links`·`story_url` 사용. 배너는 헤더 바로 아래 풀폭 가로(21:9) 캐러셀, 프로필 정보 영역과 완전히 분리됨.
 
 ### 예약 실시간 연동
 - bookings 테이블, owner_id/customer_id 필터 postgres_changes
