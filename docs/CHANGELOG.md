@@ -5,6 +5,12 @@
 
 ## 2026-06-03
 
+### PC 반응형 + 배너 비율 + 회차 선택 중복 제거
+- **UNIT G:** salons/[id], checkout/booking 최상위 maxWidth:480 컨테이너, 결제 버튼 z-index
+- **UNIT H:** 배너 16:9·grid 160px 고정, EmptyBannerHook 첫방문 후킹 카드
+- **UNIT I:** checkout sessions URL 파라미터 수신, salons에서 선택 시 회차 UI 숨김
+- **UNIT J:** docs/TROUBLESHOOT.md PC 반응형·예약 플로우 규칙 추가
+
 ### 스토어 꾸미기 + 예약 실시간 + 고객홈 즐겨찾는 원장
 - **UNIT B:** `/dashboard/owner/store-decoration` — 배너·스토리·페이즈 인사·main_cta·지도/SNS 편집 (salons 컬럼)
 - **UNIT C:** `src/components/salon-store/*` 4종 — salons/[id] import+호출만 삽입

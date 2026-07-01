@@ -3,6 +3,19 @@
 
 ---
 
+## 2026-06-03
+
+### PC 반응형 규칙
+salons/[id]/page.tsx, checkout/booking/page.tsx 등 고객 대면 페이지는 최상위에
+maxWidth:480 + margin:'0 auto' 컨테이너 필수 — 없으면 PC에서 그리드/fixed 요소가
+브라우저 폭 그대로 늘어나 깨짐 (2026-06-03 실사용 중 발견).
+
+### 예약 플로우
+salons/[id]/page.tsx에서 회차 선택 → URL sessions 파라미터로 전달 →
+checkout/booking/page.tsx가 그대로 받아씀. 회차 선택 UI 중복 금지.
+
+---
+
 ## 2026-06-28
 
 ### 브랜드사 로그인 후 고객 홈으로 튕기는 문제
