@@ -25,6 +25,10 @@ export function isPeriodTrack(track: string | null | undefined) {
   return track === 'general' || track === 'menopause_peri'
 }
 
+export function canShowCyclePhase(track: string | null | undefined): boolean {
+  return track === 'general'
+}
+
 export function calcCycleDay(lastPeriodDate: string | null | undefined, cycleLength: number | null | undefined, now = new Date()) {
   if (!lastPeriodDate) return 0
   const s = new Date(lastPeriodDate)
