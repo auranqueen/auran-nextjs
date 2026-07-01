@@ -3,6 +3,18 @@
 
 ---
 
+## 2026-06-03
+
+### 호르몬 페이즈 노출 게이트 전수 적용
+- **원인:** `profiles.cycle_type` / `hormone_cycle_applicable` 죽은 컬럼(전원 null)으로 게이트 미작동 → 남성·갱년기·임신 등에도 4페이즈 노출
+- **UNIT A:** `hormoneUtils.ts` — `canShowCyclePhase(track)` 추가 (`track === 'general'`만 true)
+- **UNIT B:** `salons/[id]/page.tsx` — general만 페이즈 UI, 그 외 피부 고민 칩 대체
+- **UNIT C:** `client-v2.tsx`, `charts-v2/ChartPopup.tsx`, `charts-v2/page.tsx` — getPhase 호출부 게이트
+- **UNIT D:** `dashboard/owner/chat/[id]/page.tsx` — 페이즈 매핑 게이트
+- **UNIT E:** `docs/DATABASE.md`, `docs/AI_CONTEXT.md` 규칙 문서화
+
+---
+
 ## 2026-06-28
 
 ### slug 로그인 — 아이디/비밀번호 찾기 연동

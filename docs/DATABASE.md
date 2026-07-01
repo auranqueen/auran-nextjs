@@ -267,3 +267,10 @@ active_role = customer이면 brand role도 customer로 처리됨
 3. public.profiles INSERT (auth_id, role=brand, active_role=brand)
 4. brands.user_id UPDATE (auth.users.id 연결)
 5. brands.slug 설정
+
+### 호르몬 페이즈 노출 규칙
+- 페이즈(달빛기/황금기/만개기/물들기) 표시는 hormone_cycle.track === 'general'일 때만 허용
+- 게이트 함수: src/lib/hormoneUtils.ts → canShowCyclePhase(track)
+- profiles.cycle_type / profiles.hormone_cycle_applicable 컬럼은 미사용(전원 null, 죽은 컬럼) — 신규 로직에서 참조 금지
+- 남성/여성갱년기(peri·post)/임신/산후/불규칙/무월경(의학적, track null 또는 미설정)은 페이즈 전면 숨김
+- 적용 파일: salons/[id]/page.tsx, dashboard/owner/client-v2.tsx, charts-v2/ChartPopup.tsx, charts-v2/page.tsx, chat/[id]/page.tsx
