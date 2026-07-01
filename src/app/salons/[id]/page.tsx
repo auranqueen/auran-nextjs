@@ -2,6 +2,10 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { canShowCyclePhase } from '@/lib/hormoneUtils'
+import StoreHeroGreeting from '@/components/salon-store/StoreHeroGreeting'
+import StoreRelationshipCard from '@/components/salon-store/StoreRelationshipCard'
+import StoreRepurchaseCard from '@/components/salon-store/StoreRepurchaseCard'
+import StoreSnsMapInfo from '@/components/salon-store/StoreSnsMapInfo'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
@@ -563,6 +567,11 @@ export default function SalonHomePage() {
           </div>
         </div>
       </div>
+
+      <StoreHeroGreeting salon={salon} customerTrack={hormoneTrack} customerGender={customerGender} />
+      <StoreRelationshipCard ownerId={ownerId} customerId={customerUserId} />
+      <StoreRepurchaseCard ownerId={ownerId} customerId={customerUserId} />
+      <StoreSnsMapInfo mapUrl={(salon as { map_url?: string | null }).map_url} snsLinks={(salon as { sns_links?: Record<string, string> | null }).sns_links} />
 
       <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, padding: '0 16px', marginTop: 12 }}>
         {(
