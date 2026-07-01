@@ -274,3 +274,12 @@ active_role = customer이면 brand role도 customer로 처리됨
 - profiles.cycle_type / profiles.hormone_cycle_applicable 컬럼은 미사용(전원 null, 죽은 컬럼) — 신규 로직에서 참조 금지
 - 남성/여성갱년기(peri·post)/임신/산후/불규칙/무월경(의학적, track null 또는 미설정)은 페이즈 전면 숨김
 - 적용 파일: salons/[id]/page.tsx, dashboard/owner/client-v2.tsx, charts-v2/ChartPopup.tsx, charts-v2/page.tsx, chat/[id]/page.tsx
+
+### 스토어 꾸미기 (salons 컬럼: phase_greetings/phase_reco_enabled/banner_links/sns_links/main_cta/map_url)
+- 영업시간은 SalonInfoForm의 open_hours 재사용
+- 편집: /dashboard/owner/store-decoration (store/page.tsx 커머스 어드민과 별개)
+- 고객 화면 컴포넌트: src/components/salon-store/* (500줄 초과로 분리생성)
+
+### 예약 실시간 연동
+- bookings 테이블, owner_id/customer_id 필터 postgres_changes
+- 원장: useOwnerBookingRealtime 훅(BookingManagePage.tsx), 고객: MyBookingStatus.tsx 직접

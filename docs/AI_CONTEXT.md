@@ -104,7 +104,7 @@ external_customers     — 외부 고객 (오프라인 고객 관리)
 5. 수정 전 기존 코드 확인 필수
 6. 규칙 어기면 전체 작업 중단 후 보고
 7. useEffect/useCallback/useMemo deps에 supabase 절대 금지
-8. 파일 500줄 초과 시 직접 수정 금지 → 신규 컴포넌트 분리 후 import 1줄+호출 1줄만
+8. 500줄 초과 파일(salons/[id]/page.tsx, page.tsx, BookingManagePage.tsx 등) 수정 시 반드시 컴포넌트/훅 분리 + import 1줄 삽입 방식만 사용
 
 ---
 

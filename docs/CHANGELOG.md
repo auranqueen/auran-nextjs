@@ -5,6 +5,13 @@
 
 ## 2026-06-03
 
+### 스토어 꾸미기 + 예약 실시간 + 고객홈 즐겨찾는 원장
+- **UNIT B:** `/dashboard/owner/store-decoration` — 배너·스토리·페이즈 인사·main_cta·지도/SNS 편집 (salons 컬럼)
+- **UNIT C:** `src/components/salon-store/*` 4종 — salons/[id] import+호출만 삽입
+- **UNIT D:** `FavoriteSalonsSection` — chat/bookings 기반 즐겨찾는 원장 카드, page.tsx 삽입
+- **UNIT E:** `useOwnerBookingRealtime` 훅 + MyBookingStatus UPDATE 구독
+- **UNIT F:** docs/DATABASE.md, AI_CONTEXT.md, CHANGELOG.md 갱신
+
 ### 긴급수정: 페이즈 게이트 gender 이중 체크
 - 실데이터에서 남성 고객(`gender=male`)인데 `hormone_cycle.track=general` 케이스 발견 → `canShowCyclePhase`에 gender 체크 추가, 5개 호출부 전수 반영
 
