@@ -35,7 +35,8 @@ function BookingCheckoutInner() {
   const partnerFeeRate = Number(search.get('partner_fee_rate') || 0)
   const reviewerId = search.get('reviewer_id') ?? ''
 
-  const [sessions, setSessions] = useState(1)
+  const initialSessions = Number(search.get('sessions') || 1)
+  const [sessions, setSessions] = useState(initialSessions)
   const [toastOn, setToastOn] = useState(false)
   const [toastInput, setToastInput] = useState(0)
   const [userToast, setUserToast] = useState(0)
@@ -187,6 +188,12 @@ function BookingCheckoutInner() {
 
         {/* 카드 2: 회차 선택 */}
         <div style={{ background: CARD, border: `0.5px solid ${BORDER}`, borderRadius: 12, padding: '14px 15px' }}>
+          {initialSessions > 1 ? (
+            <div style={{ fontSize: 13, color: TEXT_SUB, lineHeight: 1.5 }}>
+              선택한 회차: {sessions}회권 (변경하려면 이전 화면으로)
+            </div>
+          ) : (
+            <>
           <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 10 }}>회차 선택</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 12 }}>
             {SESSION_OPTS.map((opt) => {
@@ -228,6 +235,8 @@ function BookingCheckoutInner() {
             <br />
             구매한 회차는 마이페이지에서 확인할 수 있어요.
           </div>
+            </>
+          )}
         </div>
 
         {/* 카드 3: 할인 안내 */}
