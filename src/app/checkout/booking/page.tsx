@@ -133,7 +133,7 @@ function BookingCheckoutInner() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: TEXT, paddingBottom: 100 }}>
+    <div style={{ minHeight: '100vh', background: BG, color: TEXT, paddingBottom: 100, maxWidth: 480, margin: '0 auto', position: 'relative' }}>
       <div
         style={{
           position: 'sticky',
@@ -343,6 +343,9 @@ function BookingCheckoutInner() {
           left: 0,
           right: 0,
           bottom: 0,
+          maxWidth: 480,
+          margin: '0 auto',
+          zIndex: 50,
           padding: '12px 16px calc(12px + env(safe-area-inset-bottom))',
           background: BG,
           borderTop: `0.5px solid ${BORDER}`,

@@ -476,7 +476,7 @@ export default function SalonHomePage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: TEXT, paddingBottom: tab === 'menu' ? 88 : 24 }}>
+    <div style={{ minHeight: '100vh', background: BG, color: TEXT, paddingBottom: tab === 'menu' ? 88 : 24, maxWidth: 480, margin: '0 auto', position: 'relative' }}>
       <header style={{ position: 'sticky', top: 0, zIndex: 20, background: BG, display: 'flex', alignItems: 'center', padding: '12px 16px', borderBottom: `1px solid ${BORDER}` }}>
         <button type="button" onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: TEXT, fontSize: 22, cursor: 'pointer', minWidth: 44, minHeight: 44 }}>
           ←
