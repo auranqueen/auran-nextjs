@@ -7,6 +7,7 @@ import StoreRelationshipCard from '@/components/salon-store/StoreRelationshipCar
 import StoreRepurchaseCard from '@/components/salon-store/StoreRepurchaseCard'
 import StoreSnsMapInfo from '@/components/salon-store/StoreSnsMapInfo'
 import { EmptyBannerHook } from '@/components/salon-store/EmptyBannerHook'
+import { useSalonBookingMessage } from '@/hooks/useSalonBookingMessage'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
@@ -171,6 +172,7 @@ export default function SalonHomePage() {
   const params = useParams<{ id: string }>()
   const id = params?.id ? String(params.id) : ''
   const supabaseRef = useRef(createClient())
+  const sendSalonBookingMessage = useSalonBookingMessage()
 
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
@@ -294,6 +296,21 @@ export default function SalonHomePage() {
         month: new Date().getMonth(),
       })
       window.history.replaceState({}, '', window.location.pathname)
+      if (pid) {
+        void (async () => {
+          const { data: pur } = await supabaseRef.current
+            .from('purchases')
+            .select('service_name, service_price, total_sessions, salon_id, payment_amount')
+            .eq('id', pid)
+            .maybeSingle()
+          if (pur) {
+            setBookingServiceName(pur.service_name || '')
+            setBookingServicePrice(Number(pur.service_price || 0))
+            setBookingSessions(Number(pur.total_sessions || 1))
+            setBookingSalonId(String(pur.salon_id || id || ''))
+          }
+        })()
+      }
     }
   }, [])
 
@@ -1615,6 +1632,38 @@ export default function SalonHomePage() {
                         if (error) {
                           setShareToast('예약에 실패했어요')
                           return
+                        }
+                        const svcName = bookingServiceName || '시술'
+                        const dateTime = `${bookingDate} ${bookingTime}`
+                        const oid = salon?.owner_id ? String(salon.owner_id) : ''
+                        try {
+                          await sendSalonBookingMessage(
+                            oid,
+                            customerUserId,
+                            null,
+                            `${svcName} 예약이 접수됐어요. 원장님 확인 후 곧 확정될 예정이에요 🌙`,
+                          )
+                        } catch { /* ignore */ }
+                        try {
+                          await supabaseRef.current.from('notifications').insert({
+                            user_id: customerUserId,
+                            type: 'booking',
+                            title: '예약이 접수됐어요',
+                            body: `${svcName} · ${dateTime}`,
+                            link_url: '/my/orders',
+                            is_read: false,
+                          } as any)
+                        } catch { /* ignore */ }
+                        if (oid) {
+                          try {
+                            await supabaseRef.current.from('notifications').insert({
+                              user_id: oid,
+                              type: 'booking',
+                              title: '새 예약 요청',
+                              body: `${svcName} · ${dateTime}`,
+                              is_read: false,
+                            } as any)
+                          } catch { /* ignore */ }
                         }
                         setBookingStep(5)
                       })()

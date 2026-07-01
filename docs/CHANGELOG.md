@@ -5,6 +5,10 @@
 
 ## 2026-06-03
 
+### 결제복귀 상태복원 + 예약접수 알림 (UNIT M/N)
+- salons/[id]: booking_paid 복귀 시 purchases 조회로 시술명·가격·회차·salon_id 복원 (₩0 버그)
+- bookings.insert 성공 시 고객·원장 notifications + useSalonBookingMessage 접수 메시지
+
 ### 예약 상태알림 오렌상담톡 전환 (UNIT L)
 - `useSalonBookingMessage` 훅 — channel_type='salon' + salon_messages
 - BookingManagePage: confirmed/완료/취소 시 오렌상담톡, 카카오 알림톡 예약용도 제거

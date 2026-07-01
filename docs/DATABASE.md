@@ -285,6 +285,15 @@ active_role = customer이면 brand role도 customer로 처리됨
 - bookings 테이블, owner_id/customer_id 필터 postgres_changes
 - 원장: useOwnerBookingRealtime 훅(BookingManagePage.tsx), 고객: MyBookingStatus.tsx 직접
 
+### 예약 플로우 상태 복원
+결제(/checkout/booking) 후 salons/[id]?booking_paid=true&purchase_id=... 복귀 시
+purchases 테이블에서 시술명/가격/회차/salon_id를 재조회해 복원 (페이지 새로고침으로
+React state 초기화되므로 필수).
+
+### 예약 알림 2단계
+1) 접수(pending, 고객이 bookings.insert): 고객+원장 notifications + salon 채널 접수메시지
+2) 확정/완료/취소(원장이 status 변경): UNIT L의 useSalonBookingMessage
+
 ### 채팅 채널 역할 분리 (중요 — 절대 혼용 금지)
 - channel_type='owner' + consultation_messages: 고객↔AURAN(오렌콘솔), 원장 무관
 - channel_type='salon' + salon_messages + owner_id: 고객↔특정 원장님 전용
