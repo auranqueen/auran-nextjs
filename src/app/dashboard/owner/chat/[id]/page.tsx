@@ -2,6 +2,7 @@
 
 import { compressImage } from '@/lib/imageUpload'
 import { createClient } from '@/lib/supabase/client'
+import { canShowCyclePhase } from '@/lib/hormoneUtils'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
@@ -116,6 +117,7 @@ export default function OwnerChatRoomPage() {
     is_founder: boolean
     avatar_url: string | null
   } | null>(null)
+  const [customerHormoneTrack, setCustomerHormoneTrack] = useState<string | null>(null)
   const [showHistoryList, setShowHistoryList] = useState(false)
   const [channels, setChannels] = useState<
     { id: string; title: string; preview_text: string; last_message_at: string | null; unread_count: number; user_id?: string | null; customer_name?: string }[]
@@ -222,7 +224,7 @@ export default function OwnerChatRoomPage() {
       const { data: uRow } = await supabase.from('users').select('auth_id,points,is_founder').eq('id', customerUserId).maybeSingle()
       if (!uRow) return
       const authId = uRow.auth_id
-      const [profileRes, cycleRes] = await Promise.all([
+      const [profileRes, cycleRes, hormoneCycleRes] = await Promise.all([
         supabase.from('profiles').select('skin_type,skin_concerns,avatar_url,notification_sound').eq('auth_id', authId).maybeSingle(),
         supabase
           .from('skin_cycle_analysis')
@@ -231,11 +233,19 @@ export default function OwnerChatRoomPage() {
           .order('analysis_date', { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from('hormone_cycle')
+          .select('track')
+          .eq('user_id', customerUserId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ])
       const profile = profileRes.data as { notification_sound?: string | null } | null
       if (profile?.notification_sound) {
         setNotifSound(String(profile.notification_sound))
       }
+      setCustomerHormoneTrack(hormoneCycleRes.data?.track != null ? String(hormoneCycleRes.data.track) : null)
       setCustomerSkinInfo({
         skin_type: (profile as any)?.skin_type ?? null,
         skin_concerns: (profileRes.data as any)?.skin_concerns ?? [],
@@ -2555,11 +2565,15 @@ export default function OwnerChatRoomPage() {
                 <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '8px 10px' }}>
                   <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginBottom: 3 }}>호르몬 페이즈</div>
                   <div style={{ fontSize: 11, color: '#C084FC' }}>
-                    {customerSkinInfo.hormone_phase === 'menstrual' && '🌙 달빛기'}
-                    {customerSkinInfo.hormone_phase === 'follicular' && '✨ 황금기'}
-                    {customerSkinInfo.hormone_phase === 'ovulation' && '🌸 만개기'}
-                    {customerSkinInfo.hormone_phase === 'luteal' && '🍂 물들기'}
-                    {!customerSkinInfo.hormone_phase && '— 미등록'}
+                    {canShowCyclePhase(customerHormoneTrack) ? (
+                      <>
+                        {customerSkinInfo.hormone_phase === 'menstrual' && '🌙 달빛기'}
+                        {customerSkinInfo.hormone_phase === 'follicular' && '✨ 황금기'}
+                        {customerSkinInfo.hormone_phase === 'ovulation' && '🌸 만개기'}
+                        {customerSkinInfo.hormone_phase === 'luteal' && '🍂 물들기'}
+                        {!customerSkinInfo.hormone_phase && '— 미등록'}
+                      </>
+                    ) : '—'}
                   </div>
                 </div>
                 <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '8px 10px' }}>
