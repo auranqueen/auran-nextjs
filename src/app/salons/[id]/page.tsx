@@ -1,6 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
+import { canShowCyclePhase } from '@/lib/hormoneUtils'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
@@ -25,6 +26,7 @@ const PHASE_TIP: Record<string, string> = {
   만개기: '리프팅 · 활력 케어를 추천해요',
   물들기: '수분 · 진정 케어로 균형을 잡아주세요',
 }
+const SKIN_CONCERN_CHIPS = ['건조', '탄력', '색소', '진정'] as const
 
 const SESSION_PACKAGES = [
   { sessions: 1, label: '1회권', desc: '1회 이용', discount: 0 },
@@ -191,6 +193,8 @@ export default function SalonHomePage() {
   const [bookingSubmitting, setBookingSubmitting] = useState(false)
   const [customerUserId, setCustomerUserId] = useState<string | null>(null)
   const [lastPeriodDate, setLastPeriodDate] = useState<string | null>(null)
+  const [hormoneTrack, setHormoneTrack] = useState<string | null>(null)
+  const [skinConcernFilter, setSkinConcernFilter] = useState<string | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -229,13 +233,16 @@ export default function SalonHomePage() {
           setCustomerUserId(String(urow.id))
           const { data: hcRows } = await sb
             .from('hormone_cycle')
-            .select('last_period_date')
+            .select('last_period_date, track')
             .eq('user_id', urow.id)
             .order('created_at', { ascending: false })
             .limit(1)
-          const last = ((hcRows as { last_period_date?: string }[]) || [])[0]?.last_period_date
+          const hcRow = ((hcRows as { last_period_date?: string; track?: string }[]) || [])[0]
+          const last = hcRow?.last_period_date
+          const track = hcRow?.track != null ? String(hcRow.track) : null
+          setHormoneTrack(track)
           setLastPeriodDate(last || null)
-          setCustomerPhase(calcPhase(last))
+          setCustomerPhase(canShowCyclePhase(track) ? calcPhase(last) : null)
         }
       }
 
@@ -339,10 +346,19 @@ export default function SalonHomePage() {
     return [5, 4, 3, 2, 1].map((star) => ({ star, count: counts[star], pct: (counts[star] / max) * 100 }))
   }, [reviews])
 
+  const showCyclePhase = canShowCyclePhase(hormoneTrack)
+
   const filteredReviews = useMemo(() => {
+    if (!showCyclePhase) {
+      if (!skinConcernFilter) return reviews
+      return reviews.filter((r) => {
+        const effects = Array.isArray(r.effect_tags) ? r.effect_tags.map(String) : []
+        return effects.some((t) => t.includes(skinConcernFilter))
+      })
+    }
     if (phaseFilter === '전체') return reviews
     return reviews.filter((r) => String(r.hormone_phase || '') === phaseFilter)
-  }, [reviews, phaseFilter])
+  }, [reviews, phaseFilter, showCyclePhase, skinConcernFilter])
 
   const visibleReviews = filteredReviews.slice(0, reviewLimit)
 
@@ -408,7 +424,7 @@ export default function SalonHomePage() {
   }, [salon?.open_hours, bookingDate])
 
   const nextGoldenLabel = useMemo(() => {
-    if (!lastPeriodDate) return null
+    if (!showCyclePhase || !lastPeriodDate) return null
     const start = new Date(lastPeriodDate)
     if (Number.isNaN(start.getTime())) return null
     const diff = Math.floor((Date.now() - start.getTime()) / 86400000)
@@ -417,7 +433,7 @@ export default function SalonHomePage() {
     const d = new Date()
     d.setDate(d.getDate() + daysUntil)
     return `${d.getMonth() + 1}월 ${d.getDate()}일`
-  }, [lastPeriodDate])
+  }, [lastPeriodDate, showCyclePhase])
 
   const chatHref = `/dashboard/customer/salon-chat/new?salon_id=${encodeURIComponent(id)}&owner_id=${encodeURIComponent(ownerId)}`
 
@@ -497,6 +513,15 @@ export default function SalonHomePage() {
                 </span>
                 <div style={{ fontSize: 11, color: GOLD, lineHeight: 1.4 }}>{PHASE_TIP[customerPhase]}</div>
               </div>
+            ) : customerUserId && !showCyclePhase ? (
+              <div style={{ background: 'rgba(123,94,167,0.12)', border: '0.5px solid rgba(123,94,167,0.25)', borderRadius: 9, padding: '7px 9px' }}>
+                <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 6 }}>피부 고민으로 찾기</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {SKIN_CONCERN_CHIPS.map((c) => (
+                    <span key={c} style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, background: PURPLE_LIGHT, color: PURPLE }}>{c}</span>
+                  ))}
+                </div>
+              </div>
             ) : null}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
               <button
@@ -570,6 +595,15 @@ export default function SalonHomePage() {
                   고객님은 지금 {PHASE_EMOJI[customerPhase] || ''} {customerPhase}예요
                 </div>
                 <div style={{ fontSize: 12, color: TEXT_SUB, lineHeight: 1.5 }}>{PHASE_TIP[customerPhase] || ''}</div>
+              </div>
+            ) : customerUserId && !showCyclePhase ? (
+              <div style={{ background: PURPLE_LIGHT, borderRadius: 12, padding: 14, marginBottom: 16, border: `1px solid ${BORDER}` }}>
+                <div style={{ fontSize: 14, marginBottom: 8 }}>피부 고민으로 찾기</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {SKIN_CONCERN_CHIPS.map((c) => (
+                    <span key={c} style={{ fontSize: 12, padding: '6px 12px', borderRadius: 20, background: CARD, border: `1px solid ${BORDER}`, color: TEXT_SUB }}>{c}</span>
+                  ))}
+                </div>
               </div>
             ) : null}
             {services.length === 0 ? (
@@ -654,27 +688,54 @@ export default function SalonHomePage() {
               ))}
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
-              {PHASE_FILTERS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => {
-                    setPhaseFilter(p)
-                    setReviewLimit(5)
-                  }}
-                  style={{
-                    border: `1px solid ${phaseFilter === p ? PURPLE : BORDER}`,
-                    background: phaseFilter === p ? PURPLE_LIGHT : CARD,
-                    color: phaseFilter === p ? TEXT : TEXT_SUB,
-                    borderRadius: 20,
-                    padding: '6px 12px',
-                    fontSize: 12,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {p === '전체' ? '전체' : `${PHASE_EMOJI[p] || ''}${p}`}
-                </button>
-              ))}
+              {showCyclePhase ? (
+                PHASE_FILTERS.map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => {
+                      setPhaseFilter(p)
+                      setReviewLimit(5)
+                    }}
+                    style={{
+                      border: `1px solid ${phaseFilter === p ? PURPLE : BORDER}`,
+                      background: phaseFilter === p ? PURPLE_LIGHT : CARD,
+                      color: phaseFilter === p ? TEXT : TEXT_SUB,
+                      borderRadius: 20,
+                      padding: '6px 12px',
+                      fontSize: 12,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {p === '전체' ? '전체' : `${PHASE_EMOJI[p] || ''}${p}`}
+                  </button>
+                ))
+              ) : (
+                <>
+                  <span style={{ fontSize: 12, color: TEXT_SUB, width: '100%', marginBottom: 2 }}>피부 고민으로 찾기</span>
+                  {SKIN_CONCERN_CHIPS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => {
+                        setSkinConcernFilter(skinConcernFilter === c ? null : c)
+                        setReviewLimit(5)
+                      }}
+                      style={{
+                        border: `1px solid ${skinConcernFilter === c ? PURPLE : BORDER}`,
+                        background: skinConcernFilter === c ? PURPLE_LIGHT : CARD,
+                        color: skinConcernFilter === c ? TEXT : TEXT_SUB,
+                        borderRadius: 20,
+                        padding: '6px 12px',
+                        fontSize: 12,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </>
+              )}
             </div>
             {visibleReviews.length === 0 ? (
               <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 13, padding: 24 }}>리뷰가 없어요</div>
@@ -696,7 +757,7 @@ export default function SalonHomePage() {
                       <span style={{ fontSize: 12, color: GOLD }}>★ {Number(r.rating || 0).toFixed(1)}</span>
                     </div>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-                      {r.hormone_phase ? (
+                      {showCyclePhase && r.hormone_phase ? (
                         <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, ...phaseBadgeStyle(String(r.hormone_phase)) }}>{r.hormone_phase}</span>
                       ) : null}
                       {r.skin_type ? <span style={{ fontSize: 10, padding: '3px 8px', borderRadius: 20, background: SURFACE, color: TEXT_SUB }}>{r.skin_type}</span> : null}
