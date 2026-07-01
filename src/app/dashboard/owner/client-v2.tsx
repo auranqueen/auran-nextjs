@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { canShowCyclePhase } from '@/lib/hormoneUtils'
 import SalonChatListPopup from './salon-chat/SalonChatListPopup'
 import NewChatPopup from './salon-chat/NewChatPopup'
 
@@ -253,15 +254,18 @@ export default function OwnerDashClientV2() {
         if (!ext) return null
         if (phaseCache[ext.id]) return phaseCache[ext.id]
         let last: string | null = null
+        let track: string | null = null
         if (ext.auran_user_id) {
-          const { data: hcRows } = await sb.from('hormone_cycle').select('last_period_date').eq('user_id', ext.auran_user_id).order('created_at', { ascending: false }).limit(1)
-          last = ((hcRows as any[]) || [])[0]?.last_period_date ?? null
+          const { data: hcRows } = await sb.from('hormone_cycle').select('last_period_date, track').eq('user_id', ext.auran_user_id).order('created_at', { ascending: false }).limit(1)
+          const hcRow = ((hcRows as any[]) || [])[0]
+          last = hcRow?.last_period_date ?? null
+          track = hcRow?.track != null ? String(hcRow.track) : null
         }
         if (!last) {
           const m = parseMemo(ext.memo)
           if (m.birth_date && m.menstruation === '있음') last = String(m.birth_date)
         }
-        const p = getPhase(last)
+        const p = canShowCyclePhase(track) ? getPhase(last) : null
         phaseCache[ext.id] = p
         return p
       }
@@ -291,11 +295,14 @@ export default function OwnerDashClientV2() {
       const alerts: { name: string; days: number }[] = []
       for (const ext of extList) {
         let last: string | null = null
+        let track: string | null = null
         if (ext.auran_user_id) {
-          const { data: hcRows } = await sb.from('hormone_cycle').select('last_period_date').eq('user_id', ext.auran_user_id).order('created_at', { ascending: false }).limit(1)
-          last = ((hcRows as any[]) || [])[0]?.last_period_date ?? null
+          const { data: hcRows } = await sb.from('hormone_cycle').select('last_period_date, track').eq('user_id', ext.auran_user_id).order('created_at', { ascending: false }).limit(1)
+          const hcRow = ((hcRows as any[]) || [])[0]
+          last = hcRow?.last_period_date ?? null
+          track = hcRow?.track != null ? String(hcRow.track) : null
         }
-        if (!last) continue
+        if (!last || !canShowCyclePhase(track)) continue
         for (const daysAhead of [1, 3]) {
           const target = new Date()
           target.setDate(target.getDate() + daysAhead)

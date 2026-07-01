@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { canShowCyclePhase } from '@/lib/hormoneUtils'
 import { compressImage } from '@/lib/imageUpload'
 
 const BG = '#ffffff'
@@ -222,22 +223,25 @@ export default function ChartPopup({ open, onClose, onSaved, customer, ownerId, 
     const run = async () => {
       const sb = supabaseRef.current
       let lastPeriod: string | null = null
+      let hormoneTrack: string | null = null
       if (customer.auran_user_id) {
         const { data: hcRows } = await sb
           .from('hormone_cycle')
-          .select('last_period_date')
+          .select('last_period_date, track')
           .eq('user_id', customer.auran_user_id)
           .order('created_at', { ascending: false })
           .limit(1)
-        lastPeriod = ((hcRows as any[]) || [])[0]?.last_period_date ?? null
+        const hcRow = ((hcRows as any[]) || [])[0]
+        lastPeriod = hcRow?.last_period_date ?? null
+        hormoneTrack = hcRow?.track != null ? String(hcRow.track) : null
       }
       if (!lastPeriod && memoData.birth_date && memoData.menstruation === '있음') {
         lastPeriod = String(memoData.birth_date)
       }
-      const p = getPhase(lastPeriod)
+      const p = canShowCyclePhase(hormoneTrack) ? getPhase(lastPeriod) : '—'
       setPhase(p)
-      const golden = getNextGoldenDate(lastPeriod)
-      setGoldenHint(golden)
+      const golden = canShowCyclePhase(hormoneTrack) ? getNextGoldenDate(lastPeriod) : null
+      setGoldenHint(golden || '')
       if (golden) setNextVisitDate(golden)
 
       const { data: hist } = await sb

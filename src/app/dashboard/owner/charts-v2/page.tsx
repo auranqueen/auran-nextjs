@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { canShowCyclePhase } from '@/lib/hormoneUtils'
 import CustomerPopup from './CustomerPopup'
 import ChartPopup from './ChartPopup'
 import InvitePopup from './InvitePopup'
@@ -148,11 +149,13 @@ export default function OwnerChartsV2Page() {
     }
 
     let hormoneMap: Record<string, string> = {}
+    let trackMap: Record<string, string> = {}
     if (userIds.length) {
-      const { data: hcRows } = await sb.from('hormone_cycle').select('user_id,last_period_date,created_at').in('user_id', userIds).order('created_at', { ascending: false })
+      const { data: hcRows } = await sb.from('hormone_cycle').select('user_id,last_period_date,track,created_at').in('user_id', userIds).order('created_at', { ascending: false })
       for (const h of (hcRows as any[]) || []) {
         const uid = String(h.user_id || '')
         if (uid && !hormoneMap[uid] && h.last_period_date) hormoneMap[uid] = String(h.last_period_date)
+        if (uid && !trackMap[uid] && h.track != null) trackMap[uid] = String(h.track)
       }
     }
 
@@ -170,7 +173,11 @@ export default function OwnerChartsV2Page() {
       const uid = String(u.id)
       const authId = u.auth_id ? String(u.auth_id) : null
       const prof = authId ? profileMap[authId] : null
-      const mergedProfile = prof ? { ...prof, last_period_date: hormoneMap[uid] ?? null } : hormoneMap[uid] ? { last_period_date: hormoneMap[uid] } : null
+      const mergedProfile = prof
+        ? { ...prof, last_period_date: hormoneMap[uid] ?? null, hormone_track: trackMap[uid] ?? null }
+        : hormoneMap[uid] || trackMap[uid]
+          ? { last_period_date: hormoneMap[uid] ?? null, hormone_track: trackMap[uid] ?? null }
+          : null
       rows.push({ key: `user-${uid}`, kind: 'user', id: uid, authId, name: String(u.name || '고객'), profile: mergedProfile, visitCount: visitByCustomer[uid]?.count ?? 0, lastVisit: visitByCustomer[uid]?.last ?? null })
     }
 
@@ -298,7 +305,8 @@ export default function OwnerChartsV2Page() {
                   </thead>
                   <tbody>
                     {customers.map((c) => {
-                      const phase = getPhaseFromCycleStart(cycleStartFromProfile(c.profile))
+                      const track = c.profile?.hormone_track != null ? String(c.profile.hormone_track) : null
+                      const phase = canShowCyclePhase(track) ? getPhaseFromCycleStart(cycleStartFromProfile(c.profile)) : '—'
                       const skin = c.profile?.skin_type ? String(c.profile.skin_type) : '—'
                       return (
                         <tr key={c.key} style={{ borderBottom: `1px solid ${BORDER}` }}>
