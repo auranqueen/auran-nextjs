@@ -5,6 +5,9 @@
 
 ## 2026-06-03
 
+### 긴급수정: 페이즈 게이트 gender 이중 체크
+- 실데이터에서 남성 고객(`gender=male`)인데 `hormone_cycle.track=general` 케이스 발견 → `canShowCyclePhase`에 gender 체크 추가, 5개 호출부 전수 반영
+
 ### 호르몬 페이즈 노출 게이트 전수 적용
 - **원인:** `profiles.cycle_type` / `hormone_cycle_applicable` 죽은 컬럼(전원 null)으로 게이트 미작동 → 남성·갱년기·임신 등에도 4페이즈 노출
 - **UNIT A:** `hormoneUtils.ts` — `canShowCyclePhase(track)` 추가 (`track === 'general'`만 true)

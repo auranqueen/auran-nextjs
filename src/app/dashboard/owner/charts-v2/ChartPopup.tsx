@@ -224,6 +224,7 @@ export default function ChartPopup({ open, onClose, onSaved, customer, ownerId, 
       const sb = supabaseRef.current
       let lastPeriod: string | null = null
       let hormoneTrack: string | null = null
+      let customerGender: string | null = null
       if (customer.auran_user_id) {
         const { data: hcRows } = await sb
           .from('hormone_cycle')
@@ -234,13 +235,18 @@ export default function ChartPopup({ open, onClose, onSaved, customer, ownerId, 
         const hcRow = ((hcRows as any[]) || [])[0]
         lastPeriod = hcRow?.last_period_date ?? null
         hormoneTrack = hcRow?.track != null ? String(hcRow.track) : null
+        const { data: uRow } = await sb.from('users').select('auth_id').eq('id', customer.auran_user_id).maybeSingle()
+        if (uRow?.auth_id) {
+          const { data: prof } = await sb.from('profiles').select('gender').eq('auth_id', uRow.auth_id).maybeSingle()
+          customerGender = prof?.gender != null ? String(prof.gender) : null
+        }
       }
       if (!lastPeriod && memoData.birth_date && memoData.menstruation === '있음') {
         lastPeriod = String(memoData.birth_date)
       }
-      const p = canShowCyclePhase(hormoneTrack) ? getPhase(lastPeriod) : '—'
+      const p = canShowCyclePhase(hormoneTrack, customerGender) ? getPhase(lastPeriod) : '—'
       setPhase(p)
-      const golden = canShowCyclePhase(hormoneTrack) ? getNextGoldenDate(lastPeriod) : null
+      const golden = canShowCyclePhase(hormoneTrack, customerGender) ? getNextGoldenDate(lastPeriod) : null
       setGoldenHint(golden || '')
       if (golden) setNextVisitDate(golden)
 

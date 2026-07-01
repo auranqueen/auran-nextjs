@@ -25,7 +25,8 @@ export function isPeriodTrack(track: string | null | undefined) {
   return track === 'general' || track === 'menopause_peri'
 }
 
-export function canShowCyclePhase(track: string | null | undefined): boolean {
+export function canShowCyclePhase(track: string | null | undefined, gender?: string | null): boolean {
+  if (gender === 'male') return false
   return track === 'general'
 }
 

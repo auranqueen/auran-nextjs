@@ -194,6 +194,7 @@ export default function SalonHomePage() {
   const [customerUserId, setCustomerUserId] = useState<string | null>(null)
   const [lastPeriodDate, setLastPeriodDate] = useState<string | null>(null)
   const [hormoneTrack, setHormoneTrack] = useState<string | null>(null)
+  const [customerGender, setCustomerGender] = useState<string | null>(null)
   const [skinConcernFilter, setSkinConcernFilter] = useState<string | null>(null)
 
   useEffect(() => {
@@ -231,18 +232,23 @@ export default function SalonHomePage() {
         const { data: urow } = await sb.from('users').select('id').eq('auth_id', auth.user.id).maybeSingle()
         if (urow?.id) {
           setCustomerUserId(String(urow.id))
-          const { data: hcRows } = await sb
-            .from('hormone_cycle')
-            .select('last_period_date, track')
-            .eq('user_id', urow.id)
-            .order('created_at', { ascending: false })
-            .limit(1)
+          const [{ data: hcRows }, { data: prof }] = await Promise.all([
+            sb
+              .from('hormone_cycle')
+              .select('last_period_date, track')
+              .eq('user_id', urow.id)
+              .order('created_at', { ascending: false })
+              .limit(1),
+            sb.from('profiles').select('gender').eq('auth_id', auth.user.id).maybeSingle(),
+          ])
           const hcRow = ((hcRows as { last_period_date?: string; track?: string }[]) || [])[0]
           const last = hcRow?.last_period_date
           const track = hcRow?.track != null ? String(hcRow.track) : null
+          const gender = prof?.gender != null ? String(prof.gender) : null
           setHormoneTrack(track)
+          setCustomerGender(gender)
           setLastPeriodDate(last || null)
-          setCustomerPhase(canShowCyclePhase(track) ? calcPhase(last) : null)
+          setCustomerPhase(canShowCyclePhase(track, gender) ? calcPhase(last) : null)
         }
       }
 
@@ -346,7 +352,7 @@ export default function SalonHomePage() {
     return [5, 4, 3, 2, 1].map((star) => ({ star, count: counts[star], pct: (counts[star] / max) * 100 }))
   }, [reviews])
 
-  const showCyclePhase = canShowCyclePhase(hormoneTrack)
+  const showCyclePhase = canShowCyclePhase(hormoneTrack, customerGender)
 
   const filteredReviews = useMemo(() => {
     if (!showCyclePhase) {

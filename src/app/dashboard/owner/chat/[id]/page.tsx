@@ -118,6 +118,7 @@ export default function OwnerChatRoomPage() {
     avatar_url: string | null
   } | null>(null)
   const [customerHormoneTrack, setCustomerHormoneTrack] = useState<string | null>(null)
+  const [customerGender, setCustomerGender] = useState<string | null>(null)
   const [showHistoryList, setShowHistoryList] = useState(false)
   const [channels, setChannels] = useState<
     { id: string; title: string; preview_text: string; last_message_at: string | null; unread_count: number; user_id?: string | null; customer_name?: string }[]
@@ -225,7 +226,7 @@ export default function OwnerChatRoomPage() {
       if (!uRow) return
       const authId = uRow.auth_id
       const [profileRes, cycleRes, hormoneCycleRes] = await Promise.all([
-        supabase.from('profiles').select('skin_type,skin_concerns,avatar_url,notification_sound').eq('auth_id', authId).maybeSingle(),
+        supabase.from('profiles').select('skin_type,skin_concerns,avatar_url,notification_sound,gender').eq('auth_id', authId).maybeSingle(),
         supabase
           .from('skin_cycle_analysis')
           .select('hormone_stage')
@@ -246,6 +247,7 @@ export default function OwnerChatRoomPage() {
         setNotifSound(String(profile.notification_sound))
       }
       setCustomerHormoneTrack(hormoneCycleRes.data?.track != null ? String(hormoneCycleRes.data.track) : null)
+      setCustomerGender(profileRes.data?.gender != null ? String(profileRes.data.gender) : null)
       setCustomerSkinInfo({
         skin_type: (profile as any)?.skin_type ?? null,
         skin_concerns: (profileRes.data as any)?.skin_concerns ?? [],
@@ -2565,7 +2567,7 @@ export default function OwnerChatRoomPage() {
                 <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '8px 10px' }}>
                   <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.4)', marginBottom: 3 }}>호르몬 페이즈</div>
                   <div style={{ fontSize: 11, color: '#C084FC' }}>
-                    {canShowCyclePhase(customerHormoneTrack) ? (
+                    {canShowCyclePhase(customerHormoneTrack, customerGender) ? (
                       <>
                         {customerSkinInfo.hormone_phase === 'menstrual' && '🌙 달빛기'}
                         {customerSkinInfo.hormone_phase === 'follicular' && '✨ 황금기'}

@@ -142,7 +142,7 @@ export default function OwnerChartsV2Page() {
 
     let profileMap: Record<string, Record<string, unknown>> = {}
     if (authIds.length) {
-      const { data: profiles } = await sb.from('profiles').select('auth_id,skin_type,skin_concerns,birth_date,body_status,allergy_ingredients').in('auth_id', authIds)
+      const { data: profiles } = await sb.from('profiles').select('auth_id,skin_type,skin_concerns,birth_date,body_status,allergy_ingredients,gender').in('auth_id', authIds)
       for (const p of (profiles as any[]) || []) {
         if (p.auth_id) profileMap[p.auth_id] = p
       }
@@ -306,7 +306,8 @@ export default function OwnerChartsV2Page() {
                   <tbody>
                     {customers.map((c) => {
                       const track = c.profile?.hormone_track != null ? String(c.profile.hormone_track) : null
-                      const phase = canShowCyclePhase(track) ? getPhaseFromCycleStart(cycleStartFromProfile(c.profile)) : '—'
+                      const gender = c.profile?.gender != null ? String(c.profile.gender) : null
+                      const phase = canShowCyclePhase(track, gender) ? getPhaseFromCycleStart(cycleStartFromProfile(c.profile)) : '—'
                       const skin = c.profile?.skin_type ? String(c.profile.skin_type) : '—'
                       return (
                         <tr key={c.key} style={{ borderBottom: `1px solid ${BORDER}` }}>

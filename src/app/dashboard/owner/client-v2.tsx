@@ -255,17 +255,23 @@ export default function OwnerDashClientV2() {
         if (phaseCache[ext.id]) return phaseCache[ext.id]
         let last: string | null = null
         let track: string | null = null
+        let gender: string | null = null
         if (ext.auran_user_id) {
           const { data: hcRows } = await sb.from('hormone_cycle').select('last_period_date, track').eq('user_id', ext.auran_user_id).order('created_at', { ascending: false }).limit(1)
           const hcRow = ((hcRows as any[]) || [])[0]
           last = hcRow?.last_period_date ?? null
           track = hcRow?.track != null ? String(hcRow.track) : null
+          const { data: uRow } = await sb.from('users').select('auth_id').eq('id', ext.auran_user_id).maybeSingle()
+          if (uRow?.auth_id) {
+            const { data: prof } = await sb.from('profiles').select('gender').eq('auth_id', uRow.auth_id).maybeSingle()
+            gender = prof?.gender != null ? String(prof.gender) : null
+          }
         }
         if (!last) {
           const m = parseMemo(ext.memo)
           if (m.birth_date && m.menstruation === '있음') last = String(m.birth_date)
         }
-        const p = canShowCyclePhase(track) ? getPhase(last) : null
+        const p = canShowCyclePhase(track, gender) ? getPhase(last) : null
         phaseCache[ext.id] = p
         return p
       }
@@ -296,13 +302,19 @@ export default function OwnerDashClientV2() {
       for (const ext of extList) {
         let last: string | null = null
         let track: string | null = null
+        let gender: string | null = null
         if (ext.auran_user_id) {
           const { data: hcRows } = await sb.from('hormone_cycle').select('last_period_date, track').eq('user_id', ext.auran_user_id).order('created_at', { ascending: false }).limit(1)
           const hcRow = ((hcRows as any[]) || [])[0]
           last = hcRow?.last_period_date ?? null
           track = hcRow?.track != null ? String(hcRow.track) : null
+          const { data: uRow } = await sb.from('users').select('auth_id').eq('id', ext.auran_user_id).maybeSingle()
+          if (uRow?.auth_id) {
+            const { data: prof } = await sb.from('profiles').select('gender').eq('auth_id', uRow.auth_id).maybeSingle()
+            gender = prof?.gender != null ? String(prof.gender) : null
+          }
         }
-        if (!last || !canShowCyclePhase(track)) continue
+        if (!last || !canShowCyclePhase(track, gender)) continue
         for (const daysAhead of [1, 3]) {
           const target = new Date()
           target.setDate(target.getDate() + daysAhead)

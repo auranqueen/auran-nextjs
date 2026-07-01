@@ -91,7 +91,7 @@ external_customers     — 외부 고객 (오프라인 고객 관리)
 
 **페이즈 4단계:** 달빛기 → 황금기 → 만개기 → 물들기
 
-페이즈 관련 신규 코드 작성 시 반드시 `canShowCyclePhase(hormone_cycle.track)` 게이트를 거칠 것. `profiles.cycle_type` 사용 금지.
+페이즈 관련 신규 코드 작성 시 반드시 `canShowCyclePhase(hormone_cycle.track, profiles.gender)` 게이트를 거칠 것 — track+gender 이중 체크 (2026-06-03 강화). `profiles.cycle_type` 사용 금지.
 
 ---
 
