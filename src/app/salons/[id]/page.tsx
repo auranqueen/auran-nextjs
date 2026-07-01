@@ -6,6 +6,7 @@ import StoreHeroGreeting from '@/components/salon-store/StoreHeroGreeting'
 import StoreRelationshipCard from '@/components/salon-store/StoreRelationshipCard'
 import StoreRepurchaseCard from '@/components/salon-store/StoreRepurchaseCard'
 import StoreSnsMapInfo from '@/components/salon-store/StoreSnsMapInfo'
+import { EmptyBannerHook } from '@/components/salon-store/EmptyBannerHook'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 
@@ -493,11 +494,11 @@ export default function SalonHomePage() {
           {salon.area} · {openNow ? '영업 중' : '영업 종료'}
           {hoursToday && hoursToday.includes('~') ? ` · ${hoursToday.split('~')[1]?.trim()} 마감` : ''}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '160px 1fr', gap: 10, alignItems: 'start' }}>
           <div
             style={{
               width: '100%',
-              aspectRatio: '1/1',
+              aspectRatio: '16/9',
               borderRadius: 12,
               background: salon.banner_url ? `url(${salon.banner_url}) center/cover no-repeat` : PURPLE_LIGHT,
               display: 'flex',
@@ -507,7 +508,7 @@ export default function SalonHomePage() {
               flexShrink: 0,
             }}
           >
-            {!salon.banner_url ? <span style={{ fontSize: 36 }}>💜</span> : null}
+            {!salon.banner_url ? <EmptyBannerHook salonName={salon.name} /> : null}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
