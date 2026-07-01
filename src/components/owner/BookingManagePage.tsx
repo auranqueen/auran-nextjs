@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { useOwnerBookingRealtime } from '@/hooks/useOwnerBookingRealtime'
 
 const BG = '#ffffff'
 const SURFACE = '#f9f8fc'
@@ -173,6 +174,8 @@ export default function BookingManagePage() {
       cancelled = true
     }
   }, [router, tab, selectedDate])
+
+  useOwnerBookingRealtime(ownerId, () => { if (ownerId) void loadBookings(ownerId, tab, selectedDate) })
 
   const updateStatus = async (id: string, status: string) => {
     if (!ownerId) return

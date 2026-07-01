@@ -75,6 +75,7 @@ export default function MyBookingStatus() {
   const [popup, setPopup] = useState<PurchaseRow | null>(null)
   const [bookings, setBookings] = useState<BookingRow[]>([])
   const [bookingsLoading, setBookingsLoading] = useState(false)
+  const [customerUserId, setCustomerUserId] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -91,6 +92,7 @@ export default function MyBookingStatus() {
         if (!cancelled) setLoading(false)
         return
       }
+      setCustomerUserId(String(me.id))
       const { data } = await sb
         .from('purchases')
         .select('id, salon_id, service_name, used_sessions, total_sessions, salons(name, category)')
@@ -107,6 +109,31 @@ export default function MyBookingStatus() {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    if (!customerUserId) return
+    const sb = supabaseRef.current
+    const reload = async () => {
+      const { data } = await sb
+        .from('purchases')
+        .select('id, salon_id, service_name, used_sessions, total_sessions, salons(name, category)')
+        .eq('customer_id', customerUserId)
+        .order('purchased_at', { ascending: false })
+      const list = ((data as PurchaseRow[]) || []).filter((p) => Number(p.used_sessions) < Number(p.total_sessions))
+      setRows(list)
+    }
+    const ch = sb
+      .channel(`customer-bookings-${customerUserId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'bookings', filter: `customer_id=eq.${customerUserId}` },
+        () => { void reload() },
+      )
+      .subscribe()
+    return () => {
+      void sb.removeChannel(ch)
+    }
+  }, [customerUserId])
 
   useEffect(() => {
     if (!popup) {
