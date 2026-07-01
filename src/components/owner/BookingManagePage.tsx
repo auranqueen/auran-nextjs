@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useOwnerBookingRealtime } from '@/hooks/useOwnerBookingRealtime'
+import { useSalonBookingMessage } from '@/hooks/useSalonBookingMessage'
 
 const BG = '#ffffff'
 const SURFACE = '#f9f8fc'
@@ -177,6 +178,8 @@ export default function BookingManagePage() {
 
   useOwnerBookingRealtime(ownerId, () => { if (ownerId) void loadBookings(ownerId, tab, selectedDate) })
 
+  const sendSalonBookingMessage = useSalonBookingMessage()
+
   const updateStatus = async (id: string, status: string) => {
     if (!ownerId) return
     const { error } = await supabaseRef.current
@@ -187,6 +190,23 @@ export default function BookingManagePage() {
     if (error) {
       showToast('변경 실패')
       return
+    }
+
+    const bookingForMsg = rows.find((bk) => bk.id === id)
+
+    if (status === 'confirmed' && bookingForMsg && (bookingForMsg.customer_id || bookingForMsg.external_customer_id)) {
+      const svcName = bookingForMsg.service_name ?? '관리'
+      const scheduledAt = (bookingForMsg as { scheduled_at?: string | null }).scheduled_at
+        ?? (bookingForMsg.booking_date ? `${bookingForMsg.booking_date}T${bookingForMsg.booking_time ?? '00:00'}` : null)
+      const dateStr = scheduledAt
+        ? new Date(scheduledAt).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : ''
+      await sendSalonBookingMessage(
+        ownerId,
+        bookingForMsg.customer_id || null,
+        bookingForMsg.external_customer_id || null,
+        `${dateStr} ${svcName} 예약이 확정됐어요! 🌙`,
+      )
     }
 
     if (status === 'completed' || status === 'cancelled') {
@@ -217,29 +237,22 @@ export default function BookingManagePage() {
     }
 
     if (status === 'completed' || status === 'cancelled') {
-      const booking = rows.find(bk => bk.id === id)
-      if (booking?.customer_id) {
-        const { data: userRow } = await supabaseRef.current
-          .from('users')
-          .select('phone, name')
-          .eq('id', booking.customer_id)
-          .single()
-        if (userRow?.phone) {
-          const svcName = booking.service_name ?? '관리'
-          const scheduledAt = (booking as { scheduled_at?: string | null }).scheduled_at
-            ?? (booking.booking_date ? `${booking.booking_date}T${booking.booking_time ?? '00:00'}` : null)
-          const dateStr = scheduledAt
-            ? new Date(scheduledAt).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-            : ''
-          const msg = status === 'completed'
-            ? `${userRow.name ?? '고객'}님, ${svcName} 관리가 완료됐어요 💜\n홈케어 잊지 마세요!`
-            : `${userRow.name ?? '고객'}님, ${dateStr} ${svcName} 예약이 취소됐어요.\n남은 회차는 그대로 유지됩니다.`
-          await fetch('/api/alimtalk/send', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone: userRow.phone, message: msg, title: 'AURAN 예약 알림' }),
-          }).catch(() => {})
-        }
+      if (bookingForMsg && (bookingForMsg.customer_id || bookingForMsg.external_customer_id)) {
+        const svcName = bookingForMsg.service_name ?? '관리'
+        const scheduledAt = (bookingForMsg as { scheduled_at?: string | null }).scheduled_at
+          ?? (bookingForMsg.booking_date ? `${bookingForMsg.booking_date}T${bookingForMsg.booking_time ?? '00:00'}` : null)
+        const dateStr = scheduledAt
+          ? new Date(scheduledAt).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+          : ''
+        const msg = status === 'completed'
+          ? `${svcName} 관리가 완료됐어요 💜\n홈케어 잊지 마세요!`
+          : `${dateStr} ${svcName} 예약이 취소됐어요.\n남은 회차는 그대로 유지됩니다.`
+        await sendSalonBookingMessage(
+          ownerId,
+          bookingForMsg.customer_id || null,
+          bookingForMsg.external_customer_id || null,
+          msg,
+        )
       }
     }
 
@@ -303,50 +316,6 @@ export default function BookingManagePage() {
                 message_kind: 'text',
               })
           }
-        }
-      }
-    }
-
-    if (status === 'completed' || status === 'cancelled') {
-      const booking = rows.find(bk => bk.id === id)
-      if (booking?.customer_id) {
-        const svcName = booking.service_name ?? '관리'
-        let msg: string
-        if (status === 'completed') {
-          const { data: salon } = await supabaseRef.current
-            .from('salons')
-            .select('id, services')
-            .eq('id', salonId)
-            .maybeSingle()
-          const services = salon?.services ?? []
-          const svc = Array.isArray(services)
-            ? services.find((s: { name?: string | null; review_toast_text?: number }) => s.name === booking.service_name)
-            : null
-          const toastAmt = svc?.review_toast_text ?? 100
-          msg = `${svcName} 관리가 완료됐어요 💜\n홈케어 잊지 마세요!\n\n리뷰 남기면 ${toastAmt}T 적립돼요 🍯\n👉 auran.kr/reviews/write?service=${encodeURIComponent(svcName)}`
-        } else {
-          msg = `${svcName} 예약이 취소됐어요.\n남은 회차는 그대로 유지되니 편하실 때 다시 예약해 주세요 💜`
-        }
-        const { data: channel } = await supabaseRef.current
-          .from('chat_channels')
-          .select('id')
-          .eq('owner_id', ownerId)
-          .eq('customer_id', booking.customer_id)
-          .eq('channel_type', 'salon')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single()
-        if (channel?.id) {
-          await supabaseRef.current
-            .from('salon_messages')
-            .insert({
-              channel_id: channel.id,
-              sender_id: ownerId,
-              sender_type: 'owner',
-              body: msg,
-              is_from_customer: false,
-              message_kind: 'text',
-            })
         }
       }
     }

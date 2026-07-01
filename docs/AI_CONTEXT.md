@@ -106,6 +106,8 @@ external_customers     — 외부 고객 (오프라인 고객 관리)
 7. useEffect/useCallback/useMemo deps에 supabase 절대 금지
 8. 500줄 초과 파일(salons/[id]/page.tsx, page.tsx, BookingManagePage.tsx 등) 수정 시 반드시 컴포넌트/훅 분리 + import 1줄 삽입 방식만 사용
 
+채팅 채널은 owner(AURAN 오렌콘솔)/salon(원장 전용)/platform 세 종류로 분리됨 — 원장 관련 자동 메시지는 반드시 salon 타입만 사용.
+
 ---
 
 ## 7. UI 규칙

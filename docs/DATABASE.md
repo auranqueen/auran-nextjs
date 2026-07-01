@@ -284,3 +284,10 @@ active_role = customer이면 brand role도 customer로 처리됨
 ### 예약 실시간 연동
 - bookings 테이블, owner_id/customer_id 필터 postgres_changes
 - 원장: useOwnerBookingRealtime 훅(BookingManagePage.tsx), 고객: MyBookingStatus.tsx 직접
+
+### 채팅 채널 역할 분리 (중요 — 절대 혼용 금지)
+- channel_type='owner' + consultation_messages: 고객↔AURAN(오렌콘솔), 원장 무관
+- channel_type='salon' + salon_messages + owner_id: 고객↔특정 원장님 전용
+- RLS(chat_channel_access)로 user_id/owner_id 일치하는 본인만 접근 가능, 관리자만 전체 접근
+- 예약 상태변경(확정/완료/취소) 메시지는 반드시 'salon' 타입 사용, useSalonBookingMessage 훅 참고
+- 카카오 알림톡은 예약 관련 용도로 미사용 전환 (오렌상담톡으로 대체)

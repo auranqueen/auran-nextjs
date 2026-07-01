@@ -5,6 +5,10 @@
 
 ## 2026-06-03
 
+### 예약 상태알림 오렌상담톡 전환 (UNIT L)
+- `useSalonBookingMessage` 훅 — channel_type='salon' + salon_messages
+- BookingManagePage: confirmed/완료/취소 시 오렌상담톡, 카카오 알림톡 예약용도 제거
+
 ### 배너 영역 풀폭 가로 캐러셀 재구성 (UNIT K)
 - `banner_urls`/`banner_links`/`story_url` 실제 연결, 헤더 아래 21:9 풀폭 캐러셀
 - 프로필 grid 좌측 정사각형 배너 칸 제거, `EmptyBannerHook` 가로형 후킹 카드
