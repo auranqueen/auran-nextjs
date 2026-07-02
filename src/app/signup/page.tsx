@@ -50,7 +50,7 @@ function SignupForm() {
   const [ownerSlugCopied, setOwnerSlugCopied] = useState(false)
   const { getSettingNum } = useAdminSettings()
   const [signupWelcomePoint, setSignupWelcomePoint] = useState(() =>
-    getSettingNum('points_action', 'signup_welcome', 8888)
+    getSettingNum('points_action', 'signup_welcome', 10000)
   )
 
   useEffect(() => {
@@ -69,7 +69,7 @@ function SignupForm() {
       setSignupWelcomePoint(
         psRow?.points
           ? Math.max(0, Math.floor(Number(psRow.points)))
-          : getSettingNum('points_action', 'signup_welcome', 8888)
+          : getSettingNum('points_action', 'signup_welcome', 10000)
       )
     })()
   }, [getSettingNum])

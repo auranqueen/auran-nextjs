@@ -59,7 +59,7 @@ const META: Record<string, { label: string; keys: Record<string, SettingMeta> }>
       streak_7days: { label: '7일 연속 저널 보너스', unit: 'P', type: 'number', defaultValue: '300' },
       streak_30days: { label: '30일 연속 저널 보너스', unit: 'P', type: 'number', defaultValue: '1000' },
       ai_analysis_complete: { label: 'AI 피부분석 완료 포인트', unit: 'P', type: 'number', defaultValue: '500' },
-      signup_welcome: { label: '회원가입 환영 포인트', unit: 'P', type: 'number', defaultValue: '8888' },
+      signup_welcome: { label: '회원가입 환영 포인트', unit: 'P', type: 'number', defaultValue: '10000' },
     },
   },
   points_payment: {

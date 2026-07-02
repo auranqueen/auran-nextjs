@@ -21,7 +21,7 @@ export async function insertSignupWelcomeNotification(supabase: SupabaseClient, 
     .eq('category', 'points_action')
     .eq('key', 'signup_welcome')
     .maybeSingle()
-  const pts = Number(wp?.value ?? 8888)
+  const pts = Number(wp?.value ?? 10000)
 
   await createNotification(
     supabase,

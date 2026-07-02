@@ -32,7 +32,7 @@ function LoginForm() {
   const meta = ROLE_META[role] || ROLE_META.customer
   const showDemo = process.env.NEXT_PUBLIC_SHOW_DEMO === 'true'
   const { getSettingNum } = useAdminSettings()
-  const signupWelcomePoint = getSettingNum('points_action', 'signup_welcome', 8888)
+  const signupWelcomePoint = getSettingNum('points_action', 'signup_welcome', 10000)
 
   const REMEMBER_EMAIL_KEY = 'auran_remember_email_v1'
   const REMEMBER_EMAIL_CHECKED_KEY = 'auran_remember_email_checked_v1'

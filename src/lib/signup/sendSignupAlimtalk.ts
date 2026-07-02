@@ -29,7 +29,7 @@ export async function sendSignupAlimtalkIfNeeded(authUserId: string): Promise<vo
   const { data: sCoupon } = await client.from('admin_settings').select('value').eq('category', 'alimtalk').eq('key', 'coupon_enabled').maybeSingle()
 
   const { data: welcomePointsRow } = await client.from('admin_settings').select('value').eq('category', 'points_action').eq('key', 'signup_welcome').maybeSingle()
-  const welcomePts = Number(welcomePointsRow?.value ?? 8888)
+  const welcomePts = Number(welcomePointsRow?.value ?? 10000)
 
   const { data: wc } = await client.from('coupons').select('name,end_at,discount_amount,min_order').eq('code', 'APP-WELCOME-5000').maybeSingle()
   const wcName = wc?.name || '웰컴 쿠폰 5,000원'

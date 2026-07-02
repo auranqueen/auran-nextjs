@@ -5,6 +5,7 @@
 
 ## 2026-07-02
 
+- signup: 환영 포인트 8,888P → 10,000P (코드 폴백 5곳 + DB admin_settings)
 - signup: 아이디→@auran.kr 변환으로 Supabase signUp 이메일 검증 오류 수정
 - signup/consent/onboarding/login: safe-area-inset 적용 (노치/홈바 겹침 해결)
 - layout.tsx viewport: viewportFit cover 추가
