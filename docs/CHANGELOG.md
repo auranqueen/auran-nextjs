@@ -5,6 +5,8 @@
 
 ## 2026-07-02
 
+- 홈 그리드: 상담톡 제거 (스텁 페이지 → 홈 튕김)
+- 홈 그리드: 리뷰·커뮤니티 라벨 fontSize 10→9
 - 고아 컴포넌트 12개 + lib 1개 삭제 (dead code 정리)
 - my/track: step 구조 제거 → 한 페이지 스크롤
 - my/track: 진행바·step state·goNext·validateStep1 제거

@@ -54,7 +54,6 @@ const POP_CONTENT: Record<Exclude<PopKey, null>, { title: string; body: string }
 const SHORTCUTS = [
   { label: '호르몬달력', emoji: '🌙', href: '/my/hormone', bg: '#EEEDFE', disabled: false },
   { label: '내관리', emoji: '💆', href: '/my/manage', bg: '#E1F5EE', disabled: false },
-  { label: '상담톡', emoji: '💬', href: '/dashboard/customer/chat', bg: '#EEEDFE', disabled: false },
   { label: '스킨스타', emoji: '✨', href: '/myworld', bg: '#FBEAF0', disabled: false },
   { label: '리뷰·커뮤니티', emoji: '📝', href: '/dashboard/customer/community', bg: '#FAEEDA', disabled: false },
   { label: '라이브', emoji: '📹', href: '#', bg: '#f0f0f0', disabled: true },
@@ -109,7 +108,7 @@ function ShortcutGrid({ isLoggedIn }: { isLoggedIn: boolean }) {
             }}>
               {item.emoji}
             </div>
-            <span style={{ fontSize: 10, color: '#2A2433', fontWeight: 500 }}>{item.label}</span>
+            <span style={{ fontSize: 9, color: '#2A2433', fontWeight: 500 }}>{item.label}</span>
           </div>
         )
         if (item.disabled) return <div key={item.label}>{inner}</div>
