@@ -101,6 +101,9 @@ export default function ProductDetailClient({
   const [loginSheetOpen, setLoginSheetOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [shareRefUserId, setShareRefUserId] = useState<string | null | undefined>(undefined)
+  const [myRole, setMyRole] = useState<string | null>(null)
+  const [partnerRefCode, setPartnerRefCode] = useState<string | null>(null)
+  const [partnerCommissionRate, setPartnerCommissionRate] = useState(5)
   const [myProfileSkinType, setMyProfileSkinType] = useState<string | null>(null)
   const paymentResumeOnce = useRef(false)
   const reviewSectionRef = useRef<HTMLDivElement | null>(null)
@@ -510,9 +513,28 @@ export default function ProductDetailClient({
   useEffect(() => {
     if (!shareOpen) return
     setShareRefUserId(undefined)
-    void supabase.auth.getSession().then(({ data: { session } }) => {
-      setShareRefUserId(session?.user?.id ?? null)
-    })
+    void (async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      const uid = session?.user?.id ?? null
+      setShareRefUserId(uid)
+      if (!uid) return
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('role, partner_referral_code')
+        .eq('auth_id', uid)
+        .maybeSingle()
+      setMyRole(prof?.role ?? null)
+      setPartnerRefCode(prof?.partner_referral_code ?? null)
+      if (prof?.role === 'partner') {
+        const { data: setting } = await supabase
+          .from('admin_settings')
+          .select('value')
+          .eq('category', 'partner')
+          .eq('key', 'partner_commission_basic')
+          .maybeSingle()
+        setPartnerCommissionRate(Number(setting?.value ?? 5))
+      }
+    })()
   }, [shareOpen])
 
   useEffect(() => {
@@ -1124,41 +1146,6 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
 
   return (
     <div style={wrap}>
-      <div
-        onClick={() => setShareOpen((o) => !o)}
-        style={{
-          background: 'rgba(123,94,167,0.12)',
-          borderTop: '1px solid rgba(123,94,167,0.2)',
-          borderBottom: '1px solid rgba(123,94,167,0.2)',
-          padding: '10px 16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          cursor: 'pointer',
-          position: 'relative',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span style={{ fontSize: 18 }}>🍓</span>
-          <div>
-            <div style={{ fontSize: 12, color: '#c4a8ff', lineHeight: 1.4 }}>이렇게 좋은 제품 나만 쓰기 너무해</div>
-            <div style={{ fontSize: 11, color: 'rgba(201,169,110,0.9)', marginTop: 2 }}>
-              공유하면 딸기잼 {sharePtsAmount.toLocaleString()} 적립
-            </div>
-          </div>
-        </div>
-        <div style={{
-          fontSize: 11,
-          color: '#7B5EA7',
-          background: 'rgba(123,94,167,0.2)',
-          border: '1px solid rgba(123,94,167,0.3)',
-          borderRadius: 20,
-          padding: '5px 12px',
-          whiteSpace: 'nowrap',
-        }}>
-          공유하기
-        </div>
-      </div>
       {shareOpen ? (
         <div
           style={{ position: 'fixed', inset: 0, zIndex: 89, background: 'transparent' }}
@@ -1173,137 +1160,107 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           onClick={() => router.push('/')}
           style={{ fontFamily: 'Georgia, serif', fontSize: 16, color: '#C9A96E', letterSpacing: '4px', cursor: 'pointer' }}
         >AURAN</div>
-        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => setShareOpen(true)}>
           <div style={{ fontSize: 9, color: '#7B5EA7' }}>공유</div>
           {shareOpen ? (
+          <div
+            style={{
+              position: 'fixed', inset: 0, zIndex: 999,
+              background: 'rgba(0,0,0,0.6)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              padding: '0 20px',
+            }}
+            onClick={() => setShareOpen(false)}
+          >
             <div
-              onClick={(e) => e.stopPropagation()}
+              onClick={e => e.stopPropagation()}
               style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: 8,
-                width: 'min(300px, calc(100vw - 24px))',
-                background: '#1a1610',
-                border: '1px solid rgba(123,94,167,0.35)',
-                borderRadius: 14,
-                padding: 14,
-                zIndex: 91,
-                boxShadow: '0 12px 40px rgba(0,0,0,0.45)',
+                width: '100%', maxWidth: 360,
+                background: '#1A1714',
+                borderRadius: 20,
+                padding: '20px',
+                border: '0.5px solid rgba(123,94,167,0.3)',
               }}
             >
-              <div style={{ fontSize: 12, color: '#B09AD0', marginBottom: 8 }}>공유 카피</div>
-              {sharePts.length > 0 ? (
-                <ul style={{ margin: '0 0 10px 0', paddingLeft: 18, fontSize: 11, color: '#e8e4dc', lineHeight: 1.5 }}>
-                  {sharePts.map((line, i) => (
-                    <li key={i} style={{ marginBottom: 4 }}>{line}</li>
-                  ))}
-                </ul>
-              ) : (
-                <div style={{ fontSize: 11, color: '#666', marginBottom: 10 }}>등록된 카피포인트가 없어요</div>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  const url = typeof window !== 'undefined' ? window.location.href.split('#')[0] : ''
-                  const text = sharePts.length ? sharePts.join('\n') : `${name}\n${url}`
-                  void (async () => {
-                    try {
-                      if (typeof navigator !== 'undefined' && navigator.share) {
-                        await navigator.share({ title: name, text, url })
-                      } else {
-                        await navigator.clipboard.writeText(`${text}\n${url}`)
-                        alert('내용을 복사했어요. 카카오톡에 붙여넣기 하세요!')
-                      }
-                      void recordShare('kakao')
-                    } catch {
-                      /* user cancelled or share/copy failed */
-                    }
-                  })()
-                }}
-                style={{
-                  width: '100%',
-                  marginBottom: 8,
-                  padding: '12px 0',
-                  borderRadius: 12,
-                  border: 'none',
-                  background: '#FEE500',
-                  color: '#191600',
-                  fontSize: 13,
-                  cursor: 'pointer',
-                  fontFamily: 'inherit',
-                  fontWeight: 700,
-                }}
-              >
-                카카오톡 공유
-              </button>
-              {shareRefUserId === null ? (
-                <div style={{ marginTop: 4 }}>
-                  <div style={{ fontSize: 11, color: '#888', marginBottom: 8, lineHeight: 1.5 }}>
-                    로그인하면 추천 링크 복사가 열려요.
+              {/* 헤더 */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <span style={{ fontSize: 22 }}>🍓</span>
+                  <div>
+                    <div style={{ fontSize: 13, color: '#c4a8ff', lineHeight: 1.4 }}>이렇게 좋은 제품 나만 쓰기 너무해</div>
+                    <div style={{ fontSize: 12, color: 'rgba(201,169,110,0.9)', marginTop: 4 }}>
+                      {myRole === 'partner'
+                        ? `공유하면 커미션 약 ${Math.floor(Number(product.retail_price ?? 0) * partnerCommissionRate / 100).toLocaleString()}원 지급`
+                        : `공유하면 딸기잼 ${sharePtsAmount.toLocaleString()}원 적립`}
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      void supabase.auth.signInWithOAuth({
-                        provider: 'kakao',
-                        options: { redirectTo: typeof window !== 'undefined' ? window.location.href : undefined },
-                      })
-                    }
-                    style={{
-                      width: '100%',
-                      padding: '12px 0',
-                      borderRadius: 12,
-                      border: 'none',
-                      background: '#FEE500',
-                      color: '#191600',
-                      fontSize: 13,
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      fontWeight: 700,
-                    }}
-                  >
-                    카카오 로그인
-                  </button>
                 </div>
-              ) : shareRefUserId ? (
-                <>
+                <button
+                  type="button"
+                  onClick={() => setShareOpen(false)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, color: 'rgba(255,255,255,0.5)', padding: '0 0 0 8px', lineHeight: 1 }}
+                >✕</button>
+              </div>
+              {/* 구분선 */}
+              <div style={{ height: '0.5px', background: 'rgba(255,255,255,0.1)', marginBottom: 16 }} />
+              {/* 카카오톡 공유 */}
+              {shareRefUserId === null ? (
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', textAlign: 'center', padding: '12px 0' }}>
+                  로그인 후 공유하면 적립돼요
+                </div>
+              ) : shareRefUserId === undefined ? (
+                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', textAlign: 'center', padding: '12px 0' }}>연결 확인 중…</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <button
                     type="button"
                     onClick={() => {
-                      void (async () => {
-                        try {
-                          await navigator.clipboard.writeText(shareLinkWithRef)
-                          alert('추천 링크를 복사했어요!')
-                          void recordShare('link')
-                        } catch {
-                          /* copy failed */
-                        }
-                      })()
+                      const link = myRole === 'partner' && partnerRefCode
+                        ? `${window.location.origin}/products/${product.id}?ref=${partnerRefCode}`
+                        : shareLinkWithRef
+                      if (navigator.share) {
+                        void navigator.share({ title: product.name ?? '', url: link })
+                      } else {
+                        void navigator.clipboard.writeText(link)
+                      }
+                      void recordShare('kakao')
+                      setShareOpen(false)
                     }}
                     style={{
-                      width: '100%',
-                      padding: '12px 0',
-                      borderRadius: 12,
-                      border: '1px solid rgba(123,94,167,0.45)',
-                      background: 'rgba(123,94,167,0.15)',
-                      color: '#e8d9ff',
-                      fontSize: 13,
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
+                      width: '100%', padding: '14px',
+                      background: '#FEE500', borderRadius: 12, border: 'none',
+                      fontSize: 14, color: '#191919', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                     }}
                   >
-                    내 추천 링크 복사
+                    <span>💬</span> 카카오톡 공유
                   </button>
-                  <div style={{ fontSize: 10, color: '#666', lineHeight: 1.5, marginTop: 10 }}>
-                    친구 가입·첫구매 시 토스트 추가 적립이 있을 수 있어요. (캠페인 기준)
-                  </div>
-                </>
-              ) : (
-                <div style={{ fontSize: 11, color: '#666' }}>연결 확인 중…</div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const link = myRole === 'partner' && partnerRefCode
+                        ? `${window.location.origin}/products/${product.id}?ref=${partnerRefCode}`
+                        : shareLinkWithRef
+                      void navigator.clipboard.writeText(link).then(() => {
+                        void recordShare('link')
+                        setShareOpen(false)
+                      })
+                    }}
+                    style={{
+                      width: '100%', padding: '14px',
+                      background: 'rgba(123,94,167,0.15)', borderRadius: 12,
+                      border: '0.5px solid rgba(123,94,167,0.4)',
+                      fontSize: 14, color: '#c4a8ff', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    }}
+                  >
+                    <span>🔗</span> 추천링크 복사
+                  </button>
+                </div>
               )}
             </div>
-          ) : null}
+          </div>
+        ) : null}
         </div>
       </div>
 
