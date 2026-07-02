@@ -90,10 +90,11 @@ export default function MyProfilePage() {
       }
       setAuthId(user.id)
       const { data: profile } = await supabase.from('profiles').select('*, avatar_url').eq('auth_id', user.id).maybeSingle()
-      setFullName(String(profile?.full_name ?? ''))
-      setUsername(String(profile?.username ?? ''))
+      const { data: userRow } = await supabase.from('users').select('name, phone').eq('auth_id', user.id).maybeSingle()
+      setFullName(String(profile?.full_name ?? userRow?.name ?? ''))
+      setUsername(String(profile?.username ?? userRow?.name ?? ''))
       setEmail(String(profile?.email ?? user.email ?? ''))
-      setPhone(String(profile?.phone ?? ''))
+      setPhone(String(profile?.phone ?? userRow?.phone ?? ''))
       setBirthDate(String(profile?.birth_date ?? '').slice(0, 10))
       if (profile?.birth_date) {
         const bd = String(profile.birth_date).slice(0, 10)
