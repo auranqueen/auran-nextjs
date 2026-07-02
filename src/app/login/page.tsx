@@ -433,10 +433,10 @@ function LoginForm() {
         {/* 이메일 폼 */}
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 12, position: 'relative', zIndex: 2, pointerEvents: 'auto' }}>
           <div>
-            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 5, fontFamily: "'JetBrains Mono', monospace" }}>이메일</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 5, fontFamily: "'JetBrains Mono', monospace" }}>아이디</div>
             <input
-              type="email" value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="example@email.com" required
+              type="text" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="아이디" required
               style={inputStyle}
               onFocus={e => e.target.style.borderColor = meta.accent}
               onBlur={e => e.target.style.borderColor = 'var(--border)'}

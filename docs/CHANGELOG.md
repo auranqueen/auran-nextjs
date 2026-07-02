@@ -3,6 +3,12 @@
 
 ---
 
+## 2026-07-02
+
+### 로그인 아이디 문구 통일 + 가입 동의 환영문구 크기 조정 (UNIT JJ/KK)
+- login/page.tsx: 두 번째 로그인 블록의 라벨 `이메일`→`아이디`, placeholder `example@email.com`→`아이디`, 입력 타입 `email`→`text`
+- signup/consent/page.tsx: 환영 문구(`오렌에 오신 걸 환영해요 💜`) fontSize 22→20으로 축소
+
 ## 2026-06-03
 
 ### 보안 강화 — 로그인·결제PIN 단계식 잠금 + PIN UX (UNIT FF–II)
