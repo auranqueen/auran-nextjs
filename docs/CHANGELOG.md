@@ -5,6 +5,10 @@
 
 ## 2026-06-03
 
+### 보안 감사 — checkout PIN 검증 통일 (UNIT DD)
+- checkout/page.tsx: users.payment_pin(죽은 컬럼) 직접 비교 제거 → PaymentAuthGuard + api/auth/pin/verify
+- UNIT EE(로그인 계정 잠금): users.login_failed_count/login_locked_until 컬럼 없음 — SQL 추가 후 재작업 필요
+
 ### 원장 가입완료 slug 자동생성·전용주소 안내 (UNIT CC)
 - signup/page.tsx: owner 가입 시 profiles.slug 생성(UNIT O 동일 규칙) + 완료 화면 전용 로그인 주소·복사
 

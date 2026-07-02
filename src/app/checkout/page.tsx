@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Suspense } from 'react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import DashboardHeader from '@/components/DashboardHeader'
@@ -17,6 +17,7 @@ import {
   type OrderLineForCoupon,
 } from '@/lib/coupon/computeDiscount'
 import { fetchUserCouponsWithCoupons } from '@/lib/coupon/fetchUserCouponsWithCoupons'
+import PaymentAuthGuard from '@/components/PaymentAuthGuard'
 
 function toNum(v: any) {
   const n = Number(v)
@@ -57,10 +58,8 @@ function CheckoutPageInner() {
   const [payWithToast, setPayWithToast] = useState(true)
   const [payModal, setPayModal] = useState(false)
   const [earnToast, setEarnToast] = useState(true)
-  const [pinOpen, setPinOpen] = useState(false)
-  const [pinInput, setPinInput] = useState('')
-  const [pinChecking, setPinChecking] = useState(false)
   const [isPaying, setIsPaying] = useState(false)
+  const payGuardBtnRef = useRef<HTMLButtonElement>(null)
   const [gradeDiscount, setGradeDiscount] = useState(0)
   const [gradeName, setGradeName] = useState('')
   const [shippingFee, setShippingFee] = useState(0)
@@ -459,49 +458,8 @@ function CheckoutPageInner() {
       setIsPaying(false)
       return
     }
-    if (needCharge > 0) {
-      router.push(`/payment/payapp?products=${orderedProducts.map(p=>p.id).join(',')}&qty=${qtyList.join(',')}&product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}&user_coupon_id=${(selectedUserCouponId && !selectedUserCouponId.startsWith('virtual_')) ? selectedUserCouponId : ''}`)
-      setIsPaying(false)
-      return
-    }
-    router.push(`/payment/payapp?products=${orderedProducts.map(p=>p.id).join(',')}&qty=${qtyList.join(',')}&product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}&user_coupon_id=${(selectedUserCouponId && !selectedUserCouponId.startsWith('virtual_')) ? selectedUserCouponId : ''}`)
     setIsPaying(false)
-  }
-
-  const confirmPinAndPay = async () => {
-    if (isPaying) return
-    setIsPaying(true)
-    if (!recipientName?.trim()) {
-      setToast('받는 분 이름을 입력해주세요')
-      setIsPaying(false)
-      return
-    }
-    if (!recipientPhone?.trim()) {
-      setToast('연락처를 입력해주세요')
-      setIsPaying(false)
-      return
-    }
-    if (!address?.trim()) {
-      setToast('배송지 주소를 입력해주세요')
-      setIsPaying(false)
-      return
-    }
-    if (!meId || pinInput.length !== 6 || pinChecking) {
-      setIsPaying(false)
-      return
-    }
-    setPinChecking(true)
-    const { data: me } = await supabase.from('users').select('payment_pin').eq('id', meId).maybeSingle()
-    if (!me?.payment_pin || String(me.payment_pin) !== pinInput) {
-      setPinChecking(false)
-      setToast('결제 PIN이 올바르지 않습니다')
-      setIsPaying(false)
-      return
-    }
-    setPinOpen(false)
-    setPinChecking(false)
-    router.push(`/payment/payapp?products=${orderedProducts.map(p=>p.id).join(',')}&qty=${qtyList.join(',')}&product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}&user_coupon_id=${(selectedUserCouponId && !selectedUserCouponId.startsWith('virtual_')) ? selectedUserCouponId : ''}`)
-    setIsPaying(false)
+    payGuardBtnRef.current?.click()
   }
 
   const onChargeKrw = async (krw: number) => {
@@ -649,37 +607,18 @@ function CheckoutPageInner() {
         generalProgress={generalProgress}
         rnobelProgress={rnbAmount > 0 ? rnobelProgress : undefined}
       />
-      {pinOpen ? (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 120, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-          <div style={{ width: '100%', maxWidth: 340, background: '#141210', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 14, padding: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#fff', marginBottom: 8 }}>결제 PIN 확인</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 10 }}>6자리 결제 PIN을 입력해 주세요.</div>
-            <input
-              value={pinInput}
-              onChange={(e) => setPinInput(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              inputMode="numeric"
-              maxLength={6}
-              placeholder="••••••"
-              style={{ width: '100%', height: 42, borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: '#0d0b09', color: '#fff', padding: '0 12px', marginBottom: 12, fontSize: 16, letterSpacing: 4 }}
-            />
-            <div style={{ display: 'flex', gap: 8 }}>
-              <button
-                onClick={() => setPinOpen(false)}
-                style={{ flex: 1, height: 40, borderRadius: 10, border: '1px solid rgba(255,255,255,0.16)', background: 'transparent', color: 'rgba(255,255,255,0.72)', cursor: 'pointer' }}
-              >
-                취소
-              </button>
-              <button
-                onClick={confirmPinAndPay}
-                disabled={pinInput.length !== 6 || pinChecking || settingsLoading || isPaying}
-                style={{ flex: 1, height: 40, borderRadius: 10, border: 'none', background: '#C9A96E', color: '#0d0b09', fontWeight: 700, cursor: 'pointer', opacity: pinInput.length !== 6 || pinChecking || settingsLoading || isPaying ? 0.6 : 1 }}
-              >
-                {pinChecking ? '확인 중...' : '확인'}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <PaymentAuthGuard
+        title="결제 PIN 확인"
+        requirePin
+        onSuccess={() => {
+          if (isPaying) return
+          setIsPaying(true)
+          router.push(`/payment/payapp?products=${orderedProducts.map(p=>p.id).join(',')}&qty=${qtyList.join(',')}&product_id=${orderedProducts[0]?.id}&amount=${payAppAmount}&shipping_fee=${shippingFee}&grade_discount=${gradeDiscountAmt}&subtotal=${subtotal}&recipient_name=${encodeURIComponent(recipientName || '')}&recipient_phone=${encodeURIComponent(recipientPhone || '')}&address=${encodeURIComponent(address || '')}&address_detail=${encodeURIComponent(addressDetail || '')}&coupon_discount=${couponDiscount}&user_coupon_id=${(selectedUserCouponId && !selectedUserCouponId.startsWith('virtual_')) ? selectedUserCouponId : ''}`)
+          setIsPaying(false)
+        }}
+      >
+        <button type="button" ref={payGuardBtnRef} style={{ display: 'none' }} tabIndex={-1} aria-hidden="true" />
+      </PaymentAuthGuard>
       {payModal && (
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'flex-end',zIndex:999}}>
           <div style={{width:'100%',background:'#171310',borderRadius:'20px 20px 0 0',padding:'24px 20px 40px'}}>
