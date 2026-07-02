@@ -103,7 +103,7 @@ function ConsentInner() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
-        <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 20, color: 'var(--text)', marginBottom: 6, textAlign: 'center' }}>오렌에 오신 걸 환영해요 💜</div>
+        <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 16, whiteSpace: 'nowrap', color: 'var(--text)', marginBottom: 6, textAlign: 'center' }}>오렌에 오신 걸 환영해요 💜</div>
         <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 28, textAlign: 'center' }}>서비스 이용을 위해 약관에 동의해주세요</div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 16 }}>
@@ -115,7 +115,7 @@ function ConsentInner() {
                 onChange={e => setConsent(c => ({ ...c, [item.key]: e.target.checked }))}
                 style={{ accentColor: '#7B5EA7', width: 16, height: 16, flexShrink: 0 }}
               />
-              <div style={{ flex: 1, fontSize: 13, color: 'var(--text)' }}>{item.label}</div>
+              <div style={{ flex: 1, fontSize: 11, color: 'var(--text)' }}>{item.label}</div>
               <button
                 type="button"
                 onClick={e => { e.preventDefault(); setModalKey(item.key) }}

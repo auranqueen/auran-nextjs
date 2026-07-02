@@ -5,6 +5,10 @@
 
 ## 2026-07-02
 
+### 회원가입 환영문구·약관 텍스트 모바일 폰트 조정 (UNIT NN/OO)
+- signup/consent/page.tsx: 환영 문구 fontSize 20→16, `whiteSpace: 'nowrap'` 추가
+- signup/consent/page.tsx: 약관 체크박스 라벨 fontSize 13→11
+
 ### 로그인 아이디 문구 통일 + 가입 동의 환영문구 크기 조정 (UNIT JJ/KK)
 - login/page.tsx: 두 번째 로그인 블록의 라벨 `이메일`→`아이디`, placeholder `example@email.com`→`아이디`, 입력 타입 `email`→`text`
 - signup/consent/page.tsx: 환영 문구(`오렌에 오신 걸 환영해요 💜`) fontSize 22→20으로 축소
