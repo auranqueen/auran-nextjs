@@ -49,6 +49,8 @@ AURAN(오렌)은 호르몬 주기 기반 피부 관리 O2O 플랫폼입니다.
 - Brand Hub: auran.kr/brand/[slug] (예: auran.kr/brand/civasan)
 - 물류 허브: auran.kr/logi/[slug] (예: auran.kr/logi/civasan)
 
+원장 전용 로그인은 /owner/[slug] (profiles.slug 기준). 가입 시 자동 생성됨. 공용 /login?role=owner는 폴백용으로만 유지.
+
 ---
 
 ## 4. DB 핵심 테이블

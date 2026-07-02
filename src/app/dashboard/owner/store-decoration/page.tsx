@@ -12,6 +12,7 @@ const P = '#7B5EA7'
 const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.9)'
 const TEXT_SUB = 'rgba(255,255,255,0.45)'
+const SURFACE = 'rgba(255,255,255,0.08)'
 
 const PHASE_KEYS = ['달빛기', '황금기', '만개기', '물들기'] as const
 const MAIN_CTA_OPTIONS = [
@@ -77,6 +78,7 @@ export default function StoreDecorationPage() {
   const [toast, setToast] = useState('')
   const [ownerUserId, setOwnerUserId] = useState<string | null>(null)
   const [salonId, setSalonId] = useState<string | null>(null)
+  const [ownerSlug, setOwnerSlug] = useState<string | null>(null)
 
   const [bannerUrls, setBannerUrls] = useState<(string | null)[]>([null, null, null])
   const [bannerLinks, setBannerLinks] = useState<string[]>(['none', 'none', 'none'])
@@ -111,6 +113,8 @@ export default function StoreDecorationPage() {
       }
       const oid = String(urow.id)
       setOwnerUserId(oid)
+      const { data: prof } = await sb.from('profiles').select('slug').eq('auth_id', auth.user.id).maybeSingle()
+      if (prof?.slug) setOwnerSlug(String(prof.slug))
       const { data: salon } = await sb
         .from('salons')
         .select('id, banner_urls, banner_links, story_url, story_type, phase_greetings, phase_reco_enabled, main_cta, map_url, sns_links')
@@ -316,6 +320,12 @@ export default function StoreDecorationPage() {
           {saving ? '저장 중...' : '저장하기'}
         </button>
 
+        {ownerSlug ? (
+          <div style={{ padding: '10px 12px', background: SURFACE, borderRadius: 10, marginBottom: 8, textAlign: 'center' }}>
+            <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 4 }}>내 전용 로그인 주소</div>
+            <div style={{ fontSize: 13, color: GOLD }}>auran.kr/owner/{ownerSlug}</div>
+          </div>
+        ) : null}
         {salonId ? (
           <a href={`/salons/${salonId}`} target="_blank" rel="noopener noreferrer" style={{ display: 'block', textAlign: 'center', fontSize: 13, color: GOLD, textDecoration: 'none', padding: 12 }}>
             고객화면 미리보기 →

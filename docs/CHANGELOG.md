@@ -5,6 +5,11 @@
 
 ## 2026-06-03
 
+### 원장 slug 자동생성 + 전용 로그인 주소 (UNIT O/P/Q)
+- store/page: owner_store_name 저장 시 slug 자동 생성(중복 시 숫자 suffix)
+- store-decoration: 내 전용 로그인 주소 노출
+- login?role=owner: 전용 주소 안내 배너
+
 ### 결제복귀 상태복원 + 예약접수 알림 (UNIT M/N)
 - salons/[id]: booking_paid 복귀 시 purchases 조회로 시술명·가격·회차·salon_id 복원 (₩0 버그)
 - bookings.insert 성공 시 고객·원장 notifications + useSalonBookingMessage 접수 메시지

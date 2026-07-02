@@ -203,13 +203,27 @@ export default function OwnerStorePage() {
         logoUrl = data.publicUrl || logoUrl
       }
     }
+    const nameTrim = modalName.trim()
+    const { data: profRow } = await supabase.from('profiles').select('slug').eq('auth_id', user.id).maybeSingle()
+    const profilePayload: Record<string, unknown> = {
+      owner_store_name: nameTrim || null,
+      owner_store_description: modalDesc.trim() || null,
+      owner_store_logo_url: logoUrl || null,
+    }
+    if (!profRow?.slug && nameTrim) {
+      let base = nameTrim.toLowerCase().replace(/[^a-z0-9]/g, '')
+      if (!base) base = 'owner' + Math.random().toString(16).slice(2, 10)
+      let candidate = base
+      for (let suffix = 1; suffix < 1000; suffix++) {
+        const { data: taken } = await supabase.from('profiles').select('auth_id').eq('slug', candidate).neq('auth_id', user.id).maybeSingle()
+        if (!taken) break
+        candidate = `${base}${suffix}`
+      }
+      profilePayload.slug = candidate
+    }
     await supabase
       .from('profiles')
-      .update({
-        owner_store_name: modalName.trim() || null,
-        owner_store_description: modalDesc.trim() || null,
-        owner_store_logo_url: logoUrl || null,
-      } as any)
+      .update(profilePayload as any)
       .eq('auth_id', user.id)
     setStoreName(modalName.trim() || null)
     setStoreDesc(modalDesc.trim() || null)
