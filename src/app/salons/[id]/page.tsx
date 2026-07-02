@@ -73,6 +73,7 @@ type SalonRow = {
   review_count?: number | null
   staff_count?: number | null
   room_count?: number | null
+  certificates?: { url: string; label?: string | null }[] | null
 }
 
 type ReviewRow = {
@@ -209,6 +210,7 @@ export default function SalonHomePage() {
   const [skinConcernFilter, setSkinConcernFilter] = useState<string | null>(null)
   const [bannerIndex, setBannerIndex] = useState(0)
   const [showStory, setShowStory] = useState(false)
+  const [certLightbox, setCertLightbox] = useState<{ url: string; label: string } | null>(null)
   const bannerTouchX = useRef(0)
 
   useEffect(() => {
@@ -351,6 +353,13 @@ export default function SalonHomePage() {
     const discount = pkg?.discount ?? 0
     return Math.floor(unit * bookingSessions * (1 - discount / 100))
   }, [bookingServicePrice, bookingSessions])
+  const salonCertificates = useMemo(() => {
+    const raw = salon?.certificates
+    if (!Array.isArray(raw)) return []
+    return raw
+      .filter((c) => c?.url)
+      .map((c) => ({ url: String(c.url), label: String(c.label || '') }))
+  }, [salon?.certificates])
   const hoursToday = useMemo(() => todayHours(salon?.open_hours ?? null), [salon?.open_hours])
   const openNow = useMemo(() => isOpenNow(salon?.open_hours ?? null), [salon?.open_hours])
   const salonBannerUrls = useMemo(() => {
@@ -621,6 +630,28 @@ export default function SalonHomePage() {
           ) : (
             <img src={salon.story_url} alt="" style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain' }} onClick={(e) => e.stopPropagation()} />
           )}
+        </div>
+      ) : null}
+
+      {certLightbox ? (
+        <div
+          role="presentation"
+          style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}
+          onClick={() => setCertLightbox(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setCertLightbox(null)}
+            style={{ position: 'absolute', top: 16, right: 16, width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.15)', color: TEXT, fontSize: 20, cursor: 'pointer' }}
+          >
+            ×
+          </button>
+          <div style={{ maxWidth: '100%', maxHeight: '90vh', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+            <img src={certLightbox.url} alt={certLightbox.label || ''} style={{ maxWidth: '100%', maxHeight: '80vh', objectFit: 'contain', borderRadius: 8 }} />
+            {certLightbox.label ? (
+              <div style={{ marginTop: 12, fontSize: 14, color: TEXT_SUB }}>{certLightbox.label}</div>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
@@ -969,6 +1000,26 @@ export default function SalonHomePage() {
               <div>
                 <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 4 }}>샵 소개</div>
                 <div style={{ fontSize: 14, lineHeight: 1.6, color: TEXT_SUB }}>{salon.description}</div>
+              </div>
+            ) : null}
+            {salonCertificates.length ? (
+              <div style={{ marginTop: salon.description || salon.address || hoursToday || salon.phone || ownerName ? 16 : 0, paddingTop: salon.description || salon.address || hoursToday || salon.phone || ownerName ? 16 : 0, borderTop: salon.description || salon.address || hoursToday || salon.phone || ownerName ? `1px solid ${BORDER}` : 'none' }}>
+                <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 10 }}>자격증 · 경력</div>
+                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+                  {salonCertificates.map((cert, idx) => (
+                    <button
+                      key={`${cert.url}-${idx}`}
+                      type="button"
+                      onClick={() => setCertLightbox(cert)}
+                      style={{ flex: '0 0 auto', width: 120, border: `1px solid ${BORDER}`, borderRadius: 10, background: CARD, padding: 0, overflow: 'hidden', cursor: 'pointer', textAlign: 'left' }}
+                    >
+                      <img src={cert.url} alt={cert.label || ''} style={{ width: '100%', height: 90, objectFit: 'cover', display: 'block' }} />
+                      {cert.label ? (
+                        <div style={{ fontSize: 10, color: TEXT_SUB, padding: '8px 8px 10px', lineHeight: 1.4 }}>{cert.label}</div>
+                      ) : null}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : null}
           </div>

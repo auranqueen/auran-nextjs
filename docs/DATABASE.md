@@ -281,6 +281,11 @@ active_role = customer이면 brand role도 customer로 처리됨
 - 고객 화면 컴포넌트: src/components/salon-store/* (500줄 초과로 분리생성)
 - `salons.banner_url`(단수, 레거시)는 미사용 전환 — 고객 화면은 `banner_urls`(배열)·`banner_links`·`story_url` 사용. 배너는 헤더 바로 아래 풀폭 가로(21:9) 캐러셀, 프로필 정보 영역과 완전히 분리됨.
 
+### 자격증·경력 전시 (salons.certificates)
+- [{url, label}] 배열, owner-store 버킷 이미지
+- 편집: SalonInfoForm.tsx / 전시: salons/[id]/page.tsx 샵정보 탭
+- 파트너 자격증 검증 기능(미착수)과 별개 — 추후 파트너용으로 유사 구조 재사용 예정
+
 ### 예약 실시간 연동
 - bookings 테이블, owner_id/customer_id 필터 postgres_changes
 - 원장: useOwnerBookingRealtime 훅(BookingManagePage.tsx), 고객: MyBookingStatus.tsx 직접

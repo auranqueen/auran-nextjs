@@ -5,6 +5,10 @@
 
 ## 2026-06-03
 
+### 원장 자격증·경력 전시 (UNIT V/W)
+- SalonInfoForm: certificates 업로드·라벨 편집 (owner-store 버킷)
+- salons/[id] 샵 정보 탭: 자격증 가로 스크롤 + 확대 모달
+
 ### 파트너 전용 로그인 + slug 자동생성 (UNIT R/S/T/U)
 - `/partner/[slug]` 전용 로그인 페이지 (owner 패턴 재사용)
 - dashboard/partner 첫 진입 시 profiles.slug 자동 생성

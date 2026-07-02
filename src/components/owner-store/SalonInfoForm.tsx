@@ -31,6 +31,11 @@ type MenuItem = {
   phase_tags: string[]
 }
 
+type CertificateItem = {
+  url: string
+  label: string
+}
+
 const emptyMenu = (): MenuItem => ({
   name: '',
   duration_min: 60,
@@ -78,6 +83,8 @@ export default function SalonInfoForm() {
   const [phone, setPhone] = useState('')
   const [status, setStatus] = useState<'active' | 'inactive'>('active')
   const [menus, setMenus] = useState<MenuItem[]>([emptyMenu()])
+  const [certificates, setCertificates] = useState<CertificateItem[]>([])
+  const [certUploading, setCertUploading] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -109,7 +116,7 @@ export default function SalonInfoForm() {
       const sb = createClient()
       const { data } = await sb
         .from('salons')
-        .select('id,name,description,area,address,phone,status,services,open_hours')
+        .select('id,name,description,area,address,phone,status,services,open_hours,certificates')
         .eq('owner_id', ownerUserId)
         .maybeSingle()
 
@@ -123,6 +130,14 @@ export default function SalonInfoForm() {
         setPhone(String(data.phone || ''))
         setStatus(data.status === 'inactive' ? 'inactive' : 'active')
         setMenus(parseMenus(data.services))
+        const rawCerts = data.certificates
+        setCertificates(
+          Array.isArray(rawCerts)
+            ? rawCerts
+                .filter((c: { url?: string }) => c?.url)
+                .map((c: { url: string; label?: string }) => ({ url: String(c.url), label: String(c.label || '') }))
+            : [],
+        )
       } else {
         setSalonId(null)
         setName('')
@@ -132,6 +147,7 @@ export default function SalonInfoForm() {
         setPhone('')
         setStatus('active')
         setMenus([emptyMenu()])
+        setCertificates([])
       }
       setLoading(false)
     }
@@ -186,6 +202,7 @@ export default function SalonInfoForm() {
       status,
       services,
       open_hours: DEFAULT_OPEN_HOURS,
+      certificates: certificates.filter(c => c.url.trim()).map(c => ({ url: c.url.trim(), label: c.label.trim() || '' })),
     }
 
     const { error } = salonId
@@ -307,6 +324,68 @@ export default function SalonInfoForm() {
               </div>
             ))}
           </div>
+        </div>
+
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14 }}>
+          <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 4 }}>자격증 · 경력 전시</div>
+          <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 10 }}>고객이 스토어 상세에서 확인할 수 있어요</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {certificates.map((cert, idx) => (
+              <div key={`${cert.url}-${idx}`} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
+                <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                  <img src={cert.url} alt="" style={{ width: 72, height: 72, borderRadius: 8, objectFit: 'cover', flexShrink: 0, background: 'rgba(255,255,255,0.05)' }} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <input
+                      value={cert.label}
+                      onChange={e => setCertificates(prev => prev.map((c, i) => (i === idx ? { ...c, label: e.target.value } : c)))}
+                      placeholder="예: 피부관리사 1급, 20년 경력 수료증"
+                      style={fieldStyle}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCertificates(prev => prev.filter((_, i) => i !== idx))}
+                      style={{ marginTop: 8, background: 'transparent', border: '1px solid rgba(220,80,80,0.4)', borderRadius: 8, padding: '5px 10px', fontSize: 11, color: '#e07070', cursor: 'pointer' }}
+                    >
+                      삭제
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <label style={{ display: 'block', marginTop: 10, fontSize: 11, color: P, cursor: certUploading ? 'wait' : 'pointer' }}>
+            {certUploading ? '업로드 중…' : '+ 이미지 추가'}
+            <input
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              disabled={certUploading || !ownerUserId}
+              onChange={e => {
+                void (async () => {
+                  const file = e.target.files?.[0]
+                  e.target.value = ''
+                  if (!file || !ownerUserId) return
+                  if (file.size > 5 * 1024 * 1024) {
+                    setToast('5MB 이하 파일만 업로드할 수 있어요')
+                    return
+                  }
+                  setCertUploading(true)
+                  const sb = createClient()
+                  const path = `${ownerUserId}/certificates/${Date.now()}_${Math.random().toString(16).slice(2)}`
+                  const { error } = await sb.storage.from('owner-store').upload(path, file, { upsert: true })
+                  if (error) {
+                    setToast('업로드에 실패했어요')
+                    setCertUploading(false)
+                    return
+                  }
+                  const { data } = sb.storage.from('owner-store').getPublicUrl(path)
+                  const url = data.publicUrl || ''
+                  if (url) setCertificates(prev => [...prev, { url, label: '' }])
+                  setCertUploading(false)
+                })()
+              }}
+            />
+          </label>
         </div>
 
         <button
