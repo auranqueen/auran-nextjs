@@ -363,6 +363,11 @@ export default function CustomerHomePage() {
   const [showWeatherDetail, setShowWeatherDetail] = useState(false)
   const [showSkinDiary, setShowSkinDiary] = useState(false)
   const [skinDiaryInitialTab, setSkinDiaryInitialTab] = useState(0)
+  const [cycleBannerDismissed, setCycleBannerDismissed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
+    return !!localStorage.getItem(`auran_cycle_banner_${today}`)
+  })
   const [showWeatherRec, setShowWeatherRec] = useState(false)
   const [skinTooltipMsg, setSkinTooltipMsg] = useState('')
   const [timeSales, setTimeSales] = useState<any[]>([])
@@ -2434,38 +2439,48 @@ export default function CustomerHomePage() {
         />
         </div>
 
-        {hormoneCycle === null ? (
-          <div style={{
-            background: 'rgba(123,94,167,0.06)',
-            border: '0.5px dashed rgba(123,94,167,0.3)',
-            borderRadius: 12,
-            padding: '18px 16px',
-            textAlign: 'center',
-            margin: '0 16px',
-          }}>
-            <div style={{ fontSize: 24, marginBottom: 10 }}>🌙</div>
-            <div style={{ fontSize: 12, color: 'rgba(232,223,245,0.5)', marginBottom: 6 }}>
-              피부사이클케어가 잠겨있어요
+        {hormoneCycle === null
+          && hormoneTrack === 'general'
+          && !cycleBannerDismissed && (
+          <div
+            onClick={() => hormoneCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              background: 'rgba(123,94,167,0.12)',
+              border: '0.5px solid rgba(123,94,167,0.3)',
+              borderRadius: 12, padding: '10px 14px',
+              marginBottom: 12, cursor: 'pointer',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 20 }}>🌙</span>
+              <div>
+                <div style={{ fontSize: 12, color: '#e8dff5', fontWeight: 500 }}>생리 시작일을 알려주세요</div>
+                <div style={{ fontSize: 10, color: 'rgba(232,223,245,0.5)', marginTop: 2 }}>내 피부 사이클을 분석해드려요</div>
+              </div>
             </div>
-            <div style={{ fontSize: 13, color: '#e8dff5', lineHeight: 1.65, marginBottom: 16 }}>
-              생리 첫날 오렌한테 귓속말 해주면<br />나만의 피부 사이클 케어가 깨어나요 ✨
-            </div>
+            <span
+              onClick={(e) => {
+                e.stopPropagation()
+                const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
+                localStorage.setItem(`auran_cycle_banner_${today}`, '1')
+                setCycleBannerDismissed(true)
+              }}
+              style={{ fontSize: 16, color: 'rgba(255,255,255,0.4)', padding: '0 4px', cursor: 'pointer' }}
+            >✕</span>
           </div>
-        ) : (
-          <>
-            {hormoneCycle && !isPC && (
-              <BodyCareCard
-                currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? ''}
-                skinType={String((motivationProfile as any)?.skin_type ?? '')}
-                skinConcerns={Array.isArray((motivationProfile as any)?.skin_concerns)
-                  ? (motivationProfile as any).skin_concerns
-                  : []}
-                recommended={skinRecList.slice(0, 12)}
-                showEditChrome={showHomeEditChrome}
-                supabaseClient={supabase}
-              />
-            )}
-          </>
+        )}
+        {hormoneCycle !== null && !isPC && (
+          <BodyCareCard
+            currentPhase={calcHormoneBriefing(hormoneCycle)?.phase ?? ''}
+            skinType={String((motivationProfile as any)?.skin_type ?? '')}
+            skinConcerns={Array.isArray((motivationProfile as any)?.skin_concerns)
+              ? (motivationProfile as any).skin_concerns
+              : []}
+            recommended={skinRecList.slice(0, 12)}
+            showEditChrome={showHomeEditChrome}
+            supabaseClient={supabase}
+          />
         )}
 
         {dailyQuestion ? (
