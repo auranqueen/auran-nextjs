@@ -146,7 +146,7 @@ function SignupForm() {
         } catch {}
         // 이메일 인증 필요 시 세션이 없음 → 인증 대기 화면으로
         if (mode === 'track') {
-          router.push('/')
+          router.replace('/')
           return
         }
         router.push(`/auth/done?position=${encodeURIComponent(role)}`)

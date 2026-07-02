@@ -18,8 +18,8 @@ export function AuthSessionProvider({ children }: { children: React.ReactNode })
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, _session) => {
       if (event === 'SIGNED_OUT') {
-        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
-          router.replace('/login')
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/signup')) {
+          setTimeout(() => router.replace('/login'), 300)
         }
       }
     })

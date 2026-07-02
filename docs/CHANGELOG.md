@@ -5,6 +5,8 @@
 
 ## 2026-07-02
 
+- AuthSessionProvider: SIGNED_OUT redirect에 /signup 경로 예외 + 300ms 딜레이
+- signup: 가입 완료 후 router.push → router.replace 변경
 - signup: 환영 포인트 8,888P → 10,000P (코드 폴백 5곳 + DB admin_settings)
 - signup: 아이디→@auran.kr 변환으로 Supabase signUp 이메일 검증 오류 수정
 - signup/consent/onboarding/login: safe-area-inset 적용 (노치/홈바 겹침 해결)
