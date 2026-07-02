@@ -206,7 +206,6 @@ type HormoneSheetProps = {
   hormoneCycle?: any
   showEditChrome: boolean
   supabaseClient: SupabaseClient
-  onOpenSkinDiary?: () => void
   onRefreshCycle?: () => void
 }
 
@@ -218,7 +217,6 @@ export default function HormoneSheet({
   hormoneCycle,
   showEditChrome,
   supabaseClient,
-  onOpenSkinDiary,
   onRefreshCycle,
 }: HormoneSheetProps) {
   const [activeTab, setActiveTab] = useState(0)

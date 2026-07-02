@@ -5,6 +5,9 @@
 
 ## 2026-07-02
 
+- SkinDiarySheet·SkinDiaryJournal·CalendarSection 완전 삭제
+- HormoneCard·HormoneSheet dead prop onOpenSkinDiary 제거
+- page.tsx showSkinDiary state·import·렌더 제거
 - HormoneCalendarRecord: 모달 → 바텀시트 교체 + X 닫기버튼
 - HormoneCalendarRecord: 피부일지(수면·UV·스트레스·피부상태) 통합
 - saveRecord: daily_skin_log 동시 저장

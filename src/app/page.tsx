@@ -20,7 +20,6 @@ import SegmentSlot from '@/components/home/SegmentSlot'
 import { trackToSegment } from '@/lib/segment'
 import Avatar from '@/components/ui/Avatar'
 
-const SkinDiarySheet = dynamic(() => import('@/components/skin-diary/SkinDiarySheet'), { ssr: false })
 const WeatherRecommendSheet = dynamic(() => import('@/components/home/WeatherRecommendSheet'), { ssr: false })
 
 const getSeoulToday = () => {
@@ -361,8 +360,6 @@ export default function CustomerHomePage() {
   const [seasonRecs, setSeasonRecs] = useState<any[]>([])
   const [weather, setWeather] = useState<any>(null)
   const [showWeatherDetail, setShowWeatherDetail] = useState(false)
-  const [showSkinDiary, setShowSkinDiary] = useState(false)
-  const [skinDiaryInitialTab, setSkinDiaryInitialTab] = useState(0)
   const [cycleBannerDismissed, setCycleBannerDismissed] = useState(() => {
     if (typeof window === 'undefined') return false
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' })
@@ -2431,10 +2428,6 @@ export default function CustomerHomePage() {
           cycleDay={calcHormoneBriefing(hormoneCycle)?.cycleDay ?? 0}
           hormoneCycle={hormoneCycle}
           supabaseClient={supabase}
-          onOpenSkinDiary={() => {
-            setShowSkinDiary(true)
-            setSkinDiaryInitialTab(1)
-          }}
           onRefreshCycle={() => void loadMotivationProfile()}
         />
         </div>
@@ -4585,18 +4578,6 @@ export default function CustomerHomePage() {
         cycleDay={calcHormoneBriefing(hormoneCycle)?.cycleDay ?? 0}
         supabaseClient={supabase}
         showEditChrome={showHomeEditChrome}
-      />
-
-      <SkinDiarySheet
-        open={showSkinDiary}
-        onClose={() => { setShowSkinDiary(false); void loadMotivationProfile(); setSkinDiaryInitialTab(0) }}
-        supabase={supabase}
-        userId={myUserId}
-        hormoneCycle={hormoneCycle}
-        hormoneTrack={hormoneTrack}
-        skinRecList={skinRecList}
-        cycleType={cycleType}
-        initialTab={skinDiaryInitialTab}
       />
 
       {showCheckinPopup && checkinResult && (

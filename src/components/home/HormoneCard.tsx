@@ -20,7 +20,6 @@ type HormoneCardProps = {
   cycleDay: number
   hormoneCycle?: any
   supabaseClient: SupabaseClient
-  onOpenSkinDiary?: () => void
   onRefreshCycle?: () => void
 }
 
@@ -39,7 +38,6 @@ export default function HormoneCard({
   cycleDay,
   hormoneCycle,
   supabaseClient,
-  onOpenSkinDiary,
   onRefreshCycle,
 }: HormoneCardProps) {
   const [sheetOpen, setSheetOpen] = useState(false)
@@ -216,7 +214,6 @@ export default function HormoneCard({
         hormoneCycle={hormoneCycle}
         showEditChrome={showEditChrome}
         supabaseClient={supabaseClient}
-        onOpenSkinDiary={onOpenSkinDiary}
         onRefreshCycle={onRefreshCycle}
       />
     </>
