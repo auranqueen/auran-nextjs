@@ -493,7 +493,7 @@ function LoginForm() {
                     type="email"
                     value={resetEmail}
                     onChange={e => setResetEmail(e.target.value)}
-                    placeholder="이메일 주소"
+                    placeholder="아이디"
                     style={{width:'100%', padding:'10px 12px', borderRadius:8, border:'1px solid rgba(255,255,255,0.1)', background:'rgba(255,255,255,0.05)', color:'#fff', fontSize:13, boxSizing:'border-box', marginBottom:8, outline:'none'}}
                   />
                   <button type="button" onClick={submitReset} disabled={resetLoading}
