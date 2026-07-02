@@ -1261,7 +1261,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           </div>
         </div>
         <div
-          onClick={() => router.push('/')}
+          onClick={() => router.back()}
           style={{ fontFamily: 'Georgia, serif', fontSize: 16, color: '#C9A96E', letterSpacing: '4px', cursor: 'pointer' }}
         >AURAN</div>
         <div style={{ flex: 1 }} />

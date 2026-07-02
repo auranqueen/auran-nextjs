@@ -5,6 +5,7 @@
 
 ## 2026-07-02
 
+- product detail: AURAN 워드마크 클릭 시 홈 이동 대신 이전 페이지로 이동(router.back)
 - product detail: 하단 3버튼 폰트 통일(지금구매 크기 축소) + 버튼바 슬림화
 - product detail: 탑바 위치 조정(살짝 하단 이동), 공유버튼 좌측 이동 + 원형 테두리 추가
 - product detail: 하단 네비 숨김 처리, 3버튼바 bottom 위치 재조정
