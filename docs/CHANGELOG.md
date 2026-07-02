@@ -5,6 +5,7 @@
 
 ## 2026-07-02
 
+- product detail: 탑바 위치 조정(살짝 하단 이동), 공유버튼 좌측 이동 + 원형 테두리 추가
 - product detail: 하단 네비 숨김 처리, 3버튼바 bottom 위치 재조정
 - product detail: 수량행 가격 표시 잘림 방지 (flexShrink/nowrap 추가)
 - product detail: 하단 3버튼바 슬림화 + 하단 여백 확보, 텍스트 위계 조정, 상담버튼 축소

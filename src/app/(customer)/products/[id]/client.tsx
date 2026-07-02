@@ -1154,15 +1154,12 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
         />
       ) : null}
       {/* 탑바 */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 18px', background: '#0d0b09', position: 'sticky', top: 0, zIndex: 90 }}>
-        <div style={{ fontSize: 20, color: GOLD, cursor: 'pointer' }} onClick={() => router.back()}>←</div>
-        <div
-          onClick={() => router.push('/')}
-          style={{ fontFamily: 'Georgia, serif', fontSize: 16, color: '#C9A96E', letterSpacing: '4px', cursor: 'pointer' }}
-        >AURAN</div>
-        <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => setShareOpen(true)}>
-          <div style={{ fontSize: 9, color: '#7B5EA7' }}>공유</div>
-          {shareOpen ? (
+      <div style={{ display: 'flex', alignItems: 'center', padding: '20px 18px 14px', background: '#0d0b09', position: 'sticky', top: 0, zIndex: 90 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
+          <div style={{ fontSize: 20, color: GOLD, cursor: 'pointer' }} onClick={() => router.back()}>←</div>
+          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }} onClick={() => setShareOpen(true)}>
+            <div style={{ fontSize: 9, color: '#7B5EA7', padding: '4px 8px', border: '1px solid #7B5EA7', borderRadius: '12px' }}>공유</div>
+            {shareOpen ? (
           <div
             style={{
               position: 'fixed', inset: 0, zIndex: 999,
@@ -1261,7 +1258,13 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             </div>
           </div>
         ) : null}
+          </div>
         </div>
+        <div
+          onClick={() => router.push('/')}
+          style={{ fontFamily: 'Georgia, serif', fontSize: 16, color: '#C9A96E', letterSpacing: '4px', cursor: 'pointer' }}
+        >AURAN</div>
+        <div style={{ flex: 1 }} />
       </div>
 
       {/* 갤러리 */}
