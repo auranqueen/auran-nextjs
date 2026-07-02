@@ -2467,12 +2467,12 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
 
       {/* 수량 */}
       <div style={{ padding: '8px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#0d0b09', borderTop: '1px solid #1a1610' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0, overflow: 'hidden' }}>
           <div onClick={() => setQty(q => Math.max(1, q - 1))} style={{ width: 28, height: 28, borderRadius: '50%', background: '#1e1a14', border: '1px solid #2a2520', color: '#fff', fontSize: 18, textAlign: 'center', lineHeight: '26px', cursor: 'pointer', userSelect: 'none' }}>−</div>
           <div style={{ fontSize: 18 }}>{qty}</div>
           <div onClick={() => setQty(q => q + 1)} style={{ width: 28, height: 28, borderRadius: '50%', background: '#1e1a14', border: '1px solid #2a2520', color: '#fff', fontSize: 18, textAlign: 'center', lineHeight: '26px', cursor: 'pointer', userSelect: 'none' }}>+</div>
         </div>
-        <div style={{ fontSize: 20, color: GOLD }}>{total}</div>
+        <div style={{ fontSize: 20, color: GOLD, flexShrink: 0, whiteSpace: 'nowrap' }}>{total}</div>
       </div>
 
       {/* 3버튼 */}

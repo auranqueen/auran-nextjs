@@ -5,6 +5,7 @@
 
 ## 2026-07-02
 
+- product detail: 수량행 가격 표시 잘림 방지 (flexShrink/nowrap 추가)
 - product detail: 하단 3버튼바 슬림화 + 하단 여백 확보, 텍스트 위계 조정, 상담버튼 축소
 - product detail: 제품명/가격 폰트 위계 조정, 상담버튼 축소, 하단 paddingBottom 재조정
 - 제품상세: 공유 배너 제거 → 탑바 공유 버튼 팝업으로 통합
