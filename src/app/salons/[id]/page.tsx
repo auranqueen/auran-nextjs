@@ -185,6 +185,7 @@ export default function SalonHomePage() {
   const [notFound, setNotFound] = useState(false)
   const [salon, setSalon] = useState<SalonRow | null>(null)
   const [ownerName, setOwnerName] = useState('')
+  const [ownerAvatarUrl, setOwnerAvatarUrl] = useState('')
   const [reviews, setReviews] = useState<ReviewRow[]>([])
   const [customerPhase, setCustomerPhase] = useState<string | null>(null)
   const [tab, setTab] = useState<'menu' | 'reviews' | 'info'>('menu')
@@ -241,9 +242,10 @@ export default function SalonHomePage() {
         if (!cancelled && owner?.name) setOwnerName(String(owner.name))
 
         const { data: ownerProfile } = owner?.auth_id
-          ? await sb.from('profiles').select('id').eq('auth_id', owner.auth_id).maybeSingle()
+          ? await sb.from('profiles').select('id, avatar_url').eq('auth_id', owner.auth_id).maybeSingle()
           : { data: null }
         const profileOwnerId = ownerProfile?.id || null
+        if (!cancelled) setOwnerAvatarUrl(ownerProfile?.avatar_url ? String(ownerProfile.avatar_url) : '')
 
         if (profileOwnerId) {
           const [{ data: gradeRows }, { data: areteRows }] = await Promise.all([
@@ -287,6 +289,7 @@ export default function SalonHomePage() {
         }
       } else if (!cancelled) {
         setBrandAuthItems([])
+        setOwnerAvatarUrl('')
       }
 
       const { data: reviewRows } = await sb
@@ -711,7 +714,12 @@ export default function SalonHomePage() {
       ) : null}
 
       <div style={{ padding: '12px 15px 0' }}>
-        <div style={{ fontSize: 17, fontWeight: 500, color: TEXT, marginBottom: 3 }}>{salon.name}</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+          {ownerAvatarUrl ? (
+            <img src={ownerAvatarUrl} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+          ) : null}
+          <div style={{ fontSize: 17, fontWeight: 500, color: TEXT }}>{salon.name}</div>
+        </div>
         <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 10 }}>
           {salon.area} · {openNow ? '영업 중' : '영업 종료'}
           {hoursToday && hoursToday.includes('~') ? ` · ${hoursToday.split('~')[1]?.trim()} 마감` : ''}

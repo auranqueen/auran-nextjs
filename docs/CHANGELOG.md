@@ -5,6 +5,10 @@
 
 ## 2026-06-03
 
+### 원장 프로필 사진 편집·고객 스토어 노출 (UNIT AA/BB)
+- store-decoration: profiles.avatar_url 업로드·저장 (owner-store 버킷)
+- salons/[id]: 살롱명 옆 원형 프로필 사진 (auth_id 경유 조회)
+
 ### 브랜드인증 조회 ID 불일치 수정 (UNIT Z)
 - salons/[id]: salons.owner_id(users.id) → auth_id → profiles.id 경유 후 brand_owner_grades/brand_arete_members 조회 (UNIT Y 버그 수정)
 

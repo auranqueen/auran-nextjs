@@ -304,6 +304,11 @@ salons.owner_id는 users.id 사용.
 두 시스템을 연결할 땐 반드시 auth_id를 경유해서 조회할 것
 (users.id → users.auth_id → profiles.id 순서).
 
+### 원장 프로필 사진
+profiles.avatar_url 단일 소스. 편집: store-decoration/page.tsx.
+노출: owner/[slug](로그인창), salons/[id](고객 스토어, auth_id 경유 조회).
+세 화면 모두 같은 컬럼 참조하므로 한 곳에서 바꾸면 전체 반영됨.
+
 ### 예약 실시간 연동
 - bookings 테이블, owner_id/customer_id 필터 postgres_changes
 - 원장: useOwnerBookingRealtime 훅(BookingManagePage.tsx), 고객: MyBookingStatus.tsx 직접

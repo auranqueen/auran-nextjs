@@ -79,6 +79,7 @@ export default function StoreDecorationPage() {
   const [ownerUserId, setOwnerUserId] = useState<string | null>(null)
   const [salonId, setSalonId] = useState<string | null>(null)
   const [ownerSlug, setOwnerSlug] = useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState('')
 
   const [bannerUrls, setBannerUrls] = useState<(string | null)[]>([null, null, null])
   const [bannerLinks, setBannerLinks] = useState<string[]>(['none', 'none', 'none'])
@@ -113,8 +114,9 @@ export default function StoreDecorationPage() {
       }
       const oid = String(urow.id)
       setOwnerUserId(oid)
-      const { data: prof } = await sb.from('profiles').select('slug').eq('auth_id', auth.user.id).maybeSingle()
+      const { data: prof } = await sb.from('profiles').select('slug, avatar_url').eq('auth_id', auth.user.id).maybeSingle()
       if (prof?.slug) setOwnerSlug(String(prof.slug))
+      if (prof?.avatar_url) setAvatarUrl(String(prof.avatar_url))
       const { data: salon } = await sb
         .from('salons')
         .select('id, banner_urls, banner_links, story_url, story_type, phase_greetings, phase_reco_enabled, main_cta, map_url, sns_links')
@@ -178,6 +180,13 @@ export default function StoreDecorationPage() {
     setStoryType(file.type.startsWith('video/') ? 'video' : 'image')
   }
 
+  const handleAvatarUpload = async (file: File | null) => {
+    if (!file) return
+    const url = await uploadFile(file, 'avatar')
+    if (!url) return
+    setAvatarUrl(url)
+  }
+
   const handleSave = async () => {
     if (!ownerUserId || !salonId) {
       setToast('살롱 정보를 먼저 등록해주세요')
@@ -205,6 +214,14 @@ export default function StoreDecorationPage() {
       setToast('저장에 실패했어요')
       return
     }
+    const { data: auth } = await sb.auth.getUser()
+    if (auth.user) {
+      const { error: profErr } = await sb.from('profiles').update({ avatar_url: avatarUrl || null }).eq('auth_id', auth.user.id)
+      if (profErr) {
+        setToast('살롱은 저장됐지만 프로필 사진 저장에 실패했어요')
+        return
+      }
+    }
     setToast('저장되었어요 💜')
   }
 
@@ -226,6 +243,20 @@ export default function StoreDecorationPage() {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14 }}>
+          <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 10 }}>프로필 사진</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: avatarUrl ? `url(${avatarUrl}) center/cover` : 'rgba(255,255,255,0.06)', border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0, overflow: 'hidden' }}>
+              {!avatarUrl ? '🌸' : null}
+            </div>
+            <label style={{ fontSize: 11, color: P, cursor: 'pointer' }}>
+              사진 업로드
+              <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { void handleAvatarUpload(e.target.files?.[0] || null) }} />
+            </label>
+          </div>
+          <div style={{ fontSize: 10, color: TEXT_SUB, marginTop: 8 }}>권장 정사각형 · 최대 5MB · 고객 스토어·로그인 화면에 노출</div>
+        </div>
+
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14 }}>
           <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 10 }}>배너 (최대 3장)</div>
           <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 10 }}>권장 1200×675px · 16:9 · 최대 5MB</div>
