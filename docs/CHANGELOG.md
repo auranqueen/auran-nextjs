@@ -5,6 +5,10 @@
 
 ## 2026-07-02
 
+### 회원가입 아이디 문구·필드 통일 (UNIT PP)
+- signup/consent/page.tsx: `이메일로 시작하기` → `아이디로 시작하기`
+- signup/page.tsx: 가입 폼 라벨 `이메일 *` → `아이디 *`, input type `email`→`text`, placeholder `아이디`
+
 ### 회원가입 환영문구·약관 텍스트 모바일 폰트 조정 (UNIT NN/OO)
 - signup/consent/page.tsx: 환영 문구 fontSize 20→16, `whiteSpace: 'nowrap'` 추가
 - signup/consent/page.tsx: 약관 체크박스 라벨 fontSize 13→11

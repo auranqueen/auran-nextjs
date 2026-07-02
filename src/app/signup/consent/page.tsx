@@ -157,7 +157,7 @@ function ConsentInner() {
             disabled={loading}
             style={{ width: '100%', padding: 14, background: 'var(--bg3)', border: '1px solid rgba(123,94,167,0.3)', borderRadius: 12, color: 'var(--text)', fontSize: 15, cursor: 'pointer' }}
           >
-            {loading ? '처리중...' : '이메일로 시작하기'}
+            {loading ? '처리중...' : '아이디로 시작하기'}
           </button>
         </div>
         {error && <div style={{ fontSize: 12, color: '#e08080', textAlign: 'center', marginTop: 10 }}>{error}</div>}

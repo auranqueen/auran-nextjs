@@ -311,7 +311,7 @@ function SignupForm() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div><label style={labelStyle}>이름 또는 닉네임 *</label>{inp('name', form.name, v => setForm(f => ({ ...f, name: v })), { placeholder: '실명 입력', required: true })}</div>
-              <div><label style={labelStyle}>이메일 *</label>{inp('email', form.email, v => setForm(f => ({ ...f, email: v })), { type: 'email', placeholder: 'example@email.com', required: true })}</div>
+              <div><label style={labelStyle}>아이디 *</label>{inp('email', form.email, v => setForm(f => ({ ...f, email: v })), { type: 'text', placeholder: '아이디', required: true })}</div>
               <div><label style={labelStyle}>비밀번호 * (6자 이상)</label>{inp('pw', form.password, v => setForm(f => ({ ...f, password: v })), { type: 'password', placeholder: '6자 이상 입력', required: true })}</div>
               <div><label style={labelStyle}>비밀번호 확인 *</label>{inp('pw2', form.passwordConfirm, v => setForm(f => ({ ...f, passwordConfirm: v })), { type: 'password', placeholder: '비밀번호 재입력', required: true })}</div>
               <div><label style={labelStyle}>휴대폰 번호</label>{inp('phone', form.phone, v => setForm(f => ({ ...f, phone: v })), { type: 'tel', placeholder: '010-0000-0000' })}</div>
