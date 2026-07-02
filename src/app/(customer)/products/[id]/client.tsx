@@ -1003,11 +1003,11 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
   const wrap: React.CSSProperties = {
     background: '#0d0b09', color: '#e8e4dc', maxWidth: 430,
     margin: '0 auto', minHeight: '100dvh', maxHeight: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any,
-    paddingBottom: 'calc(132px + env(safe-area-inset-bottom, 0px))',
+    paddingBottom: 'calc(118px + env(safe-area-inset-bottom, 0px))',
     fontFamily: '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif',
   }
   const tag = (bg: string, color: string, border: string): React.CSSProperties => ({
-    display: 'inline-block', fontSize: 10, padding: '2px 9px',
+    display: 'inline-block', fontSize: 11, padding: '2px 9px',
     borderRadius: 20, background: bg, color, border: `1px solid ${border}`,
   })
 
@@ -1676,7 +1676,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           onClick={isEditMode ? (e) => { e.stopPropagation(); setEditingField({ field: 'name', label: '상품명 수정', currentValue: name }) } : undefined}
           style={{
             position: showEditChrome ? 'relative' : undefined,
-            fontSize: 20, lineHeight: 1.4, marginBottom: 5, color: '#e8e4dc',
+            fontSize: 15, lineHeight: 1.4, marginBottom: 5, color: '#e8e4dc',
             outline: showEditChrome ? '2px dashed #7B5EA7' : undefined,
             outlineOffset: showEditChrome ? 2 : undefined,
             borderRadius: showEditChrome ? 4 : undefined,
@@ -1721,7 +1721,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           {discount > 0 ? (
             <div style={{ background: '#c02030', color: '#fff', fontSize: 11, padding: '3px 8px', borderRadius: 999 }}>-{discount}%</div>
           ) : null}
-          <div style={{ fontSize: 28, color: GOLD, fontWeight: product.is_groupbuy ? 900 : 700 }}>
+          <div style={{ fontSize: 21, color: GOLD, fontWeight: product.is_groupbuy ? 900 : 700 }}>
             {hasValidPrice ? `${price.toLocaleString()}원` : '가격문의'}
           </div>
           {discount > 0 && product.retail_price > price ? (
@@ -2483,10 +2483,10 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           <button
             onClick={() => setConsultOpen(true)}
             style={{
-              width: '100%', padding: 13, borderRadius: 12,
+              width: 'auto', padding: '6px 12px', borderRadius: 12,
               border: 'none', background: '#2D1B5E',
-              color: '#C9A96E', fontSize: 14, cursor: 'pointer',
-              letterSpacing: -0.2, marginBottom: 8,
+              color: '#C9A96E', fontSize: 12, cursor: 'pointer',
+              letterSpacing: -0.2, marginBottom: 6,
             }}
           >
             맑원장이랑 향기 얘기해요 💜
@@ -2499,11 +2499,11 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
           <button
             onClick={() => setConsultOpen(true)}
             style={{
-              width: '100%', padding: 11, borderRadius: 12,
+              width: 'auto', padding: '5px 10px', borderRadius: 12,
               border: '0.5px solid #AFA9EC',
               background: 'transparent',
-              color: '#534AB7', fontSize: 13, cursor: 'pointer',
-              letterSpacing: -0.2, marginBottom: 8,
+              color: '#534AB7', fontSize: 12, cursor: 'pointer',
+              letterSpacing: -0.2, marginBottom: 6,
             }}
           >
             이거 나한테 맞을까요? 🤫
