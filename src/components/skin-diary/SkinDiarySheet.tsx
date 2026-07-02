@@ -1,8 +1,6 @@
 'use client'
 import { useState } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import CalendarSection from '@/components/CalendarSection'
-import SkinDiaryJournal from './SkinDiaryJournal'
 
 type Props = {
   open: boolean

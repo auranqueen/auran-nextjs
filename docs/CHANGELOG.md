@@ -5,6 +5,8 @@
 
 ## 2026-07-02
 
+- 홈 잠금카드: 「마법캘린더 입력하기」→「피부 일지 기록하기」라벨 수정
+- SkinDiarySheet: 미사용 CalendarSection·SkinDiaryJournal import 제거
 - profile 편집: profiles 빈값 시 users.name/phone fallback 적용 (가입값 자동입력)
 - 홈 TODAY'S SKIN 카드: 피부타입 텍스트 클릭 시 /my/track 이동
 - profile: persist() 후 페이지 이동 제거 → 현재 페이지 유지 + 저장완료 표시
