@@ -116,6 +116,7 @@ external_customers     — 외부 고객 (오프라인 고객 관리)
 
 ## 7. UI 규칙
 
+- 제품 상세(/products/[id])는 하단 고객 네비 숨김 처리됨 (AppProviders hideCustomerNav)
 - 굵은 글씨(bold/font-weight) 절대 금지 → 크기/색상으로만 강조
 - select 박스 금지 → 버튼 그룹 또는 검색바+드롭다운으로 구현
 - 팝업/모달: 닫기 버튼(×) + 배경 클릭 닫기 둘 다 필수

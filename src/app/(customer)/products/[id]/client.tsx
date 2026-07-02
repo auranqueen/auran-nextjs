@@ -1003,7 +1003,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
   const wrap: React.CSSProperties = {
     background: '#0d0b09', color: '#e8e4dc', maxWidth: 430,
     margin: '0 auto', minHeight: '100dvh', maxHeight: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any,
-    paddingBottom: 'calc(96px + env(safe-area-inset-bottom, 0px))',
+    paddingBottom: 'calc(40px + env(safe-area-inset-bottom, 0px))',
     fontFamily: '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif',
   }
   const tag = (bg: string, color: string, border: string): React.CSSProperties => ({
@@ -2476,7 +2476,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
       </div>
 
       {/* 3버튼 */}
-      <div style={{ position: 'fixed', bottom: 'calc(56px + env(safe-area-inset-bottom, 0px) + 10px)', left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '8px 16px calc(8px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)', left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '8px 16px calc(8px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: 6 }}>
         {/* ===== [상담톡] 르노벨 전용 상담 버튼 ===== */}
         {/* 르노벨 brand_id일 때만 노출 */}
         {(product as any).brand_id === '90175aa9-70c8-4568-865a-195f11bd7859' && (
