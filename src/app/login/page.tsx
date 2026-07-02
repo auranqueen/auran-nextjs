@@ -278,6 +278,11 @@ function LoginForm() {
             주소를 모르시면 스토어 꾸미기 화면에서 확인하실 수 있어요.
           </div>
         ) : null}
+        {role === 'partner' ? (
+          <div style={{ padding: '12px 14px', marginBottom: 16, background: 'rgba(74,141,192,0.08)', border: '1px solid rgba(74,141,192,0.25)', borderRadius: 12, fontSize: 12, color: 'var(--text3)', lineHeight: 1.6 }}>
+            파트너스는 개인 전용 주소(auran.kr/partner/내슬러그)로 로그인하시면 더 빨라요.
+          </div>
+        ) : null}
         {role !== 'admin' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginBottom: 16 }}>
             {recentKakao && (

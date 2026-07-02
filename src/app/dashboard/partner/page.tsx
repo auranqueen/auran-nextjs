@@ -82,13 +82,13 @@ export default function PartnerDashboardPage() {
         return
       }
 
-      const { data: urow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+      const { data: urow } = await supabase.from('users').select('id, name').eq('auth_id', user.id).maybeSingle()
       const uid = urow?.id ? String(urow.id) : null
       setPartnerUserId(uid)
 
       const { data: prof } = await supabase
         .from('profiles')
-        .select('username, full_name, grade, partner_grade, partner_referral_code, partner_total_sales, partner_total_commission, partner_bank_name, partner_bank_account, partner_bank_holder')
+        .select('username, full_name, grade, slug, partner_grade, partner_referral_code, partner_total_sales, partner_total_commission, partner_bank_name, partner_bank_account, partner_bank_holder')
         .eq('auth_id', user.id)
         .maybeSingle()
       let p = prof as any
@@ -106,6 +106,22 @@ export default function PartnerDashboardPage() {
           .eq('auth_id', user.id)
           .maybeSingle()
         p = prof2 as any
+      }
+
+      if (p && !p.slug) {
+        const nameTrim = String(p.full_name || p.username || urow?.name || '').trim()
+        if (nameTrim) {
+          let base = nameTrim.toLowerCase().replace(/[^a-z0-9]/g, '')
+          if (!base) base = 'partner' + Math.random().toString(16).slice(2, 10)
+          let candidate = base
+          for (let suffix = 1; suffix < 1000; suffix++) {
+            const { data: taken } = await supabase.from('profiles').select('auth_id').eq('slug', candidate).neq('auth_id', user.id).maybeSingle()
+            if (!taken) break
+            candidate = `${base}${suffix}`
+          }
+          await supabase.from('profiles').update({ slug: candidate, role: 'partner' } as any).eq('auth_id', user.id)
+          p = { ...p, slug: candidate }
+        }
       }
 
       setProfile(p || null)

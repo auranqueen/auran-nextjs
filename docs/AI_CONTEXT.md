@@ -51,6 +51,8 @@ AURAN(오렌)은 호르몬 주기 기반 피부 관리 O2O 플랫폼입니다.
 
 원장 전용 로그인은 /owner/[slug] (profiles.slug 기준). 가입 시 자동 생성됨. 공용 /login?role=owner는 폴백용으로만 유지.
 
+파트너 전용 로그인은 /partner/[slug] (profiles.slug 기준, role='partner'). 가입 시 자동 생성됨. 자격증 검증은 별도 세션 예정(미착수).
+
 ---
 
 ## 4. DB 핵심 테이블

@@ -5,6 +5,11 @@
 
 ## 2026-06-03
 
+### 파트너 전용 로그인 + slug 자동생성 (UNIT R/S/T/U)
+- `/partner/[slug]` 전용 로그인 페이지 (owner 패턴 재사용)
+- dashboard/partner 첫 진입 시 profiles.slug 자동 생성
+- login?role=partner 전용 주소 안내 배너
+
 ### 원장 slug 자동생성 + 전용 로그인 주소 (UNIT O/P/Q)
 - store/page: owner_store_name 저장 시 slug 자동 생성(중복 시 숫자 suffix)
 - store-decoration: 내 전용 로그인 주소 노출
