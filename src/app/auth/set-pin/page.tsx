@@ -65,7 +65,7 @@ export default function SetPinPage() {
   }, [pin, firstPin, router, redirect])
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', padding: 24 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))', paddingLeft: 24, paddingRight: 24, paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))' }}>
       <div style={{ marginBottom: 16 }}>
         <button type="button" onClick={() => step === 'first' ? router.back() : setStep('first')} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 18 }}>‹</button>
       </div>
@@ -116,11 +116,11 @@ export default function SetPinPage() {
           )}
         </div>
         {step === 'first' ? (
-          <button type="button" onClick={handleNext} disabled={pin.length !== 6} style={{ width: '100%', maxWidth: 280, padding: 14, background: pin.length === 6 ? GOLD : 'var(--bg3)', border: 'none', borderRadius: 12, color: pin.length === 6 ? '#0a0a0a' : 'var(--text3)', fontWeight: 700 }}>
+          <button type="button" onClick={handleNext} disabled={pin.length !== 6} style={{ width: '100%', maxWidth: 280, padding: 14, marginBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))', background: pin.length === 6 ? GOLD : 'var(--bg3)', border: 'none', borderRadius: 12, color: pin.length === 6 ? '#0a0a0a' : 'var(--text3)', fontWeight: 700 }}>
             다음
           </button>
         ) : (
-          <button type="button" onClick={handleSubmit} disabled={pin.length !== 6 || loading} style={{ width: '100%', maxWidth: 280, padding: 14, background: pin.length === 6 ? GOLD : 'var(--bg3)', border: 'none', borderRadius: 12, color: pin.length === 6 ? '#0a0a0a' : 'var(--text3)', fontWeight: 700, opacity: loading ? 0.7 : 1 }}>
+          <button type="button" onClick={handleSubmit} disabled={pin.length !== 6 || loading} style={{ width: '100%', maxWidth: 280, padding: 14, marginBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))', background: pin.length === 6 ? GOLD : 'var(--bg3)', border: 'none', borderRadius: 12, color: pin.length === 6 ? '#0a0a0a' : 'var(--text3)', fontWeight: 700, opacity: loading ? 0.7 : 1 }}>
             {loading ? '저장 중...' : '설정 완료'}
           </button>
         )}

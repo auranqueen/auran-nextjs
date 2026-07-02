@@ -152,7 +152,7 @@ export default function MyProfilePage() {
     }
   }, [birthYear, birthMonth, birthDay])
 
-  const persist = async () => {
+  const persist = async (overrides?: Record<string, unknown>) => {
     if (!authId) return
     setSaving(true)
     const bodyStatusVal = bodyStatus.length ? bodyStatus.join(',') : null
@@ -184,6 +184,7 @@ export default function MyProfilePage() {
         notify_birthday: notifyBirthday,
         notification_sound: notificationSound,
         special_dates: specialDates,
+        ...overrides,
       } as any, { onConflict: 'auth_id' })
     setSaving(false)
     if (error) {
@@ -195,7 +196,6 @@ export default function MyProfilePage() {
       name: fullName,
       avatar_url: avatarUrl || null,
     }).eq('auth_id', authId)
-    router.push('/my')
     setToast(profileCompletion === 100 ? '완성! 이제 오렌의 모든 기능을 누릴 수 있어요 💜' : '프로필이 저장됐습니다 💜')
     window.setTimeout(() => {
       setToast('')
@@ -239,12 +239,16 @@ export default function MyProfilePage() {
     setUploading(false)
   }
 
-  const toggleRow = (label: string, value: boolean, set: (v: boolean) => void) => (
+  const toggleRow = (label: string, value: boolean, set: (v: boolean) => void, notifyKey: string) => (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
       <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>{label}</span>
       <button
         type="button"
-        onClick={() => set(!value)}
+        onClick={() => {
+          const next = !value
+          set(next)
+          void persist({ [notifyKey]: next })
+        }}
         style={{
           width: 44,
           height: 24,
@@ -429,11 +433,11 @@ export default function MyProfilePage() {
           <div style={{ display: 'grid', gap: 10 }}>
             <div>
               <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 4 }}>이름</div>
-              <input value={fullName} onChange={(e) => setFullName(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', fontSize: 13, padding: '10px 12px', outline: 'none' }} />
+              <input value={fullName} onChange={(e) => setFullName(e.target.value)} onBlur={() => void persist()} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', fontSize: 13, padding: '10px 12px', outline: 'none' }} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 4 }}>닉네임</div>
-              <input value={username} onChange={(e) => setUsername(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', fontSize: 13, padding: '10px 12px', outline: 'none' }} />
+              <input value={username} onChange={(e) => setUsername(e.target.value)} onBlur={() => void persist()} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', fontSize: 13, padding: '10px 12px', outline: 'none' }} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 4 }}>이메일</div>
@@ -441,7 +445,7 @@ export default function MyProfilePage() {
             </div>
             <div>
               <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 4 }}>전화번호</div>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', fontSize: 13, padding: '10px 12px', outline: 'none' }} />
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} onBlur={() => void persist()} style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', fontSize: 13, padding: '10px 12px', outline: 'none' }} />
             </div>
             <div>
               <div style={{ fontSize: 10, color: TEXT_MUTED, marginBottom: 4 }}>생년월일</div>
@@ -449,6 +453,12 @@ export default function MyProfilePage() {
                 <select
                   value={birthYear}
                   onChange={(e) => setBirthYear(e.target.value)}
+                  onBlur={() => {
+                    const bd = birthYear && birthMonth && birthDay
+                      ? `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
+                      : null
+                    void persist({ birth_date: bd })
+                  }}
                   style={{
                     width: '100%',
                     background: 'rgba(255,255,255,0.08)',
@@ -468,6 +478,12 @@ export default function MyProfilePage() {
                 <select
                   value={birthMonth}
                   onChange={(e) => setBirthMonth(e.target.value)}
+                  onBlur={() => {
+                    const bd = birthYear && birthMonth && birthDay
+                      ? `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
+                      : null
+                    void persist({ birth_date: bd })
+                  }}
                   style={{
                     width: '100%',
                     background: 'rgba(255,255,255,0.08)',
@@ -487,6 +503,12 @@ export default function MyProfilePage() {
                 <select
                   value={birthDay}
                   onChange={(e) => setBirthDay(e.target.value)}
+                  onBlur={() => {
+                    const bd = birthYear && birthMonth && birthDay
+                      ? `${birthYear}-${birthMonth.padStart(2, '0')}-${birthDay.padStart(2, '0')}`
+                      : null
+                    void persist({ birth_date: bd })
+                  }}
                   style={{
                     width: '100%',
                     background: 'rgba(255,255,255,0.08)',
@@ -711,11 +733,11 @@ export default function MyProfilePage() {
 
         <section id="notify" style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: 16, padding: '10px 14px 14px', marginBottom: 12 }}>
           <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4, color: GOLD }}>알림 설정</div>
-          {toggleRow('카카오 알림톡 수신', kakaoNotify, setKakaoNotify)}
-          {toggleRow('이메일 수신', emailNotify, setEmailNotify)}
-          {toggleRow('재고알림', notifyRestock, setNotifyRestock)}
-          {toggleRow('세일알림', notifySale, setNotifySale)}
-          {toggleRow('생일쿠폰 알림', notifyBirthday, setNotifyBirthday)}
+          {toggleRow('카카오 알림톡 수신', kakaoNotify, setKakaoNotify, 'kakao_notify')}
+          {toggleRow('이메일 수신', emailNotify, setEmailNotify, 'email_notify')}
+          {toggleRow('재고알림', notifyRestock, setNotifyRestock, 'notify_restock')}
+          {toggleRow('세일알림', notifySale, setNotifySale, 'notify_sale')}
+          {toggleRow('생일쿠폰 알림', notifyBirthday, setNotifyBirthday, 'notify_birthday')}
           <div style={{ marginTop: 16 }}>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 10 }}>채팅 알림음</div>
             {[
@@ -727,7 +749,10 @@ export default function MyProfilePage() {
             ].map((s) => (
               <div
                 key={s.id}
-                onClick={() => setNotificationSound(s.id)}
+                onClick={() => {
+                  setNotificationSound(s.id)
+                  void persist({ notification_sound: s.id })
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',

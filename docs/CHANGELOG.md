@@ -5,6 +5,9 @@
 
 ## 2026-07-02
 
+- profile: persist() 후 페이지 이동 제거 → 현재 페이지 유지 + 저장완료 표시
+- profile: 피부타입·알림·닉네임 등 항목별 즉시저장 (onBlur/onChange)
+- auth/set-pin: 하단 버튼 safe-area-inset-bottom 적용
 - AuthSessionProvider: SIGNED_OUT redirect에 /signup 경로 예외 + 300ms 딜레이
 - signup: 가입 완료 후 router.push → router.replace 변경
 - signup: 환영 포인트 8,888P → 10,000P (코드 폴백 5곳 + DB admin_settings)
