@@ -101,7 +101,7 @@ function ConsentInner() {
   ]
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))', paddingLeft: 24, paddingRight: 24 }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 16, whiteSpace: 'nowrap', color: 'var(--text)', marginBottom: 6, textAlign: 'center' }}>오렌에 오신 걸 환영해요 💜</div>
         <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 28, textAlign: 'center' }}>서비스 이용을 위해 약관에 동의해주세요</div>

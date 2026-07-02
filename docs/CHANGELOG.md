@@ -5,6 +5,10 @@
 
 ## 2026-07-02
 
+- signup: 아이디→@auran.kr 변환으로 Supabase signUp 이메일 검증 오류 수정
+- signup/consent/onboarding/login: safe-area-inset 적용 (노치/홈바 겹침 해결)
+- layout.tsx viewport: viewportFit cover 추가
+
 ### BrandTabHome 마케팅·이벤트 — 예정 라이브 카드 추가
 - dashboard/brand/tabs/BrandTabHome.tsx — closedEvents에 live 카드 추가, 전부 닫힘 시 다시 보기(3개 기준)
 

@@ -94,7 +94,7 @@ function OnboardingInner() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))', paddingLeft: 24, paddingRight: 24 }}>
       <div style={{ width: '100%', maxWidth: 400 }}>
         <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 22, color: 'var(--text)', marginBottom: 6 }}>나를 알려주세요</div>
         <div style={{ fontSize: 13, color: 'var(--text3)', marginBottom: 24 }}>맞춤 추천을 위한 기본 정보예요</div>

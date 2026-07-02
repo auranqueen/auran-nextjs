@@ -116,7 +116,7 @@ function LoginForm() {
         }
       }
 
-      const { data: signData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
+      const { data: signData, error: authError } = await supabase.auth.signInWithPassword({ email: lookupEmail, password })
       if (authError) throw authError
 
       if (signData.user?.id) {
@@ -170,7 +170,7 @@ function LoginForm() {
     } catch (err: any) {
       const msg = err?.message || ''
       if (msg.includes('Email not confirmed') || msg.includes('email_not_confirmed')) {
-        const { error: signInRetry } = await supabase.auth.signInWithPassword({ email, password })
+        const { error: signInRetry } = await supabase.auth.signInWithPassword({ email: email.trim().includes('@') ? email.trim() : `${email.trim()}@auran.kr`, password })
         if (!signInRetry) {
           const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
           router.replace(dashboardPathForRole(stored || role || 'customer'))
@@ -303,14 +303,14 @@ function LoginForm() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))' }}>
       {/* 헤더 */}
       <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
         <button onClick={() => router.push('/')} style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 22, lineHeight: 1 }}>‹</button>
         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 13, color: meta.accent }}>{meta.brand} · {meta.label.toUpperCase()} LOGIN</div>
       </div>
 
-      <div style={{ flex: 1, padding: '8px 24px 40px' }}>
+      <div style={{ flex: 1, padding: '8px 24px calc(40px + env(safe-area-inset-bottom, 0px))' }}>
         {/* 역할 배지 */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28, padding: '14px 16px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 14 }}>
           <span style={{ fontSize: 28 }}>{meta.icon}</span>

@@ -93,8 +93,9 @@ function SignupForm() {
     if (form.password.length < 6) { setError('비밀번호는 6자 이상이어야 합니다.'); return }
     setLoading(true); setError('')
     try {
+      const authEmail = form.email.includes('@') ? form.email.trim() : `${form.email.trim()}@auran.kr`
       const { data: authData, error: authErr } = await supabase.auth.signUp({
-        email: form.email,
+        email: authEmail,
         password: form.password,
         options: {
           data: {
@@ -138,7 +139,7 @@ function SignupForm() {
           await supabase.from('hormone_cycle').upsert(payload, { onConflict: 'auth_id' })
           if (cycleType) {
             await supabase.from('profiles').upsert(
-              { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: localStorage.getItem('auran_research_consent') === 'true', marketing_agreed: localStorage.getItem('auran_marketing_consent') === 'true', birth_date: localStorage.getItem('auran_birth_date') || null, gender: localStorage.getItem('auran_gender') || null, skin_type: localStorage.getItem('auran_skin_type') || null } as any,
+              { auth_id: authData.user.id, email: authEmail, cycle_type: cycleType, research_consent: localStorage.getItem('auran_research_consent') === 'true', marketing_agreed: localStorage.getItem('auran_marketing_consent') === 'true', birth_date: localStorage.getItem('auran_birth_date') || null, gender: localStorage.getItem('auran_gender') || null, skin_type: localStorage.getItem('auran_skin_type') || null } as any,
               { onConflict: 'auth_id' }
             )
           }
@@ -178,7 +179,7 @@ function SignupForm() {
           .from('users')
           .insert({
             auth_id: authData.user.id,
-            email: form.email,
+            email: authEmail,
             name: form.name,
             phone: form.phone,
             role,
@@ -213,7 +214,7 @@ function SignupForm() {
           }
           const profilePayload: Record<string, unknown> = {
             auth_id: authData.user.id,
-            email: form.email,
+            email: authEmail,
             full_name: form.name,
             role: 'owner',
           }
@@ -258,7 +259,7 @@ function SignupForm() {
         }
         if (cycleType) {
           await supabase.from('profiles').upsert(
-            { auth_id: authData.user.id, email: form.email, cycle_type: cycleType, research_consent: localStorage.getItem('auran_research_consent') === 'true', marketing_agreed: localStorage.getItem('auran_marketing_consent') === 'true', birth_date: localStorage.getItem('auran_birth_date') || null, gender: localStorage.getItem('auran_gender') || null, skin_type: localStorage.getItem('auran_skin_type') || null } as any,
+            { auth_id: authData.user.id, email: authEmail, cycle_type: cycleType, research_consent: localStorage.getItem('auran_research_consent') === 'true', marketing_agreed: localStorage.getItem('auran_marketing_consent') === 'true', birth_date: localStorage.getItem('auran_birth_date') || null, gender: localStorage.getItem('auran_gender') || null, skin_type: localStorage.getItem('auran_skin_type') || null } as any,
             { onConflict: 'auth_id' }
           )
         }
@@ -276,7 +277,7 @@ function SignupForm() {
   const labelStyle: React.CSSProperties = { fontSize: 11, color: 'var(--text3)', marginBottom: 5, fontFamily: "'JetBrains Mono', monospace", display: 'block' }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))' }}>
       {/* 헤더 */}
       <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
         <button onClick={() => step > 1 ? setStep(s => s - 1) : router.push(`/signup/consent?role=${role}`)}
@@ -301,7 +302,7 @@ function SignupForm() {
         </div>
       </div>
 
-      <div style={{ flex: 1, padding: '0 24px 40px' }}>
+      <div style={{ flex: 1, padding: '0 24px calc(40px + env(safe-area-inset-bottom, 0px))' }}>
 
         {/* STEP 1: 정보 입력 */}
         {step === 1 && (
