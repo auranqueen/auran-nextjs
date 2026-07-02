@@ -44,7 +44,6 @@ export default function MyTrackPage() {
   const [authId, setAuthId] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [step, setStep] = useState(1)
   const [error, setError] = useState('')
 
   const [skinType, setSkinType] = useState('')
@@ -113,23 +112,6 @@ export default function MyTrackPage() {
     }
     void run()
   }, [router])
-
-  const validateStep1 = () => {
-    if (!skinType) return '피부타입을 선택해주세요'
-    if (skinConcerns.length === 0) return '피부고민을 1개 이상 선택해주세요'
-    if (allergyIngredients.length === 0) return '알레르기 성분을 선택해주세요'
-    if (!careStyle) return '케어스타일을 선택해주세요'
-    if (procedureHistory.length === 0) return '시술 경험을 선택해주세요'
-    if (!menstrualCycle) return '피부 변화 주기를 선택해주세요'
-    if (!periodPain) return '마법 같은 그날 컨디션은요? 🔮를 선택해주세요'
-    return ''
-  }
-
-  const goNext = () => {
-    setError('')
-    setStep(2)
-    window.scrollTo(0, 0)
-  }
 
   const persist = async (override?: {
     skin_type?: string | null
@@ -223,36 +205,24 @@ export default function MyTrackPage() {
       >
         <button
           type="button"
-          onClick={() => (step > 1 ? setStep(1) : router.back())}
+          onClick={() => router.back()}
           style={{ background: 'none', border: 'none', color: TEXT_MUTED, fontSize: 22, cursor: 'pointer', padding: 0 }}
         >
           ‹
         </button>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 15, color: '#fff' }}>내 피부 트랙</div>
-          <div style={{ fontSize: 10, color: TEXT_MUTED, marginTop: 2 }}>{step} / 2</div>
         </div>
       </header>
 
       <div style={{ padding: '14px 14px 0' }}>
-        <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
-          {[1, 2].map((s) => (
-            <div
-              key={s}
-              onClick={() => setStep(s)}
-              style={{ flex: 1, height: 3, borderRadius: 2, background: s <= step ? PRIMARY : 'rgba(255,255,255,0.08)', cursor: 'pointer' }}
-            />
-          ))}
-        </div>
-
         {error ? (
           <div style={{ marginBottom: 12, padding: '10px 12px', background: 'rgba(217,79,79,0.1)', border: '1px solid rgba(217,79,79,0.3)', borderRadius: 8, fontSize: 12, color: '#e08080' }}>
             {error}
           </div>
         ) : null}
 
-        {step === 1 ? (
-          <>
+        <>
             {section('1. 피부타입', '하나만 선택해주세요', <>
               {chipRow(['건성', '지성', '복합성', '민감성', '정상'], skinType, (v) => { setSkinType(v); void persist({ skin_type: v }) })}
               <textarea
@@ -434,9 +404,8 @@ export default function MyTrackPage() {
                 }}
               />
             </>)}
-          </>
-        ) : (
-          <>
+        </>
+        <>
             <div style={{ fontSize: 12, color: TEXT_MUTED, marginBottom: 12, lineHeight: 1.55 }}>
               라이프스타일을 알려주시면 추천이 더 정교해져요. 선택 항목은 저장 시 프로필에 반영됩니다.
             </div>
@@ -532,8 +501,7 @@ export default function MyTrackPage() {
                 }}
               />
             </>)}
-          </>
-        )}
+        </>
       </div>
     </div>
   )

@@ -5,6 +5,8 @@
 
 ## 2026-07-02
 
+- my/track: step 구조 제거 → 한 페이지 스크롤
+- my/track: 진행바·step state·goNext·validateStep1 제거
 - SkinDiarySheet·SkinDiaryJournal·CalendarSection 완전 삭제
 - HormoneCard·HormoneSheet dead prop onOpenSkinDiary 제거
 - page.tsx showSkinDiary state·import·렌더 제거
