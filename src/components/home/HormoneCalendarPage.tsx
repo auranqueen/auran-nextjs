@@ -736,7 +736,7 @@ export default function HormoneCalendarPage() {
       {showRhythmFix ? <RhythmFix /> : null}
 
       {!isMale && !isMenopause ? (
-        <HormoneCalendarRecordModal open={record.recordOpen} currentPhase={currentPhase} cycleDay={cycleDay} selectedDateIso={record.selectedDateIso} recordPeriod={record.recordPeriod} setRecordPeriod={record.setRecordPeriod} recordCondition={record.recordCondition} setRecordCondition={record.setRecordCondition} recordMemo={record.recordMemo} setRecordMemo={record.setRecordMemo} saving={record.saving} onClose={record.closeRecord} onSave={() => { void record.saveRecord() }} />
+        <HormoneCalendarRecordModal open={record.recordOpen} currentPhase={currentPhase} cycleDay={cycleDay} selectedDateIso={record.selectedDateIso} recordPeriod={record.recordPeriod} setRecordPeriod={record.setRecordPeriod} recordCondition={record.recordCondition} setRecordCondition={record.setRecordCondition} recordMemo={record.recordMemo} setRecordMemo={record.setRecordMemo} recordSleep={record.recordSleep} setRecordSleep={record.setRecordSleep} recordUv={record.recordUv} setRecordUv={record.setRecordUv} recordStress={record.recordStress} setRecordStress={record.setRecordStress} recordSkinStatus={record.recordSkinStatus} setRecordSkinStatus={record.setRecordSkinStatus} saving={record.saving} onClose={record.closeRecord} onSave={() => { void record.saveRecord() }} />
       ) : null}
 
       {isMale && record.recordOpen ? (

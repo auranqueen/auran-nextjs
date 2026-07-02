@@ -5,6 +5,9 @@
 
 ## 2026-07-02
 
+- HormoneCalendarRecord: 모달 → 바텀시트 교체 + X 닫기버튼
+- HormoneCalendarRecord: 피부일지(수면·UV·스트레스·피부상태) 통합
+- saveRecord: daily_skin_log 동시 저장
 - my/track: 칩 즉시저장 값 지연 버그 수정 (override 인자)
 - my/track: 진행바 클릭으로 step1↔step2 이동
 - my/track: 칩 선택·textarea 즉시저장 적용

@@ -26,59 +26,44 @@ function parseCheckinCondition(raw: string | null | undefined): { period: string
   return { period: parts[0] || '', condition: parts.slice(1).join(' / ') }
 }
 
-function RecordModal({
-  title,
-  onClose,
-  children,
-}: {
-  title: string
-  onClose: () => void
-  children: React.ReactNode
-}) {
+function RecordModal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
-    <>
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 999,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex', alignItems: 'flex-end',
+      }}
+    >
       <div
-        role="presentation"
-        onClick={onClose}
-        style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 9998 }}
-      />
-      <div style={{
-        position: 'fixed',
-        left: '50%',
-        bottom: 0,
-        transform: 'translateX(-50%)',
-        width: '100%',
-        maxWidth: 390,
-        maxHeight: '85vh',
-        overflowY: 'auto',
-        background: '#1e1830',
-        borderRadius: '20px 20px 0 0',
-        zIndex: 9999,
-        padding: '16px 18px 28px',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <div style={{ fontSize: 15, fontWeight: 500, color: '#f3ecff' }}>{title}</div>
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 480, margin: '0 auto',
+          background: '#1A1714',
+          borderRadius: '20px 20px 0 0',
+          padding: '0 20px calc(24px + env(safe-area-inset-bottom, 0px))',
+          maxHeight: '90vh', overflowY: 'auto',
+        }}
+      >
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '16px 0 12px', position: 'sticky', top: 0,
+          background: '#1A1714', zIndex: 1,
+        }}>
+          <span style={{ fontSize: 15, color: '#fff', fontWeight: 500 }}>{title}</span>
           <button
-            type="button"
             onClick={onClose}
             style={{
-              border: 'none',
-              background: 'rgba(255,255,255,0.08)',
-              color: '#fff',
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              cursor: 'pointer',
-              fontSize: 16,
-              fontFamily: 'inherit',
+              background: 'none', border: 'none', cursor: 'pointer',
+              fontSize: 24, color: 'rgba(255,255,255,0.6)',
+              padding: '4px 8px', lineHeight: 1,
             }}
-          >
-            ✕
-          </button>
+          >✕</button>
         </div>
         {children}
       </div>
-    </>
+    </div>
   )
 }
 
@@ -103,6 +88,10 @@ export function useHormoneCalendarRecord({
   const [recordedDates, setRecordedDates] = useState<Set<string>>(() => new Set())
   const [recordVersion, setRecordVersion] = useState(0)
   const [saving, setSaving] = useState(false)
+  const [recordSleep, setRecordSleep] = useState(3)
+  const [recordUv, setRecordUv] = useState('보통')
+  const [recordStress, setRecordStress] = useState('보통')
+  const [recordSkinStatus, setRecordSkinStatus] = useState<string[]>([])
   const [toast, setToast] = useState('')
 
   const selectedDateIso = toIsoDate(selectedDate)
@@ -217,6 +206,18 @@ export function useHormoneCalendarRecord({
         { onConflict: 'auth_id,record_date' },
       )
       if (dErr) throw dErr
+      const userId = (await sb.auth.getUser()).data.user?.id
+      if (userId) {
+        await sb.from('daily_skin_log').upsert({
+          user_id: userId,
+          date: iso,
+          sleep_hours: recordSleep + 4,
+          uv_exposure: recordUv,
+          stress_level: recordStress,
+          skin_status: recordSkinStatus,
+          memo: recordMemo.trim() || null,
+        }, { onConflict: 'user_id,date' })
+      }
       setRecordedDates((prev) => new Set([...Array.from(prev), iso]))
       setRecordVersion((v) => v + 1)
       setRecordOpen(false)
@@ -229,7 +230,7 @@ export function useHormoneCalendarRecord({
     } finally {
       setSaving(false)
     }
-  }, [authId, hormoneCycle, selectedDate, recordPeriod, recordCondition, recordMemo, onCloseTab])
+  }, [authId, hormoneCycle, selectedDate, recordPeriod, recordCondition, recordMemo, recordSleep, recordUv, recordStress, recordSkinStatus, onCloseTab])
 
   const openTodayRecord = useCallback(() => {
     void openForDate(todayDate())
@@ -246,6 +247,14 @@ export function useHormoneCalendarRecord({
     setRecordCondition,
     recordMemo,
     setRecordMemo,
+    recordSleep,
+    setRecordSleep,
+    recordUv,
+    setRecordUv,
+    recordStress,
+    setRecordStress,
+    recordSkinStatus,
+    setRecordSkinStatus,
     saving,
     toast,
     openForDate,
@@ -266,6 +275,14 @@ export function HormoneCalendarRecordModal({
   setRecordCondition,
   recordMemo,
   setRecordMemo,
+  recordSleep,
+  setRecordSleep,
+  recordUv,
+  setRecordUv,
+  recordStress,
+  setRecordStress,
+  recordSkinStatus,
+  setRecordSkinStatus,
   saving,
   onClose,
   onSave,
@@ -280,6 +297,14 @@ export function HormoneCalendarRecordModal({
   setRecordCondition: (v: string) => void
   recordMemo: string
   setRecordMemo: (v: string) => void
+  recordSleep: number
+  setRecordSleep: (v: number) => void
+  recordUv: string
+  setRecordUv: (v: string) => void
+  recordStress: string
+  setRecordStress: (v: string) => void
+  recordSkinStatus: string[]
+  setRecordSkinStatus: (v: string[]) => void
   saving: boolean
   onClose: () => void
   onSave: () => void
@@ -347,6 +372,58 @@ export function HormoneCalendarRecordModal({
             }}
           />
         </label>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>오늘의 피부 일지</div>
+          <label style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>
+            수면 ({recordSleep + 4}시간)
+            <input type="range" min={0} max={8} value={recordSleep}
+              onChange={e => setRecordSleep(Number(e.target.value))}
+              style={{ width: '100%', marginTop: 6 }} />
+          </label>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>햇빛 노출</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {['거의 없음','조금','보통','많음','매우 많음'].map(v => (
+              <button key={v} type="button"
+                onClick={() => setRecordUv(v)}
+                style={{ fontSize: 12, padding: '4px 10px', borderRadius: 20,
+                  background: recordUv === v ? '#7B5EA7' : 'rgba(255,255,255,0.08)',
+                  color: recordUv === v ? '#fff' : 'rgba(255,255,255,0.5)',
+                  border: 'none', cursor: 'pointer' }}>
+                {v}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>스트레스</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {['매우 낮음','낮음','보통','높음','매우 높음'].map(v => (
+              <button key={v} type="button"
+                onClick={() => setRecordStress(v)}
+                style={{ fontSize: 12, padding: '4px 10px', borderRadius: 20,
+                  background: recordStress === v ? '#7B5EA7' : 'rgba(255,255,255,0.08)',
+                  color: recordStress === v ? '#fff' : 'rgba(255,255,255,0.5)',
+                  border: 'none', cursor: 'pointer' }}>
+                {v}
+              </button>
+            ))}
+          </div>
+          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)' }}>피부 상태</div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {['촉촉함','건조함','트러블','예민함','맑음','칙칙함'].map(v => (
+              <button key={v} type="button"
+                onClick={() => setRecordSkinStatus(
+                  recordSkinStatus.includes(v)
+                    ? recordSkinStatus.filter(s => s !== v)
+                    : [...recordSkinStatus, v]
+                )}
+                style={{ fontSize: 12, padding: '4px 10px', borderRadius: 20,
+                  background: recordSkinStatus.includes(v) ? '#7B5EA7' : 'rgba(255,255,255,0.08)',
+                  color: recordSkinStatus.includes(v) ? '#fff' : 'rgba(255,255,255,0.5)',
+                  border: 'none', cursor: 'pointer' }}>
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
         <button
           type="button"
           disabled={saving}
