@@ -5,6 +5,9 @@
 
 ## 2026-06-03
 
+### 브랜드인증 조회 ID 불일치 수정 (UNIT Z)
+- salons/[id]: salons.owner_id(users.id) → auth_id → profiles.id 경유 후 brand_owner_grades/brand_arete_members 조회 (UNIT Y 버그 수정)
+
 ### 브랜드 등급 분리 + 고객 스토어 브랜드 인증 (UNIT X/Y)
 - BrandTabOwners: profiles.grade → brand_owner_grades 조회·upsert 전환
 - salons/[id] 샵정보 탭: brand_owner_grades + brand_arete_members 브랜드 인증 섹션 노출

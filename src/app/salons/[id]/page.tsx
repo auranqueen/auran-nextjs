@@ -237,45 +237,54 @@ export default function SalonHomePage() {
       setNotFound(false)
 
       if (salonData.owner_id) {
-        const { data: owner } = await sb.from('users').select('name').eq('id', salonData.owner_id).maybeSingle()
+        const { data: owner } = await sb.from('users').select('name, auth_id').eq('id', salonData.owner_id).maybeSingle()
         if (!cancelled && owner?.name) setOwnerName(String(owner.name))
 
-        const [{ data: gradeRows }, { data: areteRows }] = await Promise.all([
-          sb.from('brand_owner_grades').select('brand_id, grade').eq('owner_id', salonData.owner_id),
-          sb.from('brand_arete_members').select('brand_id').eq('owner_id', salonData.owner_id).eq('status', 'active'),
-        ])
-        const brandIds = Array.from(new Set([
-          ...((gradeRows || []).map((r: { brand_id: string }) => r.brand_id)),
-          ...((areteRows || []).map((r: { brand_id: string }) => r.brand_id)),
-        ]))
-        let brandNameMap: Record<string, string> = {}
-        if (brandIds.length) {
-          const { data: brandRows } = await sb.from('brands').select('id, name').in('id', brandIds)
-          if (brandRows) {
-            for (const b of brandRows) brandNameMap[b.id] = String(b.name || '')
+        const { data: ownerProfile } = owner?.auth_id
+          ? await sb.from('profiles').select('id').eq('auth_id', owner.auth_id).maybeSingle()
+          : { data: null }
+        const profileOwnerId = ownerProfile?.id || null
+
+        if (profileOwnerId) {
+          const [{ data: gradeRows }, { data: areteRows }] = await Promise.all([
+            sb.from('brand_owner_grades').select('brand_id, grade').eq('owner_id', profileOwnerId),
+            sb.from('brand_arete_members').select('brand_id').eq('owner_id', profileOwnerId).eq('status', 'active'),
+          ])
+          const brandIds = Array.from(new Set([
+            ...((gradeRows || []).map((r: { brand_id: string }) => r.brand_id)),
+            ...((areteRows || []).map((r: { brand_id: string }) => r.brand_id)),
+          ]))
+          let brandNameMap: Record<string, string> = {}
+          if (brandIds.length) {
+            const { data: brandRows } = await sb.from('brands').select('id, name').in('id', brandIds)
+            if (brandRows) {
+              for (const b of brandRows) brandNameMap[b.id] = String(b.name || '')
+            }
           }
-        }
-        const areteSet = new Set((areteRows || []).map((r: { brand_id: string }) => r.brand_id))
-        const byBrand: Record<string, { brandId: string; brandName: string; grade: string; arete: boolean }> = {}
-        for (const r of gradeRows || []) {
-          byBrand[r.brand_id] = {
-            brandId: r.brand_id,
-            brandName: brandNameMap[r.brand_id] || '브랜드',
-            grade: r.grade || '취급점',
-            arete: areteSet.has(r.brand_id),
-          }
-        }
-        for (const r of areteRows || []) {
-          if (!byBrand[r.brand_id]) {
+          const areteSet = new Set((areteRows || []).map((r: { brand_id: string }) => r.brand_id))
+          const byBrand: Record<string, { brandId: string; brandName: string; grade: string; arete: boolean }> = {}
+          for (const r of gradeRows || []) {
             byBrand[r.brand_id] = {
               brandId: r.brand_id,
               brandName: brandNameMap[r.brand_id] || '브랜드',
-              grade: '',
-              arete: true,
+              grade: r.grade || '취급점',
+              arete: areteSet.has(r.brand_id),
             }
           }
+          for (const r of areteRows || []) {
+            if (!byBrand[r.brand_id]) {
+              byBrand[r.brand_id] = {
+                brandId: r.brand_id,
+                brandName: brandNameMap[r.brand_id] || '브랜드',
+                grade: '',
+                arete: true,
+              }
+            }
+          }
+          if (!cancelled) setBrandAuthItems(Object.values(byBrand).filter(i => i.grade || i.arete))
+        } else if (!cancelled) {
+          setBrandAuthItems([])
         }
-        if (!cancelled) setBrandAuthItems(Object.values(byBrand).filter(i => i.grade || i.arete))
       } else if (!cancelled) {
         setBrandAuthItems([])
       }

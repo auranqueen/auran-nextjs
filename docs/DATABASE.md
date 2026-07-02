@@ -297,6 +297,13 @@ active_role = customer이면 brand role도 customer로 처리됨
 2) 브랜드 인증: brand_owner_grades + brand_arete_members (UNIT X/Y)
 시각적으로 구분해서 노출
 
+### ID 체계 경고 (중요)
+profiles.id ≠ users.id — 서로 다른 테이블, auth_id로만 연결됨.
+brand_owner_grades/brand_arete_members는 profiles.id 사용.
+salons.owner_id는 users.id 사용.
+두 시스템을 연결할 땐 반드시 auth_id를 경유해서 조회할 것
+(users.id → users.auth_id → profiles.id 순서).
+
 ### 예약 실시간 연동
 - bookings 테이블, owner_id/customer_id 필터 postgres_changes
 - 원장: useOwnerBookingRealtime 훅(BookingManagePage.tsx), 고객: MyBookingStatus.tsx 직접
