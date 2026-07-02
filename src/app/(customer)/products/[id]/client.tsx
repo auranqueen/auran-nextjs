@@ -1003,7 +1003,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
   const wrap: React.CSSProperties = {
     background: '#0d0b09', color: '#e8e4dc', maxWidth: 430,
     margin: '0 auto', minHeight: '100dvh', maxHeight: '100dvh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' as any,
-    paddingBottom: 'calc(40px + env(safe-area-inset-bottom, 0px))',
+    paddingBottom: 'calc(32px + env(safe-area-inset-bottom, 0px))',
     fontFamily: '"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif',
   }
   const tag = (bg: string, color: string, border: string): React.CSSProperties => ({
@@ -2479,7 +2479,7 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
       </div>
 
       {/* 3버튼 */}
-      <div style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)', left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '8px 16px calc(8px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ position: 'fixed', bottom: 'calc(env(safe-area-inset-bottom, 0px) + 10px)', left: 0, right: 0, zIndex: 100, background: '#0D0B09', padding: '5px 16px calc(5px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: 4 }}>
         {/* ===== [상담톡] 르노벨 전용 상담 버튼 ===== */}
         {/* 르노벨 brand_id일 때만 노출 */}
         {(product as any).brand_id === '90175aa9-70c8-4568-865a-195f11bd7859' && (
@@ -2531,18 +2531,18 @@ hormone_tags에 '갱년기'·'남성' 넣지 마
             })
             setCartToast('🛍️ 장바구니에 담겼어요!')
           }}
-          style={{ flex: 1, background: '#1e1a14', border: 'none', color: '#aaa', fontSize: 12, padding: '11px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
+          style={{ flex: 1, background: '#1e1a14', border: 'none', color: '#aaa', fontSize: 12, padding: '8px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           🛍️ 담기
         </button>
         <button
           type="button"
           onClick={() => setGiftSheetOpen(true)}
-          style={{ flex: 1, background: '#241e0e', border: 'none', color: GOLD, fontSize: 12, padding: '11px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
+          style={{ flex: 1, background: '#241e0e', border: 'none', color: GOLD, fontSize: 12, padding: '8px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}
         >
           🎁 {maleMeno ? '여성 선물하기' : '선물하기'}
         </button>
-        <button onClick={() => void handleBuy()} style={{ flex: 2, background: `linear-gradient(135deg,${GOLD},#a07840)`, border: 'none', color: '#000', fontSize: 15, padding: '11px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>지금 구매</button>
+        <button onClick={() => void handleBuy()} style={{ flex: 2, background: `linear-gradient(135deg,${GOLD},#a07840)`, border: 'none', color: '#000', fontSize: 12, padding: '8px 0', minHeight: 40, textAlign: 'center', cursor: 'pointer', fontFamily: 'inherit' }}>지금 구매</button>
         </div>
       </div>
 
