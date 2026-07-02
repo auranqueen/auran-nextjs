@@ -46,6 +46,8 @@ function SignupForm() {
   }, [])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [ownerSlug, setOwnerSlug] = useState('')
+  const [ownerSlugCopied, setOwnerSlugCopied] = useState(false)
   const { getSettingNum } = useAdminSettings()
   const [signupWelcomePoint, setSignupWelcomePoint] = useState(() =>
     getSettingNum('points_action', 'signup_welcome', 8888)
@@ -192,6 +194,33 @@ function SignupForm() {
         if (newUserInsertErr) {
           console.warn('[users insert]', newUserInsertErr)
         }
+        if (role === 'owner' && authData.user) {
+          const { data: profRow } = await supabase.from('profiles').select('slug, owner_store_name').eq('auth_id', authData.user.id).maybeSingle()
+          let createdSlug = profRow?.slug ? String(profRow.slug) : ''
+          if (!createdSlug) {
+            const nameTrim = String(profRow?.owner_store_name || form.name || '').trim()
+            if (nameTrim) {
+              let base = nameTrim.toLowerCase().replace(/[^a-z0-9]/g, '')
+              if (!base) base = 'owner' + Math.random().toString(16).slice(2, 10)
+              let candidate = base
+              for (let suffix = 1; suffix < 1000; suffix++) {
+                const { data: taken } = await supabase.from('profiles').select('auth_id').eq('slug', candidate).neq('auth_id', authData.user.id).maybeSingle()
+                if (!taken) break
+                candidate = `${base}${suffix}`
+              }
+              createdSlug = candidate
+            }
+          }
+          const profilePayload: Record<string, unknown> = {
+            auth_id: authData.user.id,
+            email: form.email,
+            full_name: form.name,
+            role: 'owner',
+          }
+          if (createdSlug && !profRow?.slug) profilePayload.slug = createdSlug
+          await supabase.from('profiles').upsert(profilePayload as any, { onConflict: 'auth_id' })
+          if (createdSlug) setOwnerSlug(createdSlug)
+        }
         if (inviteCode) {
           await supabase.from('invite_links').update({ used_count: supabase.rpc('increment', { row_id: inviteCode }) }).eq('code', inviteCode)
         }
@@ -322,6 +351,25 @@ function SignupForm() {
             <div style={{ padding: '12px 16px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 10, fontSize: 12, color: 'var(--gold)', marginBottom: 28 }}>
               {`환영해요! 🎉 +${signupWelcomePoint.toLocaleString()}P가 적립됐어요`}
             </div>
+            {role === 'owner' && ownerSlug ? (
+              <div style={{ padding: '14px 16px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 10, marginBottom: 16, textAlign: 'left' }}>
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 6 }}>내 전용 로그인 주소</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ flex: 1, fontSize: 13, color: meta.color, wordBreak: 'break-all' }}>auran.kr/owner/{ownerSlug}</div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard.writeText(`https://auran.kr/owner/${ownerSlug}`)
+                      setOwnerSlugCopied(true)
+                      setTimeout(() => setOwnerSlugCopied(false), 2000)
+                    }}
+                    style={{ flexShrink: 0, padding: '6px 10px', borderRadius: 8, border: `1px solid ${meta.border}`, background: 'transparent', color: meta.color, fontSize: 11, cursor: 'pointer' }}
+                  >
+                    {ownerSlugCopied ? '복사됨' : '복사'}
+                  </button>
+                </div>
+              </div>
+            ) : null}
             <div style={{ padding: '14px 16px', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, fontSize: 12, color: '#7B5EA7', marginBottom: 16, lineHeight: 1.7, textAlign: 'left' }}>
               💜 프로필을 완성하면 호르몬 사이클에 맞춘 케어가 더 정교해져요<br />
               지금 바로 내 피부 타입과 고민을 알려주세요

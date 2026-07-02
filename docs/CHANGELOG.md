@@ -5,6 +5,9 @@
 
 ## 2026-06-03
 
+### 원장 가입완료 slug 자동생성·전용주소 안내 (UNIT CC)
+- signup/page.tsx: owner 가입 시 profiles.slug 생성(UNIT O 동일 규칙) + 완료 화면 전용 로그인 주소·복사
+
 ### 원장 프로필 사진 편집·고객 스토어 노출 (UNIT AA/BB)
 - store-decoration: profiles.avatar_url 업로드·저장 (owner-store 버킷)
 - salons/[id]: 살롱명 옆 원형 프로필 사진 (auth_id 경유 조회)

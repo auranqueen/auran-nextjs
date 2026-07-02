@@ -183,6 +183,7 @@ external_customers     — 외부 고객 (오프라인 고객 관리)
 
 - profiles.grade = 고객 멤버십 전용. 브랜드 등급 작업 시 반드시 brand_owner_grades 사용, profiles.grade 참조 금지.
 - profiles와 users는 별개 테이블, id 직접 비교 금지 — auth_id로만 연결. 새 기능에서 원장을 식별할 때 어느 테이블 id를 쓰는지 항상 먼저 확인.
+- 원장 slug는 가입완료 시점(signup/page.tsx)과 스토어저장 시점(store/page.tsx, UNIT O) 두 곳에서 생성 시도 — 이미 있으면 스킵.
 - onboarding_done: true는 birth_date+gender 저장 완료 시점에만
 - auth/callback/complete 등 경유 페이지에서 무조건 true upsert 금지
 - PayApp target_id는 TEXT 타입 (compound pipe-delimited string)
