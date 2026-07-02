@@ -5,6 +5,10 @@
 
 ## 2026-07-02
 
+- my/track: 칩 선택·textarea 즉시저장 적용
+- my/track: 저장하기 버튼·하단 fixed bar 제거
+- my/track: 저장 후 /my 이동 제거 → 토스트 표시
+- my/track: step 이동 시 필수 검증 제거
 - my/track: 하단 버튼 safe-area-inset-bottom 적용 (짤림 해결)
 - 홈: 잠금카드 → 미니 배너로 교체 (생리 사이클 미등록 시)
 - 배너: 클릭 시 호르몬 카드 스크롤, X 누르면 오늘 하루 숨김
