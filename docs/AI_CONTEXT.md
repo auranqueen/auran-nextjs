@@ -181,6 +181,7 @@ external_customers     — 외부 고객 (오프라인 고객 관리)
 
 ## 12. 중요 주의사항
 
+- profiles.grade = 고객 멤버십 전용. 브랜드 등급 작업 시 반드시 brand_owner_grades 사용, profiles.grade 참조 금지.
 - onboarding_done: true는 birth_date+gender 저장 완료 시점에만
 - auth/callback/complete 등 경유 페이지에서 무조건 true upsert 금지
 - PayApp target_id는 TEXT 타입 (compound pipe-delimited string)

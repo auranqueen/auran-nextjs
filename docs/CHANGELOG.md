@@ -5,6 +5,10 @@
 
 ## 2026-06-03
 
+### 브랜드 등급 분리 + 고객 스토어 브랜드 인증 (UNIT X/Y)
+- BrandTabOwners: profiles.grade → brand_owner_grades 조회·upsert 전환
+- salons/[id] 샵정보 탭: brand_owner_grades + brand_arete_members 브랜드 인증 섹션 노출
+
 ### 원장 자격증·경력 전시 (UNIT V/W)
 - SalonInfoForm: certificates 업로드·라벨 편집 (owner-store 버킷)
 - salons/[id] 샵 정보 탭: 자격증 가로 스크롤 + 확대 모달

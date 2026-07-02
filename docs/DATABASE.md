@@ -286,6 +286,17 @@ active_role = customer이면 brand role도 customer로 처리됨
 - 편집: SalonInfoForm.tsx / 전시: salons/[id]/page.tsx 샵정보 탭
 - 파트너 자격증 검증 기능(미착수)과 별개 — 추후 파트너용으로 유사 구조 재사용 예정
 
+### 브랜드 인증 등급 (brand_owner_grades) — 중요
+- profiles.grade는 오렌 고객 멤버십 등급(PETAL/BLOOM) 전용, 브랜드 등급과 혼동 금지
+- 브랜드별 원장 등급(취급점/전문점/프리미엄전문점/메디슈티컬)은 brand_owner_grades 사용
+- 브랜드가 BrandTabOwners.tsx에서 등급 부여 → 고객 스토어 샵정보 탭에 자동 노출
+- 아레테클럽(brand_arete_members)은 등급과 별개 배지로 병행 표시
+
+### 자격증 전시 2종
+1) 원장 직접 등록: salons.certificates (UNIT V/W)
+2) 브랜드 인증: brand_owner_grades + brand_arete_members (UNIT X/Y)
+시각적으로 구분해서 노출
+
 ### 예약 실시간 연동
 - bookings 테이블, owner_id/customer_id 필터 postgres_changes
 - 원장: useOwnerBookingRealtime 훅(BookingManagePage.tsx), 고객: MyBookingStatus.tsx 직접

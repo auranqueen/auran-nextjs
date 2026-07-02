@@ -21,6 +21,12 @@ const TEXT_SUB = 'rgba(255,255,255,0.55)'
 const BORDER = 'rgba(255,255,255,0.08)'
 const CARD = 'rgba(255,255,255,0.05)'
 const SURFACE = 'rgba(255,255,255,0.08)'
+const GRADE_COLORS: Record<string, string> = {
+  '메디슈티컬': '#E53935',
+  '프리미엄전문점': '#C9A96E',
+  '전문점': '#9C7FD4',
+  '취급점': '#64B5F6',
+}
 
 const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const
 const DAY_KO = ['일', '월', '화', '수', '목', '금', '토']
@@ -211,6 +217,7 @@ export default function SalonHomePage() {
   const [bannerIndex, setBannerIndex] = useState(0)
   const [showStory, setShowStory] = useState(false)
   const [certLightbox, setCertLightbox] = useState<{ url: string; label: string } | null>(null)
+  const [brandAuthItems, setBrandAuthItems] = useState<{ brandId: string; brandName: string; grade: string; arete: boolean }[]>([])
   const bannerTouchX = useRef(0)
 
   useEffect(() => {
@@ -232,6 +239,45 @@ export default function SalonHomePage() {
       if (salonData.owner_id) {
         const { data: owner } = await sb.from('users').select('name').eq('id', salonData.owner_id).maybeSingle()
         if (!cancelled && owner?.name) setOwnerName(String(owner.name))
+
+        const [{ data: gradeRows }, { data: areteRows }] = await Promise.all([
+          sb.from('brand_owner_grades').select('brand_id, grade').eq('owner_id', salonData.owner_id),
+          sb.from('brand_arete_members').select('brand_id').eq('owner_id', salonData.owner_id).eq('status', 'active'),
+        ])
+        const brandIds = Array.from(new Set([
+          ...((gradeRows || []).map((r: { brand_id: string }) => r.brand_id)),
+          ...((areteRows || []).map((r: { brand_id: string }) => r.brand_id)),
+        ]))
+        let brandNameMap: Record<string, string> = {}
+        if (brandIds.length) {
+          const { data: brandRows } = await sb.from('brands').select('id, name').in('id', brandIds)
+          if (brandRows) {
+            for (const b of brandRows) brandNameMap[b.id] = String(b.name || '')
+          }
+        }
+        const areteSet = new Set((areteRows || []).map((r: { brand_id: string }) => r.brand_id))
+        const byBrand: Record<string, { brandId: string; brandName: string; grade: string; arete: boolean }> = {}
+        for (const r of gradeRows || []) {
+          byBrand[r.brand_id] = {
+            brandId: r.brand_id,
+            brandName: brandNameMap[r.brand_id] || '브랜드',
+            grade: r.grade || '취급점',
+            arete: areteSet.has(r.brand_id),
+          }
+        }
+        for (const r of areteRows || []) {
+          if (!byBrand[r.brand_id]) {
+            byBrand[r.brand_id] = {
+              brandId: r.brand_id,
+              brandName: brandNameMap[r.brand_id] || '브랜드',
+              grade: '',
+              arete: true,
+            }
+          }
+        }
+        if (!cancelled) setBrandAuthItems(Object.values(byBrand).filter(i => i.grade || i.arete))
+      } else if (!cancelled) {
+        setBrandAuthItems([])
       }
 
       const { data: reviewRows } = await sb
@@ -1018,6 +1064,31 @@ export default function SalonHomePage() {
                         <div style={{ fontSize: 10, color: TEXT_SUB, padding: '8px 8px 10px', lineHeight: 1.4 }}>{cert.label}</div>
                       ) : null}
                     </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {brandAuthItems.length ? (
+              <div style={{ marginTop: 16, padding: 14, borderRadius: 10, background: 'rgba(123,94,167,0.12)', border: `1px solid rgba(123,94,167,0.25)` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <span style={{ width: 22, height: 22, borderRadius: '50%', background: 'rgba(123,94,167,0.35)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: PURPLE }}>✓</span>
+                  <div style={{ fontSize: 13, color: TEXT }}>브랜드 인증</div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {brandAuthItems.map(item => (
+                    <div key={item.brandId} style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 13, color: TEXT, minWidth: 72 }}>{item.brandName}</span>
+                      {item.grade ? (
+                        <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 12, background: `${GRADE_COLORS[item.grade] || PURPLE}22`, color: GRADE_COLORS[item.grade] || PURPLE, border: `0.5px solid ${GRADE_COLORS[item.grade] || PURPLE}66` }}>
+                          {item.grade}
+                        </span>
+                      ) : null}
+                      {item.arete ? (
+                        <span style={{ fontSize: 10, padding: '3px 10px', borderRadius: 12, background: 'rgba(201,169,110,0.08)', color: GOLD, border: '1px solid rgba(201,169,110,0.65)' }}>
+                          아레테클럽
+                        </span>
+                      ) : null}
+                    </div>
                   ))}
                 </div>
               </div>

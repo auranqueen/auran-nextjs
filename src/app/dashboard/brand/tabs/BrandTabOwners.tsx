@@ -44,7 +44,7 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
       setLoading(true)
       const { data } = await supabase
         .from('profiles')
-        .select('id, full_name, owner_store_name, region, trade_brands, preferred_brands, grade, arete_member, phone, last_order_at, monthly_order')
+        .select('id, full_name, owner_store_name, region, trade_brands, preferred_brands, arete_member, phone, last_order_at, monthly_order')
         .not('trade_brands', 'is', null)
       if (data) {
         const matched = data.filter((p: any) => {
@@ -53,12 +53,23 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
             : (Array.isArray(p.preferred_brands) ? p.preferred_brands : [])
           return brands.some((b: string) => b === brandName)
         })
+        let gradeMap: Record<string, string> = {}
+        if (brandId && matched.length > 0) {
+          const { data: gradeRows } = await supabase
+            .from('brand_owner_grades')
+            .select('owner_id, grade')
+            .eq('brand_id', brandId)
+            .in('owner_id', matched.map((p: any) => p.id))
+          if (gradeRows) {
+            for (const row of gradeRows) gradeMap[row.owner_id] = row.grade
+          }
+        }
         setOwners(matched.map((p: any) => ({
           id: p.id,
           name: p.full_name || p.name || '이름 없음',
           salon_name: p.owner_store_name || '-',
           region: p.region || '-',
-          grade: p.grade || '취급점',
+          grade: gradeMap[p.id] || '취급점',
           arete: p.arete_member || false,
           last_order: p.last_order_at || null,
           monthly: p.monthly_order || 0,
@@ -76,8 +87,12 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
     return matchGrade && matchSearch
   })
   const updateGrade = async (ownerId: string, grade: string) => {
+    if (!brandId) return
     setSaving(ownerId + '_grade')
-    await supabase.from('profiles').update({ grade }).eq('id', ownerId)
+    await supabase.from('brand_owner_grades').upsert(
+      { brand_id: brandId, owner_id: ownerId, grade },
+      { onConflict: 'brand_id,owner_id' }
+    )
     setOwners(prev => prev.map(o => o.id === ownerId ? { ...o, grade } : o))
     setSaving(null)
   }
