@@ -131,16 +131,20 @@ export default function MyTrackPage() {
     window.scrollTo(0, 0)
   }
 
-  const persist = async () => {
+  const persist = async (override?: {
+    skin_type?: string | null
+    skin_concerns?: string[]
+    allergy_ingredients?: string[]
+  }) => {
     if (!authId) return
     setSaving(true)
     setError('')
     const { error: upErr } = await supabase
       .from('profiles')
       .update({
-        skin_type: skinType || null,
-        skin_concerns: skinConcerns,
-        allergy_ingredients: allergyIngredients,
+        skin_type: override?.skin_type !== undefined ? (override.skin_type || null) : (skinType || null),
+        skin_concerns: override?.skin_concerns ?? skinConcerns,
+        allergy_ingredients: override?.allergy_ingredients ?? allergyIngredients,
         body_status: careStyle || null,
         procedure_history: procedureHistory,
         menstrual_cycle: menstrualCycle || null,
@@ -235,7 +239,8 @@ export default function MyTrackPage() {
           {[1, 2].map((s) => (
             <div
               key={s}
-              style={{ flex: 1, height: 3, borderRadius: 2, background: s <= step ? PRIMARY : 'rgba(255,255,255,0.08)' }}
+              onClick={() => setStep(s)}
+              style={{ flex: 1, height: 3, borderRadius: 2, background: s <= step ? PRIMARY : 'rgba(255,255,255,0.08)', cursor: 'pointer' }}
             />
           ))}
         </div>
@@ -249,7 +254,7 @@ export default function MyTrackPage() {
         {step === 1 ? (
           <>
             {section('1. 피부타입', '하나만 선택해주세요', <>
-              {chipRow(['건성', '지성', '복합성', '민감성', '정상'], skinType, (v) => { setSkinType(v); void persist() })}
+              {chipRow(['건성', '지성', '복합성', '민감성', '정상'], skinType, (v) => { setSkinType(v); void persist({ skin_type: v }) })}
               <textarea
                 value={skinTypeMemo}
                 onChange={(e) => setSkinTypeMemo(e.target.value)}
@@ -272,7 +277,11 @@ export default function MyTrackPage() {
               />
             </>)}
             {section('2. 피부고민', '복수 선택 가능', <>
-              {chipRow(['피부 변화', '모공', '색소침착', '주름', '건조', '유분', '민감'], skinConcerns, (v) => { setSkinConcerns((p) => toggleArr(p, v)); void persist() }, true)}
+              {chipRow(['피부 변화', '모공', '색소침착', '주름', '건조', '유분', '민감'], skinConcerns, (v) => { setSkinConcerns((p) => {
+                const next = toggleArr(p, v)
+                void persist({ skin_concerns: next })
+                return next
+              }) }, true)}
               <textarea
                 value={skinConcernMemo}
                 onChange={(e) => setSkinConcernMemo(e.target.value)}
@@ -295,7 +304,11 @@ export default function MyTrackPage() {
               />
             </>)}
             {section('3. 알레르기 성분', '복수 선택 가능', <>
-              {chipRow(['파라벤', '알코올', '향료', '실리콘', '없음'], allergyIngredients, (v) => { setAllergyIngredients((p) => toggleArr(p, v)); void persist() }, true)}
+              {chipRow(['파라벤', '알코올', '향료', '실리콘', '없음'], allergyIngredients, (v) => { setAllergyIngredients((p) => {
+                const next = toggleArr(p, v)
+                void persist({ allergy_ingredients: next })
+                return next
+              }) }, true)}
               <textarea
                 value={allergyMemo}
                 onChange={(e) => setAllergyMemo(e.target.value)}

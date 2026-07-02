@@ -5,6 +5,8 @@
 
 ## 2026-07-02
 
+- my/track: 칩 즉시저장 값 지연 버그 수정 (override 인자)
+- my/track: 진행바 클릭으로 step1↔step2 이동
 - my/track: 칩 선택·textarea 즉시저장 적용
 - my/track: 저장하기 버튼·하단 fixed bar 제거
 - my/track: 저장 후 /my 이동 제거 → 토스트 표시
