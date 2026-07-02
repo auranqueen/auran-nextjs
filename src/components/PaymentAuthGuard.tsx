@@ -15,15 +15,20 @@ export default function PaymentAuthGuard({ children, onSuccess, title = '결제 
   const [showPin, setShowPin] = useState(false)
   const [pinError, setPinError] = useState('')
   const [lockedMinutes, setLockedMinutes] = useState<number | null>(null)
+  const [lockedSeconds, setLockedSeconds] = useState<number | null>(null)
+  const [pinShuffleNonce, setPinShuffleNonce] = useState(0)
 
   const fetchStatus = useCallback(async () => {
     try {
       const res = await fetch('/api/auth/pin/status')
       const data = await res.json()
+      if (data.secondsLeft != null && data.secondsLeft > 0) setLockedSeconds(data.secondsLeft)
+      else setLockedSeconds(null)
       if (data.minutesLeft != null && data.minutesLeft > 0) setLockedMinutes(data.minutesLeft)
       else setLockedMinutes(null)
     } catch {
       setLockedMinutes(null)
+      setLockedSeconds(null)
     }
   }, [])
 
@@ -37,6 +42,7 @@ export default function PaymentAuthGuard({ children, onSuccess, title = '결제 
       return
     }
     setPinError('')
+    setPinShuffleNonce((n) => n + 1)
     setShowPin(true)
   }
 
@@ -48,8 +54,11 @@ export default function PaymentAuthGuard({ children, onSuccess, title = '결제 
       body: JSON.stringify({ pin }),
     })
     const data = await res.json()
-    if (res.status === 423 && data.minutesLeft != null) {
-      setLockedMinutes(data.minutesLeft)
+    if (res.status === 423 && (data.secondsLeft != null || data.minutesLeft != null)) {
+      if (data.secondsLeft != null && data.secondsLeft > 0) setLockedSeconds(data.secondsLeft)
+      else setLockedSeconds(null)
+      if (data.minutesLeft != null && data.minutesLeft > 0) setLockedMinutes(data.minutesLeft)
+      else setLockedMinutes(null)
       return
     }
     if (!res.ok) {
@@ -72,6 +81,8 @@ export default function PaymentAuthGuard({ children, onSuccess, title = '결제 
           onCancel={() => setShowPin(false)}
           error={pinError}
           lockedMinutes={lockedMinutes ?? undefined}
+          lockedSeconds={lockedSeconds ?? undefined}
+          shuffleNonce={pinShuffleNonce}
         />
       )}
     </>

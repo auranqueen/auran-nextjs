@@ -18,12 +18,16 @@ export async function GET() {
     const hasPin = !!row?.payment_pin_hash
     const lockedUntil = row?.pin_locked_until || null
     let minutesLeft: number | null = null
+    let secondsLeft: number | null = null
     if (lockedUntil) {
       const until = new Date(lockedUntil)
-      if (until > new Date()) minutesLeft = Math.ceil((until.getTime() - Date.now()) / 60000)
+      if (until > new Date()) {
+        secondsLeft = Math.ceil((until.getTime() - Date.now()) / 1000)
+        minutesLeft = secondsLeft >= 60 ? Math.ceil(secondsLeft / 60) : null
+      }
     }
 
-    return NextResponse.json({ hasPin, lockedUntil, minutesLeft })
+    return NextResponse.json({ hasPin, lockedUntil, minutesLeft, secondsLeft })
   } catch {
     return NextResponse.json({ hasPin: false, lockedUntil: null, minutesLeft: null }, { status: 200 })
   }

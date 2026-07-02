@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 
 const GOLD = '#c9a84c'
 
@@ -10,12 +10,19 @@ type PinModalProps = {
   onCancel: () => void
   error?: string
   lockedMinutes?: number
+  lockedSeconds?: number
+  shuffleNonce?: number
 }
 
-export default function PinModal({ title, onConfirm, onCancel, error, lockedMinutes }: PinModalProps) {
+export default function PinModal({ title, onConfirm, onCancel, error, lockedMinutes, lockedSeconds, shuffleNonce = 0 }: PinModalProps) {
   const [pin, setPin] = useState('')
   const [loading, setLoading] = useState(false)
   const [err, setErr] = useState(error || '')
+
+  const digitSlots = useMemo(() => {
+    const digits = Array.from({ length: 10 }, (_, i) => String(i)).sort(() => Math.random() - 0.5)
+    return [...digits.slice(0, 9), '', digits[9], '⌫']
+  }, [shuffleNonce])
 
   const submit = useCallback(async () => {
     if (pin.length !== 6) return
@@ -37,13 +44,16 @@ export default function PinModal({ title, onConfirm, onCancel, error, lockedMinu
   }
   const backspace = () => setPin((p) => p.slice(0, -1))
 
-  if (lockedMinutes != null && lockedMinutes > 0) {
+  if ((lockedSeconds != null && lockedSeconds > 0) || (lockedMinutes != null && lockedMinutes > 0)) {
+    const waitLabel = lockedSeconds != null && lockedSeconds > 0 && lockedSeconds < 60
+      ? `${lockedSeconds}초`
+      : `${lockedMinutes ?? Math.ceil((lockedSeconds || 0) / 60)}분`
     return (
       <div style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ background: 'var(--bg)', borderRadius: 16, padding: 24, maxWidth: 320, width: '100%', border: '1px solid var(--border)' }}>
           <div style={{ fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 8 }}>🔒 PIN 잠금</div>
           <p style={{ fontSize: 14, color: 'var(--text3)', marginBottom: 20 }}>
-            비정상적인 시도가 감지되어 {lockedMinutes}분 후에 다시 시도해주세요.
+            비정상적인 시도가 감지되어 {waitLabel} 후에 다시 시도해주세요.
           </p>
           <button onClick={onCancel} style={{ width: '100%', padding: 12, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)' }}>
             닫기
@@ -81,15 +91,15 @@ export default function PinModal({ title, onConfirm, onCancel, error, lockedMinu
         </div>
         {(err || error) && <p style={{ fontSize: 12, color: '#e08080', marginBottom: 12, textAlign: 'center' }}>{err || error}</p>}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 12 }}>
-          {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((key) =>
+          {digitSlots.map((key, idx) =>
             key === '' ? (
-              <div key="empty" />
+              <div key={`empty-${idx}`} />
             ) : key === '⌫' ? (
               <button key="back" type="button" onClick={backspace} style={{ padding: 14, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontSize: 18 }}>
                 ⌫
               </button>
             ) : (
-              <button key={key} type="button" onClick={() => addDigit(key)} style={{ padding: 14, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, color: '#fff', fontSize: 18 }}>
+              <button key={`${key}-${idx}`} type="button" onClick={() => addDigit(key)} style={{ padding: 14, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, color: '#fff', fontSize: 18 }}>
                 {key}
               </button>
             )

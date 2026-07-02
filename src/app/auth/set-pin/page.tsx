@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 
 const GOLD = '#c9a84c'
@@ -13,6 +13,11 @@ export default function SetPinPage() {
   const [pin, setPin] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const digitSlots = useMemo(() => {
+    const digits = Array.from({ length: 10 }, (_, i) => String(i)).sort(() => Math.random() - 0.5)
+    return [...digits.slice(0, 9), '', digits[9], '⌫']
+  }, [step])
 
   const addDigit = (d: string) => {
     if (pin.length >= 6) return
@@ -96,12 +101,17 @@ export default function SetPinPage() {
           ))}
         </div>
         {error && <p style={{ fontSize: 12, color: '#e08080', marginBottom: 12, textAlign: 'center' }}>{error}</p>}
+        {step === 'confirm' ? (
+          <p style={{ fontSize: 11, color: '#e08080', marginBottom: 12, textAlign: 'center' }}>
+            이 PIN은 다시 확인할 수 없어요. 꼭 기억해두세요.
+          </p>
+        ) : null}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20, maxWidth: 260 }}>
-          {['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', '⌫'].map((key) =>
-            key === '' ? <div key="empty" /> : key === '⌫' ? (
+          {digitSlots.map((key, idx) =>
+            key === '' ? <div key={`empty-${idx}`} /> : key === '⌫' ? (
               <button key="back" type="button" onClick={backspace} style={{ padding: 14, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontSize: 18 }}>⌫</button>
             ) : (
-              <button key={key} type="button" onClick={() => addDigit(key)} style={{ padding: 14, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, color: '#fff', fontSize: 18 }}>{key}</button>
+              <button key={`${key}-${idx}`} type="button" onClick={() => addDigit(key)} style={{ padding: 14, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 10, color: '#fff', fontSize: 18 }}>{key}</button>
             )
           )}
         </div>

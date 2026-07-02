@@ -101,8 +101,27 @@ function LoginForm() {
         else localStorage.removeItem(REMEMBER_EMAIL_KEY)
       } catch {}
 
+      const lookupEmail = email.trim().includes('@') ? email.trim() : `${email.trim()}@auran.kr`
+      const { data: lockRow } = await supabase
+        .from('users')
+        .select('login_locked_until')
+        .eq('email', lookupEmail)
+        .maybeSingle()
+      if (lockRow?.login_locked_until) {
+        const until = new Date(lockRow.login_locked_until)
+        if (until > new Date()) {
+          const sec = Math.ceil((until.getTime() - Date.now()) / 1000)
+          setError(sec < 60 ? `${sec}초 후 다시 시도해주세요` : `${Math.ceil(sec / 60)}분 후 다시 시도해주세요`)
+          return
+        }
+      }
+
       const { data: signData, error: authError } = await supabase.auth.signInWithPassword({ email, password })
       if (authError) throw authError
+
+      if (signData.user?.id) {
+        await supabase.from('users').update({ login_failed_count: 0, login_locked_until: null }).eq('auth_id', signData.user.id)
+      }
 
       // 서버 API는 로그인 직후 쿠키가 아직 없어 401일 수 있음 → 클라이언트 users 조회로 보완
       let userData: { role: string | null; status: string | null } | null = null
@@ -163,6 +182,35 @@ function LoginForm() {
       setError(msg === 'Invalid login credentials'
         ? '이메일 또는 비밀번호가 맞지 않습니다.'
         : msg || '로그인 중 오류가 발생했습니다.')
+      if (msg === 'Invalid login credentials' || msg.includes('Invalid login credentials')) {
+        const lookupEmail = email.trim().includes('@') ? email.trim() : `${email.trim()}@auran.kr`
+        const { data: userRow } = await supabase
+          .from('users')
+          .select('id, login_failed_count')
+          .eq('email', lookupEmail)
+          .maybeSingle()
+        if (userRow?.id) {
+          const failCount = (userRow.login_failed_count ?? 0) + 1
+          const updates: Record<string, unknown> = { login_failed_count: failCount }
+          let lockUntil: Date | null = null
+          if (failCount >= 15) {
+            lockUntil = new Date()
+            lockUntil.setMinutes(lockUntil.getMinutes() + 30)
+          } else if (failCount === 10) {
+            lockUntil = new Date()
+            lockUntil.setMinutes(lockUntil.getMinutes() + 5)
+          } else if (failCount === 5) {
+            lockUntil = new Date()
+            lockUntil.setSeconds(lockUntil.getSeconds() + 30)
+          }
+          if (lockUntil) updates.login_locked_until = lockUntil.toISOString()
+          await supabase.from('users').update(updates).eq('id', userRow.id)
+          if (lockUntil && lockUntil > new Date()) {
+            const sec = Math.ceil((lockUntil.getTime() - Date.now()) / 1000)
+            setError(sec < 60 ? `${sec}초 후 다시 시도해주세요` : `${Math.ceil(sec / 60)}분 후 다시 시도해주세요`)
+          }
+        }
+      }
     } finally {
       setLoading(false)
     }

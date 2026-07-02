@@ -314,6 +314,11 @@ users.payment_pin_hash + pin_failed_count + pin_locked_until 만 사용.
 users.payment_pin(단수, 평문) 존재하지 않는 죽은 참조였음 — 절대 재사용 금지.
 PIN 검증은 반드시 PaymentAuthGuard 컴포넌트 + api/auth/pin/verify 경유.
 
+### 잠금 정책 통일 (로그인 + 결제PIN)
+5회→30초, 누적10회→5분, 누적15회→30분. users.login_failed_count/login_locked_until,
+users.pin_failed_count/pin_locked_until 각각 별도 컬럼이지만 동일 규칙 적용.
+PIN 숫자패드는 매번 랜덤 배열(set-pin, PinModal, PaymentAuthGuard 3곳).
+
 ### 예약 실시간 연동
 - bookings 테이블, owner_id/customer_id 필터 postgres_changes
 - 원장: useOwnerBookingRealtime 훅(BookingManagePage.tsx), 고객: MyBookingStatus.tsx 직접

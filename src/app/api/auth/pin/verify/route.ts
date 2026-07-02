@@ -3,8 +3,25 @@ import { createClient } from '@/lib/supabase/server'
 import bcrypt from 'bcryptjs'
 
 const PIN_REGEX = /^\d{6}$/
-const MAX_FAIL = 5
-const LOCK_MINUTES = 30
+
+function lockUntilForFailCount(failCount: number): Date | null {
+  if (failCount >= 15) {
+    const lockUntil = new Date()
+    lockUntil.setMinutes(lockUntil.getMinutes() + 30)
+    return lockUntil
+  }
+  if (failCount === 10) {
+    const lockUntil = new Date()
+    lockUntil.setMinutes(lockUntil.getMinutes() + 5)
+    return lockUntil
+  }
+  if (failCount === 5) {
+    const lockUntil = new Date()
+    lockUntil.setSeconds(lockUntil.getSeconds() + 30)
+    return lockUntil
+  }
+  return null
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,8 +49,12 @@ export async function POST(request: NextRequest) {
 
     const lockedUntil = row.pin_locked_until ? new Date(row.pin_locked_until) : null
     if (lockedUntil && lockedUntil > new Date()) {
-      const mins = Math.ceil((lockedUntil.getTime() - Date.now()) / 60000)
-      return NextResponse.json({ error: 'pin_locked', minutesLeft: mins }, { status: 423 })
+      const secondsLeft = Math.max(0, Math.ceil((lockedUntil.getTime() - Date.now()) / 1000))
+      return NextResponse.json({
+        error: 'pin_locked',
+        secondsLeft,
+        minutesLeft: secondsLeft >= 60 ? Math.ceil(secondsLeft / 60) : null,
+      }, { status: 423 })
     }
 
     const hash = row.payment_pin_hash
@@ -45,14 +66,16 @@ export async function POST(request: NextRequest) {
     if (!ok) {
       const failCount = (row.pin_failed_count ?? 0) + 1
       const updates: Record<string, unknown> = { pin_failed_count: failCount }
-      if (failCount >= MAX_FAIL) {
-        const lockUntil = new Date()
-        lockUntil.setMinutes(lockUntil.getMinutes() + LOCK_MINUTES)
-        updates.pin_locked_until = lockUntil.toISOString()
-      }
+      const nextLockUntil = lockUntilForFailCount(failCount)
+      if (nextLockUntil) updates.pin_locked_until = nextLockUntil.toISOString()
       await supabase.from('users').update(updates).eq('auth_id', user.id)
-      if (failCount >= MAX_FAIL) {
-        return NextResponse.json({ error: 'pin_locked', minutesLeft: LOCK_MINUTES }, { status: 423 })
+      if (nextLockUntil && nextLockUntil > new Date()) {
+        const secondsLeft = Math.max(0, Math.ceil((nextLockUntil.getTime() - Date.now()) / 1000))
+        return NextResponse.json({
+          error: 'pin_locked',
+          secondsLeft,
+          minutesLeft: secondsLeft >= 60 ? Math.ceil(secondsLeft / 60) : null,
+        }, { status: 423 })
       }
       return NextResponse.json({ error: 'PIN이 일치하지 않습니다.' }, { status: 401 })
     }

@@ -5,6 +5,11 @@
 
 ## 2026-06-03
 
+### 보안 강화 — 로그인·결제PIN 단계식 잠금 + PIN UX (UNIT FF–II)
+- login/page.tsx: login_failed_count/login_locked_until 3단계 잠금 (5→30초, 10→5분, 15→30분)
+- pin/verify: pin_failed_count 동일 규칙, PaymentAuthGuard 경유 유지
+- set-pin·PinModal·PaymentAuthGuard: 숫자패드 랜덤 배열, PIN 기억 안내 문구
+
 ### 보안 감사 — checkout PIN 검증 통일 (UNIT DD)
 - checkout/page.tsx: users.payment_pin(죽은 컬럼) 직접 비교 제거 → PaymentAuthGuard + api/auth/pin/verify
 - UNIT EE(로그인 계정 잠금): users.login_failed_count/login_locked_until 컬럼 없음 — SQL 추가 후 재작업 필요
