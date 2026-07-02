@@ -292,10 +292,10 @@ active_role = customer이면 brand role도 customer로 처리됨
 - 브랜드가 BrandTabOwners.tsx에서 등급 부여 → 고객 스토어 샵정보 탭에 자동 노출
 - 아레테클럽(brand_arete_members)은 등급과 별개 배지로 병행 표시
 
-### 자격증 전시 2종
+### 자격증 전시 2종 (완결)
 1) 원장 직접 등록: salons.certificates (UNIT V/W)
 2) 브랜드 인증: brand_owner_grades + brand_arete_members (UNIT X/Y)
-시각적으로 구분해서 노출
+샵정보 탭에 시각적으로 구분해서 나란히 노출
 
 ### ID 체계 경고 (중요)
 profiles.id ≠ users.id — 서로 다른 테이블, auth_id로만 연결됨.
