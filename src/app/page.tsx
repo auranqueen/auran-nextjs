@@ -2450,20 +2450,6 @@ export default function CustomerHomePage() {
             <div style={{ fontSize: 13, color: '#e8dff5', lineHeight: 1.65, marginBottom: 16 }}>
               생리 첫날 오렌한테 귓속말 해주면<br />나만의 피부 사이클 케어가 깨어나요 ✨
             </div>
-            <button
-              onClick={() => { setShowSkinDiary(true); setSkinDiaryInitialTab(1) }}
-              style={{
-                background: '#7B5EA7', border: 'none',
-                borderRadius: 20, padding: '8px 22px',
-                color: '#fff', fontSize: 12, cursor: 'pointer',
-              }}
-            >
-              {userGender === 'male'
-                ? '내 피부 사이클 기록'
-                : (userHca as boolean | null) === false
-                ? '케어 루틴 기록'
-                : '피부 일지 기록하기'}
-            </button>
           </div>
         ) : (
           <>
@@ -2639,12 +2625,6 @@ export default function CustomerHomePage() {
                 style={{ flex:1, background:'rgba(201,169,110,0.08)', border:'1px solid rgba(201,169,110,0.25)', borderRadius:20, padding:'6px 10px', fontSize:11, color:GOLD, cursor:'pointer' }}
               >
                 ✦ 날씨 맞춤 추천
-              </button>
-              <button
-                onClick={e => { e.stopPropagation(); setShowSkinDiary(true) }}
-                style={{ flex:1, background:'rgba(123,94,167,0.08)', border:'1px solid rgba(123,94,167,0.25)', borderRadius:20, padding:'6px 10px', fontSize:11, color:'#c4a7e7', cursor:'pointer' }}
-              >
-                💜 오늘 기록하기
               </button>
             </div>
           </div>

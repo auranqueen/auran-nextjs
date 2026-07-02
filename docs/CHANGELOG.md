@@ -5,6 +5,7 @@
 
 ## 2026-07-02
 
+- 홈 잠금카드: CTA 버튼 제거 (문구만 유지) / 날씨카드 「오늘 기록하기」 버튼 제거
 - 홈 잠금카드: 「마법캘린더 입력하기」→「피부 일지 기록하기」라벨 수정
 - SkinDiarySheet: 미사용 CalendarSection·SkinDiaryJournal import 제거
 - profile 편집: profiles 빈값 시 users.name/phone fallback 적용 (가입값 자동입력)
