@@ -2578,7 +2578,10 @@ export default function CustomerHomePage() {
                 style={{ cursor: 'pointer' }}
               >?</span>
             </div>
-            <div style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px' }}>
+            <div
+              onClick={e => { e.stopPropagation(); router.push('/my/track') }}
+              style={{ fontSize: '14px', fontWeight: 400, marginBottom: '4px', cursor: 'pointer' }}
+            >
               {profileSkinType || '피부타입을 설정해주세요'}
             </div>
             {profileSkinConcerns ? (
