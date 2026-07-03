@@ -5,6 +5,7 @@
 
 ## 2026-07-03
 
+- 원장 로그인(/owner/[slug]) 리다이렉트: ?v=2(구 라이트버전) → 기본경로(신규 다크버전)로 수정
 - 원장 로그인 페이지(/owner/[slug]): profiles 직접조회 → owner_public_profile 뷰로 변경 (RLS 강화로 비로그인 조회 막혀있던 버그 수정)
 - RLS 보안 전수 감사 및 긴급 조치
 - external_customers: admin_all(true) 정책 → authenticated로 제한

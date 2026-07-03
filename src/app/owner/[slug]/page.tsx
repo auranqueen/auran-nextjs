@@ -46,7 +46,7 @@ export default function OwnerLoginPage() {
       setLoadingOwner(false)
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user && session.user.id === data.auth_id) {
-        router.replace('/dashboard/owner?v=2')
+        router.replace('/dashboard/owner')
       }
     }
     void loadOwner()
@@ -77,7 +77,7 @@ export default function OwnerLoginPage() {
       localStorage.removeItem(`auran_owner_userid_${slug}`)
       localStorage.removeItem(`auran_owner_remember_${slug}`)
     }
-    router.replace('/dashboard/owner?v=2')
+    router.replace('/dashboard/owner')
   }
   const BG = '#0f0d14'
   const CARD_BG = '#1a1520'
