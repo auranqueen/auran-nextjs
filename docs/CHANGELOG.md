@@ -3,6 +3,18 @@
 
 ---
 
+## 2026-07-03
+
+- RLS 보안 전수 감사 및 긴급 조치
+- external_customers: admin_all(true) 정책 → authenticated로 제한
+- RLS 미활성화 테이블 60+ 전체 활성화 + 정책 부여
+  - 민감 테이블: profiles, orders, bookings, payment_intents, shipping_addresses, refunds, settlements, notifications, products, skin_analyses, login_logs, point_history
+  - 설정성 테이블: benefit_settings, grade_settings, coupons, charge_plans 등 (조회 공개/쓰기 admin)
+  - 콘텐츠 테이블: notices, banners, categories, time_sales, group_buys 등 (조회 공개/쓰기 admin)
+  - 관리자 전용/로그성 테이블: admin_broadcasts, app_config, mapping_rules, traffic_logs, visitor_logs, referral_logs 등
+- purchase_events: 레포 코드 미사용 확인, admin 전용으로 정책 교체
+- 실결제 테스트 완료 (payapp webhook 정상 동작 확인)
+
 ## 2026-07-02
 
 - product detail: AURAN 워드마크 클릭 시 홈 이동 대신 이전 페이지로 이동(router.back)

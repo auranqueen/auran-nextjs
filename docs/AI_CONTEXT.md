@@ -204,3 +204,19 @@ external_customers     — 외부 고객 (오프라인 고객 관리)
 - 라이브 기능 (Agora/Mux)
 - Impact Vault 토스트 기부
 - 이타카 아로마 실험실
+
+---
+
+## RLS 정책 원칙 (2026-07-03)
+
+- 새 테이블 생성 시 RLS 활성화 + 정책 필수 (누락 시 전체 노출 위험)
+- 소유자 스코핑은 owner_id/user_id/customer_id 등 실제 컬럼명 확인 후 정책 작성 (추정 금지)
+- 서버-to-서버 webhook insert는 anon 대상 insert만 열고 select는 admin 전용으로 제한
+
+## 미해결 이슈 (다음 세션 우선순위)
+
+1. external_customers에 owner_id 컬럼 없음 — 코드는 있다고 가정하고 쿼리 중, 원장 대시보드 고객목록 실동작 확인 필요
+2. treatment_charts 코드가 참조하는 external_customer_id 컬럼이 실제로는 없음 (실제 컬럼: customer_id) — insert 동작 여부 확인 필요
+3. /my/charts 조회조건(customer_id+completed)이 charts-v2 저장방식(external_customer_id+active)과 불일치 — 원장이 입력한 차트가 고객 마이페이지에 노출 안 됨
+4. external-cards-v2 insert 시 owner_id 미설정 — 원장 대시보드 데이터 분리 가능성
+5. user_behavior_logs: insert는 action 컬럼, admin 통계 조회는 action_type으로 필터링 — 컬럼명 불일치로 구매통계 집계 누락 가능성
