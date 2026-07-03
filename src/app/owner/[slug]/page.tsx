@@ -37,10 +37,9 @@ export default function OwnerLoginPage() {
   useEffect(() => {
     const loadOwner = async () => {
       const { data } = await supabase
-        .from('profiles')
+        .from('owner_public_profile')
         .select('id, full_name, owner_store_name, avatar_url, slug, auth_id')
         .eq('slug', slug)
-        .eq('role', 'owner')
         .maybeSingle()
       if (!data) { setNotFound(true); setLoadingOwner(false); return }
       setOwner(data as OwnerInfo)
