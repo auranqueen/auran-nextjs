@@ -5,6 +5,7 @@
 
 ## 2026-07-05
 
+- client.tsx 하단 탭바(DashboardBottomNav) 제거, OwnerSidebarShell로 대체
 - 원장 콘솔 PC 반응형 사이드바(OwnerSidebarShell) 신설, layout.tsx 적용
 - client.tsx 스토어 등급 5단계 UI 매핑 완료 + 다음 등급 안내 표시
 - 스토어 등급 5단계 자동계산(매출+평점+리뷰+주문수 복합점수) + 양방향 트리거 + salons RLS 활성화

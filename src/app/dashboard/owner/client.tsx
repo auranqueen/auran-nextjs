@@ -47,7 +47,6 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
 import NoticeBell from '@/components/NoticeBell'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 import OwnerQuickMenu from '@/components/OwnerQuickMenu'
 
 const PLAN_COLORS: Record<string, string> = { basic: '#4a8dc0', pro: '#bf5f90', premium: '#c9a84c' }
@@ -232,7 +231,7 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 110 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 24 }}>
       {/* 히어로 */}
       <div style={{ background: 'linear-gradient(160deg,#120a18,#0e0814)', borderBottom: '1px solid rgba(191,95,144,0.2)', padding: '20px 20px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
@@ -523,7 +522,6 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
           </div>
         )}
       </div>
-      <DashboardBottomNav role="salon" />
     </div>
   )
 }
