@@ -51,7 +51,10 @@ import DashboardBottomNav from '@/components/DashboardBottomNav'
 import OwnerQuickMenu from '@/components/OwnerQuickMenu'
 
 const PLAN_COLORS: Record<string, string> = { basic: '#4a8dc0', pro: '#bf5f90', premium: '#c9a84c' }
-const GRADE_COLORS: Record<string, string> = { none: 'var(--text3)', basic: '#4a8dc0', silver: '#aab8c8', gold: '#c9a84c' }
+const GRADE_COLORS: Record<string, string> = { debut: 'var(--text3)', essor: '#4a8dc0', prestige: '#aab8c8', couronne: '#c9a84c', empire: '#bf5f90' }
+const GRADE_LABELS: Record<string, string> = { debut: 'DÉBUT', essor: 'ESSOR', prestige: 'PRESTIGE', couronne: 'COURONNE', empire: 'EMPIRE' }
+const GRADE_ORDER = ['debut', 'essor', 'prestige', 'couronne', 'empire']
+const GRADE_THRESHOLDS = [0, 21, 41, 61, 81, 100] // 각 등급 시작 점수 (debut 0~20, essor 21~40, prestige 41~60, couronne 61~80, empire 81~100)
 
 type ChannelRow = {
   id: string
@@ -73,7 +76,12 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
   }
 
   const plan = profile.plan || 'basic'
-  const grade = profile.store_grade || 'none'
+  const grade = profile.store_grade || 'debut'
+  const gradeIdxRaw = GRADE_ORDER.indexOf(grade)
+  const gradeIdx = gradeIdxRaw >= 0 ? gradeIdxRaw : 0
+  const nextGradeHint = gradeIdx >= GRADE_ORDER.length - 1
+    ? '최고 등급 달성'
+    : `다음 등급: ${GRADE_LABELS[GRADE_ORDER[gradeIdx + 1]] || GRADE_ORDER[gradeIdx + 1].toUpperCase()}까지 성장 중`
 
   const [activeSub, setActiveSub] = useState<any | null>(null)
   const [ownerMode, setOwnerMode] = useState<string | null>(null)
@@ -251,13 +259,14 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
           </div>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
-          {[{ l: '오늘 예약', v: `${todayBookings.length}건`, c: '#bf5f90' }, { l: '스토어 등급', v: grade.toUpperCase(), c: GRADE_COLORS[grade] }, { l: '판매 수수료', v: `${profile.store_commission || 0}%`, c: 'var(--gold)' }].map(s => (
+          {[{ l: '오늘 예약', v: `${todayBookings.length}건`, c: '#bf5f90' }, { l: '스토어 등급', v: GRADE_LABELS[grade] || grade.toUpperCase(), c: GRADE_COLORS[grade] || GRADE_COLORS.debut }, { l: '판매 수수료', v: `${profile.store_commission || 0}%`, c: 'var(--gold)' }].map(s => (
             <div key={s.l} style={{ background: 'rgba(191,95,144,0.08)', border: '1px solid rgba(191,95,144,0.2)', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
               <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 15, fontWeight: 700, color: s.c }}>{s.v}</div>
               <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 2 }}>{s.l}</div>
             </div>
           ))}
         </div>
+        <div style={{ fontSize: 9, color: 'var(--text3)', textAlign: 'center', marginTop: 6 }}>{nextGradeHint}</div>
       </div>
 
       <div style={{ padding: '18px 18px 0' }}>
@@ -503,7 +512,7 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
         {plan === 'basic' && (
           <div style={{ marginTop: 16, background: 'rgba(191,95,144,0.06)', border: '1px solid rgba(191,95,144,0.2)', borderRadius: 13, padding: '13px 15px' }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#bf5f90', marginBottom: 6 }}>⭐ PRO 업그레이드</div>
-            <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.7 }}>PRO 구독 시 스토어 SILVER 등급 + 판매 수수료 20% 혜택</div>
+            <div style={{ fontSize: 11, color: 'var(--text3)', lineHeight: 1.7 }}>PRO 구독 시 스토어 등급 상승 + 판매 수수료 20% 혜택</div>
             <button
               type="button"
               onClick={() => router.push('/dashboard/owner/subscription')}
