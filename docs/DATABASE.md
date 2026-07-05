@@ -241,6 +241,18 @@ prevent_access_log_modification()
   → brand_access_logs UPDATE/DELETE 차단
   → 접근 로그 영구 보존
 
+### 스토어 등급 자동 계산 (065_store_grade_system.sql)
+- enum: store_grade_v2 = debut | essor | prestige | couronne | empire (구 store_grade → old_store_grade_unused 보존)
+- users.store_grade 컬럼 타입 = store_grade_v2, default debut
+- calculate_store_grade(p_salon_id UUID) → store_grade_v2 (SECURITY DEFINER)
+  - salons: monthly_sales, review_count, avg_rating + users.total_orders (owner_id 조인)
+  - 복합점수(0~100): 매출 35% + 평점 25% + 리뷰수 20% + 주문수 20%
+  - 구간: 0~20 debut / 21~40 essor / 41~60 prestige / 61~80 couronne / 81~100 empire
+- trg_auto_update_store_grade_salons: salons AFTER UPDATE OF review_count, avg_rating, monthly_sales → owner users.store_grade 갱신
+- trg_auto_update_store_grade_orders: users AFTER UPDATE OF total_orders → 연결 salon 기준 재계산
+- trg_guard_store_grade_manual_edit: users BEFORE UPDATE OF store_grade — API/클라이언트 수동 변경 차단 (자동 갱신은 app.store_grade_auto session flag)
+- salons RLS: salons_select_all (SELECT true), salons_update_own (owner_id = current_user_id())
+
 ## 4. RLS 정책 원칙
 
 모든 테이블 RLS 활성화

@@ -198,6 +198,7 @@ external_customers     — 외부 고객 (오프라인 고객 관리)
 ## 13. 베타 이후 주요 작업
 
 - client.tsx 리팩토링 (1500줄+ 분리) — 원장 대시보드 빠른메뉴는 `src/components/OwnerQuickMenu.tsx`로 분리 완료
+- 스토어 등급: salons(매출·리뷰·평점) + users.total_orders 변경 시 `calculate_store_grade` 양방향 트리거로 자동 재계산 (065 마이그레이션)
 - 추천 시스템 전체 재설계
 - AI 분석카드 고객 노출
 - 피부주치의 월간리포트
