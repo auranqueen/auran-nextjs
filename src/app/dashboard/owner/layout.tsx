@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import OwnerSidebarShell from '@/components/OwnerSidebarShell'
 
 export const metadata: Metadata = {
   title: 'AURAN PRO · For Professionals',
@@ -16,5 +17,5 @@ export const metadata: Metadata = {
 }
 
 export default function OwnerDashboardLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>
+  return <OwnerSidebarShell>{children}</OwnerSidebarShell>
 }
