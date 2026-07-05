@@ -197,7 +197,7 @@ external_customers     — 외부 고객 (오프라인 고객 관리)
 
 ## 13. 베타 이후 주요 작업
 
-- client.tsx 리팩토링 (1500줄+ 분리)
+- client.tsx 리팩토링 (1500줄+ 분리) — 원장 대시보드 빠른메뉴는 `src/components/OwnerQuickMenu.tsx`로 분리 완료
 - 추천 시스템 전체 재설계
 - AI 분석카드 고객 노출
 - 피부주치의 월간리포트
