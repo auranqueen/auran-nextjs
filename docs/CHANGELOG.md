@@ -11,6 +11,7 @@
 
 ## 2026-07-05
 
+- /dashboard/salon 레거시 폴더 삭제, owner/page.tsx import 경로 정리
 - DashboardBottomNav owner role 신설, OwnerSidebarShell 및 owner 콘솔 경로 정상화, 중복 탭바 제거(subscription/store)
 - OwnerSidebarShell에 모바일 하단탭바 복원 (PC=사이드바/모바일=탭바 반응형 완성)
 - client.tsx 하단 탭바(DashboardBottomNav) 제거, OwnerSidebarShell로 대체

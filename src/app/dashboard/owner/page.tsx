@@ -1,7 +1,7 @@
 // ── OWNER (Salon)
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import SalonDashClient from '../salon/client'
+import SalonDashClient from './client'
 import OwnerDashClientV2 from './client-v2'
 
 export default async function OwnerDashboard({ searchParams }: { searchParams: { v?: string } }) {
