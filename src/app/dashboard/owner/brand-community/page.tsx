@@ -129,7 +129,7 @@ export default function BrandCommunityPage() {
           </div>
         ))}
       </div>
-      <DashboardBottomNav role="salon" />
+      <DashboardBottomNav role="owner" />
     </div>
   )
 }

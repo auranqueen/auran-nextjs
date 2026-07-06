@@ -137,7 +137,7 @@ export default function BrandReturnsPage() {
           )
         })}
       </div>
-      <DashboardBottomNav role="salon" />
+      <DashboardBottomNav role="owner" />
     </div>
   )
 }

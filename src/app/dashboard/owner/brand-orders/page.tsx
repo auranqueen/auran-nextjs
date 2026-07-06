@@ -501,7 +501,7 @@ export default function BrandOrdersPage() {
           </div>
         </div>
       )}
-      <DashboardBottomNav role="salon" />
+      <DashboardBottomNav role="owner" />
     </div>
   )
 }

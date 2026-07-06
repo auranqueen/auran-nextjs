@@ -200,7 +200,7 @@ external_customers     — 외부 고객 (오프라인 고객 관리)
 - client.tsx 리팩토링 (1500줄+ 분리) — 원장 대시보드 빠른메뉴는 `src/components/OwnerQuickMenu.tsx`로 분리 완료
 - 원장 콘솔 PC 사이드바 `src/components/OwnerSidebarShell.tsx` — `dashboard/owner/layout.tsx`에서 전 하위 적용, `/dashboard/owner/chat/*` 제외
 - 원장 콘솔 반응형 네비 확정: PC=좌측 사이드바, 모바일=하단 `DashboardBottomNav` (OwnerSidebarShell에서 분기)
-- `DashboardBottomNav`: `owner` role 신설(`/dashboard/owner/*`), OwnerSidebarShell·원장 콘솔은 `owner` 사용; `salon` role은 brand-* 화면용 NAV 블록으로 유지 (href `/dashboard/salon/*`는 레거시 폴더 삭제 후 후속 정리 필요)
+- `DashboardBottomNav`: `owner` role(`/dashboard/owner/*`) — OwnerSidebarShell·원장 콘솔·brand-* 5개 화면 모두 `owner` 사용; `salon` role은 코드베이스 실사용 없음(NAV 블록만 하위호환용 유지)
 - `/dashboard/salon` 레거시 폴더 삭제 완료; `owner/page.tsx` import는 `./client`로 정리
 - 스토어 등급: salons(매출·리뷰·평점) + users.total_orders 변경 시 `calculate_store_grade` 양방향 트리거로 자동 재계산 (065 마이그레이션)
 - 추천 시스템 전체 재설계

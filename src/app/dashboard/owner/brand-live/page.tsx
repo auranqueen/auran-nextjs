@@ -100,7 +100,7 @@ export default function BrandLivePage() {
           )
         })}
       </div>
-      <DashboardBottomNav role="salon" />
+      <DashboardBottomNav role="owner" />
     </div>
   )
 }

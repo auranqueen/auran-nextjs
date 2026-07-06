@@ -173,7 +173,7 @@ export default function BrandSamplesPage() {
           })}
         </div>
       )}
-      <DashboardBottomNav role="salon" />
+      <DashboardBottomNav role="owner" />
     </div>
   )
 }
