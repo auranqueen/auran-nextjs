@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
+import DashboardBottomNav from '@/components/DashboardBottomNav'
 
 const PURPLE = '#7B5EA7'
 const SIDEBAR_BG = '#120a18'
@@ -34,7 +35,14 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
   }
 
   if (!isPC) {
-    return <>{children}</>
+    return (
+      <>
+        <div style={{ paddingBottom: 'calc(66px + env(safe-area-inset-bottom, 0px))' }}>
+          {children}
+        </div>
+        <DashboardBottomNav role="salon" />
+      </>
+    )
   }
 
   return (

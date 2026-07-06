@@ -11,6 +11,7 @@
 
 ## 2026-07-05
 
+- OwnerSidebarShell에 모바일 하단탭바 복원 (PC=사이드바/모바일=탭바 반응형 완성)
 - client.tsx 하단 탭바(DashboardBottomNav) 제거, OwnerSidebarShell로 대체
 - 원장 콘솔 PC 반응형 사이드바(OwnerSidebarShell) 신설, layout.tsx 적용
 - client.tsx 스토어 등급 5단계 UI 매핑 완료 + 다음 등급 안내 표시
