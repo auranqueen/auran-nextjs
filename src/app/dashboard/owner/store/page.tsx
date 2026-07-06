@@ -5,7 +5,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
 import OwnerCouponProductTargetFields from '@/components/owner-store/OwnerCouponProductTargetFields'
 import SalonInfoForm from '@/components/owner-store/SalonInfoForm'
 
@@ -498,7 +497,6 @@ export default function OwnerStorePage() {
         >
           구독하러 가기
         </button>
-        <DashboardBottomNav role="salon" />
       </div>
     )
   }
@@ -1052,7 +1050,6 @@ export default function OwnerStorePage() {
         </div>
       ) : null}
 
-      <DashboardBottomNav role="salon" />
     </div>
   )
 }

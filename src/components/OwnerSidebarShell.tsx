@@ -40,7 +40,7 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
         <div style={{ paddingBottom: 'calc(66px + env(safe-area-inset-bottom, 0px))' }}>
           {children}
         </div>
-        <DashboardBottomNav role="salon" />
+        <DashboardBottomNav role="owner" />
       </>
     )
   }

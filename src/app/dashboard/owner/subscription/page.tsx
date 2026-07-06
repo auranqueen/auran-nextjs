@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import DashboardBottomNav from '@/components/DashboardBottomNav'
-
 const BG = '#0D0B09'
 
 type OwnerMode = 'auran' | 'independent' | 'integrated'
@@ -582,7 +580,6 @@ export default function OwnerSubscriptionPage() {
         </div>
       ) : null}
 
-      <DashboardBottomNav role="salon" />
     </div>
   )
 }

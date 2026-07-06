@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from 'next/navigation'
 import { useCart } from '@/context/CartContext'
 
-type Role = 'customer' | 'partner' | 'salon' | 'brand'
+type Role = 'customer' | 'partner' | 'salon' | 'owner' | 'brand'
 
 const NAV: Record<Role, { icon: string; label: string; href: string }[]> = {
   customer: [
@@ -25,6 +25,13 @@ const NAV: Record<Role, { icon: string; label: string; href: string }[]> = {
     { icon: '📅', label: '예약', href: '/dashboard/salon/reservations' },
     { icon: '🏪', label: '스토어', href: '/dashboard/salon/store' },
     { icon: '📈', label: '매출', href: '/dashboard/salon/revenue' },
+    { icon: '👤', label: '마이', href: '/mypage' },
+  ],
+  owner: [
+    { icon: '🏠', label: '홈', href: '/dashboard/owner' },
+    { icon: '📅', label: '예약', href: '/dashboard/owner/bookings' },
+    { icon: '🏪', label: '스토어', href: '/dashboard/owner/store' },
+    { icon: '📈', label: '매출', href: '/dashboard/owner/revenue' },
     { icon: '👤', label: '마이', href: '/mypage' },
   ],
   brand: [
