@@ -350,3 +350,37 @@ React state 초기화되므로 필수).
 - RLS(chat_channel_access)로 user_id/owner_id 일치하는 본인만 접근 가능, 관리자만 전체 접근
 - 예약 상태변경(확정/완료/취소) 메시지는 반드시 'salon' 타입 사용, useSalonBookingMessage 훅 참고
 - 카카오 알림톡은 예약 관련 용도로 미사용 전환 (오렌상담톡으로 대체)
+
+## users vs profiles 필드 정본 규칙 (2026-07-05 전수조사)
+
+### 배경
+users와 profiles 테이블에 같은 의미의 필드가 중복 존재. 신규 코드 작성 시 반드시 아래 표의 "정본" 테이블을 사용할 것.
+
+### 정본표
+
+| 필드(의미) | 정본 테이블.컬럼 | 비고 |
+|---|---|---|
+| 사람 이름 | profiles.full_name | users.name은 컬럼명이 다름, 혼동 주의 |
+| 매장 이름 | profiles.owner_store_name | users.salon_name 있음, brand-orders에서 과거 존재하지 않는 users.store_name 조회 버그 있었음(수정완료) |
+| 파트너 등급 | profiles.partner_grade | users.partner_grade는 미사용 죽은 컬럼 (enum, 값 다름 — 절대 참조 금지) |
+| 아바타 | profiles.avatar_url | my/profile 저장 시 users.avatar_url에도 동기화됨 |
+| 피부타입 | profiles.skin_type | users.skin_type은 레거시, analysis/page.tsx·admin coupons에서만 사용 중 (후속 정리 대상) |
+| 전화번호 | ⚠️ 미확정 — 후속 작업 필요 | profiles(마이페이지 표시)와 users(알림톡/인증) 간 동기화 안 됨. api/auth/complete-phone은 users만, my/profile persist는 profiles만 갱신 |
+| 이메일 | users.email | NOT NULL UNIQUE 제약, 가입 시 고정 |
+
+### role vs active_role — 반드시 구분할 것
+
+- **users.role**: 계정 최초 가입 시 정해지는 고정 신분(customer/partner/salon-owner/brand). 거의 변경되지 않음.
+- **profiles.role**: users.role과 동기화되어야 하나 드리프트 가능성 있음.
+- **profiles.active_role**: 로그인 후 홈 화면 우측 상단 "역할 스위처"로 사용자가 자유롭게 전환하는 현재 활성 화면 모드. profiles.roles(배열) 안에 있는 역할로만 전환 가능. 변경 API: POST /api/profile/active-role
+- **미들웨어 판단 순서**: profiles.active_role → profiles.role → users.role (fallback)
+- 예: 브랜드로 가입한 계정도 고객 화면 테스트를 위해 active_role을 'customer'로 전환해둘 수 있음 — 이건 버그가 아니라 정상 기능.
+
+### owner_mode (참고, active_role과 무관)
+- profiles.owner_mode: 원장의 운영 모드(auran 연동/독립 스토어 등), 구독 결제 웹훅에서만 갱신됨.
+- active_role과 완전히 다른 개념이므로 혼동 금지.
+- 값 정의가 코드 위치마다 약간 다르게 쓰이고 있음(auran/independent/integrated vs independent/both) — 후속 확인 필요 항목으로 별도 기록.
+
+### 마이그레이션 드리프트 주의
+- profiles 테이블은 마이그레이션 파일에 12개 컬럼만 기록되어 있으나, 실제 운영 DB에는 90개 이상의 컬럼이 존재함 (원격에서 직접 추가된 것으로 추정).
+- 새 컬럼을 profiles에 추가할 때는 반드시 마이그레이션 파일로도 기록해서 이런 드리프트가 더 커지지 않도록 할 것.
