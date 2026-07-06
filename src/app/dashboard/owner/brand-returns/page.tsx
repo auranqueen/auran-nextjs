@@ -2,8 +2,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import DashboardHeader from '@/components/DashboardHeader'
-import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
@@ -40,9 +38,9 @@ export default function BrandReturnsPage() {
   useEffect(() => {
     const fetch = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login?role=customer'); return }
+      if (!user) { router.replace('/login?role=owner'); return }
       const { data: profile } = await supabase
-        .from('users').select('id, trade_brands, preferred_brands').eq('auth_id', user.id).single()
+        .from('profiles').select('id, trade_brands, preferred_brands').eq('auth_id', user.id).maybeSingle()
       const tradeNames: string[] = profile?.trade_brands?.length
         ? profile.trade_brands : (profile?.preferred_brands || [])
       if (tradeNames.length > 0) {
@@ -67,8 +65,8 @@ export default function BrandReturnsPage() {
     if (!form.brand_id || !form.product_name || !form.reason) return
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
-    const { data: profile } = await supabase.from('users').select('id').eq('auth_id', user.id).single()
+    if (!user) { router.replace('/login?role=owner'); return }
+    const { data: profile } = await supabase.from('profiles').select('id').eq('auth_id', user.id).maybeSingle()
     const { error } = await supabase.from('brand_returns').insert({
       brand_id: form.brand_id,
       product_name: form.product_name,
@@ -87,12 +85,16 @@ export default function BrandReturnsPage() {
     setSaving(false)
   }
   return (
-    <div style={{ minHeight: '100dvh', background: BG, paddingBottom: 80 }}>
-      <DashboardHeader onBack={() => router.back()} title="반품 신청" right={<CustomerHeaderRight />} />
+    <div style={{ background: BG, minHeight: '100vh', paddingBottom: 80 }}>
+      <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <button type="button" onClick={() => router.back()}
+          style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: TEXT, padding: 0 }}>←</button>
+        <div style={{ fontSize: 16, fontWeight: 500, color: TEXT }}>반품 신청</div>
+      </div>
       {toast && (
         <div style={{ position: 'fixed' as const, top: 60, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', padding: '8px 20px', borderRadius: 20, fontSize: 12, zIndex: 999 }}>{toast}</div>
       )}
-      <div style={{ padding: '16px 16px 0' }}>
+      <div style={{ padding: '0 16px' }}>
         <button type="button" onClick={() => setShowForm(!showForm)}
           style={{ width: '100%', padding: '12px', borderRadius: 10, border: `1px solid ${PURPLE}`, background: showForm ? PURPLE : 'transparent', color: showForm ? '#fff' : PURPLE, fontSize: 13, cursor: 'pointer', marginBottom: 14 }}>
           {showForm ? '× 취소' : '+ 반품 신청하기'}

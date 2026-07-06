@@ -11,6 +11,7 @@
 
 ## 2026-07-05
 
+- brand-live/returns profiles 테이블 조회로 수정(기존 users 조회는 존재하지 않는 컬럼이라 브랜드 목록이 항상 비어 보이는 버그였음), 로그인/헤더 owner 패턴 통일
 - brand-* 5개 파일 하단탭 role owner로 전환, /dashboard/salon 삭제에 따른 링크 정상화 완료
 - /dashboard/salon 레거시 폴더 삭제, owner/page.tsx import 경로 정리
 - DashboardBottomNav owner role 신설, OwnerSidebarShell 및 owner 콘솔 경로 정상화, 중복 탭바 제거(subscription/store)

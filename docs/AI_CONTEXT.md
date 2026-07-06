@@ -201,6 +201,8 @@ external_customers     — 외부 고객 (오프라인 고객 관리)
 - 원장 콘솔 PC 사이드바 `src/components/OwnerSidebarShell.tsx` — `dashboard/owner/layout.tsx`에서 전 하위 적용, `/dashboard/owner/chat/*` 제외
 - 원장 콘솔 반응형 네비 확정: PC=좌측 사이드바, 모바일=하단 `DashboardBottomNav` (OwnerSidebarShell에서 분기)
 - `DashboardBottomNav`: `owner` role(`/dashboard/owner/*`) — OwnerSidebarShell·원장 콘솔·brand-* 5개 화면 모두 `owner` 사용; `salon` role은 코드베이스 실사용 없음(NAV 블록만 하위호환용 유지)
+- brand-live/returns: `profiles` 테이블 조회 + `role=owner` 로그인·인라인 헤더로 community/samples 패턴 통일 완료 (기존 `users.trade_brands` 조회는 스키마 불일치 버그)
+- 후속 확인: brand-orders의 `users.store_name` 조회는 마이그레이션 `users.salon_name`과 불일치 가능
 - `/dashboard/salon` 레거시 폴더 삭제 완료; `owner/page.tsx` import는 `./client`로 정리
 - 스토어 등급: salons(매출·리뷰·평점) + users.total_orders 변경 시 `calculate_store_grade` 양방향 트리거로 자동 재계산 (065 마이그레이션)
 - 추천 시스템 전체 재설계

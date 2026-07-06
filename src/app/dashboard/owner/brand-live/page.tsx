@@ -2,8 +2,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import DashboardHeader from '@/components/DashboardHeader'
-import CustomerHeaderRight from '@/components/CustomerHeaderRight'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
@@ -38,9 +36,9 @@ export default function BrandLivePage() {
   useEffect(() => {
     const fetch = async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login?role=customer'); return }
+      if (!user) { router.replace('/login?role=owner'); return }
       const { data: profile } = await supabase
-        .from('users').select('trade_brands, preferred_brands').eq('auth_id', user.id).single()
+        .from('profiles').select('trade_brands, preferred_brands').eq('auth_id', user.id).maybeSingle()
       const brands: string[] = profile?.trade_brands?.length
         ? profile.trade_brands
         : (profile?.preferred_brands || [])
@@ -62,9 +60,13 @@ export default function BrandLivePage() {
     void fetch()
   }, [])
   return (
-    <div style={{ minHeight: '100dvh', background: BG, paddingBottom: 80 }}>
-      <DashboardHeader onBack={() => router.back()} title="브랜드 라이브" right={<CustomerHeaderRight />} />
-      <div style={{ padding: '16px 16px 0' }}>
+    <div style={{ background: BG, minHeight: '100vh', paddingBottom: 80 }}>
+      <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+        <button type="button" onClick={() => router.back()}
+          style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: TEXT, padding: 0 }}>←</button>
+        <div style={{ fontSize: 16, fontWeight: 500, color: TEXT }}>브랜드 라이브</div>
+      </div>
+      <div style={{ padding: '0 16px' }}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: 40, color: SUB, fontSize: 13 }}>불러오는 중...</div>
         ) : tradeBrands.length === 0 ? (
