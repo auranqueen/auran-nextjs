@@ -1,6 +1,6 @@
 'use client'
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 const COURIERS = ['CJ대한통운','롯데택배','한진택배','우체국택배','로젠택배','직접전달','퀵배송']
 const CHANNELS = ['네이버 스마트스토어','더치스 쇼핑몰','블로그 공구','인스타 DM','카카오 문의','기타']
@@ -30,6 +30,9 @@ export default function ExternalCardsV2Page() {
   const [address, setAddress] = useState('')
   const [channel, setChannel] = useState('네이버 스마트스토어')
   const [products, setProducts] = useState<ProductRow[]>([])
+  const phoneRef = useRef<HTMLInputElement>(null)
+  const addressRef = useRef<HTMLInputElement>(null)
+  const productSearchRef = useRef<HTMLInputElement>(null)
   const [productSearch, setProductSearch] = useState('')
   const [productResults, setProductResults] = useState<any[]>([])
   const [courier, setCourier] = useState('CJ대한통운')
@@ -96,6 +99,7 @@ export default function ExternalCardsV2Page() {
   const selectCustomer = (c: any) => {
     setName(c.name); setPhone(c.phone || ''); setAddress(c.address || ''); setChannel(c.channel || '네이버 스마트스토어')
     setCustSearch(''); setCustResults([])
+    setTimeout(() => productSearchRef.current?.focus(), 0)
   }
   const searchProducts = async (q: string) => {
     setProductSearch(q)
@@ -394,6 +398,7 @@ ${(amRoutine || pmRoutine || tip) ? `<div class="sec"><div class="sec-title">✦
                 <div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>고객명</div>
                 <input style={inp} value={name}
                   onChange={e => { setName(e.target.value); searchCustomers(e.target.value) }}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); phoneRef.current?.focus() } }}
                   placeholder="예) 김민지 (기존 고객 자동완성)" autoComplete="off" />
                 {custResults.length > 0 && (
                   <div style={{ position: 'absolute', top: 'calc(100% + 3px)', left: 0, right: 0, background: '#1a1830', border: '0.5px solid rgba(123,94,167,0.4)', borderRadius: 9, overflow: 'hidden', zIndex: 20 }}>
@@ -408,9 +413,9 @@ ${(amRoutine || pmRoutine || tip) ? `<div class="sec"><div class="sec-title">✦
                   </div>
                 )}
               </div>
-              <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>연락처</div><input style={inp} value={phone} onChange={e => setPhone(e.target.value)} placeholder="010-0000-0000" /></div>
+              <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>연락처</div><input ref={phoneRef} style={inp} value={phone} onChange={e => setPhone(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addressRef.current?.focus() } }} placeholder="010-0000-0000" /></div>
             </div>
-            <div style={{ marginBottom: 8 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>배송 주소</div><input style={inp} value={address} onChange={e => setAddress(e.target.value)} placeholder="서울시 강남구..." /></div>
+            <div style={{ marginBottom: 8 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>배송 주소</div><input ref={addressRef} style={inp} value={address} onChange={e => setAddress(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); productSearchRef.current?.focus() } }} placeholder="서울시 강남구..." /></div>
             <div><div style={{ fontSize: 10, color: '#555', marginBottom: 6 }}>구매 채널</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {CHANNELS.map(c => (
@@ -421,7 +426,7 @@ ${(amRoutine || pmRoutine || tip) ? `<div class="sec"><div class="sec-title">✦
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, marginBottom: 8 }}>✦ 구매 제품</div>
             <div style={{ position: 'relative', marginBottom: 8 }}>
-              <input style={inp} value={productSearch} onChange={e => searchProducts(e.target.value)} placeholder="제품명 검색..." autoComplete="off" />
+              <input ref={productSearchRef} style={inp} value={productSearch} onChange={e => searchProducts(e.target.value)} placeholder="제품명 검색..." autoComplete="off" />
               {productResults.length > 0 && (
                 <div style={{ position: 'absolute', top: 'calc(100% + 3px)', left: 0, right: 0, background: '#1a1830', border: '0.5px solid rgba(123,94,167,0.4)', borderRadius: 9, overflow: 'hidden', zIndex: 20 }}>
                   {productResults.map(p => (
