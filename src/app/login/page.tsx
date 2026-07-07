@@ -331,7 +331,7 @@ function LoginForm() {
             파트너스는 개인 전용 주소(auran.kr/partner/내슬러그)로 로그인하시면 더 빨라요.
           </div>
         ) : null}
-        {role !== 'admin' && (
+        {role !== 'admin' && role !== 'owner' && role !== 'partner' && role !== 'brand' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0, marginBottom: 16 }}>
             {recentKakao && (
               <div
@@ -397,7 +397,7 @@ function LoginForm() {
         </div>
 
         {/* 소셜 로그인 */}
-        {role !== 'admin' && (
+        {role !== 'admin' && role !== 'owner' && role !== 'partner' && role !== 'brand' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 20 }}>
             <button
               type="button"

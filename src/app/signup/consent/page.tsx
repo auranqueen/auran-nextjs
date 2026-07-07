@@ -138,20 +138,24 @@ function ConsentInner() {
         {error && <div style={{ fontSize: 12, color: '#e08080', textAlign: 'center', marginBottom: 12 }}>{error}</div>}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          <button
-            onClick={() => { if (!allRequired) { setError('필수 약관에 동의해주세요'); return } handleSubmit('kakao') }}
-            disabled={loading}
-            style={{ width: '100%', padding: 14, background: '#FEE500', border: 'none', borderRadius: 12, color: '#3C1E1E', fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-          >
-            💬 카카오로 시작하기
-          </button>
-          <button
-            onClick={() => { if (!allRequired) { setError('필수 약관에 동의해주세요'); return } handleSubmit('google') }}
-            disabled={loading}
-            style={{ width: '100%', padding: 14, background: '#fff', border: '1px solid #ddd', borderRadius: 12, color: '#333', fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
-          >
-            G 구글로 시작하기
-          </button>
+          {role !== 'owner' && role !== 'partner' && role !== 'brand' && (
+            <>
+              <button
+                onClick={() => { if (!allRequired) { setError('필수 약관에 동의해주세요'); return } handleSubmit('kakao') }}
+                disabled={loading}
+                style={{ width: '100%', padding: 14, background: '#FEE500', border: 'none', borderRadius: 12, color: '#3C1E1E', fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              >
+                💬 카카오로 시작하기
+              </button>
+              <button
+                onClick={() => { if (!allRequired) { setError('필수 약관에 동의해주세요'); return } handleSubmit('google') }}
+                disabled={loading}
+                style={{ width: '100%', padding: 14, background: '#fff', border: '1px solid #ddd', borderRadius: 12, color: '#333', fontSize: 15, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              >
+                G 구글로 시작하기
+              </button>
+            </>
+          )}
           <button
             onClick={() => { if (!allRequired) { setError('필수 약관에 동의해주세요'); return } handleSubmit('') }}
             disabled={loading}
