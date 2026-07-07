@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { normalizePosition, positionToDashboardPath, POSITION_STORAGE_KEY } from '@/lib/position'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
+import Loading from '@/app/loading'
 
 const ROLE_META: Record<string, { label: string; icon: string; accent: string; border: string; bg: string; hint: string; brand: string }> = {
   customer: { label: '고객', icon: '💧', accent: '#C9A96E', border: 'rgba(201,169,110,0.35)', bg: 'rgba(201,169,110,0.08)', hint: '피부 분석·제품 추천·살롱 예약', brand: 'AURAN' },
@@ -51,6 +52,7 @@ function LoginForm() {
   const [resetEmail, setResetEmail] = useState('')
   const [resetSent, setResetSent] = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
+  const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
     try {
@@ -72,17 +74,17 @@ function LoginForm() {
         setRememberEmail(checked)
       } catch {}
 
-      if (redirectParam) return
+      if (redirectParam) { setAuthChecked(true); return }
       const { data: { session: earlySession } } = await supabase.auth.getSession()
       if (earlySession?.user && params.get('role')) {
         const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
         router.replace(redirectParam || positionToDashboardPath(stored || 'customer'))
         return
       }
-      if (params.get('role')) return
+      if (params.get('role')) { setAuthChecked(true); return }
 
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.user) return
+      if (!session?.user) { setAuthChecked(true); return }
 
       const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
       router.replace(positionToDashboardPath(stored || 'customer'))
@@ -300,6 +302,10 @@ function LoginForm() {
     width: '100%', background: 'var(--bg3)', border: '1px solid var(--border)',
     borderRadius: 10, padding: '13px 14px', color: 'var(--text)', fontSize: 14,
     outline: 'none', transition: 'border-color 0.15s',
+  }
+
+  if (!authChecked) {
+    return <Loading />
   }
 
   return (
