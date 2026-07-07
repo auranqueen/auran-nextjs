@@ -1,130 +1,81 @@
 import net from 'net'
 
-type ConnectConfig = { host: string; port: number; token: string }
-
-type SendParams = {
-  receivers: string[]
-  sender: string
-  title: string
-  msg: string
-  rsvdt: string
-}
-
-type IcodeSendResult = {
-  stdcd: string
-  retcd: string
-  receiver: string
-  telecom: string
-  retmsg: string
-}
-
 class IcodeClient {
-  private host = ''
-  private port = 0
-  private token = ''
-  private socket: net.Socket | null = null
+  sendCnt = 0
+  res = ''
+  returns: Array<{ stdcd: string; retcd: string; retmsg: string; receiver: string; telecom: string }> = []
+  socket: net.Socket | null = null
+  token = ''
+  stm = 0
+  retFn: ((rets: any[]) => void) | null = null
 
-  connect(cfg: ConnectConfig) {
-    this.host = cfg.host
-    this.port = cfg.port
-    this.token = cfg.token
-  }
-
-  send(params: SendParams, callback: (rets: IcodeSendResult[]) => void) {
-    const socket = net.connect({ host: this.host, port: this.port })
-    this.socket = socket
-    const packets: string[] = params.receivers.map((receiver) =>
-      this.writeData(receiver, params.sender, params.title, params.msg, params.rsvdt)
-    )
-    const rets: IcodeSendResult[] = []
-    let buffer = ''
-
-    const done = () => {
-      this.close()
-      callback(rets)
-    }
-
-    socket.on('connect', () => {
-      for (const packet of packets) {
-        socket.write(packet)
-      }
-    })
-
-    socket.on('data', (chunk) => {
-      buffer += chunk.toString()
-      const lines = buffer.split('\n')
-      buffer = lines.pop() || ''
-      for (const line of lines) {
-        if (rets.length >= packets.length) break
-        if (line.length >= 8) rets.push(this.parseResponse(line.slice(0, 31).padEnd(31, ' ')))
-      }
-      while (buffer.length >= 31 && rets.length < packets.length) {
-        const block = buffer.slice(0, 31)
-        buffer = buffer.slice(31)
-        rets.push(this.parseResponse(block))
-      }
-      if (rets.length >= packets.length) done()
-    })
-
-    socket.on('error', (err) => {
-      if (rets.length === 0) {
-        rets.push({
-          stdcd: '',
-          retcd: '99',
-          receiver: '',
-          telecom: '',
-          retmsg: err.message || this.retCodeName('99'),
-        })
-      }
-      done()
-    })
-
-    socket.on('close', () => {
-      if (rets.length < packets.length && rets.length === 0) {
-        rets.push({
-          stdcd: '',
-          retcd: '99',
-          receiver: '',
-          telecom: '',
-          retmsg: this.retCodeName('99'),
-        })
-        done()
-      }
+  connect(option: { host: string; port: number; token: string }) {
+    const stm = this.currentTimeMillis()
+    this.stm = stm
+    this.token = option.token
+    const _this = this
+    this.socket = net.connect({ port: option.port, host: option.host }, function (this: net.Socket) {
+      const sock = this
+      this.setTimeout(2000)
+      this.setEncoding('utf8')
+      this.on('data', function (data) {
+        _this.res += data.toString()
+        if (_this.sendCnt > 0 && _this.res && _this.res.length >= _this.sendCnt * 31) {
+          for (let j = 0; j < _this.sendCnt; j++) {
+            const t = _this.res.substring(j * 31, j * 31 + 31)
+            _this.returns.push({
+              stdcd: t.substring(0, 6),
+              retcd: t.substring(6, 8),
+              retmsg: _this.retCodeName(t.substring(6, 8)),
+              receiver: t.substring(8, 20),
+              telecom: t.substring(20),
+            })
+          }
+          sock.end()
+          if (_this.retFn) _this.retFn(_this.returns)
+        }
+      })
+      this.on('error', function (err) {
+        console.error('[icode] Socket Error:', JSON.stringify(err))
+      })
+      this.on('timeout', function () {
+        console.error('[icode] Socket Timed Out')
+      })
     })
   }
 
-  writeData(receiver: string, sender: string, title: string, msg: string, rsvdt: string): string {
-    const tel = receiver.replace(/[^0-9]/g, '')
-    const cb = sender.replace(/[^0-9]/g, '')
-    const body = msg.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
-    const list: Record<string, string> = {
-      key: this.token,
-      tel,
-      cb,
-      msg: body,
-    }
-    if (title) list.title = title.slice(0, 30)
-    if (rsvdt) list.date = rsvdt.replace(/[^0-9]/g, '')
-    const packet = JSON.stringify(list)
-    return '06' + String(Buffer.byteLength(packet, 'utf8')).padStart(4, '0') + packet
+  send(sms: { receivers: string[]; sender: string; title: string; msg: string; rsvdt: string }, fn: (rets: any[]) => void) {
+    this.retFn = fn
+    const _this = this
+    sms.receivers.forEach(function (rsv) {
+      const data = {
+        key: _this.token,
+        tel: rsv,
+        cb: sms.sender,
+        title: sms.title.replace('\r\n', ' '),
+        msg: (rsv + sms.msg).replace('\r\n', '\n'),
+        date: sms.rsvdt,
+      }
+      _this.writeData(_this.socket!, data)
+    })
   }
 
-  parseResponse(block: string): IcodeSendResult {
-    const stdcd = block.slice(0, 6)
-    const retcd = block.slice(6, 8)
-    const receiver = block.slice(8, 20)
-    const telecom = block.slice(20)
-    return {
-      stdcd,
-      retcd,
-      receiver: receiver.trim(),
-      telecom: telecom.trim(),
-      retmsg: this.retCodeName(retcd),
+  writeData(socket: net.Socket, data: any) {
+    const _this = this
+    this.sendCnt++
+    let str = this.unicodeEscape(JSON.stringify(data))
+    const byteLength = ('0000' + Buffer.byteLength(str)).slice(-4)
+    str = '06' + byteLength + str
+    const success = !socket.write(str)
+    if (!success) {
+      socket.once('drain', function () {
+        _this.writeData(socket, data)
+      })
     }
   }
 
-  retCodeName(code: string): string {
-    switch (code) {
+  retCodeName(retCode: string): string {
+    switch (retCode) {
       case '00': return '성공'
       case '99': return '인증실패/포트오류'
       case '98': return '사용기간만료'
@@ -140,31 +91,21 @@ class IcodeClient {
   }
 
   close() {
-    if (this.socket && !this.socket.destroyed) {
-      this.socket.destroy()
-    }
-    this.socket = null
+    this.socket?.destroy()
   }
 
   unicodeEscape(str: string): string {
-    let out = ''
-    for (let i = 0; i < str.length; i++) {
-      const c = str.charCodeAt(i)
-      if (c > 127) {
-        out += '\\u' + c.toString(16).padStart(4, '0')
-      } else {
-        out += str[i]
+    return str.replace(/[\s\S]/g, function (escape) {
+      const ch = escape.charCodeAt(0)
+      if ((12593 <= ch && ch >= 12622) || (12623 <= ch && ch >= 12641) || (44032 <= ch && ch <= 55203)) {
+        return '\\u' + ch.toString(16)
       }
-    }
-    return out.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+      return escape
+    })
   }
 
   currentTimeMillis(): number {
-    return Date.now()
-  }
-
-  timeDiff(serverTime: number): number {
-    return serverTime - this.currentTimeMillis()
+    return new Date().getTime()
   }
 }
 
@@ -179,14 +120,11 @@ export async function sendIcodeSms(params: { phone: string; message: string }): 
   }
   return new Promise((resolve) => {
     let settled = false
-    const finish = (result: { ok: boolean; skipped?: boolean; raw?: string }) => {
+    const finish = (result: { ok: boolean; raw?: string }) => {
       if (settled) return
       settled = true
       resolve(result)
     }
-    const timer = setTimeout(() => {
-      finish({ ok: false, raw: 'timeout' })
-    }, 5000)
     try {
       const client = new IcodeClient()
       client.connect({ host, port: Number(port), token })
@@ -198,8 +136,7 @@ export async function sendIcodeSms(params: { phone: string; message: string }): 
           msg: params.message,
           rsvdt: '',
         },
-        (rets) => {
-          clearTimeout(timer)
+        (rets: any[]) => {
           const first = rets?.[0]
           if (first && first.retcd === '00') {
             finish({ ok: true, raw: first.retmsg })
@@ -209,11 +146,10 @@ export async function sendIcodeSms(params: { phone: string; message: string }): 
           }
         }
       )
-    } catch (e: unknown) {
-      clearTimeout(timer)
-      const msg = e instanceof Error ? e.message : 'exception'
-      console.error('[icode] exception:', msg)
-      finish({ ok: false, raw: msg })
+      setTimeout(() => finish({ ok: false, raw: 'timeout' }), 5000)
+    } catch (e: any) {
+      console.error('[icode] exception:', e?.message)
+      finish({ ok: false, raw: e?.message || 'exception' })
     }
   })
 }
