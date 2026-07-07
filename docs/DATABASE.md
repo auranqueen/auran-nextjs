@@ -384,3 +384,16 @@ users와 profiles 테이블에 같은 의미의 필드가 중복 존재. 신규 
 ### 마이그레이션 드리프트 주의
 - profiles 테이블은 마이그레이션 파일에 12개 컬럼만 기록되어 있으나, 실제 운영 DB에는 90개 이상의 컬럼이 존재함 (원격에서 직접 추가된 것으로 추정).
 - 새 컬럼을 profiles에 추가할 때는 반드시 마이그레이션 파일로도 기록해서 이런 드리프트가 더 커지지 않도록 할 것.
+
+## coupons 캠페인 증정품 필드 (066_coupon_campaign_gift.sql, 2026-07-07)
+
+| 컬럼 | 타입/기본값 | 설명 |
+|---|---|---|
+| coupons.reward_type | text NOT NULL DEFAULT 'discount' (CHECK: discount / gift_product / gift_product_and_discount) | 쿠폰 보상 종류. discount=할인만, gift_product=제품증정만, gift_product_and_discount=증정+할인 |
+| coupons.gift_product_id | uuid, REFERENCES public.products(id), nullable | 증정 대상 제품 (reward_type이 gift 계열일 때만 사용) |
+| coupons.gift_product_qty | integer, nullable | 1인당 증정 수량 |
+| coupons.campaign_quantity_limit | integer, nullable | 캠페인 전체 증정 한도 (타겟 리스트 인원수 기준, null이면 무제한) |
+| coupons.campaign_quantity_issued | integer NOT NULL DEFAULT 0 | 캠페인 누적 지급 건수, limit 도달 시 추가 발급 차단 용도 |
+
+- 전부 기본값/nullable이라 기존 쿠폰 발급/적용 플로우(computeDiscount.ts, checkout 단일선택 구조)에 영향 없음.
+- 기존 RLS 정책(coupons_active_read, coupons_admin_all, coupons_readable_if_held)은 컬럼을 참조하지 않으므로 컬럼 추가로 깨지지 않음.
