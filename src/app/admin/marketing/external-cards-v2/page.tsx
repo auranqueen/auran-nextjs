@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { printCard } from './printCard'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import BuyerBroadcastModal from './_components/BuyerBroadcastModal'
 const COURIERS = ['CJ대한통운','롯데택배','한진택배','우체국택배','로젠택배','직접전달','퀵배송']
 const CHANNELS = ['네이버 스마트스토어','더치스 쇼핑몰','블로그 공구','인스타 DM','카카오 문의','기타']
 const ALIMTALK_COPIES = [
@@ -65,6 +66,7 @@ export default function ExternalCardsV2Page() {
   const [custResults, setCustResults] = useState<any[]>([])
   const [customers, setCustomers] = useState<any[]>([])
   const [selectedBuyerIds, setSelectedBuyerIds] = useState<string[]>([])
+  const [showBroadcastModal, setShowBroadcastModal] = useState(false)
   const [openCustId, setOpenCustId] = useState<string | null>(null)
   const totalAmount = useMemo(() => products.reduce((s, p) => s + p.custom, 0), [products])
   useEffect(() => {
@@ -731,6 +733,8 @@ export default function ExternalCardsV2Page() {
           </div>
           {stats.topBuyers.length > 0 && <>
             <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, margin: '16px 0 10px' }}>✦ 구매자 랭킹 TOP 10</div>
+            <button type="button" onClick={() => setShowBroadcastModal(true)} disabled={selectedBuyerIds.length === 0} style={{ width: '100%', marginBottom: 10, padding: '9px', borderRadius: 9, border: 'none', background: selectedBuyerIds.length === 0 ? 'rgba(123,94,167,0.25)' : C.purple, color: '#fff', fontSize: 12, fontWeight: 600, cursor: selectedBuyerIds.length === 0 ? 'default' : 'pointer' }}>선택 고객 발송 ({selectedBuyerIds.length})</button>
+            {showBroadcastModal && <BuyerBroadcastModal selectedBuyerIds={selectedBuyerIds} buyers={customers as any} onClose={() => setShowBroadcastModal(false)} />}
             {stats.topBuyers.map((c, i) => (
               <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 9, marginBottom: 6 }}>
                 <input type="checkbox" checked={selectedBuyerIds.includes(c.id)} onChange={() => setSelectedBuyerIds(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id])} style={{ accentColor: C.purple, width: 14, height: 14 }} />
