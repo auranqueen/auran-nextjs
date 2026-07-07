@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendPpurioSms } from '@/lib/ppurio/sendAlimtalk'
+import { sendIcodeSms } from '@/lib/icode/sendSms'
 
 const adminSupabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -37,10 +37,13 @@ export async function POST(req: NextRequest) {
         purpose: 'find_password',
         expires_at: expiresAt,
       })
-      await sendPpurioSms({
+      const smsResult = await sendIcodeSms({
         phone: cleanPhone,
         message: `[AURAN] 인증번호는 ${verifyCode}입니다. (5분 내 입력)`,
       })
+      if (!smsResult.ok) {
+        return NextResponse.json({ ok: false, error: '인증문자 발송에 실패했어요. 잠시 후 다시 시도해주세요.' }, { status: 500 })
+      }
       return NextResponse.json({ ok: true })
     }
 
