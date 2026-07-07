@@ -3,6 +3,7 @@ import { useSearchParams } from 'next/navigation'
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { printCard } from './printCard'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 const COURIERS = ['CJ대한통운','롯데택배','한진택배','우체국택배','로젠택배','직접전달','퀵배송']
 const CHANNELS = ['네이버 스마트스토어','더치스 쇼핑몰','블로그 공구','인스타 DM','카카오 문의','기타']
 const ALIMTALK_COPIES = [
@@ -63,6 +64,7 @@ export default function ExternalCardsV2Page() {
   const [custSearch, setCustSearch] = useState('')
   const [custResults, setCustResults] = useState<any[]>([])
   const [customers, setCustomers] = useState<any[]>([])
+  const [selectedBuyerIds, setSelectedBuyerIds] = useState<string[]>([])
   const [openCustId, setOpenCustId] = useState<string | null>(null)
   const totalAmount = useMemo(() => products.reduce((s, p) => s + p.custom, 0), [products])
   useEffect(() => {
@@ -71,7 +73,7 @@ export default function ExternalCardsV2Page() {
   }, [])
   useEffect(() => {
     if (tab === 'customers' || tab === 'marketing') { fetchCustomers(); fetchCards() }
-    if (tab === 'stats') fetchCards()
+    if (tab === 'stats') { fetchCards(); fetchCustomers() }
   }, [tab])
   const fetchCards = async () => {
     setLoadingCards(true)
@@ -233,8 +235,35 @@ export default function ExternalCardsV2Page() {
     const prodMap: Record<string, { name: string; cnt: number }> = {}
     cards.forEach(c => { (c.products || []).forEach((p: any) => { if (!prodMap[p.id]) prodMap[p.id] = { name: p.name, cnt: 0 }; prodMap[p.id].cnt++ }) })
     const topProds = Object.values(prodMap).sort((a, b) => b.cnt - a.cnt).slice(0, 5)
-    return { monthCount: monthCards.length, totalAmt: monthCards.reduce((s, c) => s + (c.total_amount || 0), 0), joined, topChannel, topProds }
-  }, [cards])
+    const now = new Date()
+    const monthlyRevenue: { month: string; amount: number }[] = []
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      const amount = cards.filter(c => c.created_at.startsWith(month)).reduce((s, c) => s + (c.total_amount || 0), 0)
+      monthlyRevenue.push({ month, amount })
+    }
+    const topBuyers = [...customers]
+      .sort((a, b) => (b.total_amount || 0) - (a.total_amount || 0))
+      .slice(0, 10)
+      .map(c => ({ id: c.id, name: c.name, phone: c.phone, total_amount: c.total_amount || 0, visit_count: c.visit_count || 0 }))
+    const prodRevMap: Record<string, { name: string; amount: number }> = {}
+    cards.forEach(c => {
+      (c.products || []).forEach((p: ProductRow) => {
+        const price = p.custom ?? p.orig ?? 0
+        if (!prodRevMap[p.id]) prodRevMap[p.id] = { name: p.name, amount: 0 }
+        prodRevMap[p.id].amount += price
+      })
+    })
+    const topProductsByRevenue = Object.values(prodRevMap).sort((a, b) => b.amount - a.amount).slice(0, 10)
+    const repeatRate = customers.length > 0
+      ? Math.round(customers.filter(c => (c.visit_count || 0) >= 2).length / customers.length * 100)
+      : 0
+    const channelRevenueMap: Record<string, number> = {}
+    cards.forEach(c => { channelRevenueMap[c.channel] = (channelRevenueMap[c.channel] || 0) + (c.total_amount || 0) })
+    const channelRevenue = Object.entries(channelRevenueMap).sort((a, b) => b[1] - a[1])
+    return { monthCount: monthCards.length, totalAmt: monthCards.reduce((s, c) => s + (c.total_amount || 0), 0), joined, topChannel, topProds, monthlyRevenue, topBuyers, topProductsByRevenue, repeatRate, channelRevenue }
+  }, [cards, customers])
   const inp = { width: '100%', padding: '8px 10px', background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#e8e0f5', fontSize: 12, fontFamily: 'inherit' } as React.CSSProperties
   return (
     <div style={{ padding: '18px 18px 60px', maxWidth: 600, margin: '0 auto', fontFamily: '-apple-system,sans-serif', background: '#0d0d0d', minHeight: '100vh', color: '#e8e0f5' }}>
@@ -651,8 +680,8 @@ export default function ExternalCardsV2Page() {
       )}
       {tab === 'stats' && (
         <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 16 }}>
-            {[['이번달 발송', stats.monthCount + '건'], ['이번달 금액', '₩' + Math.round(stats.totalAmt / 10000) + '만'], ['AURAN 가입', stats.joined + '명']].map(([l, n]) => (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 16 }}>
+            {[['이번달 발송', stats.monthCount + '건'], ['이번달 금액', '₩' + Math.round(stats.totalAmt / 10000) + '만'], ['AURAN 가입', stats.joined + '명'], ['재구매율', stats.repeatRate + '%']].map(([l, n]) => (
               <div key={l} style={{ background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 12, textAlign: 'center' }}>
                 <div style={{ fontSize: 20, color: C.gold, marginBottom: 3 }}>{n}</div>
                 <div style={{ fontSize: 10, color: '#444' }}>{l}</div>
@@ -668,6 +697,17 @@ export default function ExternalCardsV2Page() {
               </div>
             </div>
           ))}
+          {stats.channelRevenue.length > 0 && <>
+            <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, margin: '16px 0 10px' }}>✦ 채널별 매출</div>
+            {stats.channelRevenue.slice(0, 5).map(([ch, amt], i) => (
+              <div key={ch} style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#555', marginBottom: 4 }}><span>{ch}</span><span>₩{amt.toLocaleString()}</span></div>
+                <div style={{ height: 5, background: 'rgba(255,255,255,0.06)', borderRadius: 3 }}>
+                  <div style={{ height: 5, borderRadius: 3, background: ['#7B5EA7','#C9A96E','#9B7EC8','#5B8A6B','#555'][i], width: `${Math.round(amt / Math.max(...stats.channelRevenue.map(x => x[1] as number)) * 100)}%` }} />
+                </div>
+              </div>
+            ))}
+          </>}
           {stats.topProds.length > 0 && <>
             <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, margin: '16px 0 10px' }}>✦ 많이 보낸 제품 TOP 5</div>
             {stats.topProds.map((p, i) => (
@@ -675,6 +715,41 @@ export default function ExternalCardsV2Page() {
                 <div style={{ fontSize: 13, color: C.gold, minWidth: 20 }}>{i + 1}</div>
                 <div style={{ flex: 1, fontSize: 12, color: '#e8e0f5' }}>{p.name}</div>
                 <div style={{ fontSize: 12, color: '#555' }}>{p.cnt}건</div>
+              </div>
+            ))}
+          </>}
+          <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, margin: '16px 0 10px' }}>✦ 월별 매출 추이</div>
+          <div style={{ marginBottom: 16 }}>
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={stats.monthlyRevenue}>
+                <XAxis dataKey="month" tick={{ fill: '#555', fontSize: 10 }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} />
+                <YAxis tick={{ fill: '#555', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${Math.round(Number(v) / 10000)}만`} />
+                <Tooltip contentStyle={{ background: '#1a1830', border: '0.5px solid rgba(123,94,167,0.4)', borderRadius: 8, fontSize: 11, color: '#e8e0f5' }} formatter={(v: number) => [`₩${v.toLocaleString()}`, '매출']} />
+                <Line type="monotone" dataKey="amount" stroke={C.gold} strokeWidth={2} dot={{ fill: C.gold, r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+          {stats.topBuyers.length > 0 && <>
+            <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, margin: '16px 0 10px' }}>✦ 구매자 랭킹 TOP 10</div>
+            {stats.topBuyers.map((c, i) => (
+              <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 9, marginBottom: 6 }}>
+                <input type="checkbox" checked={selectedBuyerIds.includes(c.id)} onChange={() => setSelectedBuyerIds(prev => prev.includes(c.id) ? prev.filter(id => id !== c.id) : [...prev, c.id])} style={{ accentColor: C.purple, width: 14, height: 14 }} />
+                <div style={{ fontSize: 13, color: C.gold, minWidth: 20 }}>{i + 1}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 12, color: '#e8e0f5' }}>{c.name}</div>
+                  <div style={{ fontSize: 10, color: '#555', marginTop: 1 }}>{c.phone || '-'} · {c.visit_count}회 구매</div>
+                </div>
+                <div style={{ fontSize: 12, color: C.gold }}>₩{c.total_amount.toLocaleString()}</div>
+              </div>
+            ))}
+          </>}
+          {stats.topProductsByRevenue.length > 0 && <>
+            <div style={{ fontSize: 10, letterSpacing: '.15em', color: C.gold, margin: '16px 0 10px' }}>✦ 제품 랭킹 TOP 10 (매출)</div>
+            {stats.topProductsByRevenue.map((p, i) => (
+              <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 9, marginBottom: 6 }}>
+                <div style={{ fontSize: 13, color: C.gold, minWidth: 20 }}>{i + 1}</div>
+                <div style={{ flex: 1, fontSize: 12, color: '#e8e0f5' }}>{p.name}</div>
+                <div style={{ fontSize: 12, color: C.gold }}>₩{p.amount.toLocaleString()}</div>
               </div>
             ))}
           </>}
