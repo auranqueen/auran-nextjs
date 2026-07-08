@@ -10,12 +10,18 @@ const BORDER = 'rgba(255,255,255,0.08)'
 
 const MENU_ITEMS = [
   { label: '홈', href: '/dashboard/owner' },
+  { label: '오렌상담톡', href: '/dashboard/owner/chat/redirect' },
   { label: '예약 관리', href: '/dashboard/owner/bookings' },
   { label: '고객 관리', href: '/dashboard/owner/customers' },
+  { label: '시술차트', href: '/dashboard/owner/charts-v2' },
   { label: '스토어', href: '/dashboard/owner/store' },
   { label: '매출 리포트', href: '/dashboard/owner/revenue' },
+  { label: '발주', href: '/dashboard/owner/brand-orders' },
+  { label: '소식', href: '/dashboard/owner/brand-community' },
+  { label: '샘플', href: '/dashboard/owner/brand-samples' },
+  { label: '라이브', href: '/dashboard/owner/brand-live' },
+  { label: '반품', href: '/dashboard/owner/brand-returns' },
   { label: '구독 관리', href: '/dashboard/owner/subscription' },
-  { label: '시술차트', href: '/dashboard/owner/charts-v2' },
 ]
 
 export default function OwnerSidebarShell({ children }: { children: ReactNode }) {
