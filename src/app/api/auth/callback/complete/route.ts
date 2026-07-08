@@ -224,5 +224,20 @@ export async function GET(request: NextRequest) {
   const userRole = rawRole === 'salon' ? 'owner' : rawRole
   const finalPosition = userRole === 'owner' ? 'salon' : userRole
 
+  try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || null
+    const userAgent = request.headers.get('user-agent') || null
+    const { data: logUserRow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+    await supabase.from('login_logs').insert({
+      user_id: (logUserRow as { id?: string } | null)?.id ?? null,
+      email: emailOrFallback,
+      role: userRole,
+      provider,
+      ip_address: ip,
+      user_agent: userAgent,
+      status: 'success',
+    } as any)
+  } catch { /* ignore */ }
+
   return NextResponse.json({ ok: true, position: finalPosition })
 }

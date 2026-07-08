@@ -64,6 +64,7 @@ export default function SuperConsoleLoginPage() {
       }
 
       // 통과: 실제 어드민 콘솔로 이동 (슈퍼콘솔 URL은 비공개 진입점)
+      fetch('/api/auth/log-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ email: email.trim(), role: 'admin', provider: 'email', status: 'success' }) }).catch(() => {})
       router.replace('/admin')
     } catch {
       setError('접근 권한이 없습니다')

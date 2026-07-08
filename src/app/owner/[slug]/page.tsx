@@ -77,6 +77,7 @@ export default function OwnerLoginPage() {
       localStorage.removeItem(`auran_owner_userid_${slug}`)
       localStorage.removeItem(`auran_owner_remember_${slug}`)
     }
+    fetch('/api/auth/log-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ email, role: 'owner', provider: 'email', status: 'success' }) }).catch(() => {})
     router.replace('/dashboard/owner')
   }
   const BG = '#0f0d14'

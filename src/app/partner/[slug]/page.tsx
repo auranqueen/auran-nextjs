@@ -77,6 +77,7 @@ export default function PartnerLoginPage() {
       localStorage.removeItem(`auran_partner_userid_${slug}`)
       localStorage.removeItem(`auran_partner_remember_${slug}`)
     }
+    fetch('/api/auth/log-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ email, role: 'partner', provider: 'email', status: 'success' }) }).catch(() => {})
     router.replace('/dashboard/partner')
   }
   const BG = '#0f0d14'

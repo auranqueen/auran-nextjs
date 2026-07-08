@@ -78,6 +78,7 @@ export default function BrandLoginPage() {
       localStorage.removeItem(`auran_brand_userid_${slug}`)
       localStorage.removeItem(`auran_brand_remember_${slug}`)
     }
+    fetch('/api/auth/log-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ email, role: 'brand', provider: 'email', status: 'success' }) }).catch(() => {})
     router.replace(`/dashboard/brand?login_role=${brand!.login_role || 'director'}`)
   }
   const BG = '#0f0d14'

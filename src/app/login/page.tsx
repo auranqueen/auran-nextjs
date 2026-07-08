@@ -168,6 +168,7 @@ function LoginForm() {
       // redirect 파라미터가 있으면 해당 경로로, 없으면 기본 대시보드로
       const safeRedirect = redirectParam && redirectParam.startsWith('/') ? redirectParam : null
       const safeReturnUrl = returnUrlParam && returnUrlParam.startsWith('/') ? returnUrlParam : null
+      fetch('/api/auth/log-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ email: lookupEmail, role: effectiveRole || role || 'customer', provider: 'email', status: 'success' }) }).catch(() => {})
       router.replace(safeReturnUrl || safeRedirect || dashboardPathForRole(effectiveRole))
     } catch (err: any) {
       const msg = err?.message || ''
@@ -175,6 +176,7 @@ function LoginForm() {
         const { error: signInRetry } = await supabase.auth.signInWithPassword({ email: email.trim().includes('@') ? email.trim() : `${email.trim()}@auran.kr`, password })
         if (!signInRetry) {
           const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
+          fetch('/api/auth/log-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ email: email.trim().includes('@') ? email.trim() : `${email.trim()}@auran.kr`, role: stored || role || 'customer', provider: 'email', status: 'success' }) }).catch(() => {})
           router.replace(dashboardPathForRole(stored || role || 'customer'))
           return
         }

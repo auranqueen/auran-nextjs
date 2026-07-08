@@ -56,6 +56,7 @@ export default function LogiLoginPage() {
       setError('이 물류 허브에 접근 권한이 없어요')
       setLoading(false); return
     }
+    fetch('/api/auth/log-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ email, role: 'brand', provider: 'email', status: 'success' }) }).catch(() => {})
     router.replace(`/dashboard/logi?slug=${slug}`)
   }
   const BG = '#0d1117'
