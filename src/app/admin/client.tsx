@@ -97,8 +97,10 @@ export default function AdminClient({ profile, stats, pendingOrders, pendingBran
       {/* 헤더 */}
       <div style={{ background: 'rgba(9,11,14,0.96)', backdropFilter: 'blur(14px)', borderBottom: '1px solid var(--border)', padding: '14px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, zIndex: 10 }}>
         <div>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: '#e8c870', letterSpacing: '.12em' }}>AURAN</div>
-          <div style={{ fontSize: 9, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '.1em' }}>ADMIN CONSOLE</div>
+          <a href="/?preview=guest" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: '#e8c870', letterSpacing: '.12em' }}>AURAN</div>
+            <div style={{ fontSize: 9, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '.1em' }}>ADMIN CONSOLE</div>
+          </a>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <span style={{ fontSize: 10, color: 'var(--text3)' }}>{profile.name}</span>

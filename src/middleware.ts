@@ -193,7 +193,7 @@ export async function middleware(req: NextRequest) {
   const normalizedRole = role === 'owner' ? 'salon' : role
 
   if (user && isHome) {
-    if (normalizedRole === 'admin')
+    if (normalizedRole === 'admin' && req.nextUrl.searchParams.get('preview') !== 'guest')
       return redirectPreservingSupabaseCookies(res, NextResponse.redirect(new URL('/admin', req.url)))
     if (normalizedRole === 'brand')
       return redirectPreservingSupabaseCookies(res, NextResponse.redirect(new URL('/dashboard/brand', req.url)))
