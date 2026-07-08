@@ -654,6 +654,33 @@ export default function AdminSettingsAdminSettingsPage() {
         </div>
       )}
 
+      <div style={{ marginTop: 16, background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 16, padding: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 900, color: '#fff', marginBottom: 8 }}>데모 계정 바로가기</div>
+        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 12 }}>
+          원장/파트너스/브랜드사 기능 점검용 — login/page.tsx 데모 계정과 동일
+        </div>
+        {[
+          { label: '원장님', email: 'shop@auran.kr', password: 'auran1234!', href: '/login?role=owner' },
+          { label: '파트너스', email: 'partner@auran.kr', password: 'auran1234!', href: '/login?role=partner' },
+          { label: '브랜드사', email: 'brand@auran.kr', password: 'auran1234!', href: '/login?role=brand' },
+        ].map((d) => (
+          <div key={d.href} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#fff', marginBottom: 4 }}>{d.label}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontFamily: "'JetBrains Mono', monospace" }}>{d.email} / {d.password}</div>
+            </div>
+            <a
+              href={d.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ flexShrink: 0, padding: '8px 12px', borderRadius: 10, background: '#c9a84c', color: '#111', fontSize: 11, fontWeight: 900, textDecoration: 'none' }}
+            >
+              로그인 페이지 열기
+            </a>
+          </div>
+        ))}
+      </div>
+
       {active !== 'grade' && active !== 'shipping' ? (
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 14 }}>
           <button
