@@ -5,6 +5,7 @@
 
 ## 2026-07-07
 
+- 2026-07-07: AdminChrome.tsx(실사용 전역 헤더)에 AURAN 로고 게스트 미리보기 링크 추가 - 이전 client.tsx 수정은 미사용 파일이라 무효했음, 정정
 - 2026-07-07: 오렌콘솔 AURAN 로고 클릭 시 고객 홈 미리보기 새 탭 오픈 (?preview=guest, admin 세션 영향 없음)
 - 2026-07-07: products 테이블에 admin INSERT 정책 추가 (신규 제품 등록 RLS 오류 수정)
 - 2026-07-07: 카테고리 데이터 추가 - 스킨케어 하위에 비비/쿠션 신설 (categories 테이블, 대시보드 직접 INSERT, level=3, parent_id=c2000000-0000-4000-8000-000000000001, sort_order 10/11)

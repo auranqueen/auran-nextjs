@@ -221,8 +221,10 @@ export default function AdminChrome({ adminName, roleCounts, pendingShipCount = 
         }}
       >
         <div style={{ padding: '20px 18px 16px', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 17, fontWeight: 700, color: 'var(--gold2)', letterSpacing: '.15em' }}>AURAN</div>
-          <div style={{ fontSize: 9, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '.1em', marginTop: 2 }}>ADMIN CONSOLE · PC</div>
+          <a href="/?preview=guest" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 17, fontWeight: 700, color: 'var(--gold2)', letterSpacing: '.15em' }}>AURAN</div>
+            <div style={{ fontSize: 9, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace", letterSpacing: '.1em', marginTop: 2 }}>ADMIN CONSOLE · PC</div>
+          </a>
         </div>
 
         <nav style={{ padding: '10px 0', flex: 1 }}>
