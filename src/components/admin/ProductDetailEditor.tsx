@@ -82,6 +82,23 @@ export default function ProductDetailEditor({ value, onChange, onImageUpload, on
     editor.chain().focus().insertContent(html).run()
   }
 
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    const file = e.dataTransfer.files?.[0]
+    if (!file) return
+    if (file.type.startsWith('image/') && onImageUpload) {
+      const url = await onImageUpload(file)
+      editor.chain().focus().setImage({ src: url }).run()
+    } else if (file.type.startsWith('video/') && onVideoUpload) {
+      const url = await onVideoUpload(file)
+      editor.chain().focus().insertContent(`<video src="${url}" controls style="max-width:100%;border-radius:8px"></video>`).run()
+    }
+  }
+
   return (
     <div style={{ border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 8, overflow: 'hidden' }}>
       {/* 툴바 */}
@@ -160,7 +177,7 @@ export default function ProductDetailEditor({ value, onChange, onImageUpload, on
         <BTN onClick={() => editor.chain().focus().redo().run()} title="다시실행">↪</BTN>
       </div>
       {/* 에디터 본문 */}
-      <div style={{ background: 'rgba(255,255,255,0.02)' }}>
+      <div style={{ background: 'rgba(255,255,255,0.02)' }} onDragOver={handleDragOver} onDrop={(e) => void handleDrop(e)}>
         <EditorContent editor={editor} />
       </div>
       {/* 하단 */}

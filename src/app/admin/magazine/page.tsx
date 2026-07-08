@@ -1,12 +1,24 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { compressImage } from '@/lib/imageUpload'
+import ProductDetailEditor from '@/components/admin/ProductDetailEditor'
+import { uploadVideoToStorage } from '@/lib/product/productFormUtils'
 
 const CATS = ['피부케어', '성분', '루틴', '브랜드', '원장님픽'] as const
 
 type PublishMode = 'draft' | 'now' | 'scheduled'
+
+function debounce<A extends unknown[]>(fn: (...args: A) => void | Promise<void>, ms: number) {
+  let t: ReturnType<typeof setTimeout> | undefined
+  return (...args: A) => {
+    if (t) clearTimeout(t)
+    t = setTimeout(() => {
+      void fn(...args)
+    }, ms)
+  }
+}
 
 export default function AdminMagazinePage() {
   const supabase = createClient()
@@ -26,6 +38,22 @@ export default function AdminMagazinePage() {
   const [prodSearch, setProdSearch] = useState('')
   const [prodHits, setProdHits] = useState<any[]>([])
   const [kpi, setKpi] = useState({ total: 0, published: 0, views: 0 })
+  const modalRowRef = useRef(modal.row)
+
+  useEffect(() => {
+    modalRowRef.current = modal.row
+  }, [modal.row])
+
+  const debouncedSaveContent = useMemo(
+    () =>
+      debounce(async (html: string) => {
+        const id = modalRowRef.current?.id
+        if (!id) return
+        const { error } = await supabase.from('magazines' as any).update({ content: html }).eq('id', id)
+        if (!error) setToast('자동 저장됨')
+      }, 2500),
+    []
+  )
 
   useEffect(() => {
     if (!toast) return
@@ -296,7 +324,25 @@ export default function AdminMagazinePage() {
               </div>
             ) : null}
             <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>본문 (HTML 또는 마크다운)</div>
-            <textarea value={content} onChange={(e) => setContent(e.target.value)} rows={20} style={{ width: '100%', boxSizing: 'border-box', padding: 10, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg3)', color: 'var(--text)', fontSize: 12, fontFamily: 'monospace' }} />
+            <ProductDetailEditor
+              value={content}
+              onChange={(val) => {
+                setContent(val)
+                debouncedSaveContent(val)
+              }}
+              onImageUpload={async (file) => {
+                const f = await compressImage(file, 'magazine')
+                const path = `magazine/${Date.now()}_${file.name}`
+                const { error } = await supabase.storage.from('magazine').upload(path, f, { upsert: true })
+                if (error) throw error
+                const { data } = supabase.storage.from('magazine').getPublicUrl(path)
+                return data.publicUrl || ''
+              }}
+              onVideoUpload={async (file) => {
+                const path = `magazine/${Date.now()}_${file.name}`
+                return uploadVideoToStorage(file, path)
+              }}
+            />
 
             <div style={{ marginTop: 12 }}>
               <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 6 }}>제품 태그 (최대 5)</div>
