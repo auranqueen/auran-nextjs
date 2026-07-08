@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import ConsultChat from '@/components/ConsultChat'
 
 const BG = '#0D0B09'
 
@@ -52,6 +53,8 @@ export default function MagazineDetailClient() {
   const [related, setRelated] = useState<any[]>([])
   const [tagProducts, setTagProducts] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [consultOpen, setConsultOpen] = useState(false)
+  const [consultProduct, setConsultProduct] = useState<any | null>(null)
 
   const load = useCallback(async () => {
     if (!id) return
@@ -103,7 +106,7 @@ export default function MagazineDetailClient() {
       const tags = (data as any).product_tags
       const ids = Array.isArray(tags) ? tags.map((x: any) => String(x)).filter(Boolean).slice(0, 5) : []
       if (ids.length) {
-        const { data: prods } = await supabase.from('products').select('id,name,retail_price,sale_price,thumb_img').in('id', ids)
+        const { data: prods } = await supabase.from('products').select('id,name,retail_price,sale_price,thumb_img,brand_id').in('id', ids)
         setTagProducts((prods as any[]) || [])
       } else {
         setTagProducts([])
@@ -295,7 +298,14 @@ export default function MagazineDetailClient() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => router.push(`/products/${p.id}`)}
+                    onClick={() => {
+                      if (p.brand_id === '90175aa9-70c8-4568-865a-195f11bd7859') {
+                        setConsultProduct(p)
+                        setConsultOpen(true)
+                      } else {
+                        router.push(`/products/${p.id}`)
+                      }
+                    }}
                     style={{ marginTop: 8, width: '100%', border: 'none', borderRadius: 8, background: '#7B5EA7', color: '#fff', fontSize: 10, fontWeight: 700, padding: '7px 0', cursor: 'pointer' }}
                   >
                     구매하기
@@ -329,6 +339,19 @@ export default function MagazineDetailClient() {
             ))}
           </div>
         </div>
+      ) : null}
+
+      {consultOpen && consultProduct ? (
+        <ConsultChat
+          productId={consultProduct.id}
+          productName={consultProduct.name || ''}
+          brandId={consultProduct.brand_id}
+          onClose={() => setConsultOpen(false)}
+          onLoginRequest={() => {
+            setConsultOpen(false)
+            router.push('/login?role=customer')
+          }}
+        />
       ) : null}
 
     </div>

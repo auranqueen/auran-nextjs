@@ -439,3 +439,9 @@ users와 profiles 테이블에 같은 의미의 필드가 중복 존재. 신규 
 - `admin can insert products` (069, 신규 2026-07-07) — INSERT, authenticated, 038과 동일한 admin 판별(WITH CHECK)
 
 대시보드 직접 생성분(드리프트, 마이그레이션 미기록): `brand can insert own products`(브랜드 소속 제품만 INSERT 허용) 등 브랜드 계열 정책. 069 추가 전까지 admin 전용 INSERT 정책이 없어 /admin/products/edit-v2 신규 등록이 RLS 위반으로 실패했음. 전체 정책 목록은 대시보드 pg_policies로만 최종 확인 가능.
+
+### 매거진 × 르노벨 제품 태그 → 상담톡 직결 (2026-07-07)
+- `magazines.product_tags`: 제품 UUID 문자열 배열(JSONB). 어드민 `/admin/magazine`에서 `products.id` 최대 5개 태그.
+- 고객 매거진 상세 `/magazine/[id]`: `product_tags`로 `products` 조회 후 추천 제품 카드 렌더. 글 본문·목록은 SEO 공개(noindex 없음).
+- **일반 제품**: "구매하기" → `/products/{id}` 이동(기존과 동일).
+- **르노벨 제품** (`products.brand_id = 90175aa9-70c8-4568-865a-195f11bd7859`): "구매하기" → 제품 상세 대신 동일 페이지에서 `ConsultChat` 오픈(제품 페이지·브랜드 상세 비노출 유지). 비로그인 시 `onLoginRequest` → `/login?role=customer`.
