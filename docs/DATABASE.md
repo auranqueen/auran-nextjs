@@ -409,6 +409,7 @@ users와 profiles 테이블에 같은 의미의 필드가 중복 존재. 신규 
 | sender_id | uuid NOT NULL | sender_type이 owner면 owner_id, brand면 brand_id |
 | target_type | text NOT NULL (CHECK: manual_list / product_repurchase) | manual_list=체크박스로 고른 리스트, product_repurchase=제품+기간 필터 |
 | target_customer_ids | uuid[] | manual_list일 때 대상 고객 id 배열 |
+| target_customer_type | text NOT NULL DEFAULT 'external_customer' (CHECK: external_customer / auran_user) | target_customer_ids가 가리키는 대상 테이블 구분. external_customer=외부고객카드(SMS+오렌톡 분기 가능), auran_user=오렌 가입 내부고객(profiles/users, 오렌톡 salon_messages만 사용). 068에서 추가 |
 | target_product_id | uuid REFERENCES products(id) | product_repurchase 대상 제품 |
 | target_date_from / target_date_to | timestamptz | product_repurchase 기간 필터 |
 | message | text NOT NULL | 발송 메시지 |

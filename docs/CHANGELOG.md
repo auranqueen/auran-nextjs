@@ -5,6 +5,7 @@
 
 ## 2026-07-07
 
+- 2026-07-07: scheduled_campaigns에 target_customer_type 추가 (외부고객/오렌내부고객 구분)
 - 2026-07-07: scheduled_campaigns 테이블 신설 (예약형 캠페인 발송 시스템 코어)
 - 2026-07-07: 원장 콘솔 모바일 하단탭 - 매출 제거, 시술차트 추가 (현장 전후사진 업로드 접근성 개선)
 - 2026-07-07: coupons 테이블에 캠페인 증정품 필드 추가 (066_coupon_campaign_gift.sql)
