@@ -30,8 +30,8 @@ const NAV: Record<Role, { icon: string; label: string; href: string }[]> = {
   owner: [
     { icon: '🏠', label: '홈', href: '/dashboard/owner' },
     { icon: '📅', label: '예약', href: '/dashboard/owner/bookings' },
+    { icon: '📋', label: '시술차트', href: '/dashboard/owner/charts-v2' },
     { icon: '🏪', label: '스토어', href: '/dashboard/owner/store' },
-    { icon: '📈', label: '매출', href: '/dashboard/owner/revenue' },
     { icon: '👤', label: '마이', href: '/mypage' },
   ],
   brand: [
