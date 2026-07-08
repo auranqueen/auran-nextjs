@@ -21,7 +21,7 @@ function SignupForm() {
   const meta = ROLE_META[role] || ROLE_META.customer
 
   const [step, setStep] = useState(1) // 1: 정보입력 2: 온보딩 3: 완료
-  const [form, setForm] = useState({ name: '', email: '', password: '', passwordConfirm: '', phone: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', passwordConfirm: '', phone: '', storeName: '' })
   const [consent, setConsent] = useState({ required1: false, required2: false, marketing: false, research: false })
   const [termsModalKey, setTermsModalKey] = useState<string | null>(null)
   const [track, setTrack] = useState<TrackType>('general')
@@ -199,7 +199,7 @@ function SignupForm() {
           const { data: profRow } = await supabase.from('profiles').select('slug, owner_store_name').eq('auth_id', authData.user.id).maybeSingle()
           let createdSlug = profRow?.slug ? String(profRow.slug) : ''
           if (!createdSlug) {
-            const nameTrim = String(profRow?.owner_store_name || form.name || '').trim()
+            const nameTrim = String(profRow?.owner_store_name || form.storeName || form.name || '').trim()
             if (nameTrim) {
               let base = nameTrim.toLowerCase().replace(/[^a-z0-9]/g, '')
               if (!base) base = 'owner' + Math.random().toString(16).slice(2, 10)
@@ -217,6 +217,7 @@ function SignupForm() {
             email: authEmail,
             full_name: form.name,
             role: 'owner',
+            owner_store_name: form.storeName || undefined,
           }
           if (createdSlug && !profRow?.slug) profilePayload.slug = createdSlug
           await supabase.from('profiles').upsert(profilePayload as any, { onConflict: 'auth_id' })
@@ -312,6 +313,9 @@ function SignupForm() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div><label style={labelStyle}>이름 또는 닉네임 *</label>{inp('name', form.name, v => setForm(f => ({ ...f, name: v })), { placeholder: '실명 입력', required: true })}</div>
+              {role === 'owner' && (
+                <div><label style={labelStyle}>상호명(매장명) *</label>{inp('storeName', form.storeName, v => setForm(f => ({ ...f, storeName: v })), { placeholder: '매장명 입력', required: true })}</div>
+              )}
               <div><label style={labelStyle}>아이디 *</label>{inp('email', form.email, v => setForm(f => ({ ...f, email: v })), { type: 'text', placeholder: '아이디', required: true })}</div>
               <div><label style={labelStyle}>비밀번호 * (6자 이상)</label>{inp('pw', form.password, v => setForm(f => ({ ...f, password: v })), { type: 'password', placeholder: '6자 이상 입력', required: true })}</div>
               <div><label style={labelStyle}>비밀번호 확인 *</label>{inp('pw2', form.passwordConfirm, v => setForm(f => ({ ...f, passwordConfirm: v })), { type: 'password', placeholder: '비밀번호 재입력', required: true })}</div>
