@@ -151,7 +151,7 @@ export async function middleware(req: NextRequest) {
   const user = data.user ?? null
 
   if (!user) {
-    if (isHome) {
+    if (false) {
       const loginUrl = req.nextUrl.clone()
       loginUrl.pathname = '/login'
       return redirectPreservingSupabaseCookies(res, NextResponse.redirect(loginUrl))
