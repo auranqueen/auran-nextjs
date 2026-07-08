@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import CustomerCampaignPanel from './_components/CustomerCampaignPanel'
 
 type TabKey = '매출현황' | '제품분석' | '고객분석' | '유입경로' | '쿠폰/토스트'
 
@@ -24,6 +25,8 @@ export default function AdminRevenuePage() {
   const [customerFilterDraft, setCustomerFilterDraft] = useState('amount_top')
   const [customerFilter, setCustomerFilter] = useState('amount_top')
   const [customerPanelId, setCustomerPanelId] = useState<string | null>(null)
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([])
+  const [showCampaignPanel, setShowCampaignPanel] = useState(false)
 
   useEffect(() => {
     const t = new Date()
@@ -754,10 +757,19 @@ export default function AdminRevenuePage() {
                 </div>
               </div>
               <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 10, padding: 12 }}>
-                <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 8 }}>고객 순위 TOP 20</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 8 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text2)' }}>고객 순위 TOP 20</div>
+                  <button type="button" className="btn btn-bl" disabled={selectedCustomerIds.length === 0} onClick={() => setShowCampaignPanel(true)}>
+                    선택 고객 캠페인 ({selectedCustomerIds.length})
+                  </button>
+                </div>
+                {showCampaignPanel && (
+                  <CustomerCampaignPanel selectedCustomerIds={selectedCustomerIds} onClose={() => setShowCampaignPanel(false)} />
+                )}
                 <table>
                   <thead>
                     <tr>
+                      <th></th>
                       <th>순위</th>
                       <th>고객명</th>
                       <th>등급</th>
@@ -772,6 +784,13 @@ export default function AdminRevenuePage() {
                   <tbody>
                     {customerSearchResult.top.map((r, i) => (
                       <tr key={r.id} onClick={() => setCustomerPanelId(r.id)} style={{ cursor: 'pointer' }}>
+                        <td onClick={(e) => e.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            checked={selectedCustomerIds.includes(r.id)}
+                            onChange={() => setSelectedCustomerIds(prev => prev.includes(r.id) ? prev.filter(id => id !== r.id) : [...prev, r.id])}
+                          />
+                        </td>
                         <td className="mono">{i + 1}</td>
                         <td className="mono">
                           {r.display} <span style={{ fontSize: 14 }}>{customerSearchResult.mark(r)}</span>
@@ -830,7 +849,7 @@ export default function AdminRevenuePage() {
                     ))}
                     {customerSearchResult.top.length === 0 ? (
                       <tr>
-                        <td colSpan={9}>데이터 없음</td>
+                        <td colSpan={10}>데이터 없음</td>
                       </tr>
                     ) : null}
                   </tbody>
