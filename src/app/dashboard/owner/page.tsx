@@ -17,7 +17,7 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
   const { data: profile } = await supabase.from('users').select('*').eq('auth_id', user.id).single()
   if (!profile) redirect('/login?role=owner')
 
-  if (searchParams?.v === '3') {
+  if (!searchParams?.v || searchParams?.v === '3') {
     const now = new Date()
     const y = now.getFullYear()
     const m = now.getMonth()
@@ -177,13 +177,17 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
     )
   }
 
-  const { data: salon } = await supabase.from('salons').select('*').eq('owner_id', profile.id).single()
-  const { data: todayBookings } = await supabase
-    .from('bookings')
-    .select('*')
-    .eq('owner_id', profile.id)
-    .eq('booking_date', new Date().toISOString().slice(0, 10))
-    .order('booking_time')
+  if (searchParams?.v === '1') {
+    const { data: salon } = await supabase.from('salons').select('*').eq('owner_id', profile.id).single()
+    const { data: todayBookings } = await supabase
+      .from('bookings')
+      .select('*')
+      .eq('owner_id', profile.id)
+      .eq('booking_date', new Date().toISOString().slice(0, 10))
+      .order('booking_time')
 
-  return <SalonDashClient profile={profile} salon={salon} todayBookings={todayBookings || []} />
+    return <SalonDashClient profile={profile} salon={salon} todayBookings={todayBookings || []} />
+  }
+
+  redirect('/dashboard/owner')
 }
