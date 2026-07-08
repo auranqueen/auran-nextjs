@@ -397,3 +397,32 @@ users와 profiles 테이블에 같은 의미의 필드가 중복 존재. 신규 
 
 - 전부 기본값/nullable이라 기존 쿠폰 발급/적용 플로우(computeDiscount.ts, checkout 단일선택 구조)에 영향 없음.
 - 기존 RLS 정책(coupons_active_read, coupons_admin_all, coupons_readable_if_held)은 컬럼을 참조하지 않으므로 컬럼 추가로 깨지지 않음.
+
+## scheduled_campaigns (067_scheduled_campaigns.sql, 2026-07-07)
+
+예약형 마케팅 캠페인 코어 테이블. 지정 시각(scheduled_at) 도달 시 대상 고객에게 메시지+증정을 발송. 실시간 결제/재고 트리거 없이 Vercel Cron 스케줄러 방식(expire-coupons 패턴 재사용 예정).
+
+| 컬럼 | 타입/기본값 | 설명 |
+|---|---|---|
+| id | uuid PK DEFAULT gen_random_uuid() | |
+| sender_type | text NOT NULL DEFAULT 'owner' (CHECK: owner / brand) | 발신 주체. owner=원장→고객, brand=브랜드→원장(추후 확장). 필드 미리 넣어 테이블 재작업 없이 확장 가능 |
+| sender_id | uuid NOT NULL | sender_type이 owner면 owner_id, brand면 brand_id |
+| target_type | text NOT NULL (CHECK: manual_list / product_repurchase) | manual_list=체크박스로 고른 리스트, product_repurchase=제품+기간 필터 |
+| target_customer_ids | uuid[] | manual_list일 때 대상 고객 id 배열 |
+| target_product_id | uuid REFERENCES products(id) | product_repurchase 대상 제품 |
+| target_date_from / target_date_to | timestamptz | product_repurchase 기간 필터 |
+| message | text NOT NULL | 발송 메시지 |
+| sender_display_name | text | 카드 타이틀용 스토어명 스냅샷 (예: "OO원장님이 미쳤나봐요") |
+| reward_type | text NOT NULL DEFAULT 'discount' (CHECK: discount / gift_product / gift_product_and_discount / none) | 보상 종류 |
+| gift_product_id | uuid REFERENCES products(id) | 증정 제품 |
+| gift_product_qty | integer | 1인당 증정 수량 |
+| coupon_id | uuid REFERENCES coupons(id) | 연결 쿠폰 |
+| scheduled_at | timestamptz NOT NULL | 예약 발송 시각 (cron이 도달 건 조회) |
+| status | text NOT NULL DEFAULT 'pending' (CHECK: pending / sent / failed / cancelled) | pending=대기(취소가능), sent=발송완료(취소불가), failed, cancelled |
+| created_by | uuid NOT NULL | 생성자 |
+| sent_at | timestamptz | 실제 발송 완료 시각 |
+| result_success_count / result_failed_count / result_no_channel_count | integer | 발송 결과 집계 (broadcast-to-buyers 응답 재사용) |
+| created_at | timestamptz NOT NULL DEFAULT now() | |
+
+- RLS: ENABLE 후 `scheduled_campaigns_admin_all`(FOR ALL) 정책 — super_admin(JWT app_metadata.role) 또는 users.role='admin'(auth_id=auth.uid())만 접근. 일반 유저 SELECT/INSERT 차단.
+- FK: products/coupons 모두 PK가 uuid `id`라 참조 정상.
