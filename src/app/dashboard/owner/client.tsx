@@ -231,7 +231,7 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 480, margin: '0 auto', paddingBottom: 24 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 720, margin: '0 auto', paddingBottom: 24, width: '100%' }}>
       {/* 히어로 */}
       <div style={{ background: 'linear-gradient(160deg,#120a18,#0e0814)', borderBottom: '1px solid rgba(191,95,144,0.2)', padding: '20px 20px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
