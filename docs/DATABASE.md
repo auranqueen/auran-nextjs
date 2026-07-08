@@ -430,3 +430,12 @@ users와 profiles 테이블에 같은 의미의 필드가 중복 존재. 신규 
 
 ### categories 테이블 드리프트 참고
 마이그레이션 파일에 정의 없음(대시보드 생성). 2026-07-07 스킨케어(level=2) 하위에 비비/쿠션(level=3) 데이터 직접 추가함. 카테고리 추가는 supabase/migrations가 아니라 대시보드에서 직접 INSERT로 이뤄지고 있으므로, 전체 categories 데이터는 대시보드 information_schema/직접 조회로만 확인 가능.
+
+### products 테이블 RLS 정책 현황 (2026-07-07 점검)
+마이그레이션에 기록된 정책:
+- `public read products` (017) — SELECT, anon+authenticated, USING(true)
+- `admin update products` (038) — UPDATE, authenticated, users.role='admin' OR profiles.role='admin'
+- `admin delete products` (042) — DELETE, authenticated, admin 조건
+- `admin can insert products` (069, 신규 2026-07-07) — INSERT, authenticated, 038과 동일한 admin 판별(WITH CHECK)
+
+대시보드 직접 생성분(드리프트, 마이그레이션 미기록): `brand can insert own products`(브랜드 소속 제품만 INSERT 허용) 등 브랜드 계열 정책. 069 추가 전까지 admin 전용 INSERT 정책이 없어 /admin/products/edit-v2 신규 등록이 RLS 위반으로 실패했음. 전체 정책 목록은 대시보드 pg_policies로만 최종 확인 가능.
