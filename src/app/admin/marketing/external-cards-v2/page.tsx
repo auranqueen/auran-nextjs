@@ -327,6 +327,14 @@ export default function ExternalCardsV2Page() {
                 </div>
               )}
             </div>
+            <a
+              href="/admin/products/edit-v2"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ display: 'inline-block', marginBottom: 8, fontSize: 11, color: C.gold, textDecoration: 'none', opacity: 0.85 }}
+            >
+              + 찾는 제품이 없나요? 새 탭에서 제품 등록하러 가기
+            </a>
             {products.map(p => (
               <div key={p.id} style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 9, padding: '10px 12px', marginBottom: 6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
