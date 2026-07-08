@@ -135,3 +135,52 @@
   8. 동시성 처리 (여러 발송완료 처리가 몰릴 때 재고 0 근접 시 race condition 방지)
 - 별도 세션 필요 이유: 재고 시스템 + 푸시 인프라가 AURAN 전체 주문/배송/알림 흐름에 영향을 주는 기초 인프라라, 별도 세션에서 처음부터 설계해야 함
 - 다음 세션 시작 시 우선 확인할 것: (1) 푸시 시스템 존재 여부, (2) "택배발송완료" 버튼 실제 위치 — 이 둘 확인 후 범위 재조정
+
+---
+
+## 신규 아이디어 (2026-07-07, 오후) — 예약형 캠페인 발송 시스템 + 브랜드-원장 전용 채널
+
+### 배경
+구매자/제품 랭킹에서 즉석발송(BuyerBroadcastModal)은 완성됐으나, "특정 제품 재구매 시 쿠폰/증정품 자동 지급"은 실시간 트리거(결제훅/재고훅) 없이 "예약발송" 방식으로 단순화하기로 함(머스크 논리: 실시간 감지 불필요, 원장이 미리 대상/날짜만 지정하면 충분).
+
+### 카드 타이틀 정책
+발송 카드 타이틀은 발신자의 스토어명(슬러그) 기준: "{owner_store_name}원장님이 미쳤나봐요" 형태로 자동 생성. 원장마다 다르게 노출되어 고객이 특별혜택으로 인지하게 함.
+
+### 채널 우선순위 확정
+- 앱 푸시(FCM/APNs/OneSignal/web-push): 코드/패키지 전부 미존재 확인됨(2026-07-07 확인). 별도 인프라 구축 필요, 오늘 범위 아님.
+- 가입회원(auran_joined=true): 오렌톡(salon_messages, channel_type='salon') 재사용
+- 미가입 외부고객: 아이코드 SMS
+
+### scheduled_campaigns 테이블 설계안 (마이그레이션 067 예정)
+- id, target_type('manual_list'|'product_repurchase')
+- target_customer_ids(uuid[]), target_product_id, target_date_from, target_date_to
+- message, sender_display_name(owner_store_name 스냅샷)
+- reward_type, gift_product_id, gift_product_qty, coupon_id
+- campaign_quantity_limit/issued (066에서 이미 coupons에 추가된 필드 재사용 검토)
+- scheduled_at, status('pending'|'sent'|'failed'|'cancelled'), created_by, sent_at
+- 실행: Vercel Cron이 scheduled_at 도달 건을 찾아 기존 broadcast-to-buyers 로직 재사용 발송
+
+### 정책 7가지 (2026-03~04 스폰서 커미션 설계 때 확립한 원칙 재적용)
+1. 증정 확정 시점: 발송이 아니라 "고객 실제 구매확정(재구매)" 시점에만 증정 확정. 메시지만 가고 미구매 시 아무 일도 없어야 함
+2. 자기 자신 타겟 금지: 특히 브랜드→원장 캠페인에서 발신 브랜드가 자기 소속 아닌 원장에게 잘못 보내는 것 방지
+3. 발송 범위 제한(브랜드→원장): brand_owner_grades 등 기존 관계 테이블 기준으로, 브랜드는 자기와 관계된 원장에게만 발송 가능(무차별 전체발송 금지)
+4. 예약 취소/수정: 발송 전까지만 취소 가능, 발송완료 후 취소 불가
+5. 스팸 방지: 동일 고객에게 짧은 기간 내 캠페인 중복 발송 제한 여부(추가 논의 필요, 미확정)
+6. 재고(캠페인 한도) 초과 시 처리: campaign_quantity_limit 도달 후 구매자는 증정 없이 "증정마감 안내" 또는 "쿠폰만" 등 명확한 처리 필요(조용히 누락되면 안 됨)
+7. 쿠폰 중복 방지: checkout이 이미 단일쿠폰선택 구조(selectedUserCouponId: string | null)라 구조적으로 해결됨(추가 설계 불필요, 확인 완료 2026-07-07)
+
+### 브랜드-원장 채널 확인 결과 (2026-07-07)
+- channel_type='owner'는 고객↔원장(오렌상담톡) 채널로, user_id(고객)+owner_id(원장) 조합. 브랜드↔원장 채널이 아님.
+- chat_channels 테이블은 마이그레이션 SQL에 정의 없음(대시보드 생성 추정, 드리프트 상태)
+- 브랜드-원장 캠페인을 위해서는 channel_type='brand' 등 신규 채널 타입 신설 필요(owner_id + brand_id 조합)
+- 참고: brand_owner_grades / brand_arete_members / brand_points 테이블도 코드에는 이미 사용 중이나 마이그레이션 파일에 미기록(별도 드리프트 이슈, 이번 작업과 별개로 문서화 필요)
+
+### 별도 세션 필요 이유
+- 신규 채널 타입(channel_type='brand') 신설은 chat_channels 전체 구조에 영향
+- scheduled_campaigns + Vercel Cron 신설은 스키마+백엔드+프론트 전부 걸친 중간 규모 작업
+- brand_owner_grades 등 3개 테이블 마이그레이션 드리프트 문서화도 별도 처리 필요
+
+### 다음 세션 시작 시 우선 확인할 것
+1. chat_channels 실제 전체 컬럼(대시보드 기준, information_schema로 재확인)
+2. Vercel Cron 설정 현황(기존에 이미 쓰는 cron 있는지)
+3. brand_owner_grades 실사용 컬럼 전체(BrandTabOwners.tsx 기준 재확인)
