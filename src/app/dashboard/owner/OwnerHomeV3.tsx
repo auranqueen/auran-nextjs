@@ -1,0 +1,349 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+
+const GRADE_COLORS: Record<string, string> = {
+  debut: 'var(--text3)',
+  essor: '#4a8dc0',
+  prestige: '#aab8c8',
+  couronne: '#c9a84c',
+  empire: '#bf5f90',
+}
+const GRADE_LABELS: Record<string, string> = {
+  debut: 'DÉBUT',
+  essor: 'ESSOR',
+  prestige: 'PRESTIGE',
+  couronne: 'COURONNE',
+  empire: 'EMPIRE',
+}
+
+export type RevenueSlice = {
+  current: number
+  previous: number
+  changePercent: number
+}
+
+export type RecentChat = {
+  id: string
+  title: string | null
+  preview_text: string | null
+  last_message_at: string | null
+  unread_count: number
+}
+
+export type RecruitedOwner = {
+  id: string
+  name: string
+  monthSales: number
+}
+
+export type BrandPostPreview = {
+  id: string
+  title: string | null
+  body: string
+  created_at: string
+  brand_name?: string | null
+} | null
+
+type Props = {
+  profile: any
+  salon: any
+  todayBookings: any[]
+  serviceRevenue: RevenueSlice
+  productRevenue: RevenueSlice
+  pendingCsCount: number
+  unreadChatCount: number
+  recentChats: RecentChat[]
+  recruitedOwners: RecruitedOwner[]
+  brandPost: BrandPostPreview
+}
+
+export default function OwnerHomeV3({
+  profile,
+  salon,
+  todayBookings,
+  serviceRevenue,
+  productRevenue,
+  pendingCsCount,
+  unreadChatCount,
+  recentChats,
+  recruitedOwners,
+  brandPost,
+}: Props) {
+  const router = useRouter()
+  const [chatOpen, setChatOpen] = useState(false)
+
+  const grade = String(profile?.store_grade || 'debut')
+  const salonName = salon?.name || profile?.salon_name || profile?.name || '살롱'
+  const monthTotal = serviceRevenue.current + productRevenue.current
+  const unanswered = pendingCsCount + unreadChatCount
+  const serviceShare = monthTotal > 0 ? Math.round((serviceRevenue.current / monthTotal) * 100) : 0
+  const productShare = monthTotal > 0 ? Math.round((productRevenue.current / monthTotal) * 100) : 0
+
+  const fmtWon = (n: number) => `₩${Math.max(0, Math.floor(n)).toLocaleString()}`
+  const fmtPct = (p: number) => (p === 0 ? '0%' : `${p > 0 ? '+' : ''}${p}%`)
+
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 1100, margin: '0 auto', paddingBottom: 24, width: '100%' }}>
+      <div style={{ background: 'linear-gradient(160deg,#120a18,#0e0814)', borderBottom: '1px solid rgba(191,95,144,0.2)', padding: '20px 20px 16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+          <div>
+            <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8, color: 'rgba(191,95,144,0.5)', letterSpacing: '0.2em', marginBottom: 4 }}>CLINIC COMMAND CENTER</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 18, color: '#fff' }}>{salonName}</div>
+              <span
+                style={{
+                  fontSize: 9,
+                  padding: '2px 8px',
+                  background: `${GRADE_COLORS[grade] || GRADE_COLORS.debut}22`,
+                  color: GRADE_COLORS[grade] || GRADE_COLORS.debut,
+                  border: `1px solid ${(GRADE_COLORS[grade] || GRADE_COLORS.debut)}44`,
+                  borderRadius: 18,
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontWeight: 700,
+                }}
+              >
+                {GRADE_LABELS[grade] || grade.toUpperCase()}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
+          {[
+            { l: '이번 달 매출', v: fmtWon(monthTotal), c: 'var(--gold)' },
+            { l: '오늘 예약', v: `${todayBookings.length}건`, c: '#bf5f90' },
+            { l: '미답변', v: `${unanswered}건`, c: '#C084FC' },
+          ].map((s) => (
+            <div key={s.l} style={{ background: 'rgba(191,95,144,0.08)', border: '1px solid rgba(191,95,144,0.2)', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+              <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: s.c }}>{s.v}</div>
+              <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 2 }}>{s.l}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: 9, color: 'var(--text3)', textAlign: 'center', marginTop: 6 }}>
+          이번 달 매출 = 관리권 + 제품 (수수료 차감 전 총액)
+        </div>
+      </div>
+
+      <div
+        style={{
+          padding: '18px 18px 0',
+          display: 'grid',
+          gap: 16,
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))',
+        }}
+      >
+        <div>
+          <button
+            type="button"
+            onClick={() => setChatOpen((v) => !v)}
+            style={{
+              width: '100%',
+              padding: '16px 18px',
+              marginBottom: chatOpen ? 0 : 10,
+              background: '#2D1B4E',
+              border: '1px solid rgba(123,94,167,0.5)',
+              borderRadius: chatOpen ? '14px 14px 0 0' : 14,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              color: '#C084FC',
+            }}
+          >
+            <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 22 }}>💬</span>
+              <span style={{ fontSize: 15, fontWeight: 500 }}>상담톡</span>
+              {unreadChatCount > 0 && (
+                <span style={{ fontSize: 10, background: '#bf5f90', color: '#fff', borderRadius: 10, padding: '2px 7px' }}>{unreadChatCount}</span>
+              )}
+            </span>
+            <span style={{ fontSize: 12, opacity: 0.7 }}>{chatOpen ? '접기 ▲' : '펼치기 ▼'}</span>
+          </button>
+          {chatOpen && (
+            <div
+              style={{
+                background: 'rgba(45,27,78,0.5)',
+                border: '1px solid rgba(123,94,167,0.35)',
+                borderTop: 'none',
+                borderRadius: '0 0 14px 14px',
+                padding: '10px 14px 14px',
+                marginBottom: 10,
+              }}
+            >
+              {recentChats.length === 0 ? (
+                <div style={{ fontSize: 12, color: 'var(--text3)', padding: '8px 0' }}>최근 상담이 없습니다</div>
+              ) : (
+                recentChats.map((ch) => (
+                  <button
+                    key={ch.id}
+                    type="button"
+                    onClick={() => router.push(`/dashboard/owner/chat/${ch.id}`)}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid rgba(255,255,255,0.08)',
+                      borderRadius: 10,
+                      padding: '10px 12px',
+                      marginBottom: 6,
+                      cursor: 'pointer',
+                      color: 'var(--text)',
+                    }}
+                  >
+                    <div style={{ fontSize: 13, fontWeight: 600 }}>{ch.title || '상담'}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {ch.preview_text || '메시지 없음'}
+                    </div>
+                  </button>
+                ))
+              )}
+              <Link href="/dashboard/owner/chat/redirect" style={{ display: 'block', textAlign: 'center', fontSize: 12, color: '#C084FC', marginTop: 8, textDecoration: 'none' }}>
+                전체 상담 보기 →
+              </Link>
+            </div>
+          )}
+
+          <div style={{ marginBottom: 16, marginTop: chatOpen ? 6 : 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>📅 오늘 예약 일정</div>
+            {todayBookings.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 20, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12, color: 'var(--text3)' }}>
+                오늘 예약이 없습니다
+              </div>
+            ) : (
+              todayBookings.map((b) => (
+                <div
+                  key={b.id}
+                  style={{
+                    background: 'var(--bg3)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 12,
+                    padding: '12px 13px',
+                    marginBottom: 7,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 12, fontFamily: "'JetBrains Mono', monospace", color: 'var(--text3)' }}>{b.booking_time}</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{b.service_name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)' }}>₩{(b.service_price || 0).toLocaleString()}</div>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      padding: '3px 9px',
+                      borderRadius: 18,
+                      background: b.status === '예약확정' ? 'rgba(76,173,126,0.12)' : 'rgba(201,168,76,0.1)',
+                      color: b.status === '예약확정' ? '#4cad7e' : 'var(--gold)',
+                      border: `1px solid ${b.status === '예약확정' ? 'rgba(76,173,126,0.3)' : 'rgba(201,168,76,0.3)'}`,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {b.status}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>매출 디테일</div>
+            <div style={{ marginBottom: 14 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ fontSize: 12, color: 'var(--text)' }}>관리권 매출</span>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, color: '#bf5f90', fontWeight: 700 }}>{fmtWon(serviceRevenue.current)}</span>
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>
+                비중 {serviceShare}% · 전월대비 {fmtPct(serviceRevenue.changePercent)}
+              </div>
+            </div>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <span style={{ fontSize: 12, color: 'var(--text)' }}>제품 매출</span>
+                <span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, color: 'var(--gold)', fontWeight: 700 }}>{fmtWon(productRevenue.current)}</span>
+              </div>
+              <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4 }}>
+                비중 {productShare}% · 전월대비 {fmtPct(productRevenue.changePercent)}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>내가 모집한 원장님</div>
+            <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.4 }}>
+              모집 원장님 매출 기준 커미션 - 정산 로직 연결 예정
+            </div>
+            {recruitedOwners.length === 0 ? (
+              <div style={{ fontSize: 12, color: 'var(--text3)' }}>모집한 원장님이 아직 없습니다</div>
+            ) : (
+              recruitedOwners.map((o) => (
+                <div
+                  key={o.id}
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '8px 0',
+                    borderBottom: '1px solid var(--border)',
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600 }}>{o.name}</div>
+                    <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>이번달 매출 {fmtWon(o.monthSales)}</div>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      color: 'rgba(201,168,76,0.85)',
+                      background: 'rgba(201,168,76,0.1)',
+                      border: '1px solid rgba(201,168,76,0.25)',
+                      borderRadius: 8,
+                      padding: '4px 8px',
+                    }}
+                  >
+                    정산 준비중
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+
+          {brandPost && (
+            <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>브랜드 소식</div>
+              {brandPost.brand_name && (
+                <div style={{ fontSize: 10, color: '#C084FC', marginBottom: 4 }}>{brandPost.brand_name}</div>
+              )}
+              <div style={{ fontSize: 13, color: 'var(--text)', fontWeight: 600, marginBottom: 4 }}>
+                {brandPost.title || '공지'}
+              </div>
+              <div
+                style={{
+                  fontSize: 12,
+                  color: 'var(--text3)',
+                  lineHeight: 1.45,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 3,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }}
+              >
+                {brandPost.body}
+              </div>
+              <Link href="/dashboard/owner/brand-community" style={{ display: 'inline-block', marginTop: 10, fontSize: 12, color: '#C084FC', textDecoration: 'none' }}>
+                더보기 →
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
