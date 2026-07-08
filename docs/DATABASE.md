@@ -427,3 +427,6 @@ users와 profiles 테이블에 같은 의미의 필드가 중복 존재. 신규 
 
 - RLS: ENABLE 후 `scheduled_campaigns_admin_all`(FOR ALL) 정책 — super_admin(JWT app_metadata.role) 또는 users.role='admin'(auth_id=auth.uid())만 접근. 일반 유저 SELECT/INSERT 차단.
 - FK: products/coupons 모두 PK가 uuid `id`라 참조 정상.
+
+### categories 테이블 드리프트 참고
+마이그레이션 파일에 정의 없음(대시보드 생성). 2026-07-07 스킨케어(level=2) 하위에 비비/쿠션(level=3) 데이터 직접 추가함. 카테고리 추가는 supabase/migrations가 아니라 대시보드에서 직접 INSERT로 이뤄지고 있으므로, 전체 categories 데이터는 대시보드 information_schema/직접 조회로만 확인 가능.
