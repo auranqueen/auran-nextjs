@@ -49,7 +49,7 @@ function SignupForm() {
   const [error, setError] = useState('')
   const [ownerSlug, setOwnerSlug] = useState('')
   const [ownerSlugCopied, setOwnerSlugCopied] = useState(false)
-  const [ownerStoreStep, setOwnerStoreStep] = useState(false)
+  const [ownerStoreStep, setOwnerStoreStep] = useState(role === 'owner')
   const [hasOfflineStore, setHasOfflineStore] = useState<boolean | null>(null)
   const [storeType, setStoreType] = useState('')
   const [ownerStoreAddress, setOwnerStoreAddress] = useState('')
@@ -293,14 +293,20 @@ function SignupForm() {
   }
 
   const labelStyle: React.CSSProperties = { fontSize: 11, color: 'var(--text3)', marginBottom: 5, fontFamily: "'JetBrains Mono', monospace", display: 'block' }
-  const uiStep = role === 'owner' && ownerStoreStep ? 2 : step
+  const uiStep = role === 'owner' && step === 1
+    ? (ownerStoreStep ? 1 : 2)
+    : step
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))' }}>
       {/* 헤더 */}
       <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
         <button onClick={() => {
-          if (role === 'owner' && ownerStoreStep) { setOwnerStoreStep(false); setError(''); return }
+          if (role === 'owner' && step === 1 && !ownerStoreStep) {
+            setOwnerStoreStep(true)
+            setError('')
+            return
+          }
           if (step > 1) setStep(s => s - 1)
           else router.push(`/signup/consent?role=${role}`)
         }}
@@ -363,18 +369,13 @@ function SignupForm() {
                   setCycleType('male')
                   setTrack('male')
                 }
-                if (role === 'owner') {
-                  if (!form.storeName.trim()) { setError('상호명을 입력해주세요'); return }
-                  setOwnerStoreStep(true)
-                  setError('')
-                  return
-                }
+                if (role === 'owner' && !form.storeName.trim()) { setError('상호명을 입력해주세요'); return }
                 handleSignup()
               }}
               disabled={loading}
               style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.color, fontSize: 15, fontWeight: 700, marginTop: 20, opacity: loading ? 0.7 : 1 }}
             >
-              다음 →
+              {role === 'owner' ? '가입 완료' : '다음 →'}
             </button>
           </div>
         )}
@@ -397,7 +398,7 @@ function SignupForm() {
               if (hasOfflineStore && !storeType) { setError('업종을 선택해주세요'); return }
               if (!ownerStoreAddress.trim()) { setError('주소를 입력해주세요'); return }
               setError('')
-              handleSignup()
+              setOwnerStoreStep(false)
             }}
           />
         )}

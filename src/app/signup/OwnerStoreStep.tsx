@@ -157,7 +157,7 @@ export default function OwnerStoreStep({
         disabled={loading}
         style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.color, fontSize: 15, fontWeight: 700, marginTop: 20, opacity: loading ? 0.7 : 1 }}
       >
-        가입 완료
+        다음 →
       </button>
     </div>
   )
