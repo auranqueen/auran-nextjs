@@ -161,6 +161,82 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
     const svcChange = svcPrev <= 0 ? (svcCur > 0 ? 100 : 0) : Math.round(((svcCur - svcPrev) / svcPrev) * 100)
     const prodChange = prodPrev <= 0 ? (prodCur > 0 ? 100 : 0) : Math.round(((prodCur - prodPrev) / prodPrev) * 100)
 
+    const sixMonthsAgo = new Date(y, m - 5, 1)
+    const trendStart = `${sixMonthsAgo.getFullYear()}-${pad(sixMonthsAgo.getMonth() + 1)}-01`
+    const { data: trendBookings } = await supabase
+      .from('bookings')
+      .select('service_price, booking_date')
+      .eq('owner_id', profile.id)
+      .gte('booking_date', trendStart)
+      .lte('booking_date', thisEnd)
+    const { data: trendOrders } = await supabase
+      .from('orders')
+      .select('final_amount, ordered_at')
+      .eq('owner_id', profile.id)
+      .in('status', confirmedStatuses)
+      .gte('ordered_at', `${trendStart}T00:00:00`)
+      .lte('ordered_at', `${thisEnd}T23:59:59`)
+    const monthlyTrend: { month: string; total: number }[] = []
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(y, m - i, 1)
+      const my = d.getFullYear()
+      const mo = d.getMonth()
+      const startMs = new Date(my, mo, 1).getTime()
+      const endMs = new Date(my, mo + 1, 0, 23, 59, 59, 999).getTime()
+      let total = 0
+      for (const b of (trendBookings as any[]) || []) {
+        const bd = new Date(String(b.booking_date)).getTime()
+        if (bd >= startMs && bd <= endMs) total += Number(b.service_price || 0)
+      }
+      for (const o of (trendOrders as any[]) || []) {
+        const od = new Date(String(o.ordered_at)).getTime()
+        if (od >= startMs && od <= endMs) total += Number(o.final_amount || 0)
+      }
+      monthlyTrend.push({ month: `${mo + 1}월`, total })
+    }
+
+    const thirtyDaysAgo = new Date(now)
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    const thirtyKey = `${thirtyDaysAgo.getFullYear()}-${pad(thirtyDaysAgo.getMonth() + 1)}-${pad(thirtyDaysAgo.getDate())}`
+    const { data: recentBookings } = await supabase
+      .from('bookings')
+      .select('service_name')
+      .eq('owner_id', profile.id)
+      .gte('booking_date', thirtyKey)
+    const svcMap: Record<string, number> = {}
+    for (const b of (recentBookings as any[]) || []) {
+      const name = String(b.service_name || '').trim() || '기타'
+      svcMap[name] = (svcMap[name] || 0) + 1
+    }
+    const topServices = Object.entries(svcMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3)
+
+    const { data: recentOrders } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('owner_id', profile.id)
+      .in('status', confirmedStatuses)
+      .gte('ordered_at', `${thirtyKey}T00:00:00`)
+    const recentOrderIds = ((recentOrders as any[]) || []).map((r) => r.id).filter(Boolean)
+    let topProducts: { name: string; quantity: number }[] = []
+    if (recentOrderIds.length) {
+      const { data: itemRows } = await supabase
+        .from('order_items')
+        .select('product_name, quantity')
+        .in('order_id', recentOrderIds)
+      const prodMap: Record<string, number> = {}
+      for (const it of (itemRows as any[]) || []) {
+        const name = String(it.product_name || '').trim() || '기타'
+        prodMap[name] = (prodMap[name] || 0) + Number(it.quantity || 0)
+      }
+      topProducts = Object.entries(prodMap)
+        .map(([name, quantity]) => ({ name, quantity }))
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 3)
+    }
+
     return (
       <OwnerHomeV3
         profile={profile}
@@ -173,6 +249,9 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
         recentChats={recentChats}
         recruitedOwners={recruitedOwners}
         brandPost={brandPost}
+        monthlyTrend={monthlyTrend}
+        topServices={topServices}
+        topProducts={topProducts}
       />
     )
   }

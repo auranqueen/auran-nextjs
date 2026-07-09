@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
 const GRADE_COLORS: Record<string, string> = {
   debut: 'var(--text3)',
@@ -58,6 +59,9 @@ type Props = {
   recentChats: RecentChat[]
   recruitedOwners: RecruitedOwner[]
   brandPost: BrandPostPreview
+  monthlyTrend: { month: string; total: number }[]
+  topServices: { name: string; count: number }[]
+  topProducts: { name: string; quantity: number }[]
 }
 
 export default function OwnerHomeV3({
@@ -71,22 +75,52 @@ export default function OwnerHomeV3({
   recentChats,
   recruitedOwners,
   brandPost,
+  monthlyTrend,
+  topServices,
+  topProducts,
 }: Props) {
   const router = useRouter()
   const [chatOpen, setChatOpen] = useState(false)
+  const [kpiMonth, setKpiMonth] = useState(0)
+  const [kpiBookings, setKpiBookings] = useState(0)
+  const [kpiUnanswered, setKpiUnanswered] = useState(0)
 
   const grade = String(profile?.store_grade || 'debut')
+  const gradeColor = GRADE_COLORS[grade] || GRADE_COLORS.debut
   const salonName = salon?.name || profile?.salon_name || profile?.name || '살롱'
   const monthTotal = serviceRevenue.current + productRevenue.current
   const unanswered = pendingCsCount + unreadChatCount
   const serviceShare = monthTotal > 0 ? Math.round((serviceRevenue.current / monthTotal) * 100) : 0
   const productShare = monthTotal > 0 ? Math.round((productRevenue.current / monthTotal) * 100) : 0
 
+  useEffect(() => {
+    const targets = [monthTotal, todayBookings.length, unanswered]
+    const duration = 800
+    const start = performance.now()
+    let raf = 0
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration)
+      const ease = 1 - Math.pow(1 - p, 3)
+      setKpiMonth(Math.round(targets[0] * ease))
+      setKpiBookings(Math.round(targets[1] * ease))
+      setKpiUnanswered(Math.round(targets[2] * ease))
+      if (p < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [monthTotal, todayBookings.length, unanswered])
+
   const fmtWon = (n: number) => `₩${Math.max(0, Math.floor(n)).toLocaleString()}`
   const fmtPct = (p: number) => (p === 0 ? '0%' : `${p > 0 ? '+' : ''}${p}%`)
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 1100, margin: '0 auto', paddingBottom: 24, width: '100%' }}>
+      <style>{`
+        @media (min-width: 768px) {
+          .owner-v3-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+          .owner-v3-card:hover { transform: translateY(-2px); }
+        }
+      `}</style>
       <div style={{ background: 'linear-gradient(160deg,#120a18,#0e0814)', borderBottom: '1px solid rgba(191,95,144,0.2)', padding: '20px 20px 16px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
           <div>
@@ -97,12 +131,13 @@ export default function OwnerHomeV3({
                 style={{
                   fontSize: 9,
                   padding: '2px 8px',
-                  background: `${GRADE_COLORS[grade] || GRADE_COLORS.debut}22`,
-                  color: GRADE_COLORS[grade] || GRADE_COLORS.debut,
-                  border: `1px solid ${(GRADE_COLORS[grade] || GRADE_COLORS.debut)}44`,
+                  background: `${gradeColor}22`,
+                  color: gradeColor,
+                  border: `1px solid ${gradeColor}44`,
                   borderRadius: 18,
                   fontFamily: "'JetBrains Mono', monospace",
                   fontWeight: 700,
+                  boxShadow: `0 0 10px ${gradeColor}55`,
                 }}
               >
                 {GRADE_LABELS[grade] || grade.toUpperCase()}
@@ -113,11 +148,11 @@ export default function OwnerHomeV3({
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>
           {[
-            { l: '이번 달 매출', v: fmtWon(monthTotal), c: 'var(--gold)' },
-            { l: '오늘 예약', v: `${todayBookings.length}건`, c: '#bf5f90' },
-            { l: '미답변', v: `${unanswered}건`, c: '#C084FC' },
+            { l: '이번 달 매출', v: fmtWon(kpiMonth), c: 'var(--gold)' },
+            { l: '오늘 예약', v: `${kpiBookings}건`, c: '#bf5f90' },
+            { l: '미답변', v: `${kpiUnanswered}건`, c: '#C084FC' },
           ].map((s) => (
-            <div key={s.l} style={{ background: 'rgba(191,95,144,0.08)', border: '1px solid rgba(191,95,144,0.2)', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
+            <div key={s.l} className="owner-v3-card" style={{ background: 'rgba(191,95,144,0.08)', border: '1px solid rgba(191,95,144,0.2)', borderRadius: 10, padding: '10px 12px', textAlign: 'center' }}>
               <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 14, fontWeight: 700, color: s.c }}>{s.v}</div>
               <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 2 }}>{s.l}</div>
             </div>
@@ -140,6 +175,7 @@ export default function OwnerHomeV3({
           <button
             type="button"
             onClick={() => setChatOpen((v) => !v)}
+            className="owner-v3-card"
             style={{
               width: '100%',
               padding: '16px 18px',
@@ -210,13 +246,14 @@ export default function OwnerHomeV3({
           <div style={{ marginBottom: 16, marginTop: chatOpen ? 6 : 0 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 10 }}>📅 오늘 예약 일정</div>
             {todayBookings.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: 20, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12, color: 'var(--text3)' }}>
+              <div className="owner-v3-card" style={{ textAlign: 'center', padding: 20, background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12, color: 'var(--text3)' }}>
                 오늘 예약이 없습니다
               </div>
             ) : (
               todayBookings.map((b) => (
                 <div
                   key={b.id}
+                  className="owner-v3-card"
                   style={{
                     background: 'var(--bg3)',
                     border: '1px solid var(--border)',
@@ -250,10 +287,29 @@ export default function OwnerHomeV3({
               ))
             )}
           </div>
+
+          <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16, marginBottom: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>📈 월별 매출 추이</div>
+            {monthlyTrend.length === 0 ? (
+              <div style={{ fontSize: 12, color: 'var(--text3)', textAlign: 'center', padding: 20 }}>매출 데이터가 없습니다</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={monthlyTrend}>
+                  <XAxis dataKey="month" tick={{ fill: '#888', fontSize: 10 }} axisLine={{ stroke: 'rgba(255,255,255,0.1)' }} tickLine={false} />
+                  <YAxis tick={{ fill: '#888', fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${Math.round(Number(v) / 10000)}만`} />
+                  <Tooltip
+                    contentStyle={{ background: '#1a1830', border: '0.5px solid rgba(123,94,167,0.4)', borderRadius: 8, fontSize: 11, color: '#e8e0f5' }}
+                    formatter={(v: number) => [`₩${Number(v).toLocaleString()}`, '매출']}
+                  />
+                  <Line type="monotone" dataKey="total" stroke="var(--gold)" strokeWidth={2} dot={{ fill: 'var(--gold)', r: 3 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </div>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+          <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>매출 디테일</div>
             <div style={{ marginBottom: 14 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
@@ -275,7 +331,7 @@ export default function OwnerHomeV3({
             </div>
           </div>
 
-          <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+          <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>내가 모집한 원장님</div>
             <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.4 }}>
               모집 원장님 매출 기준 커미션 - 정산 로직 연결 예정
@@ -316,7 +372,7 @@ export default function OwnerHomeV3({
           </div>
 
           {brandPost && (
-            <div style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+            <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>브랜드 소식</div>
               {brandPost.brand_name && (
                 <div style={{ fontSize: 10, color: '#C084FC', marginBottom: 4 }}>{brandPost.brand_name}</div>
@@ -342,6 +398,68 @@ export default function OwnerHomeV3({
               </Link>
             </div>
           )}
+
+          <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>🏆 인기 시술 TOP3</div>
+            <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 10 }}>최근 30일 기준</div>
+            {topServices.length === 0 ? (
+              <div style={{ fontSize: 12, color: 'var(--text3)' }}>데이터가 없습니다</div>
+            ) : (
+              topServices.map((s, i) => (
+                <div key={s.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < topServices.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      color: i === 0 ? 'var(--gold)' : 'var(--text3)',
+                      background: i === 0 ? 'rgba(201,168,76,0.12)' : 'rgba(255,255,255,0.05)',
+                      border: `1px solid ${i === 0 ? 'rgba(201,168,76,0.3)' : 'var(--border)'}`,
+                      borderRadius: 6,
+                      padding: '2px 7px',
+                      minWidth: 24,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {i + 1}
+                  </span>
+                  <div style={{ flex: 1, fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{s.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace" }}>{s.count}건</div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 12 }}>🛍️ 인기 제품 TOP3</div>
+            <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 10 }}>최근 30일 기준</div>
+            {topProducts.length === 0 ? (
+              <div style={{ fontSize: 12, color: 'var(--text3)' }}>데이터가 없습니다</div>
+            ) : (
+              topProducts.map((p, i) => (
+                <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: i < topProducts.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      fontFamily: "'JetBrains Mono', monospace",
+                      color: i === 0 ? '#bf5f90' : 'var(--text3)',
+                      background: i === 0 ? 'rgba(191,95,144,0.12)' : 'rgba(255,255,255,0.05)',
+                      border: `1px solid ${i === 0 ? 'rgba(191,95,144,0.3)' : 'var(--border)'}`,
+                      borderRadius: 6,
+                      padding: '2px 7px',
+                      minWidth: 24,
+                      textAlign: 'center',
+                    }}
+                  >
+                    {i + 1}
+                  </span>
+                  <div style={{ flex: 1, fontSize: 13, color: 'var(--text)', fontWeight: 500 }}>{p.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace" }}>{p.quantity}개</div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
