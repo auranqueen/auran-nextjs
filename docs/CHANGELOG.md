@@ -5,6 +5,7 @@
 
 ## 2026-07-09
 
+- 2026-07-09: 마이페이지에 추천링크 카드 추가 - 친구초대(customer)/원장초대(owner) 링크를 카카오/SMS 등으로 공유 가능, 기존 ShareBottomSheet 재사용
 - 2026-07-09: 카카오/구글 OAuth 로그인 중 SIGNED_OUT 이벤트로 인해 /login으로 되튕기던 버그 수정 - AuthSessionProvider 예외 경로에 /auth/done, /auth/callback, /auth/exchange 추가
 - 2026-07-09: 가입 시 추천인 코드(referral_code) 조회를 서버 API(resolve-referrer)로 이전 - 기존 클라이언트 직접조회는 RLS(본인row만 조회가능)에 막혀 항상 실패하던 버그였음, 서버 API는 id만 안전하게 반환
 - 2026-07-09: 원장/파트너/브랜드 로그아웃 시 고객 홈으로 잘못 이동하던 문제 정리 - pending-approval을 SIGNED_OUT 예외에 추가, 로그아웃 목적지를 role별 로그인 화면으로 통일, "홈으로" 버튼을 유머러스한 문구로 변경
