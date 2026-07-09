@@ -400,9 +400,11 @@ function LoginForm() {
             </button>
           </div>
         )}
+        {role !== 'admin' && role !== 'owner' && role !== 'partner' && role !== 'brand' && (
         <div style={{ marginTop: 0, marginBottom: 20, padding: '10px 12px', borderRadius: 10, background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.25)', fontSize: 12, color: 'var(--gold)', fontWeight: 700 }}>
           {`지금 가입하면 ${signupWelcomePoint.toLocaleString()}P 즉시 지급`}
         </div>
+        )}
 
         {/* 소셜 로그인 */}
         {role !== 'admin' && role !== 'owner' && role !== 'partner' && role !== 'brand' && (

@@ -354,7 +354,9 @@ function SignupForm() {
               {form.name}님, AURAN에 오신 걸 환영합니다.
             </div>
             <div style={{ padding: '12px 16px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 10, fontSize: 12, color: 'var(--gold)', marginBottom: 28 }}>
-              {`환영해요! 🎉 +${signupWelcomePoint.toLocaleString()}P가 적립됐어요`}
+              {role === 'customer'
+                ? `환영해요! 🎉 +${signupWelcomePoint.toLocaleString()}P가 적립됐어요`
+                : '회원가입이 완료됐어요! 🎉'}
             </div>
             {role === 'owner' && ownerSlug ? (
               <div style={{ padding: '14px 16px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 10, marginBottom: 16, textAlign: 'left' }}>

@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
         .select('id')
         .eq('auth_id', user.id)
         .maybeSingle()
-      if (newUser?.id && dbRole !== 'owner' && dbRole !== 'partner' && dbRole !== 'brand') {
+      if (newUser?.id && dbRole === 'customer') {
         await adminClient.from('toast_transactions').insert({
           user_id: newUser.id,
           amount: 10000,
@@ -190,7 +190,7 @@ export async function GET(request: NextRequest) {
         .select('id, role, points')
         .eq('auth_id', user.id)
         .maybeSingle()
-      if (anyUser?.id && !['owner','partner','brand'].includes(anyUser.role ?? '')) {
+      if (anyUser?.id && anyUser.role === 'customer') {
         const { data: alreadyGiven } = await adminClient2
           .from('toast_transactions')
           .select('id')
