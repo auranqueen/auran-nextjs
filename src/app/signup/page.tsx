@@ -22,7 +22,7 @@ function SignupForm() {
   const meta = ROLE_META[role] || ROLE_META.customer
 
   const [step, setStep] = useState(1) // 1: 정보입력 2: 온보딩 3: 완료
-  const [form, setForm] = useState({ name: '', email: '', password: '', passwordConfirm: '', phone: '', storeName: '' })
+  const [form, setForm] = useState({ name: '', email: '', password: '', passwordConfirm: '', phone: '', storeName: '', slugText: '' })
   const [consent, setConsent] = useState({ required1: false, required2: false, marketing: false, research: false })
   const [termsModalKey, setTermsModalKey] = useState<string | null>(null)
   const [track, setTrack] = useState<TrackType>('general')
@@ -206,17 +206,28 @@ function SignupForm() {
           const { data: profRow } = await supabase.from('profiles').select('slug, owner_store_name').eq('auth_id', authData.user.id).maybeSingle()
           let createdSlug = profRow?.slug ? String(profRow.slug) : ''
           if (!createdSlug) {
-            const nameTrim = String(profRow?.owner_store_name || form.storeName || form.name || '').trim()
-            if (nameTrim) {
-              let base = nameTrim.toLowerCase().replace(/[^a-z0-9]/g, '')
-              if (!base) base = 'owner' + Math.random().toString(16).slice(2, 10)
-              let candidate = base
+            const slugFromInput = form.slugText.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
+            if (slugFromInput) {
+              let candidate = slugFromInput
               for (let suffix = 1; suffix < 1000; suffix++) {
                 const { data: taken } = await supabase.from('profiles').select('auth_id').eq('slug', candidate).neq('auth_id', authData.user.id).maybeSingle()
                 if (!taken) break
-                candidate = `${base}${suffix}`
+                candidate = `${slugFromInput}${suffix}`
               }
               createdSlug = candidate
+            } else {
+              const nameTrim = String(profRow?.owner_store_name || form.storeName || form.name || '').trim()
+              if (nameTrim) {
+                let base = nameTrim.toLowerCase().replace(/[^a-z0-9]/g, '')
+                if (!base) base = 'owner' + Math.random().toString(16).slice(2, 10)
+                let candidate = base
+                for (let suffix = 1; suffix < 1000; suffix++) {
+                  const { data: taken } = await supabase.from('profiles').select('auth_id').eq('slug', candidate).neq('auth_id', authData.user.id).maybeSingle()
+                  if (!taken) break
+                  candidate = `${base}${suffix}`
+                }
+                createdSlug = candidate
+              }
             }
           }
           const profilePayload: Record<string, unknown> = {
@@ -349,6 +360,11 @@ function SignupForm() {
                   <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4, lineHeight: 1.4 }}>
                     실제 상호명을 입력해주세요 — 매장/스토어 화면에 그대로 표기됩니다
                   </div>
+                  <label style={{ ...labelStyle, marginTop: 10 }}>스토어 영문 주소 (선택)</label>
+                  {inp('slugText', form.slugText, v => setForm(f => ({ ...f, slugText: v.toLowerCase().replace(/[^a-z0-9]/g, '') })), { placeholder: '예: skinpowderroom' })}
+                  <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4, lineHeight: 1.4 }}>
+                    입력하면 auran.kr/owner/{form.slugText || '입력값'}으로 만들어져요. 비워두면 자동 생성돼요
+                  </div>
                 </div>
               )}
               <div><label style={labelStyle}>아이디 *</label>{inp('email', form.email, v => setForm(f => ({ ...f, email: v })), { type: 'text', placeholder: '아이디', required: true })}</div>
@@ -412,7 +428,7 @@ function SignupForm() {
             <div style={{ fontSize: 60, marginBottom: 20 }}>🎉</div>
             <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 22, color: 'var(--text)', marginBottom: 8 }}>가입 완료!</div>
             <div style={{ fontSize: 13, color: 'var(--text3)', lineHeight: 1.7, marginBottom: 8 }}>
-              {form.name}님, AURAN에 오신 걸 환영합니다.
+              {(role === 'owner' ? (form.storeName.trim() || form.name) : form.name)}님, AURAN에 오신 걸 환영합니다.
             </div>
             <div style={{ padding: '12px 16px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 10, fontSize: 12, color: 'var(--gold)', marginBottom: 28 }}>
               {role === 'customer'
@@ -438,10 +454,16 @@ function SignupForm() {
                 </div>
               </div>
             ) : null}
-            <div style={{ padding: '14px 16px', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, fontSize: 12, color: '#7B5EA7', marginBottom: 16, lineHeight: 1.7, textAlign: 'left' }}>
-              💜 프로필을 완성하면 호르몬 사이클에 맞춘 케어가 더 정교해져요<br />
-              지금 바로 내 피부 타입과 고민을 알려주세요
-            </div>
+            {role === 'customer' ? (
+              <div style={{ padding: '14px 16px', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, fontSize: 12, color: '#7B5EA7', marginBottom: 16, lineHeight: 1.7, textAlign: 'left' }}>
+                💜 프로필을 완성하면 호르몬 사이클에 맞춘 케어가 더 정교해져요<br />
+                지금 바로 내 피부 타입과 고민을 알려주세요
+              </div>
+            ) : role === 'owner' ? (
+              <div style={{ padding: '14px 16px', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.2)', borderRadius: 10, fontSize: 12, color: '#7B5EA7', marginBottom: 16, lineHeight: 1.7, textAlign: 'left' }}>
+                오늘부터 {form.storeName.trim() || '매장'}의 성장이 시작돼요 💜 예약부터 매출까지, 오렌이 든든하게 함께할게요
+              </div>
+            ) : null}
             <button
               onClick={() => router.push(`/login?role=${role}`)}
               style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.color, fontSize: 15, fontWeight: 700 }}
