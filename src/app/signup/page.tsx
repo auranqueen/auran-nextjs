@@ -357,12 +357,12 @@ function SignupForm() {
               {role === 'owner' && (
                 <div>
                   <label style={labelStyle}>상호명(매장명) *</label>
-                  {inp('storeName', form.storeName, v => setForm(f => ({ ...f, storeName: v })), { placeholder: '매장명 입력', required: true })}
+                  {inp('storeName', form.storeName, v => setForm(f => ({ ...f, storeName: v })), { placeholder: "La Poudre d'Or", required: true })}
                   <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4, lineHeight: 1.4 }}>
                     실제 상호명을 입력해주세요 — 매장/스토어 화면에 그대로 표기됩니다
                   </div>
                   <label style={{ ...labelStyle, marginTop: 10 }}>스토어 영문 주소 (선택)</label>
-                  {inp('slugText', form.slugText, v => setForm(f => ({ ...f, slugText: v.toLowerCase().replace(/[^a-z0-9]/g, '') })), { placeholder: '예: skinpowderroom' })}
+                  {inp('slugText', form.slugText, v => setForm(f => ({ ...f, slugText: v.toLowerCase().replace(/[^a-z0-9]/g, '') })), { placeholder: '예: lapoudredor' })}
                   <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4, lineHeight: 1.4 }}>
                     입력하면 auran.kr/owner/{form.slugText || '입력값'}으로 만들어져요. 비워두면 자동 생성돼요
                   </div>
