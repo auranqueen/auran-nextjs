@@ -72,23 +72,27 @@ function ConsentInner() {
 
   const allRequired = consent.required1 && consent.required2
 
+  useEffect(() => {
+    if (role !== 'customer') return
+    void (async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+      window.location.href = '/auth/done?position=customer'
+    })()
+  }, [role])
+
   const handleSubmit = async (providerOverride?: string) => {
     const finalProvider = providerOverride !== undefined ? providerOverride : provider
     if (!allRequired) { setError('필수 약관에 동의해주세요'); return }
     setLoading(true)
     try {
-      // localStorage에 동의 여부 저장 (로그인 전이라 세션 없음)
       localStorage.setItem('auran_research_consent', consent.research ? 'true' : 'false')
       localStorage.setItem('auran_marketing_consent', consent.marketing ? 'true' : 'false')
 
-      const appUrl = window.location.origin
-      const callbackQuery = `?role=${role}`
-
-      // 온보딩 페이지로 이동 (provider 전달)
       if (role === 'owner' || role === 'partner' || role === 'brand') {
-        router.push(`/signup?role=${role}`)
+        window.location.href = `/signup?role=${role}`
       } else {
-        router.push(`/signup/onboarding?provider=${finalProvider}&role=${role}&marketing=${consent.marketing ? 'true' : 'false'}&research=${consent.research ? 'true' : 'false'}`)
+        window.location.href = `/signup/onboarding?provider=${finalProvider}&role=${role}&marketing=${consent.marketing ? 'true' : 'false'}&research=${consent.research ? 'true' : 'false'}`
       }
     } catch {
       setError('오류가 발생했습니다. 다시 시도해주세요.')

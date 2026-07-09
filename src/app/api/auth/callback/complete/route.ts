@@ -2,9 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 /**
- * After client-side setSession (e.g. from hash fragment on /auth/callback),
- * ensure users table row exists and return position for redirect.
- * PC 이메일/폰 인증 후 콜백에서 해시로 세션 설정한 경우 호출.
+ * OAuth/이메일 인증 후 auth/done(또는 hash 콜백)에서 호출.
+ * users 신규 생성·가입 혜택·login_logs. profiles/온보딩 데이터는 auth/done이 담당.
  */
 export async function GET(request: NextRequest) {
   const supabase = createClient()
@@ -20,7 +19,7 @@ export async function GET(request: NextRequest) {
     .from('users')
     .select('id, role')
     .eq('auth_id', user.id)
-    .single()
+    .maybeSingle()
 
   const meta = user.user_metadata || {}
   const provider = user.app_metadata?.provider || 'email'

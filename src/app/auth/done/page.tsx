@@ -52,17 +52,19 @@ function AuthDoneInner() {
         await new Promise(r => setTimeout(r, 1000))
         const { data: retry } = await supabase.auth.getSession()
         if (!retry.session?.user) {
-          const fromQuery = normalizePosition(params.get('position'))
-          const position = fromQuery || 'customer'
-          router.replace(positionToDashboardPath(position))
+          router.replace('/login?error=session')
           return
         }
         data = retry
       }
       const createdAt = data.session!.user.created_at
-      await fetch(`/api/auth/callback/complete?position=customer`, {
-        credentials: 'same-origin',
-      })
+      const position = normalizePosition(params.get('position')) || 'customer'
+      const marketing = localStorage.getItem('auran_marketing_consent') === 'true' ? 'true' : 'false'
+      const research = localStorage.getItem('auran_research_consent') === 'true' ? 'true' : 'false'
+      await fetch(
+        `/api/auth/callback/complete?position=${encodeURIComponent(position)}&marketing=${marketing}&research=${research}`,
+        { credentials: 'same-origin' },
+      )
       try {
         await supabase.from('profiles').upsert(
           { auth_id: data.session!.user.id, email: data.session!.user.email ?? '' },
@@ -126,6 +128,7 @@ function AuthDoneInner() {
         const gender = localStorage.getItem('auran_gender')
         const skinType = localStorage.getItem('auran_skin_type')
         const hca = localStorage.getItem('auran_hormone_cycle_applicable')
+        const onboardingFormDone = localStorage.getItem('auran_onboarding_done') === 'true'
         if (birthDate || gender || skinType) {
           await supabase.from('profiles').upsert(
             {
@@ -135,6 +138,8 @@ function AuthDoneInner() {
               ...(skinType ? { skin_type: skinType } : {}),
               ...(hca === 'true' ? { hormone_cycle_applicable: true } :
                   hca === 'false' ? { hormone_cycle_applicable: false } : {}),
+              marketing_agreed: localStorage.getItem('auran_marketing_consent') === 'true',
+              ...(onboardingFormDone && birthDate && gender ? { onboarding_done: true } : {}),
             },
             { onConflict: 'auth_id' }
           )
@@ -142,22 +147,13 @@ function AuthDoneInner() {
           if (hca !== null) localStorage.removeItem('auran_hormone_cycle_applicable')
           if (gender) localStorage.removeItem('auran_gender')
           if (skinType) localStorage.removeItem('auran_skin_type')
+          if (onboardingFormDone) localStorage.removeItem('auran_onboarding_done')
+          localStorage.removeItem('auran_marketing_consent')
         }
       } catch {}
       setSessionUserCreatedAt(createdAt)
       const { data: row } = await supabase.from('users').select('phone').eq('auth_id', data.session!.user.id).maybeSingle()
       const p = String(row?.phone || '').replace(/\D/g, '')
-      const { data: profileRow } = await supabase
-        .from('profiles')
-        .select('onboarding_done')
-        .eq('auth_id', data.session!.user.id)
-        .maybeSingle()
-      console.log('profileRow:', profileRow)
-      console.log('onboarding_done:', profileRow?.onboarding_done)
-      if (profileRow?.onboarding_done !== true) {
-        router.replace('/signup/consent?role=customer')
-        return
-      }
       if (p.length >= 10) {
         let onboarded = false
         try {

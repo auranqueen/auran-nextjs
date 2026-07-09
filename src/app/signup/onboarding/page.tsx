@@ -63,39 +63,6 @@ function OnboardingInner() {
       localStorage.setItem('auran_skin_type', skinType)
       localStorage.setItem('auran_onboarding_done', 'true')
 
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
-        const userId = session.user.id
-        const cycleTypeVal = gender === 'female' ? cycleType : 'male'
-        const trackVal = gender === 'female' ? track : 'male'
-        const hca =
-          gender === 'male' ? false :
-          cycleType === 'menstrual' ? true :
-          menopauseReason === 'natural' ? false : null
-        if (cycleTypeVal && trackVal) {
-          await supabase.from('hormone_cycle').upsert({
-            auth_id: userId,
-            cycle_type: cycleTypeVal,
-            track: trackVal,
-            cycle_length: cycleLength ? parseInt(cycleLength) : 28,
-            last_period_date: lastPeriodDate || null,
-            menopause_reason: (trackVal === 'menopause_peri' || trackVal === 'menopause_post') ? (menopauseReason || null) : null,
-          }, { onConflict: 'auth_id' })
-        }
-        await supabase.from('profiles').upsert({
-          auth_id: userId,
-          birth_date: birthForDB,
-          gender,
-          skin_type: skinType || null,
-          hormone_cycle_applicable: hca,
-          onboarding_done: true,
-          research_consent: localStorage.getItem('auran_research_consent') === 'true',
-          marketing_agreed: localStorage.getItem('auran_marketing_consent') === 'true',
-        }, { onConflict: 'auth_id' })
-        window.location.href = '/'
-        return
-      }
-
       const appUrl = 'https://www.auran.kr'
       const marketing = params.get('marketing') || 'false'
       const research = params.get('research') || 'false'
