@@ -23,6 +23,9 @@ function PendingApprovalInner() {
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', padding: 24 }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
         <div style={{ fontSize: 48, marginBottom: 16 }}>{meta.icon}</div>
+        <p style={{ fontSize: 15, color: '#7B5EA7', marginBottom: 12, lineHeight: 1.6, maxWidth: 360 }}>
+          {meta.label} 승인이 진행되고 있어요 💜 곧 오렌과 함께하실 수 있어요
+        </p>
         <h1 style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 20, color: 'var(--text)', marginBottom: 10 }}>
           {meta.label} 승인 대기 중입니다
         </h1>
