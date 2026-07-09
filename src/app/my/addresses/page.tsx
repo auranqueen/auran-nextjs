@@ -86,6 +86,25 @@ export default function MyAddressesPage() {
     })
   }, [router])
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if ((window as any).daum?.Postcode) return
+    const existing = document.querySelector('script[data-daum-postcode="true"]')
+    if (existing) return
+    const script = document.createElement('script')
+    script.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js'
+    script.async = true
+    script.setAttribute('data-daum-postcode', 'true')
+    document.body.appendChild(script)
+  }, [])
+
+  const openAddressSearch = (onSelect: (addr: string) => void) => {
+    if (!(window as any).daum?.Postcode) return
+    new (window as any).daum.Postcode({
+      oncomplete: (data: any) => onSelect(String(data?.roadAddress || '')),
+    }).open()
+  }
+
   const setDefault = async (id: string) => {
     const {
       data: { user },
@@ -208,8 +227,6 @@ export default function MyAddressesPage() {
           {[
             { placeholder: '받는 분 이름', value: newName, set: setNewName },
             { placeholder: '연락처', value: newPhone, set: setNewPhone },
-            { placeholder: '주소', value: newAddress, set: setNewAddress },
-            { placeholder: '상세주소 (동/호수)', value: newDetail, set: setNewDetail },
           ].map((f, i) => (
             <input
               key={i}
@@ -230,6 +247,49 @@ export default function MyAddressesPage() {
               }}
             />
           ))}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <input
+              value={newAddress}
+              onChange={(e) => setNewAddress(e.target.value)}
+              placeholder="주소"
+              style={{
+                flex: 1,
+                minWidth: 0,
+                padding: '10px 12px',
+                borderRadius: 10,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                color: '#fff',
+                fontSize: 12,
+                outline: 'none',
+                boxSizing: 'border-box' as const,
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => openAddressSearch((addr) => setNewAddress(addr))}
+              style={{ width: 72, flexShrink: 0, border: 'none', borderRadius: 8, background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}
+            >
+              주소 검색
+            </button>
+          </div>
+          <input
+            value={newDetail}
+            onChange={(e) => setNewDetail(e.target.value)}
+            placeholder="상세주소 (동/호수)"
+            style={{
+              width: '100%',
+              padding: '10px 12px',
+              borderRadius: 10,
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: '#fff',
+              fontSize: 12,
+              outline: 'none',
+              marginBottom: 8,
+              boxSizing: 'border-box' as const,
+            }}
+          />
           <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
             <button
               type="button"

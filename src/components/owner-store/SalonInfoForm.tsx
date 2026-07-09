@@ -106,6 +106,25 @@ export default function SalonInfoForm() {
   }, [])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    if ((window as any).daum?.Postcode) return
+    const existing = document.querySelector('script[data-daum-postcode="true"]')
+    if (existing) return
+    const script = document.createElement('script')
+    script.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js'
+    script.async = true
+    script.setAttribute('data-daum-postcode', 'true')
+    document.body.appendChild(script)
+  }, [])
+
+  const openAddressSearch = (onSelect: (addr: string) => void) => {
+    if (!(window as any).daum?.Postcode) return
+    new (window as any).daum.Postcode({
+      oncomplete: (data: any) => onSelect(String(data?.roadAddress || '')),
+    }).open()
+  }
+
+  useEffect(() => {
     if (!ownerUserId) {
       setLoading(false)
       return
@@ -244,7 +263,10 @@ export default function SalonInfoForm() {
             <input value={name} onChange={e => setName(e.target.value)} placeholder="살롱명" style={fieldStyle} />
             <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="설명" rows={3} style={{ ...fieldStyle, resize: 'vertical' }} />
             <input value={area} onChange={e => setArea(e.target.value)} placeholder="지역 (예: 대구 수성구)" style={fieldStyle} />
-            <input value={address} onChange={e => setAddress(e.target.value)} placeholder="주소" style={fieldStyle} />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input value={address} onChange={e => setAddress(e.target.value)} placeholder="주소" style={{ ...fieldStyle, flex: 1, minWidth: 0 }} />
+              <button type="button" onClick={() => openAddressSearch((addr) => setAddress(addr))} style={{ width: 72, flexShrink: 0, border: 'none', borderRadius: 8, background: P, color: '#fff', fontSize: 12, cursor: 'pointer' }}>주소 검색</button>
+            </div>
             <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="전화" style={fieldStyle} />
             <div style={{ display: 'flex', gap: 12, fontSize: 12, color: TEXT_SUB }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>

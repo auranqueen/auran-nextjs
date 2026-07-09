@@ -77,6 +77,23 @@ export default function ExternalCardsV2Page() {
     if (tab === 'customers' || tab === 'marketing') { fetchCustomers(); fetchCards() }
     if (tab === 'stats') { fetchCards(); fetchCustomers() }
   }, [tab])
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if ((window as any).daum?.Postcode) return
+    const existing = document.querySelector('script[data-daum-postcode="true"]')
+    if (existing) return
+    const script = document.createElement('script')
+    script.src = 'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js'
+    script.async = true
+    script.setAttribute('data-daum-postcode', 'true')
+    document.body.appendChild(script)
+  }, [])
+  const openAddressSearch = (onSelect: (addr: string) => void) => {
+    if (!(window as any).daum?.Postcode) return
+    new (window as any).daum.Postcode({
+      oncomplete: (data: any) => onSelect(String(data?.roadAddress || '')),
+    }).open()
+  }
   const fetchCards = async () => {
     setLoadingCards(true)
     const { data } = await supabase.from('external_care_cards_v2').select('*').order('created_at', { ascending: false })
@@ -304,7 +321,13 @@ export default function ExternalCardsV2Page() {
               </div>
               <div style={{ flex: 1 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>연락처</div><input ref={phoneRef} style={inp} value={phone} onChange={e => setPhone(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addressRef.current?.focus() } }} placeholder="010-0000-0000" /></div>
             </div>
-            <div style={{ marginBottom: 8 }}><div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>배송 주소</div><input ref={addressRef} style={inp} value={address} onChange={e => setAddress(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); productSearchRef.current?.focus() } }} placeholder="서울시 강남구..." /></div>
+            <div style={{ marginBottom: 8 }}>
+              <div style={{ fontSize: 10, color: '#555', marginBottom: 4 }}>배송 주소</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input ref={addressRef} style={{ ...inp, flex: 1, minWidth: 0 }} value={address} onChange={e => setAddress(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); productSearchRef.current?.focus() } }} placeholder="서울시 강남구..." />
+                <button type="button" onClick={() => openAddressSearch((addr) => setAddress(addr))} style={{ width: 72, flexShrink: 0, border: 'none', borderRadius: 8, background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}>주소 검색</button>
+              </div>
+            </div>
             <div><div style={{ fontSize: 10, color: '#555', marginBottom: 6 }}>구매 채널</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {CHANNELS.map(c => (
