@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 
-const STORE_TYPE_OPTIONS = ['피부관리실', '왁싱샵', '네일샵', '반영구샵', '자유기재'] as const
+const STORE_TYPE_OPTIONS = ['피부관리실', '왁싱샵', '네일샵', '반영구샵', '기타'] as const
 
 type Props = {
   hasOfflineStore: boolean | null
