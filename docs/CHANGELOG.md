@@ -5,6 +5,7 @@
 
 ## 2026-07-09
 
+- 2026-07-09: 온보딩(생년월일/성별) 완료 시 이미 로그인된 세션인데 OAuth를 재호출해서 로그아웃되던 버그 수정 - 세션 있으면 OAuth 생략하고 바로 데이터 저장
 - 2026-07-09: 카카오 로그인 후 홈 진입 시 미들웨어 쿠키 타이밍 문제로 /login 튕기던 근본 원인 해결 - auth/done을 풀페이지 이동으로 변경, AuthSessionProvider SIGNED_OUT 시 세션 재확인 로직 추가
 - 2026-07-09: 마이페이지에 추천링크 카드 추가 - 친구초대(customer)/원장초대(owner) 링크를 카카오/SMS 등으로 공유 가능, 기존 ShareBottomSheet 재사용
 - 2026-07-09: 카카오/구글 OAuth 로그인 중 SIGNED_OUT 이벤트로 인해 /login으로 되튕기던 버그 수정 - AuthSessionProvider 예외 경로에 /auth/done, /auth/callback, /auth/exchange 추가
