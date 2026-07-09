@@ -165,22 +165,13 @@ function SignupForm() {
         const status = role === 'customer' ? 'active' : 'pending'
         let referredByUserId: string | null = null
         if (inviteCode) {
-          const { data: linkRow } = await supabase
-            .from('invite_links')
-            .select('created_by')
-            .eq('code', inviteCode)
-            .maybeSingle()
-
-          if (linkRow?.created_by) {
-            referredByUserId = linkRow.created_by
-          } else {
-            const { data: refUser } = await supabase
-              .from('users')
-              .select('id')
-              .eq('referral_code', inviteCode)
-              .maybeSingle()
-            referredByUserId = refUser?.id || null
-          }
+          const res = await fetch('/api/auth/resolve-referrer', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code: inviteCode }),
+          })
+          const json = await res.json().catch(() => ({}))
+          if (json?.ok && json.referrerId) referredByUserId = String(json.referrerId)
         }
         const { data: newUserRow, error: newUserInsertErr } = await supabase
           .from('users')
