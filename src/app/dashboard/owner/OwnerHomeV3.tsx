@@ -62,6 +62,8 @@ type Props = {
   monthlyTrend: { month: string; total: number }[]
   topServices: { name: string; count: number }[]
   topProducts: { name: string; quantity: number }[]
+  storeSlug: string | null
+  storeThumbnailUrl: string | null
 }
 
 export default function OwnerHomeV3({
@@ -78,6 +80,8 @@ export default function OwnerHomeV3({
   monthlyTrend,
   topServices,
   topProducts,
+  storeSlug,
+  storeThumbnailUrl,
 }: Props) {
   const router = useRouter()
   const [chatOpen, setChatOpen] = useState(false)
@@ -122,7 +126,7 @@ export default function OwnerHomeV3({
         }
       `}</style>
       <div style={{ background: 'linear-gradient(160deg,#120a18,#0e0814)', borderBottom: '1px solid rgba(191,95,144,0.2)', padding: '20px 20px 16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14, gap: 12 }}>
           <div>
             <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 8, color: 'rgba(191,95,144,0.5)', letterSpacing: '0.2em', marginBottom: 4 }}>CLINIC COMMAND CENTER</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -144,6 +148,51 @@ export default function OwnerHomeV3({
               </span>
             </div>
           </div>
+          {storeSlug ? (
+            <a
+              href={`https://auran.kr/store/${storeSlug}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="owner-v3-card"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                flexShrink: 0,
+                padding: '8px 12px',
+                background: 'rgba(191,95,144,0.08)',
+                border: '1px solid rgba(191,95,144,0.25)',
+                borderRadius: 12,
+                textDecoration: 'none',
+                color: 'inherit',
+              }}
+            >
+              <div
+                style={{
+                  width: 36,
+                  height: 36,
+                  borderRadius: '50%',
+                  flexShrink: 0,
+                  background: storeThumbnailUrl ? `url(${storeThumbnailUrl}) center/cover` : 'rgba(191,95,144,0.15)',
+                  border: '1px solid rgba(191,95,144,0.3)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 16,
+                  overflow: 'hidden',
+                }}
+              >
+                {!storeThumbnailUrl ? '🏪' : null}
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>내 스토어 보기</div>
+                <div style={{ fontSize: 9, color: 'rgba(191,95,144,0.7)', fontFamily: "'JetBrains Mono', monospace", marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>
+                  auran.kr/store/{storeSlug}
+                </div>
+              </div>
+              <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 2 }}>↗</span>
+            </a>
+          ) : null}
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8 }}>

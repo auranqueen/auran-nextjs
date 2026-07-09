@@ -126,7 +126,7 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
     } | null = null
     const { data: profExtra } = await supabase
       .from('profiles')
-      .select('trade_brands, preferred_brands')
+      .select('trade_brands, preferred_brands, slug, avatar_url, owner_store_logo_url')
       .eq('auth_id', user.id)
       .maybeSingle()
     const brandNames: string[] =
@@ -237,6 +237,14 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
         .slice(0, 3)
     }
 
+    const storeSlug = profExtra?.slug ? String(profExtra.slug) : null
+    const storeThumbnailUrl =
+      (profExtra as any)?.owner_store_logo_url ||
+      profExtra?.avatar_url ||
+      salon?.avatar_url ||
+      profile?.avatar_url ||
+      null
+
     return (
       <OwnerHomeV3
         profile={profile}
@@ -252,6 +260,8 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
         monthlyTrend={monthlyTrend}
         topServices={topServices}
         topProducts={topProducts}
+        storeSlug={storeSlug}
+        storeThumbnailUrl={storeThumbnailUrl}
       />
     )
   }
