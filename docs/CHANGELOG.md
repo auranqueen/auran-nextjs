@@ -5,6 +5,7 @@
 
 ## 2026-07-09
 
+- 2026-07-09: salons 테이블 INSERT RLS 정책 추가 (마이그레이션 073) - 원장 가입 시 salons 자동생성이 RLS에 막혀 실패하던 문제 발견 및 수정
 - 2026-07-09: confirmOrder.ts 추천보상 로직 변경 - 하드코딩 5000T 신규지급 대신, 가입 시 잠겨있던 1000T를 첫구매확정 시 잠금해제(status active + users.points 반영)하는 방식으로 교체
 - 2026-07-09: handle_referral_rewards 트리거 재설계 (마이그레이션 072) - 추천인이 customer일 때만 1000T 잠긴 상태로 지급, 피추천인 즉시보상/원장모집보상 로직 제거
 - 2026-07-09: toast_transactions에 status 컬럼 추가 (마이그레이션 071) - 추천보상 잠금/해제 구조 준비용
