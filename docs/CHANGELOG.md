@@ -5,6 +5,7 @@
 
 ## 2026-07-09
 
+- 2026-07-09: 카카오 로그인 후 홈 진입 시 미들웨어 쿠키 타이밍 문제로 /login 튕기던 근본 원인 해결 - auth/done을 풀페이지 이동으로 변경, AuthSessionProvider SIGNED_OUT 시 세션 재확인 로직 추가
 - 2026-07-09: 마이페이지에 추천링크 카드 추가 - 친구초대(customer)/원장초대(owner) 링크를 카카오/SMS 등으로 공유 가능, 기존 ShareBottomSheet 재사용
 - 2026-07-09: 카카오/구글 OAuth 로그인 중 SIGNED_OUT 이벤트로 인해 /login으로 되튕기던 버그 수정 - AuthSessionProvider 예외 경로에 /auth/done, /auth/callback, /auth/exchange 추가
 - 2026-07-09: 가입 시 추천인 코드(referral_code) 조회를 서버 API(resolve-referrer)로 이전 - 기존 클라이언트 직접조회는 RLS(본인row만 조회가능)에 막혀 항상 실패하던 버그였음, 서버 API는 id만 안전하게 반환
