@@ -53,6 +53,7 @@ function SignupForm() {
   const [hasOfflineStore, setHasOfflineStore] = useState<boolean | null>(null)
   const [storeType, setStoreType] = useState('')
   const [ownerStoreAddress, setOwnerStoreAddress] = useState('')
+  const [ownerStoreAddressDetail, setOwnerStoreAddressDetail] = useState('')
   const [ownerStoreArea, setOwnerStoreArea] = useState('')
   const { getSettingNum } = useAdminSettings()
   const [signupWelcomePoint, setSignupWelcomePoint] = useState(() =>
@@ -235,7 +236,7 @@ function SignupForm() {
               owner_id: newUserRow.id,
               name: (form.storeName || form.name).trim(),
               area: ownerStoreArea.trim() || null,
-              address: ownerStoreAddress.trim() || null,
+              address: [ownerStoreAddress.trim(), ownerStoreAddressDetail.trim()].filter(Boolean).join(' ') || null,
               status: 'pending',
             })
           }
@@ -388,6 +389,8 @@ function SignupForm() {
             setStoreType={setStoreType}
             ownerStoreAddress={ownerStoreAddress}
             setOwnerStoreAddress={setOwnerStoreAddress}
+            ownerStoreAddressDetail={ownerStoreAddressDetail}
+            setOwnerStoreAddressDetail={setOwnerStoreAddressDetail}
             ownerStoreArea={ownerStoreArea}
             setOwnerStoreArea={setOwnerStoreArea}
             error={error}

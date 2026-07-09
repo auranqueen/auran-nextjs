@@ -31,6 +31,7 @@ export default function ExternalCardsV2Page() {
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
+  const [addressDetail, setAddressDetail] = useState('')
   const [channel, setChannel] = useState('네이버 스마트스토어')
   const [products, setProducts] = useState<ProductRow[]>([])
   const phoneRef = useRef<HTMLInputElement>(null)
@@ -116,7 +117,7 @@ export default function ExternalCardsV2Page() {
     setCustResults(data || [])
   }
   const selectCustomer = (c: any) => {
-    setName(c.name); setPhone(c.phone || ''); setAddress(c.address || ''); setChannel(c.channel || '네이버 스마트스토어')
+    setName(c.name); setPhone(c.phone || ''); setAddress(c.address || ''); setAddressDetail(''); setChannel(c.channel || '네이버 스마트스토어')
     setCustSearch(''); setCustResults([])
     setTimeout(() => productSearchRef.current?.focus(), 0)
   }
@@ -172,13 +173,14 @@ export default function ExternalCardsV2Page() {
     ])
     setBundleProds([])
     setSampleProds([])
-    setName(''); setPhone(''); setAddress(''); setChannel('네이버 스마트스토어')
+    setName(''); setPhone(''); setAddress(''); setAddressDetail(''); setChannel('네이버 스마트스토어')
     setProducts([]); setCourier('CJ대한통운'); setTrackingNo('')
     setShippedAt(''); setArrivalAt(''); setAmRoutine(''); setPmRoutine(''); setTip('')
   }
   const save = async (andPrint = false) => {
     if (!name.trim()) { setMsg('고객명을 입력해주세요'); return }
     setSaving(true); setMsg('')
+    const fullAddress = [address.trim(), addressDetail.trim()].filter(Boolean).join(' ') || null
     const isEdit = !!currentCardId
     let customerId: string | null = null
     const existCust = await supabase.from('external_customers')
@@ -186,7 +188,7 @@ export default function ExternalCardsV2Page() {
     if ((existCust.data as any)?.id) {
       customerId = (existCust.data as any).id
       await supabase.from('external_customers').update({
-        phone: phone || undefined, address: address || undefined, channel,
+        phone: phone || undefined, address: fullAddress || undefined, channel,
         total_amount: await (async () => {
           const { data: allCards } = await supabase
             .from('external_care_cards_v2')
@@ -200,14 +202,14 @@ export default function ExternalCardsV2Page() {
       }).eq('id', customerId)
     } else {
       const { data: newCust } = await supabase.from('external_customers').insert({
-        name: name.trim(), phone: phone || null, address: address || null, channel,
+        name: name.trim(), phone: phone || null, address: fullAddress, channel,
         total_amount: totalAmount, visit_count: 1,
         last_purchase_at: new Date().toISOString(),
       } as any).select('id').single()
       customerId = (newCust as any)?.id || null
     }
     const cardPayload = {
-      customer_name: name.trim(), phone, address, channel,
+      customer_name: name.trim(), phone, address: fullAddress, channel,
       products, total_amount: totalAmount,
       delivery_type: courier, tracking_no: trackingNo || null,
       shipped_at: shippedAt || null, estimated_arrival: arrivalAt || null,
@@ -327,6 +329,7 @@ export default function ExternalCardsV2Page() {
                 <input ref={addressRef} style={{ ...inp, flex: 1, minWidth: 0 }} value={address} onChange={e => setAddress(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); productSearchRef.current?.focus() } }} placeholder="서울시 강남구..." />
                 <button type="button" onClick={() => openAddressSearch((addr) => setAddress(addr))} style={{ width: 72, flexShrink: 0, border: 'none', borderRadius: 8, background: '#7B5EA7', color: '#fff', fontSize: 12, cursor: 'pointer' }}>주소 검색</button>
               </div>
+              <input style={{ ...inp, marginTop: 8 }} value={addressDetail} onChange={e => setAddressDetail(e.target.value)} placeholder="상세주소 (동/호수 등)" />
             </div>
             <div><div style={{ fontSize: 10, color: '#555', marginBottom: 6 }}>구매 채널</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -576,7 +579,7 @@ export default function ExternalCardsV2Page() {
                         alert(json.ok ? '알림톡 발송 완료!' : '발송 실패: ' + json.error)
                       }} style={{ padding: '6px 12px', borderRadius: 7, fontSize: 11, cursor: 'pointer', background: 'rgba(201,169,110,0.15)', border: '0.5px solid rgba(201,169,110,0.35)', color: '#C9A96E', fontFamily: 'inherit' }}>알림톡 발송</button>
                     )}
-                    <button onClick={() => { setTab('write'); setName(c.name); setPhone(c.phone || ''); setAddress(c.address || ''); setChannel(c.channel || '네이버 스마트스토어') }}
+                    <button onClick={() => { setTab('write'); setName(c.name); setPhone(c.phone || ''); setAddress(c.address || ''); setAddressDetail(''); setChannel(c.channel || '네이버 스마트스토어') }}
                       style={{ padding: '6px 12px', borderRadius: 7, fontSize: 11, cursor: 'pointer', background: 'rgba(123,94,167,0.2)', border: '0.5px solid rgba(123,94,167,0.4)', color: '#9B7EC8', fontFamily: 'inherit' }}>새 케어카드 작성</button>
                     <button
                       onClick={async () => {
@@ -622,6 +625,7 @@ export default function ExternalCardsV2Page() {
                                 setName(card.customer_name || '')
                                 setPhone(card.phone || '')
                                 setAddress(card.address || '')
+                                setAddressDetail('')
                                 setChannel(card.channel || '네이버 스마트스토어')
                                 setProducts(card.products || [])
                                 setCourier(card.delivery_type || 'CJ대한통운')

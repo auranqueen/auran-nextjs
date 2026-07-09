@@ -11,6 +11,8 @@ type Props = {
   setStoreType: (v: string) => void
   ownerStoreAddress: string
   setOwnerStoreAddress: (v: string) => void
+  ownerStoreAddressDetail: string
+  setOwnerStoreAddressDetail: (v: string) => void
   ownerStoreArea: string
   setOwnerStoreArea: (v: string) => void
   error: string
@@ -26,6 +28,8 @@ export default function OwnerStoreStep({
   setStoreType,
   ownerStoreAddress,
   setOwnerStoreAddress,
+  ownerStoreAddressDetail,
+  setOwnerStoreAddressDetail,
   setOwnerStoreArea,
   error,
   loading,
@@ -144,6 +148,22 @@ export default function OwnerStoreStep({
               주소 검색
             </button>
           </div>
+          <input
+            value={ownerStoreAddressDetail}
+            onChange={(e) => setOwnerStoreAddressDetail(e.target.value)}
+            placeholder="상세주소 (동/호수 등)"
+            style={{
+              width: '100%',
+              marginTop: 8,
+              background: 'var(--bg3)',
+              border: '1px solid var(--border)',
+              borderRadius: 10,
+              padding: '13px 14px',
+              color: 'var(--text)',
+              fontSize: 14,
+              outline: 'none',
+            }}
+          />
         </div>
       )}
 

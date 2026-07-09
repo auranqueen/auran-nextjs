@@ -80,6 +80,7 @@ export default function SalonInfoForm() {
   const [description, setDescription] = useState('')
   const [area, setArea] = useState('')
   const [address, setAddress] = useState('')
+  const [addressDetail, setAddressDetail] = useState('')
   const [phone, setPhone] = useState('')
   const [status, setStatus] = useState<'active' | 'inactive'>('active')
   const [menus, setMenus] = useState<MenuItem[]>([emptyMenu()])
@@ -146,6 +147,7 @@ export default function SalonInfoForm() {
         setDescription(String(data.description || ''))
         setArea(String(data.area || ''))
         setAddress(String(data.address || ''))
+        setAddressDetail('')
         setPhone(String(data.phone || ''))
         setStatus(data.status === 'inactive' ? 'inactive' : 'active')
         setMenus(parseMenus(data.services))
@@ -163,6 +165,7 @@ export default function SalonInfoForm() {
         setDescription('')
         setArea('')
         setAddress('')
+        setAddressDetail('')
         setPhone('')
         setStatus('active')
         setMenus([emptyMenu()])
@@ -216,7 +219,7 @@ export default function SalonInfoForm() {
       name: name.trim(),
       description: description.trim() || null,
       area: area.trim() || null,
-      address: address.trim() || null,
+      address: [address.trim(), addressDetail.trim()].filter(Boolean).join(' ') || null,
       phone: phone.trim() || null,
       status,
       services,
@@ -267,6 +270,7 @@ export default function SalonInfoForm() {
               <input value={address} onChange={e => setAddress(e.target.value)} placeholder="주소" style={{ ...fieldStyle, flex: 1, minWidth: 0 }} />
               <button type="button" onClick={() => openAddressSearch((addr) => setAddress(addr))} style={{ width: 72, flexShrink: 0, border: 'none', borderRadius: 8, background: P, color: '#fff', fontSize: 12, cursor: 'pointer' }}>주소 검색</button>
             </div>
+            <input value={addressDetail} onChange={e => setAddressDetail(e.target.value)} placeholder="상세주소 (동/호수 등)" style={fieldStyle} />
             <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="전화" style={fieldStyle} />
             <div style={{ display: 'flex', gap: 12, fontSize: 12, color: TEXT_SUB }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
