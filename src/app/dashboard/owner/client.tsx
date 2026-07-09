@@ -71,7 +71,7 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
   async function logout() {
     await supabase.auth.signOut()
     localStorage.removeItem(POSITION_STORAGE_KEY)
-    router.push('/')
+    router.push('/login?role=owner')
   }
 
   const plan = profile.plan || 'basic'

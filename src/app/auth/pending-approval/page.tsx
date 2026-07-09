@@ -76,7 +76,7 @@ function PendingApprovalInner() {
         {error && <div style={{ fontSize: 12, color: '#e08080', textAlign: 'center' }}>{error}</div>}
         <button
           type="button"
-          onClick={async () => { await supabase.auth.signOut(); router.replace('/') }}
+          onClick={async () => { await supabase.auth.signOut(); router.replace(`/login?role=${encodeURIComponent(role === 'owner' || role === 'salon' ? 'owner' : role)}`) }}
           style={{
             width: '100%',
             padding: 14,
@@ -103,7 +103,7 @@ function PendingApprovalInner() {
             fontSize: 14,
           }}
         >
-          홈으로
+          5초마다 눌러보는 거 저만 그런가요 😅
         </button>
       </div>
     </div>
