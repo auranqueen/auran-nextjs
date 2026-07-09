@@ -124,7 +124,7 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
     }
   }
 
-  // ===== [가입 추천인 보상] 피추천인 첫 구매확정 시 추천인 5,000T =====
+  // ===== [가입 추천인 보상] 피추천인 첫 구매확정 시 잠긴 1000T 해제 =====
   if (buyerAuthId && !(order as any).referral_reward_paid) {
     const { data: buyerUser } = await supabase
       .from('users')
@@ -147,30 +147,37 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
           .maybeSingle()
 
         if (referrerUser?.auth_id) {
-          const referralReward = 5000
+          const referralReward = 1000
 
-          await addUserPointsByAuth(supabase, referrerUser.auth_id, referralReward)
+          const { data: lockedRow } = await supabase
+            .from('toast_transactions')
+            .select('id, amount')
+            .eq('user_id', referrerUser.id)
+            .eq('reference_id', buyerUser.id)
+            .eq('status', 'locked')
+            .eq('source_type', 'referral_reward_locked')
+            .maybeSingle()
 
-          await supabase.from('toast_transactions').insert({
-            user_id: referrerUser.id,
-            amount: referralReward,
-            transaction_type: 'referral',
-            source_type: 'referral_reward',
-            reference_id: orderId,
-          } as any)
+          if (lockedRow?.id) {
+            await supabase.from('toast_transactions')
+              .update({ status: 'active' } as any)
+              .eq('id', lockedRow.id)
 
-          await supabase.from('orders')
-            .update({ referral_reward_paid: true } as any)
-            .eq('id', orderId)
+            await addUserPointsByAuth(supabase, referrerUser.auth_id, Number(lockedRow.amount || referralReward))
 
-          await supabase.from('notifications').insert({
-            user_id: referrerUser.id,
-            type: 'promo',
-            title: '추천 보상이 적립됐어요 💜',
-            body: `내 추천으로 가입한 친구가 첫 구매를 완료했어요! +${referralReward.toLocaleString()}T`,
-            icon: '🎁',
-            is_read: false,
-          } as any)
+            await supabase.from('orders')
+              .update({ referral_reward_paid: true } as any)
+              .eq('id', orderId)
+
+            await supabase.from('notifications').insert({
+              user_id: referrerUser.id,
+              type: 'promo',
+              title: '추천 보상이 사용 가능해졌어요 💜',
+              body: '친구가 첫 구매를 완료해서 1000T가 사용 가능해졌어요 💜',
+              icon: '🎁',
+              is_read: false,
+            } as any)
+          }
         }
       }
     }
