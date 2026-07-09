@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
 import { TrackType } from '@/lib/hormoneUtils'
+import OwnerStoreStep from './OwnerStoreStep'
 
 const ROLE_META: Record<string, { label: string; icon: string; color: string; border: string; bg: string }> = {
   customer: { label: '고객', icon: '💧', color: '#c9a84c', border: 'rgba(201,168,76,0.35)', bg: 'rgba(201,168,76,0.08)' },
@@ -48,6 +49,11 @@ function SignupForm() {
   const [error, setError] = useState('')
   const [ownerSlug, setOwnerSlug] = useState('')
   const [ownerSlugCopied, setOwnerSlugCopied] = useState(false)
+  const [ownerStoreStep, setOwnerStoreStep] = useState(false)
+  const [hasOfflineStore, setHasOfflineStore] = useState<boolean | null>(null)
+  const [storeType, setStoreType] = useState('')
+  const [ownerStoreAddress, setOwnerStoreAddress] = useState('')
+  const [ownerStoreArea, setOwnerStoreArea] = useState('')
   const { getSettingNum } = useAdminSettings()
   const [signupWelcomePoint, setSignupWelcomePoint] = useState(() =>
     getSettingNum('points_action', 'signup_welcome', 10000)
@@ -218,10 +224,21 @@ function SignupForm() {
             full_name: form.name,
             role: 'owner',
             owner_store_name: form.storeName || undefined,
+            has_offline_store: hasOfflineStore,
+            store_type: hasOfflineStore ? (storeType || null) : null,
           }
           if (createdSlug && !profRow?.slug) profilePayload.slug = createdSlug
           await supabase.from('profiles').upsert(profilePayload as any, { onConflict: 'auth_id' })
           if (createdSlug) setOwnerSlug(createdSlug)
+          if (newUserRow?.id) {
+            await supabase.from('salons').insert({
+              owner_id: newUserRow.id,
+              name: (form.storeName || form.name).trim(),
+              area: ownerStoreArea.trim() || null,
+              address: ownerStoreAddress.trim() || null,
+              status: 'pending',
+            })
+          }
         }
         if (inviteCode) {
           await supabase.from('invite_links').update({ used_count: supabase.rpc('increment', { row_id: inviteCode }) }).eq('code', inviteCode)
@@ -276,29 +293,34 @@ function SignupForm() {
   }
 
   const labelStyle: React.CSSProperties = { fontSize: 11, color: 'var(--text3)', marginBottom: 5, fontFamily: "'JetBrains Mono', monospace", display: 'block' }
+  const uiStep = role === 'owner' && ownerStoreStep ? 2 : step
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column', paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))' }}>
       {/* 헤더 */}
       <div style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button onClick={() => step > 1 ? setStep(s => s - 1) : router.push(`/signup/consent?role=${role}`)}
+        <button onClick={() => {
+          if (role === 'owner' && ownerStoreStep) { setOwnerStoreStep(false); setError(''); return }
+          if (step > 1) setStep(s => s - 1)
+          else router.push(`/signup/consent?role=${role}`)
+        }}
           style={{ background: 'none', border: 'none', color: 'var(--text3)', fontSize: 22 }}>‹</button>
         <div style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 12, color: meta.color }}>
           AURAN · {meta.label.toUpperCase()} 회원가입
         </div>
-        <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text3)' }}>{step}/3</div>
+        <div style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text3)' }}>{uiStep}/3</div>
       </div>
 
       {/* 스텝 바 */}
       <div style={{ padding: '0 20px', marginBottom: 24 }}>
         <div style={{ display: 'flex', gap: 4 }}>
           {[1,2,3].map(s => (
-            <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: s <= step ? meta.color : 'var(--bg3)', transition: 'background 0.3s' }} />
+            <div key={s} style={{ flex: 1, height: 3, borderRadius: 2, background: s <= uiStep ? meta.color : 'var(--bg3)', transition: 'background 0.3s' }} />
           ))}
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
           {['정보 입력', '온보딩', '가입 완료'].map((l, i) => (
-            <span key={i} style={{ fontSize: 9, color: i + 1 <= step ? meta.color : 'var(--text3)' }}>{l}</span>
+            <span key={i} style={{ fontSize: 9, color: i + 1 <= uiStep ? meta.color : 'var(--text3)' }}>{l}</span>
           ))}
         </div>
       </div>
@@ -306,7 +328,7 @@ function SignupForm() {
       <div style={{ flex: 1, padding: '0 24px calc(40px + env(safe-area-inset-bottom, 0px))' }}>
 
         {/* STEP 1: 정보 입력 */}
-        {step === 1 && (
+        {step === 1 && !(role === 'owner' && ownerStoreStep) && (
           <div>
             <div style={{ fontFamily: "'Noto Serif KR', serif", fontSize: 20, color: 'var(--text)', marginBottom: 6 }}>정보를 입력해주세요</div>
             <div style={{ fontSize: 12, color: 'var(--text3)', marginBottom: 24 }}>{meta.icon} {meta.label}으로 가입합니다</div>
@@ -314,7 +336,13 @@ function SignupForm() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div><label style={labelStyle}>이름 또는 닉네임 *</label>{inp('name', form.name, v => setForm(f => ({ ...f, name: v })), { placeholder: '실명 입력', required: true })}</div>
               {role === 'owner' && (
-                <div><label style={labelStyle}>상호명(매장명) *</label>{inp('storeName', form.storeName, v => setForm(f => ({ ...f, storeName: v })), { placeholder: '매장명 입력', required: true })}</div>
+                <div>
+                  <label style={labelStyle}>상호명(매장명) *</label>
+                  {inp('storeName', form.storeName, v => setForm(f => ({ ...f, storeName: v })), { placeholder: '매장명 입력', required: true })}
+                  <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 4, lineHeight: 1.4 }}>
+                    실제 상호명을 입력해주세요 — 매장/스토어 화면에 그대로 표기됩니다
+                  </div>
+                </div>
               )}
               <div><label style={labelStyle}>아이디 *</label>{inp('email', form.email, v => setForm(f => ({ ...f, email: v })), { type: 'text', placeholder: '아이디', required: true })}</div>
               <div><label style={labelStyle}>비밀번호 * (6자 이상)</label>{inp('pw', form.password, v => setForm(f => ({ ...f, password: v })), { type: 'password', placeholder: '6자 이상 입력', required: true })}</div>
@@ -335,6 +363,12 @@ function SignupForm() {
                   setCycleType('male')
                   setTrack('male')
                 }
+                if (role === 'owner') {
+                  if (!form.storeName.trim()) { setError('상호명을 입력해주세요'); return }
+                  setOwnerStoreStep(true)
+                  setError('')
+                  return
+                }
                 handleSignup()
               }}
               disabled={loading}
@@ -343,6 +377,29 @@ function SignupForm() {
               다음 →
             </button>
           </div>
+        )}
+
+        {step === 1 && role === 'owner' && ownerStoreStep && (
+          <OwnerStoreStep
+            hasOfflineStore={hasOfflineStore}
+            setHasOfflineStore={setHasOfflineStore}
+            storeType={storeType}
+            setStoreType={setStoreType}
+            ownerStoreAddress={ownerStoreAddress}
+            setOwnerStoreAddress={setOwnerStoreAddress}
+            ownerStoreArea={ownerStoreArea}
+            setOwnerStoreArea={setOwnerStoreArea}
+            error={error}
+            loading={loading}
+            meta={meta}
+            onSubmit={() => {
+              if (hasOfflineStore === null) { setError('오프라인 매장 유무를 선택해주세요'); return }
+              if (hasOfflineStore && !storeType) { setError('업종을 선택해주세요'); return }
+              if (!ownerStoreAddress.trim()) { setError('주소를 입력해주세요'); return }
+              setError('')
+              handleSignup()
+            }}
+          />
         )}
 
         {/* STEP 3: 완료 (이메일 인증 비활성 시에만 표시) */}
