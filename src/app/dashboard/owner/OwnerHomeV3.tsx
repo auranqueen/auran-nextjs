@@ -62,7 +62,7 @@ type Props = {
   monthlyTrend: { month: string; total: number }[]
   topServices: { name: string; count: number }[]
   topProducts: { name: string; quantity: number }[]
-  storeSlug: string | null
+  salonId: string | null
   storeThumbnailUrl: string | null
 }
 
@@ -80,7 +80,7 @@ export default function OwnerHomeV3({
   monthlyTrend,
   topServices,
   topProducts,
-  storeSlug,
+  salonId,
   storeThumbnailUrl,
 }: Props) {
   const router = useRouter()
@@ -148,9 +148,9 @@ export default function OwnerHomeV3({
               </span>
             </div>
           </div>
-          {storeSlug ? (
+          {salonId ? (
             <a
-              href={`https://auran.kr/store/${storeSlug}`}
+              href={`/salons/${salonId}`}
               target="_blank"
               rel="noopener noreferrer"
               className="owner-v3-card"
@@ -186,9 +186,6 @@ export default function OwnerHomeV3({
               </div>
               <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: '#fff', whiteSpace: 'nowrap' }}>내 스토어 보기</div>
-                <div style={{ fontSize: 9, color: 'rgba(191,95,144,0.7)', fontFamily: "'JetBrains Mono', monospace", marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 140 }}>
-                  auran.kr/store/{storeSlug}
-                </div>
               </div>
               <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 2 }}>↗</span>
             </a>

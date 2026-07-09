@@ -237,7 +237,7 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
         .slice(0, 3)
     }
 
-    const storeSlug = profExtra?.slug ? String(profExtra.slug) : null
+    const salonId = salon?.id ? String(salon.id) : null
     const storeThumbnailUrl =
       (profExtra as any)?.owner_store_logo_url ||
       profExtra?.avatar_url ||
@@ -260,7 +260,7 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
         monthlyTrend={monthlyTrend}
         topServices={topServices}
         topProducts={topProducts}
-        storeSlug={storeSlug}
+        salonId={salonId}
         storeThumbnailUrl={storeThumbnailUrl}
       />
     )
