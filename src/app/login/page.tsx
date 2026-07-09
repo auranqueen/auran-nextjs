@@ -78,7 +78,8 @@ function LoginForm() {
       const { data: { session: earlySession } } = await supabase.auth.getSession()
       if (earlySession?.user && params.get('role')) {
         const stored = normalizePosition(localStorage.getItem(POSITION_STORAGE_KEY))
-        router.replace(redirectParam || positionToDashboardPath(stored || 'customer'))
+        const fromParam = normalizePosition(params.get('role'))
+        router.replace(redirectParam || positionToDashboardPath(stored || fromParam || 'customer'))
         return
       }
       if (params.get('role')) { setAuthChecked(true); return }

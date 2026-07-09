@@ -251,6 +251,7 @@ function SignupForm() {
               status: 'pending',
             })
           }
+          try { localStorage.setItem('auran_position', 'salon') } catch {}
         }
         if (inviteCode) {
           await supabase.from('invite_links').update({ used_count: supabase.rpc('increment', { row_id: inviteCode }) }).eq('code', inviteCode)
@@ -465,10 +466,19 @@ function SignupForm() {
               </div>
             ) : null}
             <button
-              onClick={() => router.push(`/login?role=${role}`)}
+              onClick={async () => {
+                if (role === 'owner') {
+                  const { data: { session } } = await supabase.auth.getSession()
+                  if (session?.user) {
+                    router.push('/dashboard/owner')
+                    return
+                  }
+                }
+                router.push(`/login?role=${role}`)
+              }}
               style={{ width: '100%', padding: '15px', background: meta.bg, border: `1px solid ${meta.border}`, borderRadius: 12, color: meta.color, fontSize: 15, fontWeight: 700 }}
             >
-              로그인하기 →
+              {role === 'owner' ? '원장 대시보드로 이동 →' : '로그인하기 →'}
             </button>
           </div>
         )}
