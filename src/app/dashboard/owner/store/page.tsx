@@ -36,6 +36,7 @@ export default function OwnerStorePage() {
   const [ownerUserId, setOwnerUserId] = useState<string | null>(null)
   const [ownerMode, setOwnerMode] = useState<string | null>(null)
   const [ownerSubPlan, setOwnerSubPlan] = useState<string | null>(null)
+  const [ownerSignupDate, setOwnerSignupDate] = useState<string | null>(null)
   const [storeName, setStoreName] = useState<string | null>(null)
   const [storeDesc, setStoreDesc] = useState<string | null>(null)
   const [storeLogoUrl, setStoreLogoUrl] = useState<string | null>(null)
@@ -98,7 +99,11 @@ export default function OwnerStorePage() {
   const [platformFeeRate, setPlatformFeeRate] = useState(8)
   const [settlementDay, setSettlementDay] = useState(25)
 
-  const canAccessStore = ownerMode === 'independent' || ownerMode === 'both'
+  const isInTrialPeriod = ownerSignupDate
+    ? Date.now() - new Date(ownerSignupDate).getTime() < 90 * 24 * 60 * 60 * 1000
+    : false
+  const canAccessStore =
+    ownerMode === 'independent' || ownerMode === 'both' || ownerMode === 'integrated' || isInTrialPeriod
 
   useEffect(() => {
     if (!toast) return
@@ -114,12 +119,13 @@ export default function OwnerStorePage() {
       router.push('/login?role=owner')
       return null
     }
-    const { data: urow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+    const { data: urow } = await supabase.from('users').select('id, created_at').eq('auth_id', user.id).maybeSingle()
     const oid = urow?.id ? String(urow.id) : null
     setOwnerUserId(oid)
 
     const { data: prof } = await supabase.from('profiles').select('*').eq('auth_id', user.id).maybeSingle()
     const p = prof as any
+    setOwnerSignupDate(String(urow?.created_at ?? p?.created_at ?? '') || null)
     setOwnerMode(p?.owner_mode ?? null)
     setOwnerSubPlan(p?.owner_subscription_plan ?? null)
     setStoreName(p?.owner_store_name ?? null)
@@ -489,7 +495,10 @@ export default function OwnerStorePage() {
   if (!canAccessStore) {
     return (
       <div style={{ minHeight: '100vh', background: BG, color: '#fff', maxWidth: 480, margin: '0 auto', padding: 24, paddingBottom: 110 }}>
-        <div style={{ fontSize: 15, lineHeight: 1.6, color: 'rgba(255,255,255,0.85)' }}>독립 모드 구독이 필요해요</div>
+        <div style={{ fontSize: 15, lineHeight: 1.6, color: 'rgba(255,255,255,0.85)' }}>
+          3개월 무료 체험이 종료됐어요.<br />
+          독립 스토어를 계속 쓰려면 구독이 필요해요.
+        </div>
         <button
           type="button"
           onClick={() => router.push('/dashboard/owner/subscription')}
