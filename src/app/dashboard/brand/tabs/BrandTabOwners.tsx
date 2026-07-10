@@ -23,6 +23,14 @@ interface OwnerRow {
   last_order: string | null
   monthly: number
 }
+interface BrandOwnerLinkRow {
+  id: string
+  owner_id: string
+  status: string
+  approved_at: string | null
+  name: string
+  email: string
+}
 interface Props {
   brandId: string | null
   brandName: string
@@ -39,6 +47,59 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
   const [filter, setFilter] = useState<string>('all')
   const [search, setSearch] = useState('')
   const [toast, setToast] = useState('')
+  const [autoApprove, setAutoApprove] = useState(false)
+  const [autoApproveBusy, setAutoApproveBusy] = useState(false)
+  const [linkRows, setLinkRows] = useState<BrandOwnerLinkRow[]>([])
+  const [linkLoading, setLinkLoading] = useState(false)
+  const [linkSaving, setLinkSaving] = useState<string | null>(null)
+
+  const loadBrandOwnerLinks = async () => {
+    if (!brandId) {
+      setLinkRows([])
+      setAutoApprove(false)
+      return
+    }
+    setLinkLoading(true)
+    const { data: brandRow } = await supabase
+      .from('brands')
+      .select('auto_approve_owner_invite')
+      .eq('id', brandId)
+      .maybeSingle()
+    setAutoApprove(Boolean((brandRow as { auto_approve_owner_invite?: boolean | null } | null)?.auto_approve_owner_invite))
+
+    const { data: links } = await supabase
+      .from('brand_owner_links')
+      .select('id, owner_id, status, approved_at')
+      .eq('brand_id', brandId)
+      .order('approved_at', { ascending: false })
+
+    const rows = (links || []) as { id: string; owner_id: string; status: string; approved_at: string | null }[]
+    const ownerIds = Array.from(new Set(rows.map((r) => r.owner_id).filter(Boolean)))
+    let userMap: Record<string, { name: string; email: string }> = {}
+    if (ownerIds.length > 0) {
+      const { data: users } = await supabase.from('users').select('id, name, email').in('id', ownerIds)
+      if (users) {
+        for (const u of users as { id: string; name?: string | null; email?: string | null }[]) {
+          userMap[u.id] = { name: u.name || '이름 없음', email: u.email || '—' }
+        }
+      }
+    }
+    setLinkRows(rows.map((r) => ({
+      id: r.id,
+      owner_id: r.owner_id,
+      status: r.status || 'pending',
+      approved_at: r.approved_at,
+      name: userMap[r.owner_id]?.name || '이름 없음',
+      email: userMap[r.owner_id]?.email || '—',
+    })))
+    setLinkLoading(false)
+  }
+
+  useEffect(() => {
+    void loadBrandOwnerLinks()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brandId])
+
   useEffect(() => {
     const fetchOwners = async () => {
       setLoading(true)
@@ -80,6 +141,58 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
     void fetchOwners()
   }, [brandId, brandName])
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
+  const linkStatusBadge = (status: string) => {
+    const s = status.toLowerCase()
+    if (s === 'active') {
+      return { label: '연결됨', color: PURPLE, bg: 'rgba(123,94,167,0.15)', border: 'rgba(123,94,167,0.35)' }
+    }
+    if (s === 'revoked') {
+      return { label: '해제됨', color: SUB, bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.12)' }
+    }
+    return { label: '승인대기', color: GOLD, bg: 'rgba(201,169,110,0.12)', border: 'rgba(201,169,110,0.35)' }
+  }
+  const copyInviteLink = async () => {
+    if (!brandId) {
+      showToast('브랜드 정보를 불러오는 중이에요')
+      return
+    }
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://www.auran.kr'
+    const url = `${origin}/signup/owner-v2?brand_id=${brandId}`
+    try {
+      await navigator.clipboard.writeText(url)
+      showToast('초대 링크가 복사됐어요')
+    } catch {
+      showToast('복사에 실패했어요')
+    }
+  }
+  const toggleAutoApprove = async () => {
+    if (!brandId || autoApproveBusy) return
+    setAutoApproveBusy(true)
+    const next = !autoApprove
+    const { error } = await supabase.from('brands').update({ auto_approve_owner_invite: next }).eq('id', brandId)
+    setAutoApproveBusy(false)
+    if (error) {
+      showToast('설정 저장에 실패했어요')
+      return
+    }
+    setAutoApprove(next)
+    showToast(next ? '신규 원장 자동승인 ON' : '신규 원장 자동승인 OFF')
+  }
+  const approveBrandLink = async (linkId: string) => {
+    setLinkSaving(linkId)
+    const now = new Date().toISOString()
+    const { error } = await supabase
+      .from('brand_owner_links')
+      .update({ status: 'active', approved_at: now })
+      .eq('id', linkId)
+    setLinkSaving(null)
+    if (error) {
+      showToast('승인 처리에 실패했어요')
+      return
+    }
+    setLinkRows((prev) => prev.map((r) => (r.id === linkId ? { ...r, status: 'active', approved_at: now } : r)))
+    showToast('원장님 연결을 승인했어요')
+  }
   const grades = ['all', '메디슈티컬', '프리미엄전문점', '전문점', '취급점']
   const filtered = owners.filter(o => {
     const matchGrade = filter === 'all' || o.grade === filter
@@ -169,6 +282,97 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
         />
       </div>
       <div style={CARD}>
+        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>제휴 원장 초대</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 12, color: TEXT }}>신규 원장 자동승인</span>
+          <button
+            type="button"
+            disabled={!brandId || autoApproveBusy}
+            onClick={() => void toggleAutoApprove()}
+            style={{
+              fontSize: 11,
+              padding: '5px 14px',
+              borderRadius: 20,
+              border: `0.5px solid ${autoApprove ? GOLD : 'rgba(255,255,255,0.15)'}`,
+              background: autoApprove ? 'rgba(201,169,110,0.15)' : 'transparent',
+              color: autoApprove ? GOLD : SUB,
+              cursor: !brandId || autoApproveBusy ? 'not-allowed' : 'pointer',
+              opacity: autoApproveBusy ? 0.6 : 1,
+            }}
+          >
+            {autoApproveBusy ? '저장 중...' : autoApprove ? 'ON' : 'OFF'}
+          </button>
+        </div>
+        <button
+          type="button"
+          disabled={!brandId}
+          onClick={() => void copyInviteLink()}
+          style={{
+            width: '100%',
+            padding: '10px',
+            borderRadius: 8,
+            border: `0.5px solid ${PURPLE}`,
+            background: 'rgba(123,94,167,0.1)',
+            color: '#c4a8f0',
+            fontSize: 12,
+            cursor: brandId ? 'pointer' : 'not-allowed',
+            opacity: brandId ? 1 : 0.5,
+          }}
+        >
+          초대 링크 복사
+        </button>
+        <div style={{ marginTop: 8, fontSize: 10, color: SUB, lineHeight: 1.5 }}>
+          링크로 가입한 원장님은 아래 제휴 연결 목록에 표시돼요.
+        </div>
+      </div>
+      <div style={CARD}>
+        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>제휴 연결 원장 ({linkRows.length})</div>
+        {linkLoading ? (
+          <div style={{ textAlign: 'center', padding: 20, color: SUB, fontSize: 13 }}>불러오는 중...</div>
+        ) : linkRows.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 20, color: SUB, fontSize: 13, lineHeight: 1.7 }}>
+            아직 제휴 링크로 가입한 원장님이 없어요.<br />
+            초대 링크를 공유해보세요.
+          </div>
+        ) : (
+          linkRows.map((row, i) => {
+            const badge = linkStatusBadge(row.status)
+            return (
+              <div key={row.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < linkRows.length - 1 ? `0.5px solid ${BORDER}` : 'none' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 2 }}>
+                    <span style={{ fontSize: 13, color: TEXT }}>{row.name}</span>
+                    <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: badge.bg, color: badge.color, border: `0.5px solid ${badge.border}` }}>
+                      {badge.label}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: 11, color: SUB, fontFamily: "'JetBrains Mono', monospace" }}>{row.email}</div>
+                </div>
+                {row.status.toLowerCase() === 'pending' ? (
+                  <button
+                    type="button"
+                    disabled={linkSaving === row.id}
+                    onClick={() => void approveBrandLink(row.id)}
+                    style={{
+                      fontSize: 11,
+                      padding: '6px 12px',
+                      borderRadius: 8,
+                      border: `0.5px solid ${PURPLE}`,
+                      background: 'rgba(123,94,167,0.2)',
+                      color: '#c4a8f0',
+                      cursor: linkSaving === row.id ? 'wait' : 'pointer',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {linkSaving === row.id ? '처리 중...' : '승인'}
+                  </button>
+                ) : null}
+              </div>
+            )
+          })
+        )}
+      </div>
+      <div style={CARD}>
         {loading ? (
           <div style={{ textAlign: 'center', padding: 24, color: SUB, fontSize: 13 }}>불러오는 중...</div>
         ) : filtered.length === 0 ? (
@@ -222,12 +426,8 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
       </div>
       <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
         <button type="button" onClick={() => setShowAddForm(!showAddForm)}
-          style={{ flex: 1, padding: '10px', borderRadius: 8, border: `0.5px solid ${PURPLE}`, background: 'rgba(123,94,167,0.1)', color: '#c4a8f0', fontSize: 12, cursor: 'pointer' }}>
+          style={{ width: '100%', padding: '10px', borderRadius: 8, border: `0.5px solid ${PURPLE}`, background: 'rgba(123,94,167,0.1)', color: '#c4a8f0', fontSize: 12, cursor: 'pointer' }}>
           + 수기 원장님 등록
-        </button>
-        <button type="button" onClick={() => showToast('레퍼럴 링크 복사!')}
-          style={{ flex: 1, padding: '10px', borderRadius: 8, border: '0.5px solid rgba(255,255,255,0.1)', background: 'transparent', color: SUB, fontSize: 12, cursor: 'pointer' }}>
-          + 초대 링크
         </button>
       </div>
       {showAddForm && (

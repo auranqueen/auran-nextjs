@@ -56,6 +56,12 @@ director — 정산 탭 숨김 + 통합 허브 전환 가능
 - 거래 원장님 목록
 - 등급별 필터
 - 발주 현황 연동
+- **제휴 원장 초대** (2026-07-10)
+  - 초대 링크: `{origin}/signup/owner-v2?brand_id={brands.id}` 클립보드 복사
+  - 신규 원장 자동승인 토글: `brands.auto_approve_owner_invite` (ON이면 가입 시 `brand_owner_links.status=active`)
+  - 제휴 연결 목록: `brand_owner_links` 조회 (이름/이메일, status 뱃지)
+  - status=pending → 브랜드가 수동 "승인" (`active` + `approved_at`)
+  - 오렌 지사 원장 추천(`users.referred_by`)과 별개 트랙
 
 발주 (orders)
 - 원장님 발주 목록

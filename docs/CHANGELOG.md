@@ -5,6 +5,7 @@
 
 ## 2026-07-10
 
+- 브랜드 대시보드에 원장 초대링크 생성/자동승인 토글/brand_owner_links 연결목록·승인 기능 추가
 - admin/brands 목록에서 카드 펼치지 않아도 승인/거절 버튼 바로 노출
 - admin/approvals에서 owner 승인 버튼 제거 및 owners 탭 안내로 교체 (salons 미동기화 이중경로 문제 근본 차단)
 - owner-signup-v2: profiles.active_role 누락으로 가입 후 고객홈 오라우팅 버그 수정

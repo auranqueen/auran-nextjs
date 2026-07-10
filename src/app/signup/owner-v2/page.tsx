@@ -20,7 +20,9 @@ function OwnerSignupV2Form() {
   const params = useSearchParams()
   const supabase = createClient()
   const ref = params.get('ref') || ''
+  const brandId = params.get('brand_id') || ''
 
+  const [brandInviteLabel, setBrandInviteLabel] = useState('')
   const [form, setForm] = useState({
     storeName: '',
     area: '',
@@ -36,6 +38,29 @@ function OwnerSignupV2Form() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [errorStage, setErrorStage] = useState('')
+
+  useEffect(() => {
+    if (!brandId) {
+      setBrandInviteLabel('')
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      const { data } = await supabase
+        .from('brands')
+        .select('name, brand_name_kr')
+        .eq('id', brandId)
+        .maybeSingle()
+      if (cancelled) return
+      if (!data) {
+        setBrandInviteLabel('')
+        return
+      }
+      const label = String((data as { brand_name_kr?: string; name?: string }).brand_name_kr || (data as { name?: string }).name || '').trim()
+      setBrandInviteLabel(label)
+    })()
+    return () => { cancelled = true }
+  }, [brandId])
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -153,6 +178,7 @@ function OwnerSignupV2Form() {
           addressDetail: form.addressDetail.trim(),
           phone: form.phone.trim(),
           ref: ref || undefined,
+          brand_id: brandId || undefined,
         }),
       })
       const json = await res.json().catch(() => ({}))
@@ -199,6 +225,13 @@ function OwnerSignupV2Form() {
           <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 6, lineHeight: 1.6 }}>
             매장 정보와 계정을 한 번에 등록해요
           </div>
+          {brandId ? (
+            <div style={{ marginTop: 10, fontSize: 12, color: PURPLE, lineHeight: 1.55 }}>
+              {brandInviteLabel
+                ? `${brandInviteLabel} 브랜드 제휴 초대로 가입 중이에요`
+                : '브랜드 제휴 초대로 가입 중이에요'}
+            </div>
+          ) : null}
           {ref ? (
             <div style={{ marginTop: 8, fontSize: 10, color: 'var(--text3)', fontFamily: "'JetBrains Mono', monospace" }}>
               초대 코드: {ref}

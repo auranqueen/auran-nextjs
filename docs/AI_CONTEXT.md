@@ -2,6 +2,8 @@
 > 새 AI 또는 개발자가 이 파일을 먼저 읽으면 AURAN 프로젝트를 즉시 이해할 수 있습니다.
 > 작성일: 2026-06
 
+> **브랜드→원장 초대는 `brand_owner_links` 테이블로 관리, 오렌 지사 원장추천(`referred_by`)과 완전히 별개 트랙. 추천커미션 자격은 이 초대와 무관 (다음세션 전문점 그레이드 구매 로직에서 별도 설계)**
+
 > **원장(owner) 승인은 `/admin/owners` 에서만 처리 (`/admin/approvals`는 owner 승인 버튼 숨김, 파트너/브랜드만 처리) — salons.status 동기화는 `/api/admin/owners/approve` 에서만 이루어짐**
 
 > **원장 승인은 `/api/admin/owners/approve` 로 통합 (users.status+role, salons.status 원자적 처리 지향, 단 Supabase 트랜잭션 미지원으로 완전 원자성은 아님 — `stage` 필드로 실패 지점 응답)**
