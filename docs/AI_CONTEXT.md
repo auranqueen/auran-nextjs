@@ -2,6 +2,8 @@
 > 새 AI 또는 개발자가 이 파일을 먼저 읽으면 AURAN 프로젝트를 즉시 이해할 수 있습니다.
 > 작성일: 2026-06
 
+> **원장(owner) 승인은 `/admin/owners` 에서만 처리 (`/admin/approvals`는 owner 승인 버튼 숨김, 파트너/브랜드만 처리) — salons.status 동기화는 `/api/admin/owners/approve` 에서만 이루어짐**
+
 > **원장 승인은 `/api/admin/owners/approve` 로 통합 (users.status+role, salons.status 원자적 처리 지향, 단 Supabase 트랜잭션 미지원으로 완전 원자성은 아님 — `stage` 필드로 실패 지점 응답)**
 
 > **신규 원장 가입은 `/signup/owner-v2` + `/api/auth/owner-signup-v2` 로 진행 (join/마이페이지 링크만 전환, 기존 `/signup?role=owner` 및 login→consent 체인은 레거시로 유지, 미삭제)**

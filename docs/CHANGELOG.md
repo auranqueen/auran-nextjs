@@ -5,6 +5,7 @@
 
 ## 2026-07-10
 
+- admin/approvals에서 owner 승인 버튼 제거 및 owners 탭 안내로 교체 (salons 미동기화 이중경로 문제 근본 차단)
 - owner-signup-v2: profiles.active_role 누락으로 가입 후 고객홈 오라우팅 버그 수정
 - 원장 가입 v2 신설 (`/signup/owner-v2`, `POST /api/auth/owner-signup-v2`) — salons row 미생성 버그 근본 해결, service role로 users→profiles→salons 일괄 처리
 - brand_owner_links 테이블 및 brands.auto_approve_owner_invite 컬럼 추가 (마이그레이션 076, 077)

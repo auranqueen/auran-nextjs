@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 type Row = {
   type?: 'user' | 'brand'
@@ -21,6 +22,7 @@ const roleLabel = (r: string) => {
 }
 
 export default function AdminApprovalsPage() {
+  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<Row[]>([])
   const [approvedRows, setApprovedRows] = useState<any[]>([])
@@ -188,6 +190,7 @@ export default function AdminApprovalsPage() {
                 const name = r.type === 'brand' ? (r.name || '-') : (r.name || '-')
                 const email = r.type === 'brand' ? '-' : (r.email || '-')
                 const status = r.status || 'pending'
+                const isOwnerUser = r.type !== 'brand' && r.role === 'owner'
                 return (
                 <tr key={key}>
                   <td><span className="b b-gy">{role}</span></td>
@@ -198,13 +201,24 @@ export default function AdminApprovalsPage() {
                     {new Date(r.created_at).toLocaleDateString()}
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <button
-                      className="btn btn-gd"
-                      onClick={() => approve(r)}
-                      disabled={savingId === key}
-                    >
-                      {savingId === key ? '처리 중...' : '승인'}
-                    </button>
+                    {isOwnerUser ? (
+                      <button
+                        type="button"
+                        className="btn btn-gd"
+                        onClick={() => router.push('/admin/owners')}
+                        style={{ fontSize: 11, whiteSpace: 'nowrap' }}
+                      >
+                        원장님 관리 탭에서 승인해주세요 →
+                      </button>
+                    ) : (
+                      <button
+                        className="btn btn-gd"
+                        onClick={() => approve(r)}
+                        disabled={savingId === key}
+                      >
+                        {savingId === key ? '처리 중...' : '승인'}
+                      </button>
+                    )}
                   </td>
                 </tr>
                 )
