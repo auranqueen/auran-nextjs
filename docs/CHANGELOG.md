@@ -5,6 +5,9 @@
 
 ## 2026-07-10
 
+- 원장 가입 v2 신설 (`/signup/owner-v2`, `POST /api/auth/owner-signup-v2`) — salons row 미생성 버그 근본 해결, service role로 users→profiles→salons 일괄 처리
+- brand_owner_links 테이블 및 brands.auto_approve_owner_invite 컬럼 추가 (마이그레이션 076, 077)
+- join/마이페이지 원장 초대링크 v2로 전환 (login→consent→signup 레거시 경로는 유지)
 - 원장 승인 API 통합 (`POST /api/admin/owners/approve`) — salons.status 미동기화 버그 수정, `/admin/owners`가 service role API 경유로 users+salons 일괄 처리
 - brands RLS 활성화 (마이그레이션 074)
 - salons admin UPDATE RLS 정책 추가 (마이그레이션 075, `admin_all_salons`)

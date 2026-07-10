@@ -592,7 +592,7 @@ export default function MyPage() {
               onClick={() => {
                 const origin = typeof window !== 'undefined' ? window.location.origin : 'https://auran.kr'
                 setSharePayload({
-                  link: `${origin}/signup?role=owner&ref=${referralCode}`,
+                  link: `${origin}/signup/owner-v2?ref=${referralCode}`,
                   title: '오렌 원장님으로 함께해요 ✨',
                   description: '원장님 추천 링크로 가입하고 매장을 시작해보세요',
                   imageUrl: avatarUrl || null,

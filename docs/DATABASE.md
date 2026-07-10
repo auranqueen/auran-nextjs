@@ -262,6 +262,19 @@ prevent_access_log_modification()
 - `/api/admin/approvals` 는 **users 계정 승인**(partner/owner/brand `users.status`) 및 **brands 입점**만 처리 — salons 테이블은 더 이상 다루지 않음
 - `/admin/owners` 클라이언트에서 salons/users 직접 UPDATE 하지 않음 (위 API 단일 경로)
 
+### 원장 가입 v2 (owner-signup-v2)
+- UI: `/signup/owner-v2` (약관 동의 내장, consent 페이지 생략)
+- API: `POST /api/auth/owner-signup-v2` — service role, body `{ email, password, name, storeName, area, address, addressDetail, phone, ref?, brand_id? }`
+- 처리 순서:
+  1. `auth.admin.createUser` (email_confirm: true)
+  2. `users` insert (role=owner, status=pending, referral_code, referred_by)
+  3. `profiles` upsert (full_name, owner_store_name, has_offline_store) — **실패해도 롤백 없음**, `profile_warning` 응답
+  4. `salons` insert (status=pending) — **실패 시 users row 삭제 + auth user 삭제**
+  5. `brand_owner_links` insert (brand_id 선택 시, auto_approve_owner_invite 기준) — **실패해도 롤백 없음**, `brand_link_warning` 응답
+- 성공 후 클라이언트에서 `signInWithPassword` → `/dashboard/owner` (pending이면 middleware → `/auth/pending-approval`)
+- 진입 링크: `/join/owner?ref=`, 마이페이지 원장 추천 링크 → `/signup/owner-v2?ref=`
+- **레거시 유지**: `/signup?role=owner`, `/login?role=owner` → consent → 기존 signup/page.tsx 원장 플로우는 **미삭제·미수정**
+
 ## 4. RLS 정책 원칙
 
 모든 테이블 RLS 활성화

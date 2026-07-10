@@ -93,7 +93,7 @@ export default async function JoinPage({ params, searchParams }: Props) {
       </div>
 
       <div style={{ padding: '28px 24px' }}>
-        <Link href={`/signup?role=${role}&ref=${code}`}
+        <Link href={role === 'owner' ? `/signup/owner-v2?ref=${code}` : `/signup?role=${role}&ref=${code}`}
           style={{ display: 'block', width: '100%', padding: '16px', background: `${meta.color}18`, border: `1px solid ${meta.color}44`, borderRadius: 14, color: meta.color, fontSize: 15, fontWeight: 700, textAlign: 'center', marginBottom: 12 }}>
           ✅ {meta.label}으로 회원가입
         </Link>

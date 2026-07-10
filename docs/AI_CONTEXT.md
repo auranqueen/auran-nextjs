@@ -4,6 +4,8 @@
 
 > **원장 승인은 `/api/admin/owners/approve` 로 통합 (users.status+role, salons.status 원자적 처리 지향, 단 Supabase 트랜잭션 미지원으로 완전 원자성은 아님 — `stage` 필드로 실패 지점 응답)**
 
+> **신규 원장 가입은 `/signup/owner-v2` + `/api/auth/owner-signup-v2` 로 진행 (join/마이페이지 링크만 전환, 기존 `/signup?role=owner` 및 login→consent 체인은 레거시로 유지, 미삭제)**
+
 ---
 
 ## 1. 프로젝트 개요
