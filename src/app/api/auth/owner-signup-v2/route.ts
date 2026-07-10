@@ -150,6 +150,7 @@ export async function POST(req: NextRequest) {
       email,
       full_name: name,
       role: 'owner',
+      active_role: 'owner',
       owner_store_name: storeName,
       has_offline_store: true,
     },
