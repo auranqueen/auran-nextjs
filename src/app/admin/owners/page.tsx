@@ -90,19 +90,19 @@ export default function AdminOwnersPage() {
   }, [])
 
   const updateStatus = async (salon: Salon, status: string) => {
-    const { error } = await supabase.from('salons').update({ status }).eq('id', salon.id)
-    if (error) {
-      alert(error.message)
+    const res = await fetch('/api/admin/owners/approve', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        salon_id: salon.id,
+        action: status === 'active' ? 'approve' : 'reject',
+      }),
+    })
+    const j = await res.json().catch(() => ({}))
+    if (!res.ok || !j?.ok) {
+      alert(typeof j?.error === 'string' ? j.error : '처리 실패')
       return
-    }
-
-    // 승인 시: 원장님 권한 반영 (users.role = 'owner', status = 'active')
-    if (status === 'active' && salon.owner_id) {
-      const { error: uerr } = await supabase.from('users').update({ role: 'owner', status: 'active' }).eq('id', salon.owner_id)
-      if (uerr) {
-        // 살롱 승인과 유저 권한 반영을 동시에 처리하지만, 유저 업데이트 실패는 안내만 하고 UI는 진행
-        alert(`살롱 승인 완료. (유저 권한 업데이트 실패: ${uerr.message})`)
-      }
     }
 
     setSalons(prev => prev.map(s => (s.id === salon.id ? { ...s, status } : s)))

@@ -3,6 +3,13 @@
 
 ---
 
+## 2026-07-10
+
+- 원장 승인 API 통합 (`POST /api/admin/owners/approve`) — salons.status 미동기화 버그 수정, `/admin/owners`가 service role API 경유로 users+salons 일괄 처리
+- brands RLS 활성화 (마이그레이션 074)
+- salons admin UPDATE RLS 정책 추가 (마이그레이션 075, `admin_all_salons`)
+- 브랜드 데이터 정리(중복 통합/pending 라벨 정정)
+
 ## 2026-07-09
 
 - 2026-07-09: 카카오/구글 가입 플로우 전면 재설계 - OAuth 시점을 온보딩 완료 후 1회로 통일(consent→onboarding→OAuth 1회→auth/done에서 DB일괄저장→홈). 기존 구조는 OAuth 재호출로 세션이 깨져 /와 /login을 반복하는 근본 버그가 있었음

@@ -251,7 +251,16 @@ prevent_access_log_modification()
 - trg_auto_update_store_grade_salons: salons AFTER UPDATE OF review_count, avg_rating, monthly_sales → owner users.store_grade 갱신
 - trg_auto_update_store_grade_orders: users AFTER UPDATE OF total_orders → 연결 salon 기준 재계산
 - trg_guard_store_grade_manual_edit: users BEFORE UPDATE OF store_grade — API/클라이언트 수동 변경 차단 (자동 갱신은 app.store_grade_auto session flag)
-- salons RLS: salons_select_all (SELECT true), salons_update_own (owner_id = current_user_id())
+- salons RLS: salons_select_all (SELECT true), salons_update_own (owner_id = current_user_id()), admin_all_salons (admin FOR ALL, 마이그레이션 075)
+
+### 원장 입점 승인 (salons.status)
+- UI: `/admin/owners` 입점 신청 대기 목록에서 승인/거절
+- API: `POST /api/admin/owners/approve` — body `{ salon_id, action: 'approve' | 'reject' }`
+  - approve: `users.status='active'`, `users.role='owner'` (salon.owner_id) 후 `salons.status='active'` (users → salons 순, 실패 시 `stage` 응답)
+  - reject: `salons.status='rejected'` 만 변경 (users 미변경)
+- service role client로 RLS 우회 처리
+- `/api/admin/approvals` 는 **users 계정 승인**(partner/owner/brand `users.status`) 및 **brands 입점**만 처리 — salons 테이블은 더 이상 다루지 않음
+- `/admin/owners` 클라이언트에서 salons/users 직접 UPDATE 하지 않음 (위 API 단일 경로)
 
 ## 4. RLS 정책 원칙
 
