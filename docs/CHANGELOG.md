@@ -5,6 +5,7 @@
 
 ## 2026-07-10
 
+- admin/brands 목록에서 카드 펼치지 않아도 승인/거절 버튼 바로 노출
 - admin/approvals에서 owner 승인 버튼 제거 및 owners 탭 안내로 교체 (salons 미동기화 이중경로 문제 근본 차단)
 - owner-signup-v2: profiles.active_role 누락으로 가입 후 고객홈 오라우팅 버그 수정
 - 원장 가입 v2 신설 (`/signup/owner-v2`, `POST /api/auth/owner-signup-v2`) — salons row 미생성 버그 근본 해결, service role로 users→profiles→salons 일괄 처리

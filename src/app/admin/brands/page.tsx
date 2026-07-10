@@ -619,6 +619,52 @@ export default function AdminBrandsPage() {
                     <span style={{ fontSize: 11, color: 'var(--text2)', fontFamily: "'JetBrains Mono', monospace" }}>
                       제품 {productCountByBrand[b.id] ?? 0}
                     </span>
+                    {tab === 'pending' && normApply(b.apply_status) === 'pending' ? (
+                      <div
+                        style={{ display: 'flex', gap: 6, flexShrink: 0 }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          disabled={busyId === b.id}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            void approve(b)
+                          }}
+                          style={{
+                            fontSize: 11,
+                            padding: '6px 12px',
+                            borderRadius: 8,
+                            border: `1px solid ${ACC}`,
+                            background: 'rgba(123,94,167,0.2)',
+                            color: '#e7ddf7',
+                            cursor: busyId === b.id ? 'wait' : 'pointer',
+                          }}
+                        >
+                          {busyId === b.id ? '처리 중...' : '승인'}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busyId === b.id}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setRejectFor({ id: b.id, name: b.name })
+                            setRejectText('')
+                          }}
+                          style={{
+                            fontSize: 11,
+                            padding: '6px 12px',
+                            borderRadius: 8,
+                            border: '1px solid rgba(217,79,79,0.45)',
+                            background: 'rgba(217,79,79,0.12)',
+                            color: '#f0a0a0',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          거절
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
                 </div>
                 {expandedId === b.id && (
