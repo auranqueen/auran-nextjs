@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.85)'
@@ -35,6 +35,13 @@ export default function BrandPinGate({ brandId, brandName, onAuth }: Props) {
   const [locked, setLocked] = useState(false)
   const [error, setError] = useState('')
   const [checking, setChecking] = useState(false)
+  const [shuffleNonce, setShuffleNonce] = useState(0)
+
+  const digitSlots = useMemo(() => {
+    const digits = Array.from({ length: 10 }, (_, i) => String(i)).sort(() => Math.random() - 0.5)
+    return [...digits.slice(0, 9), '', digits[9], '⌫']
+  }, [shuffleNonce])
+
   const loadStaff = useCallback(async () => {
     if (!brandId) return
     setLoading(true)
@@ -54,6 +61,7 @@ export default function BrandPinGate({ brandId, brandName, onAuth }: Props) {
     setError('')
     setFailCount(0)
     setLocked(false)
+    setShuffleNonce((n) => n + 1)
   }
   const handlePin = async () => {
     if (!selected || !brandId) return
@@ -181,17 +189,23 @@ export default function BrandPinGate({ brandId, brandName, onAuth }: Props) {
               ))}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 12 }}>
-              {['1','2','3','4','5','6','7','8','9','','0','⌫'].map((k, i) => (
-                <button key={i} type="button"
-                  onClick={() => {
-                    if (k === '⌫') { setPin(p => p.slice(0,-1)); setError('') }
-                    else if (k && pin.length < pinLen) { setPin(p => p + k) }
-                  }}
-                  disabled={k === ''}
-                  style={{ padding: '14px', borderRadius: 10, border: '0.5px solid rgba(255,255,255,0.08)', background: k === '' ? 'transparent' : 'rgba(255,255,255,0.04)', color: k === '⌫' ? SUB : TEXT, fontSize: k === '⌫' ? 18 : 20, cursor: k === '' ? 'default' : 'pointer', fontWeight: 400, opacity: k === '' ? 0 : 1 }}>
-                  {k}
-                </button>
-              ))}
+              {digitSlots.map((k, i) =>
+                k === '' ? (
+                  <div key={`empty-${i}`} />
+                ) : (
+                  <button
+                    key={k === '⌫' ? `back-${i}` : `${k}-${i}`}
+                    type="button"
+                    onClick={() => {
+                      if (k === '⌫') { setPin(p => p.slice(0, -1)); setError('') }
+                      else if (pin.length < pinLen) { setPin(p => p + k) }
+                    }}
+                    style={{ padding: '14px', borderRadius: 10, border: '0.5px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: k === '⌫' ? SUB : TEXT, fontSize: k === '⌫' ? 18 : 20, cursor: 'pointer', fontWeight: 400 }}
+                  >
+                    {k}
+                  </button>
+                )
+              )}
             </div>
             {error && (
               <div style={{ background: 'rgba(229,57,53,0.08)', border: '0.5px solid rgba(229,57,53,0.3)', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: DANGER, marginBottom: 12, textAlign: 'center' as const }}>
