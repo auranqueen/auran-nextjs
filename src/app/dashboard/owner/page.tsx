@@ -249,8 +249,15 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
     const tierBadgeBrands: Array<{
       brandId: string
       brandName: string
-      packages: Array<{ id: string; tier_name: string; price: number; product_scope?: string | null }>
+      packages: Array<{
+        id: string
+        tier_name: string
+        price: number
+        commission_rate: number
+        product_scope?: string | null
+      }>
       ownedGrade: string | null
+      ownedPrice: number | null
       paymentStatus: string | null
     }> = []
     if (ownerProfileId) {
@@ -263,12 +270,12 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
         const brandIds = tcRows.map((b) => String(b.id))
         const { data: pkgRows } = await supabase
           .from('brand_tier_packages')
-          .select('id, brand_id, tier_name, price, product_scope')
+          .select('id, brand_id, tier_name, price, commission_rate, product_scope')
           .in('brand_id', brandIds)
           .eq('is_active', true)
         const { data: gradeRows } = await supabase
           .from('brand_owner_grades')
-          .select('brand_id, grade, payment_status')
+          .select('brand_id, grade, payment_status, tier_package_id')
           .eq('owner_id', ownerProfileId)
           .in('brand_id', brandIds)
         const pkgsByBrand: Record<string, any[]> = {}
@@ -277,28 +284,43 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
           if (!pkgsByBrand[bid]) pkgsByBrand[bid] = []
           pkgsByBrand[bid].push(p)
         }
-        const gradeByBrand: Record<string, { grade: string; payment_status: string }> = {}
+        const gradeByBrand: Record<
+          string,
+          { grade: string; payment_status: string; tier_package_id: string | null }
+        > = {}
         for (const g of (gradeRows as any[]) || []) {
           gradeByBrand[String(g.brand_id)] = {
             grade: String(g.grade || ''),
             payment_status: String(g.payment_status || ''),
+            tier_package_id: g.tier_package_id ? String(g.tier_package_id) : null,
           }
         }
         for (const b of tcRows) {
           const bid = String(b.id)
-          const packages = (pkgsByBrand[bid] || []).map((p) => ({
-            id: String(p.id),
-            tier_name: String(p.tier_name),
-            price: Number(p.price || 0),
-            product_scope: p.product_scope ?? null,
-          }))
+          const packages = (pkgsByBrand[bid] || [])
+            .map((p) => ({
+              id: String(p.id),
+              tier_name: String(p.tier_name),
+              price: Math.trunc(Number(p.price || 0)),
+              commission_rate: Number(p.commission_rate ?? 0),
+              product_scope: p.product_scope ?? null,
+            }))
+            .sort((a, b) => a.price - b.price)
           if (!packages.length) continue
+
           const owned = gradeByBrand[bid]
+          const isPaid = owned?.payment_status === 'paid'
+          const ownedPkg =
+            isPaid && owned?.tier_package_id
+              ? packages.find((p) => p.id === owned.tier_package_id) ?? null
+              : null
+
           tierBadgeBrands.push({
             brandId: bid,
             brandName: String(b.name || '브랜드'),
             packages,
-            ownedGrade: owned?.grade || null,
+            ownedGrade: isPaid ? owned?.grade || null : null,
+            ownedPrice: ownedPkg ? ownedPkg.price : null,
             paymentStatus: owned?.payment_status || null,
           })
         }

@@ -326,19 +326,25 @@ active_role = customer이면 brand role도 customer로 처리됨
 - 브랜드가 BrandTabOwners.tsx에서 등급 부여 → 고객 스토어 샵정보 탭에 자동 노출
 - 아레테클럽(brand_arete_members)은 등급과 별개 배지로 병행 표시
 
-### 브랜드 전문점 등급 구매 · 스폰서 커미션 (brand_tier_purchase) — 2026-07-11
+### 브랜드 파트너 등급 구매 · 스폰서 커미션 (brand_tier_purchase) — 2026-07-11
 
-PayApp `payment_intents.kind = 'brand_tier_purchase'` 로 원장이 tier_contract 브랜드의 전문점 등급 패키지를 구매하는 트랙 (오렌지사 신규매출 트랙B).
+PayApp `payment_intents.kind = 'brand_tier_purchase'` 로 원장이 tier_contract 브랜드의 등급 패키지를 구매하는 트랙 (오렌지사 신규매출 트랙B).
 
 **관련 테이블 5개**
 
 | 테이블 | 용도 |
 |--------|------|
-| `brand_tier_packages` | 브랜드별 등급(취급점~메디슈티컬) 패키지 가격·커미션율 정의. `distribution_type = 'tier_contract'` 브랜드만 |
+| `brand_tier_packages` | 브랜드별 등급 패키지(이름·개수 자유). `tier_name`·`price`·`commission_rate` 정의. `distribution_type = 'tier_contract'` 브랜드만 |
 | `brand_tier_orders` | 등급 구매 결제 원장. `owner_id` → **profiles.id**, `payment_intent_id`로 중복 처리 방지 |
-| `brand_owner_grades` | 브랜드별 원장 등급·결제상태·`sponsor_owner_id`(최초 1회 고정). `owner_id` / `sponsor_owner_id` 모두 **profiles.id** |
+| `brand_owner_grades` | 브랜드별 원장 등급·결제상태·`tier_package_id`(구매 시점 패키지 FK)·`sponsor_owner_id`(최초 1회 고정). `owner_id` / `sponsor_owner_id` 모두 **profiles.id** |
 | `sponsor_commission_ledger` | 스폰서 커미션 원장. `sponsor_owner_id`, `referred_owner_id` → **profiles.id** |
 | `sponsor_eligibility` | 스폰서 자격·케어 활성 판정용 (후속 정산 연동 예정) |
+
+**스키마 탄력화 (081/082, 2026-07-11)**
+
+- **081**: `brand_tier_packages.tier_name_check`, `brand_owner_grades.grade_check` DROP → 브랜드마다 등급명·개수 자유 (시바산 4단계 고정 아님).
+- **082**: `brand_owner_grades.tier_package_id` → `brand_tier_packages(id)` FK 추가. 업그레이드 판단·스폰서 커미션율 조회는 **이 FK 직조회** (가격/이름 변경과 무관).
+- 업그레이드 순서: `canUpgradeToTier(currentPrice, targetPrice)` — **price strictly greater** (앱 `src/lib/brandTierGrade.ts`).
 
 **ID 체계 (절대규칙)**
 
@@ -350,8 +356,8 @@ PayApp `payment_intents.kind = 'brand_tier_purchase'` 로 원장이 tier_contrac
 
 - **1단계(직근)만** 지급. upline 체인 없음.
 - 스폰서는 동일 `brand_id`에서 `brand_owner_grades.payment_status = 'paid'` 인 경우만 자격.
-- **커미션율 = 스폰서 본인 등급**의 `brand_tier_packages.commission_rate` (구매자가 산 패키지 rate 사용 금지).
-- `commission_amount = net_amount × (스폰서등급 commission_rate / 100)`, `net_amount` = 결제액 − 8.8% 플랫폼 수수료.
+- **커미션율 = 스폰서 `tier_package_id`가 가리키는 패키지**의 `commission_rate` (구매자 패키지 rate 사용 금지).
+- `commission_amount = net_amount × (commission_rate / 100)`, `net_amount` = 결제액 − 8.8% 플랫폼 수수료.
 - `sponsor_owner_id`는 `WHERE sponsor_owner_id IS NULL` 일 때만 1회 SET, 이후 변경 금지.
 
 **앱 코드 위치**
@@ -359,8 +365,9 @@ PayApp `payment_intents.kind = 'brand_tier_purchase'` 로 원장이 tier_contrac
 - 결제 생성: `POST /api/payments/brand-tier/create` (서버가 DB `price`만 신뢰, sandbox 분기 없음)
 - webhook 처리: `src/lib/webhookHandlers/brandTierPurchase.ts` (`handleBrandTierPurchase`)
 - webhook route: `payapp/webhook/route.ts` 에 import + 4줄 분기만 (500줄 규칙 — 로직은 handlers로 분리)
+- 원장 UI: `OwnerBadgeTierSection.tsx` — 업그레이드 가능 패키지만 표시, `commission_rate` 동적 표시
 
-**마이그레이션**: `079_sponsor_commission_system.sql` (078 `brands.distribution_type` 선행)
+**마이그레이션**: `078` → `079` → `080`(owner SELECT RLS) → `081`(자유 tier_name) → `082`(tier_package_id FK)
 
 ### 자격증 전시 2종 (완결)
 1) 원장 직접 등록: salons.certificates (UNIT V/W)

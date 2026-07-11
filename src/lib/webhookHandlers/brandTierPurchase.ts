@@ -27,9 +27,7 @@ export async function handleBrandTierPurchase(
     .eq('payment_intent_id', intent.id)
     .maybeSingle()
 
-  if (dupOrder?.id) {
-    return
-  }
+  if (dupOrder?.id) return
 
   let payload: TierTarget = {}
   try {
@@ -102,6 +100,7 @@ export async function handleBrandTierPurchase(
       brand_id: brandId,
       owner_id: ownerProfileId,
       grade: tierName,
+      tier_package_id: tierPackageId,
       purchase_amount: paidAmount,
       payment_status: 'paid',
       grade_purchased_at: nowIso,
@@ -147,21 +146,17 @@ export async function handleBrandTierPurchase(
         if (candidateProfileId && candidateProfileId !== ownerProfileId) {
           const { data: sponsorGradeRow } = await client
             .from('brand_owner_grades')
-            .select('id, grade, payment_status')
+            .select('id, tier_package_id, payment_status')
             .eq('brand_id', brandId)
             .eq('owner_id', candidateProfileId)
             .eq('payment_status', 'paid')
             .maybeSingle()
 
-          if (sponsorGradeRow?.id) {
-            const sponsorGrade = String(sponsorGradeRow.grade || '')
-
+          if (sponsorGradeRow?.id && sponsorGradeRow.tier_package_id) {
             const { data: sponsorRatePkg } = await client
               .from('brand_tier_packages')
               .select('commission_rate')
-              .eq('brand_id', brandId)
-              .eq('tier_name', sponsorGrade)
-              .eq('is_active', true)
+              .eq('id', String(sponsorGradeRow.tier_package_id))
               .maybeSingle()
 
             const rate = Number(sponsorRatePkg?.commission_rate ?? 0)
@@ -177,9 +172,9 @@ export async function handleBrandTierPurchase(
                 .is('sponsor_owner_id', null)
             } else {
               console.warn(
-                '[brand_tier_purchase] sponsor rate package missing',
+                '[brand_tier_purchase] sponsor rate missing for tier_package_id',
                 intent.id,
-                { brandId, sponsorGrade },
+                { brandId, tier_package_id: sponsorGradeRow.tier_package_id },
               )
             }
           }
@@ -231,7 +226,7 @@ export async function handleBrandTierPurchase(
   await client.from('notifications').insert({
     user_id: intent.user_id,
     type: 'promo',
-    title: '전문점 등급 구매 완료 💜',
+    title: `${tierName} 등급 구매 완료 💜`,
     body: `${tierName} 등급이 활성화됐어요`,
     icon: '💜',
     is_read: false,

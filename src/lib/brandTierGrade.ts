@@ -1,16 +1,12 @@
-export const BRAND_TIER_ORDER = ['취급점', '전문점', '프리미엄전문점', '메디슈티컬'] as const
-export type BrandTierName = (typeof BRAND_TIER_ORDER)[number]
+/** 등급 없음(null)이면 구매 가능. targetPrice가 현재보다 strictly 커야 업그레이드 가능 */
+export function canUpgradeToTier(currentPrice: number | null, targetPrice: number): boolean {
+  const target = Math.trunc(Number(targetPrice))
+  if (!Number.isFinite(target) || target <= 0) return false
 
-export function brandTierRank(grade: string | null | undefined): number {
-  if (!grade) return -1
-  return BRAND_TIER_ORDER.indexOf(grade as BrandTierName)
-}
+  if (currentPrice == null) return true
 
-/** 현재 등급보다 strictly 높은 tier만 구매 가능 */
-export function canUpgradeToTier(current: string | null | undefined, target: string): boolean {
-  const cur = brandTierRank(current)
-  const tgt = brandTierRank(target)
-  if (tgt < 0) return false
-  if (cur < 0) return true
-  return tgt > cur
+  const current = Math.trunc(Number(currentPrice))
+  if (!Number.isFinite(current) || current <= 0) return true
+
+  return target > current
 }

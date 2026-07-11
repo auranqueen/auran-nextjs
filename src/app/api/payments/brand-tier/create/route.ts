@@ -23,6 +23,37 @@ function parsePayAppResponse(text: string): Record<string, string> {
   return out
 }
 
+async function resolveOwnedTierPrice(
+  supabase: ReturnType<typeof createClient>,
+  brandId: string,
+  ownerProfileId: string,
+): Promise<number | null> {
+  const { data: existingGrade } = await supabase
+    .from('brand_owner_grades')
+    .select('tier_package_id, payment_status')
+    .eq('brand_id', brandId)
+    .eq('owner_id', ownerProfileId)
+    .maybeSingle()
+
+  if (!existingGrade || existingGrade.payment_status !== 'paid') return null
+
+  const ownedPackageId = existingGrade.tier_package_id
+    ? String(existingGrade.tier_package_id)
+    : null
+  if (!ownedPackageId) return null
+
+  const { data: ownedPkg } = await supabase
+    .from('brand_tier_packages')
+    .select('price, brand_id')
+    .eq('id', ownedPackageId)
+    .maybeSingle()
+
+  if (!ownedPkg?.price || String(ownedPkg.brand_id) !== brandId) return null
+
+  const price = Math.trunc(Number(ownedPkg.price))
+  return price > 0 ? price : null
+}
+
 export async function POST(req: NextRequest) {
   const supabase = createClient()
   const {
@@ -81,28 +112,23 @@ export async function POST(req: NextRequest) {
 
   const brandId = String(pkg.brand_id)
   const targetTier = String(pkg.tier_name)
+  const targetPrice = Math.trunc(Number(pkg.price))
 
-  const { data: existingGrade } = await supabase
-    .from('brand_owner_grades')
-    .select('grade, payment_status')
-    .eq('brand_id', brandId)
-    .eq('owner_id', ownerProfileId)
-    .maybeSingle()
+  const currentPrice = await resolveOwnedTierPrice(supabase, brandId, ownerProfileId)
 
-  const currentGrade = existingGrade?.grade ? String(existingGrade.grade) : null
-  if (!canUpgradeToTier(currentGrade, targetTier)) {
+  if (!canUpgradeToTier(currentPrice, targetPrice)) {
     return NextResponse.json(
       {
         ok: false,
         error: 'grade_downgrade_or_same_not_allowed',
-        current: currentGrade,
-        target: targetTier,
+        current_price: currentPrice,
+        target_price: targetPrice,
       },
       { status: 400 },
     )
   }
 
-  const amount = Math.trunc(Number(pkg.price))
+  const amount = targetPrice
   if (!Number.isFinite(amount) || amount < MIN_AMOUNT) {
     return NextResponse.json({ ok: false, error: 'invalid_package_price' }, { status: 400 })
   }
@@ -150,7 +176,7 @@ export async function POST(req: NextRequest) {
     shopname: mustEnv('PAYAPP_SHOPNAME'),
     linkkey: mustEnv('PAYAPP_LINKKEY'),
     linkval: mustEnv('PAYAPP_LINKVAL'),
-    goodname: `AURAN 전문점 등급(${targetTier})`,
+    goodname: `AURAN 브랜드 등급(${targetTier})`,
     price: String(amount),
     recvphone,
     memo: `AURAN ${kind}`,
