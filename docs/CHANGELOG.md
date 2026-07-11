@@ -5,6 +5,7 @@
 
 ## 2026-07-11
 
+- 브랜드 전문점 등급(뱃지) PayApp 구매 플로우 구현: `brand_tier_purchase` kind, `/api/payments/brand-tier/create`, webhook 핸들러 `src/lib/webhookHandlers/brandTierPurchase.ts` 분리, 원장 홈 `OwnerBadgeTierSection` UI
 - BrandPinGate: 스태프 PIN 키패드 고정배열 → 랜덤 셔플 적용 (담당자 선택 시 재섞기, PinModal 패턴 참고)
 
 ## 2026-07-10

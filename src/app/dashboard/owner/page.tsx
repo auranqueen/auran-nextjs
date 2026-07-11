@@ -126,9 +126,10 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
     } | null = null
     const { data: profExtra } = await supabase
       .from('profiles')
-      .select('trade_brands, preferred_brands, slug, avatar_url, owner_store_logo_url')
+      .select('id, trade_brands, preferred_brands, slug, avatar_url, owner_store_logo_url')
       .eq('auth_id', user.id)
       .maybeSingle()
+    const ownerProfileId = profExtra?.id ? String(profExtra.id) : null
     const brandNames: string[] =
       Array.isArray(profExtra?.trade_brands) && (profExtra.trade_brands as any[]).length > 0
         ? (profExtra!.trade_brands as any[]).map(String)
@@ -245,6 +246,65 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
       profile?.avatar_url ||
       null
 
+    const tierBadgeBrands: Array<{
+      brandId: string
+      brandName: string
+      packages: Array<{ id: string; tier_name: string; price: number; product_scope?: string | null }>
+      ownedGrade: string | null
+      paymentStatus: string | null
+    }> = []
+    if (ownerProfileId) {
+      const { data: tierContractBrands } = await supabase
+        .from('brands')
+        .select('id, name')
+        .eq('distribution_type', 'tier_contract')
+      const tcRows = (tierContractBrands as any[]) || []
+      if (tcRows.length) {
+        const brandIds = tcRows.map((b) => String(b.id))
+        const { data: pkgRows } = await supabase
+          .from('brand_tier_packages')
+          .select('id, brand_id, tier_name, price, product_scope')
+          .in('brand_id', brandIds)
+          .eq('is_active', true)
+        const { data: gradeRows } = await supabase
+          .from('brand_owner_grades')
+          .select('brand_id, grade, payment_status')
+          .eq('owner_id', ownerProfileId)
+          .in('brand_id', brandIds)
+        const pkgsByBrand: Record<string, any[]> = {}
+        for (const p of (pkgRows as any[]) || []) {
+          const bid = String(p.brand_id)
+          if (!pkgsByBrand[bid]) pkgsByBrand[bid] = []
+          pkgsByBrand[bid].push(p)
+        }
+        const gradeByBrand: Record<string, { grade: string; payment_status: string }> = {}
+        for (const g of (gradeRows as any[]) || []) {
+          gradeByBrand[String(g.brand_id)] = {
+            grade: String(g.grade || ''),
+            payment_status: String(g.payment_status || ''),
+          }
+        }
+        for (const b of tcRows) {
+          const bid = String(b.id)
+          const packages = (pkgsByBrand[bid] || []).map((p) => ({
+            id: String(p.id),
+            tier_name: String(p.tier_name),
+            price: Number(p.price || 0),
+            product_scope: p.product_scope ?? null,
+          }))
+          if (!packages.length) continue
+          const owned = gradeByBrand[bid]
+          tierBadgeBrands.push({
+            brandId: bid,
+            brandName: String(b.name || '브랜드'),
+            packages,
+            ownedGrade: owned?.grade || null,
+            paymentStatus: owned?.payment_status || null,
+          })
+        }
+      }
+    }
+
     return (
       <OwnerHomeV3
         profile={profile}
@@ -262,6 +322,7 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
         topProducts={topProducts}
         salonId={salonId}
         storeThumbnailUrl={storeThumbnailUrl}
+        tierBadgeBrands={tierBadgeBrands}
       />
     )
   }

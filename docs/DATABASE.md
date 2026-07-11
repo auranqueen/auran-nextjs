@@ -326,6 +326,42 @@ active_role = customer이면 brand role도 customer로 처리됨
 - 브랜드가 BrandTabOwners.tsx에서 등급 부여 → 고객 스토어 샵정보 탭에 자동 노출
 - 아레테클럽(brand_arete_members)은 등급과 별개 배지로 병행 표시
 
+### 브랜드 전문점 등급 구매 · 스폰서 커미션 (brand_tier_purchase) — 2026-07-11
+
+PayApp `payment_intents.kind = 'brand_tier_purchase'` 로 원장이 tier_contract 브랜드의 전문점 등급 패키지를 구매하는 트랙 (오렌지사 신규매출 트랙B).
+
+**관련 테이블 5개**
+
+| 테이블 | 용도 |
+|--------|------|
+| `brand_tier_packages` | 브랜드별 등급(취급점~메디슈티컬) 패키지 가격·커미션율 정의. `distribution_type = 'tier_contract'` 브랜드만 |
+| `brand_tier_orders` | 등급 구매 결제 원장. `owner_id` → **profiles.id**, `payment_intent_id`로 중복 처리 방지 |
+| `brand_owner_grades` | 브랜드별 원장 등급·결제상태·`sponsor_owner_id`(최초 1회 고정). `owner_id` / `sponsor_owner_id` 모두 **profiles.id** |
+| `sponsor_commission_ledger` | 스폰서 커미션 원장. `sponsor_owner_id`, `referred_owner_id` → **profiles.id** |
+| `sponsor_eligibility` | 스폰서 자격·케어 활성 판정용 (후속 정산 연동 예정) |
+
+**ID 체계 (절대규칙)**
+
+- owner / sponsor / referred 참조는 전부 **profiles.id**. `users.id` 직접 FK 금지.
+- `payment_intents.user_id`는 기존과 동일하게 **users.id** (PayApp create 흐름 호환).
+- 스폰서 출처: `users.referred_by` (오렌 원장 유치 트랙). `brand_owner_links`와 별개.
+
+**스폰서 커미션 원칙**
+
+- **1단계(직근)만** 지급. upline 체인 없음.
+- 스폰서는 동일 `brand_id`에서 `brand_owner_grades.payment_status = 'paid'` 인 경우만 자격.
+- **커미션율 = 스폰서 본인 등급**의 `brand_tier_packages.commission_rate` (구매자가 산 패키지 rate 사용 금지).
+- `commission_amount = net_amount × (스폰서등급 commission_rate / 100)`, `net_amount` = 결제액 − 8.8% 플랫폼 수수료.
+- `sponsor_owner_id`는 `WHERE sponsor_owner_id IS NULL` 일 때만 1회 SET, 이후 변경 금지.
+
+**앱 코드 위치**
+
+- 결제 생성: `POST /api/payments/brand-tier/create` (서버가 DB `price`만 신뢰, sandbox 분기 없음)
+- webhook 처리: `src/lib/webhookHandlers/brandTierPurchase.ts` (`handleBrandTierPurchase`)
+- webhook route: `payapp/webhook/route.ts` 에 import + 4줄 분기만 (500줄 규칙 — 로직은 handlers로 분리)
+
+**마이그레이션**: `079_sponsor_commission_system.sql` (078 `brands.distribution_type` 선행)
+
 ### 자격증 전시 2종 (완결)
 1) 원장 직접 등록: salons.certificates (UNIT V/W)
 2) 브랜드 인증: brand_owner_grades + brand_arete_members (UNIT X/Y)

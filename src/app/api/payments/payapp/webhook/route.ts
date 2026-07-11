@@ -4,6 +4,7 @@ import { sendWalletChargeCompleteAlimtalkIfEnabled } from '@/lib/payments/sendWa
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 import { addToPurchaseAmount, autoUpgradeGrade } from '@/lib/gradeUtils'
 import { sendPpurioAlimtalk } from '@/lib/ppurio/sendAlimtalk'
+import { handleBrandTierPurchase } from '@/lib/webhookHandlers/brandTierPurchase'
 
 function mustEnv(name: string): string {
   const v = process.env[name]
@@ -164,6 +165,10 @@ export async function POST(req: NextRequest) {
         } as any)
       }
 
+      if (intent.kind === 'brand_tier_purchase' && intent.target_id) {
+        const client = tryCreateServiceClient() || supabase
+        await handleBrandTierPurchase(intent, client)
+      }
 
       // ★ 멤버십 결제 완료 — 기존 분기 그대로 두고 이 블록만 추가
       if (intent.kind === 'membership' && intent.user_id && intent.target_id) {

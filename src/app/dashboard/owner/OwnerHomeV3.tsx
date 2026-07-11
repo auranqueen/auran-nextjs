@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { OwnerBadgeTierSection, type TierBadgeBrand } from './OwnerBadgeTierSection'
 
 const GRADE_COLORS: Record<string, string> = {
   debut: 'var(--text3)',
@@ -64,6 +65,7 @@ type Props = {
   topProducts: { name: string; quantity: number }[]
   salonId: string | null
   storeThumbnailUrl: string | null
+  tierBadgeBrands: TierBadgeBrand[]
 }
 
 export default function OwnerHomeV3({
@@ -82,6 +84,7 @@ export default function OwnerHomeV3({
   topProducts,
   salonId,
   storeThumbnailUrl,
+  tierBadgeBrands,
 }: Props) {
   const router = useRouter()
   const [chatOpen, setChatOpen] = useState(false)
@@ -376,6 +379,8 @@ export default function OwnerHomeV3({
               </div>
             </div>
           </div>
+
+          <OwnerBadgeTierSection brands={tierBadgeBrands} />
 
           <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>내가 모집한 원장님</div>
