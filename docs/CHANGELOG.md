@@ -5,6 +5,8 @@
 
 ## 2026-07-12
 
+- **브랜드 재고발주 제품 물리 분리 (088) + 세컨브랜드·RLS (089)**: 오렌 쇼핑몰 `products`와 브랜드 발주 전용 `brand_products` 테이블·RLS 분리(088, 마이그레이션 파일). `brandOrigin.ts`/`brandProductTypes.ts`, `POST /api/brand/brand-products/save`(원산지·`brand_id` 서버 검증), `BrandProductFormV2` API 저장·공급가, 원장 발주·브랜드 대시보드·`BrandTabHome` 조회를 `brand_products`로 전환. CIVASAN mall `products` 정리 스크립트(`scripts/delete_civasan_products_from_products.sql`)는 수동 실행 전용
+- **세컨브랜드 자동노출 + 보안 (089)**: `brand_products_select_active` RLS를 `users.role IN ('owner','brand','admin')`만 허용(고객 SELECT 차단). 원장 발주(`/dashboard/owner/brand-orders`) `users.origin_track === 'A'` 게이트. 브랜드 대시보드 세컨브랜드 즉시 생성(`status: active`, `users.id` 기준), `POST /api/brand/second-brand/connect-owners`로 허브 브랜드 `brand_owner_links` active + 트랙A 원장 `profiles.trade_brands` 자동 append. `brand-products/save`는 body `brand_id` + `brand_members` 소속 검증
 - 브랜드 재고발주 2단계 (087): `brand_billing_invoices` 파우치 컬럼(`pouch_tier`/`pouch_sent_qty`/`pouch_sent_note`), `brandBilling.ts`(월 합계→파우치 tier·청구서 라인), 원장 발주 프로모 버튼 선택(`BrandOrderProductCard`, `buildOrderLineItem` 4번째 인자), 월청구서 화면(`/dashboard/owner/brand-orders/invoice`), 청구서 sync API(`POST /api/owner/brand-billing-invoice/sync`), 시바산 월청구서 셀프결제(`kind:invoice`, `civasan/invoice/create`, webhook invoice 분기)
 - 브랜드 재고발주 1단계 (085): `brand_orders.total_amount`, `supply_promos` 시바산 시드·DB 프로모 조회, `products.supply_price` 단가·발주 불가 가드, `brand_billing_invoices`·`brand_payment_intents.kind`(tier/invoice)
 - 트랙A 셀프결제 데모모드 UX: `OwnerBrandSelfTierSection` 가짜 결제창 모달(등급·금액·카드번호 장식, 체험 완료 화면), 시바산 전용 섹션 제목·부제

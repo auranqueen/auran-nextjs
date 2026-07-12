@@ -83,6 +83,7 @@ export default function BrandOrdersPage() {
   const [ownerName, setOwnerName] = useState('')
   const [salonName, setSalonName] = useState('')
   const [ownerProfileId, setOwnerProfileId] = useState<string | null>(null)
+  const [trackAllowed, setTrackAllowed] = useState<boolean | null>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
 
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
@@ -92,13 +93,24 @@ export default function BrandOrdersPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.replace('/login?role=owner'); return }
 
-    const [{ data: prof }, { data: ownerProf }] = await Promise.all([
-      supabase.from('users').select('id, name, store_name').eq('auth_id', user.id).maybeSingle(),
+    const [{ data: userRow }, { data: ownerProf }] = await Promise.all([
+      supabase.from('users').select('id, name, store_name, origin_track, role').eq('auth_id', user.id).maybeSingle(),
       supabase.from('profiles').select('id, grade, trade_brands, preferred_brands, owner_store_name, full_name').eq('auth_id', user.id).maybeSingle(),
     ])
-    setOwnerName((ownerProf as { full_name?: string } | null)?.full_name || (prof as { name?: string } | null)?.name || '')
-    setSalonName((ownerProf as { owner_store_name?: string } | null)?.owner_store_name || (prof as { store_name?: string } | null)?.store_name || '')
+    setOwnerName((ownerProf as { full_name?: string } | null)?.full_name || (userRow as { name?: string } | null)?.name || '')
+    setSalonName((ownerProf as { owner_store_name?: string } | null)?.owner_store_name || (userRow as { store_name?: string } | null)?.store_name || '')
     setOwnerProfileId((ownerProf as { id?: string } | null)?.id || null)
+
+    const originTrack = String((userRow as { origin_track?: string } | null)?.origin_track || 'B')
+    if (originTrack !== 'A') {
+      setTrackAllowed(false)
+      setProducts([])
+      setSupplyPromos([])
+      setOrders([])
+      setLoading(false)
+      return
+    }
+    setTrackAllowed(true)
 
     if (!(ownerProf as { id?: string } | null)?.id) {
       showToast('프로필 정보를 불러올 수 없어요. 다시 시도해주세요.')
@@ -124,11 +136,10 @@ export default function BrandOrdersPage() {
       if (brandIds.length > 0) {
         const [{ data: prodRows }, { data: promoRows }] = await Promise.all([
           supabase
-            .from('products')
+            .from('brand_products')
             .select('id, name, thumb_img, brand_id, supply_price, brands(name)')
             .in('brand_id', brandIds)
             .eq('status', 'active')
-            .is('deleted_at', null)
             .order('created_at', { ascending: false }),
           supabase
             .from('supply_promos')
@@ -380,6 +391,20 @@ export default function BrandOrdersPage() {
     return (
       <div style={{ background: BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB }}>
         불러오는 중...
+      </div>
+    )
+  }
+
+  if (trackAllowed === false) {
+    return (
+      <div style={{ background: BG, minHeight: '100vh', padding: 24, textAlign: 'center' }}>
+        <div style={{ fontSize: 16, fontWeight: 500, color: TEXT, marginBottom: 8 }}>
+          브랜드 직거래(트랙A) 원장님 전용 메뉴입니다
+        </div>
+        <div style={{ fontSize: 13, color: SUB, lineHeight: 1.6 }}>
+          이 발주 화면은 브랜드사 직접 제휴로 가입한 원장님만 이용할 수 있어요.
+        </div>
+        <DashboardBottomNav role="owner" />
       </div>
     )
   }

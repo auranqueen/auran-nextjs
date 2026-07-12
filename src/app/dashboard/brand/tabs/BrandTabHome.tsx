@@ -33,18 +33,16 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
       setLoading(true)
       // 제품 수 집계
       const [{ count: total }, { count: active }] = await Promise.all([
-        supabase.from('products').select('id', { count: 'exact', head: true }).eq('brand_id', brandId).is('deleted_at', null),
-        supabase.from('products').select('id', { count: 'exact', head: true }).eq('brand_id', brandId).eq('status', 'active').is('deleted_at', null),
+        supabase.from('brand_products').select('id', { count: 'exact', head: true }).eq('brand_id', brandId),
+        supabase.from('brand_products').select('id', { count: 'exact', head: true }).eq('brand_id', brandId).eq('status', 'active'),
       ])
       setProductCount(total ?? 0)
       setActiveCount(active ?? 0)
-      // TOP 제품 (최근 active 5개)
       const { data: prods } = await supabase
-        .from('products')
+        .from('brand_products')
         .select('name, status')
         .eq('brand_id', brandId)
         .eq('status', 'active')
-        .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .limit(5)
       setTopProducts(prods || [])

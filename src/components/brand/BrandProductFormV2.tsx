@@ -2,10 +2,12 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { uploadToStorage, uploadVideoToStorage, insertNewProduct, updateProduct } from '@/lib/product/productFormUtils'
+import { uploadToStorage, uploadVideoToStorage } from '@/lib/product/productFormUtils'
+import { buildEventBanner, parseEventBanner } from '@/lib/brand/brandProductTypes'
 import dynamic from 'next/dynamic'
 
 const ProductDetailEditor = dynamic(() => import('@/components/admin/ProductDetailEditor'), { ssr: false })
+const SAVE_API = '/api/brand/brand-products/save'
 
 interface BrandProductFormV2Props {
   brandId: string
@@ -30,7 +32,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
   const [shortDesc, setShortDesc] = useState('')
   const [keywords, setKeywords] = useState('')
   const brandId = propBrandId
-  const [origin, setOrigin] = useState('')
+  const [supplyPrice, setSupplyPrice] = useState('')
   const [categoryText, setCategoryText] = useState('')
   const [allCategories, setAllCategories] = useState<{ id: string; name: string; parent_id: string | null; level: number; sort_order: number | null }[]>([])
   const [catL1, setCatL1] = useState('')
@@ -105,7 +107,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
   useEffect(() => {
     if (!editId) return
     setLoading(true)
-    supabase.from('products').select('*').eq('id', editId).single().then(({ data }) => {
+    supabase.from('brand_products').select('*').eq('id', editId).single().then(({ data }) => {
       if (!data) {
         setLoading(false)
         return
@@ -113,194 +115,38 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
       setName(data.name || '')
       setShortDesc(data.description || '')
       setKeywords(data.tag || '')
-      setOrigin(data.category || '')
+      setSupplyPrice(String(data.supply_price ?? 0))
       setCategoryText(data.category || '')
-      setManufacturer(data.ingredient || '')
-      setThumbImages(data.thumb_images?.length ? data.thumb_images : [null, null, null, null, null])
-      setVideoUrl(data.video_url || '')
-      setDetailImages(data.detail_images || [])
-      setDetailContent(data.detail_content || '')
-      setKeyIngredients(data.key_ingredients || '')
-      setIngredientText(data.ingredient || '')
-      setClinicalResult(data.clinical_result || '')
-      setCertifications(data.certifications || '')
-      if (data.perfect_together?.length) {
-        supabase.from('products').select('id,name').in('id', data.perfect_together).then(({ data: pts }) => {
-          setPtSelected((pts || []).map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })))
-        })
-      }
-      setSkinConcerns(data.skin_concerns || [])
-      setStepTags(data.step_tags || [])
-      setSkinTypes(data.skin_types || [])
-      setSeasonTags(data.season_tags || [])
-      setIngredientTags((data.ingredient_tags || []).join(', '))
       if (data.category_id) setProductCategoryLeafId(data.category_id)
-      setIsActive(data.is_active ?? true)
-      setIsExclusive(data.is_exclusive ?? false)
-      setEventEmoji(data.event_emoji || '')
-      setEventTitle(data.event_title || '')
-      setEventDesc(data.event_desc || '')
-      setEventStartsAt(data.event_starts_at?.slice(0, 10) || '')
-      setEventEndsAt(data.event_ends_at?.slice(0, 10) || '')
+
+      const imgs = Array.isArray(data.images) ? data.images : []
+      setThumbImages(
+        imgs.length
+          ? [...imgs, ...Array(Math.max(0, 5 - imgs.length)).fill(null)].slice(0, 5)
+          : data.thumb_img
+            ? [data.thumb_img, null, null, null, null]
+            : [null, null, null, null, null],
+      )
+
+      setDetailContent(data.detail_content || '')
+      setDetailImages(Array.isArray(data.detail_images) ? data.detail_images : [])
+      setKeyIngredients(data.ingredient_main || '')
+      setIngredientText(data.ingredient_full || '')
+      setSkinConcerns(Array.isArray(data.skin_concern) ? data.skin_concern : [])
+      setSkinTypes(Array.isArray(data.skin_type) ? data.skin_type : [])
+
+      const ev = parseEventBanner(data.event_banner)
+      setEventEmoji(ev?.emoji || '')
+      setEventTitle(ev?.title || '')
+      setEventDesc(ev?.desc || '')
+      setEventStartsAt(ev?.starts_at?.slice(0, 10) || '')
+      setEventEndsAt(ev?.ends_at?.slice(0, 10) || '')
+
+      setIsActive(data.status === 'active')
       workingIdRef.current = editId
       setLoading(false)
     })
   }, [editId, supabase])
-
-  const ensureWorkingProduct = useCallback(async () => {
-    if (workingIdRef.current) return workingIdRef.current
-    if (!brandId) { alert('브랜드 정보가 없습니다'); return null }
-    if (!authUserId) { alert('로그인 정보가 없습니다'); return null }
-    try {
-      const pid = await insertNewProduct(supabase, { brand_id: brandId, brand_user_id: authUserId, name: name.trim() || '신규 상품', retail_price: 0, is_flash_sale: false })
-      workingIdRef.current = pid
-      const now = new Date(); setTmpSavedAt(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`)
-      return pid
-    } catch { alert('임시 저장 실패'); return null }
-  }, [authUserId, brandId, name, supabase])
-
-  const handleImagePick = useCallback(async (slot: number, file: File) => {
-    if (!await ensureWorkingProduct()) return
-    const ext = file.name.split('.').pop() || 'jpg'
-    const url = await uploadToStorage(file, `edit/${workingIdRef.current}/${slot}-${Date.now()}.${ext}`)
-    setThumbImages(prev => {
-      const n = [...prev]
-      n[slot] = url
-      return n
-    })
-  }, [ensureWorkingProduct])
-
-  const handleVideoPick = useCallback(async (file: File) => {
-    if (!await ensureWorkingProduct()) return
-    const ext = file.name.split('.').pop() || 'mp4'
-    const url = await uploadVideoToStorage(file, `edit/${workingIdRef.current}/video-${Date.now()}.${ext}`)
-    setVideoUrl(url)
-  }, [ensureWorkingProduct])
-
-  const handleDetailImagePick = useCallback(async (file: File) => {
-    if (!await ensureWorkingProduct()) return
-    const ext = file.name.split('.').pop() || 'jpg'
-    const url = await uploadVideoToStorage(file, `edit/${workingIdRef.current}/detail-${Date.now()}.${ext}`)
-    setDetailImages(prev => [...prev, url])
-  }, [ensureWorkingProduct])
-
-  const buildPayload = () => ({
-    brand_id: brandId || null,
-    brand_user_id: authUserId || null,
-    name: name.trim().slice(0, 100) || '신규 상품',
-    description: shortDesc.trim() || null,
-    tag: keywords.trim() || null,
-    category_id: catL5 || catL4 || catL3 || catL2 || catL1 || null,
-    category: categoryText.trim() || null,
-    ingredient: manufacturer.trim() || null,
-    shipping_fee: 3500,
-    shipping_memo: '5만원 이상 무료배송 · 제주/도서산간 +5,000원',
-    thumb_images: thumbImages.filter(Boolean),
-    thumb_img: thumbImages.find(Boolean) || null,
-    storage_thumb_url: thumbImages.find(Boolean) || null,
-    video_url: videoUrl || null,
-    detail_content: detailContent || null,
-    key_ingredients: keyIngredients || null,
-    clinical_result: clinicalResult || null,
-    certifications: certifications || null,
-    perfect_together: ptSelected.map(p => p.id),
-    detail_images: detailImages,
-    detail_imgs: detailImages,
-    status: isActive ? 'active' : 'hidden',
-    is_active: isActive,
-    is_exclusive: isExclusive,
-    skin_concerns: skinConcerns.length ? skinConcerns : [],
-    step_tags: stepTags.length ? stepTags : [],
-    skin_types: skinTypes.length ? skinTypes : [],
-    season_tags: seasonTags.length ? seasonTags : [],
-    ingredient_tags: ingredientTags.trim() ? ingredientTags.split(',').map(s => s.trim()).filter(Boolean) : [],
-    event_emoji: eventEmoji || null,
-    event_title: eventTitle || null,
-    event_desc: eventDesc || null,
-    event_starts_at: eventStartsAt || null,
-    event_ends_at: eventEndsAt || null,
-    func_tags: [],
-    weather_tags: [],
-    situation_tags: [],
-    lifestyle_tags: [],
-    timing_tags: [],
-    event_tags: [],
-  })
-
-  const onSave = async () => {
-    setMsg('')
-    if (!brandId) {
-      setMsg('브랜드 정보가 없습니다')
-      return
-    }
-    setSaving(true)
-    try {
-      let pid = editId || workingIdRef.current || null
-      if (!pid) {
-        pid = await insertNewProduct(supabase, {
-          brand_id: brandId,
-          brand_user_id: authUserId,
-          name: name.trim().slice(0, 100) || '신규 상품',
-          retail_price: 0,
-          is_flash_sale: false,
-        })
-        workingIdRef.current = pid
-      }
-      await updateProduct(supabase, pid!, buildPayload())
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(editId ? `auran_product_draft_${editId}` : 'auran_product_draft_new')
-      }
-      setMsg('저장 완료 ✓')
-      setTimeout(() => setMsg(''), 3000)
-      onSaved?.()
-    } catch (e: unknown) {
-      setMsg(e instanceof Error ? e.message : '오류')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const onTmpSave = async () => {
-    if (!brandId) { alert('브랜드 정보가 없습니다'); return }
-    setSaving(true)
-    try {
-      let pid = editId || workingIdRef.current || null
-      if (!pid) {
-        pid = await insertNewProduct(supabase, {
-          brand_id: brandId,
-          brand_user_id: authUserId,
-          name: name.trim() || '신규 상품',
-          retail_price: 0,
-          is_flash_sale: false,
-        })
-        workingIdRef.current = pid
-      }
-      await updateProduct(supabase, pid!, {
-        ...buildPayload(),
-        status: 'pending',
-        is_active: false,
-      })
-      const now = new Date()
-      setTmpSavedAt(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`)
-    } catch (e: unknown) {
-      alert(e instanceof Error ? e.message : '임시저장 실패')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  const loadDrafts = async () => {
-    const { data } = await supabase
-      .from('products')
-      .select('id, name, created_at')
-      .eq('status', 'pending')
-      .eq('brand_id', brandId)
-      .is('routine_category', null)
-      .order('created_at', { ascending: false })
-      .limit(20)
-    setDraftList(data || [])
-    setShowDraftPicker(true)
-  }
 
   useEffect(() => {
     if (ptInput.trim().length < 1) {
@@ -350,6 +196,159 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
     return [catL1, catL2, catL3, catL4, catL5].filter(Boolean).map(id => allCategories.find(c => c.id === id)?.name || '').filter(Boolean).join(' > ')
   }, [allCategories, catL1, catL2, catL3, catL4, catL5])
 
+  const buildSaveBody = useCallback((statusOverride?: string) => {
+    const imgs = thumbImages.filter(Boolean) as string[]
+    return {
+      id: editId || workingIdRef.current || undefined,
+      brand_id: brandId,
+      name: name.trim().slice(0, 100) || '신규 상품',
+      supply_price: Math.max(0, Math.trunc(Number(supplyPrice) || 0)),
+      description: shortDesc.trim() || null,
+      tag: keywords.trim() || null,
+      category_id: catL5 || catL4 || catL3 || catL2 || catL1 || null,
+      category: categoryText.trim() || categoryBreadcrumb || null,
+      thumb_img: imgs[0] ?? null,
+      images: imgs,
+      event_banner: buildEventBanner({
+        emoji: eventEmoji,
+        title: eventTitle,
+        desc: eventDesc,
+        starts_at: eventStartsAt || undefined,
+        ends_at: eventEndsAt || undefined,
+      }),
+      ingredient_main: keyIngredients.trim() || null,
+      ingredient_full: ingredientText.trim() || null,
+      detail_content: detailContent || null,
+      detail_images: detailImages,
+      skin_concern: skinConcerns,
+      skin_type: skinTypes,
+      status: statusOverride ?? (isActive ? 'active' : 'hidden'),
+    }
+  }, [
+    editId,
+    brandId,
+    name,
+    supplyPrice,
+    shortDesc,
+    keywords,
+    catL1,
+    catL2,
+    catL3,
+    catL4,
+    catL5,
+    categoryText,
+    categoryBreadcrumb,
+    thumbImages,
+    eventEmoji,
+    eventTitle,
+    eventDesc,
+    eventStartsAt,
+    eventEndsAt,
+    keyIngredients,
+    ingredientText,
+    detailContent,
+    detailImages,
+    skinConcerns,
+    skinTypes,
+    isActive,
+  ])
+
+  const persistViaApi = useCallback(async (statusOverride?: string) => {
+    const res = await fetch(SAVE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify(buildSaveBody(statusOverride)),
+    })
+    const json = await res.json().catch(() => ({}))
+    if (!json?.ok) throw new Error(json?.error || '저장 실패')
+    if (json.product?.id) workingIdRef.current = json.product.id
+    return json.product
+  }, [buildSaveBody])
+
+  const ensureWorkingProduct = useCallback(async () => {
+    if (workingIdRef.current) return workingIdRef.current
+    if (!brandId) { alert('브랜드 정보가 없습니다'); return null }
+    try {
+      await persistViaApi('pending')
+      const now = new Date()
+      setTmpSavedAt(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`)
+      return workingIdRef.current
+    } catch (e) {
+      alert(e instanceof Error ? e.message : '임시 저장 실패')
+      return null
+    }
+  }, [brandId, persistViaApi])
+
+  const handleImagePick = useCallback(async (slot: number, file: File) => {
+    if (!await ensureWorkingProduct()) return
+    const ext = file.name.split('.').pop() || 'jpg'
+    const url = await uploadToStorage(file, `edit/${workingIdRef.current}/${slot}-${Date.now()}.${ext}`)
+    setThumbImages(prev => {
+      const n = [...prev]
+      n[slot] = url
+      return n
+    })
+  }, [ensureWorkingProduct])
+
+  const handleVideoPick = useCallback(async (file: File) => {
+    if (!await ensureWorkingProduct()) return
+    const ext = file.name.split('.').pop() || 'mp4'
+    const url = await uploadVideoToStorage(file, `edit/${workingIdRef.current}/video-${Date.now()}.${ext}`)
+    setVideoUrl(url)
+  }, [ensureWorkingProduct])
+
+  const handleDetailImagePick = useCallback(async (file: File) => {
+    if (!await ensureWorkingProduct()) return
+    const ext = file.name.split('.').pop() || 'jpg'
+    const url = await uploadVideoToStorage(file, `edit/${workingIdRef.current}/detail-${Date.now()}.${ext}`)
+    setDetailImages(prev => [...prev, url])
+  }, [ensureWorkingProduct])
+
+  const onSave = async () => {
+    setMsg('')
+    if (!brandId) {
+      setMsg('브랜드 정보가 없습니다')
+      return
+    }
+    setSaving(true)
+    try {
+      await persistViaApi(isActive ? 'active' : 'hidden')
+      setMsg('저장 완료 ✓')
+      setTimeout(() => setMsg(''), 3000)
+      onSaved?.()
+    } catch (e: unknown) {
+      setMsg(e instanceof Error ? e.message : '오류')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const onTmpSave = async () => {
+    if (!brandId) { alert('브랜드 정보가 없습니다'); return }
+    setSaving(true)
+    try {
+      await persistViaApi('pending')
+      const now = new Date()
+      setTmpSavedAt(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`)
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : '임시저장 실패')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const loadDrafts = async () => {
+    const { data } = await supabase
+      .from('brand_products')
+      .select('id, name, created_at')
+      .eq('status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(20)
+    setDraftList(data || [])
+    setShowDraftPicker(true)
+  }
+
   const ActionBar = () => (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       {msg && <span style={{ fontSize: 12, color: msg.includes('완료') ? '#4cad7e' : '#e08080' }}>{msg}</span>}
@@ -382,7 +381,20 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
               <div><span style={S.lbl}>브랜드</span>
                 <div style={S.inp}>{brandName}</div>
               </div>
-              <div><span style={S.lbl}>원산지</span><input style={S.inp} value={origin} onChange={e => setOrigin(e.target.value)} placeholder="프랑스" /></div>
+              <div>
+                <span style={S.lbl}>공급가 (원)</span>
+                <input
+                  style={S.inp}
+                  type="number"
+                  min={0}
+                  value={supplyPrice}
+                  onChange={(e) => setSupplyPrice(e.target.value)}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>
+              원산지는 브랜드별로 서버에서 자동 설정됩니다.
             </div>
             <div style={S.row2}>
               <div>
@@ -458,24 +470,12 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
               value={detailContent}
               onChange={setDetailContent}
               onImageUpload={async (file) => {
-                if (!workingIdRef.current) {
-                  if (!brandId) return ''
-                  try {
-                    const pid = await insertNewProduct(supabase, { brand_id: brandId, brand_user_id: authUserId, name: name.trim() || '신규 상품', retail_price: 0, is_flash_sale: false })
-                    workingIdRef.current = pid
-                  } catch { return '' }
-                }
+                if (!await ensureWorkingProduct()) return ''
                 const ext = file.name.split('.').pop() || 'jpg'
                 return await uploadToStorage(file, `edit/${workingIdRef.current}/editor-${Date.now()}.${ext}`)
               }}
               onVideoUpload={async (file) => {
-                if (!workingIdRef.current) {
-                  if (!brandId) return ''
-                  try {
-                    const pid = await insertNewProduct(supabase, { brand_id: brandId, brand_user_id: authUserId, name: name.trim() || '신규 상품', retail_price: 0, is_flash_sale: false })
-                    workingIdRef.current = pid
-                  } catch { return '' }
-                }
+                if (!await ensureWorkingProduct()) return ''
                 const ext = file.name.split('.').pop() || 'mp4'
                 return await uploadVideoToStorage(file, `edit/${workingIdRef.current}/editor-video-${Date.now()}.${ext}`)
               }}

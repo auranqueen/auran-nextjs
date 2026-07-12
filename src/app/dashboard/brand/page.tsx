@@ -96,11 +96,10 @@ export default function BrandDashboardPage() {
       if (!activeBrandId) setActiveBrandId(list[0]?.id ?? null)
     }
     const { data: pr } = await supabase
-      .from('products')
+      .from('brand_products')
       .select('*, brands(id,name)')
-      .eq('brand_user_id', user.id)
+      .eq('brand_user_id', u.id)
       .eq('brand_id', bid ?? '')
-      .is('deleted_at', null)
       .order('created_at', { ascending: false })
     setRows((pr || []) as Row[])
     setLoading(false)
@@ -165,45 +164,36 @@ export default function BrandDashboardPage() {
   }
 
   const fetchRows = useCallback(async (overrideBrandId?: string) => {
-    if (!authId) return
+    if (!userPk) return
     const targetBrandId = overrideBrandId || brandId
     const { data: pr } = await supabase
-      .from('products')
+      .from('brand_products')
       .select('*, brands(id,name)')
-      .eq('brand_user_id', authId)
+      .eq('brand_user_id', userPk)
       .eq('brand_id', targetBrandId ?? '')
-      .is('deleted_at', null)
       .order('created_at', { ascending: false })
     setRows((pr || []) as Row[])
-  }, [authId, brandId])
+  }, [userPk, brandId, supabase])
 
   const approveOne = async (id: string) => {
     setBusyId(id)
-    await supabase.from('products').update({ status: 'active' }).eq('id', id).eq('brand_user_id', authId || '')
+    await supabase.from('brand_products').update({ status: 'active' }).eq('id', id).eq('brand_user_id', userPk || '')
     setBusyId(null)
     await fetchRows()
   }
 
   const rejectOne = async (id: string) => {
     setBusyId(id)
-    await supabase.from('products').update({ status: 'discontinued' }).eq('id', id).eq('brand_user_id', authId || '')
+    await supabase.from('brand_products').update({ status: 'discontinued' }).eq('id', id).eq('brand_user_id', userPk || '')
     setBusyId(null)
     await fetchRows()
   }
 
   const saveFlashSale = async (
-    id: string,
-    payload: { is_flash_sale: boolean; flash_sale_price: number | null; flash_sale_start: string | null; flash_sale_end: string | null }
+    _id: string,
+    _payload: { is_flash_sale: boolean; flash_sale_price: number | null; flash_sale_start: string | null; flash_sale_end: string | null }
   ) => {
-    let q = supabase.from('products').update(payload as any).eq('id', id)
-    if (authId) q = q.eq('brand_user_id', authId)
-    const { error } = await q
-    if (error) {
-      setToast(error.message || '저장 실패')
-      return
-    }
-    await fetchRows()
-    setToast('타임세일 저장됨')
+    setToast('재고발주 제품은 타임세일을 지원하지 않아요')
   }
 
   const handleProductUpdated = (p: any) => {
@@ -294,20 +284,20 @@ export default function BrandDashboardPage() {
 
       {editProduct ? (
         <BrandProductFormV2
-          brandId={brandId!}
+          brandId={activeBrandId || brandId!}
           brandName={brandName}
           authUserId={authId!}
           productId={editProduct.id}
-          onSaved={() => { setEditProduct(null); void fetchRows() }}
+          onSaved={() => { setEditProduct(null); void fetchRows(activeBrandId || brandId || undefined) }}
         />
       ) : null}
 
       {formOpen && (
         <BrandProductFormV2
-          brandId={brandId!}
+          brandId={activeBrandId || brandId!}
           brandName={brandName}
           authUserId={authId!}
-          onSaved={() => { setFormOpen(false); void fetchRows() }}
+          onSaved={() => { setFormOpen(false); void fetchRows(activeBrandId || brandId || undefined) }}
         />
       )}
 
@@ -356,8 +346,7 @@ export default function BrandDashboardPage() {
             {addBrandDone ? (
               <div style={{ textAlign: 'center', padding: '24px 0' }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>🎉</div>
-                <div style={{ fontSize: 15, color: '#fff', marginBottom: 8 }}>브랜드 추가 신청 완료!</div>
-                <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 20 }}>승인 후 대시보드에서 전환할 수 있어요</div>
+                <div style={{ fontSize: 15, color: '#fff', marginBottom: 20 }}>브랜드가 추가됐어요!</div>
                 <button
                   onClick={() => {
                     setShowAddBrand(false)
@@ -407,56 +396,74 @@ export default function BrandDashboardPage() {
                   </div>
                 ))}
                 <button
-                  disabled={addBrandLoading || !addBrandName}
+                  disabled={addBrandLoading || !addBrandName || !userPk}
                   onClick={async () => {
-                    if (!addBrandName) return
+                    if (!addBrandName || !userPk) return
                     setAddBrandLoading(true)
-                    const {
-                      data: { user },
-                    } = await supabase.auth.getUser()
-                    if (!user) {
+
+                    const hubBrandId = brandId || activeBrandId
+                    if (!hubBrandId) {
                       setAddBrandLoading(false)
+                      alert('현재 브랜드 정보를 찾을 수 없어요')
                       return
                     }
+
                     const { data: newBrand, error } = await supabase
                       .from('brands')
                       .insert({
                         name: addBrandName,
                         name_en: addBrandNameEn || null,
                         origin_country: addBrandCountry || '대한민국',
-                        user_id: user.id,
+                        user_id: userPk,
                         apply_status: 'approved',
+                        status: 'active',
                         welcome_shown: true,
                         manager_phone: addBrandContact || null,
                       })
                       .select('id')
                       .single()
-                    if (!error && newBrand) {
-                      await supabase.from('brand_members').insert({
-                        user_id: user.id,
-                        brand_id: newBrand.id,
-                        role: 'owner',
-                      })
-                      await supabase.from('notifications').insert({
-                        type: 'brand_apply',
-                        message: `새 브랜드 추가 신청: ${addBrandName}`,
-                        is_read: false,
-                      })
-                      setAddBrandDone(true)
-                      const newEntry = { id: newBrand.id, name: addBrandName, role: 'owner' }
-                      setMyBrands(prev => [...prev, newEntry])
-                      setActiveBrandId(newBrand.id)
-                      setBrandId(newBrand.id)
-                      setBrandName(addBrandName)
-                      void fetchRows(newBrand.id)
+
+                    if (error || !newBrand?.id) {
+                      setAddBrandLoading(false)
+                      alert(error?.message || '브랜드 추가에 실패했어요')
+                      return
                     }
+
+                    await supabase.from('brand_members').insert({
+                      user_id: userPk,
+                      brand_id: newBrand.id,
+                      role: 'owner',
+                    })
+
+                    try {
+                      await fetch('/api/brand/second-brand/connect-owners', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'same-origin',
+                        body: JSON.stringify({
+                          hub_brand_id: hubBrandId,
+                          second_brand_id: newBrand.id,
+                          second_brand_name: addBrandName,
+                        }),
+                      })
+                    } catch {
+                      /* trade_brands 연결 실패해도 브랜드 생성은 유지 */
+                    }
+
+                    setAddBrandDone(true)
+                    const newEntry = { id: newBrand.id, name: addBrandName, role: 'owner' }
+                    setMyBrands(prev => [...prev, newEntry])
+                    setActiveBrandId(newBrand.id)
+                    setBrandId(newBrand.id)
+                    setBrandName(addBrandName)
+                    void fetchRows(newBrand.id)
                     setAddBrandLoading(false)
                   }}
                   style={{
                     width: '100%',
                     padding: '12px',
                     borderRadius: 10,
-                    background: addBrandLoading || !addBrandName ? 'rgba(123,94,167,0.3)' : '#7B5EA7',
+                    background: addBrandLoading || !addBrandName || !userPk ? 'rgba(123,94,167,0.3)' : '#7B5EA7',
                     border: 'none',
                     color: '#fff',
                     fontSize: 14,
@@ -464,7 +471,7 @@ export default function BrandDashboardPage() {
                     marginTop: 8,
                   }}
                 >
-                  {addBrandLoading ? '신청 중...' : '신청하기'}
+                  {addBrandLoading ? '추가 중...' : '브랜드 추가'}
                 </button>
               </>
             )}
