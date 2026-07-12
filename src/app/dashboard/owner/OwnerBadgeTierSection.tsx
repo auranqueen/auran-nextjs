@@ -20,6 +20,7 @@ export type TierBadgeBrand = {
   }>
   ownedGrade: string | null
   ownedPrice: number | null
+  ownedCommissionRate: number | null
   paymentStatus: string | null
 }
 
@@ -131,6 +132,13 @@ export function OwnerBadgeTierSection({ brands }: Props) {
                 }}
               >
                 {COMMISSION_INTRO_COPY}
+                {b.ownedGrade && b.ownedCommissionRate != null ? (
+                  <>
+                    {' '}
+                    현재 {b.ownedGrade} 등급 보유 중이시라, 지금 원장님을 추천하시면 커미션{' '}
+                    {formatCommissionRate(b.ownedCommissionRate)}%가 적용돼요!
+                  </>
+                ) : null}
               </div>
             )}
 

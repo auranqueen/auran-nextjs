@@ -3,6 +3,10 @@
 
 ---
 
+## 2026-07-12
+
+- OwnerBadgeTierSection: 보유 등급 커미션율(`ownedCommissionRate`) 데이터 전달 및 추천 커미션 안내 배너 동적 문구 추가
+
 ## 2026-07-11
 
 - 브랜드 등급 시스템 탄력화: 081(자유 tier_name/grade CHECK 제거), 082(brand_owner_grades.tier_package_id FK), price 기반 업그레이드 판단, 스폰서 커미션율 tier_package_id 직조회

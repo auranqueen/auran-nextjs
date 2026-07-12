@@ -258,6 +258,7 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
       }>
       ownedGrade: string | null
       ownedPrice: number | null
+      ownedCommissionRate: number | null
       paymentStatus: string | null
     }> = []
     if (ownerProfileId) {
@@ -321,6 +322,10 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
             packages,
             ownedGrade: isPaid ? owned?.grade || null : null,
             ownedPrice: ownedPkg ? ownedPkg.price : null,
+            ownedCommissionRate:
+              ownedPkg && Number(ownedPkg.commission_rate) > 0
+                ? Number(ownedPkg.commission_rate)
+                : null,
             paymentStatus: owned?.payment_status || null,
           })
         }
