@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
+import { useIsTrackA } from '@/hooks/useIsTrackA'
 
 const PURPLE = '#7B5EA7'
 const SIDEBAR_BG = '#120a18'
@@ -28,6 +29,18 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
   const router = useRouter()
   const pathname = usePathname()
   const [isPC, setIsPC] = useState(false)
+  const { isTrackA, ready } = useIsTrackA()
+
+  const menuItems = useMemo(
+    () =>
+      MENU_ITEMS.filter((item) => {
+        if (item.href === '/dashboard/owner/brand-orders') {
+          return ready && isTrackA
+        }
+        return true
+      }),
+    [isTrackA, ready],
+  )
 
   useEffect(() => {
     const handleResize = () => setIsPC(window.innerWidth >= 768)
@@ -68,7 +81,7 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
         <div style={{ fontSize: 11, fontWeight: 700, color: PURPLE, letterSpacing: '0.12em', marginBottom: 12, padding: '0 10px' }}>
           AURAN PRO
         </div>
-        {MENU_ITEMS.map((item) => {
+        {menuItems.map((item) => {
           const active = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href + '/'))
           return (
             <button

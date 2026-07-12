@@ -5,6 +5,7 @@
 
 ## 2026-07-12
 
+- **트랙B 원장 브랜드 발주 진입점 숨김**: `useIsTrackA` 훅(`users.origin_track`)으로 PC 사이드바 「발주」, 원장 홈 v1 거래 브랜드 제품 섹션, v2 빠른메뉴·더보기·브랜드사 설정 배너를 트랙A만 조건부 렌더. URL 직접 접근 방어는 `brand-orders/page.tsx` 기존 게이트 유지
 - **brands.name_en (090)**: `brands.name_en TEXT` nullable 컬럼 추가(마이그레이션 파일). 세컨브랜드 추가 모달 영문명 저장용
 - **세컨브랜드 추가 모달 UX**: placeholder를 시바산/CIVASAN/대한민국 예시로 변경 (`dashboard/brand/page.tsx`)
 - **브랜드 재고발주 제품 물리 분리 (088) + 세컨브랜드·RLS (089)**: 오렌 쇼핑몰 `products`와 브랜드 발주 전용 `brand_products` 테이블·RLS 분리(088, 마이그레이션 파일). `brandOrigin.ts`/`brandProductTypes.ts`, `POST /api/brand/brand-products/save`(원산지·`brand_id` 서버 검증), `BrandProductFormV2` API 저장·공급가, 원장 발주·브랜드 대시보드·`BrandTabHome` 조회를 `brand_products`로 전환. CIVASAN mall `products` 정리 스크립트(`scripts/delete_civasan_products_from_products.sql`)는 수동 실행 전용

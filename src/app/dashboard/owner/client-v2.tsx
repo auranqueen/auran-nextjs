@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { canShowCyclePhase } from '@/lib/hormoneUtils'
+import { useIsTrackA } from '@/hooks/useIsTrackA'
 import SalonChatListPopup from './salon-chat/SalonChatListPopup'
 import NewChatPopup from './salon-chat/NewChatPopup'
 
@@ -77,6 +78,7 @@ function initials(name: string) {
 export default function OwnerDashClientV2() {
   const router = useRouter()
   const supabaseRef = useRef(createClient())
+  const { isTrackA, ready } = useIsTrackA()
 
   const [loading, setLoading] = useState(true)
   const [ownerName, setOwnerName] = useState('원장님')
@@ -369,7 +371,7 @@ export default function OwnerDashClientV2() {
     { key: 'more', label: '더보기', href: '/dashboard/owner/store' },
   ]
 
-  const quickMenus = [
+  const quickMenusAll = [
     { icon: '📋', label: '관리 프로그램', sub: '등록 · 수정 · 관리', href: '/dashboard/owner/services' },
     { icon: '📋', label: '시술차트', sub: `오늘 ${todayChartCount}건 작성`, href: '/dashboard/owner/charts-v2' },
     { icon: '📅', label: '예약 관리', sub: `오늘 ${todayBookings.length}건`, href: '/dashboard/owner/bookings' },
@@ -383,6 +385,10 @@ export default function OwnerDashClientV2() {
     { icon: '🤝', label: '파트너스', sub: `유입 ${partnerCount}명`, href: '/dashboard/partner' },
     { icon: '💬', label: '샵 상담톡', sub: '고객 1:1 상담', onClick: () => setShowChatList(true) },
   ]
+
+  const quickMenus = quickMenusAll.filter(
+    (m) => m.href !== '/dashboard/owner/brand-orders' || (ready && isTrackA),
+  )
 
   if (loading) {
     return <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', color: TEXT_SUB, fontSize: 14 }}>불러오는 중…</div>
@@ -648,24 +654,26 @@ export default function OwnerDashClientV2() {
                           </div>
                         </div>
                       ))}
-                      <div
-                        style={{
-                          flexShrink: 0,
-                          width: 100,
-                          borderRadius: 10,
-                          border: `1px solid ${BORDER}`,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background: '#faf9fc',
-                          cursor: 'pointer',
-                          fontSize: 12,
-                          color: '#7B5EA7',
-                        }}
-                        onClick={() => router.push('/dashboard/owner/brand-orders')}
-                      >
-                        더보기 →
-                      </div>
+                      {ready && isTrackA && (
+                        <div
+                          style={{
+                            flexShrink: 0,
+                            width: 100,
+                            borderRadius: 10,
+                            border: `1px solid ${BORDER}`,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: '#faf9fc',
+                            cursor: 'pointer',
+                            fontSize: 12,
+                            color: '#7B5EA7',
+                          }}
+                          onClick={() => router.push('/dashboard/owner/brand-orders')}
+                        >
+                          더보기 →
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div style={{ fontSize: 13, color: TEXT_SUB }}>
@@ -673,7 +681,7 @@ export default function OwnerDashClientV2() {
                     </div>
                   )}
                 </div>
-              ) : (
+              ) : ready && isTrackA ? (
                 <div style={{ padding: '12px 0', fontSize: 13, color: TEXT_SUB, lineHeight: 1.6 }}>
                   거래 브랜드사를 설정하면 이벤트 · 프로모션 알림을 받을 수 있어요
                   <br />
@@ -693,7 +701,7 @@ export default function OwnerDashClientV2() {
                     브랜드사 설정하기 →
                   </button>
                 </div>
-              )}
+              ) : null}
             </>
           )}
         </div>

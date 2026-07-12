@@ -48,6 +48,7 @@ import { createClient } from '@/lib/supabase/client'
 import { POSITION_STORAGE_KEY } from '@/lib/position'
 import NoticeBell from '@/components/NoticeBell'
 import OwnerQuickMenu from '@/components/OwnerQuickMenu'
+import { useIsTrackA } from '@/hooks/useIsTrackA'
 
 const PLAN_COLORS: Record<string, string> = { basic: '#4a8dc0', pro: '#bf5f90', premium: '#c9a84c' }
 const GRADE_COLORS: Record<string, string> = { debut: 'var(--text3)', essor: '#4a8dc0', prestige: '#aab8c8', couronne: '#c9a84c', empire: '#bf5f90' }
@@ -66,6 +67,7 @@ type ChannelRow = {
 export default function OwnerDashClient({ profile, salon, todayBookings }: { profile: any; salon: any; todayBookings: any[] }) {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
+  const { isTrackA, ready } = useIsTrackA()
   const [csRows, setCsRows] = useState<any[]>([])
   const [ownerChannels, setOwnerChannels] = useState<ChannelRow[]>([])
   async function logout() {
@@ -308,7 +310,7 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
         {/* 빠른 메뉴 */}
         <OwnerQuickMenu />
 
-      {brandProducts.length > 0 && (
+      {ready && isTrackA && brandProducts.length > 0 && (
         <div style={{ margin: '16px 16px 0' }}>
           <div style={{ fontSize: 13, fontWeight: 500, color: '#1A1A2E', marginBottom: 10 }}>거래 브랜드 제품</div>
           <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
