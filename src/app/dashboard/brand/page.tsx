@@ -86,22 +86,42 @@ export default function BrandDashboardPage() {
       .from('brand_members')
       .select('brand_id, role, brands(id, name)')
       .eq('user_id', u.id)
-    if (memberRows && memberRows.length > 0) {
-      const list = memberRows.map((m: any) => ({
-        id: m.brands?.id ?? m.brand_id,
-        name: m.brands?.name ?? '',
-        role: m.role,
-      }))
-      setMyBrands(list)
-      if (!activeBrandId) setActiveBrandId(list[0]?.id ?? null)
+
+    const memberList =
+      memberRows && memberRows.length > 0
+        ? memberRows.map((m: any) => ({
+            id: m.brands?.id ?? m.brand_id,
+            name: m.brands?.name ?? '',
+            role: m.role,
+          }))
+        : []
+
+    if (memberList.length > 0) {
+      setMyBrands(memberList)
+      if (!activeBrandId) setActiveBrandId(memberList[0]?.id ?? null)
     }
-    const { data: pr } = await supabase
-      .from('brand_products')
-      .select('*, brands(id,name)')
-      .eq('brand_user_id', u.id)
-      .eq('brand_id', bid ?? '')
-      .order('created_at', { ascending: false })
-    setRows((pr || []) as Row[])
+
+    const brandIdSet = new Set<string>()
+    for (const owned of brandList || []) {
+      if (owned?.id) brandIdSet.add(String(owned.id))
+    }
+    for (const member of memberList) {
+      if (member.id) brandIdSet.add(String(member.id))
+    }
+    const allBrandIds = Array.from(brandIdSet)
+
+    if (allBrandIds.length > 0) {
+      const { data: pr } = await supabase
+        .from('brand_products')
+        .select('*, brands(id,name)')
+        .eq('brand_user_id', u.id)
+        .in('brand_id', allBrandIds)
+        .order('created_at', { ascending: false })
+      setRows((pr || []) as Row[])
+    } else {
+      setRows([])
+    }
+
     setLoading(false)
   }, [router])
 
@@ -163,17 +183,37 @@ export default function BrandDashboardPage() {
     return 'rejected'
   }
 
-  const fetchRows = useCallback(async (overrideBrandId?: string) => {
+  const fetchRows = useCallback(async () => {
     if (!userPk) return
-    const targetBrandId = overrideBrandId || brandId
+
+    const { data: ownedRows } = await supabase
+      .from('brands')
+      .select('id')
+      .eq('user_id', userPk)
+
+    const brandIdSet = new Set<string>()
+    for (const owned of ownedRows || []) {
+      if (owned?.id) brandIdSet.add(String(owned.id))
+    }
+    for (const member of myBrands) {
+      if (member.id) brandIdSet.add(String(member.id))
+    }
+    const allBrandIds = Array.from(brandIdSet)
+
+    if (allBrandIds.length === 0) {
+      setRows([])
+      return
+    }
+
     const { data: pr } = await supabase
       .from('brand_products')
       .select('*, brands(id,name)')
       .eq('brand_user_id', userPk)
-      .eq('brand_id', targetBrandId ?? '')
+      .in('brand_id', allBrandIds)
       .order('created_at', { ascending: false })
+
     setRows((pr || []) as Row[])
-  }, [userPk, brandId, supabase])
+  }, [userPk, myBrands, supabase])
 
   const approveOne = async (id: string) => {
     setBusyId(id)
@@ -314,15 +354,10 @@ export default function BrandDashboardPage() {
                 setFormOpen(false)
                 setEditProduct(null)
               }}
-              onSaved={(savedBrandId) => {
-                const savedBrandName =
-                  myBrands.find((b) => b.id === savedBrandId)?.name || brandName
-                setActiveBrandId(savedBrandId)
-                setBrandId(savedBrandId)
-                setBrandName(savedBrandName)
+              onSaved={() => {
                 setFormOpen(false)
                 setEditProduct(null)
-                void fetchRows(savedBrandId)
+                void fetchRows()
               }}
             />
           </div>
@@ -345,10 +380,8 @@ export default function BrandDashboardPage() {
                   key={b.id}
                   onClick={() => {
                     setActiveBrandId(b.id)
-                    setBrandId(b.id)
                     setBrandName(b.name)
                     setShowBrandDropdown(false)
-                    void fetchRows(b.id)
                   }}
                   style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, color: b.id === activeBrandId ? '#7B5EA7' : 'rgba(255,255,255,0.7)', background: b.id === activeBrandId ? 'rgba(123,94,167,0.1)' : 'transparent' }}
                 >
@@ -484,7 +517,7 @@ export default function BrandDashboardPage() {
                     setActiveBrandId(newBrand.id)
                     setBrandId(newBrand.id)
                     setBrandName(addBrandName)
-                    void fetchRows(newBrand.id)
+                    void fetchRows()
                     setAddBrandLoading(false)
                   }}
                   style={{

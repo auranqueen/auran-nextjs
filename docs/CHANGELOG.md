@@ -5,6 +5,7 @@
 
 ## 2026-07-12
 
+- **브랜드 제품목록 통합조회 + 필터 pill**: `brand_products`를 소유·멤버 브랜드 ID IN 한 번에 조회. 제품 탭에 전체/브랜드별 필터(판매중 누적 표시), 상태 탭 count는 필터 적용 후 계산. 상단 드롭다운은 등록 기본 브랜드만, 저장 후 전체 재조회
 - **제품등록 폼 브랜드 선택**: `BrandProductFormV2`에 `myBrands` select 추가(신규 등록만). 저장 시 선택 `brand_id` 반영, `onSaved(savedBrandId)`로 목록 재조회 + `activeBrandId`/`brandName` 컨텍스트 자동 동기화
 - **브랜드 제품등록 폼 팝업화**: `BrandProductFormV2`를 고정 오버레이(`position:fixed`, dim)로 감싸 뒷배경 가림, 폼 `maxHeight:90vh` 스크롤. `onClose`/`onSaved` 콜백 분리. 제품 탭 「+ 새 제품 등록」 옆 **현재 브랜드** 라벨 강조
 - **트랙B 원장 브랜드 발주 진입점 숨김**: `useIsTrackA` 훅(`users.origin_track`)으로 PC 사이드바 「발주」, 원장 홈 v1 거래 브랜드 제품 섹션, v2 빠른메뉴·더보기·브랜드사 설정 배너를 트랙A만 조건부 렌더. URL 직접 접근 방어는 `brand-orders/page.tsx` 기존 게이트 유지
