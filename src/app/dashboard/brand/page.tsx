@@ -370,9 +370,9 @@ export default function BrandDashboardPage() {
                   </button>
                 </div>
                 {[
-                  { label: '브랜드명 (한글)', value: addBrandName, set: setAddBrandName, placeholder: '예: 탈라' },
-                  { label: '브랜드명 (영문)', value: addBrandNameEn, set: setAddBrandNameEn, placeholder: '예: THALAC' },
-                  { label: '원산지', value: addBrandCountry, set: setAddBrandCountry, placeholder: '예: 프랑스' },
+                  { label: '브랜드명 (한글)', value: addBrandName, set: setAddBrandName, placeholder: '예: 시바산' },
+                  { label: '브랜드명 (영문)', value: addBrandNameEn, set: setAddBrandNameEn, placeholder: '예: CIVASAN' },
+                  { label: '원산지', value: addBrandCountry, set: setAddBrandCountry, placeholder: '예: 대한민국' },
                   { label: '담당자 연락처', value: addBrandContact, set: setAddBrandContact, placeholder: '010-0000-0000' },
                 ].map(({ label, value, set, placeholder }) => (
                   <div key={label} style={{ marginBottom: 12 }}>
