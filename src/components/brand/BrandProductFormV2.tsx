@@ -15,9 +15,10 @@ interface BrandProductFormV2Props {
   authUserId?: string
   productId?: string
   onSaved?: () => void
+  onClose?: () => void
 }
 
-export default function BrandProductFormV2({ brandId: propBrandId, brandName, authUserId, productId: propProductId, onSaved }: BrandProductFormV2Props) {
+export default function BrandProductFormV2({ brandId: propBrandId, brandName, authUserId, productId: propProductId, onSaved, onClose }: BrandProductFormV2Props) {
   const supabase = createClient()
   const editId = propProductId || null
   const workingIdRef = useRef<string | null>(null)
@@ -160,7 +161,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
   }, [ptInput, supabase])
 
   const S = {
-    pg: { background: '#0D0B09', minHeight: '100vh', color: '#e8e4dc', fontFamily: 'var(--font-sans)' } as CSSProperties,
+    pg: { background: '#0D0B09', color: '#e8e4dc', fontFamily: 'var(--font-sans)', width: '100%', maxHeight: '90vh', overflowY: 'auto', borderRadius: 16 } as CSSProperties,
     topbar: { background: '#0D0B09', borderBottom: '0.5px solid rgba(255,255,255,0.08)', padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky' as const, top: 0, zIndex: 10 } as CSSProperties,
     body: { display: 'grid', gridTemplateColumns: '1fr 280px', gap: 16, padding: '20px 24px', maxWidth: 1200, margin: '0 auto' } as CSSProperties,
     sec: { background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 16, marginBottom: 12 } as CSSProperties,
@@ -355,7 +356,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
       <button type="button" onClick={() => void onTmpSave()} style={{ padding: '7px 14px', borderRadius: 8, background: 'transparent', border: '0.5px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer' }}>임시저장</button>
       {!editId && <button type="button" onClick={() => void loadDrafts()} style={{ padding: '7px 12px', borderRadius: 8, background: 'transparent', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.35)', fontSize: 11, cursor: 'pointer' }}>📋 불러오기</button>}
       <button type="button" onClick={() => void onSave()} disabled={saving} style={{ padding: '7px 18px', borderRadius: 8, background: '#7b5ea7', border: 'none', color: '#fff', fontSize: 13, cursor: saving ? 'default' : 'pointer', opacity: saving ? 0.6 : 1 }}>{saving ? '저장 중...' : '저장'}</button>
-      <button type="button" onClick={() => onSaved?.()} style={{ padding: '7px 14px', borderRadius: 8, background: 'transparent', border: '0.5px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.5)', fontSize: 13, cursor: 'pointer' }}>닫기</button>
+      <button type="button" onClick={() => onClose?.()} style={{ padding: '7px 14px', borderRadius: 8, background: 'transparent', border: '0.5px solid rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.5)', fontSize: 13, cursor: 'pointer' }}>닫기</button>
     </div>
   )
 

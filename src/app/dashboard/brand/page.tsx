@@ -282,23 +282,45 @@ export default function BrandDashboardPage() {
         />
       )}
 
-      {editProduct ? (
-        <BrandProductFormV2
-          brandId={activeBrandId || brandId!}
-          brandName={brandName}
-          authUserId={authId!}
-          productId={editProduct.id}
-          onSaved={() => { setEditProduct(null); void fetchRows(activeBrandId || brandId || undefined) }}
-        />
-      ) : null}
-
-      {formOpen && (
-        <BrandProductFormV2
-          brandId={activeBrandId || brandId!}
-          brandName={brandName}
-          authUserId={authId!}
-          onSaved={() => { setFormOpen(false); void fetchRows(activeBrandId || brandId || undefined) }}
-        />
+      {(editProduct || formOpen) && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.7)',
+            zIndex: 100,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: 1200,
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              borderRadius: 16,
+            }}
+          >
+            <BrandProductFormV2
+              brandId={activeBrandId || brandId!}
+              brandName={brandName}
+              authUserId={authId!}
+              productId={editProduct?.id}
+              onClose={() => {
+                setFormOpen(false)
+                setEditProduct(null)
+              }}
+              onSaved={() => {
+                setFormOpen(false)
+                setEditProduct(null)
+                void fetchRows(activeBrandId || brandId || undefined)
+              }}
+            />
+          </div>
+        </div>
       )}
 
       {myBrands.length > 1 && (

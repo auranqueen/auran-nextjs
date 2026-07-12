@@ -12,6 +12,7 @@ interface Props {
   onTabChange: (t: 'pending' | 'active' | 'hidden') => void
   onEdit: (p: Row) => void
   onNew: () => void
+  currentBrandName?: string
 }
 function badge(p: Row) {
   const s = String(p.status || '')
@@ -19,7 +20,7 @@ function badge(p: Row) {
   if (s === 'hidden' || s === 'discontinued') return { t: '숨김', bg: 'rgba(255,255,255,0.07)', color: SUB }
   return { t: '승인 대기', bg: 'rgba(255,193,7,0.15)', color: '#FFC107' }
 }
-export default function BrandTabProducts({ rows, tab, onTabChange, onEdit, onNew }: Props) {
+export default function BrandTabProducts({ rows, tab, onTabChange, onEdit, onNew, currentBrandName = '' }: Props) {
   const counts = {
     pending: rows.filter(r => !['active','hidden','discontinued'].includes(String(r.status || ''))).length,
     active: rows.filter(r => r.status === 'active').length,
@@ -32,11 +33,25 @@ export default function BrandTabProducts({ rows, tab, onTabChange, onEdit, onNew
   })
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 10, flexWrap: 'wrap' }}>
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: '#c4a7e7',
+            padding: '6px 12px',
+            borderRadius: 8,
+            background: 'rgba(123,94,167,0.15)',
+            border: '1px solid rgba(123,94,167,0.35)',
+          }}
+        >
+          현재 브랜드:{' '}
+          <span style={{ color: '#fff' }}>{currentBrandName || '—'}</span>
+        </div>
         <button
           type="button"
           onClick={onNew}
-          style={{ fontSize: 12, padding: '6px 14px', borderRadius: 8, border: 'none', background: PURPLE, color: '#fff', cursor: 'pointer' }}
+          style={{ fontSize: 12, padding: '6px 14px', borderRadius: 8, border: 'none', background: PURPLE, color: '#fff', cursor: 'pointer', flexShrink: 0 }}
         >
           + 새 제품 등록
         </button>
