@@ -8,6 +8,8 @@ type BrandPaymentIntentRow = {
   brand_id: string
   owner_id: string
   tier_package_id: string | null
+  invoice_id: string | null
+  kind: string | null
   amount: number
   status: string
   provider_trade_id: string | null
@@ -67,14 +69,14 @@ export async function POST(req: NextRequest) {
   if (intentId) {
     const { data: found } = await svc
       .from('brand_payment_intents')
-      .select('id, brand_id, owner_id, tier_package_id, amount, status, provider_trade_id, is_demo')
+      .select('id, brand_id, owner_id, tier_package_id, invoice_id, kind, amount, status, provider_trade_id, is_demo')
       .eq('id', intentId)
       .maybeSingle()
     intent = (found as BrandPaymentIntentRow | null) ?? null
   } else if (mulNo) {
     const { data: found } = await svc
       .from('brand_payment_intents')
-      .select('id, brand_id, owner_id, tier_package_id, amount, status, provider_trade_id, is_demo')
+      .select('id, brand_id, owner_id, tier_package_id, invoice_id, kind, amount, status, provider_trade_id, is_demo')
       .eq('brand_id', CIVASAN_BRAND_ID)
       .eq('provider_trade_id', mulNo)
       .maybeSingle()
@@ -117,7 +119,26 @@ export async function POST(req: NextRequest) {
     return new NextResponse('SUCCESS', { status: 200 })
   }
 
-  if (!intent.tier_package_id) {
+  if (intent.kind === 'invoice' && intent.invoice_id) {
+    await svc
+      .from('brand_payment_intents')
+      .update({
+        status: 'paid',
+        provider_trade_id: mulNo || intent.provider_trade_id,
+        updated_at: nowIso,
+      })
+      .eq('id', intent.id)
+
+    await svc
+      .from('brand_billing_invoices')
+      .update({ status: 'paid', paid_at: nowIso })
+      .eq('id', intent.invoice_id)
+      .eq('status', 'unpaid')
+
+    return new NextResponse('SUCCESS', { status: 200 })
+  }
+
+  if (intent.kind !== 'tier' || !intent.tier_package_id) {
     return new NextResponse('SUCCESS', { status: 200 })
   }
 

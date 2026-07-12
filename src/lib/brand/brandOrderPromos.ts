@@ -65,13 +65,20 @@ export function gradePointRate(grade: string): number {
   return GRADE_POINT_RATES[grade] ?? 1
 }
 
+export function promosForBrand(promos: SupplyPromoRow[], brandId: string): SupplyPromoRow[] {
+  return promos
+    .filter((p) => p.brand_id === brandId)
+    .sort((a, b) => (a.qty ?? 0) - (b.qty ?? 0))
+}
+
 export function buildOrderLineItem(
   product: { id: string; name: string; brand_id: string; supply_price: number },
   qty: number,
   promos: SupplyPromoRow[],
+  pickedPromo?: SupplyPromoRow | null,
 ): BrandOrderLineItem {
   const unitPrice = Math.trunc(product.supply_price)
-  const picked = pickSupplyPromo(promos, product.brand_id, qty)
+  const picked = pickedPromo ?? pickSupplyPromo(promos, product.brand_id, qty)
   const promo = promoLabel(picked)
   const bonus = promoBonus(picked)
   return {

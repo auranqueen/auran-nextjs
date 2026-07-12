@@ -4,10 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
+import BrandOrderProductCard, { type BrandOrderProduct } from './BrandOrderProductCard'
 import {
   buildOrderLineItem,
   gradePointRate,
   hasValidSupplyPrice,
+  promoLabel,
   type SupplyPromoRow,
 } from '@/lib/brand/brandOrderPromos'
 
@@ -31,6 +33,7 @@ interface Product {
 interface CartItem {
   product: Product
   qty: number
+  selectedPromo: SupplyPromoRow | null
 }
 
 interface OrderItem {
@@ -217,24 +220,49 @@ export default function BrandOrdersPage() {
   }, {} as Record<string, Product[]>)
 
   const popupCart = cart.filter((c) => !selectedBrand || c.product.brand_name === selectedBrand)
-  const popupTotalAmount = popupCart.reduce((s, c) => s + buildOrderLineItem(c.product, c.qty, supplyPromos).line_amount, 0)
+  const popupTotalAmount = popupCart.reduce(
+    (s, c) => s + buildOrderLineItem(c.product, c.qty, supplyPromos, c.selectedPromo).line_amount,
+    0,
+  )
   const totalQty = cart.reduce((s, c) => s + c.qty, 0)
 
-  const addToCart = (prod: Product) => {
+  const applyPromo = (prod: BrandOrderProduct, promo: SupplyPromoRow) => {
     if (!hasValidSupplyPrice(prod.supply_price)) {
       showToast('가격 미설정 제품이에요')
       return
     }
+    const full = products.find((p) => p.id === prod.id)
+    if (!full) return
+    const qty = Math.max(1, Math.trunc(promo.qty ?? 1))
     setCart((prev) => {
       const ex = prev.find((c) => c.product.id === prod.id)
-      if (ex) return prev.map((c) => (c.product.id === prod.id ? { ...c, qty: c.qty + 1 } : c))
-      return [...prev, { product: prod, qty: 1 }]
+      if (ex) {
+        return prev.map((c) =>
+          c.product.id === prod.id ? { ...c, qty, selectedPromo: promo } : c,
+        )
+      }
+      return [...prev, { product: full, qty, selectedPromo: promo }]
+    })
+    showToast(`${promoLabel(promo)} · ${qty}개 담김`)
+  }
+
+  const addToCart = (prod: BrandOrderProduct) => {
+    if (!hasValidSupplyPrice(prod.supply_price)) {
+      showToast('가격 미설정 제품이에요')
+      return
+    }
+    const full = products.find((p) => p.id === prod.id)
+    if (!full) return
+    setCart((prev) => {
+      const ex = prev.find((c) => c.product.id === prod.id)
+      if (ex) return prev.map((c) => (c.product.id === prod.id ? { ...c, qty: c.qty + 1, selectedPromo: null } : c))
+      return [...prev, { product: full, qty: 1, selectedPromo: null }]
     })
   }
 
   const changeQty = (id: string, delta: number) => {
     setCart((prev) => prev
-      .map((c) => (c.product.id === id ? { ...c, qty: Math.max(0, c.qty + delta) } : c))
+      .map((c) => (c.product.id === id ? { ...c, qty: Math.max(0, c.qty + delta), selectedPromo: null } : c))
       .filter((c) => c.qty > 0))
   }
 
@@ -259,7 +287,7 @@ export default function BrandOrdersPage() {
       return
     }
 
-    const items = popupCart.map((c) => buildOrderLineItem(c.product, c.qty, supplyPromos))
+    const items = popupCart.map((c) => buildOrderLineItem(c.product, c.qty, supplyPromos, c.selectedPromo))
     const totalItems = items.reduce((s, i) => s + i.qty, 0)
     const totalAmount = items.reduce((s, i) => s + i.line_amount, 0)
     const promoApplied = items.map((i) => i.promo).filter(Boolean).join(', ') || null
@@ -367,8 +395,15 @@ export default function BrandOrdersPage() {
       <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
         <button type="button" onClick={() => router.back()} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: TEXT, padding: 0 }}>←</button>
         <div style={{ fontSize: 16, fontWeight: 500, color: TEXT }}>브랜드 발주</div>
+        <button
+          type="button"
+          onClick={() => router.push('/dashboard/owner/brand-orders/invoice')}
+          style={{ marginLeft: 'auto', fontSize: 11, padding: '4px 10px', borderRadius: 16, border: `1px solid ${PURPLE}`, background: `${PURPLE}10`, color: PURPLE, cursor: 'pointer' }}
+        >
+          월청구서
+        </button>
         {totalQty > 0 && (
-          <div style={{ marginLeft: 'auto', fontSize: 12, padding: '4px 12px', borderRadius: 20, background: PURPLE, color: '#fff', cursor: 'pointer' }} onClick={() => setShowPopup(true)}>
+          <div style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: PURPLE, color: '#fff', cursor: 'pointer' }} onClick={() => setShowPopup(true)}>
             장바구니 {totalQty}개
           </div>
         )}
@@ -410,44 +445,18 @@ export default function BrandOrdersPage() {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                   {prods.map((prod) => {
-                    const priced = hasValidSupplyPrice(prod.supply_price)
                     const cartItem = cart.find((c) => c.product.id === prod.id)
-                    const qty = cartItem?.qty || 0
-                    const line = qty > 0 ? buildOrderLineItem(prod, qty, supplyPromos) : null
                     return (
-                      <div key={prod.id} style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', opacity: priced ? 1 : 0.55 }}>
-                        <div style={{ height: 80, background: LIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                          {prod.thumb_img
-                            ? <img src={prod.thumb_img} alt={prod.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            : <span style={{ fontSize: 26 }}>🧴</span>}
-                        </div>
-                        <div style={{ padding: '8px' }}>
-                          <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.4, marginBottom: 4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const, overflow: 'hidden' }}>{prod.name}</div>
-                          {priced
-                            ? <div style={{ fontSize: 10, color: SUB, marginBottom: 4 }}>₩{prod.supply_price.toLocaleString()}</div>
-                            : <div style={{ fontSize: 10, color: '#C0392B', marginBottom: 4 }}>가격 미설정</div>}
-                          {line?.promo && <div style={{ fontSize: 10, color: PURPLE, marginBottom: 4 }}>{line.promo}</div>}
-                          {!priced ? (
-                            <button type="button" disabled
-                              style={{ width: '100%', padding: '5px', borderRadius: 6, border: `1px solid ${BORDER}`, background: LIGHT, color: SUB, fontSize: 11, cursor: 'not-allowed' }}>
-                              발주 불가
-                            </button>
-                          ) : qty === 0 ? (
-                            <button type="button" onClick={() => addToCart(prod)}
-                              style={{ width: '100%', padding: '5px', borderRadius: 6, border: `1px solid ${PURPLE}`, background: `${PURPLE}15`, color: PURPLE, fontSize: 11, cursor: 'pointer' }}>
-                              + 담기
-                            </button>
-                          ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <button type="button" onClick={() => changeQty(prod.id, -1)}
-                                style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${BORDER}`, background: LIGHT, fontSize: 14, cursor: 'pointer', color: TEXT }}>−</button>
-                              <span style={{ fontSize: 13, fontWeight: 500, color: TEXT }}>{qty}</span>
-                              <button type="button" onClick={() => changeQty(prod.id, 1)}
-                                style={{ width: 26, height: 26, borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', fontSize: 14, cursor: 'pointer' }}>+</button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <BrandOrderProductCard
+                        key={prod.id}
+                        prod={prod}
+                        supplyPromos={supplyPromos}
+                        qty={cartItem?.qty || 0}
+                        activePromoId={cartItem?.selectedPromo?.id}
+                        onApplyPromo={applyPromo}
+                        onAdd={addToCart}
+                        onChangeQty={changeQty}
+                      />
                     )
                   })}
                 </div>
@@ -514,7 +523,7 @@ export default function BrandOrdersPage() {
             </div>
 
             {popupCart.map((item) => {
-              const line = buildOrderLineItem(item.product, item.qty, supplyPromos)
+              const line = buildOrderLineItem(item.product, item.qty, supplyPromos, item.selectedPromo)
               return (
                 <div key={item.product.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
