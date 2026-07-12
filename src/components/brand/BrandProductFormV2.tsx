@@ -12,13 +12,14 @@ const SAVE_API = '/api/brand/brand-products/save'
 interface BrandProductFormV2Props {
   brandId: string
   brandName: string
+  myBrands: Array<{ id: string; name: string }>
   authUserId?: string
   productId?: string
-  onSaved?: () => void
+  onSaved?: (savedBrandId: string) => void
   onClose?: () => void
 }
 
-export default function BrandProductFormV2({ brandId: propBrandId, brandName, authUserId, productId: propProductId, onSaved, onClose }: BrandProductFormV2Props) {
+export default function BrandProductFormV2({ brandId: propBrandId, brandName, myBrands, authUserId, productId: propProductId, onSaved, onClose }: BrandProductFormV2Props) {
   const supabase = createClient()
   const editId = propProductId || null
   const workingIdRef = useRef<string | null>(null)
@@ -32,7 +33,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
   const [name, setName] = useState('')
   const [shortDesc, setShortDesc] = useState('')
   const [keywords, setKeywords] = useState('')
-  const brandId = propBrandId
+  const [brandId, setBrandId] = useState(propBrandId)
   const [supplyPrice, setSupplyPrice] = useState('')
   const [categoryText, setCategoryText] = useState('')
   const [allCategories, setAllCategories] = useState<{ id: string; name: string; parent_id: string | null; level: number; sort_order: number | null }[]>([])
@@ -159,6 +160,18 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
     }, 300)
     return () => clearTimeout(t)
   }, [ptInput, supabase])
+
+  const brandOptions = useMemo(() => {
+    if (myBrands.some((brand) => brand.id === propBrandId)) {
+      return myBrands
+    }
+    return [{ id: propBrandId, name: brandName || '현재 브랜드' }, ...myBrands]
+  }, [myBrands, propBrandId, brandName])
+
+  const selectedBrandName =
+    brandOptions.find((brand) => brand.id === brandId)?.name ||
+    brandName ||
+    '—'
 
   const S = {
     pg: { background: '#0D0B09', color: '#e8e4dc', fontFamily: 'var(--font-sans)', width: '100%', maxHeight: '90vh', overflowY: 'auto', borderRadius: 16 } as CSSProperties,
@@ -309,7 +322,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
   const onSave = async () => {
     setMsg('')
     if (!brandId) {
-      setMsg('브랜드 정보가 없습니다')
+      setMsg('브랜드를 선택해 주세요')
       return
     }
     setSaving(true)
@@ -317,7 +330,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
       await persistViaApi(isActive ? 'active' : 'hidden')
       setMsg('저장 완료 ✓')
       setTimeout(() => setMsg(''), 3000)
-      onSaved?.()
+      onSaved?.(brandId)
     } catch (e: unknown) {
       setMsg(e instanceof Error ? e.message : '오류')
     } finally {
@@ -379,8 +392,23 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
             <div style={S.f}><span style={S.lbl}>짧은 설명</span><input style={S.inp} value={shortDesc} onChange={e => setShortDesc(e.target.value)} placeholder="한 줄 설명" /></div>
             <div style={S.f}><span style={S.lbl}>검색 키워드</span><input style={S.inp} value={keywords} onChange={e => setKeywords(e.target.value)} placeholder="보습, 진정, 마스크팩" /></div>
             <div style={S.row2}>
-              <div><span style={S.lbl}>브랜드</span>
-                <div style={S.inp}>{brandName}</div>
+              <div>
+                <span style={S.lbl}>브랜드</span>
+                {editId ? (
+                  <div style={S.inp}>{selectedBrandName}</div>
+                ) : (
+                  <select
+                    style={S.sel}
+                    value={brandId}
+                    onChange={(e) => setBrandId(e.target.value)}
+                  >
+                    {brandOptions.map((brand) => (
+                      <option key={brand.id} value={brand.id}>
+                        {brand.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div>
                 <span style={S.lbl}>공급가 (원)</span>
@@ -394,6 +422,11 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, au
                 />
               </div>
             </div>
+            {!editId && (
+              <div style={{ fontSize: 11, color: '#c4a7e7', marginBottom: 8 }}>
+                선택한 브랜드에 제품이 등록됩니다.
+              </div>
+            )}
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>
               원산지는 브랜드별로 서버에서 자동 설정됩니다.
             </div>

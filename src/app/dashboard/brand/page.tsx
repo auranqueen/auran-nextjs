@@ -307,16 +307,22 @@ export default function BrandDashboardPage() {
             <BrandProductFormV2
               brandId={activeBrandId || brandId!}
               brandName={brandName}
+              myBrands={myBrands.map(({ id, name }) => ({ id, name }))}
               authUserId={authId!}
               productId={editProduct?.id}
               onClose={() => {
                 setFormOpen(false)
                 setEditProduct(null)
               }}
-              onSaved={() => {
+              onSaved={(savedBrandId) => {
+                const savedBrandName =
+                  myBrands.find((b) => b.id === savedBrandId)?.name || brandName
+                setActiveBrandId(savedBrandId)
+                setBrandId(savedBrandId)
+                setBrandName(savedBrandName)
                 setFormOpen(false)
                 setEditProduct(null)
-                void fetchRows(activeBrandId || brandId || undefined)
+                void fetchRows(savedBrandId)
               }}
             />
           </div>
