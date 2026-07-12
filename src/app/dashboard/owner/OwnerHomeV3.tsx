@@ -384,7 +384,11 @@ export default function OwnerHomeV3({
           </div>
 
           <OwnerBadgeTierSection brands={tierBadgeBrands} />
-          <OwnerBrandSelfTierSection brands={selfTierBrands} />
+          <OwnerBrandSelfTierSection
+            brands={selfTierBrands}
+            sectionTitle="시바산 본사 인증 등급"
+            sectionSubtitle="시바산 파트너 전용 혜택"
+          />
 
           <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>내가 모집한 원장님</div>
