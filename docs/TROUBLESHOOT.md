@@ -3,6 +3,20 @@
 
 ---
 
+## 2026-07-12
+
+### OwnerHomeV3.tsx 500줄 규칙 초과 (다음 리팩터링 후보)
+
+증상:
+`src/app/dashboard/owner/OwnerHomeV3.tsx`가 수정 전부터 **519줄**로 500줄 규칙 초과.
+트랙A `OwnerBrandSelfTierSection` 추가로 import+렌더 **약 8줄** 추가 (현재 ~527줄).
+
+권장 후속:
+- 우측 컬럼 카드(매출 디테일·뱃지·모집 원장·브랜드 소식·TOP3 등)를 `OwnerHomeV3Sidebar.tsx` 등으로 분리
+- 또는 KPI 헤더 블록을 `OwnerHomeV3Header.tsx`로 분리
+
+---
+
 ## 2026-06-03
 
 ### PC 반응형 규칙

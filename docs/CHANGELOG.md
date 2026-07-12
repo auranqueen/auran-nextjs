@@ -5,6 +5,7 @@
 
 ## 2026-07-12
 
+- 트랙A 브랜드 자체 등급 셀프결제 (084): `brand_payment_intents` 테이블, 시바산 전용 `brand-self/civasan` API·웹훅, `OwnerBrandSelfTierSection`, 데모모드(`payapp_active=false`)
 - `users.origin_track` (083): 트랙A/B 가입경로 고정 — 브랜드 직거래(A) 원장 뱃지구매·원장 초대 차단, immutable DB 트리거
 - OwnerBadgeTierSection: 보유 등급 커미션율(`ownedCommissionRate`) 데이터 전달 및 추천 커미션 안내 배너 동적 문구 추가
 

@@ -326,6 +326,27 @@ active_role = customer이면 brand role도 customer로 처리됨
 - 브랜드가 BrandTabOwners.tsx에서 등급 부여 → 고객 스토어 샵정보 탭에 자동 노출
 - 아레테클럽(brand_arete_members)은 등급과 별개 배지로 병행 표시
 
+### 브랜드 자체 등급 셀프결제 (brand_payment_intents) — 2026-07-12
+
+트랙A(`users.origin_track = 'A'`) 원장이 브랜드 자체 PayApp으로 등급 패키지를 구매하는 트랙. **`payment_intents`·오렌 `payapp/*`·`sponsor_commission_ledger`와 완전 분리.**
+
+| 테이블/컬럼 | 용도 |
+|-------------|------|
+| `brand_payment_intents` | 브랜드별 결제 의향. `brand_id` NOT NULL FK로 브랜드 강제 구분. `owner_id` → **profiles.id**. `is_demo` = 데모 즉시활성화 |
+| `brands.payapp_user_id` | PayApp 가맹점 ID (`userid`) |
+| `brands.payapp_key` | PayApp **linkkey** (084 COMMENT 명시) |
+| `brands.payapp_linkval` | PayApp **linkval** — `payapp_key`와 쌍으로 결제요청·웹훅 검증 |
+| `brands.payapp_active` | `false` = 데모(결제 없이 등급 활성화), `true` = 실결제 |
+
+**앱 코드 (시바산 전용, 브랜드마다 파일 분리)**
+
+- `POST /api/payments/brand-self/civasan/create` — `CIVASAN_BRAND_ID` 하드코딩
+- `POST /api/payments/brand-self/civasan/webhook` — 동일 브랜드 credentials 검증
+- UI: `OwnerBrandSelfTierSection` (`createApiPath` props로 브랜드별 API 연결)
+- 순수 유틸만 공유: `src/lib/payments/payappUtil.ts` (`formEncode`, `parsePayAppResponse`)
+
+**middleware:** `/api/payments/brand-self` 경로는 오렌 payapp 웹훅과 동일하게 인증 제외.
+
 ### 브랜드 파트너 등급 구매 · 스폰서 커미션 (brand_tier_purchase) — 2026-07-11
 
 PayApp `payment_intents.kind = 'brand_tier_purchase'` 로 원장이 tier_contract 브랜드의 등급 패키지를 구매하는 트랙 (오렌지사 신규매출 트랙B).

@@ -125,7 +125,8 @@ export async function middleware(req: NextRequest) {
   if (
     pathname.startsWith('/api/payment') ||
     pathname.startsWith('/api/payapp') ||
-    pathname.startsWith('/api/payments/payapp')
+    pathname.startsWith('/api/payments/payapp') ||
+    pathname.startsWith('/api/payments/brand-self')
   ) {
     return NextResponse.next()
   }

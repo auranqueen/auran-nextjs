@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { OwnerBadgeTierSection, type TierBadgeBrand } from './OwnerBadgeTierSection'
+import { OwnerBrandSelfTierSection, type SelfTierBrand } from './OwnerBrandSelfTierSection'
 
 const GRADE_COLORS: Record<string, string> = {
   debut: 'var(--text3)',
@@ -66,6 +67,7 @@ type Props = {
   salonId: string | null
   storeThumbnailUrl: string | null
   tierBadgeBrands: TierBadgeBrand[]
+  selfTierBrands: SelfTierBrand[]
 }
 
 export default function OwnerHomeV3({
@@ -85,6 +87,7 @@ export default function OwnerHomeV3({
   salonId,
   storeThumbnailUrl,
   tierBadgeBrands,
+  selfTierBrands,
 }: Props) {
   const router = useRouter()
   const [chatOpen, setChatOpen] = useState(false)
@@ -381,6 +384,7 @@ export default function OwnerHomeV3({
           </div>
 
           <OwnerBadgeTierSection brands={tierBadgeBrands} />
+          <OwnerBrandSelfTierSection brands={selfTierBrands} />
 
           <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>내가 모집한 원장님</div>

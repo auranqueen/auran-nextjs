@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import SalonDashClient from './client'
 import OwnerDashClientV2 from './client-v2'
 import OwnerHomeV3 from './OwnerHomeV3'
+import type { SelfTierBrand } from './OwnerBrandSelfTierSection'
 
 export default async function OwnerDashboard({ searchParams }: { searchParams: { v?: string } }) {
   const supabase = createClient()
@@ -332,6 +333,117 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
       }
     }
 
+    const BRAND_SELF_API: Record<string, string> = {
+      civasan: '/api/payments/brand-self/civasan/create',
+    }
+
+    const selfTierBrands: SelfTierBrand[] = []
+    if (ownerProfileId && profile.origin_track === 'A') {
+      let linkedBrandIds: string[] = []
+
+      const { data: linkRows } = await supabase
+        .from('brand_owner_links')
+        .select('brand_id, status')
+        .eq('owner_id', profile.id)
+        .in('status', ['active', 'pending'])
+
+      if (linkRows?.length) {
+        linkedBrandIds = Array.from(
+          new Set(linkRows.map((r: { brand_id: string }) => String(r.brand_id)).filter(Boolean)),
+        )
+      }
+
+      if (!linkedBrandIds.length && brandNames.length > 0) {
+        const { data: fallbackBrands } = await supabase
+          .from('brands')
+          .select('id')
+          .in('name', brandNames)
+        linkedBrandIds = ((fallbackBrands as { id: string }[]) || []).map((b) => String(b.id))
+      }
+
+      if (linkedBrandIds.length) {
+        const { data: selfBrandRows } = await supabase
+          .from('brands')
+          .select('id, name, slug, payapp_active')
+          .in('id', linkedBrandIds)
+
+        const eligible = ((selfBrandRows as any[]) || []).filter((b) => {
+          const slug = String(b.slug || '').toLowerCase()
+          return Boolean(BRAND_SELF_API[slug])
+        })
+
+        if (eligible.length) {
+          const brandIds = eligible.map((b) => String(b.id))
+          const { data: pkgRows } = await supabase
+            .from('brand_tier_packages')
+            .select('id, brand_id, tier_name, price, product_scope')
+            .in('brand_id', brandIds)
+            .eq('is_active', true)
+
+          const { data: gradeRows } = await supabase
+            .from('brand_owner_grades')
+            .select('brand_id, grade, payment_status, tier_package_id')
+            .eq('owner_id', ownerProfileId)
+            .in('brand_id', brandIds)
+
+          const pkgsByBrand: Record<string, any[]> = {}
+          for (const p of (pkgRows as any[]) || []) {
+            const bid = String(p.brand_id)
+            if (!pkgsByBrand[bid]) pkgsByBrand[bid] = []
+            pkgsByBrand[bid].push(p)
+          }
+
+          const gradeByBrand: Record<
+            string,
+            { grade: string; payment_status: string; tier_package_id: string | null }
+          > = {}
+          for (const g of (gradeRows as any[]) || []) {
+            gradeByBrand[String(g.brand_id)] = {
+              grade: String(g.grade || ''),
+              payment_status: String(g.payment_status || ''),
+              tier_package_id: g.tier_package_id ? String(g.tier_package_id) : null,
+            }
+          }
+
+          for (const b of eligible) {
+            const bid = String(b.id)
+            const slug = String(b.slug || '').toLowerCase()
+            const createApiPath = BRAND_SELF_API[slug]
+            if (!createApiPath) continue
+
+            const packages = (pkgsByBrand[bid] || [])
+              .map((p) => ({
+                id: String(p.id),
+                tier_name: String(p.tier_name),
+                price: Math.trunc(Number(p.price || 0)),
+                product_scope: p.product_scope ?? null,
+              }))
+              .sort((a, b) => a.price - b.price)
+
+            if (!packages.length) continue
+
+            const owned = gradeByBrand[bid]
+            const isPaid = owned?.payment_status === 'paid'
+            const ownedPkg =
+              isPaid && owned?.tier_package_id
+                ? packages.find((p) => p.id === owned.tier_package_id) ?? null
+                : null
+
+            selfTierBrands.push({
+              brandId: bid,
+              brandName: String(b.name || '브랜드'),
+              createApiPath,
+              payappActive: Boolean(b.payapp_active),
+              packages,
+              ownedGrade: isPaid ? owned?.grade || null : null,
+              ownedPrice: ownedPkg ? ownedPkg.price : null,
+              paymentStatus: owned?.payment_status || null,
+            })
+          }
+        }
+      }
+    }
+
     return (
       <OwnerHomeV3
         profile={profile}
@@ -350,6 +462,7 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
         salonId={salonId}
         storeThumbnailUrl={storeThumbnailUrl}
         tierBadgeBrands={tierBadgeBrands}
+        selfTierBrands={selfTierBrands}
       />
     )
   }
