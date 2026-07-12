@@ -116,6 +116,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  let originTrack: 'A' | 'B' = 'B'
+  if (brandId) {
+    originTrack = 'A'
+  } else if (referredBy) {
+    const { data: referrerRow } = await svc
+      .from('users')
+      .select('origin_track')
+      .eq('id', referredBy)
+      .maybeSingle()
+    originTrack = referrerRow?.origin_track === 'A' ? 'A' : 'B'
+  }
+
   const { data: userRow, error: userError } = await svc
     .from('users')
     .insert({
@@ -125,6 +137,7 @@ export async function POST(req: NextRequest) {
       role: 'owner',
       status: 'pending',
       referred_by: referredBy,
+      origin_track: originTrack,
       referral_code: genReferralCode(),
       provider: 'email',
       points: 0,

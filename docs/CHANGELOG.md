@@ -5,6 +5,7 @@
 
 ## 2026-07-12
 
+- `users.origin_track` (083): 트랙A/B 가입경로 고정 — 브랜드 직거래(A) 원장 뱃지구매·원장 초대 차단, immutable DB 트리거
 - OwnerBadgeTierSection: 보유 등급 커미션율(`ownedCommissionRate`) 데이터 전달 및 추천 커미션 안내 배너 동적 문구 추가
 
 ## 2026-07-11

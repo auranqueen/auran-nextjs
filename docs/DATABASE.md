@@ -432,8 +432,20 @@ users와 profiles 테이블에 같은 의미의 필드가 중복 존재. 신규 
 | 피부타입 | profiles.skin_type | users.skin_type은 레거시, analysis/page.tsx·admin coupons에서만 사용 중 (후속 정리 대상) |
 | 전화번호 | ⚠️ 미확정 — 후속 작업 필요 | profiles(마이페이지 표시)와 users(알림톡/인증) 간 동기화 안 됨. api/auth/complete-phone은 users만, my/profile persist는 profiles만 갱신 |
 | 이메일 | users.email | NOT NULL UNIQUE 제약, 가입 시 고정 |
+| 가입 트랙 (원장) | users.origin_track | `'A'` \| `'B'`, 가입 시 1회만 설정. 이후 UPDATE 금지 (`trg_guard_users_origin_track_immutable`) |
 
-### role vs active_role — 반드시 구분할 것
+### users.origin_track (083, 2026-07-12)
+
+| 값 | 의미 | 설정 시점 |
+|---|---|---|
+| `A` | 브랜드사 직거래 유입 (`brand_id` 경유 가입) | `owner-signup-v2` INSERT |
+| `B` | 오렌지사 자체 유입 (추천 ref·자연가입) | 동일 |
+
+- **기본값:** `'B'` (기존 row·마이그레이션 backfill 포함)
+- **상속:** `brand_id` 없고 `referred_by` 있을 때, 추천인 `origin_track === 'A'`이면 신규도 `'A'`, 아니면 `'B'`
+- **immutable:** `BEFORE UPDATE` 트리거 `guard_users_origin_track_immutable` — `origin_track` 변경 시도 시 EXCEPTION
+- **UI 게이트:** 트랙 A 원장 — 뱃지구매(`OwnerBadgeTierSection`)·마이페이지 원장 초대 버튼 숨김. 오렌피드/구독 등은 별도(`owner_subscriptions`)
+
 
 - **users.role**: 계정 최초 가입 시 정해지는 고정 신분(customer/partner/salon-owner/brand). 거의 변경되지 않음.
 - **profiles.role**: users.role과 동기화되어야 하나 드리프트 가능성 있음.

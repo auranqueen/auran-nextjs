@@ -261,7 +261,7 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
       ownedCommissionRate: number | null
       paymentStatus: string | null
     }> = []
-    if (ownerProfileId) {
+    if (ownerProfileId && profile.origin_track === 'B') {
       const { data: tierContractBrands } = await supabase
         .from('brands')
         .select('id, name')

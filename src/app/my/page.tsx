@@ -50,6 +50,7 @@ export default function MyPage() {
   const [periodTipTitle, setPeriodTipTitle] = useState('생리 시작 안내')
   const [periodTipEnabled, setPeriodTipEnabled] = useState(true)
   const [referralCode, setReferralCode] = useState('')
+  const [originTrack, setOriginTrack] = useState<'A' | 'B' | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
   const [sharePayload, setSharePayload] = useState({ link: '', title: '', description: '', imageUrl: null as string | null, buttonTitle: '가입하기' })
   const [periodQuietNotice, setPeriodQuietNotice] = useState('')
@@ -92,11 +93,14 @@ export default function MyPage() {
               setPeriodTipTitle(String((tip as any)?.title || '생리 시작 안내'))
             }
           })
-        supabase.from('users').select('id, points, charge_balance, referral_code').eq('auth_id', data.user.id).single().then(({ data: meRow }) => {
+        supabase.from('users').select('id, points, charge_balance, referral_code, origin_track').eq('auth_id', data.user.id).single().then(({ data: meRow }) => {
           if (!meRow) return
           setPoint(meRow.points || 0)
           setChargeBalance(meRow.charge_balance || 0)
           if (meRow.referral_code) setReferralCode(String(meRow.referral_code))
+          if (meRow.origin_track === 'A' || meRow.origin_track === 'B') {
+            setOriginTrack(meRow.origin_track)
+          }
           supabase
             .from('user_memberships')
             .select('id, status, next_shipment_date, shipments_remaining, shipments_total, source_type, membership_plans(name)')
@@ -569,7 +573,7 @@ export default function MyPage() {
         <div style={{ margin: '12px 16px 0', background: CARD_BG, border: CARD_BORDER, borderRadius: '14px', padding: '14px 16px', position: 'relative' }}>
           <div style={{ fontSize: '14px', fontWeight: 600, color: '#fff', marginBottom: 4 }}>친구·원장님 초대하고 1000T 받기 💜</div>
           <div style={{ fontSize: '11px', color: TEXT_MUTED, marginBottom: 12, lineHeight: 1.5 }}>추천 링크로 가입하면 친구가 첫 구매할 때 1000T가 풀려요</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: originTrack === 'A' ? '1fr' : '1fr 1fr', gap: 8 }}>
             <button
               type="button"
               onClick={() => {
@@ -587,23 +591,25 @@ export default function MyPage() {
             >
               친구 초대하기
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                const origin = typeof window !== 'undefined' ? window.location.origin : 'https://auran.kr'
-                setSharePayload({
-                  link: `${origin}/signup/owner-v2?ref=${referralCode}`,
-                  title: '오렌 원장님으로 함께해요 ✨',
-                  description: '원장님 추천 링크로 가입하고 매장을 시작해보세요',
-                  imageUrl: avatarUrl || null,
-                  buttonTitle: '원장님으로 가입하기',
-                })
-                setShareOpen(true)
-              }}
-              style={{ padding: '12px 10px', background: 'rgba(201,169,110,0.1)', border: '1px solid rgba(201,169,110,0.28)', borderRadius: '12px', color: GOLD, fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
-            >
-              원장님 초대하기
-            </button>
+            {originTrack !== 'A' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://auran.kr'
+                  setSharePayload({
+                    link: `${origin}/signup/owner-v2?ref=${referralCode}`,
+                    title: '오렌 원장님으로 함께해요 ✨',
+                    description: '원장님 추천 링크로 가입하고 매장을 시작해보세요',
+                    imageUrl: avatarUrl || null,
+                    buttonTitle: '원장님으로 가입하기',
+                  })
+                  setShareOpen(true)
+                }}
+                style={{ padding: '12px 10px', background: 'rgba(201,169,110,0.1)', border: '1px solid rgba(201,169,110,0.28)', borderRadius: '12px', color: GOLD, fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+              >
+                원장님 초대하기
+              </button>
+            ) : null}
           </div>
           <div id="my-referral-share-card" style={{ position: 'absolute', left: -9999, top: 0, width: 320, background: '#1f1a26', border: '1px solid rgba(201,169,110,0.3)', borderRadius: 14, padding: 16 }}>
             <div style={{ fontSize: 9, letterSpacing: 2, color: 'rgba(201,169,110,0.5)', marginBottom: 6 }}>AURAN · 초대</div>

@@ -14,6 +14,8 @@
 
 > **신규 원장 가입은 `/signup/owner-v2` + `/api/auth/owner-signup-v2` 로 진행 (join/마이페이지 링크만 전환, 기존 `/signup?role=owner` 및 login→consent 체인은 레거시로 유지, 미삭제)**
 
+> **트랙A(브랜드직거래)/트랙B(오렌자체유입) 구분은 `users.origin_track` 하나로만 판단. `trade_brands` 배열 매칭 방식 사용 금지(오염 위험). 가입시 1회 고정, 이후 변경 절대 불가.**
+
 ---
 
 ## 1. 프로젝트 개요
