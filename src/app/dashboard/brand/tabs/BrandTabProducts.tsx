@@ -34,6 +34,16 @@ function rowBrandName(row: Row): string {
   return String((row.brands as { name?: string } | null)?.name || '브랜드')
 }
 
+function rowName(row: Row): string {
+  return String(row.name || '')
+}
+
+function matchesSearch(row: Row, query: string): boolean {
+  const q = query.trim().toLowerCase()
+  if (!q) return true
+  return rowName(row).toLowerCase().includes(q)
+}
+
 function badge(p: Row) {
   const s = String(p.status || '')
   if (s === 'active') return { t: '판매중', bg: 'rgba(76,175,80,0.15)', color: '#4CAF50' }
@@ -50,6 +60,7 @@ export default function BrandTabProducts({
   currentBrandName = '',
 }: Props) {
   const [brandFilter, setBrandFilter] = useState<'all' | string>('all')
+  const [searchQuery, setSearchQuery] = useState('')
 
   const brandOptions = useMemo(() => {
     const map = new Map<string, string>()
@@ -79,10 +90,15 @@ export default function BrandTabProducts({
     [rows],
   )
 
+  const searchFilteredRows = useMemo(() => {
+    if (!searchQuery.trim()) return rows
+    return rows.filter((row) => matchesSearch(row, searchQuery))
+  }, [rows, searchQuery])
+
   const brandFilteredRows = useMemo(() => {
-    if (brandFilter === 'all') return rows
-    return rows.filter((row) => rowBrandId(row) === brandFilter)
-  }, [rows, brandFilter])
+    if (brandFilter === 'all') return searchFilteredRows
+    return searchFilteredRows.filter((row) => rowBrandId(row) === brandFilter)
+  }, [searchFilteredRows, brandFilter])
 
   const counts = useMemo(() => {
     let pending = 0
@@ -180,6 +196,25 @@ export default function BrandTabProducts({
         ))}
       </div>
 
+      <input
+        type="search"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="제품명 검색"
+        style={{
+          width: '100%',
+          boxSizing: 'border-box',
+          marginBottom: 10,
+          padding: '10px 12px',
+          borderRadius: 8,
+          border: '0.5px solid rgba(255,255,255,0.12)',
+          background: 'rgba(255,255,255,0.05)',
+          color: '#fff',
+          fontSize: 13,
+          outline: 'none',
+        }}
+      />
+
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
         {(
           [
@@ -202,7 +237,9 @@ export default function BrandTabProducts({
       <div style={CARD}>
         {filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 24, color: SUB, fontSize: 13 }}>
-            이 탭에 표시할 제품이 없습니다.
+            {searchQuery.trim()
+              ? '검색 결과가 없습니다.'
+              : '이 탭에 표시할 제품이 없습니다.'}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
