@@ -134,11 +134,33 @@ brand_stock_logs — 재고 변동 로그
 brand_orders — 발주
   id UUID PK
   brand_id UUID → brands.id
-  owner_id UUID → users.id
-  status TEXT (pending/approved/shipped/delivered/cancelled)
-  total_amount INTEGER
-  tracking_number TEXT
+  profile_id UUID → profiles.id
+  status TEXT (pending/approved/shipping/done/cancelled)
+  items JSONB — [{ product_id, name, qty, unit_price, line_amount, bonus?, promo? }]
+  total_qty INTEGER
+  total_amount INTEGER — 공급가 합계(원), 085
+  promo_applied TEXT
+  points_earned INTEGER
   created_at TIMESTAMPTZ
+
+brand_billing_invoices — 월 청구서 (085)
+  id UUID PK
+  brand_id UUID → brands.id
+  owner_id UUID → profiles.id
+  billing_month DATE — 월 첫날 (예: 2026-07-01)
+  total_amount INTEGER
+  points_total INTEGER
+  status TEXT (unpaid/paid)
+  paid_at TIMESTAMPTZ
+  created_at TIMESTAMPTZ
+  UNIQUE (brand_id, owner_id, billing_month)
+
+supply_promos — 납품 수량 프로모 (001 + 085 시드)
+  brand_id, promo_type (qty_price|bundle|discount)
+  condition TEXT — 등급명(메디슈티컬/전문점 등) 또는 조건
+  qty, bonus_qty, bonus TEXT (예: 10+10)
+  status active/inactive
+  085: 시바산(60413ded-…) 등급별 8행 시드 — brand-orders/page.tsx에서 조회
 
 brand_returns — 반품·교환
   id UUID PK
@@ -332,7 +354,7 @@ active_role = customer이면 brand role도 customer로 처리됨
 
 | 테이블/컬럼 | 용도 |
 |-------------|------|
-| `brand_payment_intents` | 브랜드별 결제 의향. `brand_id` NOT NULL FK로 브랜드 강제 구분. `owner_id` → **profiles.id**. `is_demo` = 데모 즉시활성화 |
+| `brand_payment_intents` | 브랜드별 결제 의향. `brand_id` NOT NULL FK. `owner_id` → **profiles.id**. `kind`: **`tier`**(등급 셀프결제) \| **`invoice`**(월 청구서, 085). `invoice_id` → `brand_billing_invoices`. `is_demo` = 데모 즉시활성화 |
 | `brands.payapp_user_id` | PayApp 가맹점 ID (`userid`) |
 | `brands.payapp_key` | PayApp **linkkey** (084 COMMENT 명시) |
 | `brands.payapp_linkval` | PayApp **linkval** — `payapp_key`와 쌍으로 결제요청·웹훅 검증 |

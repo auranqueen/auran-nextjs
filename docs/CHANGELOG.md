@@ -5,6 +5,7 @@
 
 ## 2026-07-12
 
+- 브랜드 재고발주 1단계 (085): `brand_orders.total_amount`, `supply_promos` 시바산 시드·DB 프로모 조회, `products.supply_price` 단가·발주 불가 가드, `brand_billing_invoices`·`brand_payment_intents.kind`(tier/invoice)
 - 트랙A 셀프결제 데모모드 UX: `OwnerBrandSelfTierSection` 가짜 결제창 모달(등급·금액·카드번호 장식, 체험 완료 화면), 시바산 전용 섹션 제목·부제
 - 트랙A 브랜드 자체 등급 셀프결제 (084): `brand_payment_intents` 테이블, 시바산 전용 `brand-self/civasan` API·웹훅, `OwnerBrandSelfTierSection`, 데모모드(`payapp_active=false`)
 - `users.origin_track` (083): 트랙A/B 가입경로 고정 — 브랜드 직거래(A) 원장 뱃지구매·원장 초대 차단, immutable DB 트리거
