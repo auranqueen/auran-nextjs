@@ -6,6 +6,13 @@ import { addToPurchaseAmount, autoUpgradeGrade } from '@/lib/gradeUtils'
 import { sendPpurioAlimtalk } from '@/lib/ppurio/sendAlimtalk'
 import { handleBrandTierPurchase } from '@/lib/webhookHandlers/brandTierPurchase'
 
+const ANNUAL_STORE_PLAN_SLUGS = new Set([
+  'track_a_store_annual',
+  'track_b_store_annual',
+  'track_a_showcase_annual',
+  'track_b_showcase_annual',
+])
+
 function mustEnv(name: string): string {
   const v = process.env[name]
   if (!v) throw new Error(`Missing env: ${name}`)
@@ -136,7 +143,11 @@ export async function POST(req: NextRequest) {
         const ownerMode = String(payload.mode || 'auran')
         const monthlyPrice = Number(payload.monthly_price ?? intent.amount ?? 0)
         const expiresAt = new Date()
-        expiresAt.setMonth(expiresAt.getMonth() + 1)
+        if (ANNUAL_STORE_PLAN_SLUGS.has(planSlug)) {
+          expiresAt.setFullYear(expiresAt.getFullYear() + 1)
+        } else {
+          expiresAt.setMonth(expiresAt.getMonth() + 1)
+        }
 
         await client.from('owner_subscriptions').insert({
           owner_id: ownerId,
