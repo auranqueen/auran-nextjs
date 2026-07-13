@@ -5,6 +5,7 @@
 
 ## 2026-07-13
 
+- **brand-orders `store_name` 400 버그 (심각)**: 원장 발주 화면 `users` select에 존재하지 않는 `store_name` 컬럼 요청 → PostgREST 400 → `userRow` null → `origin_track` 미조회·기본값 `'B'` → **트랙A 원장 전원** 발주 진입 차단. `salon_name`으로 교체, 상호명 fallback은 `profiles.owner_store_name` → `users.salon_name`
 - **브랜드-원장 연결 판단 1단계 (092)**: `trade_brands`/`preferred_brands` 문자열 매칭 → `brand_owner_links`(ID 기반) 전환. 원장 발주(`brand-orders/page.tsx`)는 active link의 `brand_id`로 제품·프로모 조회, 홈 KPI(`BrandTabHome`) 「활성 원장님」은 link COUNT. `resolveOwnerIds.ts` 추가(auth_id → users.id + profiles.id). `092_brand_owner_links_rls.sql` — owner SELECT / brand·member SELECT·UPDATE / admin ALL (마이그레이션 파일만, 미실행). 백필 전 link 없는 레거시 원장은 발주·카운트 0 가능
 
 ## 2026-07-12

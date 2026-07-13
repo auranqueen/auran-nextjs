@@ -95,7 +95,7 @@ export default function BrandOrdersPage() {
     if (!user) { router.replace('/login?role=owner'); return }
 
     const [{ data: userRow }, ownerIds] = await Promise.all([
-      supabase.from('users').select('id, name, store_name, origin_track, role').eq('auth_id', user.id).maybeSingle(),
+      supabase.from('users').select('id, name, salon_name, origin_track, role').eq('auth_id', user.id).maybeSingle(),
       resolveOwnerIds(supabase, user.id),
     ])
 
@@ -106,7 +106,11 @@ export default function BrandOrdersPage() {
       .maybeSingle()
 
     setOwnerName((ownerProf as { full_name?: string } | null)?.full_name || (userRow as { name?: string } | null)?.name || '')
-    setSalonName((ownerProf as { owner_store_name?: string } | null)?.owner_store_name || (userRow as { store_name?: string } | null)?.store_name || '')
+    setSalonName(
+      (ownerProf as { owner_store_name?: string } | null)?.owner_store_name
+      || (userRow as { salon_name?: string } | null)?.salon_name
+      || '',
+    )
     setOwnerProfileId(ownerIds?.profileId ?? null)
 
     const originTrack = String((userRow as { origin_track?: string } | null)?.origin_track || 'B')
