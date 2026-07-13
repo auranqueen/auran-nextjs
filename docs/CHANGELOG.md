@@ -5,6 +5,7 @@
 
 ## 2026-07-13
 
+- **원장 스토어 브랜드 제품 탭 트랙A 잠금**: `GET /api/salons/[id]/brand-products`가 `users.origin_track` 조회 — 트랙A면 `locked: true`·`lock_reason: track_a_subscription`·`products: []` 즉시 반환(1단계 하드코딩). 트랙B는 기존 link→`brand_products` 체인 + `locked: false`. 살롱 페이지 `SalonBrandProductsLocked` 패널(CTA 없음), `locked` 시 탭 유지·잠금 UI
 - **원장 스토어 브랜드 제품 진열**: `/salons/[id]`에 「브랜드 제품」탭 추가 — `GET /api/salons/[id]/brand-products`(service role)가 `salons.owner_id` → `brand_owner_links`(active) → `brand_products`(active)만 조회. 살롱 전용 `SalonBrandProductCard`·`SalonBrandProductsPanel`, `supply_price` 미노출. 오렌몰 `products` 테이블·홈·검색과 완전 분리
 - **적립금 CSV UI 위치 전환**: `BrandTabOwners` — `manual_init` ledger 1건 이상이면 상단 CSV 카드 숨김, 탭 하단 「초기 적립금 CSV 재업로드」 링크로 접기(클릭 시 펼침)
 - **발주화면 브랜드명·그리드 UX**: `brand-orders/page.tsx` 필터 pill 표시명 간소화(`시바산그룹`→`시바산`, DB 미변경), 제품 수 보라색 강조(`전체 N` 형식). 제품 그리드 반응형 — PC(≥768px) 5열, 모바일 3열, 좁은 화면(<400px) 2열

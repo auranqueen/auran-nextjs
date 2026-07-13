@@ -5,7 +5,22 @@ import type { SalonBrandProductItem, SalonBrandProductsResponse } from '@/types/
 const NO_STORE_HEADERS = { 'Cache-Control': 'private, no-store' }
 
 function emptyResponse(salonId: string): NextResponse<SalonBrandProductsResponse> {
-  return NextResponse.json({ salon_id: salonId, products: [] }, { headers: NO_STORE_HEADERS })
+  return NextResponse.json(
+    { salon_id: salonId, locked: false, lock_reason: null, products: [] },
+    { headers: NO_STORE_HEADERS },
+  )
+}
+
+function lockedTrackAResponse(salonId: string): NextResponse<SalonBrandProductsResponse> {
+  return NextResponse.json(
+    {
+      salon_id: salonId,
+      locked: true,
+      lock_reason: 'track_a_subscription',
+      products: [],
+    },
+    { headers: NO_STORE_HEADERS },
+  )
 }
 
 export async function GET(
@@ -28,6 +43,17 @@ export async function GET(
   if (salonError || !salon?.owner_id) return emptyResponse(salonId)
 
   const ownerUserId = String(salon.owner_id)
+
+  const { data: ownerRow, error: ownerError } = await svc
+    .from('users')
+    .select('origin_track')
+    .eq('id', ownerUserId)
+    .maybeSingle()
+
+  if (ownerError) return emptyResponse(salonId)
+
+  const originTrack = String((ownerRow as { origin_track?: string } | null)?.origin_track || 'B')
+  if (originTrack === 'A') return lockedTrackAResponse(salonId)
 
   const { data: linkRows, error: linkError } = await svc
     .from('brand_owner_links')
@@ -78,7 +104,12 @@ export async function GET(
   })
 
   return NextResponse.json(
-    { salon_id: salonId, products } satisfies SalonBrandProductsResponse,
+    {
+      salon_id: salonId,
+      locked: false,
+      lock_reason: null,
+      products,
+    } satisfies SalonBrandProductsResponse,
     { headers: NO_STORE_HEADERS },
   )
 }

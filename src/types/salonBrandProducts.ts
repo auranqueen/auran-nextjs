@@ -11,5 +11,7 @@ export type SalonBrandProductItem = {
 
 export type SalonBrandProductsResponse = {
   salon_id: string
+  locked: boolean
+  lock_reason?: 'track_a_subscription' | null
   products: SalonBrandProductItem[]
 }

@@ -6,6 +6,7 @@ import StoreHeroGreeting from '@/components/salon-store/StoreHeroGreeting'
 import StoreRelationshipCard from '@/components/salon-store/StoreRelationshipCard'
 import StoreRepurchaseCard from '@/components/salon-store/StoreRepurchaseCard'
 import StoreSnsMapInfo from '@/components/salon-store/StoreSnsMapInfo'
+import SalonBrandProductsLocked from '@/components/salon-store/SalonBrandProductsLocked'
 import SalonBrandProductsPanel from '@/components/salon-store/SalonBrandProductsPanel'
 import { EmptyBannerHook } from '@/components/salon-store/EmptyBannerHook'
 import type { SalonBrandProductItem } from '@/types/salonBrandProducts'
@@ -193,6 +194,7 @@ export default function SalonHomePage() {
   type SalonTab = 'menu' | 'products' | 'reviews' | 'info'
   const [tab, setTab] = useState<SalonTab>('menu')
   const [brandProducts, setBrandProducts] = useState<SalonBrandProductItem[]>([])
+  const [brandProductsLocked, setBrandProductsLocked] = useState(false)
   const [brandProductsLoading, setBrandProductsLoading] = useState(false)
   const [brandProductsLoaded, setBrandProductsLoaded] = useState(false)
   const [showProductsTab, setShowProductsTab] = useState(true)
@@ -423,22 +425,28 @@ export default function SalonHomePage() {
         })
         const json = (await res.json().catch(() => null)) as {
           salon_id?: string
+          locked?: boolean
           products?: SalonBrandProductItem[]
         } | null
 
         if (cancelled) return
 
+        const locked = json?.locked === true
         const list = Array.isArray(json?.products) ? json.products : []
+        setBrandProductsLocked(locked)
         setBrandProducts(list)
         setBrandProductsLoaded(true)
 
-        if (list.length === 0) {
+        if (locked) {
+          setShowProductsTab(true)
+        } else if (list.length === 0) {
           setShowProductsTab(false)
           setTab('menu')
         }
       } catch {
         if (!cancelled) {
           setBrandProducts([])
+          setBrandProductsLocked(false)
           setBrandProductsLoaded(true)
           setShowProductsTab(false)
           setTab('menu')
@@ -866,10 +874,14 @@ export default function SalonHomePage() {
 
       <div style={{ padding: 16 }}>
         {tab === 'products' ? (
-          <SalonBrandProductsPanel
-            loading={brandProductsLoading}
-            products={brandProducts}
-          />
+          brandProductsLocked ? (
+            <SalonBrandProductsLocked />
+          ) : (
+            <SalonBrandProductsPanel
+              loading={brandProductsLoading}
+              products={brandProducts}
+            />
+          )
         ) : null}
 
         {tab === 'menu' ? (
