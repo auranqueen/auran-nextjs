@@ -46,19 +46,13 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
         .order('created_at', { ascending: false })
         .limit(5)
       setTopProducts(prods || [])
-      // 연결 원장님 수 (profiles.trade_brands에 brandName 포함)
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('trade_brands, preferred_brands')
-      if (profiles) {
-          const cnt = profiles.filter((p: any) => {
-            const brands = Array.isArray(p.trade_brands) && p.trade_brands.length > 0
-              ? p.trade_brands
-              : (Array.isArray(p.preferred_brands) ? p.preferred_brands : [])
-            return brands.some((b: string) => b === brandName)
-          }).length
-        setOwnerCount(cnt)
-      }
+      // 연결 원장님 수 (brand_owner_links active)
+      const { count: activeOwnerCount } = await supabase
+        .from('brand_owner_links')
+        .select('id', { count: 'exact', head: true })
+        .eq('brand_id', brandId)
+        .eq('status', 'active')
+      setOwnerCount(activeOwnerCount ?? 0)
       const { data: lotData } = await supabase
         .from('brand_inventory_lots')
         .select('lot_number, remaining_qty, expires_at, brand_inventory(product_name)')
@@ -128,7 +122,7 @@ export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabC
       setLoading(false)
     }
     void fetch()
-  }, [brandId, brandName])
+  }, [brandId, supabase])
   const kpis = [
     { label: '이달 판매액', value: loading ? '-' : `₩${(monthSales / 10000).toFixed(0)}만`, color: '#fff' },
     { label: '처리대기 주문', value: loading ? '-' : `${pendingOrders}`, color: pendingOrders > 0 ? '#e8a500' : '#fff' },

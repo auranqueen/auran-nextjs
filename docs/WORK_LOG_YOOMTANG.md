@@ -1,5 +1,11 @@
 # YOOMTANG 작업 로그 (쉬운 말)
 
+## 2026-07-13
+
+- 2026-07-13 | 개선(중요) | **브랜드-원장 연결을 문자열(trade_brands) 대신 ID(link)로 바꿨어요 — 1단계.** 원장 발주 화면은 `brand_owner_links` active 연결의 brand_id로 제품을 보고, 브랜드 홈 「활성 원장님」 숫자도 link 기준이에요. 브랜드명 바뀌어도 카운트 안 깨져요 | 완료
+- 2026-07-13 | 준비작업 | **`brand_owner_links` RLS(092)** 마이그레이션 파일 추가 — owner 본인 조회, brand 소유·멤버 조회·승인, admin 전체. SQL은 윰탱님이 직접 실행 | 완료
+- 2026-07-13 | 개선 | **`resolveOwnerIds`** 유틸 추가 — auth_id로 users.id·profiles.id 한 번에 매핑 (link의 owner_id는 users.id) | 완료
+
 ## 2026-07-12
 
 - 2026-07-12 | 개선 | **브랜드 제품관리에 제품명 검색창**을 넣었어요. 브랜드 pill·상태 탭과 같이 AND로 걸리고, 상태 탭 숫자도 검색 결과 기준이에요 | 완료

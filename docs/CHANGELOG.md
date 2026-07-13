@@ -3,6 +3,10 @@
 
 ---
 
+## 2026-07-13
+
+- **브랜드-원장 연결 판단 1단계 (092)**: `trade_brands`/`preferred_brands` 문자열 매칭 → `brand_owner_links`(ID 기반) 전환. 원장 발주(`brand-orders/page.tsx`)는 active link의 `brand_id`로 제품·프로모 조회, 홈 KPI(`BrandTabHome`) 「활성 원장님」은 link COUNT. `resolveOwnerIds.ts` 추가(auth_id → users.id + profiles.id). `092_brand_owner_links_rls.sql` — owner SELECT / brand·member SELECT·UPDATE / admin ALL (마이그레이션 파일만, 미실행). 백필 전 link 없는 레거시 원장은 발주·카운트 0 가능
+
 ## 2026-07-12
 
 - **제품명 검색바 + brand_products RLS 역할별 분리 (091)**: `BrandTabProducts`에 제품명 부분검색(대소문자 무시, 브랜드·상태 필터 AND). `brand_products_select_active` 삭제 후 `select_active_brand`(brand·본인 active만) / `select_active_owner`(owner·트랙A·active 전체) 2정책 분리. admin은 기존 `admin_all` 유지. 마이그레이션 파일만 추가(미실행)

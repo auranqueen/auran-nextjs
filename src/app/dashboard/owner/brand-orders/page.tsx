@@ -12,6 +12,7 @@ import {
   promoLabel,
   type SupplyPromoRow,
 } from '@/lib/brand/brandOrderPromos'
+import { resolveOwnerIds } from '@/lib/brand/resolveOwnerIds'
 
 const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
@@ -93,13 +94,20 @@ export default function BrandOrdersPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.replace('/login?role=owner'); return }
 
-    const [{ data: userRow }, { data: ownerProf }] = await Promise.all([
+    const [{ data: userRow }, ownerIds] = await Promise.all([
       supabase.from('users').select('id, name, store_name, origin_track, role').eq('auth_id', user.id).maybeSingle(),
-      supabase.from('profiles').select('id, grade, trade_brands, preferred_brands, owner_store_name, full_name').eq('auth_id', user.id).maybeSingle(),
+      resolveOwnerIds(supabase, user.id),
     ])
+
+    const { data: ownerProf } = await supabase
+      .from('profiles')
+      .select('id, grade, owner_store_name, full_name')
+      .eq('auth_id', user.id)
+      .maybeSingle()
+
     setOwnerName((ownerProf as { full_name?: string } | null)?.full_name || (userRow as { name?: string } | null)?.name || '')
     setSalonName((ownerProf as { owner_store_name?: string } | null)?.owner_store_name || (userRow as { store_name?: string } | null)?.store_name || '')
-    setOwnerProfileId((ownerProf as { id?: string } | null)?.id || null)
+    setOwnerProfileId(ownerIds?.profileId ?? null)
 
     const originTrack = String((userRow as { origin_track?: string } | null)?.origin_track || 'B')
     if (originTrack !== 'A') {
@@ -112,69 +120,65 @@ export default function BrandOrdersPage() {
     }
     setTrackAllowed(true)
 
-    if (!(ownerProf as { id?: string } | null)?.id) {
+    const ownerUserId = ownerIds?.userId ?? (userRow as { id?: string } | null)?.id ?? null
+    if (!ownerUserId || !ownerIds?.profileId) {
       showToast('프로필 정보를 불러올 수 없어요. 다시 시도해주세요.')
       setLoading(false)
       return
     }
 
-    const profileId = (ownerProf as { id: string }).id
+    const profileId = ownerIds.profileId
     const g = (ownerProf as { grade?: string } | null)?.grade || '취급점'
     setGrade(g)
 
-    const tradeBrands: string[] = Array.isArray((ownerProf as { trade_brands?: string[] }).trade_brands)
-      && (ownerProf as { trade_brands: string[] }).trade_brands.length > 0
-      ? (ownerProf as { trade_brands: string[] }).trade_brands
-      : (Array.isArray((ownerProf as { preferred_brands?: string[] }).preferred_brands)
-        ? (ownerProf as { preferred_brands: string[] }).preferred_brands
-        : [])
+    const { data: linkRows } = await supabase
+      .from('brand_owner_links')
+      .select('brand_id')
+      .eq('owner_id', ownerUserId)
+      .eq('status', 'active')
 
-    if (tradeBrands.length > 0) {
-      const { data: brandRows } = await supabase.from('brands').select('id, name').in('name', tradeBrands)
-      const brandIds = (brandRows || []).map((b: { id: string }) => b.id)
+    const brandIds = Array.from(
+      new Set((linkRows || []).map((r: { brand_id: string }) => String(r.brand_id)).filter(Boolean)),
+    )
 
-      if (brandIds.length > 0) {
-        const [{ data: prodRows }, { data: promoRows }] = await Promise.all([
-          supabase
-            .from('brand_products')
-            .select('id, name, thumb_img, brand_id, supply_price, brands(name)')
-            .in('brand_id', brandIds)
-            .eq('status', 'active')
-            .order('created_at', { ascending: false }),
-          supabase
-            .from('supply_promos')
-            .select('id, brand_id, qty, bonus_qty, bonus, condition, title')
-            .in('brand_id', brandIds)
-            .eq('condition', g)
-            .eq('promo_type', 'qty_price')
-            .eq('status', 'active'),
-        ])
+    if (brandIds.length > 0) {
+      const [{ data: prodRows }, { data: promoRows }] = await Promise.all([
+        supabase
+          .from('brand_products')
+          .select('id, name, thumb_img, brand_id, supply_price, brands(name)')
+          .in('brand_id', brandIds)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('supply_promos')
+          .select('id, brand_id, qty, bonus_qty, bonus, condition, title')
+          .in('brand_id', brandIds)
+          .eq('condition', g)
+          .eq('promo_type', 'qty_price')
+          .eq('status', 'active'),
+      ])
 
-        setSupplyPromos((promoRows || []) as SupplyPromoRow[])
-        setProducts((prodRows || []).map((p: {
-          id: string
-          name: string
-          thumb_img: string | null
-          brand_id: string
-          supply_price: number | null
-          brands: { name: string } | { name: string }[] | null
-        }) => {
-          const brandRef = p.brands
-          const brandName = Array.isArray(brandRef) ? brandRef[0]?.name : brandRef?.name
-          return {
-            id: p.id,
-            name: p.name || '',
-            thumb_img: p.thumb_img || null,
-            brand_id: p.brand_id,
-            brand_name: brandName || '',
-            supply_price: Math.trunc(Number(p.supply_price) || 0),
-            status: 'active',
-          }
-        }))
-      } else {
-        setProducts([])
-        setSupplyPromos([])
-      }
+      setSupplyPromos((promoRows || []) as SupplyPromoRow[])
+      setProducts((prodRows || []).map((p: {
+        id: string
+        name: string
+        thumb_img: string | null
+        brand_id: string
+        supply_price: number | null
+        brands: { name: string } | { name: string }[] | null
+      }) => {
+        const brandRef = p.brands
+        const brandName = Array.isArray(brandRef) ? brandRef[0]?.name : brandRef?.name
+        return {
+          id: p.id,
+          name: p.name || '',
+          thumb_img: p.thumb_img || null,
+          brand_id: p.brand_id,
+          brand_name: brandName || '',
+          supply_price: Math.trunc(Number(p.supply_price) || 0),
+          status: 'active',
+        }
+      }))
     } else {
       setProducts([])
       setSupplyPromos([])
@@ -453,8 +457,8 @@ export default function BrandOrdersPage() {
         <div style={{ padding: '0 16px' }}>
           {Object.keys(brandGroups).length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 0', color: SUB, fontSize: 14 }}>
-              거래 브랜드 제품이 없어요.<br />
-              <span style={{ fontSize: 12 }}>원장님 프로필에서 거래 브랜드를 설정해주세요</span>
+              연결된 브랜드 제품이 없어요.<br />
+              <span style={{ fontSize: 12 }}>브랜드사 제휴 연결(active) 후 이용할 수 있어요</span>
             </div>
           ) : (
             Object.entries(brandGroups).map(([brandName, prods]) => (
