@@ -5,6 +5,7 @@
 
 ## 2026-07-13
 
+- **원장 적립금(T) CSV 대량 업로드**: `parseCsv.ts` 공통 유틸, `POST /api/brand/owner-points/bulk-import`(brand 인증 + `tryCreateAdminClient` service role), `BrandTabOwners` 업로드 패널 — 매장명 정규화 매칭(company·active link·트랙A), 성공/실패/충돌 미리보기, `manual_init` ledger + balance 갱신(idempotency_key)
 - **발주화면 브랜드명·그리드 UX**: `brand-orders/page.tsx` 필터 pill 표시명 간소화(`시바산그룹`→`시바산`, DB 미변경), 제품 수 보라색 강조(`전체 N` 형식). 제품 그리드 반응형 — PC(≥768px) 5열, 모바일 3열, 좁은 화면(<400px) 2열
 - **원장 발주화면 브랜드 필터·검색**: `brand-orders/page.tsx`에 `brand_owner_links` 기준 브랜드 pill(전체 + 연결 브랜드별, 제품 수 표시)과 제품명 검색바 추가 — 클라이언트 필터(브랜드 AND 검색어 부분일치), 등급 pill은 선택 브랜드 등급 반영
 - **세컨브랜드 자동연결 + 브랜드 대시보드 UX**: `connectTrackAOwnersToSecondBrand`가 `trade_brands`만 갱신하던 문제 수정 — 트랙A eligible 원장에 `brand_owner_links`(세컨 `brand_id`, `users.id`, active) upsert 추가(ON CONFLICT 무시). 기존 씨아클라르제 백필 SQL `scripts/backfill_civaclare_second_brand_links.sql`(수동 1회). 브랜드 주문탭(`BrandHubContent`)을 상단 선택 브랜드(`activeBrandId`) 기준 조회로 연동. 제품 탭 기본 상태 `pending` → `active`
