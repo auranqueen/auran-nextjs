@@ -78,11 +78,27 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
   const [csvBusy, setCsvBusy] = useState(false)
   const [csvDryRun, setCsvDryRun] = useState(true)
   const [csvResult, setCsvResult] = useState<BulkImportResult | null>(null)
+  const [hasManualInit, setHasManualInit] = useState(false)
+  const [initLedgerLoading, setInitLedgerLoading] = useState(true)
+  const [showCsvReupload, setShowCsvReupload] = useState(false)
+
+  const checkManualInitExists = async (cid: string) => {
+    setInitLedgerLoading(true)
+    const { count, error } = await supabase
+      .from('brand_owner_point_ledger')
+      .select('id', { count: 'exact', head: true })
+      .eq('company_id', cid)
+      .eq('type', 'manual_init')
+    setHasManualInit(!error && (count ?? 0) > 0)
+    setInitLedgerLoading(false)
+  }
 
   const loadPointBalances = async () => {
     if (!brandId) {
       setCompanyId(null)
       setPointBalances({})
+      setHasManualInit(false)
+      setInitLedgerLoading(false)
       return
     }
     const { data: brandRow } = await supabase
@@ -94,13 +110,19 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
     if (!cid) {
       setCompanyId(null)
       setPointBalances({})
+      setHasManualInit(false)
+      setInitLedgerLoading(false)
       return
     }
-    setCompanyId(String(cid))
-    const { data: rows } = await supabase
-      .from('brand_owner_point_balance')
-      .select('owner_id, balance')
-      .eq('company_id', cid)
+    const cidStr = String(cid)
+    setCompanyId(cidStr)
+    const [{ data: rows }] = await Promise.all([
+      supabase
+        .from('brand_owner_point_balance')
+        .select('owner_id, balance')
+        .eq('company_id', cidStr),
+      checkManualInitExists(cidStr),
+    ])
     const map: Record<string, number> = {}
     for (const r of (rows || []) as { owner_id: string; balance: number }[]) {
       map[r.owner_id] = Math.trunc(Number(r.balance) || 0)
@@ -154,6 +176,11 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
     void loadBrandOwnerLinks()
     void loadPointBalances()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brandId])
+
+  useEffect(() => {
+    setShowCsvReupload(false)
+    setCsvResult(null)
   }, [brandId])
 
   useEffect(() => {
@@ -255,6 +282,10 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
       })
       if (!dryRun) {
         await loadPointBalances()
+        if (companyId) await checkManualInitExists(companyId)
+        if ((json.imported ?? 0) > 0) {
+          setShowCsvReupload(false)
+        }
         showToast(`적립 반영 완료 (${json.imported}건)`)
       } else {
         showToast(`미리보기 완료 — 반영 가능 ${json.imported}건`)
@@ -378,44 +409,27 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
     setShowAddForm(false)
     setAddSaving(false)
   }
-  return (
-    <div>
-      {toast && (
-        <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>
-          {toast}
-        </div>
-      )}
-      <div style={{ ...CARD, marginBottom: 10 }}>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-          {grades.map(g => (
-            <button
-              key={g}
-              type="button"
-              onClick={() => setFilter(g)}
-              style={{ fontSize: 11, padding: '3px 12px', borderRadius: 20, border: `0.5px solid ${filter === g ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: filter === g ? 'rgba(123,94,167,0.2)' : 'transparent', color: filter === g ? '#c4a7e7' : SUB, cursor: 'pointer' }}
-            >
-              {g === 'all' ? `전체 (${owners.length})` : g}
-            </button>
-          ))}
-        </div>
-        <input
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="원장님 이름 또는 살롱명 검색"
-          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: TEXT, outline: 'none' }}
-        />
-      </div>
-      <div style={CARD}>
-        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>초기 적립금(T) CSV 대량 업로드</div>
+
+  const renderCsvUploadPanel = (placement: 'primary' | 'footer') => {
+    const isFooter = placement === 'footer'
+    const wrapStyle = isFooter
+      ? { marginTop: 8, padding: 12, borderRadius: 8, border: `0.5px solid ${BORDER}`, background: 'rgba(255,255,255,0.02)' }
+      : CARD
+
+    return (
+      <div style={wrapStyle}>
+        {!isFooter ? (
+          <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>초기 적립금(T) CSV 대량 업로드</div>
+        ) : null}
         {!companyId ? (
           <div style={{ fontSize: 11, color: SUB, lineHeight: 1.6, marginBottom: 10 }}>
             회사(company_id)가 아직 연결되지 않았어요. 093 마이그레이션 + 백필 스크립트 실행 후 이용할 수 있어요.
           </div>
-        ) : (
+        ) : !isFooter ? (
           <div style={{ fontSize: 10, color: SUB, marginBottom: 8, fontFamily: "'JetBrains Mono', monospace" }}>
             company_id: {companyId.slice(0, 8)}…
           </div>
-        )}
+        ) : null}
         <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.6, marginBottom: 10 }}>
           CSV 헤더: <span style={{ fontFamily: "'JetBrains Mono', monospace", color: GOLD }}>매장명, 금액, 메모(선택)</span>
           <br />
@@ -514,6 +528,39 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
           </div>
         ) : null}
       </div>
+    )
+  }
+
+  const showCsvAtTop = !initLedgerLoading && !hasManualInit
+
+  return (
+    <div>
+      {toast && (
+        <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>
+          {toast}
+        </div>
+      )}
+      <div style={{ ...CARD, marginBottom: 10 }}>
+        <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+          {grades.map(g => (
+            <button
+              key={g}
+              type="button"
+              onClick={() => setFilter(g)}
+              style={{ fontSize: 11, padding: '3px 12px', borderRadius: 20, border: `0.5px solid ${filter === g ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: filter === g ? 'rgba(123,94,167,0.2)' : 'transparent', color: filter === g ? '#c4a7e7' : SUB, cursor: 'pointer' }}
+            >
+              {g === 'all' ? `전체 (${owners.length})` : g}
+            </button>
+          ))}
+        </div>
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="원장님 이름 또는 살롱명 검색"
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: TEXT, outline: 'none' }}
+        />
+      </div>
+      {showCsvAtTop ? renderCsvUploadPanel('primary') : null}
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>제휴 원장 초대</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -693,6 +740,48 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
           </div>
         </div>
       )}
+      {!initLedgerLoading && hasManualInit && companyId ? (
+        <div style={{ marginTop: 14, paddingTop: 4, textAlign: 'right' }}>
+          {!showCsvReupload ? (
+            <button
+              type="button"
+              onClick={() => setShowCsvReupload(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                fontSize: 10,
+                color: SUB,
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                opacity: 0.75,
+              }}
+            >
+              초기 적립금 CSV 재업로드
+            </button>
+          ) : (
+            <div style={{ textAlign: 'left' }}>
+              {renderCsvUploadPanel('footer')}
+              <div style={{ textAlign: 'right', marginTop: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => { setShowCsvReupload(false); setCsvResult(null) }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    fontSize: 10,
+                    color: SUB,
+                    cursor: 'pointer',
+                  }}
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   )
 }
