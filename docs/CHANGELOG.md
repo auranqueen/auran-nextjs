@@ -5,6 +5,7 @@
 
 ## 2026-07-13
 
+- **원장 적립금(T) 스키마 093**: `brand_companies`(회사 단위) + `brands.company_id` FK, `brand_owner_point_ledger`(append-only 이력: manual_init/order_earned/used/carried_forward/adjustment), `brand_owner_point_balance`(company_id+owner_id 잔액 요약). RLS 092 패턴 — owner/brand SELECT only, INSERT/UPDATE는 service role API 전용. 백필 스크립트 `scripts/backfill_093_civasan_company.sql`(시바산+씨아클라르제). **마이그레이션 파일만, 미실행**. 세컨브랜드 `company_id` 연동·API는 후속
 - **발주 수량 5단위 + 보너스 표시 + 썸네일 정사각형**: 원장 발주 담기·증감을 5개 단위(`QTY_STEP`)로 통일(카드·확인 팝업, 최소 0 유지). 원장 주문 탭·브랜드 수주 목록(`BrandTabOrders`)에 items 저장 `bonus > 0`이면 `(+N 증정)` 표시(Invoice와 동일 정보). `BrandOrderProductCard` 썸네일 `aspect-ratio: 1/1` 정사각형 고정
 - **brand-orders `store_name` 400 버그 (심각)**: 원장 발주 화면 `users` select에 존재하지 않는 `store_name` 컬럼 요청 → PostgREST 400 → `userRow` null → `origin_track` 미조회·기본값 `'B'` → **트랙A 원장 전원** 발주 진입 차단. `salon_name`으로 교체, 상호명 fallback은 `profiles.owner_store_name` → `users.salon_name`
 - **브랜드-원장 연결 판단 1단계 (092)**: `trade_brands`/`preferred_brands` 문자열 매칭 → `brand_owner_links`(ID 기반) 전환. 원장 발주(`brand-orders/page.tsx`)는 active link의 `brand_id`로 제품·프로모 조회, 홈 KPI(`BrandTabHome`) 「활성 원장님」은 link COUNT. `resolveOwnerIds.ts` 추가(auth_id → users.id + profiles.id). `092_brand_owner_links_rls.sql` — owner SELECT / brand·member SELECT·UPDATE / admin ALL (마이그레이션 파일만, 미실행). 백필 전 link 없는 레거시 원장은 발주·카운트 0 가능
