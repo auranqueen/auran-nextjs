@@ -30,13 +30,17 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   done:      { label: '완료',      color: 'rgba(255,255,255,0.3)' },
   cancelled: { label: '취소',      color: 'rgba(229,57,53,0.7)' },
 }
+function formatOrderItemLine(it: { name: string; qty: number; bonus?: number }): string {
+  const bonus = Math.trunc(Number(it.bonus) || 0)
+  return `${it.name} ${it.qty}ea${bonus > 0 ? ` (+${bonus} 증정)` : ''}`
+}
 interface OrderRow {
   id: string
   owner_name: string | null
   salon_name: string | null
   grade: string | null
   status: string
-  items: Array<{ name: string; qty: number }>
+  items: Array<{ name: string; qty: number; bonus?: number }>
   promo_applied: string | null
   points_earned: number
   created_at: string
@@ -292,7 +296,7 @@ export default function BrandTabOrders({ brandId, brandName }: Props) {
                 </div>
                 {items.length > 0 && (
                   <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>
-                    {items.map((it, ii) => `${it.name} ${it.qty}ea`).join(' · ')}
+                    {items.map((it) => formatOrderItemLine(it)).join(' · ')}
                     {o.promo_applied && <span style={{ marginLeft: 6, color: GOLD }}>{o.promo_applied} 적용</span>}
                   </div>
                 )}

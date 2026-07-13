@@ -13,6 +13,7 @@ const BORDER = '#ede9f7'
 const TEXT = '#1A1A2E'
 const SUB = '#888888'
 const LIGHT = '#f8f7fc'
+const QTY_STEP = 5
 
 export type BrandOrderProduct = {
   id: string
@@ -49,7 +50,7 @@ export default function BrandOrderProductCard({
 
   return (
     <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', opacity: priced ? 1 : 0.55 }}>
-      <div style={{ height: 80, background: LIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+      <div style={{ aspectRatio: '1 / 1', width: '100%', background: LIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
         {prod.thumb_img
           ? <img src={prod.thumb_img} alt={prod.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           : <span style={{ fontSize: 26 }}>🧴</span>}
@@ -98,10 +99,10 @@ export default function BrandOrderProductCard({
           </button>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <button type="button" onClick={() => onChangeQty(prod.id, -1)}
+            <button type="button" onClick={() => onChangeQty(prod.id, -QTY_STEP)}
               style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${BORDER}`, background: LIGHT, fontSize: 14, cursor: 'pointer', color: TEXT }}>−</button>
             <span style={{ fontSize: 13, fontWeight: 500, color: TEXT }}>{qty}</span>
-            <button type="button" onClick={() => onChangeQty(prod.id, 1)}
+            <button type="button" onClick={() => onChangeQty(prod.id, QTY_STEP)}
               style={{ width: 26, height: 26, borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', fontSize: 14, cursor: 'pointer' }}>+</button>
           </div>
         )}

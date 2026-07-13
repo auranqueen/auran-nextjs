@@ -20,6 +20,7 @@ const BORDER = '#ede9f7'
 const TEXT = '#1A1A2E'
 const SUB = '#888888'
 const LIGHT = '#f8f7fc'
+const QTY_STEP = 5
 
 interface Product {
   id: string
@@ -44,6 +45,11 @@ interface OrderItem {
   line_amount?: number
   bonus?: number
   promo?: string
+}
+
+function formatOrderItemLine(it: OrderItem): string {
+  const bonus = Math.trunc(Number(it.bonus) || 0)
+  return `${it.name} ${it.qty}ea${bonus > 0 ? ` (+${bonus} 증정)` : ''}`
 }
 
 interface Order {
@@ -274,8 +280,8 @@ export default function BrandOrdersPage() {
     if (!full) return
     setCart((prev) => {
       const ex = prev.find((c) => c.product.id === prod.id)
-      if (ex) return prev.map((c) => (c.product.id === prod.id ? { ...c, qty: c.qty + 1, selectedPromo: null } : c))
-      return [...prev, { product: full, qty: 1, selectedPromo: null }]
+      if (ex) return prev.map((c) => (c.product.id === prod.id ? { ...c, qty: c.qty + QTY_STEP, selectedPromo: null } : c))
+      return [...prev, { product: full, qty: QTY_STEP, selectedPromo: null }]
     })
   }
 
@@ -516,7 +522,7 @@ export default function BrandOrdersPage() {
                     </div>
                   </div>
                   <div style={{ fontSize: 12, color: SUB, marginBottom: 4 }}>
-                    {o.items.map((it) => `${it.name} ${it.qty}ea`).join(' · ')}
+                    {o.items.map((it) => formatOrderItemLine(it)).join(' · ')}
                   </div>
                   {o.total_amount > 0 && (
                     <div style={{ fontSize: 12, color: TEXT, marginBottom: 4 }}>₩{o.total_amount.toLocaleString()}</div>
@@ -565,10 +571,10 @@ export default function BrandOrdersPage() {
                     {line.promo && <div style={{ fontSize: 11, color: PURPLE }}>{line.promo} → +{line.bonus}개 증정</div>}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                    <button type="button" onClick={() => changeQty(item.product.id, -1)}
+                    <button type="button" onClick={() => changeQty(item.product.id, -QTY_STEP)}
                       style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${BORDER}`, background: LIGHT, fontSize: 14, cursor: 'pointer', color: TEXT }}>−</button>
                     <span style={{ fontSize: 14, fontWeight: 500, minWidth: 20, textAlign: 'center', color: TEXT }}>{item.qty}</span>
-                    <button type="button" onClick={() => changeQty(item.product.id, 1)}
+                    <button type="button" onClick={() => changeQty(item.product.id, QTY_STEP)}
                       style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', fontSize: 14, cursor: 'pointer' }}>+</button>
                   </div>
                 </div>
