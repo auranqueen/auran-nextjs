@@ -76,6 +76,10 @@ function matchesProductSearch(name: string, query: string): boolean {
   return name.toLowerCase().includes(q)
 }
 
+function displayBrandName(name: string): string {
+  return name === '시바산그룹' ? '시바산' : name
+}
+
 function brandPillStyle(selected: boolean): CSSProperties {
   return {
     fontSize: 12,
@@ -85,6 +89,14 @@ function brandPillStyle(selected: boolean): CSSProperties {
     background: selected ? `${PURPLE}20` : 'transparent',
     color: selected ? PURPLE : SUB,
     cursor: 'pointer',
+  }
+}
+
+function brandPillCountStyle(selected: boolean): CSSProperties {
+  return {
+    marginLeft: 5,
+    color: selected ? PURPLE : '#7B5EA7',
+    fontWeight: 700,
   }
 }
 
@@ -131,6 +143,7 @@ export default function BrandOrdersPage() {
   const [salonName, setSalonName] = useState('')
   const [ownerProfileId, setOwnerProfileId] = useState<string | null>(null)
   const [trackAllowed, setTrackAllowed] = useState<boolean | null>(null)
+  const [productGridCols, setProductGridCols] = useState(3)
   const overlayRef = useRef<HTMLDivElement>(null)
 
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
@@ -315,13 +328,27 @@ export default function BrandOrdersPage() {
 
   useEffect(() => { void load() }, [load])
 
+  useEffect(() => {
+    const applyGridCols = () => {
+      const w = window.innerWidth
+      if (w >= 768) setProductGridCols(5)
+      else if (w < 400) setProductGridCols(2)
+      else setProductGridCols(3)
+    }
+
+    applyGridCols()
+    window.addEventListener('resize', applyGridCols)
+    return () => window.removeEventListener('resize', applyGridCols)
+  }, [])
+
   const linkedBrandOptions = useMemo(
     () => linkedBrandIds
       .map((id) => {
         const fromProduct = products.find((p) => p.brand_id === id)?.brand_name
+        const name = fromProduct || linkedBrandNames[id] || '브랜드'
         return {
           id,
-          name: fromProduct || linkedBrandNames[id] || '브랜드',
+          name: displayBrandName(name),
         }
       })
       .sort((a, b) => a.name.localeCompare(b.name, 'ko')),
@@ -594,18 +621,27 @@ export default function BrandOrdersPage() {
             onClick={() => setBrandFilter('all')}
             style={brandPillStyle(brandFilter === 'all')}
           >
-            전체 (제품 {products.length})
+            전체
+            <span style={brandPillCountStyle(brandFilter === 'all')}>
+              {products.length}
+            </span>
           </button>
-          {linkedBrandOptions.map((brand) => (
-            <button
-              key={brand.id}
-              type="button"
-              onClick={() => setBrandFilter(brand.id)}
-              style={brandPillStyle(brandFilter === brand.id)}
-            >
-              {brand.name} (제품 {productCountByBrandId.get(brand.id) || 0})
-            </button>
-          ))}
+          {linkedBrandOptions.map((brand) => {
+            const selected = brandFilter === brand.id
+            return (
+              <button
+                key={brand.id}
+                type="button"
+                onClick={() => setBrandFilter(brand.id)}
+                style={brandPillStyle(selected)}
+              >
+                {brand.name}
+                <span style={brandPillCountStyle(selected)}>
+                  {productCountByBrandId.get(brand.id) || 0}
+                </span>
+              </button>
+            )
+          })}
         </div>
       )}
 
@@ -668,7 +704,7 @@ export default function BrandOrdersPage() {
                     </button>
                   )}
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${productGridCols}, 1fr)`, gap: 8 }}>
                   {prods.map((prod) => {
                     const cartItem = cart.find((c) => c.product.id === prod.id)
                     const brandGrade = gradeForBrand(gradeByBrandId, prod.brand_id)
