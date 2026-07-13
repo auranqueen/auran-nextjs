@@ -5,6 +5,7 @@
 
 ## 2026-07-13
 
+- **094 마이그레이션 실제 컬럼(price) 정합 + 결제 연동**: `subscription_plans` INSERT를 `price`·`plan`(=slug)·`mode`(NULL) 기준으로 수정. `admin_settings` `category=subscription`에 `price_track_*_annual` 4키 시드. `subscription/page.tsx` `priceFor()` — admin_settings 우선, 없으면 DB `price` fallback. `admin/subscriptions` 플랜 목록 `p.price` 표시. **094 SQL 미실행**
 - **원장 스토어 이용료 2단 레이어 구독플랜(094)**: `subscription_plans`에 `billing_period`·`layer`(store/showcase)·`trial_days` + 연간 플랜 4종 — `track_a/b_store_annual`(스토어유지비), `track_a/b_showcase_annual`(제품노출+SNS+라이브). PayApp webhook 연간 slug는 `expires_at` +1년. `storeTrial.ts` 90일 체험 판정 유틸. **094 SQL 미실행**
 - **원장 스토어 브랜드 제품 탭 트랙A 잠금**: `GET /api/salons/[id]/brand-products`가 `users.origin_track` 조회 — 트랙A면 `locked: true`·`lock_reason: track_a_subscription`·`products: []` 즉시 반환(1단계 하드코딩). 트랙B는 기존 link→`brand_products` 체인 + `locked: false`. 살롱 페이지 `SalonBrandProductsLocked` 패널(CTA 없음), `locked` 시 탭 유지·잠금 UI
 - **원장 스토어 브랜드 제품 진열**: `/salons/[id]`에 「브랜드 제품」탭 추가 — `GET /api/salons/[id]/brand-products`(service role)가 `salons.owner_id` → `brand_owner_links`(active) → `brand_products`(active)만 조회. 살롱 전용 `SalonBrandProductCard`·`SalonBrandProductsPanel`, `supply_price` 미노출. 오렌몰 `products` 테이블·홈·검색과 완전 분리

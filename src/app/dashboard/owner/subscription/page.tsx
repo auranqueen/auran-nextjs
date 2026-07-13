@@ -14,6 +14,7 @@ type SubPlanRow = {
   name?: string | null
   mode?: string | null
   owner_mode?: string | null
+  price?: number | null
   features?: string[] | null
   sort_order?: number | null
   is_recommended?: boolean | null
@@ -193,6 +194,8 @@ export default function OwnerSubscriptionPage() {
       const v = settings[k]
       if (v !== undefined && v !== null && String(v).trim() !== '') return Number(v)
     }
+    const dbPrice = Number(p.price)
+    if (Number.isFinite(dbPrice) && dbPrice > 0) return dbPrice
     return 0
   }
 

@@ -1,6 +1,6 @@
 -- 094_subscription_plans_store_showcase_annual.sql
 -- 원장 스토어 이용료: 레이어1(store) + 레이어2(showcase) 연간 플랜 4종
--- 전제: public.subscription_plans 테이블 존재 (slug, name, monthly_price, features, is_active, sort_order 등)
+-- 전제: public.subscription_plans (id, mode, plan, name, price, features, is_active, sort_order, created_at, slug)
 -- 실행: 윰탱님 Supabase SQL Editor에서 직접
 
 -- ============================================================
@@ -72,8 +72,10 @@ WHERE billing_period IS NULL OR trial_days IS NULL;
 -- ============================================================
 INSERT INTO public.subscription_plans (
   slug,
+  plan,
+  mode,
   name,
-  monthly_price,
+  price,
   billing_period,
   layer,
   trial_days,
@@ -83,6 +85,8 @@ INSERT INTO public.subscription_plans (
 )
 VALUES (
   'track_a_store_annual',
+  'track_a_store_annual',
+  NULL,
   '스토어 유지비 연간 (트랙A)',
   220000,
   'annual',
@@ -93,8 +97,10 @@ VALUES (
   110
 )
 ON CONFLICT (slug) DO UPDATE SET
+  plan = EXCLUDED.plan,
+  mode = EXCLUDED.mode,
   name = EXCLUDED.name,
-  monthly_price = EXCLUDED.monthly_price,
+  price = EXCLUDED.price,
   billing_period = EXCLUDED.billing_period,
   layer = EXCLUDED.layer,
   trial_days = EXCLUDED.trial_days,
@@ -107,8 +113,10 @@ ON CONFLICT (slug) DO UPDATE SET
 -- ============================================================
 INSERT INTO public.subscription_plans (
   slug,
+  plan,
+  mode,
   name,
-  monthly_price,
+  price,
   billing_period,
   layer,
   trial_days,
@@ -118,6 +126,8 @@ INSERT INTO public.subscription_plans (
 )
 VALUES (
   'track_b_store_annual',
+  'track_b_store_annual',
+  NULL,
   '스토어 유지비 연간 (트랙B)',
   120000,
   'annual',
@@ -128,8 +138,10 @@ VALUES (
   111
 )
 ON CONFLICT (slug) DO UPDATE SET
+  plan = EXCLUDED.plan,
+  mode = EXCLUDED.mode,
   name = EXCLUDED.name,
-  monthly_price = EXCLUDED.monthly_price,
+  price = EXCLUDED.price,
   billing_period = EXCLUDED.billing_period,
   layer = EXCLUDED.layer,
   trial_days = EXCLUDED.trial_days,
@@ -142,8 +154,10 @@ ON CONFLICT (slug) DO UPDATE SET
 -- ============================================================
 INSERT INTO public.subscription_plans (
   slug,
+  plan,
+  mode,
   name,
-  monthly_price,
+  price,
   billing_period,
   layer,
   trial_days,
@@ -153,6 +167,8 @@ INSERT INTO public.subscription_plans (
 )
 VALUES (
   'track_a_showcase_annual',
+  'track_a_showcase_annual',
+  NULL,
   '쇼케이스 연간 (트랙A)',
   330000,
   'annual',
@@ -163,8 +179,10 @@ VALUES (
   210
 )
 ON CONFLICT (slug) DO UPDATE SET
+  plan = EXCLUDED.plan,
+  mode = EXCLUDED.mode,
   name = EXCLUDED.name,
-  monthly_price = EXCLUDED.monthly_price,
+  price = EXCLUDED.price,
   billing_period = EXCLUDED.billing_period,
   layer = EXCLUDED.layer,
   trial_days = EXCLUDED.trial_days,
@@ -177,8 +195,10 @@ ON CONFLICT (slug) DO UPDATE SET
 -- ============================================================
 INSERT INTO public.subscription_plans (
   slug,
+  plan,
+  mode,
   name,
-  monthly_price,
+  price,
   billing_period,
   layer,
   trial_days,
@@ -188,6 +208,8 @@ INSERT INTO public.subscription_plans (
 )
 VALUES (
   'track_b_showcase_annual',
+  'track_b_showcase_annual',
+  NULL,
   '쇼케이스 연간 (트랙B)',
   220000,
   'annual',
@@ -198,11 +220,28 @@ VALUES (
   211
 )
 ON CONFLICT (slug) DO UPDATE SET
+  plan = EXCLUDED.plan,
+  mode = EXCLUDED.mode,
   name = EXCLUDED.name,
-  monthly_price = EXCLUDED.monthly_price,
+  price = EXCLUDED.price,
   billing_period = EXCLUDED.billing_period,
   layer = EXCLUDED.layer,
   trial_days = EXCLUDED.trial_days,
   features = EXCLUDED.features,
   is_active = EXCLUDED.is_active,
   sort_order = EXCLUDED.sort_order;
+
+-- ============================================================
+-- 6. admin_settings: 결제 금액 (subscription/page.tsx priceFor 키)
+--    키 패턴: price_{slug}
+-- ============================================================
+INSERT INTO public.admin_settings (category, key, value)
+VALUES
+  ('subscription', 'price_track_a_store_annual', '220000'),
+  ('subscription', 'price_track_b_store_annual', '120000'),
+  ('subscription', 'price_track_a_showcase_annual', '330000'),
+  ('subscription', 'price_track_b_showcase_annual', '220000')
+ON CONFLICT (category, key)
+DO UPDATE SET
+  value = EXCLUDED.value,
+  updated_at = NOW();
