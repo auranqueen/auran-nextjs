@@ -5,6 +5,7 @@
 
 ## 2026-07-13
 
+- **발주화면 등급·적립 계산 수정**: `brand-orders/page.tsx` 등급 소스를 `profiles.grade`(고객 멤버십) → `brand_owner_grades`(브랜드별 원장 등급, `owner_id=profiles.id`)로 전환. `gradeByBrandId`·`linkedBrandIds` state, 브랜드별 `supply_promos.condition` 필터. `brandOrderPromos.calcPointsEarned` 추가 — 적립 T = `floor(발주합계 × 등급적립율% / 100)` (기존 수량×% 버그 수정). 발주 확인 팝업에 적립 예정 T 표시
 - **원장 적립금(T) 스키마 093**: `brand_companies`(회사 단위) + `brands.company_id` FK, `brand_owner_point_ledger`(append-only 이력: manual_init/order_earned/used/carried_forward/adjustment), `brand_owner_point_balance`(company_id+owner_id 잔액 요약). RLS 092 패턴 — owner/brand SELECT only, INSERT/UPDATE는 service role API 전용. 백필 스크립트 `scripts/backfill_093_civasan_company.sql`(시바산+씨아클라르제). **마이그레이션 파일만, 미실행**. 세컨브랜드 `company_id` 연동·API는 후속
 - **발주 수량 5단위 + 보너스 표시 + 썸네일 정사각형**: 원장 발주 담기·증감을 5개 단위(`QTY_STEP`)로 통일(카드·확인 팝업, 최소 0 유지). 원장 주문 탭·브랜드 수주 목록(`BrandTabOrders`)에 items 저장 `bonus > 0`이면 `(+N 증정)` 표시(Invoice와 동일 정보). `BrandOrderProductCard` 썸네일 `aspect-ratio: 1/1` 정사각형 고정
 - **brand-orders `store_name` 400 버그 (심각)**: 원장 발주 화면 `users` select에 존재하지 않는 `store_name` 컬럼 요청 → PostgREST 400 → `userRow` null → `origin_track` 미조회·기본값 `'B'` → **트랙A 원장 전원** 발주 진입 차단. `salon_name`으로 교체, 상호명 fallback은 `profiles.owner_store_name` → `users.salon_name`

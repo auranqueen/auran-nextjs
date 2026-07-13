@@ -65,6 +65,11 @@ export function gradePointRate(grade: string): number {
   return GRADE_POINT_RATES[grade] ?? 1
 }
 
+/** 발주 금액 기준 적립 T (표시용 %는 gradePointRate 유지) */
+export function calcPointsEarned(totalAmount: number, grade: string): number {
+  return Math.floor(totalAmount * gradePointRate(grade) / 100)
+}
+
 export function promosForBrand(promos: SupplyPromoRow[], brandId: string): SupplyPromoRow[] {
   return promos
     .filter((p) => p.brand_id === brandId)

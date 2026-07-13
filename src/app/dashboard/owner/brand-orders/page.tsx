@@ -7,6 +7,7 @@ import DashboardBottomNav from '@/components/DashboardBottomNav'
 import BrandOrderProductCard, { type BrandOrderProduct } from './BrandOrderProductCard'
 import {
   buildOrderLineItem,
+  calcPointsEarned,
   gradePointRate,
   hasValidSupplyPrice,
   promoLabel,
@@ -21,6 +22,7 @@ const TEXT = '#1A1A2E'
 const SUB = '#888888'
 const LIGHT = '#f8f7fc'
 const QTY_STEP = 5
+const DEFAULT_GRADE = '취급점'
 
 interface Product {
   id: string
@@ -52,6 +54,21 @@ function formatOrderItemLine(it: OrderItem): string {
   return `${it.name} ${it.qty}ea${bonus > 0 ? ` (+${bonus} 증정)` : ''}`
 }
 
+function gradeForBrand(gradeByBrandId: Record<string, string>, brandId: string | null | undefined): string {
+  if (!brandId) return DEFAULT_GRADE
+  return gradeByBrandId[brandId] || DEFAULT_GRADE
+}
+
+function promosForBrandGrade(
+  promos: SupplyPromoRow[],
+  brandId: string,
+  grade: string,
+): SupplyPromoRow[] {
+  return promos
+    .filter((p) => p.brand_id === brandId && (p.condition || '') === grade)
+    .sort((a, b) => (a.qty ?? 0) - (b.qty ?? 0))
+}
+
 interface Order {
   id: string
   brand_id: string | null
@@ -74,7 +91,8 @@ export default function BrandOrdersPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [supplyPromos, setSupplyPromos] = useState<SupplyPromoRow[]>([])
-  const [grade, setGrade] = useState('취급점')
+  const [gradeByBrandId, setGradeByBrandId] = useState<Record<string, string>>({})
+  const [linkedBrandIds, setLinkedBrandIds] = useState<string[]>([])
   const [cart, setCart] = useState<CartItem[]>([])
   const [showPopup, setShowPopup] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
@@ -107,7 +125,7 @@ export default function BrandOrdersPage() {
 
     const { data: ownerProf } = await supabase
       .from('profiles')
-      .select('id, grade, owner_store_name, full_name')
+      .select('id, owner_store_name, full_name')
       .eq('auth_id', user.id)
       .maybeSingle()
 
@@ -125,6 +143,8 @@ export default function BrandOrdersPage() {
       setProducts([])
       setSupplyPromos([])
       setOrders([])
+      setGradeByBrandId({})
+      setLinkedBrandIds([])
       setLoading(false)
       return
     }
@@ -138,8 +158,6 @@ export default function BrandOrdersPage() {
     }
 
     const profileId = ownerIds.profileId
-    const g = (ownerProf as { grade?: string } | null)?.grade || '취급점'
-    setGrade(g)
 
     const { data: linkRows } = await supabase
       .from('brand_owner_links')
@@ -150,8 +168,28 @@ export default function BrandOrdersPage() {
     const brandIds = Array.from(
       new Set((linkRows || []).map((r: { brand_id: string }) => String(r.brand_id)).filter(Boolean)),
     )
+    setLinkedBrandIds(brandIds)
+
+    let gradeMap: Record<string, string> = {}
+    if (brandIds.length > 0) {
+      const { data: gradeRows } = await supabase
+        .from('brand_owner_grades')
+        .select('brand_id, grade')
+        .eq('owner_id', profileId)
+        .in('brand_id', brandIds)
+
+      for (const row of gradeRows || []) {
+        gradeMap[String((row as { brand_id: string }).brand_id)] =
+          String((row as { grade?: string }).grade || DEFAULT_GRADE)
+      }
+    }
+    setGradeByBrandId(gradeMap)
 
     if (brandIds.length > 0) {
+      const uniqueGrades = Array.from(
+        new Set(brandIds.map((id) => gradeMap[id] || DEFAULT_GRADE)),
+      )
+
       const [{ data: prodRows }, { data: promoRows }] = await Promise.all([
         supabase
           .from('brand_products')
@@ -163,7 +201,7 @@ export default function BrandOrdersPage() {
           .from('supply_promos')
           .select('id, brand_id, qty, bonus_qty, bonus, condition, title')
           .in('brand_id', brandIds)
-          .eq('condition', g)
+          .in('condition', uniqueGrades)
           .eq('promo_type', 'qty_price')
           .eq('status', 'active'),
       ])
@@ -245,10 +283,24 @@ export default function BrandOrdersPage() {
   }, {} as Record<string, Product[]>)
 
   const popupCart = cart.filter((c) => !selectedBrand || c.product.brand_name === selectedBrand)
+  const popupBrandId =
+    (selectedBrand ? products.find((p) => p.brand_name === selectedBrand)?.brand_id : null)
+    || popupCart[0]?.product.brand_id
+    || linkedBrandIds[0]
+    || null
+  const activeGrade = gradeForBrand(gradeByBrandId, popupBrandId)
+  const headerGrade = gradeForBrand(gradeByBrandId, linkedBrandIds[0])
+
   const popupTotalAmount = popupCart.reduce(
-    (s, c) => s + buildOrderLineItem(c.product, c.qty, supplyPromos, c.selectedPromo).line_amount,
+    (s, c) => s + buildOrderLineItem(
+      c.product,
+      c.qty,
+      promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)),
+      c.selectedPromo,
+    ).line_amount,
     0,
   )
+  const popupPointsEarned = calcPointsEarned(popupTotalAmount, activeGrade)
   const totalQty = cart.reduce((s, c) => s + c.qty, 0)
 
   const applyPromo = (prod: BrandOrderProduct, promo: SupplyPromoRow) => {
@@ -312,18 +364,24 @@ export default function BrandOrdersPage() {
       return
     }
 
-    const items = popupCart.map((c) => buildOrderLineItem(c.product, c.qty, supplyPromos, c.selectedPromo))
+    const orderGrade = gradeForBrand(gradeByBrandId, brandRow.id)
+    const items = popupCart.map((c) => buildOrderLineItem(
+      c.product,
+      c.qty,
+      promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)),
+      c.selectedPromo,
+    ))
     const totalItems = items.reduce((s, i) => s + i.qty, 0)
     const totalAmount = items.reduce((s, i) => s + i.line_amount, 0)
     const promoApplied = items.map((i) => i.promo).filter(Boolean).join(', ') || null
-    const pointsEarned = Math.floor(totalItems * gradePointRate(grade))
+    const pointsEarned = calcPointsEarned(totalAmount, orderGrade)
 
     const { error } = await supabase.from('brand_orders').insert({
       brand_id: brandRow.id,
       profile_id: ownerProfileId || '',
       owner_name: ownerName,
       salon_name: salonName,
-      grade,
+      grade: orderGrade,
       status: 'pending',
       items,
       total_qty: totalItems,
@@ -450,7 +508,7 @@ export default function BrandOrdersPage() {
 
       <div style={{ padding: '8px 16px 12px' }}>
         <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 20, background: `${PURPLE}15`, color: PURPLE, border: `0.5px solid ${PURPLE}40` }}>
-          {grade} · 적립 {gradePointRate(grade)}%
+          {headerGrade} · 적립 {gradePointRate(headerGrade)}%
         </span>
       </div>
 
@@ -485,11 +543,12 @@ export default function BrandOrdersPage() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
                   {prods.map((prod) => {
                     const cartItem = cart.find((c) => c.product.id === prod.id)
+                    const brandGrade = gradeForBrand(gradeByBrandId, prod.brand_id)
                     return (
                       <BrandOrderProductCard
                         key={prod.id}
                         prod={prod}
-                        supplyPromos={supplyPromos}
+                        supplyPromos={promosForBrandGrade(supplyPromos, prod.brand_id, brandGrade)}
                         qty={cartItem?.qty || 0}
                         activePromoId={cartItem?.selectedPromo?.id}
                         onApplyPromo={applyPromo}
@@ -562,7 +621,13 @@ export default function BrandOrdersPage() {
             </div>
 
             {popupCart.map((item) => {
-              const line = buildOrderLineItem(item.product, item.qty, supplyPromos, item.selectedPromo)
+              const brandGrade = gradeForBrand(gradeByBrandId, item.product.brand_id)
+              const line = buildOrderLineItem(
+                item.product,
+                item.qty,
+                promosForBrandGrade(supplyPromos, item.product.brand_id, brandGrade),
+                item.selectedPromo,
+              )
               return (
                 <div key={item.product.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -583,13 +648,16 @@ export default function BrandOrdersPage() {
 
             <div style={{ padding: '12px 0', borderBottom: `1px solid ${BORDER}`, marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: SUB, marginBottom: 4 }}>
-                <span>등급</span><span style={{ color: PURPLE }}>{grade}</span>
+                <span>등급</span><span style={{ color: PURPLE }}>{activeGrade}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: SUB, marginBottom: 4 }}>
-                <span>적립 예정</span><span style={{ color: '#1E6B40' }}>{gradePointRate(grade)}%</span>
+                <span>적립율</span><span style={{ color: SUB }}>{gradePointRate(activeGrade)}%</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 600, color: TEXT }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 4 }}>
                 <span>발주 합계</span><span style={{ color: PURPLE }}>₩{popupTotalAmount.toLocaleString()}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 600, color: '#1E6B40' }}>
+                <span>적립 예정</span><span>{popupPointsEarned}T</span>
               </div>
             </div>
 
