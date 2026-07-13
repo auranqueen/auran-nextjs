@@ -5,6 +5,7 @@
 
 ## 2026-07-13
 
+- **원장 스토어 브랜드 제품 진열**: `/salons/[id]`에 「브랜드 제품」탭 추가 — `GET /api/salons/[id]/brand-products`(service role)가 `salons.owner_id` → `brand_owner_links`(active) → `brand_products`(active)만 조회. 살롱 전용 `SalonBrandProductCard`·`SalonBrandProductsPanel`, `supply_price` 미노출. 오렌몰 `products` 테이블·홈·검색과 완전 분리
 - **적립금 CSV UI 위치 전환**: `BrandTabOwners` — `manual_init` ledger 1건 이상이면 상단 CSV 카드 숨김, 탭 하단 「초기 적립금 CSV 재업로드」 링크로 접기(클릭 시 펼침)
 - **발주화면 브랜드명·그리드 UX**: `brand-orders/page.tsx` 필터 pill 표시명 간소화(`시바산그룹`→`시바산`, DB 미변경), 제품 수 보라색 강조(`전체 N` 형식). 제품 그리드 반응형 — PC(≥768px) 5열, 모바일 3열, 좁은 화면(<400px) 2열
 - **원장 발주화면 브랜드 필터·검색**: `brand-orders/page.tsx`에 `brand_owner_links` 기준 브랜드 pill(전체 + 연결 브랜드별, 제품 수 표시)과 제품명 검색바 추가 — 클라이언트 필터(브랜드 AND 검색어 부분일치), 등급 pill은 선택 브랜드 등급 반영
