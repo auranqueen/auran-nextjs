@@ -1,6 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
@@ -69,6 +70,24 @@ function promosForBrandGrade(
     .sort((a, b) => (a.qty ?? 0) - (b.qty ?? 0))
 }
 
+function matchesProductSearch(name: string, query: string): boolean {
+  const q = query.trim().toLowerCase()
+  if (!q) return true
+  return name.toLowerCase().includes(q)
+}
+
+function brandPillStyle(selected: boolean): CSSProperties {
+  return {
+    fontSize: 12,
+    padding: '5px 14px',
+    borderRadius: 20,
+    border: `0.5px solid ${selected ? PURPLE : BORDER}`,
+    background: selected ? `${PURPLE}20` : 'transparent',
+    color: selected ? PURPLE : SUB,
+    cursor: 'pointer',
+  }
+}
+
 interface Order {
   id: string
   brand_id: string | null
@@ -93,6 +112,9 @@ export default function BrandOrdersPage() {
   const [supplyPromos, setSupplyPromos] = useState<SupplyPromoRow[]>([])
   const [gradeByBrandId, setGradeByBrandId] = useState<Record<string, string>>({})
   const [linkedBrandIds, setLinkedBrandIds] = useState<string[]>([])
+  const [linkedBrandNames, setLinkedBrandNames] = useState<Record<string, string>>({})
+  const [brandFilter, setBrandFilter] = useState<'all' | string>('all')
+  const [searchQuery, setSearchQuery] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
   const [showPopup, setShowPopup] = useState(false)
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
@@ -145,6 +167,9 @@ export default function BrandOrdersPage() {
       setOrders([])
       setGradeByBrandId({})
       setLinkedBrandIds([])
+      setLinkedBrandNames({})
+      setBrandFilter('all')
+      setSearchQuery('')
       setLoading(false)
       return
     }
@@ -169,6 +194,19 @@ export default function BrandOrdersPage() {
       new Set((linkRows || []).map((r: { brand_id: string }) => String(r.brand_id)).filter(Boolean)),
     )
     setLinkedBrandIds(brandIds)
+
+    let brandNameMap: Record<string, string> = {}
+    if (brandIds.length > 0) {
+      const { data: brandRows } = await supabase
+        .from('brands')
+        .select('id, name')
+        .in('id', brandIds)
+
+      for (const row of brandRows || []) {
+        brandNameMap[String((row as { id: string }).id)] = String((row as { name?: string }).name || '브랜드')
+      }
+    }
+    setLinkedBrandNames(brandNameMap)
 
     let gradeMap: Record<string, string> = {}
     if (brandIds.length > 0) {
@@ -222,7 +260,7 @@ export default function BrandOrdersPage() {
           name: p.name || '',
           thumb_img: p.thumb_img || null,
           brand_id: p.brand_id,
-          brand_name: brandName || '',
+          brand_name: brandName || brandNameMap[p.brand_id] || '',
           supply_price: Math.trunc(Number(p.supply_price) || 0),
           status: 'active',
         }
@@ -271,25 +309,62 @@ export default function BrandOrdersPage() {
       }
     }))
 
+    setBrandFilter((prev) => (prev !== 'all' && !brandIds.includes(prev) ? 'all' : prev))
     setLoading(false)
   }, [router, supabase])
 
   useEffect(() => { void load() }, [load])
 
-  const brandGroups = products.reduce((acc, p) => {
-    if (!acc[p.brand_name]) acc[p.brand_name] = []
-    acc[p.brand_name].push(p)
-    return acc
-  }, {} as Record<string, Product[]>)
+  const linkedBrandOptions = useMemo(
+    () => linkedBrandIds
+      .map((id) => {
+        const fromProduct = products.find((p) => p.brand_id === id)?.brand_name
+        return {
+          id,
+          name: fromProduct || linkedBrandNames[id] || '브랜드',
+        }
+      })
+      .sort((a, b) => a.name.localeCompare(b.name, 'ko')),
+    [linkedBrandIds, linkedBrandNames, products],
+  )
+
+  const productCountByBrandId = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const p of products) {
+      counts.set(p.brand_id, (counts.get(p.brand_id) || 0) + 1)
+    }
+    return counts
+  }, [products])
+
+  const brandFilteredProducts = useMemo(() => {
+    if (brandFilter === 'all') return products
+    return products.filter((p) => p.brand_id === brandFilter)
+  }, [products, brandFilter])
+
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim()) return brandFilteredProducts
+    return brandFilteredProducts.filter((p) => matchesProductSearch(p.name, searchQuery))
+  }, [brandFilteredProducts, searchQuery])
+
+  const brandGroups = useMemo(
+    () => filteredProducts.reduce((acc, p) => {
+      if (!acc[p.brand_name]) acc[p.brand_name] = []
+      acc[p.brand_name].push(p)
+      return acc
+    }, {} as Record<string, Product[]>),
+    [filteredProducts],
+  )
 
   const popupCart = cart.filter((c) => !selectedBrand || c.product.brand_name === selectedBrand)
   const popupBrandId =
     (selectedBrand ? products.find((p) => p.brand_name === selectedBrand)?.brand_id : null)
     || popupCart[0]?.product.brand_id
+    || (brandFilter !== 'all' ? brandFilter : null)
     || linkedBrandIds[0]
     || null
   const activeGrade = gradeForBrand(gradeByBrandId, popupBrandId)
-  const headerGrade = gradeForBrand(gradeByBrandId, linkedBrandIds[0])
+  const headerBrandId = brandFilter !== 'all' ? brandFilter : linkedBrandIds[0]
+  const headerGrade = gradeForBrand(gradeByBrandId, headerBrandId)
 
   const popupTotalAmount = popupCart.reduce(
     (s, c) => s + buildOrderLineItem(
@@ -512,6 +587,48 @@ export default function BrandOrdersPage() {
         </span>
       </div>
 
+      {linkedBrandOptions.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, padding: '0 16px 10px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setBrandFilter('all')}
+            style={brandPillStyle(brandFilter === 'all')}
+          >
+            전체 (제품 {products.length})
+          </button>
+          {linkedBrandOptions.map((brand) => (
+            <button
+              key={brand.id}
+              type="button"
+              onClick={() => setBrandFilter(brand.id)}
+              style={brandPillStyle(brandFilter === brand.id)}
+            >
+              {brand.name} (제품 {productCountByBrandId.get(brand.id) || 0})
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div style={{ padding: '0 16px 12px' }}>
+        <input
+          type="search"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="제품명 검색"
+          style={{
+            width: '100%',
+            boxSizing: 'border-box',
+            padding: '10px 12px',
+            borderRadius: 8,
+            border: `0.5px solid ${BORDER}`,
+            background: LIGHT,
+            color: TEXT,
+            fontSize: 13,
+            outline: 'none',
+          }}
+        />
+      </div>
+
       <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, marginBottom: 16 }}>
         {(['shop', 'orders'] as const).map((t) => (
           <button key={t} type="button" onClick={() => setTab(t)}
@@ -525,8 +642,19 @@ export default function BrandOrdersPage() {
         <div style={{ padding: '0 16px' }}>
           {Object.keys(brandGroups).length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 0', color: SUB, fontSize: 14 }}>
-              연결된 브랜드 제품이 없어요.<br />
-              <span style={{ fontSize: 12 }}>브랜드사 제휴 연결(active) 후 이용할 수 있어요</span>
+              {searchQuery.trim() ? (
+                '검색 결과가 없습니다.'
+              ) : brandFilter === 'all' ? (
+                <>
+                  연결된 브랜드 제품이 없어요.<br />
+                  <span style={{ fontSize: 12 }}>브랜드사 제휴 연결(active) 후 이용할 수 있어요</span>
+                </>
+              ) : (
+                <>
+                  이 브랜드에 등록된 제품이 없어요.<br />
+                  <span style={{ fontSize: 12 }}>다른 브랜드를 선택하거나 전체를 눌러보세요</span>
+                </>
+              )}
             </div>
           ) : (
             Object.entries(brandGroups).map(([brandName, prods]) => (
