@@ -5,6 +5,7 @@
 
 ## 2026-07-13
 
+- **세컨브랜드 자동연결 + 브랜드 대시보드 UX**: `connectTrackAOwnersToSecondBrand`가 `trade_brands`만 갱신하던 문제 수정 — 트랙A eligible 원장에 `brand_owner_links`(세컨 `brand_id`, `users.id`, active) upsert 추가(ON CONFLICT 무시). 기존 씨아클라르제 백필 SQL `scripts/backfill_civaclare_second_brand_links.sql`(수동 1회). 브랜드 주문탭(`BrandHubContent`)을 상단 선택 브랜드(`activeBrandId`) 기준 조회로 연동. 제품 탭 기본 상태 `pending` → `active`
 - **발주화면 등급·적립 계산 수정**: `brand-orders/page.tsx` 등급 소스를 `profiles.grade`(고객 멤버십) → `brand_owner_grades`(브랜드별 원장 등급, `owner_id=profiles.id`)로 전환. `gradeByBrandId`·`linkedBrandIds` state, 브랜드별 `supply_promos.condition` 필터. `brandOrderPromos.calcPointsEarned` 추가 — 적립 T = `floor(발주합계 × 등급적립율% / 100)` (기존 수량×% 버그 수정). 발주 확인 팝업에 적립 예정 T 표시
 - **원장 적립금(T) 스키마 093**: `brand_companies`(회사 단위) + `brands.company_id` FK, `brand_owner_point_ledger`(append-only 이력: manual_init/order_earned/used/carried_forward/adjustment), `brand_owner_point_balance`(company_id+owner_id 잔액 요약). RLS 092 패턴 — owner/brand SELECT only, INSERT/UPDATE는 service role API 전용. 백필 스크립트 `scripts/backfill_093_civasan_company.sql`(시바산+씨아클라르제). **마이그레이션 파일만, 미실행**. 세컨브랜드 `company_id` 연동·API는 후속
 - **발주 수량 5단위 + 보너스 표시 + 썸네일 정사각형**: 원장 발주 담기·증감을 5개 단위(`QTY_STEP`)로 통일(카드·확인 팝업, 최소 0 유지). 원장 주문 탭·브랜드 수주 목록(`BrandTabOrders`)에 items 저장 `bonus > 0`이면 `(+N 증정)` 표시(Invoice와 동일 정보). `BrandOrderProductCard` 썸네일 `aspect-ratio: 1/1` 정사각형 고정

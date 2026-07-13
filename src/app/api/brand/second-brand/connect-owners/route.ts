@@ -74,6 +74,7 @@ export async function POST(req: NextRequest) {
   try {
     const result = await connectTrackAOwnersToSecondBrand(svc, {
       hubBrandId,
+      secondBrandId,
       secondBrandName,
     })
     return NextResponse.json({ ok: true, ...result })

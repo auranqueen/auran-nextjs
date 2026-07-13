@@ -44,6 +44,7 @@ export default function BrandHubContent({
   const [helpOpen, setHelpOpen] = useState(false)
   const [systemMode, setSystemMode] = useState<SystemMode>('brand')
   const [logiTab, setLogiTab] = useState<LogiTab>('stock')
+  const selectedBrandId = activeBrandId || brandId
   const LOGI_TABS = [
     { key: 'stock',     label: '재고현황',   icon: '📦' },
     { key: 'lots',      label: '로트관리',   icon: '🏷' },
@@ -329,7 +330,7 @@ export default function BrandHubContent({
             {mainTab === 'home' && <BrandTabHome brandName={brandName} brandId={brandId} activeBrandId={activeBrandId} onTabChange={(t) => setMainTab(t as MainTab)} />}
             {mainTab === 'products' && <BrandTabProducts rows={rows} tab={tab} onTabChange={onTabChange} onEdit={onEdit} onNew={onNew} currentBrandName={brandName} />}
             {mainTab === 'owners' && <BrandTabOwners brandId={brandId} brandName={brandName} authId={authId} />}
-            {mainTab === 'orders' && <BrandTabOrders brandId={brandId} brandName={brandName} />}
+            {mainTab === 'orders' && <BrandTabOrders brandId={selectedBrandId} brandName={brandName} />}
             {mainTab === 'orentalk' && <BrandTabOrenTalk brandName={brandName} brandId={brandId} authId={authId} />}
             {mainTab === 'live' && <BrandTabLive brandId={brandId} brandName={brandName} />}
             {mainTab === 'sample' && <BrandTabSample brandId={brandId} brandName={brandName} />}

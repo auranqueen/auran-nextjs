@@ -49,7 +49,7 @@ export default function BrandDashboardPage() {
   const [addBrandDone, setAddBrandDone] = useState(false)
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<Row[]>([])
-  const [tab, setTab] = useState<'pending' | 'active' | 'hidden'>('pending')
+  const [tab, setTab] = useState<'pending' | 'active' | 'hidden'>('active')
   const [formOpen, setFormOpen] = useState(false)
   const [editProduct, setEditProduct] = useState<{ id: string } | null>(null)
   const [brands, setBrands] = useState<{ id: string; name: string; origin_country?: string | null }[]>([])

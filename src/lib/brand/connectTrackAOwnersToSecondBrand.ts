@@ -1,15 +1,21 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-type Result = { updated: number; eligible: number; skipped: number }
+type Result = {
+  linksCreated: number
+  updated: number
+  eligible: number
+  skipped: number
+}
 
 export async function connectTrackAOwnersToSecondBrand(
   db: SupabaseClient,
-  params: { hubBrandId: string; secondBrandName: string },
+  params: { hubBrandId: string; secondBrandId: string; secondBrandName: string },
 ): Promise<Result> {
   const hubBrandId = params.hubBrandId.trim()
+  const secondBrandId = params.secondBrandId.trim()
   const secondBrandName = params.secondBrandName.trim()
-  if (!hubBrandId || !secondBrandName) {
-    return { updated: 0, eligible: 0, skipped: 0 }
+  if (!hubBrandId || !secondBrandId || !secondBrandName) {
+    return { linksCreated: 0, updated: 0, eligible: 0, skipped: 0 }
   }
 
   const { data: links, error: linkErr } = await db
@@ -23,7 +29,7 @@ export async function connectTrackAOwnersToSecondBrand(
   const ownerIds = Array.from(
     new Set((links || []).map((l) => String(l.owner_id)).filter(Boolean)),
   )
-  if (!ownerIds.length) return { updated: 0, eligible: 0, skipped: 0 }
+  if (!ownerIds.length) return { linksCreated: 0, updated: 0, eligible: 0, skipped: 0 }
 
   const { data: trackAOwners, error: userErr } = await db
     .from('users')
@@ -35,13 +41,35 @@ export async function connectTrackAOwnersToSecondBrand(
   if (userErr) throw new Error(userErr.message)
 
   const eligible = trackAOwners?.length ?? 0
-  if (!eligible) return { updated: 0, eligible: 0, skipped: ownerIds.length }
+  if (!eligible) return { linksCreated: 0, updated: 0, eligible: 0, skipped: ownerIds.length }
+
+  const nowIso = new Date().toISOString()
+  let linksCreated = 0
+
+  const linkPayload = (trackAOwners || []).map((u) => ({
+    brand_id: secondBrandId,
+    owner_id: String(u.id),
+    status: 'active',
+    approved_at: nowIso,
+  }))
+
+  if (linkPayload.length > 0) {
+    const { data: insertedLinks, error: linkInsertErr } = await db
+      .from('brand_owner_links')
+      .upsert(linkPayload, { onConflict: 'brand_id,owner_id', ignoreDuplicates: true })
+      .select('id')
+
+    if (linkInsertErr) throw new Error(linkInsertErr.message)
+    linksCreated = insertedLinks?.length ?? 0
+  }
 
   const authIds = (trackAOwners || [])
     .map((u) => String(u.auth_id || ''))
     .filter(Boolean)
 
-  if (!authIds.length) return { updated: 0, eligible: 0, skipped: ownerIds.length }
+  if (!authIds.length) {
+    return { linksCreated, updated: 0, eligible, skipped: ownerIds.length }
+  }
 
   const { data: profiles, error: profErr } = await db
     .from('profiles')
@@ -70,6 +98,7 @@ export async function connectTrackAOwnersToSecondBrand(
   }
 
   return {
+    linksCreated,
     updated,
     eligible,
     skipped: ownerIds.length - updated,
