@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
-import { parseCsv, pickColumn } from '@/lib/csv/parseCsv'
+import {
+  parseCsv,
+  pickColumn,
+  normalizeStoreNameKey,
+  matchByStoreNameKey,
+} from '@/lib/csv/parseCsv'
 
 type Body = {
   brand_id?: string
@@ -9,14 +14,38 @@ type Body = {
   dry_run?: boolean
 }
 
-type RowResult =
-  | { line: number; status: 'ok'; owner_id: string; amount: number }
-  | { line: number; status: 'skipped'; reason: string; owner_id?: string }
-  | { line: number; status: 'error'; reason: string }
+type EligibleOwner = {
+  profileId: string
+  userId: string
+  ownerStoreName: string
+  ownerName: string
+  storeKey: string
+}
 
-const PROFILE_ID_KEYS = ['owner_profile_id', 'profile_id', 'owner_id']
-const AMOUNT_KEYS = ['amount', 'balance', 't', 'points', 'point']
-const MEMO_KEYS = ['memo', 'note', 'description', 'remark']
+type RowResult = {
+  line: number
+  store_name: string
+  amount?: number
+  status: 'ok' | 'skipped' | 'no_match' | 'conflict' | 'error'
+  reason?: string
+  owner_id?: string
+  matched_owner_name?: string
+  matched_store_name?: string
+  conflict_owners?: { profile_id: string; owner_store_name: string; owner_name: string }[]
+}
+
+const STORE_NAME_KEYS = [
+  'store_name',
+  'owner_store_name',
+  'salon_name',
+  'salon',
+  '매장명',
+  '살롱명',
+  '상호',
+  '상호명',
+]
+const AMOUNT_KEYS = ['amount', 'balance', 't', 'points', 'point', '금액', '적립금']
+const MEMO_KEYS = ['memo', 'note', 'description', 'remark', '메모', '비고']
 
 async function assertBrandAccess(
   supabase: ReturnType<typeof createClient>,
@@ -46,8 +75,66 @@ function parseAmount(raw: string): number | null {
   return n
 }
 
-function isUuid(v: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v)
+async function loadEligibleOwners(
+  svc: NonNullable<ReturnType<typeof tryCreateAdminClient>>,
+  brandId: string,
+): Promise<{ index: Map<string, EligibleOwner[]>; eligibleCount: number }> {
+  const { data: activeLinks } = await svc
+    .from('brand_owner_links')
+    .select('owner_id')
+    .eq('brand_id', brandId)
+    .eq('status', 'active')
+
+  const linkedUserIds = Array.from(
+    new Set((activeLinks || []).map((r: { owner_id: string }) => String(r.owner_id)).filter(Boolean)),
+  )
+  if (!linkedUserIds.length) {
+    return { index: new Map(), eligibleCount: 0 }
+  }
+
+  const { data: trackAUsers } = await svc
+    .from('users')
+    .select('id, auth_id')
+    .in('id', linkedUserIds)
+    .eq('role', 'owner')
+    .eq('origin_track', 'A')
+
+  const users = trackAUsers || []
+  if (!users.length) {
+    return { index: new Map(), eligibleCount: 0 }
+  }
+
+  const authIds = Array.from(new Set(users.map((u: { auth_id: string }) => u.auth_id).filter(Boolean)))
+  const userByAuth = new Map(users.map((u: { id: string; auth_id: string }) => [u.auth_id, u.id]))
+
+  const { data: profiles } = await svc
+    .from('profiles')
+    .select('id, auth_id, owner_store_name, full_name')
+    .in('auth_id', authIds)
+
+  const index = new Map<string, EligibleOwner[]>()
+  for (const p of profiles || []) {
+    if (!p?.id || !p?.auth_id) continue
+    const userId = userByAuth.get(p.auth_id)
+    if (!userId) continue
+    const ownerStoreName = String(p.owner_store_name || '').trim()
+    const storeKey = normalizeStoreNameKey(ownerStoreName)
+    if (!storeKey) continue
+
+    const item: EligibleOwner = {
+      profileId: String(p.id),
+      userId: String(userId),
+      ownerStoreName,
+      ownerName: String(p.full_name || '').trim() || ownerStoreName || '이름 없음',
+      storeKey,
+    }
+    const bucket = index.get(storeKey) || []
+    bucket.push(item)
+    index.set(storeKey, bucket)
+  }
+
+  const eligibleCount = Array.from(index.values()).reduce((sum, bucket) => sum + bucket.length, 0)
+  return { index, eligibleCount }
 }
 
 export async function POST(req: NextRequest) {
@@ -103,77 +190,68 @@ export async function POST(req: NextRequest) {
   const svc = tryCreateAdminClient()
   if (!svc) return NextResponse.json({ ok: false, error: 'service_unavailable' }, { status: 500 })
 
-  const { data: activeLinks } = await svc
-    .from('brand_owner_links')
-    .select('owner_id')
-    .eq('brand_id', brandId)
-    .eq('status', 'active')
-
-  const linkedUserIds = new Set((activeLinks || []).map((r: { owner_id: string }) => String(r.owner_id)))
-
-  const profileIds = parsed.rows
-    .map((row) => pickColumn(row, PROFILE_ID_KEYS))
-    .filter((id) => isUuid(id))
-
-  let profileToUser = new Map<string, string>()
-  if (profileIds.length) {
-    const uniqueIds = Array.from(new Set(profileIds))
-    const { data: profiles } = await svc
-      .from('profiles')
-      .select('id, auth_id')
-      .in('id', uniqueIds)
-    const authIds = Array.from(
-      new Set((profiles || []).map((p: { auth_id?: string | null }) => p?.auth_id).filter(Boolean) as string[]),
-    )
-    const { data: users } = authIds.length
-      ? await svc.from('users').select('id, auth_id').in('auth_id', authIds)
-      : { data: [] as { id: string; auth_id: string }[] }
-    const authToUser = new Map((users || []).map((u: { id: string; auth_id: string }) => [u.auth_id, u.id]))
-    for (const p of profiles || []) {
-      if (!p?.id || !p?.auth_id) continue
-      const uid = authToUser.get(p.auth_id)
-      if (uid) profileToUser.set(String(p.id), String(uid))
-    }
-  }
+  const { index: ownerIndex, eligibleCount } = await loadEligibleOwners(svc, brandId)
 
   const results: RowResult[] = []
   let imported = 0
   let skipped = 0
   let failed = 0
+  let conflicts = 0
 
   for (let i = 0; i < parsed.rows.length; i++) {
     const line = i + 2
     const row = parsed.rows[i]
-    const profileId = pickColumn(row, PROFILE_ID_KEYS)
+    const storeNameRaw = pickColumn(row, STORE_NAME_KEYS)
     const amountRaw = pickColumn(row, AMOUNT_KEYS)
     const memo = pickColumn(row, MEMO_KEYS) || 'CSV 초기 적립'
 
-    if (!profileId || !isUuid(profileId)) {
+    if (!storeNameRaw) {
       failed++
-      results.push({ line, status: 'error', reason: 'invalid_owner_profile_id' })
+      results.push({ line, store_name: '', status: 'error', reason: 'missing_store_name' })
       continue
     }
 
     const amount = parseAmount(amountRaw)
     if (amount == null) {
       failed++
-      results.push({ line, status: 'error', reason: 'invalid_amount' })
+      results.push({ line, store_name: storeNameRaw, status: 'error', reason: 'invalid_amount' })
       continue
     }
 
-    const userId = profileToUser.get(profileId)
-    if (!userId) {
+    const match = matchByStoreNameKey(storeNameRaw, ownerIndex)
+
+    if (match.status === 'no_match') {
       failed++
-      results.push({ line, status: 'error', reason: 'profile_or_user_not_found' })
+      results.push({
+        line,
+        store_name: storeNameRaw,
+        amount,
+        status: 'no_match',
+        reason: 'store_name_not_found',
+      })
       continue
     }
 
-    if (!linkedUserIds.has(userId)) {
+    if (match.status === 'conflict') {
+      conflicts++
       failed++
-      results.push({ line, status: 'error', reason: 'owner_not_linked_active' })
+      results.push({
+        line,
+        store_name: storeNameRaw,
+        amount,
+        status: 'conflict',
+        reason: 'multiple_owners_matched',
+        conflict_owners: match.items.map((o) => ({
+          profile_id: o.profileId,
+          owner_store_name: o.ownerStoreName,
+          owner_name: o.ownerName,
+        })),
+      })
       continue
     }
 
+    const owner = match.item
+    const profileId = owner.profileId
     const idempotencyKey = `manual_init:${companyId}:${profileId}`
 
     const { data: existingLedger } = await svc
@@ -184,13 +262,30 @@ export async function POST(req: NextRequest) {
 
     if (existingLedger?.id) {
       skipped++
-      results.push({ line, status: 'skipped', reason: 'already_initialized', owner_id: profileId })
+      results.push({
+        line,
+        store_name: storeNameRaw,
+        amount,
+        status: 'skipped',
+        reason: 'already_initialized',
+        owner_id: profileId,
+        matched_owner_name: owner.ownerName,
+        matched_store_name: owner.ownerStoreName,
+      })
       continue
     }
 
     if (dryRun) {
       imported++
-      results.push({ line, status: 'ok', owner_id: profileId, amount })
+      results.push({
+        line,
+        store_name: storeNameRaw,
+        amount,
+        status: 'ok',
+        owner_id: profileId,
+        matched_owner_name: owner.ownerName,
+        matched_store_name: owner.ownerStoreName,
+      })
       continue
     }
 
@@ -220,11 +315,26 @@ export async function POST(req: NextRequest) {
     if (ledgerErr) {
       if (ledgerErr.code === '23505') {
         skipped++
-        results.push({ line, status: 'skipped', reason: 'duplicate_idempotency', owner_id: profileId })
+        results.push({
+          line,
+          store_name: storeNameRaw,
+          amount,
+          status: 'skipped',
+          reason: 'duplicate_idempotency',
+          owner_id: profileId,
+          matched_owner_name: owner.ownerName,
+          matched_store_name: owner.ownerStoreName,
+        })
         continue
       }
       failed++
-      results.push({ line, status: 'error', reason: ledgerErr.message || 'ledger_insert_failed' })
+      results.push({
+        line,
+        store_name: storeNameRaw,
+        amount,
+        status: 'error',
+        reason: ledgerErr.message || 'ledger_insert_failed',
+      })
       continue
     }
 
@@ -240,22 +350,38 @@ export async function POST(req: NextRequest) {
 
     if (balErr) {
       failed++
-      results.push({ line, status: 'error', reason: balErr.message || 'balance_upsert_failed' })
+      results.push({
+        line,
+        store_name: storeNameRaw,
+        amount,
+        status: 'error',
+        reason: balErr.message || 'balance_upsert_failed',
+      })
       continue
     }
 
     imported++
-    results.push({ line, status: 'ok', owner_id: profileId, amount })
+    results.push({
+      line,
+      store_name: storeNameRaw,
+      amount,
+      status: 'ok',
+      owner_id: profileId,
+      matched_owner_name: owner.ownerName,
+      matched_store_name: owner.ownerStoreName,
+    })
   }
 
   return NextResponse.json({
     ok: true,
     dry_run: dryRun,
     company_id: companyId,
+    eligible_owners: eligibleCount,
     total_rows: parsed.rows.length,
     imported,
     skipped,
     failed,
+    conflicts,
     results,
   })
 }

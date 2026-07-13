@@ -24,12 +24,25 @@ interface OwnerRow {
   monthly: number
   point_balance: number
 }
+type CsvRowResult = {
+  line: number
+  store_name: string
+  amount?: number
+  status: 'ok' | 'skipped' | 'no_match' | 'conflict' | 'error'
+  reason?: string
+  owner_id?: string
+  matched_owner_name?: string
+  matched_store_name?: string
+  conflict_owners?: { profile_id: string; owner_store_name: string; owner_name: string }[]
+}
 type BulkImportResult = {
   imported: number
   skipped: number
   failed: number
+  conflicts: number
   dry_run: boolean
-  results?: { line: number; status: string; reason?: string; owner_id?: string; amount?: number }[]
+  eligible_owners?: number
+  results?: CsvRowResult[]
 }
 interface BrandOwnerLinkRow {
   id: string
@@ -185,8 +198,23 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
     void fetchOwners()
   }, [brandId, brandName, pointBalances])
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
+  const csvRowStyle = (status: CsvRowResult['status']) => {
+    if (status === 'ok') {
+      return { color: '#81c784', bg: 'rgba(129,199,132,0.12)', label: '매칭성공' }
+    }
+    if (status === 'conflict') {
+      return { color: '#ffb74d', bg: 'rgba(255,183,77,0.12)', label: '충돌' }
+    }
+    if (status === 'skipped') {
+      return { color: SUB, bg: 'rgba(255,255,255,0.05)', label: '스킵' }
+    }
+    if (status === 'no_match') {
+      return { color: '#f48fb1', bg: 'rgba(244,143,177,0.12)', label: '매칭실패' }
+    }
+    return { color: '#f48fb1', bg: 'rgba(244,143,177,0.12)', label: '오류' }
+  }
   const downloadCsvTemplate = () => {
-    const sample = 'owner_profile_id,amount,memo\n00000000-0000-4000-8000-000000000000,10000,초기 적립\n'
+    const sample = '매장명,금액,메모\n스킨파우더룸,10000,초기 적립\n'
     const blob = new Blob([sample], { type: 'text/csv;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -220,14 +248,16 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
         imported: json.imported ?? 0,
         skipped: json.skipped ?? 0,
         failed: json.failed ?? 0,
+        conflicts: json.conflicts ?? 0,
         dry_run: Boolean(json.dry_run),
+        eligible_owners: json.eligible_owners,
         results: json.results,
       })
       if (!dryRun) {
         await loadPointBalances()
         showToast(`적립 반영 완료 (${json.imported}건)`)
       } else {
-        showToast(`검증 완료 — 반영 가능 ${json.imported}건`)
+        showToast(`미리보기 완료 — 반영 가능 ${json.imported}건`)
       }
     } catch {
       showToast('업로드 중 오류가 났어요')
@@ -387,9 +417,11 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
           </div>
         )}
         <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.6, marginBottom: 10 }}>
-          CSV 헤더: <span style={{ fontFamily: "'JetBrains Mono', monospace", color: GOLD }}>owner_profile_id, amount, memo</span>
+          CSV 헤더: <span style={{ fontFamily: "'JetBrains Mono', monospace", color: GOLD }}>매장명, 금액, 메모(선택)</span>
           <br />
-          active 제휴 연결 원장만 반영돼요. 같은 원장은 1회만 초기화(idempotency).
+          트랙A + active 제휴 연결 원장의 매장명(owner_store_name)으로 자동 매칭돼요.
+          <br />
+          먼저 검증만(dry-run)으로 미리보기 후, 성공 건만 실제 반영하세요.
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
           <button
@@ -433,13 +465,52 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
           />
         </label>
         {csvResult ? (
-          <div style={{ marginTop: 10, fontSize: 11, color: TEXT, lineHeight: 1.7 }}>
-            {csvResult.dry_run ? '검증' : '반영'} — 성공 {csvResult.imported} · 스킵 {csvResult.skipped} · 실패 {csvResult.failed}
-            {(csvResult.results || []).filter((r) => r.status === 'error').slice(0, 5).map((r) => (
-              <div key={r.line} style={{ color: '#f48fb1', fontSize: 10 }}>
-                {r.line}행: {r.reason}
-              </div>
-            ))}
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 11, color: TEXT, marginBottom: 8, lineHeight: 1.7 }}>
+              {csvResult.dry_run ? '미리보기' : '반영'} —
+              성공 {csvResult.imported} · 스킵 {csvResult.skipped} · 실패 {csvResult.failed}
+              {csvResult.conflicts > 0 ? ` · 충돌 ${csvResult.conflicts}` : ''}
+              {csvResult.eligible_owners != null ? (
+                <span style={{ color: SUB }}> (매칭 대상 원장 {csvResult.eligible_owners}명)</span>
+              ) : null}
+            </div>
+            <div style={{ overflowX: 'auto', borderRadius: 8, border: `0.5px solid ${BORDER}` }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
+                <thead>
+                  <tr style={{ background: 'rgba(255,255,255,0.04)', color: SUB }}>
+                    <th style={{ padding: '6px 8px', textAlign: 'left' }}>행</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'left' }}>CSV 매장명</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'right' }}>금액</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'left' }}>상태</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'left' }}>매칭 원장</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(csvResult.results || []).map((r) => {
+                    const badge = csvRowStyle(r.status)
+                    const matchedLabel =
+                      r.status === 'ok' || r.status === 'skipped'
+                        ? `${r.matched_owner_name || '—'} (${r.matched_store_name || r.store_name})`
+                        : r.status === 'conflict'
+                          ? (r.conflict_owners || [])
+                              .map((c) => `${c.owner_name}(${c.owner_store_name})`)
+                              .join(' / ')
+                          : r.reason || '—'
+                    return (
+                      <tr key={r.line} style={{ background: badge.bg, borderTop: `0.5px solid ${BORDER}` }}>
+                        <td style={{ padding: '6px 8px', color: TEXT }}>{r.line}</td>
+                        <td style={{ padding: '6px 8px', color: TEXT }}>{r.store_name || '—'}</td>
+                        <td style={{ padding: '6px 8px', color: TEXT, textAlign: 'right' }}>
+                          {r.amount != null ? r.amount.toLocaleString() : '—'}
+                        </td>
+                        <td style={{ padding: '6px 8px', color: badge.color }}>{badge.label}</td>
+                        <td style={{ padding: '6px 8px', color: badge.color, lineHeight: 1.5 }}>{matchedLabel}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : null}
       </div>
@@ -564,9 +635,6 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
                 {companyId ? (
                   <div style={{ fontSize: 10, color: GOLD, marginTop: 2 }}>
                     T {o.point_balance.toLocaleString()}
-                    <span style={{ color: SUB, marginLeft: 6, fontFamily: "'JetBrains Mono', monospace", fontSize: 9 }}>
-                      {o.id.slice(0, 8)}…
-                    </span>
                   </div>
                 ) : null}
               </div>

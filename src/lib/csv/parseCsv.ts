@@ -85,3 +85,29 @@ export function pickColumn(row: Record<string, string>, aliases: string[]): stri
   }
   return ''
 }
+
+/** 매장명 매칭용 정규화 키: trim + 소문자 + 공백 제거 */
+export function normalizeStoreNameKey(name: string): string {
+  return String(name || '').trim().toLowerCase().replace(/\s+/g, '')
+}
+
+export type StoreNameMatchResult<T> =
+  | { status: 'matched'; item: T }
+  | { status: 'no_match' }
+  | { status: 'conflict'; items: T[] }
+
+/**
+ * 정규화된 매장명 키로 후보 목록에서 1건 매칭.
+ * 0건=no_match, 1건=matched, 2건+=conflict
+ */
+export function matchByStoreNameKey<T extends { storeKey: string }>(
+  rawStoreName: string,
+  index: Map<string, T[]>,
+): StoreNameMatchResult<T> {
+  const key = normalizeStoreNameKey(rawStoreName)
+  if (!key) return { status: 'no_match' }
+  const hits = index.get(key) || []
+  if (hits.length === 0) return { status: 'no_match' }
+  if (hits.length === 1) return { status: 'matched', item: hits[0] }
+  return { status: 'conflict', items: hits }
+}
