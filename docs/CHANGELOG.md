@@ -5,6 +5,7 @@
 
 ## 2026-07-14
 
+- **레이어1+2 통합 90일 무료체험 DB 준비 (095·096, 미실행)**: `users.store_trial_started_at` TIMESTAMPTZ NULL — NULL이면 앱에서 `created_at` fallback. `track_a_showcase_annual` `trial_days` 0→90 (나머지 3플랜 이미 90). **앱 판정 로직·스킨파우더룸 재부여 UPDATE는 다음 단계**
 - **미사용 독립몰(`/dashboard/owner/store`) 제거**: 원장 직접판매 독립몰 페이지·쿠폰상품타겟 필드 삭제. `SalonInfoForm`(살롱명·메뉴·자격증)은 `store-decoration` 「살롱 정보」탭으로 이전. 사이드바「스토어」·독립몰 CTA·admin「스토어 관리」제거, 하단탭은「꾸미기」로 교체. **매출 리포트** 메뉴는 전용 페이지 없음 → 임시로 `/dashboard/owner` 홈 KPI로 연결(`TODO` 주석). `owner_coupons`/`owner_settlements`·채팅·수수료·DB 테이블은 미변경
 - **원장 스토어 이용기간 D-day 통합**: `getOwnerStorePeriod` + `useOwnerStorePeriod` — trial(90일/`created_at`)·active(`expires_at` 또는 `started_at+365`)·expired. PC 사이드바 「구독 관리」옆 배지, 구독 페이지 `SubscriptionPeriodBanner`(문장형). 500줄 룰 — `SubscriptionPayModal`·`SubscriptionPlanCards` 분리, `subscription/page.tsx` 슬림화
 - **구독 페이지 UI 정리 + track 결제 시 owner_mode 보존**: 운영모드 탭 제거, 레거시 mode 필터는 `profiles.owner_mode` 기준. 미구독 시 `users.created_at`+`isInStoreTrialPeriod`로 `90일 무료체험 중 (D-N)` 표시(종료 시 숨김). PayApp webhook — `track_a_`/`track_b_` slug면 `owner_mode` UPDATE 스킵, `owner_subscription_plan`만 갱신
