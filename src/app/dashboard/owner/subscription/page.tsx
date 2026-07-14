@@ -15,6 +15,7 @@ type SubPlanRow = {
   mode?: string | null
   owner_mode?: string | null
   price?: number | null
+  billing_period?: string | null
   features?: string[] | null
   sort_order?: number | null
   is_recommended?: boolean | null
@@ -42,12 +43,17 @@ function planMode(p: SubPlanRow): string | null {
   return String(p.mode ?? p.owner_mode ?? '').trim() || null
 }
 
+function pricePeriodLabel(p: SubPlanRow): '/년' | '/월' {
+  return String(p.billing_period || '').toLowerCase() === 'annual' ? '/년' : '/월'
+}
+
 export default function OwnerSubscriptionPage() {
   const router = useRouter()
   const supabase = createClient()
 
   const [loading, setLoading] = useState(true)
   const [ownerUserId, setOwnerUserId] = useState<string | null>(null)
+  const [originTrack, setOriginTrack] = useState<'A' | 'B' | null>(null)
   const [profile, setProfile] = useState<{
     id: string
     owner_mode: OwnerMode | null
@@ -88,9 +94,17 @@ export default function OwnerSubscriptionPage() {
 
     const { data: prof } = await supabase.from('profiles').select('*').eq('auth_id', user.id).maybeSingle()
 
-    const { data: urow } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+    const { data: urow } = await supabase
+      .from('users')
+      .select('id, origin_track')
+      .eq('auth_id', user.id)
+      .maybeSingle()
     const oid = urow?.id ? String(urow.id) : null
     setOwnerUserId(oid)
+    const rawTrack = String((urow as { origin_track?: string | null } | null)?.origin_track || '')
+      .trim()
+      .toUpperCase()
+    setOriginTrack(rawTrack === 'A' || rawTrack === 'B' ? rawTrack : null)
     const rawMode = (prof as any)?.owner_mode as string | undefined
     const om: OwnerMode | null =
       rawMode === 'auran' || rawMode === 'independent' || rawMode === 'integrated' ? rawMode : null
@@ -181,11 +195,18 @@ export default function OwnerSubscriptionPage() {
 
   const filteredPlans = useMemo(() => {
     return planRows.filter((p) => {
+      const slug = String(p.slug || p.code || '').toLowerCase()
+      if (slug.startsWith('track_a_')) {
+        if (originTrack !== 'A') return false
+      } else if (slug.startsWith('track_b_')) {
+        if (originTrack !== 'B') return false
+      }
+      // track_a_/track_b_ 패턴이 아니면 기존 mode 필터만
       const pm = planMode(p)
       if (!pm) return true
       return pm === mode
     })
-  }, [planRows, mode])
+  }, [planRows, mode, originTrack])
 
   const priceFor = (p: SubPlanRow) => {
     const slug = String(p.slug || p.code || p.id || '')
@@ -454,7 +475,7 @@ export default function OwnerSubscriptionPage() {
                     ) : null}
                     <div style={{ fontSize: 16, fontWeight: 800 }}>{p.name || p.slug || '플랜'}</div>
                     <div style={{ marginTop: 8, fontSize: 18, color: '#C9A96E', fontWeight: 800 }}>
-                      {price > 0 ? `${price.toLocaleString()}원/월` : '가격 문의'}
+                      {price > 0 ? `${price.toLocaleString()}원${pricePeriodLabel(p)}` : '가격 문의'}
                     </div>
                     <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
                       {feats.length === 0 ? (
@@ -518,10 +539,10 @@ export default function OwnerSubscriptionPage() {
             <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 6 }}>결제</div>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>{payTarget.name || payTarget.slug}</div>
             <div style={{ fontSize: 18, color: '#C9A96E', marginTop: 6, fontWeight: 800 }}>
-              {priceFor(payTarget).toLocaleString()}원/월
+              {priceFor(payTarget).toLocaleString()}원{pricePeriodLabel(payTarget)}
             </div>
             <div style={{ marginTop: 12, fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
-              첫 {trialDays}일 무료 후 {priceFor(payTarget).toLocaleString()}원/월
+              첫 {trialDays}일 무료 후 {priceFor(payTarget).toLocaleString()}원{pricePeriodLabel(payTarget)}
             </div>
             <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
               <button

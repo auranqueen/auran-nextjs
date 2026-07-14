@@ -3,6 +3,10 @@
 
 ---
 
+## 2026-07-14
+
+- **구독 페이지 트랙별 플랜 필터 + 연납 표시**: `subscription/page.tsx` — `users.origin_track` 조회 후 `track_a_*`/`track_b_*` slug만 해당 트랙 원장에게 노출(기존 AURAN BASIC 등은 mode 필터만). `billing_period === 'annual'`이면 가격 표기 `/년`, 아니면 `/월`
+
 ## 2026-07-13
 
 - **094 마이그레이션 실제 컬럼(price) 정합 + 결제 연동**: `subscription_plans` INSERT를 `price`·`plan`(=slug)·`mode`(NULL) 기준으로 수정. `admin_settings` `category=subscription`에 `price_track_*_annual` 4키 시드. `subscription/page.tsx` `priceFor()` — admin_settings 우선, 없으면 DB `price` fallback. `admin/subscriptions` 플랜 목록 `p.price` 표시. **094 SQL 미실행**
