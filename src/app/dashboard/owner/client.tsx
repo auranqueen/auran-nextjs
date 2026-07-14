@@ -85,7 +85,6 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
     : `다음 등급: ${GRADE_LABELS[GRADE_ORDER[gradeIdx + 1]] || GRADE_ORDER[gradeIdx + 1].toUpperCase()}까지 성장 중`
 
   const [activeSub, setActiveSub] = useState<any | null>(null)
-  const [ownerMode, setOwnerMode] = useState<string | null>(null)
   const [subReady, setSubReady] = useState(false)
 
   useEffect(() => {
@@ -99,19 +98,8 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
           .order('created_at', { ascending: false })
           .limit(1)
         setActiveSub(((subs as any[]) || [])[0] ?? null)
-
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-        if (user) {
-          const { data: prof } = await supabase.from('profiles').select('owner_mode').eq('auth_id', user.id).maybeSingle()
-          setOwnerMode((prof as any)?.owner_mode ?? null)
-        } else {
-          setOwnerMode(null)
-        }
       } catch {
         setActiveSub(null)
-        setOwnerMode(null)
       } finally {
         setSubReady(true)
       }
@@ -215,8 +203,6 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
     activeSub?.expires_at && Number.isFinite(expiryMs) ? seoulDateKey(new Date(activeSub.expires_at)) === seoulDateKey(new Date()) : false
   const showExpirySoon = daysLeft !== null && daysLeft >= 1 && daysLeft <= 7
   const showExpiryToday = daysLeft !== null && (daysLeft <= 0 || expiryToday)
-  const showIndependentStoreBtn =
-    !!activeSub && (ownerMode === 'independent' || ownerMode === 'both')
   const showAnnualPromoBanner = !!activeSub && !looksLikeAnnualSub && !showExpiryToday && !showExpirySoon
   const ownerUnreadTotal = ownerChannels.reduce((acc, ch) => acc + Math.max(0, Number(ch.unread_count || 0)), 0)
 
@@ -435,26 +421,6 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
                 지금 갱신하기
               </button>
             </div>
-          ) : null}
-          {activeSub && showIndependentStoreBtn ? (
-            <button
-              type="button"
-              onClick={() => router.push('/dashboard/owner/store')}
-              style={{
-                marginTop: 10,
-                width: '100%',
-                borderRadius: 12,
-                border: '1px solid rgba(149,104,212,0.45)',
-                background: 'rgba(149,104,212,0.12)',
-                color: '#c4a7e7',
-                fontSize: 12,
-                fontWeight: 700,
-                padding: '11px 12px',
-                cursor: 'pointer',
-              }}
-            >
-              내 스토어 관리 →
-            </button>
           ) : null}
           {showAnnualPromoBanner ? (
             <button

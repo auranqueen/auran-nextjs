@@ -10,9 +10,10 @@ export default function OwnerQuickMenu() {
       {[
         { icon: '📅', label: '예약 관리', color: 'rgba(191,95,144,0.1)', border: 'rgba(191,95,144,0.3)', tc: '#bf5f90', href: '/dashboard/owner/bookings' },
         { icon: '👥', label: '고객 관리', color: 'rgba(74,141,192,0.1)', border: 'rgba(74,141,192,0.3)', tc: '#4a8dc0', href: '/dashboard/owner/customers' },
-        { icon: '🏪', label: '스토어', color: 'rgba(149,104,212,0.1)', border: 'rgba(149,104,212,0.3)', tc: '#9568d4', href: '/dashboard/owner/store' },
+        { icon: '✨', label: '꾸미기', color: 'rgba(149,104,212,0.1)', border: 'rgba(149,104,212,0.3)', tc: '#9568d4', href: '/dashboard/owner/store-decoration' },
         { icon: '🖊️', label: '샵 편집', color: 'rgba(76,173,126,0.08)', border: 'rgba(76,173,126,0.25)', tc: '#4cad7e', href: '/dashboard/owner/edit' },
-        { icon: '📊', label: '매출 리포트', color: 'rgba(240,160,80,0.08)', border: 'rgba(240,160,80,0.25)', tc: '#f0a050', href: '/dashboard/owner/revenue' },
+        // TODO: 전용 매출리포트 페이지 제작 후 경로 교체
+        { icon: '📊', label: '매출 리포트', color: 'rgba(240,160,80,0.08)', border: 'rgba(240,160,80,0.25)', tc: '#f0a050', href: '/dashboard/owner' },
         { icon: '💳', label: '구독 관리', color: 'rgba(191,95,144,0.08)', border: 'rgba(191,95,144,0.2)', tc: '#bf5f90', href: '/dashboard/owner/subscription' },
         { icon: '📋', label: '시술차트', color: 'rgba(123,94,167,0.1)', border: 'rgba(123,94,167,0.3)', tc: '#7B5EA7', href: '/dashboard/owner/charts-v2' },
         { icon: '🧬', label: 'AI 학습', color: 'rgba(123,94,167,0.1)', border: 'rgba(123,94,167,0.3)', tc: '#7B5EA7', href: '/admin/hormone-phases' },

@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import SalonInfoForm from './SalonInfoForm'
 
 const BG = '#0D0B09'
 const CARD = '#181520'
@@ -91,6 +91,14 @@ export default function StoreDecorationPage() {
   const [mainCta, setMainCta] = useState<(typeof MAIN_CTA_OPTIONS)[number]['id']>('booking')
   const [mapUrl, setMapUrl] = useState('')
   const [sns, setSns] = useState<SnsLinks>({})
+  const [pageTab, setPageTab] = useState<'decoration' | 'salon-info'>('decoration')
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    if (new URLSearchParams(window.location.search).get('tab') === 'salon-info') {
+      setPageTab('salon-info')
+    }
+  }, [])
 
   useEffect(() => {
     if (!toast) return
@@ -237,11 +245,19 @@ export default function StoreDecorationPage() {
         </div>
       ) : null}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <button type="button" onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: TEXT, fontSize: 22, cursor: 'pointer', minWidth: 44, minHeight: 44 }}>←</button>
         <div style={{ flex: 1, fontSize: 16, color: TEXT }}>스토어 꾸미기</div>
       </div>
 
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+        <button type="button" onClick={() => setPageTab('decoration')} style={chip(pageTab === 'decoration')}>꾸미기</button>
+        <button type="button" onClick={() => setPageTab('salon-info')} style={chip(pageTab === 'salon-info')}>살롱 정보</button>
+      </div>
+
+      {pageTab === 'salon-info' ? (
+        <SalonInfoForm />
+      ) : (
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14 }}>
           <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 10 }}>프로필 사진</div>
@@ -342,8 +358,14 @@ export default function StoreDecorationPage() {
           <input value={sns.kakao || ''} onChange={(e) => setSns((p) => ({ ...p, kakao: e.target.value }))} placeholder="Kakao 채널 URL" style={{ ...fieldStyle, marginBottom: 8 }} />
           <input value={sns.youtube || ''} onChange={(e) => setSns((p) => ({ ...p, youtube: e.target.value }))} placeholder="YouTube URL" style={fieldStyle} />
           <div style={{ fontSize: 11, color: TEXT_SUB, marginTop: 12 }}>
-            영업시간은 살롱 정보에서 관리 →{' '}
-            <Link href="/dashboard/owner/store" style={{ color: P, textDecoration: 'none' }}>살롱 정보 탭</Link>
+            살롱명·메뉴·자격증은 살롱 정보에서 관리 →{' '}
+            <button
+              type="button"
+              onClick={() => setPageTab('salon-info')}
+              style={{ color: P, background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontSize: 11 }}
+            >
+              살롱 정보 탭
+            </button>
           </div>
         </div>
 
@@ -363,6 +385,7 @@ export default function StoreDecorationPage() {
           </a>
         ) : null}
       </div>
+      )}
     </div>
   )
 }

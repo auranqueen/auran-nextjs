@@ -16,8 +16,8 @@ const MENU_ITEMS = [
   { label: '예약 관리', href: '/dashboard/owner/bookings' },
   { label: '고객 관리', href: '/dashboard/owner/customers' },
   { label: '시술차트', href: '/dashboard/owner/charts-v2' },
-  { label: '스토어', href: '/dashboard/owner/store' },
-  { label: '매출 리포트', href: '/dashboard/owner/revenue' },
+  // TODO: 전용 매출리포트 페이지 제작 후 경로 교체
+  { label: '매출 리포트', href: '/dashboard/owner' },
   { label: '발주', href: '/dashboard/owner/brand-orders' },
   { label: '소식', href: '/dashboard/owner/brand-community' },
   { label: '샘플', href: '/dashboard/owner/brand-samples' },
