@@ -56,7 +56,8 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
   const pathname = usePathname()
   const [isPC, setIsPC] = useState(false)
   const { isTrackA, ready } = useIsTrackA()
-  const { phase, daysLeft, ready: periodReady } = useOwnerStorePeriod()
+  // 레이어1(스토어유지비) 기준 D-day — store_trial_started_at ?? created_at 반영
+  const { phase, daysLeft, ready: periodReady } = useOwnerStorePeriod({ layer: 'store' })
 
   const menuItems = useMemo(
     () =>

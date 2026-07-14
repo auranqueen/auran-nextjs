@@ -3,15 +3,27 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
-  getOwnerStorePeriod,
+  getOwnerLayerPeriod,
+  pickLayerActiveSub,
+  resolveTrialStart,
+  type OwnerStorePeriod,
   type OwnerStorePeriodPhase,
+  type OwnerSubLayer,
 } from '@/lib/subscription/storeTrial'
 
-/** 원장 스토어 이용기간/무료체험 D-day (사이드바·구독 페이지 공용) */
-export function useOwnerStorePeriod() {
+const EMPTY: OwnerStorePeriod = { phase: 'expired', daysLeft: 0 }
+
+type Options = {
+  /** 미지정 시 phase/daysLeft는 store 기준 (기존 사이드바·배너 호환) */
+  layer?: OwnerSubLayer
+}
+
+/** 원장 레이어별 이용기간/무료체험 D-day */
+export function useOwnerStorePeriod(options?: Options) {
+  const layer: OwnerSubLayer = options?.layer ?? 'store'
   const supabase = useMemo(() => createClient(), [])
-  const [phase, setPhase] = useState<OwnerStorePeriodPhase>('expired')
-  const [daysLeft, setDaysLeft] = useState(0)
+  const [storePeriod, setStorePeriod] = useState<OwnerStorePeriod>(EMPTY)
+  const [showcasePeriod, setShowcasePeriod] = useState<OwnerStorePeriod>(EMPTY)
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -21,8 +33,8 @@ export function useOwnerStorePeriod() {
       const { data: auth } = await supabase.auth.getUser()
       if (!auth.user) {
         if (!cancelled) {
-          setPhase('expired')
-          setDaysLeft(0)
+          setStorePeriod(EMPTY)
+          setShowcasePeriod(EMPTY)
           setReady(true)
         }
         return
@@ -30,30 +42,45 @@ export function useOwnerStorePeriod() {
 
       const { data: urow } = await supabase
         .from('users')
-        .select('id, created_at')
+        .select('id, created_at, store_trial_started_at')
         .eq('auth_id', auth.user.id)
         .maybeSingle()
 
       const ownerId = urow?.id ? String(urow.id) : null
-      const createdAt = urow?.created_at ? String(urow.created_at) : null
+      const trialStart = resolveTrialStart(
+        (urow as { store_trial_started_at?: string | null } | null)?.store_trial_started_at,
+        urow?.created_at ? String(urow.created_at) : null,
+      )
 
-      let activeSub: { started_at?: string | null; expires_at?: string | null; status?: string | null } | null =
-        null
+      let subs: {
+        plan?: string | null
+        started_at?: string | null
+        expires_at?: string | null
+        status?: string | null
+      }[] = []
+
       if (ownerId) {
-        const { data: subs } = await supabase
+        const { data } = await supabase
           .from('owner_subscriptions')
-          .select('started_at, expires_at, status')
+          .select('plan, started_at, expires_at, status')
           .eq('owner_id', ownerId)
           .eq('status', 'active')
           .order('created_at', { ascending: false })
-          .limit(1)
-        activeSub = ((subs as any[]) || [])[0] || null
+        subs = ((data as any[]) || []) as typeof subs
       }
 
-      const period = getOwnerStorePeriod({ createdAt, activeSub })
+      const store = getOwnerLayerPeriod({
+        trialStart,
+        activeSubForLayer: pickLayerActiveSub(subs, 'store'),
+      })
+      const showcase = getOwnerLayerPeriod({
+        trialStart,
+        activeSubForLayer: pickLayerActiveSub(subs, 'showcase'),
+      })
+
       if (!cancelled) {
-        setPhase(period.phase)
-        setDaysLeft(period.daysLeft)
+        setStorePeriod(store)
+        setShowcasePeriod(showcase)
         setReady(true)
       }
     }
@@ -64,5 +91,14 @@ export function useOwnerStorePeriod() {
     }
   }, [supabase])
 
-  return { phase, daysLeft, ready }
+  const primary = layer === 'showcase' ? showcasePeriod : storePeriod
+
+  return {
+    storePeriod,
+    showcasePeriod,
+    ready,
+    /** 하위호환 / layer 옵션 반영 */
+    phase: primary.phase as OwnerStorePeriodPhase,
+    daysLeft: primary.daysLeft,
+  }
 }

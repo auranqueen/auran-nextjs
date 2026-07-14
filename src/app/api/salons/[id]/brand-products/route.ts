@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
+import {
+  SHOWCASE_PLAN_SLUGS,
+  getOwnerLayerPeriod,
+  pickLayerActiveSub,
+  resolveTrialStart,
+} from '@/lib/subscription/storeTrial'
 import type { SalonBrandProductItem, SalonBrandProductsResponse } from '@/types/salonBrandProducts'
 
 const NO_STORE_HEADERS = { 'Cache-Control': 'private, no-store' }
@@ -11,12 +17,12 @@ function emptyResponse(salonId: string): NextResponse<SalonBrandProductsResponse
   )
 }
 
-function lockedTrackAResponse(salonId: string): NextResponse<SalonBrandProductsResponse> {
+function lockedShowcaseResponse(salonId: string): NextResponse<SalonBrandProductsResponse> {
   return NextResponse.json(
     {
       salon_id: salonId,
       locked: true,
-      lock_reason: 'track_a_subscription',
+      lock_reason: 'showcase_subscription',
       products: [],
     },
     { headers: NO_STORE_HEADERS },
@@ -46,14 +52,33 @@ export async function GET(
 
   const { data: ownerRow, error: ownerError } = await svc
     .from('users')
-    .select('origin_track')
+    .select('created_at, store_trial_started_at')
     .eq('id', ownerUserId)
     .maybeSingle()
 
   if (ownerError) return emptyResponse(salonId)
 
-  const originTrack = String((ownerRow as { origin_track?: string } | null)?.origin_track || 'B')
-  if (originTrack === 'A') return lockedTrackAResponse(salonId)
+  const trialStart = resolveTrialStart(
+    (ownerRow as { store_trial_started_at?: string | null } | null)?.store_trial_started_at,
+    (ownerRow as { created_at?: string | null } | null)?.created_at,
+  )
+
+  const { data: subRows } = await svc
+    .from('owner_subscriptions')
+    .select('plan, started_at, expires_at, status')
+    .eq('owner_id', ownerUserId)
+    .eq('status', 'active')
+    .in('plan', [...SHOWCASE_PLAN_SLUGS])
+    .order('created_at', { ascending: false })
+
+  const showcasePeriod = getOwnerLayerPeriod({
+    trialStart,
+    activeSubForLayer: pickLayerActiveSub((subRows as any[]) || [], 'showcase'),
+  })
+
+  if (showcasePeriod.phase === 'expired') {
+    return lockedShowcaseResponse(salonId)
+  }
 
   const { data: linkRows, error: linkError } = await svc
     .from('brand_owner_links')
