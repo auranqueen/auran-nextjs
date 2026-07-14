@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { isInStoreTrialPeriod, STORE_TRIAL_PERIOD_MS } from '@/lib/subscription/storeTrial'
+import SubscriptionPeriodBanner from '@/components/owner/SubscriptionPeriodBanner'
+import SubscriptionPayModal from '@/components/owner/SubscriptionPayModal'
+import SubscriptionPlanCards from '@/components/owner/SubscriptionPlanCards'
 
 const BG = '#0D0B09'
 
@@ -23,7 +25,6 @@ type SubPlanRow = {
   is_recommended?: boolean | null
 }
 
-// MODE_META는 활성 구독 카드의 modeLabel용으로만 유지 (탭 UI 없음)
 const MODE_META: Record<OwnerMode, { label: string }> = {
   auran: { label: 'AURAN 연동' },
   independent: { label: '독립 모드' },
@@ -34,18 +35,6 @@ function planMode(p: SubPlanRow): string | null {
   return String(p.mode ?? p.owner_mode ?? '').trim() || null
 }
 
-function pricePeriodLabel(p: SubPlanRow): '/년' | '/월' {
-  return String(p.billing_period || '').toLowerCase() === 'annual' ? '/년' : '/월'
-}
-
-function storeTrialDaysLeft(createdAt: string | null | undefined): number | null {
-  if (!createdAt || !isInStoreTrialPeriod(createdAt)) return null
-  const startedAt = new Date(createdAt).getTime()
-  if (!Number.isFinite(startedAt)) return null
-  const remainMs = STORE_TRIAL_PERIOD_MS - (Date.now() - startedAt)
-  return Math.max(0, Math.ceil(remainMs / 86400000))
-}
-
 export default function OwnerSubscriptionPage() {
   const router = useRouter()
   const supabase = createClient()
@@ -53,7 +42,6 @@ export default function OwnerSubscriptionPage() {
   const [loading, setLoading] = useState(true)
   const [ownerUserId, setOwnerUserId] = useState<string | null>(null)
   const [originTrack, setOriginTrack] = useState<'A' | 'B' | null>(null)
-  const [ownerCreatedAt, setOwnerCreatedAt] = useState<string | null>(null)
   const [profile, setProfile] = useState<{
     id: string
     owner_mode: OwnerMode | null
@@ -95,7 +83,7 @@ export default function OwnerSubscriptionPage() {
 
     const { data: urow } = await supabase
       .from('users')
-      .select('id, origin_track, created_at')
+      .select('id, origin_track')
       .eq('auth_id', user.id)
       .maybeSingle()
     const oid = urow?.id ? String(urow.id) : null
@@ -104,10 +92,6 @@ export default function OwnerSubscriptionPage() {
       .trim()
       .toUpperCase()
     setOriginTrack(rawTrack === 'A' || rawTrack === 'B' ? rawTrack : null)
-    const createdAt = (urow as { created_at?: string | null } | null)?.created_at
-      ? String((urow as { created_at?: string | null }).created_at)
-      : null
-    setOwnerCreatedAt(createdAt)
     const rawMode = (prof as any)?.owner_mode as string | undefined
     const om: OwnerMode | null =
       rawMode === 'auran' || rawMode === 'independent' || rawMode === 'integrated' ? rawMode : null
@@ -189,7 +173,6 @@ export default function OwnerSubscriptionPage() {
   }
 
   const trialDays = getSetting('owner_free_trial_days', '30')
-  const storeTrialDday = storeTrialDaysLeft(ownerCreatedAt)
 
   const filteredPlans = useMemo(() => {
     const filterMode: OwnerMode = profile?.owner_mode ?? 'auran'
@@ -311,7 +294,7 @@ export default function OwnerSubscriptionPage() {
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)' }}>불러오는 중…</div>
         ) : (
           <>
-            {/* 현재 구독 현황 */}
+            <SubscriptionPeriodBanner hasActiveSub={!!activeSub} />
             {activeSub ? (
               <div
                 style={{
@@ -393,15 +376,9 @@ export default function OwnerSubscriptionPage() {
                 아직 구독 플랜이 없어요
                 <br />
                 플랜을 선택해서 시작해보세요 💜
-                {storeTrialDday !== null ? (
-                  <div style={{ marginTop: 10, fontSize: 12, color: 'rgba(196,167,231,0.85)' }}>
-                    90일 무료체험 중 (D-{storeTrialDday})
-                  </div>
-                ) : null}
               </div>
             )}
 
-            {/* 플랜 카드 */}
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>플랜 선택</div>
             <button
               type="button"
@@ -420,154 +397,22 @@ export default function OwnerSubscriptionPage() {
               결제 완료 후 여기서 확인하기
             </button>
 
-            {filteredPlans.length === 0 ? (
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', padding: '12px 0' }}>
-                등록된 플랜이 없어요. 관리자에게 subscription_plans 등록을 요청해주세요.
-              </div>
-            ) : (
-              filteredPlans.map((p) => {
-                const slug = String(p.slug || p.code || '').toLowerCase()
-                const isPro = slug === 'pro' || p.is_recommended === true
-                const price = priceFor(p)
-                const feats = Array.isArray(p.features) ? p.features : []
-                return (
-                  <div
-                    key={p.id}
-                    style={{
-                      position: 'relative',
-                      background: 'rgba(255,255,255,0.03)',
-                      border: isPro ? '1px solid rgba(123,94,167,0.4)' : '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: 16,
-                      padding: 20,
-                      marginBottom: 12,
-                    }}
-                  >
-                    {isPro ? (
-                      <span
-                        style={{
-                          position: 'absolute',
-                          top: 12,
-                          right: 12,
-                          fontSize: 10,
-                          padding: '3px 8px',
-                          borderRadius: 8,
-                          background: 'rgba(123,94,167,0.35)',
-                          color: '#f0e8ff',
-                          fontWeight: 800,
-                        }}
-                      >
-                        추천
-                      </span>
-                    ) : null}
-                    <div style={{ fontSize: 16, fontWeight: 800 }}>{p.name || p.slug || '플랜'}</div>
-                    <div style={{ marginTop: 8, fontSize: 18, color: '#C9A96E', fontWeight: 800 }}>
-                      {price > 0 ? `${price.toLocaleString()}원${pricePeriodLabel(p)}` : '가격 문의'}
-                    </div>
-                    <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      {feats.length === 0 ? (
-                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>혜택 정보가 없습니다</div>
-                      ) : (
-                        feats.map((f, i) => (
-                          <div key={i} style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>
-                            ✅ {f}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => openPay(p)}
-                      style={{
-                        marginTop: 14,
-                        width: '100%',
-                        border: 'none',
-                        borderRadius: 12,
-                        background: '#7B5EA7',
-                        color: '#fff',
-                        padding: '11px 0',
-                        fontSize: 13,
-                        fontWeight: 800,
-                      }}
-                    >
-                      선택하기
-                    </button>
-                  </div>
-                )
-              })
-            )}
+            <SubscriptionPlanCards plans={filteredPlans} priceFor={priceFor} onSelect={openPay} />
           </>
         )}
       </div>
 
       {payOpen && payTarget ? (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 100,
-            background: 'rgba(0,0,0,0.72)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: 16,
+        <SubscriptionPayModal
+          payTarget={payTarget}
+          amount={priceFor(payTarget)}
+          trialDays={trialDays}
+          onClose={() => {
+            setPayOpen(false)
+            setPayTarget(null)
           }}
-        >
-          <div
-            style={{
-              width: '100%',
-              maxWidth: 360,
-              background: '#1a1228',
-              border: '1px solid rgba(123,94,167,0.45)',
-              borderRadius: 18,
-              padding: 18,
-            }}
-          >
-            <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 6 }}>결제</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)' }}>{payTarget.name || payTarget.slug}</div>
-            <div style={{ fontSize: 18, color: '#C9A96E', marginTop: 6, fontWeight: 800 }}>
-              {priceFor(payTarget).toLocaleString()}원{pricePeriodLabel(payTarget)}
-            </div>
-            <div style={{ marginTop: 12, fontSize: 11, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
-              첫 {trialDays}일 무료 후 {priceFor(payTarget).toLocaleString()}원{pricePeriodLabel(payTarget)}
-            </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setPayOpen(false)
-                  setPayTarget(null)
-                }}
-                style={{
-                  flex: 1,
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  background: 'transparent',
-                  color: '#fff',
-                  borderRadius: 12,
-                  padding: '11px 0',
-                  fontSize: 12,
-                }}
-              >
-                닫기
-              </button>
-              <button
-                type="button"
-                onClick={() => void startCardPay()}
-                style={{
-                  flex: 2,
-                  border: 'none',
-                  borderRadius: 12,
-                  background: '#7B5EA7',
-                  color: '#fff',
-                  padding: '11px 0',
-                  fontSize: 13,
-                  fontWeight: 800,
-                }}
-              >
-                카드 결제
-              </button>
-            </div>
-          </div>
-        </div>
+          onPay={() => void startCardPay()}
+        />
       ) : null}
 
       {toast ? (
@@ -589,7 +434,6 @@ export default function OwnerSubscriptionPage() {
           {toast}
         </div>
       ) : null}
-
     </div>
   )
 }
