@@ -140,6 +140,7 @@ export async function POST(req: NextRequest) {
         const ownerId = String(payload.owner_id || intent.user_id)
         const planSlug = String(payload.plan || 'owner_plan')
         const planName = String(payload.plan_name || planSlug)
+        const isTrackPlan = planSlug.startsWith('track_a_') || planSlug.startsWith('track_b_')
         const ownerMode = String(payload.mode || 'auran')
         const monthlyPrice = Number(payload.monthly_price ?? intent.amount ?? 0)
         const expiresAt = new Date()
@@ -160,10 +161,13 @@ export async function POST(req: NextRequest) {
 
         const { data: urow } = await client.from('users').select('auth_id').eq('id', ownerId).maybeSingle()
         if (urow?.auth_id) {
-          await client
-            .from('profiles')
-            .update({ owner_subscription_plan: planSlug, owner_mode: ownerMode } as any)
-            .eq('auth_id', urow.auth_id)
+          const profileUpdate: { owner_subscription_plan: string; owner_mode?: string } = {
+            owner_subscription_plan: planSlug,
+          }
+          if (!isTrackPlan) {
+            profileUpdate.owner_mode = ownerMode
+          }
+          await client.from('profiles').update(profileUpdate as any).eq('auth_id', urow.auth_id)
         }
 
         await client.from('notifications').insert({

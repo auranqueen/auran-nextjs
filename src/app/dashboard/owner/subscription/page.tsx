@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { isInStoreTrialPeriod, STORE_TRIAL_PERIOD_MS } from '@/lib/subscription/storeTrial'
+
 const BG = '#0D0B09'
 
 type OwnerMode = 'auran' | 'independent' | 'integrated'
@@ -21,22 +23,11 @@ type SubPlanRow = {
   is_recommended?: boolean | null
 }
 
-const MODE_META: Record<
-  OwnerMode,
-  { label: string; hint: string }
-> = {
-  auran: {
-    label: 'AURAN 연동',
-    hint: 'AURAN 고객 연동 · 처방전 커미션 · 케어룸 노출',
-  },
-  independent: {
-    label: '독립 모드',
-    hint: '자체 스토어 운영 · 본인 제품 판매 · AURAN 미노출',
-  },
-  integrated: {
-    label: '통합 모드',
-    hint: '두 가지 모두 · 최대 기능 · 할인 적용',
-  },
+// MODE_META는 활성 구독 카드의 modeLabel용으로만 유지 (탭 UI 없음)
+const MODE_META: Record<OwnerMode, { label: string }> = {
+  auran: { label: 'AURAN 연동' },
+  independent: { label: '독립 모드' },
+  integrated: { label: '통합 모드' },
 }
 
 function planMode(p: SubPlanRow): string | null {
@@ -47,6 +38,14 @@ function pricePeriodLabel(p: SubPlanRow): '/년' | '/월' {
   return String(p.billing_period || '').toLowerCase() === 'annual' ? '/년' : '/월'
 }
 
+function storeTrialDaysLeft(createdAt: string | null | undefined): number | null {
+  if (!createdAt || !isInStoreTrialPeriod(createdAt)) return null
+  const startedAt = new Date(createdAt).getTime()
+  if (!Number.isFinite(startedAt)) return null
+  const remainMs = STORE_TRIAL_PERIOD_MS - (Date.now() - startedAt)
+  return Math.max(0, Math.ceil(remainMs / 86400000))
+}
+
 export default function OwnerSubscriptionPage() {
   const router = useRouter()
   const supabase = createClient()
@@ -54,6 +53,7 @@ export default function OwnerSubscriptionPage() {
   const [loading, setLoading] = useState(true)
   const [ownerUserId, setOwnerUserId] = useState<string | null>(null)
   const [originTrack, setOriginTrack] = useState<'A' | 'B' | null>(null)
+  const [ownerCreatedAt, setOwnerCreatedAt] = useState<string | null>(null)
   const [profile, setProfile] = useState<{
     id: string
     owner_mode: OwnerMode | null
@@ -62,7 +62,6 @@ export default function OwnerSubscriptionPage() {
   const [activeSub, setActiveSub] = useState<any | null>(null)
   const [planRows, setPlanRows] = useState<SubPlanRow[]>([])
   const [settings, setSettings] = useState<Record<string, string>>({})
-  const [mode, setMode] = useState<OwnerMode>('auran')
   const [toast, setToast] = useState('')
   const [payOpen, setPayOpen] = useState(false)
   const [payTarget, setPayTarget] = useState<SubPlanRow | null>(null)
@@ -96,7 +95,7 @@ export default function OwnerSubscriptionPage() {
 
     const { data: urow } = await supabase
       .from('users')
-      .select('id, origin_track')
+      .select('id, origin_track, created_at')
       .eq('auth_id', user.id)
       .maybeSingle()
     const oid = urow?.id ? String(urow.id) : null
@@ -105,6 +104,10 @@ export default function OwnerSubscriptionPage() {
       .trim()
       .toUpperCase()
     setOriginTrack(rawTrack === 'A' || rawTrack === 'B' ? rawTrack : null)
+    const createdAt = (urow as { created_at?: string | null } | null)?.created_at
+      ? String((urow as { created_at?: string | null }).created_at)
+      : null
+    setOwnerCreatedAt(createdAt)
     const rawMode = (prof as any)?.owner_mode as string | undefined
     const om: OwnerMode | null =
       rawMode === 'auran' || rawMode === 'independent' || rawMode === 'integrated' ? rawMode : null
@@ -167,12 +170,6 @@ export default function OwnerSubscriptionPage() {
     })
     setSettings(m)
 
-    if (om === 'auran' || om === 'independent' || om === 'integrated') {
-      setMode(om)
-    } else {
-      setMode('auran')
-    }
-
     setLoading(false)
     return hasActive
   }, [router])
@@ -192,8 +189,10 @@ export default function OwnerSubscriptionPage() {
   }
 
   const trialDays = getSetting('owner_free_trial_days', '30')
+  const storeTrialDday = storeTrialDaysLeft(ownerCreatedAt)
 
   const filteredPlans = useMemo(() => {
+    const filterMode: OwnerMode = profile?.owner_mode ?? 'auran'
     return planRows.filter((p) => {
       const slug = String(p.slug || p.code || '').toLowerCase()
       if (slug.startsWith('track_a_')) {
@@ -201,12 +200,11 @@ export default function OwnerSubscriptionPage() {
       } else if (slug.startsWith('track_b_')) {
         if (originTrack !== 'B') return false
       }
-      // track_a_/track_b_ 패턴이 아니면 기존 mode 필터만
       const pm = planMode(p)
       if (!pm) return true
-      return pm === mode
+      return pm === filterMode
     })
-  }, [planRows, mode, originTrack])
+  }, [planRows, profile?.owner_mode, originTrack])
 
   const priceFor = (p: SubPlanRow) => {
     const slug = String(p.slug || p.code || p.id || '')
@@ -241,12 +239,21 @@ export default function OwnerSubscriptionPage() {
     }
     const slug = String(payTarget.slug || payTarget.code || payTarget.id)
     const planName = String(payTarget.name || slug)
-    const payload = {
+    const isTrackPlan = slug.startsWith('track_a_') || slug.startsWith('track_b_')
+    const payload: {
+      owner_id: string
+      plan: string
+      plan_name: string
+      monthly_price: number
+      mode?: OwnerMode
+    } = {
       owner_id: ownerUserId,
       plan: slug,
       plan_name: planName,
-      mode,
       monthly_price: amount,
+    }
+    if (!isTrackPlan && profile?.owner_mode) {
+      payload.mode = profile.owner_mode
     }
     const res = await fetch('/api/payments/payapp/create', {
       method: 'POST',
@@ -386,34 +393,13 @@ export default function OwnerSubscriptionPage() {
                 아직 구독 플랜이 없어요
                 <br />
                 플랜을 선택해서 시작해보세요 💜
-                <div style={{ marginTop: 10, fontSize: 12, color: 'rgba(196,167,231,0.85)' }}>
-                  {trialDays}일 무료 체험 가능
-                </div>
+                {storeTrialDday !== null ? (
+                  <div style={{ marginTop: 10, fontSize: 12, color: 'rgba(196,167,231,0.85)' }}>
+                    90일 무료체험 중 (D-{storeTrialDday})
+                  </div>
+                ) : null}
               </div>
             )}
-
-            {/* 모드 선택 */}
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>운영 모드</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 14 }}>
-              {(Object.keys(MODE_META) as OwnerMode[]).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setMode(m)}
-                  style={{
-                    textAlign: 'left',
-                    border: mode === m ? '1px solid rgba(123,94,167,0.5)' : '1px solid rgba(255,255,255,0.1)',
-                    background: mode === m ? 'rgba(123,94,167,0.12)' : 'rgba(255,255,255,0.03)',
-                    borderRadius: 12,
-                    padding: '12px 14px',
-                    color: '#fff',
-                  }}
-                >
-                  <div style={{ fontSize: 13, fontWeight: 700, color: mode === m ? '#c4a7e7' : '#fff' }}>{MODE_META[m].label}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>{MODE_META[m].hint}</div>
-                </button>
-              ))}
-            </div>
 
             {/* 플랜 카드 */}
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>플랜 선택</div>
@@ -436,7 +422,7 @@ export default function OwnerSubscriptionPage() {
 
             {filteredPlans.length === 0 ? (
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', padding: '12px 0' }}>
-                이 모드에 등록된 플랜이 없어요. 관리자에게 subscription_plans 등록을 요청해주세요.
+                등록된 플랜이 없어요. 관리자에게 subscription_plans 등록을 요청해주세요.
               </div>
             ) : (
               filteredPlans.map((p) => {
