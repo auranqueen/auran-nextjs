@@ -19,7 +19,9 @@ export default function BrandLoginPage() {
   const slug = params.slug as string
   const [brand, setBrand] = useState<BrandInfo | null>(null)
   const [loadingBrand, setLoadingBrand] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [notFound, setNotFound] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
   const [userId, setUserId] = useState('')
   const [rememberUserId, setRememberUserId] = useState(false)
   const [password, setPassword] = useState('')
@@ -37,11 +39,22 @@ export default function BrandLoginPage() {
   }, [slug])
   useEffect(() => {
     const loadBrand = async () => {
-      const { data } = await supabase
+      setLoadingBrand(true)
+      setLoadError(false)
+      setNotFound(false)
+      setBrand(null)
+
+      const { data, error: brandError } = await supabase
         .from('brands')
         .select('id, name, brand_name_kr, logo_url, slug, user_id, login_role')
         .eq('slug', slug)
         .maybeSingle()
+      if (brandError) {
+        console.error('[BrandHub] 브랜드 조회 실패', { slug, error: brandError })
+        setLoadError(true)
+        setLoadingBrand(false)
+        return
+      }
       if (!data) { setNotFound(true); setLoadingBrand(false); return }
       setBrand(data as BrandInfo)
       setLoadingBrand(false)
@@ -51,7 +64,7 @@ export default function BrandLoginPage() {
       }
     }
     void loadBrand()
-  }, [slug])
+  }, [slug, retryCount])
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!userId.trim() || !password) { setError('아이디와 비밀번호를 입력해주세요'); return }
@@ -100,6 +113,20 @@ export default function BrandLoginPage() {
   if (loadingBrand) return (
     <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB, fontSize: 14 }}>
       로딩 중...
+    </div>
+  )
+  if (loadError) return (
+    <div style={{ minHeight: '100vh', background: BG, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+      <div style={{ fontSize: 32 }}>⚠️</div>
+      <div style={{ fontSize: 16, color: TEXT }}>일시적 오류가 발생했어요</div>
+      <div style={{ fontSize: 13, color: SUB }}>잠시 후 다시 시도해주세요</div>
+      <button
+        type="button"
+        onClick={() => setRetryCount((value) => value + 1)}
+        style={{ marginTop: 4, border: 0, borderRadius: 10, padding: '11px 18px', background: PURPLE, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+      >
+        다시 시도
+      </button>
     </div>
   )
   if (notFound) return (

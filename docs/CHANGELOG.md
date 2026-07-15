@@ -5,6 +5,7 @@
 
 ## 2026-07-15
 
+- **브랜드 허브 조회 오류·미존재 분리**: `/brand/[slug]`의 `brands` 조회에서 Supabase 오류를 별도 `loadError` 상태로 처리하고 콘솔에 slug·오류 정보를 기록. 실제 조회 결과가 없을 때만 기존 미존재 화면을 표시하며, 일시적 오류 화면에는 상태를 초기화하고 쿼리를 다시 실행하는 재시도 버튼 추가.
 - **브랜드 상품 소비자가 저장·살롱 노출 연결 (097, 미실행)**: `brand_products.consumer_price INTEGER NOT NULL DEFAULT 0 CHECK (consumer_price >= 0)` migration 추가. `BrandProductFormV2`에서 소비자가를 입력·수정·미리보기하고 save API가 pending은 0 허용, active는 양수만 저장하도록 검증. 살롱 전용 brand-products API가 실제 소비자가를 반환해 `SalonBrandProductCard`의 기존 가격 UI에 연결. 일반몰 쿠폰 가격(`products.retail_price/sale_price`)과 원장 발주 공급가(`brand_products.supply_price`) 흐름은 미변경.
 - **BrandProductFormV2 500줄 규칙 대응**: 기본정보·가격, 미디어·상세설명, 성분·태그·판매설정을 각각 `BrandProductPriceSection`, `BrandProductMediaSection`, `BrandProductMetadataSection`으로 분리하고 로컬 스타일·섹션 전용 업로드/분석 핸들러를 이동. 부모 파일은 PowerShell `Measure-Object -Line` 기준 493줄.
 
