@@ -2,11 +2,11 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
-import { uploadToStorage, uploadVideoToStorage } from '@/lib/product/productFormUtils'
 import { buildEventBanner, parseEventBanner } from '@/lib/brand/brandProductTypes'
-import dynamic from 'next/dynamic'
+import BrandProductPriceSection from './BrandProductPriceSection'
+import BrandProductMediaSection from './BrandProductMediaSection'
+import BrandProductMetadataSection from './BrandProductMetadataSection'
 
-const ProductDetailEditor = dynamic(() => import('@/components/admin/ProductDetailEditor'), { ssr: false })
 const SAVE_API = '/api/brand/brand-products/save'
 
 interface BrandProductFormV2Props {
@@ -35,6 +35,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
   const [keywords, setKeywords] = useState('')
   const [brandId, setBrandId] = useState(propBrandId)
   const [supplyPrice, setSupplyPrice] = useState('')
+  const [consumerPrice, setConsumerPrice] = useState('')
   const [categoryText, setCategoryText] = useState('')
   const [allCategories, setAllCategories] = useState<{ id: string; name: string; parent_id: string | null; level: number; sort_order: number | null }[]>([])
   const [catL1, setCatL1] = useState('')
@@ -53,9 +54,6 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
   const [thumbImages, setThumbImages] = useState<(string | null)[]>([null, null, null, null, null])
   const [videoUrl, setVideoUrl] = useState('')
   const [detailImages, setDetailImages] = useState<string[]>([])
-  const fileRefs = useRef<(HTMLInputElement | null)[]>([null, null, null, null, null])
-  const videoRef = useRef<HTMLInputElement | null>(null)
-  const detailFileRef = useRef<HTMLInputElement | null>(null)
 
   const [detailContent, setDetailContent] = useState('')
 
@@ -63,8 +61,6 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
   const [ingredientText, setIngredientText] = useState('')
   const [clinicalResult, setClinicalResult] = useState('')
   const [certifications, setCertifications] = useState('')
-  const [ingredientAnalyzeLoading, setIngredientAnalyzeLoading] = useState(false)
-  const ingredientPhotoRef = useRef<HTMLInputElement | null>(null)
 
   const [ptInput, setPtInput] = useState('')
   const [ptResults, setPtResults] = useState<{ id: string; name: string }[]>([])
@@ -118,6 +114,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
       setShortDesc(data.description || '')
       setKeywords(data.tag || '')
       setSupplyPrice(String(data.supply_price ?? 0))
+      setConsumerPrice(String(data.consumer_price ?? 0))
       setCategoryText(data.category || '')
       if (data.category_id) setProductCategoryLeafId(data.category_id)
 
@@ -177,21 +174,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
     pg: { background: '#0D0B09', color: '#e8e4dc', fontFamily: 'var(--font-sans)', width: '100%', maxHeight: '90vh', overflowY: 'auto', borderRadius: 16 } as CSSProperties,
     topbar: { background: '#0D0B09', borderBottom: '0.5px solid rgba(255,255,255,0.08)', padding: '12px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky' as const, top: 0, zIndex: 10 } as CSSProperties,
     body: { display: 'grid', gridTemplateColumns: '1fr 280px', gap: 16, padding: '20px 24px', maxWidth: 1200, margin: '0 auto' } as CSSProperties,
-    sec: { background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 16, marginBottom: 12 } as CSSProperties,
-    secTitle: { fontSize: 11, color: 'rgba(255,255,255,0.4)', letterSpacing: 0.5, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 } as CSSProperties,
-    lbl: { fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4, display: 'block' } as CSSProperties,
     inp: { background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 10px', color: '#e8e4dc', fontSize: 13, outline: 'none', width: '100%', boxSizing: 'border-box' as const } as CSSProperties,
-    sel: { background: '#1a1714', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 10px', color: '#e8e4dc', fontSize: 13, outline: 'none', width: '100%' } as CSSProperties,
-    row2: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 } as CSSProperties,
-    row3: { display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 10 } as CSSProperties,
-    f: { marginBottom: 10 } as CSSProperties,
-    tag: (on: boolean) => ({ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: on ? 'rgba(123,94,167,0.35)' : 'rgba(123,94,167,0.1)', border: `0.5px solid ${on ? 'rgba(123,94,167,0.6)' : 'rgba(123,94,167,0.25)'}`, color: '#c4a7e7', cursor: 'pointer', display: 'inline-block', margin: '3px 3px 0 0' }) as CSSProperties,
-    goldTag: (on: boolean) => ({ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: on ? 'rgba(201,169,110,0.3)' : 'rgba(201,169,110,0.1)', border: `0.5px solid ${on ? 'rgba(201,169,110,0.6)' : 'rgba(201,169,110,0.25)'}`, color: '#c9a96e', cursor: 'pointer', display: 'inline-block', margin: '3px 3px 0 0' }) as CSSProperties,
-    tog: (on: boolean) => ({ width: 34, height: 18, borderRadius: 9, border: 'none', cursor: 'pointer', background: on ? 'rgba(123,94,167,0.6)' : 'rgba(255,255,255,0.1)' }) as CSSProperties,
-  }
-
-  const toggleArr = (arr: string[], val: string, set: (v: string[]) => void) => {
-    set(arr.includes(val) ? arr.filter(x => x !== val) : [...arr, val])
   }
 
   const catOpts = (parentId: string | null) =>
@@ -217,6 +200,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
       brand_id: brandId,
       name: name.trim().slice(0, 100) || '신규 상품',
       supply_price: Math.max(0, Math.trunc(Number(supplyPrice) || 0)),
+      consumer_price: Math.max(0, Math.trunc(Number(consumerPrice) || 0)),
       description: shortDesc.trim() || null,
       tag: keywords.trim() || null,
       category_id: catL5 || catL4 || catL3 || catL2 || catL1 || null,
@@ -243,6 +227,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
     brandId,
     name,
     supplyPrice,
+    consumerPrice,
     shortDesc,
     keywords,
     catL1,
@@ -293,31 +278,6 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
       return null
     }
   }, [brandId, persistViaApi])
-
-  const handleImagePick = useCallback(async (slot: number, file: File) => {
-    if (!await ensureWorkingProduct()) return
-    const ext = file.name.split('.').pop() || 'jpg'
-    const url = await uploadToStorage(file, `edit/${workingIdRef.current}/${slot}-${Date.now()}.${ext}`)
-    setThumbImages(prev => {
-      const n = [...prev]
-      n[slot] = url
-      return n
-    })
-  }, [ensureWorkingProduct])
-
-  const handleVideoPick = useCallback(async (file: File) => {
-    if (!await ensureWorkingProduct()) return
-    const ext = file.name.split('.').pop() || 'mp4'
-    const url = await uploadVideoToStorage(file, `edit/${workingIdRef.current}/video-${Date.now()}.${ext}`)
-    setVideoUrl(url)
-  }, [ensureWorkingProduct])
-
-  const handleDetailImagePick = useCallback(async (file: File) => {
-    if (!await ensureWorkingProduct()) return
-    const ext = file.name.split('.').pop() || 'jpg'
-    const url = await uploadVideoToStorage(file, `edit/${workingIdRef.current}/detail-${Date.now()}.${ext}`)
-    setDetailImages(prev => [...prev, url])
-  }, [ensureWorkingProduct])
 
   const onSave = async () => {
     setMsg('')
@@ -386,272 +346,72 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
       </div>
       <div style={S.body}>
         <div>
-          <div style={S.sec}>
-            <div style={S.secTitle}>기본 정보</div>
-            <div style={S.f}><span style={S.lbl}>상품명 (최대 100자)</span><input style={S.inp} value={name} onChange={e => setName(e.target.value)} placeholder="상품명" /></div>
-            <div style={S.f}><span style={S.lbl}>짧은 설명</span><input style={S.inp} value={shortDesc} onChange={e => setShortDesc(e.target.value)} placeholder="한 줄 설명" /></div>
-            <div style={S.f}><span style={S.lbl}>검색 키워드</span><input style={S.inp} value={keywords} onChange={e => setKeywords(e.target.value)} placeholder="보습, 진정, 마스크팩" /></div>
-            <div style={S.row2}>
-              <div>
-                <span style={S.lbl}>브랜드</span>
-                {editId ? (
-                  <div style={S.inp}>{selectedBrandName}</div>
-                ) : (
-                  <select
-                    style={S.sel}
-                    value={brandId}
-                    onChange={(e) => setBrandId(e.target.value)}
-                  >
-                    {brandOptions.map((brand) => (
-                      <option key={brand.id} value={brand.id}>
-                        {brand.name}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-              <div>
-                <span style={S.lbl}>공급가 (원)</span>
-                <input
-                  style={S.inp}
-                  type="number"
-                  min={0}
-                  value={supplyPrice}
-                  onChange={(e) => setSupplyPrice(e.target.value)}
-                  placeholder="0"
-                />
-              </div>
-            </div>
-            {!editId && (
-              <div style={{ fontSize: 11, color: '#c4a7e7', marginBottom: 8 }}>
-                선택한 브랜드에 제품이 등록됩니다.
-              </div>
-            )}
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>
-              원산지는 브랜드별로 서버에서 자동 설정됩니다.
-            </div>
-            <div style={S.row2}>
-              <div>
-                <span style={S.lbl}>카테고리</span>
-                <button type="button" onClick={() => { setCategoryPickerTab('select'); setShowCategoryPicker(true) }}
-                  style={{ ...S.inp, textAlign: 'left' as const, cursor: 'pointer', background: '#1a1714' }}>
-                  {categoryBreadcrumb || '카테고리 선택'}
-                </button>
-                {categoryBreadcrumb && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginTop: 4 }}>{categoryBreadcrumb}</div>}
-              </div>
-              <div><span style={S.lbl}>제조사</span><input style={S.inp} value={manufacturer} onChange={e => setManufacturer(e.target.value)} placeholder="제조사명" /></div>
-            </div>
-            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
-                <input type="checkbox" checked={isExclusive} onChange={e => setIsExclusive(e.target.checked)} style={{ accentColor: '#7b5ea7' }} />AURAN 독점
-              </label>
-            </div>
-          </div>
+          <BrandProductPriceSection
+            editId={editId} name={name} setName={setName}
+            shortDesc={shortDesc} setShortDesc={setShortDesc}
+            keywords={keywords} setKeywords={setKeywords}
+            brandId={brandId} setBrandId={setBrandId} brandOptions={brandOptions}
+            selectedBrandName={selectedBrandName}
+            supplyPrice={supplyPrice} setSupplyPrice={setSupplyPrice}
+            consumerPrice={consumerPrice} setConsumerPrice={setConsumerPrice}
+            categoryBreadcrumb={categoryBreadcrumb}
+            onOpenCategory={() => { setCategoryPickerTab('select'); setShowCategoryPicker(true) }}
+            manufacturer={manufacturer} setManufacturer={setManufacturer}
+            isExclusive={isExclusive} setIsExclusive={setIsExclusive}
+          />
 
-          <div style={S.sec}>
-            <div style={S.secTitle}>상품 이미지</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 8, marginBottom: 12 }}>
-              {thumbImages.map((url, i) => (
-                <div key={i} style={{ position: 'relative', aspectRatio: '1' }}
-                  draggable={!!url}
-                  onDragStart={e => e.dataTransfer.setData('text/plain', String(i))}
-                  onDragOver={e => e.preventDefault()}
-                  onDrop={e => {
-                    e.preventDefault()
-                    const from = Number(e.dataTransfer.getData('text/plain'))
-                    if (from === i) return
-                    setThumbImages(prev => {
-                      const next = [...prev]
-                      const tmp = next[from]
-                      next[from] = next[i]
-                      next[i] = tmp
-                      return next
-                    })
-                  }}>
-                  <div
-                    onClick={() => { if (!url) fileRefs.current[i]?.click() }}
-                    style={{ width: '100%', height: '100%', background: i === 0 ? 'rgba(123,94,167,0.06)' : 'rgba(255,255,255,0.04)', border: `0.5px dashed ${i === 0 ? 'rgba(123,94,167,0.4)' : 'rgba(255,255,255,0.12)'}`, borderRadius: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: url ? 'grab' : 'pointer', overflow: 'hidden' }}>
-                    {url
-                      ? <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <span style={{ fontSize: 10, color: i === 0 ? 'rgba(196,167,231,0.6)' : 'rgba(255,255,255,0.25)' }}>{i === 0 ? '대표' : '+'}</span>
-                    }
-                  </div>
-                  {url && (
-                    <button
-                      type="button"
-                      onClick={e => { e.stopPropagation(); setThumbImages(prev => { const next = [...prev]; next[i] = null; return next }) }}
-                      style={{ position: 'absolute', top: 3, right: 3, width: 18, height: 18, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', fontSize: 12, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
-                      ×
-                    </button>
-                  )}
-                  {url && i === 0 && (
-                    <div style={{ position: 'absolute', bottom: 3, left: 3, fontSize: 9, padding: '1px 5px', borderRadius: 4, background: 'rgba(123,94,167,0.7)', color: '#fff' }}>대표</div>
-                  )}
-                  <input ref={el => { fileRefs.current[i] = el }} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) void handleImagePick(i, f) }} />
-                </div>
-              ))}
-            </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginBottom: 8 }}>드래그로 순서 변경 · × 버튼으로 삭제</div>
-            <div style={{ background: 'rgba(255,180,0,0.04)', border: '0.5px dashed rgba(255,180,0,0.2)', borderRadius: 8, padding: 12, textAlign: 'center', cursor: 'pointer', fontSize: 12, color: 'rgba(255,180,0,0.5)' }} onClick={() => videoRef.current?.click()}>
-              {videoUrl ? '영상 업로드됨 ✓' : '+ 영상 업로드'}
-              <input ref={videoRef} type="file" accept="video/*" style={{ display: 'none' }} onChange={e => { const f = e.target.files?.[0]; if (f) void handleVideoPick(f) }} />
-            </div>
-          </div>
+          <BrandProductMediaSection
+            thumbImages={thumbImages}
+            setThumbImages={setThumbImages}
+            videoUrl={videoUrl}
+            setVideoUrl={setVideoUrl}
+            detailContent={detailContent}
+            setDetailContent={setDetailContent}
+            detailImages={detailImages}
+            setDetailImages={setDetailImages}
+            ensureWorkingProduct={ensureWorkingProduct}
+          />
 
-          <div style={S.sec}>
-            <div style={S.secTitle}>상세 설명</div>
-            <ProductDetailEditor
-              value={detailContent}
-              onChange={setDetailContent}
-              onImageUpload={async (file) => {
-                if (!await ensureWorkingProduct()) return ''
-                const ext = file.name.split('.').pop() || 'jpg'
-                return await uploadToStorage(file, `edit/${workingIdRef.current}/editor-${Date.now()}.${ext}`)
-              }}
-              onVideoUpload={async (file) => {
-                if (!await ensureWorkingProduct()) return ''
-                const ext = file.name.split('.').pop() || 'mp4'
-                return await uploadVideoToStorage(file, `edit/${workingIdRef.current}/editor-video-${Date.now()}.${ext}`)
-              }}
-            />
-            <div style={{ marginTop: 10 }}>
-              <span style={S.lbl}>상세 이미지</span>
-              <div style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px dashed rgba(255,255,255,0.1)', borderRadius: 8, padding: 14, textAlign: 'center', cursor: 'pointer', fontSize: 12, color: 'rgba(255,255,255,0.25)' }} onClick={() => detailFileRef.current?.click()}>
-                + 상세 이미지 업로드 (여러 장 가능)
-                <input ref={detailFileRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={e => { Array.from(e.target.files || []).forEach(f => void handleDetailImagePick(f)) }} />
-              </div>
-              {detailImages.length > 0 && (
-                <div style={{ marginTop: 10, display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
-                  {detailImages.map((url, i) => (
-                    <div key={i} style={{ position: 'relative', aspectRatio: '1', borderRadius: 8, overflow: 'hidden', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}
-                      draggable
-                      onDragStart={e => e.dataTransfer.setData('text/plain', String(i))}
-                      onDragOver={e => e.preventDefault()}
-                      onDrop={e => {
-                        e.preventDefault()
-                        const from = Number(e.dataTransfer.getData('text/plain'))
-                        if (from === i) return
-                        setDetailImages(prev => {
-                          const next = [...prev]
-                          const tmp = next[from]
-                          next[from] = next[i]
-                          next[i] = tmp
-                          return next
-                        })
-                      }}>
-                      <img src={url} alt={`상세 ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                      <button
-                        type="button"
-                        onClick={e => { e.stopPropagation(); setDetailImages(prev => prev.filter((_, j) => j !== i)) }}
-                        style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.65)', border: 'none', color: '#fff', fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>
-                        ×
-                      </button>
-                      <div style={{ position: 'absolute', bottom: 4, left: 4, fontSize: 9, padding: '1px 5px', borderRadius: 4, background: 'rgba(0,0,0,0.5)', color: 'rgba(255,255,255,0.6)' }}>{i + 1}</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div style={S.sec}>
-            <div style={S.secTitle}>성분 정보</div>
-            <div style={S.f}><span style={S.lbl}>KEY INGREDIENTS</span><textarea style={{ ...S.inp, height: 80, resize: 'vertical' as const }} value={keyIngredients} onChange={e => setKeyIngredients(e.target.value)} placeholder="주요 성분 설명" /></div>
-            <div style={S.f}><span style={S.lbl}>전성분 텍스트</span><textarea style={{ ...S.inp, height: 60, resize: 'vertical' as const }} value={ingredientText} onChange={e => setIngredientText(e.target.value)} placeholder="Water, Glycerin..." /></div>
-            <div style={S.f}>
-              <span style={S.lbl}>전성분 사진 AI 분석</span>
-              <div style={{ background: 'rgba(255,255,255,0.03)', border: '0.5px dashed rgba(255,255,255,0.1)', borderRadius: 8, padding: 12, textAlign: 'center', cursor: 'pointer', fontSize: 12, color: ingredientAnalyzeLoading ? '#c4a7e7' : 'rgba(255,255,255,0.25)' }} onClick={() => ingredientPhotoRef.current?.click()}>
-                {ingredientAnalyzeLoading ? 'AI 분석 중...' : '+ 사진 업로드 → AI 자동 분석'}
-                <input ref={ingredientPhotoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={e => {
-                  void (async () => {
-                    const f = e.target.files?.[0]
-                    if (!f) return
-                    setIngredientAnalyzeLoading(true)
-                    try {
-                      const base64 = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res((r.result as string).split(',')[1]); r.readAsDataURL(f) })
-                      const resp = await fetch('/api/analyze-ingredients', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ image: base64 }) })
-                      const data = await resp.json()
-                      if (data.ingredients) setIngredientText(data.ingredients)
-                    } catch { alert('분석 실패') } finally { setIngredientAnalyzeLoading(false) }
-                  })()
-                }} />
-              </div>
-            </div>
-            <div style={S.f}><span style={S.lbl}>CLINICAL RESULT</span><textarea style={{ ...S.inp, height: 60, resize: 'vertical' as const }} value={clinicalResult} onChange={e => setClinicalResult(e.target.value)} placeholder="보습력 98% 향상..." /></div>
-            <div><span style={S.lbl}>CERTIFICATIONS</span><input style={S.inp} value={certifications} onChange={e => setCertifications(e.target.value)} placeholder="ISO 9001, 피부과 테스트 완료" /></div>
-          </div>
-
-          <div style={S.sec}>
-            <div style={S.secTitle}>함께 쓰기 좋은 제품</div>
-            <div style={{ position: 'relative', marginBottom: 8 }}>
-              <input style={S.inp} value={ptInput} onChange={e => setPtInput(e.target.value)} placeholder="제품명 검색..." />
-              {ptResults.length > 0 && (
-                <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: '#1a1714', border: '0.5px solid rgba(255,255,255,0.12)', borderRadius: 8, zIndex: 10, marginTop: 4 }}>
-                  {ptResults.map(p => (
-                    <div key={p.id} onClick={() => { if (ptSelected.length < 3 && !ptSelected.find(x => x.id === p.id)) setPtSelected(prev => [...prev, p]); setPtInput(''); setPtResults([]) }}
-                      style={{ padding: '8px 12px', fontSize: 12, color: 'rgba(255,255,255,0.7)', cursor: 'pointer', borderBottom: '0.5px solid rgba(255,255,255,0.05)' }}>
-                      {p.name}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            {ptSelected.map(p => (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 8, background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.08)', borderRadius: 8, marginBottom: 6 }}>
-                <span style={{ flex: 1, fontSize: 12, color: 'rgba(255,255,255,0.7)' }}>{p.name}</span>
-                <button type="button" onClick={() => setPtSelected(prev => prev.filter(x => x.id !== p.id))} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', fontSize: 16 }}>×</button>
-              </div>
-            ))}
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>최대 3개</div>
-          </div>
-
-          <div style={S.sec}>
-            <div style={S.secTitle}>태그</div>
-            {[
-              { label: '피부 고민', items: ['보습', '진정', '미백', '탄력', '모공', '각질', '트러블'], arr: skinConcerns, set: setSkinConcerns, style: S.tag },
-              { label: '피부 타입', items: ['건성', '지성', '복합성', '민감성', '중성', '여드름', '홍조', '특정'], arr: skinTypes, set: setSkinTypes, style: S.tag },
-              { label: '계절', items: ['전계절', '봄', '여름', '가을', '겨울', '시술후'], arr: seasonTags, set: setSeasonTags, style: S.tag },
-            ].map(({ label, items, arr, set, style }) => (
-              <div key={label} style={S.f}>
-                <span style={S.lbl}>{label}</span>
-                <div>{items.map(t => <span key={t} style={style(arr.includes(t))} onClick={() => toggleArr(arr, t, set)}>{t}</span>)}</div>
-              </div>
-            ))}
-            <div style={S.f}>
-              <span style={S.lbl}>루틴 단계</span>
-              <div>{['클렌징', '토너', '앰플', '세럼', '크림', '선케어', '마스크팩', '아로마오일', '바디입욕제', '바디버블', '바디팩', ...stepTags.filter(t => !['클렌징', '토너', '앰플', '세럼', '크림', '선케어', '마스크팩', '아로마오일', '바디입욕제', '바디버블', '바디팩'].includes(t))].map(t => (
-                <span key={t} style={S.tag(stepTags.includes(t))} onClick={() => toggleArr(stepTags, t, setStepTags)}>{t}</span>
-              ))}
-                <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'inline-block', margin: '3px 3px 0 0' }}
-                  onClick={() => { const v = window.prompt('루틴 단계 추가:'); if (v?.trim()) setStepTags(prev => [...prev, v.trim()]) }}>+ 추가</span>
-              </div>
-            </div>
-            <div><span style={S.lbl}>성분 태그 (콤마 구분)</span><input style={S.inp} value={ingredientTags} onChange={e => setIngredientTags(e.target.value)} placeholder="히알루론산, 나이아신아마이드" /></div>
-          </div>
-
-          <div style={S.sec}>
-            <div style={S.secTitle}>판매 설정</div>
-            {[
-              { label: '판매 상태', val: isActive, set: setIsActive },
-              { label: 'AURAN 독점', val: isExclusive, set: setIsExclusive },
-            ].map(({ label, val, set }) => (
-              <div key={label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '0.5px solid rgba(255,255,255,0.05)' }}>
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{label}</span>
-                <button type="button" style={S.tog(val)} onClick={() => set(!val)} aria-label={label} />
-              </div>
-            ))}
-          </div>
-
-          <div style={S.sec}>
-            <div style={S.secTitle}>이벤트 배너</div>
-            <div style={S.f}><span style={S.lbl}>이모지</span><input style={{ ...S.inp, width: 80 }} value={eventEmoji} onChange={e => setEventEmoji(e.target.value)} placeholder="🎁" /></div>
-            <div style={S.f}><span style={S.lbl}>제목</span><input style={S.inp} value={eventTitle} onChange={e => setEventTitle(e.target.value)} placeholder="오픈 기념 특가" /></div>
-            <div style={S.f}><span style={S.lbl}>설명</span><textarea style={{ ...S.inp, height: 60, resize: 'vertical' as const }} value={eventDesc} onChange={e => setEventDesc(e.target.value)} placeholder="이벤트 내용" /></div>
-            <div style={S.row2}>
-              <div><span style={S.lbl}>시작일</span><input style={S.inp} type="date" value={eventStartsAt} onChange={e => setEventStartsAt(e.target.value)} /></div>
-              <div><span style={S.lbl}>종료일</span><input style={S.inp} type="date" value={eventEndsAt} onChange={e => setEventEndsAt(e.target.value)} /></div>
-            </div>
-          </div>
+          <BrandProductMetadataSection
+            keyIngredients={keyIngredients}
+            setKeyIngredients={setKeyIngredients}
+            ingredientText={ingredientText}
+            setIngredientText={setIngredientText}
+            clinicalResult={clinicalResult}
+            setClinicalResult={setClinicalResult}
+            certifications={certifications}
+            setCertifications={setCertifications}
+            ptInput={ptInput}
+            setPtInput={setPtInput}
+            ptResults={ptResults}
+            setPtResults={setPtResults}
+            ptSelected={ptSelected}
+            setPtSelected={setPtSelected}
+            skinConcerns={skinConcerns}
+            setSkinConcerns={setSkinConcerns}
+            stepTags={stepTags}
+            setStepTags={setStepTags}
+            skinTypes={skinTypes}
+            setSkinTypes={setSkinTypes}
+            seasonTags={seasonTags}
+            setSeasonTags={setSeasonTags}
+            ingredientTags={ingredientTags}
+            setIngredientTags={setIngredientTags}
+            isActive={isActive}
+            setIsActive={setIsActive}
+            isExclusive={isExclusive}
+            setIsExclusive={setIsExclusive}
+            eventEmoji={eventEmoji}
+            setEventEmoji={setEventEmoji}
+            eventTitle={eventTitle}
+            setEventTitle={setEventTitle}
+            eventDesc={eventDesc}
+            setEventDesc={setEventDesc}
+            eventStartsAt={eventStartsAt}
+            setEventStartsAt={setEventStartsAt}
+            eventEndsAt={eventEndsAt}
+            setEventEndsAt={setEventEndsAt}
+          />
 
           {/* 카테고리 피커 모달 */}
           {showCategoryPicker && (
@@ -748,7 +508,9 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
             <div style={{ padding: 12 }}>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>{brandName}</div>
               <div style={{ fontSize: 13, color: '#e8e4dc', marginBottom: 6, lineHeight: 1.4 }}>{name || '상품명'}</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>가격은 승인 후 설정됩니다</div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>
+                {Number(consumerPrice) > 0 ? `${Math.trunc(Number(consumerPrice)).toLocaleString()}원` : '가격은 승인 후 설정됩니다'}
+              </div>
               <div>
                 {skinConcerns.slice(0, 3).map(t => <span key={t} style={{ fontSize: 10, padding: '2px 6px', borderRadius: 10, background: 'rgba(201,169,110,0.12)', color: '#c9a96e', border: '0.5px solid rgba(201,169,110,0.2)', display: 'inline-block', margin: '2px 2px 0 0' }}>{t}</span>)}
               </div>

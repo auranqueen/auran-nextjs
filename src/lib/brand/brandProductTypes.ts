@@ -11,6 +11,7 @@ export type BrandProductSaveBody = {
   id?: string
   name: string
   supply_price: number
+  consumer_price: number
   description?: string | null
   thumb_img?: string | null
   images?: string[]

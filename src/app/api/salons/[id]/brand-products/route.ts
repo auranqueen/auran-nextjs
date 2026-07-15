@@ -100,7 +100,7 @@ export async function GET(
 
   const { data: productRows, error: productError } = await svc
     .from('brand_products')
-    .select('id, name, thumb_img, brand_id, brands(name)')
+    .select('id, name, thumb_img, brand_id, consumer_price, brands(name)')
     .in('brand_id', brandIds)
     .eq('status', 'active')
     .order('name', { ascending: true })
@@ -113,6 +113,7 @@ export async function GET(
       name: string
       thumb_img: string | null
       brand_id: string
+      consumer_price: number | null
       brands: { name: string } | { name: string }[] | null
     }
     const brandRef = r.brands
@@ -124,7 +125,7 @@ export async function GET(
       thumb_img: r.thumb_img ? String(r.thumb_img) : null,
       brand_id: String(r.brand_id),
       brand_name: brandName ? String(brandName) : null,
-      consumer_price: null,
+      consumer_price: Number.isFinite(Number(r.consumer_price)) ? Number(r.consumer_price) : null,
     }
   })
 

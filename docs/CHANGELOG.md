@@ -3,6 +3,11 @@
 
 ---
 
+## 2026-07-15
+
+- **브랜드 상품 소비자가 저장·살롱 노출 연결 (097, 미실행)**: `brand_products.consumer_price INTEGER NOT NULL DEFAULT 0 CHECK (consumer_price >= 0)` migration 추가. `BrandProductFormV2`에서 소비자가를 입력·수정·미리보기하고 save API가 pending은 0 허용, active는 양수만 저장하도록 검증. 살롱 전용 brand-products API가 실제 소비자가를 반환해 `SalonBrandProductCard`의 기존 가격 UI에 연결. 일반몰 쿠폰 가격(`products.retail_price/sale_price`)과 원장 발주 공급가(`brand_products.supply_price`) 흐름은 미변경.
+- **BrandProductFormV2 500줄 규칙 대응**: 기본정보·가격, 미디어·상세설명, 성분·태그·판매설정을 각각 `BrandProductPriceSection`, `BrandProductMediaSection`, `BrandProductMetadataSection`으로 분리하고 로컬 스타일·섹션 전용 업로드/분석 핸들러를 이동. 부모 파일은 PowerShell `Measure-Object -Line` 기준 493줄.
+
 ## 2026-07-14
 
 - **레이어1+2 통합 90일 무료체험 앱 적용**: `storeTrial.ts` — `resolveTrialStart`(`store_trial_started_at` ?? `created_at`)·`getOwnerLayerPeriod`. 훅·사이드바는 store 레이어 D-day. brand-products는 트랙A 하드코딩 잠금 제거 → 쇼케이스 trial/active만 unlock (`lock_reason: showcase_subscription`). **095·096 SQL 미실행 시 컬럼 없으면 select 실패 가능**

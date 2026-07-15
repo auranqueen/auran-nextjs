@@ -13,6 +13,7 @@ type Body = {
   brand_id?: string
   name?: string
   supply_price?: number
+  consumer_price?: number
   description?: string | null
   thumb_img?: string | null
   images?: string[]
@@ -67,9 +68,13 @@ export async function POST(req: NextRequest) {
   if (!brandId) return NextResponse.json({ ok: false, error: 'missing_brand_id' }, { status: 400 })
 
   const supplyPrice = Math.max(0, Math.trunc(Number(body.supply_price) || 0))
+  const consumerPrice = Math.max(0, Math.trunc(Number(body.consumer_price) || 0))
   const status = ['pending', 'active', 'hidden', 'discontinued'].includes(String(body.status))
     ? String(body.status)
     : 'pending'
+  if (status === 'active' && consumerPrice <= 0) {
+    return NextResponse.json({ ok: false, error: 'consumer_price_required' }, { status: 400 })
+  }
 
   const { data: me } = await supabase
     .from('users')
@@ -104,6 +109,7 @@ export async function POST(req: NextRequest) {
     brand_user_id: me.id,
     name: name.slice(0, 100),
     supply_price: supplyPrice,
+    consumer_price: consumerPrice,
     origin_country: originCountry,
     status,
     thumb_img: body.thumb_img ?? null,
