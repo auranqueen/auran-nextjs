@@ -5,6 +5,7 @@
 
 ## 2026-07-16
 
+- **CEO 정산탭 표시명 매장명 우선**: `BrandTabSettlement` 제목 `salon_name` → `owner_name` → `profiles.full_name` → `원장님`. 제목이 매장명일 때 부제는 `owner_name`(담당자)로 바꿔 중복 제거.
 - **CEO 정산 탭 신규 (`BrandTabSettlement`)**: 브랜드 허브 `settlement` 플레이스홀더 → 실제 화면. `brand_billing_invoices` 기준 월 선택·상단 합계·전월 대비 증감률·미결제/완료 토글·원장별 청구 리스트. 펼침 상세는 `brand_orders` — 연결키 `brand_id` + `profile_id`(= `owner_id`) + `created_at` 월범위(`monthBillingRange`). 원장명 `brand_orders.owner_name` → `profiles.full_name` → `원장님`. `expandOrderItemsToLines` 재사용. CEO 전용(`isCEO`), `currentBrandId` 전달.
 - **브랜드 대시보드 currentBrandId 통합**: `brandId`/`activeBrandId` 이원 state → `currentBrandId` 단일화. `mergeMyBrands`로 소유(`brands.user_id`) + 멤버(`brand_members`) 목록 합집합(중복 제거). `switchBrand` 공용 핸들러 — page 상단 드롭다운 + `BrandHubContent` 사이드바 버튼 그룹 전환 UI. 허브 전 탭·폼·Pin 게이트에 동일 ID 전달. `selectedBrandId`/`BrandTabHome.activeBrandId` 제거. 제품관리 탭 자동 필터·Welcome `brandRow` 동기화는 미포함.
 - **시바산(Track A) 셀프 등급구매 전면 정비**: (1) Track B `brand-tier/create`에 `origin_track === 'B'` 게이트 추가. (2) Track A `civasan/create`·`webhook`에 `computeTierUpgradeCharge` 차액결제 — intent/PayApp 금액은 차액, `brand_owner_grades.purchase_amount`는 목표 등급 정가. (3) 원장 UI `OwnerBrandSelfTierSection`에 「차액 N원」 표시. (4) 브랜드 허브 「등급 패키지 관리」탭 + `POST /api/brand/tier-packages/save`(assertBrandAccess, service role) — `tier_name`·`price`만, `commission_rate` 미노출. Track B 차액·커미션 ledger·`BrandTabOwners` 수동등급은 미변경. RLS 마이그레이션 없음.

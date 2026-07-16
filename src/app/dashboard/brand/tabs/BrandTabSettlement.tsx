@@ -73,6 +73,7 @@ export default function BrandTabSettlement({ brandId, brandName }: Props) {
   const [invoices, setInvoices] = useState<InvoiceRow[]>([])
   const [prevMonthTotal, setPrevMonthTotal] = useState(0)
   const [ordersByOwner, setOrdersByOwner] = useState<Record<string, OrderRow[]>>({})
+  const [salonNameFromOrders, setSalonNameFromOrders] = useState<Record<string, string>>({})
   const [ownerNameFromOrders, setOwnerNameFromOrders] = useState<Record<string, string>>({})
   const [profileNames, setProfileNames] = useState<Record<string, string>>({})
   const [expandedOwnerId, setExpandedOwnerId] = useState<string | null>(null)
@@ -84,8 +85,20 @@ export default function BrandTabSettlement({ brandId, brandName }: Props) {
   }
 
   const resolveOwnerName = useCallback(
-    (ownerId: string) => ownerNameFromOrders[ownerId] || profileNames[ownerId] || '원장님',
-    [ownerNameFromOrders, profileNames],
+    (ownerId: string) =>
+      salonNameFromOrders[ownerId] || ownerNameFromOrders[ownerId] || profileNames[ownerId] || '원장님',
+    [salonNameFromOrders, ownerNameFromOrders, profileNames],
+  )
+
+  const resolveSubtitleLead = useCallback(
+    (ownerId: string) => {
+      // 제목이 매장명일 때만 부제에 담당자(개인이름) 표시 — 중복 방지
+      if (salonNameFromOrders[ownerId]) {
+        return ownerNameFromOrders[ownerId] || profileNames[ownerId] || '-'
+      }
+      return '-'
+    },
+    [salonNameFromOrders, ownerNameFromOrders, profileNames],
   )
 
   const load = useCallback(async () => {
@@ -140,11 +153,13 @@ export default function BrandTabSettlement({ brandId, brandName }: Props) {
       }
     }
 
+    const salonFromOrders: Record<string, string> = {}
     const nameFromOrders: Record<string, string> = {}
     const grouped: Record<string, OrderRow[]> = {}
     for (const o of orderRows) {
       const pid = o.profile_id
       if (!pid) continue
+      if (o.salon_name) salonFromOrders[pid] = o.salon_name
       if (o.owner_name) nameFromOrders[pid] = o.owner_name
       if (!grouped[pid]) grouped[pid] = []
       grouped[pid].push(o)
@@ -158,6 +173,7 @@ export default function BrandTabSettlement({ brandId, brandName }: Props) {
       ),
     )
     setOrdersByOwner(grouped)
+    setSalonNameFromOrders(salonFromOrders)
     setOwnerNameFromOrders(nameFromOrders)
     setProfileNames(profileMap)
     setExpandedOwnerId(null)
@@ -356,7 +372,7 @@ export default function BrandTabSettlement({ brandId, brandName }: Props) {
                       </span>
                     </div>
                     <div style={{ fontSize: 11, color: SUB }}>
-                      {firstOrder?.salon_name || '-'}
+                      {resolveSubtitleLead(ownerId)}
                       {firstOrder?.grade ? ` · ${firstOrder.grade}` : ''}
                       {inv.paid_at ? ` · 결제 ${new Date(inv.paid_at).toLocaleDateString('ko-KR')}` : ''}
                     </div>
