@@ -75,6 +75,7 @@ export default function BrandTabSettlement({ brandId, brandName }: Props) {
   const [ordersByOwner, setOrdersByOwner] = useState<Record<string, OrderRow[]>>({})
   const [salonNameFromOrders, setSalonNameFromOrders] = useState<Record<string, string>>({})
   const [ownerNameFromOrders, setOwnerNameFromOrders] = useState<Record<string, string>>({})
+  const [storeNames, setStoreNames] = useState<Record<string, string>>({})
   const [profileNames, setProfileNames] = useState<Record<string, string>>({})
   const [expandedOwnerId, setExpandedOwnerId] = useState<string | null>(null)
   const [toast, setToast] = useState('')
@@ -86,19 +87,23 @@ export default function BrandTabSettlement({ brandId, brandName }: Props) {
 
   const resolveOwnerName = useCallback(
     (ownerId: string) =>
-      salonNameFromOrders[ownerId] || ownerNameFromOrders[ownerId] || profileNames[ownerId] || '원장님',
-    [salonNameFromOrders, ownerNameFromOrders, profileNames],
+      salonNameFromOrders[ownerId]
+      || storeNames[ownerId]
+      || ownerNameFromOrders[ownerId]
+      || profileNames[ownerId]
+      || '원장님',
+    [salonNameFromOrders, storeNames, ownerNameFromOrders, profileNames],
   )
 
   const resolveSubtitleLead = useCallback(
     (ownerId: string) => {
-      // 제목이 매장명일 때만 부제에 담당자(개인이름) 표시 — 중복 방지
-      if (salonNameFromOrders[ownerId]) {
+      // 제목이 매장명(salon_name 또는 owner_store_name)일 때만 부제에 담당자명
+      if (salonNameFromOrders[ownerId] || storeNames[ownerId]) {
         return ownerNameFromOrders[ownerId] || profileNames[ownerId] || '-'
       }
       return '-'
     },
-    [salonNameFromOrders, ownerNameFromOrders, profileNames],
+    [salonNameFromOrders, storeNames, ownerNameFromOrders, profileNames],
   )
 
   const load = useCallback(async () => {
@@ -143,13 +148,17 @@ export default function BrandTabSettlement({ brandId, brandName }: Props) {
 
     const ownerIds = Array.from(new Set(invoiceRows.map((r) => r.owner_id)))
     const profileMap: Record<string, string> = {}
+    const storeMap: Record<string, string> = {}
     if (ownerIds.length > 0) {
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, full_name')
+        .select('id, full_name, owner_store_name')
         .in('id', ownerIds)
       for (const p of profiles || []) {
-        profileMap[(p as { id: string }).id] = String((p as { full_name?: string | null }).full_name || '')
+        const id = (p as { id: string }).id
+        profileMap[id] = String((p as { full_name?: string | null }).full_name || '')
+        const store = String((p as { owner_store_name?: string | null }).owner_store_name || '').trim()
+        if (store) storeMap[id] = store
       }
     }
 
@@ -175,6 +184,7 @@ export default function BrandTabSettlement({ brandId, brandName }: Props) {
     setOrdersByOwner(grouped)
     setSalonNameFromOrders(salonFromOrders)
     setOwnerNameFromOrders(nameFromOrders)
+    setStoreNames(storeMap)
     setProfileNames(profileMap)
     setExpandedOwnerId(null)
     setLoading(false)

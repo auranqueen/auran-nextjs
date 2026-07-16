@@ -186,44 +186,75 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
   useEffect(() => {
     const fetchOwners = async () => {
       setLoading(true)
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, full_name, owner_store_name, region, trade_brands, preferred_brands, arete_member, phone, last_order_at, monthly_order')
-        .not('trade_brands', 'is', null)
-      if (data) {
-        const matched = data.filter((p: any) => {
-          const brands = Array.isArray(p.trade_brands) && p.trade_brands.length > 0
-            ? p.trade_brands
-            : (Array.isArray(p.preferred_brands) ? p.preferred_brands : [])
-          return brands.some((b: string) => b === brandName)
-        })
-        let gradeMap: Record<string, string> = {}
-        if (brandId && matched.length > 0) {
-          const { data: gradeRows } = await supabase
-            .from('brand_owner_grades')
-            .select('owner_id, grade')
-            .eq('brand_id', brandId)
-            .in('owner_id', matched.map((p: any) => p.id))
-          if (gradeRows) {
-            for (const row of gradeRows) gradeMap[row.owner_id] = row.grade
-          }
-        }
-        setOwners(matched.map((p: any) => ({
-          id: p.id,
-          name: p.full_name || p.name || '이름 없음',
-          salon_name: p.owner_store_name || '-',
-          region: p.region || '-',
-          grade: gradeMap[p.id] || '취급점',
-          arete: p.arete_member || false,
-          last_order: p.last_order_at || null,
-          monthly: p.monthly_order || 0,
-          point_balance: pointBalances[p.id] ?? 0,
-        })))
+      if (!brandId) {
+        setOwners([])
+        setLoading(false)
+        return
       }
+
+      // brand_owner_links.owner_id = users.id → auth_id → profiles (bulk-import 패턴)
+      const { data: activeLinks } = await supabase
+        .from('brand_owner_links')
+        .select('owner_id')
+        .eq('brand_id', brandId)
+        .eq('status', 'active')
+
+      const linkedUserIds = Array.from(
+        new Set((activeLinks || []).map((r: { owner_id: string }) => String(r.owner_id)).filter(Boolean)),
+      )
+      if (linkedUserIds.length === 0) {
+        setOwners([])
+        setLoading(false)
+        return
+      }
+
+      const { data: userRows } = await supabase
+        .from('users')
+        .select('id, auth_id')
+        .in('id', linkedUserIds)
+        .eq('role', 'owner')
+
+      const authIds = Array.from(
+        new Set((userRows || []).map((u: { auth_id?: string | null }) => String(u.auth_id || '')).filter(Boolean)),
+      )
+      if (authIds.length === 0) {
+        setOwners([])
+        setLoading(false)
+        return
+      }
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, owner_store_name, region, arete_member, phone, last_order_at, monthly_order')
+        .in('auth_id', authIds)
+
+      const matched = profiles || []
+      let gradeMap: Record<string, string> = {}
+      if (matched.length > 0) {
+        const { data: gradeRows } = await supabase
+          .from('brand_owner_grades')
+          .select('owner_id, grade')
+          .eq('brand_id', brandId)
+          .in('owner_id', matched.map((p: { id: string }) => p.id))
+        if (gradeRows) {
+          for (const row of gradeRows) gradeMap[row.owner_id] = row.grade
+        }
+      }
+      setOwners(matched.map((p: any) => ({
+        id: p.id,
+        name: p.full_name || p.name || '이름 없음',
+        salon_name: p.owner_store_name || '-',
+        region: p.region || '-',
+        grade: gradeMap[p.id] || '취급점',
+        arete: p.arete_member || false,
+        last_order: p.last_order_at || null,
+        monthly: p.monthly_order || 0,
+        point_balance: pointBalances[p.id] ?? 0,
+      })))
       setLoading(false)
     }
     void fetchOwners()
-  }, [brandId, brandName, pointBalances])
+  }, [brandId, pointBalances])
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
   const csvRowStyle = (status: CsvRowResult['status']) => {
     if (status === 'ok') {

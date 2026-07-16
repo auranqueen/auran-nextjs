@@ -45,7 +45,7 @@ export default function BrandTabData({ brandId, brandName }: Props) {
       { count: activeCount },
       { data: thisMonthOrders },
       { data: recentOrders },
-      { data: profiles },
+      { count: linkedOwnerCount },
     ] = await Promise.all([
       supabase.from('brand_orders').select('id', { count: 'exact', head: true })
         .eq('brand_id', brandId).gte('created_at', firstDay),
@@ -57,15 +57,11 @@ export default function BrandTabData({ brandId, brandName }: Props) {
         .eq('brand_id', brandId).gte('created_at', firstDay),
       supabase.from('brand_orders').select('id, owner_name, status, items, created_at')
         .eq('brand_id', brandId).order('created_at', { ascending: false }).limit(10),
-      supabase.from('profiles').select('trade_brands, preferred_brands'),
+      // BrandTabHome과 동일: brand_owner_links active
+      supabase.from('brand_owner_links').select('id', { count: 'exact', head: true })
+        .eq('brand_id', brandId).eq('status', 'active'),
     ])
-    // 연결 원장님 수
-      const cnt = (profiles || []).filter((p: any) => {
-        const brands = Array.isArray(p.trade_brands) && p.trade_brands.length > 0
-          ? p.trade_brands
-          : (Array.isArray(p.preferred_brands) ? p.preferred_brands : [])
-        return brands.some((b: string) => b === brandName)
-      }).length
+    const cnt = linkedOwnerCount ?? 0
     setOwnerCount(cnt)
     setKpi({
       orderCount: orderCount ?? 0,
@@ -76,7 +72,7 @@ export default function BrandTabData({ brandId, brandName }: Props) {
     setOrders((recentOrders || []) as OrderRow[])
     setThisMonthOrders((thisMonthOrders || []) as Array<{ id: string; status: string; items: Array<{ name: string; qty: number }> }>)
     setLoading(false)
-  }, [brandId, brandName])
+  }, [brandId])
   useEffect(() => { void fetchData() }, [fetchData])
   // 아이템별 집계
   const itemMap: Record<string, number> = {}

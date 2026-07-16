@@ -5,6 +5,7 @@
 
 ## 2026-07-16
 
+- **원장 연결 기준 `trade_brands` → `brand_owner_links(active)` (브랜드 측)**: `BrandTabOwners` 원장님현황 — `.not(trade_brands)`·브랜드명 문자열 매칭 제거, `links.owner_id(=users.id)` → `users.auth_id` → `profiles` 경로(bulk-import와 동일). `BrandTabData` 「연결 원장님 수」는 `BrandTabHome`과 같이 links count. 정산탭 표시명에 `profiles.owner_store_name` fallback 추가(`salon_name` → `owner_store_name` → `owner_name` → `full_name`). 원장 측 trade_brands 교체는 별도 승인 후.
 - **CEO 정산탭 표시명 매장명 우선**: `BrandTabSettlement` 제목 `salon_name` → `owner_name` → `profiles.full_name` → `원장님`. 제목이 매장명일 때 부제는 `owner_name`(담당자)로 바꿔 중복 제거.
 - **CEO 정산 탭 신규 (`BrandTabSettlement`)**: 브랜드 허브 `settlement` 플레이스홀더 → 실제 화면. `brand_billing_invoices` 기준 월 선택·상단 합계·전월 대비 증감률·미결제/완료 토글·원장별 청구 리스트. 펼침 상세는 `brand_orders` — 연결키 `brand_id` + `profile_id`(= `owner_id`) + `created_at` 월범위(`monthBillingRange`). 원장명 `brand_orders.owner_name` → `profiles.full_name` → `원장님`. `expandOrderItemsToLines` 재사용. CEO 전용(`isCEO`), `currentBrandId` 전달.
 - **브랜드 대시보드 currentBrandId 통합**: `brandId`/`activeBrandId` 이원 state → `currentBrandId` 단일화. `mergeMyBrands`로 소유(`brands.user_id`) + 멤버(`brand_members`) 목록 합집합(중복 제거). `switchBrand` 공용 핸들러 — page 상단 드롭다운 + `BrandHubContent` 사이드바 버튼 그룹 전환 UI. 허브 전 탭·폼·Pin 게이트에 동일 ID 전달. `selectedBrandId`/`BrandTabHome.activeBrandId` 제거. 제품관리 탭 자동 필터·Welcome `brandRow` 동기화는 미포함.
