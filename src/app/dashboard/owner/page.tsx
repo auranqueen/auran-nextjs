@@ -5,6 +5,7 @@ import SalonDashClient from './client'
 import OwnerDashClientV2 from './client-v2'
 import OwnerHomeV3 from './OwnerHomeV3'
 import type { SelfTierBrand } from './OwnerBrandSelfTierSection'
+import { getOwnerLinkedBrandIds } from '@/lib/brand/getOwnerLinkedBrandIds'
 
 export default async function OwnerDashboard({ searchParams }: { searchParams: { v?: string } }) {
   const supabase = createClient()
@@ -127,35 +128,28 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
     } | null = null
     const { data: profExtra } = await supabase
       .from('profiles')
-      .select('id, trade_brands, preferred_brands, slug, avatar_url, owner_store_logo_url')
+      .select('id, slug, avatar_url, owner_store_logo_url')
       .eq('auth_id', user.id)
       .maybeSingle()
     const ownerProfileId = profExtra?.id ? String(profExtra.id) : null
-    const brandNames: string[] =
-      Array.isArray(profExtra?.trade_brands) && (profExtra.trade_brands as any[]).length > 0
-        ? (profExtra!.trade_brands as any[]).map(String)
-        : Array.isArray(profExtra?.preferred_brands)
-          ? (profExtra!.preferred_brands as any[]).map(String)
-          : []
-    if (brandNames.length > 0) {
-      const { data: bRows } = await supabase.from('brands').select('id, name').in('name', brandNames)
-      const ids = ((bRows as any[]) || []).map((b) => b.id)
-      if (ids.length) {
-        const { data: post } = await supabase
-          .from('brand_posts')
-          .select('id, title, body, created_at, brand_id, brands(name)')
-          .in('brand_id', ids)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-        if (post) {
-          brandPost = {
-            id: post.id,
-            title: post.title,
-            body: post.body,
-            created_at: post.created_at,
-            brand_name: (post as any).brands?.name ?? null,
-          }
+    // page.tsx의 profile 변수는 users row — links.owner_id = users.id
+    const ownerUserId = String(profile.id)
+    const linkedBrandIdsForFeed = await getOwnerLinkedBrandIds(supabase, user.id)
+    if (linkedBrandIdsForFeed.length > 0) {
+      const { data: post } = await supabase
+        .from('brand_posts')
+        .select('id, title, body, created_at, brand_id, brands(name)')
+        .in('brand_id', linkedBrandIdsForFeed)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (post) {
+        brandPost = {
+          id: post.id,
+          title: post.title,
+          body: post.body,
+          created_at: post.created_at,
+          brand_name: (post as any).brands?.name ?? null,
         }
       }
     }
@@ -341,24 +335,17 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
     if (ownerProfileId && profile.origin_track === 'A') {
       let linkedBrandIds: string[] = []
 
+      // brand_owner_links.owner_id = users.id (profiles.id 금지)
       const { data: linkRows } = await supabase
         .from('brand_owner_links')
         .select('brand_id, status')
-        .eq('owner_id', profile.id)
+        .eq('owner_id', ownerUserId)
         .in('status', ['active', 'pending'])
 
       if (linkRows?.length) {
         linkedBrandIds = Array.from(
           new Set(linkRows.map((r: { brand_id: string }) => String(r.brand_id)).filter(Boolean)),
         )
-      }
-
-      if (!linkedBrandIds.length && brandNames.length > 0) {
-        const { data: fallbackBrands } = await supabase
-          .from('brands')
-          .select('id')
-          .in('name', brandNames)
-        linkedBrandIds = ((fallbackBrands as { id: string }[]) || []).map((b) => String(b.id))
       }
 
       if (linkedBrandIds.length) {

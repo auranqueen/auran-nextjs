@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
+import { getOwnerLinkedBrandIds } from '@/lib/brand/getOwnerLinkedBrandIds'
 const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
 const BORDER = '#ede9f7'
@@ -40,14 +41,12 @@ export default function BrandReturnsPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.replace('/login?role=owner'); return }
       const { data: profile } = await supabase
-        .from('profiles').select('id, trade_brands, preferred_brands').eq('auth_id', user.id).maybeSingle()
-      const tradeNames: string[] = profile?.trade_brands?.length
-        ? profile.trade_brands : (profile?.preferred_brands || [])
-      if (tradeNames.length > 0) {
-        const { data: brandRows } = await supabase.from('brands').select('id, name').in('name', tradeNames)
+        .from('profiles').select('id').eq('auth_id', user.id).maybeSingle()
+      const brandIds = await getOwnerLinkedBrandIds(supabase, user.id)
+      if (brandIds.length > 0) {
+        const { data: brandRows } = await supabase.from('brands').select('id, name').in('id', brandIds)
         setBrands(brandRows || [])
-        const brandIds = (brandRows || []).map((b: { id: string }) => b.id)
-        if (brandIds.length > 0 && profile?.id) {
+        if (profile?.id) {
           const { data } = await supabase
             .from('brand_returns')
             .select('id, product_name, quantity, reason, status, rtn_code, created_at, brands(name)')

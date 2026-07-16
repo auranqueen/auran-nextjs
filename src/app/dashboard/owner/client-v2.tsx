@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useIsTrackA } from '@/hooks/useIsTrackA'
+import { getOwnerLinkedBrandIds } from '@/lib/brand/getOwnerLinkedBrandIds'
 import SalonChatListPopup from './salon-chat/SalonChatListPopup'
 import NewChatPopup from './salon-chat/NewChatPopup'
 import OwnerV2LowerStack from './OwnerV2LowerStack'
@@ -110,7 +111,6 @@ export default function OwnerDashClientV2() {
         { data: monthBookings },
         { data: monthCharts },
         { data: goalRow },
-        { data: ownerProf },
       ] = await Promise.all([
         sb.from('bookings').select('*').eq('owner_id', me.id).eq('booking_date', todayKey).order('booking_time'),
         sb.from('treatment_charts').select('id,treatment_date,treatment_items,admin_memo,external_customer_id').eq('owner_id', me.id).gte('treatment_date', `${todayKey}T00:00:00`).lte('treatment_date', `${todayKey}T23:59:59`),
@@ -120,67 +120,47 @@ export default function OwnerDashClientV2() {
         sb.from('bookings').select('service_price,booking_date').eq('owner_id', me.id).gte('booking_date', `${monthKey}-01`).lte('booking_date', `${todayKey}`),
         sb.from('treatment_charts').select('treatment_items,admin_memo,treatment_date').eq('owner_id', me.id).gte('treatment_date', `${monthKey}-01T00:00:00`),
         sb.from('admin_settings').select('value').eq('key', 'owner_monthly_revenue_goal').maybeSingle(),
-        sb.from('profiles').select('preferred_brands,trade_brands').eq('auth_id', user.id).maybeSingle(),
       ])
 
       setTodayChartCount(((charts as any[]) || []).length)
       setExtCount(extTotal || 0)
       setUnreadChat(((channels as any[]) || []).reduce((s, c) => s + Number(c.unread_count || 0), 0))
 
-      const brands = (Array.isArray((ownerProf as any)?.trade_brands) && (ownerProf as any).trade_brands.length > 0)
-        ? (ownerProf as any).trade_brands
-        : (ownerProf as any)?.preferred_brands
-      setTradeBrands(Array.isArray(brands) ? brands.map(String) : [])
-
-      // 거래 브랜드 제품 조회
-      if (Array.isArray(brands) && brands.length > 0) {
-        const brandNames = brands.map(String)
+      const brandIds = await getOwnerLinkedBrandIds(sb, user.id)
+      if (brandIds.length > 0) {
         const { data: brandRows } = await sb
           .from('brands')
           .select('id, name')
-          .in('name', brandNames)
-        if (brandRows && brandRows.length > 0) {
-          const brandIds = brandRows.map((b: { id: string }) => b.id)
-          const { data: prodRows } = await sb
-            .from('products')
-            .select('id, name, thumb_img, brands(name)')
-            .in('brand_id', brandIds)
-            .eq('status', 'active')
-            .eq('is_active', true)
-            .order('created_at', { ascending: false })
-            .limit(10)
-          if (prodRows) {
-            setBrandProducts(prodRows.map((p: any) => ({
-              id: p.id,
-              name: p.name || '',
-              thumb_img: p.thumb_img || null,
-              brand_name: p.brands?.name || '',
-            })))
-          }
-        }
-      }
+          .in('id', brandIds)
+        setTradeBrands((brandRows || []).map((b: { name?: string }) => String(b.name || '')).filter(Boolean))
 
-      const myTradeBrands: string[] = Array.isArray((ownerProf as any)?.trade_brands) && (ownerProf as any).trade_brands.length > 0
-        ? (ownerProf as any).trade_brands
-        : (Array.isArray((ownerProf as any)?.preferred_brands) ? (ownerProf as any).preferred_brands : [])
-      if (myTradeBrands.length > 0) {
-        const { data: bRows } = await sb
-          .from('brands')
-          .select('id')
-          .in('name', myTradeBrands)
-        const brandIds = (bRows || []).map((b: { id: string }) => b.id)
-        if (brandIds.length > 0) {
-          const { data: bmData } = await sb
-            .from('brand_messages')
-            .select('id, title, body, message_type, created_at, brand_id, brands(name)')
-            .in('brand_id', brandIds)
-            .order('created_at', { ascending: false })
-            .limit(10)
-          setBrandMessages((bmData || []) as any[])
-        } else {
-          setBrandMessages([])
+        const { data: prodRows } = await sb
+          .from('products')
+          .select('id, name, thumb_img, brands(name)')
+          .in('brand_id', brandIds)
+          .eq('status', 'active')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(10)
+        if (prodRows) {
+          setBrandProducts(prodRows.map((p: any) => ({
+            id: p.id,
+            name: p.name || '',
+            thumb_img: p.thumb_img || null,
+            brand_name: p.brands?.name || '',
+          })))
         }
+
+        const { data: bmData } = await sb
+          .from('brand_messages')
+          .select('id, title, body, message_type, created_at, brand_id, brands(name)')
+          .in('brand_id', brandIds)
+          .order('created_at', { ascending: false })
+          .limit(10)
+        setBrandMessages((bmData || []) as any[])
       } else {
+        setTradeBrands([])
+        setBrandProducts([])
         setBrandMessages([])
       }
 

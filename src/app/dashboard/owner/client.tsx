@@ -151,19 +151,12 @@ export default function OwnerDashClient({ profile, salon, todayBookings }: { pro
   const [brandProducts, setBrandProducts] = useState<Array<{ id: string; name: string; thumb_img: string | null; brand_name: string }>>([])
   useEffect(() => {
     const fetchBrandProducts = async () => {
-      const tradeBrands: string[] = Array.isArray(profile.trade_brands) && profile.trade_brands.length > 0
-        ? profile.trade_brands.map(String)
-        : Array.isArray((profile as any).preferred_brands)
-          ? (profile as any).preferred_brands.map(String)
-          : []
-      if (tradeBrands.length === 0) return
       const supabase = (await import('@/lib/supabase/client')).createClient()
-      const { data: brandRows } = await supabase
-        .from('brands')
-        .select('id, name')
-        .in('name', tradeBrands)
-      if (!brandRows || brandRows.length === 0) return
-      const brandIds = brandRows.map((b: { id: string }) => b.id)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const { getOwnerLinkedBrandIds } = await import('@/lib/brand/getOwnerLinkedBrandIds')
+      const brandIds = await getOwnerLinkedBrandIds(supabase, user.id)
+      if (brandIds.length === 0) return
       const { data: prodRows } = await supabase
         .from('products')
         .select('id, name, thumb_img, brands(name)')

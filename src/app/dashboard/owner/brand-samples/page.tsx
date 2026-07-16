@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
+import { getOwnerLinkedBrandIds } from '@/lib/brand/getOwnerLinkedBrandIds'
 const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
 const BORDER = '#ede9f7'
@@ -45,20 +46,12 @@ export default function BrandSamplesPage() {
     if (!user) { router.replace('/login?role=owner'); return }
     const { data: prof } = await supabase
       .from('profiles')
-      .select('grade, trade_brands, preferred_brands')
+      .select('grade')
       .eq('auth_id', user.id)
       .maybeSingle()
     const ownerGrade = (prof as { grade?: string })?.grade || ''
     setGrade(ownerGrade)
-    const tradeBrands: string[] = Array.isArray((prof as { trade_brands?: string[] })?.trade_brands) && (prof as { trade_brands?: string[] }).trade_brands!.length > 0
-      ? (prof as { trade_brands?: string[] }).trade_brands!
-      : (Array.isArray((prof as { preferred_brands?: string[] })?.preferred_brands) ? (prof as { preferred_brands?: string[] }).preferred_brands! : [])
-    if (tradeBrands.length === 0) { setLoading(false); return }
-    const { data: bRows } = await supabase
-      .from('brands')
-      .select('id')
-      .in('name', tradeBrands)
-    const brandIds = (bRows || []).map((b: { id: string }) => b.id)
+    const brandIds = await getOwnerLinkedBrandIds(supabase, user.id)
     if (brandIds.length === 0) { setLoading(false); return }
     const [{ data: sampleData }, { data: sendData }] = await Promise.all([
       supabase.from('brand_samples')
