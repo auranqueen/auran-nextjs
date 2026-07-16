@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-import { getOwnerLinkedBrandIds } from '@/lib/brand/getOwnerLinkedBrandIds'
+import { getOwnerLinkedBrandIds, getOwnerPendingOnlyBrandNames, formatPendingApprovalNotice } from '@/lib/brand/getOwnerLinkedBrandIds'
 const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
 const BORDER = '#ede9f7'
@@ -36,8 +36,10 @@ export default function BrandReturnsPage() {
   const [brands, setBrands] = useState<{ id: string; name: string }[]>([])
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
+  const [pendingNotice, setPendingNotice] = useState('')
   useEffect(() => {
     const fetch = async () => {
+      setPendingNotice('')
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.replace('/login?role=owner'); return }
       const { data: profile } = await supabase
@@ -55,6 +57,11 @@ export default function BrandReturnsPage() {
             .order('created_at', { ascending: false })
           setReturns((data || []) as any[])
         }
+      } else {
+        const pendingNames = await getOwnerPendingOnlyBrandNames(supabase, user.id)
+        setPendingNotice(formatPendingApprovalNotice(pendingNames))
+        setBrands([])
+        setReturns([])
       }
       setLoading(false)
     }
@@ -94,11 +101,17 @@ export default function BrandReturnsPage() {
         <div style={{ position: 'fixed' as const, top: 60, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', padding: '8px 20px', borderRadius: 20, fontSize: 12, zIndex: 999 }}>{toast}</div>
       )}
       <div style={{ padding: '0 16px' }}>
-        <button type="button" onClick={() => setShowForm(!showForm)}
-          style={{ width: '100%', padding: '12px', borderRadius: 10, border: `1px solid ${PURPLE}`, background: showForm ? PURPLE : 'transparent', color: showForm ? '#fff' : PURPLE, fontSize: 13, cursor: 'pointer', marginBottom: 14 }}>
-          {showForm ? '× 취소' : '+ 반품 신청하기'}
-        </button>
-        {showForm && (
+        {pendingNotice ? (
+          <div style={{ padding: '14px 16px', borderRadius: 10, background: `${PURPLE}10`, border: `1px solid ${PURPLE}30`, color: PURPLE, fontSize: 13, lineHeight: 1.55, textAlign: 'center', marginBottom: 14 }}>
+            {pendingNotice}
+          </div>
+        ) : (
+          <button type="button" onClick={() => setShowForm(!showForm)}
+            style={{ width: '100%', padding: '12px', borderRadius: 10, border: `1px solid ${PURPLE}`, background: showForm ? PURPLE : 'transparent', color: showForm ? '#fff' : PURPLE, fontSize: 13, cursor: 'pointer', marginBottom: 14 }}>
+            {showForm ? '× 취소' : '+ 반품 신청하기'}
+          </button>
+        )}
+        {showForm && !pendingNotice && (
           <div style={{ background: LIGHT, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14, marginBottom: 14 }}>
             <select value={form.brand_id} onChange={e => setForm(f => ({ ...f, brand_id: e.target.value }))}
               style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${BORDER}`, background: '#fff', color: TEXT, fontSize: 12, marginBottom: 8 }}>
@@ -121,7 +134,9 @@ export default function BrandReturnsPage() {
         {loading ? (
           <div style={{ textAlign: 'center', padding: 40, color: SUB, fontSize: 13 }}>불러오는 중...</div>
         ) : returns.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 40, color: SUB, fontSize: 13 }}>반품 내역이 없어요</div>
+          <div style={{ textAlign: 'center', padding: 40, color: SUB, fontSize: 13 }}>
+            {pendingNotice ? '승인되면 반품을 신청할 수 있어요' : '반품 내역이 없어요'}
+          </div>
         ) : returns.map((r) => {
           const st = STATUS_MAP[r.status] || STATUS_MAP['requested']
           return (

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-import { getOwnerLinkedBrandIds } from '@/lib/brand/getOwnerLinkedBrandIds'
+import { getOwnerLinkedBrandIds, getOwnerPendingOnlyBrandNames, formatPendingApprovalNotice } from '@/lib/brand/getOwnerLinkedBrandIds'
 const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
 const BORDER = '#ede9f7'
@@ -40,8 +40,10 @@ export default function BrandSamplesPage() {
   const [loading, setLoading] = useState(true)
   const [grade, setGrade] = useState('')
   const [tab, setTab] = useState<'available' | 'history'>('available')
+  const [pendingNotice, setPendingNotice] = useState('')
   const load = useCallback(async () => {
     setLoading(true)
+    setPendingNotice('')
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.replace('/login?role=owner'); return }
     const { data: prof } = await supabase
@@ -52,7 +54,14 @@ export default function BrandSamplesPage() {
     const ownerGrade = (prof as { grade?: string })?.grade || ''
     setGrade(ownerGrade)
     const brandIds = await getOwnerLinkedBrandIds(supabase, user.id)
-    if (brandIds.length === 0) { setLoading(false); return }
+    if (brandIds.length === 0) {
+      const pendingNames = await getOwnerPendingOnlyBrandNames(supabase, user.id)
+      setPendingNotice(formatPendingApprovalNotice(pendingNames))
+      setSamples([])
+      setMySends([])
+      setLoading(false)
+      return
+    }
     const [{ data: sampleData }, { data: sendData }] = await Promise.all([
       supabase.from('brand_samples')
         .select('id, product_name, description, target_grades, auto_welcome, brand_id, brands(name)')
@@ -70,7 +79,7 @@ export default function BrandSamplesPage() {
     setSamples(filtered as unknown as SampleRow[])
     setMySends((sendData || []) as unknown as SendRow[])
     setLoading(false)
-  }, [])
+  }, [router, supabase])
   useEffect(() => { void load() }, [load])
   const timeAgo = (iso: string) => {
     const diff = Date.now() - new Date(iso).getTime()
@@ -96,6 +105,11 @@ export default function BrandSamplesPage() {
           </span>
         )}
       </div>
+      {pendingNotice ? (
+        <div style={{ margin: '0 16px 16px', padding: '14px 16px', borderRadius: 10, background: `${PURPLE}10`, border: `1px solid ${PURPLE}30`, color: PURPLE, fontSize: 13, lineHeight: 1.55, textAlign: 'center' }}>
+          {pendingNotice}
+        </div>
+      ) : null}
       <div style={{ display: 'flex', borderBottom: `1px solid ${BORDER}`, marginBottom: 16, padding: '0 16px' }}>
         {([
           { key: 'available', label: `받을 수 있는 샘플 (${samples.length})` },
@@ -111,7 +125,7 @@ export default function BrandSamplesPage() {
         <div style={{ padding: '0 16px' }}>
           {samples.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 0', color: SUB, fontSize: 14 }}>
-              받을 수 있는 샘플이 없어요
+              {pendingNotice ? '승인되면 샘플을 받을 수 있어요' : '받을 수 있는 샘플이 없어요'}
             </div>
           ) : samples.map(s => (
             <div key={s.id} style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '14px', marginBottom: 10 }}>
@@ -144,7 +158,7 @@ export default function BrandSamplesPage() {
         <div style={{ padding: '0 16px' }}>
           {mySends.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '60px 0', color: SUB, fontSize: 14 }}>
-              샘플 발송 이력이 없어요
+              {pendingNotice ? '승인되면 발송 이력이 보여요' : '샘플 발송 이력이 없어요'}
             </div>
           ) : mySends.map(send => {
             const st = STATUS_MAP[send.status] || { label: send.status, color: SUB, bg: LIGHT }

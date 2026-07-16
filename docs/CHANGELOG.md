@@ -5,6 +5,7 @@
 
 ## 2026-07-16
 
+- **샘플·반품 pending 안내 문구**: active 연결 없고 pending만 있을 때 `getOwnerPendingOnlyBrandNames`로 브랜드명 조회 후 「{브랜드} 브랜드와 연결 승인 대기 중이에요. 조금만 기달려주세요」 표시. 반품 신청 버튼은 pending 시 숨김.
 - **원장 콘텐츠 권한 세분화 (`includePending`)**: `getOwnerLinkedBrandIds`에 `{ includePending }` 옵션. 라이브·커뮤니티는 pending 포함(보기만), 샘플·반품·홈/client 피드는 active만. 셀프등급·brand-orders 미변경.
 - **원장 측 거래 브랜드도 `brand_owner_links(active)` 통일**: 공통 헬퍼 `getOwnerLinkedBrandIds`(auth → users.id → links). `owner/page`·`client`·`client-v2`·`brand-live`·`brand-community`·`brand-samples`·`brand-returns`에서 `trade_brands`/`preferred_brands` 제거. 셀프등급 블록은 `owner_id=users.id` 명시(`ownerUserId`) + trade_brands fallback 삭제. `brand-orders`는 기존 links 사용으로 미변경.
 - **원장 연결 기준 `trade_brands` → `brand_owner_links(active)` (브랜드 측)**: `BrandTabOwners` 원장님현황 — `.not(trade_brands)`·브랜드명 문자열 매칭 제거, `links.owner_id(=users.id)` → `users.auth_id` → `profiles` 경로(bulk-import와 동일). `BrandTabData` 「연결 원장님 수」는 `BrandTabHome`과 같이 links count. 정산탭 표시명에 `profiles.owner_store_name` fallback 추가(`salon_name` → `owner_store_name` → `owner_name` → `full_name`).

@@ -43,3 +43,30 @@ export async function getOwnerLinkedBrandIds(
     new Set((links || []).map((r: { brand_id: string }) => String(r.brand_id)).filter(Boolean)),
   )
 }
+
+/** active 연결은 없고 pending만 있을 때 브랜드명 목록 (안내 문구용) */
+export async function getOwnerPendingOnlyBrandNames(
+  supabase: SupabaseClient,
+  authId: string,
+): Promise<string[]> {
+  const activeIds = await getOwnerLinkedBrandIds(supabase, authId)
+  if (activeIds.length > 0) return []
+
+  const pendingIds = await getOwnerLinkedBrandIds(supabase, authId, { includePending: true })
+  if (pendingIds.length === 0) return []
+
+  const { data: brandRows } = await supabase
+    .from('brands')
+    .select('id, name')
+    .in('id', pendingIds)
+
+  return (brandRows || [])
+    .map((b: { name?: string | null }) => String(b.name || '').trim())
+    .filter(Boolean)
+}
+
+export function formatPendingApprovalNotice(brandNames: string[]): string {
+  if (brandNames.length === 0) return ''
+  const label = brandNames.join(', ')
+  return `${label} 브랜드와 연결 승인 대기 중이에요. 조금만 기달려주세요`
+}
