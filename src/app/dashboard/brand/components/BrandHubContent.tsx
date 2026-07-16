@@ -15,12 +15,13 @@ const BrandTabInvoice = dynamic(() => import('../tabs/BrandTabInvoice'), { ssr: 
 const BrandTabInventory = dynamic(() => import('../tabs/BrandTabInventory'), { ssr: false })
 const BrandTabReport = dynamic(() => import('../tabs/BrandTabReport'), { ssr: false })
 const BrandTabReturns = dynamic(() => import('../tabs/BrandTabReturns'), { ssr: false })
+const BrandTabTierPackages = dynamic(() => import('../tabs/BrandTabTierPackages'), { ssr: false })
 const BrandInventoryStock = dynamic(() => import('../tabs/BrandInventoryStock'), { ssr: false })
 const BrandInventoryLots = dynamic(() => import('../tabs/BrandInventoryLots'), { ssr: false })
 const BrandInventoryScan = dynamic(() => import('../tabs/BrandInventoryScan'), { ssr: false })
 const BrandInventoryQR = dynamic(() => import('../tabs/BrandInventoryQR'), { ssr: false })
 const BrandInventoryEmergency = dynamic(() => import('../tabs/BrandInventoryEmergency'), { ssr: false })
-type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'data' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement'
+type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'data' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages'
 type LogiTab = 'stock' | 'lots' | 'scan' | 'qr' | 'emergency'
 type SystemMode = 'brand' | 'logi'
 interface Props {
@@ -75,6 +76,7 @@ export default function BrandHubContent({
       label: '제품·파트너',
       items: [
         { key: 'products', label: '제품 관리', icon: 'ti-package' },
+        { key: 'tierPackages', label: '등급 패키지 관리', icon: 'ti-medal' },
         { key: 'owners', label: '원장님 현황', icon: 'ti-building-store' },
         { key: 'expand', label: '입점 확장', icon: 'ti-arrow-bar-up' },
       ],
@@ -329,6 +331,7 @@ export default function BrandHubContent({
           <div style={{ padding: 16 }}>
             {mainTab === 'home' && <BrandTabHome brandName={brandName} brandId={brandId} activeBrandId={activeBrandId} onTabChange={(t) => setMainTab(t as MainTab)} />}
             {mainTab === 'products' && <BrandTabProducts rows={rows} tab={tab} onTabChange={onTabChange} onEdit={onEdit} onNew={onNew} currentBrandName={brandName} />}
+            {mainTab === 'tierPackages' && <BrandTabTierPackages brandId={selectedBrandId} brandName={brandName} />}
             {mainTab === 'owners' && <BrandTabOwners brandId={brandId} brandName={brandName} authId={authId} />}
             {mainTab === 'orders' && <BrandTabOrders brandId={selectedBrandId} brandName={brandName} />}
             {mainTab === 'orentalk' && <BrandTabOrenTalk brandName={brandName} brandId={brandId} authId={authId} />}

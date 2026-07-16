@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
 
   const { data: userRow, error: userErr } = await supabase
     .from('users')
-    .select('id, phone, name, role')
+    .select('id, phone, name, role, origin_track')
     .eq('auth_id', user.id)
     .maybeSingle()
   if (userErr || !userRow?.id) {
@@ -79,6 +79,9 @@ export async function POST(req: NextRequest) {
   }
   if (userRow.role !== 'owner') {
     return NextResponse.json({ ok: false, error: 'owner_only' }, { status: 403 })
+  }
+  if (userRow.origin_track !== 'B') {
+    return NextResponse.json({ ok: false, error: 'track_b_only' }, { status: 403 })
   }
 
   const { data: profileRow, error: profErr } = await supabase

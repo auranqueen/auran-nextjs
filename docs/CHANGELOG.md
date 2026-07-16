@@ -3,6 +3,10 @@
 
 ---
 
+## 2026-07-16
+
+- **시바산(Track A) 셀프 등급구매 전면 정비**: (1) Track B `brand-tier/create`에 `origin_track === 'B'` 게이트 추가. (2) Track A `civasan/create`·`webhook`에 `computeTierUpgradeCharge` 차액결제 — intent/PayApp 금액은 차액, `brand_owner_grades.purchase_amount`는 목표 등급 정가. (3) 원장 UI `OwnerBrandSelfTierSection`에 「차액 N원」 표시. (4) 브랜드 허브 「등급 패키지 관리」탭 + `POST /api/brand/tier-packages/save`(assertBrandAccess, service role) — `tier_name`·`price`만, `commission_rate` 미노출. Track B 차액·커미션 ledger·`BrandTabOwners` 수동등급은 미변경. RLS 마이그레이션 없음.
+
 ## 2026-07-15
 
 - **브랜드 허브 조회 오류·미존재 분리**: `/brand/[slug]`의 `brands` 조회에서 Supabase 오류를 별도 `loadError` 상태로 처리하고 콘솔에 slug·오류 정보를 기록. 실제 조회 결과가 없을 때만 기존 미존재 화면을 표시하며, 일시적 오류 화면에는 상태를 초기화하고 쿼리를 다시 실행하는 재시도 버튼 추가.

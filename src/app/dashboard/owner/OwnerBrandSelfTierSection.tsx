@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { canUpgradeToTier } from '@/lib/brandTierGrade'
+import { canUpgradeToTier, computeTierUpgradeCharge } from '@/lib/brandTierGrade'
 
 const ACCENT_COLOR = '#C084FC'
 const PURPLE = '#7B5EA7'
@@ -134,7 +134,17 @@ export function OwnerBrandSelfTierSection({
 
   if (!brands.length) return null
 
-  const modalPrice = modalTarget ? Math.trunc(Number(modalTarget.pkg.price)) : 0
+  const modalPrice = modalTarget
+    ? computeTierUpgradeCharge(
+        modalTarget.brand.ownedPrice,
+        Math.trunc(Number(modalTarget.pkg.price)),
+      ) ?? Math.trunc(Number(modalTarget.pkg.price))
+    : 0
+  const modalListPrice = modalTarget ? Math.trunc(Number(modalTarget.pkg.price)) : 0
+  const modalIsUpgrade =
+    modalTarget != null &&
+    modalTarget.brand.ownedPrice != null &&
+    modalPrice < modalListPrice
 
   return (
     <>
@@ -197,6 +207,10 @@ export function OwnerBrandSelfTierSection({
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {upgradablePackages.map((p) => {
                     const packagePrice = Math.trunc(Number(p.price))
+                    const chargeAmount =
+                      computeTierUpgradeCharge(b.ownedPrice, packagePrice) ?? packagePrice
+                    const isUpgrade =
+                      b.ownedPrice != null && chargeAmount < packagePrice
                     const btnLabel = !b.payappActive
                       ? '체험하기(데모)'
                       : busy === p.id
@@ -217,9 +231,18 @@ export function OwnerBrandSelfTierSection({
                       >
                         <div style={{ minWidth: 0 }}>
                           <span style={{ fontSize: 12, color: ACCENT_COLOR }}>{p.tier_name}</span>
-                          <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 8 }}>
-                            {packagePrice.toLocaleString()}원
-                          </span>
+                          {isUpgrade ? (
+                            <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 2 }}>
+                              정가 {packagePrice.toLocaleString()}원 →{' '}
+                              <span style={{ color: ACCENT_COLOR, fontWeight: 600 }}>
+                                차액 {chargeAmount.toLocaleString()}원
+                              </span>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 8 }}>
+                              {packagePrice.toLocaleString()}원
+                            </span>
+                          )}
                         </div>
                         <button
                           type="button"
@@ -303,7 +326,9 @@ export function OwnerBrandSelfTierSection({
                     marginBottom: 14,
                   }}
                 >
-                  <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>결제 금액</div>
+                  <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>
+                    {modalIsUpgrade ? '차액 결제 금액' : '결제 금액'}
+                  </div>
                   <div
                     style={{
                       fontFamily: "'JetBrains Mono', monospace",
@@ -314,6 +339,11 @@ export function OwnerBrandSelfTierSection({
                   >
                     ₩{modalPrice.toLocaleString()}
                   </div>
+                  {modalIsUpgrade ? (
+                    <div style={{ fontSize: 10, color: 'var(--text3)', marginTop: 6 }}>
+                      정가 ₩{modalListPrice.toLocaleString()} − 보유 등급 정가
+                    </div>
+                  ) : null}
                 </div>
 
                 <label style={{ display: 'block', marginBottom: 14 }}>
