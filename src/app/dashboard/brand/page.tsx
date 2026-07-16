@@ -20,6 +20,31 @@ const GOLD = '#C9A96E'
 
 type Row = Record<string, unknown> & { id: string; name?: string | null; status?: string | null; thumb_img?: string | null }
 
+type BrandOption = { id: string; name: string; role: string }
+
+function mergeMyBrands(
+  brandList: Array<{ id?: string; name?: string | null }> | null | undefined,
+  memberList: BrandOption[],
+): BrandOption[] {
+  const map = new Map<string, BrandOption>()
+
+  for (const owned of brandList || []) {
+    if (!owned?.id) continue
+    const id = String(owned.id)
+    map.set(id, { id, name: String(owned.name || ''), role: 'owner' })
+  }
+
+  for (const member of memberList) {
+    if (!member.id) continue
+    const id = String(member.id)
+    if (!map.has(id)) {
+      map.set(id, { id, name: member.name, role: member.role })
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, 'ko'))
+}
+
 export default function BrandDashboardPage() {
   const supabase = createClient()
   const router = useRouter()
@@ -34,11 +59,10 @@ export default function BrandDashboardPage() {
   } | null>(null)
   const [authId, setAuthId] = useState<string | null>(null)
   const [userPk, setUserPk] = useState<string | null>(null)
-  const [brandId, setBrandId] = useState<string | null>(null)
+  const [currentBrandId, setCurrentBrandId] = useState<string | null>(null)
   const [brandName, setBrandName] = useState('')
   const [brandRow, setBrandRow] = useState<Record<string, unknown> | null>(null)
-  const [myBrands, setMyBrands] = useState<Array<{ id: string; name: string; role: string }>>([])
-  const [activeBrandId, setActiveBrandId] = useState<string | null>(null)
+  const [myBrands, setMyBrands] = useState<BrandOption[]>([])
   const [showBrandDropdown, setShowBrandDropdown] = useState(false)
   const [showAddBrand, setShowAddBrand] = useState(false)
   const [addBrandName, setAddBrandName] = useState('')
@@ -59,6 +83,11 @@ export default function BrandDashboardPage() {
   const isApproved = brandRow?.apply_status != null && String(brandRow.apply_status).toLowerCase().trim() === 'approved'
   const showWelcome = isApproved && brandRow !== null && brandRow.welcome_shown === false
 
+  const switchBrand = useCallback((id: string, name: string) => {
+    setCurrentBrandId(id)
+    setBrandName(name)
+  }, [])
+
   const load = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -78,28 +107,37 @@ export default function BrandDashboardPage() {
       .eq('user_id', u.id)
       .order('created_at', { ascending: true })
     const b = brandList?.[0] || null
-    const bid = (b as { id?: string } | null)?.id || null
-    setBrandId(bid)
     setBrandRow((b as Record<string, unknown> | null) || null)
-    setBrandName(String((b as { name?: string } | null)?.name || ''))
+
     const { data: memberRows } = await supabase
       .from('brand_members')
       .select('brand_id, role, brands(id, name)')
       .eq('user_id', u.id)
 
-    const memberList =
+    const memberList: BrandOption[] =
       memberRows && memberRows.length > 0
         ? memberRows.map((m: any) => ({
-            id: m.brands?.id ?? m.brand_id,
-            name: m.brands?.name ?? '',
-            role: m.role,
+            id: String(m.brands?.id ?? m.brand_id),
+            name: String(m.brands?.name ?? ''),
+            role: String(m.role || 'member'),
           }))
         : []
 
-    if (memberList.length > 0) {
-      setMyBrands(memberList)
-      if (!activeBrandId) setActiveBrandId(memberList[0]?.id ?? null)
-    }
+    const merged = mergeMyBrands(brandList, memberList)
+    setMyBrands(merged)
+
+    const defaultId =
+      (brandList?.[0] as { id?: string } | undefined)?.id?.toString() ??
+      memberList[0]?.id ??
+      null
+
+    setCurrentBrandId((prev) => {
+      const nextId = prev && merged.some((brand) => brand.id === prev) ? prev : defaultId
+      const pick = merged.find((brand) => brand.id === nextId)
+      if (pick) setBrandName(pick.name)
+      else setBrandName(String((b as { name?: string } | null)?.name || ''))
+      return nextId
+    })
 
     const brandIdSet = new Set<string>()
     for (const owned of brandList || []) {
@@ -145,8 +183,9 @@ export default function BrandDashboardPage() {
 
 
   const dismissWelcome = async () => {
-    if (!brandId) return
-    const { error } = await supabase.from('brands').update({ welcome_shown: true } as any).eq('id', brandId)
+    const welcomeBrandId = brandRow?.id ? String(brandRow.id) : null
+    if (!welcomeBrandId) return
+    const { error } = await supabase.from('brands').update({ welcome_shown: true } as any).eq('id', welcomeBrandId)
     if (error) {
       setToast(error.message || '저장 실패')
       return
@@ -257,10 +296,10 @@ export default function BrandDashboardPage() {
     )
   }
 
-  if (!pinAuth && brandId) {
+  if (!pinAuth && currentBrandId) {
     return (
       <BrandPinGate
-        brandId={brandId}
+        brandId={currentBrandId}
         brandName={brandName}
         onAuth={setPinAuth}
       />
@@ -345,7 +384,7 @@ export default function BrandDashboardPage() {
             }}
           >
             <BrandProductFormV2
-              brandId={activeBrandId || brandId!}
+              brandId={currentBrandId!}
               brandName={brandName}
               myBrands={myBrands.map(({ id, name }) => ({ id, name }))}
               authUserId={authId!}
@@ -370,7 +409,7 @@ export default function BrandDashboardPage() {
             onClick={() => setShowBrandDropdown(v => !v)}
             style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', cursor: 'pointer', color: '#fff', fontSize: 13 }}
           >
-            <span>{myBrands.find(b => b.id === activeBrandId)?.name ?? brandName}</span>
+            <span>{myBrands.find(b => b.id === currentBrandId)?.name ?? brandName}</span>
             <span style={{ fontSize: 10, opacity: 0.5 }}>▼</span>
           </button>
           {showBrandDropdown && (
@@ -379,11 +418,10 @@ export default function BrandDashboardPage() {
                 <div
                   key={b.id}
                   onClick={() => {
-                    setActiveBrandId(b.id)
-                    setBrandName(b.name)
+                    switchBrand(b.id, b.name)
                     setShowBrandDropdown(false)
                   }}
-                  style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, color: b.id === activeBrandId ? '#7B5EA7' : 'rgba(255,255,255,0.7)', background: b.id === activeBrandId ? 'rgba(123,94,167,0.1)' : 'transparent' }}
+                  style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, color: b.id === currentBrandId ? '#7B5EA7' : 'rgba(255,255,255,0.7)', background: b.id === currentBrandId ? 'rgba(123,94,167,0.1)' : 'transparent' }}
                 >
                   {b.name}
                 </div>
@@ -462,8 +500,7 @@ export default function BrandDashboardPage() {
                     if (!addBrandName || !userPk) return
                     setAddBrandLoading(true)
 
-                    const hubBrandId = brandId || activeBrandId
-                    if (!hubBrandId) {
+                    if (!currentBrandId) {
                       setAddBrandLoading(false)
                       alert('현재 브랜드 정보를 찾을 수 없어요')
                       return
@@ -502,7 +539,7 @@ export default function BrandDashboardPage() {
                         headers: { 'Content-Type': 'application/json' },
                         credentials: 'same-origin',
                         body: JSON.stringify({
-                          hub_brand_id: hubBrandId,
+                          hub_brand_id: currentBrandId,
                           second_brand_id: newBrand.id,
                           second_brand_name: addBrandName,
                         }),
@@ -512,11 +549,9 @@ export default function BrandDashboardPage() {
                     }
 
                     setAddBrandDone(true)
-                    const newEntry = { id: newBrand.id, name: addBrandName, role: 'owner' }
-                    setMyBrands(prev => [...prev, newEntry])
-                    setActiveBrandId(newBrand.id)
-                    setBrandId(newBrand.id)
-                    setBrandName(addBrandName)
+                    const newEntry: BrandOption = { id: newBrand.id, name: addBrandName, role: 'owner' }
+                    setMyBrands((prev) => mergeMyBrands([newEntry], prev))
+                    switchBrand(newBrand.id, addBrandName)
                     void fetchRows()
                     setAddBrandLoading(false)
                   }}
@@ -542,9 +577,10 @@ export default function BrandDashboardPage() {
 
       {/* 통합 허브 콘텐츠 */}
       <BrandHubContent
-        brandId={brandId}
+        brandId={currentBrandId}
         brandName={brandName}
-        activeBrandId={activeBrandId}
+        myBrands={myBrands}
+        onBrandChange={switchBrand}
         authId={authId}
         isCEO={isCEO}
         loginRole={loginRole}

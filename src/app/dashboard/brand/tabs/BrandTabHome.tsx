@@ -10,10 +10,9 @@ const SUB = 'rgba(255,255,255,0.3)'
 interface Props {
   brandName: string
   brandId: string | null
-  activeBrandId: string | null
   onTabChange: (tab: string) => void
 }
-export default function BrandTabHome({ brandName, brandId, activeBrandId, onTabChange }: Props) {
+export default function BrandTabHome({ brandName, brandId, onTabChange }: Props) {
   const supabase = createClient()
   const [ownerCount, setOwnerCount] = useState<number | null>(null)
   const [productCount, setProductCount] = useState<number | null>(null)
