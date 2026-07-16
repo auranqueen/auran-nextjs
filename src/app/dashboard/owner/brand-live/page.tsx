@@ -38,7 +38,7 @@ export default function BrandLivePage() {
     const fetch = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.replace('/login?role=owner'); return }
-      const brandIds = await getOwnerLinkedBrandIds(supabase, user.id)
+      const brandIds = await getOwnerLinkedBrandIds(supabase, user.id, { includePending: true })
       if (brandIds.length === 0) { setLoading(false); return }
       const { data: brandRows } = await supabase
         .from('brands').select('id, name').in('id', brandIds)
