@@ -16,6 +16,7 @@ const BrandTabInventory = dynamic(() => import('../tabs/BrandTabInventory'), { s
 const BrandTabReport = dynamic(() => import('../tabs/BrandTabReport'), { ssr: false })
 const BrandTabReturns = dynamic(() => import('../tabs/BrandTabReturns'), { ssr: false })
 const BrandTabTierPackages = dynamic(() => import('../tabs/BrandTabTierPackages'), { ssr: false })
+const BrandTabSettlement = dynamic(() => import('../tabs/BrandTabSettlement'), { ssr: false })
 const BrandInventoryStock = dynamic(() => import('../tabs/BrandInventoryStock'), { ssr: false })
 const BrandInventoryLots = dynamic(() => import('../tabs/BrandInventoryLots'), { ssr: false })
 const BrandInventoryScan = dynamic(() => import('../tabs/BrandInventoryScan'), { ssr: false })
@@ -402,9 +403,7 @@ export default function BrandHubContent({
             {mainTab === 'report' && <BrandTabReport brandId={brandId} brandName={brandName} />}
             {mainTab === 'returns' && <BrandTabReturns brandId={brandId} brandName={brandName} />}
             {mainTab === 'settlement' && isCEO && (
-              <div style={{ padding: 20, color: 'rgba(255,255,255,0.3)', textAlign: 'center', fontSize: 13 }}>
-                정산 탭 — 준비 중
-              </div>
+              <BrandTabSettlement brandId={brandId} brandName={brandName} />
             )}
           </div>
         )}
