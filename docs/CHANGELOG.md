@@ -5,6 +5,7 @@
 
 ## 2026-07-17
 
+- **트랙A 카트 다중살롱 지원을 위한 checkout_batch_id 도입**: 결제1회+내부 다중주문 처리, 금액합계 위변조 검증+관리자알림, 개별주문 try/catch로 부분실패 격리. `brand-product-orders/create`에 `checkout_batch_id` 필수·저장, 웹훅은 `target_id`=batch로 다건 조회·합계 검증 후 순회 결제완료/취소.
 - **트랙A 살롱 브랜드제품 상세·리뷰·카트 연결**: 살롱 제품 카드 클릭 → `/salons/[id]/products/[productId]` 상세. `BrandCartContext`(`auran_brand_cart` localStorage, `brand_product_id` 키) + `salons/[id]/layout` Provider. 상세 하단 「장바구니/바로구매」는 각각 `/cart`·`/checkout`로 push(페이지는 후속). `POST /api/brand-product-reviews/create` — `brand_product_reviews` insert, 주문당 1회 `review_toast_rate` 토스트(`source_type: brand_product_review`). 몰 `CartContext`/`reviews`/`products` 미사용(A/B 격리).
 - **트랙A 웹훅 핸들러 분리 리팩토링**: `payapp/webhook`의 `brand_product_order` 결제완료·취소 본문을 `src/lib/webhookHandlers/brandProductOrder.ts`(`handleBrandProductOrderComplete` / `handleBrandProductOrderCancel`)로 이동. `handleBrandTierPurchase`와 동일 시그니처·service client 전달 패턴. 로직 변경 없음(500줄 규칙 준수용 분리).
 - **트랙A 브랜드제품 결제완료 웹훅 분기 추가** (`payapp/webhook`): `kind === 'brand_product_order'` — 결제완료 시 `brand_product_orders` 상태·`payment_id`·`ordered_at` 갱신, `customer_toast_amount`로 구매적립토스트 즉시지급(`source_type: brand_product_order`), 앱 알림. 취소 분기에서 상태 `취소` 롤백. select부터 service client(RLS 우회). `purchase_reward_rate`/스폰서 등 트랙B 정책과 완전분리.

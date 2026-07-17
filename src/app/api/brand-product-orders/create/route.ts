@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
   const { data: me } = await service.from('users').select('id').eq('auth_id', user.id).single()
   if (!me) return NextResponse.json({ ok: false, error: 'user_not_found' }, { status: 404 })
   const body = await req.json()
-  const { salon_id, items, recipient_name, recipient_phone, address, address_detail } = body
-  if (!salon_id || !Array.isArray(items) || items.length === 0 || !address) {
+  const { salon_id, items, recipient_name, recipient_phone, address, address_detail, checkout_batch_id } = body
+  if (!salon_id || !Array.isArray(items) || items.length === 0 || !address || !checkout_batch_id) {
     return NextResponse.json({ ok: false, error: 'invalid_request' }, { status: 400 })
   }
   const { data: salon } = await service.from('salons').select('id, owner_id').eq('id', salon_id).single()
@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
       platform_fee: platformFee,
       owner_amount: ownerAmount,
       review_toast_rate: REVIEW_TOAST_RATE,
+      checkout_batch_id,
       customer_toast_amount: totalCustomerToast,
     })
     .select('id, order_no, final_amount')
