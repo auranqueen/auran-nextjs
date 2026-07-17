@@ -10,14 +10,17 @@ const PURPLE_LIGHT = 'rgba(123,94,167,0.15)'
 
 type Props = {
   item: SalonBrandProductItem
+  salonId: string
+  onSelect?: () => void
 }
 
-export default function SalonBrandProductCard({ item }: Props) {
+export default function SalonBrandProductCard({ item, onSelect }: Props) {
   const price = item.consumer_price
   const showPrice = typeof price === 'number' && price > 0
 
   return (
     <div
+      onClick={onSelect}
       style={{
         background: CARD,
         border: `1px solid ${BORDER}`,
@@ -27,6 +30,7 @@ export default function SalonBrandProductCard({ item }: Props) {
         display: 'flex',
         alignItems: 'center',
         gap: 12,
+        cursor: 'pointer',
       }}
     >
       <div

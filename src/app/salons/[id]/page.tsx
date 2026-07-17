@@ -880,6 +880,7 @@ export default function SalonHomePage() {
             <SalonBrandProductsPanel
               loading={brandProductsLoading}
               products={brandProducts}
+              salonId={id}
             />
           )
         ) : null}

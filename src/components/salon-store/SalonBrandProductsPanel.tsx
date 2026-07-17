@@ -2,15 +2,19 @@
 
 import SalonBrandProductCard from '@/components/salon-store/SalonBrandProductCard'
 import type { SalonBrandProductItem } from '@/types/salonBrandProducts'
+import { useRouter } from 'next/navigation'
 
 const TEXT_SUB = 'rgba(255,255,255,0.55)'
 
 type Props = {
   loading: boolean
   products: SalonBrandProductItem[]
+  salonId: string
 }
 
-export default function SalonBrandProductsPanel({ loading, products }: Props) {
+export default function SalonBrandProductsPanel({ loading, products, salonId }: Props) {
+  const router = useRouter()
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 13, padding: 32 }}>
@@ -30,7 +34,12 @@ export default function SalonBrandProductsPanel({ loading, products }: Props) {
   return (
     <div>
       {products.map((item) => (
-        <SalonBrandProductCard key={item.id} item={item} />
+        <SalonBrandProductCard
+          key={item.id}
+          item={item}
+          salonId={salonId}
+          onSelect={() => router.push(`/salons/${salonId}/products/${item.id}`)}
+        />
       ))}
     </div>
   )
