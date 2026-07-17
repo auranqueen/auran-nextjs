@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import { OwnerBadgeTierSection, type TierBadgeBrand } from './OwnerBadgeTierSection'
 import { OwnerBrandSelfTierSection, type SelfTierBrand } from './OwnerBrandSelfTierSection'
+import OwnerBrandProductRevenueRow from '@/components/salon-store/OwnerBrandProductRevenueRow'
 
 const GRADE_COLORS: Record<string, string> = {
   debut: 'var(--text3)',
@@ -56,6 +57,7 @@ type Props = {
   todayBookings: any[]
   serviceRevenue: RevenueSlice
   productRevenue: RevenueSlice
+  brandProductRevenue: RevenueSlice
   pendingCsCount: number
   unreadChatCount: number
   recentChats: RecentChat[]
@@ -76,6 +78,7 @@ export default function OwnerHomeV3({
   todayBookings,
   serviceRevenue,
   productRevenue,
+  brandProductRevenue,
   pendingCsCount,
   unreadChatCount,
   recentChats,
@@ -381,6 +384,7 @@ export default function OwnerHomeV3({
                 비중 {productShare}% · 전월대비 {fmtPct(productRevenue.changePercent)}
               </div>
             </div>
+            <OwnerBrandProductRevenueRow revenue={brandProductRevenue} />
           </div>
 
           <OwnerBadgeTierSection brands={tierBadgeBrands} />

@@ -156,6 +156,23 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
 
     const svcChange = svcPrev <= 0 ? (svcCur > 0 ? 100 : 0) : Math.round(((svcCur - svcPrev) / svcPrev) * 100)
     const prodChange = prodPrev <= 0 ? (prodCur > 0 ? 100 : 0) : Math.round(((prodCur - prodPrev) / prodPrev) * 100)
+    const { data: brandCurRows } = await supabase
+      .from('brand_product_orders')
+      .select('owner_amount')
+      .eq('salon_id', salon?.id)
+      .not('status', 'in', '("결제대기","취소")')
+      .gte('ordered_at', `${thisStart}T00:00:00`)
+      .lte('ordered_at', `${thisEnd}T23:59:59`)
+    const { data: brandPrevRows } = await supabase
+      .from('brand_product_orders')
+      .select('owner_amount')
+      .eq('salon_id', salon?.id)
+      .not('status', 'in', '("결제대기","취소")')
+      .gte('ordered_at', `${prevStart}T00:00:00`)
+      .lte('ordered_at', `${prevEnd}T23:59:59`)
+    const brandCur = ((brandCurRows as any[]) || []).reduce((s, r) => s + Number(r.owner_amount || 0), 0)
+    const brandPrev = ((brandPrevRows as any[]) || []).reduce((s, r) => s + Number(r.owner_amount || 0), 0)
+    const brandChange = brandPrev <= 0 ? (brandCur > 0 ? 100 : 0) : Math.round(((brandCur - brandPrev) / brandPrev) * 100)
 
     const sixMonthsAgo = new Date(y, m - 5, 1)
     const trendStart = `${sixMonthsAgo.getFullYear()}-${pad(sixMonthsAgo.getMonth() + 1)}-01`
@@ -438,6 +455,7 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
         todayBookings={todayBookings || []}
         serviceRevenue={{ current: svcCur, previous: svcPrev, changePercent: svcChange }}
         productRevenue={{ current: prodCur, previous: prodPrev, changePercent: prodChange }}
+        brandProductRevenue={{ current: brandCur, previous: brandPrev, changePercent: brandChange }}
         pendingCsCount={pendingCsCount}
         unreadChatCount={unreadChatCount}
         recentChats={recentChats}
