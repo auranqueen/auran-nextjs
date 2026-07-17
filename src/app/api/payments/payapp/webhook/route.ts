@@ -535,6 +535,52 @@ export async function POST(req: NextRequest) {
           console.error('[booking purchase insert]', e)
         }
       }
+      if (intent.kind === 'brand_product_order' && intent.target_id && intent.user_id) {
+        const postClient = tryCreateServiceClient() || supabase
+        const { data: order } = await postClient
+          .from('brand_product_orders')
+          .select('id, customer_id, status, customer_toast_amount, final_amount')
+          .eq('id', intent.target_id)
+          .maybeSingle()
+        if (order && order.status !== '결제완료') {
+          await postClient
+            .from('brand_product_orders')
+            .update({ status: '결제완료', payment_id: String(intent.id), ordered_at: new Date().toISOString() })
+            .eq('id', order.id)
+          const toastEarn = Number(order.customer_toast_amount || 0)
+          if (toastEarn > 0) {
+            await postClient.from('toast_transactions').insert({
+              user_id: order.customer_id,
+              amount: toastEarn,
+              transaction_type: 'earn',
+              source_type: 'brand_product_order',
+              source_id: order.id,
+              reference_id: order.id,
+            })
+            const { error: ptErr } = await postClient.rpc('increment_points', {
+              user_id: order.customer_id,
+              amount: toastEarn,
+            })
+            if (ptErr) console.warn('[brand_product_order toast points]', ptErr)
+            await postClient.from('notifications').insert({
+              user_id: order.customer_id,
+              type: 'toast',
+              title: `${toastEarn.toLocaleString()}T 적립됐어요 🍞`,
+              body: '제품 구매 완료 적립 토스트예요. 다음 주문에 사용해보세요!',
+              link_url: '/wallet',
+              is_read: false,
+            })
+          }
+          await postClient.from('notifications').insert({
+            user_id: order.customer_id,
+            type: 'payment',
+            title: '주문이 완료됐어요',
+            body: `결제금액 ₩${Number(order.final_amount).toLocaleString()}`,
+            link_url: '/my/orders',
+            is_read: false,
+          })
+        }
+      }
       // 주문 결제 완료: 알림만 (주문 상태는 이미 주문확인)
       if (intent.kind === 'order' && intent.target_id && intent.user_id) {
         const client = tryCreateServiceClient() || supabase
@@ -1022,6 +1068,14 @@ export async function POST(req: NextRequest) {
             })
           }
         }
+      }
+      if (intent.kind === 'brand_product_order' && intent.target_id) {
+        const postClient = tryCreateServiceClient() || supabase
+        await postClient
+          .from('brand_product_orders')
+          .update({ status: '취소' })
+          .eq('id', intent.target_id)
+          .neq('status', '취소')
       }
       await supabase
         .from('payment_intents')

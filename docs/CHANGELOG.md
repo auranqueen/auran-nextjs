@@ -5,6 +5,7 @@
 
 ## 2026-07-17
 
+- **트랙A 브랜드제품 결제완료 웹훅 분기 추가** (`payapp/webhook`): `kind === 'brand_product_order'` — 결제완료 시 `brand_product_orders` 상태·`payment_id`·`ordered_at` 갱신, `customer_toast_amount`로 구매적립토스트 즉시지급(`source_type: brand_product_order`), 앱 알림. 취소 분기에서 상태 `취소` 롤백. select부터 service client(RLS 우회). `purchase_reward_rate`/스폰서 등 트랙B 정책과 완전분리.
 - **새 API: 트랙A 실물 제품 장바구니 주문 생성** (`POST /api/brand-product-orders/create`): `origin_track='A'` 살롱 검증, `brand_owner_links(active)` 연결 확인, `brand_products` 서버 가격·`customer_toast_rate` 재계산, 배송비 트랙A 전용 하드코딩(5만원 이상 무료·제주/울릉 할증), `platform_fee` 8.8%·`owner_amount`·리뷰토스트율 5%·구매적립토스트 합계를 `brand_product_orders`/`brand_product_order_items`에 저장. service role은 `tryCreateAdminClient`.
 
 ## 2026-07-16

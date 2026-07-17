@@ -1,0 +1,30 @@
+---
+description: 트랙A/B 기능 재사용 vs 정책 격리 — A 작업 시 필수 검증
+alwaysApply: true
+---
+
+# 트랙A · 트랙B 격리 원칙
+
+트랙A(브랜드 직거래·살롱 스토어·`brand_products`/`brand_product_orders` 등) 설계·구현·리뷰 시 반드시 지킨다.
+
+## 허용 — 기능(메커니즘) 재사용
+
+- 코드 패턴, API 구조, 웹훅 분기 형태, UI 컴포넌트 스타일, RPC 호출 방식(`increment_points` 등)은 B에서 **빌려 써도 된다**.
+- 예: PayApp intent·웹훅 흐름, `toast_transactions` insert 컬럼 구조, 주소 문자열로 제주/울릉 할증 판정.
+
+## 금지 — 정책(설정값) 공유
+
+- B용으로 정해진 **비율·금액·커미션·적립률·어드민 설정 키**를 A가 그대로 읽거나 같이 쓰면 **절대 안 된다**.
+- 예 (금지):
+  - `admin_settings.points_payment.purchase_reward_rate`를 A 구매 토스트에 사용
+  - `brand_tier_packages.commission_rate` / `sponsor_commission_ledger` / `referred_by` 스폰서 로직을 A 주문에 연결
+  - 오렌몰 `orders` 커미션·모집 커미션 체계를 `brand_product_orders`에 혼입
+- A는 A 전용 값만 쓴다 (하드코딩·A 전용 컬럼·A 전용 설정). 예: 배송비 상수, `customer_toast_rate`, `platform_fee` 8.8%, `review_toast_rate`.
+
+## 작업 요청 분석 시 (에이전트 의무)
+
+Claude/작업 프롬프트 결과나 설계안을 검토할 때:
+
+1. **잘된 점** — B 패턴만 빌리고 A 전용 값을 쓰는지
+2. **못된 점 / 리스크** — B 정책·설정·커미션 테이블을 A가 공유하는지  Explicit하게 지적
+3. 완료 보고(`final-opinion`)에 이 격리 위반 여부를 한 줄이라도 반드시 확인한다.
