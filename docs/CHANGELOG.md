@@ -5,6 +5,7 @@
 
 ## 2026-07-17
 
+- **BrandCartProvider를 `/salons/[id]/layout.tsx`에서 `/salons/layout.tsx`로 이동**: 여러 살롱 넘나드는 카트 상태 유지 위함, `/salons/cart`·`/salons/checkout` 등 살롱 특정 안 된 라우트 지원 목적. `[id]/page`·`loading`·products 하위는 미변경.
 - **원장홈+어드민에 트랙A 브랜드제품 정산액/수수료 표시 추가**: 원장 `OwnerHomeV3`에 `OwnerBrandProductRevenueRow`(`owner_amount` 이번달/전월), 어드민 매출현황에 `AdminBrandProductFeeCard`(`platform_fee` 이번달). 기존 `monthTotal`/`productShare` 계산에는 미포함 — 매출3종 혼동방지 원칙 준수.
 - **트랙A 카트 다중살롱 지원을 위한 checkout_batch_id 도입**: 결제1회+내부 다중주문 처리, 금액합계 위변조 검증+관리자알림, 개별주문 try/catch로 부분실패 격리. `brand-product-orders/create`에 `checkout_batch_id` 필수·저장, 웹훅은 `target_id`=batch로 다건 조회·합계 검증 후 순회 결제완료/취소.
 - **트랙A 살롱 브랜드제품 상세·리뷰·카트 연결**: 살롱 제품 카드 클릭 → `/salons/[id]/products/[productId]` 상세. `BrandCartContext`(`auran_brand_cart` localStorage, `brand_product_id` 키) + `salons/[id]/layout` Provider. 상세 하단 「장바구니/바로구매」는 각각 `/cart`·`/checkout`로 push(페이지는 후속). `POST /api/brand-product-reviews/create` — `brand_product_reviews` insert, 주문당 1회 `review_toast_rate` 토스트(`source_type: brand_product_review`). 몰 `CartContext`/`reviews`/`products` 미사용(A/B 격리).
