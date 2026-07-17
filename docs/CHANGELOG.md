@@ -3,6 +3,10 @@
 
 ---
 
+## 2026-07-17
+
+- **새 API: 트랙A 실물 제품 장바구니 주문 생성** (`POST /api/brand-product-orders/create`): `origin_track='A'` 살롱 검증, `brand_owner_links(active)` 연결 확인, `brand_products` 서버 가격·`customer_toast_rate` 재계산, 배송비 트랙A 전용 하드코딩(5만원 이상 무료·제주/울릉 할증), `platform_fee` 8.8%·`owner_amount`·리뷰토스트율 5%·구매적립토스트 합계를 `brand_product_orders`/`brand_product_order_items`에 저장. service role은 `tryCreateAdminClient`.
+
 ## 2026-07-16
 
 - **샘플·반품 pending 안내 문구**: active 연결 없고 pending만 있을 때 `getOwnerPendingOnlyBrandNames`로 브랜드명 조회 후 「{브랜드} 브랜드와 연결 승인 대기 중이에요. 조금만 기달려주세요」 표시. 반품 신청 버튼은 pending 시 숨김.
