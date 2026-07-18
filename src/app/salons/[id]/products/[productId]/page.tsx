@@ -39,6 +39,7 @@ export default async function ProductDetailPage({
           brand_product_id: product.id,
           brand_id: product.brand_id,
           salon_id: salon.id,
+          salon_name: salon.name,
           name: product.name,
           price: product.consumer_price,
           thumb_img: product.thumb_img,

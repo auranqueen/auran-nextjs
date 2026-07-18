@@ -4,6 +4,7 @@ export interface BrandCartItem {
   brand_product_id: string
   brand_id: string
   salon_id: string
+  salon_name?: string
   name: string
   price: number
   thumb_img: string | null

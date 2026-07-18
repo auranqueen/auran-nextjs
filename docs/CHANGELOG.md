@@ -3,6 +3,10 @@
 
 ---
 
+## 2026-07-19
+
+- **트랙A 카트/체크아웃 페이지 구현** (`/salons/cart`, `/salons/checkout`): 카트는 `salon_id`별 그룹핑·개별/살롱단위 체크박스 선택, `sessionStorage(auran_brand_checkout_selection)`로 선택 전달. 체크아웃은 `shipping_addresses`(기본배송지 우선) 조회, 선택 상품을 `salon_id__brand_id`로 묶어 `/api/brand-product-orders/create`를 그룹별 호출(공통 `checkout_batch_id`), 합계로 PayApp `kind: brand_product_order`·`target_id=batch` 결제 생성 후 카트 비움. `BrandCartItem`/`ProductDetailActions`/상세 page에 `salon_name` 전달 추가(카트 살롱명 표시용).
+
 ## 2026-07-17
 
 - **BrandCartProvider를 `/salons/[id]/layout.tsx`에서 `/salons/layout.tsx`로 이동**: 여러 살롱 넘나드는 카트 상태 유지 위함, `/salons/cart`·`/salons/checkout` 등 살롱 특정 안 된 라우트 지원 목적. `[id]/page`·`loading`·products 하위는 미변경.
