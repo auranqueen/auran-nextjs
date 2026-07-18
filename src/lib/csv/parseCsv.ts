@@ -1,107 +1,113 @@
-/** admin/orders 송장 CSV 업로드와 동일한 parseLine 패턴 */
+/** RFC4180-ish CSV parser (comma, quoted fields, UTF-8 BOM strip). */
 
-export function parseCsvLine(line: string): string[] {
-  const cells: string[] = []
-  let c = ''
-  let q = false
+export type ParsedCsv = {
+  headers: string[]
+  rows: Record<string, string>[]
+  errors: string[]
+}
+
+function stripBom(text: string): string {
+  return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text
+}
+
+function normalizeHeader(raw: string): string {
+  return raw.trim().toLowerCase().replace(/\s+/g, '_')
+}
+
+function parseCsvLine(line: string): string[] {
+  const out: string[] = []
+  let cur = ''
+  let inQuotes = false
   for (let i = 0; i < line.length; i++) {
     const ch = line[i]
-    if (ch === '"') {
-      q = !q
-      continue
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') {
+          cur += '"'
+          i++
+        } else {
+          inQuotes = false
+        }
+      } else {
+        cur += ch
+      }
+    } else if (ch === '"') {
+      inQuotes = true
+    } else if (ch === ',') {
+      out.push(cur)
+      cur = ''
+    } else {
+      cur += ch
     }
-    if (ch === ',' && !q) {
-      cells.push(c.trim())
-      c = ''
-      continue
+  }
+  out.push(cur)
+  return out
+}
+
+/**
+ * Parse CSV text into header-keyed rows.
+ * Empty lines skipped. Header names normalized to snake_case lowercase.
+ */
+export function parseCsv(text: string): ParsedCsv {
+  const errors: string[] = []
+  const raw = stripBom(String(text || '')).replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+  const lines = raw.split('\n').map((l) => l.trimEnd()).filter((l) => l.trim().length > 0)
+  if (!lines.length) {
+    return { headers: [], rows: [], errors: ['empty_csv'] }
+  }
+
+  const headerCells = parseCsvLine(lines[0]).map(normalizeHeader)
+  const headers = headerCells.filter(Boolean)
+  if (!headers.length) {
+    return { headers: [], rows: [], errors: ['missing_header_row'] }
+  }
+
+  const rows: Record<string, string>[] = []
+  for (let li = 1; li < lines.length; li++) {
+    const cells = parseCsvLine(lines[li])
+    if (cells.every((c) => !String(c).trim())) continue
+    const row: Record<string, string> = {}
+    for (let ci = 0; ci < headers.length; ci++) {
+      row[headers[ci]] = String(cells[ci] ?? '').trim()
     }
-    c += ch
-  }
-  cells.push(c.trim())
-  return cells.map((x) => x.replace(/^"(.*)"$/, '$1'))
-}
-
-export function parseCsvText(text: string): { headers: string[]; rows: string[][] } {
-  const rawLines = String(text || '')
-    .replace(/^\uFEFF/, '')
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter((l) => l.length > 0)
-
-  if (rawLines.length < 1) {
-    return { headers: [], rows: [] }
+    rows.push(row)
   }
 
-  const headers = parseCsvLine(rawLines[0])
-  const rows = rawLines.slice(1).map(parseCsvLine)
-  return { headers, rows }
+  if (!rows.length) errors.push('no_data_rows')
+  return { headers, rows, errors }
 }
 
-export function findHeaderIndex(headers: string[], matchers: string[]): number {
-  const normalized = headers.map((h) => h.trim().toLowerCase())
-  for (const m of matchers) {
-    const needle = m.toLowerCase()
-    const idx = normalized.findIndex((h) => h.includes(needle))
-    if (idx >= 0) return idx
+/** Pick first matching column value from normalized header keys. */
+export function pickColumn(row: Record<string, string>, aliases: string[]): string {
+  for (const key of aliases) {
+    const v = row[key]
+    if (v != null && String(v).trim() !== '') return String(v).trim()
   }
-  return -1
+  return ''
 }
 
-export function readCsvFile(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result || ''))
-    reader.onerror = () => reject(reader.error ?? new Error('CSV read failed'))
-    reader.readAsText(file, 'UTF-8')
-  })
-}
-
-/** 매장명 정규화 키 — trim + 소문자 + 모든 공백 제거 */
+/** 매장명 매칭용 정규화 키: trim + 소문자 + 공백 제거 */
 export function normalizeStoreNameKey(name: string): string {
-  return String(name || '')
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '')
+  return String(name || '').trim().toLowerCase().replace(/\s+/g, '')
 }
 
-export type OwnerPointCsvRow = {
-  line: number
-  store_name: string
-  amount: number
-  memo: string | null
-}
+export type StoreNameMatchResult<T> =
+  | { status: 'matched'; item: T }
+  | { status: 'no_match' }
+  | { status: 'conflict'; items: T[] }
 
-export function parseOwnerPointCsvRows(
-  headers: string[],
-  rows: string[][],
-): { ok: true; rows: OwnerPointCsvRow[] } | { ok: false; error: string } {
-  const iStore = findHeaderIndex(headers, ['매장명', '살롱명', '상호', 'store'])
-  const iAmount = findHeaderIndex(headers, ['금액', '적립', '포인트', 'amount', 't'])
-  const iMemo = findHeaderIndex(headers, ['메모', 'memo', '비고'])
-
-  if (iStore < 0 || iAmount < 0) {
-    return { ok: false, error: '헤더에 매장명, 금액 컬럼이 필요합니다.' }
-  }
-
-  const maxIdx = Math.max(iStore, iAmount, iMemo >= 0 ? iMemo : -1)
-  const out: OwnerPointCsvRow[] = []
-
-  for (let li = 0; li < rows.length; li++) {
-    const cells = rows[li]
-    if (cells.length <= maxIdx) continue
-
-    const store_name = (cells[iStore] || '').trim()
-    const amountRaw = (cells[iAmount] || '').trim().replace(/,/g, '')
-    const amount = Math.trunc(Number(amountRaw))
-    const memo = iMemo >= 0 ? ((cells[iMemo] || '').trim() || null) : null
-
-    if (!store_name && !amountRaw) continue
-    out.push({ line: li + 2, store_name, amount, memo })
-  }
-
-  if (!out.length) {
-    return { ok: false, error: '유효한 데이터 행이 없습니다.' }
-  }
-
-  return { ok: true, rows: out }
+/**
+ * 정규화된 매장명 키로 후보 목록에서 1건 매칭.
+ * 0건=no_match, 1건=matched, 2건+=conflict
+ */
+export function matchByStoreNameKey<T extends { storeKey: string }>(
+  rawStoreName: string,
+  index: Map<string, T[]>,
+): StoreNameMatchResult<T> {
+  const key = normalizeStoreNameKey(rawStoreName)
+  if (!key) return { status: 'no_match' }
+  const hits = index.get(key) || []
+  if (hits.length === 0) return { status: 'no_match' }
+  if (hits.length === 1) return { status: 'matched', item: hits[0] }
+  return { status: 'conflict', items: hits }
 }

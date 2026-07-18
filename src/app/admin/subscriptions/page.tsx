@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-type PlanRow = Record<string, unknown> & { id?: string; name?: string | null; slug?: string | null; code?: string | null; mode?: string | null; owner_mode?: string | null; monthly_price?: number | null; sort_order?: number | null; is_active?: boolean | null }
+type PlanRow = Record<string, unknown> & { id?: string; name?: string | null; slug?: string | null; code?: string | null; mode?: string | null; owner_mode?: string | null; price?: number | null; sort_order?: number | null; is_active?: boolean | null }
 
 type SubRow = Record<string, unknown> & {
   id?: string
@@ -113,7 +113,7 @@ export default function AdminSubscriptionsPage() {
                   <td style={{ padding: '10px 12px', color: 'var(--text)' }}>{p.name || '-'}</td>
                   <td style={{ padding: '10px 12px', color: 'var(--text2)', fontFamily: 'monospace' }}>{p.slug || p.code || '-'}</td>
                   <td style={{ padding: '10px 12px', color: 'var(--text2)' }}>{String(p.mode || p.owner_mode || '-')}</td>
-                  <td style={{ padding: '10px 12px', color: 'var(--text2)' }}>₩{Number(p.monthly_price || 0).toLocaleString()}</td>
+                  <td style={{ padding: '10px 12px', color: 'var(--text2)' }}>₩{Number(p.price || 0).toLocaleString()}</td>
                   <td style={{ padding: '10px 12px', color: 'var(--text2)' }}>{p.sort_order ?? '-'}</td>
                 </tr>
               ))

@@ -6,7 +6,10 @@ import StoreHeroGreeting from '@/components/salon-store/StoreHeroGreeting'
 import StoreRelationshipCard from '@/components/salon-store/StoreRelationshipCard'
 import StoreRepurchaseCard from '@/components/salon-store/StoreRepurchaseCard'
 import StoreSnsMapInfo from '@/components/salon-store/StoreSnsMapInfo'
+import SalonBrandProductsLocked from '@/components/salon-store/SalonBrandProductsLocked'
+import SalonBrandProductsPanel from '@/components/salon-store/SalonBrandProductsPanel'
 import { EmptyBannerHook } from '@/components/salon-store/EmptyBannerHook'
+import type { SalonBrandProductItem } from '@/types/salonBrandProducts'
 import { useSalonBookingMessage } from '@/hooks/useSalonBookingMessage'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
@@ -188,7 +191,13 @@ export default function SalonHomePage() {
   const [ownerAvatarUrl, setOwnerAvatarUrl] = useState('')
   const [reviews, setReviews] = useState<ReviewRow[]>([])
   const [customerPhase, setCustomerPhase] = useState<string | null>(null)
-  const [tab, setTab] = useState<'menu' | 'reviews' | 'info'>('menu')
+  type SalonTab = 'menu' | 'products' | 'reviews' | 'info'
+  const [tab, setTab] = useState<SalonTab>('menu')
+  const [brandProducts, setBrandProducts] = useState<SalonBrandProductItem[]>([])
+  const [brandProductsLocked, setBrandProductsLocked] = useState(false)
+  const [brandProductsLoading, setBrandProductsLoading] = useState(false)
+  const [brandProductsLoaded, setBrandProductsLoaded] = useState(false)
+  const [showProductsTab, setShowProductsTab] = useState(true)
   const [phaseFilter, setPhaseFilter] = useState<string>('전체')
   const [reviewLimit, setReviewLimit] = useState(5)
   const [shareToast, setShareToast] = useState('')
@@ -403,6 +412,53 @@ export default function SalonHomePage() {
   useEffect(() => {
     setBannerIndex(0)
   }, [id])
+
+  useEffect(() => {
+    if (tab !== 'products' || !id || brandProductsLoaded) return
+
+    let cancelled = false
+    const run = async () => {
+      setBrandProductsLoading(true)
+      try {
+        const res = await fetch(`/api/salons/${encodeURIComponent(id)}/brand-products`, {
+          cache: 'no-store',
+        })
+        const json = (await res.json().catch(() => null)) as {
+          salon_id?: string
+          locked?: boolean
+          products?: SalonBrandProductItem[]
+        } | null
+
+        if (cancelled) return
+
+        const locked = json?.locked === true
+        const list = Array.isArray(json?.products) ? json.products : []
+        setBrandProductsLocked(locked)
+        setBrandProducts(list)
+        setBrandProductsLoaded(true)
+
+        if (locked) {
+          setShowProductsTab(true)
+        } else if (list.length === 0) {
+          setShowProductsTab(false)
+          setTab('menu')
+        }
+      } catch {
+        if (!cancelled) {
+          setBrandProducts([])
+          setBrandProductsLocked(false)
+          setBrandProductsLoaded(true)
+          setShowProductsTab(false)
+          setTab('menu')
+        }
+      } finally {
+        if (!cancelled) setBrandProductsLoading(false)
+      }
+    }
+
+    void run()
+    return () => { cancelled = true }
+  }, [tab, id, brandProductsLoaded])
 
   const services = useMemo(() => parseServices(salon?.services), [salon?.services])
   const bookingAmount = useMemo(() => {
@@ -791,6 +847,7 @@ export default function SalonHomePage() {
         {(
           [
             ['menu', '시술 메뉴'],
+            ...(showProductsTab ? [['products', '브랜드 제품'] as const] : []),
             ['reviews', `리뷰 ${reviewTotal}`],
             ['info', '샵 정보'],
           ] as const
@@ -816,6 +873,18 @@ export default function SalonHomePage() {
       </div>
 
       <div style={{ padding: 16 }}>
+        {tab === 'products' ? (
+          brandProductsLocked ? (
+            <SalonBrandProductsLocked />
+          ) : (
+            <SalonBrandProductsPanel
+              loading={brandProductsLoading}
+              products={brandProducts}
+              salonId={id}
+            />
+          )
+        ) : null}
+
         {tab === 'menu' ? (
           <>
             {customerPhase ? (

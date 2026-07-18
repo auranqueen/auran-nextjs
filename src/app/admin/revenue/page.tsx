@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import CustomerCampaignPanel from './_components/CustomerCampaignPanel'
+import AdminBrandProductFeeCard from '@/components/admin/AdminBrandProductFeeCard'
 
 type TabKey = '매출현황' | '제품분석' | '고객분석' | '유입경로' | '쿠폰/토스트'
 
@@ -628,6 +629,7 @@ export default function AdminRevenuePage() {
                   ))}
                 </div>
               </div>
+              <AdminBrandProductFeeCard />
             </>
           ) : null}
 

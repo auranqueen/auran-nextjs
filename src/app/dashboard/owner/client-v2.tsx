@@ -3,10 +3,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { canShowCyclePhase } from '@/lib/hormoneUtils'
 import { useIsTrackA } from '@/hooks/useIsTrackA'
+import { getOwnerLinkedBrandIds } from '@/lib/brand/getOwnerLinkedBrandIds'
 import SalonChatListPopup from './salon-chat/SalonChatListPopup'
 import NewChatPopup from './salon-chat/NewChatPopup'
+import OwnerV2LowerStack from './OwnerV2LowerStack'
+import {
+  canShowCyclePhase,
+  getPhase,
+  initials,
+  parseMemo,
+  parseTreatmentName,
+  type BookingRow,
+  type ExtCustomer,
+  type PhaseInfo,
+} from './client-v2-helpers'
 
 const BG = '#ffffff'
 const SURFACE = '#f9f8fc'
@@ -16,64 +27,6 @@ const GOLD = '#C9A96E'
 const TEXT = '#1A1A2E'
 const TEXT_SUB = '#888888'
 const BORDER = '#ede9f7'
-
-type PhaseInfo = { label: string; emoji: string; style: string }
-
-type BookingRow = {
-  id: string
-  booking_time?: string | null
-  service_name?: string | null
-  service_price?: number | null
-  status?: string | null
-  external_customer_id?: string | null
-  customer_name?: string | null
-}
-
-type ExtCustomer = {
-  id: string
-  name: string
-  memo?: string | null
-  auran_user_id?: string | null
-  last_purchase_at?: string | null
-  visit_count?: number | null
-  auran_joined?: boolean | null
-}
-
-function parseMemo(raw: string | null | undefined) {
-  try {
-    return JSON.parse(String(raw || '{}'))
-  } catch {
-    return {}
-  }
-}
-
-function getPhase(last: string | null | undefined): PhaseInfo | null {
-  if (!last) return null
-  const diff = Math.floor((Date.now() - new Date(last).getTime()) / 86400000)
-  const day = ((diff % 28) + 28) % 28
-  if (day < 5) return { label: '달빛기', emoji: '🌙', style: 'pm' }
-  if (day < 13) return { label: '황금기', emoji: '✨', style: 'pg' }
-  if (day < 20) return { label: '만개기', emoji: '🌸', style: 'pb' }
-  return { label: '물들기', emoji: '🍂', style: 'pf' }
-}
-
-function parseTreatmentName(raw: unknown): string {
-  if (!raw) return ''
-  if (typeof raw === 'string') {
-    try {
-      const j = JSON.parse(raw)
-      return String(j?.name || '')
-    } catch {
-      return raw
-    }
-  }
-  if (typeof raw === 'object' && raw !== null) return String((raw as any).name || '')
-  return ''
-}
-
-function initials(name: string) {
-  return String(name || '고').slice(0, 1)
-}
 
 export default function OwnerDashClientV2() {
   const router = useRouter()
@@ -158,7 +111,6 @@ export default function OwnerDashClientV2() {
         { data: monthBookings },
         { data: monthCharts },
         { data: goalRow },
-        { data: ownerProf },
       ] = await Promise.all([
         sb.from('bookings').select('*').eq('owner_id', me.id).eq('booking_date', todayKey).order('booking_time'),
         sb.from('treatment_charts').select('id,treatment_date,treatment_items,admin_memo,external_customer_id').eq('owner_id', me.id).gte('treatment_date', `${todayKey}T00:00:00`).lte('treatment_date', `${todayKey}T23:59:59`),
@@ -168,67 +120,47 @@ export default function OwnerDashClientV2() {
         sb.from('bookings').select('service_price,booking_date').eq('owner_id', me.id).gte('booking_date', `${monthKey}-01`).lte('booking_date', `${todayKey}`),
         sb.from('treatment_charts').select('treatment_items,admin_memo,treatment_date').eq('owner_id', me.id).gte('treatment_date', `${monthKey}-01T00:00:00`),
         sb.from('admin_settings').select('value').eq('key', 'owner_monthly_revenue_goal').maybeSingle(),
-        sb.from('profiles').select('preferred_brands,trade_brands').eq('auth_id', user.id).maybeSingle(),
       ])
 
       setTodayChartCount(((charts as any[]) || []).length)
       setExtCount(extTotal || 0)
       setUnreadChat(((channels as any[]) || []).reduce((s, c) => s + Number(c.unread_count || 0), 0))
 
-      const brands = (Array.isArray((ownerProf as any)?.trade_brands) && (ownerProf as any).trade_brands.length > 0)
-        ? (ownerProf as any).trade_brands
-        : (ownerProf as any)?.preferred_brands
-      setTradeBrands(Array.isArray(brands) ? brands.map(String) : [])
-
-      // 거래 브랜드 제품 조회
-      if (Array.isArray(brands) && brands.length > 0) {
-        const brandNames = brands.map(String)
+      const brandIds = await getOwnerLinkedBrandIds(sb, user.id)
+      if (brandIds.length > 0) {
         const { data: brandRows } = await sb
           .from('brands')
           .select('id, name')
-          .in('name', brandNames)
-        if (brandRows && brandRows.length > 0) {
-          const brandIds = brandRows.map((b: { id: string }) => b.id)
-          const { data: prodRows } = await sb
-            .from('products')
-            .select('id, name, thumb_img, brands(name)')
-            .in('brand_id', brandIds)
-            .eq('status', 'active')
-            .eq('is_active', true)
-            .order('created_at', { ascending: false })
-            .limit(10)
-          if (prodRows) {
-            setBrandProducts(prodRows.map((p: any) => ({
-              id: p.id,
-              name: p.name || '',
-              thumb_img: p.thumb_img || null,
-              brand_name: p.brands?.name || '',
-            })))
-          }
-        }
-      }
+          .in('id', brandIds)
+        setTradeBrands((brandRows || []).map((b: { name?: string }) => String(b.name || '')).filter(Boolean))
 
-      const myTradeBrands: string[] = Array.isArray((ownerProf as any)?.trade_brands) && (ownerProf as any).trade_brands.length > 0
-        ? (ownerProf as any).trade_brands
-        : (Array.isArray((ownerProf as any)?.preferred_brands) ? (ownerProf as any).preferred_brands : [])
-      if (myTradeBrands.length > 0) {
-        const { data: bRows } = await sb
-          .from('brands')
-          .select('id')
-          .in('name', myTradeBrands)
-        const brandIds = (bRows || []).map((b: { id: string }) => b.id)
-        if (brandIds.length > 0) {
-          const { data: bmData } = await sb
-            .from('brand_messages')
-            .select('id, title, body, message_type, created_at, brand_id, brands(name)')
-            .in('brand_id', brandIds)
-            .order('created_at', { ascending: false })
-            .limit(10)
-          setBrandMessages((bmData || []) as any[])
-        } else {
-          setBrandMessages([])
+        const { data: prodRows } = await sb
+          .from('products')
+          .select('id, name, thumb_img, brands(name)')
+          .in('brand_id', brandIds)
+          .eq('status', 'active')
+          .eq('is_active', true)
+          .order('created_at', { ascending: false })
+          .limit(10)
+        if (prodRows) {
+          setBrandProducts(prodRows.map((p: any) => ({
+            id: p.id,
+            name: p.name || '',
+            thumb_img: p.thumb_img || null,
+            brand_name: p.brands?.name || '',
+          })))
         }
+
+        const { data: bmData } = await sb
+          .from('brand_messages')
+          .select('id, title, body, message_type, created_at, brand_id, brands(name)')
+          .in('brand_id', brandIds)
+          .order('created_at', { ascending: false })
+          .limit(10)
+        setBrandMessages((bmData || []) as any[])
       } else {
+        setTradeBrands([])
+        setBrandProducts([])
         setBrandMessages([])
       }
 
@@ -368,7 +300,7 @@ export default function OwnerDashClientV2() {
     { key: 'book', label: '예약', href: '/dashboard/owner/bookings' },
     { key: 'chart', label: '차트', href: '/dashboard/owner/charts-v2' },
     { key: 'cust', label: '고객', href: '/dashboard/owner/charts-v2' },
-    { key: 'more', label: '더보기', href: '/dashboard/owner/store' },
+    { key: 'more', label: '더보기', href: '/dashboard/owner/store-decoration' },
   ]
 
   const quickMenusAll = [
@@ -381,7 +313,6 @@ export default function OwnerDashClientV2() {
     { icon: '🎁', label: '브랜드 샘플', href: '/dashboard/owner/brand-samples' },
     { icon: '🎓', label: '브랜드 라이브', href: '/dashboard/owner/brand-live' },
     { icon: '↩️', label: '반품 신청', href: '/dashboard/owner/brand-returns' },
-    { icon: '📊', label: '매출 분석', sub: revisitRate ? `재방문 ${revisitRate}%` : '-', href: '/dashboard/owner/store' },
     { icon: '🤝', label: '파트너스', sub: `유입 ${partnerCount}명`, href: '/dashboard/partner' },
     { icon: '💬', label: '샵 상담톡', sub: '고객 1:1 상담', onClick: () => setShowChatList(true) },
   ]
@@ -500,264 +431,26 @@ export default function OwnerDashClientV2() {
           )}
         </div>
 
-        <div
-          style={{
-            background: '#ffffff',
-            border: '0.5px solid #ede9f7',
-            borderRadius: 12,
-            padding: 15,
-            marginBottom: 12,
-            marginTop: 16,
-          }}
-        >
-          <div
-            style={{
-              fontSize: 13,
-              fontWeight: 500,
-              borderBottom: '0.5px solid #ede9f7',
-              paddingBottom: 8,
-              marginBottom: 12,
-            }}
-          >
-            예약 설정
-          </div>
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>관리사 수</div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => void updateSalonCapacity('staff_count', n)}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 20,
-                    border: staffCount === n ? '1.5px solid #7B5EA7' : '0.5px solid #ede9f7',
-                    background: staffCount === n ? '#EDE9F7' : 'transparent',
-                    color: staffCount === n ? '#7B5EA7' : '#888',
-                    fontSize: 12,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {n}명
-                </button>
-              ))}
-            </div>
-          </div>
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 11, color: '#888', marginBottom: 6 }}>관리룸 수</div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => void updateSalonCapacity('room_count', n)}
-                  style={{
-                    padding: '6px 14px',
-                    borderRadius: 20,
-                    border: roomCount === n ? '1.5px solid #7B5EA7' : '0.5px solid #ede9f7',
-                    background: roomCount === n ? '#EDE9F7' : 'transparent',
-                    color: roomCount === n ? '#7B5EA7' : '#888',
-                    fontSize: 12,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {n}개
-                </button>
-              ))}
-            </div>
-          </div>
-          <div style={{ padding: '8px 10px', background: '#f9f8fc', borderRadius: 8, fontSize: 11, color: '#7B5EA7' }}>
-            동시 예약 가능: 최대 {Math.min(staffCount ?? 1, roomCount ?? 1)}건
-            <span style={{ color: '#888', marginLeft: 4 }}>(관리사·룸 중 적은 수 기준)</span>
-          </div>
-        </div>
-
-        <div style={sectionLabel}>지금 챙겨야 할 것들</div>
-        <div style={card}>
-          {hormoneAlerts.length === 0 && churnAlerts.length === 0 && tradeBrands.length === 0 ? (
-            brandMessages.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '20px 0', color: 'rgba(255,255,255,0.3)', fontSize: 13 }}>
-                아직 알림이 없어요.
-              </div>
-            ) : (
-              brandMessages.map((m: any) => (
-                <div key={m.id} style={{ padding: '10px 0', borderBottom: '0.5px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                    <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 10, background: 'rgba(123,94,167,0.2)', color: '#c4a7e7' }}>
-                      {m.brands?.name || '브랜드'}
-                    </span>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
-                      {new Date(m.created_at).toLocaleDateString('ko-KR')}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', marginBottom: 2 }}>{m.title}</div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', lineHeight: 1.5 }}>{m.body}</div>
-                </div>
-              ))
-            )
-          ) : (
-            <>
-              {hormoneAlerts.map((a, i) => (
-                <div key={`h${i}`} style={{ padding: '10px 0', borderBottom: `1px solid ${BORDER}`, fontSize: 13 }}>
-                  ✨ {a.name}님 {a.days}일 후 황금기 진입 예정
-                  <button type="button" style={{ float: 'right', border: `1px solid ${BORDER}`, background: BG, borderRadius: 20, padding: '4px 10px', fontSize: 11, color: PURPLE, cursor: 'pointer' }}>
-                    알림톡 발송
-                  </button>
-                </div>
-              ))}
-              {churnAlerts.map((c) => (
-                <div key={c.id} style={{ padding: '10px 0', borderBottom: `1px solid ${BORDER}`, fontSize: 13 }}>
-                  ⚠️ {c.name}님 60일 이상 미방문
-                  <button type="button" style={{ float: 'right', border: `1px solid ${BORDER}`, background: BG, borderRadius: 20, padding: '4px 10px', fontSize: 11, color: PURPLE, cursor: 'pointer' }}>
-                    메시지 발송
-                  </button>
-                </div>
-              ))}
-              {tradeBrands.length > 0 ? (
-                <div style={{ paddingTop: 10 }}>
-                  <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 8 }}>
-                    거래 브랜드 제품
-                  </div>
-                  {brandProducts.length > 0 ? (
-                    <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
-                      {brandProducts.map(prod => (
-                        <div
-                          key={prod.id}
-                          style={{
-                            flexShrink: 0,
-                            width: 100,
-                            borderRadius: 10,
-                            border: `1px solid ${BORDER}`,
-                            overflow: 'hidden',
-                            background: '#faf9fc',
-                          }}
-                        >
-                          <div style={{
-                            width: '100%',
-                            height: 80,
-                            background: '#ede9f7',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            overflow: 'hidden',
-                          }}>
-                            {prod.thumb_img ? (
-                              <img src={prod.thumb_img} alt={prod.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            ) : (
-                              <span style={{ fontSize: 24 }}>🧴</span>
-                            )}
-                          </div>
-                          <div style={{ padding: '6px 8px' }}>
-                            <div style={{ fontSize: 10, color: '#7B5EA7', marginBottom: 2 }}>{prod.brand_name}</div>
-                            <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.4, wordBreak: 'keep-all' }}>{prod.name}</div>
-                          </div>
-                        </div>
-                      ))}
-                      {ready && isTrackA && (
-                        <div
-                          style={{
-                            flexShrink: 0,
-                            width: 100,
-                            borderRadius: 10,
-                            border: `1px solid ${BORDER}`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            background: '#faf9fc',
-                            cursor: 'pointer',
-                            fontSize: 12,
-                            color: '#7B5EA7',
-                          }}
-                          onClick={() => router.push('/dashboard/owner/brand-orders')}
-                        >
-                          더보기 →
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div style={{ fontSize: 13, color: TEXT_SUB }}>
-                      거래 브랜드: {tradeBrands.join(', ')}
-                    </div>
-                  )}
-                </div>
-              ) : ready && isTrackA ? (
-                <div style={{ padding: '12px 0', fontSize: 13, color: TEXT_SUB, lineHeight: 1.6 }}>
-                  거래 브랜드사를 설정하면 이벤트 · 프로모션 알림을 받을 수 있어요
-                  <br />
-                  <button
-                    type="button"
-                    onClick={() => router.push('/dashboard/owner/brand-orders')}
-                    style={{
-                      marginTop: 8,
-                      fontSize: 12,
-                      color: '#7B5EA7',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: 0,
-                    }}
-                  >
-                    브랜드사 설정하기 →
-                  </button>
-                </div>
-              ) : null}
-            </>
-          )}
-        </div>
-
-        <div style={sectionLabel}>이번 달 목표</div>
-        <div style={card}>
-          <div style={{ height: 8, background: SURFACE, borderRadius: 4, overflow: 'hidden', marginBottom: 10 }}>
-            <div style={{ width: `${goalPct}%`, height: '100%', background: PURPLE, borderRadius: 4 }} />
-          </div>
-          <div style={{ fontSize: 13, color: TEXT_SUB }}>
-            {goalDone ? '목표 달성! 🎉' : `₩${monthRevenue.toLocaleString()} 목표 · 잔여 ₩${Math.max(0, monthGoal - monthRevenue).toLocaleString()} 남았어요`}
-          </div>
-        </div>
-
-        <div style={sectionLabel}>이번 달 인기 시술 트렌드</div>
-        <div style={card}>
-          {trendItems.length > 0 ? (
-            trendItems.map((t) => (
-              <div key={t.name} style={{ marginBottom: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                  <span>{t.name}</span>
-                  <span style={{ color: TEXT_SUB }}>{t.count}건</span>
-                </div>
-                <div style={{ height: 6, background: SURFACE, borderRadius: 3 }}>
-                  <div style={{ width: `${Math.min(100, (t.count / (trendItems[0]?.count || 1)) * 100)}%`, height: '100%', background: PURPLE, borderRadius: 3 }} />
-                </div>
-              </div>
-            ))
-          ) : (
-            <div style={{ fontSize: 13, color: TEXT_SUB, lineHeight: 1.7 }}>
-              대구 수성구 이번 달 인기 시술
-              <br />
-              1위 MTS · 2위 수분케어 · 3위 스피큘
-              <br />
-              <span style={{ fontSize: 11 }}>(오렌 전체 데이터 기준)</span>
-            </div>
-          )}
-        </div>
-
-        <div style={sectionLabel}>빠른 메뉴</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-          {quickMenus.map((m) => (
-            <button
-              key={m.label}
-              type="button"
-              onClick={() => ('onClick' in m && m.onClick ? m.onClick() : router.push((m as { href: string }).href))}
-              style={{ ...card, textAlign: 'left', cursor: 'pointer', border: `1px solid ${BORDER}`, background: BG }}
-            >
-              <div style={{ width: 34, height: 34, borderRadius: '50%', background: PURPLE_LIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, marginBottom: 8 }}>
-                {m.icon}
-              </div>
-              <div style={{ fontSize: 14, fontWeight: 500 }}>{m.label}</div>
-              <div style={{ fontSize: 11, color: TEXT_SUB, marginTop: 4 }}>{m.sub}</div>
-            </button>
-          ))}
-        </div>
+        <OwnerV2LowerStack
+          card={card}
+          sectionLabel={sectionLabel}
+          staffCount={staffCount}
+          roomCount={roomCount}
+          onCapacity={(field, value) => void updateSalonCapacity(field, value)}
+          hormoneAlerts={hormoneAlerts}
+          churnAlerts={churnAlerts}
+          tradeBrands={tradeBrands}
+          brandMessages={brandMessages}
+          brandProducts={brandProducts}
+          ready={ready}
+          isTrackA={!!isTrackA}
+          monthRevenue={monthRevenue}
+          monthGoal={monthGoal}
+          goalPct={goalPct}
+          goalDone={goalDone}
+          trendItems={trendItems}
+          quickMenus={quickMenus}
+        />
       </div>
 
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: BG, borderTop: `0.5px solid ${BORDER}`, display: 'flex', zIndex: 50 }}>

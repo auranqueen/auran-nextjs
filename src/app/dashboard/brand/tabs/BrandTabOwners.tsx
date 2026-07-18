@@ -1,12 +1,6 @@
 'use client'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import {
-  parseCsvText,
-  parseOwnerPointCsvRows,
-  readCsvFile,
-  type OwnerPointCsvRow,
-} from '@/lib/csv/parseCsv'
 const CARD = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
@@ -28,6 +22,27 @@ interface OwnerRow {
   arete: boolean
   last_order: string | null
   monthly: number
+  point_balance: number
+}
+type CsvRowResult = {
+  line: number
+  store_name: string
+  amount?: number
+  status: 'ok' | 'skipped' | 'no_match' | 'conflict' | 'error'
+  reason?: string
+  owner_id?: string
+  matched_owner_name?: string
+  matched_store_name?: string
+  conflict_owners?: { profile_id: string; owner_store_name: string; owner_name: string }[]
+}
+type BulkImportResult = {
+  imported: number
+  skipped: number
+  failed: number
+  conflicts: number
+  dry_run: boolean
+  eligible_owners?: number
+  results?: CsvRowResult[]
 }
 interface BrandOwnerLinkRow {
   id: string
@@ -37,29 +52,6 @@ interface BrandOwnerLinkRow {
   name: string
   email: string
 }
-type PointImportRow = {
-  line: number
-  store_name: string
-  amount: number
-  memo: string | null
-  status: 'success' | 'failed' | 'conflict'
-  profile_id?: string
-  owner_name?: string
-  matched_store_name?: string
-  candidates?: Array<{ profile_id: string; full_name: string; store_name: string }>
-  error?: string
-}
-
-type PointImportSummary = {
-  total: number
-  success: number
-  failed: number
-  conflict: number
-  inserted?: number
-  skipped?: number
-  apply_failed?: number
-}
-
 interface Props {
   brandId: string | null
   brandName: string
@@ -81,15 +73,62 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
   const [linkRows, setLinkRows] = useState<BrandOwnerLinkRow[]>([])
   const [linkLoading, setLinkLoading] = useState(false)
   const [linkSaving, setLinkSaving] = useState<string | null>(null)
-  const [pointsBulkOpen, setPointsBulkOpen] = useState(false)
-  const [pointsCsvRows, setPointsCsvRows] = useState<OwnerPointCsvRow[]>([])
-  const [pointsPreview, setPointsPreview] = useState<PointImportRow[]>([])
-  const [pointsSummary, setPointsSummary] = useState<PointImportSummary | null>(null)
-  const [pointsBusy, setPointsBusy] = useState(false)
-  const [pointsApplying, setPointsApplying] = useState(false)
-  const [pointsMessage, setPointsMessage] = useState('')
-  const [pointsFileKey, setPointsFileKey] = useState(0)
-  const pointsBatchIdRef = useRef<string>(crypto.randomUUID())
+  const [companyId, setCompanyId] = useState<string | null>(null)
+  const [pointBalances, setPointBalances] = useState<Record<string, number>>({})
+  const [csvBusy, setCsvBusy] = useState(false)
+  const [csvDryRun, setCsvDryRun] = useState(true)
+  const [csvResult, setCsvResult] = useState<BulkImportResult | null>(null)
+  const [hasManualInit, setHasManualInit] = useState(false)
+  const [initLedgerLoading, setInitLedgerLoading] = useState(true)
+  const [showCsvReupload, setShowCsvReupload] = useState(false)
+
+  const checkManualInitExists = async (cid: string) => {
+    setInitLedgerLoading(true)
+    const { count, error } = await supabase
+      .from('brand_owner_point_ledger')
+      .select('id', { count: 'exact', head: true })
+      .eq('company_id', cid)
+      .eq('type', 'manual_init')
+    setHasManualInit(!error && (count ?? 0) > 0)
+    setInitLedgerLoading(false)
+  }
+
+  const loadPointBalances = async () => {
+    if (!brandId) {
+      setCompanyId(null)
+      setPointBalances({})
+      setHasManualInit(false)
+      setInitLedgerLoading(false)
+      return
+    }
+    const { data: brandRow } = await supabase
+      .from('brands')
+      .select('company_id')
+      .eq('id', brandId)
+      .maybeSingle()
+    const cid = (brandRow as { company_id?: string | null } | null)?.company_id
+    if (!cid) {
+      setCompanyId(null)
+      setPointBalances({})
+      setHasManualInit(false)
+      setInitLedgerLoading(false)
+      return
+    }
+    const cidStr = String(cid)
+    setCompanyId(cidStr)
+    const [{ data: rows }] = await Promise.all([
+      supabase
+        .from('brand_owner_point_balance')
+        .select('owner_id, balance')
+        .eq('company_id', cidStr),
+      checkManualInitExists(cidStr),
+    ])
+    const map: Record<string, number> = {}
+    for (const r of (rows || []) as { owner_id: string; balance: number }[]) {
+      map[r.owner_id] = Math.trunc(Number(r.balance) || 0)
+    }
+    setPointBalances(map)
+  }
 
   const loadBrandOwnerLinks = async () => {
     if (!brandId) {
@@ -135,160 +174,159 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
 
   useEffect(() => {
     void loadBrandOwnerLinks()
+    void loadPointBalances()
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brandId])
+
+  useEffect(() => {
+    setShowCsvReupload(false)
+    setCsvResult(null)
   }, [brandId])
 
   useEffect(() => {
     const fetchOwners = async () => {
       setLoading(true)
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, full_name, owner_store_name, region, trade_brands, preferred_brands, arete_member, phone, last_order_at, monthly_order')
-        .not('trade_brands', 'is', null)
-      if (data) {
-        const matched = data.filter((p: any) => {
-          const brands = Array.isArray(p.trade_brands) && p.trade_brands.length > 0
-            ? p.trade_brands
-            : (Array.isArray(p.preferred_brands) ? p.preferred_brands : [])
-          return brands.some((b: string) => b === brandName)
-        })
-        let gradeMap: Record<string, string> = {}
-        if (brandId && matched.length > 0) {
-          const { data: gradeRows } = await supabase
-            .from('brand_owner_grades')
-            .select('owner_id, grade')
-            .eq('brand_id', brandId)
-            .in('owner_id', matched.map((p: any) => p.id))
-          if (gradeRows) {
-            for (const row of gradeRows) gradeMap[row.owner_id] = row.grade
-          }
-        }
-        setOwners(matched.map((p: any) => ({
-          id: p.id,
-          name: p.full_name || p.name || '이름 없음',
-          salon_name: p.owner_store_name || '-',
-          region: p.region || '-',
-          grade: gradeMap[p.id] || '취급점',
-          arete: p.arete_member || false,
-          last_order: p.last_order_at || null,
-          monthly: p.monthly_order || 0,
-        })))
+      if (!brandId) {
+        setOwners([])
+        setLoading(false)
+        return
       }
+
+      // brand_owner_links.owner_id = users.id → auth_id → profiles (bulk-import 패턴)
+      const { data: activeLinks } = await supabase
+        .from('brand_owner_links')
+        .select('owner_id')
+        .eq('brand_id', brandId)
+        .eq('status', 'active')
+
+      const linkedUserIds = Array.from(
+        new Set((activeLinks || []).map((r: { owner_id: string }) => String(r.owner_id)).filter(Boolean)),
+      )
+      if (linkedUserIds.length === 0) {
+        setOwners([])
+        setLoading(false)
+        return
+      }
+
+      const { data: userRows } = await supabase
+        .from('users')
+        .select('id, auth_id')
+        .in('id', linkedUserIds)
+        .eq('role', 'owner')
+
+      const authIds = Array.from(
+        new Set((userRows || []).map((u: { auth_id?: string | null }) => String(u.auth_id || '')).filter(Boolean)),
+      )
+      if (authIds.length === 0) {
+        setOwners([])
+        setLoading(false)
+        return
+      }
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, full_name, owner_store_name, region, arete_member, phone, last_order_at, monthly_order')
+        .in('auth_id', authIds)
+
+      const matched = profiles || []
+      let gradeMap: Record<string, string> = {}
+      if (matched.length > 0) {
+        const { data: gradeRows } = await supabase
+          .from('brand_owner_grades')
+          .select('owner_id, grade')
+          .eq('brand_id', brandId)
+          .in('owner_id', matched.map((p: { id: string }) => p.id))
+        if (gradeRows) {
+          for (const row of gradeRows) gradeMap[row.owner_id] = row.grade
+        }
+      }
+      setOwners(matched.map((p: any) => ({
+        id: p.id,
+        name: p.full_name || p.name || '이름 없음',
+        salon_name: p.owner_store_name || '-',
+        region: p.region || '-',
+        grade: gradeMap[p.id] || '취급점',
+        arete: p.arete_member || false,
+        last_order: p.last_order_at || null,
+        monthly: p.monthly_order || 0,
+        point_balance: pointBalances[p.id] ?? 0,
+      })))
       setLoading(false)
     }
     void fetchOwners()
-  }, [brandId, brandName])
+  }, [brandId, pointBalances])
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
-
-  const resetPointsImport = () => {
-    setPointsCsvRows([])
-    setPointsPreview([])
-    setPointsSummary(null)
-    setPointsMessage('')
-    pointsBatchIdRef.current = crypto.randomUUID()
+  const csvRowStyle = (status: CsvRowResult['status']) => {
+    if (status === 'ok') {
+      return { color: '#81c784', bg: 'rgba(129,199,132,0.12)', label: '매칭성공' }
+    }
+    if (status === 'conflict') {
+      return { color: '#ffb74d', bg: 'rgba(255,183,77,0.12)', label: '충돌' }
+    }
+    if (status === 'skipped') {
+      return { color: SUB, bg: 'rgba(255,255,255,0.05)', label: '스킵' }
+    }
+    if (status === 'no_match') {
+      return { color: '#f48fb1', bg: 'rgba(244,143,177,0.12)', label: '매칭실패' }
+    }
+    return { color: '#f48fb1', bg: 'rgba(244,143,177,0.12)', label: '오류' }
   }
-
-  const requestPointsPreview = async (rows: OwnerPointCsvRow[]) => {
+  const downloadCsvTemplate = () => {
+    const sample = '매장명,금액,메모\n스킨파우더룸,10000,초기 적립\n'
+    const blob = new Blob([sample], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'owner_points_init_template.csv'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+  const runCsvBulkImport = async (file: File, dryRun: boolean) => {
     if (!brandId) {
-      setPointsMessage('브랜드 정보를 불러오는 중이에요')
+      showToast('브랜드 정보를 불러오는 중이에요')
       return
     }
-    setPointsBusy(true)
-    setPointsMessage('')
+    setCsvBusy(true)
+    setCsvResult(null)
     try {
+      const csv = await file.text()
       const res = await fetch('/api/brand/owner-points/bulk-import', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          brand_id: brandId,
-          rows,
-          dry_run: true,
-          import_batch_id: pointsBatchIdRef.current,
-        }),
+        body: JSON.stringify({ brand_id: brandId, csv, dry_run: dryRun }),
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok || !json.ok) {
-        setPointsPreview([])
-        setPointsSummary(null)
-        setPointsMessage(json.error || '미리보기에 실패했어요')
+        showToast(json.error === 'company_id_not_configured'
+          ? 'company_id가 없어요. 093 백필 먼저 실행해주세요'
+          : (json.error || '업로드 실패'))
         return
       }
-      setPointsPreview((json.rows || []) as PointImportRow[])
-      setPointsSummary(json.summary as PointImportSummary)
-      setPointsMessage(
-        `미리보기 ${json.summary?.total || 0}건 · 성공 ${json.summary?.success || 0} · 실패 ${json.summary?.failed || 0} · 충돌 ${json.summary?.conflict || 0}`,
-      )
-    } catch {
-      setPointsMessage('미리보기 요청에 실패했어요')
-    } finally {
-      setPointsBusy(false)
-    }
-  }
-
-  const handlePointsCsvFile = async (file: File | undefined) => {
-    setPointsFileKey((k) => k + 1)
-    if (!file) return
-    try {
-      const text = await readCsvFile(file)
-      const { headers, rows } = parseCsvText(text)
-      const parsed = parseOwnerPointCsvRows(headers, rows)
-      if (!parsed.ok) {
-        resetPointsImport()
-        setPointsMessage(parsed.error)
-        return
-      }
-      setPointsCsvRows(parsed.rows)
-      await requestPointsPreview(parsed.rows)
-    } catch {
-      resetPointsImport()
-      setPointsMessage('CSV 파일을 읽지 못했어요')
-    }
-  }
-
-  const applyPointsImport = async () => {
-    if (!brandId || !pointsCsvRows.length || pointsApplying) return
-    const successCount = pointsPreview.filter((r) => r.status === 'success').length
-    if (successCount === 0) {
-      setPointsMessage('적용할 성공 건이 없어요')
-      return
-    }
-    setPointsApplying(true)
-    setPointsMessage('')
-    try {
-      const res = await fetch('/api/brand/owner-points/bulk-import', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          brand_id: brandId,
-          rows: pointsCsvRows,
-          dry_run: false,
-          import_batch_id: pointsBatchIdRef.current,
-        }),
+      setCsvResult({
+        imported: json.imported ?? 0,
+        skipped: json.skipped ?? 0,
+        failed: json.failed ?? 0,
+        conflicts: json.conflicts ?? 0,
+        dry_run: Boolean(json.dry_run),
+        eligible_owners: json.eligible_owners,
+        results: json.results,
       })
-      const json = await res.json().catch(() => ({}))
-      if (!res.ok || !json.ok) {
-        setPointsMessage(json.error || '적용에 실패했어요')
-        return
+      if (!dryRun) {
+        await loadPointBalances()
+        if (companyId) await checkManualInitExists(companyId)
+        if ((json.imported ?? 0) > 0) {
+          setShowCsvReupload(false)
+        }
+        showToast(`적립 반영 완료 (${json.imported}건)`)
+      } else {
+        showToast(`미리보기 완료 — 반영 가능 ${json.imported}건`)
       }
-      setPointsPreview((json.rows || []) as PointImportRow[])
-      setPointsSummary(json.summary as PointImportSummary)
-      setPointsMessage(
-        `적용 완료 · 반영 ${json.summary?.inserted || 0}건 · 건너뜀 ${json.summary?.skipped || 0}건 · 실패 ${json.summary?.apply_failed || 0}건`,
-      )
-      showToast('적립금 CSV 적용 완료')
     } catch {
-      setPointsMessage('적용 요청에 실패했어요')
+      showToast('업로드 중 오류가 났어요')
     } finally {
-      setPointsApplying(false)
+      setCsvBusy(false)
     }
   }
-
-  const pointRowStyle = (status: PointImportRow['status']) => {
-    if (status === 'success') return { bg: 'rgba(76,175,80,0.08)', color: '#81c784', border: 'rgba(76,175,80,0.25)' }
-    if (status === 'conflict') return { bg: 'rgba(255,193,7,0.08)', color: '#ffd54f', border: 'rgba(255,193,7,0.25)' }
-    return { bg: 'rgba(244,67,54,0.08)', color: '#ef9a9a', border: 'rgba(244,67,54,0.25)' }
-  }
-
   const linkStatusBadge = (status: string) => {
     const s = status.toLowerCase()
     if (s === 'active') {
@@ -396,12 +434,136 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
     if (data) setOwners(prev => [...prev, {
       id: data.id, name: addForm.name, salon_name: addForm.salon_name,
       region: addForm.region, grade: '', arete: false,
-      last_order: null, monthly: 0,
+      last_order: null, monthly: 0, point_balance: 0,
     }])
     setAddForm({ name: '', salon_name: '', phone: '', region: '' })
     setShowAddForm(false)
     setAddSaving(false)
   }
+
+  const renderCsvUploadPanel = (placement: 'primary' | 'footer') => {
+    const isFooter = placement === 'footer'
+    const wrapStyle = isFooter
+      ? { marginTop: 8, padding: 12, borderRadius: 8, border: `0.5px solid ${BORDER}`, background: 'rgba(255,255,255,0.02)' }
+      : CARD
+
+    return (
+      <div style={wrapStyle}>
+        {!isFooter ? (
+          <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>초기 적립금(T) CSV 대량 업로드</div>
+        ) : null}
+        {!companyId ? (
+          <div style={{ fontSize: 11, color: SUB, lineHeight: 1.6, marginBottom: 10 }}>
+            회사(company_id)가 아직 연결되지 않았어요. 093 마이그레이션 + 백필 스크립트 실행 후 이용할 수 있어요.
+          </div>
+        ) : !isFooter ? (
+          <div style={{ fontSize: 10, color: SUB, marginBottom: 8, fontFamily: "'JetBrains Mono', monospace" }}>
+            company_id: {companyId.slice(0, 8)}…
+          </div>
+        ) : null}
+        <div style={{ fontSize: 11, color: TEXT, lineHeight: 1.6, marginBottom: 10 }}>
+          CSV 헤더: <span style={{ fontFamily: "'JetBrains Mono', monospace", color: GOLD }}>매장명, 금액, 메모(선택)</span>
+          <br />
+          트랙A + active 제휴 연결 원장의 매장명(owner_store_name)으로 자동 매칭돼요.
+          <br />
+          먼저 검증만(dry-run)으로 미리보기 후, 성공 건만 실제 반영하세요.
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 }}>
+          <button
+            type="button"
+            onClick={downloadCsvTemplate}
+            style={{ fontSize: 11, padding: '6px 12px', borderRadius: 8, border: `0.5px solid ${GOLD}`, background: 'rgba(201,169,110,0.1)', color: GOLD, cursor: 'pointer' }}
+          >
+            샘플 CSV
+          </button>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: TEXT, cursor: 'pointer' }}>
+            <input type="checkbox" checked={csvDryRun} onChange={(e) => setCsvDryRun(e.target.checked)} />
+            검증만 (dry-run)
+          </label>
+        </div>
+        <label
+          style={{
+            display: 'block',
+            width: '100%',
+            padding: '10px',
+            borderRadius: 8,
+            border: `0.5px dashed ${PURPLE}`,
+            background: 'rgba(123,94,167,0.08)',
+            color: '#c4a8f0',
+            fontSize: 12,
+            textAlign: 'center',
+            cursor: !brandId || csvBusy || !companyId ? 'not-allowed' : 'pointer',
+            opacity: !brandId || !companyId ? 0.5 : 1,
+          }}
+        >
+          {csvBusy ? '처리 중...' : 'CSV 파일 선택'}
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            disabled={!brandId || csvBusy || !companyId}
+            style={{ display: 'none' }}
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) void runCsvBulkImport(f, csvDryRun)
+              e.target.value = ''
+            }}
+          />
+        </label>
+        {csvResult ? (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ fontSize: 11, color: TEXT, marginBottom: 8, lineHeight: 1.7 }}>
+              {csvResult.dry_run ? '미리보기' : '반영'} —
+              성공 {csvResult.imported} · 스킵 {csvResult.skipped} · 실패 {csvResult.failed}
+              {csvResult.conflicts > 0 ? ` · 충돌 ${csvResult.conflicts}` : ''}
+              {csvResult.eligible_owners != null ? (
+                <span style={{ color: SUB }}> (매칭 대상 원장 {csvResult.eligible_owners}명)</span>
+              ) : null}
+            </div>
+            <div style={{ overflowX: 'auto', borderRadius: 8, border: `0.5px solid ${BORDER}` }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
+                <thead>
+                  <tr style={{ background: 'rgba(255,255,255,0.04)', color: SUB }}>
+                    <th style={{ padding: '6px 8px', textAlign: 'left' }}>행</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'left' }}>CSV 매장명</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'right' }}>금액</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'left' }}>상태</th>
+                    <th style={{ padding: '6px 8px', textAlign: 'left' }}>매칭 원장</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(csvResult.results || []).map((r) => {
+                    const badge = csvRowStyle(r.status)
+                    const matchedLabel =
+                      r.status === 'ok' || r.status === 'skipped'
+                        ? `${r.matched_owner_name || '—'} (${r.matched_store_name || r.store_name})`
+                        : r.status === 'conflict'
+                          ? (r.conflict_owners || [])
+                              .map((c) => `${c.owner_name}(${c.owner_store_name})`)
+                              .join(' / ')
+                          : r.reason || '—'
+                    return (
+                      <tr key={r.line} style={{ background: badge.bg, borderTop: `0.5px solid ${BORDER}` }}>
+                        <td style={{ padding: '6px 8px', color: TEXT }}>{r.line}</td>
+                        <td style={{ padding: '6px 8px', color: TEXT }}>{r.store_name || '—'}</td>
+                        <td style={{ padding: '6px 8px', color: TEXT, textAlign: 'right' }}>
+                          {r.amount != null ? r.amount.toLocaleString() : '—'}
+                        </td>
+                        <td style={{ padding: '6px 8px', color: badge.color }}>{badge.label}</td>
+                        <td style={{ padding: '6px 8px', color: badge.color, lineHeight: 1.5 }}>{matchedLabel}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : null}
+      </div>
+    )
+  }
+
+  const showCsvAtTop = !initLedgerLoading && !hasManualInit
+
   return (
     <div>
       {toast && (
@@ -409,121 +571,6 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
           {toast}
         </div>
       )}
-      <div style={{ ...CARD, marginBottom: 10 }}>
-        <button
-          type="button"
-          disabled={!brandId}
-          onClick={() => {
-            setPointsBulkOpen((v) => {
-              const next = !v
-              if (!next) resetPointsImport()
-              return next
-            })
-          }}
-          style={{
-            width: '100%',
-            padding: '10px',
-            borderRadius: 8,
-            border: `0.5px solid ${PURPLE}`,
-            background: pointsBulkOpen ? 'rgba(123,94,167,0.2)' : 'rgba(123,94,167,0.1)',
-            color: '#c4a8f0',
-            fontSize: 12,
-            cursor: brandId ? 'pointer' : 'not-allowed',
-            opacity: brandId ? 1 : 0.5,
-          }}
-        >
-          📥 적립금 CSV 업로드
-        </button>
-
-        {pointsBulkOpen && (
-          <div style={{ marginTop: 12, paddingTop: 12, borderTop: `0.5px solid ${BORDER}` }}>
-            <div style={{ fontSize: 11, color: SUB, marginBottom: 8, lineHeight: 1.5 }}>
-              CSV 헤더: 매장명, 금액, 메모(선택) · 회사(company) 단위 트랙A 연결 원장만 매칭
-            </div>
-
-            <input
-              key={pointsFileKey}
-              type="file"
-              accept=".csv,text/csv"
-              disabled={pointsBusy || pointsApplying}
-              onChange={(e) => void handlePointsCsvFile(e.target.files?.[0])}
-              style={{ fontSize: 11, color: TEXT, width: '100%' }}
-            />
-
-            {pointsMessage ? (
-              <div style={{ marginTop: 8, fontSize: 11, color: SUB }}>{pointsMessage}</div>
-            ) : null}
-
-            {pointsPreview.length > 0 && (
-              <div style={{ marginTop: 10, maxHeight: 260, overflow: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
-                  <thead>
-                    <tr style={{ color: SUB, textAlign: 'left' }}>
-                      <th style={{ padding: '4px 6px' }}>행</th>
-                      <th style={{ padding: '4px 6px' }}>매장명</th>
-                      <th style={{ padding: '4px 6px' }}>금액</th>
-                      <th style={{ padding: '4px 6px' }}>상태</th>
-                      <th style={{ padding: '4px 6px' }}>비고</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pointsPreview.map((row) => {
-                      const tone = pointRowStyle(row.status)
-                      const statusLabel =
-                        row.status === 'success' ? '성공'
-                          : row.status === 'conflict' ? '충돌'
-                            : '실패'
-                      const note =
-                        row.status === 'success'
-                          ? `${row.owner_name || ''}${row.matched_store_name ? ` (${row.matched_store_name})` : ''}`
-                          : row.status === 'conflict'
-                            ? (row.candidates || []).map((c) => c.full_name).join(', ')
-                            : (row.error || '')
-                      return (
-                        <tr
-                          key={`${row.line}-${row.store_name}`}
-                          style={{ background: tone.bg, borderBottom: `0.5px solid ${tone.border}` }}
-                        >
-                          <td style={{ padding: '6px', color: tone.color }}>{row.line}</td>
-                          <td style={{ padding: '6px', color: TEXT }}>{row.store_name}</td>
-                          <td style={{ padding: '6px', color: TEXT }}>{row.amount.toLocaleString()}T</td>
-                          <td style={{ padding: '6px', color: tone.color, fontWeight: 600 }}>{statusLabel}</td>
-                          <td style={{ padding: '6px', color: SUB }}>{note}</td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            <div style={{ marginTop: 10, display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              <button
-                type="button"
-                disabled={pointsApplying || pointsBusy || !pointsPreview.some((r) => r.status === 'success')}
-                onClick={() => void applyPointsImport()}
-                style={{
-                  fontSize: 11,
-                  padding: '6px 14px',
-                  borderRadius: 8,
-                  border: `0.5px solid ${PURPLE}`,
-                  background: 'rgba(123,94,167,0.2)',
-                  color: '#c4a8f0',
-                  cursor: pointsApplying ? 'wait' : 'pointer',
-                  opacity: pointsApplying ? 0.6 : 1,
-                }}
-              >
-                {pointsApplying ? '적용 중...' : `적용 (${pointsSummary?.success || 0}건)`}
-              </button>
-              {pointsSummary ? (
-                <span style={{ fontSize: 11, color: SUB }}>
-                  총 {pointsSummary.total} · 성공 {pointsSummary.success} · 실패 {pointsSummary.failed} · 충돌 {pointsSummary.conflict}
-                </span>
-              ) : null}
-            </div>
-          </div>
-        )}
-      </div>
       <div style={{ ...CARD, marginBottom: 10 }}>
         <div style={{ display: 'flex', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
           {grades.map(g => (
@@ -544,6 +591,7 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
           style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: TEXT, outline: 'none' }}
         />
       </div>
+      {showCsvAtTop ? renderCsvUploadPanel('primary') : null}
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>제휴 원장 초대</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 12, flexWrap: 'wrap' }}>
@@ -662,6 +710,11 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
                   )}
                 </div>
                 <div style={{ fontSize: 11, color: SUB }}>{o.salon_name} · {o.region}</div>
+                {companyId ? (
+                  <div style={{ fontSize: 10, color: GOLD, marginTop: 2 }}>
+                    T {o.point_balance.toLocaleString()}
+                  </div>
+                ) : null}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' as const, gap: 5, flexShrink: 0, alignItems: 'flex-end' }}>
                 <div style={{ display: 'flex', gap: 4 }}>
@@ -718,6 +771,48 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
           </div>
         </div>
       )}
+      {!initLedgerLoading && hasManualInit && companyId ? (
+        <div style={{ marginTop: 14, paddingTop: 4, textAlign: 'right' }}>
+          {!showCsvReupload ? (
+            <button
+              type="button"
+              onClick={() => setShowCsvReupload(true)}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                fontSize: 10,
+                color: SUB,
+                textDecoration: 'underline',
+                cursor: 'pointer',
+                opacity: 0.75,
+              }}
+            >
+              초기 적립금 CSV 재업로드
+            </button>
+          ) : (
+            <div style={{ textAlign: 'left' }}>
+              {renderCsvUploadPanel('footer')}
+              <div style={{ textAlign: 'right', marginTop: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => { setShowCsvReupload(false); setCsvResult(null) }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    padding: 0,
+                    fontSize: 10,
+                    color: SUB,
+                    cursor: 'pointer',
+                  }}
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : null}
     </div>
   )
 }

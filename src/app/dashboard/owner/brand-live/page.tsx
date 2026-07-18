@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
+import { getOwnerLinkedBrandIds } from '@/lib/brand/getOwnerLinkedBrandIds'
 const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
 const BORDER = '#ede9f7'
@@ -37,17 +38,11 @@ export default function BrandLivePage() {
     const fetch = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.replace('/login?role=owner'); return }
-      const { data: profile } = await supabase
-        .from('profiles').select('trade_brands, preferred_brands').eq('auth_id', user.id).maybeSingle()
-      const brands: string[] = profile?.trade_brands?.length
-        ? profile.trade_brands
-        : (profile?.preferred_brands || [])
-      setTradeBrands(brands)
-      if (brands.length === 0) { setLoading(false); return }
-      const { data: brandRows } = await supabase
-        .from('brands').select('id').in('name', brands)
-      const brandIds = (brandRows || []).map((b: { id: string }) => b.id)
+      const brandIds = await getOwnerLinkedBrandIds(supabase, user.id, { includePending: true })
       if (brandIds.length === 0) { setLoading(false); return }
+      const { data: brandRows } = await supabase
+        .from('brands').select('id, name').in('id', brandIds)
+      setTradeBrands((brandRows || []).map((b: { name?: string }) => String(b.name || '')).filter(Boolean))
       const { data } = await supabase
         .from('brand_lives')
         .select('id, title, description, platform, live_url, scheduled_at, status, recording_url, target_grades, brands(name)')

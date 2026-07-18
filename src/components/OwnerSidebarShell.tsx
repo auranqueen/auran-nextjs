@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import { useIsTrackA } from '@/hooks/useIsTrackA'
+import { useOwnerStorePeriod } from '@/hooks/useOwnerStorePeriod'
 
 const PURPLE = '#7B5EA7'
 const SIDEBAR_BG = '#120a18'
@@ -15,8 +16,8 @@ const MENU_ITEMS = [
   { label: '예약 관리', href: '/dashboard/owner/bookings' },
   { label: '고객 관리', href: '/dashboard/owner/customers' },
   { label: '시술차트', href: '/dashboard/owner/charts-v2' },
-  { label: '스토어', href: '/dashboard/owner/store' },
-  { label: '매출 리포트', href: '/dashboard/owner/revenue' },
+  // TODO: 전용 매출리포트 페이지 제작 후 경로 교체
+  { label: '매출 리포트', href: '/dashboard/owner' },
   { label: '발주', href: '/dashboard/owner/brand-orders' },
   { label: '소식', href: '/dashboard/owner/brand-community' },
   { label: '샘플', href: '/dashboard/owner/brand-samples' },
@@ -25,11 +26,38 @@ const MENU_ITEMS = [
   { label: '구독 관리', href: '/dashboard/owner/subscription' },
 ]
 
+function periodBadge(phase: 'trial' | 'active' | 'expired', daysLeft: number) {
+  if (phase === 'trial') {
+    return {
+      text: `무료체험 D-${daysLeft}`,
+      color: '#c4a7e7',
+      bg: 'rgba(123,94,167,0.2)',
+      border: 'rgba(123,94,167,0.45)',
+    }
+  }
+  if (phase === 'active') {
+    return {
+      text: `이용기간 D-${daysLeft}`,
+      color: '#8fd4a8',
+      bg: 'rgba(76,173,126,0.18)',
+      border: 'rgba(76,173,126,0.4)',
+    }
+  }
+  return {
+    text: '구독 필요',
+    color: '#f0a0a0',
+    bg: 'rgba(190,70,70,0.18)',
+    border: 'rgba(190,70,70,0.4)',
+  }
+}
+
 export default function OwnerSidebarShell({ children }: { children: ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const [isPC, setIsPC] = useState(false)
   const { isTrackA, ready } = useIsTrackA()
+  // 레이어1(스토어유지비) 기준 D-day — store_trial_started_at ?? created_at 반영
+  const { phase, daysLeft, ready: periodReady } = useOwnerStorePeriod({ layer: 'store' })
 
   const menuItems = useMemo(
     () =>
@@ -83,6 +111,8 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
         </div>
         {menuItems.map((item) => {
           const active = pathname === item.href || (item.href !== '/' && pathname?.startsWith(item.href + '/'))
+          const isSubMenu = item.href === '/dashboard/owner/subscription'
+          const badge = isSubMenu && periodReady ? periodBadge(phase, daysLeft) : null
           return (
             <button
               key={item.href}
@@ -103,7 +133,26 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
                 fontFamily: "'Noto Sans KR', sans-serif",
               }}
             >
-              {item.label}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+                <span>{item.label}</span>
+                {badge ? (
+                  <span
+                    style={{
+                      flexShrink: 0,
+                      fontSize: 9,
+                      fontWeight: 700,
+                      padding: '2px 6px',
+                      borderRadius: 999,
+                      color: badge.color,
+                      background: badge.bg,
+                      border: `1px solid ${badge.border}`,
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {badge.text}
+                  </span>
+                ) : null}
+              </div>
             </button>
           )
         })}

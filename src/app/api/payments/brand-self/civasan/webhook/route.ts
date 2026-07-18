@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
+import { computeTierUpgradeCharge } from '@/lib/brandTierGrade'
 
 const CIVASAN_BRAND_ID = '60413ded-91f4-4004-b677-ae684cb0677e'
 
@@ -16,6 +17,8 @@ type BrandPaymentIntentRow = {
   is_demo: boolean
 }
 
+type ServiceClient = NonNullable<ReturnType<typeof tryCreateServiceClient>>
+
 async function readRawBody(req: NextRequest) {
   const buf = await req.arrayBuffer()
   return Buffer.from(buf).toString('utf8')
@@ -27,6 +30,36 @@ function parseForm(body: string): Record<string, string> {
     out[k] = v
   })
   return out
+}
+
+async function resolveOwnedTierPrice(
+  svc: ServiceClient,
+  ownerProfileId: string,
+): Promise<number | null> {
+  const { data: existingGrade } = await svc
+    .from('brand_owner_grades')
+    .select('tier_package_id, payment_status')
+    .eq('brand_id', CIVASAN_BRAND_ID)
+    .eq('owner_id', ownerProfileId)
+    .maybeSingle()
+
+  if (!existingGrade || existingGrade.payment_status !== 'paid') return null
+
+  const ownedPackageId = existingGrade.tier_package_id
+    ? String(existingGrade.tier_package_id)
+    : null
+  if (!ownedPackageId) return null
+
+  const { data: ownedPkg } = await svc
+    .from('brand_tier_packages')
+    .select('price, brand_id')
+    .eq('id', ownedPackageId)
+    .maybeSingle()
+
+  if (!ownedPkg?.price || String(ownedPkg.brand_id) !== CIVASAN_BRAND_ID) return null
+
+  const price = Math.trunc(Number(ownedPkg.price))
+  return price > 0 ? price : null
 }
 
 export async function POST(req: NextRequest) {
@@ -149,8 +182,15 @@ export async function POST(req: NextRequest) {
     .eq('is_active', true)
     .maybeSingle()
 
-  const dbPrice = Math.trunc(Number(pkg?.price ?? 0))
-  if (!pkg?.id || String(pkg.brand_id) !== CIVASAN_BRAND_ID || dbPrice !== Number(intent.amount)) {
+  const targetPrice = Math.trunc(Number(pkg?.price ?? 0))
+  if (!pkg?.id || String(pkg.brand_id) !== CIVASAN_BRAND_ID || targetPrice <= 0) {
+    return new NextResponse('SUCCESS', { status: 200 })
+  }
+
+  // 차액결제: intent.amount === (목표정가 − 보유정가), 전액이면 목표정가
+  const currentPrice = await resolveOwnedTierPrice(svc, intent.owner_id)
+  const expectedCharge = computeTierUpgradeCharge(currentPrice, targetPrice)
+  if (expectedCharge == null || expectedCharge !== Number(intent.amount)) {
     return new NextResponse('SUCCESS', { status: 200 })
   }
 
@@ -165,13 +205,14 @@ export async function POST(req: NextRequest) {
 
   const tierName = String(pkg.tier_name)
 
+  // purchase_amount = 목표 등급 정가 / 실결제액은 brand_payment_intents.amount
   await svc.from('brand_owner_grades').upsert(
     {
       brand_id: CIVASAN_BRAND_ID,
       owner_id: intent.owner_id,
       grade: tierName,
       tier_package_id: intent.tier_package_id,
-      purchase_amount: Number(intent.amount),
+      purchase_amount: targetPrice,
       payment_status: 'paid',
       grade_purchased_at: nowIso,
       care_enabled: true,

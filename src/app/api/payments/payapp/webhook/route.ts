@@ -5,6 +5,14 @@ import { tryCreateServiceClient } from '@/lib/supabase/service'
 import { addToPurchaseAmount, autoUpgradeGrade } from '@/lib/gradeUtils'
 import { sendPpurioAlimtalk } from '@/lib/ppurio/sendAlimtalk'
 import { handleBrandTierPurchase } from '@/lib/webhookHandlers/brandTierPurchase'
+import { handleBrandProductOrderComplete, handleBrandProductOrderCancel } from '@/lib/webhookHandlers/brandProductOrder'
+
+const ANNUAL_STORE_PLAN_SLUGS = new Set([
+  'track_a_store_annual',
+  'track_b_store_annual',
+  'track_a_showcase_annual',
+  'track_b_showcase_annual',
+])
 
 function mustEnv(name: string): string {
   const v = process.env[name]
@@ -133,10 +141,15 @@ export async function POST(req: NextRequest) {
         const ownerId = String(payload.owner_id || intent.user_id)
         const planSlug = String(payload.plan || 'owner_plan')
         const planName = String(payload.plan_name || planSlug)
+        const isTrackPlan = planSlug.startsWith('track_a_') || planSlug.startsWith('track_b_')
         const ownerMode = String(payload.mode || 'auran')
         const monthlyPrice = Number(payload.monthly_price ?? intent.amount ?? 0)
         const expiresAt = new Date()
-        expiresAt.setMonth(expiresAt.getMonth() + 1)
+        if (ANNUAL_STORE_PLAN_SLUGS.has(planSlug)) {
+          expiresAt.setFullYear(expiresAt.getFullYear() + 1)
+        } else {
+          expiresAt.setMonth(expiresAt.getMonth() + 1)
+        }
 
         await client.from('owner_subscriptions').insert({
           owner_id: ownerId,
@@ -149,10 +162,13 @@ export async function POST(req: NextRequest) {
 
         const { data: urow } = await client.from('users').select('auth_id').eq('id', ownerId).maybeSingle()
         if (urow?.auth_id) {
-          await client
-            .from('profiles')
-            .update({ owner_subscription_plan: planSlug, owner_mode: ownerMode } as any)
-            .eq('auth_id', urow.auth_id)
+          const profileUpdate: { owner_subscription_plan: string; owner_mode?: string } = {
+            owner_subscription_plan: planSlug,
+          }
+          if (!isTrackPlan) {
+            profileUpdate.owner_mode = ownerMode
+          }
+          await client.from('profiles').update(profileUpdate as any).eq('auth_id', urow.auth_id)
         }
 
         await client.from('notifications').insert({
@@ -519,6 +535,10 @@ export async function POST(req: NextRequest) {
         } catch (e) {
           console.error('[booking purchase insert]', e)
         }
+      }
+      if (intent.kind === 'brand_product_order' && intent.target_id && intent.user_id) {
+        const client = tryCreateServiceClient() || supabase
+        await handleBrandProductOrderComplete(intent, client)
       }
       // 주문 결제 완료: 알림만 (주문 상태는 이미 주문확인)
       if (intent.kind === 'order' && intent.target_id && intent.user_id) {
@@ -1007,6 +1027,10 @@ export async function POST(req: NextRequest) {
             })
           }
         }
+      }
+      if (intent.kind === 'brand_product_order' && intent.target_id) {
+        const client = tryCreateServiceClient() || supabase
+        await handleBrandProductOrderCancel(intent, client)
       }
       await supabase
         .from('payment_intents')

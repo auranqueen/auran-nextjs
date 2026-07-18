@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
+import { getOwnerLinkedBrandIds } from '@/lib/brand/getOwnerLinkedBrandIds'
 const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
 const BORDER = '#ede9f7'
@@ -31,19 +32,12 @@ export default function BrandCommunityPage() {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.replace('/login?role=owner'); return }
-    const { data: prof } = await supabase
-      .from('profiles')
-      .select('trade_brands, preferred_brands')
-      .eq('auth_id', user.id)
-      .maybeSingle()
-    const tradeBrands: string[] = Array.isArray((prof as { trade_brands?: string[] })?.trade_brands) && (prof as { trade_brands?: string[] }).trade_brands!.length > 0
-      ? (prof as { trade_brands?: string[] }).trade_brands!
-      : (Array.isArray((prof as { preferred_brands?: string[] })?.preferred_brands) ? (prof as { preferred_brands?: string[] }).preferred_brands! : [])
-    if (tradeBrands.length === 0) { setLoading(false); return }
+    const brandIds = await getOwnerLinkedBrandIds(supabase, user.id, { includePending: true })
+    if (brandIds.length === 0) { setLoading(false); return }
     const { data: bRows } = await supabase
       .from('brands')
       .select('id, name')
-      .in('name', tradeBrands)
+      .in('id', brandIds)
     const ids = (bRows || []).map((b: { id: string }) => b.id)
     setBrandNames((bRows || []) as Array<{ id: string; name: string }>)
     if (ids.length === 0) { setLoading(false); return }

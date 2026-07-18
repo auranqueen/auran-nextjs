@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
-import { canUpgradeToTier } from '@/lib/brandTierGrade'
+import { canUpgradeToTier, computeTierUpgradeCharge } from '@/lib/brandTierGrade'
 import { formEncode, parsePayAppResponse, PAYAPP_API_URL } from '@/lib/payments/payappUtil'
 
 const CIVASAN_BRAND_ID = '60413ded-91f4-4004-b677-ae684cb0677e'
@@ -128,7 +128,14 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  if (!Number.isFinite(targetPrice) || targetPrice < MIN_AMOUNT) {
+  const chargeAmount = computeTierUpgradeCharge(currentPrice, targetPrice)
+  if (
+    chargeAmount == null ||
+    !Number.isFinite(chargeAmount) ||
+    chargeAmount < MIN_AMOUNT ||
+    !Number.isFinite(targetPrice) ||
+    targetPrice < MIN_AMOUNT
+  ) {
     return NextResponse.json({ ok: false, error: 'invalid_package_price' }, { status: 400 })
   }
 
@@ -156,8 +163,9 @@ export async function POST(req: NextRequest) {
       .insert({
         brand_id: CIVASAN_BRAND_ID,
         owner_id: ownerProfileId,
+        kind: 'tier',
         tier_package_id: tierPackageId,
-        amount: targetPrice,
+        amount: chargeAmount,
         status: 'paid',
         is_demo: true,
         created_at: nowIso,
@@ -173,6 +181,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // purchase_amount = 목표 등급 정가 / intent.amount = 실제 청구(차액)
     await activateOwnerGrade(svc, ownerProfileId, tierPackageId, tierName, targetPrice)
 
     await svc.from('notifications').insert({
@@ -206,8 +215,9 @@ export async function POST(req: NextRequest) {
     .insert({
       brand_id: CIVASAN_BRAND_ID,
       owner_id: ownerProfileId,
+      kind: 'tier',
       tier_package_id: tierPackageId,
-      amount: targetPrice,
+      amount: chargeAmount,
       status: 'pending',
       is_demo: false,
       created_at: nowIso,
@@ -241,7 +251,7 @@ export async function POST(req: NextRequest) {
     linkkey,
     linkval,
     goodname: `${shopname} 등급(${tierName})`,
-    price: String(targetPrice),
+    price: String(chargeAmount),
     recvphone,
     memo: `brand_self_tier ${tierName}`,
     smsuse: 'n',
