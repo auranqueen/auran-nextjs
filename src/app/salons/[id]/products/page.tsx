@@ -40,6 +40,7 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
   const [categoriesFlat, setCategoriesFlat] = useState<CategoryNode[]>([])
   const [brandOptions, setBrandOptions] = useState<{ id: string; name: string }[]>([])
   const [copied, setCopied] = useState(false)
+  const [isPc, setIsPc] = useState(false)
   const requestRef = useRef(0)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const catTree = useMemo(() => {
@@ -122,6 +123,12 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q])
+  useEffect(() => {
+    const check = () => setIsPc(window.innerWidth >= 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
   const handleShare = async () => {
     const url = window.location.href
     if (navigator.share) {
@@ -145,13 +152,13 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
   })
   if (locked) {
     return (
-      <div style={{ padding: 24, textAlign: 'center', color: TEXT_SUB, background: BG, minHeight: '100vh', maxWidth: 480, margin: '0 auto' }}>
+      <div style={{ padding: 24, textAlign: 'center', color: TEXT_SUB, background: BG, minHeight: '100vh', maxWidth: isPc ? 1100 : 480, margin: '0 auto' }}>
         스토어 상품 진열 기능이 잠겨있어요 ({lockReason})
       </div>
     )
   }
   return (
-    <div style={{ color: '#fff', background: BG, minHeight: '100vh', maxWidth: 480, margin: '0 auto' }}>
+    <div style={{ color: '#fff', background: BG, minHeight: '100vh', maxWidth: isPc ? 1100 : 480, margin: '0 auto' }}>
       <div style={{ display: 'flex', gap: 8, padding: '10px 16px' }}>
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: '9px 12px' }}>
           <input
@@ -235,7 +242,7 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
         ))}
       </div>
       <div style={{ padding: '4px 16px', fontSize: 11, color: TEXT_SUB }}>{total}개 제품</div>
-      <div style={{ padding: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', gap: 12 }}>
+      <div style={{ padding: 16, display: 'grid', gridTemplateColumns: isPc ? 'repeat(5, 1fr)' : 'repeat(2, 1fr)', gap: 12 }}>
         {products.map(p => {
           const avgRating = p.review_count > 0 ? (p.rating_sum / p.review_count).toFixed(1) : null
           return (
