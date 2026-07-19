@@ -17,6 +17,18 @@ export async function POST() {
     .eq('salon_id', salon.id)
     .not('status', 'in', '("결제대기","취소")')
   const customerIds = Array.from(new Set((pastOrders || []).map(o => o.customer_id)))
+  const cooldownStart = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const { data: recentNotif } = await service
+    .from('notifications')
+    .select('id')
+    .eq('link_url', `/salons/${salon.id}/products`)
+    .eq('type', 'promo')
+    .gte('created_at', cooldownStart)
+    .limit(1)
+    .maybeSingle()
+  if (recentNotif) {
+    return NextResponse.json({ ok: false, error: 'cooldown_active' }, { status: 429 })
+  }
   if (customerIds.length === 0) {
     return NextResponse.json({ ok: true, notified: 0 })
   }
