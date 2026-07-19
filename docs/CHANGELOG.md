@@ -5,6 +5,7 @@
 
 ## 2026-07-19
 
+- **살롱 구독(알림받기) 토글/조회 API 신설**: `POST/GET /api/salons/[id]/subscribe` — 로그인 고객이 특정 살롱의 소식 알림을 구독/해지. POST는 `subscribed:true`면 `brand_product_salon_subscribers`에 upsert(`onConflict: salon_id,customer_id`), `false`면 delete. GET은 현재 구독 여부를 `subscribed`로 반환하되, 비로그인·서비스 불가·유저 미조회 시 에러 대신 `{ ok:true, subscribed:false }` 안전 반환(공개 화면 렌더 안전). 트랙A 전용, 트랙B 정책 미참조.
 - **고객알림 API에 24시간 쿨다운 추가**: `POST /api/brand-product-orders/notify-customers` — 대상 계산 후 발송 직전, 같은 살롱의 `link_url=/salons/{id}/products` + `type:'promo'` 알림이 최근 24시간 내 존재하면 `cooldown_active`(HTTP 429)로 차단. 동일 살롱 프로모 알림의 24시간 내 중복 발송을 방지(원장 반복 클릭 남용 방어). 나머지 로직 무변경.
 - **원장 고객알림 발송 API 신설**: `POST /api/brand-product-orders/notify-customers` — 로그인 원장이 능동적으로 트리거(버튼 클릭)해야만 실행되는 수동 발송. 자동 발송 아님. 본인 살롱(`salons.owner_id`) 검증 후, 해당 살롱에서 `brand_product_orders` 구매이력이 있는 고객(status가 `결제대기`/`취소` 제외) `customer_id`를 중복 제거해 `notifications`에 `type:'promo'` 알림 일괄 insert(`link_url=/salons/{id}/products`). 대상 0명이면 `notified:0`. 트랙A 전용, 트랙B 정책 미참조.
 - **원장 배너 업로드/숨김 API 신설**: `POST/DELETE /api/brand-product-orders/banner` — 로그인 원장이 자기 살롱 스토어 대표 배너를 등록/숨김. POST는 본인 살롱(`salons.owner_id`) 검증 후 `brand_product_salon_banner`에 `is_active=true` upsert(`onConflict: salon_id`, 살롱당 1개). 모바일/PC 이미지 중 하나만 올리면 나머지 사이즈를 같은 이미지로 자동 복제, 둘 다 없으면 `image_required`. DELETE는 실제 삭제 대신 `is_active=false`로 숨김 처리. 트랙A 전용, 트랙B 정책 미참조.
