@@ -3,6 +3,10 @@
 
 ---
 
+## 2026-07-19
+
+- **트랙A `brand_products.sales_count` 증감 로직 추가 (웹훅 유지관리)**: `handleBrandProductOrderComplete`가 주문 결제완료(`status='결제완료'`) 직후 `brand_product_order_items`(`order_id` 기준)를 조회해 항목별 `increment_brand_product_sales(pid, qty)` RPC 호출로 판매량 증분. `handleBrandProductOrderCancel`은 취소 대상 주문을 먼저 조회해 **직전 상태가 `결제완료`였던 주문만** `decrement_brand_product_sales(pid, qty)`로 감소(진짜 환불), `결제대기` 주문은 애초 미카운트라 미변경. 오렌몰 `products.sales_count`(스키마 기본값만 존재, 웹훅·구매확정 어디서도 자동 갱신 안 됨)와 달리 트랙A는 실제 결제/환불 웹훅에서 값을 유지관리함. RPC `increment_brand_product_sales`·`decrement_brand_product_sales`와 `brand_products.sales_count` 컬럼은 DB 선행 필요(미생성 시 RPC 실패). A 전용 주문 테이블(`brand_product_orders`/`brand_product_order_items`)만 소스로 사용 — B 커미션·집계 체계 미혼입.
+
 ## 2026-07-17
 
 - **BrandCartProvider를 `/salons/[id]/layout.tsx`에서 `/salons/layout.tsx`로 이동**: 여러 살롱 넘나드는 카트 상태 유지 위함, `/salons/cart`·`/salons/checkout` 등 살롱 특정 안 된 라우트 지원 목적. `[id]/page`·`loading`·products 하위는 미변경.

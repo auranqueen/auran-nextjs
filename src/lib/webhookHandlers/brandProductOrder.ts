@@ -47,6 +47,16 @@ export async function handleBrandProductOrderComplete(
         .from('brand_product_orders')
         .update({ status: '결제완료', payment_id: String(intent.id), ordered_at: new Date().toISOString() })
         .eq('id', order.id)
+      const { data: orderItemsForSales } = await client
+        .from('brand_product_order_items')
+        .select('brand_product_id, quantity')
+        .eq('order_id', order.id)
+      for (const item of orderItemsForSales || []) {
+        await client.rpc('increment_brand_product_sales', {
+          pid: item.brand_product_id,
+          qty: item.quantity,
+        })
+      }
       const toastEarn = Number(order.customer_toast_amount || 0)
       if (toastEarn > 0) {
         await client.from('toast_transactions').insert({
@@ -103,6 +113,26 @@ export async function handleBrandProductOrderCancel(
   client: SupabaseClient,
 ): Promise<void> {
   if (!intent.target_id) return
+  const { data: ordersToCancel } = await client
+    .from('brand_product_orders')
+    .select('id, status')
+    .eq('checkout_batch_id', intent.target_id)
+    .neq('status', '취소')
+  if (!ordersToCancel || ordersToCancel.length === 0) return
+  for (const order of ordersToCancel) {
+    if (order.status === '결제완료') {
+      const { data: orderItemsForSales } = await client
+        .from('brand_product_order_items')
+        .select('brand_product_id, quantity')
+        .eq('order_id', order.id)
+      for (const item of orderItemsForSales || []) {
+        await client.rpc('decrement_brand_product_sales', {
+          pid: item.brand_product_id,
+          qty: item.quantity,
+        })
+      }
+    }
+  }
   await client
     .from('brand_product_orders')
     .update({ status: '취소' })
