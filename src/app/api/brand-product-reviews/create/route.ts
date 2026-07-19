@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const { data: me } = await service.from('users').select('id').eq('auth_id', user.id).single()
   if (!me) return NextResponse.json({ ok: false, error: 'user_not_found' }, { status: 404 })
   const body = await req.json()
-  const { order_id, brand_product_id, rating, content, images } = body
+  const { order_id, brand_product_id, rating, content, images, video_url } = body
   if (!order_id || !brand_product_id || !rating) {
     return NextResponse.json({ ok: false, error: 'invalid_request' }, { status: 400 })
   }
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     .from('brand_product_reviews')
     .insert({
       brand_product_id, order_id, author_id: me.id,
-      rating, content, images: images || [],
+      rating, content, images: images || [], video_url: video_url || null,
     })
     .select('id')
     .single()
