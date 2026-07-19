@@ -5,6 +5,7 @@
 
 ## 2026-07-19
 
+- **제품목록 페이지에 배너+큐레이션 노출 섹션 추가**: `src/app/salons/[id]/products/page.tsx` — 검색바 아래, 정렬바 위에 원장 배너와 추천 제품(가로 스크롤) 섹션 추가. `GET /api/salons/[id]/curation`에서 `banner`/`products` 조회(`useEffect` dep `[params.id]`). 배너는 `isPc`로 PC(`image_url_pc`)/모바일(`image_url_mobile`) 이미지 분기, `link_url` 있으면 `<a>` 래핑. 배너 없으면 배너 섹션 숨김, 추천 제품 0개면 추천 섹션 숨김. `GOLD` 상수(기존 선언, 6행) 라벨에 사용. 기존 검색/정렬/그리드 로직 무변경. 트랙A 전용.
 - **원장 사이드바에 "브랜드 스토어 꾸미기" 메뉴 추가**: `src/components/OwnerSidebarShell.tsx` — `MENU_ITEMS`에 `{ label: '브랜드 스토어 꾸미기', href: '/dashboard/owner/brand-store-decoration' }` 추가, `menuItems` useMemo 필터 조건에 해당 href 포함시켜 `ready && isTrackA`(트랙A 원장)에게만 노출. 기존 `brand-orders`/`brand-retail-orders`와 동일한 격리 조건. 나머지 로직 무변경.
 - **원장 브랜드스토어꾸미기 화면 신규**: `src/app/dashboard/owner/brand-store-decoration/page.tsx` — 트랙A 전용 원장 관리 화면. 기존 트랙B `store-decoration`(살롱 배너/스토리/인사말/SNS)과 **경로 충돌 방지 위해 별도 라우트**로 분리. 기능: 배너 업로드(PC/모바일, `product-images` 버킷 재사용 후 `/api/brand-product-orders/banner` upsert), 추천 제품 토글(최대 8개, `/api/brand-product-orders/curation-toggle`), 스토어알림받기 구독자 수 표시 + `/api/brand-product-orders/notify-customers` 수동 발송(쿨다운 안내 처리). `supabaseRef`로 클라이언트 고정, `load` useCallback 의존성 `[]` 유지(supabase 미포함). 기존 파일 무변경.
 - **고객알림 발송 대상을 "스토어알림받기 설정 고객"으로 변경**: `POST /api/brand-product-orders/notify-customers` — 기존 "이 살롱 구매이력 전체(`brand_product_orders`)"에서 "구독자(`brand_product_salon_subscribers`)"로 대상 소스 교체. 명시적으로 알림받기를 설정한 고객에게만 발송되어 마케팅 수신동의 문제를 근본 해결. 알림 본문도 안내 문구로 변경. 24시간 쿨다운·insert 로직은 무변경.
