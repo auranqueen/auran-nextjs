@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 const CARD = 'rgba(255,255,255,0.05)'
 const BORDER = 'rgba(255,255,255,0.08)'
