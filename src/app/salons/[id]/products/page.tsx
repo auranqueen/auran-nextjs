@@ -197,7 +197,7 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
       )}
       {openFilter === 'step' && (
         <div style={{ padding: '0 16px 8px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {[0, 1, 2].map(level => {
+          {Array.from({ length: catPicked.length + 1 }, (_, i) => i).map(level => {
             const parentId = level === 0 ? 'root' : catPicked[level - 1]?.id
             if (level > 0 && !catPicked[level - 1]) return null
             const options = catTree[parentId || 'root'] || []

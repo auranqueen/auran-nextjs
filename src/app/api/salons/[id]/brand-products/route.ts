@@ -106,6 +106,11 @@ export async function GET(
 
   if (brandIds.length === 0) return emptyResponse(salonId)
 
+  const { data: categoryRows } = await svc
+    .from('categories')
+    .select('id, name, parent_id, level, sort_order')
+    .order('sort_order', { ascending: true, nullsFirst: false })
+
   let productQuery = svc
     .from('brand_products')
     .select('id, name, thumb_img, brand_id, consumer_price, category_id, skin_concern, sales_count, review_count, rating_sum, brands(name)', { count: 'exact' })
@@ -113,7 +118,17 @@ export async function GET(
     .eq('status', 'active')
   if (q.length >= 2) productQuery = productQuery.ilike('name', `%${q}%`)
   if (brandIdParam) productQuery = productQuery.eq('brand_id', brandIdParam)
-  if (categoryId) productQuery = productQuery.eq('category_id', categoryId)
+  if (categoryId) {
+    const descendantIds: string[] = [categoryId]
+    let frontier = [categoryId]
+    while (frontier.length > 0) {
+      const children = (categoryRows || []).filter(c => frontier.includes(c.parent_id || ''))
+      const childIds = children.map(c => c.id)
+      descendantIds.push(...childIds)
+      frontier = childIds
+    }
+    productQuery = productQuery.in('category_id', descendantIds)
+  }
   if (concernsParam.length > 0) productQuery = productQuery.overlaps('skin_concern', concernsParam)
   if (sort === 'price_asc') productQuery = productQuery.order('consumer_price', { ascending: true })
   else if (sort === 'price_desc') productQuery = productQuery.order('consumer_price', { ascending: false })
@@ -148,10 +163,6 @@ export async function GET(
     }
   })
 
-  const { data: categoryRows } = await svc
-    .from('categories')
-    .select('id, name, parent_id, level, sort_order')
-    .order('sort_order', { ascending: true, nullsFirst: false })
   return NextResponse.json(
     {
       salon_id: salonId,
