@@ -420,7 +420,7 @@ export default function SalonHomePage() {
     const run = async () => {
       setBrandProductsLoading(true)
       try {
-        const res = await fetch(`/api/salons/${encodeURIComponent(id)}/brand-products`, {
+        const res = await fetch(`/api/salons/${encodeURIComponent(id)}/brand-products?limit=4`, {
           cache: 'no-store',
         })
         const json = (await res.json().catch(() => null)) as {
