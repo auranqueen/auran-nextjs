@@ -5,6 +5,7 @@
 
 ## 2026-07-19
 
+- **원장 브랜드스토어꾸미기 화면 신규**: `src/app/dashboard/owner/brand-store-decoration/page.tsx` — 트랙A 전용 원장 관리 화면. 기존 트랙B `store-decoration`(살롱 배너/스토리/인사말/SNS)과 **경로 충돌 방지 위해 별도 라우트**로 분리. 기능: 배너 업로드(PC/모바일, `product-images` 버킷 재사용 후 `/api/brand-product-orders/banner` upsert), 추천 제품 토글(최대 8개, `/api/brand-product-orders/curation-toggle`), 스토어알림받기 구독자 수 표시 + `/api/brand-product-orders/notify-customers` 수동 발송(쿨다운 안내 처리). `supabaseRef`로 클라이언트 고정, `load` useCallback 의존성 `[]` 유지(supabase 미포함). 기존 파일 무변경.
 - **고객알림 발송 대상을 "스토어알림받기 설정 고객"으로 변경**: `POST /api/brand-product-orders/notify-customers` — 기존 "이 살롱 구매이력 전체(`brand_product_orders`)"에서 "구독자(`brand_product_salon_subscribers`)"로 대상 소스 교체. 명시적으로 알림받기를 설정한 고객에게만 발송되어 마케팅 수신동의 문제를 근본 해결. 알림 본문도 안내 문구로 변경. 24시간 쿨다운·insert 로직은 무변경.
 - **살롱 구독(알림받기) 토글/조회 API 신설**: `POST/GET /api/salons/[id]/subscribe` — 로그인 고객이 특정 살롱의 소식 알림을 구독/해지. POST는 `subscribed:true`면 `brand_product_salon_subscribers`에 upsert(`onConflict: salon_id,customer_id`), `false`면 delete. GET은 현재 구독 여부를 `subscribed`로 반환하되, 비로그인·서비스 불가·유저 미조회 시 에러 대신 `{ ok:true, subscribed:false }` 안전 반환(공개 화면 렌더 안전). 트랙A 전용, 트랙B 정책 미참조.
 - **고객알림 API에 24시간 쿨다운 추가**: `POST /api/brand-product-orders/notify-customers` — 대상 계산 후 발송 직전, 같은 살롱의 `link_url=/salons/{id}/products` + `type:'promo'` 알림이 최근 24시간 내 존재하면 `cooldown_active`(HTTP 429)로 차단. 동일 살롱 프로모 알림의 24시간 내 중복 발송을 방지(원장 반복 클릭 남용 방어). 나머지 로직 무변경.
