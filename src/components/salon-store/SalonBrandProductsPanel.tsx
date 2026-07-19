@@ -41,6 +41,21 @@ export default function SalonBrandProductsPanel({ loading, products, salonId }: 
           onSelect={() => router.push(`/salons/${salonId}/products/${item.id}`)}
         />
       ))}
+      <button
+        onClick={() => router.push(`/salons/${salonId}/products`)}
+        style={{
+          width: '100%',
+          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'transparent',
+          color: '#7B5EA7',
+          borderRadius: 12,
+          padding: 11,
+          fontSize: 13,
+          marginTop: 8,
+        }}
+      >
+        전체보기
+      </button>
     </div>
   )
 }
