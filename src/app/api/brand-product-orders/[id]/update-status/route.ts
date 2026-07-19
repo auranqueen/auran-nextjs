@@ -40,10 +40,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (order.status !== '결제완료') {
       return NextResponse.json({ ok: false, error: 'invalid_status_transition' }, { status: 400 })
     }
-    await service
+    const { error: shipErr } = await service
       .from('brand_product_orders')
       .update({ status: '배송중', courier, tracking_no, shipped_at: new Date().toISOString() })
       .eq('id', order.id)
+    if (shipErr) return NextResponse.json({ ok: false, error: 'update_failed' }, { status: 500 })
   }
   if (target_status === '배송완료') {
     if (order.status !== '배송중') {
@@ -51,10 +52,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
     const now = new Date()
     const autoConfirmAt = new Date(now.getTime() + TRACK_A_AUTO_CONFIRM_DAYS * 24 * 60 * 60 * 1000)
-    await service
+    const { error: deliverErr } = await service
       .from('brand_product_orders')
       .update({ status: '배송완료', delivered_at: now.toISOString(), auto_confirm_at: autoConfirmAt.toISOString() })
       .eq('id', order.id)
+    if (deliverErr) return NextResponse.json({ ok: false, error: 'update_failed' }, { status: 500 })
   }
   return NextResponse.json({ ok: true })
 }
