@@ -5,6 +5,7 @@
 
 ## 2026-07-19
 
+- **원장 배너 업로드/숨김 API 신설**: `POST/DELETE /api/brand-product-orders/banner` — 로그인 원장이 자기 살롱 스토어 대표 배너를 등록/숨김. POST는 본인 살롱(`salons.owner_id`) 검증 후 `brand_product_salon_banner`에 `is_active=true` upsert(`onConflict: salon_id`, 살롱당 1개). 모바일/PC 이미지 중 하나만 올리면 나머지 사이즈를 같은 이미지로 자동 복제, 둘 다 없으면 `image_required`. DELETE는 실제 삭제 대신 `is_active=false`로 숨김 처리. 트랙A 전용, 트랙B 정책 미참조.
 - **원장 큐레이션 토글 API 신설**: `POST /api/brand-product-orders/curation-toggle` — 로그인 원장이 자기 살롱의 추천 제품 노출을 on/off. 검증 체인: 본인 살롱(`salons.owner_id`) 확인 → 제품 존재 확인 → `brand_owner_links`(status=active)로 트랙A 브랜드-원장 연결 검증. 노출 ON 시 `brand_product_salon_display`에 `is_featured=true` upsert(`onConflict: salon_id,brand_product_id`, `display_order`는 기존 featured 개수), 최대 8개 제한(초과 시 `curation_limit_reached`). OFF 시 `is_featured=false` 업데이트. 트랙A 전용, 트랙B 정책 미참조.
 - **큐레이션 API에 `customer_toast_rate` 필드 추가**: `GET /api/salons/[id]/curation`의 `brand_products` select에 `customer_toast_rate` 추가 — 큐레이션 제품 카드에서 토스트 적립률 표시용. 나머지 로직 무변경.
 - **살롱 배너+큐레이션 공개조회 API 신설** (`GET /api/salons/[id]/curation`): 살롱 스토어 노출용 공개 조회 라우트. `brand_product_salon_banner`(활성 배너 `image_url_mobile/image_url_pc/link_url`, `is_active` + `salon_id`로 `maybeSingle`)와 `brand_product_salon_display`(원장 큐레이션 `is_featured` 제품, `display_order` asc)를 조회한 뒤, 큐레이션 순서대로 `brand_products`(active) 정보를 매핑해 `{ ok, banner, products }` 반환. 큐레이션 순서 보존을 위해 `productIds.map(...find)` 방식 사용(IN 조회 결과 순서 무시). `tryCreateAdminClient`로 RLS 우회(공개 노출 데이터), 인증 불필요. 트랙A 전용 테이블만 사용 — 격리 유지. 전제: `brand_product_salon_banner`·`brand_product_salon_display` 테이블 DB 선행 필요.
