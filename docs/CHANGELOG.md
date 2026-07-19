@@ -5,6 +5,7 @@
 
 ## 2026-07-19
 
+- **트랙A 결제대기 주문 자동취소 크론잡** (`/api/cron/expire-brand-product-orders`): 생성 후 3시간(`CUTOFF_HOURS`) 지난 `brand_product_orders.status='결제대기'` 건을 `'취소'`로 일괄 업데이트. `expire-coupons`와 동일한 `CRON_SECRET` Bearer/`?secret=` 인증·`force-dynamic` 패턴 재사용. 쿼리는 `brand_product_orders`만 대상(트랙B `orders` 미접촉, A/B 격리 유지)이며, `.eq('status','결제대기')` 필터가 멱등성 가드 역할. `vercel.json` crons에 `"0 1 * * *"`(매일 새벽 1시, Hobby 플랜 일 1회) 추가. 결제 미완/이탈/부분생성 실패로 남은 고아 주문을 정리 — 즉시 롤백 대신 배치잡 단일 경로로 커버.
 - **트랙A 카트/체크아웃 페이지 구현** (`/salons/cart`, `/salons/checkout`): 카트는 `salon_id`별 그룹핑·개별/살롱단위 체크박스 선택, `sessionStorage(auran_brand_checkout_selection)`로 선택 전달. 체크아웃은 `shipping_addresses`(기본배송지 우선) 조회, 선택 상품을 `salon_id__brand_id`로 묶어 `/api/brand-product-orders/create`를 그룹별 호출(공통 `checkout_batch_id`), 합계로 PayApp `kind: brand_product_order`·`target_id=batch` 결제 생성 후 카트 비움. `BrandCartItem`/`ProductDetailActions`/상세 page에 `salon_name` 전달 추가(카트 살롱명 표시용).
 
 ## 2026-07-17
