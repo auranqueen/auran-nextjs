@@ -45,6 +45,10 @@ export async function POST(req: NextRequest) {
   if (error || !review) {
     return NextResponse.json({ ok: false, error: 'review_already_exists' }, { status: 409 })
   }
+  await service.rpc('increment_brand_product_review_stats', {
+    pid: brand_product_id,
+    r: rating,
+  })
   let toastEarn = 0
   if (!order.review_toast_paid) {
     toastEarn = Math.floor(order.subtotal * order.review_toast_rate / 100)
