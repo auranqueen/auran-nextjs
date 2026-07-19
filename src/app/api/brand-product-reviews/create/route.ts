@@ -45,6 +45,10 @@ export async function POST(req: NextRequest) {
   if (error || !review) {
     return NextResponse.json({ ok: false, error: 'review_already_exists' }, { status: 409 })
   }
+  await service
+    .from('brand_product_orders')
+    .update({ status: '구매확정', confirmed_at: new Date().toISOString() })
+    .eq('id', order_id)
   await service.rpc('increment_brand_product_review_stats', {
     pid: brand_product_id,
     r: rating,
