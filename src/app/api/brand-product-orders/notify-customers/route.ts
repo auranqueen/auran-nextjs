@@ -11,12 +11,11 @@ export async function POST() {
   if (!me) return NextResponse.json({ ok: false, error: 'user_not_found' }, { status: 404 })
   const { data: salon } = await service.from('salons').select('id, name').eq('owner_id', me.id).maybeSingle()
   if (!salon) return NextResponse.json({ ok: false, error: 'salon_not_found' }, { status: 404 })
-  const { data: pastOrders } = await service
-    .from('brand_product_orders')
+  const { data: subscribers } = await service
+    .from('brand_product_salon_subscribers')
     .select('customer_id')
     .eq('salon_id', salon.id)
-    .not('status', 'in', '("결제대기","취소")')
-  const customerIds = Array.from(new Set((pastOrders || []).map(o => o.customer_id)))
+  const customerIds = Array.from(new Set((subscribers || []).map(s => s.customer_id)))
   const cooldownStart = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
   const { data: recentNotif } = await service
     .from('notifications')
@@ -37,7 +36,7 @@ export async function POST() {
       user_id: customerId,
       type: 'promo',
       title: `${salon.name} 새 추천 제품이 떴어요`,
-      body: '지금 확인해보세요',
+      body: '스토어알림받기 설정한 분들께 보내드려요',
       link_url: `/salons/${salon.id}/products`,
       is_read: false,
     }))
