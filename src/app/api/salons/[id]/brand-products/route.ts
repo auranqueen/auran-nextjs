@@ -120,10 +120,12 @@ export async function GET(
   if (brandIdParam) productQuery = productQuery.eq('brand_id', brandIdParam)
   if (categoryId) {
     const descendantIds: string[] = [categoryId]
+    const visited = new Set<string>([categoryId])
     let frontier = [categoryId]
     while (frontier.length > 0) {
-      const children = (categoryRows || []).filter(c => frontier.includes(c.parent_id || ''))
+      const children = (categoryRows || []).filter(c => frontier.includes(c.parent_id || '') && !visited.has(c.id))
       const childIds = children.map(c => c.id)
+      childIds.forEach(id => visited.add(id))
       descendantIds.push(...childIds)
       frontier = childIds
     }
