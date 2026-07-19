@@ -8,13 +8,11 @@ const PURPLE = '#7B5EA7'
 const PURPLE_LIGHT = 'rgba(123,94,167,0.15)'
 const TEXT_SUB = 'rgba(255,255,255,0.55)'
 const BG = '#0D0B09'
-type CategoryNode = { id: string; name: string; parent_id: string | null; level: number; sort_order: number | null }
 type Product = {
   id: string; name: string; thumb_img: string | null; brand_id: string
   consumer_price: number; sales_count: number; review_count: number; rating_sum: number
   brands: { name: string } | null
 }
-const CONCERN_OPTIONS = ['보습', '진정', '미백', '탄력', '모공', '각질', '트러블']
 const SORT_OPTIONS: [string, string][] = [
   ['popular', '인기순'], ['newest', '신상품순'], ['review', '리뷰많은순'],
   ['price_asc', '낮은가격순'], ['price_desc', '높은가격순'],
@@ -29,38 +27,18 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
   const [leafCategoryId, setLeafCategoryId] = useState(searchParams.get('category_id') || '')
   const [concerns, setConcerns] = useState<string[]>(searchParams.get('concerns')?.split(',').filter(Boolean) || [])
   const [sort, setSort] = useState(searchParams.get('sort') || 'popular')
-  const [openFilter, setOpenFilter] = useState<'brand' | 'step' | 'concern' | null>(null)
-  const [catPicked, setCatPicked] = useState<{ id: string; name: string }[]>([])
   const [products, setProducts] = useState<Product[]>([])
   const [total, setTotal] = useState(0)
   const [offset, setOffset] = useState(0)
   const [loading, setLoading] = useState(false)
   const [locked, setLocked] = useState(false)
   const [lockReason, setLockReason] = useState<string | null>(null)
-  const [categoriesFlat, setCategoriesFlat] = useState<CategoryNode[]>([])
+  const [categoriesFlat, setCategoriesFlat] = useState<any[]>([])
   const [brandOptions, setBrandOptions] = useState<{ id: string; name: string }[]>([])
   const [copied, setCopied] = useState(false)
   const [isPc, setIsPc] = useState(false)
   const requestRef = useRef(0)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const catTree = useMemo(() => {
-    const byParent: Record<string, CategoryNode[]> = {}
-    for (const c of categoriesFlat) {
-      const key = c.parent_id || 'root'
-      ;(byParent[key] ||= []).push(c)
-    }
-    return byParent
-  }, [categoriesFlat])
-  useEffect(() => {
-    if (!leafCategoryId || categoriesFlat.length === 0 || catPicked.length > 0) return
-    const path: { id: string; name: string }[] = []
-    let current = categoriesFlat.find(c => c.id === leafCategoryId)
-    while (current) {
-      path.unshift({ id: current.id, name: current.name })
-      current = current.parent_id ? categoriesFlat.find(c => c.id === current!.parent_id) : undefined
-    }
-    if (path.length > 0) setCatPicked(path)
-  }, [leafCategoryId, categoriesFlat])
   const syncUrl = useCallback((next: { q?: string; brandId?: string; categoryId?: string; concerns?: string[]; sort?: string }) => {
     const p = new URLSearchParams()
     const nq = next.q ?? q
@@ -138,18 +116,6 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
-  const toggleConcern = (c: string) => {
-    setConcerns(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c])
-  }
-  const chipStyle = (selected: boolean, small?: boolean): React.CSSProperties => ({
-    flexShrink: 0,
-    border: selected ? 'none' : `1px solid ${BORDER}`,
-    background: selected ? PURPLE : 'transparent',
-    color: selected ? '#fff' : 'rgba(255,255,255,0.85)',
-    borderRadius: 20,
-    padding: small ? '6px 12px' : '7px 14px',
-    fontSize: small ? 11 : 12,
-  })
   if (locked) {
     return (
       <div style={{ padding: 24, textAlign: 'center', color: TEXT_SUB, background: BG, minHeight: '100vh', maxWidth: isPc ? 1100 : 480, margin: '0 auto' }}>
@@ -172,64 +138,6 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
           {copied ? '복사됨' : '공유'}
         </button>
       </div>
-      <div style={{ display: 'flex', gap: 6, padding: '0 16px 8px' }}>
-        {(['brand', 'step', 'concern'] as const).map(key => {
-          const label = key === 'brand' ? '브랜드' : key === 'step' ? '단계별' : '고민별'
-          const hasSelection = (key === 'brand' && brandId) || (key === 'step' && catPicked.length > 0) || (key === 'concern' && concerns.length > 0)
-          return (
-            <button
-              key={key}
-              onClick={() => setOpenFilter(openFilter === key ? null : key)}
-              style={chipStyle(openFilter === key)}
-            >
-              {label}{hasSelection ? ' ●' : ''}
-            </button>
-          )
-        })}
-      </div>
-      {openFilter === 'brand' && (
-        <div style={{ display: 'flex', gap: 6, padding: '0 16px 8px', overflowX: 'auto' }}>
-          <button onClick={() => setBrandId('')} style={chipStyle(!brandId)}>전체</button>
-          {brandOptions.map(b => (
-            <button key={b.id} onClick={() => setBrandId(b.id)} style={chipStyle(brandId === b.id)}>{b.name}</button>
-          ))}
-        </div>
-      )}
-      {openFilter === 'step' && (
-        <div style={{ padding: '0 16px 8px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {Array.from({ length: catPicked.length + 1 }, (_, i) => i).map(level => {
-            const parentId = level === 0 ? 'root' : catPicked[level - 1]?.id
-            if (level > 0 && !catPicked[level - 1]) return null
-            const options = catTree[parentId || 'root'] || []
-            if (options.length === 0) return null
-            return (
-              <div key={level} style={{ display: 'flex', gap: 6, overflowX: 'auto' }}>
-                {options.map(opt => (
-                  <button
-                    key={opt.id}
-                    onClick={() => {
-                      const isSame = catPicked[level]?.id === opt.id
-                      const nextPicked = isSame ? catPicked.slice(0, level) : [...catPicked.slice(0, level), { id: opt.id, name: opt.name }]
-                      setCatPicked(nextPicked)
-                      setLeafCategoryId(nextPicked.length > 0 ? nextPicked[nextPicked.length - 1].id : '')
-                    }}
-                    style={chipStyle(catPicked[level]?.id === opt.id, true)}
-                  >
-                    {opt.name}
-                  </button>
-                ))}
-              </div>
-            )
-          })}
-        </div>
-      )}
-      {openFilter === 'concern' && (
-        <div style={{ display: 'flex', gap: 6, padding: '0 16px 8px', overflowX: 'auto' }}>
-          {CONCERN_OPTIONS.map(c => (
-            <button key={c} onClick={() => toggleConcern(c)} style={chipStyle(concerns.includes(c))}>{c}</button>
-          ))}
-        </div>
-      )}
       <div style={{ display: 'flex', gap: 12, padding: '6px 16px 8px', borderTop: `1px solid ${BORDER}`, overflowX: 'auto' }}>
         {SORT_OPTIONS.map(([val, label]) => (
           <button
