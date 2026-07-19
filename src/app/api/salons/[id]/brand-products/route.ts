@@ -108,7 +108,7 @@ export async function GET(
 
   let productQuery = svc
     .from('brand_products')
-    .select('id, name, thumb_img, brand_id, consumer_price, category_id, skin_concern, sales_count, brands(name)', { count: 'exact' })
+    .select('id, name, thumb_img, brand_id, consumer_price, category_id, skin_concern, sales_count, review_count, rating_sum, brands(name)', { count: 'exact' })
     .in('brand_id', brandIds)
     .eq('status', 'active')
   if (q.length >= 2) productQuery = productQuery.ilike('name', `%${q}%`)
@@ -119,7 +119,8 @@ export async function GET(
   else if (sort === 'price_desc') productQuery = productQuery.order('consumer_price', { ascending: false })
   else if (sort === 'newest') productQuery = productQuery.order('created_at', { ascending: false })
   else if (sort === 'popular') productQuery = productQuery.order('sales_count', { ascending: false })
-  else productQuery = productQuery.order('name', { ascending: true })
+  else if (sort === 'review') productQuery = productQuery.order('review_count', { ascending: false })
+  else productQuery = productQuery.order('sales_count', { ascending: false })
   productQuery = productQuery.range(offset, offset + limit - 1)
   const { data: productRows, count, error: productError } = await productQuery
 
