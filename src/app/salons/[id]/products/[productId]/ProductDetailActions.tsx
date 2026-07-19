@@ -13,6 +13,8 @@ interface Props {
     customer_toast_rate: number
   }
 }
+const BORDER = 'rgba(255,255,255,0.08)'
+const PURPLE = '#7B5EA7'
 export default function ProductDetailActions({ product }: Props) {
   const { addItem } = useBrandCart()
   const router = useRouter()
@@ -26,8 +28,18 @@ export default function ProductDetailActions({ product }: Props) {
   }
   return (
     <div style={{ display: 'flex', gap: 8 }}>
-      <button onClick={handleAddToCart}>장바구니 담기</button>
-      <button onClick={handleBuyNow}>바로 구매하기</button>
+      <button
+        onClick={handleAddToCart}
+        style={{ flex: 1, border: `1px solid ${BORDER}`, background: 'transparent', color: '#fff', borderRadius: 12, padding: 13, fontSize: 14 }}
+      >
+        장바구니 담기
+      </button>
+      <button
+        onClick={handleBuyNow}
+        style={{ flex: 1, border: 'none', background: PURPLE, color: '#fff', borderRadius: 12, padding: 13, fontSize: 14 }}
+      >
+        바로 구매하기
+      </button>
     </div>
   )
 }
