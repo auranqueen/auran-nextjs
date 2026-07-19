@@ -855,7 +855,7 @@ export default function SalonHomePage() {
           <button
             key={key}
             type="button"
-            onClick={() => setTab(key)}
+            onClick={() => key === 'products' ? router.push(`/salons/${id}/products`) : setTab(key)}
             style={{
               flex: 1,
               border: 'none',
