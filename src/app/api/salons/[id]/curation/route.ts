@@ -19,7 +19,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const { data: products } = productIds.length > 0
     ? await service
         .from('brand_products')
-        .select('id, name, thumb_img, consumer_price')
+        .select('id, name, thumb_img, consumer_price, customer_toast_rate')
         .in('id', productIds)
         .eq('status', 'active')
     : { data: [] }
