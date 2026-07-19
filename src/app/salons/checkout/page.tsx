@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useBrandCart } from '@/context/BrandCartContext'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -33,16 +33,53 @@ export default function BrandCheckoutPage() {
     run()
   }, [])
   const subtotal = checkoutItems.reduce((s, i) => s + i.price * i.quantity, 0)
-  const handlePayment = async () => {
-    if (!selectedAddr || checkoutItems.length === 0) return
-    setSubmitting(true)
-    const checkoutBatchId = crypto.randomUUID()
-    const bySalonBrand = checkoutItems.reduce((acc: Record<string, { salon_id: string; items: typeof items }>, item) => {
+  const bySalonBrand = useMemo(() => {
+    return checkoutItems.reduce((acc: Record<string, { salon_id: string; items: typeof items }>, item) => {
       const key = `${item.salon_id}__${item.brand_id}`
       if (!acc[key]) acc[key] = { salon_id: item.salon_id, items: [] }
       acc[key].items.push(item)
       return acc
     }, {})
+  }, [checkoutItems])
+  const [quotedTotal, setQuotedTotal] = useState<number | null>(null)
+  const [quoting, setQuoting] = useState(false)
+  const quoteReqRef = useRef(0)
+  useEffect(() => {
+    if (!selectedAddr || checkoutItems.length === 0) { setQuotedTotal(null); return }
+    const reqId = ++quoteReqRef.current
+    setQuoting(true)
+    const run = async () => {
+      let total = 0
+      try {
+        for (const key of Object.keys(bySalonBrand)) {
+          const group = bySalonBrand[key]
+          const res = await fetch('/api/brand-product-orders/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              dry_run: true,
+              salon_id: group.salon_id,
+              items: group.items.map(i => ({ brand_product_id: i.brand_product_id, quantity: i.quantity })),
+              address: selectedAddr.address,
+              address_detail: selectedAddr.address_detail,
+            }),
+          }).then(r => r.json())
+          if (!res.ok) throw new Error('quote_failed')
+          total += Number(res.final_amount || 0)
+        }
+        if (reqId === quoteReqRef.current) setQuotedTotal(total)
+      } catch {
+        if (reqId === quoteReqRef.current) setQuotedTotal(null)
+      } finally {
+        if (reqId === quoteReqRef.current) setQuoting(false)
+      }
+    }
+    run()
+  }, [selectedAddr, bySalonBrand])
+  const handlePayment = async () => {
+    if (!selectedAddr || checkoutItems.length === 0) return
+    setSubmitting(true)
+    const checkoutBatchId = crypto.randomUUID()
     let totalAmount = 0
     const createdOrderIds: string[] = []
     for (const key of Object.keys(bySalonBrand)) {
@@ -99,9 +136,17 @@ export default function BrandCheckoutPage() {
           <p>{selectedAddr.address} {selectedAddr.address_detail}</p>
         </div>
       )}
-      <div>총 결제금액 {subtotal.toLocaleString()}원</div>
-      <button onClick={handlePayment} disabled={submitting || !selectedAddr}>
-        {subtotal.toLocaleString()}원 결제하기
+      <div>
+        {quoting ? '배송비 계산 중…' : `총 결제금액 ${(quotedTotal ?? subtotal).toLocaleString()}원`}
+      </div>
+      {!quoting && selectedAddr && quotedTotal === null && (
+        <div>금액을 계산하지 못했어요. 주소를 다시 선택해주세요.</div>
+      )}
+      <button
+        onClick={handlePayment}
+        disabled={submitting || quoting || !selectedAddr || quotedTotal === null}
+      >
+        {quoting ? '계산 중…' : `${(quotedTotal ?? subtotal).toLocaleString()}원 결제하기`}
       </button>
     </div>
   )
