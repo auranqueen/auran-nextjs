@@ -1,5 +1,7 @@
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '@/lib/supabase/server'
 import ProductDetailActions from './ProductDetailActions'
+import ReviewSection from './ReviewSection'
 import { notFound } from 'next/navigation'
 const BG = '#0D0B09'
 const CARD = 'rgba(255,255,255,0.05)'
@@ -28,7 +30,7 @@ export default async function ProductDetailPage({
   if (!salon) return notFound()
   const { data: reviews } = await service
     .from('brand_product_reviews')
-    .select('id, rating, content, images, created_at, author_id, users:author_id(name)')
+    .select('id, rating, content, images, video_url, created_at, author_id, users:author_id(name)')
     .eq('brand_product_id', product.id)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -39,8 +41,39 @@ export default async function ProductDetailPage({
   const galleryImages = (product.images && product.images.length > 0)
     ? product.images
     : (product.thumb_img ? [product.thumb_img] : [])
+  // 리뷰 작성 자격 확인 (로그인 + 이 제품 구매 + 아직 리뷰 안 씀)
+  let eligibleOrderId: string | null = null
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user) {
+    const { data: me } = await service.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+    if (me) {
+      const { data: myOrders } = await service
+        .from('brand_product_orders')
+        .select('id, status')
+        .eq('customer_id', me.id)
+        .in('status', ['결제완료', '배송완료'])
+      const orderIds = (myOrders || []).map(o => o.id)
+      if (orderIds.length > 0) {
+        const { data: myItems } = await service
+          .from('brand_product_order_items')
+          .select('order_id')
+          .eq('brand_product_id', product.id)
+          .in('order_id', orderIds)
+        const candidateOrderIds = (myItems || []).map(i => i.order_id)
+        if (candidateOrderIds.length > 0) {
+          const { data: existingReviews } = await service
+            .from('brand_product_reviews')
+            .select('order_id')
+            .in('order_id', candidateOrderIds)
+          const reviewedSet = new Set((existingReviews || []).map(r => r.order_id))
+          eligibleOrderId = candidateOrderIds.find(id => !reviewedSet.has(id)) || null
+        }
+      }
+    }
+  }
   return (
-    <div style={{ color: '#fff', background: BG, minHeight: '100vh' }}>
+    <div style={{ color: '#fff', background: BG, minHeight: '100vh', maxWidth: 480, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: `1px solid ${BORDER}` }}>
         <a href={`/salons/${params.id}/products`} style={{ color: '#fff', textDecoration: 'none', fontSize: 18 }}>←</a>
         <span style={{ fontSize: 14, color: '#fff' }}>{salon.name}</span>
@@ -97,6 +130,7 @@ export default async function ProductDetailPage({
         <div style={{ fontSize: 14, color: '#fff', marginBottom: 12 }}>
           리뷰 {product.review_count || 0} · 평균 {avgRating.toFixed(1)}점
         </div>
+        <ReviewSection eligibleOrderId={eligibleOrderId} brandProductId={product.id} />
         {(!reviews || reviews.length === 0) && (
           <div style={{ fontSize: 13, color: TEXT_SUB }}>아직 리뷰가 없어요</div>
         )}
@@ -106,7 +140,17 @@ export default async function ProductDetailPage({
               <span style={{ color: GOLD, fontSize: 12 }}>{'★'.repeat(r.rating)}</span>
               <span style={{ color: TEXT_SUB, fontSize: 12 }}>{(r as any).users?.name || '고객'}</span>
             </div>
-            <p style={{ fontSize: 13, color: '#fff', margin: 0 }}>{r.content}</p>
+            <p style={{ fontSize: 13, color: '#fff', margin: '0 0 8px' }}>{r.content}</p>
+            {r.images && r.images.length > 0 && (
+              <div style={{ display: 'flex', gap: 6, marginBottom: r.video_url ? 6 : 0 }}>
+                {r.images.map((img: string, i: number) => (
+                  <img key={i} src={img} alt="" style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover' }} />
+                ))}
+              </div>
+            )}
+            {r.video_url && (
+              <video src={r.video_url} controls style={{ width: '100%', maxWidth: 240, borderRadius: 8 }} />
+            )}
           </div>
         ))}
       </section>
