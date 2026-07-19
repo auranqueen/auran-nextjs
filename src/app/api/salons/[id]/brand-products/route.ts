@@ -30,11 +30,19 @@ function lockedShowcaseResponse(salonId: string): NextResponse<SalonBrandProduct
 }
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } },
 ) {
   const salonId = typeof params?.id === 'string' ? params.id.trim() : ''
   if (!salonId) return emptyResponse('')
+  const url = new URL(req.url)
+  const q = url.searchParams.get('q')?.trim().slice(0, 80) || ''
+  const brandIdParam = url.searchParams.get('brand_id') || ''
+  const categoryId = url.searchParams.get('category_id') || ''
+  const concernsParam = url.searchParams.get('concerns')?.split(',').filter(Boolean) || []
+  const sort = url.searchParams.get('sort') || 'name'
+  const offset = Number(url.searchParams.get('offset') || 0)
+  const limit = Math.min(Number(url.searchParams.get('limit') || 20), 50)
 
   const svc = tryCreateAdminClient()
   if (!svc) return emptyResponse(salonId)
@@ -98,12 +106,22 @@ export async function GET(
 
   if (brandIds.length === 0) return emptyResponse(salonId)
 
-  const { data: productRows, error: productError } = await svc
+  let productQuery = svc
     .from('brand_products')
-    .select('id, name, thumb_img, brand_id, consumer_price, brands(name)')
+    .select('id, name, thumb_img, brand_id, consumer_price, category_id, skin_concern, sales_count, brands(name)', { count: 'exact' })
     .in('brand_id', brandIds)
     .eq('status', 'active')
-    .order('name', { ascending: true })
+  if (q.length >= 2) productQuery = productQuery.ilike('name', `%${q}%`)
+  if (brandIdParam) productQuery = productQuery.eq('brand_id', brandIdParam)
+  if (categoryId) productQuery = productQuery.eq('category_id', categoryId)
+  if (concernsParam.length > 0) productQuery = productQuery.overlaps('skin_concern', concernsParam)
+  if (sort === 'price_asc') productQuery = productQuery.order('consumer_price', { ascending: true })
+  else if (sort === 'price_desc') productQuery = productQuery.order('consumer_price', { ascending: false })
+  else if (sort === 'newest') productQuery = productQuery.order('created_at', { ascending: false })
+  else if (sort === 'popular') productQuery = productQuery.order('sales_count', { ascending: false })
+  else productQuery = productQuery.order('name', { ascending: true })
+  productQuery = productQuery.range(offset, offset + limit - 1)
+  const { data: productRows, count, error: productError } = await productQuery
 
   if (productError) return emptyResponse(salonId)
 
@@ -129,13 +147,19 @@ export async function GET(
     }
   })
 
+  const { data: categoryRows } = await svc
+    .from('categories')
+    .select('id, name, parent_id, level, sort_order')
+    .order('sort_order', { ascending: true, nullsFirst: false })
   return NextResponse.json(
     {
       salon_id: salonId,
       locked: false,
       lock_reason: null,
       products,
-    } satisfies SalonBrandProductsResponse,
+      total: count || 0,
+      categories: categoryRows || [],
+    },
     { headers: NO_STORE_HEADERS },
   )
 }
