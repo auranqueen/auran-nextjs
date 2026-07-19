@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { confirmOrderById } from '@/lib/orders/confirmOrder'
 import PaymentCompleteCard from '@/components/orders/PaymentCompleteCard'
+import BrandProductOrderCard from '@/components/orders/BrandProductOrderCard'
 
 const BG = '#0D0B09'
 const GOLD = '#C9A96E'
@@ -35,7 +36,7 @@ type OrderRow = {
   _cs?: any | null
 }
 
-const tabs = ['전체', '배송중', '배송완료', '취소/환불'] as const
+const tabs = ['전체', '배송중', '배송완료', '취소/환불', '브랜드 제품'] as const
 
 function getTrackingUrl(courier: string, trackingNo: string) {
   if (!trackingNo) return ''
@@ -58,6 +59,10 @@ export default function MyOrdersPage() {
   const [reviewPromptOrderId, setReviewPromptOrderId] = useState('')
   const [points, setPoints] = useState<number>(0)
   const [chargeBalance, setChargeBalance] = useState<number>(0)
+  const [brandOrders, setBrandOrders] = useState<any[]>([])
+  const [loadingBrand, setLoadingBrand] = useState(false)
+  const [confirmingId, setConfirmingId] = useState('')
+  const [brandLoaded, setBrandLoaded] = useState(false)
 
   useEffect(() => {
     if (!toast) return
@@ -129,6 +134,32 @@ export default function MyOrdersPage() {
     run()
   }, [])
 
+  useEffect(() => {
+    if (tab !== '브랜드 제품' || brandLoaded) return
+    setLoadingBrand(true)
+    fetch('/api/brand-product-orders/my-orders')
+      .then((r) => r.json())
+      .then((json) => {
+        if (json?.ok) setBrandOrders(json.orders || [])
+        setBrandLoaded(true)
+      })
+      .catch(() => {})
+      .finally(() => setLoadingBrand(false))
+  }, [tab, brandLoaded])
+
+  const confirmBrandOrder = async (orderId: string) => {
+    setConfirmingId(orderId)
+    try {
+      const res = await fetch(`/api/brand-product-orders/${orderId}/confirm`, { method: 'POST' }).then((r) => r.json())
+      if (res?.ok) {
+        setBrandOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: '구매확정' } : o)))
+        setToast('구매확정 완료! 토스트 적립됐어요 ✨')
+      }
+    } finally {
+      setConfirmingId('')
+    }
+  }
+
   const confirmOrder = async (orderId: string) => {
     const res = await confirmOrderById(supabase as any, orderId)
     if (!res.ok) return
@@ -185,6 +216,18 @@ export default function MyOrdersPage() {
       </div>
 
       <div style={{ padding: '0 16px' }}>
+        {tab === '브랜드 제품' ? (
+          <>
+            {loadingBrand ? <div style={{ color: TEXT_MUTED, fontSize: 13 }}>불러오는 중...</div> : null}
+            {!loadingBrand && brandOrders.length === 0 ? <div style={{ color: TEXT_MUTED, fontSize: 13 }}>브랜드 제품 주문 내역이 없어요</div> : null}
+            {brandOrders.map((order) => (
+              <div key={order.id} style={{ marginBottom: 10 }}>
+                <BrandProductOrderCard order={order} onConfirm={confirmBrandOrder} confirming={confirmingId === order.id} />
+              </div>
+            ))}
+          </>
+        ) : (
+          <>
         {loading ? <div style={{ color: TEXT_MUTED, fontSize: 13 }}>불러오는 중...</div> : null}
         {!loading && filtered.length === 0 ? <div style={{ color: TEXT_MUTED, fontSize: 13 }}>주문 내역이 없어요</div> : null}
         {filtered.map((order) => {
@@ -287,6 +330,8 @@ export default function MyOrdersPage() {
             </div>
           )
         })}
+          </>
+        )}
       </div>
       {toast ? (
         <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 24, background: 'rgba(123,94,167,0.95)', color: '#fff', borderRadius: 10, padding: '10px 14px', fontSize: 12, zIndex: 60 }}>
