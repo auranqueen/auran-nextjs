@@ -5,6 +5,7 @@
 
 ## 2026-07-19
 
+- **원장 고객알림 발송 API 신설**: `POST /api/brand-product-orders/notify-customers` — 로그인 원장이 능동적으로 트리거(버튼 클릭)해야만 실행되는 수동 발송. 자동 발송 아님. 본인 살롱(`salons.owner_id`) 검증 후, 해당 살롱에서 `brand_product_orders` 구매이력이 있는 고객(status가 `결제대기`/`취소` 제외) `customer_id`를 중복 제거해 `notifications`에 `type:'promo'` 알림 일괄 insert(`link_url=/salons/{id}/products`). 대상 0명이면 `notified:0`. 트랙A 전용, 트랙B 정책 미참조.
 - **원장 배너 업로드/숨김 API 신설**: `POST/DELETE /api/brand-product-orders/banner` — 로그인 원장이 자기 살롱 스토어 대표 배너를 등록/숨김. POST는 본인 살롱(`salons.owner_id`) 검증 후 `brand_product_salon_banner`에 `is_active=true` upsert(`onConflict: salon_id`, 살롱당 1개). 모바일/PC 이미지 중 하나만 올리면 나머지 사이즈를 같은 이미지로 자동 복제, 둘 다 없으면 `image_required`. DELETE는 실제 삭제 대신 `is_active=false`로 숨김 처리. 트랙A 전용, 트랙B 정책 미참조.
 - **원장 큐레이션 토글 API 신설**: `POST /api/brand-product-orders/curation-toggle` — 로그인 원장이 자기 살롱의 추천 제품 노출을 on/off. 검증 체인: 본인 살롱(`salons.owner_id`) 확인 → 제품 존재 확인 → `brand_owner_links`(status=active)로 트랙A 브랜드-원장 연결 검증. 노출 ON 시 `brand_product_salon_display`에 `is_featured=true` upsert(`onConflict: salon_id,brand_product_id`, `display_order`는 기존 featured 개수), 최대 8개 제한(초과 시 `curation_limit_reached`). OFF 시 `is_featured=false` 업데이트. 트랙A 전용, 트랙B 정책 미참조.
 - **큐레이션 API에 `customer_toast_rate` 필드 추가**: `GET /api/salons/[id]/curation`의 `brand_products` select에 `customer_toast_rate` 추가 — 큐레이션 제품 카드에서 토스트 적립률 표시용. 나머지 로직 무변경.
