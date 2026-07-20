@@ -3,6 +3,10 @@
 
 ---
 
+## 2026-07-20
+
+- **fix: 리뷰 작성 자격체크(brand-product-reviews/create) — 결제완료 상태에서도 리뷰 작성 가능하던 버그 수정, 배송완료 상태에서만 리뷰 작성 가능하도록 제한**
+
 ## 2026-07-19
 
 - **원장 소매주문 관리 화면 신규 (`/dashboard/owner/brand-retail-orders`) + 목록 API (`GET /api/brand-product-orders/my-salon-orders`)**: 트랙A 원장이 자기 살롱의 소매주문(`brand_product_orders`)을 관리하는 대시보드 화면. (1) **목록 API**: 로그인 → `users`(auth_id) → `salons.owner_id`로 **자기 살롱 서버검증**(RLS 우회 admin client) → `결제대기/취소` 제외 상태의 주문 최근 50건 + 주문상품(`brand_product_order_items`) 조인 반환. (2) **관리 화면**: 발송대기/배송중/정산액(배송완료+구매확정 `owner_amount` 합) 요약 카드, 주문카드별 상태배지. `결제완료`→택배사 select+송장 input+발송처리(update-status API '배송중'), `배송중`→배송조회 링크(`getTrackingUrl` 메커니즘 재사용, my/orders와 동일 택배사 URL 패턴)+배송완료 처리, `배송완료/구매확정`→정산액 표시. (3) **사이드바**: `OwnerSidebarShell`에 '제품 주문' 메뉴 추가, 기존 '발주'와 함께 `ready && isTrackA` 조건으로 트랙A 원장에게만 노출. 빌드 통과·타입에러 없음. 전제: `brand_product_orders`에 `recipient_name/recipient_phone/owner_amount/order_no` 등 컬럼 존재 필요. 트랙A 전용 테이블만 사용 — 격리 유지. (주: 제공 코드의 배송조회 `<a>` 여는 태그 누락 오타 1건을 빌드 통과 위해 보정.)

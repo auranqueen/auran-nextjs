@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   if (!order || order.customer_id !== me.id) {
     return NextResponse.json({ ok: false, error: 'order_not_found' }, { status: 404 })
   }
-  if (order.status !== '결제완료' && order.status !== '배송완료') {
+  if (order.status !== '배송완료') {
     return NextResponse.json({ ok: false, error: 'order_not_eligible' }, { status: 400 })
   }
   const { data: item } = await service
