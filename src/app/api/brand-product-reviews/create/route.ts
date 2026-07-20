@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   }
   const { data: order } = await service
     .from('brand_product_orders')
-    .select('id, customer_id, status, review_toast_rate, review_toast_paid, subtotal')
+    .select('id, customer_id, status, review_toast_rate, review_toast_paid, subtotal, customer_toast_amount, customer_toast_paid')
     .eq('id', order_id)
     .maybeSingle()
   if (!order || order.customer_id !== me.id) {
@@ -53,6 +53,21 @@ export async function POST(req: NextRequest) {
     pid: brand_product_id,
     r: rating,
   })
+  const purchaseToastEarn = Number(order.customer_toast_amount || 0)
+  if (purchaseToastEarn > 0 && !order.customer_toast_paid) {
+    await service.from('toast_transactions').insert({
+      user_id: me.id, amount: purchaseToastEarn, transaction_type: 'earn',
+      source_type: 'brand_product_order', source_id: order_id, reference_id: order_id,
+    })
+    await service.rpc('increment_points', { user_id: me.id, amount: purchaseToastEarn })
+    await service.from('brand_product_orders').update({ customer_toast_paid: true }).eq('id', order_id)
+    await service.from('notifications').insert({
+      user_id: me.id, type: 'toast',
+      title: `${purchaseToastEarn.toLocaleString()}T 적립됐어요 🍞`,
+      body: '제품 구매 완료 적립 토스트예요. 다음 주문에 사용해보세요!',
+      link_url: '/wallet', is_read: false,
+    })
+  }
   let toastEarn = 0
   if (!order.review_toast_paid) {
     toastEarn = Math.floor(order.subtotal * order.review_toast_rate / 100)
