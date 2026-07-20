@@ -5,6 +5,7 @@
 
 ## 2026-07-20
 
+- feat: 트랙A 리뷰 작성기한 신설 — 배송완료(delivered_at) 기준 21일 초과 시 리뷰 작성 차단
 - fix: 구매적립토스트 지급 시점을 결제완료→구매확정으로 이동 (트랙A: brandProductOrder.ts/auto-confirm-cron/review-create, 트랙B: confirmOrder.ts/payapp-webhook) — 취소·반품·교환 전 부정 적립 방지, customer_toast_paid/purchase_toast_paid 플래그로 재지급 방지
 - **fix: 리뷰 작성 자격체크(brand-product-reviews/create) — 결제완료 상태에서도 리뷰 작성 가능하던 버그 수정, 배송완료 상태에서만 리뷰 작성 가능하도록 제한**
 
