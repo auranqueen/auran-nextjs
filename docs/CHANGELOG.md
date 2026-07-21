@@ -3,6 +3,15 @@
 
 ---
 
+## 2026-07-21
+
+## 출석토스트 이중지급 수정
+- checkin/route.ts: existCheckin 방식 → upsert(onConflict) 방식으로 변경 (레이스 컨디션 제거)
+- toast_transactions.reference_id 필드 활용 시작 (${userId}:${date})
+- CheckinTracker.tsx 신규 컴포넌트 분리 (page.tsx L956-972, L4583-4602 로직 이관), in-flight 락 추가
+- migration 117: daily_checkin (user_id, checked_at) UNIQUE 제약 추가
+- 기존 중복지급 8건 회수 완료 (9fa4eb0b 300T, a6af3814 500T)
+
 ## 2026-07-20
 
 - feat: 트랙A 리뷰 작성기한 신설 — 배송완료(delivered_at) 기준 21일 초과 시 리뷰 작성 차단
