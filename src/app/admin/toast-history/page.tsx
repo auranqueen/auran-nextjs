@@ -405,7 +405,7 @@ export default function AdminToastHistoryPage() {
                 const amt = Number(r.amount) || 0
                 const uid = String(r.user_id || '')
                 const memberName =
-                  pickUser(r.users)?.name || (uid && nameByUserId[uid]) || (uid ? uid.slice(0, 8) + '…' : '—')
+                  pickUser(r.users)?.name || (uid && nameByUserId[uid]) || (uid ? '이름없음' : '—')
                 const canReverse =
                   r.transaction_type === 'earn' && r.status === 'active' && amt > 0
                 const isReversed = r.status === 'reversed'
@@ -415,7 +415,7 @@ export default function AdminToastHistoryPage() {
                     <td className="mono" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>
                       {page * PAGE_SIZE + idx + 1}
                     </td>
-                    <td style={{ color: 'var(--text)' }}>{memberName}</td>
+                    <td style={{ color: 'var(--text)' }} title={r.user_id || undefined}>{memberName}</td>
                     <td>{pickUser(r.users)?.origin_track || '—'}</td>
                     <td style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>{TYPE_LABEL[r.source_type || ''] || TYPE_LABEL[r.transaction_type || ''] || r.source_type || r.transaction_type || '—'}</td>
                     <td className="mono" style={{ color: isAdjust || amt < 0 ? RED : GOLD }}>

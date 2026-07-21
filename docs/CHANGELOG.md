@@ -3,6 +3,10 @@
 
 ---
 
+## 2026-07-21 (6) toast-history 이름없음 유저 표시 개선
+- 회원명이 빈 유저는 UUID 앞 8자리 노출 대신 "이름없음" 표시
+- <td title={user_id}>로 hover 시 전체 UUID 확인 가능
+
 ## 2026-07-21 (5) toast-history FK 에러 수정 + 트랙 표시
 - 핫픽스: users(name) → users!toast_transactions_user_id_fkey(name) (admin_id FK 추가로 인한 embed 모호성 에러 해결)
 - 신규: 목록에 회원 트랙(A/B) 컬럼 추가 (users.origin_track 조인)
