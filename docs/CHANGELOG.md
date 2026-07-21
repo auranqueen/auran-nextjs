@@ -3,6 +3,11 @@
 
 ---
 
+## 2026-07-21 (5) toast-history FK 에러 수정 + 트랙 표시
+- 핫픽스: users(name) → users!toast_transactions_user_id_fkey(name) (admin_id FK 추가로 인한 embed 모호성 에러 해결)
+- 신규: 목록에 회원 트랙(A/B) 컬럼 추가 (users.origin_track 조인)
+- 디버그용 임시 에러노출 코드 원복 완료
+
 ## 2026-07-21 (3) 오렌콘솔 토스트 강제지급/차감
 - 신규 API: POST /api/admin/toast/grant (toast_transactions 장부, admin_id/note 기록, 지급·차감 모두 지원)
 - /admin/members 회원상세에 「토스트 지급/차감」버튼 + 인라인 폼 추가 (기존 「포인트 지급」모달/point_history 장부는 완전 별개로 유지)

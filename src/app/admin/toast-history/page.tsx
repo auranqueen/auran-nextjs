@@ -47,7 +47,7 @@ const TYPE_LABEL: Record<string, string> = {
   gift: '선물',
 }
 
-type UserJoin = { name?: string | null; auth_id?: string | null }
+type UserJoin = { name?: string | null; auth_id?: string | null; origin_track?: string | null }
 type ToastRow = {
   id: string
   user_id: string | null
@@ -197,7 +197,7 @@ export default function AdminToastHistoryPage() {
 
       let listQ = supabase
         .from('toast_transactions')
-        .select('id, user_id, amount, transaction_type, source_type, source_id, reference_id, created_at, note, admin_id, status, balance_after, users!toast_transactions_user_id_fkey(name)', {
+        .select('id, user_id, amount, transaction_type, source_type, source_id, reference_id, created_at, note, admin_id, status, balance_after, users!toast_transactions_user_id_fkey(name, origin_track)', {
           count: 'exact',
         })
       if (dateFrom) listQ = listQ.gte('created_at', dateFrom)
@@ -234,13 +234,13 @@ export default function AdminToastHistoryPage() {
       const extra: Record<string, string> = {}
       if (missing.size) {
         const ids = Array.from(missing)
-        const { data: byId } = await supabase.from('users').select('id, auth_id, name').in('id', ids)
+        const { data: byId } = await supabase.from('users').select('id, auth_id, name, origin_track').in('id', ids)
         ;((byId as { id: string; name?: string | null }[]) || []).forEach((u) => {
           if (u.id && u.name) extra[String(u.id)] = String(u.name)
         })
         const left = ids.filter((id) => !extra[id])
         if (left.length) {
-          const { data: byAuth } = await supabase.from('users').select('id, auth_id, name').in('auth_id', left)
+          const { data: byAuth } = await supabase.from('users').select('id, auth_id, name, origin_track').in('auth_id', left)
           ;((byAuth as { auth_id: string; name?: string | null }[]) || []).forEach((u) => {
             if (u.auth_id && u.name) extra[String(u.auth_id)] = String(u.name)
           })
@@ -248,7 +248,7 @@ export default function AdminToastHistoryPage() {
       }
       setNameByUserId(extra)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : JSON.stringify(e))
+      setError(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.')
       setRows([])
       setTotalCount(0)
       setAmountSum(0)
@@ -392,6 +392,7 @@ export default function AdminToastHistoryPage() {
               <tr>
                 <th style={{ width: 56 }}>번호</th>
                 <th>회원명</th>
+                <th style={{ width: 56 }}>트랙</th>
                 <th style={{ width: 100 }}>종류</th>
                 <th style={{ width: 120 }}>금액(T)</th>
                 <th>출처</th>
@@ -415,6 +416,7 @@ export default function AdminToastHistoryPage() {
                       {page * PAGE_SIZE + idx + 1}
                     </td>
                     <td style={{ color: 'var(--text)' }}>{memberName}</td>
+                    <td>{pickUser(r.users)?.origin_track || '—'}</td>
                     <td style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>{TYPE_LABEL[r.source_type || ''] || TYPE_LABEL[r.transaction_type || ''] || r.source_type || r.transaction_type || '—'}</td>
                     <td className="mono" style={{ color: isAdjust || amt < 0 ? RED : GOLD }}>
                       {amt >= 0 ? '+' : ''}
@@ -448,7 +450,7 @@ export default function AdminToastHistoryPage() {
                   </tr>,
                   adjustTargetId === r.id ? (
                     <tr key={`${r.id}-adjust`}>
-                      <td colSpan={7} style={{ padding: 12, background: 'rgba(123,94,167,0.08)' }}>
+                      <td colSpan={8} style={{ padding: 12, background: 'rgba(123,94,167,0.08)' }}>
                         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 8 }}>
                           회수 사유
                         </div>
