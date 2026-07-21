@@ -3,6 +3,11 @@
 
 ---
 
+## 2026-07-21 (3) 오렌콘솔 토스트 강제지급/차감
+- 신규 API: POST /api/admin/toast/grant (toast_transactions 장부, admin_id/note 기록, 지급·차감 모두 지원)
+- /admin/members 회원상세에 「토스트 지급/차감」버튼 + 인라인 폼 추가 (기존 「포인트 지급」모달/point_history 장부는 완전 별개로 유지)
+- ⚠️ known issue: members/page.tsx 876줄로 규칙9(500줄) 초과 심화
+
 ## 2026-07-21 (2) 오렌콘솔 토스트 회수/조정 기능
 - migration 118: toast_transactions.note, admin_id 컬럼 + reference_id 인덱스 추가
 - /admin/toast-history: earn+active 상태 토스트에 "회수" 버튼 추가, 인라인 사유입력 → 신규 adjust row(마이너스 금액) 생성 방식으로 이력 보존 (DELETE 방식 폐기)
