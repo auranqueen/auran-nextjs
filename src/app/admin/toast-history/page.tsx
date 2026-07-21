@@ -197,7 +197,7 @@ export default function AdminToastHistoryPage() {
 
       let listQ = supabase
         .from('toast_transactions')
-        .select('id, user_id, amount, transaction_type, source_type, source_id, reference_id, created_at, note, admin_id, status, balance_after, users(name)', {
+        .select('id, user_id, amount, transaction_type, source_type, source_id, reference_id, created_at, note, admin_id, status, balance_after, users!toast_transactions_user_id_fkey(name)', {
           count: 'exact',
         })
       if (dateFrom) listQ = listQ.gte('created_at', dateFrom)
@@ -248,7 +248,7 @@ export default function AdminToastHistoryPage() {
       }
       setNameByUserId(extra)
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : '목록을 불러오지 못했습니다.')
+      setError(e instanceof Error ? e.message : JSON.stringify(e))
       setRows([])
       setTotalCount(0)
       setAmountSum(0)
