@@ -3,6 +3,12 @@
 
 ---
 
+## 2026-07-21 (2) 오렌콘솔 토스트 회수/조정 기능
+- migration 118: toast_transactions.note, admin_id 컬럼 + reference_id 인덱스 추가
+- /admin/toast-history: earn+active 상태 토스트에 "회수" 버튼 추가, 인라인 사유입력 → 신규 adjust row(마이너스 금액) 생성 방식으로 이력 보존 (DELETE 방식 폐기)
+- 신규 API: POST /api/admin/toast/adjust
+- ⚠️ known issue: toast-history/page.tsx 563줄로 규칙9(500줄) 초과, 컴포넌트 분리 필요 (미착수)
+
 ## 2026-07-20
 
 - **fix: 리뷰 작성 자격체크(brand-product-reviews/create) — 결제완료 상태에서도 리뷰 작성 가능하던 버그 수정, 배송완료 상태에서만 리뷰 작성 가능하도록 제한**

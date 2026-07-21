@@ -57,6 +57,10 @@ type ToastRow = {
   source_id: string | null
   reference_id: string | null
   created_at: string | null
+  note: string | null
+  admin_id: string | null
+  status: string
+  balance_after: number
   users?: UserJoin | UserJoin[] | null
 }
 
@@ -138,6 +142,10 @@ export default function AdminToastHistoryPage() {
   const [page, setPage] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
   const [amountSum, setAmountSum] = useState(0)
+  const [adminId, setAdminId] = useState<string | null>(null)
+  const [adjustTargetId, setAdjustTargetId] = useState<string | null>(null)
+  const [adjustNote, setAdjustNote] = useState('')
+  const [adjustSubmitting, setAdjustSubmitting] = useState(false)
 
   const resolveNameSearchIds = useCallback(
     async (term: string): Promise<string[] | null> => {
@@ -163,6 +171,15 @@ export default function AdminToastHistoryPage() {
     setLoading(true)
     setError('')
     try {
+      const { data: auth } = await supabase.auth.getUser()
+      const authUser = auth?.user
+      if (authUser) {
+        const { data: u } = await supabase.from('users').select('id,role').eq('auth_id', authUser.id).single()
+        setAdminId(u?.id || null)
+      } else {
+        setAdminId(null)
+      }
+
       let userIds: string[] | null = null
       if (nameSearchApplied.trim()) {
         userIds = await resolveNameSearchIds(nameSearchApplied)
@@ -180,7 +197,7 @@ export default function AdminToastHistoryPage() {
 
       let listQ = supabase
         .from('toast_transactions')
-        .select('id, user_id, amount, transaction_type, source_type, source_id, reference_id, created_at, users(name)', {
+        .select('id, user_id, amount, transaction_type, source_type, source_id, reference_id, created_at, note, admin_id, status, balance_after, users(name)', {
           count: 'exact',
         })
       if (dateFrom) listQ = listQ.gte('created_at', dateFrom)
@@ -379,6 +396,7 @@ export default function AdminToastHistoryPage() {
                 <th style={{ width: 120 }}>금액(T)</th>
                 <th>출처</th>
                 <th style={{ width: 168 }}>일시</th>
+                <th style={{ width: 88 }}>관리</th>
               </tr>
             </thead>
             <tbody>
@@ -387,23 +405,130 @@ export default function AdminToastHistoryPage() {
                 const uid = String(r.user_id || '')
                 const memberName =
                   pickUser(r.users)?.name || (uid && nameByUserId[uid]) || (uid ? uid.slice(0, 8) + '…' : '—')
-                return (
+                const canReverse =
+                  r.transaction_type === 'earn' && r.status === 'active' && amt > 0
+                const isReversed = r.status === 'reversed'
+                const isAdjust = r.transaction_type === 'adjust'
+                return [
                   <tr key={r.id}>
                     <td className="mono" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>
                       {page * PAGE_SIZE + idx + 1}
                     </td>
                     <td style={{ color: 'var(--text)' }}>{memberName}</td>
                     <td style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)' }}>{TYPE_LABEL[r.source_type || ''] || TYPE_LABEL[r.transaction_type || ''] || r.source_type || r.transaction_type || '—'}</td>
-                    <td className="mono" style={{ color: amt >= 0 ? GOLD : RED }}>
+                    <td className="mono" style={{ color: isAdjust || amt < 0 ? RED : GOLD }}>
                       {amt >= 0 ? '+' : ''}
                       {amt.toLocaleString()}T
+                      {isAdjust && r.note ? (
+                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 4, fontWeight: 400 }}>
+                          {r.note}
+                        </div>
+                      ) : null}
                     </td>
                     <td style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>{sourceText(r)}</td>
                     <td className="mono" style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>
                       {r.created_at ? new Date(r.created_at).toLocaleString('ko-KR') : '—'}
                     </td>
-                  </tr>
-                )
+                    <td>
+                      {canReverse ? (
+                        <button
+                          type="button"
+                          style={btnBase}
+                          onClick={() => {
+                            setAdjustTargetId(r.id)
+                            setAdjustNote('')
+                          }}
+                        >
+                          회수
+                        </button>
+                      ) : isReversed ? (
+                        <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>회수됨</span>
+                      ) : null}
+                    </td>
+                  </tr>,
+                  adjustTargetId === r.id ? (
+                    <tr key={`${r.id}-adjust`}>
+                      <td colSpan={7} style={{ padding: 12, background: 'rgba(123,94,167,0.08)' }}>
+                        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginBottom: 8 }}>
+                          회수 사유
+                        </div>
+                        <textarea
+                          value={adjustNote}
+                          onChange={(e) => setAdjustNote(e.target.value)}
+                          placeholder="회수 사유를 입력하세요"
+                          rows={3}
+                          style={{
+                            width: '100%',
+                            boxSizing: 'border-box',
+                            padding: '8px 12px',
+                            borderRadius: 8,
+                            border: '1px solid rgba(255,255,255,0.12)',
+                            background: 'rgba(0,0,0,0.25)',
+                            color: '#fff',
+                            fontSize: 12,
+                            fontFamily: 'inherit',
+                            resize: 'vertical',
+                            outline: 'none',
+                          }}
+                        />
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <button
+                            type="button"
+                            style={{
+                              ...btnBase,
+                              border: '1px solid rgba(123,94,167,0.45)',
+                              background: 'rgba(123,94,167,0.25)',
+                              color: '#c4a7e7',
+                              opacity: !adjustNote.trim() || adjustSubmitting || !adminId ? 0.5 : 1,
+                            }}
+                            disabled={!adjustNote.trim() || adjustSubmitting || !adminId}
+                            onClick={() => {
+                              void (async () => {
+                                if (!adjustTargetId || !adjustNote.trim() || adjustSubmitting) return
+                                setAdjustSubmitting(true)
+                                setError('')
+                                try {
+                                  const res = await fetch('/api/admin/toast/adjust', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                      transaction_id: adjustTargetId,
+                                      note: adjustNote.trim(),
+                                    }),
+                                  })
+                                  const json = await res.json().catch(() => ({}))
+                                  if (!res.ok || !json?.ok) {
+                                    throw new Error(json?.error || '회수 처리에 실패했습니다.')
+                                  }
+                                  setAdjustTargetId(null)
+                                  setAdjustNote('')
+                                  await load()
+                                } catch (e: unknown) {
+                                  setError(e instanceof Error ? e.message : '회수 처리에 실패했습니다.')
+                                } finally {
+                                  setAdjustSubmitting(false)
+                                }
+                              })()
+                            }}
+                          >
+                            {adjustSubmitting ? '처리 중…' : '확인'}
+                          </button>
+                          <button
+                            type="button"
+                            style={btnBase}
+                            disabled={adjustSubmitting}
+                            onClick={() => {
+                              setAdjustTargetId(null)
+                              setAdjustNote('')
+                            }}
+                          >
+                            취소
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : null,
+                ]
               })}
             </tbody>
           </table>
