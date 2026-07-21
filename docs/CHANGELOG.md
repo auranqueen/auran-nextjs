@@ -3,6 +3,12 @@
 
 ---
 
+## 2026-07-21 (8) 레거시 dead path 제거
+- src/app/api/payment/callback/route.ts 삭제
+- 사유: benefit_settings + award_points 5% 이중적립 위험 로직 포함,
+  코드베이스 내 참조 0건 확인(2회 검증) — 실제 결제는
+  /api/payments/payapp/webhook 경로 사용 중
+
 ## 2026-07-21 (7) 회원 이름 누락 근본 차단
 - auth/done upsert가 name 없이 계정을 만들 수 있던 경로 차단
   (기존 유저면 skip, 신규면 메타데이터/이메일 기반 이름 폴백 채워서 insert)
