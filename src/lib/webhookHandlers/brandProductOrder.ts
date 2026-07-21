@@ -57,30 +57,6 @@ export async function handleBrandProductOrderComplete(
           qty: item.quantity,
         })
       }
-      const toastEarn = Number(order.customer_toast_amount || 0)
-      if (toastEarn > 0) {
-        await client.from('toast_transactions').insert({
-          user_id: order.customer_id,
-          amount: toastEarn,
-          transaction_type: 'earn',
-          source_type: 'brand_product_order',
-          source_id: order.id,
-          reference_id: order.id,
-        })
-        const { error: ptErr } = await client.rpc('increment_points', {
-          user_id: order.customer_id,
-          amount: toastEarn,
-        })
-        if (ptErr) console.warn('[brand_product_order toast points]', ptErr)
-        await client.from('notifications').insert({
-          user_id: order.customer_id,
-          type: 'toast',
-          title: `${toastEarn.toLocaleString()}T 적립됐어요 🍞`,
-          body: '제품 구매 완료 적립 토스트예요. 다음 주문에 사용해보세요!',
-          link_url: '/wallet',
-          is_read: false,
-        })
-      }
       await client.from('notifications').insert({
         user_id: order.customer_id,
         type: 'payment',

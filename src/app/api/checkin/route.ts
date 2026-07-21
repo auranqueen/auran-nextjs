@@ -27,15 +27,6 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
   if (!userRow) return NextResponse.json({ ok: false, error: 'user_not_found' }, { status: 404 })
 
-  // 오늘 이미 출석했는지 확인
-  const { data: existCheckin } = await client
-    .from('daily_checkin')
-    .select('id')
-    .eq('user_id', userRow.id)
-    .eq('checked_at', today)
-    .maybeSingle()
-  if (existCheckin) return NextResponse.json({ ok: true, already: true, message: '오늘 이미 출석했어요' })
-
   // IP 중복 체크
   const { data: ipCheck } = await client
     .from('daily_checkin')
@@ -93,12 +84,18 @@ export async function POST(req: NextRequest) {
   const newStreak = isConsecutive ? ((userRow as any).consecutive_checkin_days || 0) + 1 : 1
   const newTotal = ((userRow as any).total_checkin_days || 0) + 1
 
-  // 출석 기록 저장
-  await client.from('daily_checkin').insert({
-    user_id: userRow.id,
-    checked_at: today,
-    ip_address: ip,
-  } as any)
+  // 출석 기록 저장 (UNIQUE 충돌 시 ignore → 빈 배열 = already)
+  const { data: insertedRows } = await client
+    .from('daily_checkin')
+    .upsert(
+      { user_id: userRow.id, checked_at: today, ip_address: ip },
+      { onConflict: 'user_id,checked_at', ignoreDuplicates: true },
+    )
+    .select()
+
+  if (!insertedRows || insertedRows.length === 0) {
+    return NextResponse.json({ ok: true, already: true, message: '오늘 이미 출석했어요' })
+  }
 
   // 스트릭 업데이트
   await client.from('users').update({
@@ -133,6 +130,7 @@ export async function POST(req: NextRequest) {
     amount: totalEarned,
     transaction_type: 'earn',
     source_type: 'attendance',
+    reference_id: `${userRow.id}:${today}`,
   } as any)
   await client.from('users').update({
     points: (userRow.points || 0) + totalEarned,

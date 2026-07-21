@@ -9,8 +9,19 @@
 - 신규 API: POST /api/admin/toast/adjust
 - ⚠️ known issue: toast-history/page.tsx 563줄로 규칙9(500줄) 초과, 컴포넌트 분리 필요 (미착수)
 
+## 2026-07-21
+
+## 출석토스트 이중지급 수정
+- checkin/route.ts: existCheckin 방식 → upsert(onConflict) 방식으로 변경 (레이스 컨디션 제거)
+- toast_transactions.reference_id 필드 활용 시작 (${userId}:${date})
+- CheckinTracker.tsx 신규 컴포넌트 분리 (page.tsx L956-972, L4583-4602 로직 이관), in-flight 락 추가
+- migration 117: daily_checkin (user_id, checked_at) UNIQUE 제약 추가
+- 기존 중복지급 8건 회수 완료 (9fa4eb0b 300T, a6af3814 500T)
+
 ## 2026-07-20
 
+- feat: 트랙A 리뷰 작성기한 신설 — 배송완료(delivered_at) 기준 21일 초과 시 리뷰 작성 차단
+- fix: 구매적립토스트 지급 시점을 결제완료→구매확정으로 이동 (트랙A: brandProductOrder.ts/auto-confirm-cron/review-create, 트랙B: confirmOrder.ts/payapp-webhook) — 취소·반품·교환 전 부정 적립 방지, customer_toast_paid/purchase_toast_paid 플래그로 재지급 방지
 - **fix: 리뷰 작성 자격체크(brand-product-reviews/create) — 결제완료 상태에서도 리뷰 작성 가능하던 버그 수정, 배송완료 상태에서만 리뷰 작성 가능하도록 제한**
 
 ## 2026-07-19

@@ -849,42 +849,13 @@ export async function POST(req: NextRequest) {
             // 1. 누적 구매액 + 등급 자동 승급
             await addToPurchaseAmount(intent.user_id, intent.amount, postClient)
             await autoUpgradeGrade(intent.user_id, postClient)
-            // 2. 구매 토스트 적립
-            const { data: rewardSetting } = await postClient
-              .from('admin_settings')
-              .select('value')
-              .eq('category', 'points_payment')
-              .eq('key', 'purchase_reward_rate')
-              .maybeSingle()
-            const rewardRate = Number(rewardSetting?.value ?? 3) / 100
-            const toastEarn = Math.floor(intent.amount * rewardRate)
-            if (toastEarn > 0) {
-              await postClient.from('toast_transactions').insert({
-                user_id: intent.user_id,
-                amount: toastEarn,
-                transaction_type: 'earn',
-                source_type: 'order',
-                source_id: (orderRow as any)?.id || null,
-                reference_id: (orderRow as any)?.id || null,
-              } as any)
-              const { error: ptErr } = await postClient.rpc('increment_points', { user_id: intent.user_id, amount: toastEarn })
-              if (ptErr) console.warn('[order purchase toast points]', ptErr)
-              await postClient.from('notifications').insert({
-                user_id: intent.user_id,
-                type: 'toast',
-                title: `${toastEarn.toLocaleString()}T 적립됐어요 🍞`,
-                body: '구매 완료 적립 토스트예요. 다음 주문에 사용해보세요!',
-                link_url: '/wallet',
-                is_read: false,
-              } as any)
-            }
             // 3. 주문 완료 알림톡
             const { data: uRow } = await postClient.from('users').select('phone,name').eq('id', intent.user_id).maybeSingle()
             if ((uRow as any)?.phone) {
               const uName = (uRow as any)?.name || '고객'
               await sendPpurioAlimtalk({
                 phone: (uRow as any).phone,
-                message: `[AURAN] ${uName}님, 주문이 완료됐어요 💜\n\n결제금액: ₩${Number(intent.amount).toLocaleString()}\n토스트 ${toastEarn.toLocaleString()}T 적립!\n\n주문 확인: https://auran.kr/my`,
+                message: `[AURAN] ${uName}님, 주문이 완료됐어요 💜\n\n결제금액: ₩${Number(intent.amount).toLocaleString()}\n\n주문 확인: https://auran.kr/my`,
                 title: 'AURAN 주문 완료',
               }).catch(() => {})
             }

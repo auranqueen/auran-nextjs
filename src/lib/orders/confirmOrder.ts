@@ -37,7 +37,7 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
 
   const { data: order } = await supabase
     .from('orders')
-    .select('id,status,customer_id,items,referrer_user_id,share_toast_paid,prescription_owner_id,final_amount,referral_reward_paid,order_items(product_id,quantity,product_price,final_price)')
+    .select('id,status,customer_id,items,referrer_user_id,share_toast_paid,prescription_owner_id,final_amount,referral_reward_paid,purchase_toast_paid,order_items(product_id,quantity,product_price,final_price)')
     .eq('id', orderId)
     .maybeSingle()
   if (!order?.id) return { ok: false, rewardAmount: 0, shareAmount: 0, autoConfirmDays }
@@ -78,8 +78,34 @@ export async function confirmOrderById(supabase: SupabaseClient, orderId: string
       shareAmount += Math.floor(Math.max(0, pm.share_toast) * qty)
     }
   })
-  // 구매자 토스트 적립은 결제완료(웹훅)에서 실결제금액 기준으로 처리됨
   const buyerAuthId = String((order as any).customer_id || '')
+  if (buyerAuthId && !(order as any).purchase_toast_paid) {
+    const { data: rewardSetting } = await supabase
+      .from('admin_settings')
+      .select('value')
+      .eq('category', 'points_payment')
+      .eq('key', 'purchase_reward_rate')
+      .maybeSingle()
+    const rewardRate = Number((rewardSetting as any)?.value ?? 3) / 100
+    const purchaseToastEarn = Math.floor(Number((order as any).final_amount || 0) * rewardRate)
+    if (purchaseToastEarn > 0) {
+      const { data: buyerRow } = await supabase.from('users').select('id').eq('auth_id', buyerAuthId).maybeSingle()
+      if (buyerRow?.id) {
+        await supabase.from('toast_transactions').insert({
+          user_id: buyerRow.id, amount: purchaseToastEarn, transaction_type: 'earn',
+          source_type: 'order', source_id: orderId, reference_id: orderId,
+        })
+        await addUserPointsByAuth(supabase, buyerAuthId, purchaseToastEarn)
+        await supabase.from('notifications').insert({
+          user_id: buyerRow.id, type: 'toast',
+          title: `${purchaseToastEarn.toLocaleString()}T 적립됐어요 🍞`,
+          body: '구매 완료 적립 토스트예요. 다음 주문에 사용해보세요!',
+          link_url: '/wallet', is_read: false,
+        })
+      }
+    }
+    await supabase.from('orders').update({ purchase_toast_paid: true }).eq('id', orderId)
+  }
 
   const referrerAuthId = String((order as any).referrer_user_id || '')
   if (referrerAuthId && shareAmount > 0 && !(order as any).share_toast_paid) {
