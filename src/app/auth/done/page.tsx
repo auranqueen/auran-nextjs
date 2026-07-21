@@ -81,11 +81,21 @@ function AuthDoneInner() {
         const _email = _user.email ||
           (_provider === 'kakao' && _kakaoId ? `kakao-${_kakaoId}@no-email.auran` : null) ||
           `${_user.id}@no-email.auran`
-        const { error: _usersErr } = await supabase.from('users').upsert(
-          { auth_id: _user.id, email: _email },
-          { onConflict: 'auth_id' }
-        )
-        console.log('users upsert result:', _usersErr ? _usersErr : 'success', 'email:', _email)
+        const _meta = _user.user_metadata || {}
+        const { data: _existingUser } = await supabase
+          .from('users')
+          .select('id')
+          .eq('auth_id', _user.id)
+          .maybeSingle()
+        if (!_existingUser) {
+          const _displayName =
+            _meta.name || _meta.full_name || (_email?.split('@')[0] ?? '사용자')
+          const { error: _usersErr } = await supabase.from('users').upsert(
+            { auth_id: _user.id, email: _email, name: _displayName },
+            { onConflict: 'auth_id' }
+          )
+          console.log('users upsert result:', _usersErr ? _usersErr : 'success', 'email:', _email)
+        }
       } catch (e) { console.error('users upsert error:', e) }
       // localStorage에서 research_consent 읽어서 profiles 저장
       try {

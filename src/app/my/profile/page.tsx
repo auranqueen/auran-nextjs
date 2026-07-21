@@ -155,6 +155,10 @@ export default function MyProfilePage() {
 
   const persist = async (overrides?: Record<string, unknown>) => {
     if (!authId) return
+    if (!fullName.trim()) {
+      alert('이름을 입력해 주세요.')
+      return
+    }
     setSaving(true)
     const bodyStatusVal = bodyStatus.length ? bodyStatus.join(',') : null
     const { error } = await supabase

@@ -405,7 +405,7 @@ export default function AdminToastHistoryPage() {
                 const amt = Number(r.amount) || 0
                 const uid = String(r.user_id || '')
                 const memberName =
-                  pickUser(r.users)?.name || (uid && nameByUserId[uid]) || (uid ? '이름없음' : '—')
+                  pickUser(r.users)?.name || (uid && nameByUserId[uid]) || (uid ? '⚠ 이름누락(오류)' : '—')
                 const canReverse =
                   r.transaction_type === 'earn' && r.status === 'active' && amt > 0
                 const isReversed = r.status === 'reversed'

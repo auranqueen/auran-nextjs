@@ -369,7 +369,7 @@ function SignupForm() {
 
             <button
               onClick={() => {
-                if (!form.name || !form.email || !form.password) { setError('필수 항목을 입력해주세요'); return }
+                if (!form.name.trim() || !form.email || !form.password) { setError('필수 항목을 입력해주세요'); return }
                 if (form.password !== form.passwordConfirm) { setError('비밀번호가 일치하지 않습니다'); return }
                 if (form.password.length < 6) { setError('비밀번호는 6자 이상이어야 합니다'); return }
                 const savedGender = localStorage.getItem('auran_gender') || ''
