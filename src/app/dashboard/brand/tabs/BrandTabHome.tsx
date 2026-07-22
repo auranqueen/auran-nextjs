@@ -2,22 +2,32 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { CSSProperties } from 'react'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 const CARD: CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: 12, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
+const STATUS_LABEL: Record<string, string> = {
+  pending: '접수 대기',
+  approved: '승인됨',
+  shipping: '배송중',
+  done: '완료',
+  cancelled: '취소',
+}
+function dayKey(iso: string) {
+  const d = new Date(iso)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 interface Props {
   brandName: string
   brandId: string | null
   onTabChange: (tab: string) => void
 }
-export default function BrandTabHome({ brandName, brandId, onTabChange }: Props) {
+export default function BrandTabHome({ brandId, onTabChange }: Props) {
   const supabase = createClient()
   const [ownerCount, setOwnerCount] = useState<number | null>(null)
   const [productCount, setProductCount] = useState<number | null>(null)
-  const [activeCount, setActiveCount] = useState<number | null>(null)
-  const [topProducts, setTopProducts] = useState<Array<{ name: string; status: string }>>([])
   const [loading, setLoading] = useState(true)
   const [expiringLots, setExpiringLots] = useState<Array<{ product_name: string; lot_number: string; days: number; remaining_qty: number }>>([])
   const [recentTalks, setRecentTalks] = useState<Array<{ owner_name: string; preview: string; unread: boolean; updated_at: string }>>([])
@@ -26,26 +36,24 @@ export default function BrandTabHome({ brandName, brandId, onTabChange }: Props)
   const [monthSales, setMonthSales] = useState<number>(0)
   const [closedEvents, setClosedEvents] = useState<string[]>([])
   const [pendingOrders, setPendingOrders] = useState<number>(0)
+  const [salesOpen, setSalesOpen] = useState(false)
+  const [salesTrend, setSalesTrend] = useState<Array<{ day: string; label: string; amount: number }>>([])
+  const [monthOrderList, setMonthOrderList] = useState<Array<{
+    id: string
+    created_at: string
+    owner_name: string
+    amount: number
+    status: string
+  }>>([])
   useEffect(() => {
     if (!brandId) return
     const fetch = async () => {
       setLoading(true)
-      // 제품 수 집계
-      const [{ count: total }, { count: active }] = await Promise.all([
-        supabase.from('brand_products').select('id', { count: 'exact', head: true }).eq('brand_id', brandId),
-        supabase.from('brand_products').select('id', { count: 'exact', head: true }).eq('brand_id', brandId).eq('status', 'active'),
-      ])
-      setProductCount(total ?? 0)
-      setActiveCount(active ?? 0)
-      const { data: prods } = await supabase
+      const { count: total } = await supabase
         .from('brand_products')
-        .select('name, status')
+        .select('id', { count: 'exact', head: true })
         .eq('brand_id', brandId)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(5)
-      setTopProducts(prods || [])
-      // 연결 원장님 수 (brand_owner_links active)
+      setProductCount(total ?? 0)
       const { count: activeOwnerCount } = await supabase
         .from('brand_owner_links')
         .select('id', { count: 'exact', head: true })
@@ -70,7 +78,6 @@ export default function BrandTabHome({ brandName, brandId, onTabChange }: Props)
           }))
           .filter(l => l.days <= 330))
       }
-      // 오렌상담톡 최근 3건
       const { data: talks } = await supabase
         .from('chat_channels')
         .select('id, last_message, last_message_at, unread_count, owner_id, users!owner_id(name)')
@@ -86,7 +93,6 @@ export default function BrandTabHome({ brandName, brandId, onTabChange }: Props)
           updated_at: t.last_message_at || '',
         })))
       }
-      // 최근 주문 4건
       const { data: orders } = await supabase
         .from('brand_orders')
         .select('id, product_name, total_amount, status, created_at')
@@ -102,7 +108,6 @@ export default function BrandTabHome({ brandName, brandId, onTabChange }: Props)
         })))
         setPendingOrders(orders.filter((o: any) => o.status === 'pending').length)
       }
-      // 샘플 발송 최근 4건
       const { data: samples } = await supabase
         .from('brand_samples')
         .select('owner_name, product_name, status')
@@ -110,24 +115,88 @@ export default function BrandTabHome({ brandName, brandId, onTabChange }: Props)
         .order('created_at', { ascending: false })
         .limit(4)
       if (samples) setSampleRequests(samples as any[])
-      // 이달 판매액 (orders 테이블)
-      const thisMonth = new Date(); thisMonth.setDate(1); thisMonth.setHours(0, 0, 0, 0)
-      const { data: salesData } = await supabase
-        .from('orders')
-        .select('final_price')
+
+      const thisMonth = new Date()
+      thisMonth.setDate(1)
+      thisMonth.setHours(0, 0, 0, 0)
+      const { data: stockOrders } = await supabase
+        .from('brand_orders')
+        .select('total_amount')
+        .eq('brand_id', brandId)
         .gte('created_at', thisMonth.toISOString())
-        .in('status', ['paid', 'shipped', 'delivered'])
-      if (salesData) setMonthSales(salesData.reduce((sum: number, o: any) => sum + (o.final_price || 0), 0))
+        .neq('status', 'cancelled')
+      const stockSum = (stockOrders || []).reduce((s, o) => s + (o.total_amount || 0), 0)
+      setMonthSales(stockSum)
+
+      const { data: monthRows } = await supabase
+        .from('brand_orders')
+        .select('id, total_amount, status, created_at, owner_name, profile_id, profiles(full_name)')
+        .eq('brand_id', brandId)
+        .gte('created_at', thisMonth.toISOString())
+        .order('created_at', { ascending: false })
+      setMonthOrderList((monthRows || []).map((o: any) => {
+        const profileRef = o.profiles
+        const profileName = Array.isArray(profileRef) ? profileRef[0]?.full_name : profileRef?.full_name
+        return {
+          id: o.id,
+          created_at: o.created_at,
+          owner_name: profileName || o.owner_name || '원장님',
+          amount: Math.trunc(Number(o.total_amount) || 0),
+          status: o.status || 'pending',
+        }
+      }))
+
+      const since = new Date()
+      since.setHours(0, 0, 0, 0)
+      since.setDate(since.getDate() - 29)
+      const sinceIso = since.toISOString()
+      const [{ data: createdRows }, { data: cancelledRows }] = await Promise.all([
+        supabase
+          .from('brand_orders')
+          .select('total_amount, created_at')
+          .eq('brand_id', brandId)
+          .gte('created_at', sinceIso),
+        supabase
+          .from('brand_orders')
+          .select('total_amount, updated_at')
+          .eq('brand_id', brandId)
+          .eq('status', 'cancelled')
+          .gte('updated_at', sinceIso),
+      ])
+      const createdByDay: Record<string, number> = {}
+      const cancelledByDay: Record<string, number> = {}
+      for (const o of createdRows || []) {
+        if (!o.created_at) continue
+        const k = dayKey(o.created_at)
+        createdByDay[k] = (createdByDay[k] || 0) + (o.total_amount || 0)
+      }
+      for (const o of cancelledRows || []) {
+        if (!(o as { updated_at?: string }).updated_at) continue
+        const k = dayKey((o as { updated_at: string }).updated_at)
+        cancelledByDay[k] = (cancelledByDay[k] || 0) + (o.total_amount || 0)
+      }
+      const trend: Array<{ day: string; label: string; amount: number }> = []
+      for (let i = 0; i < 30; i++) {
+        const d = new Date(since.getFullYear(), since.getMonth(), since.getDate() + i)
+        const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        trend.push({
+          day: k,
+          label: `${d.getMonth() + 1}/${d.getDate()}`,
+          amount: (createdByDay[k] || 0) - (cancelledByDay[k] || 0),
+        })
+      }
+      setSalesTrend(trend)
+
       setLoading(false)
     }
     void fetch()
   }, [brandId, supabase])
   const kpis = [
-    { label: '이달 판매액', value: loading ? '-' : `₩${(monthSales / 10000).toFixed(0)}만`, color: '#fff' },
-    { label: '처리대기 주문', value: loading ? '-' : `${pendingOrders}`, color: pendingOrders > 0 ? '#e8a500' : '#fff' },
-    { label: '임박재고 D-30', value: loading ? '-' : `${expiringLots.filter(l => l.days <= 30).length}`, color: expiringLots.filter(l => l.days <= 30).length > 0 ? '#e85555' : '#fff' },
-    { label: '활성 원장님', value: loading ? '-' : `${ownerCount ?? 0}명`, color: PURPLE },
-    { label: '등록 제품', value: loading ? '-' : `${productCount ?? 0}개`, color: GOLD },
+    { key: 'sales', label: '이달 판매액', value: loading ? '-' : `₩${(monthSales / 10000).toFixed(0)}만`, color: '#fff' },
+    { key: 'pending', label: '처리대기 주문', value: loading ? '-' : `${pendingOrders}`, color: pendingOrders > 0 ? '#e8a500' : '#fff' },
+    { key: 'lots', label: '임박재고 D-30', value: loading ? '-' : `${expiringLots.filter(l => l.days <= 30).length}`, color: expiringLots.filter(l => l.days <= 30).length > 0 ? '#e85555' : '#fff' },
+    { key: 'owners', label: '활성 원장님', value: loading ? '-' : `${ownerCount ?? 0}명`, color: PURPLE },
+    { key: 'products', label: '등록 제품', value: loading ? '-' : `${productCount ?? 0}개`, color: GOLD },
   ]
   const alerts = [
     ...(productCount === 0 ? [{ text: '제품을 등록하고 원장님과 연결을 시작해보세요', action: '제품 등록', tab: 'products' }] : []),
@@ -155,11 +224,114 @@ export default function BrandTabHome({ brandName, brandId, onTabChange }: Props)
       )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 8, marginBottom: 12 }}>
         {kpis.map(k => (
-          <div key={k.label} style={{ ...CARD, textAlign: 'center', marginBottom: 0 }}>
+          <div
+            key={k.key}
+            role={k.key === 'sales' ? 'button' : undefined}
+            onClick={k.key === 'sales' ? () => setSalesOpen(v => !v) : undefined}
+            style={{
+              ...CARD,
+              textAlign: 'center',
+              marginBottom: 0,
+              cursor: k.key === 'sales' ? 'pointer' : 'default',
+              outline: k.key === 'sales' && salesOpen ? `1px solid ${GOLD}` : undefined,
+            }}
+          >
             <div style={{ fontSize: 18, color: k.color, marginBottom: 4, fontWeight: 500 }}>{k.value}</div>
             <div style={{ fontSize: 10, color: SUB }}>{k.label}</div>
           </div>
         ))}
+      </div>
+      {salesOpen && (
+        <div style={{ ...CARD, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <div style={{ fontSize: 12, color: SUB }}>이달 재고발주 내역</div>
+            <button
+              type="button"
+              onClick={() => setSalesOpen(false)}
+              style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: TEXT, cursor: 'pointer' }}
+            >
+              접기
+            </button>
+          </div>
+          {monthOrderList.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>이달 발주 내역이 없어요</div>
+          ) : (
+            monthOrderList.map((row) => {
+              const cancelled = row.status === 'cancelled'
+              return (
+                <div
+                  key={row.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 0',
+                    borderBottom: '0.5px solid rgba(255,255,255,0.05)',
+                    fontSize: 11,
+                  }}
+                >
+                  <span style={{ color: SUB, width: 72, flexShrink: 0 }}>
+                    {new Date(row.created_at).toLocaleDateString('ko-KR')}
+                  </span>
+                  <span style={{ color: TEXT, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {row.owner_name}
+                  </span>
+                  <span style={{ color: cancelled ? SUB : GOLD, flexShrink: 0 }}>
+                    {cancelled ? '-' : ''}₩{row.amount.toLocaleString()}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 9,
+                      padding: '2px 6px',
+                      borderRadius: 4,
+                      flexShrink: 0,
+                      background: cancelled ? 'rgba(255,255,255,0.06)' : 'rgba(201,169,110,0.12)',
+                      color: cancelled ? 'rgba(255,255,255,0.35)' : GOLD,
+                    }}
+                  >
+                    {STATUS_LABEL[row.status] || row.status}
+                  </span>
+                </div>
+              )
+            })
+          )}
+        </div>
+      )}
+      <div style={{ ...CARD, marginBottom: 12 }}>
+        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>최근 30일 재고발주 매출</div>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 24, color: SUB, fontSize: 12 }}>불러오는 중…</div>
+        ) : (
+          <ResponsiveContainer width="100%" height={180}>
+            <LineChart data={salesTrend}>
+              <XAxis
+                dataKey="label"
+                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }}
+                axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+                tickLine={false}
+                interval="preserveStartEnd"
+              />
+              <YAxis
+                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v) => `${Math.round(Number(v) / 10000)}만`}
+                width={36}
+              />
+              <Tooltip
+                contentStyle={{
+                  background: '#1a1520',
+                  border: '0.5px solid rgba(201,169,110,0.35)',
+                  borderRadius: 8,
+                  fontSize: 11,
+                  color: TEXT,
+                }}
+                formatter={(v: number) => [`₩${Number(v).toLocaleString()}`, '발주 매출']}
+              />
+              <Line type="monotone" dataKey="amount" stroke={GOLD} strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </div>
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>🔔 지금 챙겨야 할 것들</div>
@@ -180,7 +352,6 @@ export default function BrandTabHome({ brandName, brandId, onTabChange }: Props)
           ))
         )}
       </div>
-      {/* 3단: 오렌상담톡 + 최근주문 + 재고현황 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', gap: 10, marginBottom: 10 }}>
         <div style={CARD}>
           <div style={{ fontSize: 10, color: SUB, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
@@ -232,7 +403,6 @@ export default function BrandTabHome({ brandName, brandId, onTabChange }: Props)
           ))}
         </div>
       </div>
-      {/* 2단: 마케팅 + 샘플발송 */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <div style={{ ...CARD, marginBottom: 0, background: 'rgba(123,94,167,0.06)', border: '1px solid rgba(123,94,167,0.15)' }}>
           <div style={{ fontSize: 10, color: SUB, marginBottom: 10, display: 'flex', justifyContent: 'space-between' }}>

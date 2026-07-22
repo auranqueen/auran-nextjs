@@ -3,6 +3,14 @@
 
 ---
 
+## 2026-07-22
+
+- **fix: 브랜드 홈 매출 KPI 수정 + 30일 추이 그래프 추가** (`BrandTabHome.tsx`)
+  - 이달 판매액 KPI: `orders` 테이블(브랜드 필터 없던 버그) → `brand_orders`(재고발주) 기준으로 교체. `status='cancelled'` 제외 `total_amount` 합산
+  - 최근 30일 매출 추이 그래프 신규: `created_at` 기준 생성분(+) − `updated_at` 기준 취소분(`status='cancelled'`) 일별 집계, recharts `Line`(골드 `#C9A96E`)
+  - 매출액 카드 클릭 시 인라인 아코디언(이번달 발주 리스트: 날짜·원장명·금액·상태, 취소는 `-`금액+회색 뱃지, 「접기」토글)
+  - **살롱스토어(`brand_product_orders`)는 브랜드사 매출 KPI/추이에서 의도적으로 제외** (재고발주만 집계)
+
 ## 2026-07-21 (8) 레거시 dead path 제거
 - src/app/api/payment/callback/route.ts 삭제
 - 사유: benefit_settings + award_points 5% 이중적립 위험 로직 포함,
