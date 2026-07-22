@@ -105,7 +105,9 @@ function LogiDashboardInner() {
         {tab === 'lots'      && <BrandInventoryLots brandId={brandId} />}
         {tab === 'scan'      && <BrandInventoryScan brandId={brandId} brandName={brandName} />}
         {tab === 'qr'        && <BrandInventoryQR brandId={brandId} brandName={brandName} />}
-        {tab === 'orders'    && <BrandTabOrders brandId={brandId} brandName={brandName} />}
+        {tab === 'orders'    && brandId && (
+          <BrandTabOrders myBrands={[{ id: brandId, name: brandName }]} />
+        )}
         {tab === 'emergency' && <BrandInventoryEmergency brandId={brandId} brandName={brandName} />}
       </div>
     </div>

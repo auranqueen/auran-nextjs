@@ -5,6 +5,14 @@
 
 ## 2026-07-23
 
+- **refactor: 브랜드 전환 드롭다운 제거, 홈 그룹뷰 고정 + 탭별 개별 브랜드선택 도입**
+  - `TabBrandSelector.tsx` 신규: 탭 내부 브랜드 선택 pill UI, `localStorage`로 탭별 선택 기억
+  - `BrandHubContent.tsx` 상단 「브랜드 전환」 드롭다운 완전 제거 — 홈/제품관리는 기존 방식(그룹뷰/자체필터) 유지, 나머지 13개 탭(Sample/TierPackages/Orders/OrenTalk/Live/Community/Expand/Data/Invoice/Inventory/Report/Returns/Settlement)은 각자 내부 브랜드선택으로 전환
+  - BrandTabProducts 신규등록 폼: 브랜드 선택을 `TabBrandSelector`로 교체 (`BrandProductPriceSection`, storageKey `product-form-brand`)
+  - `OwnersBrandWrapper.tsx` 신규: 800줄 규칙 초과인 `BrandTabOwners.tsx` 본문 미수정, 래퍼로 브랜드선택 주입 (`owners-brand`)
+  - `page.tsx`: 상단 드롭다운 삭제, `currentBrandId`는 PIN/Home/제품폼 초기값용으로 유지(`myBrands[0]` 기본값)
+  - `dashboard/logi/page.tsx` Orders props를 `myBrands` 방식으로 수정(빌드 깨짐 수정)
+
 - **fix: 그룹매출 그래프 툴팁 글씨색 다크테마 대응**
   - `GroupRevenueChart.tsx` BarChart/PieChart 툴팁이 다크배경에서 검정글씨로 안 보이던 문제 수정, `contentStyle`/`itemStyle`/`labelStyle`로 흰색 적용
 

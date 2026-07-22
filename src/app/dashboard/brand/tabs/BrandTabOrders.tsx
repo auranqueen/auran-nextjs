@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import TabBrandSelector from '../components/TabBrandSelector'
 import type { CSSProperties } from 'react'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -50,10 +51,12 @@ interface OrderRow {
   logistics_staff: string | null
 }
 interface Props {
-  brandId: string | null
-  brandName: string
+  myBrands: { id: string; name: string }[]
 }
-export default function BrandTabOrders({ brandId, brandName }: Props) {
+export default function BrandTabOrders({ myBrands }: Props) {
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
+  const brandId = selectedBrandId
+  const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
   const supabase = createClient()
   const [orders, setOrders] = useState<OrderRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -206,6 +209,11 @@ export default function BrandTabOrders({ brandId, brandName }: Props) {
   const pendingCount = orders.filter(o => o.status === 'pending').length
   return (
     <div>
+      <TabBrandSelector myBrands={myBrands} storageKey="orders-brand" onSelect={setSelectedBrandId} />
+      {!selectedBrandId ? (
+        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
+      ) : (
+      <>
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>{toast}</div>
       )}
@@ -375,6 +383,8 @@ export default function BrandTabOrders({ brandId, brandName }: Props) {
           💡 아레테 포인트 + 발주 적립 포인트 → 시바산 제품 구매 시 통합 사용
         </div>
       </div>
+      </>
+      )}
     </div>
   )
 }

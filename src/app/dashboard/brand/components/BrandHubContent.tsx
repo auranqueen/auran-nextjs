@@ -1,9 +1,10 @@
 'use client'
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
+import TabBrandSelector from './TabBrandSelector'
 const BrandTabHome = dynamic(() => import('../tabs/BrandTabHome'), { ssr: false })
 const BrandTabProducts = dynamic(() => import('../tabs/BrandTabProducts'), { ssr: false })
-const BrandTabOwners = dynamic(() => import('../tabs/BrandTabOwners'), { ssr: false })
+const OwnersBrandWrapper = dynamic(() => import('./OwnersBrandWrapper'), { ssr: false })
 const BrandTabOrders = dynamic(() => import('../tabs/BrandTabOrders'), { ssr: false })
 const BrandTabOrenTalk = dynamic(() => import('../tabs/BrandTabOrenTalk'), { ssr: false })
 const BrandTabLive = dynamic(() => import('../tabs/BrandTabLive'), { ssr: false })
@@ -41,14 +42,16 @@ interface Props {
   onNew: () => void
 }
 export default function BrandHubContent({
-  brandId, brandName, myBrands, onBrandChange, authId, isCEO, loginRole,
+  brandId, brandName, myBrands, onBrandChange: _onBrandChange, authId, isCEO, loginRole,
   rows, tab, onTabChange, onEdit, onNew
 }: Props) {
   const [mainTab, setMainTab] = useState<MainTab>('home')
   const [helpOpen, setHelpOpen] = useState(false)
   const [systemMode, setSystemMode] = useState<SystemMode>('brand')
   const [logiTab, setLogiTab] = useState<LogiTab>('stock')
-  const [showBrandPicker, setShowBrandPicker] = useState(false)
+  const [logiBrandId, setLogiBrandId] = useState<string | null>(null)
+  const brandOpts = myBrands.map(({ id, name }) => ({ id, name }))
+  const logiBrandName = brandOpts.find((b) => b.id === logiBrandId)?.name || brandName
   const LOGI_TABS = [
     { key: 'stock',     label: '재고현황',   icon: '📦' },
     { key: 'lots',      label: '로트관리',   icon: '🏷' },
@@ -101,62 +104,7 @@ export default function BrandHubContent({
         {/* 브랜드명 */}
         <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <div style={{ fontSize: 10, color: '#C9A96E', letterSpacing: 4, marginBottom: 3 }}>AURAN</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: myBrands.length > 1 ? 6 : 0 }}>{brandName}</div>
-          {myBrands.length > 1 ? (
-            <div style={{ marginBottom: 8 }}>
-              <button
-                type="button"
-                onClick={() => setShowBrandPicker((v) => !v)}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 6,
-                  padding: '5px 8px',
-                  borderRadius: 6,
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  background: 'rgba(255,255,255,0.04)',
-                  color: 'rgba(255,255,255,0.55)',
-                  fontSize: 10,
-                  cursor: 'pointer',
-                }}
-              >
-                <span>브랜드 전환</span>
-                <span style={{ opacity: 0.5 }}>{showBrandPicker ? '▲' : '▼'}</span>
-              </button>
-              {showBrandPicker ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
-                  {myBrands.map((b) => {
-                    const active = b.id === brandId
-                    return (
-                      <button
-                        key={b.id}
-                        type="button"
-                        onClick={() => {
-                          onBrandChange(b.id, b.name)
-                          setShowBrandPicker(false)
-                        }}
-                        style={{
-                          width: '100%',
-                          padding: '6px 8px',
-                          borderRadius: 6,
-                          border: active ? '1px solid rgba(123,94,167,0.45)' : '1px solid rgba(255,255,255,0.08)',
-                          background: active ? 'rgba(123,94,167,0.2)' : 'rgba(255,255,255,0.03)',
-                          color: active ? '#c4a8f0' : 'rgba(255,255,255,0.45)',
-                          fontSize: 10,
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {b.name}
-                      </button>
-                    )
-                  })}
-                </div>
-              ) : null}
-            </div>
-          ) : null}
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 0 }}>{brandName}</div>
           {/* 브랜드/물류 모드 전환 — CEO/이사만 */}
           {(isCEO || loginRole === 'director') && (
             <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
@@ -379,31 +327,38 @@ export default function BrandHubContent({
         )}
         {systemMode === 'logi' ? (
           <div style={{ padding: 16 }}>
-            {logiTab === 'stock' && <BrandInventoryStock brandId={brandId} brandName={brandName} authId={null} />}
-            {logiTab === 'lots' && <BrandInventoryLots brandId={brandId} />}
-            {logiTab === 'scan' && <BrandInventoryScan brandId={brandId} brandName={brandName} />}
-            {logiTab === 'qr' && <BrandInventoryQR brandId={brandId} brandName={brandName} />}
-            {logiTab === 'emergency' && <BrandInventoryEmergency brandId={brandId} brandName={brandName} />}
+            <TabBrandSelector myBrands={brandOpts} storageKey="logi-brand" onSelect={setLogiBrandId} />
+            {!logiBrandId ? (
+              <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
+            ) : (
+              <>
+                {logiTab === 'stock' && <BrandInventoryStock brandId={logiBrandId} brandName={logiBrandName} authId={null} />}
+                {logiTab === 'lots' && <BrandInventoryLots brandId={logiBrandId} />}
+                {logiTab === 'scan' && <BrandInventoryScan brandId={logiBrandId} brandName={logiBrandName} />}
+                {logiTab === 'qr' && <BrandInventoryQR brandId={logiBrandId} brandName={logiBrandName} />}
+                {logiTab === 'emergency' && <BrandInventoryEmergency brandId={logiBrandId} brandName={logiBrandName} />}
+              </>
+            )}
           </div>
         ) : (
           <div style={{ padding: 16 }}>
             {mainTab === 'home' && <BrandTabHome brandName={brandName} brandId={brandId} onTabChange={(t) => setMainTab(t as MainTab)} />}
             {mainTab === 'products' && <BrandTabProducts rows={rows} tab={tab} onTabChange={onTabChange} onEdit={onEdit} onNew={onNew} currentBrandName={brandName} />}
-            {mainTab === 'tierPackages' && <BrandTabTierPackages brandId={brandId} brandName={brandName} />}
-            {mainTab === 'owners' && <BrandTabOwners brandId={brandId} brandName={brandName} authId={authId} />}
-            {mainTab === 'orders' && <BrandTabOrders brandId={brandId} brandName={brandName} />}
-            {mainTab === 'orentalk' && <BrandTabOrenTalk brandName={brandName} brandId={brandId} authId={authId} />}
-            {mainTab === 'live' && <BrandTabLive brandId={brandId} brandName={brandName} />}
-            {mainTab === 'sample' && <BrandTabSample brandId={brandId} brandName={brandName} />}
-            {mainTab === 'community' && <BrandTabCommunity brandId={brandId} brandName={brandName} />}
-            {mainTab === 'expand' && <BrandTabExpand brandId={brandId} brandName={brandName} />}
-            {mainTab === 'data' && <BrandTabData brandId={brandId} brandName={brandName} />}
-            {mainTab === 'invoice' && <BrandTabInvoice brandId={brandId} brandName={brandName} />}
-            {mainTab === 'inventory' && <BrandTabInventory brandId={brandId} brandName={brandName} authId={authId} loginRole={loginRole} />}
-            {mainTab === 'report' && <BrandTabReport brandId={brandId} brandName={brandName} />}
-            {mainTab === 'returns' && <BrandTabReturns brandId={brandId} brandName={brandName} />}
+            {mainTab === 'tierPackages' && <BrandTabTierPackages myBrands={brandOpts} />}
+            {mainTab === 'owners' && <OwnersBrandWrapper myBrands={brandOpts} authId={authId} />}
+            {mainTab === 'orders' && <BrandTabOrders myBrands={brandOpts} />}
+            {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} authId={authId} />}
+            {mainTab === 'live' && <BrandTabLive myBrands={brandOpts} />}
+            {mainTab === 'sample' && <BrandTabSample myBrands={brandOpts} />}
+            {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} />}
+            {mainTab === 'expand' && <BrandTabExpand myBrands={brandOpts} />}
+            {mainTab === 'data' && <BrandTabData myBrands={brandOpts} />}
+            {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} />}
+            {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} />}
+            {mainTab === 'report' && <BrandTabReport myBrands={brandOpts} />}
+            {mainTab === 'returns' && <BrandTabReturns myBrands={brandOpts} />}
             {mainTab === 'settlement' && isCEO && (
-              <BrandTabSettlement brandId={brandId} brandName={brandName} />
+              <BrandTabSettlement myBrands={brandOpts} />
             )}
           </div>
         )}

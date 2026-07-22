@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { expandOrderItemsToLines, monthBillingRange } from '@/lib/brand/brandBilling'
+import TabBrandSelector from '../components/TabBrandSelector'
 
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
@@ -39,8 +40,7 @@ type OrderRow = {
 }
 
 interface Props {
-  brandId: string | null
-  brandName: string
+  myBrands: { id: string; name: string }[]
 }
 
 function currentYm(): string {
@@ -65,7 +65,10 @@ function formatGrowth(current: number, prev: number): string {
   return `${sign}${pct.toFixed(1)}%`
 }
 
-export default function BrandTabSettlement({ brandId, brandName }: Props) {
+export default function BrandTabSettlement({ myBrands }: Props) {
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
+  const brandId = selectedBrandId
+  const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
   const supabase = createClient()
   const [ym, setYm] = useState(currentYm)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -226,16 +229,13 @@ export default function BrandTabSettlement({ brandId, brandName }: Props) {
     setExpandedOwnerId((prev) => (prev === ownerId ? null : ownerId))
   }
 
-  if (!brandId) {
-    return (
-      <div style={{ ...CARD, textAlign: 'center', color: SUB, fontSize: 13 }}>
-        브랜드를 선택해주세요
-      </div>
-    )
-  }
-
   return (
     <div>
+      <TabBrandSelector myBrands={myBrands} storageKey="settlement-brand" onSelect={setSelectedBrandId} />
+      {!selectedBrandId ? (
+        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
+      ) : (
+      <>
       {toast && (
         <div
           style={{
@@ -459,6 +459,8 @@ export default function BrandTabSettlement({ brandId, brandName }: Props) {
           })
         )}
       </div>
+      </>
+      )}
     </div>
   )
 }

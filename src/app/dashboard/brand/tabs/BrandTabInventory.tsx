@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
+import TabBrandSelector from '../components/TabBrandSelector'
 const BrandInventoryStock = dynamic(() => import('./BrandInventoryStock'), { ssr: false })
 const BrandInventoryLots = dynamic(() => import('./BrandInventoryLots'), { ssr: false })
 const BrandInventoryScan = dynamic(() => import('./BrandInventoryScan'), { ssr: false })
@@ -23,15 +24,22 @@ const SUBTABS = [
 ] as const
 type SubTab = typeof SUBTABS[number]['key']
 interface Props {
-  brandId: string | null
-  brandName: string
+  myBrands: { id: string; name: string }[]
   authId: string | null
   loginRole?: string
 }
-export default function BrandTabInventory({ brandId, brandName, authId, loginRole = 'director' }: Props) {
+export default function BrandTabInventory({ myBrands, authId, loginRole = 'director' }: Props) {
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
+  const brandId = selectedBrandId
+  const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
   const [sub, setSub] = useState<SubTab>('stock')
   return (
     <div>
+      <TabBrandSelector myBrands={myBrands} storageKey="inventory-brand" onSelect={setSelectedBrandId} />
+      {!selectedBrandId ? (
+        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
+      ) : (
+      <>
       <div style={{ display: 'flex', gap: 0, overflowX: 'auto' as const, marginBottom: 14, borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}>
         {SUBTABS.map(t => (
           <button key={t.key} type="button" onClick={() => setSub(t.key)}
@@ -48,6 +56,8 @@ export default function BrandTabInventory({ brandId, brandName, authId, loginRol
       {sub === 'staff' && <BrandInventoryStaff brandId={brandId} currentUserRole={loginRole === 'ceo' ? 'ceo' : 'director'} />}
       {sub === 'emergency' && <BrandInventoryEmergency brandId={brandId} brandName={brandName} />}
       {sub === 'marketing' && <BrandInventoryMarketing brandId={brandId} brandName={brandName} />}
+      </>
+      )}
     </div>
   )
 }

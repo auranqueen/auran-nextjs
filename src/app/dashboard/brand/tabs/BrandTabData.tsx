@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import TabBrandSelector from '../components/TabBrandSelector'
 import type { CSSProperties } from 'react'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -23,10 +24,12 @@ interface OrderRow {
   created_at: string
 }
 interface Props {
-  brandId: string | null
-  brandName: string
+  myBrands: { id: string; name: string }[]
 }
-export default function BrandTabData({ brandId, brandName }: Props) {
+export default function BrandTabData({ myBrands }: Props) {
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
+  const brandId = selectedBrandId
+  const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
   const supabase = createClient()
   const [kpi, setKpi] = useState<KpiData>({ orderCount: 0, ownerCount: 0, productCount: 0, activeCount: 0 })
   const [orders, setOrders] = useState<OrderRow[]>([])
@@ -107,6 +110,11 @@ export default function BrandTabData({ brandId, brandName }: Props) {
   }
   return (
     <div>
+      <TabBrandSelector myBrands={myBrands} storageKey="data-brand" onSelect={setSelectedBrandId} />
+      {!selectedBrandId ? (
+        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
+      ) : (
+      <>
       {/* KPI */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8, marginBottom: 10 }}>
         {kpis.map(k => (
@@ -214,6 +222,8 @@ export default function BrandTabData({ brandId, brandName }: Props) {
             </div>
           </div>
         </>
+      )}
+      </>
       )}
     </div>
   )

@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import TabBrandSelector from '../components/TabBrandSelector'
 interface InvoiceSettings {
   logo_name: string
   brand_sub: string
@@ -26,8 +27,7 @@ interface OrderRow {
   shipped_at: string | null
 }
 interface Props {
-  brandId: string | null
-  brandName: string
+  myBrands: { id: string; name: string }[]
 }
 const DEFAULT_SETTINGS: InvoiceSettings = {
   logo_name: '',
@@ -40,7 +40,10 @@ const DEFAULT_SETTINGS: InvoiceSettings = {
   stamp_text: '확인',
 }
 const PURPLE = '#7B5EA7'
-export default function BrandTabInvoice({ brandId, brandName }: Props) {
+export default function BrandTabInvoice({ myBrands }: Props) {
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
+  const brandId = selectedBrandId
+  const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
   const supabase = createClient()
   const [tab, setTab] = useState<'preview' | 'settings' | 'select'>('select')
   const [settings, setSettings] = useState<InvoiceSettings>({ ...DEFAULT_SETTINGS, logo_name: brandName })
@@ -225,6 +228,11 @@ ${order.tracking_no ? `<div class="track-box">
   }
   return (
     <div>
+      <TabBrandSelector myBrands={myBrands} storageKey="invoice-brand" onSelect={setSelectedBrandId} />
+      {!selectedBrandId ? (
+        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
+      ) : (
+      <>
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999, whiteSpace: 'nowrap' }}>{toast}</div>
       )}
@@ -318,6 +326,8 @@ ${order.tracking_no ? `<div class="track-box">
             {saving ? '저장 중...' : '저장하기'}
           </button>
         </div>
+      )}
+      </>
       )}
     </div>
   )

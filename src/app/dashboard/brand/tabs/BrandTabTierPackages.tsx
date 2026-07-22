@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import TabBrandSelector from '../components/TabBrandSelector'
 
 const PURPLE = '#7B5EA7'
 
@@ -18,11 +19,13 @@ type Draft = {
 }
 
 type Props = {
-  brandId: string | null
-  brandName: string
+  myBrands: { id: string; name: string }[]
 }
 
-export default function BrandTabTierPackages({ brandId, brandName }: Props) {
+export default function BrandTabTierPackages({ myBrands }: Props) {
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
+  const brandId = selectedBrandId
+  const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
   const supabase = createClient()
   const [rows, setRows] = useState<TierPackage[]>([])
   const [drafts, setDrafts] = useState<Record<string, Draft>>({})
@@ -110,16 +113,13 @@ export default function BrandTabTierPackages({ brandId, brandName }: Props) {
     }
   }
 
-  if (!brandId) {
-    return (
-      <div style={{ padding: 20, color: 'rgba(255,255,255,0.35)', fontSize: 13, textAlign: 'center' }}>
-        브랜드를 선택해 주세요
-      </div>
-    )
-  }
-
   return (
     <div style={{ maxWidth: 640 }}>
+      <TabBrandSelector myBrands={myBrands} storageKey="tier-packages-brand" onSelect={setSelectedBrandId} />
+      {!selectedBrandId ? (
+        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
+      ) : (
+      <>
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 4 }}>등급 패키지 관리</div>
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
@@ -227,6 +227,8 @@ export default function BrandTabTierPackages({ brandId, brandName }: Props) {
       {toast ? (
         <div style={{ marginTop: 12, fontSize: 12, color: '#c4a8f0' }}>{toast}</div>
       ) : null}
+      </>
+      )}
     </div>
   )
 }

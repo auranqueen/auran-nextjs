@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
+import TabBrandSelector from '../components/TabBrandSelector'
 const BrandReportCompare = dynamic(() => import('./BrandReportCompare'), { ssr: false })
 const BrandReportStaff = dynamic(() => import('./BrandReportStaff'), { ssr: false })
 const BrandReportHQ = dynamic(() => import('./BrandReportHQ'), { ssr: false })
@@ -17,13 +18,19 @@ const SUBTABS = [
 ] as const
 type SubTab = typeof SUBTABS[number]['key']
 interface Props {
-  brandId: string | null
-  brandName: string
+  myBrands: { id: string; name: string }[]
 }
-export default function BrandTabReport({ brandId, brandName }: Props) {
+export default function BrandTabReport({ myBrands }: Props) {
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
+  const brandId = selectedBrandId
   const [sub, setSub] = useState<SubTab>('compare')
   return (
     <div>
+      <TabBrandSelector myBrands={myBrands} storageKey="report-brand" onSelect={setSelectedBrandId} />
+      {!selectedBrandId ? (
+        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
+      ) : (
+      <>
       <div style={{ display: 'flex', gap: 0, overflowX: 'auto' as const, marginBottom: 14, borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}>
         {SUBTABS.map(t => (
           <button key={t.key} type="button" onClick={() => setSub(t.key)}
@@ -37,6 +44,8 @@ export default function BrandTabReport({ brandId, brandName }: Props) {
       {sub === 'hq' && <BrandReportHQ brandId={brandId} />}
       {sub === 'logistics' && <BrandReportLogistics brandId={brandId} />}
       {sub === 'mismatch' && <BrandReportMismatch brandId={brandId} />}
+      </>
+      )}
     </div>
   )
 }

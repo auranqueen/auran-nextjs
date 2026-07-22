@@ -64,7 +64,6 @@ export default function BrandDashboardPage() {
   const [brandName, setBrandName] = useState('')
   const [brandRow, setBrandRow] = useState<Record<string, unknown> | null>(null)
   const [myBrands, setMyBrands] = useState<BrandOption[]>([])
-  const [showBrandDropdown, setShowBrandDropdown] = useState(false)
   const [showAddBrand, setShowAddBrand] = useState(false)
   const [addBrandName, setAddBrandName] = useState('')
   const [addBrandNameEn, setAddBrandNameEn] = useState('')
@@ -127,10 +126,8 @@ export default function BrandDashboardPage() {
     const merged = mergeMyBrands(brandList, memberList)
     setMyBrands(merged)
 
-    const defaultId =
-      (brandList?.[0] as { id?: string } | undefined)?.id?.toString() ??
-      memberList[0]?.id ??
-      null
+    // 상단 전환 UI 없음 → myBrands[0]을 허브/폼 fallback 기본값으로 사용
+    const defaultId = merged[0]?.id ?? null
 
     setCurrentBrandId((prev) => {
       const nextId = prev && merged.some((brand) => brand.id === prev) ? prev : defaultId
@@ -401,34 +398,6 @@ export default function BrandDashboardPage() {
               }}
             />
           </div>
-        </div>
-      )}
-
-      {myBrands.length > 1 && (
-        <div style={{ position: 'relative', marginBottom: 12 }}>
-          <button
-            onClick={() => setShowBrandDropdown(v => !v)}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 14px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', cursor: 'pointer', color: '#fff', fontSize: 13 }}
-          >
-            <span>{myBrands.find(b => b.id === currentBrandId)?.name ?? brandName}</span>
-            <span style={{ fontSize: 10, opacity: 0.5 }}>▼</span>
-          </button>
-          {showBrandDropdown && (
-            <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, minWidth: 180, zIndex: 50, overflow: 'hidden' }}>
-              {myBrands.map(b => (
-                <div
-                  key={b.id}
-                  onClick={() => {
-                    switchBrand(b.id, b.name)
-                    setShowBrandDropdown(false)
-                  }}
-                  style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, color: b.id === currentBrandId ? '#7B5EA7' : 'rgba(255,255,255,0.7)', background: b.id === currentBrandId ? 'rgba(123,94,167,0.1)' : 'transparent' }}
-                >
-                  {b.name}
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
