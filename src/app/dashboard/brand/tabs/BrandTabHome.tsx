@@ -3,23 +3,12 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { CSSProperties } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import MonthlyOrderAccordion from '../components/MonthlyOrderAccordion'
 const CARD: CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: 12, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
-const STATUS_LABEL: Record<string, string> = {
-  pending: '접수 대기',
-  approved: '승인됨',
-  shipping: '배송중',
-  done: '완료',
-  cancelled: '취소',
-  '결제대기': '결제대기',
-  '결제완료': '결제완료',
-  '배송완료': '배송완료',
-  '구매확정': '구매확정',
-  '취소': '취소',
-}
 const HQ_PAID_STATUSES = ['결제완료', '배송완료', '구매확정']
 
 function dayKey(iso: string) {
@@ -45,14 +34,6 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
   const [pendingOrders, setPendingOrders] = useState<number>(0)
   const [salesOpen, setSalesOpen] = useState(false)
   const [salesTrend, setSalesTrend] = useState<Array<{ day: string; label: string; amountA: number; amountB: number }>>([])
-  const [monthOrderList, setMonthOrderList] = useState<Array<{
-    id: string
-    created_at: string
-    owner_name: string
-    amount: number
-    status: string
-    track: 'A' | 'B'
-  }>>([])
   useEffect(() => {
     if (!brandId) return
     const fetch = async () => {
@@ -159,50 +140,6 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
         0,
       )
       setMonthSales(stockSum + hqSum)
-
-      const [{ data: monthRows }, { data: hqMonthRows }] = await Promise.all([
-        supabase
-          .from('brand_orders')
-          .select('id, total_amount, status, created_at, owner_name, profile_id, profiles(full_name)')
-          .eq('brand_id', brandId)
-          .gte('created_at', thisMonthIso)
-          .order('created_at', { ascending: false }),
-        supabase
-          .from('hq_stock_orders')
-          .select('id, final_amount, status, ordered_at, created_at, owner_name, profile_id, profiles(full_name)')
-          .eq('brand_id', brandId)
-          .gte('created_at', thisMonthIso)
-          .order('created_at', { ascending: false }),
-      ])
-      const listA = (monthRows || []).map((o: any) => {
-        const profileRef = o.profiles
-        const profileName = Array.isArray(profileRef) ? profileRef[0]?.full_name : profileRef?.full_name
-        return {
-          id: `A-${o.id}`,
-          created_at: o.created_at,
-          owner_name: profileName || o.owner_name || '원장님',
-          amount: Math.trunc(Number(o.total_amount) || 0),
-          status: o.status || 'pending',
-          track: 'A' as const,
-        }
-      })
-      const listB = (hqMonthRows || []).map((o: any) => {
-        const profileRef = o.profiles
-        const profileName = Array.isArray(profileRef) ? profileRef[0]?.full_name : profileRef?.full_name
-        return {
-          id: `B-${o.id}`,
-          created_at: o.ordered_at || o.created_at,
-          owner_name: profileName || o.owner_name || '원장님',
-          amount: Math.trunc(Number(o.final_amount) || 0),
-          status: o.status || '결제대기',
-          track: 'B' as const,
-        }
-      })
-      setMonthOrderList(
-        [...listA, ...listB].sort(
-          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-        ),
-      )
 
       const since = new Date()
       since.setHours(0, 0, 0, 0)
@@ -312,73 +249,8 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
           </div>
         ))}
       </div>
-      {salesOpen && (
-        <div style={{ ...CARD, marginBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <div style={{ fontSize: 12, color: SUB }}>이달 재고발주 내역</div>
-            <button
-              type="button"
-              onClick={() => setSalesOpen(false)}
-              style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: TEXT, cursor: 'pointer' }}
-            >
-              접기
-            </button>
-          </div>
-          {monthOrderList.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>이달 발주 내역이 없어요</div>
-          ) : (
-            monthOrderList.map((row) => {
-              const cancelled = row.status === 'cancelled' || row.status === '취소'
-              return (
-                <div
-                  key={row.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 8,
-                    padding: '8px 0',
-                    borderBottom: '0.5px solid rgba(255,255,255,0.05)',
-                    fontSize: 11,
-                  }}
-                >
-                  <span style={{ color: SUB, width: 72, flexShrink: 0 }}>
-                    {new Date(row.created_at).toLocaleDateString('ko-KR')}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 9,
-                      padding: '1px 5px',
-                      borderRadius: 4,
-                      flexShrink: 0,
-                      background: row.track === 'A' ? 'rgba(201,169,110,0.15)' : 'rgba(123,94,167,0.18)',
-                      color: row.track === 'A' ? GOLD : '#c4a8f0',
-                    }}
-                  >
-                    {row.track}
-                  </span>
-                  <span style={{ color: TEXT, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {row.owner_name}
-                  </span>
-                  <span style={{ color: cancelled ? SUB : (row.track === 'A' ? GOLD : PURPLE), flexShrink: 0 }}>
-                    {cancelled ? '-' : ''}₩{row.amount.toLocaleString()}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 9,
-                      padding: '2px 6px',
-                      borderRadius: 4,
-                      flexShrink: 0,
-                      background: cancelled ? 'rgba(255,255,255,0.06)' : 'rgba(201,169,110,0.12)',
-                      color: cancelled ? 'rgba(255,255,255,0.35)' : GOLD,
-                    }}
-                  >
-                    {STATUS_LABEL[row.status] || row.status}
-                  </span>
-                </div>
-              )
-            })
-          )}
-        </div>
+      {salesOpen && brandId && (
+        <MonthlyOrderAccordion brandId={brandId} onClose={() => setSalesOpen(false)} />
       )}
       <div style={{ ...CARD, marginBottom: 12 }}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>최근 30일 재고발주 매출</div>

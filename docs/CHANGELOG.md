@@ -5,6 +5,12 @@
 
 ## 2026-07-22
 
+- **feat: 브랜드홈 아코디언 샵명/원장실명 표시 + 컴포넌트 분리**
+  - 신규 `MonthlyOrderAccordion.tsx`: `BrandTabHome.tsx` 아코디언 로직 분리(576→449줄, 500줄 규칙 준수)
+  - 트랙A(`brand_orders`): select에 `salon_name` 추가
+  - 트랙B(`hq_stock_orders`): 존재하지 않는 `owner_name` 컬럼 select 제거, `profile_id` → `profiles.auth_id` → `users` → `salons` 체인 조회로 교체 (관리자 AB정산시스템과 동일 패턴)
+  - UI: 샵명(위)/원장실명(아래) 2줄 구조로 통일 (관리자콘솔과 표시 방식 일치)
+
 - **feat: AB 정산 시스템 통합 콘솔 구축 + HQ발주 원장/샵명 표시 핫픽스**
   - `/admin/track-b-system` 명칭을 **「AB 정산 시스템」**으로 변경(사이드바 `AdminChrome` + 페이지 타이틀). 기존 트랙B 콘솔(KPI·추이·스폰서 커미션·HQ 발주내역)은 그대로 유지
   - **트랙A 정산 섹션 신규**: `brand_product_orders`의 `platform_fee` / `owner_amount`(생성 시 이미 계산됨) 활용, `settlement_status` 기준 정산대기·완료 KPI + 원장별 정산대기 리스트 + 일괄 정산확정 버튼(실송금 없음, 확정처리만). 골드 색상으로 트랙B(보라) 섹션과 시각 구분
