@@ -305,13 +305,9 @@ export default function GroupRevenueChart({ companyId, hubBrandId }: Props) {
                     width={36}
                   />
                   <Tooltip
-                    contentStyle={{
-                      background: '#1a1520',
-                      border: '0.5px solid rgba(201,169,110,0.35)',
-                      borderRadius: 8,
-                      fontSize: 11,
-                      color: TEXT,
-                    }}
+                    contentStyle={{ background: '#1c1b2b', border: '1px solid #2c2b3d', borderRadius: 8 }}
+                    itemStyle={{ color: '#fff' }}
+                    labelStyle={{ color: '#fff' }}
                     formatter={(v: number, name: string) => {
                       const brand = brands.find((b) => b.id === name)
                       return [`₩${Number(v).toLocaleString()}`, brand?.name || name]
@@ -355,13 +351,9 @@ export default function GroupRevenueChart({ companyId, hubBrandId }: Props) {
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={{
-                        background: '#1a1520',
-                        border: '0.5px solid rgba(201,169,110,0.35)',
-                        borderRadius: 8,
-                        fontSize: 11,
-                        color: TEXT,
-                      }}
+                      contentStyle={{ background: '#1c1b2b', border: '1px solid #2c2b3d', borderRadius: 8 }}
+                      itemStyle={{ color: '#fff' }}
+                      labelStyle={{ color: '#fff' }}
                       formatter={(v: number, name: string) => [
                         `₩${Number(v).toLocaleString()}`,
                         name,

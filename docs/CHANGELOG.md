@@ -5,6 +5,9 @@
 
 ## 2026-07-23
 
+- **fix: 그룹매출 그래프 툴팁 글씨색 다크테마 대응**
+  - `GroupRevenueChart.tsx` BarChart/PieChart 툴팁이 다크배경에서 검정글씨로 안 보이던 문제 수정, `contentStyle`/`itemStyle`/`labelStyle`로 흰색 적용
+
 - **style: 그룹매출 그래프 막대+도넛 조합으로 개선**
   - `GroupRevenueChart.tsx`: 멀티라인 → 스택 BarChart + 이달매출비중 도넛 PieChart 조합으로 변경, 제목 옆 「전체 N개 브랜드」 뱃지 추가, 아래 트랙A/B 단일브랜드 선그래프와 시각적으로 구분되도록 개선
 
