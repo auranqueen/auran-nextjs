@@ -5,6 +5,13 @@
 
 ## 2026-07-22
 
+- **feat: 재고발주 월정산 자동화(25일 취합/미납시 발주차단) 구축**
+  - `src/lib/billing/aggregateBrandBilling.ts` 신규: 월 구간 + `cancelled` 제외 합산, `brand_billing_invoices` upsert, `calcPouchTier` 반영
+  - `/api/cron/aggregate-brand-billing` 신규: 매월 25일(`0 3 25 * *`) 자동실행, 이번달 발주 있는 원장 전체 청구서 자동생성
+  - `/api/brand-orders/create` 신규: 서버단 발주 생성 + 미납(`status=unpaid`, `total_amount>0`, 납기 경과) 시 403 차단, 결제 완료되면 다음 발주 시도부터 실시간으로 자동 해제
+  - `src/app/dashboard/owner/brand-orders/page.tsx`: `submitOrder`의 직접 insert를 신규 API 호출로 교체 (앵커 1곳만 최소 수정)
+  - `vercel.json` cron 등록 추가
+
 - **feat: 샘플발송 원장선택 + 오렌톡 타겟팅 시스템 구축, 가짜 발송버튼 수정**
   - migration `119_brand_sample_sends_message_targeting.sql`: `brand_sample_sends.owner_id`, `brand_messages.target_owner_id` 추가 (수동 반영 완료 · 문서화)
   - `client-v2.tsx`: `brand_messages` 조회에 `target_owner_id` 필터 추가 (`myProfileId` 기준, `null`이면 전체공개 기존 동작 유지)

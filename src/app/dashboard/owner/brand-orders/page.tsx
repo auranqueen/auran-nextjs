@@ -478,37 +478,33 @@ export default function BrandOrdersPage() {
     const promoApplied = items.map((i) => i.promo).filter(Boolean).join(', ') || null
     const pointsEarned = calcPointsEarned(totalAmount, orderGrade)
 
-    const { error } = await supabase.from('brand_orders').insert({
-      brand_id: brandRow.id,
-      profile_id: ownerProfileId || '',
-      owner_name: ownerName,
-      salon_name: salonName,
-      grade: orderGrade,
-      status: 'pending',
-      items,
-      total_qty: totalItems,
-      total_amount: totalAmount,
-      promo_applied: promoApplied,
-      points_earned: pointsEarned,
-    })
-
-    if (!error) {
-      await supabase.from('brand_messages').insert({
+    const res = await fetch('/api/brand-orders/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         brand_id: brandRow.id,
-        message_type: 'auto_order',
-        target_type: 'all',
-        title: `${ownerName} 원장님 발주 접수`,
-        body: `${ownerName} 원장님(${salonName})이 발주를 요청했습니다. ${items.map((i) => `${i.name} ${i.qty}ea · ₩${i.line_amount.toLocaleString()}`).join(', ')}`,
-        send_count: 1,
-      })
+        profile_id: ownerProfileId || '',
+        owner_name: ownerName,
+        salon_name: salonName,
+        grade: orderGrade,
+        status: 'pending',
+        items,
+        total_qty: totalItems,
+        total_amount: totalAmount,
+        promo_applied: promoApplied,
+        points_earned: pointsEarned,
+      }),
+    })
+    const result = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      showToast(result.message || ('발주 실패: ' + (result.error || res.statusText || '')))
+    } else {
       setCart([])
       setShowPopup(false)
       setSelectedBrand(null)
       showToast('발주 요청 완료!')
       void load()
       setTab('orders')
-    } else {
-      showToast('발주 실패: ' + error.message)
     }
     setSending(false)
   }
