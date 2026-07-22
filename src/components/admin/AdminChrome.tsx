@@ -53,7 +53,7 @@ const MENU = [
     section: 'SALES',
     items: [
       { label: '주문 내역', href: '/admin/orders', icon: '📦' },
-      { label: '트랙B 시스템', href: '/admin/track-b-system', icon: '🟣' },
+      { label: 'AB 정산 시스템', href: '/admin/track-b-system', icon: '🟣' },
       { label: '충전 승인', href: '/admin/wallet-requests', icon: '🏦' },
       { label: '정산 일괄 처리', href: '/admin/settlement', icon: '💰' },
       { label: '매출 분석', href: '/admin/revenue', icon: '📈' },
@@ -130,7 +130,7 @@ const pageTitleByPath = (path: string) => {
   if (path.startsWith('/admin/brands')) return '브랜드 입점 신청'
   if (path.startsWith('/admin/shipping')) return '배송 관리'
   if (path.startsWith('/admin/orders')) return '주문 내역'
-  if (path.startsWith('/admin/track-b-system')) return '트랙B 시스템'
+  if (path.startsWith('/admin/track-b-system')) return 'AB 정산 시스템'
   if (path.startsWith('/admin/wallet-requests')) return '충전 승인'
   if (path.startsWith('/admin/products/edit-v2')) return '제품 등록'
   if (path.startsWith('/admin/toast-history')) return '토스트 거래 내역'

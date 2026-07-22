@@ -5,6 +5,12 @@
 
 ## 2026-07-22
 
+- **feat: AB 정산 시스템 통합 콘솔 구축 + HQ발주 원장/샵명 표시 핫픽스**
+  - `/admin/track-b-system` 명칭을 **「AB 정산 시스템」**으로 변경(사이드바 `AdminChrome` + 페이지 타이틀). 기존 트랙B 콘솔(KPI·추이·스폰서 커미션·HQ 발주내역)은 그대로 유지
+  - **트랙A 정산 섹션 신규**: `brand_product_orders`의 `platform_fee` / `owner_amount`(생성 시 이미 계산됨) 활용, `settlement_status` 기준 정산대기·완료 KPI + 원장별 정산대기 리스트 + 일괄 정산확정 버튼(실송금 없음, 확정처리만). 골드 색상으로 트랙B(보라) 섹션과 시각 구분
+  - **핫픽스**: `hq_stock_orders`에 존재하지 않는 `owner_name` / `salon_name` 컬럼을 직접 select하던 400 에러 수정 → `profile_id` → `profiles.auth_id` → `users`(auth_id 매칭) → `salons.owner_id` 체인 조회로 교정. UI는 샵명(위) / 원장 실명(아래) 2줄 구조
+  - 트랙A(`salonNameById` / `ownerNameBySalon`) 로직은 미변경 — 트랙A/B 완전 격리 유지
+
 - **feat: 트랙B 시스템 구축 완료 — 재고발주 / 오렌어드민 콘솔 / 스폰서 커미션(요율 트랙A 분리)**
   - `hq_stock_orders` / `hq_commission_ledger` / `hq_commission_rates` 신규 테이블 3개, RLS 포함 (migration `120`·`121`·`122`)
   - 트랙B 원장 재고발주 화면 + API + PayApp 연동 (`kind:'hq_stock_order'`)
