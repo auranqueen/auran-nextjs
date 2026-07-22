@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { CSSProperties } from 'react'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 const CARD: CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: 12, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
@@ -14,7 +14,14 @@ const STATUS_LABEL: Record<string, string> = {
   shipping: '배송중',
   done: '완료',
   cancelled: '취소',
+  '결제대기': '결제대기',
+  '결제완료': '결제완료',
+  '배송완료': '배송완료',
+  '구매확정': '구매확정',
+  '취소': '취소',
 }
+const HQ_PAID_STATUSES = ['결제완료', '배송완료', '구매확정']
+
 function dayKey(iso: string) {
   const d = new Date(iso)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -37,13 +44,14 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
   const [closedEvents, setClosedEvents] = useState<string[]>([])
   const [pendingOrders, setPendingOrders] = useState<number>(0)
   const [salesOpen, setSalesOpen] = useState(false)
-  const [salesTrend, setSalesTrend] = useState<Array<{ day: string; label: string; amount: number }>>([])
+  const [salesTrend, setSalesTrend] = useState<Array<{ day: string; label: string; amountA: number; amountB: number }>>([])
   const [monthOrderList, setMonthOrderList] = useState<Array<{
     id: string
     created_at: string
     owner_name: string
     amount: number
     status: string
+    track: 'A' | 'B'
   }>>([])
   useEffect(() => {
     if (!brandId) return
@@ -130,38 +138,77 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
       const thisMonth = new Date()
       thisMonth.setDate(1)
       thisMonth.setHours(0, 0, 0, 0)
-      const { data: stockOrders } = await supabase
-        .from('brand_orders')
-        .select('total_amount')
-        .eq('brand_id', brandId)
-        .gte('created_at', thisMonth.toISOString())
-        .neq('status', 'cancelled')
+      const thisMonthIso = thisMonth.toISOString()
+      const [{ data: stockOrders }, { data: hqMonthPaid }] = await Promise.all([
+        supabase
+          .from('brand_orders')
+          .select('total_amount')
+          .eq('brand_id', brandId)
+          .gte('created_at', thisMonthIso)
+          .neq('status', 'cancelled'),
+        supabase
+          .from('hq_stock_orders')
+          .select('final_amount')
+          .eq('brand_id', brandId)
+          .in('status', HQ_PAID_STATUSES)
+          .gte('ordered_at', thisMonthIso),
+      ])
       const stockSum = (stockOrders || []).reduce((s, o) => s + (o.total_amount || 0), 0)
-      setMonthSales(stockSum)
+      const hqSum = (hqMonthPaid || []).reduce(
+        (s, o) => s + Math.trunc(Number(o.final_amount) || 0),
+        0,
+      )
+      setMonthSales(stockSum + hqSum)
 
-      const { data: monthRows } = await supabase
-        .from('brand_orders')
-        .select('id, total_amount, status, created_at, owner_name, profile_id, profiles(full_name)')
-        .eq('brand_id', brandId)
-        .gte('created_at', thisMonth.toISOString())
-        .order('created_at', { ascending: false })
-      setMonthOrderList((monthRows || []).map((o: any) => {
+      const [{ data: monthRows }, { data: hqMonthRows }] = await Promise.all([
+        supabase
+          .from('brand_orders')
+          .select('id, total_amount, status, created_at, owner_name, profile_id, profiles(full_name)')
+          .eq('brand_id', brandId)
+          .gte('created_at', thisMonthIso)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('hq_stock_orders')
+          .select('id, final_amount, status, ordered_at, created_at, owner_name, profile_id, profiles(full_name)')
+          .eq('brand_id', brandId)
+          .gte('created_at', thisMonthIso)
+          .order('created_at', { ascending: false }),
+      ])
+      const listA = (monthRows || []).map((o: any) => {
         const profileRef = o.profiles
         const profileName = Array.isArray(profileRef) ? profileRef[0]?.full_name : profileRef?.full_name
         return {
-          id: o.id,
+          id: `A-${o.id}`,
           created_at: o.created_at,
           owner_name: profileName || o.owner_name || '원장님',
           amount: Math.trunc(Number(o.total_amount) || 0),
           status: o.status || 'pending',
+          track: 'A' as const,
         }
-      }))
+      })
+      const listB = (hqMonthRows || []).map((o: any) => {
+        const profileRef = o.profiles
+        const profileName = Array.isArray(profileRef) ? profileRef[0]?.full_name : profileRef?.full_name
+        return {
+          id: `B-${o.id}`,
+          created_at: o.ordered_at || o.created_at,
+          owner_name: profileName || o.owner_name || '원장님',
+          amount: Math.trunc(Number(o.final_amount) || 0),
+          status: o.status || '결제대기',
+          track: 'B' as const,
+        }
+      })
+      setMonthOrderList(
+        [...listA, ...listB].sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        ),
+      )
 
       const since = new Date()
       since.setHours(0, 0, 0, 0)
       since.setDate(since.getDate() - 29)
       const sinceIso = since.toISOString()
-      const [{ data: createdRows }, { data: cancelledRows }] = await Promise.all([
+      const [{ data: createdRows }, { data: cancelledRows }, { data: hqTrendRows }] = await Promise.all([
         supabase
           .from('brand_orders')
           .select('total_amount, created_at')
@@ -173,9 +220,16 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
           .eq('brand_id', brandId)
           .eq('status', 'cancelled')
           .gte('updated_at', sinceIso),
+        supabase
+          .from('hq_stock_orders')
+          .select('final_amount, ordered_at')
+          .eq('brand_id', brandId)
+          .in('status', HQ_PAID_STATUSES)
+          .gte('ordered_at', sinceIso),
       ])
       const createdByDay: Record<string, number> = {}
       const cancelledByDay: Record<string, number> = {}
+      const hqByDay: Record<string, number> = {}
       for (const o of createdRows || []) {
         if (!o.created_at) continue
         const k = dayKey(o.created_at)
@@ -186,14 +240,20 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
         const k = dayKey((o as { updated_at: string }).updated_at)
         cancelledByDay[k] = (cancelledByDay[k] || 0) + (o.total_amount || 0)
       }
-      const trend: Array<{ day: string; label: string; amount: number }> = []
+      for (const o of hqTrendRows || []) {
+        if (!o.ordered_at) continue
+        const k = dayKey(o.ordered_at)
+        hqByDay[k] = (hqByDay[k] || 0) + Math.trunc(Number(o.final_amount) || 0)
+      }
+      const trend: Array<{ day: string; label: string; amountA: number; amountB: number }> = []
       for (let i = 0; i < 30; i++) {
         const d = new Date(since.getFullYear(), since.getMonth(), since.getDate() + i)
         const k = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
         trend.push({
           day: k,
           label: `${d.getMonth() + 1}/${d.getDate()}`,
-          amount: (createdByDay[k] || 0) - (cancelledByDay[k] || 0),
+          amountA: (createdByDay[k] || 0) - (cancelledByDay[k] || 0),
+          amountB: hqByDay[k] || 0,
         })
       }
       setSalesTrend(trend)
@@ -268,7 +328,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
             <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>이달 발주 내역이 없어요</div>
           ) : (
             monthOrderList.map((row) => {
-              const cancelled = row.status === 'cancelled'
+              const cancelled = row.status === 'cancelled' || row.status === '취소'
               return (
                 <div
                   key={row.id}
@@ -284,10 +344,22 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
                   <span style={{ color: SUB, width: 72, flexShrink: 0 }}>
                     {new Date(row.created_at).toLocaleDateString('ko-KR')}
                   </span>
+                  <span
+                    style={{
+                      fontSize: 9,
+                      padding: '1px 5px',
+                      borderRadius: 4,
+                      flexShrink: 0,
+                      background: row.track === 'A' ? 'rgba(201,169,110,0.15)' : 'rgba(123,94,167,0.18)',
+                      color: row.track === 'A' ? GOLD : '#c4a8f0',
+                    }}
+                  >
+                    {row.track}
+                  </span>
                   <span style={{ color: TEXT, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {row.owner_name}
                   </span>
-                  <span style={{ color: cancelled ? SUB : GOLD, flexShrink: 0 }}>
+                  <span style={{ color: cancelled ? SUB : (row.track === 'A' ? GOLD : PURPLE), flexShrink: 0 }}>
                     {cancelled ? '-' : ''}₩{row.amount.toLocaleString()}
                   </span>
                   <span
@@ -337,9 +409,17 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
                   fontSize: 11,
                   color: TEXT,
                 }}
-                formatter={(v: number) => [`₩${Number(v).toLocaleString()}`, '발주 매출']}
+                formatter={(v: number, name: string) => [
+                  `₩${Number(v).toLocaleString()}`,
+                  name === 'amountA' ? '트랙A' : '트랙B',
+                ]}
               />
-              <Line type="monotone" dataKey="amount" stroke={GOLD} strokeWidth={2} dot={false} />
+              <Legend
+                wrapperStyle={{ fontSize: 10, color: SUB }}
+                formatter={(value) => (value === 'amountA' ? '트랙A' : '트랙B')}
+              />
+              <Line type="monotone" dataKey="amountA" stroke={GOLD} strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="amountB" stroke={PURPLE} strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         )}

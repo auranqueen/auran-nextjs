@@ -55,6 +55,8 @@ export async function POST(req: NextRequest) {
     ? `${base}/membership/gift/complete?gift_id=${targetId}`
     : kind === 'booking'
     ? `${base}/api/payments/payapp/return?booking=true&salon_id=${(targetId || '').split('|')[0]}`
+    : kind === 'hq_stock_order'
+    ? `${base}/dashboard/owner/hq-stock-orders?paid=1`
     : `${base}/api/payments/payapp/return`
   const sandbox = process.env.PAYAPP_SANDBOX === 'true' || process.env.PAYAPP_TEST_MODE === 'true'
 

@@ -6,6 +6,7 @@ import { addToPurchaseAmount, autoUpgradeGrade } from '@/lib/gradeUtils'
 import { sendPpurioAlimtalk } from '@/lib/ppurio/sendAlimtalk'
 import { handleBrandTierPurchase } from '@/lib/webhookHandlers/brandTierPurchase'
 import { handleBrandProductOrderComplete, handleBrandProductOrderCancel } from '@/lib/webhookHandlers/brandProductOrder'
+import { handleHqStockOrderComplete, handleHqStockOrderCancel } from '@/lib/webhookHandlers/hqStockOrder'
 
 const ANNUAL_STORE_PLAN_SLUGS = new Set([
   'track_a_store_annual',
@@ -540,6 +541,10 @@ export async function POST(req: NextRequest) {
         const client = tryCreateServiceClient() || supabase
         await handleBrandProductOrderComplete(intent, client)
       }
+      if (intent.kind === 'hq_stock_order' && intent.target_id) {
+        const client = tryCreateServiceClient() || supabase
+        await handleHqStockOrderComplete(intent, client)
+      }
       // 주문 결제 완료: 알림만 (주문 상태는 이미 주문확인)
       if (intent.kind === 'order' && intent.target_id && intent.user_id) {
         const client = tryCreateServiceClient() || supabase
@@ -1002,6 +1007,10 @@ export async function POST(req: NextRequest) {
       if (intent.kind === 'brand_product_order' && intent.target_id) {
         const client = tryCreateServiceClient() || supabase
         await handleBrandProductOrderCancel(intent, client)
+      }
+      if (intent.kind === 'hq_stock_order' && intent.target_id) {
+        const client = tryCreateServiceClient() || supabase
+        await handleHqStockOrderCancel(intent, client)
       }
       await supabase
         .from('payment_intents')

@@ -5,6 +5,14 @@
 
 ## 2026-07-22
 
+- **feat: 트랙B 본사재고발주 신규 구축 + 브랜드홈 매출그래프 트랙B 반영**
+  - `hq_stock_orders` 신규 테이블(migration `120` RLS): 트랙B 원장→오렌 본사 재고발주 전용, `brand_orders`와 완전 분리
+  - `/dashboard/owner/hq-stock-orders` 신규 발주화면 (`origin_track='B'` 가드, brand-orders UI/계산 패턴 재사용)
+  - `/api/hq-stock-orders/create` 신규
+  - PayApp `kind:'hq_stock_order'` 분기 추가 (`payapp/create`, `payapp/webhook`) — 결제완료/취소 처리
+  - `BrandTabHome.tsx`: 이달 판매액 KPI에 트랙B 합산 추가, 30일 그래프 트랙A(골드)/트랙B(보라) 이중 시리즈, 아코디언에 A/B 뱃지 표시
+  - `client-v2.tsx` 원장 퀵메뉴: 트랙B 전용 「재고 발주」 링크 추가, `origin_track==='B'` 명시조건으로 null/미설정 원장 노출 방지
+
 - **fix: 크론 UTC/KST 시간대 오류 수정 + 재고발주 청구주기 26일~25일 통일**
   - `vercel.json`: `expire-coupons` / `expire-brand-product-orders` / `auto-confirm-brand-product-orders` 3개 크론이 UTC 그대로 설정돼 실제로는 KST 대낮(오전 10~11시)에 실행되던 시간대 버그 수정 → 의도대로 KST 새벽 실행되게 UTC 환산 반영
   - `aggregate-brand-billing` 취합 주기를 달력월에서 「전월26일~당월26일」 반개구간으로 변경(`billingCycleRange` 신규), 크론 실행시각 KST 26일 새벽 4시로 조정(누락 방지)

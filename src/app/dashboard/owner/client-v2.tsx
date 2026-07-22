@@ -38,6 +38,7 @@ export default function OwnerDashClientV2() {
   const [ownerSlug, setOwnerSlug] = useState<string | null>(null)
   const [ownerAvatar, setOwnerAvatar] = useState<string | null>(null)
   const [ownerId, setOwnerId] = useState('')
+  const [originTrack, setOriginTrack] = useState<string | null>(null)
   const [todayBookings, setTodayBookings] = useState<(BookingRow & { displayName: string; phase: PhaseInfo | null })[]>([])
   const [todayChartCount, setTodayChartCount] = useState(0)
   const [extCount, setExtCount] = useState(0)
@@ -84,9 +85,10 @@ export default function OwnerDashClientV2() {
         return
       }
 
-      const { data: me } = await sb.from('users').select('id,auth_id,name,role').eq('auth_id', user.id).maybeSingle()
+      const { data: me } = await sb.from('users').select('id,auth_id,name,role,origin_track').eq('auth_id', user.id).maybeSingle()
       if (!me?.id) return
       setOwnerId(String(me.id))
+      setOriginTrack((me as { origin_track?: string | null }).origin_track ?? null)
       const { data: profileRow } = await sb
         .from('profiles')
         .select('id, slug, avatar_url')
@@ -318,6 +320,9 @@ export default function OwnerDashClientV2() {
     { icon: '📅', label: '예약 관리', sub: `오늘 ${todayBookings.length}건`, href: '/dashboard/owner/bookings' },
     { icon: '👥', label: '고객 관리', sub: `${extCount}명`, href: '/dashboard/owner/charts-v2' },
     { icon: '📦', label: '브랜드 발주', sub: tradeBrands.length ? `${tradeBrands[0]} 외 ${Math.max(0, tradeBrands.length - 1)}개` : '브랜드사를 설정해보세요', href: '/dashboard/owner/brand-orders' },
+    ...(originTrack === 'B'
+      ? [{ icon: '📦', label: '재고 발주', sub: '본사 재고 · 즉시 결제', href: '/dashboard/owner/hq-stock-orders' }]
+      : []),
     { icon: '💬', label: '브랜드 소식', href: '/dashboard/owner/brand-community' },
     { icon: '🎁', label: '브랜드 샘플', href: '/dashboard/owner/brand-samples' },
     { icon: '🎓', label: '브랜드 라이브', href: '/dashboard/owner/brand-live' },
