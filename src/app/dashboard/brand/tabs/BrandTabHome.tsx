@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { CSSProperties } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import MonthlyOrderAccordion from '../components/MonthlyOrderAccordion'
+import GroupRevenueChart from '../components/GroupRevenueChart'
 const CARD: CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: 12, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
@@ -34,6 +35,21 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
   const [pendingOrders, setPendingOrders] = useState<number>(0)
   const [salesOpen, setSalesOpen] = useState(false)
   const [salesTrend, setSalesTrend] = useState<Array<{ day: string; label: string; amountA: number; amountB: number }>>([])
+  const [companyId, setCompanyId] = useState<string | null>(null)
+  useEffect(() => {
+    if (!brandId) {
+      setCompanyId(null)
+      return
+    }
+    void supabase
+      .from('brands')
+      .select('company_id')
+      .eq('id', brandId)
+      .maybeSingle()
+      .then(({ data }) => {
+        setCompanyId(data?.company_id ? String(data.company_id) : null)
+      })
+  }, [brandId, supabase])
   useEffect(() => {
     if (!brandId) return
     const fetch = async () => {
@@ -252,6 +268,9 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
       {salesOpen && brandId && (
         <MonthlyOrderAccordion brandId={brandId} onClose={() => setSalesOpen(false)} />
       )}
+      {companyId && brandId ? (
+        <GroupRevenueChart companyId={companyId} hubBrandId={brandId} />
+      ) : null}
       <div style={{ ...CARD, marginBottom: 12 }}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>최근 30일 재고발주 매출</div>
         {loading ? (

@@ -3,6 +3,14 @@
 
 ---
 
+## 2026-07-23
+
+- **feat: 그룹합산 대시보드 구축 + 서브브랜드 company_id 자동상속**
+  - `src/lib/brand/createSecondBrand.ts` 신규: 서브브랜드 추가 시 허브의 `company_id` 자동 상속, 허브에 `company_id` 없으면 명확한 에러로 차단(자동생성 안 함)
+  - `page.tsx` 브랜드추가 insert 로직을 `createSecondBrand()`로 교체
+  - `GroupRevenueChart.tsx` 신규: `company_id` 기준 서브브랜드 전체 최근 30일 매출 그래프(트랙A 재고발주 생성-취소 + 트랙B HQ결제완료~구매확정 합산), 브랜드별 색상 범례토글, 이달매출 리스트+세부내역 아코디언(`MonthlyOrderAccordion` 재사용), 매출0 브랜드 하단 흐리게 표시
+  - `BrandTabHome.tsx`: KPI카드와 기존 트랙A/B 단일브랜드 그래프 사이에 그룹차트 삽입 (449→468줄)
+
 ## 2026-07-22
 
 - **feat: 브랜드홈 아코디언 샵명/원장실명 표시 + 컴포넌트 분리**

@@ -2,6 +2,7 @@
 
 import ProductThumbnail from '@/components/ui/ProductThumbnail'
 import { createClient } from '@/lib/supabase/client'
+import { createSecondBrand } from '@/lib/brand/createSecondBrand'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -506,26 +507,21 @@ export default function BrandDashboardPage() {
                       return
                     }
 
-                    const { data: newBrand, error } = await supabase
-                      .from('brands')
-                      .insert({
-                        name: addBrandName,
-                        name_en: addBrandNameEn || null,
-                        origin_country: addBrandCountry || '대한민국',
-                        user_id: userPk,
-                        apply_status: 'approved',
-                        status: 'active',
-                        welcome_shown: true,
-                        manager_phone: addBrandContact || null,
-                      })
-                      .select('id')
-                      .single()
+                    const created = await createSecondBrand(supabase, {
+                      addBrandName,
+                      addBrandNameEn,
+                      addBrandCountry,
+                      userPk,
+                      addBrandContact,
+                      currentBrandId,
+                    })
 
-                    if (error || !newBrand?.id) {
+                    if (!created.success) {
                       setAddBrandLoading(false)
-                      alert(error?.message || '브랜드 추가에 실패했어요')
+                      alert(created.error)
                       return
                     }
+                    const newBrand = created.data
 
                     await supabase.from('brand_members').insert({
                       user_id: userPk,
