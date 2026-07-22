@@ -95,17 +95,22 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
       }
       const { data: orders } = await supabase
         .from('brand_orders')
-        .select('id, product_name, total_amount, status, created_at')
+        .select('id, items, total_amount, status, created_at')
         .eq('brand_id', brandId)
         .order('created_at', { ascending: false })
         .limit(4)
       if (orders) {
-        setRecentOrders(orders.map((o: any) => ({
-          order_no: `#${String(o.id).slice(0, 8).toUpperCase()}`,
-          product_name: o.product_name || '-',
-          amount: o.total_amount || 0,
-          status: o.status || 'pending',
-        })))
+        setRecentOrders(orders.map((o: any) => {
+          const itemList = Array.isArray(o.items) ? o.items : []
+          const firstName = itemList[0]?.name || '-'
+          const label = itemList.length > 1 ? `${firstName} 외 ${itemList.length - 1}건` : firstName
+          return {
+            order_no: `#${String(o.id).slice(0, 8).toUpperCase()}`,
+            product_name: label,
+            amount: o.total_amount || 0,
+            status: o.status || 'pending',
+          }
+        }))
         setPendingOrders(orders.filter((o: any) => o.status === 'pending').length)
       }
       const { data: samples } = await supabase
