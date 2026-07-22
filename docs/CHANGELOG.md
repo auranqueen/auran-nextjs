@@ -5,6 +5,11 @@
 
 ## 2026-07-22
 
+- **fix: 크론 UTC/KST 시간대 오류 수정 + 재고발주 청구주기 26일~25일 통일**
+  - `vercel.json`: `expire-coupons` / `expire-brand-product-orders` / `auto-confirm-brand-product-orders` 3개 크론이 UTC 그대로 설정돼 실제로는 KST 대낮(오전 10~11시)에 실행되던 시간대 버그 수정 → 의도대로 KST 새벽 실행되게 UTC 환산 반영
+  - `aggregate-brand-billing` 취합 주기를 달력월에서 「전월26일~당월26일」 반개구간으로 변경(`billingCycleRange` 신규), 크론 실행시각 KST 26일 새벽 4시로 조정(누락 방지)
+  - `invoice/page.tsx`도 동일 `billingCycleRange`로 통일해 화면 표시금액과 실제 청구금액 정합성 확보, 청구기간 라벨을 「N월26일~M월25일」 형태로 표시
+
 - **feat: 재고발주 월정산 자동화(25일 취합/미납시 발주차단) 구축**
   - `src/lib/billing/aggregateBrandBilling.ts` 신규: 월 구간 + `cancelled` 제외 합산, `brand_billing_invoices` upsert, `calcPouchTier` 반영
   - `/api/cron/aggregate-brand-billing` 신규: 매월 25일(`0 3 25 * *`) 자동실행, 이번달 발주 있는 원장 전체 청구서 자동생성

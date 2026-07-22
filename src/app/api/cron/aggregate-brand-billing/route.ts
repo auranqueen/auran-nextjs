@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
-import { monthBillingRange } from '@/lib/brand/brandBilling'
-import { aggregateBrandBilling } from '@/lib/billing/aggregateBrandBilling'
+import { aggregateBrandBilling, billingCycleRange } from '@/lib/billing/aggregateBrandBilling'
 
 const CIVASAN_BRAND_ID = '60413ded-91f4-4004-b677-ae684cb0677e'
 
@@ -11,6 +10,7 @@ function json(data: object, status = 200) {
 
 export const dynamic = 'force-dynamic'
 
+/** invoice/page.tsx currentYm()와 동일한 라벨용 YYYY-MM */
 function currentYm(): string {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -18,6 +18,7 @@ function currentYm(): string {
 
 /**
  * 매월 25일: 시바산 brand_orders 월합 → brand_billing_invoices 취합
+ * 조회 구간 = 전월26일~당월26일 / billing_month 라벨 = 이번달 1일
  * Vercel Cron: Authorization: Bearer $CRON_SECRET
  */
 export async function GET(req: NextRequest) {
@@ -37,7 +38,8 @@ export async function GET(req: NextRequest) {
   if (!svc) return json({ ok: false, error: 'service_unavailable' }, 500)
 
   const ym = currentYm()
-  const { billingMonth, startIso, endIso } = monthBillingRange(ym)
+  const billingMonth = `${ym}-01`
+  const { startIso, endIso } = billingCycleRange(new Date())
 
   const { data: orderRows, error: listErr } = await svc
     .from('brand_orders')
@@ -75,12 +77,14 @@ export async function GET(req: NextRequest) {
   }
 
   console.log(
-    `[aggregate-brand-billing] month=${billingMonth} profiles=${profileIds.length} ok=${okCount} fail=${failCount}`,
+    `[aggregate-brand-billing] month=${billingMonth} cycle=${startIso}..${endIso} profiles=${profileIds.length} ok=${okCount} fail=${failCount}`,
   )
 
   return json({
     ok: true,
     billing_month: billingMonth,
+    cycle_start: startIso,
+    cycle_end: endIso,
     profile_count: profileIds.length,
     aggregated: okCount,
     failed: failCount,

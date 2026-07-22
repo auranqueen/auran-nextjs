@@ -7,10 +7,10 @@ import DashboardBottomNav from '@/components/DashboardBottomNav'
 import {
   calcPouchTier,
   expandOrderItemsToLines,
-  monthBillingRange,
   pouchTierLabel,
   type InvoiceLineRow,
 } from '@/lib/brand/brandBilling'
+import { billingCycleRange } from '@/lib/billing/aggregateBrandBilling'
 
 const CIVASAN_BRAND_ID = '60413ded-91f4-4004-b677-ae684cb0677e'
 const INVOICE_PAY_API = '/api/payments/brand-self/civasan/invoice/create'
@@ -37,6 +37,14 @@ type BillingInvoice = {
 function currentYm(): string {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+/** 사이클 [start, end) → "M월 D일 ~ M월 D일" (end 전날 = 25일) */
+function formatCyclePeriodLabel(startIso: string, endIso: string): string {
+  const s = new Date(startIso)
+  const e = new Date(endIso)
+  const last = new Date(e.getFullYear(), e.getMonth(), e.getDate() - 1)
+  return `${s.getMonth() + 1}월 ${s.getDate()}일 ~ ${last.getMonth() + 1}월 ${last.getDate()}일`
 }
 
 function BrandOrdersInvoiceContent() {
@@ -88,7 +96,9 @@ function BrandOrdersInvoiceContent() {
       return
     }
 
-    const { billingMonth, startIso, endIso } = monthBillingRange(ym)
+    const [y, m] = ym.split('-').map(Number)
+    const billingMonth = `${y}-${String(m).padStart(2, '0')}-01`
+    const { startIso, endIso } = billingCycleRange(new Date(y, m - 1, 1))
 
     const { data: brandRow } = await supabase
       .from('brands')
@@ -201,6 +211,9 @@ function BrandOrdersInvoiceContent() {
 
   const pouchMsg = pouchTierLabel(pouchTier)
   const isPaid = invoice?.status === 'paid'
+  const [cy, cm] = ym.split('-').map(Number)
+  const cycleRange = billingCycleRange(new Date(cy, cm - 1, 1))
+  const cycleLabel = formatCyclePeriodLabel(cycleRange.startIso, cycleRange.endIso)
 
   if (loading) {
     return (
@@ -230,12 +243,12 @@ function BrandOrdersInvoiceContent() {
           onChange={(e) => setYm(e.target.value)}
           style={{ padding: '8px 10px', borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 13, color: TEXT }}
         />
-        <div style={{ fontSize: 12, color: SUB, marginTop: 8 }}>{brandName} · {ym}</div>
+        <div style={{ fontSize: 12, color: SUB, marginTop: 8 }}>{brandName} · {cycleLabel}</div>
       </div>
 
       <div style={{ padding: '0 16px' }}>
         {lines.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px 0', color: SUB, fontSize: 14 }}>이번 달 발주 내역이 없어요</div>
+          <div style={{ textAlign: 'center', padding: '48px 0', color: SUB, fontSize: 14 }}>이 청구 기간 발주 내역이 없어요</div>
         ) : (
           <div style={{ border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', marginBottom: 16 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '72px 1fr 40px 56px 64px', gap: 6, padding: '8px 10px', background: LIGHT, fontSize: 10, color: SUB, fontWeight: 600 }}>
@@ -296,7 +309,7 @@ function BrandOrdersInvoiceContent() {
                   <div style={{ fontSize: 15, fontWeight: 600, color: TEXT }}>{brandName} 월청구서</div>
                   <button type="button" onClick={closeModal} disabled={busy} style={{ background: 'none', border: 'none', fontSize: 22, color: SUB, cursor: 'pointer' }}>✕</button>
                 </div>
-                <div style={{ fontSize: 12, color: SUB, marginBottom: 12 }}>{ym} · {payappActive ? '실결제' : '데모 (실과금 없음)'}</div>
+                <div style={{ fontSize: 12, color: SUB, marginBottom: 12 }}>{cycleLabel} · {payappActive ? '실결제' : '데모 (실과금 없음)'}</div>
                 <div style={{ padding: 14, borderRadius: 10, background: LIGHT, marginBottom: 14 }}>
                   <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>결제 금액</div>
                   <div style={{ fontSize: 22, fontWeight: 700, color: TEXT }}>₩{totalAmount.toLocaleString()}</div>

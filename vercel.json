@@ -2,19 +2,19 @@
   "crons": [
     {
       "path": "/api/cron/expire-coupons",
-      "schedule": "5 0 * * *"
+      "schedule": "5 15 * * *"
     },
     {
       "path": "/api/cron/expire-brand-product-orders",
-      "schedule": "0 1 * * *"
+      "schedule": "0 16 * * *"
     },
     {
       "path": "/api/cron/auto-confirm-brand-product-orders",
-      "schedule": "0 2 * * *"
+      "schedule": "0 17 * * *"
     },
     {
       "path": "/api/cron/aggregate-brand-billing",
-      "schedule": "0 3 25 * *"
+      "schedule": "0 19 25 * *"
     }
   ]
 }
