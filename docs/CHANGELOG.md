@@ -5,6 +5,12 @@
 
 ## 2026-07-23
 
+- **fix: 오렌몰-브랜드제품 트랙격리 사고 수정 - 레거시 등록경로 제거**
+  - 트랙격리 사고 발견: 레거시 브랜드 제품등록 경로(`/dashboard/brand/products/new` → `/api/brand/products/create`)가 `brand_products`가 아닌 `products`(오렌몰)에 저장하던 구조적 결함 발견 및 수정
+  - 레거시 페이지/API 파일 완전삭제, `client.tsx` 잔여 링크 제거(`/dashboard/brand`로 교체)
+  - `BrandTabData.tsx`, `BrandInventoryStock.tsx`가 `products`를 잘못 참조하던 부분 `brand_products`로 수정(`brand_id` 필터 포함)
+  - 오염된 제품 3건 `products`에서 완전삭제(연결된 종료된 `group_buys` 레코드 포함)
+
 - **refactor: 브랜드 전환 드롭다운 제거, 홈 그룹뷰 고정 + 탭별 개별 브랜드선택 도입**
   - `TabBrandSelector.tsx` 신규: 탭 내부 브랜드 선택 pill UI, `localStorage`로 탭별 선택 기억
   - `BrandHubContent.tsx` 상단 「브랜드 전환」 드롭다운 완전 제거 — 홈/제품관리는 기존 방식(그룹뷰/자체필터) 유지, 나머지 13개 탭(Sample/TierPackages/Orders/OrenTalk/Live/Community/Expand/Data/Invoice/Inventory/Report/Returns/Settlement)은 각자 내부 브랜드선택으로 전환

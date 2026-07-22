@@ -48,10 +48,9 @@ export default function BrandInventoryStock({ brandId, brandName, authId }: Prop
         .eq('brand_id', brandId)
         .order('product_name'),
       supabase
-        .from('products')
+        .from('brand_products')
         .select('id, name')
         .eq('brand_id', brandId)
-        .is('deleted_at', null)
         .order('name'),
     ])
     setItems((data || []) as InventoryRow[])

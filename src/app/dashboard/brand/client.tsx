@@ -200,7 +200,7 @@ export default function BrandDashClient({ profile, brand, products }: { profile:
             {/* 관리 메뉴 */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginBottom: 18 }}>
               {[
-                { icon: '📦', label: '제품 등록', tc: '#4cad7e', color: 'rgba(76,173,126,0.1)', border: 'rgba(76,173,126,0.3)', href: '/dashboard/brand/products/new' },
+                { icon: '📦', label: '제품 등록', tc: '#4cad7e', color: 'rgba(76,173,126,0.1)', border: 'rgba(76,173,126,0.3)', href: '/dashboard/brand' },
                 { icon: '📢', label: '공지 발송', tc: '#4a8dc0', color: 'rgba(74,141,192,0.1)', border: 'rgba(74,141,192,0.3)' },
                 { icon: '🎁', label: '납품 프로모션', tc: 'var(--gold)', color: 'rgba(201,168,76,0.1)', border: 'rgba(201,168,76,0.3)' },
                 { icon: '📊', label: '매출 리포트', tc: '#f0a050', color: 'rgba(240,160,80,0.08)', border: 'rgba(240,160,80,0.25)' },

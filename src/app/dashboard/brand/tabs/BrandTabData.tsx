@@ -52,10 +52,10 @@ export default function BrandTabData({ myBrands }: Props) {
     ] = await Promise.all([
       supabase.from('brand_orders').select('id', { count: 'exact', head: true })
         .eq('brand_id', brandId).gte('created_at', firstDay),
-      supabase.from('products').select('id', { count: 'exact', head: true })
-        .eq('brand_id', brandId).is('deleted_at', null),
-      supabase.from('products').select('id', { count: 'exact', head: true })
-        .eq('brand_id', brandId).eq('status', 'active').is('deleted_at', null),
+      supabase.from('brand_products').select('id', { count: 'exact', head: true })
+        .eq('brand_id', brandId),
+      supabase.from('brand_products').select('id', { count: 'exact', head: true })
+        .eq('brand_id', brandId).eq('status', 'active'),
       supabase.from('brand_orders').select('id, status, items')
         .eq('brand_id', brandId).gte('created_at', firstDay),
       supabase.from('brand_orders').select('id, owner_name, status, items, created_at')
