@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import OwnerOrenTalkButton from '../components/OwnerOrenTalkButton'
 const CARD = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
@@ -730,10 +731,7 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
                     style={{ fontSize: 9, padding: '2px 8px', borderRadius: 4, border: `0.5px solid ${o.arete ? 'rgba(201,169,110,0.5)' : 'rgba(255,255,255,0.1)'}`, background: o.arete ? 'rgba(201,169,110,0.15)' : 'transparent', color: o.arete ? GOLD : SUB, cursor: 'pointer', opacity: saving === o.id + '_arete' ? 0.5 : 1 }}>
                     {o.arete ? '아레테 ON' : '아레테 OFF'}
                   </button>
-                  <button type="button" onClick={() => showToast(`${o.name} 오렌톡 발송!`)}
-                    style={{ fontSize: 9, padding: '2px 8px', borderRadius: 4, border: '0.5px solid rgba(255,193,7,0.3)', background: 'rgba(255,193,7,0.08)', color: 'rgba(255,193,7,0.8)', cursor: 'pointer' }}>
-                    오렌톡
-                  </button>
+                  <OwnerOrenTalkButton brandId={brandId} ownerId={o.id} ownerName={o.name} />
                 </div>
               </div>
             </div>

@@ -31,6 +31,12 @@ interface SendRow {
   sent_at: string | null
   created_at: string
 }
+interface TargetOwner {
+  id: string
+  name: string
+  salon_name: string
+  origin_track: string | null
+}
 interface Props {
   brandName: string
   brandId: string | null
@@ -48,6 +54,11 @@ export default function BrandTabSample({ brandName, brandId }: Props) {
   const [autoWelcome, setAutoWelcome] = useState(false)
   const [saving, setSaving] = useState(false)
   const [selectedSample, setSelectedSample] = useState<string | null>(null)
+  const [sendGrade, setSendGrade] = useState<string | null>(null)
+  const [targetOwners, setTargetOwners] = useState<TargetOwner[]>([])
+  const [selectedOwnerIds, setSelectedOwnerIds] = useState<string[]>([])
+  const [ownersLoading, setOwnersLoading] = useState(false)
+  const [orenMsg, setOrenMsg] = useState('')
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const fetchData = useCallback(async () => {
     if (!brandId) return
@@ -70,6 +81,93 @@ export default function BrandTabSample({ brandName, brandId }: Props) {
     setLoading(false)
   }, [brandId])
   useEffect(() => { void fetchData() }, [fetchData])
+
+  const loadOwnersByGrade = async (grade: string) => {
+    if (!brandId) return
+    setSendGrade(grade)
+    setOwnersLoading(true)
+    setTargetOwners([])
+    setSelectedOwnerIds([])
+
+    const { data: activeLinks } = await supabase
+      .from('brand_owner_links')
+      .select('owner_id')
+      .eq('brand_id', brandId)
+      .eq('status', 'active')
+    const linkedUserIds = Array.from(
+      new Set((activeLinks || []).map((r: { owner_id: string }) => String(r.owner_id)).filter(Boolean)),
+    )
+    if (linkedUserIds.length === 0) {
+      setOwnersLoading(false)
+      return
+    }
+
+    const { data: userRows } = await supabase
+      .from('users')
+      .select('id, auth_id, origin_track')
+      .in('id', linkedUserIds)
+      .eq('role', 'owner')
+    const users = (userRows || []) as { id: string; auth_id?: string | null; origin_track?: string | null }[]
+    const authIds = Array.from(new Set(users.map(u => String(u.auth_id || '')).filter(Boolean)))
+    if (authIds.length === 0) {
+      setOwnersLoading(false)
+      return
+    }
+    const trackByAuth: Record<string, string | null> = {}
+    for (const u of users) {
+      if (u.auth_id) trackByAuth[String(u.auth_id)] = u.origin_track || null
+    }
+
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, full_name, owner_store_name, auth_id')
+      .in('auth_id', authIds)
+    const allProfiles = (profiles || []) as { id: string; full_name?: string | null; owner_store_name?: string | null; auth_id?: string | null }[]
+
+    let filtered: typeof allProfiles = []
+    if (grade === '아레테클럽') {
+      const { data: areteRows } = await supabase
+        .from('brand_arete_members')
+        .select('owner_id')
+        .eq('brand_id', brandId)
+        .eq('status', 'active')
+      const areteIds = new Set((areteRows || []).map((r: { owner_id: string }) => String(r.owner_id)))
+      filtered = allProfiles.filter(p => areteIds.has(p.id))
+    } else {
+      const { data: gradeRows } = await supabase
+        .from('brand_owner_grades')
+        .select('owner_id, grade')
+        .eq('brand_id', brandId)
+        .eq('grade', grade)
+        .in('owner_id', allProfiles.map(p => p.id))
+      const gradeIds = new Set((gradeRows || []).map((r: { owner_id: string }) => String(r.owner_id)))
+      filtered = allProfiles.filter(p => gradeIds.has(p.id))
+    }
+
+    const mapped: TargetOwner[] = filtered.map(p => ({
+      id: p.id,
+      name: p.full_name || '원장님',
+      salon_name: p.owner_store_name || '-',
+      origin_track: p.auth_id ? (trackByAuth[String(p.auth_id)] || null) : null,
+    }))
+    setTargetOwners(mapped)
+    setSelectedOwnerIds(mapped.map(o => o.id))
+    setOwnersLoading(false)
+  }
+
+  const toggleOwner = (id: string) => {
+    setSelectedOwnerIds(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    )
+  }
+  const toggleAllOwners = () => {
+    if (selectedOwnerIds.length === targetOwners.length) {
+      setSelectedOwnerIds([])
+    } else {
+      setSelectedOwnerIds(targetOwners.map(o => o.id))
+    }
+  }
+
   const toggleGrade = (g: string) => {
     setTargetGrades(prev =>
       prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
@@ -101,24 +199,42 @@ export default function BrandTabSample({ brandName, brandId }: Props) {
     }
     setSaving(false)
   }
+
   const sendSample = async (sampleId: string) => {
     if (!brandId) return
+    if (selectedOwnerIds.length === 0) { showToast('발송할 원장님을 선택해주세요'); return }
+    if (!orenMsg.trim()) { showToast('메시지를 입력해주세요'); return }
     setSelectedSample(sampleId)
-    const { error } = await supabase
-      .from('brand_sample_sends')
-      .insert({
+    const sample = samples.find(s => s.id === sampleId)
+    const selected = targetOwners.filter(o => selectedOwnerIds.includes(o.id))
+    let okCount = 0
+    for (const owner of selected) {
+      const { error: sendErr } = await supabase.from('brand_sample_sends').insert({
         sample_id: sampleId,
         brand_id: brandId,
+        owner_id: owner.id,
+        owner_name: owner.name,
+        salon_name: owner.salon_name,
         status: 'pending',
       })
-    if (!error) {
+      if (sendErr) continue
+      const { error: msgErr } = await supabase.from('brand_messages').insert({
+        brand_id: brandId,
+        message_type: 'auto_sample',
+        target_type: sendGrade || 'selected',
+        target_owner_id: owner.id,
+        title: `${sample?.product_name || '샘플'} 발송 안내`,
+        body: orenMsg.trim(),
+        send_count: 1,
+      })
+      if (!msgErr) okCount += 1
+    }
+    if (okCount > 0) {
+      const nextCount = (sample?.send_count || 0) + okCount
       setSamples(prev => prev.map(s =>
-        s.id === sampleId ? { ...s, send_count: s.send_count + 1 } : s
+        s.id === sampleId ? { ...s, send_count: nextCount } : s
       ))
-      await supabase
-        .from('brand_samples')
-        .update({ send_count: (samples.find(s => s.id === sampleId)?.send_count || 0) + 1 })
-        .eq('id', sampleId)
+      await supabase.from('brand_samples').update({ send_count: nextCount }).eq('id', sampleId)
       const { data: newSends } = await supabase
         .from('brand_sample_sends')
         .select('id, owner_name, salon_name, status, sent_at, created_at')
@@ -126,23 +242,35 @@ export default function BrandTabSample({ brandName, brandId }: Props) {
         .order('created_at', { ascending: false })
         .limit(20)
       if (newSends) setSends(newSends as SendRow[])
-      if (brandId) {
-        const sample = samples.find(s => s.id === sampleId)
-        await supabase.from('brand_messages').insert({
-          brand_id: brandId,
-          message_type: 'auto_sample',
-          target_type: 'all',
-          title: `${sample?.product_name || '샘플'} 발송 안내`,
-          body: `${sample?.product_name || '신제품 샘플'}이 발송될 예정입니다. 확인해주세요 💜`,
-          send_count: 1,
-        })
-      }
-      showToast('발송 요청 완료!')
+      showToast(`${okCount}명에게 발송 요청 완료!`)
     } else {
-      showToast('발송 실패: ' + (error?.message || ''))
+      showToast('발송 실패')
     }
     setSelectedSample(null)
   }
+
+  const sendOrenOnly = async (sampleId: string) => {
+    if (!brandId) return
+    if (selectedOwnerIds.length === 0) { showToast('발송할 원장님을 선택해주세요'); return }
+    if (!orenMsg.trim()) { showToast('메시지를 입력해주세요'); return }
+    const sample = samples.find(s => s.id === sampleId)
+    const selected = targetOwners.filter(o => selectedOwnerIds.includes(o.id))
+    let okCount = 0
+    for (const owner of selected) {
+      const { error } = await supabase.from('brand_messages').insert({
+        brand_id: brandId,
+        message_type: 'manual',
+        target_type: sendGrade || 'selected',
+        target_owner_id: owner.id,
+        title: `${brandName} · ${sample?.product_name || '샘플'} 오렌톡`,
+        body: orenMsg.trim(),
+        send_count: 1,
+      })
+      if (!error) okCount += 1
+    }
+    showToast(okCount > 0 ? `${okCount}명에게 오렌톡 발송 완료!` : '발송 실패')
+  }
+
   const deleteSample = async (id: string) => {
     const { error } = await supabase.from('brand_samples').delete().eq('id', id)
     if (!error) {
@@ -164,7 +292,6 @@ export default function BrandTabSample({ brandName, brandId }: Props) {
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>{toast}</div>
       )}
-      {/* 샘플 목록 */}
       <div style={CARD}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div style={{ fontSize: 12, color: SUB }}>🎁 샘플 제품 관리</div>
@@ -235,7 +362,7 @@ export default function BrandTabSample({ brandName, brandId }: Props) {
                     style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: 'none', background: selectedSample === s.id ? 'rgba(123,94,167,0.3)' : PURPLE, color: '#fff', cursor: selectedSample === s.id ? 'not-allowed' : 'pointer' }}>
                     발송
                   </button>
-                  <button type="button" onClick={() => showToast('오렌톡 안내 발송!')}
+                  <button type="button" onClick={() => sendOrenOnly(s.id)}
                     style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '0.5px solid rgba(255,193,7,0.3)', background: 'rgba(255,193,7,0.08)', color: 'rgba(255,193,7,0.8)', cursor: 'pointer' }}>오렌톡</button>
                   <button type="button" onClick={() => deleteSample(s.id)}
                     style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '0.5px solid rgba(229,57,53,0.3)', background: 'rgba(229,57,53,0.08)', color: 'rgba(229,57,53,0.7)', cursor: 'pointer' }}>삭제</button>
@@ -245,7 +372,59 @@ export default function BrandTabSample({ brandName, brandId }: Props) {
           ))
         )}
       </div>
-      {/* 발송 이력 */}
+
+      <div style={CARD}>
+        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>📨 발송 대상 · 오렌톡 메시지</div>
+        <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>등급 선택</div>
+        <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
+          {GRADES.map(g => (
+            <button key={g} type="button" onClick={() => void loadOwnersByGrade(g)}
+              style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, border: `0.5px solid ${sendGrade === g ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: sendGrade === g ? 'rgba(123,94,167,0.2)' : 'transparent', color: sendGrade === g ? '#c4a7e7' : SUB, cursor: 'pointer' }}>
+              {g}
+            </button>
+          ))}
+        </div>
+        {ownersLoading ? (
+          <div style={{ fontSize: 12, color: SUB, padding: 8 }}>원장님 불러오는 중...</div>
+        ) : sendGrade && targetOwners.length === 0 ? (
+          <div style={{ fontSize: 12, color: SUB, padding: 8 }}>해당 등급 원장님이 없어요</div>
+        ) : targetOwners.length > 0 ? (
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: SUB, marginBottom: 6, cursor: 'pointer' }}>
+              <input type="checkbox" checked={selectedOwnerIds.length === targetOwners.length && targetOwners.length > 0} onChange={toggleAllOwners} />
+              전체선택 ({selectedOwnerIds.length}/{targetOwners.length})
+            </label>
+            <div style={{ maxHeight: 180, overflowY: 'auto', border: `0.5px solid ${BORDER}`, borderRadius: 8, padding: '4px 8px' }}>
+              {targetOwners.map(o => (
+                <label key={o.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', borderBottom: `0.5px solid ${BORDER}`, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={selectedOwnerIds.includes(o.id)} onChange={() => toggleOwner(o.id)} />
+                  <span style={{ fontSize: 12, color: TEXT, flex: 1 }}>{o.name} · {o.salon_name}</span>
+                  {o.origin_track === 'A' || o.origin_track === 'B' ? (
+                    <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 8, background: o.origin_track === 'A' ? 'rgba(201,169,110,0.15)' : 'rgba(100,181,246,0.12)', color: o.origin_track === 'A' ? GOLD : 'rgba(100,181,246,0.9)' }}>
+                      트랙{o.origin_track}
+                    </span>
+                  ) : null}
+                </label>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div style={{ fontSize: 11, color: SUB, marginBottom: 10 }}>등급을 선택하면 원장님 목록이 나와요</div>
+        )}
+        <textarea
+          value={orenMsg}
+          onChange={e => setOrenMsg(e.target.value)}
+          placeholder="원장님들께 보낼 메시지를 입력하세요"
+          style={{ width: '100%', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '10px 12px', fontSize: 12, color: TEXT, minHeight: 80, resize: 'none', outline: 'none', marginBottom: 8 }}
+        />
+        {orenMsg.trim() ? (
+          <div style={{ background: 'rgba(123,94,167,0.08)', border: '0.5px solid rgba(123,94,167,0.25)', borderRadius: 8, padding: 12 }}>
+            <div style={{ fontSize: 10, color: SUB, marginBottom: 4 }}>미리보기</div>
+            <div style={{ fontSize: 12, color: TEXT, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{orenMsg}</div>
+          </div>
+        ) : null}
+      </div>
+
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>📋 발송 이력</div>
         {sends.length === 0 ? (

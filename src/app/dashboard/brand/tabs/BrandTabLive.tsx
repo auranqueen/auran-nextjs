@@ -111,6 +111,77 @@ export default function BrandTabLive({ brandName, brandId }: Props) {
     navigator.clipboard?.writeText(url).catch(() => {})
     showToast('링크 복사됨!')
   }
+  const resolveOwnerProfileIds = async (grades: string[]): Promise<string[]> => {
+    if (!brandId) return []
+    const { data: activeLinks } = await supabase
+      .from('brand_owner_links')
+      .select('owner_id')
+      .eq('brand_id', brandId)
+      .eq('status', 'active')
+    const linkedUserIds = Array.from(
+      new Set((activeLinks || []).map((r: { owner_id: string }) => String(r.owner_id)).filter(Boolean)),
+    )
+    if (linkedUserIds.length === 0) return []
+    const { data: userRows } = await supabase
+      .from('users')
+      .select('id, auth_id')
+      .in('id', linkedUserIds)
+      .eq('role', 'owner')
+    const authIds = Array.from(
+      new Set((userRows || []).map((u: { auth_id?: string | null }) => String(u.auth_id || '')).filter(Boolean)),
+    )
+    if (authIds.length === 0) return []
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id')
+      .in('auth_id', authIds)
+    const allIds = (profiles || []).map((p: { id: string }) => String(p.id))
+    if (grades.includes('전체') || grades.length === 0) return allIds
+
+    const wantArete = grades.includes('아레테클럽')
+    const gradeOnly = grades.filter(g => g !== '아레테클럽' && g !== '전체')
+    const idSet = new Set<string>()
+    if (gradeOnly.length > 0 && allIds.length > 0) {
+      const { data: gradeRows } = await supabase
+        .from('brand_owner_grades')
+        .select('owner_id, grade')
+        .eq('brand_id', brandId)
+        .in('grade', gradeOnly)
+        .in('owner_id', allIds)
+      for (const r of gradeRows || []) idSet.add(String((r as { owner_id: string }).owner_id))
+    }
+    if (wantArete) {
+      const { data: areteRows } = await supabase
+        .from('brand_arete_members')
+        .select('owner_id')
+        .eq('brand_id', brandId)
+        .eq('status', 'active')
+      for (const r of areteRows || []) {
+        const oid = String((r as { owner_id: string }).owner_id)
+        if (allIds.includes(oid)) idSet.add(oid)
+      }
+    }
+    return Array.from(idSet)
+  }
+  const sendLiveOrenTalk = async (live: Live) => {
+    if (!brandId) { showToast('브랜드 정보가 없습니다'); return }
+    const ownerIds = await resolveOwnerProfileIds(live.target_grades || ['전체'])
+    if (ownerIds.length === 0) { showToast('발송 대상 원장님이 없어요'); return }
+    let ok = 0
+    for (const ownerId of ownerIds) {
+      const { error } = await supabase.from('brand_messages').insert({
+        brand_id: brandId,
+        message_type: 'manual',
+        target_type: 'selected',
+        target_owner_id: ownerId,
+        title: `${brandName} 라이브 안내`,
+        body: '미등록 원장님 오렌톡 발송!',
+        send_count: 1,
+      })
+      if (!error) ok += 1
+    }
+    showToast(ok > 0 ? `미등록 원장님 ${ok}명에게 오렌톡 발송!` : '발송 실패')
+  }
   const formatDate = (iso: string) => {
     const d = new Date(iso)
     return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
@@ -146,7 +217,7 @@ export default function BrandTabLive({ brandName, brandId }: Props) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <button type="button" onClick={() => showToast('미등록 원장님 오렌톡 발송!')}
+                  <button type="button" onClick={() => void sendLiveOrenTalk(l)}
                     style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '0.5px solid rgba(255,193,7,0.3)', background: 'rgba(255,193,7,0.08)', color: 'rgba(255,193,7,0.8)', cursor: 'pointer' }}>오렌톡</button>
                   <button type="button" onClick={() => copyLink(l.live_url)}
                     style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', cursor: 'pointer' }}>링크 복사</button>

@@ -5,6 +5,13 @@
 
 ## 2026-07-22
 
+- **feat: 샘플발송 원장선택 + 오렌톡 타겟팅 시스템 구축, 가짜 발송버튼 수정**
+  - migration `119_brand_sample_sends_message_targeting.sql`: `brand_sample_sends.owner_id`, `brand_messages.target_owner_id` 추가 (수동 반영 완료 · 문서화)
+  - `client-v2.tsx`: `brand_messages` 조회에 `target_owner_id` 필터 추가 (`myProfileId` 기준, `null`이면 전체공개 기존 동작 유지)
+  - `BrandTabSample.tsx`: 발송 버튼이 대상 원장 미지정으로 빈 행만 만들던 버그 수정. 등급필터 + 원장 체크리스트(트랙A/B 뱃지) + 메시지 직접작성 UI 신규. `sendSample`을 선택된 원장별 개별 insert로 재설계
+  - `BrandTabLive.tsx`: `showToast`만 하던 가짜 발송을 실제 `brand_messages` insert로 교체
+  - `BrandTabOwners.tsx`: 800줄 규칙 초과로 `OwnerOrenTalkButton.tsx` 신규 분리, 최소 교체 적용
+
 - **fix: 브랜드 홈 매출 KPI 수정 + 30일 추이 그래프 추가 + 최근주문 product_name 핫픽스** (`BrandTabHome.tsx`)
   - 이달 판매액 KPI: `orders` 테이블(브랜드 필터 없던 버그) → `brand_orders`(재고발주) 기준으로 교체. `status='cancelled'` 제외 `total_amount` 합산
   - 최근 30일 매출 추이 그래프 신규: `created_at` 기준 생성분(+) − `updated_at` 기준 취소분(`status='cancelled'`) 일별 집계, recharts `Line`(골드 `#C9A96E`)

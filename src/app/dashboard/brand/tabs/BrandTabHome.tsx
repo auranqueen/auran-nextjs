@@ -113,13 +113,19 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
         }))
         setPendingOrders(orders.filter((o: any) => o.status === 'pending').length)
       }
-      const { data: samples } = await supabase
-        .from('brand_samples')
-        .select('owner_name, product_name, status')
+      const { data: sampleSends } = await supabase
+        .from('brand_sample_sends')
+        .select('owner_name, status, brand_samples(product_name, brand_id)')
         .eq('brand_id', brandId)
         .order('created_at', { ascending: false })
         .limit(4)
-      if (samples) setSampleRequests(samples as any[])
+      if (sampleSends) {
+        setSampleRequests(sampleSends.map((s: any) => ({
+          owner_name: s.owner_name || '-',
+          product_name: (Array.isArray(s.brand_samples) ? s.brand_samples[0]?.product_name : s.brand_samples?.product_name) || '-',
+          status: s.status || '-',
+        })))
+      }
 
       const thisMonth = new Date()
       thisMonth.setDate(1)

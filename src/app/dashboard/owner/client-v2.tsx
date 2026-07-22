@@ -87,7 +87,12 @@ export default function OwnerDashClientV2() {
       const { data: me } = await sb.from('users').select('id,auth_id,name,role').eq('auth_id', user.id).maybeSingle()
       if (!me?.id) return
       setOwnerId(String(me.id))
-      const { data: profileRow } = await sb.from('profiles').select('slug, avatar_url').eq('auth_id', user.id).maybeSingle()
+      const { data: profileRow } = await sb
+        .from('profiles')
+        .select('id, slug, avatar_url')
+        .eq('auth_id', user.id)
+        .maybeSingle()
+      const myProfileId = profileRow?.id ? String(profileRow.id) : ''
       if (profileRow?.slug) setOwnerSlug(String(profileRow.slug))
       if (profileRow?.avatar_url) setOwnerAvatar(String(profileRow.avatar_url))
       setOwnerName(String(me.name || '원장님'))
@@ -151,12 +156,16 @@ export default function OwnerDashClientV2() {
           })))
         }
 
-        const { data: bmData } = await sb
+        let bmQuery = sb
           .from('brand_messages')
-          .select('id, title, body, message_type, created_at, brand_id, brands(name)')
+          .select('id, title, body, message_type, created_at, brand_id, target_owner_id, brands(name)')
           .in('brand_id', brandIds)
           .order('created_at', { ascending: false })
           .limit(10)
+        if (myProfileId) {
+          bmQuery = bmQuery.or(`target_owner_id.is.null,target_owner_id.eq.${myProfileId}`)
+        }
+        const { data: bmData } = await bmQuery
         setBrandMessages((bmData || []) as any[])
       } else {
         setTradeBrands([])
