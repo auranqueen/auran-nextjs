@@ -3,13 +3,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  Legend,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts'
 import { createClient } from '@/lib/supabase/client'
 import MonthlyOrderAccordion from './MonthlyOrderAccordion'
@@ -54,9 +56,16 @@ export default function GroupRevenueChart({ companyId, hubBrandId }: Props) {
   const [brands, setBrands] = useState<BrandRow[]>([])
   const [trend, setTrend] = useState<Array<Record<string, string | number>>>([])
   const [monthByBrand, setMonthByBrand] = useState<Record<string, number>>({})
-  const [hidden, setHidden] = useState<Record<string, boolean>>({})
   const [loading, setLoading] = useState(true)
   const [detailBrandId, setDetailBrandId] = useState<string | null>(null)
+  const [isDesktop, setIsDesktop] = useState(true)
+
+  useEffect(() => {
+    const sync = () => setIsDesktop(typeof window !== 'undefined' && window.innerWidth >= 768)
+    sync()
+    window.addEventListener('resize', sync)
+    return () => window.removeEventListener('resize', sync)
+  }, [])
 
   useEffect(() => {
     if (!companyId) return
@@ -231,77 +240,200 @@ export default function GroupRevenueChart({ companyId, hubBrandId }: Props) {
     return { withSales: withS, zeroSales: zero }
   }, [brands, monthByBrand])
 
+  const monthTotal = useMemo(
+    () => brands.reduce((s, b) => s + (monthByBrand[b.id] || 0), 0),
+    [brands, monthByBrand],
+  )
+
+  /** 도넛: 매출>0만 슬라이스. 0원은 범례에서만 흐리게 */
+  const pieData = useMemo(() => {
+    return withSales.map((b) => ({
+      id: b.id,
+      name: b.name,
+      value: monthByBrand[b.id] || 0,
+    }))
+  }, [withSales, monthByBrand])
+
   if (!companyId) return null
 
   return (
     <div style={CARD}>
-      <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>그룹 최근 30일 재고발주 매출</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 12, color: SUB }}>그룹 최근 30일 재고발주 매출</div>
+        <span
+          style={{
+            fontSize: 10,
+            padding: '2px 8px',
+            borderRadius: 10,
+            background: 'rgba(123,94,167,0.18)',
+            color: '#c4a8f0',
+            border: '1px solid rgba(123,94,167,0.35)',
+          }}
+        >
+          전체 {brands.length}개 브랜드
+        </span>
+      </div>
       {loading ? (
         <div style={{ textAlign: 'center', padding: 24, color: SUB, fontSize: 12 }}>불러오는 중…</div>
       ) : brands.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>그룹 브랜드가 없어요</div>
       ) : (
         <>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={trend}>
-              <XAxis
-                dataKey="label"
-                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }}
-                axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
-                tickLine={false}
-                interval="preserveStartEnd"
-              />
-              <YAxis
-                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => `${Math.round(Number(v) / 10000)}만`}
-                width={36}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: '#1a1520',
-                  border: '0.5px solid rgba(201,169,110,0.35)',
-                  borderRadius: 8,
-                  fontSize: 11,
-                  color: TEXT,
-                }}
-                formatter={(v: number, name: string) => {
-                  const brand = brands.find((b) => b.id === name)
-                  return [`₩${Number(v).toLocaleString()}`, brand?.name || name]
-                }}
-              />
-              <Legend
-                wrapperStyle={{ fontSize: 10, color: SUB, cursor: 'pointer' }}
-                onClick={(e) => {
-                  const key = String((e as { dataKey?: string }).dataKey || '')
-                  if (!key) return
-                  setHidden((prev) => ({ ...prev, [key]: !prev[key] }))
-                }}
-                formatter={(value) => {
-                  const brand = brands.find((b) => b.id === value)
-                  const faded = hidden[value]
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isDesktop ? '1.6fr 1fr' : '1fr',
+              gap: 12,
+              alignItems: 'stretch',
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={trend} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }}
+                    axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
+                    tickLine={false}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v) => `${Math.round(Number(v) / 10000)}만`}
+                    width={36}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: '#1a1520',
+                      border: '0.5px solid rgba(201,169,110,0.35)',
+                      borderRadius: 8,
+                      fontSize: 11,
+                      color: TEXT,
+                    }}
+                    formatter={(v: number, name: string) => {
+                      const brand = brands.find((b) => b.id === name)
+                      return [`₩${Number(v).toLocaleString()}`, brand?.name || name]
+                    }}
+                  />
+                  {brands.map((b) => (
+                    <Bar
+                      key={b.id}
+                      dataKey={b.id}
+                      name={b.id}
+                      stackId="group"
+                      fill={colorById[b.id]}
+                      maxBarSize={28}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div style={{ fontSize: 11, color: SUB, marginBottom: 6, alignSelf: 'flex-start' }}>이달 매출 비중</div>
+              {pieData.length === 0 ? (
+                <div style={{ fontSize: 11, color: SUB, padding: 24, textAlign: 'center' }}>이달 매출이 없어요</div>
+              ) : (
+                <ResponsiveContainer width="100%" height={160}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={42}
+                      outerRadius={68}
+                      paddingAngle={1}
+                      stroke="rgba(15,13,20,0.6)"
+                      strokeWidth={1}
+                    >
+                      {pieData.map((d) => (
+                        <Cell key={d.id} fill={colorById[d.id]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        background: '#1a1520',
+                        border: '0.5px solid rgba(201,169,110,0.35)',
+                        borderRadius: 8,
+                        fontSize: 11,
+                        color: TEXT,
+                      }}
+                      formatter={(v: number, name: string) => [
+                        `₩${Number(v).toLocaleString()}`,
+                        name,
+                      ]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+              <div style={{ width: '100%', marginTop: 4 }}>
+                {withSales.map((b) => {
+                  const amt = monthByBrand[b.id] || 0
+                  const pct = monthTotal > 0 ? Math.round((amt / monthTotal) * 1000) / 10 : 0
                   return (
-                    <span style={{ color: faded ? 'rgba(255,255,255,0.25)' : TEXT }}>
-                      {brand?.name || value}
-                    </span>
+                    <div
+                      key={b.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '3px 0',
+                        fontSize: 10,
+                        color: TEXT,
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: 2,
+                          background: colorById[b.id],
+                          flexShrink: 0,
+                        }}
+                      />
+                      <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {b.name}
+                      </span>
+                      <span style={{ color: SUB, flexShrink: 0 }}>{pct}%</span>
+                    </div>
                   )
-                }}
-              />
-              {brands.map((b) => (
-                <Line
-                  key={b.id}
-                  type="monotone"
-                  dataKey={b.id}
-                  name={b.id}
-                  stroke={colorById[b.id]}
-                  strokeWidth={2}
-                  dot={false}
-                  hide={!!hidden[b.id]}
-                />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
+                })}
+                {zeroSales.map((b) => (
+                  <div
+                    key={b.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '3px 0',
+                      fontSize: 10,
+                      color: SUB,
+                      opacity: 0.45,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 7,
+                        height: 7,
+                        borderRadius: 2,
+                        background: colorById[b.id],
+                        flexShrink: 0,
+                        opacity: 0.5,
+                      }}
+                    />
+                    <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {b.name}
+                    </span>
+                    <span style={{ flexShrink: 0 }}>0%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
           <div style={{ marginTop: 14, fontSize: 11, color: SUB, marginBottom: 8 }}>이달 서브브랜드 매출</div>
           {withSales.map((b) => (

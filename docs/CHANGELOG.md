@@ -5,6 +5,9 @@
 
 ## 2026-07-23
 
+- **style: 그룹매출 그래프 막대+도넛 조합으로 개선**
+  - `GroupRevenueChart.tsx`: 멀티라인 → 스택 BarChart + 이달매출비중 도넛 PieChart 조합으로 변경, 제목 옆 「전체 N개 브랜드」 뱃지 추가, 아래 트랙A/B 단일브랜드 선그래프와 시각적으로 구분되도록 개선
+
 - **feat: 그룹합산 대시보드 구축 + 서브브랜드 company_id 자동상속**
   - `src/lib/brand/createSecondBrand.ts` 신규: 서브브랜드 추가 시 허브의 `company_id` 자동 상속, 허브에 `company_id` 없으면 명확한 에러로 차단(자동생성 안 함)
   - `page.tsx` 브랜드추가 insert 로직을 `createSecondBrand()`로 교체
