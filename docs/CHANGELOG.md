@@ -5,6 +5,14 @@
 
 ## 2026-07-22
 
+- **feat: 트랙B 시스템 구축 완료 — 재고발주 / 오렌어드민 콘솔 / 스폰서 커미션(요율 트랙A 분리)**
+  - `hq_stock_orders` / `hq_commission_ledger` / `hq_commission_rates` 신규 테이블 3개, RLS 포함 (migration `120`·`121`·`122`)
+  - 트랙B 원장 재고발주 화면 + API + PayApp 연동 (`kind:'hq_stock_order'`)
+  - 오렌어드민 `/admin/track-b-system` 신규: KPI, 30일 매출추이, 스폰서 커미션 테이블(정산처리 버튼 · 실송금 없음/확정처리만), 발주내역 리스트
+  - 스폰서 커미션 계산: 뱃지구매·HQ재고발주 모두 매 결제마다 발생(1회성 아님), 8.8% 순액×등급별 요율(`Math.floor`, 기존 `brandTierPurchase.ts` 공식 재사용)
+  - 커미션 요율을 `brand_tier_packages`(브랜드 소관, 뱃지가격용)에서 완전 분리해 `hq_commission_rates`(오렌 소관 신규) 전용 참조로 교체 — 트랙A/B 정책 격리 원칙 준수
+  - 원장 퀵메뉴 「재고 발주」 링크 추가 (`origin_track==='B'`)
+
 - **feat: 트랙B 본사재고발주 신규 구축 + 브랜드홈 매출그래프 트랙B 반영**
   - `hq_stock_orders` 신규 테이블(migration `120` RLS): 트랙B 원장→오렌 본사 재고발주 전용, `brand_orders`와 완전 분리
   - `/dashboard/owner/hq-stock-orders` 신규 발주화면 (`origin_track='B'` 가드, brand-orders UI/계산 패턴 재사용)

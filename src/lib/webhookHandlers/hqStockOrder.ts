@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { accrueHqStockCommission } from '@/lib/hq/accrueHqStockCommission'
 
 type PaymentIntentRow = {
   id: string
@@ -15,7 +16,7 @@ export async function handleHqStockOrderComplete(
   if (!intent.target_id) return
   const { data: order } = await client
     .from('hq_stock_orders')
-    .select('id, status, final_amount')
+    .select('id, status, final_amount, brand_id, profile_id')
     .eq('id', intent.target_id)
     .maybeSingle()
   if (!order?.id) return
@@ -29,7 +30,7 @@ export async function handleHqStockOrderComplete(
     return
   }
   const nowIso = new Date().toISOString()
-  await client
+  const { data: updated, error } = await client
     .from('hq_stock_orders')
     .update({
       status: '결제완료',
@@ -39,6 +40,17 @@ export async function handleHqStockOrderComplete(
     })
     .eq('id', order.id)
     .eq('status', '결제대기')
+    .select('id, brand_id, profile_id, final_amount')
+    .maybeSingle()
+
+  if (error || !updated?.id) return
+
+  await accrueHqStockCommission(client, {
+    id: String(updated.id),
+    brand_id: String(updated.brand_id),
+    profile_id: String(updated.profile_id),
+    final_amount: Math.trunc(Number(updated.final_amount) || 0),
+  })
 }
 
 export async function handleHqStockOrderCancel(
