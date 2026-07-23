@@ -5,6 +5,9 @@
 
 ## 2026-07-23
 
+- **docs: supply_promos 쓰기 RLS 마이그레이션 문서화**
+  - `supply_promos` 쓰기 RLS(INSERT/UPDATE/DELETE, 소유자/멤버 전용) migration `125_supply_promos_write_rls.sql`로 문서화 (DB 이미 반영)
+
 - **feat: 브랜드별 적립율/프로모션 설정화면 구축 + 실계산 연결**
   - `brand_grade_point_rates` 신규 테이블(브랜드별 등급 적립율, RLS: 소유자/멤버만 쓰기 가능), 시바산 시드값(메디슈티컬5/프리미엄전문점3/전문점2/취급점2) — migration `124_brand_grade_point_rates_table.sql`(기록용)
   - `supply_promos` RLS에 INSERT/UPDATE/DELETE 정책 추가(기존 SELECT만 있던 문제 수정)
