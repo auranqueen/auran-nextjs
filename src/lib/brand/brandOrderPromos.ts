@@ -61,13 +61,20 @@ export function promoBonus(row: SupplyPromoRow | null): number {
   return parseInt(parts[1] || '0', 10) || 0
 }
 
-export function gradePointRate(grade: string): number {
+export function gradePointRate(grade: string, rateMap?: Record<string, number> | null): number {
+  if (rateMap && rateMap[grade] != null && Number.isFinite(Number(rateMap[grade]))) {
+    return Number(rateMap[grade])
+  }
   return GRADE_POINT_RATES[grade] ?? 1
 }
 
 /** 발주 금액 기준 적립 T (표시용 %는 gradePointRate 유지) */
-export function calcPointsEarned(totalAmount: number, grade: string): number {
-  return Math.floor(totalAmount * gradePointRate(grade) / 100)
+export function calcPointsEarned(
+  totalAmount: number,
+  grade: string,
+  rateMap?: Record<string, number> | null,
+): number {
+  return Math.floor(totalAmount * gradePointRate(grade, rateMap) / 100)
 }
 
 export function promosForBrand(promos: SupplyPromoRow[], brandId: string): SupplyPromoRow[] {

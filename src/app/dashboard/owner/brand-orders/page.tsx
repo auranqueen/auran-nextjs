@@ -14,6 +14,7 @@ import {
   promoLabel,
   type SupplyPromoRow,
 } from '@/lib/brand/brandOrderPromos'
+import { useBrandGradeRates } from '@/lib/brand/useBrandGradeRates'
 import { resolveOwnerIds } from '@/lib/brand/resolveOwnerIds'
 
 const BG = '#ffffff'
@@ -392,6 +393,8 @@ export default function BrandOrdersPage() {
   const activeGrade = gradeForBrand(gradeByBrandId, popupBrandId)
   const headerBrandId = brandFilter !== 'all' ? brandFilter : linkedBrandIds[0]
   const headerGrade = gradeForBrand(gradeByBrandId, headerBrandId)
+  const { rateMap: gradeRateMap } = useBrandGradeRates(supabase, popupBrandId)
+  const { rateMap: headerGradeRateMap } = useBrandGradeRates(supabase, headerBrandId)
 
   const popupTotalAmount = popupCart.reduce(
     (s, c) => s + buildOrderLineItem(
@@ -402,7 +405,7 @@ export default function BrandOrdersPage() {
     ).line_amount,
     0,
   )
-  const popupPointsEarned = calcPointsEarned(popupTotalAmount, activeGrade)
+  const popupPointsEarned = calcPointsEarned(popupTotalAmount, activeGrade, gradeRateMap)
   const totalQty = cart.reduce((s, c) => s + c.qty, 0)
 
   const applyPromo = (prod: BrandOrderProduct, promo: SupplyPromoRow) => {
@@ -476,7 +479,7 @@ export default function BrandOrdersPage() {
     const totalItems = items.reduce((s, i) => s + i.qty, 0)
     const totalAmount = items.reduce((s, i) => s + i.line_amount, 0)
     const promoApplied = items.map((i) => i.promo).filter(Boolean).join(', ') || null
-    const pointsEarned = calcPointsEarned(totalAmount, orderGrade)
+    const pointsEarned = calcPointsEarned(totalAmount, orderGrade, gradeRateMap)
 
     const res = await fetch('/api/brand-orders/create', {
       method: 'POST',
@@ -606,7 +609,7 @@ export default function BrandOrdersPage() {
 
       <div style={{ padding: '8px 16px 12px' }}>
         <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 20, background: `${PURPLE}15`, color: PURPLE, border: `0.5px solid ${PURPLE}40` }}>
-          {headerGrade} · 적립 {gradePointRate(headerGrade)}%
+          {headerGrade} · 적립 {gradePointRate(headerGrade, headerGradeRateMap)}%
         </span>
       </div>
 
@@ -811,7 +814,7 @@ export default function BrandOrdersPage() {
                 <span>등급</span><span style={{ color: PURPLE }}>{activeGrade}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: SUB, marginBottom: 4 }}>
-                <span>적립율</span><span style={{ color: SUB }}>{gradePointRate(activeGrade)}%</span>
+                <span>적립율</span><span style={{ color: SUB }}>{gradePointRate(activeGrade, gradeRateMap)}%</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 4 }}>
                 <span>발주 합계</span><span style={{ color: PURPLE }}>₩{popupTotalAmount.toLocaleString()}</span>

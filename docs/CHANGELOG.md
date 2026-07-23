@@ -5,6 +5,13 @@
 
 ## 2026-07-23
 
+- **feat: 브랜드별 적립율/프로모션 설정화면 구축 + 실계산 연결**
+  - `brand_grade_point_rates` 신규 테이블(브랜드별 등급 적립율, RLS: 소유자/멤버만 쓰기 가능), 시바산 시드값(메디슈티컬5/프리미엄전문점3/전문점2/취급점2) — migration `124_brand_grade_point_rates_table.sql`(기록용)
+  - `supply_promos` RLS에 INSERT/UPDATE/DELETE 정책 추가(기존 SELECT만 있던 문제 수정)
+  - `useBrandGradeRates.ts` 신규 훅, `brandOrderPromos.ts`의 `gradePointRate`/`calcPointsEarned`를 `rateMap` 파라미터 받도록 확장(기존 `GRADE_POINT_RATES`는 폴백으로 유지)
+  - `brand-orders/page.tsx`: 헤더/팝업 각각 브랜드별 실제 적립율 DB조회 연결(4개 호출지점)
+  - `BrandOrdersPromoSettings.tsx` 신규: 적립율 인라인편집 + 프로모션 추가/수정/비활성화/삭제(2단계 확인) UI, `BrandTabOrders.tsx` 하드코딩 표 완전 제거
+
 - **fix: 오렌몰-브랜드제품 트랙격리 사고 수정 - 레거시 등록경로 제거**
   - 트랙격리 사고 발견: 레거시 브랜드 제품등록 경로(`/dashboard/brand/products/new` → `/api/brand/products/create`)가 `brand_products`가 아닌 `products`(오렌몰)에 저장하던 구조적 결함 발견 및 수정
   - 레거시 페이지/API 파일 완전삭제, `client.tsx` 잔여 링크 제거(`/dashboard/brand`로 교체)
