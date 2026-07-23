@@ -5,6 +5,10 @@
 
 ## 2026-07-23
 
+- **fix: brand_grade_point_rates RLS 정책 누락 수정 + 디버그로그 제거**
+  - `brand_grade_point_rates` RLS 정책이 실제로 반영 안 돼있던 버그 발견/수정 — RLS는 켜져있는데 정책이 하나도 없어서 전체 차단 상태였음(SQL Editor 관리자 권한으로만 보였음), SELECT/INSERT/UPDATE/DELETE/ALL 5개 정책 재실행으로 해결
+  - `BrandOrdersPromoSettings.tsx` 디버그 로그 제거
+
 - **docs: supply_promos 쓰기 RLS 마이그레이션 문서화**
   - `supply_promos` 쓰기 RLS(INSERT/UPDATE/DELETE, 소유자/멤버 전용) migration `125_supply_promos_write_rls.sql`로 문서화 (DB 이미 반영)
 
