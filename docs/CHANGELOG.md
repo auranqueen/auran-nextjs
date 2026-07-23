@@ -5,6 +5,9 @@
 
 ## 2026-07-23
 
+- **docs: brand_grade_point_rates RLS 정책 마이그레이션 126으로 고정**
+  - `brand_grade_point_rates` RLS 정책 5개를 migration `126_brand_grade_point_rates_rls_fix.sql`로 레포에 고정 (기존 123번 문서화에도 불구하고 실제 DB엔 정책이 누락돼있던 재발 방지)
+
 - **fix: brand_grade_point_rates RLS 정책 누락 수정 + 디버그로그 제거**
   - `brand_grade_point_rates` RLS 정책이 실제로 반영 안 돼있던 버그 발견/수정 — RLS는 켜져있는데 정책이 하나도 없어서 전체 차단 상태였음(SQL Editor 관리자 권한으로만 보였음), SELECT/INSERT/UPDATE/DELETE/ALL 5개 정책 재실행으로 해결
   - `BrandOrdersPromoSettings.tsx` 디버그 로그 제거
