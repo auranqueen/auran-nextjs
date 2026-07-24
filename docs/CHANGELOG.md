@@ -5,6 +5,13 @@
 
 ## 2026-07-24
 
+- **fix: 물류허브 접근권한 정리 - ops직원 브랜드허브 진입차단 + 발송처리 이전**
+  - `BrandHubContent.tsx`의 내부 "물류팀" 토글모드(`systemMode`/`LOGI_TABS`) 완전 제거 — 브랜드허브와 물류허브(`/dashboard/logi`) 이원화 문제 해소
+  - `BrandPinGate.tsx`에 `hub` prop(`'brand'|'logi'`) 추가 — 일반 브랜드허브(`hub="brand"`)에서 `ops_manager`/`ops_staff` PIN 인증 시 차단하고 물류허브 이동 안내(`brands.slug` 포함 링크)로 전환. `/dashboard/logi`(`hub="logi"`)는 기존대로 통과
+  - `/dashboard/logi`(`OPS_TABS`)에 "발송 처리"(`BrandInventoryFulfillment`) 추가, 기본 탭으로 설정
+  - `BrandTabInventory.tsx`의 중복 "발송 처리" 서브탭 제거
+  - 남은 정리 대상: `/dashboard/logi`의 "오늘출고"(`BrandTabOrders` 재사용) 탭, 발송처리와 역할 중복 여부 재검토 필요
+
 - **feat: 발주-물류 역할분리 + 트랙A/B 발송통합 + 스마트택배 자동웹훅 연동**
   - 역할 분리: 발주관리(승인까지만)와 재고·물류(실제 발송처리)를 명확히 분리 — `BrandTabOrders`에서 운송장/발송 로직 제거, `BrandInventoryFulfillment.tsx` 신규로 이관
   - 재고·물류 "발송 처리" 서브탭 신규: 트랙A(`brand_orders`)+트랙B(`hq_stock_orders`) 발주 통합 처리, 운송장번호+택배사 입력, 재고차감(`decrement_inventory_stock`) 동일 적용

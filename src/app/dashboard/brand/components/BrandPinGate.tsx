@@ -24,8 +24,12 @@ interface Props {
   brandId: string | null
   brandName: string
   onAuth: (staff: { id: string; name: string; role: string; permissions: string[] }) => void
+  /** brand: Brand Hub (/dashboard/brand). logi: 물류 허브 (/dashboard/logi) */
+  hub?: 'brand' | 'logi'
+  /** brand hub에서 ops 차단 시 이동 URL */
+  logiHref?: string
 }
-export default function BrandPinGate({ brandId, brandName, onAuth }: Props) {
+export default function BrandPinGate({ brandId, brandName, onAuth, hub = 'brand', logiHref = '/dashboard/logi' }: Props) {
   const supabase = createClient()
   const [staffList, setStaffList] = useState<StaffRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -36,6 +40,7 @@ export default function BrandPinGate({ brandId, brandName, onAuth }: Props) {
   const [error, setError] = useState('')
   const [checking, setChecking] = useState(false)
   const [shuffleNonce, setShuffleNonce] = useState(0)
+  const [opsBlocked, setOpsBlocked] = useState(false)
 
   const digitSlots = useMemo(() => {
     const digits = Array.from({ length: 10 }, (_, i) => String(i)).sort(() => Math.random() - 0.5)
@@ -61,6 +66,7 @@ export default function BrandPinGate({ brandId, brandName, onAuth }: Props) {
     setError('')
     setFailCount(0)
     setLocked(false)
+    setOpsBlocked(false)
     setShuffleNonce((n) => n + 1)
   }
   const handlePin = async () => {
@@ -92,6 +98,13 @@ export default function BrandPinGate({ brandId, brandName, onAuth }: Props) {
       } else {
         setError(`PIN이 틀렸어요 (${next}/3)`)
       }
+      return
+    }
+    // Brand Hub에서는 물류 역할(ops_*) 진입 차단 — 물류 허브로 안내
+    if (hub === 'brand' && (selected.role === 'ops_manager' || selected.role === 'ops_staff')) {
+      setOpsBlocked(true)
+      setError('')
+      setPin('')
       return
     }
     setChecking(true)
@@ -181,6 +194,24 @@ export default function BrandPinGate({ brandId, brandName, onAuth }: Props) {
               </div>
             </div>
             <div style={{ fontSize: 13, color: SUB, marginBottom: 10 }}>PIN {pinLen}자리 입력</div>
+            {opsBlocked ? (
+              <div style={{ background: 'rgba(33,136,255,0.08)', border: '0.5px solid rgba(33,136,255,0.35)', borderRadius: 10, padding: 16, marginBottom: 12, textAlign: 'center' as const }}>
+                <div style={{ fontSize: 13, color: TEXT, marginBottom: 8, lineHeight: 1.5 }}>
+                  물류직원은 /dashboard/logi로 접속해주세요
+                </div>
+                <a
+                  href={logiHref}
+                  style={{ display: 'inline-block', padding: '10px 16px', borderRadius: 8, background: '#2188ff', color: '#fff', fontSize: 13, textDecoration: 'none', fontWeight: 500 }}
+                >
+                  물류 허브로 이동
+                </a>
+                <button type="button" onClick={() => { setOpsBlocked(false); setSelected(null); setPin('') }}
+                  style={{ display: 'block', width: '100%', marginTop: 12, background: 'none', border: 'none', color: SUB, fontSize: 12, cursor: 'pointer' }}>
+                  ← 다른 담당자 선택
+                </button>
+              </div>
+            ) : (
+              <>
             <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginBottom: 16 }}>
               {Array.from({ length: pinLen }).map((_, i) => (
                 <div key={i} style={{ width: 44, height: 44, borderRadius: 10, border: `1.5px solid ${pin.length > i ? PURPLE : 'rgba(255,255,255,0.15)'}`, background: pin.length > i ? `${PURPLE}20` : 'rgba(255,255,255,0.03)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -217,6 +248,8 @@ export default function BrandPinGate({ brandId, brandName, onAuth }: Props) {
               style={{ width: '100%', padding: '14px', borderRadius: 10, border: 'none', background: pin.length < pinLen || locked ? 'rgba(123,94,167,0.3)' : PURPLE, color: '#fff', fontSize: 15, cursor: pin.length < pinLen || locked ? 'not-allowed' : 'pointer', fontWeight: 500 }}>
               {checking ? '확인 중...' : locked ? '잠김' : '확인'}
             </button>
+              </>
+            )}
           </div>
         )}
         <div style={{ textAlign: 'center', marginTop: 20, fontSize: 11, color: 'rgba(255,255,255,0.15)' }}>

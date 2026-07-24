@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import dynamic from 'next/dynamic'
 const BrandPinGate = dynamic(() => import('../brand/components/BrandPinGate'), { ssr: false })
 const BrandWatermark = dynamic(() => import('../brand/components/BrandWatermark'), { ssr: false })
+const BrandInventoryFulfillment = dynamic(() => import('../brand/components/BrandInventoryFulfillment'), { ssr: false })
 const BrandInventoryStock = dynamic(() => import('../brand/tabs/BrandInventoryStock'), { ssr: false })
 const BrandInventoryLots = dynamic(() => import('../brand/tabs/BrandInventoryLots'), { ssr: false })
 const BrandInventoryScan = dynamic(() => import('../brand/tabs/BrandInventoryScan'), { ssr: false })
@@ -15,6 +16,7 @@ const BLUE = '#2188ff'
 const SUB = 'rgba(255,255,255,0.3)'
 const TEXT = 'rgba(255,255,255,0.65)'
 const OPS_TABS = [
+  { key: 'fulfillment', label: '발송 처리', icon: '🚚' },
   { key: 'stock',     label: '재고현황',   icon: '📦' },
   { key: 'lots',      label: '로트관리',   icon: '🏷' },
   { key: 'scan',      label: '스캔입출고', icon: '📲' },
@@ -37,7 +39,7 @@ function LogiDashboardInner() {
   const [brandId, setBrandId] = useState<string | null>(null)
   const [brandName, setBrandName] = useState('')
   const [authLoading, setAuthLoading] = useState(true)
-  const [tab, setTab] = useState<OpsTab>('stock')
+  const [tab, setTab] = useState<OpsTab>('fulfillment')
   const [pinAuth, setPinAuth] = useState<{
     id: string; name: string; role: string; permissions: string[]
   } | null>(null)
@@ -65,6 +67,7 @@ function LogiDashboardInner() {
       <BrandPinGate
         brandId={brandId}
         brandName={`${brandName} 물류 허브`}
+        hub="logi"
         onAuth={(staff) => {
           if (!['ops_manager', 'ops_staff', 'ceo', 'director'].includes(staff.role)) {
             alert('물류 허브 접근 권한이 없어요.\nBrand Hub를 이용해주세요.\nauran.kr/brand/' + slug)
@@ -101,6 +104,7 @@ function LogiDashboardInner() {
       </div>
       {/* 탭 콘텐츠 */}
       <div style={{ padding: 16 }}>
+        {tab === 'fulfillment' && <BrandInventoryFulfillment brandId={brandId} brandName={brandName} />}
         {tab === 'stock'     && <BrandInventoryStock brandId={brandId} brandName={brandName} authId={null} />}
         {tab === 'lots'      && <BrandInventoryLots brandId={brandId} />}
         {tab === 'scan'      && <BrandInventoryScan brandId={brandId} brandName={brandName} />}

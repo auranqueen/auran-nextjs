@@ -21,10 +21,10 @@ const GOLD = '#C9A96E'
 
 type Row = Record<string, unknown> & { id: string; name?: string | null; status?: string | null; thumb_img?: string | null }
 
-type BrandOption = { id: string; name: string; role: string }
+type BrandOption = { id: string; name: string; role: string; slug?: string | null }
 
 function mergeMyBrands(
-  brandList: Array<{ id?: string; name?: string | null }> | null | undefined,
+  brandList: Array<{ id?: string; name?: string | null; slug?: string | null }> | null | undefined,
   memberList: BrandOption[],
 ): BrandOption[] {
   const map = new Map<string, BrandOption>()
@@ -32,14 +32,16 @@ function mergeMyBrands(
   for (const owned of brandList || []) {
     if (!owned?.id) continue
     const id = String(owned.id)
-    map.set(id, { id, name: String(owned.name || ''), role: 'owner' })
+    map.set(id, { id, name: String(owned.name || ''), role: 'owner', slug: owned.slug ?? null })
   }
 
   for (const member of memberList) {
     if (!member.id) continue
     const id = String(member.id)
     if (!map.has(id)) {
-      map.set(id, { id, name: member.name, role: member.role })
+      map.set(id, { id, name: member.name, role: member.role, slug: member.slug ?? null })
+    } else if (member.slug && !map.get(id)?.slug) {
+      map.set(id, { ...map.get(id)!, slug: member.slug })
     }
   }
 
@@ -103,7 +105,7 @@ export default function BrandDashboardPage() {
     setUserPk(u.id)
     const { data: brandList } = await supabase
       .from('brands')
-      .select('id,name,apply_status,welcome_shown,manager_name,origin_country,settlement_cycle,approved_at,logo_url,created_at')
+      .select('id,name,slug,apply_status,welcome_shown,manager_name,origin_country,settlement_cycle,approved_at,logo_url,created_at')
       .eq('user_id', u.id)
       .order('created_at', { ascending: true })
     const b = brandList?.[0] || null
@@ -111,7 +113,7 @@ export default function BrandDashboardPage() {
 
     const { data: memberRows } = await supabase
       .from('brand_members')
-      .select('brand_id, role, brands(id, name)')
+      .select('brand_id, role, brands(id, name, slug)')
       .eq('user_id', u.id)
 
     const memberList: BrandOption[] =
@@ -120,6 +122,7 @@ export default function BrandDashboardPage() {
             id: String(m.brands?.id ?? m.brand_id),
             name: String(m.brands?.name ?? ''),
             role: String(m.role || 'member'),
+            slug: m.brands?.slug != null ? String(m.brands.slug) : null,
           }))
         : []
 
@@ -295,10 +298,17 @@ export default function BrandDashboardPage() {
   }
 
   if (!pinAuth && currentBrandId) {
+    const currentSlug = myBrands.find((b) => b.id === currentBrandId)?.slug
+      || (brandRow?.slug != null ? String(brandRow.slug) : '')
+    const logiHref = currentSlug
+      ? `/dashboard/logi?slug=${encodeURIComponent(currentSlug)}`
+      : '/dashboard/logi'
     return (
       <BrandPinGate
         brandId={currentBrandId}
         brandName={brandName}
+        hub="brand"
+        logiHref={logiHref}
         onAuth={setPinAuth}
       />
     )

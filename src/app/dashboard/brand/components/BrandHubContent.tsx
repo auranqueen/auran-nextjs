@@ -1,7 +1,6 @@
 'use client'
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
-import TabBrandSelector from './TabBrandSelector'
 const BrandTabHome = dynamic(() => import('../tabs/BrandTabHome'), { ssr: false })
 const BrandTabProducts = dynamic(() => import('../tabs/BrandTabProducts'), { ssr: false })
 const OwnersBrandWrapper = dynamic(() => import('./OwnersBrandWrapper'), { ssr: false })
@@ -17,14 +16,7 @@ const BrandTabReport = dynamic(() => import('../tabs/BrandTabReport'), { ssr: fa
 const BrandTabReturns = dynamic(() => import('../tabs/BrandTabReturns'), { ssr: false })
 const BrandTabTierPackages = dynamic(() => import('../tabs/BrandTabTierPackages'), { ssr: false })
 const BrandTabSettlement = dynamic(() => import('../tabs/BrandTabSettlement'), { ssr: false })
-const BrandInventoryStock = dynamic(() => import('../tabs/BrandInventoryStock'), { ssr: false })
-const BrandInventoryLots = dynamic(() => import('../tabs/BrandInventoryLots'), { ssr: false })
-const BrandInventoryScan = dynamic(() => import('../tabs/BrandInventoryScan'), { ssr: false })
-const BrandInventoryQR = dynamic(() => import('../tabs/BrandInventoryQR'), { ssr: false })
-const BrandInventoryEmergency = dynamic(() => import('../tabs/BrandInventoryEmergency'), { ssr: false })
 type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages'
-type LogiTab = 'stock' | 'lots' | 'scan' | 'qr' | 'emergency'
-type SystemMode = 'brand' | 'logi'
 type BrandOption = { id: string; name: string; role: string }
 interface Props {
   brandId: string | null
@@ -46,18 +38,7 @@ export default function BrandHubContent({
 }: Props) {
   const [mainTab, setMainTab] = useState<MainTab>('home')
   const [helpOpen, setHelpOpen] = useState(false)
-  const [systemMode, setSystemMode] = useState<SystemMode>('brand')
-  const [logiTab, setLogiTab] = useState<LogiTab>('stock')
-  const [logiBrandId, setLogiBrandId] = useState<string | null>(null)
   const brandOpts = myBrands.map(({ id, name }) => ({ id, name }))
-  const logiBrandName = brandOpts.find((b) => b.id === logiBrandId)?.name || brandName
-  const LOGI_TABS = [
-    { key: 'stock',     label: '재고현황',   icon: '📦' },
-    { key: 'lots',      label: '로트관리',   icon: '🏷' },
-    { key: 'scan',      label: '스캔입출고', icon: '📲' },
-    { key: 'qr',        label: 'QR발행',    icon: '🔲' },
-    { key: 'emergency', label: '비상출고',   icon: '🚨' },
-  ] as const
   const SB_SECTIONS = [
     {
       label: '실시간',
@@ -103,48 +84,22 @@ export default function BrandHubContent({
         <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <div style={{ fontSize: 10, color: '#C9A96E', letterSpacing: 4, marginBottom: 3 }}>AURAN</div>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 0 }}>{brandName}</div>
-          {/* 브랜드/물류 모드 전환 — CEO/이사만 */}
-          {(isCEO || loginRole === 'director') && (
-            <div style={{ display: 'flex', gap: 4, marginTop: 8 }}>
-              <button type="button" onClick={() => setSystemMode('brand')}
-                style={{ flex: 1, padding: '4px 0', fontSize: 10, borderRadius: 5, border: 'none', cursor: 'pointer', background: systemMode === 'brand' ? 'rgba(123,94,167,0.3)' : 'rgba(255,255,255,0.05)', color: systemMode === 'brand' ? '#c4a8f0' : 'rgba(255,255,255,0.3)' }}>
-                브랜드
-              </button>
-              <button type="button" onClick={() => setSystemMode('logi')}
-                style={{ flex: 1, padding: '4px 0', fontSize: 10, borderRadius: 5, border: 'none', cursor: 'pointer', background: systemMode === 'logi' ? 'rgba(59,130,246,0.3)' : 'rgba(255,255,255,0.05)', color: systemMode === 'logi' ? '#93c5fd' : 'rgba(255,255,255,0.3)' }}>
-                물류팀
-              </button>
-            </div>
-          )}
         </div>
         {/* 메뉴 */}
         <div style={{ flex: 1, padding: '6px 0' }}>
-          {systemMode === 'brand' ? (
-            SB_SECTIONS.map(sec => (
-              <div key={sec.label}>
-                <div style={{ padding: '8px 12px 3px', fontSize: 9, color: 'rgba(255,255,255,0.18)', letterSpacing: '1.5px' }}>{sec.label.toUpperCase()}</div>
-                {sec.items.map((item: { key: string; label: string; icon: string; alert?: boolean }) => (
-                  <button key={item.key} type="button" onClick={() => setMainTab(item.key as MainTab)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', padding: '8px 12px', fontSize: 11, border: 'none', background: mainTab === item.key ? 'rgba(123,94,167,0.12)' : 'transparent', color: mainTab === item.key ? '#C9A96E' : 'rgba(255,255,255,0.4)', borderLeft: mainTab === item.key ? '2px solid #7B5EA7' : '2px solid transparent', cursor: 'pointer', textAlign: 'left' as const }}>
-                    <i className={`ti ${item.icon}`} style={{ fontSize: 13, width: 14, flexShrink: 0 }} aria-hidden="true" />
-                    <span style={{ flex: 1 }}>{item.label}</span>
-                    {item.alert && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#e85555', flexShrink: 0 }} />}
-                  </button>
-                ))}
-              </div>
-            ))
-          ) : (
-            <div>
-              <div style={{ padding: '8px 12px 3px', fontSize: 9, color: 'rgba(255,255,255,0.18)', letterSpacing: '1.5px' }}>물류팀</div>
-              {LOGI_TABS.map(t => (
-                <button key={t.key} type="button" onClick={() => setLogiTab(t.key as LogiTab)}
-                  style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', padding: '8px 12px', fontSize: 11, border: 'none', background: logiTab === t.key ? 'rgba(59,130,246,0.12)' : 'transparent', color: logiTab === t.key ? '#93c5fd' : 'rgba(255,255,255,0.4)', borderLeft: logiTab === t.key ? '2px solid #3b82f6' : '2px solid transparent', cursor: 'pointer', textAlign: 'left' as const }}>
-                  <span>{t.icon}</span>
-                  <span>{t.label}</span>
+          {SB_SECTIONS.map(sec => (
+            <div key={sec.label}>
+              <div style={{ padding: '8px 12px 3px', fontSize: 9, color: 'rgba(255,255,255,0.18)', letterSpacing: '1.5px' }}>{sec.label.toUpperCase()}</div>
+              {sec.items.map((item: { key: string; label: string; icon: string; alert?: boolean }) => (
+                <button key={item.key} type="button" onClick={() => setMainTab(item.key as MainTab)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', padding: '8px 12px', fontSize: 11, border: 'none', background: mainTab === item.key ? 'rgba(123,94,167,0.12)' : 'transparent', color: mainTab === item.key ? '#C9A96E' : 'rgba(255,255,255,0.4)', borderLeft: mainTab === item.key ? '2px solid #7B5EA7' : '2px solid transparent', cursor: 'pointer', textAlign: 'left' as const }}>
+                  <i className={`ti ${item.icon}`} style={{ fontSize: 13, width: 14, flexShrink: 0 }} aria-hidden="true" />
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                  {item.alert && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#e85555', flexShrink: 0 }} />}
                 </button>
               ))}
             </div>
-          )}
+          ))}
         </div>
       </div>
       {/* 메인 콘텐츠 */}
@@ -164,11 +119,11 @@ export default function BrandHubContent({
             ]},
             orders: { title: '발주 관리', items: [
               { type: 'flow', text: '원장님이 발주하면 접수 대기 상태로 들어와요.' },
-              { type: 'flow', text: '승인하면 원장님에게 알림이 가고, 발송은 재고·물류 → 발송 처리에서 해요.' },
+              { type: 'flow', text: '승인하면 원장님에게 알림이 가고, 발송은 물류 허브(/dashboard/logi) → 발송 처리에서 해요.' },
               { type: 'warn', text: '접수 대기 탭을 매일 확인하세요. 처리 안 하면 원장님이 기다리게 돼요.' },
             ]},
             inventory: { title: '재고·물류', items: [
-              { type: 'flow', text: '발송 처리에서 승인된 발주에 운송장을 넣으면 배송중으로 바뀌고 재고가 차감돼요.' },
+              { type: 'info', text: '재고현황·로트·스캔입출고·QR·월마감을 관리해요. 발송은 물류 허브에서 처리해요.' },
               { type: 'flow', text: '로트관리에서 로트를 등록하면 스캔입출고에서 바로 사용할 수 있어요.' },
               { type: 'info', text: '로트 상태가 활성이어야 스캔입출고 화면에 표시돼요.' },
               { type: 'tip', text: '유통기한 임박 로트부터 먼저 출고돼요 (FIFO).' },
@@ -220,34 +175,7 @@ export default function BrandHubContent({
               { type: 'info', text: '월별 정산 내역을 확인하고 처리할 수 있어요.' },
             ]},
           }
-          const currentHelp = HELP[mainTab] || HELP['home']
-          const logiHelp: Record<string, { title: string; items: { type: 'flow' | 'warn' | 'tip' | 'info'; text: string }[] }> = {
-            stock: { title: '재고현황', items: [
-              { type: 'info', text: '전체 재고·재고 부족·등록 제품 수를 한눈에 볼 수 있어요.' },
-              { type: 'warn', text: '재고 부족 항목은 즉시 로트관리에서 보충하세요.' },
-            ]},
-            lots: { title: '로트관리', items: [
-              { type: 'flow', text: '로트를 등록하면 스캔입출고에서 바로 사용할 수 있어요.' },
-              { type: 'info', text: '상태가 활성이어야 스캔입출고 목록에 표시돼요.' },
-              { type: 'tip', text: '유통기한 임박 로트부터 먼저 출고돼요 (FIFO).' },
-              { type: 'warn', text: '로트 등록 후 상태가 활성인지 꼭 확인하세요.' },
-            ]},
-            scan: { title: '스캔입출고', items: [
-              { type: 'flow', text: '로트관리에서 활성 로트 등록이 먼저 필요해요.' },
-              { type: 'flow', text: 'QR 스캔 → lot 자동 인식 → 수량 입력 → 출고 완료.' },
-              { type: 'info', text: '바코드 스캐너 없어도 lot_number를 직접 입력해도 돼요.' },
-            ]},
-            qr: { title: 'QR발행', items: [
-              { type: 'flow', text: '로트 선택 → QR 자동 생성 → 인쇄 → 제품/박스에 부착.' },
-              { type: 'tip', text: '출력 후 코팅하면 창고 환경에서 오래 사용할 수 있어요.' },
-            ]},
-            emergency: { title: '비상출고', items: [
-              { type: 'warn', text: '스캐너 고장·긴급 납품 등 일반 스캔입출고가 불가능할 때만 사용하세요.' },
-              { type: 'flow', text: '사유를 반드시 입력하세요. 이력에 기록되고 대조리포트에 표시돼요.' },
-            ]},
-          }
-          const currentLogiHelp = logiHelp[logiTab] || logiHelp['stock']
-          const activeHelp = systemMode === 'logi' ? currentLogiHelp : currentHelp
+          const activeHelp = HELP[mainTab] || HELP['home']
           return (
             <>
               {helpOpen && (
@@ -283,7 +211,7 @@ export default function BrandHubContent({
           )
         })()}
         {/* 공통 헤더 — home 제외 전 탭 */}
-        {systemMode === 'brand' && mainTab !== 'home' && (
+        {mainTab !== 'home' && (
           <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#0a0908', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <button type="button" onClick={() => setMainTab('home')}
               style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
@@ -301,60 +229,25 @@ export default function BrandHubContent({
             </button>
           </div>
         )}
-        {systemMode === 'logi' && logiTab !== 'stock' && (
-          <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#0a0908', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button type="button" onClick={() => setLogiTab('stock')}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
-              <i className="ti ti-arrow-left" style={{ fontSize: 13 }} aria-hidden="true" />
-              재고현황
-            </button>
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.15)' }}>›</span>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
-              {LOGI_TABS.find(t => t.key === logiTab)?.label ?? logiTab}
-            </span>
-            <button type="button" onClick={() => setHelpOpen(true)}
-              style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 11, cursor: 'pointer' }}>
-              <i className="ti ti-help-circle" style={{ fontSize: 13 }} aria-hidden="true" />
-              도움말
-            </button>
-          </div>
-        )}
-        {systemMode === 'logi' ? (
-          <div style={{ padding: 16 }}>
-            <TabBrandSelector myBrands={brandOpts} storageKey="logi-brand" onSelect={setLogiBrandId} />
-            {!logiBrandId ? (
-              <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
-            ) : (
-              <>
-                {logiTab === 'stock' && <BrandInventoryStock brandId={logiBrandId} brandName={logiBrandName} authId={null} />}
-                {logiTab === 'lots' && <BrandInventoryLots brandId={logiBrandId} />}
-                {logiTab === 'scan' && <BrandInventoryScan brandId={logiBrandId} brandName={logiBrandName} />}
-                {logiTab === 'qr' && <BrandInventoryQR brandId={logiBrandId} brandName={logiBrandName} />}
-                {logiTab === 'emergency' && <BrandInventoryEmergency brandId={logiBrandId} brandName={logiBrandName} />}
-              </>
-            )}
-          </div>
-        ) : (
-          <div style={{ padding: 16 }}>
-            {mainTab === 'home' && <BrandTabHome brandName={brandName} brandId={brandId} onTabChange={(t) => setMainTab(t as MainTab)} />}
-            {mainTab === 'products' && <BrandTabProducts rows={rows} tab={tab} onTabChange={onTabChange} onEdit={onEdit} onNew={onNew} currentBrandName={brandName} />}
-            {mainTab === 'tierPackages' && <BrandTabTierPackages myBrands={brandOpts} />}
-            {mainTab === 'owners' && <OwnersBrandWrapper myBrands={brandOpts} authId={authId} />}
-            {mainTab === 'orders' && <BrandTabOrders myBrands={brandOpts} />}
-            {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} authId={authId} />}
-            {mainTab === 'live' && <BrandTabLive myBrands={brandOpts} />}
-            {mainTab === 'sample' && <BrandTabSample myBrands={brandOpts} />}
-            {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} />}
-            {mainTab === 'expand' && <BrandTabExpand myBrands={brandOpts} />}
-            {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} />}
-            {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} />}
-            {mainTab === 'report' && <BrandTabReport myBrands={brandOpts} />}
-            {mainTab === 'returns' && <BrandTabReturns myBrands={brandOpts} />}
-            {mainTab === 'settlement' && isCEO && (
-              <BrandTabSettlement myBrands={brandOpts} />
-            )}
-          </div>
-        )}
+        <div style={{ padding: 16 }}>
+          {mainTab === 'home' && <BrandTabHome brandName={brandName} brandId={brandId} onTabChange={(t) => setMainTab(t as MainTab)} />}
+          {mainTab === 'products' && <BrandTabProducts rows={rows} tab={tab} onTabChange={onTabChange} onEdit={onEdit} onNew={onNew} currentBrandName={brandName} />}
+          {mainTab === 'tierPackages' && <BrandTabTierPackages myBrands={brandOpts} />}
+          {mainTab === 'owners' && <OwnersBrandWrapper myBrands={brandOpts} authId={authId} />}
+          {mainTab === 'orders' && <BrandTabOrders myBrands={brandOpts} />}
+          {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} authId={authId} />}
+          {mainTab === 'live' && <BrandTabLive myBrands={brandOpts} />}
+          {mainTab === 'sample' && <BrandTabSample myBrands={brandOpts} />}
+          {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} />}
+          {mainTab === 'expand' && <BrandTabExpand myBrands={brandOpts} />}
+          {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} />}
+          {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} />}
+          {mainTab === 'report' && <BrandTabReport myBrands={brandOpts} />}
+          {mainTab === 'returns' && <BrandTabReturns myBrands={brandOpts} />}
+          {mainTab === 'settlement' && isCEO && (
+            <BrandTabSettlement myBrands={brandOpts} />
+          )}
+        </div>
       </div>
     </div>
   )

@@ -183,7 +183,7 @@ export default function BrandTabOrders({ myBrands }: Props) {
                 )}
                 {o.status === 'approved' && (
                   <div style={{ fontSize: 11, color: SUB, marginTop: 4 }}>
-                    승인됨 · 발송은 재고·물류 → 발송 처리에서 진행하세요
+                    승인됨 · 발송은 물류 허브(/dashboard/logi) → 발송 처리에서 진행하세요
                   </div>
                 )}
               </div>
