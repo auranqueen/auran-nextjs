@@ -5,6 +5,13 @@
 
 ## 2026-07-24
 
+- **feat: 발주-물류 역할분리 + 트랙A/B 발송통합 + 스마트택배 자동웹훅 연동**
+  - 역할 분리: 발주관리(승인까지만)와 재고·물류(실제 발송처리)를 명확히 분리 — `BrandTabOrders`에서 운송장/발송 로직 제거, `BrandInventoryFulfillment.tsx` 신규로 이관
+  - 재고·물류 "발송 처리" 서브탭 신규: 트랙A(`brand_orders`)+트랙B(`hq_stock_orders`) 발주 통합 처리, 운송장번호+택배사 입력, 재고차감(`decrement_inventory_stock`) 동일 적용
+  - deliveryapi.co.kr 스마트택배 API 연동: 발송처리 시 자동 웹훅 구독(`subscribeTracking`), 배송완료 감지 시 자동으로 상태 갱신(A: `shipping`→`done`, B: `배송완료`→`구매확정`) — `/api/webhooks/delivery-status` 신규
+  - 브랜드선택 localStorage 키 통일(발주관리·재고물류 간 `brand-tab-selection`)
+  - 오렌어드민 AB정산시스템의 HQ재고발주 배송완료/구매확정은 상태변경 액션 유지(스폰서 커미션 정산 기준 자료로 사용, 실제 처리 주체는 아님 — 처리는 브랜드사+물류)
+
 - **refactor: 발주관리 브랜드선택 완전통일**
   - `BrandTabOrders.tsx`: `selectedBrandId` 단일 state로 통일(`TabBrandSelector` 제거, Summary 드롭다운 하나로 통합), 전체선택시 하위 발주처리/프로모션은 "특정 브랜드를 선택하세요" 안내로 전환
   - `BrandOrdersSummary.tsx` 전면 재설계: company 전체/브랜드 드롭다운, 기간 프리셋(이번달·지난달·26~25·직접선택), `brand_orders`(A)+`hq_stock_orders`(B) 합산 KPI, 이번달발주·기간합계매출 인라인 상세+CSV

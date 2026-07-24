@@ -164,11 +164,11 @@ export default function BrandHubContent({
             ]},
             orders: { title: '발주 관리', items: [
               { type: 'flow', text: '원장님이 발주하면 접수 대기 상태로 들어와요.' },
-              { type: 'flow', text: '승인 버튼을 누르면 원장님에게 자동으로 알림이 가고 배송중으로 바뀌어요.' },
-              { type: 'flow', text: '배송 완료되면 꼭 완료 처리해주세요.' },
+              { type: 'flow', text: '승인하면 원장님에게 알림이 가고, 발송은 재고·물류 → 발송 처리에서 해요.' },
               { type: 'warn', text: '접수 대기 탭을 매일 확인하세요. 처리 안 하면 원장님이 기다리게 돼요.' },
             ]},
             inventory: { title: '재고·물류', items: [
+              { type: 'flow', text: '발송 처리에서 승인된 발주에 운송장을 넣으면 배송중으로 바뀌고 재고가 차감돼요.' },
               { type: 'flow', text: '로트관리에서 로트를 등록하면 스캔입출고에서 바로 사용할 수 있어요.' },
               { type: 'info', text: '로트 상태가 활성이어야 스캔입출고 화면에 표시돼요.' },
               { type: 'tip', text: '유통기한 임박 로트부터 먼저 출고돼요 (FIFO).' },
