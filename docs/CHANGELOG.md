@@ -5,6 +5,11 @@
 
 ## 2026-07-24
 
+- **refactor: 발주관리 브랜드선택 완전통일**
+  - `BrandTabOrders.tsx`: `selectedBrandId` 단일 state로 통일(`TabBrandSelector` 제거, Summary 드롭다운 하나로 통합), 전체선택시 하위 발주처리/프로모션은 "특정 브랜드를 선택하세요" 안내로 전환
+  - `BrandOrdersSummary.tsx` 전면 재설계: company 전체/브랜드 드롭다운, 기간 프리셋(이번달·지난달·26~25·직접선택), `brand_orders`(A)+`hq_stock_orders`(B) 합산 KPI, 이번달발주·기간합계매출 인라인 상세+CSV
+  - `BrandOrdersPromoSettings.tsx`: 프로모션 목록/작성폼을 접이식(`+ 새 프로모션 추가`로만 펼침)
+
 - **refactor: 피부데이터 메뉴 정리, 발주관리로 통합 + 브랜드선택 동기화**
   - "피부 데이터" 메뉴 제거 — 이름과 실제 기능(발주/제품 KPI)이 불일치했던 문제, `BrandTabData`의 KPI/최근발주를 `BrandOrdersSummary.tsx`로 분리해 "발주 관리"(구 "주문·정산") 상단에 흡수
   - "주문·정산" → "발주 관리"로 명칭 변경 (실제 정산 기능은 별도 CEO전용 "정산" 메뉴에 있어 명칭 혼동 방지)

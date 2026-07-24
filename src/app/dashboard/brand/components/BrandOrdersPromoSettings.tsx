@@ -83,6 +83,7 @@ export default function BrandOrdersPromoSettings({ brandId }: Props) {
   const [editDraft, setEditDraft] = useState<PromoDraft>(emptyDraft())
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [promoOpen, setPromoOpen] = useState(false)
 
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2800) }
 
@@ -183,7 +184,26 @@ export default function BrandOrdersPromoSettings({ brandId }: Props) {
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>{toast}</div>
       )}
       <div style={CARD}>
-        <div style={{ fontSize: 12, color: SUB, marginBottom: 12 }}>📊 등급별 적립율</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
+          <div style={{ fontSize: 12, color: SUB }}>📊 등급별 적립율</div>
+          {!promoOpen ? (
+            <button
+              type="button"
+              onClick={() => { setPromoOpen(true); setAdding(true); setEditId(null); setConfirmDeleteId(null) }}
+              style={btnPrimary}
+            >
+              + 새 프로모션 추가
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => { setPromoOpen(false); setAdding(false); setAddDraft(emptyDraft()); setEditId(null); setConfirmDeleteId(null) }}
+              style={btnGhost}
+            >
+              닫기
+            </button>
+          )}
+        </div>
         {GRADES.map((grade) => {
           const color = GRADE_COLORS[grade] || GOLD
           const editing = editingGrade === grade
@@ -210,6 +230,7 @@ export default function BrandOrdersPromoSettings({ brandId }: Props) {
         </div>
       </div>
 
+      {promoOpen && (
       <div style={CARD}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div style={{ fontSize: 12, color: SUB }}>📋 프로모션</div>
@@ -271,6 +292,7 @@ export default function BrandOrdersPromoSettings({ brandId }: Props) {
           )
         })}
       </div>
+      )}
     </div>
   )
 }
