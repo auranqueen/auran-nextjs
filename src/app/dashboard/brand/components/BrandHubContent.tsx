@@ -11,7 +11,6 @@ const BrandTabLive = dynamic(() => import('../tabs/BrandTabLive'), { ssr: false 
 const BrandTabSample = dynamic(() => import('../tabs/BrandTabSample'), { ssr: false })
 const BrandTabCommunity = dynamic(() => import('../tabs/BrandTabCommunity'), { ssr: false })
 const BrandTabExpand = dynamic(() => import('../tabs/BrandTabExpand'), { ssr: false })
-const BrandTabData = dynamic(() => import('../tabs/BrandTabData'), { ssr: false })
 const BrandTabInvoice = dynamic(() => import('../tabs/BrandTabInvoice'), { ssr: false })
 const BrandTabInventory = dynamic(() => import('../tabs/BrandTabInventory'), { ssr: false })
 const BrandTabReport = dynamic(() => import('../tabs/BrandTabReport'), { ssr: false })
@@ -23,7 +22,7 @@ const BrandInventoryLots = dynamic(() => import('../tabs/BrandInventoryLots'), {
 const BrandInventoryScan = dynamic(() => import('../tabs/BrandInventoryScan'), { ssr: false })
 const BrandInventoryQR = dynamic(() => import('../tabs/BrandInventoryQR'), { ssr: false })
 const BrandInventoryEmergency = dynamic(() => import('../tabs/BrandInventoryEmergency'), { ssr: false })
-type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'data' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages'
+type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages'
 type LogiTab = 'stock' | 'lots' | 'scan' | 'qr' | 'emergency'
 type SystemMode = 'brand' | 'logi'
 type BrandOption = { id: string; name: string; role: string }
@@ -65,7 +64,7 @@ export default function BrandHubContent({
       items: [
         { key: 'home', label: '홈 대시보드', icon: 'ti-home' },
         { key: 'orentalk', label: '오렌상담톡', icon: 'ti-message-circle', alert: true },
-        { key: 'orders', label: '주문·정산', icon: 'ti-shopping-cart', alert: true },
+        { key: 'orders', label: '발주 관리', icon: 'ti-shopping-cart', alert: true },
         { key: 'inventory', label: '재고·물류', icon: 'ti-box', alert: true },
         { key: 'sample', label: '샘플 발송', icon: 'ti-gift' },
       ],
@@ -75,7 +74,6 @@ export default function BrandHubContent({
       items: [
         { key: 'live', label: '이벤트·라이브', icon: 'ti-speakerphone' },
         { key: 'community', label: '커뮤니티', icon: 'ti-users' },
-        { key: 'data', label: '피부 데이터', icon: 'ti-chart-pie' },
       ],
     },
     {
@@ -164,7 +162,7 @@ export default function BrandHubContent({
               { type: 'info', text: '발주 접수·30일 미주문·라이브 사전 알림은 자동으로 발송돼요. ON 상태인지 꼭 확인하세요.' },
               { type: 'tip', text: '수동 발송 후 이력 탭에서 발송 결과를 확인할 수 있어요.' },
             ]},
-            orders: { title: '주문·정산', items: [
+            orders: { title: '발주 관리', items: [
               { type: 'flow', text: '원장님이 발주하면 접수 대기 상태로 들어와요.' },
               { type: 'flow', text: '승인 버튼을 누르면 원장님에게 자동으로 알림이 가고 배송중으로 바뀌어요.' },
               { type: 'flow', text: '배송 완료되면 꼭 완료 처리해주세요.' },
@@ -189,10 +187,6 @@ export default function BrandHubContent({
             community: { title: '커뮤니티', items: [
               { type: 'flow', text: '공지/프로모션/신제품 소식을 작성하면 원장님 대시보드 브랜드 소식에 자동으로 공개돼요.' },
               { type: 'warn', text: '원장님이 댓글을 달 수 없어요. 중요한 내용은 오렌상담톡으로 별도 발송하세요.' },
-            ]},
-            data: { title: '피부 데이터', items: [
-              { type: 'info', text: '주문수·원장수·제품수·판매중 KPI와 이달 주문 목록을 볼 수 있어요.' },
-              { type: 'tip', text: '원장님별 구매 패턴을 참고해서 맞춤 프로모션을 기획해보세요.' },
             ]},
             products: { title: '제품 관리', items: [
               { type: 'flow', text: '제품을 등록하면 승인 후 원장님들에게 공개돼요.' },
@@ -352,7 +346,6 @@ export default function BrandHubContent({
             {mainTab === 'sample' && <BrandTabSample myBrands={brandOpts} />}
             {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} />}
             {mainTab === 'expand' && <BrandTabExpand myBrands={brandOpts} />}
-            {mainTab === 'data' && <BrandTabData myBrands={brandOpts} />}
             {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} />}
             {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} />}
             {mainTab === 'report' && <BrandTabReport myBrands={brandOpts} />}

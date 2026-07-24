@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import TabBrandSelector from '../components/TabBrandSelector'
 import BrandOrdersPromoSettings from '../components/BrandOrdersPromoSettings'
+import BrandOrdersSummary from '../components/BrandOrdersSummary'
 import type { CSSProperties } from 'react'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -196,7 +197,7 @@ export default function BrandTabOrders({ myBrands }: Props) {
   const pendingCount = orders.filter(o => o.status === 'pending').length
   return (
     <div>
-      <TabBrandSelector myBrands={myBrands} storageKey="orders-brand" onSelect={setSelectedBrandId} />
+      <TabBrandSelector myBrands={myBrands} storageKey="brand-tab-selection" onSelect={setSelectedBrandId} />
       {!selectedBrandId ? (
         <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
       ) : (
@@ -204,12 +205,14 @@ export default function BrandTabOrders({ myBrands }: Props) {
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>{toast}</div>
       )}
+      <BrandOrdersSummary brandId={selectedBrandId} />
       <BrandOrdersPromoSettings brandId={selectedBrandId} />
       {/* 접수된 발주 */}
       <div style={CARD}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <div style={{ fontSize: 12, color: SUB }}>
-            📥 발주 내역
+            📥 발주 관리
+
             {pendingCount > 0 && (
               <span style={{ marginLeft: 6, fontSize: 11, padding: '1px 7px', borderRadius: 10, background: 'rgba(255,193,7,0.15)', color: 'rgba(255,193,7,0.9)' }}>
                 대기 {pendingCount}건

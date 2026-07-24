@@ -3,6 +3,16 @@
 
 ---
 
+## 2026-07-24
+
+- **refactor: 피부데이터 메뉴 정리, 발주관리로 통합 + 브랜드선택 동기화**
+  - "피부 데이터" 메뉴 제거 — 이름과 실제 기능(발주/제품 KPI)이 불일치했던 문제, `BrandTabData`의 KPI/최근발주를 `BrandOrdersSummary.tsx`로 분리해 "발주 관리"(구 "주문·정산") 상단에 흡수
+  - "주문·정산" → "발주 관리"로 명칭 변경 (실제 정산 기능은 별도 CEO전용 "정산" 메뉴에 있어 명칭 혼동 방지)
+  - 탭별로 따로였던 브랜드선택 localStorage 키(`data-brand`/`orders-brand`)를 `brand-tab-selection`으로 통일 — 발주가 한쪽 탭에만 보이던 불일치 원인 해소
+  - `BrandTabData.tsx`는 파일만 유지, 참조 제거(dead code)
+
+---
+
 ## 2026-07-23
 
 - **docs: brand_grade_point_rates RLS 정책 마이그레이션 126으로 고정**
