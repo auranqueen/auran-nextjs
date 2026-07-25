@@ -5,6 +5,8 @@
 
 ## 2026-07-25
 
+- **chore: 미사용 BrandTabData.tsx 삭제**
+  - `BrandTabData.tsx` 삭제 (참조없음 확인, 기능은 이미 `BrandOrdersSummary`로 흡수됨)
 - **fix: 물류발송 배치단위 재구성(샵기준 단일운송장) + 일일마감 company단위 확장**
   - `BrandBatchFulfillmentList.tsx` 신규: 물류 발송처리를 브랜드별이 아닌 주문번호(batch, 샵/원장 기준)로 재구성 — 운송장 1회 입력시 해당 batch의 모든 brand_orders(여러브랜드 라인) 일괄 shipping 처리, 재고는 브랜드별 개별차감, 웹훅구독 1회 (택배비 중복발생/배송분리 사고 방지)
   - `BrandInventoryFulfillment.tsx`: company 소속 전체 브랜드 범위로 배치리스트 연결, 트랙B(hq_stock_orders)는 기존 개별처리 유지
