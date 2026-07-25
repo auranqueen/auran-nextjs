@@ -37,14 +37,20 @@ export default function BrandTabOrders({ myBrands }: Props) {
         selectedBrandId={selectedBrandId}
         onBrandChange={handleBrandChange}
       />
-      {!selectedBrandId ? (
-        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
-          특정 브랜드를 선택하세요
-        </div>
+      {selectedBrandId ? (
+        <BrandOrdersPromoSettings brandId={selectedBrandId} />
       ) : (
+        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
+          프로모션 설정을 하려면 브랜드를 선택하세요
+        </div>
+      )}
+      <BrandOrderBatchApproval
+        brandId={selectedBrandId}
+        brandIds={myBrands.map((b) => b.id)}
+        brandName={brandName}
+      />
+      {selectedBrandId && (
         <>
-          <BrandOrdersPromoSettings brandId={selectedBrandId} />
-          <BrandOrderBatchApproval brandId={selectedBrandId} brandName={brandName} />
           <BrandLogisticsClosingReview brandId={selectedBrandId} brandName={brandName} />
           <div style={CARD}>
             <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>👑 아레테클럽 포인트 현황</div>

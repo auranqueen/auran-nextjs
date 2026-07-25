@@ -79,21 +79,40 @@ export async function POST(req: NextRequest) {
     const trackingNo = trackingOf(item)
     if (!trackingNo) continue
 
-    // 트랙A: brand_orders (shipping → done)
-    const { data: brandOrder, error: aErr } = await admin
+    // 트랙A: 동일 운송장(배치 일괄발송) brand_orders 전부 shipping → done
+    const { data: brandOrders, error: aErr } = await admin
       .from('brand_orders')
-      .select('id, status')
+      .select('id, status, batch_id')
       .eq('tracking_no', trackingNo)
-      .maybeSingle()
+      .eq('status', 'shipping')
     if (aErr) errors.push(`A:${aErr.message}`)
 
-    if (brandOrder?.id && brandOrder.status === 'shipping') {
+    if (brandOrders && brandOrders.length > 0) {
+      const ids = brandOrders.map((r) => r.id as string)
       const { error } = await admin
         .from('brand_orders')
         .update({ status: 'done', updated_at: now })
-        .eq('id', brandOrder.id)
-      if (!error) updated.push(`A:${brandOrder.id}`)
-      else errors.push(`A-update:${error.message}`)
+        .in('id', ids)
+      if (!error) {
+        for (const id of ids) updated.push(`A:${id}`)
+        const batchIds = Array.from(
+          new Set(
+            brandOrders
+              .map((r) => r.batch_id as string | null)
+              .filter((id): id is string => !!id),
+          ),
+        )
+        if (batchIds.length > 0) {
+          const { error: bErr } = await admin
+            .from('brand_order_batches')
+            .update({ status: '배송완료' })
+            .in('id', batchIds)
+          if (bErr) errors.push(`A-batch:${bErr.message}`)
+          else for (const bid of batchIds) updated.push(`A-batch:${bid}`)
+        }
+      } else {
+        errors.push(`A-update:${error.message}`)
+      }
       continue
     }
 

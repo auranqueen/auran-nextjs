@@ -48,7 +48,8 @@ type BatchRow = {
 }
 
 interface Props {
-  brandId: string
+  brandId?: string | null
+  brandIds?: string[]
   brandName?: string
 }
 
@@ -75,7 +76,7 @@ function endExclusiveIso(dateStr: string): string | null {
   return d.toISOString()
 }
 
-export default function BrandOrderBatchApproval({ brandId, brandName = '' }: Props) {
+export default function BrandOrderBatchApproval({ brandId = null, brandIds = [], brandName = '' }: Props) {
   const supabase = createClient()
   const [batches, setBatches] = useState<BatchRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -91,14 +92,20 @@ export default function BrandOrderBatchApproval({ brandId, brandName = '' }: Pro
     setTimeout(() => setToast(''), 2500)
   }
 
+  const scopeBrandIds = brandId
+    ? [brandId]
+    : Array.from(new Set((brandIds || []).filter(Boolean)))
+  const scopeKey = scopeBrandIds.slice().sort().join('|')
+
   const load = useCallback(async () => {
-    if (!brandId) return
+    const ids = scopeKey ? scopeKey.split('|').filter(Boolean) : []
+    if (ids.length === 0) return
     setLoading(true)
 
     let orderQ = supabase
       .from('brand_orders')
       .select('id, batch_id, brand_id, items, promo_applied, total_amount, status, brands(name)')
-      .eq('brand_id', brandId)
+      .in('brand_id', ids)
       .not('batch_id', 'is', null)
 
     const fromIso = startOfDayIso(dateFrom)
@@ -179,7 +186,7 @@ export default function BrandOrderBatchApproval({ brandId, brandName = '' }: Pro
       })),
     )
     setLoading(false)
-  }, [brandId, brandName, dateFrom, dateTo, statusTab])
+  }, [scopeKey, brandName, dateFrom, dateTo, statusTab])
 
   useEffect(() => {
     void load()

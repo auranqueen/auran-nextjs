@@ -74,10 +74,24 @@ export default function BrandLogisticsClosingReview({ brandId, brandName }: Prop
     if (!brandId) return
     setLoading(true)
 
+    const { data: brandRow } = await supabase
+      .from('brands')
+      .select('company_id')
+      .eq('id', brandId)
+      .maybeSingle()
+    const companyId = brandRow?.company_id ? String(brandRow.company_id) : null
+
+    let companyBrandIds: string[] = [brandId]
+    if (companyId) {
+      const { data: rows } = await supabase.from('brands').select('id').eq('company_id', companyId)
+      const ids = ((rows || []) as Array<{ id: string }>).map((r) => r.id)
+      if (ids.length > 0) companyBrandIds = ids
+    }
+
     const { data: orderRows } = await supabase
       .from('brand_orders')
       .select('batch_id')
-      .eq('brand_id', brandId)
+      .in('brand_id', companyBrandIds)
       .not('batch_id', 'is', null)
 
     const brandBatchIds = Array.from(
@@ -88,13 +102,19 @@ export default function BrandLogisticsClosingReview({ brandId, brandName }: Prop
       ),
     )
 
+    let closingsQuery = supabase
+      .from('brand_logistics_daily_closings')
+      .select('id, closing_date, order_batch_ids, total_count, submitted_by, status, confirmed_by, confirmed_at')
+      .order('closing_date', { ascending: false })
+      .limit(60)
+    if (companyId) {
+      closingsQuery = closingsQuery.eq('company_id', companyId)
+    } else {
+      closingsQuery = closingsQuery.eq('brand_id', brandId)
+    }
+
     const [{ data: closingRows }, overdueResult] = await Promise.all([
-      supabase
-        .from('brand_logistics_daily_closings')
-        .select('id, closing_date, order_batch_ids, total_count, submitted_by, status, confirmed_by, confirmed_at')
-        .eq('brand_id', brandId)
-        .order('closing_date', { ascending: false })
-        .limit(60),
+      closingsQuery,
       brandBatchIds.length === 0
         ? Promise.resolve({ data: [] as OverdueBatch[] })
         : supabase
@@ -117,12 +137,17 @@ export default function BrandLogisticsClosingReview({ brandId, brandName }: Prop
       }
     }
 
-    // Also include batch ids from any closing rows not in the limited list? We used brand-scoped closings for closed set.
-    // Fetch all closed batch ids for this brand (lightweight) if list was truncated — re-query ids only.
-    const { data: allClosingIds } = await supabase
+    // Also include batch ids from any closing rows not in the limited list? We used company/brand-scoped closings for closed set.
+    // Fetch all closed batch ids for this company (lightweight) if list was truncated — re-query ids only.
+    let allIdsQuery = supabase
       .from('brand_logistics_daily_closings')
       .select('order_batch_ids')
-      .eq('brand_id', brandId)
+    if (companyId) {
+      allIdsQuery = allIdsQuery.eq('company_id', companyId)
+    } else {
+      allIdsQuery = allIdsQuery.eq('brand_id', brandId)
+    }
+    const { data: allClosingIds } = await allIdsQuery
     for (const c of (allClosingIds || []) as Array<{ order_batch_ids: string[] | null }>) {
       for (const id of c.order_batch_ids || []) {
         if (id) closedIds.add(id)

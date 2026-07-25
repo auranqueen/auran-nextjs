@@ -5,6 +5,12 @@
 
 ## 2026-07-25
 
+- **fix: 물류발송 배치단위 재구성(샵기준 단일운송장) + 일일마감 company단위 확장**
+  - `BrandBatchFulfillmentList.tsx` 신규: 물류 발송처리를 브랜드별이 아닌 주문번호(batch, 샵/원장 기준)로 재구성 — 운송장 1회 입력시 해당 batch의 모든 brand_orders(여러브랜드 라인) 일괄 shipping 처리, 재고는 브랜드별 개별차감, 웹훅구독 1회 (택배비 중복발생/배송분리 사고 방지)
+  - `BrandInventoryFulfillment.tsx`: company 소속 전체 브랜드 범위로 배치리스트 연결, 트랙B(hq_stock_orders)는 기존 개별처리 유지
+  - delivery-status 웹훅: 동일 운송장의 shipping 주문 전부 done 처리 + 관련 배치 배송완료 처리
+  - `brand_logistics_daily_closings`에 company_id 컬럼 추가(migration 129), UNIQUE를 company_id+closing_date로 변경 — 일일마감/본사대조확인을 회사 전체 기준으로 확장
+  - `BrandTabOrders.tsx`: 발주승인(BrandOrderBatchApproval)을 브랜드선택 게이트에서 제외, 페이지 진입시 항상 펼쳐진 상태로 표시(직원 즉시처리용), 프로모션설정만 브랜드선택 필요
 - **feat: A4 발주명세서 인쇄 페이지 구축 + 물류 발송처리 연결**
   - `/dashboard/brand/print/order-batch/[batchId]` 신규: 건별 A4 발주명세서 인쇄 페이지, 절취선으로 회사보관용(상단)/원장님용(하단) 분리, 프로모션+증정품목명 표시, 출고담당자 수기서명란 포함, `@page A4` 인쇄 CSS
   - `BrandInventoryFulfillment.tsx`: `batch_id` 있는 발송건에 「명세서 인쇄」버튼 연결(새창으로 인쇄페이지 오픈)

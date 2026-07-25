@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import BrandLogisticsDailyClose from './BrandLogisticsDailyClose'
+import BrandBatchFulfillmentList from './BrandBatchFulfillmentList'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -13,31 +14,17 @@ const BORDER = 'rgba(255,255,255,0.05)'
 const COURIERS = ['CJ대한통운', '한진', '로젠', '우체국', '롯데'] as const
 
 type FilterTab = 'approved' | 'shipped'
-type Track = 'A' | 'B'
 
-interface OrderRow {
+interface TrackBOrder {
   id: string
-  track: Track
   owner_name: string | null
   salon_name: string | null
-  grade: string | null
   status: string
   items: Array<{ name: string; qty: number; bonus?: number; product_id?: string }>
-  promo_applied: string | null
   created_at: string
   courier: string | null
   tracking_no: string | null
-  shipped_at: string | null
-  batch_id?: string | null
-}
-
-type ChecklistItem = {
-  id: string
-  batch_id: string
-  label: string
-  checked: boolean
-  checked_at: string | null
-  checked_by: string | null
+  brand_id: string
 }
 
 interface Props {
@@ -48,18 +35,6 @@ interface Props {
 function formatOrderItemLine(it: { name: string; qty: number; bonus?: number }): string {
   const bonus = Math.trunc(Number(it.bonus) || 0)
   return `${it.name} ${it.qty}ea${bonus > 0 ? ` (+${bonus} 증정)` : ''}`
-}
-
-function trackBadge(track: Track) {
-  return (
-    <span style={{
-      fontSize: 9, padding: '1px 5px', borderRadius: 4, flexShrink: 0,
-      background: track === 'A' ? 'rgba(201,169,110,0.15)' : 'rgba(123,94,167,0.18)',
-      color: track === 'A' ? GOLD : '#c4a8f0',
-    }}>
-      {track}
-    </span>
-  )
 }
 
 async function subscribeDelivery(courier: string, trackingNumber: string, orderId: string) {
@@ -74,138 +49,88 @@ async function subscribeDelivery(courier: string, trackingNumber: string, orderI
 
 export default function BrandInventoryFulfillment({ brandId, brandName }: Props) {
   const supabase = createClient()
-  const [orders, setOrders] = useState<OrderRow[]>([])
-  const [loading, setLoading] = useState(true)
+  const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
+  const [bOrders, setBOrders] = useState<TrackBOrder[]>([])
+  const [loadingB, setLoadingB] = useState(true)
   const [toast, setToast] = useState('')
   const [filter, setFilter] = useState<FilterTab>('approved')
   const [trackingInputs, setTrackingInputs] = useState<Record<string, { courier: string; no: string }>>({})
   const [busyId, setBusyId] = useState<string | null>(null)
-  const [checklists, setChecklists] = useState<Record<string, ChecklistItem[]>>({})
   const [todayClosed, setTodayClosed] = useState(false)
+  const [batchTick, setBatchTick] = useState(0)
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
 
-  const fetchOrders = useCallback(async () => {
-    if (!brandId) return
-    setLoading(true)
-    const aPending = filter === 'approved'
-    const [{ data: aRows }, { data: bRows }] = await Promise.all([
-      supabase
-        .from('brand_orders')
-        .select('id, owner_name, salon_name, grade, status, items, promo_applied, created_at, courier, tracking_no, shipped_at, batch_id')
-        .eq('brand_id', brandId)
-        .in('status', aPending ? ['approved'] : ['shipping', 'done'])
-        .order('created_at', { ascending: false })
-        .limit(50),
-      supabase
-        .from('hq_stock_orders')
-        .select('id, owner_name, salon_name, status, items, created_at, courier, tracking_no')
-        .eq('brand_id', brandId)
-        .in('status', aPending ? ['결제완료'] : ['배송완료', '구매확정'])
-        .order('created_at', { ascending: false })
-        .limit(50),
-    ])
-    const listA: OrderRow[] = ((aRows || []) as Array<Omit<OrderRow, 'track'>>).map((o) => ({
-      ...o,
-      track: 'A' as const,
-      batch_id: o.batch_id || null,
-    }))
-    const listB: OrderRow[] = ((bRows || []) as Array<Record<string, unknown>>).map((o) => ({
-      id: String(o.id),
-      track: 'B' as const,
-      owner_name: (o.owner_name as string | null) || null,
-      salon_name: (o.salon_name as string | null) || null,
-      grade: null,
-      status: String(o.status || ''),
-      items: Array.isArray(o.items) ? o.items as OrderRow['items'] : [],
-      promo_applied: null,
-      created_at: String(o.created_at || ''),
-      courier: (o.courier as string | null) || null,
-      tracking_no: (o.tracking_no as string | null) || null,
-      shipped_at: null,
-      batch_id: null,
-    }))
-    const merged = [...listA, ...listB].sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    )
-    setOrders(merged)
-
-    const batchIds = Array.from(
-      new Set(listA.map((o) => o.batch_id).filter((id): id is string => !!id)),
-    )
-    if (batchIds.length === 0) {
-      setChecklists({})
-    } else {
-      const { data: checkRows } = await supabase
-        .from('brand_order_batch_checklist_items')
-        .select('id, batch_id, label, checked, checked_at, checked_by')
-        .in('batch_id', batchIds)
-        .order('created_at', { ascending: true })
-      const map: Record<string, ChecklistItem[]> = {}
-      for (const row of (checkRows || []) as ChecklistItem[]) {
-        if (!map[row.batch_id]) map[row.batch_id] = []
-        map[row.batch_id].push(row)
-      }
-      setChecklists(map)
-    }
-    setLoading(false)
-  }, [brandId, filter, supabase])
-
-  useEffect(() => { void fetchOrders() }, [fetchOrders])
-
-  const toggleChecklistItem = async (item: ChecklistItem) => {
-    if (todayClosed) {
-      showToast('오늘 마감 후에는 체크리스트를 수정할 수 없습니다')
+  const resolveCompanyBrands = useCallback(async () => {
+    if (!brandId) {
+      setCompanyBrandIds([])
       return
     }
-    const nextChecked = !item.checked
-    const staffId =
-      (typeof window !== 'undefined' ? sessionStorage.getItem('brand_staff_id') : null) || null
-    const patch = {
-      checked: nextChecked,
-      checked_at: nextChecked ? new Date().toISOString() : null,
-      checked_by: nextChecked ? staffId : null,
-    }
-    const { error } = await supabase
-      .from('brand_order_batch_checklist_items')
-      .update(patch)
-      .eq('id', item.id)
-    if (error) {
-      showToast('체크 저장 실패: ' + error.message)
+    const { data } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
+    const cid = data?.company_id ? String(data.company_id) : null
+    if (!cid) {
+      setCompanyBrandIds([brandId])
       return
     }
-    setChecklists((prev) => {
-      const list = prev[item.batch_id] || []
-      return {
-        ...prev,
-        [item.batch_id]: list.map((c) =>
-          c.id === item.id
-            ? { ...c, checked: nextChecked, checked_at: patch.checked_at, checked_by: patch.checked_by }
-            : c,
-        ),
-      }
-    })
-  }
+    const { data: rows } = await supabase.from('brands').select('id').eq('company_id', cid)
+    const ids = ((rows || []) as Array<{ id: string }>).map((r) => r.id)
+    setCompanyBrandIds(ids.length > 0 ? ids : [brandId])
+  }, [brandId])
 
-  const decrementStockForOrder = async (order: OrderRow) => {
-    if (!brandId) return
+  useEffect(() => { void resolveCompanyBrands() }, [resolveCompanyBrands])
+
+  const companyKey = companyBrandIds.slice().sort().join('|')
+
+  const fetchTrackB = useCallback(async () => {
+    const ids = companyKey ? companyKey.split('|').filter(Boolean) : []
+    if (ids.length === 0) return
+    setLoadingB(true)
+    const pending = filter === 'approved'
+    const { data: bRows } = await supabase
+      .from('hq_stock_orders')
+      .select('id, brand_id, owner_name, salon_name, status, items, created_at, courier, tracking_no')
+      .in('brand_id', ids)
+      .in('status', pending ? ['결제완료'] : ['배송완료', '구매확정'])
+      .order('created_at', { ascending: false })
+      .limit(50)
+    setBOrders(
+      ((bRows || []) as Array<Record<string, unknown>>).map((o) => ({
+        id: String(o.id),
+        brand_id: String(o.brand_id),
+        owner_name: (o.owner_name as string | null) || null,
+        salon_name: (o.salon_name as string | null) || null,
+        status: String(o.status || ''),
+        items: Array.isArray(o.items) ? o.items as TrackBOrder['items'] : [],
+        created_at: String(o.created_at || ''),
+        courier: (o.courier as string | null) || null,
+        tracking_no: (o.tracking_no as string | null) || null,
+      })),
+    )
+    setLoadingB(false)
+  }, [companyKey, filter])
+
+  useEffect(() => { void fetchTrackB() }, [fetchTrackB, batchTick])
+
+  const decrementStockForB = async (order: TrackBOrder) => {
     const { data: alreadyLogged } = await supabase
       .from('brand_stock_logs')
       .select('id')
-      .eq('brand_id', brandId)
+      .eq('brand_id', order.brand_id)
       .eq('ref_type', 'order')
       .eq('ref_id', order.id)
       .maybeSingle()
     if (alreadyLogged) return
-    const items = Array.isArray(order.items) ? order.items : []
-    for (const item of items) {
-      const invQuery = supabase.from('brand_inventory').select('id, total_stock, safety_stock').eq('brand_id', brandId)
+    for (const item of order.items) {
+      const invQuery = supabase
+        .from('brand_inventory')
+        .select('id, total_stock, safety_stock')
+        .eq('brand_id', order.brand_id)
       const { data: invRow } = item.product_id
         ? await invQuery.eq('product_id', item.product_id).maybeSingle()
         : await invQuery.eq('product_name', item.name).maybeSingle()
       if (!invRow) continue
       await supabase.rpc('decrement_inventory_stock', { p_inventory_id: invRow.id, p_qty: item.qty })
       await supabase.from('brand_stock_logs').insert({
-        brand_id: brandId,
+        brand_id: order.brand_id,
         inventory_id: invRow.id,
         type: 'out',
         qty: item.qty,
@@ -214,79 +139,46 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
         ref_type: 'order',
         ref_id: order.id,
         staff_name: '발주 자동 출고',
-        memo: `발주 출고(${order.track}): ${item.name} ${item.qty}개`,
+        memo: `발주 출고(B): ${item.name} ${item.qty}개`,
       })
     }
   }
 
-  const shipOrder = async (order: OrderRow) => {
+  const shipTrackB = async (order: TrackBOrder) => {
     const input = trackingInputs[order.id]
     if (!input?.courier || !input?.no.trim()) {
       showToast('택배사와 운송장 번호를 입력해주세요')
       return
     }
-    if (!brandId) return
     setBusyId(order.id)
     const now = new Date().toISOString()
     const trackingNo = input.no.trim()
-
-    if (order.track === 'A') {
-      const { error } = await supabase
-        .from('brand_orders')
-        .update({
-          status: 'shipping',
-          courier: input.courier,
-          tracking_no: trackingNo,
-          shipped_at: now,
-          updated_at: now,
-        })
-        .eq('id', order.id)
-      if (error) {
-        setBusyId(null)
-        showToast('처리 실패: ' + error.message)
-        return
-      }
-      await supabase.from('brand_messages').insert({
-        brand_id: brandId,
-        message_type: 'auto_order',
-        target_type: 'all',
-        title: `${brandName} 발주 배송 시작`,
-        body: `주문하신 제품이 발송됐어요. 택배사: ${input.courier} · 운송장: ${trackingNo}`,
-        send_count: 1,
+    const { error } = await supabase
+      .from('hq_stock_orders')
+      .update({
+        status: '배송완료',
+        courier: input.courier,
+        tracking_no: trackingNo,
+        updated_at: now,
       })
-      await decrementStockForOrder(order)
-    } else {
-      // 트랙B: 결제완료 → 배송완료 + 운송장 저장 (tracking_no/courier 컬럼 사용)
-      const { error } = await supabase
-        .from('hq_stock_orders')
-        .update({
-          status: '배송완료',
-          courier: input.courier,
-          tracking_no: trackingNo,
-          updated_at: now,
-        })
-        .eq('id', order.id)
-      if (error) {
-        setBusyId(null)
-        showToast('처리 실패: ' + error.message)
-        return
-      }
-      await decrementStockForOrder(order)
+      .eq('id', order.id)
+    if (error) {
+      setBusyId(null)
+      showToast('처리 실패: ' + error.message)
+      return
     }
-
+    await decrementStockForB(order)
     setTrackingInputs((prev) => { const n = { ...prev }; delete n[order.id]; return n })
     setBusyId(null)
-
-    // A/B 동일: DeliveryAPI 웹훅 구독
     try {
       const sub = await subscribeDelivery(input.courier, trackingNo, order.id)
       showToast(sub.ok
-        ? '배송 처리 완료! 추적 구독 등록됨'
+        ? '트랙B 발송 완료! 추적 구독 등록됨'
         : `발송 저장됨 · 추적구독 실패: ${sub.error}`)
     } catch {
       showToast('발송 저장됨 · 추적구독 네트워크 오류')
     }
-    void fetchOrders()
+    void fetchTrackB()
   }
 
   if (!brandId) {
@@ -296,11 +188,21 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
   return (
     <div>
       {toast && (
-        <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>{toast}</div>
+        <div style={{
+          position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)',
+          background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px',
+          borderRadius: 20, zIndex: 999,
+        }}>{toast}</div>
       )}
+
       <div style={CARD}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 8, flexWrap: 'wrap' }}>
-          <div style={{ fontSize: 12, color: SUB }}>📦 발송 처리 (트랙A 승인 · 트랙B 결제완료)</div>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 12, gap: 8, flexWrap: 'wrap',
+        }}>
+          <div style={{ fontSize: 12, color: SUB }}>
+            📦 발송 처리 (A: 배치·주문번호 단위 · B: 개별)
+          </div>
           <div style={{ display: 'flex', gap: 6 }}>
             {([
               { key: 'approved' as const, label: '발송 대기' },
@@ -322,125 +224,91 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
             ))}
           </div>
         </div>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 20, color: SUB, fontSize: 12 }}>불러오는 중...</div>
-        ) : orders.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 20, color: SUB, fontSize: 12 }}>
-            {filter === 'approved' ? '발송 대기 발주가 없어요' : '발송 이력이 없어요'}
+
+        <div style={{ fontSize: 11, color: GOLD, marginBottom: 8 }}>트랙A · 배치(주문번호) 단위</div>
+        {companyBrandIds.length > 0 ? (
+          <BrandBatchFulfillmentList
+            brandIds={companyBrandIds}
+            filter={filter}
+            todayClosed={todayClosed}
+            onToast={showToast}
+            onShipped={() => setBatchTick((n) => n + 1)}
+          />
+        ) : (
+          <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>브랜드 범위 확인 중…</div>
+        )}
+      </div>
+
+      <div style={CARD}>
+        <div style={{ fontSize: 11, color: '#c4a8f0', marginBottom: 8 }}>트랙B · 개별 발송 (기존 유지)</div>
+        {loadingB ? (
+          <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>불러오는 중...</div>
+        ) : bOrders.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>
+            {filter === 'approved' ? '트랙B 발송 대기 없음' : '트랙B 발송 이력 없음'}
           </div>
         ) : (
-          orders.map((o, i) => {
+          bOrders.map((o, i) => {
             const items = Array.isArray(o.items) ? o.items : []
             const open = !!trackingInputs[o.id]
-            const statusLabel = o.track === 'A'
-              ? (o.status === 'done' ? '완료' : o.status === 'shipping' ? '배송중' : o.status)
-              : o.status
             return (
-              <div key={`${o.track}-${o.id}`} style={{ padding: '12px 0', borderBottom: i < orders.length - 1 ? `0.5px solid ${BORDER}` : 'none' }}>
+              <div
+                key={o.id}
+                style={{ padding: '12px 0', borderBottom: i < bOrders.length - 1 ? `0.5px solid ${BORDER}` : 'none' }}
+              >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, gap: 8 }}>
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
-                      {trackBadge(o.track)}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                      <span style={{
+                        fontSize: 9, padding: '1px 5px', borderRadius: 4,
+                        background: 'rgba(123,94,167,0.18)', color: '#c4a8f0',
+                      }}>B</span>
                       <span style={{ fontSize: 13, color: TEXT }}>{o.owner_name || '원장님'}</span>
-                      {o.grade && (
-                        <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: 'rgba(123,94,167,0.15)', color: '#c4a7e7', border: '0.5px solid rgba(123,94,167,0.3)' }}>{o.grade}</span>
-                      )}
                     </div>
-                    <div style={{ fontSize: 11, color: SUB }}>{o.salon_name || '-'} · {new Date(o.created_at).toLocaleDateString('ko-KR')}</div>
+                    <div style={{ fontSize: 11, color: SUB }}>
+                      {o.salon_name || '-'} · {new Date(o.created_at).toLocaleDateString('ko-KR')}
+                    </div>
                   </div>
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
-                    {o.track === 'A' && o.batch_id && (
-                      <button
-                        type="button"
-                        onClick={() => window.open(`/dashboard/brand/print/order-batch/${o.batch_id}`, '_blank')}
-                        style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '0.5px solid rgba(201,169,110,0.45)', background: 'rgba(201,169,110,0.12)', color: GOLD, cursor: 'pointer' }}
-                      >
-                        명세서 인쇄
-                      </button>
-                    )}
-                    {filter === 'shipped' ? (
-                      <span style={{ fontSize: 11, color: 'rgba(41,182,246,0.8)' }}>{statusLabel}</span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setTrackingInputs((prev) => (
-                          prev[o.id] ? (() => { const n = { ...prev }; delete n[o.id]; return n })() : { ...prev, [o.id]: { courier: '', no: '' } }
-                        ))}
-                        style={{ fontSize: 11, padding: '4px 12px', borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', cursor: 'pointer' }}
-                      >
-                        {open ? '접기' : '발송처리'}
-                      </button>
-                    )}
-                  </div>
+                  {filter === 'shipped' ? (
+                    <span style={{ fontSize: 11, color: 'rgba(41,182,246,0.8)' }}>{o.status}</span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setTrackingInputs((prev) => (
+                        prev[o.id]
+                          ? (() => { const n = { ...prev }; delete n[o.id]; return n })()
+                          : { ...prev, [o.id]: { courier: '', no: '' } }
+                      ))}
+                      style={{
+                        fontSize: 11, padding: '4px 12px', borderRadius: 6, border: 'none',
+                        background: PURPLE, color: '#fff', cursor: 'pointer',
+                      }}
+                    >
+                      {open ? '접기' : '발송처리'}
+                    </button>
+                  )}
                 </div>
                 {items.length > 0 && (
                   <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>
                     {items.map((it) => formatOrderItemLine(it)).join(' · ')}
-                    {o.promo_applied && <span style={{ marginLeft: 6, color: GOLD }}>{o.promo_applied} 적용</span>}
-                  </div>
-                )}
-                {o.track === 'A' && o.batch_id && (checklists[o.batch_id]?.length || 0) > 0 && (
-                  <div style={{ marginBottom: 8, padding: 8, borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.06)' }}>
-                    <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>물류 체크리스트</div>
-                    {todayClosed && (
-                      <div style={{ fontSize: 10, color: GOLD, marginBottom: 4 }}>마감 완료 — 체크 수정 불가</div>
-                    )}
-                    {(checklists[o.batch_id] || []).map((c) => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        disabled={todayClosed}
-                        onClick={() => void toggleChecklistItem(c)}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 8,
-                          width: '100%',
-                          textAlign: 'left',
-                          padding: '6px 4px',
-                          border: 'none',
-                          background: 'transparent',
-                          cursor: todayClosed ? 'not-allowed' : 'pointer',
-                          opacity: todayClosed ? 0.7 : 1,
-                          color: c.checked ? SUB : TEXT,
-                          fontSize: 12,
-                        }}
-                      >
-                        <span style={{
-                          width: 16,
-                          height: 16,
-                          borderRadius: 4,
-                          flexShrink: 0,
-                          border: `1.5px solid ${c.checked ? PURPLE : 'rgba(255,255,255,0.25)'}`,
-                          background: c.checked ? PURPLE : 'transparent',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: 10,
-                          color: '#fff',
-                        }}>
-                          {c.checked ? '✓' : ''}
-                        </span>
-                        <span style={{ textDecoration: c.checked ? 'line-through' : 'none' }}>{c.label}</span>
-                      </button>
-                    ))}
                   </div>
                 )}
                 {filter === 'shipped' && o.tracking_no && (
                   <div style={{ fontSize: 11, color: 'rgba(41,182,246,0.8)' }}>
                     📦 {o.courier} · {o.tracking_no}
-                    {o.shipped_at && <span style={{ color: SUB, marginLeft: 6 }}>{new Date(o.shipped_at).toLocaleDateString('ko-KR')} 발송</span>}
                   </div>
                 )}
                 {filter === 'approved' && open && (
                   <div style={{ marginTop: 8 }}>
-                    <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>운송장 입력 → 저장 시 재고 차감·추적 구독</div>
                     <div style={{ display: 'flex', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
                       {COURIERS.map((c) => (
                         <button
                           key={c}
                           type="button"
-                          onClick={() => setTrackingInputs((prev) => ({ ...prev, [o.id]: { courier: c, no: prev[o.id]?.no || '' } }))}
+                          onClick={() => setTrackingInputs((prev) => ({
+                            ...prev,
+                            [o.id]: { courier: c, no: prev[o.id]?.no || '' },
+                          }))}
                           style={{
                             fontSize: 11, padding: '3px 8px', borderRadius: 6, cursor: 'pointer',
                             border: `0.5px solid ${trackingInputs[o.id]?.courier === c ? PURPLE : 'rgba(255,255,255,0.1)'}`,
@@ -455,15 +323,25 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
                     <div style={{ display: 'flex', gap: 6 }}>
                       <input
                         value={trackingInputs[o.id]?.no || ''}
-                        onChange={(e) => setTrackingInputs((prev) => ({ ...prev, [o.id]: { courier: prev[o.id]?.courier || '', no: e.target.value } }))}
+                        onChange={(e) => setTrackingInputs((prev) => ({
+                          ...prev,
+                          [o.id]: { courier: prev[o.id]?.courier || '', no: e.target.value },
+                        }))}
                         placeholder="운송장 번호 입력"
-                        style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '7px 10px', fontSize: 12, color: TEXT, outline: 'none' }}
+                        style={{
+                          flex: 1, background: 'rgba(255,255,255,0.04)',
+                          border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 7,
+                          padding: '7px 10px', fontSize: 12, color: TEXT, outline: 'none',
+                        }}
                       />
                       <button
                         type="button"
                         disabled={busyId === o.id}
-                        onClick={() => void shipOrder(o)}
-                        style={{ padding: '7px 14px', borderRadius: 7, border: 'none', background: PURPLE, color: '#fff', fontSize: 12, cursor: 'pointer', flexShrink: 0 }}
+                        onClick={() => void shipTrackB(o)}
+                        style={{
+                          padding: '7px 14px', borderRadius: 7, border: 'none', background: PURPLE,
+                          color: '#fff', fontSize: 12, cursor: 'pointer', flexShrink: 0,
+                        }}
                       >
                         {busyId === o.id ? '처리중…' : '발송완료'}
                       </button>
@@ -475,8 +353,9 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
           })
         )}
       </div>
+
       <div style={{ fontSize: 11, color: SUB, padding: '0 2px', marginBottom: 10 }}>
-        💡 A는 승인 후, B는 결제완료 후 발송 가능. 발송 시 운송장 저장 + 추적 구독이 동일하게 등록됩니다.
+        💡 A는 승인완료 배치를 주문번호 단위로 발송(운송장 1개). B는 개별 처리 유지.
       </div>
       <BrandLogisticsDailyClose brandId={brandId} onToast={showToast} onClosedChange={setTodayClosed} />
     </div>
