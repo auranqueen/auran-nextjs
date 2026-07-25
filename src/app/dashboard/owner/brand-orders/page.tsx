@@ -16,6 +16,7 @@ import {
 } from '@/lib/brand/brandOrderPromos'
 import { useBrandGradeRates } from '@/lib/brand/useBrandGradeRates'
 import { resolveOwnerIds } from '@/lib/brand/resolveOwnerIds'
+import { submitOrderBatch } from '@/lib/brand/submitOrderBatch'
 
 const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
@@ -130,7 +131,6 @@ export default function BrandOrdersPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
   const [showPopup, setShowPopup] = useState(false)
-  const [selectedBrand, setSelectedBrand] = useState<string | null>(null)
   const [sending, setSending] = useState(false)
   const [returnPopup, setReturnPopup] = useState<{ open: boolean; order: Order | null }>({ open: false, order: null })
   const [returnType, setReturnType] = useState<'return' | 'exchange'>('return')
@@ -383,13 +383,16 @@ export default function BrandOrdersPage() {
     [filteredProducts],
   )
 
-  const popupCart = cart.filter((c) => !selectedBrand || c.product.brand_name === selectedBrand)
+  const popupCart = cart
   const popupBrandId =
-    (selectedBrand ? products.find((p) => p.brand_name === selectedBrand)?.brand_id : null)
-    || popupCart[0]?.product.brand_id
+    popupCart[0]?.product.brand_id
     || (brandFilter !== 'all' ? brandFilter : null)
     || linkedBrandIds[0]
     || null
+  const cartBrandCount = useMemo(
+    () => new Set(cart.map((c) => c.product.brand_id)).size,
+    [cart],
+  )
   const activeGrade = gradeForBrand(gradeByBrandId, popupBrandId)
   const headerBrandId = brandFilter !== 'all' ? brandFilter : linkedBrandIds[0]
   const headerGrade = gradeForBrand(gradeByBrandId, headerBrandId)
@@ -405,7 +408,28 @@ export default function BrandOrdersPage() {
     ).line_amount,
     0,
   )
-  const popupPointsEarned = calcPointsEarned(popupTotalAmount, activeGrade, gradeRateMap)
+  const popupPointsEarned = (() => {
+    const byBrand = new Map<string, typeof popupCart>()
+    for (const c of popupCart) {
+      const id = c.product.brand_id
+      if (!byBrand.has(id)) byBrand.set(id, [])
+      byBrand.get(id)!.push(c)
+    }
+    let pts = 0
+    Array.from(byBrand.entries()).forEach(([brandId, rows]) => {
+      const amount = rows.reduce(
+        (s, c) => s + buildOrderLineItem(
+          c.product,
+          c.qty,
+          promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)),
+          c.selectedPromo,
+        ).line_amount,
+        0,
+      )
+      pts += calcPointsEarned(amount, gradeForBrand(gradeByBrandId, brandId), gradeRateMap)
+    })
+    return pts
+  })()
   const totalQty = cart.reduce((s, c) => s + c.qty, 0)
 
   const applyPromo = (prod: BrandOrderProduct, promo: SupplyPromoRow) => {
@@ -449,63 +473,59 @@ export default function BrandOrdersPage() {
   }
 
   const submitOrder = async () => {
-    if (popupCart.length === 0) { showToast('제품을 선택해주세요'); return }
+    if (cart.length === 0) { showToast('제품을 선택해주세요'); return }
 
-    const unpriced = popupCart.filter((c) => !hasValidSupplyPrice(c.product.supply_price))
+    const unpriced = cart.filter((c) => !hasValidSupplyPrice(c.product.supply_price))
     if (unpriced.length > 0) {
       showToast('가격 미설정 제품이 있어요. 브랜드에 문의해주세요')
       return
     }
-
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { showToast('로그인이 필요합니다'); return }
-
-    setSending(true)
-    const cartBrandName = selectedBrand || popupCart[0]?.product.brand_name || ''
-    const { data: brandRow } = await supabase.from('brands').select('id').eq('name', cartBrandName).maybeSingle()
-    if (!brandRow) {
-      showToast('브랜드 정보를 찾을 수 없습니다')
-      setSending(false)
+    if (!ownerProfileId) {
+      showToast('프로필이 없습니다')
       return
     }
 
-    const orderGrade = gradeForBrand(gradeByBrandId, brandRow.id)
-    const items = popupCart.map((c) => buildOrderLineItem(
-      c.product,
-      c.qty,
-      promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)),
-      c.selectedPromo,
-    ))
-    const totalItems = items.reduce((s, i) => s + i.qty, 0)
-    const totalAmount = items.reduce((s, i) => s + i.line_amount, 0)
-    const promoApplied = items.map((i) => i.promo).filter(Boolean).join(', ') || null
-    const pointsEarned = calcPointsEarned(totalAmount, orderGrade, gradeRateMap)
+    setSending(true)
+    const byBrand = new Map<string, CartItem[]>()
+    for (const c of cart) {
+      const id = c.product.brand_id
+      if (!byBrand.has(id)) byBrand.set(id, [])
+      byBrand.get(id)!.push(c)
+    }
 
-    const res = await fetch('/api/brand-orders/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        brand_id: brandRow.id,
-        profile_id: ownerProfileId || '',
+    const cartItems = Array.from(byBrand.entries()).map(([brandId, rows]) => {
+      const orderGrade = gradeForBrand(gradeByBrandId, brandId)
+      const items = rows.map((c) => buildOrderLineItem(
+        c.product,
+        c.qty,
+        promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)),
+        c.selectedPromo,
+      ))
+      const totalItems = items.reduce((s, i) => s + i.qty, 0)
+      const totalAmount = items.reduce((s, i) => s + i.line_amount, 0)
+      const promoApplied = items.map((i) => i.promo).filter(Boolean).join(', ') || null
+      const pointsEarned = calcPointsEarned(totalAmount, orderGrade, null)
+      return {
+        brand_id: brandId,
+        profile_id: ownerProfileId,
         owner_name: ownerName,
         salon_name: salonName,
         grade: orderGrade,
-        status: 'pending',
         items,
         total_qty: totalItems,
         total_amount: totalAmount,
         promo_applied: promoApplied,
         points_earned: pointsEarned,
-      }),
+      }
     })
-    const result = await res.json().catch(() => ({}))
-    if (!res.ok) {
-      showToast(result.message || ('발주 실패: ' + (result.error || res.statusText || '')))
+
+    const result = await submitOrderBatch(cartItems)
+    if (!result.ok) {
+      showToast(result.message || ('발주 실패: ' + result.error))
     } else {
       setCart([])
       setShowPopup(false)
-      setSelectedBrand(null)
-      showToast('발주 요청 완료!')
+      showToast(`발주 요청 완료! 주문번호 ${result.order_no}`)
       void load()
       setTab('orders')
     }
@@ -602,7 +622,7 @@ export default function BrandOrdersPage() {
         </button>
         {totalQty > 0 && (
           <div style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: PURPLE, color: '#fff', cursor: 'pointer' }} onClick={() => setShowPopup(true)}>
-            장바구니 {totalQty}개
+            전체 발주하기 {totalQty}개
           </div>
         )}
       </div>
@@ -696,12 +716,6 @@ export default function BrandOrdersPage() {
               <div key={brandName} style={{ marginBottom: 24 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div style={{ fontSize: 14, fontWeight: 500, color: TEXT }}>{brandName}</div>
-                  {cart.filter((c) => c.product.brand_name === brandName).length > 0 && (
-                    <button type="button" onClick={() => { setSelectedBrand(brandName); setShowPopup(true) }}
-                      style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, border: `1px solid ${PURPLE}`, background: `${PURPLE}15`, color: PURPLE, cursor: 'pointer' }}>
-                      발주하기 ({cart.filter((c) => c.product.brand_name === brandName).reduce((s, c) => s + c.qty, 0)}개)
-                    </button>
-                  )}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: `repeat(${productGridCols}, 1fr)`, gap: 8 }}>
                   {prods.map((prod) => {
@@ -773,13 +787,13 @@ export default function BrandOrdersPage() {
       {showPopup && (
         <div
           ref={overlayRef}
-          onClick={(e) => { if (e.target === overlayRef.current) { setShowPopup(false); setSelectedBrand(null) } }}
+          onClick={(e) => { if (e.target === overlayRef.current) setShowPopup(false) }}
           style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
         >
           <div style={{ background: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 520, maxHeight: '80vh', overflowY: 'auto', padding: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <div style={{ fontSize: 15, fontWeight: 500, color: TEXT }}>발주 확인</div>
-              <button type="button" onClick={() => { setShowPopup(false); setSelectedBrand(null) }}
+              <div style={{ fontSize: 15, fontWeight: 500, color: TEXT }}>전체 발주 확인</div>
+              <button type="button" onClick={() => setShowPopup(false)}
                 style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: SUB, lineHeight: 1 }}>✕</button>
             </div>
 
@@ -811,10 +825,13 @@ export default function BrandOrdersPage() {
 
             <div style={{ padding: '12px 0', borderBottom: `1px solid ${BORDER}`, marginBottom: 12 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: SUB, marginBottom: 4 }}>
-                <span>등급</span><span style={{ color: PURPLE }}>{activeGrade}</span>
+                <span>브랜드</span><span style={{ color: PURPLE }}>{cartBrandCount > 1 ? `${cartBrandCount}개 브랜드` : (popupCart[0]?.product.brand_name || '-')}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: SUB, marginBottom: 4 }}>
-                <span>적립율</span><span style={{ color: SUB }}>{gradePointRate(activeGrade, gradeRateMap)}%</span>
+                <span>등급</span><span style={{ color: PURPLE }}>{cartBrandCount > 1 ? '브랜드별' : activeGrade}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: SUB, marginBottom: 4 }}>
+                <span>적립율</span><span style={{ color: SUB }}>{cartBrandCount > 1 ? '브랜드별' : `${gradePointRate(activeGrade, gradeRateMap)}%`}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 4 }}>
                 <span>발주 합계</span><span style={{ color: PURPLE }}>₩{popupTotalAmount.toLocaleString()}</span>
@@ -826,7 +843,7 @@ export default function BrandOrdersPage() {
 
             <button type="button" onClick={() => void submitOrder()} disabled={sending}
               style={{ width: '100%', padding: '12px', borderRadius: 10, border: 'none', background: sending ? `${PURPLE}80` : PURPLE, color: '#fff', fontSize: 14, cursor: sending ? 'not-allowed' : 'pointer', fontWeight: 500 }}>
-              {sending ? '발주 요청 중...' : '발주 요청하기'}
+              {sending ? '발주 요청 중...' : '전체 발주하기'}
             </button>
           </div>
         </div>

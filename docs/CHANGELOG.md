@@ -3,6 +3,17 @@
 
 ---
 
+## 2026-07-25
+
+- **feat: 주문서 묶음 시스템 구축 - 배치승인+물류전달체크리스트**
+  - `brand_order_batches` / `brand_order_batch_checklist_items` 신규 테이블(RLS 포함, migration `127_brand_order_batches.sql`) — 원장이 여러 브랜드 상품을 섞어 담아도 하나의 주문번호(`order_no`)로 묶임
+  - `insertBrandOrder.ts` 공용화, `/api/brand-order-batches/create` 신규 — 브랜드별 `brand_orders`를 `batch_id`로 묶어 일괄 생성 (`ORD-YYYYMMDD-XXXX`)
+  - 원장 발주화면: 브랜드별 개별 「발주하기」 → 「전체 발주하기」(장바구니 전체 묶음제출, `submitOrderBatch`)로 통합
+  - `BrandOrderBatchApproval.tsx` 신규: 주문번호 기준 배치카드(브랜드별 라인아이템+프로모션뱃지+증정품목명, 기간검색, 상태탭), 「발주승인→물류전달」 시 물류전달사항을 체크리스트로 자동생성 + `brand_orders` 일괄승인
+  - `BrandInventoryFulfillment.tsx`: 배치 체크리스트 표시+체크토글 추가(트랙A만, 트랙B는 batch 미해당)
+
+---
+
 ## 2026-07-24
 
 - **fix: 물류허브 접근권한 정리 - ops직원 브랜드허브 진입차단 + 발송처리 이전**

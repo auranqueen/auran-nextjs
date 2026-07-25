@@ -27,6 +27,16 @@ interface OrderRow {
   courier: string | null
   tracking_no: string | null
   shipped_at: string | null
+  batch_id?: string | null
+}
+
+type ChecklistItem = {
+  id: string
+  batch_id: string
+  label: string
+  checked: boolean
+  checked_at: string | null
+  checked_by: string | null
 }
 
 interface Props {
@@ -69,6 +79,7 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
   const [filter, setFilter] = useState<FilterTab>('approved')
   const [trackingInputs, setTrackingInputs] = useState<Record<string, { courier: string; no: string }>>({})
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [checklists, setChecklists] = useState<Record<string, ChecklistItem[]>>({})
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
 
   const fetchOrders = useCallback(async () => {
@@ -78,7 +89,7 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
     const [{ data: aRows }, { data: bRows }] = await Promise.all([
       supabase
         .from('brand_orders')
-        .select('id, owner_name, salon_name, grade, status, items, promo_applied, created_at, courier, tracking_no, shipped_at')
+        .select('id, owner_name, salon_name, grade, status, items, promo_applied, created_at, courier, tracking_no, shipped_at, batch_id')
         .eq('brand_id', brandId)
         .in('status', aPending ? ['approved'] : ['shipping', 'done'])
         .order('created_at', { ascending: false })
@@ -91,7 +102,11 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
         .order('created_at', { ascending: false })
         .limit(50),
     ])
-    const listA: OrderRow[] = ((aRows || []) as Omit<OrderRow, 'track'>[]).map((o) => ({ ...o, track: 'A' as const }))
+    const listA: OrderRow[] = ((aRows || []) as Array<Omit<OrderRow, 'track'>>).map((o) => ({
+      ...o,
+      track: 'A' as const,
+      batch_id: o.batch_id || null,
+    }))
     const listB: OrderRow[] = ((bRows || []) as Array<Record<string, unknown>>).map((o) => ({
       id: String(o.id),
       track: 'B' as const,
@@ -105,14 +120,65 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
       courier: (o.courier as string | null) || null,
       tracking_no: (o.tracking_no as string | null) || null,
       shipped_at: null,
+      batch_id: null,
     }))
-    setOrders(
-      [...listA, ...listB].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    const merged = [...listA, ...listB].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     )
+    setOrders(merged)
+
+    const batchIds = Array.from(
+      new Set(listA.map((o) => o.batch_id).filter((id): id is string => !!id)),
+    )
+    if (batchIds.length === 0) {
+      setChecklists({})
+    } else {
+      const { data: checkRows } = await supabase
+        .from('brand_order_batch_checklist_items')
+        .select('id, batch_id, label, checked, checked_at, checked_by')
+        .in('batch_id', batchIds)
+        .order('created_at', { ascending: true })
+      const map: Record<string, ChecklistItem[]> = {}
+      for (const row of (checkRows || []) as ChecklistItem[]) {
+        if (!map[row.batch_id]) map[row.batch_id] = []
+        map[row.batch_id].push(row)
+      }
+      setChecklists(map)
+    }
     setLoading(false)
   }, [brandId, filter, supabase])
 
   useEffect(() => { void fetchOrders() }, [fetchOrders])
+
+  const toggleChecklistItem = async (item: ChecklistItem) => {
+    const nextChecked = !item.checked
+    const staffId =
+      (typeof window !== 'undefined' ? sessionStorage.getItem('brand_staff_id') : null) || null
+    const patch = {
+      checked: nextChecked,
+      checked_at: nextChecked ? new Date().toISOString() : null,
+      checked_by: nextChecked ? staffId : null,
+    }
+    const { error } = await supabase
+      .from('brand_order_batch_checklist_items')
+      .update(patch)
+      .eq('id', item.id)
+    if (error) {
+      showToast('체크 저장 실패: ' + error.message)
+      return
+    }
+    setChecklists((prev) => {
+      const list = prev[item.batch_id] || []
+      return {
+        ...prev,
+        [item.batch_id]: list.map((c) =>
+          c.id === item.id
+            ? { ...c, checked: nextChecked, checked_at: patch.checked_at, checked_by: patch.checked_by }
+            : c,
+        ),
+      }
+    })
+  }
 
   const decrementStockForOrder = async (order: OrderRow) => {
     if (!brandId) return
@@ -294,6 +360,48 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
                   <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>
                     {items.map((it) => formatOrderItemLine(it)).join(' · ')}
                     {o.promo_applied && <span style={{ marginLeft: 6, color: GOLD }}>{o.promo_applied} 적용</span>}
+                  </div>
+                )}
+                {o.track === 'A' && o.batch_id && (checklists[o.batch_id]?.length || 0) > 0 && (
+                  <div style={{ marginBottom: 8, padding: 8, borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>물류 체크리스트</div>
+                    {(checklists[o.batch_id] || []).map((c) => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => void toggleChecklistItem(c)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 8,
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '6px 4px',
+                          border: 'none',
+                          background: 'transparent',
+                          cursor: 'pointer',
+                          color: c.checked ? SUB : TEXT,
+                          fontSize: 12,
+                        }}
+                      >
+                        <span style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: 4,
+                          flexShrink: 0,
+                          border: `1.5px solid ${c.checked ? PURPLE : 'rgba(255,255,255,0.25)'}`,
+                          background: c.checked ? PURPLE : 'transparent',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 10,
+                          color: '#fff',
+                        }}>
+                          {c.checked ? '✓' : ''}
+                        </span>
+                        <span style={{ textDecoration: c.checked ? 'line-through' : 'none' }}>{c.label}</span>
+                      </button>
+                    ))}
                   </div>
                 )}
                 {filter === 'shipped' && o.tracking_no && (

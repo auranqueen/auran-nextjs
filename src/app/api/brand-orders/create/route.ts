@@ -1,23 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
-
-const BLOCK_MESSAGE = '미납 청구서가 있어 발주가 제한됩니다'
-
-/** billing_month(YYYY-MM-01) → 그 달 30일(또는 말일 중 작은 값) 로컬 자정 */
-function unpaidDueDate(billingMonth: string): Date {
-  const ym = String(billingMonth).slice(0, 7)
-  const [y, m] = ym.split('-').map(Number)
-  if (!y || !m) return new Date(0)
-  const lastDay = new Date(y, m, 0).getDate()
-  const dueDay = Math.min(30, lastDay)
-  return new Date(y, m - 1, dueDay)
-}
-
-function startOfTodayLocal(): Date {
-  const d = new Date()
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
-}
+import { insertBrandOrder } from '@/lib/brand/insertBrandOrder'
 
 export async function POST(req: NextRequest) {
   const supabase = createClient()
@@ -57,60 +41,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'profile_mismatch', message: '프로필이 일치하지 않습니다' }, { status: 403 })
   }
 
-  const { data: unpaidRows } = await svc
-    .from('brand_billing_invoices')
-    .select('id, billing_month, status')
-    .eq('owner_id', profileId)
-    .eq('brand_id', brandId)
-    .eq('status', 'unpaid')
-    .gt('total_amount', 0)
-
-  const today = startOfTodayLocal()
-  const overdue = (unpaidRows || []).some((inv: { billing_month?: string }) => {
-    const due = unpaidDueDate(String(inv.billing_month || ''))
-    return due.getTime() < today.getTime()
+  const result = await insertBrandOrder(svc, {
+    brand_id: brandId,
+    profile_id: profileId,
+    owner_name: ownerName,
+    salon_name: salonName,
+    grade,
+    items,
+    total_qty: totalQty,
+    total_amount: totalAmount,
+    promo_applied: promoApplied,
+    points_earned: pointsEarned,
   })
-  if (overdue) {
-    return NextResponse.json({ ok: false, error: 'unpaid_invoice', message: BLOCK_MESSAGE }, { status: 403 })
-  }
 
-  const { data: order, error: insertErr } = await svc
-    .from('brand_orders')
-    .insert({
-      brand_id: brandId,
-      profile_id: profileId,
-      owner_name: ownerName,
-      salon_name: salonName,
-      grade,
-      status: 'pending',
-      items,
-      total_qty: totalQty,
-      total_amount: totalAmount,
-      promo_applied: promoApplied,
-      points_earned: pointsEarned,
-    })
-    .select('id')
-    .single()
-
-  if (insertErr || !order?.id) {
+  if (!result.ok) {
+    const status = result.error === 'unpaid_invoice' ? 403 : 500
     return NextResponse.json(
-      { ok: false, error: 'insert_failed', message: insertErr?.message || '발주 실패' },
-      { status: 500 },
+      { ok: false, error: result.error, message: result.message },
+      { status },
     )
   }
 
-  const itemSummary = (items as Array<{ name?: string; qty?: number; line_amount?: number }>)
-    .map((i) => `${i.name || ''} ${i.qty || 0}ea · ₩${Number(i.line_amount || 0).toLocaleString()}`)
-    .join(', ')
-
-  await svc.from('brand_messages').insert({
-    brand_id: brandId,
-    message_type: 'auto_order',
-    target_type: 'all',
-    title: `${ownerName} 원장님 발주 접수`,
-    body: `${ownerName} 원장님(${salonName})이 발주를 요청했습니다. ${itemSummary}`,
-    send_count: 1,
-  })
-
-  return NextResponse.json({ ok: true, order_id: order.id })
+  return NextResponse.json({ ok: true, order_id: result.order_id })
 }
