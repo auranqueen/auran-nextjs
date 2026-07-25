@@ -348,19 +348,30 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
                     </div>
                     <div style={{ fontSize: 11, color: SUB }}>{o.salon_name || '-'} · {new Date(o.created_at).toLocaleDateString('ko-KR')}</div>
                   </div>
-                  {filter === 'shipped' ? (
-                    <span style={{ fontSize: 11, color: 'rgba(41,182,246,0.8)', flexShrink: 0 }}>{statusLabel}</span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => setTrackingInputs((prev) => (
-                        prev[o.id] ? (() => { const n = { ...prev }; delete n[o.id]; return n })() : { ...prev, [o.id]: { courier: '', no: '' } }
-                      ))}
-                      style={{ fontSize: 11, padding: '4px 12px', borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', cursor: 'pointer', flexShrink: 0 }}
-                    >
-                      {open ? '접기' : '발송처리'}
-                    </button>
-                  )}
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+                    {o.track === 'A' && o.batch_id && (
+                      <button
+                        type="button"
+                        onClick={() => window.open(`/dashboard/brand/print/order-batch/${o.batch_id}`, '_blank')}
+                        style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '0.5px solid rgba(201,169,110,0.45)', background: 'rgba(201,169,110,0.12)', color: GOLD, cursor: 'pointer' }}
+                      >
+                        명세서 인쇄
+                      </button>
+                    )}
+                    {filter === 'shipped' ? (
+                      <span style={{ fontSize: 11, color: 'rgba(41,182,246,0.8)' }}>{statusLabel}</span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setTrackingInputs((prev) => (
+                          prev[o.id] ? (() => { const n = { ...prev }; delete n[o.id]; return n })() : { ...prev, [o.id]: { courier: '', no: '' } }
+                        ))}
+                        style={{ fontSize: 11, padding: '4px 12px', borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', cursor: 'pointer' }}
+                      >
+                        {open ? '접기' : '발송처리'}
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {items.length > 0 && (
                   <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>

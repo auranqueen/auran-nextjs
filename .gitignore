@@ -27,3 +27,7 @@ scripts/thalac-products.json
 
 # Supabase local artifacts
 supabase/.temp/
+
+# local build agent logs
+build-output*.log
+

@@ -5,6 +5,10 @@
 
 ## 2026-07-25
 
+- **feat: A4 발주명세서 인쇄 페이지 구축 + 물류 발송처리 연결**
+  - `/dashboard/brand/print/order-batch/[batchId]` 신규: 건별 A4 발주명세서 인쇄 페이지, 절취선으로 회사보관용(상단)/원장님용(하단) 분리, 프로모션+증정품목명 표시, 출고담당자 수기서명란 포함, `@page A4` 인쇄 CSS
+  - `BrandInventoryFulfillment.tsx`: `batch_id` 있는 발송건에 「명세서 인쇄」버튼 연결(새창으로 인쇄페이지 오픈)
+
 - **feat: A4발주명세서 인쇄 + 물류 일일마감/본사대조확인 시스템**
   - A4 발주명세서 인쇄(`/dashboard/brand/print/order-batch/[batchId]`): 회사보관용/원장님용 절취선 분리, 물류 발송처리 화면에서 출력
   - `brand_logistics_daily_closings` 신규(migration `128_brand_logistics_daily_closings.sql`, RLS): 물류 「오늘 마감」버튼(`BrandLogisticsDailyClose.tsx`)으로 당일 발송건 스냅샷 제출(브랜드당 하루 1회, `submitted_by` 기록)
