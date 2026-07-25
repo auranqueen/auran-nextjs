@@ -5,6 +5,9 @@
 
 ## 2026-07-25
 
+- **refactor: 세금계산서 탭 printInvoice 제거 및 A4명세서로 일원화**
+  - `BrandTabInvoice.tsx`: printInvoice(구 주문내역서 출력) 및 "발주 선택" 탭 제거, invoice_settings(사업자정보) 설정 화면만 유지 — 팝빌 연동 전까지 대기 상태
+  - `BrandOrderBatchApproval.tsx`: 배치카드에 "명세서 인쇄" 버튼 추가(승인 전/후 공통), `/print/order-batch/{batch.id}`로 연결
 - **chore: 미사용 BrandTabData.tsx 삭제**
   - `BrandTabData.tsx` 삭제 (참조없음 확인, 기능은 이미 `BrandOrdersSummary`로 흡수됨)
 - **fix: 물류발송 배치단위 재구성(샵기준 단일운송장) + 일일마감 company단위 확장**
