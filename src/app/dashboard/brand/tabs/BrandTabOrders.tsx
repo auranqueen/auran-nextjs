@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import BrandOrdersPromoSettings from '../components/BrandOrdersPromoSettings'
 import BrandOrdersSummary from '../components/BrandOrdersSummary'
 import BrandOrderBatchApproval from '../components/BrandOrderBatchApproval'
+import BrandLogisticsClosingReview from '../components/BrandLogisticsClosingReview'
 import type { CSSProperties } from 'react'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
@@ -44,6 +45,7 @@ export default function BrandTabOrders({ myBrands }: Props) {
         <>
           <BrandOrdersPromoSettings brandId={selectedBrandId} />
           <BrandOrderBatchApproval brandId={selectedBrandId} brandName={brandName} />
+          <BrandLogisticsClosingReview brandId={selectedBrandId} brandName={brandName} />
           <div style={CARD}>
             <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>👑 아레테클럽 포인트 현황</div>
             <div style={{ fontSize: 11, color: SUB, padding: '8px 10px', background: 'rgba(201,169,110,0.04)', borderRadius: 7, border: '0.5px solid rgba(201,169,110,0.15)' }}>

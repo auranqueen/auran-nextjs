@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import BrandLogisticsDailyClose from './BrandLogisticsDailyClose'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -80,6 +81,7 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
   const [trackingInputs, setTrackingInputs] = useState<Record<string, { courier: string; no: string }>>({})
   const [busyId, setBusyId] = useState<string | null>(null)
   const [checklists, setChecklists] = useState<Record<string, ChecklistItem[]>>({})
+  const [todayClosed, setTodayClosed] = useState(false)
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
 
   const fetchOrders = useCallback(async () => {
@@ -151,6 +153,10 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
   useEffect(() => { void fetchOrders() }, [fetchOrders])
 
   const toggleChecklistItem = async (item: ChecklistItem) => {
+    if (todayClosed) {
+      showToast('오늘 마감 후에는 체크리스트를 수정할 수 없습니다')
+      return
+    }
     const nextChecked = !item.checked
     const staffId =
       (typeof window !== 'undefined' ? sessionStorage.getItem('brand_staff_id') : null) || null
@@ -365,10 +371,14 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
                 {o.track === 'A' && o.batch_id && (checklists[o.batch_id]?.length || 0) > 0 && (
                   <div style={{ marginBottom: 8, padding: 8, borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.06)' }}>
                     <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>물류 체크리스트</div>
+                    {todayClosed && (
+                      <div style={{ fontSize: 10, color: GOLD, marginBottom: 4 }}>마감 완료 — 체크 수정 불가</div>
+                    )}
                     {(checklists[o.batch_id] || []).map((c) => (
                       <button
                         key={c.id}
                         type="button"
+                        disabled={todayClosed}
                         onClick={() => void toggleChecklistItem(c)}
                         style={{
                           display: 'flex',
@@ -379,7 +389,8 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
                           padding: '6px 4px',
                           border: 'none',
                           background: 'transparent',
-                          cursor: 'pointer',
+                          cursor: todayClosed ? 'not-allowed' : 'pointer',
+                          opacity: todayClosed ? 0.7 : 1,
                           color: c.checked ? SUB : TEXT,
                           fontSize: 12,
                         }}
@@ -453,9 +464,10 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
           })
         )}
       </div>
-      <div style={{ fontSize: 11, color: SUB, padding: '0 2px' }}>
+      <div style={{ fontSize: 11, color: SUB, padding: '0 2px', marginBottom: 10 }}>
         💡 A는 승인 후, B는 결제완료 후 발송 가능. 발송 시 운송장 저장 + 추적 구독이 동일하게 등록됩니다.
       </div>
+      <BrandLogisticsDailyClose brandId={brandId} onToast={showToast} onClosedChange={setTodayClosed} />
     </div>
   )
 }

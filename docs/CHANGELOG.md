@@ -5,6 +5,11 @@
 
 ## 2026-07-25
 
+- **feat: A4발주명세서 인쇄 + 물류 일일마감/본사대조확인 시스템**
+  - A4 발주명세서 인쇄(`/dashboard/brand/print/order-batch/[batchId]`): 회사보관용/원장님용 절취선 분리, 물류 발송처리 화면에서 출력
+  - `brand_logistics_daily_closings` 신규(migration `128_brand_logistics_daily_closings.sql`, RLS): 물류 「오늘 마감」버튼(`BrandLogisticsDailyClose.tsx`)으로 당일 발송건 스냅샷 제출(브랜드당 하루 1회, `submitted_by` 기록)
+  - `BrandLogisticsClosingReview.tsx` 신규: 본사가 마감내역 조회+확인완료 처리, 승인후 3일 초과 미마감 발주 자동경고 (`BrandTabOrders` 발주관리에 접이식 섹션 연결)
+
 - **feat: 주문서 묶음 시스템 구축 - 배치승인+물류전달체크리스트**
   - `brand_order_batches` / `brand_order_batch_checklist_items` 신규 테이블(RLS 포함, migration `127_brand_order_batches.sql`) — 원장이 여러 브랜드 상품을 섞어 담아도 하나의 주문번호(`order_no`)로 묶임
   - `insertBrandOrder.ts` 공용화, `/api/brand-order-batches/create` 신규 — 브랜드별 `brand_orders`를 `batch_id`로 묶어 일괄 생성 (`ORD-YYYYMMDD-XXXX`)
