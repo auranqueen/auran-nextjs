@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { calcPouchTier } from '@/lib/brand/brandBilling'
 
 export type AggregateBrandBillingParams = {
-  brandId: string
+  companyId: string
   profileId: string
   /** DATE 형태 YYYY-MM-01 (청구서 라벨용, 조회 구간과 별개) */
   billingMonth: string
@@ -29,12 +29,12 @@ export function billingCycleRange(referenceDate: Date): { startIso: string; endI
 }
 
 /**
- * 특정 원장·브랜드·청구월 brand_orders 합산 → brand_billing_invoices upsert
+ * 특정 원장·컴퍼니·청구월 brand_orders(그 컴퍼니 소속 전체 브랜드) 합산 → brand_billing_invoices upsert
  * (cancelled 제외, 조회는 26일 사이클 / billing_month 라벨은 YYYY-MM-01)
  */
 export async function aggregateBrandBilling(
   supabase: SupabaseClient,
-  { brandId, profileId, billingMonth }: AggregateBrandBillingParams,
+  { companyId, profileId, billingMonth }: AggregateBrandBillingParams,
 ): Promise<AggregateBrandBillingResult> {
   const ym = String(billingMonth).slice(0, 7)
   const [y, m] = ym.split('-').map(Number)
@@ -43,15 +43,28 @@ export async function aggregateBrandBilling(
       ? `${y}-${String(m).padStart(2, '0')}-01`
       : String(billingMonth).slice(0, 10)
 
-  // 라벨 월(예: 7월) 기준으로 사이클 = 전월26일 ~ 당월26일
   const cycleRef = y && m ? new Date(y, m - 1, 1) : new Date()
   const { startIso, endIso } = billingCycleRange(cycleRef)
+
+  const { data: brandRows, error: brandErr } = await supabase
+    .from('brands')
+    .select('id')
+    .eq('company_id', companyId)
+
+  if (brandErr) {
+    return { ok: false, total_amount: 0, points_total: 0, pouch_tier: null, error: brandErr.message }
+  }
+
+  const brandIds = (brandRows || []).map((b: { id: string }) => b.id)
+  if (brandIds.length === 0) {
+    return { ok: false, total_amount: 0, points_total: 0, pouch_tier: null, error: 'no_brands_for_company' }
+  }
 
   const { data: orderRows, error: orderErr } = await supabase
     .from('brand_orders')
     .select('id, total_amount, points_earned, status')
     .eq('profile_id', profileId)
-    .eq('brand_id', brandId)
+    .in('brand_id', brandIds)
     .gte('created_at', startIso)
     .lt('created_at', endIso)
     .neq('status', 'cancelled')
@@ -69,17 +82,17 @@ export async function aggregateBrandBilling(
     .from('brand_billing_invoices')
     .upsert(
       {
-        brand_id: brandId,
+        company_id: companyId,
         owner_id: profileId,
         billing_month: monthDate,
         total_amount: totalAmount,
         points_total: pointsTotal,
         pouch_tier: pouchTier,
       },
-      { onConflict: 'brand_id,owner_id,billing_month' },
+      { onConflict: 'company_id,owner_id,billing_month' },
     )
     .select(
-      'id, brand_id, owner_id, billing_month, total_amount, points_total, pouch_tier, pouch_sent_qty, pouch_sent_note, status, paid_at',
+      'id, company_id, owner_id, billing_month, total_amount, points_total, pouch_tier, pouch_sent_qty, pouch_sent_note, status, paid_at',
     )
     .single()
 

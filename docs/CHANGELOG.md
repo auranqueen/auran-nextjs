@@ -6,6 +6,10 @@
 
 ## 2026-07-26
 
+### 정산/결제 원장통합 재설계 (묶음1/4)
+- aggregateBrandBilling.ts: brandId 파라미터 → companyId로 변경, 컴퍼니 소속 전체 브랜드 orders 합산 방식으로 재작성
+- cron/aggregate-brand-billing/route.ts: CIVASAN_BRAND_ID 하드코딩 제거, brand_companies 전체 순회 방식으로 변경
+
 - **feat: 브랜드허브 company전체 통합 완료 + 월별리포트 뱃지 + 물류허브 링크**
   - `BrandTabHome.tsx`: 이달 판매액·처리대기·임박재고·활성원장·등록제품·최근주문·30일 선그래프를 company 소속 브랜드 합산으로 통일; 이달 판매액에 `N월 1일~M일` 기간 라벨; 처리대기 KPI에 트랙A(`pending`/`approved`)+트랙B(`결제완료`) 합산 및 `PendingOrdersDetail` 인라인 펼침; 선그래프는 `HomeSalesTrendChart`로 분리
   - `resolveCompanyBrandIds.ts` 신규: hub brand → company 소속 brand id 목록 공용 조회
