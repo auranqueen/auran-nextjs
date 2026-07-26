@@ -1,9 +1,11 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import BrandOrdersPromoSettings from '../components/BrandOrdersPromoSettings'
 import BrandOrdersSummary from '../components/BrandOrdersSummary'
 import BrandOrderBatchApproval from '../components/BrandOrderBatchApproval'
 import BrandLogisticsClosingReview from '../components/BrandLogisticsClosingReview'
+import BrandShippedOrderReport from '../components/BrandShippedOrderReport'
 import type { CSSProperties } from 'react'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
@@ -14,7 +16,10 @@ interface Props {
 }
 
 export default function BrandTabOrders({ myBrands }: Props) {
+  const supabase = createClient()
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
+  const [reportOpen, setReportOpen] = useState(false)
+  const [companyId, setCompanyId] = useState<string | null>(null)
   const brandName = myBrands.find((b) => b.id === selectedBrandId)?.name || ''
 
   const handleBrandChange = (id: string | null) => {
@@ -29,6 +34,16 @@ export default function BrandTabOrders({ myBrands }: Props) {
     const saved = localStorage.getItem('brand-tab-selection')
     if (saved && myBrands.some((b) => b.id === saved)) setSelectedBrandId(saved)
   }, [myBrands])
+
+  useEffect(() => {
+    const resolve = async () => {
+      const brandId = selectedBrandId || myBrands[0]?.id
+      if (!brandId) { setCompanyId(null); return }
+      const { data } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
+      setCompanyId(data?.company_id ? String(data.company_id) : null)
+    }
+    void resolve()
+  }, [selectedBrandId, myBrands, supabase])
 
   return (
     <div>
@@ -49,6 +64,28 @@ export default function BrandTabOrders({ myBrands }: Props) {
         brandIds={myBrands.map((b) => b.id)}
         brandName={brandName}
       />
+      <div style={CARD}>
+        <button
+          type="button"
+          onClick={() => setReportOpen((v) => !v)}
+          style={{
+            width: '100%', textAlign: 'left', fontSize: 13, padding: '8px 0', cursor: 'pointer',
+            border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.75)',
+          }}
+        >
+          📦 발송완료 리포트 {reportOpen ? '접기' : '펼치기'}
+        </button>
+        {reportOpen && companyId ? (
+          <div style={{ marginTop: 12 }}>
+            <BrandShippedOrderReport
+              companyId={companyId}
+              hubBrandId={selectedBrandId || myBrands[0]?.id || ''}
+            />
+          </div>
+        ) : reportOpen ? (
+          <div style={{ fontSize: 12, color: SUB, marginTop: 8 }}>company_id가 없어요</div>
+        ) : null}
+      </div>
       {selectedBrandId && (
         <>
           <BrandLogisticsClosingReview brandId={selectedBrandId} brandName={brandName} />
