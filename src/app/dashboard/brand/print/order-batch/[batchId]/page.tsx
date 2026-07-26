@@ -317,6 +317,7 @@ export default function OrderBatchPrintPage() {
             <span>합계금액</span>
             <span>₩{money(totalAmount)}</span>
           </div>
+          <div className="sign">수령확인 서명: ______________</div>
           <div className="notes" style={{ marginTop: 12 }}>문의처: {contact}</div>
         </section>
       </div>

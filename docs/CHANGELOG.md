@@ -6,6 +6,10 @@
 
 ## 2026-07-26
 
+- **refactor: 명세서인쇄 물류전용으로 정리 + 원장님용 서명란 추가**
+  - `BrandOrderBatchApproval.tsx`: "명세서 인쇄" 버튼 제거 (물류 발송처리 시점에서만 인쇄하는 게 맞음, 승인화면엔 불필요)
+  - `/print/order-batch/[batchId]`: 원장님용(하단)에 "수령확인 서명" 란 추가 (기존 회사보관용 "출고담당자 서명"에 이어 양쪽 다 서명란 확보)
+
 - **fix: hq_stock_orders 400에러 수정 + brand_orders RLS 확장 + 샵 발주랭킹 신규**
   - `BrandOrdersSummary.tsx`, `BrandInventoryFulfillment.tsx`: hq_stock_orders select에서 존재하지 않는 owner_name/salon_name 컬럼 제거(400에러 수정), profile_id 체인으로 대체
   - brand_orders RLS "brand can select own orders"에 brand_members 조건 추가 — 소유자 뿐 아니라 멀티브랜드 멤버도 형제 브랜드 배치 데이터 조회 가능하도록 수정

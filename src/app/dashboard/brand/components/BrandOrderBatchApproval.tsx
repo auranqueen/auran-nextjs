@@ -394,24 +394,6 @@ export default function BrandOrderBatchApproval({ brandId = null, brandIds = [],
                 <span style={{ color: PURPLE }}>₩{Math.trunc(Number(batch.total_amount) || 0).toLocaleString()}</span>
               </div>
 
-              <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                <button
-                  type="button"
-                  onClick={() => window.open(`/dashboard/brand/print/order-batch/${batch.id}`, '_blank')}
-                  style={{
-                    fontSize: 11,
-                    padding: '4px 10px',
-                    borderRadius: 6,
-                    border: '0.5px solid rgba(201,169,110,0.45)',
-                    background: 'rgba(201,169,110,0.12)',
-                    color: GOLD,
-                    cursor: 'pointer',
-                  }}
-                >
-                  명세서 인쇄
-                </button>
-              </div>
-
               {waiting && (
                 <>
                   <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>물류 전달사항 (줄바꿈 = 체크리스트 항목)</div>
