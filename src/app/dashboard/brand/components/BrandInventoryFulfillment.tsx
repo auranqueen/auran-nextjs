@@ -87,23 +87,70 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
     const pending = filter === 'approved'
     const { data: bRows } = await supabase
       .from('hq_stock_orders')
-      .select('id, brand_id, owner_name, salon_name, status, items, created_at, courier, tracking_no')
+      .select('id, brand_id, profile_id, status, items, created_at, courier, tracking_no')
       .in('brand_id', ids)
       .in('status', pending ? ['결제완료'] : ['배송완료', '구매확정'])
       .order('created_at', { ascending: false })
       .limit(50)
+    const rawHq = bRows || []
+    const hqProfileIds = Array.from(
+      new Set(rawHq.map((o: { profile_id?: string }) => String(o.profile_id || '')).filter(Boolean)),
+    )
+    const profileIdToAuthId: Record<string, string> = {}
+    const authIdToUserName: Record<string, string> = {}
+    const authIdToUserId: Record<string, string> = {}
+    const userIdToSalonName: Record<string, string> = {}
+    if (hqProfileIds.length) {
+      const { data: profRows } = await supabase
+        .from('profiles')
+        .select('id, auth_id')
+        .in('id', hqProfileIds)
+      for (const p of profRows || []) {
+        if (p.id && p.auth_id) profileIdToAuthId[String(p.id)] = String(p.auth_id)
+      }
+      const authIds = Array.from(new Set(Object.values(profileIdToAuthId)))
+      if (authIds.length) {
+        const { data: userRows } = await supabase
+          .from('users')
+          .select('id, auth_id, name')
+          .in('auth_id', authIds)
+        for (const u of userRows || []) {
+          const aid = String((u as { auth_id?: string }).auth_id || '')
+          if (!aid) continue
+          authIdToUserName[aid] = String((u as { name?: string }).name || '원장')
+          authIdToUserId[aid] = String(u.id)
+        }
+        const userIds = Array.from(new Set(Object.values(authIdToUserId)))
+        if (userIds.length) {
+          const { data: salonRows } = await supabase
+            .from('salons')
+            .select('owner_id, name')
+            .in('owner_id', userIds)
+          for (const s of salonRows || []) {
+            const oid = String((s as { owner_id?: string }).owner_id || '')
+            if (oid) userIdToSalonName[oid] = String((s as { name?: string }).name || '')
+          }
+        }
+      }
+    }
+
     setBOrders(
-      ((bRows || []) as Array<Record<string, unknown>>).map((o) => ({
-        id: String(o.id),
-        brand_id: String(o.brand_id),
-        owner_name: (o.owner_name as string | null) || null,
-        salon_name: (o.salon_name as string | null) || null,
-        status: String(o.status || ''),
-        items: Array.isArray(o.items) ? o.items as TrackBOrder['items'] : [],
-        created_at: String(o.created_at || ''),
-        courier: (o.courier as string | null) || null,
-        tracking_no: (o.tracking_no as string | null) || null,
-      })),
+      (rawHq as Array<Record<string, unknown>>).map((o) => {
+        const pid = String(o.profile_id || '')
+        const authId = profileIdToAuthId[pid] || ''
+        const userId = authId ? authIdToUserId[authId] || '' : ''
+        return {
+          id: String(o.id),
+          brand_id: String(o.brand_id),
+          owner_name: (authId && authIdToUserName[authId]) || null,
+          salon_name: (userId && userIdToSalonName[userId]) || null,
+          status: String(o.status || ''),
+          items: Array.isArray(o.items) ? o.items as TrackBOrder['items'] : [],
+          created_at: String(o.created_at || ''),
+          courier: (o.courier as string | null) || null,
+          tracking_no: (o.tracking_no as string | null) || null,
+        }
+      }),
     )
     setLoadingB(false)
   }, [companyKey, filter])

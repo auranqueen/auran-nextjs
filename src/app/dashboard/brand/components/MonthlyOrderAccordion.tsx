@@ -37,11 +37,53 @@ type MonthOrderRow = {
   amount: number
   status: string
   track: 'A' | 'B'
+  brandBadges?: string[]
+  itemsSummary?: string | null
 }
 
 interface Props {
   brandId: string
   onClose: () => void
+}
+
+function brandNameFromRow(o: { brands?: { name?: string } | { name?: string }[] | null }): string | null {
+  const ref = o.brands
+  const name = Array.isArray(ref) ? ref[0]?.name : ref?.name
+  return name ? String(name) : null
+}
+
+function profileNameFromRow(o: {
+  profiles?: { full_name?: string } | { full_name?: string }[] | null
+  owner_name?: string
+}): string {
+  const profileRef = o.profiles
+  const profileName = Array.isArray(profileRef) ? profileRef[0]?.full_name : profileRef?.full_name
+  return profileName || o.owner_name || '원장님'
+}
+
+function flattenItemLines(orders: Array<{ items?: unknown }>): Array<{ name: string }> {
+  const lines: Array<{ name: string }> = []
+  for (const o of orders) {
+    const items = Array.isArray(o.items) ? o.items : []
+    for (const it of items) {
+      const name =
+        it && typeof it === 'object' && 'name' in it
+          ? String((it as { name?: string }).name || '').trim()
+          : ''
+      lines.push({ name })
+    }
+  }
+  return lines
+}
+
+function itemsSummaryFromOrders(orders: Array<{ items?: unknown }>): string | null {
+  const lines = flattenItemLines(orders)
+  if (lines.length === 0) return null
+  const named = lines.map((l) => l.name).filter(Boolean)
+  if (named.length === 0) return '-'
+  const first = named[0]
+  if (lines.length === 1) return first
+  return `${first} 외 ${lines.length - 1}건`
 }
 
 export default function MonthlyOrderAccordion({ brandId, onClose }: Props) {
@@ -61,7 +103,9 @@ export default function MonthlyOrderAccordion({ brandId, onClose }: Props) {
       const [{ data: monthRows }, { data: hqMonthRows }] = await Promise.all([
         supabase
           .from('brand_orders')
-          .select('id, total_amount, status, created_at, owner_name, salon_name, profile_id, profiles(full_name)')
+          .select(
+            'id, batch_id, brand_id, total_amount, status, created_at, owner_name, salon_name, items, brands(name), profile_id, profiles(full_name)',
+          )
           .eq('brand_id', brandId)
           .gte('created_at', thisMonthIso)
           .order('created_at', { ascending: false }),
@@ -73,19 +117,80 @@ export default function MonthlyOrderAccordion({ brandId, onClose }: Props) {
           .order('created_at', { ascending: false }),
       ])
 
-      const listA = (monthRows || []).map((o: any) => {
-        const profileRef = o.profiles
-        const profileName = Array.isArray(profileRef) ? profileRef[0]?.full_name : profileRef?.full_name
-        return {
-          id: `A-${o.id}`,
-          created_at: o.created_at,
-          owner_name: profileName || o.owner_name || '원장님',
-          salon_name: o.salon_name ? String(o.salon_name) : null,
-          amount: Math.trunc(Number(o.total_amount) || 0),
-          status: o.status || 'pending',
-          track: 'A' as const,
+      const seedRows = (monthRows || []) as any[]
+      const batchIds = Array.from(
+        new Set(
+          seedRows
+            .map((o) => (o.batch_id != null && String(o.batch_id) ? String(o.batch_id) : null))
+            .filter((id): id is string => Boolean(id)),
+        ),
+      )
+
+      let siblingRows: any[] = []
+      if (batchIds.length) {
+        const { data } = await supabase
+          .from('brand_orders')
+          .select(
+            'id, batch_id, brand_id, total_amount, status, created_at, owner_name, salon_name, items, brands(name), profiles(full_name)',
+          )
+          .in('batch_id', batchIds)
+        siblingRows = data || []
+      }
+
+      const byBatch: Record<string, any[]> = {}
+      for (const o of siblingRows) {
+        const bid = String(o.batch_id || '')
+        if (!bid) continue
+        if (!byBatch[bid]) byBatch[bid] = []
+        byBatch[bid].push(o)
+      }
+
+      const seenBatches = new Set<string>()
+      const listA: MonthOrderRow[] = []
+
+      for (const o of seedRows) {
+        const bid = o.batch_id != null && String(o.batch_id) ? String(o.batch_id) : null
+        if (bid) {
+          if (seenBatches.has(bid)) continue
+          seenBatches.add(bid)
+          const group = byBatch[bid]?.length ? byBatch[bid] : [o]
+          const current = group.find((g) => String(g.brand_id) === String(brandId)) || null
+          const primary = current || group[0]
+          const brandBadges = Array.from(
+            new Set(
+              group
+                .map((g) => brandNameFromRow(g))
+                .filter((n): n is string => Boolean(n)),
+            ),
+          )
+          listA.push({
+            id: `A-batch-${bid}`,
+            created_at: current?.created_at || primary.created_at,
+            owner_name: profileNameFromRow(primary),
+            salon_name: primary.salon_name ? String(primary.salon_name) : null,
+            amount: Math.trunc(
+              group.reduce((sum, g) => sum + (Number(g.total_amount) || 0), 0),
+            ),
+            status: (current || primary).status || 'pending',
+            track: 'A',
+            brandBadges,
+            itemsSummary: itemsSummaryFromOrders(group),
+          })
+        } else {
+          const badge = brandNameFromRow(o)
+          listA.push({
+            id: `A-${o.id}`,
+            created_at: o.created_at,
+            owner_name: profileNameFromRow(o),
+            salon_name: o.salon_name ? String(o.salon_name) : null,
+            amount: Math.trunc(Number(o.total_amount) || 0),
+            status: o.status || 'pending',
+            track: 'A',
+            brandBadges: badge ? [badge] : undefined,
+            itemsSummary: itemsSummaryFromOrders([o]),
+          })
         }
-      })
+      }
 
       // 트랙B: profile_id → profiles.auth_id → users.name / users.id → salons.name
       const rawHqOrders = hqMonthRows || []
@@ -210,12 +315,59 @@ export default function MonthlyOrderAccordion({ brandId, onClose }: Props) {
                 {row.track}
               </span>
               <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <span style={{ color: '#fff', fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {row.salon_name || '살롱'}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, minWidth: 0, flexWrap: 'wrap' }}>
+                  <span
+                    style={{
+                      color: '#fff',
+                      fontSize: 13,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {row.salon_name || '살롱'}
+                  </span>
+                  {(row.brandBadges || []).map((b) => (
+                    <span
+                      key={b}
+                      style={{
+                        fontSize: 8,
+                        padding: '1px 5px',
+                        borderRadius: 999,
+                        flexShrink: 0,
+                        background: 'rgba(201,169,110,0.12)',
+                        color: GOLD,
+                        border: '1px solid rgba(201,169,110,0.25)',
+                      }}
+                    >
+                      {b}
+                    </span>
+                  ))}
                 </span>
-                <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <span
+                  style={{
+                    color: 'rgba(255,255,255,0.45)',
+                    fontSize: 11,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {row.owner_name || '원장'}
                 </span>
+                {row.itemsSummary ? (
+                  <span
+                    style={{
+                      color: SUB,
+                      fontSize: 10,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {row.itemsSummary}
+                  </span>
+                ) : null}
               </span>
               <span style={{ color: cancelled ? SUB : (row.track === 'A' ? GOLD : PURPLE), flexShrink: 0 }}>
                 {cancelled ? '-' : ''}₩{row.amount.toLocaleString()}

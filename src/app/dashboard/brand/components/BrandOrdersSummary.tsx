@@ -177,7 +177,7 @@ export default function BrandOrdersSummary({ myBrands, selectedBrandId, onBrandC
         .order('created_at', { ascending: false }),
       supabase
         .from('hq_stock_orders')
-        .select('id, brand_id, final_amount, status, ordered_at, created_at, owner_name, salon_name, items')
+        .select('id, brand_id, final_amount, status, ordered_at, created_at, items, profile_id')
         .in('brand_id', brandIds)
         .gte('created_at', startIso)
         .lt('created_at', endIso)
@@ -197,15 +197,62 @@ export default function BrandOrdersSummary({ myBrands, selectedBrandId, onBrandC
         cancelled: st === 'cancelled' || st === '취소',
       }
     })
-    const listB: OrderLine[] = (bRows || []).map((o: Record<string, unknown>) => {
+    // 트랙B: profile_id → profiles.auth_id → users.name / users.id → salons.name
+    const rawHq = bRows || []
+    const hqProfileIds = Array.from(
+      new Set(rawHq.map((o: { profile_id?: string }) => String(o.profile_id || '')).filter(Boolean)),
+    )
+    const profileIdToAuthId: Record<string, string> = {}
+    const authIdToUserName: Record<string, string> = {}
+    const authIdToUserId: Record<string, string> = {}
+    const userIdToSalonName: Record<string, string> = {}
+    if (hqProfileIds.length) {
+      const { data: profRows } = await supabase
+        .from('profiles')
+        .select('id, auth_id')
+        .in('id', hqProfileIds)
+      for (const p of profRows || []) {
+        if (p.id && p.auth_id) profileIdToAuthId[String(p.id)] = String(p.auth_id)
+      }
+      const authIds = Array.from(new Set(Object.values(profileIdToAuthId)))
+      if (authIds.length) {
+        const { data: userRows } = await supabase
+          .from('users')
+          .select('id, auth_id, name')
+          .in('auth_id', authIds)
+        for (const u of userRows || []) {
+          const aid = String((u as { auth_id?: string }).auth_id || '')
+          if (!aid) continue
+          authIdToUserName[aid] = String((u as { name?: string }).name || '원장')
+          authIdToUserId[aid] = String(u.id)
+        }
+        const userIds = Array.from(new Set(Object.values(authIdToUserId)))
+        if (userIds.length) {
+          const { data: salonRows } = await supabase
+            .from('salons')
+            .select('owner_id, name')
+            .in('owner_id', userIds)
+          for (const s of salonRows || []) {
+            const oid = String((s as { owner_id?: string }).owner_id || '')
+            if (oid) userIdToSalonName[oid] = String((s as { name?: string }).name || '')
+          }
+        }
+      }
+    }
+
+    const listB: OrderLine[] = rawHq.map((o: Record<string, unknown>) => {
       const st = String(o.status || '')
+      const pid = String(o.profile_id || '')
+      const authId = profileIdToAuthId[pid] || ''
+      const userId = authId ? authIdToUserId[authId] || '' : ''
+      const ownerName = (authId && authIdToUserName[authId]) || '원장'
       return {
         id: `B-${o.id}`,
         created_at: String(o.ordered_at || o.created_at),
         track: 'B' as const,
         brand_id: String(o.brand_id),
         brand_name: brandMap[String(o.brand_id)] || '-',
-        owner_name: String(o.owner_name || o.salon_name || '원장'),
+        owner_name: ownerName,
         products: formatItems(o.items),
         amount: Math.trunc(Number(o.final_amount) || 0),
         cancelled: st === 'cancelled' || st === '취소',

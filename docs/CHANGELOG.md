@@ -3,6 +3,14 @@
 
 ---
 
+
+## 2026-07-26
+
+- **fix: hq_stock_orders 400에러 수정 + brand_orders RLS 확장 + 샵 발주랭킹 신규**
+  - `BrandOrdersSummary.tsx`, `BrandInventoryFulfillment.tsx`: hq_stock_orders select에서 존재하지 않는 owner_name/salon_name 컬럼 제거(400에러 수정), profile_id 체인으로 대체
+  - brand_orders RLS "brand can select own orders"에 brand_members 조건 추가 — 소유자 뿐 아니라 멀티브랜드 멤버도 형제 브랜드 배치 데이터 조회 가능하도록 수정
+  - `MonthlyOrderAccordion.tsx`: batch_id 기준으로 여러 브랜드 섞인 발주를 한 줄로 그룹핑(브랜드뱃지 나열+금액합산+상품요약)
+  - `ShopOrderRanking.tsx` 신규: 홈 대시보드에 이달 샵(원장)별 발주 랭킹 — 트랙A배치+트랙A레거시+트랙B 합산, 상위10 가로막대그래프+전체 스크롤리스트
 ## 2026-07-25
 
 - **refactor: 세금계산서 탭 printInvoice 제거 및 A4명세서로 일원화**

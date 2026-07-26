@@ -5,6 +5,7 @@ import type { CSSProperties } from 'react'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import MonthlyOrderAccordion from '../components/MonthlyOrderAccordion'
 import GroupRevenueChart from '../components/GroupRevenueChart'
+import ShopOrderRanking from '../components/ShopOrderRanking'
 const CARD: CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: 12, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
@@ -270,6 +271,9 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
       )}
       {companyId && brandId ? (
         <GroupRevenueChart companyId={companyId} hubBrandId={brandId} />
+      ) : null}
+      {companyId && brandId ? (
+        <ShopOrderRanking companyId={companyId} hubBrandId={brandId} />
       ) : null}
       <div style={{ ...CARD, marginBottom: 12 }}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>최근 30일 재고발주 매출</div>
