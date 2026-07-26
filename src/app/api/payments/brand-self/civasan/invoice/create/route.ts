@@ -3,7 +3,6 @@ import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 import { formEncode, parsePayAppResponse, PAYAPP_API_URL } from '@/lib/payments/payappUtil'
 
-const CIVASAN_BRAND_ID = '60413ded-91f4-4004-b677-ae684cb0677e'
 const MIN_AMOUNT = 1000
 
 async function markInvoicePaid(
@@ -34,6 +33,7 @@ export async function POST(req: NextRequest) {
     .select('id, phone, role, origin_track')
     .eq('auth_id', user.id)
     .maybeSingle()
+
   if (!userRow?.id || userRow.role !== 'owner') {
     return NextResponse.json({ ok: false, error: 'owner_only' }, { status: 403 })
   }
@@ -46,12 +46,12 @@ export async function POST(req: NextRequest) {
 
   const { data: invoice } = await supabase
     .from('brand_billing_invoices')
-    .select('id, brand_id, owner_id, total_amount, status, billing_month')
+    .select('id, company_id, owner_id, total_amount, status, billing_month')
     .eq('id', invoiceId)
     .eq('owner_id', profile.id)
     .maybeSingle()
 
-  if (!invoice?.id || invoice.brand_id !== CIVASAN_BRAND_ID) {
+  if (!invoice?.id || !invoice.company_id) {
     return NextResponse.json({ ok: false, error: 'invoice_not_found' }, { status: 404 })
   }
   if (invoice.status === 'paid') {
@@ -66,14 +66,15 @@ export async function POST(req: NextRequest) {
   const svc = tryCreateServiceClient()
   if (!svc) return NextResponse.json({ ok: false, error: 'service_unavailable' }, { status: 500 })
 
-  const { data: brandRow } = await svc
-    .from('brands')
+  const { data: companyRow } = await svc
+    .from('brand_companies')
     .select('id, name, payapp_active, payapp_user_id, payapp_key, payapp_linkval')
-    .eq('id', CIVASAN_BRAND_ID)
+    .eq('id', invoice.company_id)
     .maybeSingle()
-  if (!brandRow?.id) return NextResponse.json({ ok: false, error: 'brand_not_found' }, { status: 404 })
 
-  const payappActive = Boolean((brandRow as { payapp_active?: boolean }).payapp_active)
+  if (!companyRow?.id) return NextResponse.json({ ok: false, error: 'company_not_found' }, { status: 404 })
+
+  const payappActive = Boolean((companyRow as { payapp_active?: boolean }).payapp_active)
   const nowIso = new Date().toISOString()
   const monthLabel = String(invoice.billing_month).slice(0, 7)
 
@@ -81,7 +82,7 @@ export async function POST(req: NextRequest) {
     const { data: intent, error: intentErr } = await svc
       .from('brand_payment_intents')
       .insert({
-        brand_id: CIVASAN_BRAND_ID,
+        company_id: invoice.company_id,
         owner_id: profile.id,
         kind: 'invoice',
         invoice_id: invoiceId,
@@ -100,22 +101,22 @@ export async function POST(req: NextRequest) {
     }
 
     await markInvoicePaid(svc, invoiceId)
-
     return NextResponse.json({ ok: true, demo: true, intent_id: intent.id })
   }
 
-  const userid = String((brandRow as { payapp_user_id?: string | null }).payapp_user_id || '').trim()
-  const linkkey = String((brandRow as { payapp_key?: string | null }).payapp_key || '').trim()
-  const linkval = String((brandRow as { payapp_linkval?: string | null }).payapp_linkval || '').trim()
-  const shopname = String((brandRow as { name?: string | null }).name || '시바산').trim()
+  const userid = String((companyRow as { payapp_user_id?: string | null }).payapp_user_id || '').trim()
+  const linkkey = String((companyRow as { payapp_key?: string | null }).payapp_key || '').trim()
+  const linkval = String((companyRow as { payapp_linkval?: string | null }).payapp_linkval || '').trim()
+  const shopname = String((companyRow as { name?: string | null }).name || '오렌').trim()
+
   if (!userid || !linkkey || !linkval) {
-    return NextResponse.json({ ok: false, error: 'brand_payapp_credentials_missing' }, { status: 500 })
+    return NextResponse.json({ ok: false, error: 'company_payapp_credentials_missing' }, { status: 500 })
   }
 
   const { data: intent, error: intentErr } = await svc
     .from('brand_payment_intents')
     .insert({
-      brand_id: CIVASAN_BRAND_ID,
+      company_id: invoice.company_id,
       owner_id: profile.id,
       kind: 'invoice',
       invoice_id: invoiceId,
@@ -164,8 +165,8 @@ export async function POST(req: NextRequest) {
     body: formEncode(postdata),
     cache: 'no-store',
   })
-  const parsed = parsePayAppResponse(await res.text())
 
+  const parsed = parsePayAppResponse(await res.text())
   if (parsed.state !== '1' || !parsed.mul_no || !parsed.payurl) {
     await svc.from('brand_payment_intents').update({ status: 'failed', updated_at: nowIso }).eq('id', intent.id)
     return NextResponse.json({ ok: false, error: parsed.errorMessage || 'payapp_failed' }, { status: 502 })

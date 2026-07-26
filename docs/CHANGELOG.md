@@ -6,6 +6,10 @@
 
 ## 2026-07-26
 
+### 정산/결제 원장통합 재설계 (묶음2/4)
+- invoice/create/route.ts: CIVASAN_BRAND_ID 하드코딩 제거, brand_billing_invoices.company_id 기준으로 brand_companies에서 PayApp 자격증명 조회하도록 전환
+- webhook/route.ts: intent를 먼저 조회 후 kind별로 검증분기 — invoice(청구서결제)는 company_id 기준 brand_companies 자격증명, tier(등급구매)는 기존 CIVASAN 브랜드 자격증명 그대로 유지(범위밖, 변경없음)
+
 ### 정산/결제 원장통합 재설계 (묶음1/4)
 - aggregateBrandBilling.ts: brandId 파라미터 → companyId로 변경, 컴퍼니 소속 전체 브랜드 orders 합산 방식으로 재작성
 - cron/aggregate-brand-billing/route.ts: CIVASAN_BRAND_ID 하드코딩 제거, brand_companies 전체 순회 방식으로 변경

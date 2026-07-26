@@ -6,7 +6,8 @@ const CIVASAN_BRAND_ID = '60413ded-91f4-4004-b677-ae684cb0677e'
 
 type BrandPaymentIntentRow = {
   id: string
-  brand_id: string
+  brand_id: string | null
+  company_id: string | null
   owner_id: string
   tier_package_id: string | null
   invoice_id: string | null
@@ -79,44 +80,60 @@ export async function POST(req: NextRequest) {
     return new NextResponse('SUCCESS', { status: 200 })
   }
 
-  const { data: brandRow } = await svc
-    .from('brands')
-    .select('payapp_user_id, payapp_key, payapp_linkval')
-    .eq('id', CIVASAN_BRAND_ID)
-    .maybeSingle()
-
-  const userid = String(brandRow?.payapp_user_id || '').trim()
-  const linkkey = String(brandRow?.payapp_key || '').trim()
-  const linkval = String(brandRow?.payapp_linkval || '').trim()
-
-  const checkUser = data.userid === userid
-  const checkKey = decodeURIComponent(data.linkkey?.trim() ?? '') === linkkey
-  const checkVal = decodeURIComponent(data.linkval?.trim() ?? '') === linkval
-
-  if (!checkUser || !checkKey || !checkVal) {
-    return new NextResponse('SUCCESS', { status: 200 })
-  }
-
+  // 1) intent 먼저 찾기 (kind에 따라 검증 대상이 컴퍼니/브랜드로 갈리므로)
   let intent: BrandPaymentIntentRow | null = null
 
   if (intentId) {
     const { data: found } = await svc
       .from('brand_payment_intents')
-      .select('id, brand_id, owner_id, tier_package_id, invoice_id, kind, amount, status, provider_trade_id, is_demo')
+      .select('id, brand_id, company_id, owner_id, tier_package_id, invoice_id, kind, amount, status, provider_trade_id, is_demo')
       .eq('id', intentId)
       .maybeSingle()
     intent = (found as BrandPaymentIntentRow | null) ?? null
   } else if (mulNo) {
     const { data: found } = await svc
       .from('brand_payment_intents')
-      .select('id, brand_id, owner_id, tier_package_id, invoice_id, kind, amount, status, provider_trade_id, is_demo')
-      .eq('brand_id', CIVASAN_BRAND_ID)
+      .select('id, brand_id, company_id, owner_id, tier_package_id, invoice_id, kind, amount, status, provider_trade_id, is_demo')
       .eq('provider_trade_id', mulNo)
       .maybeSingle()
     intent = (found as BrandPaymentIntentRow | null) ?? null
   }
 
-  if (!intent || intent.brand_id !== CIVASAN_BRAND_ID) {
+  if (!intent) {
+    return new NextResponse('SUCCESS', { status: 200 })
+  }
+
+  // 2) kind별로 검증 대상 자격증명 조회 (invoice=컴퍼니 / tier=브랜드(CIVASAN, 범위밖 유지))
+  let userid = ''
+  let linkkey = ''
+  let linkval = ''
+
+  if (intent.kind === 'invoice') {
+    if (!intent.company_id) return new NextResponse('SUCCESS', { status: 200 })
+    const { data: companyRow } = await svc
+      .from('brand_companies')
+      .select('payapp_user_id, payapp_key, payapp_linkval')
+      .eq('id', intent.company_id)
+      .maybeSingle()
+    userid = String(companyRow?.payapp_user_id || '').trim()
+    linkkey = String(companyRow?.payapp_key || '').trim()
+    linkval = String(companyRow?.payapp_linkval || '').trim()
+  } else {
+    const { data: brandRow } = await svc
+      .from('brands')
+      .select('payapp_user_id, payapp_key, payapp_linkval')
+      .eq('id', CIVASAN_BRAND_ID)
+      .maybeSingle()
+    userid = String(brandRow?.payapp_user_id || '').trim()
+    linkkey = String(brandRow?.payapp_key || '').trim()
+    linkval = String(brandRow?.payapp_linkval || '').trim()
+  }
+
+  const checkUser = data.userid === userid
+  const checkKey = decodeURIComponent(data.linkkey?.trim() ?? '') === linkkey
+  const checkVal = decodeURIComponent(data.linkval?.trim() ?? '') === linkval
+
+  if (!checkUser || !checkKey || !checkVal) {
     return new NextResponse('SUCCESS', { status: 200 })
   }
 
@@ -187,7 +204,6 @@ export async function POST(req: NextRequest) {
     return new NextResponse('SUCCESS', { status: 200 })
   }
 
-  // 차액결제: intent.amount === (목표정가 − 보유정가), 전액이면 목표정가
   const currentPrice = await resolveOwnedTierPrice(svc, intent.owner_id)
   const expectedCharge = computeTierUpgradeCharge(currentPrice, targetPrice)
   if (expectedCharge == null || expectedCharge !== Number(intent.amount)) {
@@ -205,7 +221,6 @@ export async function POST(req: NextRequest) {
 
   const tierName = String(pkg.tier_name)
 
-  // purchase_amount = 목표 등급 정가 / 실결제액은 brand_payment_intents.amount
   await svc.from('brand_owner_grades').upsert(
     {
       brand_id: CIVASAN_BRAND_ID,
