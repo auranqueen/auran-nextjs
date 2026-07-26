@@ -6,6 +6,10 @@
 
 ## 2026-07-26
 
+### 정산/결제 원장통합 재설계 (묶음4/4, 완료)
+- migration 131 생성(기록용, Supabase에서 이미 직접 실행됨): brand_billing_invoices/brand_payment_intents company_id 통합, brand_companies PayApp+로고 컬럼, 컴퍼니 기준 RLS SELECT 정책 2개 추가
+- 정산통합 재설계 전체 완료: 청구서 계산(크론)→결제요청→웹훅검증→원장화면→브랜드사 정산탭까지 전 구간 브랜드 단위에서 컴퍼니 단위로 전환
+
 ### 정산/결제 원장통합 재설계 (묶음3/4)
 - sync/route.ts: brand_id 파라미터 → company_id로 변경, onConflict를 company_id,owner_id,billing_month로 수정
 - owner/brand-orders/invoice/page.tsx: CIVASAN_BRAND_ID는 진입점으로만 유지, 그 소속 company_id를 찾아 회사 전체 브랜드의 발주를 합산해서 보여주도록 변경
