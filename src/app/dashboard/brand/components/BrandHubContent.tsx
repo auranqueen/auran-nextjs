@@ -17,7 +17,7 @@ const BrandTabReturns = dynamic(() => import('../tabs/BrandTabReturns'), { ssr: 
 const BrandTabTierPackages = dynamic(() => import('../tabs/BrandTabTierPackages'), { ssr: false })
 const BrandTabSettlement = dynamic(() => import('../tabs/BrandTabSettlement'), { ssr: false })
 type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages'
-type BrandOption = { id: string; name: string; role: string }
+type BrandOption = { id: string; name: string; role: string; slug?: string | null }
 interface Props {
   brandId: string | null
   brandName: string
@@ -38,7 +38,7 @@ export default function BrandHubContent({
 }: Props) {
   const [mainTab, setMainTab] = useState<MainTab>('home')
   const [helpOpen, setHelpOpen] = useState(false)
-  const brandOpts = myBrands.map(({ id, name }) => ({ id, name }))
+  const brandOpts = myBrands.map(({ id, name, slug }) => ({ id, name, slug }))
   const SB_SECTIONS = [
     {
       label: '실시간',

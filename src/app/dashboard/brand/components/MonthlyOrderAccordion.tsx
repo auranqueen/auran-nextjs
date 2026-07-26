@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { resolveOwnerSalonNames } from '@/lib/brand/resolveOwnerSalonNames'
 
 const CARD: CSSProperties = {
   background: 'rgba(255,255,255,0.03)',
@@ -197,53 +198,15 @@ export default function MonthlyOrderAccordion({ brandId, onClose }: Props) {
       const hqProfileIds = Array.from(
         new Set(rawHqOrders.map((o: { profile_id?: string }) => String(o.profile_id || '')).filter(Boolean)),
       )
-      const profileIdToAuthId: Record<string, string> = {}
-      const authIdToUserName: Record<string, string> = {}
-      const authIdToUserId: Record<string, string> = {}
-      const userIdToSalonName: Record<string, string> = {}
-      if (hqProfileIds.length) {
-        const { data: profRows } = await supabase
-          .from('profiles')
-          .select('id, auth_id')
-          .in('id', hqProfileIds)
-        for (const p of profRows || []) {
-          if (p.id && p.auth_id) profileIdToAuthId[String(p.id)] = String(p.auth_id)
-        }
-        const authIds = Array.from(new Set(Object.values(profileIdToAuthId)))
-        if (authIds.length) {
-          const { data: userRows } = await supabase
-            .from('users')
-            .select('id, auth_id, name')
-            .in('auth_id', authIds)
-          for (const u of userRows || []) {
-            const aid = String((u as { auth_id?: string }).auth_id || '')
-            if (!aid) continue
-            authIdToUserName[aid] = String((u as { name?: string }).name || '원장')
-            authIdToUserId[aid] = String(u.id)
-          }
-          const userIds = Array.from(new Set(Object.values(authIdToUserId)))
-          if (userIds.length) {
-            const { data: salonRows } = await supabase
-              .from('salons')
-              .select('owner_id, name')
-              .in('owner_id', userIds)
-            for (const s of salonRows || []) {
-              const oid = String((s as { owner_id?: string }).owner_id || '')
-              if (oid) userIdToSalonName[oid] = String((s as { name?: string }).name || '')
-            }
-          }
-        }
-      }
+      const { ownerNameByProfileId, salonNameByProfileId } = await resolveOwnerSalonNames(supabase, hqProfileIds)
 
       const listB = rawHqOrders.map((o: any) => {
         const pid = String(o.profile_id || '')
-        const authId = profileIdToAuthId[pid] || ''
-        const userId = authId ? authIdToUserId[authId] || '' : ''
         return {
           id: `B-${o.id}`,
           created_at: o.ordered_at || o.created_at,
-          owner_name: (authId && authIdToUserName[authId]) || '원장',
-          salon_name: (userId && userIdToSalonName[userId]) || null,
+          owner_name: ownerNameByProfileId[pid] || '원장',
+          salon_name: salonNameByProfileId[pid] || null,
           amount: Math.trunc(Number(o.final_amount) || 0),
           status: o.status || '결제대기',
           track: 'B' as const,

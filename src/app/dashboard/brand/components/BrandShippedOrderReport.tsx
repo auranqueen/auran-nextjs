@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { resolveOwnerSalonNames } from '@/lib/brand/resolveOwnerSalonNames'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -19,6 +20,7 @@ type ReportRow = {
   status: string
   total_amount: number
   shipped_at: string
+  track: 'A' | 'B'
   brandLines: Array<{ brand_name: string; summary: string }>
 }
 
@@ -79,12 +81,13 @@ function brandNameFromJoin(brands: unknown): string {
 }
 
 function downloadCsv(rows: ReportRow[], filename: string) {
-  const header = ['발송일', '주문번호', '샵', '원장', '브랜드상품요약', '합계', '상태']
+  const header = ['발송일', '주문번호', '트랙', '샵', '원장', '브랜드상품요약', '합계', '상태']
   const lines = rows.map((r) => {
     const brandSummary = r.brandLines.map((b) => `${b.brand_name}: ${b.summary}`).join(' / ')
     return [
       new Date(r.shipped_at).toLocaleDateString('ko-KR'),
       r.order_no,
+      r.track,
       r.salon_name,
       r.owner_name,
       brandSummary.replace(/"/g, '""'),
@@ -103,12 +106,13 @@ function downloadCsv(rows: ReportRow[], filename: string) {
 }
 
 function openStatementLinks(rows: ReportRow[]) {
-  const links = rows
+  const aRows = rows.filter((r) => r.track === 'A')
+  const links = aRows
     .map((r) => `<li><a href="/dashboard/brand/print/order-batch/${r.id}" target="_blank" rel="noopener noreferrer">${r.order_no || r.id} — ${r.salon_name || '-'} / ${r.owner_name || '-'}</a></li>`)
     .join('')
   const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>명세서 링크</title>
 <style>body{font-family:sans-serif;padding:24px;background:#111;color:#eee}a{color:#C9A96E}li{margin:8px 0}</style></head>
-<body><h1>명세서 링크 (${rows.length})</h1><ul>${links || '<li>없음</li>'}</ul></body></html>`
+<body><h1>명세서 링크 (${aRows.length})</h1><ul>${links || '<li>없음</li>'}</ul></body></html>`
   const w = window.open('', '_blank')
   if (w) {
     w.document.write(html)
@@ -141,7 +145,7 @@ export default function BrandShippedOrderReport({ companyId, hubBrandId }: Props
       try {
         const { data: brandRows } = await supabase
           .from('brands')
-          .select('id')
+          .select('id, name')
           .eq('company_id', companyId)
         let brandIds = (brandRows || []).map((b: { id: string }) => String(b.id))
         if (brandIds.length === 0 && hubBrandId) brandIds = [hubBrandId]
@@ -149,7 +153,12 @@ export default function BrandShippedOrderReport({ companyId, hubBrandId }: Props
           if (!cancelled) setRows([])
           return
         }
+        const brandIdToName: Record<string, string> = {}
+        for (const b of brandRows || []) {
+          brandIdToName[String((b as { id: string }).id)] = String((b as { name?: string }).name || '브랜드')
+        }
 
+        // Track A
         const { data: orderRows, error: orderErr } = await supabase
           .from('brand_orders')
           .select('id, batch_id, brand_id, items, promo_applied, total_amount, shipped_at, brands(name)')
@@ -163,59 +172,98 @@ export default function BrandShippedOrderReport({ companyId, hubBrandId }: Props
         if (orderErr) throw orderErr
         const orders = orderRows || []
         const batchIds = Array.from(new Set(orders.map((o: { batch_id: string }) => String(o.batch_id)).filter(Boolean)))
-        if (batchIds.length === 0) {
-          if (!cancelled) setRows([])
-          return
+
+        let builtA: ReportRow[] = []
+        if (batchIds.length > 0) {
+          const { data: batches, error: batchErr } = await supabase
+            .from('brand_order_batches')
+            .select('id, order_no, owner_name, salon_name, total_amount, status, created_at, approved_at')
+            .in('id', batchIds)
+            .in('status', ['배송중', '배송완료'])
+
+          if (batchErr) throw batchErr
+
+          const ordersByBatch = new Map<string, typeof orders>()
+          for (const o of orders) {
+            const bid = String((o as { batch_id: string }).batch_id)
+            if (!ordersByBatch.has(bid)) ordersByBatch.set(bid, [])
+            ordersByBatch.get(bid)!.push(o)
+          }
+
+          builtA = (batches || []).map((b: Record<string, unknown>) => {
+            const id = String(b.id)
+            const batchOrders = ordersByBatch.get(id) || []
+            let shippedAt = ''
+            for (const o of batchOrders) {
+              const s = String((o as { shipped_at?: string }).shipped_at || '')
+              if (s && (!shippedAt || s > shippedAt)) shippedAt = s
+            }
+            const byBrand = new Map<string, string[]>()
+            for (const o of batchOrders) {
+              const name = brandNameFromJoin((o as { brands?: unknown }).brands)
+              const line = formatItemLine((o as { items?: unknown }).items)
+              if (!byBrand.has(name)) byBrand.set(name, [])
+              byBrand.get(name)!.push(line)
+            }
+            const brandLines = Array.from(byBrand.entries()).map(([brand_name, summaries]) => ({
+              brand_name,
+              summary: summaries.filter((s) => s && s !== '-').join(' · ') || '-',
+            }))
+            return {
+              id,
+              order_no: String(b.order_no || ''),
+              owner_name: String(b.owner_name || ''),
+              salon_name: String(b.salon_name || ''),
+              status: String(b.status || ''),
+              total_amount: Math.trunc(Number(b.total_amount) || 0),
+              shipped_at: shippedAt || String(b.approved_at || b.created_at || ''),
+              track: 'A' as const,
+              brandLines,
+            }
+          })
         }
 
-        const { data: batches, error: batchErr } = await supabase
-          .from('brand_order_batches')
-          .select('id, order_no, owner_name, salon_name, total_amount, status, created_at, approved_at')
-          .in('id', batchIds)
-          .in('status', ['배송중', '배송완료'])
+        // Track B — ship sets status + updated_at
+        const { data: hqRows, error: hqErr } = await supabase
+          .from('hq_stock_orders')
+          .select('id, brand_id, final_amount, status, items, updated_at, ordered_at, profile_id, brands(name)')
+          .in('brand_id', brandIds)
+          .in('status', ['배송완료', '구매확정'])
+          .gte('updated_at', periodMeta.startIso)
+          .lt('updated_at', periodMeta.endIso)
+          .limit(2000)
 
-        if (batchErr) throw batchErr
+        if (hqErr) throw hqErr
+        const rawHq = hqRows || []
 
-        const ordersByBatch = new Map<string, typeof orders>()
-        for (const o of orders) {
-          const bid = String((o as { batch_id: string }).batch_id)
-          if (!ordersByBatch.has(bid)) ordersByBatch.set(bid, [])
-          ordersByBatch.get(bid)!.push(o)
-        }
+        const hqProfileIds = Array.from(
+          new Set(rawHq.map((o: { profile_id?: string }) => String(o.profile_id || '')).filter(Boolean)),
+        )
+        const { ownerNameByProfileId, salonNameByProfileId } = await resolveOwnerSalonNames(supabase, hqProfileIds)
 
-        const built: ReportRow[] = (batches || []).map((b: Record<string, unknown>) => {
-          const id = String(b.id)
-          const batchOrders = ordersByBatch.get(id) || []
-          let shippedAt = ''
-          for (const o of batchOrders) {
-            const s = String((o as { shipped_at?: string }).shipped_at || '')
-            if (s && (!shippedAt || s > shippedAt)) shippedAt = s
-          }
-          const byBrand = new Map<string, string[]>()
-          for (const o of batchOrders) {
-            const name = brandNameFromJoin((o as { brands?: unknown }).brands)
-            const line = formatItemLine((o as { items?: unknown }).items)
-            if (!byBrand.has(name)) byBrand.set(name, [])
-            byBrand.get(name)!.push(line)
-          }
-          const brandLines = Array.from(byBrand.entries()).map(([brand_name, summaries]) => ({
-            brand_name,
-            summary: summaries.filter((s) => s && s !== '-').join(' · ') || '-',
-          }))
+        const builtB: ReportRow[] = (rawHq as Array<Record<string, unknown>>).map((o) => {
+          const id = String(o.id)
+          const pid = String(o.profile_id || '')
+          const brandId = String(o.brand_id || '')
+          const brandName = brandNameFromJoin(o.brands) !== '브랜드'
+            ? brandNameFromJoin(o.brands)
+            : (brandIdToName[brandId] || '브랜드')
           return {
-            id,
-            order_no: String(b.order_no || ''),
-            owner_name: String(b.owner_name || ''),
-            salon_name: String(b.salon_name || ''),
-            status: String(b.status || ''),
-            total_amount: Math.trunc(Number(b.total_amount) || 0),
-            shipped_at: shippedAt || String(b.approved_at || b.created_at || ''),
-            brandLines,
+            id: `B-${id}`,
+            order_no: `B-${id.slice(0, 8).toUpperCase()}`,
+            owner_name: ownerNameByProfileId[pid] || '원장',
+            salon_name: salonNameByProfileId[pid] || '',
+            status: String(o.status || ''),
+            total_amount: Math.trunc(Number(o.final_amount) || 0),
+            shipped_at: String(o.updated_at || o.ordered_at || ''),
+            track: 'B' as const,
+            brandLines: [{ brand_name: brandName, summary: formatItemLine(o.items) }],
           }
         })
 
-        built.sort((a, b) => (a.shipped_at < b.shipped_at ? 1 : a.shipped_at > b.shipped_at ? -1 : 0))
-        if (!cancelled) setRows(built)
+        const merged = [...builtA, ...builtB]
+        merged.sort((a, b) => (a.shipped_at < b.shipped_at ? 1 : a.shipped_at > b.shipped_at ? -1 : 0))
+        if (!cancelled) setRows(merged)
       } catch (e: unknown) {
         const msg = e instanceof Error ? e.message : '불러오기 실패'
         if (!cancelled) {
@@ -238,6 +286,8 @@ export default function BrandShippedOrderReport({ companyId, hubBrandId }: Props
       (r.owner_name || '').toLowerCase().includes(q),
     )
   }, [rows, shopQuery])
+
+  const filteredA = useMemo(() => filtered.filter((r) => r.track === 'A'), [filtered])
 
   const periodBtn = (key: PeriodKey, label: string) => (
     <button
@@ -311,11 +361,11 @@ export default function BrandShippedOrderReport({ companyId, hubBrandId }: Props
         </button>
         <button
           type="button"
-          disabled={filtered.length === 0}
-          onClick={() => openStatementLinks(filtered)}
+          disabled={filteredA.length === 0}
+          onClick={() => openStatementLinks(filteredA)}
           style={{
-            fontSize: 11, padding: '5px 10px', borderRadius: 6, cursor: filtered.length ? 'pointer' : 'default',
-            border: '0.5px solid rgba(123,94,167,0.5)', background: 'rgba(123,94,167,0.12)', color: '#c4a7e7', opacity: filtered.length ? 1 : 0.4,
+            fontSize: 11, padding: '5px 10px', borderRadius: 6, cursor: filteredA.length ? 'pointer' : 'default',
+            border: '0.5px solid rgba(123,94,167,0.5)', background: 'rgba(123,94,167,0.12)', color: '#c4a7e7', opacity: filteredA.length ? 1 : 0.4,
           }}
         >
           명세서 링크 열기
@@ -331,14 +381,22 @@ export default function BrandShippedOrderReport({ companyId, hubBrandId }: Props
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {filtered.map((r) => {
           const open = previewId === r.id
+          const isA = r.track === 'A'
           return (
             <div key={r.id} style={{ ...CARD, marginBottom: 0 }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-start', justifyContent: 'space-between' }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>
-                    {r.shipped_at ? new Date(r.shipped_at).toLocaleString('ko-KR') : '-'}
-                    <span style={{ margin: '0 6px', opacity: 0.5 }}>|</span>
+                  <div style={{ fontSize: 11, color: SUB, marginBottom: 4, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
+                    <span>{r.shipped_at ? new Date(r.shipped_at).toLocaleString('ko-KR') : '-'}</span>
+                    <span style={{ opacity: 0.5 }}>|</span>
                     <span style={{ color: GOLD }}>{r.order_no || r.id.slice(0, 8)}</span>
+                    <span style={{
+                      fontSize: 10, padding: '1px 6px', borderRadius: 4, fontWeight: 600,
+                      background: isA ? 'rgba(201,169,110,0.18)' : 'rgba(123,94,167,0.22)',
+                      color: isA ? GOLD : '#c4a7e7',
+                    }}>
+                      {r.track}
+                    </span>
                   </div>
                   <div style={{ fontSize: 13, color: TEXT, marginBottom: 6 }}>
                     {r.salon_name || '-'}{' · '}{r.owner_name || '-'}
@@ -364,35 +422,39 @@ export default function BrandShippedOrderReport({ companyId, hubBrandId }: Props
                   </span>
                 </div>
               </div>
-              <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
-                <button
-                  type="button"
-                  onClick={() => setPreviewId(open ? null : r.id)}
-                  style={{
-                    fontSize: 11, padding: '4px 10px', borderRadius: 6, cursor: 'pointer',
-                    border: '0.5px solid rgba(255,255,255,0.12)', background: open ? 'rgba(123,94,167,0.2)' : 'transparent',
-                    color: open ? '#c4a7e7' : SUB,
-                  }}
-                >
-                  미리보기 {open ? '닫기' : ''}
-                </button>
-                <a
-                  href={`/dashboard/brand/print/order-batch/${r.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ fontSize: 11, color: GOLD, textDecoration: 'none' }}
-                >
-                  새창에서 명세서
-                </a>
-              </div>
-              {open && (
-                <div style={{ marginTop: 10 }}>
-                  <iframe
-                    title={`명세서 링크-${r.order_no || r.id}`}
-                    src={`/dashboard/brand/print/order-batch/${r.id}`}
-                    style={{ width: '100%', height: 420, border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, background: '#fff' }}
-                  />
-                </div>
+              {isA && (
+                <>
+                  <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewId(open ? null : r.id)}
+                      style={{
+                        fontSize: 11, padding: '4px 10px', borderRadius: 6, cursor: 'pointer',
+                        border: '0.5px solid rgba(255,255,255,0.12)', background: open ? 'rgba(123,94,167,0.2)' : 'transparent',
+                        color: open ? '#c4a7e7' : SUB,
+                      }}
+                    >
+                      미리보기 {open ? '닫기' : ''}
+                    </button>
+                    <a
+                      href={`/dashboard/brand/print/order-batch/${r.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: 11, color: GOLD, textDecoration: 'none' }}
+                    >
+                      새창에서 명세서
+                    </a>
+                  </div>
+                  {open && (
+                    <div style={{ marginTop: 10 }}>
+                      <iframe
+                        title={`명세서 링크-${r.order_no || r.id}`}
+                        src={`/dashboard/brand/print/order-batch/${r.id}`}
+                        style={{ width: '100%', height: 420, border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, background: '#fff' }}
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )

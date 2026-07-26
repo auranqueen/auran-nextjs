@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { CSSProperties } from 'react'
+import BrandNameBadge from '../components/BrandNameBadge'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
@@ -15,29 +16,29 @@ interface StaffStat {
   emergency: number
   mismatch: number
 }
-interface Props { brandId: string | null }
-export default function BrandReportStaff({ brandId }: Props) {
+interface Props { companyBrandIds: string[]; brandNames: Record<string, string> }
+export default function BrandReportStaff({ companyBrandIds, brandNames }: Props) {
   const supabase = createClient()
   const now = new Date()
   const [yearMonth, setYearMonth] = useState(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`)
   const [stats, setStats] = useState<StaffStat[]>([])
   const [loading, setLoading] = useState(true)
-  const [nightLogs, setNightLogs] = useState<Array<{ staff_name: string; created_at: string; qty: number; product: string }>>([])
+  const [nightLogs, setNightLogs] = useState<Array<{ staff_name: string; created_at: string; qty: number; product: string; brand_id?: string }>>([])
   const loadData = useCallback(async () => {
-    if (!brandId) return
+    if (!companyBrandIds.length) return
     setLoading(true)
     const [ym1, ym2] = yearMonth.split('-').map(Number)
     const startDate = new Date(ym1, ym2-1, 1).toISOString()
     const endDate = new Date(ym1, ym2, 1).toISOString()
     const { data: logs } = await supabase
       .from('brand_stock_logs')
-      .select('type, qty, ref_type, hq_status, staff_name, created_at, brand_inventory(product_name)')
-      .eq('brand_id', brandId)
+      .select('type, qty, ref_type, hq_status, staff_name, created_at, brand_id, brand_inventory(product_name)')
+      .in('brand_id', companyBrandIds)
       .gte('created_at', startDate)
       .lt('created_at', endDate)
     const staffMap: Record<string, StaffStat> = {}
     const nights: typeof nightLogs = []
-    for (const log of (logs || []) as Array<{ type: string; qty: number; ref_type: string; hq_status: string; staff_name: string | null; created_at: string; brand_inventory?: { product_name?: string } | null }>) {
+    for (const log of (logs || []) as Array<{ type: string; qty: number; ref_type: string; hq_status: string; staff_name: string | null; created_at: string; brand_id?: string; brand_inventory?: { product_name?: string } | null }>) {
       const name = log.staff_name || '알 수 없음'
       if (!staffMap[name]) staffMap[name] = { staff_name: name, total_in: 0, total_out: 0, emergency: 0, mismatch: 0 }
       if (log.type === 'in' || log.type === 'lot_in') staffMap[name].total_in += log.qty
@@ -48,13 +49,13 @@ export default function BrandReportStaff({ brandId }: Props) {
       }
       const hour = new Date(log.created_at).getHours()
       if (log.type === 'out' && (hour >= 22 || hour < 6)) {
-        nights.push({ staff_name: name, created_at: log.created_at, qty: log.qty, product: log.brand_inventory?.product_name || '' })
+        nights.push({ staff_name: name, created_at: log.created_at, qty: log.qty, product: log.brand_inventory?.product_name || '', brand_id: log.brand_id })
       }
     }
     setStats(Object.values(staffMap).sort((a, b) => (b.total_in + b.total_out) - (a.total_in + a.total_out)))
     setNightLogs(nights)
     setLoading(false)
-  }, [brandId, yearMonth])
+  }, [companyBrandIds, yearMonth])
   useEffect(() => { void loadData() }, [loadData])
   if (loading) return <div style={{ padding: 20, color: SUB, textAlign: 'center', fontSize: 13 }}>불러오는 중...</div>
   const maxTotal = Math.max(...stats.map(s => s.total_in + s.total_out), 1)
@@ -104,7 +105,10 @@ export default function BrandReportStaff({ brandId }: Props) {
           {nightLogs.map((n, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: i < nightLogs.length-1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, color: TEXT }}>{n.staff_name} · {n.product}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const, marginBottom: 2 }}>
+                  <span style={{ fontSize: 12, color: TEXT }}>{n.staff_name} · {n.product}</span>
+                  {n.brand_id && <BrandNameBadge name={brandNames[n.brand_id]} />}
+                </div>
                 <div style={{ fontSize: 11, color: SUB }}>{new Date(n.created_at).toLocaleString('ko-KR')}</div>
               </div>
               <span style={{ fontSize: 12, color: DANGER, flexShrink: 0 }}>-{n.qty}개</span>

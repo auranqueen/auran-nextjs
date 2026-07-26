@@ -13,6 +13,7 @@ import {
 } from 'chart.js'
 import { Bar } from 'react-chartjs-2'
 import { createClient } from '@/lib/supabase/client'
+import { resolveOwnerSalonNames } from '@/lib/brand/resolveOwnerSalonNames'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
@@ -160,50 +161,12 @@ export default function ShopOrderRanking({ companyId, hubBrandId }: Props) {
         const hqProfileIds = Array.from(
           new Set(rawHqOrders.map((o: { profile_id?: string }) => String(o.profile_id || '')).filter(Boolean)),
         )
-        const profileIdToAuthId: Record<string, string> = {}
-        const authIdToUserName: Record<string, string> = {}
-        const authIdToUserId: Record<string, string> = {}
-        const userIdToSalonName: Record<string, string> = {}
-        if (hqProfileIds.length) {
-          const { data: profRows } = await supabase
-            .from('profiles')
-            .select('id, auth_id')
-            .in('id', hqProfileIds)
-          for (const p of profRows || []) {
-            if (p.id && p.auth_id) profileIdToAuthId[String(p.id)] = String(p.auth_id)
-          }
-          const authIds = Array.from(new Set(Object.values(profileIdToAuthId)))
-          if (authIds.length) {
-            const { data: userRows } = await supabase
-              .from('users')
-              .select('id, auth_id, name')
-              .in('auth_id', authIds)
-            for (const u of userRows || []) {
-              const aid = String((u as { auth_id?: string }).auth_id || '')
-              if (!aid) continue
-              authIdToUserName[aid] = String((u as { name?: string }).name || '원장')
-              authIdToUserId[aid] = String(u.id)
-            }
-            const userIds = Array.from(new Set(Object.values(authIdToUserId)))
-            if (userIds.length) {
-              const { data: salonRows } = await supabase
-                .from('salons')
-                .select('owner_id, name')
-                .in('owner_id', userIds)
-              for (const s of salonRows || []) {
-                const oid = String((s as { owner_id?: string }).owner_id || '')
-                if (oid) userIdToSalonName[oid] = String((s as { name?: string }).name || '')
-              }
-            }
-          }
-        }
+        const { ownerNameByProfileId, salonNameByProfileId } = await resolveOwnerSalonNames(supabase, hqProfileIds)
 
         for (const o of rawHqOrders as Array<{ profile_id?: string; final_amount?: number }>) {
           const pid = String(o.profile_id || '')
-          const authId = profileIdToAuthId[pid] || ''
-          const userId = authId ? authIdToUserId[authId] || '' : ''
-          const owner = (authId && authIdToUserName[authId]) || '원장'
-          const salon = (userId && userIdToSalonName[userId]) || ''
+          const owner = ownerNameByProfileId[pid] || '원장'
+          const salon = salonNameByProfileId[pid] || ''
           addAmount(owner, salon, Math.trunc(Number(o.final_amount) || 0))
         }
 

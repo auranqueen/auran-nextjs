@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { CSSProperties } from 'react'
+import BrandNameBadge from '../components/BrandNameBadge'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
@@ -14,9 +15,10 @@ interface CompareRow {
   hq_approved: number
   logistics_out: number
   diff: number
+  brand_ids: string[]
 }
-interface Props { brandId: string | null }
-export default function BrandReportCompare({ brandId }: Props) {
+interface Props { companyBrandIds: string[]; brandNames: Record<string, string> }
+export default function BrandReportCompare({ companyBrandIds, brandNames }: Props) {
   const supabase = createClient()
   const now = new Date()
   const [yearMonth, setYearMonth] = useState(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`)
@@ -29,34 +31,46 @@ export default function BrandReportCompare({ brandId }: Props) {
   const [emergencyCount, setEmergencyCount] = useState(0)
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const loadData = useCallback(async () => {
-    if (!brandId) return
+    if (!companyBrandIds.length) return
     setLoading(true)
     const [ym1, ym2] = yearMonth.split('-').map(Number)
     const startDate = new Date(ym1, ym2-1, 1).toISOString()
     const endDate = new Date(ym1, ym2, 1).toISOString()
     const [{ data: orders }, { data: logs }] = await Promise.all([
       supabase.from('brand_orders')
-        .select('items, status')
-        .eq('brand_id', brandId)
+        .select('items, status, brand_id')
+        .in('brand_id', companyBrandIds)
         .eq('status', 'shipping')
         .gte('shipped_at', startDate)
         .lt('shipped_at', endDate),
       supabase.from('brand_stock_logs')
-        .select('inventory_id, type, qty, ref_type, brand_inventory(product_name)')
-        .eq('brand_id', brandId)
+        .select('inventory_id, type, qty, ref_type, brand_id, brand_inventory(product_name)')
+        .in('brand_id', companyBrandIds)
         .gte('created_at', startDate)
         .lt('created_at', endDate),
     ])
     const hqMap: Record<string, number> = {}
-    for (const order of (orders || [])) {
+    const hqBrandMap: Record<string, Set<string>> = {}
+    for (const order of (orders || []) as Array<{ brand_id?: string; items?: Array<{ name?: string; qty?: number }> }>) {
+      const bid = order.brand_id
       for (const item of (Array.isArray(order.items) ? order.items : [])) {
-        hqMap[item.name] = (hqMap[item.name] || 0) + (item.qty || 0)
+        const name = item.name || ''
+        hqMap[name] = (hqMap[name] || 0) + (item.qty || 0)
+        if (bid) {
+          if (!hqBrandMap[name]) hqBrandMap[name] = new Set()
+          hqBrandMap[name].add(bid)
+        }
       }
     }
     const logMap: Record<string, number> = {}
+    const logBrandMap: Record<string, Set<string>> = {}
     let tin = 0, tout = 0, tret = 0, emg = 0
-    for (const log of (logs || []) as Array<{ type: string; qty: number; ref_type: string; brand_inventory?: { product_name?: string } | null }>) {
+    for (const log of (logs || []) as Array<{ type: string; qty: number; ref_type: string; brand_id?: string; brand_inventory?: { product_name?: string } | null }>) {
       const name = log.brand_inventory?.product_name || ''
+      if (name && log.brand_id) {
+        if (!logBrandMap[name]) logBrandMap[name] = new Set()
+        logBrandMap[name].add(log.brand_id)
+      }
       if (log.type === 'out') {
         logMap[name] = (logMap[name] || 0) + log.qty
         tout += log.qty
@@ -70,11 +84,15 @@ export default function BrandReportCompare({ brandId }: Props) {
     const compareRows: CompareRow[] = Array.from(allNames).map(name => {
       const hqQty = hqMap[name] || 0
       const logQty = logMap[name] || 0
-      return { product_name: name, hq_approved: hqQty, logistics_out: logQty, diff: logQty - hqQty }
+      const brandIds = Array.from(new Set([
+        ...Array.from(hqBrandMap[name] || []),
+        ...Array.from(logBrandMap[name] || []),
+      ]))
+      return { product_name: name, hq_approved: hqQty, logistics_out: logQty, diff: logQty - hqQty, brand_ids: brandIds }
     }).sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff))
     setRows(compareRows)
     setLoading(false)
-  }, [brandId, yearMonth])
+  }, [companyBrandIds, yearMonth])
   useEffect(() => { void loadData() }, [loadData])
   if (loading) return <div style={{ padding: 20, color: SUB, textAlign: 'center', fontSize: 13 }}>불러오는 중...</div>
   const mismatchCount = rows.filter(r => r.diff !== 0).length
@@ -117,8 +135,11 @@ export default function BrandReportCompare({ brandId }: Props) {
           return (
             <div key={row.product_name} style={{ paddingBottom: 12, marginBottom: 12, borderBottom: i < rows.length-1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <span style={{ fontSize: 13, color: TEXT }}>{row.product_name}</span>
-                <span style={{ fontSize: 12, fontWeight: 500, color: isMatch ? GREEN : DANGER }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const, minWidth: 0 }}>
+                  <span style={{ fontSize: 13, color: TEXT }}>{row.product_name}</span>
+                  {row.brand_ids.map(id => <BrandNameBadge key={id} name={brandNames[id]} />)}
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 500, color: isMatch ? GREEN : DANGER, flexShrink: 0 }}>
                   {isMatch ? '✅ 일치' : `⚠️ ${row.diff > 0 ? '+' : ''}${row.diff}개`}
                 </span>
               </div>

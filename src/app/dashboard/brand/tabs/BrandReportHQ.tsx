@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { CSSProperties } from 'react'
+import BrandNameBadge from '../components/BrandNameBadge'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
@@ -11,6 +12,7 @@ const GOLD = '#C9A96E'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 interface OrderRow {
   id: string
+  brand_id: string
   owner_name: string | null
   salon_name: string | null
   grade: string | null
@@ -23,6 +25,7 @@ interface OrderRow {
 }
 interface ReturnRow {
   id: string
+  brand_id: string
   type: string
   reason_code: string
   status: string
@@ -30,8 +33,8 @@ interface ReturnRow {
   created_at: string
   approved_by: string | null
 }
-interface Props { brandId: string | null }
-export default function BrandReportHQ({ brandId }: Props) {
+interface Props { companyBrandIds: string[]; brandNames: Record<string, string> }
+export default function BrandReportHQ({ companyBrandIds, brandNames }: Props) {
   const supabase = createClient()
   const now = new Date()
   const [yearMonth, setYearMonth] = useState(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`)
@@ -40,21 +43,21 @@ export default function BrandReportHQ({ brandId }: Props) {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<'all' | 'shipping' | 'done' | 'cancelled'>('all')
   const loadData = useCallback(async () => {
-    if (!brandId) return
+    if (!companyBrandIds.length) return
     setLoading(true)
     const [ym1, ym2] = yearMonth.split('-').map(Number)
     const startDate = new Date(ym1, ym2-1, 1).toISOString()
     const endDate = new Date(ym1, ym2, 1).toISOString()
     const [{ data: orderData }, { data: returnData }] = await Promise.all([
       supabase.from('brand_orders')
-        .select('id, owner_name, salon_name, grade, status, items, courier, tracking_no, shipped_at, created_at')
-        .eq('brand_id', brandId)
+        .select('id, brand_id, owner_name, salon_name, grade, status, items, courier, tracking_no, shipped_at, created_at')
+        .in('brand_id', companyBrandIds)
         .gte('created_at', startDate)
         .lt('created_at', endDate)
         .order('created_at', { ascending: false }),
       supabase.from('brand_returns')
-        .select('id, type, reason_code, status, qty, created_at, approved_by')
-        .eq('brand_id', brandId)
+        .select('id, brand_id, type, reason_code, status, qty, created_at, approved_by')
+        .in('brand_id', companyBrandIds)
         .gte('created_at', startDate)
         .lt('created_at', endDate)
         .order('created_at', { ascending: false }),
@@ -62,7 +65,7 @@ export default function BrandReportHQ({ brandId }: Props) {
     setOrders((orderData || []) as OrderRow[])
     setReturns((returnData || []) as ReturnRow[])
     setLoading(false)
-  }, [brandId, yearMonth])
+  }, [companyBrandIds, yearMonth])
   useEffect(() => { void loadData() }, [loadData])
   const STATUS_MAP: Record<string, { label: string; color: string }> = {
     pending:   { label: '대기중', color: GOLD },
@@ -123,6 +126,7 @@ export default function BrandReportHQ({ brandId }: Props) {
             <div key={o.id} style={{ paddingBottom: 10, marginBottom: 10, borderBottom: i < filtered.length-1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
+                  <BrandNameBadge name={brandNames[o.brand_id]} />
                   <span style={{ fontSize: 13, color: TEXT }}>{o.owner_name || '-'}</span>
                   <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: `${st.color}18`, color: st.color }}>{st.label}</span>
                 </div>
@@ -149,7 +153,10 @@ export default function BrandReportHQ({ brandId }: Props) {
           {returns.map((r, i) => (
             <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: i < returns.length-1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none' }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, color: TEXT, marginBottom: 2 }}>{r.type === 'exchange' ? '교환' : '반품'} · {r.reason_code}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const, marginBottom: 2 }}>
+                  <BrandNameBadge name={brandNames[r.brand_id]} />
+                  <span style={{ fontSize: 12, color: TEXT }}>{r.type === 'exchange' ? '교환' : '반품'} · {r.reason_code}</span>
+                </div>
                 <div style={{ fontSize: 11, color: SUB }}>{r.qty}개 · 승인: {r.approved_by || '-'}</div>
               </div>
               <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 10, background: r.status === 'done' ? 'rgba(76,175,80,0.1)' : 'rgba(201,169,110,0.1)', color: r.status === 'done' ? GREEN : GOLD }}>

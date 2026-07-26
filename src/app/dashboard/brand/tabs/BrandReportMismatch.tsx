@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { CSSProperties } from 'react'
+import BrandNameBadge from '../components/BrandNameBadge'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
@@ -16,9 +17,11 @@ interface MismatchRow {
   logistics_out: number
   diff: number
   last_date: string
+  brand_ids: string[]
 }
 interface EmergencyRow {
   id: string
+  brand_id: string
   product_name: string
   qty: number
   staff_name: string
@@ -26,8 +29,8 @@ interface EmergencyRow {
   hq_status: string
   created_at: string
 }
-interface Props { brandId: string | null }
-export default function BrandReportMismatch({ brandId }: Props) {
+interface Props { companyBrandIds: string[]; brandNames: Record<string, string> }
+export default function BrandReportMismatch({ companyBrandIds, brandNames }: Props) {
   const supabase = createClient()
   const now = new Date()
   const [yearMonth, setYearMonth] = useState(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`)
@@ -37,31 +40,43 @@ export default function BrandReportMismatch({ brandId }: Props) {
   const [toast, setToast] = useState('')
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const loadData = useCallback(async () => {
-    if (!brandId) return
+    if (!companyBrandIds.length) return
     setLoading(true)
     const [ym1, ym2] = yearMonth.split('-').map(Number)
     const startDate = new Date(ym1, ym2-1, 1).toISOString()
     const endDate = new Date(ym1, ym2, 1).toISOString()
     const [{ data: orders }, { data: logs }] = await Promise.all([
-      supabase.from('brand_orders').select('items, status, shipped_at').eq('brand_id', brandId).eq('status', 'shipping').gte('shipped_at', startDate).lt('shipped_at', endDate),
-      supabase.from('brand_stock_logs').select('id, inventory_id, type, qty, ref_type, hq_status, staff_name, memo, created_at, brand_inventory(product_name)').eq('brand_id', brandId).gte('created_at', startDate).lt('created_at', endDate),
+      supabase.from('brand_orders').select('items, status, shipped_at, brand_id').in('brand_id', companyBrandIds).eq('status', 'shipping').gte('shipped_at', startDate).lt('shipped_at', endDate),
+      supabase.from('brand_stock_logs').select('id, inventory_id, type, qty, ref_type, hq_status, staff_name, memo, created_at, brand_id, brand_inventory(product_name)').in('brand_id', companyBrandIds).gte('created_at', startDate).lt('created_at', endDate),
     ])
     const hqMap: Record<string, number> = {}
-    for (const order of (orders || [])) {
+    const hqBrandMap: Record<string, Set<string>> = {}
+    for (const order of (orders || []) as Array<{ brand_id?: string; items?: Array<{ name?: string; qty?: number }> }>) {
+      const bid = order.brand_id
       for (const item of (Array.isArray(order.items) ? order.items : [])) {
-        hqMap[item.name] = (hqMap[item.name] || 0) + (item.qty || 0)
+        const name = item.name || ''
+        hqMap[name] = (hqMap[name] || 0) + (item.qty || 0)
+        if (bid) {
+          if (!hqBrandMap[name]) hqBrandMap[name] = new Set()
+          hqBrandMap[name].add(bid)
+        }
       }
     }
     const logMap: Record<string, { qty: number; last: string }> = {}
+    const logBrandMap: Record<string, Set<string>> = {}
     const emgList: EmergencyRow[] = []
-    for (const log of (logs || []) as Array<{ id: string; type: string; qty: number; ref_type: string; hq_status: string; staff_name: string | null; memo: string | null; created_at: string; brand_inventory?: { product_name?: string } | null }>) {
+    for (const log of (logs || []) as Array<{ id: string; type: string; qty: number; ref_type: string; hq_status: string; staff_name: string | null; memo: string | null; created_at: string; brand_id?: string; brand_inventory?: { product_name?: string } | null }>) {
       const name = log.brand_inventory?.product_name || ''
+      if (name && log.brand_id) {
+        if (!logBrandMap[name]) logBrandMap[name] = new Set()
+        logBrandMap[name].add(log.brand_id)
+      }
       if (log.type === 'out') {
         if (!logMap[name]) logMap[name] = { qty: 0, last: log.created_at }
         logMap[name].qty += log.qty
         logMap[name].last = log.created_at
         if (log.ref_type === 'emergency') {
-          emgList.push({ id: log.id, product_name: name, qty: log.qty, staff_name: log.staff_name || '-', memo: log.memo, hq_status: log.hq_status || 'pending', created_at: log.created_at })
+          emgList.push({ id: log.id, brand_id: log.brand_id || '', product_name: name, qty: log.qty, staff_name: log.staff_name || '-', memo: log.memo, hq_status: log.hq_status || 'pending', created_at: log.created_at })
         }
       }
     }
@@ -71,13 +86,17 @@ export default function BrandReportMismatch({ brandId }: Props) {
       const hq = hqMap[name] || 0
       const log = logMap[name]?.qty || 0
       if (hq !== log) {
-        rows.push({ id: name, product_name: name, hq_approved: hq, logistics_out: log, diff: log - hq, last_date: logMap[name]?.last || '' })
+        const brandIds = Array.from(new Set([
+          ...Array.from(hqBrandMap[name] || []),
+          ...Array.from(logBrandMap[name] || []),
+        ]))
+        rows.push({ id: name, product_name: name, hq_approved: hq, logistics_out: log, diff: log - hq, last_date: logMap[name]?.last || '', brand_ids: brandIds })
       }
     }
     setMismatches(rows.sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff)))
     setEmergencies(emgList)
     setLoading(false)
-  }, [brandId, yearMonth])
+  }, [companyBrandIds, yearMonth])
   useEffect(() => { void loadData() }, [loadData])
   const requestExplain = (name: string) => showToast(`${name} 담당자 소명 요청 발송됨`)
   const timeAgo = (iso: string) => {
@@ -111,8 +130,11 @@ export default function BrandReportMismatch({ brandId }: Props) {
               {mismatches.map((m, i) => (
                 <div key={m.id} style={{ paddingBottom: 12, marginBottom: 12, borderBottom: i < mismatches.length-1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                    <span style={{ fontSize: 13, color: TEXT }}>{m.product_name}</span>
-                    <span style={{ fontSize: 12, fontWeight: 500, color: DANGER }}>{m.diff > 0 ? '+' : ''}{m.diff}개 차이</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const, minWidth: 0 }}>
+                      <span style={{ fontSize: 13, color: TEXT }}>{m.product_name}</span>
+                      {m.brand_ids.map(id => <BrandNameBadge key={id} name={brandNames[id]} />)}
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: DANGER, flexShrink: 0 }}>{m.diff > 0 ? '+' : ''}{m.diff}개 차이</span>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginBottom: 6 }}>
                     <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 5, padding: '6px 10px', textAlign: 'center' as const }}>
@@ -144,6 +166,7 @@ export default function BrandReportMismatch({ brandId }: Props) {
                   <div key={e.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, padding: '8px 0', borderBottom: i < emergencies.length-1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none' }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' as const }}>
+                        <BrandNameBadge name={brandNames[e.brand_id]} />
                         <span style={{ fontSize: 12, color: TEXT }}>{e.product_name}</span>
                         <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: isPending ? 'rgba(201,169,110,0.1)' : 'rgba(76,175,80,0.1)', color: isPending ? GOLD : GREEN }}>
                           {isPending ? '확인대기' : e.hq_status === 'confirmed' ? '확인완료' : '이의제기'}

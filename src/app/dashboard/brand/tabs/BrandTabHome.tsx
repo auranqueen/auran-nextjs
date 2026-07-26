@@ -2,10 +2,12 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { CSSProperties } from 'react'
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import MonthlyOrderAccordion from '../components/MonthlyOrderAccordion'
 import GroupRevenueChart from '../components/GroupRevenueChart'
 import ShopOrderRanking from '../components/ShopOrderRanking'
+import PendingOrdersDetail from '../components/PendingOrdersDetail'
+import HomeSalesTrendChart from '../components/HomeSalesTrendChart'
 const CARD: CSSProperties = { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: 12, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
@@ -35,6 +37,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
   const [closedEvents, setClosedEvents] = useState<string[]>([])
   const [pendingOrders, setPendingOrders] = useState<number>(0)
   const [salesOpen, setSalesOpen] = useState(false)
+  const [pendingOpen, setPendingOpen] = useState(false)
   const [salesTrend, setSalesTrend] = useState<Array<{ day: string; label: string; amountA: number; amountB: number }>>([])
   const [companyId, setCompanyId] = useState<string | null>(null)
   useEffect(() => {
@@ -55,21 +58,23 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
     if (!brandId) return
     const fetch = async () => {
       setLoading(true)
+      const companyBrandIds = await resolveCompanyBrandIds(supabase, brandId)
+
       const { count: total } = await supabase
         .from('brand_products')
         .select('id', { count: 'exact', head: true })
-        .eq('brand_id', brandId)
+        .in('brand_id', companyBrandIds)
       setProductCount(total ?? 0)
       const { count: activeOwnerCount } = await supabase
         .from('brand_owner_links')
         .select('id', { count: 'exact', head: true })
-        .eq('brand_id', brandId)
+        .in('brand_id', companyBrandIds)
         .eq('status', 'active')
       setOwnerCount(activeOwnerCount ?? 0)
       const { data: lotData } = await supabase
         .from('brand_inventory_lots')
         .select('lot_number, remaining_qty, expires_at, brand_inventory(product_name)')
-        .eq('brand_id', brandId)
+        .in('brand_id', companyBrandIds)
         .eq('status', 'active')
         .not('expires_at', 'is', null)
         .order('expires_at', { ascending: true })
@@ -99,12 +104,25 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
           updated_at: t.last_message_at || '',
         })))
       }
-      const { data: orders } = await supabase
-        .from('brand_orders')
-        .select('id, items, total_amount, status, created_at')
-        .eq('brand_id', brandId)
-        .order('created_at', { ascending: false })
-        .limit(4)
+      const [{ data: orders }, { count: pendingA }, { count: pendingB }] = await Promise.all([
+        supabase
+          .from('brand_orders')
+          .select('id, items, total_amount, status, created_at')
+          .in('brand_id', companyBrandIds)
+          .order('created_at', { ascending: false })
+          .limit(4),
+        supabase
+          .from('brand_orders')
+          .select('id', { count: 'exact', head: true })
+          .in('brand_id', companyBrandIds)
+          .in('status', ['pending', 'approved']),
+        supabase
+          .from('hq_stock_orders')
+          .select('id', { count: 'exact', head: true })
+          .in('brand_id', companyBrandIds)
+          .eq('status', '결제완료'),
+      ])
+      setPendingOrders((pendingA ?? 0) + (pendingB ?? 0))
       if (orders) {
         setRecentOrders(orders.map((o: any) => {
           const itemList = Array.isArray(o.items) ? o.items : []
@@ -117,7 +135,6 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
             status: o.status || 'pending',
           }
         }))
-        setPendingOrders(orders.filter((o: any) => o.status === 'pending').length)
       }
       const { data: sampleSends } = await supabase
         .from('brand_sample_sends')
@@ -141,13 +158,13 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
         supabase
           .from('brand_orders')
           .select('total_amount')
-          .eq('brand_id', brandId)
+          .in('brand_id', companyBrandIds)
           .gte('created_at', thisMonthIso)
           .neq('status', 'cancelled'),
         supabase
           .from('hq_stock_orders')
           .select('final_amount')
-          .eq('brand_id', brandId)
+          .in('brand_id', companyBrandIds)
           .in('status', HQ_PAID_STATUSES)
           .gte('ordered_at', thisMonthIso),
       ])
@@ -162,22 +179,23 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
       since.setHours(0, 0, 0, 0)
       since.setDate(since.getDate() - 29)
       const sinceIso = since.toISOString()
+
       const [{ data: createdRows }, { data: cancelledRows }, { data: hqTrendRows }] = await Promise.all([
         supabase
           .from('brand_orders')
           .select('total_amount, created_at')
-          .eq('brand_id', brandId)
+          .in('brand_id', companyBrandIds)
           .gte('created_at', sinceIso),
         supabase
           .from('brand_orders')
           .select('total_amount, updated_at')
-          .eq('brand_id', brandId)
+          .in('brand_id', companyBrandIds)
           .eq('status', 'cancelled')
           .gte('updated_at', sinceIso),
         supabase
           .from('hq_stock_orders')
           .select('final_amount, ordered_at')
-          .eq('brand_id', brandId)
+          .in('brand_id', companyBrandIds)
           .in('status', HQ_PAID_STATUSES)
           .gte('ordered_at', sinceIso),
       ])
@@ -216,8 +234,10 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
     }
     void fetch()
   }, [brandId, supabase])
-  const kpis = [
-    { key: 'sales', label: '이달 판매액', value: loading ? '-' : `₩${(monthSales / 10000).toFixed(0)}만`, color: '#fff' },
+  const nowForPeriod = new Date()
+  const salesPeriodLabel = `${nowForPeriod.getMonth() + 1}월 1일~${new Date(nowForPeriod.getFullYear(), nowForPeriod.getMonth() + 1, 0).getDate()}일`
+  const kpis: Array<{ key: string; label: string; value: string; color: string; sublabel?: string }> = [
+    { key: 'sales', label: '이달 판매액', sublabel: salesPeriodLabel, value: loading ? '-' : `₩${(monthSales / 10000).toFixed(0)}만`, color: '#fff' },
     { key: 'pending', label: '처리대기 주문', value: loading ? '-' : `${pendingOrders}`, color: pendingOrders > 0 ? '#e8a500' : '#fff' },
     { key: 'lots', label: '임박재고 D-30', value: loading ? '-' : `${expiringLots.filter(l => l.days <= 30).length}`, color: expiringLots.filter(l => l.days <= 30).length > 0 ? '#e85555' : '#fff' },
     { key: 'owners', label: '활성 원장님', value: loading ? '-' : `${ownerCount ?? 0}명`, color: PURPLE },
@@ -251,74 +271,46 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
         {kpis.map(k => (
           <div
             key={k.key}
-            role={k.key === 'sales' ? 'button' : undefined}
-            onClick={k.key === 'sales' ? () => setSalesOpen(v => !v) : undefined}
+            role={k.key === 'sales' || k.key === 'pending' ? 'button' : undefined}
+            onClick={
+              k.key === 'sales'
+                ? () => { setPendingOpen(false); setSalesOpen(v => !v) }
+                : k.key === 'pending'
+                  ? () => { setSalesOpen(false); setPendingOpen(v => !v) }
+                  : undefined
+            }
             style={{
               ...CARD,
               textAlign: 'center',
               marginBottom: 0,
-              cursor: k.key === 'sales' ? 'pointer' : 'default',
-              outline: k.key === 'sales' && salesOpen ? `1px solid ${GOLD}` : undefined,
+              cursor: k.key === 'sales' || k.key === 'pending' ? 'pointer' : 'default',
+              outline:
+                (k.key === 'sales' && salesOpen) || (k.key === 'pending' && pendingOpen)
+                  ? `1px solid ${GOLD}`
+                  : undefined,
             }}
           >
             <div style={{ fontSize: 18, color: k.color, marginBottom: 4, fontWeight: 500 }}>{k.value}</div>
             <div style={{ fontSize: 10, color: SUB }}>{k.label}</div>
+            {k.sublabel ? (
+              <div style={{ fontSize: 11, color: SUB, marginTop: 2, lineHeight: 1.2 }}>{k.sublabel}</div>
+            ) : null}
           </div>
         ))}
       </div>
       {salesOpen && brandId && (
         <MonthlyOrderAccordion brandId={brandId} onClose={() => setSalesOpen(false)} />
       )}
+      {pendingOpen && brandId ? (
+        <PendingOrdersDetail brandId={brandId} onClose={() => setPendingOpen(false)} />
+      ) : null}
       {companyId && brandId ? (
         <GroupRevenueChart companyId={companyId} hubBrandId={brandId} />
       ) : null}
       {companyId && brandId ? (
         <ShopOrderRanking companyId={companyId} hubBrandId={brandId} />
       ) : null}
-      <div style={{ ...CARD, marginBottom: 12 }}>
-        <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>최근 30일 재고발주 매출</div>
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: 24, color: SUB, fontSize: 12 }}>불러오는 중…</div>
-        ) : (
-          <ResponsiveContainer width="100%" height={180}>
-            <LineChart data={salesTrend}>
-              <XAxis
-                dataKey="label"
-                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }}
-                axisLine={{ stroke: 'rgba(255,255,255,0.08)' }}
-                tickLine={false}
-                interval="preserveStartEnd"
-              />
-              <YAxis
-                tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }}
-                axisLine={false}
-                tickLine={false}
-                tickFormatter={(v) => `${Math.round(Number(v) / 10000)}만`}
-                width={36}
-              />
-              <Tooltip
-                contentStyle={{
-                  background: '#1a1520',
-                  border: '0.5px solid rgba(201,169,110,0.35)',
-                  borderRadius: 8,
-                  fontSize: 11,
-                  color: TEXT,
-                }}
-                formatter={(v: number, name: string) => [
-                  `₩${Number(v).toLocaleString()}`,
-                  name === 'amountA' ? '트랙A' : '트랙B',
-                ]}
-              />
-              <Legend
-                wrapperStyle={{ fontSize: 10, color: SUB }}
-                formatter={(value) => (value === 'amountA' ? '트랙A' : '트랙B')}
-              />
-              <Line type="monotone" dataKey="amountA" stroke={GOLD} strokeWidth={2} dot={false} />
-              <Line type="monotone" dataKey="amountB" stroke={PURPLE} strokeWidth={2} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        )}
-      </div>
+      <HomeSalesTrendChart loading={loading} data={salesTrend} />
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>🔔 지금 챙겨야 할 것들</div>
         {alerts.length === 0 ? (

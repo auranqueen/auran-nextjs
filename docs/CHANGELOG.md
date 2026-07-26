@@ -6,6 +6,14 @@
 
 ## 2026-07-26
 
+- **feat: 브랜드허브 company전체 통합 완료 + 월별리포트 뱃지 + 물류허브 링크**
+  - `BrandTabHome.tsx`: 이달 판매액·처리대기·임박재고·활성원장·등록제품·최근주문·30일 선그래프를 company 소속 브랜드 합산으로 통일; 이달 판매액에 `N월 1일~M일` 기간 라벨; 처리대기 KPI에 트랙A(`pending`/`approved`)+트랙B(`결제완료`) 합산 및 `PendingOrdersDetail` 인라인 펼침; 선그래프는 `HomeSalesTrendChart`로 분리
+  - `resolveCompanyBrandIds.ts` 신규: hub brand → company 소속 brand id 목록 공용 조회
+  - `BrandTabReport` + 자식 5개: `.in('brand_id', companyBrandIds)` + `BrandNameBadge` (리스트/집계 행)
+  - `BrandTabInventory.tsx`: 「🚚 물류허브 열기」→ `/dashboard/logi?slug=` 새 탭(단방향, logi PIN 유지); `BrandHubContent`에서 slug 전달
+  - `resolveOwnerSalonNames.ts` 신규: profile→users→salons 이름 해석 공용화 (`MonthlyOrderAccordion`/`ShopOrderRanking`/`BrandShippedOrderReport` 재사용)
+  - `BrandShippedOrderReport.tsx`: 트랙B(`hq_stock_orders` 배송완료/구매확정, `updated_at` 기준) 합산·CSV 트랙 컬럼 추가 (정산 탭 company화는 청구 금액 정합성 미확보로 보류)
+
 - **feat: 발송완료 리포트 신규 - 기간/샵검색+미리보기+CSV**
   - `BrandShippedOrderReport.tsx` 신규: 발주관리에 "발송완료 리포트" 접이식 추가 — 기간검색(오늘/이번달/지난달/직접선택)+샵/원장 검색, 물류에서 실제 발송처리된(배송중/배송완료) 배치만 조회, 리스트+명세서 미리보기(iframe)+CSV출력, 대표 보고용
 

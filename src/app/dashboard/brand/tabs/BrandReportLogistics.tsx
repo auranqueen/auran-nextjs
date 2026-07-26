@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { CSSProperties } from 'react'
+import BrandNameBadge from '../components/BrandNameBadge'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
@@ -10,6 +11,7 @@ const DANGER = '#E53935'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 interface LogRow {
   id: string
+  brand_id: string
   type: string
   qty: number
   before_qty: number
@@ -21,8 +23,8 @@ interface LogRow {
   hq_status: string
   brand_inventory: { product_name: string } | null
 }
-interface Props { brandId: string | null }
-export default function BrandReportLogistics({ brandId }: Props) {
+interface Props { companyBrandIds: string[]; brandNames: Record<string, string> }
+export default function BrandReportLogistics({ companyBrandIds, brandNames }: Props) {
   const supabase = createClient()
   const now = new Date()
   const [yearMonth, setYearMonth] = useState(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`)
@@ -30,22 +32,22 @@ export default function BrandReportLogistics({ brandId }: Props) {
   const [loading, setLoading] = useState(true)
   const [typeFilter, setTypeFilter] = useState<'all' | 'in' | 'out' | 'emergency'>('all')
   const loadData = useCallback(async () => {
-    if (!brandId) return
+    if (!companyBrandIds.length) return
     setLoading(true)
     const [ym1, ym2] = yearMonth.split('-').map(Number)
     const startDate = new Date(ym1, ym2-1, 1).toISOString()
     const endDate = new Date(ym1, ym2, 1).toISOString()
     const { data } = await supabase
       .from('brand_stock_logs')
-      .select('id, type, qty, before_qty, after_qty, ref_type, staff_name, memo, created_at, hq_status, brand_inventory(product_name)')
-      .eq('brand_id', brandId)
+      .select('id, brand_id, type, qty, before_qty, after_qty, ref_type, staff_name, memo, created_at, hq_status, brand_inventory(product_name)')
+      .in('brand_id', companyBrandIds)
       .gte('created_at', startDate)
       .lt('created_at', endDate)
       .order('created_at', { ascending: false })
       .limit(50)
     setLogs((data || []) as unknown as LogRow[])
     setLoading(false)
-  }, [brandId, yearMonth])
+  }, [companyBrandIds, yearMonth])
   useEffect(() => { void loadData() }, [loadData])
   const filtered = typeFilter === 'all' ? logs
     : typeFilter === 'emergency' ? logs.filter(l => l.ref_type === 'emergency')
@@ -104,6 +106,7 @@ export default function BrandReportLogistics({ brandId }: Props) {
               <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{isIn ? '⬇️' : isEmergency ? '🚨' : '⬆️'}</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' as const }}>
+                  <BrandNameBadge name={brandNames[log.brand_id]} />
                   <span style={{ fontSize: 12, color: TEXT }}>{log.brand_inventory?.product_name}</span>
                   {isEmergency && <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 8, background: 'rgba(229,57,53,0.1)', color: DANGER }}>비상</span>}
                   {log.hq_status === 'disputed' && <span style={{ fontSize: 10, padding: '1px 6px', borderRadius: 8, background: 'rgba(201,169,110,0.1)', color: '#C9A96E' }}>이의제기</span>}

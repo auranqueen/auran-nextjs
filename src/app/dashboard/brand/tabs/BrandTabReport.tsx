@@ -1,6 +1,8 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
+import { createClient } from '@/lib/supabase/client'
+import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import TabBrandSelector from '../components/TabBrandSelector'
 const BrandReportCompare = dynamic(() => import('./BrandReportCompare'), { ssr: false })
 const BrandReportStaff = dynamic(() => import('./BrandReportStaff'), { ssr: false })
@@ -21,9 +23,37 @@ interface Props {
   myBrands: { id: string; name: string }[]
 }
 export default function BrandTabReport({ myBrands }: Props) {
+  const supabase = createClient()
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
-  const brandId = selectedBrandId
+  const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
+  const [brandNames, setBrandNames] = useState<Record<string, string>>({})
   const [sub, setSub] = useState<SubTab>('compare')
+
+  useEffect(() => {
+    if (!selectedBrandId) {
+      setCompanyBrandIds([])
+      setBrandNames({})
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      const ids = await resolveCompanyBrandIds(supabase, selectedBrandId)
+      const { data: rows } = await supabase.from('brands').select('id, name').in('id', ids)
+      const map: Record<string, string> = {}
+      for (const r of rows || []) {
+        map[String((r as { id: string }).id)] = String((r as { name?: string }).name || '')
+      }
+      for (const b of myBrands) {
+        if (!map[b.id]) map[b.id] = b.name
+      }
+      if (!cancelled) {
+        setCompanyBrandIds(ids)
+        setBrandNames(map)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [selectedBrandId, supabase, myBrands])
+
   return (
     <div>
       <TabBrandSelector myBrands={myBrands} storageKey="report-brand" onSelect={setSelectedBrandId} />
@@ -39,11 +69,17 @@ export default function BrandTabReport({ myBrands }: Props) {
           </button>
         ))}
       </div>
-      {sub === 'compare' && <BrandReportCompare brandId={brandId} />}
-      {sub === 'staff' && <BrandReportStaff brandId={brandId} />}
-      {sub === 'hq' && <BrandReportHQ brandId={brandId} />}
-      {sub === 'logistics' && <BrandReportLogistics brandId={brandId} />}
-      {sub === 'mismatch' && <BrandReportMismatch brandId={brandId} />}
+      {companyBrandIds.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: 24, color: SUB, fontSize: 12 }}>불러오는 중…</div>
+      ) : (
+        <>
+          {sub === 'compare' && <BrandReportCompare companyBrandIds={companyBrandIds} brandNames={brandNames} />}
+          {sub === 'staff' && <BrandReportStaff companyBrandIds={companyBrandIds} brandNames={brandNames} />}
+          {sub === 'hq' && <BrandReportHQ companyBrandIds={companyBrandIds} brandNames={brandNames} />}
+          {sub === 'logistics' && <BrandReportLogistics companyBrandIds={companyBrandIds} brandNames={brandNames} />}
+          {sub === 'mismatch' && <BrandReportMismatch companyBrandIds={companyBrandIds} brandNames={brandNames} />}
+        </>
+      )}
       </>
       )}
     </div>
