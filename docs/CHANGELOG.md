@@ -6,6 +6,11 @@
 
 ## 2026-07-26
 
+### 정산/결제 원장통합 재설계 (묶음3/4)
+- sync/route.ts: brand_id 파라미터 → company_id로 변경, onConflict를 company_id,owner_id,billing_month로 수정
+- owner/brand-orders/invoice/page.tsx: CIVASAN_BRAND_ID는 진입점으로만 유지, 그 소속 company_id를 찾아 회사 전체 브랜드의 발주를 합산해서 보여주도록 변경
+- BrandTabSettlement.tsx: 브랜드 선택은 기존 UI 유지, 선택된 브랜드의 company_id를 resolve해서 그 회사 전체 브랜드 기준으로 청구서/발주 조회하도록 변경 (⚠️ RLS 미수정 상태라 브랜드사 쪽 화면엔 아직 청구서 안 보일 수 있음 — 묶음4에서 해결 예정, 알려진 상태)
+
 ### 정산/결제 원장통합 재설계 (묶음2/4)
 - invoice/create/route.ts: CIVASAN_BRAND_ID 하드코딩 제거, brand_billing_invoices.company_id 기준으로 brand_companies에서 PayApp 자격증명 조회하도록 전환
 - webhook/route.ts: intent를 먼저 조회 후 kind별로 검증분기 — invoice(청구서결제)는 company_id 기준 brand_companies 자격증명, tier(등급구매)는 기존 CIVASAN 브랜드 자격증명 그대로 유지(범위밖, 변경없음)

@@ -67,8 +67,9 @@ function formatGrowth(current: number, prev: number): string {
 
 export default function BrandTabSettlement({ myBrands }: Props) {
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
-  const brandId = selectedBrandId
-  const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
+  const [companyId, setCompanyId] = useState<string | null>(null)
+  const [companyName, setCompanyName] = useState('')
+  const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
   const supabase = createClient()
   const [ym, setYm] = useState(currentYm)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -100,7 +101,6 @@ export default function BrandTabSettlement({ myBrands }: Props) {
 
   const resolveSubtitleLead = useCallback(
     (ownerId: string) => {
-      // 제목이 매장명(salon_name 또는 owner_store_name)일 때만 부제에 담당자명
       if (salonNameFromOrders[ownerId] || storeNames[ownerId]) {
         return ownerNameFromOrders[ownerId] || profileNames[ownerId] || '-'
       }
@@ -109,8 +109,45 @@ export default function BrandTabSettlement({ myBrands }: Props) {
     [salonNameFromOrders, storeNames, ownerNameFromOrders, profileNames],
   )
 
+  // 선택된 브랜드 → 소속 컴퍼니 + 그 컴퍼니의 전체 브랜드ID 목록 resolve
+  useEffect(() => {
+    if (!selectedBrandId) {
+      setCompanyId(null)
+      setCompanyName('')
+      setCompanyBrandIds([])
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      const { data: brandRow } = await supabase
+        .from('brands')
+        .select('company_id')
+        .eq('id', selectedBrandId)
+        .maybeSingle()
+      const cid = brandRow?.company_id ? String(brandRow.company_id) : null
+      if (cancelled) return
+      if (!cid) {
+        setCompanyId(null)
+        setCompanyName('')
+        setCompanyBrandIds([])
+        return
+      }
+      const [{ data: companyRow }, { data: companyBrands }] = await Promise.all([
+        supabase.from('brand_companies').select('id, name').eq('id', cid).maybeSingle(),
+        supabase.from('brands').select('id').eq('company_id', cid),
+      ])
+      if (cancelled) return
+      setCompanyId(cid)
+      setCompanyName(String(companyRow?.name || ''))
+      setCompanyBrandIds((companyBrands || []).map((b: { id: string }) => b.id))
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [selectedBrandId, supabase])
+
   const load = useCallback(async () => {
-    if (!brandId) {
+    if (!companyId) {
       setInvoices([])
       setPrevMonthTotal(0)
       setOrdersByOwner({})
@@ -121,23 +158,24 @@ export default function BrandTabSettlement({ myBrands }: Props) {
     setLoading(true)
     const { billingMonth, startIso, endIso } = monthBillingRange(ym)
     const { billingMonth: prevBillingMonth } = monthBillingRange(prevYm(ym))
+    const brandIds = companyBrandIds.length > 0 ? companyBrandIds : ['00000000-0000-0000-0000-000000000000']
 
     const [invoiceRes, prevRes, orderRes] = await Promise.all([
       supabase
         .from('brand_billing_invoices')
         .select('id, owner_id, billing_month, total_amount, status, paid_at, points_total')
-        .eq('brand_id', brandId)
+        .eq('company_id', companyId)
         .eq('billing_month', billingMonth)
         .order('total_amount', { ascending: false }),
       supabase
         .from('brand_billing_invoices')
         .select('total_amount')
-        .eq('brand_id', brandId)
+        .eq('company_id', companyId)
         .eq('billing_month', prevBillingMonth),
       supabase
         .from('brand_orders')
         .select('id, profile_id, owner_name, salon_name, grade, items, created_at, total_amount')
-        .eq('brand_id', brandId)
+        .in('brand_id', brandIds)
         .gte('created_at', startIso)
         .lt('created_at', endIso)
         .order('created_at', { ascending: true }),
@@ -191,7 +229,7 @@ export default function BrandTabSettlement({ myBrands }: Props) {
     setProfileNames(profileMap)
     setExpandedOwnerId(null)
     setLoading(false)
-  }, [brandId, supabase, ym])
+  }, [companyId, companyBrandIds, supabase, ym])
 
   useEffect(() => {
     void load()
@@ -271,7 +309,7 @@ export default function BrandTabSettlement({ myBrands }: Props) {
               fontSize: 13,
             }}
           />
-          <span style={{ fontSize: 12, color: SUB }}>{brandName} · 월별 원장 결제 현황</span>
+          <span style={{ fontSize: 12, color: SUB }}>{companyName || '회사'} · 월별 원장 결제 현황 (소속 브랜드 전체 합산)</span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 12 }}>

@@ -9,13 +9,13 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ ok: false, error: 'not_logged_in' }, { status: 401 })
 
   const body = await req.json().catch(() => ({}))
-  const brandId = typeof body?.brand_id === 'string' ? body.brand_id.trim() : ''
+  const companyId = typeof body?.company_id === 'string' ? body.company_id.trim() : ''
   const billingMonth = typeof body?.billing_month === 'string' ? body.billing_month.trim() : ''
   const totalAmount = Math.trunc(Number(body?.total_amount) || 0)
   const pointsTotal = Math.trunc(Number(body?.points_total) || 0)
 
-  if (!brandId || !billingMonth) {
-    return NextResponse.json({ ok: false, error: 'brand_id_and_billing_month_required' }, { status: 400 })
+  if (!companyId || !billingMonth) {
+    return NextResponse.json({ ok: false, error: 'company_id_and_billing_month_required' }, { status: 400 })
   }
 
   const { data: profile } = await supabase.from('profiles').select('id').eq('auth_id', user.id).maybeSingle()
@@ -30,16 +30,16 @@ export async function POST(req: NextRequest) {
     .from('brand_billing_invoices')
     .upsert(
       {
-        brand_id: brandId,
+        company_id: companyId,
         owner_id: profile.id,
         billing_month: billingMonth,
         total_amount: totalAmount,
         points_total: pointsTotal,
         pouch_tier: pouchTier,
       },
-      { onConflict: 'brand_id,owner_id,billing_month' },
+      { onConflict: 'company_id,owner_id,billing_month' },
     )
-    .select('id, brand_id, owner_id, billing_month, total_amount, points_total, pouch_tier, pouch_sent_qty, pouch_sent_note, status, paid_at')
+    .select('id, company_id, owner_id, billing_month, total_amount, points_total, pouch_tier, pouch_sent_qty, pouch_sent_note, status, paid_at')
     .single()
 
   if (error || !row) {

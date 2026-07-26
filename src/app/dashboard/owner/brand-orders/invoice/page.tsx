@@ -25,7 +25,7 @@ const LIGHT = '#f8f7fc'
 
 type BillingInvoice = {
   id: string
-  brand_id: string
+  company_id: string
   total_amount: number
   points_total: number
   pouch_tier: number | null
@@ -62,7 +62,7 @@ function BrandOrdersInvoiceContent() {
   const [pouchTier, setPouchTier] = useState<number | null>(null)
   const [invoice, setInvoice] = useState<BillingInvoice | null>(null)
   const [payappActive, setPayappActive] = useState(false)
-  const [brandName, setBrandName] = useState('시바산')
+  const [companyName, setCompanyName] = useState('시바산')
 
   const [modalOpen, setModalOpen] = useState(false)
   const [modalStep, setModalStep] = useState<'form' | 'success'>('form')
@@ -100,20 +100,41 @@ function BrandOrdersInvoiceContent() {
     const billingMonth = `${y}-${String(m).padStart(2, '0')}-01`
     const { startIso, endIso } = billingCycleRange(new Date(y, m - 1, 1))
 
-    const { data: brandRow } = await supabase
+    // 진입 브랜드(시바산) → 소속 컴퍼니 찾기
+    const { data: entryBrand } = await supabase
       .from('brands')
-      .select('id, name, payapp_active')
+      .select('id, company_id')
       .eq('id', CIVASAN_BRAND_ID)
       .maybeSingle()
 
-    setBrandName(String(brandRow?.name || '시바산'))
-    setPayappActive(Boolean(brandRow?.payapp_active))
+    const companyId = entryBrand?.company_id ? String(entryBrand.company_id) : null
+    if (!companyId) {
+      showToast('회사 정보를 찾을 수 없어요')
+      setLoading(false)
+      return
+    }
+
+    const { data: companyRow } = await supabase
+      .from('brand_companies')
+      .select('id, name, payapp_active')
+      .eq('id', companyId)
+      .maybeSingle()
+
+    setCompanyName(String(companyRow?.name || '시바산'))
+    setPayappActive(Boolean(companyRow?.payapp_active))
+
+    const { data: companyBrands } = await supabase
+      .from('brands')
+      .select('id')
+      .eq('company_id', companyId)
+
+    const brandIds = (companyBrands || []).map((b: { id: string }) => b.id)
 
     const { data: orderRows } = await supabase
       .from('brand_orders')
       .select('id, created_at, items, total_amount, points_earned')
       .eq('profile_id', profile.id)
-      .eq('brand_id', CIVASAN_BRAND_ID)
+      .in('brand_id', brandIds)
       .gte('created_at', startIso)
       .lt('created_at', endIso)
       .order('created_at', { ascending: true })
@@ -134,7 +155,7 @@ function BrandOrdersInvoiceContent() {
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
       body: JSON.stringify({
-        brand_id: CIVASAN_BRAND_ID,
+        company_id: companyId,
         billing_month: billingMonth,
         total_amount: sumAmount,
         points_total: sumPoints,
@@ -146,9 +167,9 @@ function BrandOrdersInvoiceContent() {
     } else {
       const { data: existing } = await supabase
         .from('brand_billing_invoices')
-        .select('id, brand_id, total_amount, points_total, pouch_tier, status, paid_at, billing_month')
+        .select('id, company_id, total_amount, points_total, pouch_tier, status, paid_at, billing_month')
         .eq('owner_id', profile.id)
-        .eq('brand_id', CIVASAN_BRAND_ID)
+        .eq('company_id', companyId)
         .eq('billing_month', billingMonth)
         .maybeSingle()
       setInvoice((existing as BillingInvoice | null) || null)
@@ -243,7 +264,7 @@ function BrandOrdersInvoiceContent() {
           onChange={(e) => setYm(e.target.value)}
           style={{ padding: '8px 10px', borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 13, color: TEXT }}
         />
-        <div style={{ fontSize: 12, color: SUB, marginTop: 8 }}>{brandName} · {cycleLabel}</div>
+        <div style={{ fontSize: 12, color: SUB, marginTop: 8 }}>{companyName} · {cycleLabel}</div>
       </div>
 
       <div style={{ padding: '0 16px' }}>
@@ -306,7 +327,7 @@ function BrandOrdersInvoiceContent() {
             {modalStep === 'form' ? (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: TEXT }}>{brandName} 월청구서</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: TEXT }}>{companyName} 월청구서</div>
                   <button type="button" onClick={closeModal} disabled={busy} style={{ background: 'none', border: 'none', fontSize: 22, color: SUB, cursor: 'pointer' }}>✕</button>
                 </div>
                 <div style={{ fontSize: 12, color: SUB, marginBottom: 12 }}>{cycleLabel} · {payappActive ? '실결제' : '데모 (실과금 없음)'}</div>
