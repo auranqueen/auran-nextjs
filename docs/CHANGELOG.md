@@ -6,6 +6,9 @@
 
 ## 2026-07-27
 
+### 등급 패키지관리 탭 UX 정리
+- BrandTabTierPackages.tsx: 브랜드선택(TabBrandSelector) 제거 — 컴퍼니 전체 설정화면이라 브랜드별 선택 UI가 혼란을 줬음, myBrands[0] 기준으로 컴퍼니 자동resolve로 전환
+
 ### 등급 패키지관리 탭 — 고정구성품 관리 UI 통합
 - BrandTabTierPackages.tsx 전체교체(250→468줄): 등급 카드 펼침형으로 전환, 가격표시 "N원 이상"으로 문구변경, 고정구성품(부자재/인증패/진열장) 추가/수정/삭제 인라인 편집 UI 추가
 

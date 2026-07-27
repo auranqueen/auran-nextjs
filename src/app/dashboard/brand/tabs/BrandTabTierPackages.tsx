@@ -1,7 +1,6 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import TabBrandSelector from '../components/TabBrandSelector'
 const PURPLE = '#7B5EA7'
 const KIT_TYPES = ['부자재', '인증패', '진열장', '기타'] as const
 type TierPackage = {
@@ -33,7 +32,6 @@ type Props = {
   myBrands: { id: string; name: string }[]
 }
 export default function BrandTabTierPackages({ myBrands }: Props) {
-  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [companyName, setCompanyName] = useState('')
   const supabase = createClient()
@@ -54,7 +52,8 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
     setTimeout(() => setToast(''), 2500)
   }
   useEffect(() => {
-    if (!selectedBrandId) {
+    const anchorBrandId = myBrands[0]?.id
+    if (!anchorBrandId) {
       setCompanyId(null)
       setCompanyName('')
       return
@@ -64,7 +63,7 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
       const { data: brandRow } = await supabase
         .from('brands')
         .select('company_id')
-        .eq('id', selectedBrandId)
+        .eq('id', anchorBrandId)
         .maybeSingle()
       const cid = brandRow?.company_id ? String(brandRow.company_id) : null
       if (cancelled) return
@@ -85,7 +84,7 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
     return () => {
       cancelled = true
     }
-  }, [selectedBrandId, supabase])
+  }, [myBrands, supabase])
   const load = useCallback(async () => {
     if (!companyId) return
     setLoading(true)
@@ -281,9 +280,8 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
   } as const
   return (
     <div style={{ maxWidth: 640 }}>
-      <TabBrandSelector myBrands={myBrands} storageKey="tier-packages-brand" onSelect={setSelectedBrandId} />
-      {!selectedBrandId ? (
-        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
+      {!companyId ? (
+        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>불러오는 중…</div>
       ) : (
       <>
       <div style={{ marginBottom: 16 }}>
