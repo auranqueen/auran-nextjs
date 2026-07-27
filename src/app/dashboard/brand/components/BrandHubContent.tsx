@@ -26,6 +26,7 @@ interface Props {
   authId: string | null
   isCEO: boolean
   loginRole: string
+  staffRole: string | null
   rows: Array<Record<string, unknown> & { id: string; name?: string | null; status?: string | null; thumb_img?: string | null }>
   tab: 'pending' | 'active' | 'hidden'
   onTabChange: (t: 'pending' | 'active' | 'hidden') => void
@@ -33,7 +34,7 @@ interface Props {
   onNew: () => void
 }
 export default function BrandHubContent({
-  brandId, brandName, myBrands, onBrandChange: _onBrandChange, authId, isCEO, loginRole,
+  brandId, brandName, myBrands, onBrandChange: _onBrandChange, authId, isCEO, loginRole, staffRole,
   rows, tab, onTabChange, onEdit, onNew
 }: Props) {
   const [mainTab, setMainTab] = useState<MainTab>('home')
@@ -240,7 +241,7 @@ export default function BrandHubContent({
           {mainTab === 'sample' && <BrandTabSample myBrands={brandOpts} />}
           {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} />}
           {mainTab === 'expand' && <BrandTabExpand myBrands={brandOpts} />}
-          {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} />}
+          {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} staffRole={staffRole} />}
           {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} />}
           {mainTab === 'report' && <BrandTabReport myBrands={brandOpts} />}
           {mainTab === 'returns' && <BrandTabReturns myBrands={brandOpts} />}

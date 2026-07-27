@@ -11,9 +11,13 @@ interface InvoiceSettings {
   email: string
   greeting: string
   stamp_text: string
+  corp_name: string
+  biz_no: string
+  ceo_name: string
 }
 interface Props {
   myBrands: { id: string; name: string }[]
+  staffRole: string | null
 }
 const DEFAULT_SETTINGS: InvoiceSettings = {
   logo_name: '',
@@ -24,9 +28,13 @@ const DEFAULT_SETTINGS: InvoiceSettings = {
   email: '',
   greeting: '항상 저희 제품을 이용해 주셔서 감사합니다.\n제품 수령 후 수량을 확인해 주시고,\n문의사항은 언제든지 연락 주세요.',
   stamp_text: '확인',
+  corp_name: '',
+  biz_no: '',
+  ceo_name: '',
 }
 const PURPLE = '#7B5EA7'
-export default function BrandTabInvoice({ myBrands }: Props) {
+export default function BrandTabInvoice({ myBrands, staffRole }: Props) {
+  const canManageLogo = staffRole === 'ceo' || staffRole === 'director' || staffRole === 'manager'
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
   const brandId = selectedBrandId
   const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
@@ -34,12 +42,17 @@ export default function BrandTabInvoice({ myBrands }: Props) {
   const [settings, setSettings] = useState<InvoiceSettings>({ ...DEFAULT_SETTINGS, logo_name: brandName })
   const [saving, setSaving] = useState(false)
   const [toast, setToast] = useState('')
+  const [brandLogoUrl, setBrandLogoUrl] = useState('')
+  const [companyId, setCompanyId] = useState<string | null>(null)
+  const [companyLogoUrl, setCompanyLogoUrl] = useState('')
+  const [uploadingBrandLogo, setUploadingBrandLogo] = useState(false)
+  const [uploadingCompanyLogo, setUploadingCompanyLogo] = useState(false)
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const loadSettings = useCallback(async () => {
     if (!brandId) return
     const { data } = await supabase
       .from('brands')
-      .select('invoice_settings, name')
+      .select('invoice_settings, name, logo_url, company_id')
       .eq('id', brandId)
       .maybeSingle()
     if (data) {
@@ -53,7 +66,23 @@ export default function BrandTabInvoice({ myBrands }: Props) {
         email: s.email || '',
         greeting: s.greeting || DEFAULT_SETTINGS.greeting,
         stamp_text: s.stamp_text || data.name || brandName,
+        corp_name: s.corp_name || '',
+        biz_no: s.biz_no || '',
+        ceo_name: s.ceo_name || '',
       })
+      setBrandLogoUrl(data.logo_url || '')
+      const cid = data.company_id ? String(data.company_id) : null
+      setCompanyId(cid)
+      if (cid) {
+        const { data: companyRow } = await supabase
+          .from('brand_companies')
+          .select('logo_url')
+          .eq('id', cid)
+          .maybeSingle()
+        setCompanyLogoUrl(companyRow?.logo_url || '')
+      } else {
+        setCompanyLogoUrl('')
+      }
     }
   }, [brandId, brandName])
   useEffect(() => {
@@ -70,6 +99,40 @@ export default function BrandTabInvoice({ myBrands }: Props) {
     else showToast('저장 실패: ' + error.message)
     setSaving(false)
   }
+  const uploadBrandLogo = async (file: File) => {
+    if (!brandId) return
+    setUploadingBrandLogo(true)
+    try {
+      const ext = file.name.split('.').pop() || 'png'
+      const path = `brand-logos/${Date.now()}.${ext}`
+      const { data, error } = await supabase.storage.from('brand-assets').upload(path, file, { upsert: true })
+      if (error || !data) { showToast('로고 업로드 실패'); return }
+      const { data: urlData } = supabase.storage.from('brand-assets').getPublicUrl(path)
+      const { error: updateErr } = await supabase.from('brands').update({ logo_url: urlData.publicUrl }).eq('id', brandId)
+      if (updateErr) { showToast('로고 저장 실패'); return }
+      setBrandLogoUrl(urlData.publicUrl)
+      showToast('브랜드 로고 저장됐어요')
+    } finally {
+      setUploadingBrandLogo(false)
+    }
+  }
+  const uploadCompanyLogo = async (file: File) => {
+    if (!companyId) { showToast('소속 회사 정보가 없어요'); return }
+    setUploadingCompanyLogo(true)
+    try {
+      const ext = file.name.split('.').pop() || 'png'
+      const path = `company-logos/${Date.now()}.${ext}`
+      const { data, error } = await supabase.storage.from('brand-assets').upload(path, file, { upsert: true })
+      if (error || !data) { showToast('로고 업로드 실패'); return }
+      const { data: urlData } = supabase.storage.from('brand-assets').getPublicUrl(path)
+      const { error: updateErr } = await supabase.from('brand_companies').update({ logo_url: urlData.publicUrl }).eq('id', companyId)
+      if (updateErr) { showToast('회사 로고 저장 실패'); return }
+      setCompanyLogoUrl(urlData.publicUrl)
+      showToast('회사 로고 저장됐어요')
+    } finally {
+      setUploadingCompanyLogo(false)
+    }
+  }
   const SUB_COLOR = 'rgba(255,255,255,0.3)'
   const TEXT_COLOR = 'rgba(255,255,255,0.65)'
   const CARD_STYLE = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
@@ -84,11 +147,54 @@ export default function BrandTabInvoice({ myBrands }: Props) {
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999, whiteSpace: 'nowrap' }}>{toast}</div>
       )}
+      {canManageLogo && (
+        <div style={CARD_STYLE}>
+          <div style={{ fontSize: 12, color: SUB_COLOR, marginBottom: 14 }}>로고 관리 (관리자 전용)</div>
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ fontSize: 11, color: SUB_COLOR, marginBottom: 6 }}>서브브랜드 로고 ({brandName})</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {brandLogoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={brandLogoUrl} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: 44, height: 44, borderRadius: 8, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏭</div>
+              )}
+              <label style={{ fontSize: 12, color: PURPLE, cursor: 'pointer', border: `1px solid ${PURPLE}`, borderRadius: 8, padding: '6px 12px' }}>
+                {uploadingBrandLogo ? '업로드 중...' : '이미지 선택'}
+                <input type="file" accept="image/*" disabled={uploadingBrandLogo}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadBrandLogo(f) }}
+                  style={{ display: 'none' }} />
+              </label>
+            </div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: SUB_COLOR, marginBottom: 6 }}>회사 전체 로그인화면 로고</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {companyLogoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={companyLogoUrl} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: 44, height: 44, borderRadius: 8, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🏢</div>
+              )}
+              <label style={{ fontSize: 12, color: companyId ? PURPLE : SUB_COLOR, cursor: companyId ? 'pointer' : 'not-allowed', border: `1px solid ${companyId ? PURPLE : SUB_COLOR}`, borderRadius: 8, padding: '6px 12px' }}>
+                {uploadingCompanyLogo ? '업로드 중...' : '이미지 선택'}
+                <input type="file" accept="image/*" disabled={uploadingCompanyLogo || !companyId}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) void uploadCompanyLogo(f) }}
+                  style={{ display: 'none' }} />
+              </label>
+            </div>
+            {!companyId && <div style={{ fontSize: 10, color: SUB_COLOR, marginTop: 6 }}>이 브랜드는 소속 회사 정보가 없어요</div>}
+          </div>
+        </div>
+      )}
       <div style={CARD_STYLE}>
         <div style={{ fontSize: 12, color: SUB_COLOR, marginBottom: 14 }}>발행/명세서에 표시될 브랜드 정보 (팝빌 연동 예정)</div>
         {([
           { label: '로고 표시명', key: 'logo_name', placeholder: '예: CIVASAN' },
           { label: '브랜드 소개', key: 'brand_sub', placeholder: '예: 시바산 코리아 · 에스테틱 전문 브랜드' },
+          { label: '상호(법인명)', key: 'corp_name', placeholder: '예: 주식회사 시바산코리아' },
+          { label: '사업자등록번호', key: 'biz_no', placeholder: '000-00-00000' },
+          { label: '대표자명', key: 'ceo_name', placeholder: '홍길동' },
           { label: '주소', key: 'address', placeholder: '서울시 강남구 ...' },
           { label: '담당자', key: 'manager', placeholder: '홍길동' },
           { label: '연락처', key: 'tel', placeholder: '02-0000-0000' },

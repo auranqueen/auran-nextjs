@@ -6,6 +6,11 @@
 
 ## 2026-07-27
 
+### 세금계산서 탭 로고관리 + 사업자정보 확장
+- brand_companies UPDATE RLS 정책 추가(brand_companies_owner_update, 소속 브랜드 소유자가 자기 회사 로고 수정 가능하도록) — Supabase에서 직접 실행 완료
+- staffRole(PIN 직원role) 배선: page.tsx → BrandHubContent → BrandTabInvoice, ceo/director/manager만 로고관리 섹션 노출
+- BrandTabInvoice.tsx: 서브브랜드 로고(brands.logo_url) + 회사전체 로고(brand_companies.logo_url) 업로드 UI 추가, invoice_settings에 상호(corp_name)/사업자등록번호(biz_no)/대표자명(ceo_name) 필드 추가
+
 ### 오렌어드민 "제휴 브랜드사 관리" 화면 신규
 - src/app/admin/companies/page.tsx 신규 생성: brand_companies 목록(로고, PayApp 연동상태, 소속 브랜드 수) + 상세 모달(회사명/로고업로드/PayApp 3키 입력)
 - AdminChrome.tsx 사이드바에 "제휴 브랜드사" 메뉴 추가(브랜드사 메뉴 바로 아래)

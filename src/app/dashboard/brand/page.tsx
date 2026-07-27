@@ -559,6 +559,7 @@ export default function BrandDashboardPage() {
         authId={authId}
         isCEO={isCEO}
         loginRole={loginRole}
+        staffRole={pinAuth?.role ?? null}
         rows={rows}
         tab={tab}
         onTabChange={setTab}
