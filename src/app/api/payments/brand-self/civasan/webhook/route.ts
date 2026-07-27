@@ -139,6 +139,7 @@ export async function POST(req: NextRequest) {
       {
         company_id: companyId,
         owner_id: intent.owner_id,
+        origin_track: 'A',
         grade: tierName,
         tier_package_id: order.tier_package_id,
         purchase_amount: Number(order.amount),
@@ -146,7 +147,7 @@ export async function POST(req: NextRequest) {
         grade_purchased_at: nowIso,
         care_enabled: true,
       },
-      { onConflict: 'company_id,owner_id' },
+      { onConflict: 'company_id,owner_id,origin_track' },
     )
     const { data: ownerProf } = await svc.from('profiles').select('auth_id').eq('id', intent.owner_id).maybeSingle()
     if (ownerProf?.auth_id) {

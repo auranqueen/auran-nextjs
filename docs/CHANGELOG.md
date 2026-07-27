@@ -6,6 +6,11 @@
 
 ## 2026-07-27
 
+### brand_owner_grades A/B 트랙 분리 안전장치
+- origin_track 컬럼 추가(company_id+owner_id+origin_track 유니크로 변경) — 같은 컴퍼니에서 A등급/B뱃지를 한 원장이 동시에 가질 수 있도록 공존 보장(향후 A원장이 B뱃지도 구매하는 시나리오 대비)
+- tier-cart-create/route.ts, webhook/route.ts: brand_owner_grades upsert에 origin_track:'A' 반영
+- civasan/create/route.ts는 카트방식 전환 후 미사용 상태로 확인(정리 대상, 이번엔 미수정)
+
 ### 물류허브 — 등급구매 발송처리 연동
 - tier-orders/ship/route.ts 신규 — 승인된 등급주문에 운송장 등록(tracking_carrier/tracking_number/shipped_at)
 - BrandTierOrderFulfillmentList.tsx 신규 — 재고발주(BrandBatchFulfillmentList)와 별도 컴포넌트로 분리, 스마트택배 자동웹훅(subscribeDelivery) 재사용

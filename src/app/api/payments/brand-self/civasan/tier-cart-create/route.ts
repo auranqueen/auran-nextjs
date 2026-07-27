@@ -15,6 +15,7 @@ async function resolveOwnedTierPrice(
     .select('tier_package_id, payment_status')
     .eq('company_id', companyId)
     .eq('owner_id', ownerProfileId)
+    .eq('origin_track', 'A')
     .maybeSingle()
   if (!existingGrade || existingGrade.payment_status !== 'paid') return null
   const ownedPackageId = existingGrade.tier_package_id ? String(existingGrade.tier_package_id) : null
@@ -41,6 +42,7 @@ async function activateOwnerGrade(
     {
       company_id: companyId,
       owner_id: ownerProfileId,
+      origin_track: 'A',
       grade: tierName,
       tier_package_id: tierPackageId,
       purchase_amount: purchaseAmount,
@@ -48,7 +50,7 @@ async function activateOwnerGrade(
       grade_purchased_at: nowIso,
       care_enabled: true,
     },
-    { onConflict: 'company_id,owner_id' },
+    { onConflict: 'company_id,owner_id,origin_track' },
   )
 }
 export async function POST(req: NextRequest) {
