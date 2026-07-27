@@ -2,47 +2,28 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 const PURPLE = '#7B5EA7'
-const CATALOG_TYPES = ['제품', '기기', '부자재', '기타'] as const
-type CatalogItem = {
+type Product = {
   id: string
   brand_id: string
-  item_name: string
-  item_type: string
-  shop_price: number
-  image_url: string | null
-  description: string | null
-  is_active: boolean | null
+  name: string
+  supply_price: number
+  thumb_img: string | null
+  category: string | null
+  status: string
+  is_tier_catalog: boolean
 }
-type FormState = {
-  brand_id: string
-  item_name: string
-  item_type: string
-  shop_price: string
-  image_url: string
-  description: string
-}
-const EMPTY_FORM = (defaultBrandId: string): FormState => ({
-  brand_id: defaultBrandId,
-  item_name: '',
-  item_type: '제품',
-  shop_price: '',
-  image_url: '',
-  description: '',
-})
 type Props = {
   companyId: string | null
   myBrands: { id: string; name: string }[]
 }
 export default function BrandTierCatalogSection({ companyId, myBrands }: Props) {
   const supabase = createClient()
-  const [items, setItems] = useState<CatalogItem[]>([])
+  const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState('')
-  const [formOpen, setFormOpen] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [form, setForm] = useState<FormState>(EMPTY_FORM(myBrands[0]?.id || ''))
-  const [uploading, setUploading] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const [search, setSearch] = useState('')
+  const [brandFilter, setBrandFilter] = useState<string | null>(null)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
   const showToast = (t: string) => {
     setToast(t)
     setTimeout(() => setToast(''), 2500)
@@ -52,127 +33,53 @@ export default function BrandTierCatalogSection({ companyId, myBrands }: Props) 
     if (!companyId) return
     setLoading(true)
     try {
+      const brandIds = myBrands.map((b) => b.id)
+      if (brandIds.length === 0) {
+        setProducts([])
+        return
+      }
       const { data } = await supabase
-        .from('brand_tier_catalog_items')
-        .select('id, brand_id, item_name, item_type, shop_price, image_url, description, is_active')
-        .eq('company_id', companyId)
+        .from('brand_products')
+        .select('id, brand_id, name, supply_price, thumb_img, category, status, is_tier_catalog')
+        .in('brand_id', brandIds)
+        .eq('status', 'active')
         .order('created_at', { ascending: false })
-      setItems((data || []) as CatalogItem[])
+      setProducts((data || []) as Product[])
     } finally {
       setLoading(false)
     }
-  }, [companyId, supabase])
+  }, [companyId, myBrands, supabase])
   useEffect(() => {
     void load()
   }, [load])
-  const openAdd = () => {
-    setEditingId(null)
-    setForm(EMPTY_FORM(myBrands[0]?.id || ''))
-    setFormOpen(true)
-  }
-  const openEdit = (item: CatalogItem) => {
-    setEditingId(item.id)
-    setForm({
-      brand_id: item.brand_id,
-      item_name: item.item_name,
-      item_type: item.item_type,
-      shop_price: String(Math.trunc(item.shop_price)),
-      image_url: item.image_url || '',
-      description: item.description || '',
-    })
-    setFormOpen(true)
-  }
-  const closeForm = () => {
-    setFormOpen(false)
-    setEditingId(null)
-  }
-  const handleUpload = async (file: File) => {
-    setUploading(true)
-    try {
-      const ext = file.name.split('.').pop() || 'png'
-      const path = `tier-catalog/${Date.now()}.${ext}`
-      const { data, error } = await supabase.storage.from('brand-assets').upload(path, file, { upsert: true })
-      if (error || !data) {
-        showToast('이미지 업로드 실패')
-        return
-      }
-      const { data: urlData } = supabase.storage.from('brand-assets').getPublicUrl(path)
-      setForm((f) => ({ ...f, image_url: urlData.publicUrl }))
-    } finally {
-      setUploading(false)
-    }
-  }
-  const submit = async () => {
+  const toggle = async (product: Product) => {
     if (!companyId) return
-    const itemName = form.item_name.trim()
-    const shopPrice = Math.trunc(Number(form.shop_price.replace(/,/g, '')))
-    if (!form.brand_id) {
-      showToast('브랜드를 선택해 주세요')
-      return
-    }
-    if (!itemName) {
-      showToast('제품명을 입력해 주세요')
-      return
-    }
-    if (!Number.isFinite(shopPrice) || shopPrice < 0) {
-      showToast('샵가를 확인해 주세요')
-      return
-    }
-    setSaving(true)
+    setTogglingId(product.id)
+    const next = !product.is_tier_catalog
+    setProducts((prev) => prev.map((p) => (p.id === product.id ? { ...p, is_tier_catalog: next } : p)))
     try {
-      const res = await fetch('/api/brand/tier-catalog-items/save', {
+      const res = await fetch('/api/brand/tier-catalog-toggle', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
-        body: JSON.stringify({
-          company_id: companyId,
-          brand_id: form.brand_id,
-          id: editingId || undefined,
-          item_name: itemName,
-          item_type: form.item_type,
-          shop_price: shopPrice,
-          image_url: form.image_url,
-          description: form.description,
-        }),
+        body: JSON.stringify({ company_id: companyId, product_id: product.id, is_tier_catalog: next }),
       })
       const json = await res.json().catch(() => ({}))
       if (!json?.ok) {
-        showToast('저장 실패')
+        setProducts((prev) => prev.map((p) => (p.id === product.id ? { ...p, is_tier_catalog: !next } : p)))
+        showToast('변경 실패')
         return
       }
-      showToast(editingId ? '수정했어요' : '추가했어요')
-      closeForm()
-      await load()
+      showToast(next ? '카탈로그에 포함됐어요' : '카탈로그에서 제외됐어요')
     } finally {
-      setSaving(false)
+      setTogglingId(null)
     }
   }
-  const remove = async (item: CatalogItem) => {
-    if (!companyId) return
-    if (!window.confirm(`"${item.item_name}" 품목을 삭제할까요?`)) return
-    const res = await fetch('/api/brand/tier-catalog-items/delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({ company_id: companyId, id: item.id }),
-    })
-    const json = await res.json().catch(() => ({}))
-    if (!json?.ok) {
-      showToast('삭제 실패')
-      return
-    }
-    showToast('삭제했어요')
-    await load()
-  }
-  const inputStyle = {
-    width: '100%',
-    padding: '8px 10px',
-    borderRadius: 8,
-    border: '1px solid rgba(255,255,255,0.12)',
-    background: 'rgba(0,0,0,0.25)',
-    color: '#fff',
-    fontSize: 13,
-  } as const
+  const filtered = products.filter((p) => {
+    if (brandFilter && p.brand_id !== brandFilter) return false
+    if (search.trim() && !p.name.toLowerCase().includes(search.trim().toLowerCase())) return false
+    return true
+  })
   return (
     <div style={{ marginTop: 20 }}>
       {toast && (
@@ -180,96 +87,74 @@ export default function BrandTierCatalogSection({ companyId, myBrands }: Props) 
           {toast}
         </div>
       )}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#fff' }}>등급 카탈로그 (제품·기기)</div>
+      <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 4 }}>등급 카탈로그 (제품·기기)</div>
+      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>
+        이미 등록된 제품 중 원장이 등급구매 시 자율선택할 수 있게 할 항목을 켜주세요
+      </div>
+      <input
+        type="text"
+        placeholder="제품명 검색"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 13, marginBottom: 10 }}
+      />
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
         <button
           type="button"
-          onClick={openAdd}
-          style={{ fontSize: 12, padding: '6px 12px', borderRadius: 8, border: `1px solid ${PURPLE}`, background: 'transparent', color: '#c4a8f0', cursor: 'pointer' }}
+          onClick={() => setBrandFilter(null)}
+          style={{ fontSize: 12, padding: '5px 12px', borderRadius: 20, border: `1px solid ${!brandFilter ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: !brandFilter ? 'rgba(123,94,167,0.2)' : 'transparent', color: !brandFilter ? '#c4a8f0' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
         >
-          + 품목 추가
+          전체
         </button>
+        {myBrands.map((b) => (
+          <button
+            key={b.id}
+            type="button"
+            onClick={() => setBrandFilter(b.id)}
+            style={{ fontSize: 12, padding: '5px 12px', borderRadius: 20, border: `1px solid ${brandFilter === b.id ? PURPLE : 'rgba(255,255,255,0.1)'}`, background: brandFilter === b.id ? 'rgba(123,94,167,0.2)' : 'transparent', color: brandFilter === b.id ? '#c4a8f0' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}
+          >
+            {b.name}
+          </button>
+        ))}
       </div>
-      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 14 }}>
-        원장이 등급구매 시 자율선택할 수 있는 제품·기기 목록이에요
-      </div>
-      {formOpen && (
-        <div style={{ padding: 14, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)', marginBottom: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-            {form.image_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={form.image_url} alt="" style={{ width: 48, height: 48, borderRadius: 8, objectFit: 'cover' }} />
-            ) : (
-              <div style={{ width: 48, height: 48, borderRadius: 8, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>📦</div>
-            )}
-            <label style={{ fontSize: 12, color: PURPLE, cursor: 'pointer', border: `1px solid ${PURPLE}`, borderRadius: 8, padding: '6px 12px' }}>
-              {uploading ? '업로드 중...' : '이미지 선택'}
-              <input type="file" accept="image/*" disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleUpload(f) }} style={{ display: 'none' }} />
-            </label>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 10 }}>
-            <label style={{ flex: '1 1 140px' }}>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>브랜드</div>
-              <select value={form.brand_id} onChange={(e) => setForm((f) => ({ ...f, brand_id: e.target.value }))} style={inputStyle}>
-                {myBrands.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-              </select>
-            </label>
-            <label style={{ flex: '1 1 100px' }}>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>종류</div>
-              <select value={form.item_type} onChange={(e) => setForm((f) => ({ ...f, item_type: e.target.value }))} style={inputStyle}>
-                {CATALOG_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-              </select>
-            </label>
-          </div>
-          <label style={{ display: 'block', marginBottom: 8 }}>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>제품명</div>
-            <input type="text" value={form.item_name} onChange={(e) => setForm((f) => ({ ...f, item_name: e.target.value }))} style={inputStyle} />
-          </label>
-          <label style={{ display: 'block', marginBottom: 8 }}>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>샵가(원)</div>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={form.shop_price}
-              onChange={(e) => setForm((f) => ({ ...f, shop_price: e.target.value.replace(/[^\d]/g, '') }))}
-              style={{ ...inputStyle, fontFamily: "'JetBrains Mono', monospace" }}
-            />
-          </label>
-          <label style={{ display: 'block', marginBottom: 12 }}>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>설명(선택)</div>
-            <input type="text" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} style={inputStyle} />
-          </label>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button type="button" onClick={closeForm} disabled={saving} style={{ flex: 1, padding: 10, borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 12, cursor: 'pointer' }}>취소</button>
-            <button type="button" onClick={() => void submit()} disabled={saving} style={{ flex: 2, padding: 10, borderRadius: 8, border: 'none', background: PURPLE, color: '#fff', fontSize: 12, fontWeight: 600, cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.7 : 1 }}>
-              {saving ? '저장 중…' : editingId ? '수정 저장' : '추가하기'}
-            </button>
-          </div>
-        </div>
-      )}
       {loading ? (
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>불러오는 중…</div>
-      ) : items.length === 0 ? (
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>등록된 카탈로그 품목이 없어요</div>
+      ) : filtered.length === 0 ? (
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>제품이 없어요 (제품등록 탭에서 먼저 등록해 주세요)</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {items.map((item) => (
-            <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.03)' }}>
-              {item.image_url ? (
+          {filtered.map((p) => (
+            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, background: p.is_tier_catalog ? 'rgba(123,94,167,0.08)' : 'rgba(255,255,255,0.03)' }}>
+              {p.thumb_img ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={item.image_url} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
+                <img src={p.thumb_img} alt="" style={{ width: 36, height: 36, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }} />
               ) : (
                 <div style={{ width: 36, height: 36, borderRadius: 6, background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>📦</div>
               )}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, color: '#fff' }}>{item.item_name}</div>
+                <div style={{ fontSize: 13, color: '#fff' }}>{p.name}</div>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>
-                  {brandNameById(item.brand_id)} · {item.item_type}
+                  {brandNameById(p.brand_id)}{p.category ? ` · ${p.category}` : ''}
                 </div>
               </div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{Math.trunc(item.shop_price).toLocaleString()}원</div>
-              <button type="button" onClick={() => openEdit(item)} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 12 }}>수정</button>
-              <button type="button" onClick={() => void remove(item)} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: 'transparent', color: '#e88', cursor: 'pointer', fontSize: 12 }}>삭제</button>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>{Math.trunc(p.supply_price).toLocaleString()}원</div>
+              <button
+                type="button"
+                disabled={togglingId === p.id}
+                onClick={() => void toggle(p)}
+                style={{
+                  fontSize: 11,
+                  padding: '5px 12px',
+                  borderRadius: 20,
+                  border: `1px solid ${p.is_tier_catalog ? PURPLE : 'rgba(255,255,255,0.15)'}`,
+                  background: p.is_tier_catalog ? PURPLE : 'transparent',
+                  color: p.is_tier_catalog ? '#fff' : 'rgba(255,255,255,0.4)',
+                  cursor: togglingId === p.id ? 'wait' : 'pointer',
+                  opacity: togglingId === p.id ? 0.6 : 1,
+                }}
+              >
+                {p.is_tier_catalog ? '포함됨' : '포함하기'}
+              </button>
             </div>
           ))}
         </div>

@@ -11,21 +11,21 @@ async function assertCompanyAccess(
     .select('id')
     .eq('company_id', companyId)
   const brandIds = (companyBrands || []).map((b: { id: string }) => b.id)
-  if (brandIds.length === 0) return false
+  if (brandIds.length === 0) return { allowed: false, brandIds: [] as string[] }
   const { data: member } = await supabase
     .from('brand_members')
     .select('brand_id')
     .eq('user_id', userPk)
     .in('brand_id', brandIds)
     .maybeSingle()
-  if (member?.brand_id) return true
+  if (member?.brand_id) return { allowed: true, brandIds }
   const { data: owned } = await supabase
     .from('brands')
     .select('id')
     .in('id', brandIds)
     .eq('user_id', userPk)
     .maybeSingle()
-  return Boolean(owned?.id)
+  return { allowed: Boolean(owned?.id), brandIds }
 }
 export async function POST(req: NextRequest) {
   const supabase = createClient()
@@ -34,9 +34,10 @@ export async function POST(req: NextRequest) {
   } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ ok: false, error: 'not_logged_in' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
-  const id = typeof body?.id === 'string' ? body.id.trim() : ''
   const companyId = typeof body?.company_id === 'string' ? body.company_id.trim() : ''
-  if (!id || !companyId) {
+  const productId = typeof body?.product_id === 'string' ? body.product_id.trim() : ''
+  const isTierCatalog = Boolean(body?.is_tier_catalog)
+  if (!companyId || !productId) {
     return NextResponse.json({ ok: false, error: 'missing_ids' }, { status: 400 })
   }
   const { data: me } = await supabase
@@ -47,17 +48,24 @@ export async function POST(req: NextRequest) {
   if (!me?.id || me.role !== 'brand') {
     return NextResponse.json({ ok: false, error: 'brand_only' }, { status: 403 })
   }
-  const allowed = await assertCompanyAccess(supabase, me.id, companyId)
+  const { allowed, brandIds } = await assertCompanyAccess(supabase, me.id, companyId)
   if (!allowed) {
     return NextResponse.json({ ok: false, error: 'forbidden_company' }, { status: 403 })
+  }
+  const { data: product } = await supabase
+    .from('brand_products')
+    .select('id, brand_id')
+    .eq('id', productId)
+    .maybeSingle()
+  if (!product?.id || !brandIds.includes(String(product.brand_id))) {
+    return NextResponse.json({ ok: false, error: 'product_not_found' }, { status: 404 })
   }
   const svc = tryCreateServiceClient()
   const db = svc ?? supabase
   const { error } = await db
-    .from('brand_tier_catalog_items')
-    .delete()
-    .eq('id', id)
-    .eq('company_id', companyId)
+    .from('brand_products')
+    .update({ is_tier_catalog: isTierCatalog })
+    .eq('id', productId)
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }

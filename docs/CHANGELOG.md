@@ -6,6 +6,11 @@
 
 ## 2026-07-27
 
+### 등급 카탈로그 설계 수정 — 제품 이중등록 방지
+- ⚠️ 구조 재검토: brand_tier_catalog_items(신규 입력 테이블) 방식은 제품 이중등록 문제로 폐기, brand_products.is_tier_catalog 토글 방식으로 전환
+- brand_products에 is_tier_catalog 컬럼 추가, 기존 tier-catalog-items API 2개 삭제, tier-catalog-toggle API 신규
+- BrandTierCatalogSection.tsx 전체교체: 신규입력 폼 → 기존 등록제품 목록에서 토글 켜고끄기 방식으로 변경(검색+브랜드필터 유지)
+
 ### 등급 카탈로그 관리 화면
 - BrandTierCatalogSection.tsx 신규: 등급 패키지관리 탭 안에서 제품/기기 카탈로그 등록(썸네일업로드+브랜드선택+종류+샵가+설명), 목록조회/수정/삭제
 - BrandTabTierPackages.tsx에 통합(같은 탭 안에서 가격관리+구성품관리+카탈로그관리 다 됨)
