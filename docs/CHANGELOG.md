@@ -6,6 +6,9 @@
 
 ## 2026-07-27
 
+### 등급 카탈로그(제품/기기) 관리 API
+- tier-catalog-items/save/route.ts, tier-catalog-items/delete/route.ts 신규 — brand_tier_catalog_items CRUD, 서브브랜드 귀속(brand_id) 검증 포함
+
 ### 등급 패키지관리 탭 UX 정리
 - BrandTabTierPackages.tsx: 브랜드선택(TabBrandSelector) 제거 — 컴퍼니 전체 설정화면이라 브랜드별 선택 UI가 혼란을 줬음, myBrands[0] 기준으로 컴퍼니 자동resolve로 전환
 
