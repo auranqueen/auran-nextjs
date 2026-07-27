@@ -6,6 +6,11 @@
 
 ## 2026-07-27
 
+### 물류허브 — 등급구매 발송처리 연동
+- tier-orders/ship/route.ts 신규 — 승인된 등급주문에 운송장 등록(tracking_carrier/tracking_number/shipped_at)
+- BrandTierOrderFulfillmentList.tsx 신규 — 재고발주(BrandBatchFulfillmentList)와 별도 컴포넌트로 분리, 스마트택배 자동웹훅(subscribeDelivery) 재사용
+- BrandInventoryFulfillment.tsx: companyId state 추가(resolveCompanyBrands에서 함께 resolve), "등급혜택 · 발송대기" 섹션으로 통합 노출(트랙A 배치 섹션과 트랙B 사이)
+
 ### 발송오더 승인 화면
 - tier-orders/approve/route.ts 신규 — 승인시 approved_at/approved_by 기록
 - BrandTierOrderApprovalSection.tsx 신규 — 결제완료(status='paid') 등급구매 주문 목록, 원장명/트랙A·B뱃지/담은금액/품목수 표시, 승인대기·물류전달됨 구분, 등급 패키지관리 탭에 통합

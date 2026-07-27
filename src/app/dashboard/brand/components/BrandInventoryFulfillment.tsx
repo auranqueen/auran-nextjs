@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import BrandLogisticsDailyClose from './BrandLogisticsDailyClose'
 import BrandBatchFulfillmentList from './BrandBatchFulfillmentList'
+import BrandTierOrderFulfillmentList from './BrandTierOrderFulfillmentList'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -50,6 +51,7 @@ async function subscribeDelivery(courier: string, trackingNumber: string, orderI
 export default function BrandInventoryFulfillment({ brandId, brandName }: Props) {
   const supabase = createClient()
   const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
+  const [companyId, setCompanyId] = useState<string | null>(null)
   const [bOrders, setBOrders] = useState<TrackBOrder[]>([])
   const [loadingB, setLoadingB] = useState(true)
   const [toast, setToast] = useState('')
@@ -63,10 +65,12 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
   const resolveCompanyBrands = useCallback(async () => {
     if (!brandId) {
       setCompanyBrandIds([])
+      setCompanyId(null)
       return
     }
     const { data } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
     const cid = data?.company_id ? String(data.company_id) : null
+    setCompanyId(cid)
     if (!cid) {
       setCompanyBrandIds([brandId])
       return
@@ -285,6 +289,9 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
           <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>브랜드 범위 확인 중…</div>
         )}
       </div>
+
+      <div style={{ fontSize: 11, color: GOLD, marginTop: 20, marginBottom: 8 }}>등급혜택 · 발송대기</div>
+      <BrandTierOrderFulfillmentList companyId={companyId} onToast={showToast} />
 
       <div style={CARD}>
         <div style={{ fontSize: 11, color: '#c4a8f0', marginBottom: 8 }}>트랙B · 개별 발송 (기존 유지)</div>
