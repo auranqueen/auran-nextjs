@@ -29,6 +29,7 @@ const MENU = [
       { label: '파트너스', href: '/admin/members?role=partner', icon: '💼', color: '#4a8dc0', sub: '커미션·링크·정산', countKey: 'partner' as const },
       { label: '원장님', href: '/admin/owners', icon: '🏥', color: '#bf5f90', sub: '구독·예약·스토어', countKey: 'owner' as const },
       { label: '브랜드사', href: '/admin/brands', icon: '🏭', color: '#4cad7e', sub: '납품·공지·정산', countKey: 'brand' as const },
+      { label: '제휴 브랜드사', href: '/admin/companies', icon: '🏢', color: '#4cad7e', sub: 'PayApp연동·로고' },
       { label: '승인 요청', href: '/admin/approvals', icon: '✅', color: '#c9a84c', sub: '파트너·원장·브랜드 승인' },
     ],
   },
