@@ -31,3 +31,5 @@ supabase/.temp/
 # local build agent logs
 build-output*.log
 
+
+build-*.log
