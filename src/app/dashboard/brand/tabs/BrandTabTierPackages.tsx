@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
+import BrandTierCatalogSection from './BrandTierCatalogSection'
 import { createClient } from '@/lib/supabase/client'
 const PURPLE = '#7B5EA7'
 const KIT_TYPES = ['부자재', '인증패', '진열장', '기타'] as const
@@ -459,6 +460,7 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
       {toast ? (
         <div style={{ marginTop: 12, fontSize: 12, color: '#c4a8f0' }}>{toast}</div>
       ) : null}
+      <BrandTierCatalogSection companyId={companyId} myBrands={myBrands} />
       </>
       )}
     </div>

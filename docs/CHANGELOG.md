@@ -6,6 +6,10 @@
 
 ## 2026-07-27
 
+### 등급 카탈로그 관리 화면
+- BrandTierCatalogSection.tsx 신규: 등급 패키지관리 탭 안에서 제품/기기 카탈로그 등록(썸네일업로드+브랜드선택+종류+샵가+설명), 목록조회/수정/삭제
+- BrandTabTierPackages.tsx에 통합(같은 탭 안에서 가격관리+구성품관리+카탈로그관리 다 됨)
+
 ### 등급 카탈로그(제품/기기) 관리 API
 - tier-catalog-items/save/route.ts, tier-catalog-items/delete/route.ts 신규 — brand_tier_catalog_items CRUD, 서브브랜드 귀속(brand_id) 검증 포함
 
