@@ -6,6 +6,10 @@
 
 ## 2026-07-27
 
+### 원장 등급 장바구니 화면 신규
+- OwnerBrandSelfTierSection.tsx 대폭 단순화(421→134줄): 즉시결제/데모모달 로직 제거, "담으러 가기" 버튼으로 장바구니 페이지 이동만 담당
+- tier-cart/page.tsx 신규(229줄): 카탈로그(검색+브랜드필터+체크+수량+실시간합계)+고정구성품(자동표시) 조회, 최소금액 미달시 결제버튼 비활성화
+
 ### 등급 카탈로그 설계 수정 — 제품 이중등록 방지
 - ⚠️ 구조 재검토: brand_tier_catalog_items(신규 입력 테이블) 방식은 제품 이중등록 문제로 폐기, brand_products.is_tier_catalog 토글 방식으로 전환
 - brand_products에 is_tier_catalog 컬럼 추가, 기존 tier-catalog-items API 2개 삭제, tier-catalog-toggle API 신규
