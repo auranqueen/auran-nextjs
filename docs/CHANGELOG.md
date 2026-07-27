@@ -6,6 +6,11 @@
 
 ## 2026-07-27
 
+### 등급 장바구니 결제 API + 웹훅 전환
+- tier-cart-create/route.ts 신규: 장바구니 항목 검증(카탈로그귀속+활성상태+컴퍼니소속 확인), 합계가 등급 최소금액 이상인지 체크, brand_tier_orders+brand_tier_order_items 생성 후 컴퍼니 PayApp 결제요청
+- webhook/route.ts 전체교체: 등급구매(tier) 검증방식을 정가-차액계산에서 brand_tier_orders 조회 방식으로 전환, 결제완료시 주문 status='paid' + 등급 활성화
+- tier-cart/page.tsx: 체크아웃 필드명 catalog_product_id→product_id로 API와 통일
+
 ### 원장 등급 장바구니 화면 신규
 - OwnerBrandSelfTierSection.tsx 대폭 단순화(421→134줄): 즉시결제/데모모달 로직 제거, "담으러 가기" 버튼으로 장바구니 페이지 이동만 담당
 - tier-cart/page.tsx 신규(229줄): 카탈로그(검색+브랜드필터+체크+수량+실시간합계)+고정구성품(자동표시) 조회, 최소금액 미달시 결제버튼 비활성화

@@ -100,7 +100,7 @@ function TierCartContent() {
     try {
       const items = Object.entries(cart)
         .filter(([, qty]) => qty > 0)
-        .map(([catalog_product_id, qty]) => ({ catalog_product_id, qty }))
+        .map(([product_id, qty]) => ({ product_id, qty }))
       const res = await fetch('/api/payments/brand-self/civasan/tier-cart-create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
