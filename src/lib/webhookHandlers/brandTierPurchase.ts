@@ -4,6 +4,7 @@ type TierTarget = {
   company_id?: string
   owner_profile_id?: string
   tier_name?: string
+  items?: Array<{ product_id: string; item_name: string; unit_price: number; qty: number; line_amount: number }>
 }
 type PaymentIntentRow = {
   id: string
@@ -88,6 +89,18 @@ export async function handleBrandTierPurchase(
   if (orderErr || !tierOrder?.id) {
     console.error('[brand_tier_purchase] brand_tier_orders insert failed', orderErr)
     return
+  }
+  if (Array.isArray(payload.items) && payload.items.length > 0) {
+    await client.from('brand_tier_order_items').insert(
+      payload.items.map((it) => ({
+        order_id: tierOrder.id,
+        product_id: it.product_id,
+        item_name: it.item_name,
+        unit_price: it.unit_price,
+        qty: it.qty,
+        line_amount: it.line_amount,
+      })),
+    )
   }
   await client.from('brand_owner_grades').upsert(
     {

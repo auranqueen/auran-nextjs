@@ -6,6 +6,10 @@
 
 ## 2026-07-27
 
+### 트랙B 등급 장바구니 결제 API
+- cart-create/route.ts 신규(brand-tier 하위): 카탈로그(brand_products.is_tier_catalog, A와 공유) 검증+합계계산, 결제intent의 target_id에 검증된 라인아이템 포함해서 저장, 결제는 오렌 공용 PayApp env 그대로 사용
+- brandTierPurchase.ts: TierTarget에 items 필드 추가, 웹훅에서 결제완료시 brand_tier_order_items도 함께 insert
+
 ### 트랙B 뱃지구매 컴퍼니전환 완료 (3/3)
 - brandTierPurchase.ts 전체교체: target payload company_id 기준 파싱, brand_owner_grades upsert를 company_id+origin_track='B'+brand_id(하위호환용 anchor brand 이중기록)로 전환, 스폰서 조회도 company_id+origin_track='B' 기준
 - 결제(오렌 공용 PayApp env)와 커미션율(brand_tier_packages.commission_rate, 오렌 전용 보호) 로직은 그대로 유지 — 건드리지 않음
