@@ -6,6 +6,10 @@
 
 ## 2026-07-27
 
+### 트랙B 뱃지구매 컴퍼니전환 2/3
+- brand-tier/create/route.ts 전체교체: brand_id+distribution_type join 방식→company_id 기준(tier_contract 자격은 해당 컴퍼니 소속 브랜드 중 하나라도 tier_contract면 인정), 자격증명/보유등급 조회 origin_track='B'로 스코프. 결제(오렌 공용 PayApp env)는 그대로 유지
+- targetPayload를 brand_id→company_id로 변경(다음 단계에서 brandTierPurchase.ts 웹훅도 맞춰야 함, 아직 안 맞춰짐)
+
 ### 트랙B 뱃지구매 컴퍼니전환 1/3
 - owner/page.tsx: tierBadgeBrands 조립 로직을 brand_id+distribution_type 필터에서 company_id 기준으로 전환(distribution_type='tier_contract' 브랜드의 소속 컴퍼니 찾아서 그 컴퍼니의 brand_tier_packages/brand_owner_grades(origin_track='B') 조회)
 
