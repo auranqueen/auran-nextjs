@@ -6,6 +6,10 @@
 
 ## 2026-07-27
 
+### 등급 고정구성품(부자재/인증패/진열장) 관리 API
+- tier-kit-items/save/route.ts, tier-kit-items/delete/route.ts 신규 — brand_tier_kit_items CRUD, 컴퍼니 소속확인(assertCompanyAccess) 재사용
+- 신규 파일 UTF-16 인코딩 문제 발견/수정(UTF-8로 정규화)
+
 ### 등급구매(브랜드사컴퍼니 전용) 컴퍼니 전환 완료 (4/4)
 - tier-packages/save/route.ts: brand_id 기준 접근권한 체크(brand_members/brands.user_id)를 컴퍼니 소속 브랜드 전체로 확장(assertCompanyAccess), company_id 기준 업데이트로 전환
 - BrandTabTierPackages.tsx: 브랜드 선택은 유지하되 내부적으로 company_id resolve해서 회사 전체 등급 패키지(취급점/전문점/프리미엄전문점/메디슈티컬) 공통 관리
