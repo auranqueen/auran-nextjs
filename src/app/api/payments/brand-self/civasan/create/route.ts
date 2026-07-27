@@ -4,34 +4,32 @@ import { tryCreateServiceClient } from '@/lib/supabase/service'
 import { canUpgradeToTier, computeTierUpgradeCharge } from '@/lib/brandTierGrade'
 import { formEncode, parsePayAppResponse, PAYAPP_API_URL } from '@/lib/payments/payappUtil'
 
-const CIVASAN_BRAND_ID = '60413ded-91f4-4004-b677-ae684cb0677e'
 const MIN_AMOUNT = 1000
 
 async function resolveOwnedTierPrice(
   client: ReturnType<typeof createClient>,
+  companyId: string,
   ownerProfileId: string,
 ): Promise<number | null> {
   const { data: existingGrade } = await client
     .from('brand_owner_grades')
     .select('tier_package_id, payment_status')
-    .eq('brand_id', CIVASAN_BRAND_ID)
+    .eq('company_id', companyId)
     .eq('owner_id', ownerProfileId)
     .maybeSingle()
 
   if (!existingGrade || existingGrade.payment_status !== 'paid') return null
 
-  const ownedPackageId = existingGrade.tier_package_id
-    ? String(existingGrade.tier_package_id)
-    : null
+  const ownedPackageId = existingGrade.tier_package_id ? String(existingGrade.tier_package_id) : null
   if (!ownedPackageId) return null
 
   const { data: ownedPkg } = await client
     .from('brand_tier_packages')
-    .select('price, brand_id')
+    .select('price, company_id')
     .eq('id', ownedPackageId)
     .maybeSingle()
 
-  if (!ownedPkg?.price || String(ownedPkg.brand_id) !== CIVASAN_BRAND_ID) return null
+  if (!ownedPkg?.price || String(ownedPkg.company_id) !== companyId) return null
 
   const price = Math.trunc(Number(ownedPkg.price))
   return price > 0 ? price : null
@@ -39,6 +37,7 @@ async function resolveOwnedTierPrice(
 
 async function activateOwnerGrade(
   svc: NonNullable<ReturnType<typeof tryCreateServiceClient>>,
+  companyId: string,
   ownerProfileId: string,
   tierPackageId: string,
   tierName: string,
@@ -47,7 +46,7 @@ async function activateOwnerGrade(
   const nowIso = new Date().toISOString()
   await svc.from('brand_owner_grades').upsert(
     {
-      brand_id: CIVASAN_BRAND_ID,
+      company_id: companyId,
       owner_id: ownerProfileId,
       grade: tierName,
       tier_package_id: tierPackageId,
@@ -56,7 +55,7 @@ async function activateOwnerGrade(
       grade_purchased_at: nowIso,
       care_enabled: true,
     },
-    { onConflict: 'brand_id,owner_id' },
+    { onConflict: 'company_id,owner_id' },
   )
 }
 
@@ -103,18 +102,19 @@ export async function POST(req: NextRequest) {
 
   const { data: pkg, error: pkgErr } = await supabase
     .from('brand_tier_packages')
-    .select('id, brand_id, tier_name, price, is_active')
+    .select('id, company_id, tier_name, price, is_active')
     .eq('id', tierPackageId)
     .eq('is_active', true)
     .maybeSingle()
 
-  if (pkgErr || !pkg?.id || String(pkg.brand_id) !== CIVASAN_BRAND_ID) {
+  if (pkgErr || !pkg?.id || !pkg.company_id) {
     return NextResponse.json({ ok: false, error: 'package_not_found' }, { status: 404 })
   }
 
+  const companyId = String(pkg.company_id)
   const tierName = String(pkg.tier_name)
   const targetPrice = Math.trunc(Number(pkg.price))
-  const currentPrice = await resolveOwnedTierPrice(supabase, ownerProfileId)
+  const currentPrice = await resolveOwnedTierPrice(supabase, companyId, ownerProfileId)
 
   if (!canUpgradeToTier(currentPrice, targetPrice)) {
     return NextResponse.json(
@@ -144,24 +144,24 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'service_client_unavailable' }, { status: 500 })
   }
 
-  const { data: brandRow, error: brandErr } = await svc
-    .from('brands')
+  const { data: companyRow, error: companyErr } = await svc
+    .from('brand_companies')
     .select('id, name, payapp_active, payapp_user_id, payapp_key, payapp_linkval')
-    .eq('id', CIVASAN_BRAND_ID)
+    .eq('id', companyId)
     .maybeSingle()
 
-  if (brandErr || !brandRow?.id) {
-    return NextResponse.json({ ok: false, error: 'brand_not_found' }, { status: 404 })
+  if (companyErr || !companyRow?.id) {
+    return NextResponse.json({ ok: false, error: 'company_not_found' }, { status: 404 })
   }
 
-  const payappActive = Boolean((brandRow as { payapp_active?: boolean | null }).payapp_active)
+  const payappActive = Boolean((companyRow as { payapp_active?: boolean | null }).payapp_active)
   const nowIso = new Date().toISOString()
 
   if (!payappActive) {
     const { data: intent, error: intentErr } = await svc
       .from('brand_payment_intents')
       .insert({
-        brand_id: CIVASAN_BRAND_ID,
+        company_id: companyId,
         owner_id: ownerProfileId,
         kind: 'tier',
         tier_package_id: tierPackageId,
@@ -181,8 +181,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // purchase_amount = 목표 등급 정가 / intent.amount = 실제 청구(차액)
-    await activateOwnerGrade(svc, ownerProfileId, tierPackageId, tierName, targetPrice)
+    await activateOwnerGrade(svc, companyId, ownerProfileId, tierPackageId, tierName, targetPrice)
 
     await svc.from('notifications').insert({
       user_id: userRow.id,
@@ -201,19 +200,19 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const userid = String((brandRow as { payapp_user_id?: string | null }).payapp_user_id || '').trim()
-  const linkkey = String((brandRow as { payapp_key?: string | null }).payapp_key || '').trim()
-  const linkval = String((brandRow as { payapp_linkval?: string | null }).payapp_linkval || '').trim()
-  const shopname = String((brandRow as { name?: string | null }).name || '시바산').trim()
+  const userid = String((companyRow as { payapp_user_id?: string | null }).payapp_user_id || '').trim()
+  const linkkey = String((companyRow as { payapp_key?: string | null }).payapp_key || '').trim()
+  const linkval = String((companyRow as { payapp_linkval?: string | null }).payapp_linkval || '').trim()
+  const shopname = String((companyRow as { name?: string | null }).name || '오렌').trim()
 
   if (!userid || !linkkey || !linkval) {
-    return NextResponse.json({ ok: false, error: 'brand_payapp_credentials_missing' }, { status: 500 })
+    return NextResponse.json({ ok: false, error: 'company_payapp_credentials_missing' }, { status: 500 })
   }
 
   const { data: intent, error: intentErr } = await svc
     .from('brand_payment_intents')
     .insert({
-      brand_id: CIVASAN_BRAND_ID,
+      company_id: companyId,
       owner_id: ownerProfileId,
       kind: 'tier',
       tier_package_id: tierPackageId,

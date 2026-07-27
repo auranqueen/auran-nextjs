@@ -344,15 +344,14 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
       }
     }
 
-    const BRAND_SELF_API: Record<string, string> = {
-      civasan: '/api/payments/brand-self/civasan/create',
+    const BRAND_SELF_API_BY_COMPANY: Record<string, string> = {
+      'c1a78c33-4001-4de9-b22d-e94cf815cf33': '/api/payments/brand-self/civasan/create',
     }
 
     const selfTierBrands: SelfTierBrand[] = []
     if (ownerProfileId && profile.origin_track === 'A') {
       let linkedBrandIds: string[] = []
 
-      // brand_owner_links.owner_id = users.id (profiles.id 금지)
       const { data: linkRows } = await supabase
         .from('brand_owner_links')
         .select('brand_id, status')
@@ -368,54 +367,60 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
       if (linkedBrandIds.length) {
         const { data: selfBrandRows } = await supabase
           .from('brands')
-          .select('id, name, slug, payapp_active')
+          .select('id, name, company_id')
           .in('id', linkedBrandIds)
 
-        const eligible = ((selfBrandRows as any[]) || []).filter((b) => {
-          const slug = String(b.slug || '').toLowerCase()
-          return Boolean(BRAND_SELF_API[slug])
-        })
+        const companyIds = Array.from(
+          new Set(
+            ((selfBrandRows as any[]) || [])
+              .map((b) => (b.company_id ? String(b.company_id) : ''))
+              .filter((cid) => cid && BRAND_SELF_API_BY_COMPANY[cid]),
+          ),
+        )
 
-        if (eligible.length) {
-          const brandIds = eligible.map((b) => String(b.id))
+        if (companyIds.length) {
+          const { data: companyRows } = await supabase
+            .from('brand_companies')
+            .select('id, name, payapp_active')
+            .in('id', companyIds)
+
           const { data: pkgRows } = await supabase
             .from('brand_tier_packages')
-            .select('id, brand_id, tier_name, price, product_scope')
-            .in('brand_id', brandIds)
+            .select('id, company_id, tier_name, price, product_scope')
+            .in('company_id', companyIds)
             .eq('is_active', true)
 
           const { data: gradeRows } = await supabase
             .from('brand_owner_grades')
-            .select('brand_id, grade, payment_status, tier_package_id')
+            .select('company_id, grade, payment_status, tier_package_id')
             .eq('owner_id', ownerProfileId)
-            .in('brand_id', brandIds)
+            .in('company_id', companyIds)
 
-          const pkgsByBrand: Record<string, any[]> = {}
+          const pkgsByCompany: Record<string, any[]> = {}
           for (const p of (pkgRows as any[]) || []) {
-            const bid = String(p.brand_id)
-            if (!pkgsByBrand[bid]) pkgsByBrand[bid] = []
-            pkgsByBrand[bid].push(p)
+            const cid = String(p.company_id)
+            if (!pkgsByCompany[cid]) pkgsByCompany[cid] = []
+            pkgsByCompany[cid].push(p)
           }
 
-          const gradeByBrand: Record<
+          const gradeByCompany: Record<
             string,
             { grade: string; payment_status: string; tier_package_id: string | null }
           > = {}
           for (const g of (gradeRows as any[]) || []) {
-            gradeByBrand[String(g.brand_id)] = {
+            gradeByCompany[String(g.company_id)] = {
               grade: String(g.grade || ''),
               payment_status: String(g.payment_status || ''),
               tier_package_id: g.tier_package_id ? String(g.tier_package_id) : null,
             }
           }
 
-          for (const b of eligible) {
-            const bid = String(b.id)
-            const slug = String(b.slug || '').toLowerCase()
-            const createApiPath = BRAND_SELF_API[slug]
+          for (const c of (companyRows as any[]) || []) {
+            const cid = String(c.id)
+            const createApiPath = BRAND_SELF_API_BY_COMPANY[cid]
             if (!createApiPath) continue
 
-            const packages = (pkgsByBrand[bid] || [])
+            const packages = (pkgsByCompany[cid] || [])
               .map((p) => ({
                 id: String(p.id),
                 tier_name: String(p.tier_name),
@@ -426,7 +431,7 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
 
             if (!packages.length) continue
 
-            const owned = gradeByBrand[bid]
+            const owned = gradeByCompany[cid]
             const isPaid = owned?.payment_status === 'paid'
             const ownedPkg =
               isPaid && owned?.tier_package_id
@@ -434,10 +439,10 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
                 : null
 
             selfTierBrands.push({
-              brandId: bid,
-              brandName: String(b.name || '브랜드'),
+              brandId: cid,
+              brandName: String(c.name || '회사'),
               createApiPath,
-              payappActive: Boolean(b.payapp_active),
+              payappActive: Boolean(c.payapp_active),
               packages,
               ownedGrade: isPaid ? owned?.grade || null : null,
               ownedPrice: ownedPkg ? ownedPkg.price : null,

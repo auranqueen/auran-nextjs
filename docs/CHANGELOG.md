@@ -6,6 +6,12 @@
 
 ## 2026-07-27
 
+### 등급구매(브랜드사컴퍼니 전용) 컴퍼니 전환 1~3단계
+- brand_tier_packages/brand_owner_grades에 company_id 컬럼 추가, 각각 UNIQUE(company_id,tier_name)/UNIQUE(company_id,owner_id) 제약 추가 (오렌지사 전용 등급뱃지 시스템의 기존 brand_id 기준 행과는 완전히 별개로 공존)
+- 시바산 등급 4종 실제금액 반영: 취급점100만/전문점1500만/프리미엄전문점3000만/메디슈티컬5000만
+- owner/page.tsx: BRAND_SELF_API를 브랜드슬러그 기준→컴퍼니ID 기준(BRAND_SELF_API_BY_COMPANY)으로 전환, selfTierBrands를 컴퍼니 단위로 조회
+- civasan/create/route.ts, civasan/webhook/route.ts: 등급구매(tier) 로직 전체 company_id 기준으로 전환(청구서 결제와 동일한 방식)
+
 ### 세금계산서 탭 로고관리 + 사업자정보 확장
 - brand_companies UPDATE RLS 정책 추가(brand_companies_owner_update, 소속 브랜드 소유자가 자기 회사 로고 수정 가능하도록) — Supabase에서 직접 실행 완료
 - staffRole(PIN 직원role) 배선: page.tsx → BrandHubContent → BrandTabInvoice, ceo/director/manager만 로고관리 섹션 노출

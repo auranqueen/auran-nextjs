@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 import { computeTierUpgradeCharge } from '@/lib/brandTierGrade'
 
-const CIVASAN_BRAND_ID = '60413ded-91f4-4004-b677-ae684cb0677e'
-
 type BrandPaymentIntentRow = {
   id: string
   brand_id: string | null
@@ -35,12 +33,13 @@ function parseForm(body: string): Record<string, string> {
 
 async function resolveOwnedTierPrice(
   svc: ServiceClient,
+  companyId: string,
   ownerProfileId: string,
 ): Promise<number | null> {
   const { data: existingGrade } = await svc
     .from('brand_owner_grades')
     .select('tier_package_id, payment_status')
-    .eq('brand_id', CIVASAN_BRAND_ID)
+    .eq('company_id', companyId)
     .eq('owner_id', ownerProfileId)
     .maybeSingle()
 
@@ -53,11 +52,11 @@ async function resolveOwnedTierPrice(
 
   const { data: ownedPkg } = await svc
     .from('brand_tier_packages')
-    .select('price, brand_id')
+    .select('price, company_id')
     .eq('id', ownedPackageId)
     .maybeSingle()
 
-  if (!ownedPkg?.price || String(ownedPkg.brand_id) !== CIVASAN_BRAND_ID) return null
+  if (!ownedPkg?.price || String(ownedPkg.company_id) !== companyId) return null
 
   const price = Math.trunc(Number(ownedPkg.price))
   return price > 0 ? price : null
@@ -80,7 +79,7 @@ export async function POST(req: NextRequest) {
     return new NextResponse('SUCCESS', { status: 200 })
   }
 
-  // 1) intent 먼저 찾기 (kind에 따라 검증 대상이 컴퍼니/브랜드로 갈리므로)
+  // 1) intent 먼저 찾기
   let intent: BrandPaymentIntentRow | null = null
 
   if (intentId) {
@@ -99,35 +98,22 @@ export async function POST(req: NextRequest) {
     intent = (found as BrandPaymentIntentRow | null) ?? null
   }
 
-  if (!intent) {
+  if (!intent || !intent.company_id) {
     return new NextResponse('SUCCESS', { status: 200 })
   }
 
-  // 2) kind별로 검증 대상 자격증명 조회 (invoice=컴퍼니 / tier=브랜드(CIVASAN, 범위밖 유지))
-  let userid = ''
-  let linkkey = ''
-  let linkval = ''
+  const companyId = intent.company_id
 
-  if (intent.kind === 'invoice') {
-    if (!intent.company_id) return new NextResponse('SUCCESS', { status: 200 })
-    const { data: companyRow } = await svc
-      .from('brand_companies')
-      .select('payapp_user_id, payapp_key, payapp_linkval')
-      .eq('id', intent.company_id)
-      .maybeSingle()
-    userid = String(companyRow?.payapp_user_id || '').trim()
-    linkkey = String(companyRow?.payapp_key || '').trim()
-    linkval = String(companyRow?.payapp_linkval || '').trim()
-  } else {
-    const { data: brandRow } = await svc
-      .from('brands')
-      .select('payapp_user_id, payapp_key, payapp_linkval')
-      .eq('id', CIVASAN_BRAND_ID)
-      .maybeSingle()
-    userid = String(brandRow?.payapp_user_id || '').trim()
-    linkkey = String(brandRow?.payapp_key || '').trim()
-    linkval = String(brandRow?.payapp_linkval || '').trim()
-  }
+  // 2) 컴퍼니 PayApp 자격증명으로 서명 검증 (청구서/등급 둘 다 이제 컴퍼니 기준)
+  const { data: companyRow } = await svc
+    .from('brand_companies')
+    .select('payapp_user_id, payapp_key, payapp_linkval')
+    .eq('id', companyId)
+    .maybeSingle()
+
+  const userid = String(companyRow?.payapp_user_id || '').trim()
+  const linkkey = String(companyRow?.payapp_key || '').trim()
+  const linkval = String(companyRow?.payapp_linkval || '').trim()
 
   const checkUser = data.userid === userid
   const checkKey = decodeURIComponent(data.linkkey?.trim() ?? '') === linkkey
@@ -147,14 +133,12 @@ export async function POST(req: NextRequest) {
   }
 
   const payStateStr = String(payState)
-
   if (payStateStr === '10') {
     return new NextResponse('SUCCESS', { status: 200 })
   }
 
   const isPaid = payStateStr === '4'
   const isCancelled = payStateStr === '9' || payStateStr === '64'
-
   const nowIso = new Date().toISOString()
 
   if (isCancelled) {
@@ -194,17 +178,17 @@ export async function POST(req: NextRequest) {
 
   const { data: pkg } = await svc
     .from('brand_tier_packages')
-    .select('id, brand_id, tier_name, price, is_active')
+    .select('id, company_id, tier_name, price, is_active')
     .eq('id', intent.tier_package_id)
     .eq('is_active', true)
     .maybeSingle()
 
   const targetPrice = Math.trunc(Number(pkg?.price ?? 0))
-  if (!pkg?.id || String(pkg.brand_id) !== CIVASAN_BRAND_ID || targetPrice <= 0) {
+  if (!pkg?.id || String(pkg.company_id) !== companyId || targetPrice <= 0) {
     return new NextResponse('SUCCESS', { status: 200 })
   }
 
-  const currentPrice = await resolveOwnedTierPrice(svc, intent.owner_id)
+  const currentPrice = await resolveOwnedTierPrice(svc, companyId, intent.owner_id)
   const expectedCharge = computeTierUpgradeCharge(currentPrice, targetPrice)
   if (expectedCharge == null || expectedCharge !== Number(intent.amount)) {
     return new NextResponse('SUCCESS', { status: 200 })
@@ -220,10 +204,9 @@ export async function POST(req: NextRequest) {
     .eq('id', intent.id)
 
   const tierName = String(pkg.tier_name)
-
   await svc.from('brand_owner_grades').upsert(
     {
-      brand_id: CIVASAN_BRAND_ID,
+      company_id: companyId,
       owner_id: intent.owner_id,
       grade: tierName,
       tier_package_id: intent.tier_package_id,
@@ -232,7 +215,7 @@ export async function POST(req: NextRequest) {
       grade_purchased_at: nowIso,
       care_enabled: true,
     },
-    { onConflict: 'brand_id,owner_id' },
+    { onConflict: 'company_id,owner_id' },
   )
 
   const { data: ownerProf } = await svc
