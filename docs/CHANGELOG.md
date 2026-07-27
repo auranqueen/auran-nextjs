@@ -6,6 +6,10 @@
 
 ## 2026-07-27
 
+### 발송오더 승인 화면
+- tier-orders/approve/route.ts 신규 — 승인시 approved_at/approved_by 기록
+- BrandTierOrderApprovalSection.tsx 신규 — 결제완료(status='paid') 등급구매 주문 목록, 원장명/트랙A·B뱃지/담은금액/품목수 표시, 승인대기·물류전달됨 구분, 등급 패키지관리 탭에 통합
+
 ### 등급 장바구니 결제 API + 웹훅 전환
 - tier-cart-create/route.ts 신규: 장바구니 항목 검증(카탈로그귀속+활성상태+컴퍼니소속 확인), 합계가 등급 최소금액 이상인지 체크, brand_tier_orders+brand_tier_order_items 생성 후 컴퍼니 PayApp 결제요청
 - webhook/route.ts 전체교체: 등급구매(tier) 검증방식을 정가-차액계산에서 brand_tier_orders 조회 방식으로 전환, 결제완료시 주문 status='paid' + 등급 활성화
