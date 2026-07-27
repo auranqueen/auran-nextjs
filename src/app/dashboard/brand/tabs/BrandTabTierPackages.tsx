@@ -24,8 +24,8 @@ type Props = {
 
 export default function BrandTabTierPackages({ myBrands }: Props) {
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
-  const brandId = selectedBrandId
-  const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
+  const [companyId, setCompanyId] = useState<string | null>(null)
+  const [companyName, setCompanyName] = useState('')
   const supabase = createClient()
   const [rows, setRows] = useState<TierPackage[]>([])
   const [drafts, setDrafts] = useState<Record<string, Draft>>({})
@@ -38,14 +38,49 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
     setTimeout(() => setToast(''), 2500)
   }
 
+  // 선택된 브랜드 → 소속 컴퍼니 resolve
+  useEffect(() => {
+    if (!selectedBrandId) {
+      setCompanyId(null)
+      setCompanyName('')
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      const { data: brandRow } = await supabase
+        .from('brands')
+        .select('company_id')
+        .eq('id', selectedBrandId)
+        .maybeSingle()
+      const cid = brandRow?.company_id ? String(brandRow.company_id) : null
+      if (cancelled) return
+      if (!cid) {
+        setCompanyId(null)
+        setCompanyName('')
+        return
+      }
+      const { data: companyRow } = await supabase
+        .from('brand_companies')
+        .select('id, name')
+        .eq('id', cid)
+        .maybeSingle()
+      if (cancelled) return
+      setCompanyId(cid)
+      setCompanyName(String(companyRow?.name || ''))
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [selectedBrandId, supabase])
+
   const load = useCallback(async () => {
-    if (!brandId) return
+    if (!companyId) return
     setLoading(true)
     try {
       const { data, error } = await supabase
         .from('brand_tier_packages')
         .select('id, tier_name, price, is_active')
-        .eq('brand_id', brandId)
+        .eq('company_id', companyId)
         .order('price', { ascending: true })
 
       if (error) {
@@ -66,14 +101,14 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [brandId, supabase])
+  }, [companyId, supabase])
 
   useEffect(() => {
     void load()
   }, [load])
 
   const saveRow = async (pkg: TierPackage) => {
-    if (!brandId) return
+    if (!companyId) return
     const draft = drafts[pkg.id]
     if (!draft) return
 
@@ -95,7 +130,7 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'same-origin',
         body: JSON.stringify({
-          brand_id: brandId,
+          company_id: companyId,
           id: pkg.id,
           tier_name: tierName,
           price,
@@ -123,7 +158,7 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 4 }}>등급 패키지 관리</div>
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
-          {brandName} · 등급명과 가격만 수정할 수 있어요
+          {companyName || '회사'} 전체 · 등급명과 가격만 수정할 수 있어요 (소속 브랜드 공통 적용)
         </div>
       </div>
 

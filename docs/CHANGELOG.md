@@ -6,6 +6,11 @@
 
 ## 2026-07-27
 
+### 등급구매(브랜드사컴퍼니 전용) 컴퍼니 전환 완료 (4/4)
+- tier-packages/save/route.ts: brand_id 기준 접근권한 체크(brand_members/brands.user_id)를 컴퍼니 소속 브랜드 전체로 확장(assertCompanyAccess), company_id 기준 업데이트로 전환
+- BrandTabTierPackages.tsx: 브랜드 선택은 유지하되 내부적으로 company_id resolve해서 회사 전체 등급 패키지(취급점/전문점/프리미엄전문점/메디슈티컬) 공통 관리
+- 등급구매 컴퍼니전환 전체 완료: 화면(원장구매·브랜드사관리)→결제요청→웹훅검증→저장API까지 전 구간 브랜드단위→컴퍼니단위 전환
+
 ### 등급구매(브랜드사컴퍼니 전용) 컴퍼니 전환 1~3단계
 - brand_tier_packages/brand_owner_grades에 company_id 컬럼 추가, 각각 UNIQUE(company_id,tier_name)/UNIQUE(company_id,owner_id) 제약 추가 (오렌지사 전용 등급뱃지 시스템의 기존 brand_id 기준 행과는 완전히 별개로 공존)
 - 시바산 등급 4종 실제금액 반영: 취급점100만/전문점1500만/프리미엄전문점3000만/메디슈티컬5000만

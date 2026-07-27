@@ -3,22 +3,30 @@ import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 
 type Body = {
-  brand_id?: string
+  company_id?: string
   id?: string
   tier_name?: string
   price?: number
 }
 
-async function assertBrandAccess(
+async function assertCompanyAccess(
   supabase: ReturnType<typeof createClient>,
   userPk: string,
-  brandId: string,
+  companyId: string,
 ) {
+  const { data: companyBrands } = await supabase
+    .from('brands')
+    .select('id')
+    .eq('company_id', companyId)
+
+  const brandIds = (companyBrands || []).map((b: { id: string }) => b.id)
+  if (brandIds.length === 0) return false
+
   const { data: member } = await supabase
     .from('brand_members')
     .select('brand_id')
     .eq('user_id', userPk)
-    .eq('brand_id', brandId)
+    .in('brand_id', brandIds)
     .maybeSingle()
 
   if (member?.brand_id) return true
@@ -26,7 +34,7 @@ async function assertBrandAccess(
   const { data: owned } = await supabase
     .from('brands')
     .select('id')
-    .eq('id', brandId)
+    .in('id', brandIds)
     .eq('user_id', userPk)
     .maybeSingle()
 
@@ -43,13 +51,13 @@ export async function POST(req: NextRequest) {
   }
 
   const body = (await req.json().catch(() => ({}))) as Body
-  const brandId = typeof body.brand_id === 'string' ? body.brand_id.trim() : ''
+  const companyId = typeof body.company_id === 'string' ? body.company_id.trim() : ''
   const packageId = typeof body.id === 'string' ? body.id.trim() : ''
   const tierName = typeof body.tier_name === 'string' ? body.tier_name.trim() : ''
   const price = Math.trunc(Number(body.price))
 
-  if (!brandId) {
-    return NextResponse.json({ ok: false, error: 'missing_brand_id' }, { status: 400 })
+  if (!companyId) {
+    return NextResponse.json({ ok: false, error: 'missing_company_id' }, { status: 400 })
   }
   if (!packageId) {
     return NextResponse.json({ ok: false, error: 'missing_package_id' }, { status: 400 })
@@ -71,18 +79,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'brand_only' }, { status: 403 })
   }
 
-  const allowed = await assertBrandAccess(supabase, me.id, brandId)
+  const allowed = await assertCompanyAccess(supabase, me.id, companyId)
   if (!allowed) {
-    return NextResponse.json({ ok: false, error: 'forbidden_brand' }, { status: 403 })
+    return NextResponse.json({ ok: false, error: 'forbidden_company' }, { status: 403 })
   }
 
   const { data: existing } = await supabase
     .from('brand_tier_packages')
-    .select('id, brand_id')
+    .select('id, company_id')
     .eq('id', packageId)
     .maybeSingle()
 
-  if (!existing?.id || String(existing.brand_id) !== brandId) {
+  if (!existing?.id || String(existing.company_id) !== companyId) {
     return NextResponse.json({ ok: false, error: 'package_not_found' }, { status: 404 })
   }
 
@@ -97,8 +105,8 @@ export async function POST(req: NextRequest) {
       price,
     })
     .eq('id', packageId)
-    .eq('brand_id', brandId)
-    .select('id, brand_id, tier_name, price, is_active')
+    .eq('company_id', companyId)
+    .select('id, company_id, tier_name, price, is_active')
     .single()
 
   if (error) {
