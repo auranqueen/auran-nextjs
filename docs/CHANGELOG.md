@@ -6,6 +6,9 @@
 
 ## 2026-07-27
 
+### 트랙B 뱃지구매 컴퍼니전환 1/3
+- owner/page.tsx: tierBadgeBrands 조립 로직을 brand_id+distribution_type 필터에서 company_id 기준으로 전환(distribution_type='tier_contract' 브랜드의 소속 컴퍼니 찾아서 그 컴퍼니의 brand_tier_packages/brand_owner_grades(origin_track='B') 조회)
+
 ### brand_owner_grades A/B 트랙 분리 안전장치
 - origin_track 컬럼 추가(company_id+owner_id+origin_track 유니크로 변경) — 같은 컴퍼니에서 A등급/B뱃지를 한 원장이 동시에 가질 수 있도록 공존 보장(향후 A원장이 B뱃지도 구매하는 시나리오 대비)
 - tier-cart-create/route.ts, webhook/route.ts: brand_owner_grades upsert에 origin_track:'A' 반영
