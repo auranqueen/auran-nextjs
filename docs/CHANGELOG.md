@@ -6,6 +6,11 @@
 
 ## 2026-07-27
 
+### 트랙B 뱃지구매 컴퍼니전환 완료 (3/3)
+- brandTierPurchase.ts 전체교체: target payload company_id 기준 파싱, brand_owner_grades upsert를 company_id+origin_track='B'+brand_id(하위호환용 anchor brand 이중기록)로 전환, 스폰서 조회도 company_id+origin_track='B' 기준
+- 결제(오렌 공용 PayApp env)와 커미션율(brand_tier_packages.commission_rate, 오렌 전용 보호) 로직은 그대로 유지 — 건드리지 않음
+- 트랙B 뱃지구매 컴퍼니전환 전체 완료: 원장화면(tierBadgeBrands)→결제요청(create route)→웹훅(brandTierPurchase.ts) 전 구간 company_id 기준 전환. 오늘 반영한 시바산 실제 등급금액(전문점1500만/프리미엄전문점3000만/메디슈티컬5000만)이 트랙B에도 자동 반영됨
+
 ### 트랙B 뱃지구매 컴퍼니전환 2/3
 - brand-tier/create/route.ts 전체교체: brand_id+distribution_type join 방식→company_id 기준(tier_contract 자격은 해당 컴퍼니 소속 브랜드 중 하나라도 tier_contract면 인정), 자격증명/보유등급 조회 origin_track='B'로 스코프. 결제(오렌 공용 PayApp env)는 그대로 유지
 - targetPayload를 brand_id→company_id로 변경(다음 단계에서 brandTierPurchase.ts 웹훅도 맞춰야 함, 아직 안 맞춰짐)
