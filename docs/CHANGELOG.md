@@ -6,6 +6,9 @@
 
 ## 2026-07-27
 
+### 등급 패키지관리 탭 — 고정구성품 관리 UI 통합
+- BrandTabTierPackages.tsx 전체교체(250→468줄): 등급 카드 펼침형으로 전환, 가격표시 "N원 이상"으로 문구변경, 고정구성품(부자재/인증패/진열장) 추가/수정/삭제 인라인 편집 UI 추가
+
 ### 등급 고정구성품(부자재/인증패/진열장) 관리 API
 - tier-kit-items/save/route.ts, tier-kit-items/delete/route.ts 신규 — brand_tier_kit_items CRUD, 컴퍼니 소속확인(assertCompanyAccess) 재사용
 - 신규 파일 UTF-16 인코딩 문제 발견/수정(UTF-8로 정규화)
