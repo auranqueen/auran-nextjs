@@ -1,5 +1,4 @@
 'use client'
-
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -12,7 +11,6 @@ import {
   hasValidSupplyPrice,
   type SupplyPromoRow,
 } from '@/lib/brand/brandOrderPromos'
-
 const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
 const BORDER = '#ede9f7'
@@ -20,7 +18,6 @@ const TEXT = '#1A1A2E'
 const SUB = '#888888'
 const LIGHT = '#f8f7fc'
 const QTY_STEP = 5
-
 interface Product {
   id: string
   name: string
@@ -29,21 +26,19 @@ interface Product {
   brand_id: string
   supply_price: number
 }
-
 interface CartItem {
   product: Product
   qty: number
   selectedPromo: SupplyPromoRow | null
 }
-
 function HqStockOrdersContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const supabase = createClient()
-
   const [loading, setLoading] = useState(true)
   const [trackAllowed, setTrackAllowed] = useState<boolean | null>(null)
   const [products, setProducts] = useState<Product[]>([])
+  const [promoRules, setPromoRules] = useState<SupplyPromoRow[]>([])
   const [cart, setCart] = useState<CartItem[]>([])
   const [showPopup, setShowPopup] = useState(false)
   const [sending, setSending] = useState(false)
@@ -52,12 +47,10 @@ function HqStockOrdersContent() {
   const [salonName, setSalonName] = useState('')
   const [brandFilter, setBrandFilter] = useState<'all' | string>('all')
   const [searchQuery, setSearchQuery] = useState('')
-
   const showToast = (t: string) => {
     setToast(t)
     setTimeout(() => setToast(''), 2500)
   }
-
   const load = useCallback(async () => {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
@@ -84,31 +77,77 @@ function HqStockOrdersContent() {
       .maybeSingle()
     setOwnerName(String(profile?.full_name || userRow?.name || '원장님'))
     setSalonName(String(profile?.owner_store_name || userRow?.salon_name || ''))
-
     const { data: rows } = await supabase
       .from('brand_products')
       .select('id, name, thumb_img, brand_id, supply_price, brands(name)')
       .eq('status', 'active')
       .order('created_at', { ascending: false })
       .limit(200)
-
-    setProducts(
-      (rows || []).map((p: any) => ({
-        id: p.id,
-        name: p.name || '',
-        thumb_img: p.thumb_img || null,
-        brand_id: p.brand_id,
-        brand_name: p.brands?.name || '',
-        supply_price: Math.trunc(Number(p.supply_price) || 0),
-      })),
-    )
+    const productList = (rows || []).map((p: any) => ({
+      id: p.id,
+      name: p.name || '',
+      thumb_img: p.thumb_img || null,
+      brand_id: p.brand_id,
+      brand_name: p.brands?.name || '',
+      supply_price: Math.trunc(Number(p.supply_price) || 0),
+    }))
+    setProducts(productList)
+    const profileId = profile?.id ? String(profile.id) : null
+    if (profileId) {
+      const brandIds = Array.from(new Set(productList.map((p) => p.brand_id).filter(Boolean)))
+      if (brandIds.length > 0) {
+        const { data: brandRows } = await supabase
+          .from('brands')
+          .select('id, company_id')
+          .in('id', brandIds)
+        const companyIds = Array.from(
+          new Set((brandRows || []).map((b: any) => String(b.company_id || '')).filter(Boolean)),
+        )
+        if (companyIds.length > 0) {
+          const { data: gradeRows } = await supabase
+            .from('brand_owner_grades')
+            .select('company_id, tier_package_id, payment_status')
+            .eq('owner_id', profileId)
+            .eq('origin_track', 'B')
+            .eq('payment_status', 'paid')
+            .in('company_id', companyIds)
+          const tierPackageIds = Array.from(
+            new Set((gradeRows || []).map((g: any) => String(g.tier_package_id || '')).filter(Boolean)),
+          )
+          if (tierPackageIds.length > 0) {
+            const { data: ruleRows } = await supabase
+              .from('brand_tier_promo_rules')
+              .select('id, brand_id, min_qty, bonus_qty')
+              .in('tier_package_id', tierPackageIds)
+              .eq('is_active', true)
+            setPromoRules(
+              (ruleRows || []).map((r: any) => ({
+                id: String(r.id),
+                brand_id: String(r.brand_id),
+                qty: Math.trunc(Number(r.min_qty) || 0),
+                bonus_qty: Math.trunc(Number(r.bonus_qty) || 0),
+                bonus: null,
+                condition: null,
+                title: null,
+              })),
+            )
+          } else {
+            setPromoRules([])
+          }
+        } else {
+          setPromoRules([])
+        }
+      } else {
+        setPromoRules([])
+      }
+    } else {
+      setPromoRules([])
+    }
     setLoading(false)
   }, [router, supabase])
-
   useEffect(() => {
     void load()
   }, [load])
-
   useEffect(() => {
     if (searchParams.get('paid') === '1') {
       showToast('결제가 완료됐어요')
@@ -116,13 +155,11 @@ function HqStockOrdersContent() {
       setShowPopup(false)
     }
   }, [searchParams])
-
   const brandNames = useMemo(() => {
     const m: Record<string, string> = {}
     for (const p of products) m[p.brand_id] = p.brand_name || p.brand_id
     return m
   }, [products])
-
   const filtered = useMemo(() => {
     return products.filter((p) => {
       if (brandFilter !== 'all' && p.brand_id !== brandFilter) return false
@@ -131,9 +168,7 @@ function HqStockOrdersContent() {
       return true
     })
   }, [products, brandFilter, searchQuery])
-
   const cartQty = (id: string) => cart.find((c) => c.product.id === id)?.qty || 0
-
   const addToCart = (prod: BrandOrderProduct) => {
     if (!hasValidSupplyPrice(prod.supply_price)) {
       showToast('가격 미설정 제품이에요')
@@ -151,7 +186,6 @@ function HqStockOrdersContent() {
       return [...prev, { product: full, qty: QTY_STEP, selectedPromo: null }]
     })
   }
-
   const changeQty = (id: string, delta: number) => {
     setCart((prev) =>
       prev
@@ -161,12 +195,10 @@ function HqStockOrdersContent() {
         .filter((c) => c.qty > 0),
     )
   }
-
   const cartTotal = cart.reduce((s, c) => {
-    const line = buildOrderLineItem(c.product, c.qty, [], null)
+    const line = buildOrderLineItem(c.product, c.qty, promoRules, c.selectedPromo)
     return s + line.line_amount
   }, 0)
-
   const submitOrder = async () => {
     if (cart.length === 0) {
       showToast('제품을 선택해주세요')
@@ -186,9 +218,8 @@ function HqStockOrdersContent() {
       showToast('최소 결제금액은 1,000원이에요')
       return
     }
-
     setSending(true)
-    const items = cart.map((c) => buildOrderLineItem(c.product, c.qty, [], null))
+    const items = cart.map((c) => buildOrderLineItem(c.product, c.qty, promoRules, c.selectedPromo))
     try {
       const createRes = await fetch('/api/hq-stock-orders/create', {
         method: 'POST',
@@ -207,7 +238,6 @@ function HqStockOrdersContent() {
         showToast(created.message || '발주 생성 실패')
         return
       }
-
       const payRes = await fetch('/api/payments/payapp/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -227,7 +257,6 @@ function HqStockOrdersContent() {
       setSending(false)
     }
   }
-
   if (loading || trackAllowed === null) {
     return (
       <div style={{ background: BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB }}>
@@ -235,7 +264,6 @@ function HqStockOrdersContent() {
       </div>
     )
   }
-
   if (!trackAllowed) {
     return (
       <div style={{ background: BG, minHeight: '100vh', padding: 24, color: TEXT }}>
@@ -245,7 +273,6 @@ function HqStockOrdersContent() {
       </div>
     )
   }
-
   return (
     <div style={{ background: BG, minHeight: '100vh', paddingBottom: 96 }}>
       {toast && (
@@ -253,13 +280,11 @@ function HqStockOrdersContent() {
           {toast}
         </div>
       )}
-
       <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: 10 }}>
         <button type="button" onClick={() => router.back()} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: TEXT }}>←</button>
         <div style={{ fontSize: 16, fontWeight: 500, color: TEXT }}>본사 재고발주</div>
         <button type="button" onClick={() => router.push('/dashboard/owner/delivery-history')} style={{ marginLeft: 'auto', fontSize: 12, color: '#7B5EA7', background: 'none', border: 'none', cursor: 'pointer' }}>배송이력 보기</button>
       </div>
-
       <div style={{ padding: '0 16px 12px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
         <button
           type="button"
@@ -274,7 +299,6 @@ function HqStockOrdersContent() {
           </button>
         ))}
       </div>
-
       <div style={{ padding: '0 16px 12px' }}>
         <input
           value={searchQuery}
@@ -283,13 +307,12 @@ function HqStockOrdersContent() {
           style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: `1px solid ${BORDER}`, fontSize: 13, boxSizing: 'border-box' }}
         />
       </div>
-
       <div style={{ padding: '0 16px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
         {filtered.map((prod) => (
           <BrandOrderProductCard
             key={prod.id}
             prod={prod}
-            supplyPromos={[]}
+            supplyPromos={promoRules.filter((r) => r.brand_id === prod.brand_id)}
             qty={cartQty(prod.id)}
             activePromoId={undefined}
             onApplyPromo={() => {}}
@@ -298,11 +321,9 @@ function HqStockOrdersContent() {
           />
         ))}
       </div>
-
       {filtered.length === 0 && (
         <div style={{ textAlign: 'center', padding: 40, color: SUB, fontSize: 13 }}>발주 가능 제품이 없어요</div>
       )}
-
       {cart.length > 0 && (
         <div style={{ position: 'fixed', left: 0, right: 0, bottom: 64, padding: '10px 16px', background: 'rgba(255,255,255,0.96)', borderTop: `1px solid ${BORDER}`, zIndex: 50 }}>
           <button
@@ -314,7 +335,6 @@ function HqStockOrdersContent() {
           </button>
         </div>
       )}
-
       {showPopup && (
         <div
           role="presentation"
@@ -327,12 +347,15 @@ function HqStockOrdersContent() {
               <button type="button" onClick={() => setShowPopup(false)} style={{ background: 'none', border: 'none', fontSize: 20, color: SUB, cursor: 'pointer' }}>✕</button>
             </div>
             {cart.map((item) => {
-              const line = buildOrderLineItem(item.product, item.qty, [], null)
+              const line = buildOrderLineItem(item.product, item.qty, promoRules, item.selectedPromo)
               return (
                 <div key={item.product.id} style={{ display: 'flex', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, color: TEXT }}>{item.product.name}</div>
-                    <div style={{ fontSize: 11, color: SUB }}>₩{line.line_amount.toLocaleString()}</div>
+                    <div style={{ fontSize: 11, color: SUB }}>
+                      ₩{line.line_amount.toLocaleString()}
+                      {line.bonus > 0 ? ` · 🎁 +${line.bonus}개` : ''}
+                    </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <button type="button" onClick={() => changeQty(item.product.id, -QTY_STEP)} style={qtyBtn}>−</button>
@@ -357,12 +380,10 @@ function HqStockOrdersContent() {
           </div>
         </div>
       )}
-
       <DashboardBottomNav role="owner" />
     </div>
   )
 }
-
 function pillStyle(selected: boolean): CSSProperties {
   return {
     fontSize: 12,
@@ -374,7 +395,6 @@ function pillStyle(selected: boolean): CSSProperties {
     cursor: 'pointer',
   }
 }
-
 const qtyBtn: CSSProperties = {
   width: 28,
   height: 28,
@@ -384,7 +404,6 @@ const qtyBtn: CSSProperties = {
   color: TEXT,
   cursor: 'pointer',
 }
-
 export default function HqStockOrdersPage() {
   return (
     <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>불러오는 중...</div>}>
