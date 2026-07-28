@@ -6,6 +6,9 @@
 
 ## 2026-07-28
 
+### 등급별 프로모션 규칙 API
+- tier-promo-rules/save/route.ts, delete/route.ts 신규 — brand_tier_promo_rules CRUD(등급×제품별 "N개 이상 주문시 +M개 보너스" 규칙), assertCompanyAccess 재사용
+
 ### 등급구매 재고차감 연동 (1/4)
 - BrandTierOrderFulfillmentList.tsx: 발송완료 처리시 brand_tier_order_items 기준으로 brand_inventory 차감(product_id 우선매칭, 없으면 product_name 폴백), brand_stock_logs에 brand_id 포함해서 기록(ref_type='tier_order')
 - 재고발주(BrandBatchFulfillmentList)와 동일 패턴 재사용 — 등급구매 카탈로그 발송도 재고발주처럼 발송완료 버튼 클릭 시점에만 재고 확정 차감
