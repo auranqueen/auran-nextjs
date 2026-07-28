@@ -6,6 +6,10 @@
 
 ## 2026-07-28
 
+### Supabase 클라이언트 싱글턴 전환 — 근본원인 수정
+- src/lib/supabase/client.ts: createClient()가 모듈 레벨 캐시로 동일 인스턴스를 반환하도록 전환 — 기존엔 호출마다 새 인스턴스 생성되어, useEffect/useCallback 의존성 배열에 supabase가 들어간 코드베이스 전역 23곳이 잠재적으로 매 렌더마다 재실행될 위험이 있었음(오렌 작업 절대규칙 "supabase useEffect 의존성금지" 위반이 반복 발생했던 근본원인)
+- 서버 전용 client(server.ts/admin.ts)는 요청 단위 생성이 맞아서 미변경, 브라우저 client.ts만 싱글턴화
+
 ### 등급 패키지관리 탭 — 무한 재조회 버그 수정
 - BrandHubContent.tsx: brandOpts를 useMemo로 메모이제이션(매 렌더마다 새 배열 생성되던 것 수정)
 - BrandTabTierPackages.tsx, BrandTierCatalogSection.tsx: useEffect/useCallback 의존성 배열에서 supabase 제거(오렌 작업 절대규칙 위반이었음 — createClient()가 매 렌더 새 인스턴스라 의존성에 넣으면 무한 재실행 유발)
