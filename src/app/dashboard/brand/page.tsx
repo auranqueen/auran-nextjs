@@ -88,6 +88,13 @@ export default function BrandDashboardPage() {
   const switchBrand = useCallback((id: string, name: string) => {
     setCurrentBrandId(id)
     setBrandName(name)
+    void (async () => {
+      const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', id).maybeSingle()
+      const cid = brandRow?.company_id ? String(brandRow.company_id) : null
+      if (!cid) return
+      const { data: companyRow } = await supabase.from('brand_companies').select('name').eq('id', cid).maybeSingle()
+      if (companyRow?.name) setBrandName(String(companyRow.name))
+    })()
   }, [])
 
   const load = useCallback(async () => {
@@ -139,6 +146,17 @@ export default function BrandDashboardPage() {
       else setBrandName(String((b as { name?: string } | null)?.name || ''))
       return nextId
     })
+    {
+      const companyLookupId = (defaultId ?? merged[0]?.id) as string | undefined
+      if (companyLookupId) {
+        const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', companyLookupId).maybeSingle()
+        const cid = brandRow?.company_id ? String(brandRow.company_id) : null
+        if (cid) {
+          const { data: companyRow } = await supabase.from('brand_companies').select('name').eq('id', cid).maybeSingle()
+          if (companyRow?.name) setBrandName(String(companyRow.name))
+        }
+      }
+    }
 
     const brandIdSet = new Set<string>()
     for (const owned of brandList || []) {
