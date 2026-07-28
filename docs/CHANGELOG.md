@@ -6,6 +6,9 @@
 
 ## 2026-07-28
 
+### 재고발주(재구매) 화면 — 등급조회 버그 수정
+- brand-orders/page.tsx: 원장 보유등급 조회를 brand_id 기준→company_id+origin_track='A' 기준으로 수정 — 어제 등급구매를 company_id 단위로 전환하면서 이 화면이 여전히 brand_id로 등급을 찾다가 매번 못 찾아 기본값 "취급점"으로 떨어지던 버그(실제 프리미엄전문점 등 등급구매한 원장도 취급점 적립율/프로모션만 적용되던 심각한 문제) 수정
+
 ### 등급 패키지관리 탭 — 프로모션 규칙 UI 연결
 - BrandTabTierPackages.tsx: BrandTierPromoRulesSection을 등급카드 펼침 안(가격저장~고정구성품 사이)에 연결(어제 API/컴포넌트는 커밋됐으나 이 연결 파일이 누락돼있던 것 마저 반영)
 

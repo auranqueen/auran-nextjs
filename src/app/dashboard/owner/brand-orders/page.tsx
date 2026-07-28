@@ -212,29 +212,37 @@ export default function BrandOrdersPage() {
     setLinkedBrandIds(brandIds)
 
     let brandNameMap: Record<string, string> = {}
+    const brandCompanyMap: Record<string, string> = {}
     if (brandIds.length > 0) {
       const { data: brandRows } = await supabase
         .from('brands')
-        .select('id, name')
+        .select('id, name, company_id')
         .in('id', brandIds)
-
       for (const row of brandRows || []) {
-        brandNameMap[String((row as { id: string }).id)] = String((row as { name?: string }).name || '브랜드')
+        const rid = String((row as { id: string }).id)
+        brandNameMap[rid] = String((row as { name?: string }).name || '브랜드')
+        const cid = (row as { company_id?: string | null }).company_id
+        if (cid) brandCompanyMap[rid] = String(cid)
       }
     }
     setLinkedBrandNames(brandNameMap)
-
     let gradeMap: Record<string, string> = {}
-    if (brandIds.length > 0) {
+    const companyIdsForGrade = Array.from(new Set(Object.values(brandCompanyMap)))
+    if (companyIdsForGrade.length > 0) {
       const { data: gradeRows } = await supabase
         .from('brand_owner_grades')
-        .select('brand_id, grade')
+        .select('company_id, grade')
         .eq('owner_id', profileId)
-        .in('brand_id', brandIds)
-
+        .eq('origin_track', 'A')
+        .in('company_id', companyIdsForGrade)
+      const gradeByCompany: Record<string, string> = {}
       for (const row of gradeRows || []) {
-        gradeMap[String((row as { brand_id: string }).brand_id)] =
+        gradeByCompany[String((row as { company_id: string }).company_id)] =
           String((row as { grade?: string }).grade || DEFAULT_GRADE)
+      }
+      for (const bid of brandIds) {
+        const cid = brandCompanyMap[bid]
+        if (cid && gradeByCompany[cid]) gradeMap[bid] = gradeByCompany[cid]
       }
     }
     setGradeByBrandId(gradeMap)
