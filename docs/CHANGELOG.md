@@ -6,6 +6,10 @@
 
 ## 2026-07-28
 
+### 반품수령 화면 — 원장 신청사유/사진 연동
+- BrandReturnsReceive.tsx 전체교체: 원장이 신청한 사유(reason_code)를 REASON_CONDITION_MAP으로 물류 수령상태에 자동매핑(불량·파손/배송중파손→파손·불량, 유통기한임박→유통기한 문제, 그외→정상), 물류담당자가 확인 후 필요시 변경 가능
+- 원장이 첨부한 사진/상세사유(reason_detail, photos)를 수령화면에 표시, 대기목록에 사진개수 뱃지
+
 ### 반품·교환 신청시 사진첨부 기능
 - brand-orders/page.tsx: 원장 반품/교환 신청 모달에 사진 업로드(최대 5장, brand-assets 스토리지) 추가, brand_returns.photos 컬럼에 저장(기존엔 빈 배열 하드코딩)
 

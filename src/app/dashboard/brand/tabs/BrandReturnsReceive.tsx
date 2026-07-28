@@ -11,14 +11,24 @@ const GOLD = '#C9A96E'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const CONDITIONS = ['정상', '파손·불량', '유통기한 문제', '기타'] as const
 const RESTOCK_ALLOWED_CONDITIONS = ['정상']
+const REASON_CONDITION_MAP: Record<string, string> = {
+  '제품 불량·파손': '파손·불량',
+  '배송 중 파손': '파손·불량',
+  '유통기한 임박': '유통기한 문제',
+  '오배송': '정상',
+  '수량 오류': '정상',
+  '단순 변심': '정상',
+}
 interface ReturnRow {
   id: string
   type: string
   reason_code: string
+  reason_detail: string | null
   status: string
   qty: number
   return_code: string | null
   inventory_id: string | null
+  photos: string[] | null
   created_at: string
 }
 interface Props { brandId: string | null }
@@ -41,7 +51,7 @@ export default function BrandReturnsReceive({ brandId }: Props) {
     setLoading(true)
     const { data } = await supabase
       .from('brand_returns')
-      .select('id, type, reason_code, status, qty, return_code, inventory_id, created_at')
+      .select('id, type, reason_code, reason_detail, status, qty, return_code, inventory_id, photos, created_at')
       .eq('brand_id', brandId)
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
@@ -49,10 +59,17 @@ export default function BrandReturnsReceive({ brandId }: Props) {
     setLoading(false)
   }, [brandId])
   useEffect(() => { void loadPending() }, [loadPending])
+  const selectMatch = (row: ReturnRow) => {
+    setMatched(row)
+    const suggested = REASON_CONDITION_MAP[row.reason_code] || ''
+    setCondition(suggested)
+    setProcess('')
+    setDisposeMemo('')
+  }
   const searchCode = () => {
     if (!codeInput.trim()) { showToast('코드를 입력해주세요'); return }
     const found = pending.find(r => r.return_code === codeInput.trim())
-    if (found) { setMatched(found); showToast(`코드 확인됨: ${found.reason_code} · ${found.qty}개`) }
+    if (found) { selectMatch(found); showToast(`코드 확인됨: ${found.reason_code} · ${found.qty}개`) }
     else showToast('일치하는 반품 코드 없음')
   }
   const selectCondition = (c: string) => {
@@ -147,10 +164,23 @@ export default function BrandReturnsReceive({ brandId }: Props) {
           <div style={{ ...CARD, borderColor: 'rgba(76,175,80,0.3)' }}>
             <div style={{ fontSize: 11, color: GREEN, marginBottom: 8 }}>✓ 코드 확인됨</div>
             <div style={{ fontSize: 13, color: TEXT, marginBottom: 4 }}>{matched.type === 'exchange' ? '교환' : '반품'} · {matched.reason_code}</div>
-            <div style={{ fontSize: 12, color: SUB }}>수량: {matched.qty}개 · 코드: {matched.return_code}</div>
+            <div style={{ fontSize: 12, color: SUB, marginBottom: matched.reason_detail || (matched.photos && matched.photos.length > 0) ? 8 : 0 }}>수량: {matched.qty}개 · 코드: {matched.return_code}</div>
+            {matched.reason_detail && (
+              <div style={{ fontSize: 12, color: TEXT, background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '8px 10px', marginBottom: matched.photos && matched.photos.length > 0 ? 8 : 0 }}>
+                "{matched.reason_detail}"
+              </div>
+            )}
+            {matched.photos && matched.photos.length > 0 && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const }}>
+                {matched.photos.map((url) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={url} src={url} alt="" onClick={() => window.open(url, '_blank')} style={{ width: 56, height: 56, borderRadius: 8, objectFit: 'cover', cursor: 'pointer' }} />
+                ))}
+              </div>
+            )}
           </div>
           <div style={CARD}>
-            <div style={{ fontSize: 11, color: SUB, marginBottom: 8 }}>수령 상태 선택 (필수)</div>
+            <div style={{ fontSize: 11, color: SUB, marginBottom: 8 }}>수령 상태 선택 (필수, 원장 신청사유 기준 자동선택됨 — 확인 후 필요시 변경)</div>
             <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 5, marginBottom: 12 }}>
               {CONDITIONS.map(c => (
                 <button key={c} type="button" onClick={() => selectCondition(c)}
@@ -209,11 +239,14 @@ export default function BrandReturnsReceive({ brandId }: Props) {
           <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>수령 대기 목록 ({pending.length}건)</div>
           {pending.map((r, i) => (
             <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0', borderBottom: i < pending.length-1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none', cursor: 'pointer' }}
-              onClick={() => { setCodeInput(r.return_code || ''); setMatched(r) }}>
+              onClick={() => { setCodeInput(r.return_code || ''); selectMatch(r) }}>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 12, color: TEXT }}>{r.type === 'exchange' ? '교환' : '반품'} · {r.reason_code} · {r.qty}개</div>
                 <div style={{ fontSize: 11, color: GREEN }}>{r.return_code}</div>
               </div>
+              {r.photos && r.photos.length > 0 && (
+                <span style={{ fontSize: 11, color: GOLD }}>📷 {r.photos.length}</span>
+              )}
               <span style={{ fontSize: 11, color: SUB }}>탭하여 선택</span>
             </div>
           ))}
