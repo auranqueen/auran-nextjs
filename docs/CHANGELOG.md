@@ -6,6 +6,9 @@
 
 ## 2026-07-28
 
+### 등급 패키지관리 탭 — 프로모션 규칙 UI 연결
+- BrandTabTierPackages.tsx: BrandTierPromoRulesSection을 등급카드 펼침 안(가격저장~고정구성품 사이)에 연결(어제 API/컴포넌트는 커밋됐으나 이 연결 파일이 누락돼있던 것 마저 반영)
+
 ### 등급별 재구매 프로모션 규칙 — 브랜드단위로 재설계
 - brand_tier_promo_rules: product_id→brand_id로 스키마 전환(제품 100개 단위가 아니라 브랜드 7개 단위로 단순화)
 - tier-promo-rules/save·delete API, BrandTierPromoRulesSection.tsx 전부 brand_id 기준으로 재작성

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import BrandTierCatalogSection from './BrandTierCatalogSection'
 import BrandTierOrderApprovalSection from './BrandTierOrderApprovalSection'
+import BrandTierPromoRulesSection from './BrandTierPromoRulesSection'
 import { createClient } from '@/lib/supabase/client'
 const PURPLE = '#7B5EA7'
 const KIT_TYPES = ['부자재', '인증패', '진열장', '기타'] as const
@@ -451,6 +452,7 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
                         + 구성품 추가
                       </button>
                     )}
+                    <BrandTierPromoRulesSection companyId={companyId} tierPackageId={pkg.id} />
                   </div>
                 )}
               </div>
