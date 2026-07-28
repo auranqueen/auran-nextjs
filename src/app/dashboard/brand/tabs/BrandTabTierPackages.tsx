@@ -87,7 +87,7 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
     return () => {
       cancelled = true
     }
-  }, [myBrands, supabase])
+  }, [myBrands])
   const load = useCallback(async () => {
     if (!companyId) return
     setLoading(true)

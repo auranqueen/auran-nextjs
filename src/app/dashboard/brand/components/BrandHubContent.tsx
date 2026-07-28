@@ -1,6 +1,6 @@
 'use client'
 import dynamic from 'next/dynamic'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 const BrandTabHome = dynamic(() => import('../tabs/BrandTabHome'), { ssr: false })
 const BrandTabProducts = dynamic(() => import('../tabs/BrandTabProducts'), { ssr: false })
 const OwnersBrandWrapper = dynamic(() => import('./OwnersBrandWrapper'), { ssr: false })
@@ -39,7 +39,7 @@ export default function BrandHubContent({
 }: Props) {
   const [mainTab, setMainTab] = useState<MainTab>('home')
   const [helpOpen, setHelpOpen] = useState(false)
-  const brandOpts = myBrands.map(({ id, name, slug }) => ({ id, name, slug }))
+  const brandOpts = useMemo(() => myBrands.map(({ id, name, slug }) => ({ id, name, slug })), [myBrands])
   const SB_SECTIONS = [
     {
       label: '실시간',

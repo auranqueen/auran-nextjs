@@ -48,7 +48,7 @@ export default function BrandTierCatalogSection({ companyId, myBrands }: Props) 
     } finally {
       setLoading(false)
     }
-  }, [companyId, myBrands, supabase])
+  }, [companyId, myBrands])
   useEffect(() => {
     void load()
   }, [load])

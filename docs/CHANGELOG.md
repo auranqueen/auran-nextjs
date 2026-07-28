@@ -6,6 +6,11 @@
 
 ## 2026-07-28
 
+### 등급 패키지관리 탭 — 무한 재조회 버그 수정
+- BrandHubContent.tsx: brandOpts를 useMemo로 메모이제이션(매 렌더마다 새 배열 생성되던 것 수정)
+- BrandTabTierPackages.tsx, BrandTierCatalogSection.tsx: useEffect/useCallback 의존성 배열에서 supabase 제거(오렌 작업 절대규칙 위반이었음 — createClient()가 매 렌더 새 인스턴스라 의존성에 넣으면 무한 재실행 유발)
+- 증상: 새 브랜드 추가 모달에 타이핑할 때마다 등급패키지관리 탭이 brand_companies/brands/brand_products를 계속 재조회하던 문제 수정
+
 ### 트랙B 재구매 화면 — 프로모션 규칙 신규연동
 - hq-stock-orders/page.tsx: brand_tier_promo_rules(A와 공유하는 등급×브랜드 보너스규칙)를 트랙B 재구매 화면에 신규 연동 — 원장 보유등급(company_id+origin_track='B') 조회→해당 등급의 브랜드별 규칙 매칭→buildOrderLineItem으로 보너스 자동계산. 기존엔 이 화면에 프로모션 로직 자체가 없었음(빈 배열 하드코딩)
 - 발주 확정 시점(원장이 담아서 제출하는 순간)에 보너스가 확정되어 발주서에 포함 — 물류는 확정된 수량 그대로 발송(판단 없음) 원칙 적용
