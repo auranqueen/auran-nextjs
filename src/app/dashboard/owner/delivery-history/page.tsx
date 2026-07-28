@@ -85,6 +85,24 @@ export default function DeliveryHistoryPage() {
           })
         }
       }
+      const { data: hqOrders } = await supabase
+        .from('hq_stock_orders')
+        .select('id, status, final_amount, created_at, courier, tracking_no')
+        .eq('profile_id', profileId)
+        .order('created_at', { ascending: false })
+        .limit(30)
+      for (const o of (hqOrders || []) as any[]) {
+        restockItems.push({
+          id: String(o.id),
+          source: 'restock',
+          createdAt: o.created_at,
+          statusLabel: String(o.status || ''),
+          amount: Math.trunc(Number(o.final_amount) || 0),
+          courier: o.courier || null,
+          trackingNo: o.tracking_no || null,
+          label: '본사재고발주',
+        })
+      }
       const gradeItems: HistoryItem[] = []
       const { data: tierOrders } = await supabase
         .from('brand_tier_orders')

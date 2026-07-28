@@ -6,6 +6,10 @@
 
 ## 2026-07-27
 
+### 배송이력 화면 — 트랙B(hq_stock_orders) 통합 + 진입링크
+- delivery-history/page.tsx: hq_stock_orders(트랙B 본사재고발주)를 세 번째 소스로 추가(이미 courier/tracking_no 컬럼 존재+물류처리+웹훅 자동추적 다 되어있던 상태 확인, 신규 SQL 불필요했음) — 재고발주 뱃지 하나로 트랙A/B 통합표시
+- hq-stock-orders/page.tsx(트랙B), brand-orders/page.tsx(트랙A) 헤더에 "배송이력 보기" 링크 추가 — 배송이력 화면 진입경로 확보
+
 ### 원장 배송이력 화면 신규
 - delivery-history/page.tsx 신규: 재고발주(brand_order_batches)+등급구매(brand_tier_orders) 통합 조회, 출처뱃지(재고발주/등급혜택) 구분, 운송장 표시, 전체/재고발주/등급혜택 필터
 

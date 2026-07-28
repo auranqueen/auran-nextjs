@@ -620,6 +620,7 @@ export default function BrandOrdersPage() {
         >
           월청구서
         </button>
+        <button type="button" onClick={() => router.push('/dashboard/owner/delivery-history')} style={{ fontSize: 12, color: '#7B5EA7', background: 'none', border: 'none', cursor: 'pointer' }}>배송이력 보기</button>
         {totalQty > 0 && (
           <div style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: PURPLE, color: '#fff', cursor: 'pointer' }} onClick={() => setShowPopup(true)}>
             전체 발주하기 {totalQty}개

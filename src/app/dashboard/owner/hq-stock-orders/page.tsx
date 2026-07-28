@@ -257,6 +257,7 @@ function HqStockOrdersContent() {
       <div style={{ padding: '16px', display: 'flex', alignItems: 'center', gap: 10 }}>
         <button type="button" onClick={() => router.back()} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: TEXT }}>←</button>
         <div style={{ fontSize: 16, fontWeight: 500, color: TEXT }}>본사 재고발주</div>
+        <button type="button" onClick={() => router.push('/dashboard/owner/delivery-history')} style={{ marginLeft: 'auto', fontSize: 12, color: '#7B5EA7', background: 'none', border: 'none', cursor: 'pointer' }}>배송이력 보기</button>
       </div>
 
       <div style={{ padding: '0 16px 12px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
