@@ -6,6 +6,11 @@
 
 ## 2026-07-28
 
+### 등급별 재구매 프로모션 규칙 — 브랜드단위로 재설계
+- brand_tier_promo_rules: product_id→brand_id로 스키마 전환(제품 100개 단위가 아니라 브랜드 7개 단위로 단순화)
+- tier-promo-rules/save·delete API, BrandTierPromoRulesSection.tsx 전부 brand_id 기준으로 재작성
+- 정책 확정: 이 규칙은 등급구매(초도)가 아니라 재구매(재고발주) 발송처리시 원장 보유등급 기준으로 자동적용되는 것 — 다음 단계에서 BrandBatchFulfillmentList 발송처리에 연동 예정
+
 ### 등급별 프로모션 규칙 API
 - tier-promo-rules/save/route.ts, delete/route.ts 신규 — brand_tier_promo_rules CRUD(등급×제품별 "N개 이상 주문시 +M개 보너스" 규칙), assertCompanyAccess 재사용
 

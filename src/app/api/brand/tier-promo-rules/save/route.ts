@@ -11,21 +11,21 @@ async function assertCompanyAccess(
     .select('id')
     .eq('company_id', companyId)
   const brandIds = (companyBrands || []).map((b: { id: string }) => b.id)
-  if (brandIds.length === 0) return false
+  if (brandIds.length === 0) return { allowed: false, brandIds: [] as string[] }
   const { data: member } = await supabase
     .from('brand_members')
     .select('brand_id')
     .eq('user_id', userPk)
     .in('brand_id', brandIds)
     .maybeSingle()
-  if (member?.brand_id) return true
+  if (member?.brand_id) return { allowed: true, brandIds }
   const { data: owned } = await supabase
     .from('brands')
     .select('id')
     .in('id', brandIds)
     .eq('user_id', userPk)
     .maybeSingle()
-  return Boolean(owned?.id)
+  return { allowed: Boolean(owned?.id), brandIds }
 }
 export async function POST(req: NextRequest) {
   const supabase = createClient()
@@ -36,10 +36,10 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const companyId = typeof body?.company_id === 'string' ? body.company_id.trim() : ''
   const tierPackageId = typeof body?.tier_package_id === 'string' ? body.tier_package_id.trim() : ''
-  const productId = typeof body?.product_id === 'string' ? body.product_id.trim() : ''
+  const brandId = typeof body?.brand_id === 'string' ? body.brand_id.trim() : ''
   const minQty = Math.trunc(Number(body?.min_qty))
   const bonusQty = Math.trunc(Number(body?.bonus_qty))
-  if (!companyId || !tierPackageId || !productId) {
+  if (!companyId || !tierPackageId || !brandId) {
     return NextResponse.json({ ok: false, error: 'missing_ids' }, { status: 400 })
   }
   if (!Number.isFinite(minQty) || minQty < 1) {
@@ -56,9 +56,12 @@ export async function POST(req: NextRequest) {
   if (!me?.id || me.role !== 'brand') {
     return NextResponse.json({ ok: false, error: 'brand_only' }, { status: 403 })
   }
-  const allowed = await assertCompanyAccess(supabase, me.id, companyId)
+  const { allowed, brandIds } = await assertCompanyAccess(supabase, me.id, companyId)
   if (!allowed) {
     return NextResponse.json({ ok: false, error: 'forbidden_company' }, { status: 403 })
+  }
+  if (!brandIds.includes(brandId)) {
+    return NextResponse.json({ ok: false, error: 'brand_not_in_company' }, { status: 400 })
   }
   const { data: pkg } = await supabase
     .from('brand_tier_packages')
@@ -76,13 +79,13 @@ export async function POST(req: NextRequest) {
       {
         company_id: companyId,
         tier_package_id: tierPackageId,
-        product_id: productId,
+        brand_id: brandId,
         min_qty: minQty,
         bonus_qty: bonusQty,
       },
-      { onConflict: 'tier_package_id,product_id' },
+      { onConflict: 'tier_package_id,brand_id' },
     )
-    .select('id, tier_package_id, product_id, min_qty, bonus_qty, is_active')
+    .select('id, tier_package_id, brand_id, min_qty, bonus_qty, is_active')
     .single()
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true, rule: data })
