@@ -137,6 +137,8 @@ export default function BrandOrdersPage() {
   const [returnReason, setReturnReason] = useState('')
   const [returnDetail, setReturnDetail] = useState('')
   const [returnQty, setReturnQty] = useState(1)
+  const [returnPhotos, setReturnPhotos] = useState<string[]>([])
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [returnSaving, setReturnSaving] = useState(false)
   const [toast, setToast] = useState('')
   const [tab, setTab] = useState<'shop' | 'orders'>('shop')
@@ -532,6 +534,24 @@ export default function BrandOrdersPage() {
     setSending(false)
   }
 
+  const handleReturnPhotoUpload = async (files: FileList) => {
+    setUploadingPhoto(true)
+    try {
+      const uploaded: string[] = []
+      for (const file of Array.from(files).slice(0, 5 - returnPhotos.length)) {
+        const ext = file.name.split('.').pop() || 'jpg'
+        const path = `return-photos/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+        const { data, error } = await supabase.storage.from('brand-assets').upload(path, file, { upsert: true })
+        if (error || !data) continue
+        const { data: urlData } = supabase.storage.from('brand-assets').getPublicUrl(path)
+        uploaded.push(urlData.publicUrl)
+      }
+      setReturnPhotos((prev) => [...prev, ...uploaded].slice(0, 5))
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
   const submitReturn = async () => {
     if (!returnReason.trim()) { showToast('사유를 선택해주세요'); return }
     if (!returnPopup.order?.brand_id) { showToast('브랜드 정보 없음'); return }
@@ -548,13 +568,14 @@ export default function BrandOrdersPage() {
       qty: returnQty,
       status: 'requested',
       requested_by: (prof as { id?: string } | null)?.id || user.id,
-      photos: [],
+      photos: returnPhotos,
     })
     if (!error) {
       setReturnPopup({ open: false, order: null })
       setReturnReason('')
       setReturnDetail('')
       setReturnQty(1)
+      setReturnPhotos([])
       showToast('반품·교환 신청 완료! 브랜드사 검토 중')
     } else {
       showToast('신청 실패: ' + error.message)
@@ -880,6 +901,35 @@ export default function BrandOrdersPage() {
                 </button>
               ))}
             </div>
+              <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>사진 첨부 (최대 5장, 선택)</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const, marginBottom: 14 }}>
+                {returnPhotos.map((url, i) => (
+                  <div key={url} style={{ position: 'relative', width: 64, height: 64 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" style={{ width: 64, height: 64, borderRadius: 8, objectFit: 'cover' }} />
+                    <button
+                      type="button"
+                      onClick={() => setReturnPhotos((prev) => prev.filter((_, idx) => idx !== i))}
+                      style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', border: 'none', background: '#E53935', color: '#fff', fontSize: 12, cursor: 'pointer', lineHeight: '20px', padding: 0 }}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                {returnPhotos.length < 5 && (
+                  <label style={{ width: 64, height: 64, borderRadius: 8, border: '1px dashed #ccc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: '#999', cursor: 'pointer' }}>
+                    {uploadingPhoto ? '...' : '+'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      disabled={uploadingPhoto}
+                      onChange={(e) => { if (e.target.files && e.target.files.length > 0) void handleReturnPhotoUpload(e.target.files) }}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                )}
+              </div>
             <div style={{ fontSize: 12, color: '#666', marginBottom: 6 }}>수량</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
               <button type="button" onClick={() => setReturnQty((q) => Math.max(1, q - 1))}
