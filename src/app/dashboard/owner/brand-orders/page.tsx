@@ -227,48 +227,63 @@ export default function BrandOrdersPage() {
     }
     setLinkedBrandNames(brandNameMap)
     let gradeMap: Record<string, string> = {}
+    const tierPackageByCompany: Record<string, string> = {}
+    const gradeByCompanyOuter: Record<string, string> = {}
     const companyIdsForGrade = Array.from(new Set(Object.values(brandCompanyMap)))
     if (companyIdsForGrade.length > 0) {
       const { data: gradeRows } = await supabase
         .from('brand_owner_grades')
-        .select('company_id, grade')
+        .select('company_id, grade, tier_package_id, payment_status')
         .eq('owner_id', profileId)
         .eq('origin_track', 'A')
+        .eq('payment_status', 'paid')
         .in('company_id', companyIdsForGrade)
-      const gradeByCompany: Record<string, string> = {}
       for (const row of gradeRows || []) {
-        gradeByCompany[String((row as { company_id: string }).company_id)] =
-          String((row as { grade?: string }).grade || DEFAULT_GRADE)
+        const cid = String((row as { company_id: string }).company_id)
+        const g = String((row as { grade?: string }).grade || DEFAULT_GRADE)
+        gradeByCompanyOuter[cid] = g
+        const tpid = (row as { tier_package_id?: string | null }).tier_package_id
+        if (tpid) tierPackageByCompany[cid] = String(tpid)
       }
       for (const bid of brandIds) {
         const cid = brandCompanyMap[bid]
-        if (cid && gradeByCompany[cid]) gradeMap[bid] = gradeByCompany[cid]
+        if (cid && gradeByCompanyOuter[cid]) gradeMap[bid] = gradeByCompanyOuter[cid]
       }
     }
     setGradeByBrandId(gradeMap)
 
     if (brandIds.length > 0) {
-      const uniqueGrades = Array.from(
-        new Set(brandIds.map((id) => gradeMap[id] || DEFAULT_GRADE)),
-      )
-
-      const [{ data: prodRows }, { data: promoRows }] = await Promise.all([
+      const tierPackageIds = Array.from(new Set(Object.values(tierPackageByCompany)))
+      const gradeByTierPackage: Record<string, string> = {}
+      for (const cid of Object.keys(tierPackageByCompany)) {
+        gradeByTierPackage[tierPackageByCompany[cid]] = gradeByCompanyOuter[cid] || DEFAULT_GRADE
+      }
+      const [{ data: prodRows }, { data: promoRuleRows }] = await Promise.all([
         supabase
           .from('brand_products')
           .select('id, name, thumb_img, brand_id, supply_price, brands(name)')
           .in('brand_id', brandIds)
           .eq('status', 'active')
           .order('created_at', { ascending: false }),
-        supabase
-          .from('supply_promos')
-          .select('id, brand_id, qty, bonus_qty, bonus, condition, title')
-          .in('brand_id', brandIds)
-          .in('condition', uniqueGrades)
-          .eq('promo_type', 'qty_price')
-          .eq('status', 'active'),
+        tierPackageIds.length > 0
+          ? supabase
+              .from('brand_tier_promo_rules')
+              .select('id, brand_id, min_qty, bonus_qty, tier_package_id')
+              .in('tier_package_id', tierPackageIds)
+              .eq('is_active', true)
+          : Promise.resolve({ data: [] as any[] }),
       ])
-
-      setSupplyPromos((promoRows || []) as SupplyPromoRow[])
+      setSupplyPromos(
+        ((promoRuleRows || []) as any[]).map((r) => ({
+          id: String(r.id),
+          brand_id: String(r.brand_id),
+          qty: Math.trunc(Number(r.min_qty) || 0),
+          bonus_qty: Math.trunc(Number(r.bonus_qty) || 0),
+          bonus: null,
+          condition: gradeByTierPackage[String(r.tier_package_id)] || null,
+          title: null,
+        })) as SupplyPromoRow[],
+      )
       setProducts((prodRows || []).map((p: {
         id: string
         name: string

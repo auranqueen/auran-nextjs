@@ -1,7 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import BrandOrdersPromoSettings from '../components/BrandOrdersPromoSettings'
 import BrandOrdersSummary from '../components/BrandOrdersSummary'
 import BrandOrderBatchApproval from '../components/BrandOrderBatchApproval'
 import BrandLogisticsClosingReview from '../components/BrandLogisticsClosingReview'
@@ -52,13 +51,9 @@ export default function BrandTabOrders({ myBrands }: Props) {
         selectedBrandId={selectedBrandId}
         onBrandChange={handleBrandChange}
       />
-      {selectedBrandId ? (
-        <BrandOrdersPromoSettings brandId={selectedBrandId} />
-      ) : (
-        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
-          프로모션 설정을 하려면 브랜드를 선택하세요
-        </div>
-      )}
+      <div style={{ textAlign: 'center', padding: 12, color: 'rgba(255,255,255,0.3)', fontSize: 11 }}>
+        재구매 프로모션은 "등급 패키지관리" 탭에서 등급별로 설정할 수 있어요
+      </div>
       <BrandOrderBatchApproval
         brandId={selectedBrandId}
         brandIds={myBrands.map((b) => b.id)}

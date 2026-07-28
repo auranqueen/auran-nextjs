@@ -6,6 +6,12 @@
 
 ## 2026-07-28
 
+### 트랙A 재구매 프로모션 — 기존 supply_promos에서 brand_tier_promo_rules로 전환
+- brand-orders/page.tsx: 프로모션 데이터소스를 supply_promos(제품별, 등급명 문자열매칭)에서 brand_tier_promo_rules(브랜드별, 원장이 실제 보유한 tier_package_id 기준)로 전환. 기존 promosForBrandGrade 호출부 5곳은 안 건드리고, condition 필드에 실제 등급명을 채워서 기존 로직 그대로 재사용(최소범위 원칙)
+- 이제 트랙A/B가 동일한 brand_tier_promo_rules를 공유 — 브랜드사가 등급패키지관리 탭에서 규칙 하나 등록하면 A/B 양쪽 재구매에 자동 반영됨
+- BrandTabOrders.tsx: 발주관리 탭의 옛 프로모션 설정화면(BrandOrdersPromoSettings) 제거, 안내문구로 대체(등급패키지관리 탭으로 안내) — 이제 저장해도 반영 안 되는 죽은 화면이라 혼선 방지
+- 남은 정리: BrandOrdersPromoSettings.tsx/supply_promos 관련 코드 자체 삭제는 추후(현재는 미사용 확정만)
+
 ### Supabase 클라이언트 싱글턴 전환 — 근본원인 수정
 - src/lib/supabase/client.ts: createClient()가 모듈 레벨 캐시로 동일 인스턴스를 반환하도록 전환 — 기존엔 호출마다 새 인스턴스 생성되어, useEffect/useCallback 의존성 배열에 supabase가 들어간 코드베이스 전역 23곳이 잠재적으로 매 렌더마다 재실행될 위험이 있었음(오렌 작업 절대규칙 "supabase useEffect 의존성금지" 위반이 반복 발생했던 근본원인)
 - 서버 전용 client(server.ts/admin.ts)는 요청 단위 생성이 맞아서 미변경, 브라우저 client.ts만 싱글턴화
