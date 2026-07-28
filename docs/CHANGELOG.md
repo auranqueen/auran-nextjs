@@ -6,6 +6,9 @@
 
 ## 2026-07-27
 
+### 원장 배송이력 화면 신규
+- delivery-history/page.tsx 신규: 재고발주(brand_order_batches)+등급구매(brand_tier_orders) 통합 조회, 출처뱃지(재고발주/등급혜택) 구분, 운송장 표시, 전체/재고발주/등급혜택 필터
+
 ### 트랙A 원장홈 — "내가 모집한 원장님" 트랙B 전용으로 게이트
 - OwnerHomeV3.tsx: 모집원장 카드를 profile.origin_track==='B'일 때만 렌더(A는 원장모집 개념 자체가 없어서 완전 무관 — 착각 방지)
 - page.tsx: recruitedOwners 조회도 트랙B일 때만 실행(A는 쿼리 자체 스킵)
