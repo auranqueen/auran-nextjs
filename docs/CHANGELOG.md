@@ -6,6 +6,10 @@
 
 ## 2026-07-28
 
+### 등급구매 재고차감 연동 (1/4)
+- BrandTierOrderFulfillmentList.tsx: 발송완료 처리시 brand_tier_order_items 기준으로 brand_inventory 차감(product_id 우선매칭, 없으면 product_name 폴백), brand_stock_logs에 brand_id 포함해서 기록(ref_type='tier_order')
+- 재고발주(BrandBatchFulfillmentList)와 동일 패턴 재사용 — 등급구매 카탈로그 발송도 재고발주처럼 발송완료 버튼 클릭 시점에만 재고 확정 차감
+
 ### 반품수령 화면 — 원장 신청사유/사진 연동
 - BrandReturnsReceive.tsx 전체교체: 원장이 신청한 사유(reason_code)를 REASON_CONDITION_MAP으로 물류 수령상태에 자동매핑(불량·파손/배송중파손→파손·불량, 유통기한임박→유통기한 문제, 그외→정상), 물류담당자가 확인 후 필요시 변경 가능
 - 원장이 첨부한 사진/상세사유(reason_detail, photos)를 수령화면에 표시, 대기목록에 사진개수 뱃지

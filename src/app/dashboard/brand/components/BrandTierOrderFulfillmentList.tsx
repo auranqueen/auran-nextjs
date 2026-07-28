@@ -13,7 +13,8 @@ type OrderRow = {
   tracking_carrier: string | null
   tracking_number: string | null
 }
-type Enriched = OrderRow & { ownerName: string; tierName: string; itemCount: number }
+type OrderItem = { product_id: string; item_name: string; qty: number; brand_id: string }
+type Enriched = OrderRow & { ownerName: string; tierName: string; items: OrderItem[] }
 type Props = {
   companyId: string | null
   onToast: (t: string) => void
@@ -46,7 +47,7 @@ export default function BrandTierOrderFulfillmentList({ companyId, onToast }: Pr
       const [{ data: profiles }, { data: tiers }, { data: items }] = await Promise.all([
         supabase.from('profiles').select('id, full_name, owner_store_name').in('id', ownerIds),
         supabase.from('brand_tier_packages').select('id, tier_name').in('id', tierIds),
-        supabase.from('brand_tier_order_items').select('order_id').in('order_id', orderIds),
+        supabase.from('brand_tier_order_items').select('order_id, product_id, item_name, qty').in('order_id', orderIds),
       ])
       const profileMap: Record<string, string> = {}
       for (const p of (profiles || []) as any[]) {
@@ -56,17 +57,31 @@ export default function BrandTierOrderFulfillmentList({ companyId, onToast }: Pr
       for (const t of (tiers || []) as any[]) {
         tierNameMap[String(t.id)] = String(t.tier_name)
       }
-      const countMap: Record<string, number> = {}
+      const productIds = Array.from(new Set((items || []).map((it: any) => String(it.product_id)).filter(Boolean)))
+      const { data: productRows } = productIds.length
+        ? await supabase.from('brand_products').select('id, brand_id').in('id', productIds)
+        : { data: [] }
+      const productBrandMap: Record<string, string> = {}
+      for (const p of (productRows || []) as any[]) {
+        productBrandMap[String(p.id)] = String(p.brand_id)
+      }
+      const itemsByOrder: Record<string, OrderItem[]> = {}
       for (const it of (items || []) as any[]) {
         const oid = String(it.order_id)
-        countMap[oid] = (countMap[oid] || 0) + 1
+        if (!itemsByOrder[oid]) itemsByOrder[oid] = []
+        itemsByOrder[oid].push({
+          product_id: String(it.product_id),
+          item_name: String(it.item_name),
+          qty: Math.trunc(Number(it.qty) || 0),
+          brand_id: productBrandMap[String(it.product_id)] || '',
+        })
       }
       setOrders(
         rows.map((r) => ({
           ...r,
           ownerName: profileMap[String(r.owner_id)] || '원장님',
           tierName: tierNameMap[String(r.tier_package_id)] || '',
-          itemCount: countMap[r.id] || 0,
+          items: itemsByOrder[r.id] || [],
         })),
       )
     } finally {
@@ -76,6 +91,41 @@ export default function BrandTierOrderFulfillmentList({ companyId, onToast }: Pr
   useEffect(() => {
     void load()
   }, [load])
+  const decrementInventoryForOrder = async (order: Enriched) => {
+    for (const item of order.items) {
+      if (!item.qty || item.qty <= 0) continue
+      let invRow: { id: string; total_stock: number } | null = null
+      const byProduct = await supabase
+        .from('brand_inventory')
+        .select('id, total_stock')
+        .eq('product_id', item.product_id)
+        .maybeSingle()
+      if (byProduct.data) {
+        invRow = byProduct.data as { id: string; total_stock: number }
+      } else {
+        const byName = await supabase
+          .from('brand_inventory')
+          .select('id, total_stock')
+          .eq('product_name', item.item_name)
+          .maybeSingle()
+        if (byName.data) invRow = byName.data as { id: string; total_stock: number }
+      }
+      if (!invRow) continue
+      await supabase.rpc('decrement_inventory_stock', { p_inventory_id: invRow.id, p_qty: item.qty })
+      await supabase.from('brand_stock_logs').insert({
+        brand_id: item.brand_id || null,
+        inventory_id: invRow.id,
+        type: 'out',
+        qty: item.qty,
+        before_qty: invRow.total_stock,
+        after_qty: Math.max(0, invRow.total_stock - item.qty),
+        ref_type: 'tier_order',
+        ref_id: order.id,
+        staff_name: '등급구매 자동출고',
+        memo: `등급구매 발송: ${item.item_name} ${item.qty}개`,
+      })
+    }
+  }
   const submit = async (order: Enriched) => {
     if (!companyId) return
     const input = inputs[order.id]
@@ -96,6 +146,7 @@ export default function BrandTierOrderFulfillmentList({ companyId, onToast }: Pr
         onToast('발송처리 실패')
         return
       }
+      await decrementInventoryForOrder(order)
       await fetch('/api/delivery/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -122,7 +173,7 @@ export default function BrandTierOrderFulfillmentList({ companyId, onToast }: Pr
           <div key={o.id} style={{ padding: 14, borderRadius: 12, border: '1px solid rgba(123,94,167,0.3)', background: 'rgba(123,94,167,0.05)' }}>
             <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>{o.ownerName}</div>
             <div style={{ fontSize: 12, color: 'var(--text3, #888)', marginBottom: 10 }}>
-              {o.tierName} · 담은금액 {Math.trunc(o.amount).toLocaleString()}원 · 품목 {o.itemCount}종
+              {o.tierName} · 담은금액 {Math.trunc(o.amount).toLocaleString()}원 · 품목 {o.items.length}종
             </div>
             <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
               {COURIERS.map((c) => (
