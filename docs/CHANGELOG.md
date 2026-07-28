@@ -6,6 +6,10 @@
 
 ## 2026-07-27
 
+### 트랙A 원장홈 — "내가 모집한 원장님" 트랙B 전용으로 게이트
+- OwnerHomeV3.tsx: 모집원장 카드를 profile.origin_track==='B'일 때만 렌더(A는 원장모집 개념 자체가 없어서 완전 무관 — 착각 방지)
+- page.tsx: recruitedOwners 조회도 트랙B일 때만 실행(A는 쿼리 자체 스킵)
+
 ### 트랙B 등급 장바구니 결제 API
 - cart-create/route.ts 신규(brand-tier 하위): 카탈로그(brand_products.is_tier_catalog, A와 공유) 검증+합계계산, 결제intent의 target_id에 검증된 라인아이템 포함해서 저장, 결제는 오렌 공용 PayApp env 그대로 사용
 - brandTierPurchase.ts: TierTarget에 items 필드 추가, 웹훅에서 결제완료시 brand_tier_order_items도 함께 insert

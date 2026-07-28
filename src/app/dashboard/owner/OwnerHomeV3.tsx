@@ -394,6 +394,7 @@ export default function OwnerHomeV3({
             sectionSubtitle="시바산 파트너 전용 혜택"
           />
 
+          {profile?.origin_track === 'B' && (
           <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', marginBottom: 4 }}>내가 모집한 원장님</div>
             <div style={{ fontSize: 10, color: 'var(--text3)', marginBottom: 12, lineHeight: 1.4 }}>
@@ -433,6 +434,7 @@ export default function OwnerHomeV3({
               ))
             )}
           </div>
+          )}
 
           {brandPost && (
             <div className="owner-v3-card" style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 14, padding: 16 }}>

@@ -101,22 +101,24 @@ export default async function OwnerDashboard({ searchParams }: { searchParams: {
       unread_count: Number(c.unread_count || 0),
     }))
 
-    const { data: recruited } = await supabase
-      .from('users')
-      .select('id, name')
-      .eq('referred_by', profile.id)
-      .eq('role', 'owner')
     const recruitedOwners = [] as Array<{ id: string; name: string; monthSales: number }>
-    for (const o of (recruited as any[]) || []) {
-      const { data: ors } = await supabase
-        .from('orders')
-        .select('final_amount')
-        .eq('owner_id', o.id)
-        .in('status', confirmedStatuses)
-        .gte('ordered_at', `${thisStart}T00:00:00`)
-        .lte('ordered_at', `${thisEnd}T23:59:59`)
-      const monthSales = ((ors as any[]) || []).reduce((s, r) => s + Number(r.final_amount || 0), 0)
-      recruitedOwners.push({ id: o.id, name: o.name || '원장', monthSales })
+    if (profile.origin_track === 'B') {
+      const { data: recruited } = await supabase
+        .from('users')
+        .select('id, name')
+        .eq('referred_by', profile.id)
+        .eq('role', 'owner')
+      for (const o of (recruited as any[]) || []) {
+        const { data: ors } = await supabase
+          .from('orders')
+          .select('final_amount')
+          .eq('owner_id', o.id)
+          .in('status', confirmedStatuses)
+          .gte('ordered_at', `${thisStart}T00:00:00`)
+          .lte('ordered_at', `${thisEnd}T23:59:59`)
+        const monthSales = ((ors as any[]) || []).reduce((s, r) => s + Number(r.final_amount || 0), 0)
+        recruitedOwners.push({ id: o.id, name: o.name || '원장', monthSales })
+      }
     }
 
     let brandPost: {
