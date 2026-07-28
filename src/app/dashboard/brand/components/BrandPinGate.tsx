@@ -50,10 +50,25 @@ export default function BrandPinGate({ brandId, brandName, onAuth, hub = 'brand'
   const loadStaff = useCallback(async () => {
     if (!brandId) return
     setLoading(true)
+    const { data: brandRow } = await supabase
+      .from('brands')
+      .select('company_id')
+      .eq('id', brandId)
+      .maybeSingle()
+    const companyId = brandRow?.company_id ? String(brandRow.company_id) : null
+    let staffBrandIds = [brandId]
+    if (companyId) {
+      const { data: siblingBrands } = await supabase
+        .from('brands')
+        .select('id')
+        .eq('company_id', companyId)
+      const ids = (siblingBrands || []).map((b: { id: string }) => String(b.id))
+      if (ids.length > 0) staffBrandIds = ids
+    }
     const { data } = await supabase
       .from('brand_staff')
       .select('id, name, role, pin, is_active')
-      .eq('brand_id', brandId)
+      .in('brand_id', staffBrandIds)
       .eq('is_active', true)
       .order('created_at')
     setStaffList((data || []) as StaffRow[])

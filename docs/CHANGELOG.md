@@ -6,6 +6,10 @@
 
 ## 2026-07-28
 
+### 브랜드허브 PIN게이트 — 컴퍼니 단위로 전환
+- BrandPinGate.tsx: 담당자 조회를 brand_id 단일값→소속 컴퍼니 전체 브랜드 목록 기준으로 전환. 새 서브브랜드 추가시 담당자가 0명이라 아무도 로그인 못 하던 잠금 문제 해결 — 같은 컴퍼니(예: 시바산그룹)에 등록된 담당자면 어느 서브브랜드(보케르 등)든 PIN으로 로그인 가능
+- 남은 리스크(추후 확인): brand_staff_permissions/brand_pin_sessions는 여전히 brand_id 단위라 형제 브랜드에서 권한이 비어있을 수 있음 — 로그인 자체는 되니 급한 건 아님
+
 ### 트랙A 재구매 프로모션 — 기존 supply_promos에서 brand_tier_promo_rules로 전환
 - brand-orders/page.tsx: 프로모션 데이터소스를 supply_promos(제품별, 등급명 문자열매칭)에서 brand_tier_promo_rules(브랜드별, 원장이 실제 보유한 tier_package_id 기준)로 전환. 기존 promosForBrandGrade 호출부 5곳은 안 건드리고, condition 필드에 실제 등급명을 채워서 기존 로직 그대로 재사용(최소범위 원칙)
 - 이제 트랙A/B가 동일한 brand_tier_promo_rules를 공유 — 브랜드사가 등급패키지관리 탭에서 규칙 하나 등록하면 A/B 양쪽 재구매에 자동 반영됨
