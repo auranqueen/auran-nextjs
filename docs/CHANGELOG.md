@@ -6,6 +6,9 @@
 
 ## 2026-07-28
 
+### 재구매(트랙A) 재고표시 연동 완료
+- brand-orders/page.tsx: brand_inventory 배치조회+stockMap state 추가, BrandOrderProductCard에 stock prop 전달 — 트랙A 재구매 화면에서 재고표시+품절차단 실제 작동
+
 ### 재구매 제품카드 — 재고표시+품절차단 (A/B 공용)
 - BrandOrderProductCard.tsx: stock prop 추가 — 재고 있으면 "재고 N개" 표시, 0이면 어둡게+"품절, 조금만 기다려주세요"+담기버튼 비활성화. 이 컴포넌트는 brand-orders(A)/hq-stock-orders(B) 양쪽에서 공유하므로 한 번 수정으로 트랙 양쪽 다 적용됨(아직 부모화면에서 stock 값을 실제로 넘겨주는 연동은 다음 단계)
 

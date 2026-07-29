@@ -130,6 +130,7 @@ export default function BrandOrdersPage() {
   const [brandFilter, setBrandFilter] = useState<'all' | string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
+  const [stockMap, setStockMap] = useState<Record<string, number>>({})
   const [showPopup, setShowPopup] = useState(false)
   const [sending, setSending] = useState(false)
   const [returnPopup, setReturnPopup] = useState<{ open: boolean; order: Order | null }>({ open: false, order: null })
@@ -284,6 +285,20 @@ export default function BrandOrdersPage() {
           title: null,
         })) as SupplyPromoRow[],
       )
+      const prodIds = (prodRows || []).map((p: { id: string }) => p.id)
+      if (prodIds.length > 0) {
+        const { data: invRows } = await supabase
+          .from('brand_inventory')
+          .select('product_id, available_stock')
+          .in('product_id', prodIds)
+        const sMap: Record<string, number> = {}
+        for (const r of (invRows || []) as any[]) {
+          sMap[String(r.product_id)] = Math.trunc(Number(r.available_stock) || 0)
+        }
+        setStockMap(sMap)
+      } else {
+        setStockMap({})
+      }
       setProducts((prodRows || []).map((p: {
         id: string
         name: string
@@ -776,6 +791,7 @@ export default function BrandOrdersPage() {
                         onApplyPromo={applyPromo}
                         onAdd={addToCart}
                         onChangeQty={changeQty}
+                        stock={stockMap[prod.id]}
                       />
                     )
                   })}
