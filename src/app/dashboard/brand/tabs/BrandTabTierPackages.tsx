@@ -1,6 +1,5 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
-import BrandTierCatalogSection from './BrandTierCatalogSection'
 import BrandTierOrderApprovalSection from './BrandTierOrderApprovalSection'
 import BrandTierPromoRulesSection from './BrandTierPromoRulesSection'
 import { createClient } from '@/lib/supabase/client'
@@ -9,7 +8,6 @@ const SUB = 'rgba(255,255,255,0.3)'
 const KIT_TYPES = ['부자재', '인증패', '진열장', '기타'] as const
 const SUBTABS = [
   { key: 'price', label: '등급·가격' },
-  { key: 'catalog', label: '카탈로그' },
   { key: 'orders', label: '발송오더' },
 ] as const
 type SubTab = typeof SUBTABS[number]['key']
@@ -494,9 +492,6 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
             })}
           </div>
         )
-      )}
-      {sub === 'catalog' && (
-        <BrandTierCatalogSection companyId={companyId} myBrands={myBrands} />
       )}
       {sub === 'orders' && (
         <BrandTierOrderApprovalSection companyId={companyId} />
