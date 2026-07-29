@@ -6,6 +6,10 @@
 
 ## 2026-07-28
 
+### 등급구매 결제 API — is_tier_catalog 검증 제거(자유선택 정책)
+- tier-cart-create/route.ts(A), cart-create/route.ts(B) 둘 다 is_tier_catalog 체크 제거 — 컴퍼니 소속 브랜드의 활성(status='active') 제품이면 등급구매 결제에 모두 포함 가능
+- 남은 게이트: 원장 UI(tier-cart/page.tsx)의 is_tier_catalog 필터는 아직 남아있음 — 다음 커밋에서 제거 예정
+
 ### 등급 패키지관리 탭 — 카탈로그 서브탭 제거
 - BrandTabTierPackages.tsx: [카탈로그] 서브탭 제거, [등급·가격]/[발송오더] 2탭으로 축소 — 제품등록=자동으로 재구매/등급구매 양쪽 다 노출되는 정책으로 바뀌면서 별도 설정화면 자체가 불필요해짐
 - BrandTierCatalogSection.tsx는 더 이상 이 탭에서 사용 안 함(파일 자체는 정리 대상으로 남김)

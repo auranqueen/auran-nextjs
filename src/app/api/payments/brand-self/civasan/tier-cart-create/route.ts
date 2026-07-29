@@ -104,11 +104,11 @@ export async function POST(req: NextRequest) {
     .filter(Boolean)
   const { data: productRows } = await supabase
     .from('brand_products')
-    .select('id, brand_id, name, supply_price, is_tier_catalog, status')
+    .select('id, brand_id, name, supply_price, status')
     .in('id', productIds.length ? productIds : ['00000000-0000-0000-0000-000000000000'])
   const productMap: Record<string, { brand_id: string; name: string; supply_price: number }> = {}
   for (const p of (productRows || []) as any[]) {
-    if (!p.is_tier_catalog || p.status !== 'active') continue
+    if (p.status !== 'active') continue
     if (!companyBrandIds.includes(String(p.brand_id))) continue
     productMap[String(p.id)] = { brand_id: String(p.brand_id), name: String(p.name), supply_price: Math.trunc(Number(p.supply_price) || 0) }
   }
