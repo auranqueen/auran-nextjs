@@ -56,7 +56,6 @@ function TierCartContent() {
         .from('brand_products')
         .select('id, brand_id, name, supply_price, thumb_img')
         .in('brand_id', brandIds.length ? brandIds : ['00000000-0000-0000-0000-000000000000'])
-        .eq('is_tier_catalog', true)
         .eq('status', 'active')
       setCatalog((catalogRows || []) as CatalogItem[])
       const { data: kitRows } = await supabase

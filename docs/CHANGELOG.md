@@ -6,6 +6,10 @@
 
 ## 2026-07-28
 
+### 등급 카탈로그 자유선택 정책 — is_tier_catalog 완전 제거
+- tier-cart/page.tsx(원장 등급구매 장바구니 UI): is_tier_catalog 필터 제거 — 컴퍼니 소속 브랜드의 활성 제품 전체가 자유선택 가능
+- 결제API(A/B)+원장UI 전 구간 status='active'+컴퍼니브랜드 기준으로 통일 완료. "포함하기 토글" 정책 마이그레이션 종료
+
 ### 등급구매 결제 API — is_tier_catalog 검증 제거(자유선택 정책)
 - tier-cart-create/route.ts(A), cart-create/route.ts(B) 둘 다 is_tier_catalog 체크 제거 — 컴퍼니 소속 브랜드의 활성(status='active') 제품이면 등급구매 결제에 모두 포함 가능
 - 남은 게이트: 원장 UI(tier-cart/page.tsx)의 is_tier_catalog 필터는 아직 남아있음 — 다음 커밋에서 제거 예정
