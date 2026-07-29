@@ -5,7 +5,14 @@ import BrandTierOrderApprovalSection from './BrandTierOrderApprovalSection'
 import BrandTierPromoRulesSection from './BrandTierPromoRulesSection'
 import { createClient } from '@/lib/supabase/client'
 const PURPLE = '#7B5EA7'
+const SUB = 'rgba(255,255,255,0.3)'
 const KIT_TYPES = ['부자재', '인증패', '진열장', '기타'] as const
+const SUBTABS = [
+  { key: 'price', label: '등급·가격' },
+  { key: 'catalog', label: '카탈로그' },
+  { key: 'orders', label: '발송오더' },
+] as const
+type SubTab = typeof SUBTABS[number]['key']
 type TierPackage = {
   id: string
   tier_name: string
@@ -38,6 +45,7 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [companyName, setCompanyName] = useState('')
   const supabase = createClient()
+  const [sub, setSub] = useState<SubTab>('price')
   const [rows, setRows] = useState<TierPackage[]>([])
   const [drafts, setDrafts] = useState<Record<string, Draft>>({})
   const [loading, setLoading] = useState(false)
@@ -127,7 +135,7 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
     } finally {
       setLoading(false)
     }
-  }, [companyId, supabase])
+  }, [companyId])
   useEffect(() => {
     void load()
   }, [load])
@@ -290,181 +298,209 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 4 }}>등급 패키지 관리</div>
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
-          {companyName || '회사'} 전체 · 가격(이 금액 이상)과 고정 구성품을 관리해요
+          {companyName || '회사'} 전체
         </div>
       </div>
-      {loading ? (
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>불러오는 중…</div>
-      ) : rows.length === 0 ? (
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>등록된 등급 패키지가 없어요</div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {rows.map((pkg) => {
-            const draft = drafts[pkg.id] || { tier_name: '', price: '0' }
-            const dirty =
-              draft.tier_name.trim() !== String(pkg.tier_name || '') ||
-              Math.trunc(Number(draft.price.replace(/,/g, ''))) !== Math.trunc(Number(pkg.price) || 0)
-            const expanded = expandedId === pkg.id
-            const kitItems = kitItemsByPkg[pkg.id] || []
-            return (
-              <div
-                key={pkg.id}
-                style={{
-                  borderRadius: 12,
-                  border: `1px solid ${expanded ? PURPLE : 'rgba(255,255,255,0.08)'}`,
-                  background: 'rgba(255,255,255,0.03)',
-                  overflow: 'hidden',
-                }}
-              >
-                <button
-                  type="button"
-                  onClick={() => toggleExpand(pkg.id)}
+      <div style={{ display: 'flex', gap: 0, overflowX: 'auto' as const, marginBottom: 16, borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}>
+        {SUBTABS.map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setSub(t.key)}
+            style={{
+              flexShrink: 0,
+              padding: '8px 14px',
+              fontSize: 12,
+              border: 'none',
+              background: 'transparent',
+              color: sub === t.key ? '#c4a7e7' : SUB,
+              borderBottom: sub === t.key ? `2px solid ${PURPLE}` : '2px solid transparent',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap' as const,
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {toast ? (
+        <div style={{ marginBottom: 12, fontSize: 12, color: '#c4a8f0' }}>{toast}</div>
+      ) : null}
+      {sub === 'price' && (
+        loading ? (
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>불러오는 중…</div>
+        ) : rows.length === 0 ? (
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>등록된 등급 패키지가 없어요</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {rows.map((pkg) => {
+              const draft = drafts[pkg.id] || { tier_name: '', price: '0' }
+              const dirty =
+                draft.tier_name.trim() !== String(pkg.tier_name || '') ||
+                Math.trunc(Number(draft.price.replace(/,/g, ''))) !== Math.trunc(Number(pkg.price) || 0)
+              const expanded = expandedId === pkg.id
+              const kitItems = kitItemsByPkg[pkg.id] || []
+              return (
+                <div
+                  key={pkg.id}
                   style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '14px 16px',
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    textAlign: 'left',
+                    borderRadius: 12,
+                    border: `1px solid ${expanded ? PURPLE : 'rgba(255,255,255,0.08)'}`,
+                    background: 'rgba(255,255,255,0.03)',
+                    overflow: 'hidden',
                   }}
                 >
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: '#fff' }}>{pkg.tier_name}</div>
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-                      {Math.trunc(Number(pkg.price)).toLocaleString()}원 이상
-                    </div>
-                  </div>
-                  <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>{expanded ? '▲' : '▼'}</span>
-                </button>
-                {expanded && (
-                  <div style={{ padding: '0 16px 16px' }}>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', marginBottom: 14 }}>
-                      <label style={{ flex: '1 1 140px', minWidth: 120 }}>
-                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>등급명</div>
-                        <input
-                          type="text"
-                          value={draft.tier_name}
-                          onChange={(e) => setDrafts((prev) => ({ ...prev, [pkg.id]: { ...draft, tier_name: e.target.value } }))}
-                          style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 13 }}
-                        />
-                      </label>
-                      <label style={{ flex: '1 1 140px', minWidth: 120 }}>
-                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>가격(이상, 원)</div>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          value={draft.price}
-                          onChange={(e) => setDrafts((prev) => ({ ...prev, [pkg.id]: { ...draft, price: e.target.value.replace(/[^\d]/g, '') } }))}
-                          style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}
-                        />
-                      </label>
-                      <button
-                        type="button"
-                        disabled={!dirty || savingId === pkg.id}
-                        onClick={() => void saveRow(pkg)}
-                        style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: dirty ? PURPLE : 'rgba(255,255,255,0.08)', color: dirty ? '#fff' : 'rgba(255,255,255,0.3)', fontSize: 12, fontWeight: 600, cursor: !dirty || savingId === pkg.id ? 'not-allowed' : 'pointer', opacity: savingId === pkg.id ? 0.7 : 1 }}
-                      >
-                        {savingId === pkg.id ? '저장 중…' : '가격 저장'}
-                      </button>
-                    </div>
-                    <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', marginBottom: 14 }} />
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>
-                      고정 구성품 (선택불가, 등급 구매시 자동 지급)
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
-                      {kitItems.length === 0 ? (
-                        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>등록된 구성품이 없어요</div>
-                      ) : (
-                        kitItems.map((item) =>
-                          editingKitId === item.id ? (
-                            <div key={item.id} style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: 10, borderRadius: 10, background: 'rgba(255,255,255,0.05)' }}>
-                              <input
-                                type="text"
-                                value={editKitDraft.item_name}
-                                onChange={(e) => setEditKitDraft((p) => ({ ...p, item_name: e.target.value }))}
-                                style={{ flex: '1 1 120px', padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12 }}
-                              />
-                              <select
-                                value={editKitDraft.item_type}
-                                onChange={(e) => setEditKitDraft((p) => ({ ...p, item_type: e.target.value }))}
-                                style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12 }}
-                              >
-                                {KIT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                              </select>
-                              <input
-                                type="text"
-                                inputMode="numeric"
-                                value={editKitDraft.qty}
-                                onChange={(e) => setEditKitDraft((p) => ({ ...p, qty: e.target.value.replace(/[^\d]/g, '') }))}
-                                style={{ width: 50, padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12 }}
-                              />
-                              <button type="button" disabled={kitSaving} onClick={() => void submitEditKit(item)} style={{ padding: '6px 10px', borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', fontSize: 12 }}>저장</button>
-                              <button type="button" onClick={() => setEditingKitId(null)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>취소</button>
-                            </div>
-                          ) : (
-                            <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 10 }}>
-                              <span style={kitBadgeStyle}>{item.item_type}</span>
-                              <span style={{ fontSize: 13, color: '#fff', flex: 1 }}>{item.item_name}</span>
-                              <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>수량 {item.qty}</span>
-                              <button type="button" onClick={() => startEditKit(item)} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 12 }}>수정</button>
-                              <button type="button" onClick={() => void deleteKit(item)} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: 'transparent', color: '#e88', cursor: 'pointer', fontSize: 12 }}>삭제</button>
-                            </div>
-                          ),
-                        )
-                      )}
-                    </div>
-                    {addingFor === pkg.id ? (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: 10, borderRadius: 10, background: 'rgba(255,255,255,0.05)' }}>
-                        <input
-                          type="text"
-                          placeholder="구성품 이름"
-                          value={kitDraft.item_name}
-                          onChange={(e) => setKitDraft((p) => ({ ...p, item_name: e.target.value }))}
-                          style={{ flex: '1 1 120px', padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12 }}
-                        />
-                        <select
-                          value={kitDraft.item_type}
-                          onChange={(e) => setKitDraft((p) => ({ ...p, item_type: e.target.value }))}
-                          style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12 }}
-                        >
-                          {KIT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                        </select>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder="수량"
-                          value={kitDraft.qty}
-                          onChange={(e) => setKitDraft((p) => ({ ...p, qty: e.target.value.replace(/[^\d]/g, '') }))}
-                          style={{ width: 50, padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12 }}
-                        />
-                        <button type="button" disabled={kitSaving} onClick={() => void submitAdd(pkg.id)} style={{ padding: '6px 10px', borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', fontSize: 12 }}>추가</button>
-                        <button type="button" onClick={() => setAddingFor(null)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>취소</button>
+                  <button
+                    type="button"
+                    onClick={() => toggleExpand(pkg.id)}
+                    style={{
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 10,
+                      padding: '14px 16px',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: '#fff' }}>{pkg.tier_name}</div>
+                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
+                        {Math.trunc(Number(pkg.price)).toLocaleString()}원 이상
                       </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => startAdd(pkg.id)}
-                        style={{ padding: '8px 14px', borderRadius: 8, border: `1px solid ${PURPLE}`, background: 'transparent', color: '#c4a8f0', fontSize: 12, cursor: 'pointer' }}
-                      >
-                        + 구성품 추가
-                      </button>
-                    )}
-                    <BrandTierPromoRulesSection companyId={companyId} tierPackageId={pkg.id} />
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
+                    </div>
+                    <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>{expanded ? '▲' : '▼'}</span>
+                  </button>
+                  {expanded && (
+                    <div style={{ padding: '0 16px 16px' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', marginBottom: 14 }}>
+                        <label style={{ flex: '1 1 140px', minWidth: 120 }}>
+                          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>등급명</div>
+                          <input
+                            type="text"
+                            value={draft.tier_name}
+                            onChange={(e) => setDrafts((prev) => ({ ...prev, [pkg.id]: { ...draft, tier_name: e.target.value } }))}
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 13 }}
+                          />
+                        </label>
+                        <label style={{ flex: '1 1 140px', minWidth: 120 }}>
+                          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 4 }}>가격(이상, 원)</div>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={draft.price}
+                            onChange={(e) => setDrafts((prev) => ({ ...prev, [pkg.id]: { ...draft, price: e.target.value.replace(/[^\d]/g, '') } }))}
+                            style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 13, fontFamily: "'JetBrains Mono', monospace" }}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          disabled={!dirty || savingId === pkg.id}
+                          onClick={() => void saveRow(pkg)}
+                          style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: dirty ? PURPLE : 'rgba(255,255,255,0.08)', color: dirty ? '#fff' : 'rgba(255,255,255,0.3)', fontSize: 12, fontWeight: 600, cursor: !dirty || savingId === pkg.id ? 'not-allowed' : 'pointer', opacity: savingId === pkg.id ? 0.7 : 1 }}
+                        >
+                          {savingId === pkg.id ? '저장 중…' : '가격 저장'}
+                        </button>
+                      </div>
+                      <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', marginBottom: 14 }} />
+                      <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 10 }}>
+                        고정 구성품 (선택불가, 등급 구매시 자동 지급)
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+                        {kitItems.length === 0 ? (
+                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>등록된 구성품이 없어요</div>
+                        ) : (
+                          kitItems.map((item) =>
+                            editingKitId === item.id ? (
+                              <div key={item.id} style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: 10, borderRadius: 10, background: 'rgba(255,255,255,0.05)' }}>
+                                <input
+                                  type="text"
+                                  value={editKitDraft.item_name}
+                                  onChange={(e) => setEditKitDraft((p) => ({ ...p, item_name: e.target.value }))}
+                                  style={{ flex: '1 1 120px', padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12 }}
+                                />
+                                <select
+                                  value={editKitDraft.item_type}
+                                  onChange={(e) => setEditKitDraft((p) => ({ ...p, item_type: e.target.value }))}
+                                  style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12 }}
+                                >
+                                  {KIT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                                </select>
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={editKitDraft.qty}
+                                  onChange={(e) => setEditKitDraft((p) => ({ ...p, qty: e.target.value.replace(/[^\d]/g, '') }))}
+                                  style={{ width: 50, padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12 }}
+                                />
+                                <button type="button" disabled={kitSaving} onClick={() => void submitEditKit(item)} style={{ padding: '6px 10px', borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', fontSize: 12 }}>저장</button>
+                                <button type="button" onClick={() => setEditingKitId(null)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>취소</button>
+                              </div>
+                            ) : (
+                              <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 10 }}>
+                                <span style={kitBadgeStyle}>{item.item_type}</span>
+                                <span style={{ fontSize: 13, color: '#fff', flex: 1 }}>{item.item_name}</span>
+                                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>수량 {item.qty}</span>
+                                <button type="button" onClick={() => startEditKit(item)} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 12 }}>수정</button>
+                                <button type="button" onClick={() => void deleteKit(item)} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: 'transparent', color: '#e88', cursor: 'pointer', fontSize: 12 }}>삭제</button>
+                              </div>
+                            ),
+                          )
+                        )}
+                      </div>
+                      {addingFor === pkg.id ? (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: 10, borderRadius: 10, background: 'rgba(255,255,255,0.05)' }}>
+                          <input
+                            type="text"
+                            placeholder="구성품 이름"
+                            value={kitDraft.item_name}
+                            onChange={(e) => setKitDraft((p) => ({ ...p, item_name: e.target.value }))}
+                            style={{ flex: '1 1 120px', padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12 }}
+                          />
+                          <select
+                            value={kitDraft.item_type}
+                            onChange={(e) => setKitDraft((p) => ({ ...p, item_type: e.target.value }))}
+                            style={{ padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12 }}
+                          >
+                            {KIT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            placeholder="수량"
+                            value={kitDraft.qty}
+                            onChange={(e) => setKitDraft((p) => ({ ...p, qty: e.target.value.replace(/[^\d]/g, '') }))}
+                            style={{ width: 50, padding: '6px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12 }}
+                          />
+                          <button type="button" disabled={kitSaving} onClick={() => void submitAdd(pkg.id)} style={{ padding: '6px 10px', borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', fontSize: 12 }}>추가</button>
+                          <button type="button" onClick={() => setAddingFor(null)} style={{ padding: '6px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 12 }}>취소</button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => startAdd(pkg.id)}
+                          style={{ padding: '8px 14px', borderRadius: 8, border: `1px solid ${PURPLE}`, background: 'transparent', color: '#c4a8f0', fontSize: 12, cursor: 'pointer' }}
+                        >
+                          + 구성품 추가
+                        </button>
+                      )}
+                      <BrandTierPromoRulesSection companyId={companyId} tierPackageId={pkg.id} />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )
       )}
-      {toast ? (
-        <div style={{ marginTop: 12, fontSize: 12, color: '#c4a8f0' }}>{toast}</div>
-      ) : null}
-      <BrandTierCatalogSection companyId={companyId} myBrands={myBrands} />
-      <BrandTierOrderApprovalSection companyId={companyId} />
+      {sub === 'catalog' && (
+        <BrandTierCatalogSection companyId={companyId} myBrands={myBrands} />
+      )}
+      {sub === 'orders' && (
+        <BrandTierOrderApprovalSection companyId={companyId} />
+      )}
       </>
       )}
     </div>

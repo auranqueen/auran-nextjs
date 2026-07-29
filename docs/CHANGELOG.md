@@ -6,6 +6,10 @@
 
 ## 2026-07-28
 
+### 등급 패키지관리 탭 — 서브탭 3분할
+- BrandTabTierPackages.tsx: [등급·가격]/[카탈로그]/[발송오더] 서브탭으로 분리(로직 변경 없음, JSX 재구성만) — 카탈로그 제품 늘어나거나 발송오더 쌓여도 등급·가격 화면 스크롤 안 길어짐
+- load useCallback 의존성에서 supabase 제거(오렌 절대규칙 재적용)
+
 ### 살롱스토어 — 관리고객 자동판정 + 회원가 노출, 리뷰 교차오염 수정
 - brand_products.member_price 컬럼 신규 추가(살롱스토어 회원가)
 - salons/[id]/products/[productId]/page.tsx: "이 살롱에서 결제완료/배송완료 이력이 있으면 회원"으로 자동판정(신규 테이블·토글 없이 brand_product_orders.salon_id 기준), 회원이면 member_price·아니면 consumer_price를 화면표시+장바구니+구매 전 구간에 일관되게 반영(displayPrice)
