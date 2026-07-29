@@ -2,12 +2,14 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { CSSProperties } from 'react'
+import BrandNameBadge from '../components/BrandNameBadge'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 interface InventoryRow {
   id: string
+  brand_id: string
   product_name: string
   total_stock: number
   safety_stock: number
@@ -18,12 +20,14 @@ interface InventoryRow {
 }
 interface Props {
   brandId: string | null
+  companyBrandIds?: string[]
   brandName: string
   authId: string | null
 }
-export default function BrandInventoryStock({ brandId, brandName, authId }: Props) {
+export default function BrandInventoryStock({ brandId, companyBrandIds, brandName, authId }: Props) {
   const supabase = createClient()
   const [items, setItems] = useState<InventoryRow[]>([])
+  const [brandNames, setBrandNames] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState('')
   const [editId, setEditId] = useState<string | null>(null)
@@ -37,26 +41,40 @@ export default function BrandInventoryStock({ brandId, brandName, authId }: Prop
   const [saving, setSaving] = useState(false)
   const [brandProducts, setBrandProducts] = useState<Array<{ id: string; name: string }>>([])
   const [selProductId, setSelProductId] = useState<string | null>(null)
+  const isAll = brandId === 'all'
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const loadItems = useCallback(async () => {
     if (!brandId) return
     setLoading(true)
+    const targetIds = isAll ? (companyBrandIds || []) : [brandId]
+    if (targetIds.length === 0) {
+      setItems([])
+      setBrandProducts([])
+      setLoading(false)
+      return
+    }
     const [{ data }, { data: prodData }] = await Promise.all([
       supabase
         .from('brand_inventory')
-        .select('id, product_name, total_stock, safety_stock, moq, lead_time_days, alert_contact, available_stock')
-        .eq('brand_id', brandId)
+        .select('id, brand_id, product_name, total_stock, safety_stock, moq, lead_time_days, alert_contact, available_stock')
+        .in('brand_id', targetIds)
         .order('product_name'),
-      supabase
-        .from('brand_products')
-        .select('id, name')
-        .eq('brand_id', brandId)
-        .order('name'),
+      isAll
+        ? Promise.resolve({ data: [] as { id: string; name: string }[] })
+        : supabase.from('brand_products').select('id, name').eq('brand_id', brandId).order('name'),
     ])
     setItems((data || []) as InventoryRow[])
     setBrandProducts((prodData || []).map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })))
+    if (isAll && targetIds.length > 0) {
+      const { data: brandRows } = await supabase.from('brands').select('id, name').in('id', targetIds)
+      const map: Record<string, string> = {}
+      for (const b of (brandRows || []) as { id: string; name: string }[]) {
+        map[String(b.id)] = String(b.name)
+      }
+      setBrandNames(map)
+    }
     setLoading(false)
-  }, [brandId])
+  }, [brandId, isAll, companyBrandIds])
   useEffect(() => { void loadItems() }, [loadItems])
   const stockStatus = (stock: number, safety: number) => {
     if (stock <= 0) return { label: '품절', color: '#E53935', bg: 'rgba(229,57,53,0.1)' }
@@ -66,6 +84,7 @@ export default function BrandInventoryStock({ brandId, brandName, authId }: Prop
   }
   const saveSafety = async (id: string) => {
     setSaving(true)
+    const item = items.find(it => it.id === id)
     const { error } = await supabase
       .from('brand_inventory')
       .update({ safety_stock: editSafety, alert_contact: editContact, updated_at: new Date().toISOString() })
@@ -74,10 +93,9 @@ export default function BrandInventoryStock({ brandId, brandName, authId }: Prop
       setItems(prev => prev.map(it => it.id === id ? { ...it, safety_stock: editSafety, alert_contact: editContact } : it))
       setEditId(null)
       showToast('안전재고 설정 저장됨!')
-      const item = items.find(it => it.id === id)
-      if (item && item.total_stock <= editSafety && brandId) {
+      if (item && item.total_stock <= editSafety) {
         await supabase.from('brand_messages').insert({
-          brand_id: brandId,
+          brand_id: item.brand_id,
           message_type: 'auto_order',
           target_type: 'all',
           title: `⚠️ ${item.product_name} 안전재고 이하`,
@@ -91,7 +109,8 @@ export default function BrandInventoryStock({ brandId, brandName, authId }: Prop
     setSaving(false)
   }
   const addInventory = async () => {
-    if (!newProduct.trim() || !brandId) { showToast('제품명을 입력해주세요'); return }
+    if (isAll || !brandId) { showToast('특정 브랜드를 선택한 상태에서만 추가할 수 있어요'); return }
+    if (!newProduct.trim()) { showToast('제품명을 입력해주세요'); return }
     setSaving(true)
     const { error } = await supabase
       .from('brand_inventory')
@@ -134,13 +153,18 @@ export default function BrandInventoryStock({ brandId, brandName, authId }: Prop
       </div>
       <div style={CARD}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontSize: 12, color: SUB }}>제품별 재고 현황</span>
-          <button type="button" onClick={() => setShowAddForm(v => !v)}
-            style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: `0.5px solid ${PURPLE}`, background: 'rgba(123,94,167,0.15)', color: '#c4a7e7', cursor: 'pointer' }}>
-            + 제품 추가
-          </button>
+          <span style={{ fontSize: 12, color: SUB }}>{isAll ? '전체 브랜드 재고 현황' : '제품별 재고 현황'}</span>
+          {!isAll && (
+            <button type="button" onClick={() => setShowAddForm(v => !v)}
+              style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: `0.5px solid ${PURPLE}`, background: 'rgba(123,94,167,0.15)', color: '#c4a7e7', cursor: 'pointer' }}>
+              + 제품 추가
+            </button>
+          )}
         </div>
-        {showAddForm && (
+        {isAll && (
+          <div style={{ fontSize: 11, color: SUB, marginBottom: 10 }}>제품을 추가하려면 특정 브랜드를 선택해주세요</div>
+        )}
+        {showAddForm && !isAll && (
           <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, marginBottom: 12 }}>
             {brandProducts.length > 0 && (
               <div style={{ marginBottom: 8 }}>
@@ -192,8 +216,9 @@ export default function BrandInventoryStock({ brandId, brandName, authId }: Prop
           return (
             <div key={item.id} style={{ paddingBottom: 12, marginBottom: 12, borderBottom: i < items.length - 1 ? '0.5px solid rgba(255,255,255,0.05)' : 'none' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' as const }}>
                   <span style={{ fontSize: 13, color: TEXT }}>{item.product_name}</span>
+                  {isAll && <BrandNameBadge name={brandNames[item.brand_id]} />}
                   <span style={{ fontSize: 10, padding: '1px 7px', borderRadius: 10, background: st.bg, color: st.color }}>{st.label}</span>
                 </div>
                 <span style={{ fontSize: 13, fontWeight: 500, color: TEXT }}>{item.total_stock.toLocaleString()}개</span>

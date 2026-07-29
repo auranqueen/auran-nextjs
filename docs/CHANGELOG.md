@@ -5,6 +5,12 @@
 
 
 ## 2026-07-28
+### 재고물류 탭 — "전체" 통합뷰 완성 (재고표시 프로젝트 완료)
+- BrandInventoryStock.tsx: brandId==='all'일 때 companyBrandIds 전체 조회+브랜드별 뱃지(BrandNameBadge) 표시. 제품 추가는 특정 브랜드 선택시에만 가능하도록 제한
+- BrandTabInventory.tsx: 컴퍼니 전체 브랜드의 저재고 개수 집계→TabBrandSelector에 배지로 전달, "전체"가 기본 선택값. 액션형 서브탭(스캔/QR/로트관리 등)은 여전히 특정 브랜드 필요
+- 오늘 시작한 재고표시+품절차단 프로젝트 전체 완료: 등급구매(A/B공용)+재구매(A/B)+재고물류 브랜드탭 "전체" 통합뷰까지 마무리
+
+## 2026-07-28
 ### TabBrandSelector 공용컴포넌트 — 저재고배지+전체보기 옵션 추가
 - TabBrandSelector.tsx: lowStockCounts(브랜드별 저재고 개수 배지)/showAllOption("전체" pill) 선택적 prop 추가 — 안 넘기면 기존 12개 호출부 전부 그대로 동작. 이제부터 재고물류/월별리포트/원장님현황 3곳에 순차 연결 예정
 
