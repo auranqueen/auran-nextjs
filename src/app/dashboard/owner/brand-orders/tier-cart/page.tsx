@@ -28,6 +28,7 @@ function TierCartContent() {
   const [search, setSearch] = useState('')
   const [brandFilter, setBrandFilter] = useState<string | null>(null)
   const [cart, setCart] = useState<Record<string, number>>({})
+  const [stockMap, setStockMap] = useState<Record<string, number | undefined>>({})
   const showToast = (t: string) => {
     setToast(t)
     setTimeout(() => setToast(''), 2500)
@@ -58,6 +59,20 @@ function TierCartContent() {
         .in('brand_id', brandIds.length ? brandIds : ['00000000-0000-0000-0000-000000000000'])
         .eq('status', 'active')
       setCatalog((catalogRows || []) as CatalogItem[])
+      const catalogIds = (catalogRows || []).map((c: { id: string }) => c.id)
+      if (catalogIds.length > 0) {
+        const { data: invRows } = await supabase
+          .from('brand_inventory')
+          .select('product_id, available_stock')
+          .in('product_id', catalogIds)
+        const sMap: Record<string, number | undefined> = {}
+        for (const r of (invRows || []) as any[]) {
+          sMap[String(r.product_id)] = Math.trunc(Number(r.available_stock) || 0)
+        }
+        setStockMap(sMap)
+      } else {
+        setStockMap({})
+      }
       const { data: kitRows } = await supabase
         .from('brand_tier_kit_items')
         .select('id, item_name, item_type, qty')
@@ -161,8 +176,10 @@ function TierCartContent() {
         {filteredCatalog.map((item) => {
           const qty = cart[item.id] || 0
           const lineAmount = qty * Math.trunc(Number(item.supply_price))
+          const stock = stockMap[item.id]
+          const outOfStock = stock !== undefined && stock <= 0
           return (
-            <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
+            <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}`, opacity: outOfStock ? 0.45 : 1 }}>
               {item.thumb_img ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={item.thumb_img} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
@@ -172,13 +189,24 @@ function TierCartContent() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, color: TEXT }}>{item.name}</div>
                 <div style={{ fontSize: 11, color: SUB, marginTop: 1 }}>{brandName(item.brand_id)} · {Math.trunc(item.supply_price).toLocaleString()}원</div>
+                {outOfStock ? (
+                  <div style={{ fontSize: 11, color: '#c9822a', marginTop: 2 }}>품절, 조금만 기다려주세요 🙏</div>
+                ) : stock !== undefined ? (
+                  <div style={{ fontSize: 11, color: SUB, marginTop: 2 }}>재고 {stock}개</div>
+                ) : null}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '2px 4px' }}>
-                <button type="button" onClick={() => setQty(item.id, qty - 1)} style={{ width: 24, height: 24, border: 'none', background: 'none', fontSize: 14, cursor: 'pointer' }}>-</button>
-                <span style={{ fontSize: 13, minWidth: 16, textAlign: 'center' }}>{qty}</span>
-                <button type="button" onClick={() => setQty(item.id, qty + 1)} style={{ width: 24, height: 24, border: 'none', background: 'none', fontSize: 14, cursor: 'pointer' }}>+</button>
-              </div>
-              <div style={{ fontSize: 13, fontWeight: 500, minWidth: 80, textAlign: 'right', color: TEXT }}>{lineAmount.toLocaleString()}원</div>
+              {outOfStock ? (
+                <div style={{ fontSize: 12, color: SUB, minWidth: 80, textAlign: 'right' }}>품절</div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, border: `1px solid ${BORDER}`, borderRadius: 8, padding: '2px 4px' }}>
+                    <button type="button" onClick={() => setQty(item.id, qty - 1)} style={{ width: 24, height: 24, border: 'none', background: 'none', fontSize: 14, cursor: 'pointer' }}>-</button>
+                    <span style={{ fontSize: 13, minWidth: 16, textAlign: 'center' }}>{qty}</span>
+                    <button type="button" onClick={() => setQty(item.id, qty + 1)} style={{ width: 24, height: 24, border: 'none', background: 'none', fontSize: 14, cursor: 'pointer' }}>+</button>
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 500, minWidth: 80, textAlign: 'right', color: TEXT }}>{lineAmount.toLocaleString()}원</div>
+                </>
+              )}
             </div>
           )
         })}
