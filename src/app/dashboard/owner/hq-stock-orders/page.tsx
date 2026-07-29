@@ -39,6 +39,7 @@ function HqStockOrdersContent() {
   const [trackAllowed, setTrackAllowed] = useState<boolean | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [promoRules, setPromoRules] = useState<SupplyPromoRow[]>([])
+  const [stockMap, setStockMap] = useState<Record<string, number>>({})
   const [cart, setCart] = useState<CartItem[]>([])
   const [showPopup, setShowPopup] = useState(false)
   const [sending, setSending] = useState(false)
@@ -92,6 +93,20 @@ function HqStockOrdersContent() {
       supply_price: Math.trunc(Number(p.supply_price) || 0),
     }))
     setProducts(productList)
+    const prodIds = productList.map((p) => p.id)
+    if (prodIds.length > 0) {
+      const { data: invRows } = await supabase
+        .from('brand_inventory')
+        .select('product_id, available_stock')
+        .in('product_id', prodIds)
+      const sMap: Record<string, number> = {}
+      for (const r of (invRows || []) as any[]) {
+        sMap[String(r.product_id)] = Math.trunc(Number(r.available_stock) || 0)
+      }
+      setStockMap(sMap)
+    } else {
+      setStockMap({})
+    }
     const profileId = profile?.id ? String(profile.id) : null
     if (profileId) {
       const brandIds = Array.from(new Set(productList.map((p) => p.brand_id).filter(Boolean)))
@@ -318,6 +333,7 @@ function HqStockOrdersContent() {
             onApplyPromo={() => {}}
             onAdd={addToCart}
             onChangeQty={changeQty}
+            stock={stockMap[prod.id]}
           />
         ))}
       </div>

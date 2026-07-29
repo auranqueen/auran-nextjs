@@ -6,6 +6,10 @@
 
 ## 2026-07-28
 
+### 재구매(트랙B) 재고표시 연동 완료 — 재고표시+품절차단 전체 완료
+- hq-stock-orders/page.tsx: brand_inventory 배치조회+stockMap 추가, BrandOrderProductCard에 stock prop 전달
+- 재고표시+품절차단 기능 완료: 등급구매(초도, A/B 공용 tier-cart)+재구매(A: brand-orders, B: hq-stock-orders) 전 구간 적용 완료. 새 컬럼/상태값 없이 brand_inventory 실시간 조회로 전부 처리, 재입고시 자동 원상복구
+
 ### 재구매(트랙A) 재고표시 연동 완료
 - brand-orders/page.tsx: brand_inventory 배치조회+stockMap state 추가, BrandOrderProductCard에 stock prop 전달 — 트랙A 재구매 화면에서 재고표시+품절차단 실제 작동
 
