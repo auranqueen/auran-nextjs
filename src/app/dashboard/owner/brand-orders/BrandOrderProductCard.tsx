@@ -1,5 +1,4 @@
 'use client'
-
 import {
   buildOrderLineItem,
   hasValidSupplyPrice,
@@ -7,14 +6,12 @@ import {
   promosForBrand,
   type SupplyPromoRow,
 } from '@/lib/brand/brandOrderPromos'
-
 const PURPLE = '#7B5EA7'
 const BORDER = '#ede9f7'
 const TEXT = '#1A1A2E'
 const SUB = '#888888'
 const LIGHT = '#f8f7fc'
 const QTY_STEP = 5
-
 export type BrandOrderProduct = {
   id: string
   name: string
@@ -23,7 +20,6 @@ export type BrandOrderProduct = {
   brand_id: string
   supply_price: number
 }
-
 type Props = {
   prod: BrandOrderProduct
   supplyPromos: SupplyPromoRow[]
@@ -32,8 +28,8 @@ type Props = {
   onApplyPromo: (prod: BrandOrderProduct, promo: SupplyPromoRow) => void
   onAdd: (prod: BrandOrderProduct) => void
   onChangeQty: (id: string, delta: number) => void
+  stock?: number
 }
-
 export default function BrandOrderProductCard({
   prod,
   supplyPromos,
@@ -42,14 +38,15 @@ export default function BrandOrderProductCard({
   onApplyPromo,
   onAdd,
   onChangeQty,
+  stock,
 }: Props) {
   const priced = hasValidSupplyPrice(prod.supply_price)
+  const outOfStock = stock !== undefined && stock <= 0
   const brandPromos = promosForBrand(supplyPromos, prod.brand_id)
   const selectedPromo = activePromoId ? brandPromos.find((p) => p.id === activePromoId) ?? null : null
   const line = qty > 0 ? buildOrderLineItem(prod, qty, supplyPromos, selectedPromo) : null
-
   return (
-    <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', opacity: priced ? 1 : 0.55 }}>
+    <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', opacity: priced && !outOfStock ? 1 : 0.5 }}>
       <div style={{ aspectRatio: '1 / 1', width: '100%', background: LIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
         {prod.thumb_img
           ? <img src={prod.thumb_img} alt={prod.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -60,7 +57,12 @@ export default function BrandOrderProductCard({
         {priced
           ? <div style={{ fontSize: 10, color: SUB, marginBottom: 4 }}>₩{prod.supply_price.toLocaleString()}</div>
           : <div style={{ fontSize: 10, color: '#C0392B', marginBottom: 4 }}>가격 미설정</div>}
-        {priced && brandPromos.length > 0 && (
+        {outOfStock ? (
+          <div style={{ fontSize: 10, color: '#c9822a', marginBottom: 4 }}>품절, 조금만 기다려주세요 🙏</div>
+        ) : stock !== undefined ? (
+          <div style={{ fontSize: 10, color: SUB, marginBottom: 4 }}>재고 {stock}개</div>
+        ) : null}
+        {priced && !outOfStock && brandPromos.length > 0 && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 6 }}>
             {brandPromos.map((promo) => (
               <button
@@ -87,10 +89,10 @@ export default function BrandOrderProductCard({
             {line.promo}{line.bonus > 0 ? ` (+${line.bonus})` : ''}
           </div>
         )}
-        {!priced ? (
+        {!priced || outOfStock ? (
           <button type="button" disabled
             style={{ width: '100%', padding: '5px', borderRadius: 6, border: `1px solid ${BORDER}`, background: LIGHT, color: SUB, fontSize: 11, cursor: 'not-allowed' }}>
-            발주 불가
+            {outOfStock ? '품절' : '발주 불가'}
           </button>
         ) : qty === 0 ? (
           <button type="button" onClick={() => onAdd(prod)}
