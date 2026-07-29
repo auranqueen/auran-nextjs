@@ -5,6 +5,10 @@
 
 
 ## 2026-07-28
+### TabBrandSelector 공용컴포넌트 — 저재고배지+전체보기 옵션 추가
+- TabBrandSelector.tsx: lowStockCounts(브랜드별 저재고 개수 배지)/showAllOption("전체" pill) 선택적 prop 추가 — 안 넘기면 기존 12개 호출부 전부 그대로 동작. 이제부터 재고물류/월별리포트/원장님현황 3곳에 순차 연결 예정
+
+## 2026-07-28
 
 ### 재구매(트랙B) 재고표시 연동 완료 — 재고표시+품절차단 전체 완료
 - hq-stock-orders/page.tsx: brand_inventory 배치조회+stockMap 추가, BrandOrderProductCard에 stock prop 전달
