@@ -17,7 +17,7 @@ export default async function ProductDetailPage({
   if (!service) return notFound()
   const { data: product } = await service
     .from('brand_products')
-    .select('id, brand_id, name, consumer_price, thumb_img, images, description, detail_content, customer_toast_rate, status, review_count, rating_sum')
+    .select('id, brand_id, name, consumer_price, member_price, thumb_img, images, description, detail_content, customer_toast_rate, status, review_count, rating_sum')
     .eq('id', params.productId)
     .eq('status', 'active')
     .maybeSingle()
@@ -43,6 +43,7 @@ export default async function ProductDetailPage({
     : (product.thumb_img ? [product.thumb_img] : [])
   // 리뷰 작성 자격 확인 (로그인 + 이 제품 구매 + 아직 리뷰 안 씀)
   let eligibleOrderId: string | null = null
+  let isMember = false
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (user) {
@@ -52,8 +53,10 @@ export default async function ProductDetailPage({
         .from('brand_product_orders')
         .select('id, status')
         .eq('customer_id', me.id)
+        .eq('salon_id', salon.id)
         .in('status', ['결제완료', '배송완료'])
       const orderIds = (myOrders || []).map(o => o.id)
+      isMember = orderIds.length > 0
       if (orderIds.length > 0) {
         const { data: myItems } = await service
           .from('brand_product_order_items')
@@ -72,6 +75,7 @@ export default async function ProductDetailPage({
       }
     }
   }
+  const displayPrice = isMember && product.member_price ? product.member_price : product.consumer_price
   return (
     <div style={{ color: '#fff', background: BG, minHeight: '100vh', maxWidth: 480, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: `1px solid ${BORDER}` }}>
@@ -92,7 +96,7 @@ export default async function ProductDetailPage({
       )}
       <div style={{ padding: '16px' }}>
         <div style={{ fontSize: 16, color: '#fff', marginBottom: 6 }}>{product.name}</div>
-        <div style={{ fontSize: 20, color: '#fff', fontWeight: 500, marginBottom: 8 }}>{product.consumer_price.toLocaleString()}원</div>
+        <div style={{ fontSize: 20, color: '#fff', fontWeight: 500, marginBottom: 8 }}>{displayPrice.toLocaleString()}원</div>
         <div style={{ display: 'inline-block', background: PURPLE_LIGHT, color: '#C9BEDD', fontSize: 12, padding: '4px 10px', borderRadius: 8 }}>
           구매 시 {product.customer_toast_rate}% 토스트 적립
         </div>
@@ -110,7 +114,7 @@ export default async function ProductDetailPage({
             salon_id: salon.id,
             salon_name: salon.name,
             name: product.name,
-            price: product.consumer_price,
+              price: displayPrice,
             thumb_img: product.thumb_img,
             customer_toast_rate: product.customer_toast_rate,
           }}
