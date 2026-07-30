@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 const REVIEW_TOAST_RATE = 5 // 시바산 정책값 하드코딩, 수정 불가
-const TRACK_A_FREE_SHIPPING_THRESHOLD = 50000
-const TRACK_A_BASIC_SHIPPING_FEE = 3000
-const TRACK_A_JEJU_EXTRA_FEE = 5000
-const TRACK_A_ISLAND_EXTRA_FEE = 5000
+const SALON_FREE_SHIPPING_THRESHOLD = 50000
+const SALON_BASIC_SHIPPING_FEE = 3000
+const SALON_JEJU_EXTRA_FEE = 5000
+const SALON_ISLAND_EXTRA_FEE = 5000
 export async function POST(req: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
   const { data: salon } = await service.from('salons').select('id, owner_id').eq('id', salon_id).single()
   if (!salon) return NextResponse.json({ ok: false, error: 'salon_not_found' }, { status: 404 })
   const { data: owner } = await service.from('users').select('id, origin_track, auth_id').eq('id', salon.owner_id).single()
-  if (!owner || owner.origin_track !== 'A') {
-    return NextResponse.json({ ok: false, error: 'not_track_a_salon' }, { status: 403 })
+  if (!owner) {
+    return NextResponse.json({ ok: false, error: 'owner_not_found' }, { status: 404 })
   }
   const productIds = items.map((i: any) => i.brand_product_id)
   const { data: products } = await service
@@ -132,10 +132,10 @@ export async function POST(req: NextRequest) {
       customer_toast_amount: lineToast,
     }
   })
-  const basicFee = subtotal >= TRACK_A_FREE_SHIPPING_THRESHOLD ? 0 : TRACK_A_BASIC_SHIPPING_FEE
+  const basicFee = subtotal >= SALON_FREE_SHIPPING_THRESHOLD ? 0 : SALON_BASIC_SHIPPING_FEE
   let extraFee = 0
-  if (address.includes('제주')) extraFee += TRACK_A_JEJU_EXTRA_FEE
-  if (address.includes('울릉')) extraFee += TRACK_A_ISLAND_EXTRA_FEE
+  if (address.includes('제주')) extraFee += SALON_JEJU_EXTRA_FEE
+  if (address.includes('울릉')) extraFee += SALON_ISLAND_EXTRA_FEE
   const shippingFee = basicFee + extraFee
   const finalAmount = subtotal + shippingFee
   const platformFeeRate = 8.8
