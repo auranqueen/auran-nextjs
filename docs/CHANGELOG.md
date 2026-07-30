@@ -5,6 +5,12 @@
 
 
 ## 2026-07-29
+### 살롱스토어 배송처리 API — 트랙A 전용 제한 제거 (트랙B 완전정상화)
+- brand-product-orders/[id]/update-status/route.ts: origin_track!=='A'면 무조건 403 거부하던 하드코딩 제거 — 트랙B 원장도 이제 자기 살롱 주문의 배송처리(배송중/배송완료) 가능해짐
+- 상수명 TRACK_A_AUTO_CONFIRM_DAYS → SALON_AUTO_CONFIRM_DAYS로 정리(정책 자체는 A/B 동일, 이름만 정정)
+- 이걸로 살롱스토어 결제(create) + 배송처리(update-status) 양쪽 다 트랙 무관하게 정상 작동 — 소유자 검증(salon.owner_id)은 그대로라 각자 자기 살롱 주문만 처리 가능
+
+## 2026-07-29
 ### 살롱스토어 결제API — 트랙A 전용 제한 제거(A/B 공용 원칙 적용)
 - brand-product-orders/create/route.ts: origin_track!=='A'면 무조건 403 거부하던 하드코딩 제거 — 트랙B 원장 스토어 고객도 결제 가능해짐(오늘 확정한 "살롱스토어는 A/B 공용" 원칙에 맞게 수정)
 - 배송비 상수명 TRACK_A_* → SALON_*로 정리(정책 자체는 원래부터 A/B 동일해야 하는 게 맞아서 이름만 정정, 동작 변경 없음)

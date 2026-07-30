@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-const TRACK_A_AUTO_CONFIRM_DAYS = 14
+const SALON_AUTO_CONFIRM_DAYS = 14
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -29,10 +29,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!salon || salon.owner_id !== me.id) {
     return NextResponse.json({ ok: false, error: 'forbidden' }, { status: 403 })
   }
-  const { data: owner } = await service.from('users').select('origin_track').eq('id', me.id).single()
-  if (!owner || owner.origin_track !== 'A') {
-    return NextResponse.json({ ok: false, error: 'not_track_a' }, { status: 403 })
-  }
   if (target_status === '배송중') {
     if (!courier || !tracking_no) {
       return NextResponse.json({ ok: false, error: 'tracking_info_required' }, { status: 400 })
@@ -51,7 +47,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       return NextResponse.json({ ok: false, error: 'invalid_status_transition' }, { status: 400 })
     }
     const now = new Date()
-    const autoConfirmAt = new Date(now.getTime() + TRACK_A_AUTO_CONFIRM_DAYS * 24 * 60 * 60 * 1000)
+    const autoConfirmAt = new Date(now.getTime() + SALON_AUTO_CONFIRM_DAYS * 24 * 60 * 60 * 1000)
     const { error: deliverErr } = await service
       .from('brand_product_orders')
       .update({ status: '배송완료', delivered_at: now.toISOString(), auto_confirm_at: autoConfirmAt.toISOString() })
