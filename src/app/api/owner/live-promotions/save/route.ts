@@ -78,6 +78,16 @@ export async function POST(req: NextRequest) {
     end_at: endAt,
     is_active: true,
   }
+  if (id) {
+    const { data: existing } = await db
+      .from('hq_forced_campaigns')
+      .select('owner_id')
+      .eq('id', id)
+      .maybeSingle()
+    if (!existing || String(existing.owner_id) !== String(profile.id)) {
+      return NextResponse.json({ ok: false, error: 'not_owner' }, { status: 403 })
+    }
+  }
   if (id) row.id = id
   const { data, error } = await db
     .from('hq_forced_campaigns')
