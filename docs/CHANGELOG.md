@@ -4,6 +4,11 @@
 ---
 
 
+## 2026-07-29
+### 재입고 알림 — 안전재고 시스템 확장
+- notifyRestockIfNeeded.ts 신규(공용 헬퍼): 증가 전 재고가 0 이하였을 때만 브랜드사 명의로 원장 전체에게 "🎉 재입고 완료" 알림(brand_messages 재사용, 안전재고 미달 알림과 동일 패턴)
+- 재고 증가 3경로(BrandInventoryLots 롯트입고, BrandInventoryScan 스캔입고, BrandReturnsReceive 반품재입고) 전부 연결. Lots/Returns는 기존에 없던 "증가 전 재고" 조회를 새로 추가해서 정확한 감지 확보
+
 ## 2026-07-28
 ### 서브브랜드 소유권 정합성 — 컴퍼니 실제소유자로 통일
 - 시바산그룹/씨아클라르제/보케르케어 3개 브랜드 소유권을 개인계정에서 시바산 전용 계정(civasangroup@auran.kr)으로 이전. 팀원(brand_members) 접근권한은 그대로 유지(brand_inventory_members RLS 정책 추가, 시바산그룹 brand_members 누락분 등록)

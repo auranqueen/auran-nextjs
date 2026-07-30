@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { notifyRestockIfNeeded } from '@/lib/brand/notifyRestock'
 import type { CSSProperties } from 'react'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
@@ -100,7 +101,15 @@ export default function BrandReturnsReceive({ brandId }: Props) {
       .eq('id', matched.id)
     if (!error) {
       if (isRestock && matched.inventory_id) {
+        const { data: invRow } = await supabase
+          .from('brand_inventory')
+          .select('total_stock, product_name')
+          .eq('id', matched.inventory_id)
+          .maybeSingle()
         await supabase.rpc('increment_inventory_stock', { p_inventory_id: matched.inventory_id, p_qty: matched.qty })
+        if (invRow) {
+          await notifyRestockIfNeeded(supabase, { brandId, productName: invRow.product_name, beforeStock: Math.trunc(Number(invRow.total_stock) || 0) })
+        }
         await supabase.from('brand_stock_logs').insert({
           brand_id: brandId,
           inventory_id: matched.inventory_id,

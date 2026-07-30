@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { notifyRestockIfNeeded } from '@/lib/brand/notifyRestock'
 import type { CSSProperties } from 'react'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
@@ -146,6 +147,7 @@ export default function BrandInventoryScan({ brandId, brandName }: Props) {
     if (!error) {
       if (mode === 'in') {
         await supabase.rpc('increment_inventory_stock', { p_inventory_id: selInv, p_qty: qty })
+        await notifyRestockIfNeeded(supabase, { brandId: brandId!, productName: inv.product_name, beforeStock: before })
       } else {
         await supabase.rpc('decrement_inventory_stock', { p_inventory_id: selInv, p_qty: qty })
       }

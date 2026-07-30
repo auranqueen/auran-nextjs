@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { notifyRestockIfNeeded } from '@/lib/brand/notifyRestock'
 import type { CSSProperties } from 'react'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
@@ -97,7 +98,15 @@ export default function BrandInventoryLots({ brandId }: Props) {
         ref_type: 'lot_in',
         memo: `로트 입고: ${num}`,
       })
+      const { data: invRow } = await supabase
+        .from('brand_inventory')
+        .select('total_stock, product_name')
+        .eq('id', selInv)
+        .maybeSingle()
       await supabase.rpc('increment_inventory_stock', { p_inventory_id: selInv, p_qty: lotQty })
+      if (invRow) {
+        await notifyRestockIfNeeded(supabase, { brandId, productName: invRow.product_name, beforeStock: Math.trunc(Number(invRow.total_stock) || 0) })
+      }
       const inv = inventories.find(i => i.id === selInv)
       setLotNum(''); setLotQty(0); setProdDate(''); setExpDate('')
       setShowForm(false)
