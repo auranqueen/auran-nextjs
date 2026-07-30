@@ -19,6 +19,7 @@ export async function POST(req: NextRequest) {
   const discountPct = body?.discount_pct != null ? Number(body.discount_pct) : null
   const startAt = typeof body?.start_at === 'string' ? body.start_at : null
   const endAt = typeof body?.end_at === 'string' ? body.end_at : null
+  const applyToMembers = Boolean(body?.apply_to_members)
   if (!title) return NextResponse.json({ ok: false, error: 'title_required' }, { status: 400 })
   if (!['bundle', 'gift', 'discount'].includes(campaignType)) {
     return NextResponse.json({ ok: false, error: 'invalid_campaign_type' }, { status: 400 })
@@ -77,6 +78,7 @@ export async function POST(req: NextRequest) {
     start_at: startAt,
     end_at: endAt,
     is_active: true,
+    apply_to_members: applyToMembers,
   }
   if (id) {
     const { data: existing } = await db

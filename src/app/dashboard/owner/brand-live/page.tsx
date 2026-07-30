@@ -54,6 +54,7 @@ const EMPTY_DRAFT = {
   discount_pct: '',
   start_at: '',
   end_at: '',
+  apply_to_members: false,
 }
 export default function BrandLivePage() {
   const router = useRouter()
@@ -144,6 +145,7 @@ export default function BrandLivePage() {
           bonus_qty: draft.bonus_qty ? Number(draft.bonus_qty) : null,
           gift_product_id: draft.gift_product_id || null,
           discount_pct: draft.discount_pct ? Number(draft.discount_pct) : null,
+          apply_to_members: draft.apply_to_members,
           start_at: draft.start_at,
           end_at: draft.end_at,
         }),
@@ -276,6 +278,14 @@ export default function BrandLivePage() {
                   </div>
                 </>
               )}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={draft.apply_to_members}
+                  onChange={(e) => setDraft((p) => ({ ...p, apply_to_members: e.target.checked }))}
+                />
+                <span style={{ fontSize: 12, color: TEXT }}>회원(관리고객)에게도 적용</span>
+              </label>
               <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>시작일</div>
