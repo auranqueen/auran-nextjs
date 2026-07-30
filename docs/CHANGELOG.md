@@ -5,6 +5,12 @@
 
 
 ## 2026-07-29
+### 원장 라이브 프로모션 — 브랜드 라이브 화면에 통합
+- brand-live/page.tsx: 원장이 자기 스토어 제품에 이벤트(N+M증정/다른제품증정/%할인) 걸 수 있는 섹션 신규 추가 — 별도 페이지/퀵메뉴 만들지 않고 기존 "브랜드 라이브"(라이브방송 목록) 화면 안에 통합(관련 화면에 끼워넣기 원칙 적용)
+- API 2개(owner/live-promotions/save, delete) 재사용, hq_forced_campaigns 테이블(owner_id로 본사강제/원장자율 구분)에 원장 본인 소유(owner_id=본인) 캠페인 CRUD
+- 남은 것: 살롱스토어 제품페이지에 실제 배지/할인 노출 로직은 아직 미착수
+
+## 2026-07-29
 ### 재입고 알림 — 안전재고 시스템 확장
 - notifyRestockIfNeeded.ts 신규(공용 헬퍼): 증가 전 재고가 0 이하였을 때만 브랜드사 명의로 원장 전체에게 "🎉 재입고 완료" 알림(brand_messages 재사용, 안전재고 미달 알림과 동일 패턴)
 - 재고 증가 3경로(BrandInventoryLots 롯트입고, BrandInventoryScan 스캔입고, BrandReturnsReceive 반품재입고) 전부 연결. Lots/Returns는 기존에 없던 "증가 전 재고" 조회를 새로 추가해서 정확한 감지 확보
