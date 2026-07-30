@@ -5,6 +5,11 @@
 
 
 ## 2026-07-28
+### 서브브랜드 소유권 정합성 — 컴퍼니 실제소유자로 통일
+- 시바산그룹/씨아클라르제/보케르케어 3개 브랜드 소유권을 개인계정에서 시바산 전용 계정(civasangroup@auran.kr)으로 이전. 팀원(brand_members) 접근권한은 그대로 유지(brand_inventory_members RLS 정책 추가, 시바산그룹 brand_members 누락분 등록)
+- createSecondBrand.ts: 새 서브브랜드 생성시 소유자를 "그때 로그인한 사람"이 아니라 "허브 브랜드의 실제 소유자"로 자동 상속하도록 수정 — 앞으로 누가 로그인해서 서브브랜드를 추가하든 항상 컴퍼니 실소유자로 통일됨(오늘 발견된 소유권 꼬임 재발 방지)
+
+## 2026-07-28
 ### 재고물류 탭 — "전체" 통합뷰 완성 (재고표시 프로젝트 완료)
 - BrandInventoryStock.tsx: brandId==='all'일 때 companyBrandIds 전체 조회+브랜드별 뱃지(BrandNameBadge) 표시. 제품 추가는 특정 브랜드 선택시에만 가능하도록 제한
 - BrandTabInventory.tsx: 컴퍼니 전체 브랜드의 저재고 개수 집계→TabBrandSelector에 배지로 전달, "전체"가 기본 선택값. 액션형 서브탭(스캔/QR/로트관리 등)은 여전히 특정 브랜드 필요

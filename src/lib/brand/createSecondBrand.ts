@@ -23,7 +23,7 @@ export async function createSecondBrand(
 ): Promise<CreateSecondBrandResult> {
   const { data: hubBrand, error: hubError } = await supabase
     .from('brands')
-    .select('company_id')
+    .select('company_id, user_id')
     .eq('id', params.currentBrandId)
     .single()
 
@@ -45,7 +45,7 @@ export async function createSecondBrand(
       name: params.addBrandName,
       name_en: params.addBrandNameEn || null,
       origin_country: params.addBrandCountry || '대한민국',
-      user_id: params.userPk,
+      user_id: hubBrand.user_id || params.userPk,
       apply_status: 'approved',
       status: 'active',
       welcome_shown: true,
