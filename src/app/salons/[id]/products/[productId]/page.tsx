@@ -28,6 +28,63 @@ export default async function ProductDetailPage({
     .eq('id', params.id)
     .maybeSingle()
   if (!salon) return notFound()
+  type ActiveCampaign = {
+    title: string
+    badge_text: string | null
+    campaign_type: 'bundle' | 'gift' | 'discount'
+    buy_qty: number | null
+    bonus_qty: number | null
+    gift_product_id: string | null
+    gift_product_name: string | null
+    gift_product_thumb: string | null
+    discount_pct: number | null
+  }
+  let activeCampaign: ActiveCampaign | null = null
+  if (salon.owner_id) {
+    const { data: ownerUserRow } = await service.from('users').select('auth_id').eq('id', salon.owner_id).maybeSingle()
+    if (ownerUserRow?.auth_id) {
+      const { data: ownerProfileRow } = await service.from('profiles').select('id').eq('auth_id', ownerUserRow.auth_id).maybeSingle()
+      if (ownerProfileRow?.id) {
+        const nowIso = new Date().toISOString()
+        const { data: campaignRows } = await service
+          .from('hq_forced_campaigns')
+          .select('title, badge_text, campaign_type, target_product_ids, buy_qty, bonus_qty, gift_product_id, discount_pct')
+          .eq('owner_id', ownerProfileRow.id)
+          .eq('is_active', true)
+          .lte('start_at', nowIso)
+          .gte('end_at', nowIso)
+        const match = (campaignRows || []).find(
+          (c: any) => Array.isArray(c.target_product_ids) && c.target_product_ids.includes(product.id),
+        )
+        if (match) {
+          let giftName: string | null = null
+          let giftThumb: string | null = null
+          if (match.gift_product_id) {
+            const { data: giftRow } = await service
+              .from('brand_products')
+              .select('name, thumb_img')
+              .eq('id', match.gift_product_id)
+              .maybeSingle()
+            if (giftRow) {
+              giftName = giftRow.name ? String(giftRow.name) : null
+              giftThumb = giftRow.thumb_img ? String(giftRow.thumb_img) : null
+            }
+          }
+          activeCampaign = {
+            title: String(match.title),
+            badge_text: match.badge_text ? String(match.badge_text) : null,
+            campaign_type: match.campaign_type,
+            buy_qty: match.buy_qty != null ? Math.trunc(Number(match.buy_qty)) : null,
+            bonus_qty: match.bonus_qty != null ? Math.trunc(Number(match.bonus_qty)) : null,
+            gift_product_id: match.gift_product_id ? String(match.gift_product_id) : null,
+            gift_product_name: giftName,
+            gift_product_thumb: giftThumb,
+            discount_pct: match.discount_pct != null ? Number(match.discount_pct) : null,
+          }
+        }
+      }
+    }
+  }
   const { data: reviews } = await service
     .from('brand_product_reviews')
     .select('id, rating, content, images, video_url, created_at, author_id, users:author_id(name)')
@@ -75,7 +132,11 @@ export default async function ProductDetailPage({
       }
     }
   }
-  const displayPrice = isMember && product.member_price ? product.member_price : product.consumer_price
+  const basePrice = isMember && product.member_price ? product.member_price : product.consumer_price
+  const displayPrice =
+    activeCampaign?.campaign_type === 'discount' && activeCampaign.discount_pct
+      ? Math.round(basePrice * (1 - activeCampaign.discount_pct / 100))
+      : basePrice
   return (
     <div style={{ color: '#fff', background: BG, minHeight: '100vh', maxWidth: 480, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', borderBottom: `1px solid ${BORDER}` }}>
@@ -97,6 +158,12 @@ export default async function ProductDetailPage({
       <div style={{ padding: '16px' }}>
         <div style={{ fontSize: 16, color: '#fff', marginBottom: 6 }}>{product.name}</div>
         <div style={{ fontSize: 20, color: '#fff', fontWeight: 500, marginBottom: 8 }}>{displayPrice.toLocaleString()}원</div>
+        {activeCampaign && (
+          <div style={{ display: 'inline-block', background: 'rgba(229,57,53,0.15)', color: '#ff8a80', fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 8, marginBottom: 8 }}>
+            🎉 {activeCampaign.badge_text || activeCampaign.title}
+          </div>
+        )}
+        <br />
         <div style={{ display: 'inline-block', background: PURPLE_LIGHT, color: '#C9BEDD', fontSize: 12, padding: '4px 10px', borderRadius: 8 }}>
           구매 시 {product.customer_toast_rate}% 토스트 적립
         </div>
@@ -118,6 +185,7 @@ export default async function ProductDetailPage({
             thumb_img: product.thumb_img,
             customer_toast_rate: product.customer_toast_rate,
           }}
+          campaign={activeCampaign}
         />
       </div>
       {(product.description || product.detail_content) && (

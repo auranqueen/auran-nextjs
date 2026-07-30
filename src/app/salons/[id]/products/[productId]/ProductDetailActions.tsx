@@ -12,18 +12,49 @@ interface Props {
     thumb_img: string | null
     customer_toast_rate: number
   }
+  campaign?: {
+    campaign_type: 'bundle' | 'gift' | 'discount'
+    buy_qty: number | null
+    bonus_qty: number | null
+    gift_product_id: string | null
+    gift_product_name: string | null
+    gift_product_thumb: string | null
+  } | null
 }
 const BORDER = 'rgba(255,255,255,0.08)'
 const PURPLE = '#7B5EA7'
-export default function ProductDetailActions({ product }: Props) {
+export default function ProductDetailActions({ product, campaign }: Props) {
   const { addItem } = useBrandCart()
   const router = useRouter()
+  const applyCampaignToCart = () => {
+    if (campaign?.campaign_type === 'bundle' && campaign.buy_qty) {
+      const qty = campaign.buy_qty + (campaign.bonus_qty || 0)
+      addItem(product, qty)
+    } else if (campaign?.campaign_type === 'gift' && campaign.gift_product_id) {
+      addItem(product, 1)
+      addItem(
+        {
+          brand_product_id: campaign.gift_product_id,
+          brand_id: product.brand_id,
+          salon_id: product.salon_id,
+          salon_name: product.salon_name,
+          name: `${campaign.gift_product_name || '증정품'} (증정)`,
+          price: 0,
+          thumb_img: campaign.gift_product_thumb,
+          customer_toast_rate: 0,
+        },
+        1,
+      )
+    } else {
+      addItem(product)
+    }
+  }
   const handleAddToCart = () => {
-    addItem(product)
+    applyCampaignToCart()
     router.push(`/salons/${product.salon_id}/cart`)
   }
   const handleBuyNow = () => {
-    addItem(product)
+    applyCampaignToCart()
     router.push(`/salons/${product.salon_id}/checkout`)
   }
   return (
