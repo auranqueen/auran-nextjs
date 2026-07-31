@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
     bonus_qty: number | null
     gift_product_id: string | null
     discount_pct: number | null
+    apply_to_members: boolean
   }
   let campaigns: CampaignRow[] = []
   if (owner.auth_id) {
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
       const nowIso = new Date().toISOString()
       const { data: campaignRows } = await service
         .from('hq_forced_campaigns')
-        .select('campaign_type, target_product_ids, buy_qty, bonus_qty, gift_product_id, discount_pct')
+        .select('campaign_type, target_product_ids, buy_qty, bonus_qty, gift_product_id, discount_pct, apply_to_members')
         .eq('owner_id', ownerProfileRow.id)
         .eq('is_active', true)
         .lte('start_at', nowIso)
@@ -85,14 +86,14 @@ export async function POST(req: NextRequest) {
       .filter((i: any) => Math.trunc(Number(i.quantity)) >= 1)
       .map((i: any) => String(i.brand_product_id)),
   )
-  const isGiftTarget = (productId: string) =>
-    campaigns.some(
+  const giftCampaignFor = (productId: string) =>
+    campaigns.find(
       (c) =>
         c.campaign_type === 'gift' &&
         c.gift_product_id === productId &&
         Array.isArray(c.target_product_ids) &&
         c.target_product_ids.some((tid) => orderedProductIds.has(String(tid))),
-    )
+    ) || null
   let subtotal = 0
   let totalCustomerToast = 0
   const orderItems = items.map((i: any) => {
@@ -102,16 +103,26 @@ export async function POST(req: NextRequest) {
     const campaign = campaignFor(p.id)
     let unitPrice = basePrice
     let lineSubtotal = basePrice * qty
-    if (!isMember && isGiftTarget(p.id)) {
-      // 이 상품 자체가 어떤 활성 gift 캠페인의 "증정품"으로 지정된 경우 — 최대 1개까지만 무료, 초과분은 정가. 회원가 대상 제외(일반가에만 적용)
+    const giftCampaign = giftCampaignFor(p.id)
+    if (giftCampaign && (!isMember || giftCampaign.apply_to_members)) {
+      // 이 상품 자체가 어떤 활성 gift 캠페인의 "증정품"으로 지정된 경우 — 최대 1개까지만 무료, 초과분은 정가
       const freeQty = Math.min(qty, 1)
       const paidQty = qty - freeQty
       lineSubtotal = basePrice * paidQty
       unitPrice = qty > 0 ? Math.round(lineSubtotal / qty) : 0
-    } else if (!isMember && campaign?.campaign_type === 'discount' && campaign.discount_pct) {
+    } else if (
+      campaign?.campaign_type === 'discount' &&
+      campaign.discount_pct &&
+      (!isMember || campaign.apply_to_members)
+    ) {
       unitPrice = Math.round(basePrice * (1 - campaign.discount_pct / 100))
       lineSubtotal = unitPrice * qty
-    } else if (!isMember && campaign?.campaign_type === 'bundle' && campaign.buy_qty && campaign.bonus_qty) {
+    } else if (
+      campaign?.campaign_type === 'bundle' &&
+      campaign.buy_qty &&
+      campaign.bonus_qty &&
+      (!isMember || campaign.apply_to_members)
+    ) {
       const setSize = campaign.buy_qty + campaign.bonus_qty
       const completeSets = Math.floor(qty / setSize)
       const freeUnits = completeSets * campaign.bonus_qty
