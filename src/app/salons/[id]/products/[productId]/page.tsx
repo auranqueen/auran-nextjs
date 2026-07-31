@@ -38,6 +38,7 @@ export default async function ProductDetailPage({
     gift_product_name: string | null
     gift_product_thumb: string | null
     discount_pct: number | null
+    apply_to_members: boolean
   }
   let activeCampaign: ActiveCampaign | null = null
   if (salon.owner_id) {
@@ -48,7 +49,7 @@ export default async function ProductDetailPage({
         const nowIso = new Date().toISOString()
         const { data: campaignRows } = await service
           .from('hq_forced_campaigns')
-          .select('title, badge_text, campaign_type, target_product_ids, buy_qty, bonus_qty, gift_product_id, discount_pct')
+          .select('title, badge_text, campaign_type, target_product_ids, buy_qty, bonus_qty, gift_product_id, discount_pct, apply_to_members')
           .eq('owner_id', ownerProfileRow.id)
           .eq('is_active', true)
           .lte('start_at', nowIso)
@@ -80,6 +81,7 @@ export default async function ProductDetailPage({
             gift_product_name: giftName,
             gift_product_thumb: giftThumb,
             discount_pct: match.discount_pct != null ? Number(match.discount_pct) : null,
+            apply_to_members: Boolean(match.apply_to_members),
           }
         }
       }
@@ -133,9 +135,11 @@ export default async function ProductDetailPage({
     }
   }
   const basePrice = isMember && product.member_price ? product.member_price : product.consumer_price
+  const effectiveCampaign =
+    activeCampaign && (!isMember || activeCampaign.apply_to_members) ? activeCampaign : null
   const displayPrice =
-    activeCampaign?.campaign_type === 'discount' && activeCampaign.discount_pct
-      ? Math.round(basePrice * (1 - activeCampaign.discount_pct / 100))
+    effectiveCampaign?.campaign_type === 'discount' && effectiveCampaign.discount_pct
+      ? Math.round(basePrice * (1 - effectiveCampaign.discount_pct / 100))
       : basePrice
   return (
     <div style={{ color: '#fff', background: BG, minHeight: '100vh', maxWidth: 480, margin: '0 auto' }}>
@@ -158,9 +162,9 @@ export default async function ProductDetailPage({
       <div style={{ padding: '16px' }}>
         <div style={{ fontSize: 16, color: '#fff', marginBottom: 6 }}>{product.name}</div>
         <div style={{ fontSize: 20, color: '#fff', fontWeight: 500, marginBottom: 8 }}>{displayPrice.toLocaleString()}원</div>
-        {activeCampaign && (
+        {effectiveCampaign && (
           <div style={{ display: 'inline-block', background: 'rgba(229,57,53,0.15)', color: '#ff8a80', fontSize: 12, fontWeight: 600, padding: '4px 10px', borderRadius: 8, marginBottom: 8 }}>
-            🎉 {activeCampaign.badge_text || activeCampaign.title}
+            🎉 {effectiveCampaign.badge_text || effectiveCampaign.title}
           </div>
         )}
         <br />
@@ -185,7 +189,7 @@ export default async function ProductDetailPage({
             thumb_img: product.thumb_img,
             customer_toast_rate: product.customer_toast_rate,
           }}
-          campaign={activeCampaign}
+          campaign={effectiveCampaign}
         />
       </div>
       {(product.description || product.detail_content) && (
