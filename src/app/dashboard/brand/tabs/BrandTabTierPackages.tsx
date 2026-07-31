@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import BrandTierOrderApprovalSection from './BrandTierOrderApprovalSection'
 import BrandTierPromoRulesSection from './BrandTierPromoRulesSection'
+import BrandHqCampaignSection from './BrandHqCampaignSection'
 import { createClient } from '@/lib/supabase/client'
 const PURPLE = '#7B5EA7'
 const SUB = 'rgba(255,255,255,0.3)'
@@ -325,7 +326,9 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
         <div style={{ marginBottom: 12, fontSize: 12, color: '#c4a8f0' }}>{toast}</div>
       ) : null}
       {sub === 'price' && (
-        loading ? (
+        <>
+        <BrandHqCampaignSection companyId={companyId} />
+        {loading ? (
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>불러오는 중…</div>
         ) : rows.length === 0 ? (
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>등록된 등급 패키지가 없어요</div>
@@ -491,7 +494,8 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
               )
             })}
           </div>
-        )
+        )}
+        </>
       )}
       {sub === 'orders' && (
         <BrandTierOrderApprovalSection companyId={companyId} />

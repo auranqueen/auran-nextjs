@@ -5,6 +5,12 @@
 
 
 ## 2026-07-29
+### 본사 강제이벤트 관리화면 신규 (1/2, 관리단계)
+- hq-campaigns/save·delete API 신규(브랜드사 전용, company_id 기준, owner_id=null로 명시 저장 — 원장이 만드는 라이브프로모션과 같은 테이블 공유하되 owner_id로 완전 분리)
+- BrandHqCampaignSection.tsx 신규: 등급 패키지관리 탭 [등급·가격] 서브탭 최상단에 배치(등급카드와 별개, 컴퍼니 전체 브랜드 대상). 오렌어드민 쿠폰기능(coupon_type='special_event')과는 별개의 브랜드 전용 시스템
+- 다음 단계: 원장 재구매 화면(brand-orders/page.tsx, hq-stock-orders/page.tsx)에 이 이벤트 자동반영 + 트랙B 승인단계 신설
+
+## 2026-07-29
 ### 재고물류 탭 전체통합뷰 — 누락분 커밋(2026-07-28 작업 마무리)
 - BrandTabInventory.tsx: "전체" 브랜드+저재고배지 로딩, 서브탭 아이콘/라벨 정리, 전체선택시 액션형 서브탭(스캔/QR/로트관리 등)은 effectiveBrandId=null로 안전처리, 물류허브 열기는 특정브랜드 선택 필요하도록 안내, BrandInventoryStock에 companyBrandIds 전달 — 어제(7/28) 완성해놓고 실수로 커밋 안 됐던 파일, 오늘 발견해서 뒤늦게 반영
 
