@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 const RED = '#E53935'
 type Product = { id: string; brand_id: string; name: string }
 type BrandOpt = { id: string; name: string }
+type CampaignTier = { min_qty: number; discount_pct: number | null; discount_amount: number | null }
 type Campaign = {
   id: string
   title: string
@@ -14,6 +15,8 @@ type Campaign = {
   end_at: string
   is_active: boolean
 }
+type TierDraft = { min_qty: string; discount_pct: string; discount_amount: string }
+const EMPTY_TIER: TierDraft = { min_qty: '', discount_pct: '', discount_amount: '' }
 const EMPTY_DRAFT = {
   title: '',
   badge_text: '',
@@ -22,7 +25,7 @@ const EMPTY_DRAFT = {
   buy_qty: '',
   bonus_qty: '',
   gift_product_id: '',
-  discount_pct: '',
+  tiers: [{ ...EMPTY_TIER }] as TierDraft[],
   start_at: '',
   end_at: '',
 }
@@ -74,11 +77,24 @@ export default function BrandHqCampaignSection({ companyId }: Props) {
     }))
   }
   const filteredProducts = brandFilter ? products.filter((p) => p.brand_id === brandFilter) : products
+  const updateTier = (idx: number, patch: Partial<TierDraft>) => {
+    setDraft((prev) => ({
+      ...prev,
+      tiers: prev.tiers.map((t, i) => (i === idx ? { ...t, ...patch } : t)),
+    }))
+  }
+  const addTier = () => setDraft((prev) => ({ ...prev, tiers: [...prev.tiers, { ...EMPTY_TIER }] }))
+  const removeTier = (idx: number) =>
+    setDraft((prev) => ({ ...prev, tiers: prev.tiers.filter((_, i) => i !== idx) }))
   const submit = async () => {
     if (!companyId) return
     if (!draft.title.trim()) { showToast('이벤트명을 입력해주세요'); return }
     if (draft.target_product_ids.length === 0) { showToast('제품을 하나 이상 골라주세요'); return }
     if (!draft.start_at || !draft.end_at) { showToast('시작일/종료일을 입력해주세요'); return }
+    if (draft.campaign_type === 'discount' && draft.tiers.every((t) => !t.min_qty || (!t.discount_pct && !t.discount_amount))) {
+      showToast('수량구간별 할인을 최소 1개 입력해주세요')
+      return
+    }
     setSaving(true)
     try {
       const res = await fetch('/api/brand/hq-campaigns/save', {
@@ -94,7 +110,7 @@ export default function BrandHqCampaignSection({ companyId }: Props) {
           buy_qty: draft.buy_qty ? Number(draft.buy_qty) : null,
           bonus_qty: draft.bonus_qty ? Number(draft.bonus_qty) : null,
           gift_product_id: draft.gift_product_id || null,
-          discount_pct: draft.discount_pct ? Number(draft.discount_pct) : null,
+          tiers: draft.campaign_type === 'discount' ? draft.tiers : [],
           start_at: draft.start_at,
           end_at: draft.end_at,
         }),
@@ -177,14 +193,14 @@ export default function BrandHqCampaignSection({ companyId }: Props) {
           <input
             value={draft.title}
             onChange={(e) => setDraft((p) => ({ ...p, title: e.target.value }))}
-            placeholder="예: 7월 창립기념 특별이벤트"
+            placeholder="예: 바로코빈C 콜라겐 앰플 프로모션"
             style={{ width: '100%', padding: '9px 11px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 13, marginBottom: 10, boxSizing: 'border-box' }}
           />
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>배지문구(선택)</div>
           <input
             value={draft.badge_text}
             onChange={(e) => setDraft((p) => ({ ...p, badge_text: e.target.value }))}
-            placeholder="예: 1+1"
+            placeholder="예: 최대 40%할인"
             style={{ width: '100%', padding: '9px 11px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 13, marginBottom: 10, boxSizing: 'border-box' }}
           />
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>유형</div>
@@ -192,7 +208,7 @@ export default function BrandHqCampaignSection({ companyId }: Props) {
             {([
               { key: 'bundle', label: 'N+M 증정' },
               { key: 'gift', label: '다른제품 증정' },
-              { key: 'discount', label: '% 할인' },
+              { key: 'discount', label: '수량별 할인' },
             ] as const).map((t) => (
               <button
                 key={t.key}
@@ -211,9 +227,27 @@ export default function BrandHqCampaignSection({ companyId }: Props) {
             </div>
           )}
           {draft.campaign_type === 'discount' && (
-            <input type="number" placeholder="할인율(%)" value={draft.discount_pct} onChange={(e) => setDraft((p) => ({ ...p, discount_pct: e.target.value }))} style={{ width: '100%', padding: '9px 11px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 13, marginBottom: 10, boxSizing: 'border-box' }} />
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>
+                수량구간별 할인(예: 5개→35%할인, 10개→40%할인처럼 여러 단계 추가 가능). 대상제품들은 합산 수량으로 계산됨
+              </div>
+              {draft.tiers.map((t, i) => (
+                <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
+                  <input type="number" placeholder="N개 이상" value={t.min_qty} onChange={(e) => updateTier(i, { min_qty: e.target.value })} style={{ flex: 1, padding: '7px 9px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12, boxSizing: 'border-box' }} />
+                  <input type="number" placeholder="%할인" value={t.discount_pct} onChange={(e) => updateTier(i, { discount_pct: e.target.value, discount_amount: '' })} style={{ flex: 1, padding: '7px 9px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12, boxSizing: 'border-box' }} />
+                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>또는</span>
+                  <input type="number" placeholder="원 할인" value={t.discount_amount} onChange={(e) => updateTier(i, { discount_amount: e.target.value, discount_pct: '' })} style={{ flex: 1, padding: '7px 9px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12, boxSizing: 'border-box' }} />
+                  {draft.tiers.length > 1 && (
+                    <button type="button" onClick={() => removeTier(i)} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: 'transparent', color: '#e88', fontSize: 12, cursor: 'pointer' }}>×</button>
+                  )}
+                </div>
+              ))}
+              <button type="button" onClick={addTier} style={{ fontSize: 11, padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
+                + 단계 추가
+              </button>
+            </div>
           )}
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>대상 제품(컴퍼니 전체 브랜드, 복수선택)</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>대상 제품(컴퍼니 전체 브랜드, 복수선택 — 교차주문시 수량 합산)</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 8 }}>
             <button type="button" onClick={() => setBrandFilter(null)} style={{ fontSize: 10, padding: '3px 9px', borderRadius: 20, border: `1px solid ${!brandFilter ? RED : 'rgba(255,255,255,0.12)'}`, background: !brandFilter ? 'rgba(229,57,53,0.1)' : 'transparent', color: !brandFilter ? '#ff8a80' : 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>전체</button>
             {brands.map((b) => (

@@ -5,6 +5,13 @@
 
 
 ## 2026-07-29
+### 본사 강제이벤트 — 수량구간별 다단계 할인 지원(시바산 실제 마케팅 사례 기준)
+- hq_forced_campaign_tiers 테이블 신규(campaign_id, min_qty, discount_pct, discount_amount) — 캠페인 하나에 "5개→35%할인, 10개→40%할인" 같은 여러 단계 등록 가능
+- hq-campaigns/save/route.ts: tiers 배열 파싱+저장(delete 후 재삽입 방식)
+- BrandHqCampaignSection.tsx: 수량별할인 유형 선택시 다단계 입력폼(단계 추가/삭제) 제공. 대상제품 여러개 선택시 "교차주문"(합산수량으로 단계판정) 안내 문구 추가
+- 여전히 미착수: 원장 재구매 화면 자동반영, 배치승인API 가격재검증, 트랙B 승인단계 신설
+
+## 2026-07-29
 ### 본사 강제이벤트 관리화면 신규 (1/2, 관리단계)
 - hq-campaigns/save·delete API 신규(브랜드사 전용, company_id 기준, owner_id=null로 명시 저장 — 원장이 만드는 라이브프로모션과 같은 테이블 공유하되 owner_id로 완전 분리)
 - BrandHqCampaignSection.tsx 신규: 등급 패키지관리 탭 [등급·가격] 서브탭 최상단에 배치(등급카드와 별개, 컴퍼니 전체 브랜드 대상). 오렌어드민 쿠폰기능(coupon_type='special_event')과는 별개의 브랜드 전용 시스템
