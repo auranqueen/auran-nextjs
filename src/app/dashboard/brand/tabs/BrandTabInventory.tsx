@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import TabBrandSelector from '../components/TabBrandSelector'
@@ -15,13 +15,13 @@ const PURPLE = '#7B5EA7'
 const SUB = 'rgba(255,255,255,0.3)'
 const SUBTABS = [
   { key: 'stock', label: '재고현황', icon: '📦' },
-  { key: 'lots', label: '로트관리', icon: '🏷' },
+  { key: 'lots', label: '로트관리', icon: '🏷️' },
   { key: 'scan', label: '스캔입출고', icon: '📲' },
   { key: 'qr', label: 'QR발행', icon: '🔲' },
-  { key: 'close', label: '월마감', icon: '📊' },
-  { key: 'staff', label: '물류직원', icon: '👥' },
+  { key: 'close', label: '월마감', icon: '📅' },
+  { key: 'staff', label: '물류직원', icon: '👤' },
   { key: 'emergency', label: '비상출고', icon: '🚨' },
-  { key: 'marketing', label: '마케팅기획', icon: '🎯' },
+  { key: 'marketing', label: '마케팅자료', icon: '📣' },
 ] as const
 type SubTab = typeof SUBTABS[number]['key']
 interface Props {
@@ -33,19 +33,57 @@ export default function BrandTabInventory({ myBrands, authId, loginRole = 'direc
   const supabase = createClient()
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
   const [logiOpening, setLogiOpening] = useState(false)
+  const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
+  const [lowStockCounts, setLowStockCounts] = useState<Record<string, number>>({})
   const brandId = selectedBrandId
-  const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
-
+  const effectiveBrandId = brandId === 'all' ? null : brandId
+  const brandName = myBrands.find((b) => b.id === effectiveBrandId)?.name || ''
+  const loadLowStockCounts = useCallback(async () => {
+    const anchorBrandId = myBrands[0]?.id
+    if (!anchorBrandId) {
+      setCompanyBrandIds([])
+      setLowStockCounts({})
+      return
+    }
+    const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', anchorBrandId).maybeSingle()
+    const cid = brandRow?.company_id ? String(brandRow.company_id) : null
+    let ids = myBrands.map((b) => b.id)
+    if (cid) {
+      const { data: companyBrands } = await supabase.from('brands').select('id').eq('company_id', cid)
+      const cbIds = (companyBrands || []).map((b: { id: string }) => String(b.id))
+      if (cbIds.length > 0) ids = cbIds
+    }
+    setCompanyBrandIds(ids)
+    if (ids.length === 0) {
+      setLowStockCounts({})
+      return
+    }
+    const { data: invRows } = await supabase
+      .from('brand_inventory')
+      .select('brand_id, total_stock, safety_stock')
+      .in('brand_id', ids)
+    const counts: Record<string, number> = {}
+    for (const r of (invRows || []) as any[]) {
+      const bid = String(r.brand_id)
+      const total = Math.trunc(Number(r.total_stock) || 0)
+      const safety = Math.trunc(Number(r.safety_stock) || 0)
+      if (safety > 0 && total <= safety) counts[bid] = (counts[bid] || 0) + 1
+    }
+    setLowStockCounts(counts)
+  }, [myBrands])
+  useEffect(() => {
+    void loadLowStockCounts()
+  }, [loadLowStockCounts])
   const openLogiHub = async () => {
-    if (!brandId || logiOpening) return
+    if (!effectiveBrandId || logiOpening) return
     setLogiOpening(true)
     try {
-      let slug = myBrands.find((b) => b.id === brandId)?.slug
+      let slug = myBrands.find((b) => b.id === effectiveBrandId)?.slug
       if (!slug) {
         const { data } = await supabase
           .from('brands')
           .select('slug')
-          .eq('id', brandId)
+          .eq('id', effectiveBrandId)
           .maybeSingle()
         slug = data?.slug != null ? String(data.slug) : null
       }
@@ -60,32 +98,40 @@ export default function BrandTabInventory({ myBrands, authId, loginRole = 'direc
   const [sub, setSub] = useState<SubTab>('stock')
   return (
     <div>
-      <TabBrandSelector myBrands={myBrands} storageKey="brand-tab-selection" onSelect={setSelectedBrandId} />
+      <TabBrandSelector
+        myBrands={myBrands}
+        storageKey="brand-tab-selection"
+        onSelect={setSelectedBrandId}
+        lowStockCounts={lowStockCounts}
+        showAllOption
+      />
       {!selectedBrandId ? (
         <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
       ) : (
       <>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 10 }}>
-        <button
-          type="button"
-          onClick={() => { void openLogiHub() }}
-          disabled={logiOpening}
-          style={{
-            padding: '7px 12px',
-            fontSize: 12,
-            fontWeight: 600,
-            borderRadius: 8,
-            border: '1px solid rgba(123,94,167,0.55)',
-            background: 'rgba(123,94,167,0.18)',
-            color: '#e9e4f1',
-            cursor: logiOpening ? 'wait' : 'pointer',
-            opacity: logiOpening ? 0.7 : 1,
-            whiteSpace: 'nowrap' as const,
-          }}
-        >
-          🚚 물류허브 열기
-        </button>
-      </div>
+      {sub === 'stock' && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 10 }}>
+          <button
+            type="button"
+            onClick={() => { void openLogiHub() }}
+            disabled={logiOpening || !effectiveBrandId}
+            style={{
+              padding: '7px 12px',
+              fontSize: 12,
+              fontWeight: 600,
+              borderRadius: 8,
+              border: '1px solid rgba(123,94,167,0.55)',
+              background: 'rgba(123,94,167,0.18)',
+              color: '#e9e4f1',
+              cursor: logiOpening || !effectiveBrandId ? 'not-allowed' : 'pointer',
+              opacity: logiOpening || !effectiveBrandId ? 0.5 : 1,
+              whiteSpace: 'nowrap' as const,
+            }}
+          >
+            🚚 물류허브 열기{!effectiveBrandId ? '(브랜드 선택 필요)' : ''}
+          </button>
+        </div>
+      )}
       <div style={{ display: 'flex', gap: 0, overflowX: 'auto' as const, marginBottom: 14, borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}>
         {SUBTABS.map(t => (
           <button key={t.key} type="button" onClick={() => setSub(t.key)}
@@ -94,14 +140,14 @@ export default function BrandTabInventory({ myBrands, authId, loginRole = 'direc
           </button>
         ))}
       </div>
-      {sub === 'stock' && <BrandInventoryStock brandId={brandId} brandName={brandName} authId={authId} />}
-      {sub === 'lots' && <BrandInventoryLots brandId={brandId} />}
-      {sub === 'scan' && <BrandInventoryScan brandId={brandId} brandName={brandName} />}
-      {sub === 'qr' && <BrandInventoryQR brandId={brandId} brandName={brandName} />}
-      {sub === 'close' && <BrandInventoryClose brandId={brandId} />}
-      {sub === 'staff' && <BrandInventoryStaff brandId={brandId} currentUserRole={loginRole === 'ceo' ? 'ceo' : 'director'} />}
-      {sub === 'emergency' && <BrandInventoryEmergency brandId={brandId} brandName={brandName} />}
-      {sub === 'marketing' && <BrandInventoryMarketing brandId={brandId} brandName={brandName} />}
+      {sub === 'stock' && <BrandInventoryStock brandId={brandId} companyBrandIds={companyBrandIds} brandName={brandId === 'all' ? '전체' : brandName} authId={authId} />}
+      {sub === 'lots' && <BrandInventoryLots brandId={effectiveBrandId} />}
+      {sub === 'scan' && <BrandInventoryScan brandId={effectiveBrandId} brandName={brandName} />}
+      {sub === 'qr' && <BrandInventoryQR brandId={effectiveBrandId} brandName={brandName} />}
+      {sub === 'close' && <BrandInventoryClose brandId={effectiveBrandId} />}
+      {sub === 'staff' && <BrandInventoryStaff brandId={effectiveBrandId} currentUserRole={loginRole === 'ceo' ? 'ceo' : 'director'} />}
+      {sub === 'emergency' && <BrandInventoryEmergency brandId={effectiveBrandId} brandName={brandName} />}
+      {sub === 'marketing' && <BrandInventoryMarketing brandId={effectiveBrandId} brandName={brandName} />}
       </>
       )}
     </div>

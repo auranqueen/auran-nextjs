@@ -5,6 +5,10 @@
 
 
 ## 2026-07-29
+### 재고물류 탭 전체통합뷰 — 누락분 커밋(2026-07-28 작업 마무리)
+- BrandTabInventory.tsx: "전체" 브랜드+저재고배지 로딩, 서브탭 아이콘/라벨 정리, 전체선택시 액션형 서브탭(스캔/QR/로트관리 등)은 effectiveBrandId=null로 안전처리, 물류허브 열기는 특정브랜드 선택 필요하도록 안내, BrandInventoryStock에 companyBrandIds 전달 — 어제(7/28) 완성해놓고 실수로 커밋 안 됐던 파일, 오늘 발견해서 뒤늦게 반영
+
+## 2026-07-29
 ### 라이브 프로모션 — 회원적용여부 원장토글 완성(3/3, 결제API)
 - brand-product-orders/create/route.ts: apply_to_members 플래그를 gift/discount/bundle 전부에 통일 적용(isGiftTarget→giftCampaignFor로 캠페인 객체 자체 반환하도록 개선) — 화면과 결제 API가 이제 완전히 같은 기준으로 판정
 - 라이브 프로모션 회원적용토글 3단계(저장→상품페이지 표시→결제API 재검증) 전부 완료
