@@ -17,6 +17,7 @@ import {
 import { useBrandGradeRates } from '@/lib/brand/useBrandGradeRates'
 import { resolveOwnerIds } from '@/lib/brand/resolveOwnerIds'
 import { submitOrderBatch } from '@/lib/brand/submitOrderBatch'
+import type { HqForcedCampaign } from '@/lib/brand/hqForcedCampaignPromos'
 
 const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
@@ -124,6 +125,7 @@ export default function BrandOrdersPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [supplyPromos, setSupplyPromos] = useState<SupplyPromoRow[]>([])
+  const [hqForcedCampaigns, setHqForcedCampaigns] = useState<HqForcedCampaign[]>([])
   const [gradeByBrandId, setGradeByBrandId] = useState<Record<string, string>>({})
   const [linkedBrandIds, setLinkedBrandIds] = useState<string[]>([])
   const [linkedBrandNames, setLinkedBrandNames] = useState<Record<string, string>>({})
@@ -252,6 +254,34 @@ export default function BrandOrdersPage() {
       }
     }
     setGradeByBrandId(gradeMap)
+    // HQ 강제이벤트 조회 (본사 강제노출, owner_id is null, 활성+기간내)
+    let hqCampaigns: HqForcedCampaign[] = []
+    if (companyIdsForGrade.length > 0) {
+      const { data: campaignRows } = await supabase
+        .from('hq_forced_campaigns')
+        .select('id, company_id, campaign_type, target_product_ids, buy_qty, bonus_qty, gift_product_id, discount_pct, start_at, end_at')
+        .in('company_id', companyIdsForGrade)
+        .is('owner_id', null)
+        .eq('is_active', true)
+      const campaignIds = (campaignRows || []).map((r: { id: string }) => r.id)
+      const tiersByCampaign: Record<string, HqForcedCampaign['tiers']> = {}
+      if (campaignIds.length > 0) {
+        const { data: tierRows } = await supabase
+          .from('hq_forced_campaign_tiers')
+          .select('campaign_id, min_qty, discount_pct, discount_amount')
+          .in('campaign_id', campaignIds)
+        for (const t of (tierRows || []) as { campaign_id: string; min_qty: number; discount_pct: number | null; discount_amount: number | null }[]) {
+          const cid = String(t.campaign_id)
+          if (!tiersByCampaign[cid]) tiersByCampaign[cid] = []
+          tiersByCampaign[cid]!.push(t)
+        }
+      }
+      hqCampaigns = ((campaignRows || []) as any[]).map((r) => ({
+        ...r,
+        tiers: tiersByCampaign[String(r.id)] || [],
+      })) as HqForcedCampaign[]
+    }
+    setHqForcedCampaigns(hqCampaigns)
 
     if (brandIds.length > 0) {
       const tierPackageIds = Array.from(new Set(Object.values(tierPackageByCompany)))

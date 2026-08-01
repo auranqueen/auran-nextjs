@@ -4,6 +4,14 @@
 ---
 
 
+## 2026-08-01
+### HQ 강제이벤트 재구매 반영 진행 + brand_staff 최초등록 순환 수정
+- feat: hq_forced_campaigns/hq_forced_campaign_tiers RLS 활성화 + company/owner select 정책 추가
+- feat: hqForcedCampaignPromos.ts 신규 헬퍼(resolveHqCampaignEffects) 추가
+- feat: 트랙A 재구매화면(brand-orders)에 HQ강제이벤트 로드 연결(useState/import/load() 조회)
+- fix: BrandPinGate.tsx 담당자 0명(최초로그인) 시 순환구조 버그 — CEO 최초등록 폼 추가
+- chore: BrandTabInventory.tsx 탭 라벨 "물류직원" → "담당자 관리"
+
 ## 2026-07-29
 ### 본사 강제이벤트 — 수량구간별 다단계 할인 지원(시바산 실제 마케팅 사례 기준)
 - hq_forced_campaign_tiers 테이블 신규(campaign_id, min_qty, discount_pct, discount_amount) — 캠페인 하나에 "5개→35%할인, 10개→40%할인" 같은 여러 단계 등록 가능

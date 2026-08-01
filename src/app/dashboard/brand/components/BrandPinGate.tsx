@@ -41,6 +41,10 @@ export default function BrandPinGate({ brandId, brandName, onAuth, hub = 'brand'
   const [checking, setChecking] = useState(false)
   const [shuffleNonce, setShuffleNonce] = useState(0)
   const [opsBlocked, setOpsBlocked] = useState(false)
+  const [bootstrapName, setBootstrapName] = useState('')
+  const [bootstrapPin, setBootstrapPin] = useState('')
+  const [bootstrapSaving, setBootstrapSaving] = useState(false)
+  const [bootstrapError, setBootstrapError] = useState('')
 
   const digitSlots = useMemo(() => {
     const digits = Array.from({ length: 10 }, (_, i) => String(i)).sort(() => Math.random() - 0.5)
@@ -154,6 +158,39 @@ export default function BrandPinGate({ brandId, brandName, onAuth, hub = 'brand'
     onAuth({ id: selected.id, name: selected.name, role: selected.role, permissions })
     setChecking(false)
   }
+  const registerBootstrapCeo = async () => {
+    if (!brandId) return
+    const name = bootstrapName.trim()
+    const ceoPinLen = ROLE_MAP.ceo.pin
+    if (!name) { setBootstrapError('이름을 입력해주세요'); return }
+    if (bootstrapPin.length !== ceoPinLen || !/^\d+$/.test(bootstrapPin)) {
+      setBootstrapError(`PIN은 숫자 ${ceoPinLen}자리여야 해요`)
+      return
+    }
+    setBootstrapSaving(true)
+    setBootstrapError('')
+    const { data: row, error } = await supabase
+      .from('brand_staff')
+      .insert({ brand_id: brandId, name, role: 'ceo', pin: bootstrapPin, is_active: true })
+      .select()
+      .single()
+    if (error || !row) {
+      setBootstrapError(error?.message || '등록에 실패했어요. 다시 시도해주세요')
+      setBootstrapSaving(false)
+      return
+    }
+    const { data: permData } = await supabase
+      .from('brand_staff_permissions')
+      .select('module')
+      .eq('staff_id', row.id)
+      .eq('brand_id', brandId)
+    const permissions = (permData || []).map((p: { module: string }) => p.module)
+    sessionStorage.setItem('brand_staff_id', String(row.id))
+    sessionStorage.setItem('brand_staff_name', String(row.name))
+    sessionStorage.setItem('brand_staff_role', String(row.role))
+    onAuth({ id: String(row.id), name: String(row.name), role: String(row.role), permissions })
+    setBootstrapSaving(false)
+  }
   const pinLen = ROLE_MAP[selected?.role || 'staff']?.pin || 4
   if (loading) return (
     <div style={{ minHeight: '100vh', background: '#0f0d14', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB, fontSize: 14 }}>
@@ -172,9 +209,40 @@ export default function BrandPinGate({ brandId, brandName, onAuth, hub = 'brand'
             <div style={{ fontSize: 14, color: TEXT, marginBottom: 4 }}>담당자를 선택해주세요</div>
             <div style={{ fontSize: 12, color: SUB, marginBottom: 20 }}>본인의 이름을 선택 후 PIN을 입력해주세요</div>
             {staffList.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '20px 0', color: SUB, fontSize: 13 }}>
-                등록된 담당자가 없어요<br/>
-                <span style={{ fontSize: 11 }}>Brand Hub → 물류직원 탭에서 등록해주세요</span>
+              <div>
+                <div style={{ fontSize: 13, color: TEXT, marginBottom: 8, lineHeight: 1.5 }}>
+                  이 회사의 첫 로그인이에요. 대표(CEO)로 등록할게요
+                </div>
+                <div style={{ fontSize: 11, color: SUB, marginBottom: 14 }}>
+                  이름과 PIN({ROLE_MAP.ceo.pin}자리)을 정하면 바로 Hub를 쓸 수 있어요
+                </div>
+                <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>이름</div>
+                <input
+                  value={bootstrapName}
+                  onChange={(e) => { setBootstrapName(e.target.value); setBootstrapError('') }}
+                  placeholder="대표 이름"
+                  style={{ width: '100%', boxSizing: 'border-box', marginBottom: 10, padding: '10px 12px', borderRadius: 8, border: '0.5px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: TEXT, fontSize: 13, outline: 'none' }}
+                />
+                <div style={{ fontSize: 11, color: SUB, marginBottom: 4 }}>PIN ({ROLE_MAP.ceo.pin}자리)</div>
+                <input
+                  value={bootstrapPin}
+                  onChange={(e) => { setBootstrapPin(e.target.value.replace(/\D/g, '').slice(0, ROLE_MAP.ceo.pin)); setBootstrapError('') }}
+                  placeholder={'•'.repeat(ROLE_MAP.ceo.pin)}
+                  maxLength={ROLE_MAP.ceo.pin}
+                  inputMode="numeric"
+                  style={{ width: '100%', boxSizing: 'border-box', marginBottom: 12, padding: '10px 12px', borderRadius: 8, border: '0.5px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: TEXT, fontSize: 13, outline: 'none', letterSpacing: 4, textAlign: 'center' }}
+                />
+                {bootstrapError ? (
+                  <div style={{ fontSize: 12, color: DANGER, marginBottom: 10 }}>{bootstrapError}</div>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={bootstrapSaving}
+                  onClick={() => void registerBootstrapCeo()}
+                  style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: bootstrapSaving ? 'rgba(123,94,167,0.4)' : PURPLE, color: '#fff', fontSize: 14, fontWeight: 500, cursor: bootstrapSaving ? 'wait' : 'pointer' }}
+                >
+                  {bootstrapSaving ? '등록 중...' : '등록하고 시작하기'}
+                </button>
               </div>
             ) : staffList.map(s => {
               const r = ROLE_MAP[s.role] || { label: s.role, color: SUB, pin: 4 }

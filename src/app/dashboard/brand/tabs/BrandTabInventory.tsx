@@ -19,7 +19,7 @@ const SUBTABS = [
   { key: 'scan', label: '스캔입출고', icon: '📲' },
   { key: 'qr', label: 'QR발행', icon: '🔲' },
   { key: 'close', label: '월마감', icon: '📅' },
-  { key: 'staff', label: '물류직원', icon: '👤' },
+  { key: 'staff', label: '담당자 관리', icon: '👤' },
   { key: 'emergency', label: '비상출고', icon: '🚨' },
   { key: 'marketing', label: '마케팅자료', icon: '📣' },
 ] as const
