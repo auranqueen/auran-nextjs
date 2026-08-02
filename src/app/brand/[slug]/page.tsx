@@ -82,10 +82,17 @@ export default function BrandLoginPage() {
       return
     }
     if (data.user.id !== brand.user_id) {
-      await supabase.auth.signOut()
-      setError('이 브랜드 허브에 접근 권한이 없어요')
-      setLoading(false)
-      return
+      const { data: roleRow } = await supabase
+        .from('users')
+        .select('role')
+        .eq('auth_id', data.user.id)
+        .maybeSingle()
+      if (roleRow?.role !== 'admin') {
+        await supabase.auth.signOut()
+        setError('이 브랜드 허브에 접근 권한이 없어요')
+        setLoading(false)
+        return
+      }
     }
     if (rememberUserId) {
       localStorage.setItem(`auran_brand_userid_${slug}`, userId.trim())

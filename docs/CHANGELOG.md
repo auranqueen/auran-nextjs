@@ -5,6 +5,9 @@
 
 
 ## 2026-08-02
+### fix: brand/[slug] 로그인 소유권 체크에 admin 예외 추가(오렌 어드민 마스터 접근 3곳 중 마지막 지점)
+- `brand/[slug]/page.tsx`: `data.user.id !== brand.user_id`여도 `users.role === 'admin'`이면 통과
+
 ### 임시 디버깅용 — HQ캠페인 로드 확인 console.log
 - debug: `brand-orders/page.tsx`에 `[HQ캠페인 확인용]` 임시 console.log 추가 (확인 후 제거 예정)
 
