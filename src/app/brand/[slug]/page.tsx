@@ -82,12 +82,18 @@ export default function BrandLoginPage() {
       return
     }
     if (data.user.id !== brand.user_id) {
+      const { data: memberRow } = await supabase
+        .from('brand_members')
+        .select('id')
+        .eq('brand_id', brand.id)
+        .eq('user_id', data.user.id)
+        .maybeSingle()
       const { data: roleRow } = await supabase
         .from('users')
         .select('role')
         .eq('auth_id', data.user.id)
         .maybeSingle()
-      if (roleRow?.role !== 'admin') {
+      if (!memberRow && roleRow?.role !== 'admin') {
         await supabase.auth.signOut()
         setError('이 브랜드 허브에 접근 권한이 없어요')
         setLoading(false)

@@ -5,6 +5,9 @@
 
 
 ## 2026-08-02
+### fix: brand/[slug] 로그인 소유권 체크에 brand_members 팀원 예외 추가
+- `brand/[slug]/page.tsx`: 소유자가 아니어도 `brand_members` 소속이거나 `users.role === 'admin'`이면 통과
+
 ### fix: brand/[slug] 로그인 소유권 체크에 admin 예외 추가(오렌 어드민 마스터 접근 3곳 중 마지막 지점)
 - `brand/[slug]/page.tsx`: `data.user.id !== brand.user_id`여도 `users.role === 'admin'`이면 통과
 
