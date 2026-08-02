@@ -282,7 +282,6 @@ export default function BrandOrdersPage() {
       })) as HqForcedCampaign[]
     }
     setHqForcedCampaigns(hqCampaigns)
-    console.log('[HQ캠페인 확인용]', hqCampaigns)
 
     if (brandIds.length > 0) {
       const tierPackageIds = Array.from(new Set(Object.values(tierPackageByCompany)))
