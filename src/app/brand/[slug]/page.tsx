@@ -29,6 +29,9 @@ export default function BrandLoginPage() {
   const [error, setError] = useState('')
   const [showPw, setShowPw] = useState(false)
   const [showFindModal, setShowFindModal] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
   useEffect(() => {
     const saved = localStorage.getItem(`auran_brand_userid_${slug}`)
     const savedRemember = localStorage.getItem(`auran_brand_remember_${slug}`)
@@ -71,7 +74,7 @@ export default function BrandLoginPage() {
     if (!brand) return
     setLoading(true)
     setError('')
-    const email = userId.includes('@') ? userId : `${userId.trim()}@auran.kr`
+    const email = userId.includes('@') ? userId.trim() : `${userId.trim()}@auran.kr`
     const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
     if (authError || !data.user) {
       setError('아이디 또는 비밀번호가 올바르지 않아요')
@@ -93,6 +96,15 @@ export default function BrandLoginPage() {
     }
     fetch('/api/auth/log-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'same-origin', body: JSON.stringify({ email, role: 'brand', provider: 'email', status: 'success' }) }).catch(() => {})
     router.replace(`/dashboard/brand?login_role=${brand!.login_role || 'director'}`)
+  }
+  async function submitReset() {
+    if (!resetEmail) return
+    setResetLoading(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    setResetLoading(false)
+    if (!error) setResetSent(true)
   }
   const BG = '#0f0d14'
   const CARD_BG = '#1a1520'

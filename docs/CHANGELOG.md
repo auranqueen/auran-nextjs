@@ -4,6 +4,10 @@
 ---
 
 
+## 2026-08-02
+### 임시 디버깅용 — HQ캠페인 로드 확인 console.log
+- debug: `brand-orders/page.tsx`에 `[HQ캠페인 확인용]` 임시 console.log 추가 (확인 후 제거 예정)
+
 ## 2026-08-01
 ### HQ 강제이벤트 재구매 반영 진행 + brand_staff 최초등록 순환 수정
 - feat: hq_forced_campaigns/hq_forced_campaign_tiers RLS 활성화 + company/owner select 정책 추가
