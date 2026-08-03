@@ -22,7 +22,7 @@ function dayKey(iso: string) {
 interface Props {
   brandName: string
   brandId: string | null
-  onTabChange: (tab: string) => void
+  onTabChange: (tab: string, sub?: string) => void
 }
 export default function BrandTabHome({ brandId, onTabChange }: Props) {
   const supabase = createClient()
@@ -321,7 +321,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
               <span style={{ fontSize: 12, color: TEXT }}>{a.text}</span>
               <button
                 type="button"
-                onClick={() => onTabChange(a.tab)}
+                onClick={() => onTabChange(a.tab, a.tab === 'sales' ? 'orders' : undefined)}
                 style={{ fontSize: 11, padding: '3px 10px', borderRadius: 6, border: '1px solid rgba(123,94,167,0.35)', background: 'rgba(123,94,167,0.08)', color: '#c4a8f0', cursor: 'pointer', flexShrink: 0, marginLeft: 8 }}
               >
                 {a.action}
@@ -349,7 +349,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
         <div style={CARD}>
           <div style={{ fontSize: 10, color: SUB, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
             <span>🛒 최근 주문</span>
-            <span style={{ cursor: 'pointer' }} onClick={() => onTabChange('sales')}>전체 ›</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => onTabChange('sales', 'orders')}>전체 ›</span>
           </div>
           {recentOrders.length === 0 ? (
             <div style={{ fontSize: 11, color: SUB, textAlign: 'center', padding: 12 }}>주문 없음</div>
@@ -448,7 +448,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
         <div style={{ ...CARD, marginBottom: 0 }}>
           <div style={{ fontSize: 10, color: SUB, marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
             <span>🎁 샘플 발송</span>
-            <span style={{ cursor: 'pointer' }} onClick={() => onTabChange('sales')}>전체 ›</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => onTabChange('sales', 'sample')}>전체 ›</span>
           </div>
           {sampleRequests.length === 0 ? (
             <div style={{ fontSize: 11, color: SUB, textAlign: 'center', padding: 12 }}>샘플 요청 없음</div>

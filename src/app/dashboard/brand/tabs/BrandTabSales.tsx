@@ -14,9 +14,10 @@ const SUBTABS = [
 type SubTab = typeof SUBTABS[number]['key']
 type Props = {
   myBrands: { id: string; name: string }[]
+  initialSub?: string
 }
-export default function BrandTabSales({ myBrands }: Props) {
-  const [sub, setSub] = useState<SubTab>('orders')
+export default function BrandTabSales({ myBrands, initialSub }: Props) {
+  const [sub, setSub] = useState<SubTab>((initialSub as SubTab) ?? 'orders')
   return (
     <div>
       <div style={{ display: 'flex', gap: 8, overflowX: 'auto', marginBottom: 16, paddingBottom: 4 }}>

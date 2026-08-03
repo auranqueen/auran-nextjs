@@ -43,6 +43,7 @@ export default function BrandHubContent({
   rows, tab, onTabChange, onEdit, onNew
 }: Props) {
   const [mainTab, setMainTab] = useState<MainTab>('home')
+  const [mainSub, setMainSub] = useState<string | undefined>(undefined)
   const [helpOpen, setHelpOpen] = useState(false)
   const [companyId, setCompanyId] = useState<string | null>(null)
   useEffect(() => {
@@ -103,7 +104,7 @@ export default function BrandHubContent({
             <div key={sec.label}>
               <div style={{ padding: '8px 12px 3px', fontSize: 9, color: 'rgba(255,255,255,0.18)', letterSpacing: '1.5px' }}>{sec.label.toUpperCase()}</div>
               {sec.items.map((item: { key: string; label: string; icon: string; alert?: boolean }) => (
-                <button key={item.key} type="button" onClick={() => setMainTab(item.key as MainTab)}
+                <button key={item.key} type="button" onClick={() => { setMainTab(item.key as MainTab); setMainSub(undefined) }}
                   style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', padding: '8px 12px', fontSize: 11, border: 'none', background: mainTab === item.key ? 'rgba(123,94,167,0.12)' : 'transparent', color: mainTab === item.key ? '#C9A96E' : 'rgba(255,255,255,0.4)', borderLeft: mainTab === item.key ? '2px solid #7B5EA7' : '2px solid transparent', cursor: 'pointer', textAlign: 'left' as const }}>
                   <i className={`ti ${item.icon}`} style={{ fontSize: 13, width: 14, flexShrink: 0 }} aria-hidden="true" />
                   <span style={{ flex: 1 }}>{item.label}</span>
@@ -225,7 +226,7 @@ export default function BrandHubContent({
         {/* 공통 헤더 — home 제외 전 탭 */}
         {mainTab !== 'home' && (
           <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#0a0908', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button type="button" onClick={() => setMainTab('home')}
+            <button type="button" onClick={() => { setMainTab('home'); setMainSub(undefined) }}
               style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
               <i className="ti ti-arrow-left" style={{ fontSize: 13 }} aria-hidden="true" />
               홈
@@ -242,11 +243,11 @@ export default function BrandHubContent({
           </div>
         )}
         <div style={{ padding: 16 }}>
-          {mainTab === 'home' && <BrandTabHome brandName={brandName} brandId={brandId} onTabChange={(t) => setMainTab(t as MainTab)} />}
+          {mainTab === 'home' && <BrandTabHome brandName={brandName} brandId={brandId} onTabChange={(t, s) => { setMainTab(t as MainTab); setMainSub(s) }} />}
           {mainTab === 'products' && <BrandTabProducts rows={rows} tab={tab} onTabChange={onTabChange} onEdit={onEdit} onNew={onNew} currentBrandName={brandName} />}
           {mainTab === 'tierPackages' && <BrandTabTierPackages myBrands={brandOpts} staffId={staffId} isCEO={isCEO} />}
           {mainTab === 'owners' && <OwnersBrandWrapper myBrands={brandOpts} authId={authId} />}
-          {mainTab === 'sales' && <BrandTabSales myBrands={brandOpts} />}
+          {mainTab === 'sales' && <BrandTabSales myBrands={brandOpts} initialSub={mainSub} />}
           {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} authId={authId} />}
           {mainTab === 'live' && <BrandTabLive myBrands={brandOpts} />}
           {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} />}
