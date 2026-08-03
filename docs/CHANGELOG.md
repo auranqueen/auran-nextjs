@@ -5,6 +5,11 @@
 
 
 ## 2026-08-03
+### feat: 담당자관리를 정산·운영 섹션으로 이동, BrandInventoryStaff/BrandStaffPermissions를 company_id 기준으로 전환 (컴퍼니 지배원칙 근본수정 2차 - 5단계)
+- 사이드바 정산·운영에 `staff` 메인탭 추가, 재고·물류 하위탭에서 담당자 관리 제거
+- `BrandHubContent`: `brandId`→`companyId` 조회 후 담당자 화면에 전달
+- `BrandInventoryStaff` / `BrandStaffPermissions`: 조회·저장을 `company_id` 기준으로 전환
+
 ### feat: brand_staff/brand_staff_permissions company_id 컬럼 추가+백필, assertStaffPermission을 컴퍼니 기준으로 전환, hq-campaigns save/delete API에 담당자 권한검증 연결 (컴퍼니 지배원칙 근본수정 1차)
 - `assertStaffPermission.ts` 신규: staff/권한을 `company_id`로 판정(CEO는 모듈 없이 통과)
 - HQ 캠페인 save/delete: `staff_id` + `marketing_create` 권한 검사

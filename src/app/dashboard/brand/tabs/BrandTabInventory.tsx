@@ -8,7 +8,6 @@ const BrandInventoryLots = dynamic(() => import('./BrandInventoryLots'), { ssr: 
 const BrandInventoryScan = dynamic(() => import('./BrandInventoryScan'), { ssr: false })
 const BrandInventoryQR = dynamic(() => import('./BrandInventoryQR'), { ssr: false })
 const BrandInventoryClose = dynamic(() => import('./BrandInventoryClose'), { ssr: false })
-const BrandInventoryStaff = dynamic(() => import('./BrandInventoryStaff'), { ssr: false })
 const BrandInventoryEmergency = dynamic(() => import('./BrandInventoryEmergency'), { ssr: false })
 const BrandInventoryMarketing = dynamic(() => import('./BrandInventoryMarketing'), { ssr: false })
 const PURPLE = '#7B5EA7'
@@ -19,7 +18,6 @@ const SUBTABS = [
   { key: 'scan', label: '스캔입출고', icon: '📲' },
   { key: 'qr', label: 'QR발행', icon: '🔲' },
   { key: 'close', label: '월마감', icon: '📅' },
-  { key: 'staff', label: '담당자 관리', icon: '👤' },
   { key: 'emergency', label: '비상출고', icon: '🚨' },
   { key: 'marketing', label: '마케팅자료', icon: '📣' },
 ] as const
@@ -145,7 +143,6 @@ export default function BrandTabInventory({ myBrands, authId, loginRole = 'direc
       {sub === 'scan' && <BrandInventoryScan brandId={effectiveBrandId} brandName={brandName} />}
       {sub === 'qr' && <BrandInventoryQR brandId={effectiveBrandId} brandName={brandName} />}
       {sub === 'close' && <BrandInventoryClose brandId={effectiveBrandId} />}
-      {sub === 'staff' && <BrandInventoryStaff brandId={effectiveBrandId} currentUserRole={loginRole === 'ceo' ? 'ceo' : 'director'} />}
       {sub === 'emergency' && <BrandInventoryEmergency brandId={effectiveBrandId} brandName={brandName} />}
       {sub === 'marketing' && <BrandInventoryMarketing brandId={effectiveBrandId} brandName={brandName} />}
       </>
