@@ -4,6 +4,13 @@
 ---
 
 
+## 2026-08-03
+### feat: brand_staff/brand_staff_permissions company_id 컬럼 추가+백필, assertStaffPermission을 컴퍼니 기준으로 전환, hq-campaigns save/delete API에 담당자 권한검증 연결 (컴퍼니 지배원칙 근본수정 1차)
+- `assertStaffPermission.ts` 신규: staff/권한을 `company_id`로 판정(CEO는 모듈 없이 통과)
+- HQ 캠페인 save/delete: `staff_id` + `marketing_create` 권한 검사
+- 프론트: `pinAuth.id` → staffId를 save/delete body까지 전달
+- 전제: DB에 `brand_staff`/`brand_staff_permissions.company_id` 컬럼+백필이 이미 적용되어 있어야 함(이 커밋에는 마이그레이션 파일 없음)
+
 ## 2026-08-02
 ### fix: brand/[slug] 로그인 소유권 체크에 brand_members 팀원 예외 추가
 - `brand/[slug]/page.tsx`: 소유자가 아니어도 `brand_members` 소속이거나 `users.role === 'admin'`이면 통과
