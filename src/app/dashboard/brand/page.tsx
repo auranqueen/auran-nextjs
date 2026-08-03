@@ -63,6 +63,7 @@ export default function BrandDashboardPage() {
   const [authId, setAuthId] = useState<string | null>(null)
   const [userPk, setUserPk] = useState<string | null>(null)
   const [currentBrandId, setCurrentBrandId] = useState<string | null>(null)
+  const [companyId, setCompanyId] = useState<string | null>(null)
   const [brandName, setBrandName] = useState('')
   const [brandRow, setBrandRow] = useState<Record<string, unknown> | null>(null)
   const [myBrands, setMyBrands] = useState<BrandOption[]>([])
@@ -91,6 +92,7 @@ export default function BrandDashboardPage() {
     void (async () => {
       const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', id).maybeSingle()
       const cid = brandRow?.company_id ? String(brandRow.company_id) : null
+      setCompanyId(cid)
       if (!cid) return
       const { data: companyRow } = await supabase.from('brand_companies').select('name').eq('id', cid).maybeSingle()
       if (companyRow?.name) setBrandName(String(companyRow.name))
@@ -151,6 +153,7 @@ export default function BrandDashboardPage() {
       if (companyLookupId) {
         const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', companyLookupId).maybeSingle()
         const cid = brandRow?.company_id ? String(brandRow.company_id) : null
+        setCompanyId(cid)
         if (cid) {
           const { data: companyRow } = await supabase.from('brand_companies').select('name').eq('id', cid).maybeSingle()
           if (companyRow?.name) setBrandName(String(companyRow.name))
@@ -324,6 +327,7 @@ export default function BrandDashboardPage() {
     return (
       <BrandPinGate
         brandId={currentBrandId}
+        companyId={companyId}
         brandName={brandName}
         hub="brand"
         logiHref={logiHref}
