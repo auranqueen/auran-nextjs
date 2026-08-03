@@ -5,6 +5,8 @@
 
 
 ## 2026-08-03
+### feat: 오렌 어드민(role=admin) Brand Hub 진입 예외 — dashboard/brand/page.tsx 역할게이트에 admin 허용, PIN게이트를 admin이면 건너뛰게 처리 (마스터 접근 시도 중 중단됐으나 코드는 유지, 나중에 middleware까지 고치면 재개 가능)
+
 ### fix: 사이드바/헤더홈 클릭 시 이전 판매관리 서브탭(mainSub) 잔존 문제 수정 — 클릭 시 초기화하도록 처리
 
 ### feat: 관리자계정·판매관리 탭 신설 및 사이드바 재편
