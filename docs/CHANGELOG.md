@@ -5,6 +5,8 @@
 
 
 ## 2026-08-03
+### fix: 13개 테이블 RLS 정책 buggy user_id=auth.uid() 단독비교 수정(컴퍼니기준 근본수정 6단계) — current_user_id() 폴백 추가로 형제브랜드/팀원 접근 정상화
+
 ### fix: tier-kit-items/tier-orders/tier-promo-rules/tier-packages/tier-catalog-toggle 8개 API의 assertCompanyAccess에서 형제브랜드 다중소속 시 .maybeSingle() 다중행 에러로 forbidden 오탐 발생하던 버그 일괄 수정(.limit(1)+length체크로 전환) — hq-campaigns와 동일 패턴
 
 ### fix: hq-campaigns save/delete의 assertCompanyAccess에서 brand_members 조회가 형제브랜드 여러개일 때 .maybeSingle() 에러로 forbidden_company 오탐 발생하던 버그 수정(.limit(1)+length체크로 전환)
