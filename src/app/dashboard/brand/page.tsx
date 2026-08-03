@@ -62,6 +62,7 @@ export default function BrandDashboardPage() {
   } | null>(null)
   const [authId, setAuthId] = useState<string | null>(null)
   const [userPk, setUserPk] = useState<string | null>(null)
+  const [userRole, setUserRole] = useState<string | null>(null)
   const [currentBrandId, setCurrentBrandId] = useState<string | null>(null)
   const [brandName, setBrandName] = useState('')
   const [brandRow, setBrandRow] = useState<Record<string, unknown> | null>(null)
@@ -105,10 +106,11 @@ export default function BrandDashboardPage() {
     }
     setAuthId(user.id)
     const { data: u } = await supabase.from('users').select('id,role').eq('auth_id', user.id).maybeSingle()
-    if (!u?.id || (u as { role?: string }).role !== 'brand') {
+    if (!u?.id || (u.role !== 'brand' && u.role !== 'admin')) {
       router.replace('/login?role=brand')
       return
     }
+    setUserRole(u.role)
     setUserPk(u.id)
     const { data: brandList } = await supabase
       .from('brands')
@@ -315,7 +317,7 @@ export default function BrandDashboardPage() {
     )
   }
 
-  if (!pinAuth && currentBrandId) {
+  if (!pinAuth && currentBrandId && userRole !== 'admin') {
     const currentSlug = myBrands.find((b) => b.id === currentBrandId)?.slug
       || (brandRow?.slug != null ? String(brandRow.slug) : '')
     const logiHref = currentSlug
