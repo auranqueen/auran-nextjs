@@ -5,6 +5,8 @@
 
 
 ## 2026-08-03
+### fix: tier-kit-items/tier-orders/tier-promo-rules/tier-packages/tier-catalog-toggle 8개 API의 assertCompanyAccess에서 형제브랜드 다중소속 시 .maybeSingle() 다중행 에러로 forbidden 오탐 발생하던 버그 일괄 수정(.limit(1)+length체크로 전환) — hq-campaigns와 동일 패턴
+
 ### fix: hq-campaigns save/delete의 assertCompanyAccess에서 brand_members 조회가 형제브랜드 여러개일 때 .maybeSingle() 에러로 forbidden_company 오탐 발생하던 버그 수정(.limit(1)+length체크로 전환)
 
 ### feat: 오렌 어드민(role=admin) Brand Hub 진입 예외 — dashboard/brand/page.tsx 역할게이트에 admin 허용, PIN게이트를 admin이면 건너뛰게 처리 (마스터 접근 시도 중 중단됐으나 코드는 유지, 나중에 middleware까지 고치면 재개 가능)

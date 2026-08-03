@@ -22,23 +22,23 @@ async function assertCompanyAccess(
   const brandIds = (companyBrands || []).map((b: { id: string }) => b.id)
   if (brandIds.length === 0) return false
 
-  const { data: member } = await supabase
+  const { data: members } = await supabase
     .from('brand_members')
     .select('brand_id')
     .eq('user_id', userPk)
     .in('brand_id', brandIds)
-    .maybeSingle()
+    .limit(1)
 
-  if (member?.brand_id) return true
+  if (members && members.length > 0) return true
 
   const { data: owned } = await supabase
     .from('brands')
     .select('id')
     .in('id', brandIds)
     .eq('user_id', userPk)
-    .maybeSingle()
+    .limit(1)
 
-  return Boolean(owned?.id)
+  return Boolean(owned && owned.length > 0)
 }
 
 export async function POST(req: NextRequest) {
