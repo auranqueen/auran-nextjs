@@ -5,6 +5,9 @@
 
 
 ## 2026-08-03
+### chore: BrandPinGate.tsx 미사용 형제브랜드 조회 데드코드 제거(company_id 직접매칭 전환 후 불필요해진 코드)
+- `loadStaff`에서 brands/siblingBrands/`staffBrandIds` 우회 조회 블록 삭제 — `.eq('company_id', companyIdProp)`만 사용
+
 ### fix: dashboard/logi/page.tsx의 companyId 하드코딩(null) 제거, brands.company_id 실제 연결 (컴퍼니 지배원칙 근본수정 - 5단계 완료)
 - 물류 허브 `loadBrand`에 `company_id` select + state → `BrandPinGate` 전달
 - Brand Hub `page.tsx`/`BrandPinGate`: PIN 목록·권한·CEO 부트스트랩을 `company_id` 기준으로 전환
