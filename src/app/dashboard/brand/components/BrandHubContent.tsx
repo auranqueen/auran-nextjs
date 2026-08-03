@@ -18,7 +18,9 @@ const BrandTabReturns = dynamic(() => import('../tabs/BrandTabReturns'), { ssr: 
 const BrandTabTierPackages = dynamic(() => import('../tabs/BrandTabTierPackages'), { ssr: false })
 const BrandTabSettlement = dynamic(() => import('../tabs/BrandTabSettlement'), { ssr: false })
 const BrandInventoryStaff = dynamic(() => import('../tabs/BrandInventoryStaff'), { ssr: false })
-type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages' | 'staff'
+const BrandTabAdminAccount = dynamic(() => import('../tabs/BrandTabAdminAccount'), { ssr: false })
+const BrandTabSales = dynamic(() => import('../tabs/BrandTabSales'), { ssr: false })
+type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages' | 'staff' | 'sales'
 type BrandOption = { id: string; name: string; role: string; slug?: string | null }
 interface Props {
   brandId: string | null
@@ -56,9 +58,8 @@ export default function BrandHubContent({
       items: [
         { key: 'home', label: '홈 대시보드', icon: 'ti-home' },
         { key: 'orentalk', label: '오렌상담톡', icon: 'ti-message-circle', alert: true },
-        { key: 'orders', label: '발주 관리', icon: 'ti-shopping-cart', alert: true },
+        { key: 'sales', label: '판매관리', icon: 'ti-shopping-cart', alert: true },
         { key: 'inventory', label: '재고·물류', icon: 'ti-box', alert: true },
-        { key: 'sample', label: '샘플 발송', icon: 'ti-gift' },
       ],
     },
     {
@@ -82,9 +83,8 @@ export default function BrandHubContent({
       items: [
         { key: 'report', label: '월별 리포트', icon: 'ti-report' },
         { key: 'invoice', label: '세금계산서', icon: 'ti-receipt' },
-        { key: 'returns', label: '반품 관리', icon: 'ti-rotate' },
         ...(isCEO ? [{ key: 'settlement', label: '정산', icon: 'ti-coin' }] : []),
-        { key: 'staff', label: '담당자 관리', icon: 'ti-users' },
+        { key: 'staff', label: '관리자계정', icon: 'ti-users' },
       ],
     },
   ] as const
@@ -246,21 +246,19 @@ export default function BrandHubContent({
           {mainTab === 'products' && <BrandTabProducts rows={rows} tab={tab} onTabChange={onTabChange} onEdit={onEdit} onNew={onNew} currentBrandName={brandName} />}
           {mainTab === 'tierPackages' && <BrandTabTierPackages myBrands={brandOpts} staffId={staffId} isCEO={isCEO} />}
           {mainTab === 'owners' && <OwnersBrandWrapper myBrands={brandOpts} authId={authId} />}
-          {mainTab === 'orders' && <BrandTabOrders myBrands={brandOpts} />}
+          {mainTab === 'sales' && <BrandTabSales myBrands={brandOpts} />}
           {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} authId={authId} />}
           {mainTab === 'live' && <BrandTabLive myBrands={brandOpts} />}
-          {mainTab === 'sample' && <BrandTabSample myBrands={brandOpts} />}
           {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} />}
           {mainTab === 'expand' && <BrandTabExpand myBrands={brandOpts} />}
           {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} staffRole={staffRole} />}
           {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} />}
           {mainTab === 'report' && <BrandTabReport myBrands={brandOpts} />}
-          {mainTab === 'returns' && <BrandTabReturns myBrands={brandOpts} />}
           {mainTab === 'settlement' && isCEO && (
             <BrandTabSettlement myBrands={brandOpts} />
           )}
           {mainTab === 'staff' && (
-            <BrandInventoryStaff brandId={brandId} companyId={companyId} currentUserRole={loginRole === 'ceo' ? 'ceo' : 'director'} />
+            <BrandTabAdminAccount brandId={brandId} companyId={companyId} currentUserRole={loginRole === 'ceo' ? 'ceo' : 'director'} />
           )}
         </div>
       </div>

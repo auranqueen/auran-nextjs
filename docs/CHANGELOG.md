@@ -5,6 +5,12 @@
 
 
 ## 2026-08-03
+### feat: 관리자계정·판매관리 탭 신설 및 사이드바 재편
+- feat: "관리자계정" 탭 신설(BrandTabAdminAccount.tsx) — 서브탭 3개(컴퍼니정보/관리자관리/판매정책 준수현황), 관리자관리에 기존 담당자관리(BrandInventoryStaff) 편입, 정산·운영 섹션에 배치
+- feat: "판매관리" 탭 신설(BrandTabSales.tsx) — 서브탭 3개(발주관리/반품관리/샘플발송), 기존 발주/반품/샘플 개별항목 통합, 실시간 섹션에 배치
+- fix: BrandTabHome.tsx의 onTabChange('orders'/'sample') 호출 3곳을 'sales'로 수정(판매관리 통합에 따른 끊어진 링크 수정)
+- refactor: BrandHubContent.tsx SB_SECTIONS 재편 — 실시간(orders/sample 제거, sales 추가), 정산·운영(returns 제거, staff는 관리자계정으로 라벨변경)
+
 ### chore: BrandPinGate.tsx 미사용 형제브랜드 조회 데드코드 제거(company_id 직접매칭 전환 후 불필요해진 코드)
 - `loadStaff`에서 brands/siblingBrands/`staffBrandIds` 우회 조회 블록 삭제 — `.eq('company_id', companyIdProp)`만 사용
 
