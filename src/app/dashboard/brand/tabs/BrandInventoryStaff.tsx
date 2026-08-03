@@ -36,9 +36,10 @@ interface StaffRow {
 }
 interface Props {
   brandId: string | null
+  companyId?: string | null
   currentUserRole?: string
 }
-export default function BrandInventoryStaff({ brandId, currentUserRole = 'ceo' }: Props) {
+export default function BrandInventoryStaff({ brandId, companyId, currentUserRole = 'ceo' }: Props) {
   const supabase = createClient()
   const [staff, setStaff] = useState<StaffRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -54,17 +55,17 @@ export default function BrandInventoryStaff({ brandId, currentUserRole = 'ceo' }
   const [myPermissions, setMyPermissions] = useState<string[]>([])
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const loadStaff = useCallback(async () => {
-    if (!brandId) return
+    if (!brandId || !companyId) return
     setLoading(true)
     const { data: staffData } = await supabase
       .from('brand_staff')
       .select('id, name, role, pin, is_active, created_at')
-      .eq('brand_id', brandId)
+      .eq('company_id', companyId)
       .order('created_at', { ascending: false })
     const { data: permData } = await supabase
       .from('brand_staff_permissions')
       .select('staff_id, module')
-      .eq('brand_id', brandId)
+      .eq('company_id', companyId)
     const permMap: Record<string, string[]> = {}
     for (const p of (permData || []) as Array<{ staff_id: string; module: string }>) {
       if (!permMap[p.staff_id]) permMap[p.staff_id] = []
@@ -80,7 +81,7 @@ export default function BrandInventoryStaff({ brandId, currentUserRole = 'ceo' }
       if (me) setMyPermissions(permMap[me.id] || [])
     }
     setLoading(false)
-  }, [brandId, currentUserRole])
+  }, [brandId, companyId, currentUserRole])
   useEffect(() => { void loadStaff() }, [loadStaff])
   const canAddRole = GRANT_ROLES[currentUserRole] || []
   const addStaff = async () => {
@@ -90,10 +91,11 @@ export default function BrandInventoryStaff({ brandId, currentUserRole = 'ceo' }
       showToast(`PIN은 숫자 ${pinLen}자리여야 해요`)
       return
     }
-    if (!brandId) return
+    if (!brandId || !companyId) return
     setSaving(true)
     const { error } = await supabase.from('brand_staff').insert({
       brand_id: brandId,
+      company_id: companyId,
       name: newName.trim(),
       role: newRole,
       pin: newPin,
@@ -133,12 +135,14 @@ export default function BrandInventoryStaff({ brandId, currentUserRole = 'ceo' }
     }
   }
   if (loading) return <div style={{ padding: 20, color: SUB, textAlign: 'center', fontSize: 13 }}>불러오는 중...</div>
+  if (!companyId) return <div style={{ padding: 20, color: SUB, textAlign: 'center', fontSize: 13 }}>회사 정보를 불러오는 중...</div>
   return (
     <div>
       {toast && <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999, whiteSpace: 'nowrap' }}>{toast}</div>}
       {permTarget && (
         <BrandStaffPermissions
           brandId={brandId}
+          companyId={companyId}
           staff={permTarget}
           granterRole={currentUserRole}
           granterPermissions={myPermissions as any}

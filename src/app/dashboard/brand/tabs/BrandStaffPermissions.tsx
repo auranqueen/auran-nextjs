@@ -72,13 +72,14 @@ interface StaffRow {
 }
 interface Props {
   brandId: string | null
+  companyId: string | null
   staff: StaffRow
   granterRole: string
   granterPermissions: ModuleKey[]
   onClose: () => void
   onSaved: () => void
 }
-export default function BrandStaffPermissions({ brandId, staff, granterRole, granterPermissions, onClose, onSaved }: Props) {
+export default function BrandStaffPermissions({ brandId, companyId, staff, granterRole, granterPermissions, onClose, onSaved }: Props) {
   const supabase = createClient()
   const [current, setCurrent] = useState<ModuleKey[]>([])
   const [loading, setLoading] = useState(true)
@@ -90,16 +91,16 @@ export default function BrandStaffPermissions({ brandId, staff, granterRole, gra
     ? PERMISSION_MODULES.flatMap(g => g.modules.map(m => m.key as ModuleKey))
     : granterPermissions
   const loadPermissions = useCallback(async () => {
-    if (!brandId) return
+    if (!brandId || !companyId) return
     setLoading(true)
     const { data } = await supabase
       .from('brand_staff_permissions')
       .select('module')
       .eq('staff_id', staff.id)
-      .eq('brand_id', brandId)
+      .eq('company_id', companyId)
     setCurrent((data || []).map((d: { module: string }) => d.module as ModuleKey))
     setLoading(false)
-  }, [brandId, staff.id])
+  }, [brandId, companyId, staff.id])
   useEffect(() => { void loadPermissions() }, [loadPermissions])
   const toggle = (key: ModuleKey) => {
     if (!availableModules.includes(key)) return
@@ -108,17 +109,18 @@ export default function BrandStaffPermissions({ brandId, staff, granterRole, gra
     )
   }
   const savePermissions = async () => {
-    if (!brandId) return
+    if (!brandId || !companyId) return
     setSaving(true)
     await supabase
       .from('brand_staff_permissions')
       .delete()
       .eq('staff_id', staff.id)
-      .eq('brand_id', brandId)
+      .eq('company_id', companyId)
     if (current.length > 0) {
       await supabase.from('brand_staff_permissions').insert(
         current.map(module => ({
           brand_id: brandId,
+          company_id: companyId,
           staff_id: staff.id,
           module,
         }))

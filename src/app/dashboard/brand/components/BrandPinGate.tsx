@@ -22,6 +22,7 @@ const ROLE_MAP: Record<string, { label: string; color: string; pin: number }> = 
 }
 interface Props {
   brandId: string | null
+  companyId: string | null
   brandName: string
   onAuth: (staff: { id: string; name: string; role: string; permissions: string[] }) => void
   /** brand: Brand Hub (/dashboard/brand). logi: 물류 허브 (/dashboard/logi) */
@@ -29,7 +30,7 @@ interface Props {
   /** brand hub에서 ops 차단 시 이동 URL */
   logiHref?: string
 }
-export default function BrandPinGate({ brandId, brandName, onAuth, hub = 'brand', logiHref = '/dashboard/logi' }: Props) {
+export default function BrandPinGate({ brandId, companyId: companyIdProp, brandName, onAuth, hub = 'brand', logiHref = '/dashboard/logi' }: Props) {
   const supabase = createClient()
   const [staffList, setStaffList] = useState<StaffRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -54,30 +55,15 @@ export default function BrandPinGate({ brandId, brandName, onAuth, hub = 'brand'
   const loadStaff = useCallback(async () => {
     if (!brandId) return
     setLoading(true)
-    const { data: brandRow } = await supabase
-      .from('brands')
-      .select('company_id')
-      .eq('id', brandId)
-      .maybeSingle()
-    const companyId = brandRow?.company_id ? String(brandRow.company_id) : null
-    let staffBrandIds = [brandId]
-    if (companyId) {
-      const { data: siblingBrands } = await supabase
-        .from('brands')
-        .select('id')
-        .eq('company_id', companyId)
-      const ids = (siblingBrands || []).map((b: { id: string }) => String(b.id))
-      if (ids.length > 0) staffBrandIds = ids
-    }
     const { data } = await supabase
       .from('brand_staff')
       .select('id, name, role, pin, is_active')
-      .in('brand_id', staffBrandIds)
+      .eq('company_id', companyIdProp)
       .eq('is_active', true)
       .order('created_at')
     setStaffList((data || []) as StaffRow[])
     setLoading(false)
-  }, [brandId])
+  }, [brandId, companyIdProp])
   useEffect(() => { void loadStaff() }, [loadStaff])
   const selectStaff = (s: StaffRow) => {
     setSelected(s)
@@ -131,7 +117,7 @@ export default function BrandPinGate({ brandId, brandName, onAuth, hub = 'brand'
       .from('brand_staff_permissions')
       .select('module')
       .eq('staff_id', selected.id)
-      .eq('brand_id', brandId)
+      .eq('company_id', companyIdProp)
     const permissions = (permData || []).map((p: { module: string }) => p.module)
     const token = crypto.randomUUID()
     const expires = new Date(Date.now() + 30 * 60 * 1000).toISOString()
@@ -171,7 +157,7 @@ export default function BrandPinGate({ brandId, brandName, onAuth, hub = 'brand'
     setBootstrapError('')
     const { data: row, error } = await supabase
       .from('brand_staff')
-      .insert({ brand_id: brandId, name, role: 'ceo', pin: bootstrapPin, is_active: true })
+      .insert({ brand_id: brandId, company_id: companyIdProp, name, role: 'ceo', pin: bootstrapPin, is_active: true })
       .select()
       .single()
     if (error || !row) {
@@ -183,7 +169,7 @@ export default function BrandPinGate({ brandId, brandName, onAuth, hub = 'brand'
       .from('brand_staff_permissions')
       .select('module')
       .eq('staff_id', row.id)
-      .eq('brand_id', brandId)
+      .eq('company_id', companyIdProp)
     const permissions = (permData || []).map((p: { module: string }) => p.module)
     sessionStorage.setItem('brand_staff_id', String(row.id))
     sessionStorage.setItem('brand_staff_name', String(row.name))

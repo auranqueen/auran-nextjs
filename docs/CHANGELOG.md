@@ -4,7 +4,40 @@
 ---
 
 
+## 2026-08-03
+### fix: 사이드바/헤더홈 클릭 시 이전 판매관리 서브탭(mainSub) 잔존 문제 수정 — 클릭 시 초기화하도록 처리
+
+### feat: 관리자계정·판매관리 탭 신설 및 사이드바 재편
+- feat: "관리자계정" 탭 신설(BrandTabAdminAccount.tsx) — 서브탭 3개(컴퍼니정보/관리자관리/판매정책 준수현황), 관리자관리에 기존 담당자관리(BrandInventoryStaff) 편입, 정산·운영 섹션에 배치
+- feat: "판매관리" 탭 신설(BrandTabSales.tsx) — 서브탭 3개(발주관리/반품관리/샘플발송), 기존 발주/반품/샘플 개별항목 통합, 실시간 섹션에 배치
+- fix: BrandTabHome.tsx의 onTabChange('orders'/'sample') 호출 3곳을 'sales'로 수정(판매관리 통합에 따른 끊어진 링크 수정)
+- refactor: BrandHubContent.tsx SB_SECTIONS 재편 — 실시간(orders/sample 제거, sales 추가), 정산·운영(returns 제거, staff는 관리자계정으로 라벨변경)
+
+### chore: BrandPinGate.tsx 미사용 형제브랜드 조회 데드코드 제거(company_id 직접매칭 전환 후 불필요해진 코드)
+- `loadStaff`에서 brands/siblingBrands/`staffBrandIds` 우회 조회 블록 삭제 — `.eq('company_id', companyIdProp)`만 사용
+
+### fix: dashboard/logi/page.tsx의 companyId 하드코딩(null) 제거, brands.company_id 실제 연결 (컴퍼니 지배원칙 근본수정 - 5단계 완료)
+- 물류 허브 `loadBrand`에 `company_id` select + state → `BrandPinGate` 전달
+- Brand Hub `page.tsx`/`BrandPinGate`: PIN 목록·권한·CEO 부트스트랩을 `company_id` 기준으로 전환
+
+### feat: 담당자관리를 정산·운영 섹션으로 이동, BrandInventoryStaff/BrandStaffPermissions를 company_id 기준으로 전환 (컴퍼니 지배원칙 근본수정 2차 - 5단계)
+- 사이드바 정산·운영에 `staff` 메인탭 추가, 재고·물류 하위탭에서 담당자 관리 제거
+- `BrandHubContent`: `brandId`→`companyId` 조회 후 담당자 화면에 전달
+- `BrandInventoryStaff` / `BrandStaffPermissions`: 조회·저장을 `company_id` 기준으로 전환
+
+### feat: brand_staff/brand_staff_permissions company_id 컬럼 추가+백필, assertStaffPermission을 컴퍼니 기준으로 전환, hq-campaigns save/delete API에 담당자 권한검증 연결 (컴퍼니 지배원칙 근본수정 1차)
+- `assertStaffPermission.ts` 신규: staff/권한을 `company_id`로 판정(CEO는 모듈 없이 통과)
+- HQ 캠페인 save/delete: `staff_id` + `marketing_create` 권한 검사
+- 프론트: `pinAuth.id` → staffId를 save/delete body까지 전달
+- 전제: DB에 `brand_staff`/`brand_staff_permissions.company_id` 컬럼+백필이 이미 적용되어 있어야 함(이 커밋에는 마이그레이션 파일 없음)
+
 ## 2026-08-02
+### fix: brand/[slug] 로그인 소유권 체크에 brand_members 팀원 예외 추가
+- `brand/[slug]/page.tsx`: 소유자가 아니어도 `brand_members` 소속이거나 `users.role === 'admin'`이면 통과
+
+### fix: brand/[slug] 로그인 소유권 체크에 admin 예외 추가(오렌 어드민 마스터 접근 3곳 중 마지막 지점)
+- `brand/[slug]/page.tsx`: `data.user.id !== brand.user_id`여도 `users.role === 'admin'`이면 통과
+
 ### 임시 디버깅용 — HQ캠페인 로드 확인 console.log
 - debug: `brand-orders/page.tsx`에 `[HQ캠페인 확인용]` 임시 console.log 추가 (확인 후 제거 예정)
 

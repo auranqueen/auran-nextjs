@@ -1,6 +1,7 @@
 'use client'
 import dynamic from 'next/dynamic'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 const BrandTabHome = dynamic(() => import('../tabs/BrandTabHome'), { ssr: false })
 const BrandTabProducts = dynamic(() => import('../tabs/BrandTabProducts'), { ssr: false })
 const OwnersBrandWrapper = dynamic(() => import('./OwnersBrandWrapper'), { ssr: false })
@@ -16,7 +17,10 @@ const BrandTabReport = dynamic(() => import('../tabs/BrandTabReport'), { ssr: fa
 const BrandTabReturns = dynamic(() => import('../tabs/BrandTabReturns'), { ssr: false })
 const BrandTabTierPackages = dynamic(() => import('../tabs/BrandTabTierPackages'), { ssr: false })
 const BrandTabSettlement = dynamic(() => import('../tabs/BrandTabSettlement'), { ssr: false })
-type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages'
+const BrandInventoryStaff = dynamic(() => import('../tabs/BrandInventoryStaff'), { ssr: false })
+const BrandTabAdminAccount = dynamic(() => import('../tabs/BrandTabAdminAccount'), { ssr: false })
+const BrandTabSales = dynamic(() => import('../tabs/BrandTabSales'), { ssr: false })
+type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages' | 'staff' | 'sales'
 type BrandOption = { id: string; name: string; role: string; slug?: string | null }
 interface Props {
   brandId: string | null
@@ -27,6 +31,7 @@ interface Props {
   isCEO: boolean
   loginRole: string
   staffRole: string | null
+  staffId: string | null
   rows: Array<Record<string, unknown> & { id: string; name?: string | null; status?: string | null; thumb_img?: string | null }>
   tab: 'pending' | 'active' | 'hidden'
   onTabChange: (t: 'pending' | 'active' | 'hidden') => void
@@ -34,11 +39,19 @@ interface Props {
   onNew: () => void
 }
 export default function BrandHubContent({
-  brandId, brandName, myBrands, onBrandChange: _onBrandChange, authId, isCEO, loginRole, staffRole,
+  brandId, brandName, myBrands, onBrandChange: _onBrandChange, authId, isCEO, loginRole, staffRole, staffId,
   rows, tab, onTabChange, onEdit, onNew
 }: Props) {
   const [mainTab, setMainTab] = useState<MainTab>('home')
+  const [mainSub, setMainSub] = useState<string | undefined>(undefined)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [companyId, setCompanyId] = useState<string | null>(null)
+  useEffect(() => {
+    if (!brandId) { setCompanyId(null); return }
+    const supabase = createClient()
+    supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
+      .then(({ data }) => setCompanyId(data?.company_id ?? null))
+  }, [brandId])
   const brandOpts = useMemo(() => myBrands.map(({ id, name, slug }) => ({ id, name, slug })), [myBrands])
   const SB_SECTIONS = [
     {
@@ -46,9 +59,8 @@ export default function BrandHubContent({
       items: [
         { key: 'home', label: '홈 대시보드', icon: 'ti-home' },
         { key: 'orentalk', label: '오렌상담톡', icon: 'ti-message-circle', alert: true },
-        { key: 'orders', label: '발주 관리', icon: 'ti-shopping-cart', alert: true },
+        { key: 'sales', label: '판매관리', icon: 'ti-shopping-cart', alert: true },
         { key: 'inventory', label: '재고·물류', icon: 'ti-box', alert: true },
-        { key: 'sample', label: '샘플 발송', icon: 'ti-gift' },
       ],
     },
     {
@@ -72,8 +84,8 @@ export default function BrandHubContent({
       items: [
         { key: 'report', label: '월별 리포트', icon: 'ti-report' },
         { key: 'invoice', label: '세금계산서', icon: 'ti-receipt' },
-        { key: 'returns', label: '반품 관리', icon: 'ti-rotate' },
         ...(isCEO ? [{ key: 'settlement', label: '정산', icon: 'ti-coin' }] : []),
+        { key: 'staff', label: '관리자계정', icon: 'ti-users' },
       ],
     },
   ] as const
@@ -92,7 +104,7 @@ export default function BrandHubContent({
             <div key={sec.label}>
               <div style={{ padding: '8px 12px 3px', fontSize: 9, color: 'rgba(255,255,255,0.18)', letterSpacing: '1.5px' }}>{sec.label.toUpperCase()}</div>
               {sec.items.map((item: { key: string; label: string; icon: string; alert?: boolean }) => (
-                <button key={item.key} type="button" onClick={() => setMainTab(item.key as MainTab)}
+                <button key={item.key} type="button" onClick={() => { setMainTab(item.key as MainTab); setMainSub(undefined) }}
                   style={{ display: 'flex', alignItems: 'center', gap: 7, width: '100%', padding: '8px 12px', fontSize: 11, border: 'none', background: mainTab === item.key ? 'rgba(123,94,167,0.12)' : 'transparent', color: mainTab === item.key ? '#C9A96E' : 'rgba(255,255,255,0.4)', borderLeft: mainTab === item.key ? '2px solid #7B5EA7' : '2px solid transparent', cursor: 'pointer', textAlign: 'left' as const }}>
                   <i className={`ti ${item.icon}`} style={{ fontSize: 13, width: 14, flexShrink: 0 }} aria-hidden="true" />
                   <span style={{ flex: 1 }}>{item.label}</span>
@@ -214,7 +226,7 @@ export default function BrandHubContent({
         {/* 공통 헤더 — home 제외 전 탭 */}
         {mainTab !== 'home' && (
           <div style={{ position: 'sticky', top: 0, zIndex: 10, background: '#0a0908', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <button type="button" onClick={() => setMainTab('home')}
+            <button type="button" onClick={() => { setMainTab('home'); setMainSub(undefined) }}
               style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', padding: '4px 8px', borderRadius: 6 }}>
               <i className="ti ti-arrow-left" style={{ fontSize: 13 }} aria-hidden="true" />
               홈
@@ -231,22 +243,23 @@ export default function BrandHubContent({
           </div>
         )}
         <div style={{ padding: 16 }}>
-          {mainTab === 'home' && <BrandTabHome brandName={brandName} brandId={brandId} onTabChange={(t) => setMainTab(t as MainTab)} />}
+          {mainTab === 'home' && <BrandTabHome brandName={brandName} brandId={brandId} onTabChange={(t, s) => { setMainTab(t as MainTab); setMainSub(s) }} />}
           {mainTab === 'products' && <BrandTabProducts rows={rows} tab={tab} onTabChange={onTabChange} onEdit={onEdit} onNew={onNew} currentBrandName={brandName} />}
-          {mainTab === 'tierPackages' && <BrandTabTierPackages myBrands={brandOpts} />}
+          {mainTab === 'tierPackages' && <BrandTabTierPackages myBrands={brandOpts} staffId={staffId} isCEO={isCEO} />}
           {mainTab === 'owners' && <OwnersBrandWrapper myBrands={brandOpts} authId={authId} />}
-          {mainTab === 'orders' && <BrandTabOrders myBrands={brandOpts} />}
+          {mainTab === 'sales' && <BrandTabSales myBrands={brandOpts} initialSub={mainSub} />}
           {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} authId={authId} />}
           {mainTab === 'live' && <BrandTabLive myBrands={brandOpts} />}
-          {mainTab === 'sample' && <BrandTabSample myBrands={brandOpts} />}
           {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} />}
           {mainTab === 'expand' && <BrandTabExpand myBrands={brandOpts} />}
           {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} staffRole={staffRole} />}
           {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} />}
           {mainTab === 'report' && <BrandTabReport myBrands={brandOpts} />}
-          {mainTab === 'returns' && <BrandTabReturns myBrands={brandOpts} />}
           {mainTab === 'settlement' && isCEO && (
             <BrandTabSettlement myBrands={brandOpts} />
+          )}
+          {mainTab === 'staff' && (
+            <BrandTabAdminAccount brandId={brandId} companyId={companyId} currentUserRole={loginRole === 'ceo' ? 'ceo' : 'director'} />
           )}
         </div>
       </div>

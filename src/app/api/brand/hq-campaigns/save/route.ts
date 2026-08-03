@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
+import { assertStaffPermission } from '@/lib/brand/assertStaffPermission'
 async function assertCompanyAccess(
   supabase: ReturnType<typeof createClient>,
   userPk: string,
@@ -73,6 +74,11 @@ export async function POST(req: NextRequest) {
   const { allowed, brandIds } = await assertCompanyAccess(supabase, me.id, companyId)
   if (!allowed) {
     return NextResponse.json({ ok: false, error: 'forbidden_company' }, { status: 403 })
+  }
+  const staffId = typeof body?.staff_id === 'string' ? body.staff_id.trim() : ''
+  const staffAllowed = await assertStaffPermission(supabase, staffId || null, companyId, 'marketing_create')
+  if (!staffAllowed) {
+    return NextResponse.json({ ok: false, error: 'forbidden_permission' }, { status: 403 })
   }
   const svc = tryCreateServiceClient()
   const db = svc ?? supabase

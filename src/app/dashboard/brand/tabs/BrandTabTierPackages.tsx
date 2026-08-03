@@ -39,8 +39,10 @@ type KitDraft = {
 const EMPTY_KIT_DRAFT: KitDraft = { item_name: '', item_type: '부자재', qty: '1', note: '' }
 type Props = {
   myBrands: { id: string; name: string }[]
+  staffId: string | null
+  isCEO: boolean
 }
-export default function BrandTabTierPackages({ myBrands }: Props) {
+export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props) {
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [companyName, setCompanyName] = useState('')
   const supabase = createClient()
@@ -327,7 +329,7 @@ export default function BrandTabTierPackages({ myBrands }: Props) {
       ) : null}
       {sub === 'price' && (
         <>
-        <BrandHqCampaignSection companyId={companyId} />
+        <BrandHqCampaignSection companyId={companyId} staffId={staffId} isCEO={isCEO} />
         {loading ? (
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>불러오는 중…</div>
         ) : rows.length === 0 ? (

@@ -29,8 +29,8 @@ const EMPTY_DRAFT = {
   start_at: '',
   end_at: '',
 }
-type Props = { companyId: string | null }
-export default function BrandHqCampaignSection({ companyId }: Props) {
+type Props = { companyId: string | null; staffId: string | null; isCEO: boolean }
+export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Props) {
   const supabase = createClient()
   const [brands, setBrands] = useState<BrandOpt[]>([])
   const [products, setProducts] = useState<Product[]>([])
@@ -103,6 +103,7 @@ export default function BrandHqCampaignSection({ companyId }: Props) {
         credentials: 'same-origin',
         body: JSON.stringify({
           company_id: companyId,
+          staff_id: staffId,
           title: draft.title.trim(),
           badge_text: draft.badge_text.trim() || null,
           campaign_type: draft.campaign_type,
@@ -135,7 +136,7 @@ export default function BrandHqCampaignSection({ companyId }: Props) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'same-origin',
-      body: JSON.stringify({ company_id: companyId, id }),
+      body: JSON.stringify({ company_id: companyId, id, staff_id: staffId }),
     })
     const json = await res.json().catch(() => ({}))
     if (!json?.ok) {

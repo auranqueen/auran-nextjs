@@ -37,6 +37,7 @@ function LogiDashboardInner() {
   const searchParams = useSearchParams()
   const slug = searchParams.get('slug') || ''
   const [brandId, setBrandId] = useState<string | null>(null)
+  const [companyId, setCompanyId] = useState<string | null>(null)
   const [brandName, setBrandName] = useState('')
   const [authLoading, setAuthLoading] = useState(true)
   const [tab, setTab] = useState<OpsTab>('fulfillment')
@@ -48,11 +49,12 @@ function LogiDashboardInner() {
     if (!user) { router.replace(`/logi/${slug}`); return }
     const { data: brand } = await supabase
       .from('brands')
-      .select('id, name, brand_name_kr')
+      .select('id, name, brand_name_kr, company_id')
       .eq('user_id', user.id)
       .maybeSingle()
     if (!brand) { router.replace(`/logi/${slug || 'civasan'}`); return }
     setBrandId(brand.id)
+    setCompanyId(brand.company_id ?? null)
     setBrandName((brand as { brand_name_kr?: string | null }).brand_name_kr || brand.name)
     setAuthLoading(false)
   }, [slug])
@@ -66,6 +68,7 @@ function LogiDashboardInner() {
     return (
       <BrandPinGate
         brandId={brandId}
+        companyId={companyId}
         brandName={`${brandName} 물류 허브`}
         hub="logi"
         onAuth={(staff) => {
