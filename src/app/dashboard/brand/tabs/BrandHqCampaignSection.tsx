@@ -53,7 +53,7 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
   const supabase = createClient()
   const [brands, setBrands] = useState<BrandOpt[]>([])
   const [products, setProducts] = useState<Product[]>([])
-  const [brandFilter, setBrandFilter] = useState<string | null>(null)
+  const [productSearch, setProductSearch] = useState('')
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [showForm, setShowForm] = useState(false)
   const [draft, setDraft] = useState(EMPTY_DRAFT)
@@ -96,7 +96,9 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
         : [...prev.target_product_ids, id],
     }))
   }
-  const filteredProducts = brandFilter ? products.filter((p) => p.brand_id === brandFilter) : products
+  const filteredProducts = productSearch.trim()
+    ? products.filter((p) => p.name.toLowerCase().includes(productSearch.trim().toLowerCase()))
+    : products
   const updateTier = (idx: number, patch: Partial<TierDraft>) => {
     setDraft((prev) => ({
       ...prev,
@@ -357,12 +359,13 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
           ))}
           <button onClick={addTier} style={{ width: '100%', marginBottom: 16 }}>+ 구간 추가</button>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>대상 제품(컴퍼니 전체 브랜드, 복수선택 — 교차주문시 수량 합산)</div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 8 }}>
-            <button type="button" onClick={() => setBrandFilter(null)} style={{ fontSize: 10, padding: '3px 9px', borderRadius: 20, border: `1px solid ${!brandFilter ? RED : 'rgba(255,255,255,0.12)'}`, background: !brandFilter ? 'rgba(229,57,53,0.1)' : 'transparent', color: !brandFilter ? '#ff8a80' : 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>전체</button>
-            {brands.map((b) => (
-              <button key={b.id} type="button" onClick={() => setBrandFilter(b.id)} style={{ fontSize: 10, padding: '3px 9px', borderRadius: 20, border: `1px solid ${brandFilter === b.id ? RED : 'rgba(255,255,255,0.12)'}`, background: brandFilter === b.id ? 'rgba(229,57,53,0.1)' : 'transparent', color: brandFilter === b.id ? '#ff8a80' : 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>{b.name}</button>
-            ))}
-          </div>
+          <input
+            type="text"
+            value={productSearch}
+            onChange={(e) => setProductSearch(e.target.value)}
+            placeholder="제품명으로 검색 (예: 메쓰크림)"
+            style={{ width: '100%', padding: '8px 12px', marginBottom: 8 }}
+          />
           <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6, marginBottom: 10, maxHeight: 140, overflowY: 'auto' as const }}>
             {filteredProducts.map((p) => (
               <button
