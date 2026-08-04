@@ -312,7 +312,7 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
                 <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>개 이상</span>
                 {draft.tiers.length > 1 && <button onClick={() => removeTier(idx)} style={{ marginLeft: 'auto' }}>×</button>}
               </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 6 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 6, color: '#7B5EA7' }}>
                 <input type="checkbox" checked={tier.useDiscount} onChange={(e) => updateTier(idx, { useDiscount: e.target.checked })} />
                 할인 적용
               </label>
@@ -323,7 +323,7 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
                   <input type="text" placeholder="원 할인" value={tier.discount_amount} onChange={(e) => updateTier(idx, { discount_amount: e.target.value, discount_pct: '' })} style={{ width: 100 }} />
                 </div>
               )}
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 6 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 6, color: '#7B5EA7' }}>
                 <input type="checkbox" checked={tier.useFixedPrice} onChange={(e) => updateTier(idx, { useFixedPrice: e.target.checked })} />
                 확정가로 판매
               </label>
@@ -332,7 +332,7 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
                   <input type="text" placeholder="230000" value={tier.fixed_price} onChange={(e) => updateTier(idx, { fixed_price: e.target.value })} style={{ width: 120 }} /> 원
                 </div>
               )}
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 6 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 6, color: '#7B5EA7' }}>
                 <input type="checkbox" checked={tier.useGifts} onChange={(e) => updateTier(idx, { useGifts: e.target.checked })} />
                 증정품 추가
               </label>
@@ -372,7 +372,7 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
                 value={tier.highlight_text}
                 onChange={(e) => updateTier(idx, { highlight_text: e.target.value })}
                 placeholder="이 구간 강조문구 (선택, 예: 가장 인기있는 구성이에요)"
-                style={{ width: '100%', fontSize: 12 }}
+                style={{ width: '100%', fontSize: 12, color: '#7B5EA7', background: 'rgba(123,94,167,0.08)', border: '1px solid rgba(123,94,167,0.3)' }}
               />
             </div>
           ))}
