@@ -11,6 +11,7 @@ import {
   hasValidSupplyPrice,
   type SupplyPromoRow,
 } from '@/lib/brand/brandOrderPromos'
+import { resolveHqCampaignEffects, type HqForcedCampaign } from '@/lib/brand/hqForcedCampaignPromos'
 const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
 const BORDER = '#ede9f7'
@@ -39,6 +40,7 @@ function HqStockOrdersContent() {
   const [trackAllowed, setTrackAllowed] = useState<boolean | null>(null)
   const [products, setProducts] = useState<Product[]>([])
   const [promoRules, setPromoRules] = useState<SupplyPromoRow[]>([])
+  const [hqForcedCampaigns, setHqForcedCampaigns] = useState<HqForcedCampaign[]>([])
   const [stockMap, setStockMap] = useState<Record<string, number>>({})
   const [cart, setCart] = useState<CartItem[]>([])
   const [showPopup, setShowPopup] = useState(false)
@@ -149,6 +151,35 @@ function HqStockOrdersContent() {
           } else {
             setPromoRules([])
           }
+          const { data: campaignRows } = await supabase
+            .from('hq_forced_campaigns')
+            .select('id, company_id, target_product_ids, start_at, end_at')
+            .in('company_id', companyIds)
+            .is('owner_id', null)
+            .eq('is_active', true)
+          const campaignIds = (campaignRows || []).map((r: { id: string }) => r.id)
+          const tiersByCampaign: Record<string, HqForcedCampaign['tiers']> = {}
+          if (campaignIds.length > 0) {
+            const { data: tierRows } = await supabase
+              .from('hq_forced_campaign_tiers')
+              .select('campaign_id, min_qty, discount_pct, discount_amount, fixed_price, gifts, highlight_text')
+              .in('campaign_id', campaignIds)
+            for (const t of (tierRows || []) as any[]) {
+              const cid = String(t.campaign_id)
+              if (!tiersByCampaign[cid]) tiersByCampaign[cid] = []
+              tiersByCampaign[cid]!.push({
+                min_qty: t.min_qty,
+                discount_pct: t.discount_pct,
+                discount_amount: t.discount_amount,
+                fixed_price: t.fixed_price,
+                gifts: t.gifts ?? [],
+                highlight_text: t.highlight_text,
+              })
+            }
+          }
+          setHqForcedCampaigns(
+            ((campaignRows || []) as any[]).map((r) => ({ ...r, tiers: tiersByCampaign[String(r.id)] || [] })) as HqForcedCampaign[]
+          )
         } else {
           setPromoRules([])
         }
@@ -214,6 +245,15 @@ function HqStockOrdersContent() {
     const line = buildOrderLineItem(c.product, c.qty, promoRules, c.selectedPromo)
     return s + line.line_amount
   }, 0)
+  const hqCampaignEffects = resolveHqCampaignEffects(
+    cart.map((c) => ({
+      product_id: c.product.id,
+      qty: c.qty,
+      unit_price: buildOrderLineItem(c.product, c.qty, promoRules, c.selectedPromo).unit_price,
+    })),
+    hqForcedCampaigns,
+  )
+  const cartFinalTotal = cartTotal - hqCampaignEffects.discountTotal
   const submitOrder = async () => {
     if (cart.length === 0) {
       showToast('제품을 선택해주세요')

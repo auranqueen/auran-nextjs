@@ -17,7 +17,7 @@ import {
 import { useBrandGradeRates } from '@/lib/brand/useBrandGradeRates'
 import { resolveOwnerIds } from '@/lib/brand/resolveOwnerIds'
 import { submitOrderBatch } from '@/lib/brand/submitOrderBatch'
-import type { HqForcedCampaign } from '@/lib/brand/hqForcedCampaignPromos'
+import { resolveHqCampaignEffects, type HqForcedCampaign } from '@/lib/brand/hqForcedCampaignPromos'
 
 const BG = '#ffffff'
 const PURPLE = '#7B5EA7'
@@ -259,7 +259,7 @@ export default function BrandOrdersPage() {
     if (companyIdsForGrade.length > 0) {
       const { data: campaignRows } = await supabase
         .from('hq_forced_campaigns')
-        .select('id, company_id, campaign_type, target_product_ids, buy_qty, bonus_qty, gift_product_id, discount_pct, start_at, end_at')
+        .select('id, company_id, target_product_ids, start_at, end_at')
         .in('company_id', companyIdsForGrade)
         .is('owner_id', null)
         .eq('is_active', true)
@@ -268,12 +268,27 @@ export default function BrandOrdersPage() {
       if (campaignIds.length > 0) {
         const { data: tierRows } = await supabase
           .from('hq_forced_campaign_tiers')
-          .select('campaign_id, min_qty, discount_pct, discount_amount')
+          .select('campaign_id, min_qty, discount_pct, discount_amount, fixed_price, gifts, highlight_text')
           .in('campaign_id', campaignIds)
-        for (const t of (tierRows || []) as { campaign_id: string; min_qty: number; discount_pct: number | null; discount_amount: number | null }[]) {
+        for (const t of (tierRows || []) as {
+          campaign_id: string
+          min_qty: number
+          discount_pct: number | null
+          discount_amount: number | null
+          fixed_price: number | null
+          gifts: { product_id: string; qty: number }[] | null
+          highlight_text: string | null
+        }[]) {
           const cid = String(t.campaign_id)
           if (!tiersByCampaign[cid]) tiersByCampaign[cid] = []
-          tiersByCampaign[cid]!.push(t)
+          tiersByCampaign[cid]!.push({
+            min_qty: t.min_qty,
+            discount_pct: t.discount_pct,
+            discount_amount: t.discount_amount,
+            fixed_price: t.fixed_price,
+            gifts: t.gifts ?? [],
+            highlight_text: t.highlight_text,
+          })
         }
       }
       hqCampaigns = ((campaignRows || []) as any[]).map((r) => ({
@@ -478,6 +493,20 @@ export default function BrandOrdersPage() {
     ).line_amount,
     0,
   )
+  const hqCampaignEffects = resolveHqCampaignEffects(
+    popupCart.map((c) => ({
+      product_id: c.product.id,
+      qty: c.qty,
+      unit_price: buildOrderLineItem(
+        c.product,
+        c.qty,
+        promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)),
+        c.selectedPromo,
+      ).unit_price,
+    })),
+    hqForcedCampaigns,
+  )
+  const popupFinalAmount = popupTotalAmount - hqCampaignEffects.discountTotal
   const popupPointsEarned = (() => {
     const byBrand = new Map<string, typeof popupCart>()
     for (const c of popupCart) {
@@ -927,6 +956,23 @@ export default function BrandOrdersPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 4 }}>
                 <span>발주 합계</span><span style={{ color: PURPLE }}>₩{popupTotalAmount.toLocaleString()}</span>
               </div>
+              {hqCampaignEffects.discountTotal > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#e74c3c' }}>
+                  <span>캠페인 할인</span>
+                  <span>-{hqCampaignEffects.discountTotal.toLocaleString()}원</span>
+                </div>
+              )}
+              {hqCampaignEffects.giftLines.filter(g => g.effect_type === 'gift').map((g, i) => (
+                <div key={i} style={{ fontSize: 13, color: '#7B5EA7' }}>
+                  🎁 {g.label}
+                </div>
+              ))}
+              {hqCampaignEffects.discountTotal > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 500 }}>
+                  <span>최종 결제금액</span>
+                  <span>{popupFinalAmount.toLocaleString()}원</span>
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 600, color: '#1E6B40' }}>
                 <span>적립 예정</span><span>{popupPointsEarned}T</span>
               </div>

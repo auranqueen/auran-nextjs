@@ -5,6 +5,8 @@
 
 
 ## 2026-08-04
+### feat: resolveHqCampaignEffects 전면 재작성(tier별 할인/확정가/증정 자유조합, campaign_type 분기 제거). 트랙A(brand-orders) 팝업에 캠페인 할인/증정 표시 연결. 트랙B(hq-stock-orders)에도 동일 패턴으로 HQ캠페인 로드+계산 연결 (A/B 공용 메커니즘 재사용)
+
 ### fix: 구간 체크박스 라벨·강조문구 입력칸 색상을 보라색(#7B5EA7)으로 변경 — 다크배경 대비 문제 해결
 
 ### fix: 이전 커밋에서 rebase 중 유실됐던 제품검색바(브랜드칩→검색입력) 변경 재적용
