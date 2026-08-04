@@ -338,13 +338,32 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
               </label>
               {tier.useGifts && (
                 <div style={{ marginLeft: 24, marginBottom: 10 }}>
-                  {tier.gifts.map((g, gIdx) => (
-                    <div key={gIdx} style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
-                      <input type="text" placeholder="증정 제품 (제품ID 또는 검색결과 선택값)" value={g.product_id} onChange={(e) => updateTierGift(idx, gIdx, { product_id: e.target.value })} style={{ flex: 1 }} />
-                      <input type="text" value={g.qty} onChange={(e) => updateTierGift(idx, gIdx, { qty: e.target.value })} style={{ width: 50 }} />
-                      <button onClick={() => removeTierGift(idx, gIdx)}>×</button>
-                    </div>
-                  ))}
+                  {tier.gifts.map((g, gIdx) => {
+                    const selectedName = products.find((p) => p.id === g.product_id)?.name || ''
+                    const listId = `gift-products-${idx}-${gIdx}`
+                    return (
+                      <div key={gIdx} style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
+                        <input
+                          type="text"
+                          list={listId}
+                          defaultValue={selectedName}
+                          placeholder="증정 제품명 검색"
+                          onChange={(e) => {
+                            const match = products.find((p) => p.name === e.target.value)
+                            if (match) updateTierGift(idx, gIdx, { product_id: match.id })
+                          }}
+                          style={{ flex: 1 }}
+                        />
+                        <datalist id={listId}>
+                          {products.map((p) => (
+                            <option key={p.id} value={p.name} />
+                          ))}
+                        </datalist>
+                        <input type="text" value={g.qty} onChange={(e) => updateTierGift(idx, gIdx, { qty: e.target.value })} style={{ width: 50 }} />
+                        <button onClick={() => removeTierGift(idx, gIdx)}>×</button>
+                      </div>
+                    )
+                  })}
                   <button onClick={() => addTierGift(idx)} style={{ fontSize: 12 }}>+ 증정품 추가</button>
                 </div>
               )}
