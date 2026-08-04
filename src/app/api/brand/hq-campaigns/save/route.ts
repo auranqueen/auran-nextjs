@@ -47,14 +47,26 @@ export async function POST(req: NextRequest) {
   const discountPct = body?.discount_pct != null ? Number(body.discount_pct) : null
   const startAt = typeof body?.start_at === 'string' ? body.start_at : null
   const endAt = typeof body?.end_at === 'string' ? body.end_at : null
+  const description = typeof body?.description === 'string' ? body.description.trim() : null
+  const imageUrl = typeof body?.image_url === 'string' ? body.image_url.trim() : null
   const tiers = Array.isArray(body?.tiers)
     ? body.tiers
         .map((t: any) => ({
           min_qty: Math.trunc(Number(t?.min_qty)) || 0,
           discount_pct: t?.discount_pct != null && t.discount_pct !== '' ? Number(t.discount_pct) : null,
           discount_amount: t?.discount_amount != null && t.discount_amount !== '' ? Math.trunc(Number(t.discount_amount)) : null,
+          fixed_price: t?.fixed_price != null && t.fixed_price !== '' ? Math.trunc(Number(t.fixed_price)) : null,
+          gifts: Array.isArray(t?.gifts)
+            ? t.gifts
+                .filter((g: any) => g?.product_id)
+                .map((g: any) => ({ product_id: String(g.product_id), qty: Math.trunc(Number(g.qty)) || 1 }))
+            : [],
+          highlight_text: typeof t?.highlight_text === 'string' && t.highlight_text.trim() ? t.highlight_text.trim() : null,
         }))
-        .filter((t: any) => t.min_qty > 0 && (t.discount_pct != null || t.discount_amount != null))
+        .filter((t: any) =>
+          t.min_qty > 0 &&
+          (t.discount_pct != null || t.discount_amount != null || t.fixed_price != null || t.gifts.length > 0)
+        )
     : []
   if (!companyId) return NextResponse.json({ ok: false, error: 'missing_company' }, { status: 400 })
   if (!title) return NextResponse.json({ ok: false, error: 'title_required' }, { status: 400 })
@@ -94,6 +106,8 @@ export async function POST(req: NextRequest) {
     company_id: companyId,
     owner_id: null,
     title,
+    description,
+    image_url: imageUrl,
     badge_text: badgeText,
     campaign_type: campaignType,
     target_product_ids: targetProductIds,
@@ -118,7 +132,15 @@ export async function POST(req: NextRequest) {
   await db.from('hq_forced_campaign_tiers').delete().eq('campaign_id', data.id)
   if (tiers.length > 0) {
     await db.from('hq_forced_campaign_tiers').insert(
-      tiers.map((t: any) => ({ campaign_id: data.id, min_qty: t.min_qty, discount_pct: t.discount_pct, discount_amount: t.discount_amount })),
+      tiers.map((t: any) => ({
+        campaign_id: data.id,
+        min_qty: t.min_qty,
+        discount_pct: t.discount_pct,
+        discount_amount: t.discount_amount,
+        fixed_price: t.fixed_price ?? null,
+        gifts: Array.isArray(t.gifts) ? t.gifts : [],
+        highlight_text: t.highlight_text ?? null,
+      })),
     )
   }
   return NextResponse.json({ ok: true, id: data.id })

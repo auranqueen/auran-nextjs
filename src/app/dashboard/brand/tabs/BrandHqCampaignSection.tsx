@@ -15,11 +15,30 @@ type Campaign = {
   end_at: string
   is_active: boolean
 }
-type TierDraft = { min_qty: string; discount_pct: string; discount_amount: string }
-const EMPTY_TIER: TierDraft = { min_qty: '', discount_pct: '', discount_amount: '' }
+type TierGiftDraft = { product_id: string; qty: string }
+type TierDraft = {
+  min_qty: string
+  useDiscount: boolean
+  discount_pct: string
+  discount_amount: string
+  useFixedPrice: boolean
+  fixed_price: string
+  useGifts: boolean
+  gifts: TierGiftDraft[]
+  highlight_text: string
+}
+const EMPTY_TIER: TierDraft = {
+  min_qty: '',
+  useDiscount: false, discount_pct: '', discount_amount: '',
+  useFixedPrice: false, fixed_price: '',
+  useGifts: false, gifts: [],
+  highlight_text: '',
+}
 const EMPTY_DRAFT = {
   title: '',
   badge_text: '',
+  image_url: '',
+  description: '',
   campaign_type: 'bundle' as 'bundle' | 'gift' | 'discount',
   target_product_ids: [] as string[],
   buy_qty: '',
@@ -39,6 +58,7 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
   const [showForm, setShowForm] = useState(false)
   const [draft, setDraft] = useState(EMPTY_DRAFT)
   const [saving, setSaving] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [toast, setToast] = useState('')
   const showToast = (t: string) => {
     setToast(t)
@@ -86,15 +106,45 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
   const addTier = () => setDraft((prev) => ({ ...prev, tiers: [...prev.tiers, { ...EMPTY_TIER }] }))
   const removeTier = (idx: number) =>
     setDraft((prev) => ({ ...prev, tiers: prev.tiers.filter((_, i) => i !== idx) }))
+  const addTierGift = (tierIdx: number) => {
+    setDraft((prev) => ({
+      ...prev,
+      tiers: prev.tiers.map((t, i) => i === tierIdx ? { ...t, gifts: [...t.gifts, { product_id: '', qty: '1' }] } : t),
+    }))
+  }
+  const updateTierGift = (tierIdx: number, giftIdx: number, patch: Partial<TierGiftDraft>) => {
+    setDraft((prev) => ({
+      ...prev,
+      tiers: prev.tiers.map((t, i) => i === tierIdx ? {
+        ...t,
+        gifts: t.gifts.map((g, j) => j === giftIdx ? { ...g, ...patch } : g),
+      } : t),
+    }))
+  }
+  const removeTierGift = (tierIdx: number, giftIdx: number) => {
+    setDraft((prev) => ({
+      ...prev,
+      tiers: prev.tiers.map((t, i) => i === tierIdx ? { ...t, gifts: t.gifts.filter((_, j) => j !== giftIdx) } : t),
+    }))
+  }
+  const uploadCampaignImage = async (file: File) => {
+    setUploadingImage(true)
+    try {
+      const ext = file.name.split('.').pop() || 'png'
+      const path = `campaign-images/${Date.now()}.${ext}`
+      const { data, error } = await supabase.storage.from('brand-assets').upload(path, file, { upsert: true })
+      if (error || !data) { return }
+      const { data: urlData } = supabase.storage.from('brand-assets').getPublicUrl(path)
+      setDraft((prev) => ({ ...prev, image_url: urlData.publicUrl }))
+    } finally {
+      setUploadingImage(false)
+    }
+  }
   const submit = async () => {
     if (!companyId) return
     if (!draft.title.trim()) { showToast('이벤트명을 입력해주세요'); return }
     if (draft.target_product_ids.length === 0) { showToast('제품을 하나 이상 골라주세요'); return }
     if (!draft.start_at || !draft.end_at) { showToast('시작일/종료일을 입력해주세요'); return }
-    if (draft.campaign_type === 'discount' && draft.tiers.every((t) => !t.min_qty || (!t.discount_pct && !t.discount_amount))) {
-      showToast('수량구간별 할인을 최소 1개 입력해주세요')
-      return
-    }
     setSaving(true)
     try {
       const res = await fetch('/api/brand/hq-campaigns/save', {
@@ -106,12 +156,21 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
           staff_id: staffId,
           title: draft.title.trim(),
           badge_text: draft.badge_text.trim() || null,
+          description: draft.description,
+          image_url: draft.image_url,
           campaign_type: draft.campaign_type,
           target_product_ids: draft.target_product_ids,
           buy_qty: draft.buy_qty ? Number(draft.buy_qty) : null,
           bonus_qty: draft.bonus_qty ? Number(draft.bonus_qty) : null,
           gift_product_id: draft.gift_product_id || null,
-          tiers: draft.campaign_type === 'discount' ? draft.tiers : [],
+          tiers: draft.tiers.map((t) => ({
+            min_qty: t.min_qty,
+            discount_pct: t.useDiscount ? t.discount_pct : null,
+            discount_amount: t.useDiscount ? t.discount_amount : null,
+            fixed_price: t.useFixedPrice ? t.fixed_price : null,
+            gifts: t.useGifts ? t.gifts.filter(g => g.product_id) : [],
+            highlight_text: t.highlight_text || null,
+          })),
           start_at: draft.start_at,
           end_at: draft.end_at,
         }),
@@ -197,6 +256,22 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
             placeholder="예: 바로코빈C 콜라겐 앰플 프로모션"
             style={{ width: '100%', padding: '9px 11px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 13, marginBottom: 10, boxSizing: 'border-box' }}
           />
+          <textarea
+            value={draft.description}
+            onChange={(e) => setDraft((prev) => ({ ...prev, description: e.target.value }))}
+            placeholder="이벤트 상세설명 (구성, 조건, 유통기한 등)"
+            rows={3}
+            style={{ width: '100%', marginBottom: 8, resize: 'vertical' }}
+          />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadCampaignImage(f) }}
+            style={{ marginBottom: 4 }}
+          />
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 8 }}>권장 사이즈 1080×1350px (세로 4:5), 5MB 이하</p>
+          {draft.image_url && <img src={draft.image_url} alt="미리보기" style={{ maxWidth: 120, borderRadius: 8, marginBottom: 8 }} />}
+          {uploadingImage && <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)' }}>업로드 중...</p>}
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>배지문구(선택)</div>
           <input
             value={draft.badge_text}
@@ -227,27 +302,60 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
               <input type="number" placeholder="M개(증정)" value={draft.bonus_qty} onChange={(e) => setDraft((p) => ({ ...p, bonus_qty: e.target.value }))} style={{ flex: 1, padding: '9px 11px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 13, boxSizing: 'border-box' }} />
             </div>
           )}
-          {draft.campaign_type === 'discount' && (
-            <div style={{ marginBottom: 10 }}>
-              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', marginBottom: 6 }}>
-                수량구간별 할인(예: 5개→35%할인, 10개→40%할인처럼 여러 단계 추가 가능). 대상제품들은 합산 수량으로 계산됨
+          {draft.tiers.map((tier, idx) => (
+            <div key={idx} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: 12, marginBottom: 8 }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>수량</span>
+                <input type="text" value={tier.min_qty} onChange={(e) => updateTier(idx, { min_qty: e.target.value })} style={{ width: 60 }} />
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>개 이상</span>
+                {draft.tiers.length > 1 && <button onClick={() => removeTier(idx)} style={{ marginLeft: 'auto' }}>×</button>}
               </div>
-              {draft.tiers.map((t, i) => (
-                <div key={i} style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
-                  <input type="number" placeholder="N개 이상" value={t.min_qty} onChange={(e) => updateTier(i, { min_qty: e.target.value })} style={{ flex: 1, padding: '7px 9px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12, boxSizing: 'border-box' }} />
-                  <input type="number" placeholder="%할인" value={t.discount_pct} onChange={(e) => updateTier(i, { discount_pct: e.target.value, discount_amount: '' })} style={{ flex: 1, padding: '7px 9px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12, boxSizing: 'border-box' }} />
-                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>또는</span>
-                  <input type="number" placeholder="원 할인" value={t.discount_amount} onChange={(e) => updateTier(i, { discount_amount: e.target.value, discount_pct: '' })} style={{ flex: 1, padding: '7px 9px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 12, boxSizing: 'border-box' }} />
-                  {draft.tiers.length > 1 && (
-                    <button type="button" onClick={() => removeTier(i)} style={{ padding: '4px 8px', borderRadius: 6, border: 'none', background: 'transparent', color: '#e88', fontSize: 12, cursor: 'pointer' }}>×</button>
-                  )}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 6 }}>
+                <input type="checkbox" checked={tier.useDiscount} onChange={(e) => updateTier(idx, { useDiscount: e.target.checked })} />
+                할인 적용
+              </label>
+              {tier.useDiscount && (
+                <div style={{ display: 'flex', gap: 6, marginLeft: 24, marginBottom: 10 }}>
+                  <input type="text" placeholder="% 할인" value={tier.discount_pct} onChange={(e) => updateTier(idx, { discount_pct: e.target.value, discount_amount: '' })} style={{ width: 80 }} />
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', alignSelf: 'center' }}>또는</span>
+                  <input type="text" placeholder="원 할인" value={tier.discount_amount} onChange={(e) => updateTier(idx, { discount_amount: e.target.value, discount_pct: '' })} style={{ width: 100 }} />
                 </div>
-              ))}
-              <button type="button" onClick={addTier} style={{ fontSize: 11, padding: '5px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: 'transparent', color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
-                + 단계 추가
-              </button>
+              )}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 6 }}>
+                <input type="checkbox" checked={tier.useFixedPrice} onChange={(e) => updateTier(idx, { useFixedPrice: e.target.checked })} />
+                확정가로 판매
+              </label>
+              {tier.useFixedPrice && (
+                <div style={{ marginLeft: 24, marginBottom: 10 }}>
+                  <input type="text" placeholder="230000" value={tier.fixed_price} onChange={(e) => updateTier(idx, { fixed_price: e.target.value })} style={{ width: 120 }} /> 원
+                </div>
+              )}
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 6 }}>
+                <input type="checkbox" checked={tier.useGifts} onChange={(e) => updateTier(idx, { useGifts: e.target.checked })} />
+                증정품 추가
+              </label>
+              {tier.useGifts && (
+                <div style={{ marginLeft: 24, marginBottom: 10 }}>
+                  {tier.gifts.map((g, gIdx) => (
+                    <div key={gIdx} style={{ display: 'flex', gap: 6, marginBottom: 4 }}>
+                      <input type="text" placeholder="증정 제품 (제품ID 또는 검색결과 선택값)" value={g.product_id} onChange={(e) => updateTierGift(idx, gIdx, { product_id: e.target.value })} style={{ flex: 1 }} />
+                      <input type="text" value={g.qty} onChange={(e) => updateTierGift(idx, gIdx, { qty: e.target.value })} style={{ width: 50 }} />
+                      <button onClick={() => removeTierGift(idx, gIdx)}>×</button>
+                    </div>
+                  ))}
+                  <button onClick={() => addTierGift(idx)} style={{ fontSize: 12 }}>+ 증정품 추가</button>
+                </div>
+              )}
+              <input
+                type="text"
+                value={tier.highlight_text}
+                onChange={(e) => updateTier(idx, { highlight_text: e.target.value })}
+                placeholder="이 구간 강조문구 (선택, 예: 가장 인기있는 구성이에요)"
+                style={{ width: '100%', fontSize: 12 }}
+              />
             </div>
-          )}
+          ))}
+          <button onClick={addTier} style={{ width: '100%', marginBottom: 16 }}>+ 구간 추가</button>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 6 }}>대상 제품(컴퍼니 전체 브랜드, 복수선택 — 교차주문시 수량 합산)</div>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' as const, marginBottom: 8 }}>
             <button type="button" onClick={() => setBrandFilter(null)} style={{ fontSize: 10, padding: '3px 9px', borderRadius: 20, border: `1px solid ${!brandFilter ? RED : 'rgba(255,255,255,0.12)'}`, background: !brandFilter ? 'rgba(229,57,53,0.1)' : 'transparent', color: !brandFilter ? '#ff8a80' : 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>전체</button>
