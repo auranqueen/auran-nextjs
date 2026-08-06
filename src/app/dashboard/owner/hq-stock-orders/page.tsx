@@ -283,7 +283,7 @@ function HqStockOrdersContent() {
           brand_id: brandIds[0],
           items,
           subtotal: cartTotal,
-          final_amount: cartTotal,
+          final_amount: cartFinalTotal,
           owner_name: ownerName,
           salon_name: salonName,
         }),
@@ -387,7 +387,7 @@ function HqStockOrdersContent() {
             onClick={() => setShowPopup(true)}
             style={{ width: '100%', padding: 12, borderRadius: 10, border: 'none', background: PURPLE, color: '#fff', fontSize: 14, cursor: 'pointer' }}
           >
-            장바구니 {cart.length} · ₩{cartTotal.toLocaleString()}
+            장바구니 {cart.length} · {hqCampaignEffects.discountTotal > 0 && (<span style={{textDecoration:'line-through', opacity:0.5, fontSize:12}}>₩{cartTotal.toLocaleString()}</span>)} <span>₩{cartFinalTotal.toLocaleString()}</span>
           </button>
         </div>
       )}
@@ -423,8 +423,26 @@ function HqStockOrdersContent() {
             })}
             <div style={{ display: 'flex', justifyContent: 'space-between', margin: '14px 0', fontSize: 14 }}>
               <span style={{ color: SUB }}>합계</span>
-              <span style={{ fontWeight: 600, color: PURPLE }}>₩{cartTotal.toLocaleString()}</span>
+              <span style={{ fontWeight: 600, color: PURPLE, textDecoration: hqCampaignEffects.discountTotal > 0 ? 'line-through' : undefined, opacity: hqCampaignEffects.discountTotal > 0 ? 0.5 : 1 }}>₩{cartTotal.toLocaleString()}</span>
             </div>
+            {hqCampaignEffects.discountTotal > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#e74c3c', marginBottom: 6 }}>
+                <span>캠페인 할인</span>
+                <span>-{hqCampaignEffects.discountTotal.toLocaleString()}원</span>
+              </div>
+            )}
+            {hqCampaignEffects.giftLines.filter(g => g.effect_type === 'gift').map((g, i) => (
+              <div key={i} style={{ fontSize: 13, color: '#7B5EA7', marginBottom: 4 }}>
+                {'🎁'} {g.label}
+              </div>
+            ))}
+            {hqCampaignEffects.discountTotal > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 600, color: PURPLE, margin: '8px 0 14px' }}>
+                <span>최종 결제금액</span>
+                <span>₩{cartFinalTotal.toLocaleString()}</span>
+              </div>
+            )}
+
             <button
               type="button"
               disabled={sending}
