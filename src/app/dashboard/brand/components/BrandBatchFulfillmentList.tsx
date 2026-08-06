@@ -22,6 +22,9 @@ type BatchOrderLine = {
   items: OrderItem[]
   promo_applied: string | null
   status: string
+  courier: string | null
+  tracking_no: string | null
+  shipped_at: string | null
 }
 
 type ChecklistItem = {
@@ -89,6 +92,7 @@ export default function BrandBatchFulfillmentList({
   const [loading, setLoading] = useState(true)
   const [trackingInputs, setTrackingInputs] = useState<Record<string, { courier: string; no: string }>>({})
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Record<string, Set<string>>>({})
   const scopeKey = brandIds.slice().sort().join('|')
 
   const load = useCallback(async () => {
@@ -180,6 +184,9 @@ export default function BrandBatchFulfillmentList({
         items: Array.isArray(raw.items) ? (raw.items as OrderItem[]) : [],
         promo_applied: (raw.promo_applied as string | null) || null,
         status: String(raw.status || ''),
+        courier: (raw.courier as string | null) || null,
+        tracking_no: (raw.tracking_no as string | null) || null,
+        shipped_at: (raw.shipped_at as string | null) || null,
       }
       if (!byBatch.has(batchId)) byBatch.set(batchId, [])
       byBatch.get(batchId)!.push(line)
@@ -281,6 +288,15 @@ export default function BrandBatchFulfillmentList({
     }
   }
 
+  const toggleOrderSelect = (batchId: string, orderId: string) => {
+    setSelectedOrderIds((prev) => {
+      const current = new Set(prev[batchId] ?? [])
+      if (current.has(orderId)) current.delete(orderId)
+      else current.add(orderId)
+      return { ...prev, [batchId]: current }
+    })
+  }
+
   const shipBatch = async (batch: BatchCard) => {
     const input = trackingInputs[batch.id]
     if (!input?.courier || !input?.no.trim()) {
@@ -289,6 +305,20 @@ export default function BrandBatchFulfillmentList({
     }
     if (batch.orders.length === 0) {
       onToast('배치에 연결된 발주가 없습니다')
+      return
+    }
+    const unshippedOrders = batch.orders.filter((o) => !o.tracking_no)
+    if (unshippedOrders.length === 0) {
+      onToast('이미 전부 발송된 주문이에요')
+      return
+    }
+    const selected = selectedOrderIds[batch.id]
+    // purpose: 이미 보낸 건 항상 제외 — if selected, only selected that are still unshipped
+    const targetOrderIds = selected && selected.size > 0
+      ? Array.from(selected).filter((id) => unshippedOrders.some((o) => o.id === id))
+      : unshippedOrders.map((o) => o.id)
+    if (targetOrderIds.length === 0) {
+      onToast('발송할 주문을 선택해주세요')
       return
     }
     setBusyId(batch.id)
@@ -304,7 +334,7 @@ export default function BrandBatchFulfillmentList({
         shipped_at: now,
         updated_at: now,
       })
-      .eq('batch_id', batch.id)
+      .in('id', targetOrderIds)
 
     if (ordersErr) {
       setBusyId(null)
@@ -321,11 +351,12 @@ export default function BrandBatchFulfillmentList({
       onToast('주문은 발송됨 · 배치상태 갱신 실패: ' + batchErr.message)
     }
 
-    for (const ord of batch.orders) {
+    for (const ord of batch.orders.filter((o) => targetOrderIds.includes(o.id))) {
       await decrementStockForOrder(ord)
     }
 
-    const firstBrandId = batch.orders[0]?.brand_id
+    const firstTarget = batch.orders.find((o) => targetOrderIds.includes(o.id))
+    const firstBrandId = firstTarget?.brand_id
     if (firstBrandId) {
       await supabase.from('brand_messages').insert({
         brand_id: firstBrandId,
@@ -342,10 +373,11 @@ export default function BrandBatchFulfillmentList({
       delete n[batch.id]
       return n
     })
+    setSelectedOrderIds((prev) => ({ ...prev, [batch.id]: new Set() }))
     setBusyId(null)
 
     try {
-      const sub = await subscribeDelivery(input.courier, trackingNo, batch.orders[0].id)
+      const sub = await subscribeDelivery(input.courier, trackingNo, firstTarget?.id || targetOrderIds[0])
       onToast(sub.ok
         ? `배치 ${batch.order_no} 발송 완료 · 추적 구독됨`
         : `발송 저장됨 · 추적구독 실패: ${sub.error}`)
@@ -426,23 +458,45 @@ export default function BrandBatchFulfillmentList({
 
             {batch.orders.map((ord) => {
               const color = brandColor(ord.brand_id)
+              const shipped = !!ord.tracking_no
+              const selected = selectedOrderIds[batch.id]?.has(ord.id) ?? false
               return (
                 <div
                   key={ord.id}
                   style={{
                     marginBottom: 8, padding: 8, borderRadius: 8,
                     background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.06)',
+                    display: 'flex', alignItems: 'flex-start', gap: 8,
                   }}
                 >
-                  <span style={{
-                    fontSize: 10, padding: '1px 7px', borderRadius: 10, marginBottom: 4, display: 'inline-block',
-                    background: `${color}22`, color, border: `0.5px solid ${color}55`,
-                  }}>
-                    {ord.brand_name}
-                  </span>
-                  <div style={{ fontSize: 11, color: SUB, marginTop: 4 }}>
-                    {ord.items.map((it) => formatOrderItemLine(it)).join(' · ')}
-                    {ord.promo_applied && <span style={{ marginLeft: 6, color: GOLD }}>{ord.promo_applied} 적용</span>}
+                  {shipped ? (
+                    <span style={{ width: 16, flexShrink: 0 }} />
+                  ) : (
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => toggleOrderSelect(batch.id, ord.id)}
+                      style={{ marginTop: 2, flexShrink: 0, cursor: 'pointer' }}
+                    />
+                  )}
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', marginBottom: 4 }}>
+                      <span style={{
+                        fontSize: 10, padding: '1px 7px', borderRadius: 10, display: 'inline-block',
+                        background: `${color}22`, color, border: `0.5px solid ${color}55`,
+                      }}>
+                        {ord.brand_name}
+                      </span>
+                      {shipped && (
+                        <span style={{ fontSize: 11, color: '#3db864' }}>
+                          발송완료 · {ord.courier} · {ord.tracking_no}
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 11, color: SUB }}>
+                      {ord.items.map((it) => formatOrderItemLine(it)).join(' · ')}
+                      {ord.promo_applied && <span style={{ marginLeft: 6, color: GOLD }}>{ord.promo_applied} 적용</span>}
+                    </div>
                   </div>
                 </div>
               )
@@ -496,10 +550,15 @@ export default function BrandBatchFulfillmentList({
               </div>
             )}
 
-            {filter === 'approved' && open && (
+            {filter === 'approved' && open && (() => {
+              const unshippedCount = batch.orders.filter((o) => !o.tracking_no).length
+              const selSize = selectedOrderIds[batch.id]?.size ?? 0
+              return (
               <div style={{ marginTop: 8 }}>
                 <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>
-                  운송장 1건 → 배치 전체 발주 일괄 발송 · 재고는 브랜드별 차감
+                  {selSize > 0
+                    ? `${selSize}건 선택됨 · 선택건만 발송`
+                    : `잔여 ${unshippedCount}건 · 체크 안 하면 잔여분 전체 일괄 발송`}
                 </div>
                 <div style={{ display: 'flex', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
                   {COURIERS.map((c) => (
@@ -544,11 +603,14 @@ export default function BrandBatchFulfillmentList({
                       color: '#fff', fontSize: 12, cursor: 'pointer', flexShrink: 0,
                     }}
                   >
-                    {busyId === batch.id ? '처리중…' : '발송완료'}
+                    {busyId === batch.id
+                      ? '처리중…'
+                      : (selSize > 0 ? `선택 ${selSize}건 발송완료` : `잔여 ${unshippedCount}건 발송완료`)}
                   </button>
                 </div>
               </div>
-            )}
+              )
+            })()}
           </div>
         )
       })}
