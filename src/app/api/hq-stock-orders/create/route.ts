@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
+import { resolveHqCampaignEffects, type HqForcedCampaign } from '@/lib/brand/hqForcedCampaignPromos'
 
 export async function POST(req: NextRequest) {
   const supabase = createClient()
@@ -46,6 +47,47 @@ export async function POST(req: NextRequest) {
 
   if (!brandId || !items || items.length === 0 || finalAmount < 1000) {
     return NextResponse.json({ ok: false, error: 'invalid_request', message: '잘못된 요청입니다' }, { status: 400 })
+  }
+
+  // 서버 재검증: 활성 캠페인 조회 → 할인 합계
+  const { data: brandRow } = await svc.from('brands').select('company_id').eq('id', brandId).maybeSingle()
+  const companyId = brandRow?.company_id ? String(brandRow.company_id) : null
+  let serverDiscountTotal = 0
+  if (companyId) {
+    const { data: campaignRows } = await svc
+      .from('hq_forced_campaigns')
+      .select('id, company_id, target_product_ids, start_at, end_at')
+      .eq('company_id', companyId)
+      .is('owner_id', null)
+      .eq('is_active', true)
+    const campaignIds = (campaignRows || []).map((r: { id: string }) => r.id)
+    const tiersByCampaign: Record<string, HqForcedCampaign['tiers']> = {}
+    if (campaignIds.length > 0) {
+      const { data: tierRows } = await svc
+        .from('hq_forced_campaign_tiers')
+        .select('campaign_id, min_qty, discount_pct, discount_amount, fixed_price, gifts, highlight_text')
+        .in('campaign_id', campaignIds)
+      for (const t of (tierRows || []) as any[]) {
+        const cid = String(t.campaign_id)
+        if (!tiersByCampaign[cid]) tiersByCampaign[cid] = []
+        tiersByCampaign[cid]!.push({
+          min_qty: t.min_qty, discount_pct: t.discount_pct, discount_amount: t.discount_amount,
+          fixed_price: t.fixed_price, gifts: t.gifts ?? [], highlight_text: t.highlight_text,
+        })
+      }
+    }
+    const serverCampaigns = ((campaignRows || []) as any[]).map((r) => ({ ...r, tiers: tiersByCampaign[String(r.id)] || [] })) as HqForcedCampaign[]
+    const cartForEffects = (items as any[]).map((i) => ({
+      product_id: String(i.product_id || ''),
+      qty: Math.trunc(Number(i.qty) || 0),
+      unit_price: Math.trunc(Number(i.unit_price) || 0),
+    }))
+    const effects = resolveHqCampaignEffects(cartForEffects, serverCampaigns)
+    serverDiscountTotal = effects.discountTotal
+  }
+  const expectedFinal = subtotal - serverDiscountTotal
+  if (Math.abs(expectedFinal - finalAmount) > 10) {
+    return NextResponse.json({ ok: false, error: 'amount_mismatch' }, { status: 400 })
   }
 
   const { data: order, error } = await svc
