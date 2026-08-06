@@ -591,7 +591,13 @@ export default function BrandOrdersPage() {
       if (!byBrand.has(id)) byBrand.set(id, [])
       byBrand.get(id)!.push(c)
     }
-
+    const wholeCartItems = cart.map((c) => ({
+      product_id: c.product.id,
+      qty: c.qty,
+      unit_price: buildOrderLineItem(c.product, c.qty, promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)), c.selectedPromo).unit_price,
+    }))
+    const wholeCartEffects = resolveHqCampaignEffects(wholeCartItems, hqForcedCampaigns)
+    const wholeCartLineTotal = wholeCartItems.reduce((s, i) => s + i.qty * i.unit_price, 0)
     const cartItems = Array.from(byBrand.entries()).map(([brandId, rows]) => {
       const orderGrade = gradeForBrand(gradeByBrandId, brandId)
       const items = rows.map((c) => buildOrderLineItem(
@@ -601,7 +607,11 @@ export default function BrandOrdersPage() {
         c.selectedPromo,
       ))
       const totalItems = items.reduce((s, i) => s + i.qty, 0)
-      const totalAmount = items.reduce((s, i) => s + i.line_amount, 0)
+      const brandLineTotal = items.reduce((s, i) => s + i.line_amount, 0)
+      const brandShareDiscount = wholeCartLineTotal > 0
+        ? Math.round(wholeCartEffects.discountTotal * (brandLineTotal / wholeCartLineTotal))
+        : 0
+      const totalAmount = brandLineTotal - brandShareDiscount
       const promoApplied = items.map((i) => i.promo).filter(Boolean).join(', ') || null
       const pointsEarned = calcPointsEarned(totalAmount, orderGrade, null)
       return {
