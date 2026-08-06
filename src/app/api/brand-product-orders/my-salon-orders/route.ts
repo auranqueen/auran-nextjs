@@ -13,7 +13,7 @@ export async function GET() {
   if (!salon) return NextResponse.json({ ok: true, orders: [] })
   const { data: rows } = await service
     .from('brand_product_orders')
-    .select('id, order_no, status, recipient_name, recipient_phone, address, final_amount, owner_amount, courier, tracking_no, ordered_at')
+    .select('id, order_no, status, recipient_name, recipient_phone, address, final_amount, owner_amount, courier, tracking_no, ordered_at, checkout_batch_id')
     .eq('salon_id', salon.id)
     .not('status', 'in', '("결제대기","취소")')
     .order('ordered_at', { ascending: false })
