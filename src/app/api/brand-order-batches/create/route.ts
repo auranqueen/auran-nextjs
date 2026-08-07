@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
 import { insertBrandOrder } from '@/lib/brand/insertBrandOrder'
+import { resolveHqCampaignEffects, type HqForcedCampaign } from '@/lib/brand/hqForcedCampaignPromos'
 
 function yyyymmddLocal(d = new Date()): string {
   const y = d.getFullYear()
@@ -71,9 +72,58 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // 서버 재검증: 전체 카트(모든 브랜드) 기준으로 활성 캠페인 재계산
+  const brandIdsInCart = Array.from(new Set(cartItems.map((g: any) => g.brand_id)))
+  let companyIdForCampaign: string | null = null
+  if (brandIdsInCart.length > 0) {
+    const { data: brandRow } = await svc.from('brands').select('company_id').eq('id', brandIdsInCart[0]).maybeSingle()
+    companyIdForCampaign = brandRow?.company_id ? String(brandRow.company_id) : null
+  }
+  let serverDiscountTotal = 0
+  if (companyIdForCampaign) {
+    const { data: campaignRows } = await svc
+      .from('hq_forced_campaigns')
+      .select('id, company_id, target_product_ids, start_at, end_at')
+      .eq('company_id', companyIdForCampaign)
+      .is('owner_id', null)
+      .eq('is_active', true)
+    const campaignIds = (campaignRows || []).map((r: { id: string }) => r.id)
+    const tiersByCampaign: Record<string, HqForcedCampaign['tiers']> = {}
+    if (campaignIds.length > 0) {
+      const { data: tierRows } = await svc
+        .from('hq_forced_campaign_tiers')
+        .select('campaign_id, min_qty, discount_pct, discount_amount, fixed_price, gifts, highlight_text')
+        .in('campaign_id', campaignIds)
+      for (const t of (tierRows || []) as any[]) {
+        const cid = String(t.campaign_id)
+        if (!tiersByCampaign[cid]) tiersByCampaign[cid] = []
+        tiersByCampaign[cid]!.push({
+          min_qty: t.min_qty, discount_pct: t.discount_pct, discount_amount: t.discount_amount,
+          fixed_price: t.fixed_price, gifts: t.gifts ?? [], highlight_text: t.highlight_text,
+        })
+      }
+    }
+    const serverCampaigns = ((campaignRows || []) as any[]).map((r) => ({ ...r, tiers: tiersByCampaign[String(r.id)] || [] })) as HqForcedCampaign[]
+    const wholeCartForServer = cartItems.flatMap((g) =>
+      (Array.isArray(g.items) ? g.items : []).map((i: any) => ({
+        product_id: String(i.product_id || ''),
+        qty: Math.trunc(Number(i.qty) || 0),
+        unit_price: Math.trunc(Number(i.unit_price) || 0),
+      }))
+    )
+    const effects = resolveHqCampaignEffects(wholeCartForServer, serverCampaigns)
+    serverDiscountTotal = effects.discountTotal
+  }
+  const clientTotalAmount = cartItems.reduce((s: number, g: any) => s + Math.trunc(Number(g.total_amount) || 0), 0)
+  const rawLineTotal = cartItems.reduce((s: number, g: any) => s + (g.items || []).reduce((s2: number, i: any) => s2 + Math.trunc(Number(i.line_amount) || 0), 0), 0)
+  const expectedTotal = rawLineTotal - serverDiscountTotal
+  if (Math.abs(expectedTotal - clientTotalAmount) > 10) {
+    return NextResponse.json({ ok: false, error: 'amount_mismatch' }, { status: 400 })
+  }
+
   const ownerName = String(cartItems[0]?.owner_name || '')
   const salonName = String(cartItems[0]?.salon_name || '')
-  const totalAmount = cartItems.reduce((s, g) => s + Math.trunc(Number(g.total_amount) || 0), 0)
+  const totalAmount = clientTotalAmount
 
   let batchId: string | null = null
   let orderNo: string | null = null

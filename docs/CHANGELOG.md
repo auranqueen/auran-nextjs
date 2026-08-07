@@ -4,6 +4,9 @@
 ---
 
 
+## 2026-08-07
+### feat: brand-order-batches/create API에 서버 재검증 추가 — 전체 카트(모든 브랜드) 기준 HQ캠페인 할인 재계산해서 클라이언트 total_amount와 대조, 10원 초과 불일치시 amount_mismatch로 거부. 트랙A/B 둘 다 서버 재검증 완료
+
 ## 2026-08-06
 ### feat: 살롱스토어 원장 발송화면(brand-retail-orders)을 checkout_batch_id 기준 배치카드로 재설계 — 브랜드사→원장 발송과 동일한 체크박스 개별/일괄지정 방식 적용(배송 3구간 중 ②구간)
 
