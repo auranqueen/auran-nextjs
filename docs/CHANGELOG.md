@@ -5,6 +5,8 @@
 
 
 ## 2026-08-07
+### feat: HQ 강제이벤트 증정라인을 brand_orders.items에 실제 반영 — 증정품 SKU를 products.brand_id 우선, 없으면 캠페인 target_product_ids와 카트 교집합으로 브랜드에 배정. total_qty에 증정수량 포함
+
 ### feat: brand-order-batches/create API에 서버 재검증 추가 — 전체 카트(모든 브랜드) 기준 HQ캠페인 할인 재계산해서 클라이언트 total_amount와 대조, 10원 초과 불일치시 amount_mismatch로 거부. 트랙A/B 둘 다 서버 재검증 완료
 
 ## 2026-08-06

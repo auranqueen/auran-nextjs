@@ -179,18 +179,19 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
         ? await invQuery.eq('product_id', item.product_id).maybeSingle()
         : await invQuery.eq('product_name', item.name).maybeSingle()
       if (!invRow) continue
-      await supabase.rpc('decrement_inventory_stock', { p_inventory_id: invRow.id, p_qty: item.qty })
+      const outQty = item.qty + (item.bonus || 0)
+      await supabase.rpc('decrement_inventory_stock', { p_inventory_id: invRow.id, p_qty: outQty })
       await supabase.from('brand_stock_logs').insert({
         brand_id: order.brand_id,
         inventory_id: invRow.id,
         type: 'out',
-        qty: item.qty,
+        qty: outQty,
         before_qty: invRow.total_stock,
-        after_qty: Math.max(0, invRow.total_stock - item.qty),
+        after_qty: Math.max(0, invRow.total_stock - outQty),
         ref_type: 'order',
         ref_id: order.id,
         staff_name: '발주 자동 출고',
-        memo: `발주 출고(B): ${item.name} ${item.qty}개`,
+        memo: `발주 출고(B): ${item.name} ${outQty}개`,
       })
     }
   }

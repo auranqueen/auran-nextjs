@@ -606,7 +606,30 @@ export default function BrandOrdersPage() {
         promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)),
         c.selectedPromo,
       ))
-      const totalItems = items.reduce((s, i) => s + i.qty, 0)
+      const giftItemsForBrand = wholeCartEffects.giftLines
+        .filter((g) => {
+          if (g.effect_type !== 'gift' || !g.product_id) return false
+          const giftBrandId = products.find((p) => p.id === g.product_id)?.brand_id
+          if (giftBrandId) return giftBrandId === brandId
+          const camp = hqForcedCampaigns.find((c) => c.id === g.campaign_id)
+          const targets = camp?.target_product_ids ?? []
+          return rows.some((r) => targets.includes(r.product.id))
+        })
+        .map((g) => {
+          const pid = String(g.product_id)
+          const prod = products.find((p) => p.id === pid)
+          return {
+            product_id: pid,
+            name: prod?.name || g.label,
+            qty: g.qty,
+            unit_price: 0,
+            line_amount: 0,
+            bonus: 0,
+            promo: g.label,
+          }
+        })
+      const itemsWithGifts = [...items, ...giftItemsForBrand]
+      const totalItems = itemsWithGifts.reduce((s, i) => s + i.qty, 0)
       const brandLineTotal = items.reduce((s, i) => s + i.line_amount, 0)
       const brandShareDiscount = wholeCartLineTotal > 0
         ? Math.round(wholeCartEffects.discountTotal * (brandLineTotal / wholeCartLineTotal))
@@ -620,7 +643,7 @@ export default function BrandOrdersPage() {
         owner_name: ownerName,
         salon_name: salonName,
         grade: orderGrade,
-        items,
+        items: itemsWithGifts,
         total_qty: totalItems,
         total_amount: totalAmount,
         promo_applied: promoApplied,
