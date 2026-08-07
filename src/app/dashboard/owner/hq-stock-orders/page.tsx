@@ -123,11 +123,16 @@ function HqStockOrdersContent() {
         if (companyIds.length > 0) {
           const { data: gradeRows } = await supabase
             .from('brand_owner_grades')
-            .select('company_id, tier_package_id, payment_status')
+            .select('company_id, grade, tier_package_id, payment_status')
             .eq('owner_id', profileId)
             .eq('origin_track', 'B')
             .eq('payment_status', 'paid')
             .in('company_id', companyIds)
+          const gradeByCompany: Record<string, string> = {}
+          for (const g of (gradeRows || []) as { company_id?: string; grade?: string }[]) {
+            const cid = String(g.company_id || '')
+            if (cid) gradeByCompany[cid] = String(g.grade || '취급점')
+          }
           const tierPackageIds = Array.from(
             new Set((gradeRows || []).map((g: any) => String(g.tier_package_id || '')).filter(Boolean)),
           )
@@ -153,11 +158,20 @@ function HqStockOrdersContent() {
           }
           const { data: campaignRows } = await supabase
             .from('hq_forced_campaigns')
-            .select('id, company_id, target_product_ids, start_at, end_at')
+            .select('id, company_id, target_product_ids, start_at, end_at, target_grades')
             .in('company_id', companyIds)
             .is('owner_id', null)
             .eq('is_active', true)
-          const campaignIds = (campaignRows || []).map((r: { id: string }) => r.id)
+          const filteredCampaignRows = (campaignRows || []).filter((r: {
+            target_grades?: string[] | null
+            company_id?: string
+          }) => {
+            const tg = r.target_grades
+            if (!tg || !Array.isArray(tg) || tg.length === 0) return true
+            const myGrade = gradeByCompany[String(r.company_id || '')] || '취급점'
+            return tg.includes(myGrade)
+          })
+          const campaignIds = filteredCampaignRows.map((r: { id: string }) => r.id)
           const tiersByCampaign: Record<string, HqForcedCampaign['tiers']> = {}
           if (campaignIds.length > 0) {
             const { data: tierRows } = await supabase
@@ -178,7 +192,7 @@ function HqStockOrdersContent() {
             }
           }
           setHqForcedCampaigns(
-            ((campaignRows || []) as any[]).map((r) => ({ ...r, tiers: tiersByCampaign[String(r.id)] || [] })) as HqForcedCampaign[]
+            (filteredCampaignRows as any[]).map((r) => ({ ...r, tiers: tiersByCampaign[String(r.id)] || [] })) as HqForcedCampaign[]
           )
         } else {
           setPromoRules([])

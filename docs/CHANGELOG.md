@@ -5,6 +5,8 @@
 
 
 ## 2026-08-07
+### feat: hq_forced_campaigns에 target_grades(등급 타겟팅) 추가 — 관리화면에서 전체/등급선택 가능, 트랙A/B 원장화면 조회쿼리에서 본인 등급 필터 적용(다른 등급 이벤트 절대 노출 안 됨)
+
 ### feat: 트랙B(hq-stock-orders)에도 HQ증정라인을 items에 반영 — 트랙A와 동일 원칙 적용, 단일브랜드 발주라 브랜드 분배 없이 giftLines 전체 병합
 
 ### feat: HQ 강제이벤트 증정라인을 brand_orders.items에 실제 반영 — 증정품 SKU를 products.brand_id 우선, 없으면 캠페인 target_product_ids와 카트 교집합으로 브랜드에 배정. total_qty에 증정수량 포함

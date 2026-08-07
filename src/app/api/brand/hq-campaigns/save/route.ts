@@ -49,6 +49,7 @@ export async function POST(req: NextRequest) {
   const endAt = typeof body?.end_at === 'string' ? body.end_at : null
   const description = typeof body?.description === 'string' ? body.description.trim() : null
   const imageUrl = typeof body?.image_url === 'string' ? body.image_url.trim() : null
+  const targetGrades = Array.isArray(body?.target_grades) ? body.target_grades.map(String) : []
   const tiers = Array.isArray(body?.tiers)
     ? body.tiers
         .map((t: any) => ({
@@ -111,6 +112,7 @@ export async function POST(req: NextRequest) {
     badge_text: badgeText,
     campaign_type: campaignType,
     target_product_ids: targetProductIds,
+    target_grades: targetGrades.length > 0 ? targetGrades : null,
     buy_qty: buyQty,
     bonus_qty: bonusQty,
     gift_product_id: giftProductId,

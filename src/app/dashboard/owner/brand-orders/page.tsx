@@ -259,11 +259,25 @@ export default function BrandOrdersPage() {
     if (companyIdsForGrade.length > 0) {
       const { data: campaignRows } = await supabase
         .from('hq_forced_campaigns')
-        .select('id, company_id, target_product_ids, start_at, end_at')
+        .select('id, company_id, target_product_ids, start_at, end_at, target_grades')
         .in('company_id', companyIdsForGrade)
         .is('owner_id', null)
         .eq('is_active', true)
-      const campaignIds = (campaignRows || []).map((r: { id: string }) => r.id)
+      // target_grades null/[] = 전체노출; 배열이면 해당 회사 소속 브랜드 등급 중 하나라도 포함 시 노출
+      const filteredCampaignRows = (campaignRows || []).filter((r: {
+        target_grades?: string[] | null
+        company_id?: string
+      }) => {
+        const tg = r.target_grades
+        if (!tg || !Array.isArray(tg) || tg.length === 0) return true
+        const companyId = String(r.company_id || '')
+        const brandsInCompany = brandIds.filter((bid) => brandCompanyMap[bid] === companyId)
+        const grades = (brandsInCompany.length > 0 ? brandsInCompany : brandIds).map((bid) =>
+          gradeForBrand(gradeMap, bid),
+        )
+        return grades.some((g) => tg.includes(g))
+      })
+      const campaignIds = filteredCampaignRows.map((r: { id: string }) => r.id)
       const tiersByCampaign: Record<string, HqForcedCampaign['tiers']> = {}
       if (campaignIds.length > 0) {
         const { data: tierRows } = await supabase
@@ -291,7 +305,7 @@ export default function BrandOrdersPage() {
           })
         }
       }
-      hqCampaigns = ((campaignRows || []) as any[]).map((r) => ({
+      hqCampaigns = (filteredCampaignRows as any[]).map((r) => ({
         ...r,
         tiers: tiersByCampaign[String(r.id)] || [],
       })) as HqForcedCampaign[]

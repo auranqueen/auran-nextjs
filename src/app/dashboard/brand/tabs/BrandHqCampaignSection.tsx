@@ -41,6 +41,7 @@ const EMPTY_DRAFT = {
   description: '',
   campaign_type: 'bundle' as 'bundle' | 'gift' | 'discount',
   target_product_ids: [] as string[],
+  target_grades: [] as string[],
   buy_qty: '',
   bonus_qty: '',
   gift_product_id: '',
@@ -162,6 +163,7 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
           image_url: draft.image_url,
           campaign_type: draft.campaign_type,
           target_product_ids: draft.target_product_ids,
+          target_grades: draft.target_grades,
           buy_qty: draft.buy_qty ? Number(draft.buy_qty) : null,
           bonus_qty: draft.bonus_qty ? Number(draft.bonus_qty) : null,
           gift_product_id: draft.gift_product_id || null,
@@ -265,6 +267,36 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
             rows={3}
             style={{ width: '100%', marginBottom: 8, resize: 'vertical', color: '#4A2C7A' }}
           />
+          <div style={{ marginBottom: 8 }}>
+            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>노출 대상</p>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, marginBottom: 6 }}>
+              <input
+                type="checkbox"
+                checked={draft.target_grades.length === 0}
+                onChange={(e) => setDraft((prev) => ({ ...prev, target_grades: e.target.checked ? [] : ['취급점'] }))}
+              />
+              전체 등급
+            </label>
+            {draft.target_grades.length > 0 || true ? (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginLeft: 24, opacity: draft.target_grades.length === 0 ? 0.4 : 1, pointerEvents: draft.target_grades.length === 0 ? 'none' : 'auto' }}>
+                {['취급점', '전문점', '프리미엄전문점', '메디슈티컬'].map((g) => (
+                  <label key={g} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
+                    <input
+                      type="checkbox"
+                      checked={draft.target_grades.includes(g)}
+                      onChange={(e) => setDraft((prev) => ({
+                        ...prev,
+                        target_grades: e.target.checked
+                          ? [...prev.target_grades, g]
+                          : prev.target_grades.filter((x) => x !== g),
+                      }))}
+                    />
+                    {g}
+                  </label>
+                ))}
+              </div>
+            ) : null}
+          </div>
           <input
             type="file"
             accept="image/*"
