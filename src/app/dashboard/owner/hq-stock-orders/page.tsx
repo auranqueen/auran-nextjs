@@ -275,13 +275,29 @@ function HqStockOrdersContent() {
     }
     setSending(true)
     const items = cart.map((c) => buildOrderLineItem(c.product, c.qty, promoRules, c.selectedPromo))
+    const giftItems = hqCampaignEffects.giftLines
+      .filter((g) => g.effect_type === 'gift' && g.product_id)
+      .map((g) => {
+        const pid = String(g.product_id)
+        const prod = products.find((p) => p.id === pid)
+        return {
+          product_id: pid,
+          name: prod?.name || g.label,
+          qty: g.qty,
+          unit_price: 0,
+          line_amount: 0,
+          bonus: 0,
+          promo: g.label,
+        }
+      })
+    const itemsWithGifts = [...items, ...giftItems]
     try {
       const createRes = await fetch('/api/hq-stock-orders/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           brand_id: brandIds[0],
-          items,
+          items: itemsWithGifts,
           subtotal: cartTotal,
           final_amount: cartFinalTotal,
           owner_name: ownerName,
