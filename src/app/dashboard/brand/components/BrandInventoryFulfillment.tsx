@@ -12,20 +12,32 @@ const GOLD = '#C9A96E'
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
 const BORDER = 'rgba(255,255,255,0.05)'
+const GREEN = 'rgba(61,184,100,0.9)'
 const COURIERS = ['CJ대한통운', '한진', '로젠', '우체국', '롯데'] as const
+const BRAND_PALETTE = ['#7B5EA7', '#2188ff', '#3db864', '#E8A0BF', '#C9A96E', '#EF9F27', '#e85555']
 
 type FilterTab = 'approved' | 'shipped'
+type OrderItem = { name: string; qty: number; bonus?: number; product_id?: string; promo?: string }
 
-interface TrackBOrder {
+type TrackBLine = {
+  id: string
+  order_id: string
+  brand_id: string
+  brand_name: string
+  items: OrderItem[]
+  status: string
+  courier: string | null
+  tracking_no: string | null
+  shipped_at: string | null
+}
+
+type TrackBBatch = {
   id: string
   owner_name: string | null
   salon_name: string | null
   status: string
-  items: Array<{ name: string; qty: number; bonus?: number; product_id?: string }>
   created_at: string
-  courier: string | null
-  tracking_no: string | null
-  brand_id: string
+  lines: TrackBLine[]
 }
 
 interface Props {
@@ -33,7 +45,13 @@ interface Props {
   brandName: string
 }
 
-function formatOrderItemLine(it: { name: string; qty: number; bonus?: number }): string {
+function brandColor(brandId: string): string {
+  let h = 0
+  for (let i = 0; i < brandId.length; i++) h = (h + brandId.charCodeAt(i) * (i + 1)) % BRAND_PALETTE.length
+  return BRAND_PALETTE[h]
+}
+
+function formatOrderItemLine(it: OrderItem): string {
   const bonus = Math.trunc(Number(it.bonus) || 0)
   return `${it.name} ${it.qty}ea${bonus > 0 ? ` (+${bonus} 증정)` : ''}`
 }
@@ -52,12 +70,13 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
   const supabase = createClient()
   const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
   const [companyId, setCompanyId] = useState<string | null>(null)
-  const [bOrders, setBOrders] = useState<TrackBOrder[]>([])
+  const [bBatches, setBBatches] = useState<TrackBBatch[]>([])
   const [loadingB, setLoadingB] = useState(true)
   const [toast, setToast] = useState('')
   const [filter, setFilter] = useState<FilterTab>('approved')
   const [trackingInputs, setTrackingInputs] = useState<Record<string, { courier: string; no: string }>>({})
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [selectedLineIds, setSelectedLineIds] = useState<Record<string, Set<string>>>({})
   const [todayClosed, setTodayClosed] = useState(false)
   const [batchTick, setBatchTick] = useState(0)
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
@@ -78,7 +97,7 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
     const { data: rows } = await supabase.from('brands').select('id').eq('company_id', cid)
     const ids = ((rows || []) as Array<{ id: string }>).map((r) => r.id)
     setCompanyBrandIds(ids.length > 0 ? ids : [brandId])
-  }, [brandId])
+  }, [brandId, supabase])
 
   useEffect(() => { void resolveCompanyBrands() }, [resolveCompanyBrands])
 
@@ -86,19 +105,92 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
 
   const fetchTrackB = useCallback(async () => {
     const ids = companyKey ? companyKey.split('|').filter(Boolean) : []
-    if (ids.length === 0) return
+    if (ids.length === 0) {
+      setBBatches([])
+      setLoadingB(false)
+      return
+    }
     setLoadingB(true)
     const pending = filter === 'approved'
-    const { data: bRows } = await supabase
+    const brandIdSet = new Set(ids)
+
+    let parentQ = supabase
       .from('hq_stock_orders')
-      .select('id, brand_id, profile_id, status, items, created_at, courier, tracking_no')
-      .in('brand_id', ids)
-      .in('status', pending ? ['결제완료'] : ['배송완료', '구매확정'])
+      .select('id, brand_id, company_id, profile_id, status, items, created_at, courier, tracking_no')
       .order('created_at', { ascending: false })
       .limit(50)
-    const rawHq = bRows || []
+
+    if (companyId) {
+      parentQ = parentQ.eq('company_id', companyId)
+    } else {
+      parentQ = parentQ.in('brand_id', ids)
+    }
+    parentQ = pending
+      ? parentQ.in('status', ['결제완료', '배송중'])
+      : parentQ.in('status', ['배송완료', '구매확정'])
+
+    const { data: parentRows } = await parentQ
+    const rawHq = (parentRows || []) as Array<Record<string, unknown>>
+    if (rawHq.length === 0) {
+      setBBatches([])
+      setLoadingB(false)
+      return
+    }
+
+    const orderIds = rawHq.map((o) => String(o.id))
+    const [{ data: lineRows }, { data: brandNameRows }] = await Promise.all([
+      supabase
+        .from('hq_stock_order_lines')
+        .select('id, order_id, brand_id, items, line_amount, courier, tracking_no, shipped_at, status')
+        .in('order_id', orderIds),
+      supabase.from('brands').select('id, name').in('id', ids),
+    ])
+    const brandNameMap: Record<string, string> = {}
+    for (const b of (brandNameRows || []) as Array<{ id: string; name?: string }>) {
+      brandNameMap[String(b.id)] = String(b.name || '브랜드')
+    }
+
+    const linesByOrder = new Map<string, TrackBLine[]>()
+    for (const raw of (lineRows || []) as Array<Record<string, unknown>>) {
+      const bid = String(raw.brand_id || '')
+      if (!brandIdSet.has(bid)) continue
+      const orderId = String(raw.order_id || '')
+      const line: TrackBLine = {
+        id: String(raw.id),
+        order_id: orderId,
+        brand_id: bid,
+        brand_name: brandNameMap[bid] || '브랜드',
+        items: Array.isArray(raw.items) ? (raw.items as OrderItem[]) : [],
+        status: String(raw.status || ''),
+        courier: (raw.courier as string | null) || null,
+        tracking_no: (raw.tracking_no as string | null) || null,
+        shipped_at: (raw.shipped_at as string | null) || null,
+      }
+      if (!linesByOrder.has(orderId)) linesByOrder.set(orderId, [])
+      linesByOrder.get(orderId)!.push(line)
+    }
+
+    // 레거시(라인 없음): 부모 items를 단일 라인으로 합성
+    for (const o of rawHq) {
+      const oid = String(o.id)
+      if (linesByOrder.has(oid)) continue
+      const bid = String(o.brand_id || '')
+      if (!brandIdSet.has(bid)) continue
+      linesByOrder.set(oid, [{
+        id: oid,
+        order_id: oid,
+        brand_id: bid,
+        brand_name: brandNameMap[bid] || '브랜드',
+        items: Array.isArray(o.items) ? (o.items as OrderItem[]) : [],
+        status: String(o.status || ''),
+        courier: (o.courier as string | null) || null,
+        tracking_no: (o.tracking_no as string | null) || null,
+        shipped_at: null,
+      }])
+    }
+
     const hqProfileIds = Array.from(
-      new Set(rawHq.map((o: { profile_id?: string }) => String(o.profile_id || '')).filter(Boolean)),
+      new Set(rawHq.map((o) => String(o.profile_id || '')).filter(Boolean)),
     )
     const profileIdToAuthId: Record<string, string> = {}
     const authIdToUserName: Record<string, string> = {}
@@ -138,43 +230,56 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
       }
     }
 
-    setBOrders(
-      (rawHq as Array<Record<string, unknown>>).map((o) => {
-        const pid = String(o.profile_id || '')
-        const authId = profileIdToAuthId[pid] || ''
-        const userId = authId ? authIdToUserId[authId] || '' : ''
-        return {
-          id: String(o.id),
-          brand_id: String(o.brand_id),
-          owner_name: (authId && authIdToUserName[authId]) || null,
-          salon_name: (userId && userIdToSalonName[userId]) || null,
-          status: String(o.status || ''),
-          items: Array.isArray(o.items) ? o.items as TrackBOrder['items'] : [],
-          created_at: String(o.created_at || ''),
-          courier: (o.courier as string | null) || null,
-          tracking_no: (o.tracking_no as string | null) || null,
-        }
-      }),
-    )
+    const batches: TrackBBatch[] = []
+    for (const o of rawHq) {
+      const oid = String(o.id)
+      const lines = linesByOrder.get(oid) || []
+      if (lines.length === 0) continue
+      const hasUnshipped = lines.some((l) => !l.tracking_no)
+      const hasShipped = lines.some((l) => !!l.tracking_no)
+      if (pending && !hasUnshipped) continue
+      if (!pending && !hasShipped && !['배송완료', '구매확정'].includes(String(o.status || ''))) continue
+      const pid = String(o.profile_id || '')
+      const authId = profileIdToAuthId[pid] || ''
+      const userId = authId ? authIdToUserId[authId] || '' : ''
+      batches.push({
+        id: oid,
+        owner_name: (authId && authIdToUserName[authId]) || null,
+        salon_name: (userId && userIdToSalonName[userId]) || null,
+        status: String(o.status || ''),
+        created_at: String(o.created_at || ''),
+        lines,
+      })
+    }
+    setBBatches(batches)
     setLoadingB(false)
-  }, [companyKey, filter])
+  }, [companyKey, companyId, filter, supabase])
 
   useEffect(() => { void fetchTrackB() }, [fetchTrackB, batchTick])
 
-  const decrementStockForB = async (order: TrackBOrder) => {
+  const toggleLineSelect = (orderId: string, lineId: string) => {
+    setSelectedLineIds((prev) => {
+      const current = new Set(prev[orderId] ?? [])
+      if (current.has(lineId)) current.delete(lineId)
+      else current.add(lineId)
+      return { ...prev, [orderId]: current }
+    })
+  }
+
+  const decrementStockForBLine = async (line: TrackBLine) => {
     const { data: alreadyLogged } = await supabase
       .from('brand_stock_logs')
       .select('id')
-      .eq('brand_id', order.brand_id)
+      .eq('brand_id', line.brand_id)
       .eq('ref_type', 'order')
-      .eq('ref_id', order.id)
+      .eq('ref_id', line.id)
       .maybeSingle()
     if (alreadyLogged) return
-    for (const item of order.items) {
+    for (const item of line.items) {
       const invQuery = supabase
         .from('brand_inventory')
         .select('id, total_stock, safety_stock')
-        .eq('brand_id', order.brand_id)
+        .eq('brand_id', line.brand_id)
       const { data: invRow } = item.product_id
         ? await invQuery.eq('product_id', item.product_id).maybeSingle()
         : await invQuery.eq('product_name', item.name).maybeSingle()
@@ -182,48 +287,115 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
       const outQty = item.qty + (item.bonus || 0)
       await supabase.rpc('decrement_inventory_stock', { p_inventory_id: invRow.id, p_qty: outQty })
       await supabase.from('brand_stock_logs').insert({
-        brand_id: order.brand_id,
+        brand_id: line.brand_id,
         inventory_id: invRow.id,
         type: 'out',
         qty: outQty,
         before_qty: invRow.total_stock,
         after_qty: Math.max(0, invRow.total_stock - outQty),
         ref_type: 'order',
-        ref_id: order.id,
+        ref_id: line.id,
         staff_name: '발주 자동 출고',
         memo: `발주 출고(B): ${item.name} ${outQty}개`,
       })
     }
   }
 
-  const shipTrackB = async (order: TrackBOrder) => {
-    const input = trackingInputs[order.id]
+  const shipTrackB = async (batch: TrackBBatch) => {
+    const input = trackingInputs[batch.id]
     if (!input?.courier || !input?.no.trim()) {
       showToast('택배사와 운송장 번호를 입력해주세요')
       return
     }
-    setBusyId(order.id)
-    const now = new Date().toISOString()
-    const trackingNo = input.no.trim()
-    const { error } = await supabase
-      .from('hq_stock_orders')
-      .update({
-        status: '배송완료',
-        courier: input.courier,
-        tracking_no: trackingNo,
-        updated_at: now,
-      })
-      .eq('id', order.id)
-    if (error) {
-      setBusyId(null)
-      showToast('처리 실패: ' + error.message)
+    const unshipped = batch.lines.filter((l) => !l.tracking_no)
+    if (unshipped.length === 0) {
+      showToast('이미 전부 발송된 주문이에요')
       return
     }
-    await decrementStockForB(order)
-    setTrackingInputs((prev) => { const n = { ...prev }; delete n[order.id]; return n })
+    const selected = selectedLineIds[batch.id]
+    const targetLineIds = selected && selected.size > 0
+      ? Array.from(selected).filter((id) => unshipped.some((l) => l.id === id))
+      : unshipped.map((l) => l.id)
+    if (targetLineIds.length === 0) {
+      showToast('발송할 라인을 선택해주세요')
+      return
+    }
+
+    setBusyId(batch.id)
+    const now = new Date().toISOString()
+    const trackingNo = input.no.trim()
+    const targets = batch.lines.filter((l) => targetLineIds.includes(l.id))
+    const legacyTargets = targets.filter((l) => l.id === batch.id)
+    const lineTargets = targets.filter((l) => l.id !== batch.id)
+
+    if (lineTargets.length > 0) {
+      const { error: lineErr } = await supabase
+        .from('hq_stock_order_lines')
+        .update({
+          status: '배송완료',
+          courier: input.courier,
+          tracking_no: trackingNo,
+          shipped_at: now,
+          updated_at: now,
+        })
+        .in('id', lineTargets.map((l) => l.id))
+      if (lineErr) {
+        setBusyId(null)
+        showToast('처리 실패: ' + lineErr.message)
+        return
+      }
+    }
+
+    // 레거시(라인 테이블 없음): 부모 직접 배송완료
+    if (legacyTargets.length > 0) {
+      const { error: parentLegacyErr } = await supabase
+        .from('hq_stock_orders')
+        .update({
+          status: '배송완료',
+          courier: input.courier,
+          tracking_no: trackingNo,
+          updated_at: now,
+        })
+        .eq('id', batch.id)
+      if (parentLegacyErr) {
+        setBusyId(null)
+        showToast('처리 실패: ' + parentLegacyErr.message)
+        return
+      }
+    } else {
+      const { data: allLines } = await supabase
+        .from('hq_stock_order_lines')
+        .select('id, status, tracking_no')
+        .eq('order_id', batch.id)
+      const rows = (allLines || []) as Array<{ id: string; status?: string; tracking_no?: string | null }>
+      const allShipped = rows.length > 0 && rows.every((r) => !!r.tracking_no || r.status === '배송완료')
+      const { error: parentErr } = await supabase
+        .from('hq_stock_orders')
+        .update({
+          status: allShipped ? '배송완료' : '배송중',
+          updated_at: now,
+          ...(allShipped ? { courier: input.courier, tracking_no: trackingNo } : {}),
+        })
+        .eq('id', batch.id)
+      if (parentErr) {
+        showToast('라인 발송됨 · 부모상태 갱신 실패: ' + parentErr.message)
+      }
+    }
+
+    for (const line of targets) {
+      await decrementStockForBLine(line)
+    }
+
+    setTrackingInputs((prev) => {
+      const n = { ...prev }
+      delete n[batch.id]
+      return n
+    })
+    setSelectedLineIds((prev) => ({ ...prev, [batch.id]: new Set() }))
     setBusyId(null)
+
     try {
-      const sub = await subscribeDelivery(input.courier, trackingNo, order.id)
+      const sub = await subscribeDelivery(input.courier, trackingNo, targets[0]?.id || batch.id)
       showToast(sub.ok
         ? '트랙B 발송 완료! 추적 구독 등록됨'
         : `발송 저장됨 · 추적구독 실패: ${sub.error}`)
@@ -253,7 +425,7 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
           marginBottom: 12, gap: 8, flexWrap: 'wrap',
         }}>
           <div style={{ fontSize: 12, color: SUB }}>
-            📦 발송 처리 (A: 배치·주문번호 단위 · B: 개별)
+            📦 발송 처리 (A: 배치·주문번호 단위 · B: 라인 단위)
           </div>
           <div style={{ display: 'flex', gap: 6 }}>
             {([
@@ -295,21 +467,21 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
       <BrandTierOrderFulfillmentList companyId={companyId} onToast={showToast} />
 
       <div style={CARD}>
-        <div style={{ fontSize: 11, color: '#c4a8f0', marginBottom: 8 }}>트랙B · 개별 발송 (기존 유지)</div>
+        <div style={{ fontSize: 11, color: '#c4a8f0', marginBottom: 8 }}>트랙B · 라인별 발송 (체크박스)</div>
         {loadingB ? (
           <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>불러오는 중...</div>
-        ) : bOrders.length === 0 ? (
+        ) : bBatches.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>
             {filter === 'approved' ? '트랙B 발송 대기 없음' : '트랙B 발송 이력 없음'}
           </div>
         ) : (
-          bOrders.map((o, i) => {
-            const items = Array.isArray(o.items) ? o.items : []
-            const open = !!trackingInputs[o.id]
+          bBatches.map((batch, i) => {
+            const open = !!trackingInputs[batch.id]
+            const unshippedCount = batch.lines.filter((l) => !l.tracking_no).length
             return (
               <div
-                key={o.id}
-                style={{ padding: '12px 0', borderBottom: i < bOrders.length - 1 ? `0.5px solid ${BORDER}` : 'none' }}
+                key={batch.id}
+                style={{ padding: '12px 0', borderBottom: i < bBatches.length - 1 ? `0.5px solid ${BORDER}` : 'none' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, gap: 8 }}>
                   <div style={{ minWidth: 0 }}>
@@ -318,21 +490,22 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
                         fontSize: 9, padding: '1px 5px', borderRadius: 4,
                         background: 'rgba(123,94,167,0.18)', color: '#c4a8f0',
                       }}>B</span>
-                      <span style={{ fontSize: 13, color: TEXT }}>{o.owner_name || '원장님'}</span>
+                      <span style={{ fontSize: 13, color: TEXT }}>{batch.owner_name || '원장님'}</span>
+                      <span style={{ fontSize: 10, color: SUB }}>{batch.lines.length}라인</span>
                     </div>
                     <div style={{ fontSize: 11, color: SUB }}>
-                      {o.salon_name || '-'} · {new Date(o.created_at).toLocaleDateString('ko-KR')}
+                      {batch.salon_name || '-'} · {new Date(batch.created_at).toLocaleDateString('ko-KR')}
                     </div>
                   </div>
                   {filter === 'shipped' ? (
-                    <span style={{ fontSize: 11, color: 'rgba(41,182,246,0.8)' }}>{o.status}</span>
+                    <span style={{ fontSize: 11, color: 'rgba(41,182,246,0.8)' }}>{batch.status}</span>
                   ) : (
                     <button
                       type="button"
                       onClick={() => setTrackingInputs((prev) => (
-                        prev[o.id]
-                          ? (() => { const n = { ...prev }; delete n[o.id]; return n })()
-                          : { ...prev, [o.id]: { courier: '', no: '' } }
+                        prev[batch.id]
+                          ? (() => { const n = { ...prev }; delete n[batch.id]; return n })()
+                          : { ...prev, [batch.id]: { courier: '', no: '' } }
                       ))}
                       style={{
                         fontSize: 11, padding: '4px 12px', borderRadius: 6, border: 'none',
@@ -343,18 +516,61 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
                     </button>
                   )}
                 </div>
-                {items.length > 0 && (
-                  <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>
-                    {items.map((it) => formatOrderItemLine(it)).join(' · ')}
-                  </div>
-                )}
-                {filter === 'shipped' && o.tracking_no && (
-                  <div style={{ fontSize: 11, color: 'rgba(41,182,246,0.8)' }}>
-                    📦 {o.courier} · {o.tracking_no}
-                  </div>
-                )}
-                {filter === 'approved' && open && (
+
+                {batch.lines.map((line) => {
+                  const color = brandColor(line.brand_id)
+                  const shipped = !!line.tracking_no
+                  const selected = selectedLineIds[batch.id]?.has(line.id) ?? false
+                  return (
+                    <div
+                      key={line.id}
+                      style={{
+                        marginBottom: 8, padding: 8, borderRadius: 8,
+                        background: 'rgba(255,255,255,0.03)', border: '0.5px solid rgba(255,255,255,0.06)',
+                        display: 'flex', alignItems: 'flex-start', gap: 8,
+                      }}
+                    >
+                      {shipped || filter === 'shipped' ? (
+                        <span style={{ width: 16, flexShrink: 0 }} />
+                      ) : (
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() => toggleLineSelect(batch.id, line.id)}
+                          style={{ marginTop: 2, accentColor: PURPLE, flexShrink: 0 }}
+                        />
+                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                          <span style={{
+                            fontSize: 10, padding: '1px 6px', borderRadius: 4,
+                            background: `${color}22`, color, border: `0.5px solid ${color}55`,
+                          }}>
+                            {line.brand_name}
+                          </span>
+                          {shipped && (
+                            <span style={{ fontSize: 11, color: GREEN }}>
+                              발송완료 · {line.courier} · {line.tracking_no}
+                            </span>
+                          )}
+                        </div>
+                        {line.items.length > 0 && (
+                          <div style={{ fontSize: 11, color: SUB }}>
+                            {line.items.map((it) => formatOrderItemLine(it)).join(' · ')}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+
+                {filter === 'approved' && open && unshippedCount > 0 && (
                   <div style={{ marginTop: 8 }}>
+                    <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>
+                      {(selectedLineIds[batch.id]?.size || 0) > 0
+                        ? `선택 ${selectedLineIds[batch.id]!.size}개 라인 발송`
+                        : `미발송 ${unshippedCount}개 라인 전체 발송`}
+                    </div>
                     <div style={{ display: 'flex', gap: 6, marginBottom: 6, flexWrap: 'wrap' }}>
                       {COURIERS.map((c) => (
                         <button
@@ -362,13 +578,13 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
                           type="button"
                           onClick={() => setTrackingInputs((prev) => ({
                             ...prev,
-                            [o.id]: { courier: c, no: prev[o.id]?.no || '' },
+                            [batch.id]: { courier: c, no: prev[batch.id]?.no || '' },
                           }))}
                           style={{
                             fontSize: 11, padding: '3px 8px', borderRadius: 6, cursor: 'pointer',
-                            border: `0.5px solid ${trackingInputs[o.id]?.courier === c ? PURPLE : 'rgba(255,255,255,0.1)'}`,
-                            background: trackingInputs[o.id]?.courier === c ? 'rgba(123,94,167,0.2)' : 'transparent',
-                            color: trackingInputs[o.id]?.courier === c ? '#c4a7e7' : SUB,
+                            border: `0.5px solid ${trackingInputs[batch.id]?.courier === c ? PURPLE : 'rgba(255,255,255,0.1)'}`,
+                            background: trackingInputs[batch.id]?.courier === c ? 'rgba(123,94,167,0.2)' : 'transparent',
+                            color: trackingInputs[batch.id]?.courier === c ? '#c4a7e7' : SUB,
                           }}
                         >
                           {c}
@@ -377,10 +593,10 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
                     </div>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <input
-                        value={trackingInputs[o.id]?.no || ''}
+                        value={trackingInputs[batch.id]?.no || ''}
                         onChange={(e) => setTrackingInputs((prev) => ({
                           ...prev,
-                          [o.id]: { courier: prev[o.id]?.courier || '', no: e.target.value },
+                          [batch.id]: { courier: prev[batch.id]?.courier || '', no: e.target.value },
                         }))}
                         placeholder="운송장 번호 입력"
                         style={{
@@ -391,14 +607,14 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
                       />
                       <button
                         type="button"
-                        disabled={busyId === o.id}
-                        onClick={() => void shipTrackB(o)}
+                        disabled={busyId === batch.id}
+                        onClick={() => void shipTrackB(batch)}
                         style={{
                           padding: '7px 14px', borderRadius: 7, border: 'none', background: PURPLE,
                           color: '#fff', fontSize: 12, cursor: 'pointer', flexShrink: 0,
                         }}
                       >
-                        {busyId === o.id ? '처리중…' : '발송완료'}
+                        {busyId === batch.id ? '처리중…' : '발송완료'}
                       </button>
                     </div>
                   </div>
@@ -410,7 +626,7 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
       </div>
 
       <div style={{ fontSize: 11, color: SUB, padding: '0 2px', marginBottom: 10 }}>
-        💡 A는 승인완료 배치를 주문번호 단위로 발송(운송장 1개). B는 개별 처리 유지.
+        💡 A는 배치 단위, B는 브랜드 라인별 체크박스 발송(부분 발송 가능).
       </div>
       <BrandLogisticsDailyClose brandId={brandId} onToast={showToast} onClosedChange={setTodayClosed} />
     </div>
