@@ -80,6 +80,10 @@ export default function StoreDecorationPage() {
   const [salonId, setSalonId] = useState<string | null>(null)
   const [ownerSlug, setOwnerSlug] = useState<string | null>(null)
   const [avatarUrl, setAvatarUrl] = useState('')
+  const [bankName, setBankName] = useState('')
+  const [bankAccount, setBankAccount] = useState('')
+  const [bankHolder, setBankHolder] = useState('')
+  const [bankSaving, setBankSaving] = useState(false)
 
   const [bannerUrls, setBannerUrls] = useState<(string | null)[]>([null, null, null])
   const [bannerLinks, setBannerLinks] = useState<string[]>(['none', 'none', 'none'])
@@ -122,9 +126,16 @@ export default function StoreDecorationPage() {
       }
       const oid = String(urow.id)
       setOwnerUserId(oid)
-      const { data: prof } = await sb.from('profiles').select('slug, avatar_url').eq('auth_id', auth.user.id).maybeSingle()
+      const { data: prof } = await sb
+        .from('profiles')
+        .select('slug, avatar_url, owner_bank_name, owner_bank_account, owner_bank_holder')
+        .eq('auth_id', auth.user.id)
+        .maybeSingle()
       if (prof?.slug) setOwnerSlug(String(prof.slug))
       if (prof?.avatar_url) setAvatarUrl(String(prof.avatar_url))
+      setBankName(String((prof as { owner_bank_name?: string | null } | null)?.owner_bank_name || ''))
+      setBankAccount(String((prof as { owner_bank_account?: string | null } | null)?.owner_bank_account || ''))
+      setBankHolder(String((prof as { owner_bank_holder?: string | null } | null)?.owner_bank_holder || ''))
       const { data: salon } = await sb
         .from('salons')
         .select('id, banner_urls, banner_links, story_url, story_type, phase_greetings, phase_reco_enabled, main_cta, map_url, sns_links')
@@ -233,6 +244,33 @@ export default function StoreDecorationPage() {
     setToast('저장되었어요 💜')
   }
 
+  const saveBankInfo = async () => {
+    setBankSaving(true)
+    try {
+      const sb = supabaseRef.current
+      const { data: { user } } = await sb.auth.getUser()
+      if (!user) {
+        setToast('로그인이 필요해요')
+        return
+      }
+      const { error } = await sb
+        .from('profiles')
+        .update({
+          owner_bank_name: bankName.trim() || null,
+          owner_bank_account: bankAccount.trim() || null,
+          owner_bank_holder: bankHolder.trim() || null,
+        })
+        .eq('auth_id', user.id)
+      if (error) {
+        setToast('계좌정보 저장에 실패했어요')
+        return
+      }
+      setToast('계좌정보가 저장됐어요 💜')
+    } finally {
+      setBankSaving(false)
+    }
+  }
+
   if (loading) {
     return <div style={{ minHeight: '100vh', background: BG, color: TEXT_SUB, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}>불러오는 중...</div>
   }
@@ -271,6 +309,52 @@ export default function StoreDecorationPage() {
             </label>
           </div>
           <div style={{ fontSize: 10, color: TEXT_SUB, marginTop: 8 }}>권장 정사각형 · 최대 5MB · 고객 스토어·로그인 화면에 노출</div>
+        </div>
+
+        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14 }}>
+          <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 10 }}>정산 송금계좌 (트랙A/B 공용)</div>
+          <select
+            value={bankName}
+            onChange={(e) => setBankName(e.target.value)}
+            style={{ ...fieldStyle, marginBottom: 8 }}
+          >
+            <option value="">은행 선택</option>
+            <option value="국민은행">국민은행</option>
+            <option value="신한은행">신한은행</option>
+            <option value="우리은행">우리은행</option>
+            <option value="하나은행">하나은행</option>
+            <option value="농협은행">농협은행</option>
+          </select>
+          <input
+            value={bankAccount}
+            onChange={(e) => setBankAccount(e.target.value)}
+            placeholder="계좌번호 (숫자만)"
+            style={{ ...fieldStyle, marginBottom: 8 }}
+          />
+          <input
+            value={bankHolder}
+            onChange={(e) => setBankHolder(e.target.value)}
+            placeholder="예금주명"
+            style={{ ...fieldStyle, marginBottom: 10 }}
+          />
+          <button
+            type="button"
+            onClick={() => void saveBankInfo()}
+            disabled={bankSaving}
+            style={{
+              width: '100%',
+              border: 'none',
+              borderRadius: 10,
+              background: P,
+              color: '#fff',
+              padding: '10px 0',
+              fontSize: 13,
+              cursor: bankSaving ? 'wait' : 'pointer',
+              opacity: bankSaving ? 0.7 : 1,
+            }}
+          >
+            {bankSaving ? '저장 중...' : '계좌정보 저장'}
+          </button>
         </div>
 
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14 }}>

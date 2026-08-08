@@ -5,6 +5,8 @@
 
 
 ## 2026-08-08
+### feat: profiles.owner_bank_name/owner_bank_account/owner_bank_holder 컬럼 추가, store-decoration "꾸미기" 탭에 정산 송금계좌 등록 CARD 신설(트랙A/B 공용, handleSave와 독립적인 별도 저장)
+
 ### fix: hq_stock_orders 결제취소 시 관련 hq_commission_ledger(pending 상태)도 함께 취소 처리(handleHqStockOrderCancel)
 
 ### feat: /admin/settlement 제목을 "오렌몰 정산 일괄 처리"로 변경(track-b-system과 명확히 구분). /admin/track-b-system 스폰서 커미션 목록에 상세보기 드릴다운 추가 — 구매자별 제품/수량/적용요율 확인 가능
