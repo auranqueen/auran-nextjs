@@ -5,6 +5,8 @@
 
 
 ## 2026-08-08
+### feat: 트랙B(hq-stock-orders) 다중브랜드 지원 완성 — 단일브랜드 제한 삭제, company_id+lines 구조로 제출, create API 재작성(등급필터 서버재검증 포함), hq_stock_order_lines 자식테이블 도입, PayApp 웹훅이 부모+자식 상태 동기화
+
 ### feat: 트랙B 재구매 다중브랜드 지원을 위한 스키마 추가 — hq_stock_orders.company_id 컬럼, hq_stock_order_lines 자식테이블(브랜드별 items/송장 개별관리) 신설. RLS 적용
 
 ## 2026-08-07

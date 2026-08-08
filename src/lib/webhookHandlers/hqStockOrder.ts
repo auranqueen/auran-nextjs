@@ -45,6 +45,11 @@ export async function handleHqStockOrderComplete(
 
   if (error || !updated?.id) return
 
+  await client
+    .from('hq_stock_order_lines')
+    .update({ status: '결제완료', updated_at: nowIso })
+    .eq('order_id', order.id)
+
   await accrueHqStockCommission(client, {
     id: String(updated.id),
     brand_id: String(updated.brand_id),
@@ -64,4 +69,8 @@ export async function handleHqStockOrderCancel(
     .update({ status: '취소', updated_at: nowIso })
     .eq('id', intent.target_id)
     .neq('status', '취소')
+  await client
+    .from('hq_stock_order_lines')
+    .update({ status: '취소', updated_at: nowIso })
+    .eq('order_id', intent.target_id)
 }

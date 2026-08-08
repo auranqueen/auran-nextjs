@@ -50,6 +50,7 @@ function HqStockOrdersContent() {
   const [salonName, setSalonName] = useState('')
   const [brandFilter, setBrandFilter] = useState<'all' | string>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [primaryCompanyId, setPrimaryCompanyId] = useState<string | null>(null)
   const showToast = (t: string) => {
     setToast(t)
     setTimeout(() => setToast(''), 2500)
@@ -69,6 +70,7 @@ function HqStockOrdersContent() {
     if (String(userRow?.origin_track || '') !== 'B') {
       setTrackAllowed(false)
       setProducts([])
+      setPrimaryCompanyId(null)
       setLoading(false)
       return
     }
@@ -120,6 +122,7 @@ function HqStockOrdersContent() {
         const companyIds = Array.from(
           new Set((brandRows || []).map((b: any) => String(b.company_id || '')).filter(Boolean)),
         )
+        setPrimaryCompanyId(companyIds[0] || null)
         if (companyIds.length > 0) {
           const { data: gradeRows } = await supabase
             .from('brand_owner_grades')
@@ -278,9 +281,8 @@ function HqStockOrdersContent() {
       showToast('가격 미설정 제품이 있어요')
       return
     }
-    const brandIds = Array.from(new Set(cart.map((c) => c.product.brand_id)))
-    if (brandIds.length !== 1) {
-      showToast('한 번에 한 브랜드만 발주할 수 있어요')
+    if (!primaryCompanyId) {
+      showToast('회사 정보를 확인할 수 없어요')
       return
     }
     if (cartTotal < 1000) {
@@ -288,30 +290,50 @@ function HqStockOrdersContent() {
       return
     }
     setSending(true)
-    const items = cart.map((c) => buildOrderLineItem(c.product, c.qty, promoRules, c.selectedPromo))
-    const giftItems = hqCampaignEffects.giftLines
-      .filter((g) => g.effect_type === 'gift' && g.product_id)
-      .map((g) => {
-        const pid = String(g.product_id)
-        const prod = products.find((p) => p.id === pid)
-        return {
-          product_id: pid,
-          name: prod?.name || g.label,
-          qty: g.qty,
-          unit_price: 0,
-          line_amount: 0,
-          bonus: 0,
-          promo: g.label,
-        }
-      })
-    const itemsWithGifts = [...items, ...giftItems]
+    // 브랜드별로 카트 그룹핑
+    const byBrand = new Map<string, typeof cart>()
+    for (const c of cart) {
+      const bid = c.product.brand_id
+      if (!byBrand.has(bid)) byBrand.set(bid, [])
+      byBrand.get(bid)!.push(c)
+    }
+    const lines = Array.from(byBrand.entries()).map(([brandId, rows]) => {
+      const lineItems = rows.map((c) => buildOrderLineItem(c.product, c.qty, promoRules, c.selectedPromo))
+      const giftItemsForBrand = hqCampaignEffects.giftLines
+        .filter((g) => {
+          if (g.effect_type !== 'gift' || !g.product_id) return false
+          const giftBrandId = products.find((p) => p.id === g.product_id)?.brand_id
+          if (giftBrandId) return giftBrandId === brandId
+          const brandProductIds = new Set(rows.map((c) => c.product.id))
+          return brandProductIds.has(g.product_id)
+        })
+        .map((g) => {
+          const pid = String(g.product_id)
+          const prod = products.find((p) => p.id === pid)
+          return {
+            product_id: pid,
+            name: prod?.name || g.label,
+            qty: g.qty,
+            unit_price: 0,
+            line_amount: 0,
+            bonus: 0,
+            promo: g.label,
+          }
+        })
+      const lineAmount = lineItems.reduce((s, i) => s + i.line_amount, 0)
+      return {
+        brand_id: brandId,
+        items: [...lineItems, ...giftItemsForBrand],
+        line_amount: lineAmount,
+      }
+    })
     try {
       const createRes = await fetch('/api/hq-stock-orders/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          brand_id: brandIds[0],
-          items: itemsWithGifts,
+          company_id: primaryCompanyId,
+          lines,
           subtotal: cartTotal,
           final_amount: cartFinalTotal,
           owner_name: ownerName,
