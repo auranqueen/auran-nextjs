@@ -81,13 +81,25 @@ export async function POST(req: NextRequest) {
   }
   let serverDiscountTotal = 0
   if (companyIdForCampaign) {
+    const { data: gradeRow } = await svc
+      .from('brand_owner_grades')
+      .select('grade')
+      .eq('owner_id', profile.id)
+      .eq('company_id', companyIdForCampaign)
+      .eq('origin_track', 'A')
+      .eq('payment_status', 'paid')
+      .maybeSingle()
+    const ownerGrade = String(gradeRow?.grade || '취급점')
     const { data: campaignRows } = await svc
       .from('hq_forced_campaigns')
-      .select('id, company_id, target_product_ids, start_at, end_at')
+      .select('id, company_id, target_product_ids, start_at, end_at, target_grades')
       .eq('company_id', companyIdForCampaign)
       .is('owner_id', null)
       .eq('is_active', true)
-    const campaignIds = (campaignRows || []).map((r: { id: string }) => r.id)
+    const campaignRowsFiltered = (campaignRows || []).filter((r: { target_grades?: string[] | null }) =>
+      !r.target_grades || r.target_grades.length === 0 || r.target_grades.includes(ownerGrade)
+    )
+    const campaignIds = campaignRowsFiltered.map((r: { id: string }) => r.id)
     const tiersByCampaign: Record<string, HqForcedCampaign['tiers']> = {}
     if (campaignIds.length > 0) {
       const { data: tierRows } = await svc
@@ -103,7 +115,7 @@ export async function POST(req: NextRequest) {
         })
       }
     }
-    const serverCampaigns = ((campaignRows || []) as any[]).map((r) => ({ ...r, tiers: tiersByCampaign[String(r.id)] || [] })) as HqForcedCampaign[]
+    const serverCampaigns = (campaignRowsFiltered as any[]).map((r) => ({ ...r, tiers: tiersByCampaign[String(r.id)] || [] })) as HqForcedCampaign[]
     const wholeCartForServer = cartItems.flatMap((g) =>
       (Array.isArray(g.items) ? g.items : []).map((i: any) => ({
         product_id: String(i.product_id || ''),

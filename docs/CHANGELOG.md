@@ -5,6 +5,8 @@
 
 
 ## 2026-08-07
+### feat: brand-order-batches/create API 서버재검증에 원장 등급 조회+캠페인 등급필터 추가 — API 직접호출로 등급 우회하는 것도 서버단에서 차단
+
 ### feat: hq_forced_campaigns에 target_grades(등급 타겟팅) 추가 — 관리화면에서 전체/등급선택 가능, 트랙A/B 원장화면 조회쿼리에서 본인 등급 필터 적용(다른 등급 이벤트 절대 노출 안 됨)
 
 ### feat: 트랙B(hq-stock-orders)에도 HQ증정라인을 items에 반영 — 트랙A와 동일 원칙 적용, 단일브랜드 발주라 브랜드 분배 없이 giftLines 전체 병합
