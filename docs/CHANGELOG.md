@@ -4,6 +4,9 @@
 ---
 
 
+## 2026-08-08
+### feat: 트랙B 재구매 다중브랜드 지원을 위한 스키마 추가 — hq_stock_orders.company_id 컬럼, hq_stock_order_lines 자식테이블(브랜드별 items/송장 개별관리) 신설. RLS 적용
+
 ## 2026-08-07
 ### feat: brand-order-batches/create API 서버재검증에 원장 등급 조회+캠페인 등급필터 추가 — API 직접호출로 등급 우회하는 것도 서버단에서 차단
 
