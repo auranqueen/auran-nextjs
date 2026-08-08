@@ -62,6 +62,9 @@ type SponsorAgg = {
   pending_amount: number
   paid_amount: number
   pending_count: number
+  bank_name?: string
+  bank_account?: string
+  bank_holder?: string
 }
 
 type TrackASalonAgg = {
@@ -76,6 +79,27 @@ type TrackASalonAgg = {
 function dayKey(iso: string) {
   const d = new Date(iso)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+/** 계좌번호 마스킹: 앞 최대 3자리 + 가운데 * + 뒤 4자리 */
+function maskAccount(acc: string) {
+  const raw = String(acc || '').replace(/\s/g, '')
+  if (!raw) return ''
+  if (raw.length <= 4) return raw
+  if (raw.length <= 8) return `${'*'.repeat(raw.length - 4)}${raw.slice(-4)}`
+  const head = raw.slice(0, 3)
+  const mid = '*'.repeat(raw.length - 7)
+  return `${head}${mid}${raw.slice(-4)}`
+}
+
+function formatSponsorBank(s: Pick<SponsorAgg, 'bank_name' | 'bank_account' | 'bank_holder'>) {
+  const name = String(s.bank_name || '').trim()
+  const masked = maskAccount(String(s.bank_account || ''))
+  const holder = String(s.bank_holder || '').trim()
+  if (!name && !masked) return '계좌 미등록'
+  const parts = [name, masked].filter(Boolean)
+  if (holder) parts.push(`(${holder})`)
+  return parts.join(' ')
 }
 
 function monthStartIso() {
@@ -101,6 +125,7 @@ export default function AdminTrackBSystemPage() {
   const [detailOpenId, setDetailOpenId] = useState<string | null>(null)
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null)
   const [detailBySponsor, setDetailBySponsor] = useState<Record<string, SponsorDetailLine[]>>({})
+  const [selectedLedgerIds, setSelectedLedgerIds] = useState<Record<string, Set<string>>>({})
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -108,6 +133,7 @@ export default function AdminTrackBSystemPage() {
     setDetailBySponsor({})
     setDetailOpenId(null)
     setDetailLoadingId(null)
+    setSelectedLedgerIds({})
     const thisMonthIso = monthStartIso()
     const since = new Date()
     since.setHours(0, 0, 0, 0)
@@ -242,14 +268,21 @@ export default function AdminTrackBSystemPage() {
 
     const sponsorIds = Array.from(new Set(ledgersList.map((l) => l.sponsor_owner_id)))
     const nameById: Record<string, string> = {}
+    const bankById: Record<string, { bank_name: string; bank_account: string; bank_holder: string }> = {}
     const gradeByKey: Record<string, string> = {}
     if (sponsorIds.length) {
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, full_name')
+        .select('id, full_name, owner_bank_name, owner_bank_account, owner_bank_holder')
         .in('id', sponsorIds)
       for (const p of profiles || []) {
-        nameById[String(p.id)] = String((p as { full_name?: string }).full_name || '스폰서')
+        const pid = String(p.id)
+        nameById[pid] = String((p as { full_name?: string }).full_name || '스폰서')
+        bankById[pid] = {
+          bank_name: String((p as { owner_bank_name?: string | null }).owner_bank_name || ''),
+          bank_account: String((p as { owner_bank_account?: string | null }).owner_bank_account || ''),
+          bank_holder: String((p as { owner_bank_holder?: string | null }).owner_bank_holder || ''),
+        }
       }
       const brandIds = Array.from(new Set(ledgersList.map((l) => l.brand_id)))
       const { data: grades } = await supabase
@@ -266,6 +299,7 @@ export default function AdminTrackBSystemPage() {
     for (const l of ledgersList) {
       const key = l.sponsor_owner_id
       if (!aggMap[key]) {
+        const bank = bankById[key]
         aggMap[key] = {
           sponsor_owner_id: key,
           name: nameById[key] || key.slice(0, 8),
@@ -273,6 +307,9 @@ export default function AdminTrackBSystemPage() {
           pending_amount: 0,
           paid_amount: 0,
           pending_count: 0,
+          bank_name: bank?.bank_name || '',
+          bank_account: bank?.bank_account || '',
+          bank_holder: bank?.bank_holder || '',
         }
       }
       const amt = Math.trunc(Number(l.commission_amount) || 0)
@@ -373,11 +410,33 @@ export default function AdminTrackBSystemPage() {
     setBusyId(sponsorOwnerId)
     setMsg('')
     const nowIso = new Date().toISOString()
-    const { error } = await supabase
+    const selected = selectedLedgerIds[sponsorOwnerId]
+    const rows = detailBySponsor[sponsorOwnerId] || []
+    // selected state 없음 → 상세 rows 전체(없으면 스폰서 pending 전체)
+    // selected 있음 → 체크된 id만 (0건이면 중단)
+    let targetIds: string[] | null
+    if (selected) {
+      targetIds = Array.from(selected)
+    } else if (rows.length > 0) {
+      targetIds = rows.map((d) => d.ledger_id)
+    } else {
+      targetIds = null
+    }
+    if (targetIds && targetIds.length === 0) {
+      setMsg('선택된 항목이 없어요')
+      setBusyId(null)
+      return
+    }
+    let query = supabase
       .from('hq_commission_ledger')
       .update({ status: 'paid', paid_at: nowIso })
-      .eq('sponsor_owner_id', sponsorOwnerId)
       .eq('status', 'pending')
+    if (targetIds) {
+      query = query.in('id', targetIds)
+    } else {
+      query = query.eq('sponsor_owner_id', sponsorOwnerId)
+    }
+    const { error } = await query
     setBusyId(null)
     if (error) {
       setMsg(error.message)
@@ -389,8 +448,19 @@ export default function AdminTrackBSystemPage() {
       delete next[sponsorOwnerId]
       return next
     })
+    setSelectedLedgerIds((prev) => ({ ...prev, [sponsorOwnerId]: new Set() }))
     if (detailOpenId === sponsorOwnerId) setDetailOpenId(null)
     await load()
+  }
+
+  const toggleLedgerSelect = (sponsorOwnerId: string, ledgerId: string, allIds: string[]) => {
+    setSelectedLedgerIds((prev) => {
+      // 최초 토글 시 전체 선택 상태에서 시작 (checked 기본 true와 일치)
+      const current = new Set(prev[sponsorOwnerId] ?? allIds)
+      if (current.has(ledgerId)) current.delete(ledgerId)
+      else current.add(ledgerId)
+      return { ...prev, [sponsorOwnerId]: current }
+    })
   }
 
   const toggleSponsorDetail = async (sponsorOwnerId: string) => {
@@ -486,6 +556,10 @@ export default function AdminTrackBSystemPage() {
     })
 
     setDetailBySponsor((prev) => ({ ...prev, [sponsorOwnerId]: rows }))
+    setSelectedLedgerIds((prev) => ({
+      ...prev,
+      [sponsorOwnerId]: new Set(rows.map((r) => r.ledger_id)),
+    }))
     setDetailLoadingId(null)
   }
 
@@ -588,7 +662,12 @@ export default function AdminTrackBSystemPage() {
                     return (
                       <Fragment key={s.sponsor_owner_id}>
                         <tr style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                          <td style={{ padding: '8px 4px', color: '#fff' }}>{s.name}</td>
+                          <td style={{ padding: '8px 4px', color: '#fff' }}>
+                            <div>{s.name}</div>
+                            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
+                              {formatSponsorBank(s)}
+                            </div>
+                          </td>
                           <td style={{ padding: '8px 4px', color: PURPLE }}>{s.grade}</td>
                           <td style={{ padding: '8px 4px', color: GOLD }}>
                             ₩{s.pending_amount.toLocaleString()} ({s.pending_count})
@@ -630,7 +709,12 @@ export default function AdminTrackBSystemPage() {
                                   opacity: s.pending_count ? 1 : 0.4,
                                 }}
                               >
-                                정산 처리
+                                {(() => {
+                                  const sel = selectedLedgerIds[s.sponsor_owner_id]
+                                  const n = detailRows?.length || 0
+                                  if (sel && n > 0 && sel.size < n) return `선택 ${sel.size}건 정산`
+                                  return '정산 처리'
+                                })()}
                               </button>
                             </div>
                           </td>
@@ -638,6 +722,9 @@ export default function AdminTrackBSystemPage() {
                         {open ? (
                           <tr style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
                             <td colSpan={5} style={{ padding: '10px 8px 14px', background: 'rgba(123,94,167,0.06)' }}>
+                              <div style={{ fontSize: 11, color: GOLD, marginBottom: 10 }}>
+                                송금계좌: {formatSponsorBank(s)}
+                              </div>
                               {detailLoading ? (
                                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>상세 불러오는 중…</div>
                               ) : !detailRows || detailRows.length === 0 ? (
@@ -651,8 +738,24 @@ export default function AdminTrackBSystemPage() {
                                         border: '1px solid rgba(255,255,255,0.08)',
                                         borderRadius: 8,
                                         padding: 10,
+                                        display: 'flex',
+                                        gap: 8,
+                                        alignItems: 'flex-start',
                                       }}
                                     >
+                                      <input
+                                        type="checkbox"
+                                        checked={selectedLedgerIds[s.sponsor_owner_id]?.has(d.ledger_id) ?? true}
+                                        onChange={() =>
+                                          toggleLedgerSelect(
+                                            s.sponsor_owner_id,
+                                            d.ledger_id,
+                                            detailRows.map((r) => r.ledger_id),
+                                          )
+                                        }
+                                        style={{ marginRight: 8, marginTop: 2 }}
+                                      />
+                                      <div style={{ flex: 1, minWidth: 0 }}>
                                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 6, fontSize: 11 }}>
                                         <span style={{ color: '#fff' }}>구매자(원장): {d.buyer_name}</span>
                                         <span style={{ color: PURPLE }}>적용요율: {d.commission_rate}%</span>
@@ -674,6 +777,7 @@ export default function AdminTrackBSystemPage() {
                                           ))}
                                         </div>
                                       )}
+                                      </div>
                                     </div>
                                   ))}
                                 </div>

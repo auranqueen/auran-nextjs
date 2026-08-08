@@ -5,6 +5,8 @@
 
 
 ## 2026-08-08
+### feat: /admin/track-b-system 스폰서 정산에 건별(ledger_id) 체크박스 선택 지급 추가 — 문제있는 건은 체크 해제하고 나머지만 부분지급 가능. 상세 미펼침 시 기존처럼 스폰서 전체 pending 일괄 처리 유지
+
 ### feat: profiles.owner_bank_name/owner_bank_account/owner_bank_holder 컬럼 추가, store-decoration "꾸미기" 탭에 정산 송금계좌 등록 CARD 신설(트랙A/B 공용, handleSave와 독립적인 별도 저장)
 
 ### fix: hq_stock_orders 결제취소 시 관련 hq_commission_ledger(pending 상태)도 함께 취소 처리(handleHqStockOrderCancel)
