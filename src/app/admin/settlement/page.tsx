@@ -273,7 +273,7 @@ export default function AdminSettlementBatchPage() {
     <div style={{ padding: '18px 18px 60px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginBottom: 12 }}>
         <div>
-          <div style={{ fontSize: 16, fontWeight: 900, color: '#fff' }}>정산 일괄 처리</div>
+          <div style={{ fontSize: 16, fontWeight: 900, color: '#fff' }}>오렌몰 정산 일괄 처리</div>
           <div style={{ marginTop: 4, fontSize: 11, color: 'rgba(255,255,255,0.55)' }}>
             기본 대상: <span style={{ color: '#c9a84c', fontWeight: 900 }}>D-3</span> (기간 종료일 ≤ {cutoff.toLocaleDateString('ko-KR')})
           </div>

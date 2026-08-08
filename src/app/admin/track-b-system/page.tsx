@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   LineChart,
@@ -39,6 +39,20 @@ type LedgerRow = {
   status: string
   created_at: string
   paid_at: string | null
+  source_order_id: string | null
+}
+
+type OrderItemLite = { name?: string; qty?: number; bonus?: number }
+
+type SponsorDetailLine = {
+  ledger_id: string
+  source_order_id: string
+  buyer_name: string
+  commission_rate: number
+  commission_amount: number
+  order_status: string
+  final_amount: number
+  products: Array<{ name: string; qty: number; bonus: number }>
 }
 
 type SponsorAgg = {
@@ -84,10 +98,16 @@ export default function AdminTrackBSystemPage() {
   const [statusFilter, setStatusFilter] = useState<string>('전체')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [msg, setMsg] = useState('')
+  const [detailOpenId, setDetailOpenId] = useState<string | null>(null)
+  const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null)
+  const [detailBySponsor, setDetailBySponsor] = useState<Record<string, SponsorDetailLine[]>>({})
 
   const load = useCallback(async () => {
     setLoading(true)
     setMsg('')
+    setDetailBySponsor({})
+    setDetailOpenId(null)
+    setDetailLoadingId(null)
     const thisMonthIso = monthStartIso()
     const since = new Date()
     since.setHours(0, 0, 0, 0)
@@ -102,7 +122,7 @@ export default function AdminTrackBSystemPage() {
         .limit(200),
       supabase
         .from('hq_commission_ledger')
-        .select('id, sponsor_owner_id, buyer_owner_id, brand_id, commission_amount, commission_rate, status, created_at, paid_at')
+        .select('id, sponsor_owner_id, buyer_owner_id, brand_id, commission_amount, commission_rate, status, created_at, paid_at, source_order_id')
         .order('created_at', { ascending: false })
         .limit(500),
       supabase
@@ -364,7 +384,109 @@ export default function AdminTrackBSystemPage() {
       return
     }
     setMsg('정산 처리 완료 (장부 상태만 변경 · 실송금 없음)')
+    setDetailBySponsor((prev) => {
+      const next = { ...prev }
+      delete next[sponsorOwnerId]
+      return next
+    })
+    if (detailOpenId === sponsorOwnerId) setDetailOpenId(null)
     await load()
+  }
+
+  const toggleSponsorDetail = async (sponsorOwnerId: string) => {
+    if (detailOpenId === sponsorOwnerId) {
+      setDetailOpenId(null)
+      return
+    }
+    setDetailOpenId(sponsorOwnerId)
+    if (detailBySponsor[sponsorOwnerId]) return
+
+    setDetailLoadingId(sponsorOwnerId)
+    setMsg('')
+    const pending = ledgers.filter(
+      (l) => l.sponsor_owner_id === sponsorOwnerId && l.status === 'pending' && l.source_order_id,
+    )
+    if (pending.length === 0) {
+      setDetailBySponsor((prev) => ({ ...prev, [sponsorOwnerId]: [] }))
+      setDetailLoadingId(null)
+      return
+    }
+
+    const orderIds = Array.from(new Set(pending.map((l) => String(l.source_order_id))))
+    const buyerIds = Array.from(new Set(pending.map((l) => String(l.buyer_owner_id || '')).filter(Boolean)))
+
+    const [{ data: orderRows }, { data: lineRows }, { data: buyerProfiles }] = await Promise.all([
+      supabase
+        .from('hq_stock_orders')
+        .select('id, status, final_amount, items')
+        .in('id', orderIds),
+      supabase
+        .from('hq_stock_order_lines')
+        .select('order_id, items, line_amount')
+        .in('order_id', orderIds),
+      buyerIds.length
+        ? supabase.from('profiles').select('id, full_name').in('id', buyerIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; full_name?: string | null }> }),
+    ])
+
+    const buyerNameById: Record<string, string> = {}
+    for (const p of buyerProfiles || []) {
+      buyerNameById[String(p.id)] = String((p as { full_name?: string | null }).full_name || '원장')
+    }
+
+    const orderById: Record<string, { status: string; final_amount: number; items: OrderItemLite[] }> = {}
+    for (const o of orderRows || []) {
+      orderById[String(o.id)] = {
+        status: String((o as { status?: string }).status || '-'),
+        final_amount: Math.trunc(Number((o as { final_amount?: number }).final_amount) || 0),
+        items: Array.isArray((o as { items?: unknown }).items)
+          ? ((o as { items: OrderItemLite[] }).items)
+          : [],
+      }
+    }
+
+    const productsByOrder: Record<string, Array<{ name: string; qty: number; bonus: number }>> = {}
+    for (const line of lineRows || []) {
+      const oid = String((line as { order_id?: string }).order_id || '')
+      if (!oid) continue
+      if (!productsByOrder[oid]) productsByOrder[oid] = []
+      const items = Array.isArray((line as { items?: unknown }).items)
+        ? ((line as { items: OrderItemLite[] }).items)
+        : []
+      for (const it of items) {
+        productsByOrder[oid].push({
+          name: String(it.name || '제품'),
+          qty: Math.trunc(Number(it.qty) || 0),
+          bonus: Math.trunc(Number(it.bonus) || 0),
+        })
+      }
+    }
+
+    const rows: SponsorDetailLine[] = pending.map((l) => {
+      const oid = String(l.source_order_id)
+      const order = orderById[oid]
+      let products = productsByOrder[oid] || []
+      if (products.length === 0 && order?.items?.length) {
+        products = order.items.map((it) => ({
+          name: String(it.name || '제품'),
+          qty: Math.trunc(Number(it.qty) || 0),
+          bonus: Math.trunc(Number(it.bonus) || 0),
+        }))
+      }
+      return {
+        ledger_id: l.id,
+        source_order_id: oid,
+        buyer_name: buyerNameById[String(l.buyer_owner_id)] || String(l.buyer_owner_id).slice(0, 8),
+        commission_rate: Number(l.commission_rate) || 0,
+        commission_amount: Math.trunc(Number(l.commission_amount) || 0),
+        order_status: order?.status || '-',
+        final_amount: order?.final_amount || 0,
+        products,
+      }
+    })
+
+    setDetailBySponsor((prev) => ({ ...prev, [sponsorOwnerId]: rows }))
+    setDetailLoadingId(null)
   }
 
   const settleTrackASalon = async (salonId: string, pendingIds: string[]) => {
@@ -459,37 +581,109 @@ export default function AdminTrackBSystemPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sponsorAgg.map((s) => (
-                    <tr key={s.sponsor_owner_id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                      <td style={{ padding: '8px 4px', color: '#fff' }}>{s.name}</td>
-                      <td style={{ padding: '8px 4px', color: PURPLE }}>{s.grade}</td>
-                      <td style={{ padding: '8px 4px', color: GOLD }}>
-                        ₩{s.pending_amount.toLocaleString()} ({s.pending_count})
-                      </td>
-                      <td style={{ padding: '8px 4px', color: 'rgba(255,255,255,0.5)' }}>
-                        ₩{s.paid_amount.toLocaleString()}
-                      </td>
-                      <td style={{ padding: '8px 4px' }}>
-                        <button
-                          type="button"
-                          disabled={!s.pending_count || busyId === s.sponsor_owner_id}
-                          onClick={() => void settleSponsor(s.sponsor_owner_id)}
-                          style={{
-                            fontSize: 11,
-                            padding: '4px 10px',
-                            borderRadius: 6,
-                            border: '1px solid rgba(201,169,110,0.4)',
-                            background: s.pending_count ? 'rgba(201,169,110,0.15)' : 'transparent',
-                            color: GOLD,
-                            cursor: s.pending_count ? 'pointer' : 'default',
-                            opacity: s.pending_count ? 1 : 0.4,
-                          }}
-                        >
-                          정산 처리
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                  {sponsorAgg.map((s) => {
+                    const open = detailOpenId === s.sponsor_owner_id
+                    const detailRows = detailBySponsor[s.sponsor_owner_id]
+                    const detailLoading = detailLoadingId === s.sponsor_owner_id
+                    return (
+                      <Fragment key={s.sponsor_owner_id}>
+                        <tr style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                          <td style={{ padding: '8px 4px', color: '#fff' }}>{s.name}</td>
+                          <td style={{ padding: '8px 4px', color: PURPLE }}>{s.grade}</td>
+                          <td style={{ padding: '8px 4px', color: GOLD }}>
+                            ₩{s.pending_amount.toLocaleString()} ({s.pending_count})
+                          </td>
+                          <td style={{ padding: '8px 4px', color: 'rgba(255,255,255,0.5)' }}>
+                            ₩{s.paid_amount.toLocaleString()}
+                          </td>
+                          <td style={{ padding: '8px 4px' }}>
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                              <button
+                                type="button"
+                                disabled={!s.pending_count || detailLoading}
+                                onClick={() => void toggleSponsorDetail(s.sponsor_owner_id)}
+                                style={{
+                                  fontSize: 11,
+                                  padding: '4px 10px',
+                                  borderRadius: 6,
+                                  border: open ? `1px solid ${PURPLE}` : '1px solid rgba(255,255,255,0.2)',
+                                  background: open ? 'rgba(123,94,167,0.2)' : 'transparent',
+                                  color: open ? '#c4a8f0' : 'rgba(255,255,255,0.7)',
+                                  cursor: s.pending_count ? 'pointer' : 'default',
+                                  opacity: s.pending_count ? 1 : 0.4,
+                                }}
+                              >
+                                {open ? '접기' : '상세보기'}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={!s.pending_count || busyId === s.sponsor_owner_id}
+                                onClick={() => void settleSponsor(s.sponsor_owner_id)}
+                                style={{
+                                  fontSize: 11,
+                                  padding: '4px 10px',
+                                  borderRadius: 6,
+                                  border: '1px solid rgba(201,169,110,0.4)',
+                                  background: s.pending_count ? 'rgba(201,169,110,0.15)' : 'transparent',
+                                  color: GOLD,
+                                  cursor: s.pending_count ? 'pointer' : 'default',
+                                  opacity: s.pending_count ? 1 : 0.4,
+                                }}
+                              >
+                                정산 처리
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        {open ? (
+                          <tr style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                            <td colSpan={5} style={{ padding: '10px 8px 14px', background: 'rgba(123,94,167,0.06)' }}>
+                              {detailLoading ? (
+                                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>상세 불러오는 중…</div>
+                              ) : !detailRows || detailRows.length === 0 ? (
+                                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>pending 상세 없음</div>
+                              ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                                  {detailRows.map((d) => (
+                                    <div
+                                      key={d.ledger_id}
+                                      style={{
+                                        border: '1px solid rgba(255,255,255,0.08)',
+                                        borderRadius: 8,
+                                        padding: 10,
+                                      }}
+                                    >
+                                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 6, fontSize: 11 }}>
+                                        <span style={{ color: '#fff' }}>구매자(원장): {d.buyer_name}</span>
+                                        <span style={{ color: PURPLE }}>적용요율: {d.commission_rate}%</span>
+                                        <span style={{ color: GOLD }}>커미션 ₩{d.commission_amount.toLocaleString()}</span>
+                                        <span style={{ color: 'rgba(255,255,255,0.45)' }}>
+                                          주문 ₩{d.final_amount.toLocaleString()} · {d.order_status}
+                                        </span>
+                                      </div>
+                                      {d.products.length === 0 ? (
+                                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>제품 내역 없음</div>
+                                      ) : (
+                                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>
+                                          {d.products.map((p, i) => (
+                                            <span key={`${d.ledger_id}-${i}`}>
+                                              {i > 0 ? ' · ' : ''}
+                                              {p.name} {p.qty}ea
+                                              {p.bonus > 0 ? ` (+${p.bonus})` : ''}
+                                            </span>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    )
+                  })}
                 </tbody>
               </table>
             )}

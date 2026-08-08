@@ -73,4 +73,10 @@ export async function handleHqStockOrderCancel(
     .from('hq_stock_order_lines')
     .update({ status: '취소', updated_at: nowIso })
     .eq('order_id', intent.target_id)
+  await client
+    .from('hq_commission_ledger')
+    .update({ status: 'cancelled' })
+    .eq('source_type', 'hq_stock_order')
+    .eq('source_order_id', intent.target_id)
+    .eq('status', 'pending')
 }

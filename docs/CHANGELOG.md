@@ -5,6 +5,8 @@
 
 
 ## 2026-08-08
+### feat: /admin/settlement 제목을 "오렌몰 정산 일괄 처리"로 변경(track-b-system과 명확히 구분). /admin/track-b-system 스폰서 커미션 목록에 상세보기 드릴다운 추가 — 구매자별 제품/수량/적용요율 확인 가능
+
 ### feat: 트랙B 발송화면(BrandInventoryFulfillment)을 hq_stock_order_lines 기반 체크박스 발송으로 재작성 — 트랙A와 동일 패턴. 부분발송 시 부모 status를 '배송중'으로 정확히 반영. hq_stock_order_lines RLS를 company_id 기준으로 단순화(형제브랜드 라인 누락 문제 해결)
 
 ### feat: 트랙B(hq-stock-orders) 다중브랜드 지원 완성 — 단일브랜드 제한 삭제, company_id+lines 구조로 제출, create API 재작성(등급필터 서버재검증 포함), hq_stock_order_lines 자식테이블 도입, PayApp 웹훅이 부모+자식 상태 동기화
