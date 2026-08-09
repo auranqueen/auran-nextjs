@@ -431,17 +431,20 @@ export default function AdminTrackBSystemPage() {
       `${start.getFullYear()}년 ${start.getMonth() + 1}월분 ${count}건, 총 ${total.toLocaleString()}원을 정산 처리하시겠습니까?`,
     )
     if (!confirmed) return
-    const { error } = await supabase
-      .from('hq_commission_ledger')
-      .update({ status: 'paid', paid_at: now.toISOString() })
-      .eq('status', 'pending')
-      .gte('created_at', start.toISOString())
-      .lte('created_at', end.toISOString())
+    const { data: rpcResult, error } = await supabase.rpc('settle_monthly_sponsor_commission', {
+      p_period_start: start.toISOString(),
+      p_period_end: end.toISOString(),
+    })
     if (error) {
       setMsg(error.message)
       return
     }
-    setMsg(`${start.getFullYear()}년 ${start.getMonth() + 1}월분 월정산 처리 완료 (장부 상태만 변경 · 실송금 없음)`)
+    const result = rpcResult?.[0]
+    if (!result || !result.out_batch_id) {
+      setMsg('정산대상 없음')
+      return
+    }
+    setMsg(`${result.out_batch_seq}회차 정산 완료 (${start.getFullYear()}.${String(start.getMonth() + 1).padStart(2, '0')}월분, ${result.out_item_count}건, ${Number(result.out_total_amount).toLocaleString()}원)`)
     await load()
   }
   const settleSponsor = async (sponsorOwnerId: string) => {
