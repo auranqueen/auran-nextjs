@@ -210,6 +210,7 @@ export default function SalonHomePage() {
   const [bookingStep, setBookingStep] = useState<1 | 2 | 3 | 4 | 5>(1)
   const [bookingSessions, setBookingSessions] = useState(1)
   const [purchaseId, setPurchaseId] = useState<string>('')
+  const [ownedPurchases, setOwnedPurchases] = useState<Array<{ id: string; service_name: string; service_price: number; total_sessions: number; used_sessions: number }>>([])
   const [reviewerId, setReviewerId] = useState('')
   const [paymentLoading, setPaymentLoading] = useState(false)
   const bookingPaidReturnRef = useRef(false)
@@ -398,6 +399,20 @@ export default function SalonHomePage() {
     setBookingNotes('')
     setBookingAgree(false)
   }, [showBooking])
+  useEffect(() => {
+    if (!showBooking || !customerUserId) return
+    const salonIdForQuery = bookingSalonId || id
+    if (!salonIdForQuery) return
+    void (async () => {
+      const { data } = await supabaseRef.current
+        .from('purchases')
+        .select('id, service_name, service_price, total_sessions, used_sessions')
+        .eq('customer_id', customerUserId)
+        .eq('salon_id', salonIdForQuery)
+      const remaining = (data || []).filter((p) => Number(p.used_sessions || 0) < Number(p.total_sessions || 1))
+      setOwnedPurchases(remaining)
+    })()
+  }, [showBooking, customerUserId, bookingSalonId, id])
 
   useEffect(() => {
     if (bookingStep !== 5 || !showBooking) return
@@ -1346,6 +1361,35 @@ export default function SalonHomePage() {
               <div style={{ flex: 1, padding: '12px 15px 100px' }}>
                 {bookingStep === 1 ? (
                   <>
+                    {ownedPurchases.length > 0 ? (
+                      <div style={{ marginBottom: 16 }}>
+                        <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 8 }}>보유 관리권으로 예약</div>
+                        {ownedPurchases.map((p) => (
+                          <div
+                            key={p.id}
+                            onClick={() => {
+                              setPurchaseId(p.id)
+                              setBookingServiceName(p.service_name || '')
+                              setBookingServicePrice(Number(p.service_price || 0))
+                              setBookingSessions(Number(p.total_sessions || 1))
+                            }}
+                            style={{
+                              padding: 12,
+                              marginBottom: 8,
+                              border: purchaseId === p.id ? '2px solid #000' : '1px solid #ddd',
+                              borderRadius: 8,
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <div style={{ fontWeight: 500 }}>{p.service_name}</div>
+                            <div style={{ fontSize: 12, color: TEXT_SUB }}>
+                              잔여 {Number(p.total_sessions || 0) - Number(p.used_sessions || 0)}회 / 총 {p.total_sessions}회
+                            </div>
+                          </div>
+                        ))}
+                        <div style={{ fontSize: 11, color: TEXT_SUB, margin: '12px 0 8px' }}>새로 구매하기</div>
+                      </div>
+                    ) : null}
                     <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 8 }}>시술 선택</div>
                     {customerPhase ? (
                       <div style={{ background: 'rgba(123,94,167,0.12)', border: '0.5px solid rgba(123,94,167,0.25)', borderRadius: 9, padding: '8px 11px', marginBottom: 10 }}>
@@ -1361,6 +1405,7 @@ export default function SalonHomePage() {
                         role="button"
                         tabIndex={0}
                         onClick={() => {
+                          setPurchaseId('')
                           setBookingServiceName(svc.name)
                           setBookingServicePrice(svc.price)
                         }}
@@ -1690,7 +1735,7 @@ export default function SalonHomePage() {
                     <button
                       type="button"
                       disabled={!bookingServiceName}
-                      onClick={() => setBookingStep(2)}
+                      onClick={() => (purchaseId ? setBookingStep(3) : setBookingStep(2))}
                       style={{
                         width: '100%',
                         padding: 13,

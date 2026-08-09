@@ -27,6 +27,7 @@ type BookingRow = {
   customer_id?: string | null
   external_customer_id?: string | null
   notes?: string | null
+  purchase_id?: string | null
   displayName?: string
 }
 
@@ -108,7 +109,7 @@ export default function BookingManagePage() {
     const sb = supabaseRef.current
     let q = sb
       .from('bookings')
-      .select('id, booking_date, booking_time, service_name, service_price, status, customer_name, customer_id, external_customer_id, notes')
+      .select('id, booking_date, booking_time, service_name, service_price, status, customer_name, customer_id, external_customer_id, notes, purchase_id')
       .eq('owner_id', oid)
 
     if (currentTab === 'today') {
@@ -212,25 +213,53 @@ export default function BookingManagePage() {
     if (status === 'completed' || status === 'cancelled') {
       const booking = rows.find(bk => bk.id === id)
       if (booking?.customer_id) {
-        const { data: pur } = await supabaseRef.current
+        const purBaseQuery = supabaseRef.current
           .from('purchases')
-          .select('id, used_sessions, total_sessions')
-          .eq('customer_id', booking.customer_id)
-          .eq('salon_id', salonId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single()
+          .select('id, used_sessions, total_sessions, payment_amount, platform_fee, owner_amount')
+        const { data: pur } = booking.purchase_id
+          ? await purBaseQuery.eq('id', booking.purchase_id).single()
+          : await purBaseQuery
+              .eq('customer_id', booking.customer_id)
+              .eq('salon_id', salonId)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single()
         if (pur) {
           if (status === 'completed' && pur.used_sessions < pur.total_sessions) {
+            const nextSession = pur.used_sessions + 1
+            const totalSessions = pur.total_sessions || 1
+            const perAmount = Math.floor((pur.payment_amount || 0) / totalSessions)
+            const perFee = Math.floor((pur.platform_fee || 0) / totalSessions)
+            const perOwner = Math.floor((pur.owner_amount || 0) / totalSessions)
+            const isLastSession = nextSession >= totalSessions
+            const amount = isLastSession ? (pur.payment_amount || 0) - perAmount * (totalSessions - 1) : perAmount
+            const platformFee = isLastSession ? (pur.platform_fee || 0) - perFee * (totalSessions - 1) : perFee
+            const ownerAmount = isLastSession ? (pur.owner_amount || 0) - perOwner * (totalSessions - 1) : perOwner
             await supabaseRef.current
               .from('purchases')
-              .update({ used_sessions: pur.used_sessions + 1 })
+              .update({ used_sessions: nextSession })
               .eq('id', pur.id)
+            await supabaseRef.current
+              .from('purchase_session_usages')
+              .insert({
+                purchase_id: pur.id,
+                booking_id: id,
+                session_number: nextSession,
+                amount,
+                platform_fee: platformFee,
+                owner_amount: ownerAmount,
+              })
           } else if (status === 'cancelled' && pur.used_sessions > 0) {
             await supabaseRef.current
               .from('purchases')
               .update({ used_sessions: pur.used_sessions - 1 })
               .eq('id', pur.id)
+            await supabaseRef.current
+              .from('purchase_session_usages')
+              .delete()
+              .eq('purchase_id', pur.id)
+              .eq('session_number', pur.used_sessions)
+              .eq('settlement_status', 'pending')
           }
         }
       }
@@ -259,14 +288,17 @@ export default function BookingManagePage() {
     if (status === 'completed') {
       const booking = rows.find(bk => bk.id === id)
       if (booking?.customer_id) {
-        const { data: purchase } = await supabaseRef.current
+        const honeyBaseQuery = supabaseRef.current
           .from('purchases')
           .select('id, reviewer_id, honey_amount')
-          .eq('customer_id', booking.customer_id)
-          .eq('salon_id', salonId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single()
+        const { data: purchase } = booking.purchase_id
+          ? await honeyBaseQuery.eq('id', booking.purchase_id).single()
+          : await honeyBaseQuery
+              .eq('customer_id', booking.customer_id)
+              .eq('salon_id', salonId)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .single()
         if (purchase?.reviewer_id) {
           const { data: salonData } = await supabaseRef.current
             .from('salons')

@@ -4,6 +4,17 @@
 ---
 
 
+## 2026-08-09
+### feat: 회차별 정산 인프라 + 관리권 피커 + 리뷰게이트 전체 구현
+- 139: purchase_session_usages 테이블 신설(회차소진 이력+회차별 정산), RLS(customer/owner/admin 분리)
+- BookingManagePage: booking.purchase_id 우선매칭 도입(완료/취소/honey 3곳), 회차별 이력 insert + 마지막회차 잔액 몰아주기
+- salons/[id]: 예약모달에 보유 관리권 피커 추가(step1), 선택시 결제(step2) 생략하고 step3 이동, 시술 재선택시 purchaseId 초기화
+- 140: reviews.booking_id/owner_reply/replied_at 추가, insert게이트(본인의 완료된 booking만), owner_reply 전용 UPDATE 트리거
+- 141: reviews.service_tags 추가(현재 미사용 — helpful_concerns로 대체 확정)
+- 신규 페이지 /dashboard/owner/reviews: 관리권 리뷰(목록+답글)/제품 리뷰(목록) 탭, 적립토스트 표시, 퀵메뉴 연결
+- ServiceReviewForm: booking_id 쿼리파라미터+insert 반영
+- my/reviews: 완료예약(리뷰미작성) 목록 추가, "관리 후기 작성하기" 실제 작성진입으로 교체, 탭전환시 재조회
+
 ## 2026-08-08
 ### feat: /admin/track-b-system 스폰서 정산에 건별(ledger_id) 체크박스 선택 지급 추가 — 문제있는 건은 체크 해제하고 나머지만 부분지급 가능. 상세 미펼침 시 기존처럼 스폰서 전체 pending 일괄 처리 유지
 

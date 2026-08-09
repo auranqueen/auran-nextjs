@@ -46,6 +46,7 @@ export default function ServiceReviewForm() {
   const serviceName = decodeURIComponent(search.get('service') || '')
   const salonId = search.get('salon_id') || ''
   const reviewerIdParam = search.get('reviewer_id') || ''
+  const bookingId = search.get('booking_id') || ''
 
   const photoRef = useRef<HTMLInputElement | null>(null)
   const videoRef = useRef<HTMLInputElement | null>(null)
@@ -194,6 +195,7 @@ export default function ServiceReviewForm() {
           is_shared_community: isShared,
           status: 'approved',
           helpful_count: 0,
+          booking_id: bookingId || null,
         } as any)
         .select('id')
         .single()

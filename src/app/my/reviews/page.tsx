@@ -47,6 +47,7 @@ export default function MyReviewsPage() {
   const [salonRows, setSalonRows] = useState<SalonReviewRow[]>([])
   const [salonLoading, setSalonLoading] = useState(false)
   const [salonLoaded, setSalonLoaded] = useState(false)
+  const [pendingBookings, setPendingBookings] = useState<Array<{ id: string; salon_id: string; salon_name: string; service_name: string | null; booking_date: string | null }>>([])
   const [formProductId, setFormProductId] = useState<string | null>(null)
   const [editDraft, setEditDraft] = useState<{
     id: string
@@ -116,6 +117,34 @@ export default function MyReviewsPage() {
       setSalonLoaded(true)
       return
     }
+    const { data: completedBookings } = await supabase
+      .from('bookings')
+      .select('id, salon_id, service_name, booking_date')
+      .eq('customer_id', me.id)
+      .eq('status', 'completed')
+    const { data: reviewedBookingIds } = await supabase
+      .from('reviews')
+      .select('booking_id')
+      .eq('author_id', me.id)
+      .not('booking_id', 'is', null)
+    const reviewedSet = new Set((reviewedBookingIds || []).map((r) => r.booking_id))
+    const unreviewed = (completedBookings || []).filter((b) => !reviewedSet.has(b.id))
+    if (unreviewed.length) {
+      const salonIds = Array.from(new Set(unreviewed.map((b) => b.salon_id)))
+      const { data: salonNames } = await supabase.from('salons').select('id, name').in('id', salonIds)
+      const nameMap = new Map((salonNames || []).map((s) => [s.id, s.name]))
+      setPendingBookings(
+        unreviewed.map((b) => ({
+          id: b.id,
+          salon_id: b.salon_id,
+          salon_name: nameMap.get(b.salon_id) || '',
+          service_name: b.service_name,
+          booking_date: b.booking_date,
+        }))
+      )
+    } else {
+      setPendingBookings([])
+    }
     const { data: revs } = await supabase
       .from('reviews')
       .select('id, service_name, rating, content, created_at, images, helpful_concerns, target_id')
@@ -149,8 +178,8 @@ export default function MyReviewsPage() {
   }
 
   useEffect(() => {
-    if (tab === 'salon' && !salonLoaded) void loadSalonReviews()
-  }, [tab, salonLoaded])
+    if (tab === 'salon') void loadSalonReviews()
+  }, [tab])
 
   return (
     <div style={{ background: BG, minHeight: '100vh', maxWidth: '390px', margin: '0 auto', fontFamily: "'Noto Sans KR', sans-serif", fontWeight: 300, color: '#fff', paddingBottom: '96px' }}>
@@ -327,24 +356,31 @@ export default function MyReviewsPage() {
           })
         )}
 
-        {tab === 'salon' ? (
-          <span
-            onClick={() => router.push('/my')}
-            style={{
-              display: 'block',
-              textAlign: 'center',
-              marginTop: 16,
-              padding: '12px 0',
-              borderRadius: 12,
-              background: PURPLE,
-              color: '#fff',
-              fontSize: 13,
-              cursor: 'pointer',
-              fontWeight: 400,
-            }}
-          >
-            관리 후기 작성하기
-          </span>
+        {tab === 'salon' && pendingBookings.length > 0 ? (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>리뷰를 작성할 수 있어요</div>
+            {pendingBookings.map((b) => (
+              <div
+                key={b.id}
+                onClick={() =>
+                  router.push(
+                    `/reviews/write?salon_id=${b.salon_id}&service=${encodeURIComponent(b.service_name || '')}&booking_id=${b.id}`
+                  )
+                }
+                style={{
+                  padding: '12px 14px',
+                  marginBottom: 8,
+                  borderRadius: 12,
+                  background: PURPLE,
+                  color: '#fff',
+                  fontSize: 13,
+                  cursor: 'pointer',
+                }}
+              >
+                {b.salon_name} · {b.service_name} 리뷰 쓰기
+              </div>
+            ))}
+          </div>
         ) : null}
       </div>
     </div>

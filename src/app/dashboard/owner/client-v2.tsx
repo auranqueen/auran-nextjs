@@ -319,6 +319,7 @@ export default function OwnerDashClientV2() {
     { icon: '📋', label: '시술차트', sub: `오늘 ${todayChartCount}건 작성`, href: '/dashboard/owner/charts-v2' },
     { icon: '📅', label: '예약 관리', sub: `오늘 ${todayBookings.length}건`, href: '/dashboard/owner/bookings' },
     { icon: '👥', label: '고객 관리', sub: `${extCount}명`, href: '/dashboard/owner/charts-v2' },
+    { icon: '⭐', label: '리뷰함', href: '/dashboard/owner/reviews' },
     { icon: '📦', label: '브랜드 발주', sub: tradeBrands.length ? `${tradeBrands[0]} 외 ${Math.max(0, tradeBrands.length - 1)}개` : '브랜드사를 설정해보세요', href: '/dashboard/owner/brand-orders' },
     ...(originTrack === 'B'
       ? [{ icon: '📦', label: '재고 발주', sub: '본사 재고 · 즉시 결제', href: '/dashboard/owner/hq-stock-orders' }]
