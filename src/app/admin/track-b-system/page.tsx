@@ -15,7 +15,6 @@ import {
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
 const HQ_PAID = ['결제완료', '배송완료', '구매확정'] as const
-const BPO_SETTLE_STATUSES = ['결제완료', '배송중', '배송완료', '구매확정'] as const
 
 type HqOrder = {
   id: string
@@ -73,7 +72,7 @@ type TrackASalonAgg = {
   salon_name: string
   pending_count: number
   pending_amount: number
-  pending_ids: string[]
+  pending_ids: Array<{ id: string; source: 'bpo' | 'purchase_session' }>
 }
 
 function dayKey(iso: string) {
@@ -92,12 +91,16 @@ function maskAccount(acc: string) {
   return `${head}${mid}${raw.slice(-4)}`
 }
 
-function formatSponsorBank(s: Pick<SponsorAgg, 'bank_name' | 'bank_account' | 'bank_holder'>) {
+function formatSponsorBank(
+  s: Pick<SponsorAgg, 'bank_name' | 'bank_account' | 'bank_holder'>,
+  reveal?: boolean,
+) {
   const name = String(s.bank_name || '').trim()
-  const masked = maskAccount(String(s.bank_account || ''))
+  const rawAcc = String(s.bank_account || '').trim()
+  const account = reveal ? rawAcc : maskAccount(rawAcc)
   const holder = String(s.bank_holder || '').trim()
-  if (!name && !masked) return '계좌 미등록'
-  const parts = [name, masked].filter(Boolean)
+  if (!name && !account) return '계좌 미등록'
+  const parts = [name, account].filter(Boolean)
   if (holder) parts.push(`(${holder})`)
   return parts.join(' ')
 }
@@ -122,6 +125,7 @@ export default function AdminTrackBSystemPage() {
   const [statusFilter, setStatusFilter] = useState<string>('전체')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [msg, setMsg] = useState('')
+  const [revealedAccounts, setRevealedAccounts] = useState<Set<string>>(new Set())
   const [settlementBatches, setSettlementBatches] = useState<Array<{ id: string; batch_seq: number; period_start: string; period_end: string; item_count: number; total_amount: number }>>([])
   const [expandedBatchId, setExpandedBatchId] = useState<string | null>(null)
   const [batchDetailRows, setBatchDetailRows] = useState<Array<{ id: string; sponsor_owner_id: string; buyer_owner_id: string; commission_amount: number }>>([])
@@ -152,7 +156,7 @@ export default function AdminTrackBSystemPage() {
     since.setDate(since.getDate() - 29)
     const sinceIso = since.toISOString()
 
-    const [{ data: orderRows }, { data: ledgerRows }, { data: trendRows }, { data: bpoRows }] = await Promise.all([
+    const [{ data: orderRows }, { data: ledgerRows }, { data: trendRows }] = await Promise.all([
       supabase
         .from('hq_stock_orders')
         .select('id, status, final_amount, ordered_at, created_at, brand_id, profile_id')
@@ -168,12 +172,10 @@ export default function AdminTrackBSystemPage() {
         .select('final_amount, ordered_at, created_at, status')
         .in('status', [...HQ_PAID])
         .gte('created_at', sinceIso),
-      supabase
-        .from('brand_product_orders')
-        .select('id, salon_id, owner_amount, status, settlement_status')
-        .in('status', [...BPO_SETTLE_STATUSES])
-        .limit(2000),
     ])
+
+    const { data: salonAggData, error: salonAggError } = await supabase.rpc('get_salon_store_pending_by_salon')
+    const { data: settledTotalData } = await supabase.rpc('get_salon_store_settled_total')
 
     // 트랙B: profile_id → profiles.auth_id → users.name / users.id → salons.name
     const rawHqOrders = orderRows || []
@@ -337,73 +339,33 @@ export default function AdminTrackBSystemPage() {
     }
     setSponsorAgg(Object.values(aggMap).sort((a, b) => b.pending_amount - a.pending_amount))
 
-    // ── 트랙A 살롱스토어 정산 (brand_product_orders)
-    type BpoRow = {
-      id: string
-      salon_id: string
-      owner_amount: number | null
-      status: string
-      settlement_status: string | null
+    // ── AB 살롱스토어 정산 (RPC 집계)
+    if (salonAggError) {
+      setMsg(salonAggError.message)
     }
-    const bpoList = (bpoRows || []) as BpoRow[]
-    const isPendingSettle = (ss: string | null | undefined) => !ss || ss !== '정산완료'
+    const salonAggRows = salonAggData || []
     let pendingTotal = 0
-    let settledTotal = 0
-    const pendingBySalon: Record<string, { count: number; amount: number; ids: string[] }> = {}
-    for (const row of bpoList) {
-      const amt = Math.trunc(Number(row.owner_amount) || 0)
-      if (isPendingSettle(row.settlement_status)) {
-        pendingTotal += amt
-        const sid = String(row.salon_id || '')
-        if (!sid) continue
-        if (!pendingBySalon[sid]) pendingBySalon[sid] = { count: 0, amount: 0, ids: [] }
-        pendingBySalon[sid].count += 1
-        pendingBySalon[sid].amount += amt
-        pendingBySalon[sid].ids.push(row.id)
-      } else {
-        settledTotal += amt
-      }
+    for (const row of salonAggRows) {
+      pendingTotal += Number(row.pending_amount) || 0
     }
-    const salonIds = Object.keys(pendingBySalon)
-    const salonNameById: Record<string, string> = {}
-    const ownerNameBySalon: Record<string, string> = {}
-    if (salonIds.length) {
-      const { data: salons } = await supabase
-        .from('salons')
-        .select('id, name, owner_id')
-        .in('id', salonIds)
-      const ownerIds = Array.from(
-        new Set((salons || []).map((s: { owner_id?: string }) => String(s.owner_id || '')).filter(Boolean)),
-      )
-      const ownerNameById: Record<string, string> = {}
-      if (ownerIds.length) {
-        const { data: owners } = await supabase.from('users').select('id, name').in('id', ownerIds)
-        for (const u of owners || []) {
-          ownerNameById[String(u.id)] = String((u as { name?: string }).name || '원장')
-        }
-      }
-      for (const s of salons || []) {
-        const sid = String(s.id)
-        salonNameById[sid] = String((s as { name?: string }).name || '살롱')
-        ownerNameBySalon[sid] = ownerNameById[String((s as { owner_id?: string }).owner_id || '')] || '원장'
-      }
-    }
+    const settledTotal = Number(settledTotalData) || 0
     setTrackAKpi({
       pendingTotal,
       settledTotal,
-      pendingSalonCount: salonIds.length,
+      pendingSalonCount: salonAggRows.length,
     })
     setTrackASalonAgg(
-      salonIds
-        .map((sid) => ({
-          salon_id: sid,
-          owner_name: ownerNameBySalon[sid] || '원장',
-          salon_name: salonNameById[sid] || sid.slice(0, 8),
-          pending_count: pendingBySalon[sid].count,
-          pending_amount: pendingBySalon[sid].amount,
-          pending_ids: pendingBySalon[sid].ids,
-        }))
-        .sort((a, b) => b.pending_amount - a.pending_amount),
+      salonAggRows.map((row: any) => ({
+        salon_id: row.salon_id,
+        owner_name: row.owner_name || '원장',
+        salon_name: row.salon_name || row.salon_id.slice(0, 8),
+        pending_count: Number(row.pending_count) || 0,
+        pending_amount: Number(row.pending_amount) || 0,
+        pending_ids: [
+          ...(row.bpo_ids || []).map((id: string) => ({ id, source: 'bpo' as const })),
+          ...(row.psu_ids || []).map((id: string) => ({ id, source: 'purchase_session' as const })),
+        ],
+      })),
     )
 
     setLoading(false)
@@ -673,20 +635,39 @@ export default function AdminTrackBSystemPage() {
     setDetailLoadingId(null)
   }
 
-  const settleTrackASalon = async (salonId: string, pendingIds: string[]) => {
+  const settleTrackASalon = async (
+    salonId: string,
+    pendingIds: Array<{ id: string; source: 'bpo' | 'purchase_session' }>,
+  ) => {
     if (!pendingIds.length) return
     setBusyId(`a-${salonId}`)
     setMsg('')
-    const { error } = await supabase
-      .from('brand_product_orders')
-      .update({ settlement_status: '정산완료' })
-      .in('id', pendingIds)
-    setBusyId(null)
-    if (error) {
-      setMsg(error.message)
-      return
+    const bpoIds = pendingIds.filter((p) => p.source === 'bpo').map((p) => p.id)
+    const psuIds = pendingIds.filter((p) => p.source === 'purchase_session').map((p) => p.id)
+    if (bpoIds.length) {
+      const { error } = await supabase
+        .from('brand_product_orders')
+        .update({ settlement_status: '정산완료' })
+        .in('id', bpoIds)
+      if (error) {
+        setBusyId(null)
+        setMsg(error.message)
+        return
+      }
     }
-    setMsg('트랙A 정산 처리 완료 (확정만 · 실송금 없음)')
+    if (psuIds.length) {
+      const { error } = await supabase
+        .from('purchase_session_usages')
+        .update({ settlement_status: '정산완료', settled_at: new Date().toISOString() })
+        .in('id', psuIds)
+      if (error) {
+        setBusyId(null)
+        setMsg(error.message)
+        return
+      }
+    }
+    setBusyId(null)
+    setMsg('AB 살롱스토어 정산 처리 완료 (확정만 · 실송금 없음)')
     await load()
   }
 
@@ -840,7 +821,18 @@ export default function AdminTrackBSystemPage() {
                           <td style={{ padding: '8px 4px', color: '#fff' }}>
                             <div>{s.name}</div>
                             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>
-                              {formatSponsorBank(s)}
+                              {formatSponsorBank(s, revealedAccounts.has(s.sponsor_owner_id))}
+                              <span
+                                onClick={() => setRevealedAccounts((prev) => {
+                                  const next = new Set(prev)
+                                  if (next.has(s.sponsor_owner_id)) next.delete(s.sponsor_owner_id)
+                                  else next.add(s.sponsor_owner_id)
+                                  return next
+                                })}
+                                style={{ marginLeft: 6, fontSize: 11, textDecoration: 'underline', cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}
+                              >
+                                {revealedAccounts.has(s.sponsor_owner_id) ? '가리기' : '전체보기'}
+                              </span>
                             </div>
                           </td>
                           <td style={{ padding: '8px 4px', color: PURPLE }}>{s.grade}</td>
@@ -898,7 +890,18 @@ export default function AdminTrackBSystemPage() {
                           <tr style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
                             <td colSpan={5} style={{ padding: '10px 8px 14px', background: 'rgba(123,94,167,0.06)' }}>
                               <div style={{ fontSize: 11, color: GOLD, marginBottom: 10 }}>
-                                송금계좌: {formatSponsorBank(s)}
+                                송금계좌: {formatSponsorBank(s, revealedAccounts.has(s.sponsor_owner_id))}
+                                <span
+                                  onClick={() => setRevealedAccounts((prev) => {
+                                    const next = new Set(prev)
+                                    if (next.has(s.sponsor_owner_id)) next.delete(s.sponsor_owner_id)
+                                    else next.add(s.sponsor_owner_id)
+                                    return next
+                                  })}
+                                  style={{ marginLeft: 6, fontSize: 11, textDecoration: 'underline', cursor: 'pointer', color: 'rgba(255,255,255,0.5)' }}
+                                >
+                                  {revealedAccounts.has(s.sponsor_owner_id) ? '가리기' : '전체보기'}
+                                </span>
                               </div>
                               {detailLoading ? (
                                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>상세 불러오는 중…</div>
@@ -1074,9 +1077,9 @@ export default function AdminTrackBSystemPage() {
               marginTop: 18,
             }}
           >
-            <div style={{ fontSize: 13, color: GOLD, marginBottom: 4, fontWeight: 600 }}>트랙A · 살롱스토어 정산</div>
+            <div style={{ fontSize: 13, color: GOLD, marginBottom: 4, fontWeight: 600 }}>AB 살롱스토어 정산</div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginBottom: 12 }}>
-              brand_product_orders · 실송금 없음 · settlement_status 확정만
+              제품(brand_product_orders) + 관리권(purchases) · 트랙A/B 공통 · 실송금 없음 · 확정만
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 14 }}>
               <div style={{ background: 'rgba(201,169,110,0.08)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: 10, padding: 12 }}>
