@@ -5,6 +5,11 @@
 
 
 ## 2026-08-09
+### feat: 정산배치 이력(번호/기간/세부보기/출력) 전체 구현
+- hq_settlement_batches(142) + settle_monthly_sponsor_commission RPC(143) 추가: 월정산 실행시 정산번호(batch_seq)+기간 스냅샷 생성, ledger.batch_id로 연결, 원자적 트랜잭션 처리
+- 스폰서 커미션 섹션에 "최근 정산이력" 목록 추가: 회차별 클릭시 세부내역(profiles.full_name 조인) 펼침, 로딩/빈결과 상태 분리
+- 세부보기에 CSV 다운로드 + 인쇄 기능 추가(실명 반영)
+
 ### feat: 스폰서커미션 월정산 배치 + 미리보기/확인창
 - hq_commission_ledger 월정산 배치(settleMonthlyBatch) 추가: 전월 1일~말일 pending→paid 일괄처리, 기존 원장별 개별 정산과 별개 버튼으로 분리
 - 실행 전 대상 건수/합계 미리보기 + window.confirm 확인창 추가, 0건이면 확인창 없이 안내만

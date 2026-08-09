@@ -122,6 +122,11 @@ export default function AdminTrackBSystemPage() {
   const [statusFilter, setStatusFilter] = useState<string>('전체')
   const [busyId, setBusyId] = useState<string | null>(null)
   const [msg, setMsg] = useState('')
+  const [settlementBatches, setSettlementBatches] = useState<Array<{ id: string; batch_seq: number; period_start: string; period_end: string; item_count: number; total_amount: number }>>([])
+  const [expandedBatchId, setExpandedBatchId] = useState<string | null>(null)
+  const [batchDetailRows, setBatchDetailRows] = useState<Array<{ id: string; sponsor_owner_id: string; buyer_owner_id: string; commission_amount: number }>>([])
+  const [batchOwnerNames, setBatchOwnerNames] = useState<Record<string, string>>({})
+  const [batchDetailLoading, setBatchDetailLoading] = useState(false)
   const [detailOpenId, setDetailOpenId] = useState<string | null>(null)
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null)
   const [detailBySponsor, setDetailBySponsor] = useState<Record<string, SponsorDetailLine[]>>({})
@@ -131,6 +136,13 @@ export default function AdminTrackBSystemPage() {
     setLoading(true)
     setMsg('')
     setDetailBySponsor({})
+    void supabase
+      .from('hq_settlement_batches')
+      .select('id, batch_seq, period_start, period_end, item_count, total_amount')
+      .eq('settlement_type', 'sponsor_commission')
+      .order('batch_seq', { ascending: false })
+      .limit(12)
+      .then(({ data }) => setSettlementBatches(data || []))
     setDetailOpenId(null)
     setDetailLoadingId(null)
     setSelectedLedgerIds({})
@@ -406,6 +418,63 @@ export default function AdminTrackBSystemPage() {
     return orders.filter((o) => o.status === statusFilter)
   }, [orders, statusFilter])
 
+  const toggleBatchDetail = async (batchId: string) => {
+    if (expandedBatchId === batchId) {
+      setExpandedBatchId(null)
+      return
+    }
+    setExpandedBatchId(batchId)
+    setBatchDetailLoading(true)
+    const { data } = await supabase
+      .from('hq_commission_ledger')
+      .select('id, sponsor_owner_id, buyer_owner_id, commission_amount')
+      .eq('batch_id', batchId)
+    const rows = data || []
+    setBatchDetailRows(rows)
+    const ownerIds = Array.from(new Set(rows.flatMap((r) => [r.sponsor_owner_id, r.buyer_owner_id]).filter(Boolean)))
+    if (ownerIds.length) {
+      // hq_commission_ledger.sponsor/buyer_owner_id → profiles.id (users.id 아님)
+      const { data: owners } = await supabase.from('profiles').select('id, full_name').in('id', ownerIds)
+      const nameMap: Record<string, string> = {}
+      ;(owners || []).forEach((o) => {
+        nameMap[o.id] = String((o as { full_name?: string | null }).full_name || o.id.slice(0, 8))
+      })
+      setBatchOwnerNames(nameMap)
+    }
+    setBatchDetailLoading(false)
+  }
+  const exportBatchCsv = (batch: { batch_seq: number; period_start: string }, rows: Array<{ id: string; sponsor_owner_id: string; buyer_owner_id: string; commission_amount: number }>, nameMap: Record<string, string>) => {
+    const header = 'ID,스폰서,구매자,커미션금액\n'
+    const body = rows.map((r) => `${r.id},${nameMap[r.sponsor_owner_id] || r.sponsor_owner_id},${nameMap[r.buyer_owner_id] || r.buyer_owner_id},${r.commission_amount}`).join('\n')
+    const csv = '\uFEFF' + header + body
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `정산_${batch.batch_seq}회차_${new Date(batch.period_start).toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit' })}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+  const printBatch = (batch: { batch_seq: number; period_start: string; item_count: number; total_amount: number }, rows: Array<{ id: string; sponsor_owner_id: string; buyer_owner_id: string; commission_amount: number }>, nameMap: Record<string, string>) => {
+    const w = window.open('', '_blank')
+    if (!w) return
+    const rowsHtml = rows
+      .map((r) => `<tr><td>${nameMap[r.sponsor_owner_id] || r.sponsor_owner_id}</td><td>${nameMap[r.buyer_owner_id] || r.buyer_owner_id}</td><td style="text-align:right">${Number(r.commission_amount).toLocaleString()}원</td></tr>`)
+      .join('')
+    w.document.write(`
+      <html><head><title>정산 ${batch.batch_seq}회차</title></head>
+      <body style="font-family:sans-serif;padding:24px">
+        <h2>스폰서 커미션 정산 ${batch.batch_seq}회차</h2>
+        <p>${new Date(batch.period_start).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' })}분 · 총 ${batch.item_count}건 · ${Number(batch.total_amount).toLocaleString()}원</p>
+        <table border="1" cellpadding="6" style="border-collapse:collapse;width:100%">
+          <thead><tr><th>스폰서</th><th>구매자</th><th>커미션금액</th></tr></thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+        <script>window.onload = () => window.print()</script>
+      </body></html>
+    `)
+    w.document.close()
+  }
   const settleMonthlyBatch = async () => {
     const now = new Date()
     const start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
@@ -699,6 +768,54 @@ export default function AdminTrackBSystemPage() {
                 전월분 월정산 일괄처리
               </button>
             </div>
+            {settlementBatches.length > 0 ? (
+              <div style={{ marginBottom: 14, fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>
+                <div style={{ marginBottom: 6 }}>최근 정산이력</div>
+                {settlementBatches.map((b) => (
+                  <div key={b.id}>
+                    <div
+                      onClick={() => void toggleBatchDetail(b.id)}
+                      style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderTop: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer' }}
+                    >
+                      <span>{b.batch_seq}회차 · {new Date(b.period_start).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long' })}분</span>
+                      <span>{b.item_count}건 · {Number(b.total_amount).toLocaleString()}원</span>
+                    </div>
+                    {expandedBatchId === b.id ? (
+                      <div style={{ padding: '4px 0 8px 12px', fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+                        {batchDetailLoading ? (
+                          <div>불러오는 중...</div>
+                        ) : batchDetailRows.length === 0 ? (
+                          <div>내역 없음</div>
+                        ) : (
+                          <>
+                            <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
+                              <span
+                                onClick={() => exportBatchCsv(b, batchDetailRows, batchOwnerNames)}
+                                style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                              >
+                                엑셀 다운로드
+                              </span>
+                              <span
+                                onClick={() => printBatch(b, batchDetailRows, batchOwnerNames)}
+                                style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                              >
+                                인쇄
+                              </span>
+                            </div>
+                            {batchDetailRows.map((r) => (
+                              <div key={r.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
+                                <span>{batchOwnerNames[r.sponsor_owner_id] || r.sponsor_owner_id.slice(0, 8)} ← {batchOwnerNames[r.buyer_owner_id] || r.buyer_owner_id.slice(0, 8)}</span>
+                                <span>{Number(r.commission_amount).toLocaleString()}원</span>
+                              </div>
+                            ))}
+                          </>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : null}
             {sponsorAgg.length === 0 ? (
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>커미션 내역 없음</div>
             ) : (
