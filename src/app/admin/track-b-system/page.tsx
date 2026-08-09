@@ -406,6 +406,44 @@ export default function AdminTrackBSystemPage() {
     return orders.filter((o) => o.status === statusFilter)
   }, [orders, statusFilter])
 
+  const settleMonthlyBatch = async () => {
+    const now = new Date()
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+    const end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59)
+    setMsg('')
+    const { data: targets, error: previewError } = await supabase
+      .from('hq_commission_ledger')
+      .select('id, commission_amount')
+      .eq('status', 'pending')
+      .gte('created_at', start.toISOString())
+      .lte('created_at', end.toISOString())
+    if (previewError) {
+      setMsg(previewError.message)
+      return
+    }
+    const count = targets?.length || 0
+    const total = (targets || []).reduce((sum, t) => sum + Number(t.commission_amount || 0), 0)
+    if (count === 0) {
+      setMsg(`${start.getFullYear()}년 ${start.getMonth() + 1}월분 정산대상 없음`)
+      return
+    }
+    const confirmed = window.confirm(
+      `${start.getFullYear()}년 ${start.getMonth() + 1}월분 ${count}건, 총 ${total.toLocaleString()}원을 정산 처리하시겠습니까?`,
+    )
+    if (!confirmed) return
+    const { error } = await supabase
+      .from('hq_commission_ledger')
+      .update({ status: 'paid', paid_at: now.toISOString() })
+      .eq('status', 'pending')
+      .gte('created_at', start.toISOString())
+      .lte('created_at', end.toISOString())
+    if (error) {
+      setMsg(error.message)
+      return
+    }
+    setMsg(`${start.getFullYear()}년 ${start.getMonth() + 1}월분 월정산 처리 완료 (장부 상태만 변경 · 실송금 없음)`)
+    await load()
+  }
   const settleSponsor = async (sponsorOwnerId: string) => {
     setBusyId(sponsorOwnerId)
     setMsg('')
@@ -640,7 +678,24 @@ export default function AdminTrackBSystemPage() {
           </div>
 
           <div style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 10, padding: 14, marginBottom: 18 }}>
-            <div style={{ fontSize: 13, color: '#fff', marginBottom: 10 }}>스폰서 커미션</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10, gap: 10 }}>
+              <div style={{ fontSize: 13, color: '#fff' }}>스폰서 커미션</div>
+              <button
+                type="button"
+                onClick={() => void settleMonthlyBatch()}
+                style={{
+                  fontSize: 12,
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  border: '1px solid rgba(201,169,110,0.4)',
+                  background: 'rgba(201,169,110,0.15)',
+                  color: GOLD,
+                  cursor: 'pointer',
+                }}
+              >
+                전월분 월정산 일괄처리
+              </button>
+            </div>
             {sponsorAgg.length === 0 ? (
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>커미션 내역 없음</div>
             ) : (

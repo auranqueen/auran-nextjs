@@ -5,6 +5,11 @@
 
 
 ## 2026-08-09
+### feat: 스폰서커미션 월정산 배치 + 미리보기/확인창
+- hq_commission_ledger 월정산 배치(settleMonthlyBatch) 추가: 전월 1일~말일 pending→paid 일괄처리, 기존 원장별 개별 정산과 별개 버튼으로 분리
+- 실행 전 대상 건수/합계 미리보기 + window.confirm 확인창 추가, 0건이면 확인창 없이 안내만
+- 재클릭시 이미 paid인 건은 자동으로 제외됨(중복지급 방지)
+
 ### feat: 회차별 정산 인프라 + 관리권 피커 + 리뷰게이트 전체 구현
 - 139: purchase_session_usages 테이블 신설(회차소진 이력+회차별 정산), RLS(customer/owner/admin 분리)
 - BookingManagePage: booking.purchase_id 우선매칭 도입(완료/취소/honey 3곳), 회차별 이력 insert + 마지막회차 잔액 몰아주기
