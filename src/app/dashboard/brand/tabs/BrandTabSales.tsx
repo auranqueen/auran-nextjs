@@ -15,8 +15,9 @@ type SubTab = typeof SUBTABS[number]['key']
 type Props = {
   myBrands: { id: string; name: string }[]
   initialSub?: string
+  brandId: string | null
 }
-export default function BrandTabSales({ myBrands, initialSub }: Props) {
+export default function BrandTabSales({ myBrands, initialSub, brandId }: Props) {
   const [sub, setSub] = useState<SubTab>((initialSub as SubTab) ?? 'orders')
   return (
     <div>
@@ -42,7 +43,7 @@ export default function BrandTabSales({ myBrands, initialSub }: Props) {
       </div>
       {sub === 'orders' && <BrandTabOrders myBrands={myBrands} />}
       {sub === 'returns' && <BrandTabReturns myBrands={myBrands} />}
-      {sub === 'sample' && <BrandTabSample myBrands={myBrands} />}
+      {sub === 'sample' && <BrandTabSample myBrands={myBrands} brandId={brandId} />}
     </div>
   )
 }

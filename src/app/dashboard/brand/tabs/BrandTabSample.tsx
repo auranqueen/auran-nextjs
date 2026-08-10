@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import TabBrandSelector from '../components/TabBrandSelector'
+import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import type { CSSProperties } from 'react'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -40,10 +40,10 @@ interface TargetOwner {
 }
 interface Props {
   myBrands: { id: string; name: string }[]
+  brandId: string | null
 }
-export default function BrandTabSample({ myBrands }: Props) {
-  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
-  const brandId = selectedBrandId
+export default function BrandTabSample({ myBrands, brandId }: Props) {
+  const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
   const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
   const supabase = createClient()
   const [samples, setSamples] = useState<Sample[]>([])
@@ -63,35 +63,42 @@ export default function BrandTabSample({ myBrands }: Props) {
   const [ownersLoading, setOwnersLoading] = useState(false)
   const [orenMsg, setOrenMsg] = useState('')
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
+  useEffect(() => {
+    if (!brandId) { setCompanyBrandIds([]); return }
+    let cancelled = false
+    void (async () => {
+      const ids = await resolveCompanyBrandIds(supabase, brandId)
+      if (!cancelled) setCompanyBrandIds(ids)
+    })()
+    return () => { cancelled = true }
+  }, [brandId, supabase])
   const fetchData = useCallback(async () => {
-    if (!brandId) return
+    if (!companyBrandIds.length) return
     setLoading(true)
     const [{ data: sData }, { data: sendData }] = await Promise.all([
       supabase
         .from('brand_samples')
         .select('id, product_name, description, target_grades, auto_welcome, send_count')
-        .eq('brand_id', brandId)
+        .in('brand_id', companyBrandIds)
         .order('created_at', { ascending: false }),
       supabase
         .from('brand_sample_sends')
         .select('id, owner_name, salon_name, status, sent_at, created_at')
-        .eq('brand_id', brandId)
+        .in('brand_id', companyBrandIds)
         .order('created_at', { ascending: false })
         .limit(20),
     ])
     setSamples((sData || []) as Sample[])
     setSends((sendData || []) as SendRow[])
     setLoading(false)
-  }, [brandId])
+  }, [companyBrandIds])
   useEffect(() => { void fetchData() }, [fetchData])
-
   const loadOwnersByGrade = async (grade: string) => {
     if (!brandId) return
     setSendGrade(grade)
     setOwnersLoading(true)
     setTargetOwners([])
     setSelectedOwnerIds([])
-
     const { data: activeLinks } = await supabase
       .from('brand_owner_links')
       .select('owner_id')
@@ -104,7 +111,6 @@ export default function BrandTabSample({ myBrands }: Props) {
       setOwnersLoading(false)
       return
     }
-
     const { data: userRows } = await supabase
       .from('users')
       .select('id, auth_id, origin_track')
@@ -120,13 +126,11 @@ export default function BrandTabSample({ myBrands }: Props) {
     for (const u of users) {
       if (u.auth_id) trackByAuth[String(u.auth_id)] = u.origin_track || null
     }
-
     const { data: profiles } = await supabase
       .from('profiles')
       .select('id, full_name, owner_store_name, auth_id')
       .in('auth_id', authIds)
     const allProfiles = (profiles || []) as { id: string; full_name?: string | null; owner_store_name?: string | null; auth_id?: string | null }[]
-
     let filtered: typeof allProfiles = []
     if (grade === '아레테클럽') {
       const { data: areteRows } = await supabase
@@ -146,7 +150,6 @@ export default function BrandTabSample({ myBrands }: Props) {
       const gradeIds = new Set((gradeRows || []).map((r: { owner_id: string }) => String(r.owner_id)))
       filtered = allProfiles.filter(p => gradeIds.has(p.id))
     }
-
     const mapped: TargetOwner[] = filtered.map(p => ({
       id: p.id,
       name: p.full_name || '원장님',
@@ -157,7 +160,6 @@ export default function BrandTabSample({ myBrands }: Props) {
     setSelectedOwnerIds(mapped.map(o => o.id))
     setOwnersLoading(false)
   }
-
   const toggleOwner = (id: string) => {
     setSelectedOwnerIds(prev =>
       prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
@@ -170,7 +172,6 @@ export default function BrandTabSample({ myBrands }: Props) {
       setSelectedOwnerIds(targetOwners.map(o => o.id))
     }
   }
-
   const toggleGrade = (g: string) => {
     setTargetGrades(prev =>
       prev.includes(g) ? prev.filter(x => x !== g) : [...prev, g]
@@ -202,7 +203,6 @@ export default function BrandTabSample({ myBrands }: Props) {
     }
     setSaving(false)
   }
-
   const sendSample = async (sampleId: string) => {
     if (!brandId) return
     if (selectedOwnerIds.length === 0) { showToast('발송할 원장님을 선택해주세요'); return }
@@ -241,7 +241,7 @@ export default function BrandTabSample({ myBrands }: Props) {
       const { data: newSends } = await supabase
         .from('brand_sample_sends')
         .select('id, owner_name, salon_name, status, sent_at, created_at')
-        .eq('brand_id', brandId)
+        .in('brand_id', companyBrandIds)
         .order('created_at', { ascending: false })
         .limit(20)
       if (newSends) setSends(newSends as SendRow[])
@@ -251,7 +251,6 @@ export default function BrandTabSample({ myBrands }: Props) {
     }
     setSelectedSample(null)
   }
-
   const sendOrenOnly = async (sampleId: string) => {
     if (!brandId) return
     if (selectedOwnerIds.length === 0) { showToast('발송할 원장님을 선택해주세요'); return }
@@ -273,7 +272,6 @@ export default function BrandTabSample({ myBrands }: Props) {
     }
     showToast(okCount > 0 ? `${okCount}명에게 오렌톡 발송 완료!` : '발송 실패')
   }
-
   const deleteSample = async (id: string) => {
     const { error } = await supabase.from('brand_samples').delete().eq('id', id)
     if (!error) {
@@ -290,13 +288,11 @@ export default function BrandTabSample({ myBrands }: Props) {
     if (h < 24) return `${h}시간 전`
     return `${Math.floor(h / 24)}일 전`
   }
+  if (!companyBrandIds.length) {
+    return <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>불러오는 중…</div>
+  }
   return (
     <div>
-      <TabBrandSelector myBrands={myBrands} storageKey="sample-brand" onSelect={setSelectedBrandId} />
-      {!selectedBrandId ? (
-        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
-      ) : (
-      <>
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>{toast}</div>
       )}
@@ -380,7 +376,6 @@ export default function BrandTabSample({ myBrands }: Props) {
           ))
         )}
       </div>
-
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>📨 발송 대상 · 오렌톡 메시지</div>
         <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>등급 선택</div>
@@ -432,7 +427,6 @@ export default function BrandTabSample({ myBrands }: Props) {
           </div>
         ) : null}
       </div>
-
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>📋 발송 이력</div>
         {sends.length === 0 ? (
@@ -452,8 +446,6 @@ export default function BrandTabSample({ myBrands }: Props) {
           })
         )}
       </div>
-      </>
-      )}
     </div>
   )
 }

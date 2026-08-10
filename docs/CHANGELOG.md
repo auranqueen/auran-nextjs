@@ -5,6 +5,9 @@
 
 
 ## 2026-08-10
+### feat: Sample 컴퍼니 통합(TabBrandSelector 제거)
+- BrandTabSample 컴퍼니 통합: TabBrandSelector 제거, 샘플목록·발송이력 조회를 companyBrandIds 전체(.in)로 확장, 등록/발송대상선정/발송은 허브 brandId 유지. BrandTabSales에도 brandId prop 배선
+
 ### feat: Community 컴퍼니 통합(TabBrandSelector 제거)
 - BrandTabCommunity 컴퍼니 통합: TabBrandSelector 제거, 게시글 조회를 resolveCompanyBrandIds 기반 companyBrandIds 전체로 확장(.in), 작성은 허브 brandId로 귀속
 
