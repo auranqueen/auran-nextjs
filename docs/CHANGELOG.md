@@ -5,6 +5,9 @@
 
 
 ## 2026-08-10
+### feat: 트랙B 원장도 브랜드 커뮤니티 열람 가능(getOwnerLinkedBrandIds 확장)
+- getOwnerLinkedBrandIds에 트랙B 경로 추가: brand_owner_grades(origin_track='B', payment_status='paid')로 company_id 확인 후 그 회사 brands.id 전체를 A links와 합집합 반환. 커뮤니티/홈피드 등 이 헬퍼 호출처 전체가 별도수정 없이 트랙B 원장도 형제브랜드 콘텐츠를 볼 수 있게 됨
+
 ### feat: Sample 컴퍼니 통합(TabBrandSelector 제거)
 - BrandTabSample 컴퍼니 통합: TabBrandSelector 제거, 샘플목록·발송이력 조회를 companyBrandIds 전체(.in)로 확장, 등록/발송대상선정/발송은 허브 brandId 유지. BrandTabSales에도 brandId prop 배선
 

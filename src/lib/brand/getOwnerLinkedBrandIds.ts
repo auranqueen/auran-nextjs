@@ -7,7 +7,8 @@ export type GetOwnerLinkedBrandIdsOptions = {
 
 /**
  * 원장 본인의 제휴 브랜드 ID 목록.
- * brand_owner_links.owner_id = users.id (profiles.id 아님)
+ * A: brand_owner_links.owner_id = users.id
+ * B: brand_owner_grades(paid) → company_id → brands.id (형제 전체)
  */
 export async function getOwnerLinkedBrandIds(
   supabase: SupabaseClient,
@@ -24,24 +25,60 @@ export async function getOwnerLinkedBrandIds(
     .maybeSingle()
 
   const userId = userRow?.id ? String(userRow.id) : ''
-  if (!userId) return []
+  const idSet = new Set<string>()
 
-  let query = supabase
-    .from('brand_owner_links')
-    .select('brand_id')
-    .eq('owner_id', userId)
+  if (userId) {
+    let query = supabase
+      .from('brand_owner_links')
+      .select('brand_id')
+      .eq('owner_id', userId)
 
-  if (options?.includePending) {
-    query = query.in('status', ['active', 'pending'])
-  } else {
-    query = query.eq('status', 'active')
+    if (options?.includePending) {
+      query = query.in('status', ['active', 'pending'])
+    } else {
+      query = query.eq('status', 'active')
+    }
+
+    const { data: links } = await query
+    for (const r of links || []) {
+      const bid = String((r as { brand_id: string }).brand_id || '')
+      if (bid) idSet.add(bid)
+    }
   }
 
-  const { data: links } = await query
+  const { data: profileRow } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_id', id)
+    .maybeSingle()
 
-  return Array.from(
-    new Set((links || []).map((r: { brand_id: string }) => String(r.brand_id)).filter(Boolean)),
-  )
+  const profileId = profileRow?.id ? String(profileRow.id) : ''
+  if (profileId) {
+    const { data: gradeRows } = await supabase
+      .from('brand_owner_grades')
+      .select('company_id')
+      .eq('owner_id', profileId)
+      .eq('origin_track', 'B')
+      .eq('payment_status', 'paid')
+
+    const companyIds = Array.from(
+      new Set((gradeRows || []).map((r: { company_id: string }) => String(r.company_id)).filter(Boolean)),
+    )
+
+    if (companyIds.length) {
+      const { data: companyBrands } = await supabase
+        .from('brands')
+        .select('id')
+        .in('company_id', companyIds)
+
+      for (const b of companyBrands || []) {
+        const bid = String((b as { id: string }).id || '')
+        if (bid) idSet.add(bid)
+      }
+    }
+  }
+
+  return Array.from(idSet)
 }
 
 /** active 연결은 없고 pending만 있을 때 브랜드명 목록 (안내 문구용) */
