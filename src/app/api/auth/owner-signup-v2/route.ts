@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   const addressDetail = typeof body?.addressDetail === 'string' ? body.addressDetail.trim() : ''
   const phone = typeof body?.phone === 'string' ? body.phone.trim() : ''
   const ref = typeof body?.ref === 'string' ? body.ref.trim() : ''
-  const brandId = typeof body?.brand_id === 'string' ? body.brand_id.trim() : ''
+  const companyId = typeof body?.company_id === 'string' ? body.company_id.trim() : ''
 
   if (!emailRaw) {
     return NextResponse.json({ ok: false, error: 'missing_email', stage: 'validate' }, { status: 400 })
@@ -117,7 +117,7 @@ export async function POST(req: NextRequest) {
   }
 
   let originTrack: 'A' | 'B' = 'B'
-  if (brandId) {
+  if (companyId) {
     originTrack = 'A'
   } else if (referredBy) {
     const { data: referrerRow } = await svc
@@ -192,31 +192,41 @@ export async function POST(req: NextRequest) {
   }
 
   let brandLinkWarning: string | undefined
-  if (brandId) {
-    const { data: brandRow, error: brandFetchError } = await svc
-      .from('brands')
+  if (companyId) {
+    const { data: companyRow, error: companyFetchError } = await svc
+      .from('brand_companies')
       .select('id, auto_approve_owner_invite')
-      .eq('id', brandId)
+      .eq('id', companyId)
       .maybeSingle()
 
-    if (brandFetchError) {
-      brandLinkWarning = brandFetchError.message
-    } else if (!brandRow?.id) {
-      brandLinkWarning = 'brand_not_found'
+    if (companyFetchError) {
+      brandLinkWarning = companyFetchError.message
+    } else if (!companyRow?.id) {
+      brandLinkWarning = 'company_not_found'
     } else {
-      const autoApprove = Boolean((brandRow as { auto_approve_owner_invite?: boolean | null }).auto_approve_owner_invite)
-      const linkPayload: Record<string, unknown> = {
-        brand_id: brandId,
-        owner_id: publicUserId,
-        status: autoApprove ? 'active' : 'pending',
-      }
-      if (autoApprove) {
-        linkPayload.approved_at = nowIso
-      }
+      const autoApprove = Boolean((companyRow as { auto_approve_owner_invite?: boolean | null }).auto_approve_owner_invite)
+      const { data: companyBrands, error: brandsFetchError } = await svc
+        .from('brands')
+        .select('id')
+        .eq('company_id', companyId)
 
-      const { error: linkError } = await svc.from('brand_owner_links').insert(linkPayload as any)
-      if (linkError) {
-        brandLinkWarning = linkError.message
+      if (brandsFetchError) {
+        brandLinkWarning = brandsFetchError.message
+      } else if (!companyBrands?.length) {
+        brandLinkWarning = 'no_brands_in_company'
+      } else {
+        const linkPayload = companyBrands.map((b: { id: string }) => ({
+          brand_id: b.id,
+          owner_id: publicUserId,
+          status: autoApprove ? 'active' : 'pending',
+          ...(autoApprove ? { approved_at: nowIso } : {}),
+        }))
+        const { error: linkError } = await svc
+          .from('brand_owner_links')
+          .upsert(linkPayload, { onConflict: 'brand_id,owner_id', ignoreDuplicates: true })
+        if (linkError) {
+          brandLinkWarning = linkError.message
+        }
       }
     }
   }

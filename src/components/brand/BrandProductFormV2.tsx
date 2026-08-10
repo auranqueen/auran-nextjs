@@ -14,12 +14,13 @@ interface BrandProductFormV2Props {
   brandName: string
   myBrands: Array<{ id: string; name: string }>
   authUserId?: string
+  staffId?: string | null
   productId?: string
   onSaved?: (savedBrandId: string) => void
   onClose?: () => void
 }
 
-export default function BrandProductFormV2({ brandId: propBrandId, brandName, myBrands, authUserId, productId: propProductId, onSaved, onClose }: BrandProductFormV2Props) {
+export default function BrandProductFormV2({ brandId: propBrandId, brandName, myBrands, authUserId, staffId, productId: propProductId, onSaved, onClose }: BrandProductFormV2Props) {
   const supabase = createClient()
   const editId = propProductId || null
   const workingIdRef = useRef<string | null>(null)
@@ -198,6 +199,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
     return {
       id: editId || workingIdRef.current || undefined,
       brand_id: brandId,
+      staff_id: staffId ?? null,
       name: name.trim().slice(0, 100) || '신규 상품',
       supply_price: Math.max(0, Math.trunc(Number(supplyPrice) || 0)),
       consumer_price: Math.max(0, Math.trunc(Number(consumerPrice) || 0)),
@@ -225,6 +227,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
   }, [
     editId,
     brandId,
+    staffId,
     name,
     supplyPrice,
     consumerPrice,

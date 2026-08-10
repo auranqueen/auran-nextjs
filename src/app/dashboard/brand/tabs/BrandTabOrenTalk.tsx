@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import TabBrandSelector from '../components/TabBrandSelector'
+import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import type { CSSProperties } from 'react'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -35,11 +35,10 @@ interface AutoSetting {
 }
 interface Props {
   myBrands: { id: string; name: string }[]
-  authId: string | null
+  brandId: string | null
 }
-export default function BrandTabOrenTalk({ myBrands, authId }: Props) {
-  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
-  const brandId = selectedBrandId
+export default function BrandTabOrenTalk({ myBrands, brandId }: Props) {
+  const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
   const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
   const supabase = createClient()
   const [msg, setMsg] = useState('')
@@ -55,16 +54,25 @@ export default function BrandTabOrenTalk({ myBrands, authId }: Props) {
     { key: 'auto_live', icon: '📡', title: '라이브 사전 알림', desc: 'D-3, D-1, 당일 1시간 전 자동 발송', enabled: true },
   ])
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
+  useEffect(() => {
+    if (!brandId) { setCompanyBrandIds([]); return }
+    let cancelled = false
+    void (async () => {
+      const ids = await resolveCompanyBrandIds(supabase, brandId)
+      if (!cancelled) setCompanyBrandIds(ids)
+    })()
+    return () => { cancelled = true }
+  }, [brandId, supabase])
   const fetchHistory = useCallback(async () => {
-    if (!brandId) return
+    if (!companyBrandIds.length) return
     const { data } = await supabase
       .from('brand_messages')
       .select('id, message_type, target_type, title, body, send_count, created_at')
-      .eq('brand_id', brandId)
+      .in('brand_id', companyBrandIds)
       .order('created_at', { ascending: false })
       .limit(30)
     setHistory((data || []) as MsgRow[])
-  }, [brandId])
+  }, [companyBrandIds])
   useEffect(() => { void fetchHistory() }, [fetchHistory])
   const toggleAuto = (key: string) => {
     setAutoSettings(prev => prev.map(s =>
@@ -113,17 +121,14 @@ export default function BrandTabOrenTalk({ myBrands, authId }: Props) {
     if (h < 24) return `${h}시간 전`
     return `${Math.floor(h / 24)}일 전`
   }
+  if (!companyBrandIds.length) {
+    return <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>불러오는 중…</div>
+  }
   return (
     <div>
-      <TabBrandSelector myBrands={myBrands} storageKey="orentalk-brand" onSelect={setSelectedBrandId} />
-      {!selectedBrandId ? (
-        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
-      ) : (
-      <>
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>{toast}</div>
       )}
-      {/* 자동 발송 설정 */}
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 12 }}>💜 자동 발송 설정 <span style={{ fontSize: 10 }}>· AURAN 인앱 무료</span></div>
         {autoSettings.map((s, i) => (
@@ -142,7 +147,6 @@ export default function BrandTabOrenTalk({ myBrands, authId }: Props) {
           </div>
         ))}
       </div>
-      {/* 직접 발송 */}
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>✉️ 직접 발송</div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
@@ -181,7 +185,6 @@ export default function BrandTabOrenTalk({ myBrands, authId }: Props) {
           </button>
         </div>
       </div>
-      {/* 발송 이력 */}
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>📋 발송 이력</div>
         <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
@@ -214,7 +217,6 @@ export default function BrandTabOrenTalk({ myBrands, authId }: Props) {
           ))
         )}
       </div>
-      {/* 카카오 알림톡 */}
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 8 }}>💛 카카오 알림톡</div>
         <div style={{ fontSize: 11, color: SUB, marginBottom: 10, lineHeight: 1.6 }}>
@@ -228,8 +230,6 @@ export default function BrandTabOrenTalk({ myBrands, authId }: Props) {
           카카오 채널 연동하기
         </button>
       </div>
-      </>
-      )}
     </div>
   )
 }

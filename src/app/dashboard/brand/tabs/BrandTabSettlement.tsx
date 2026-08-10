@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { expandOrderItemsToLines, monthBillingRange } from '@/lib/brand/brandBilling'
-import TabBrandSelector from '../components/TabBrandSelector'
 
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
@@ -40,7 +39,7 @@ type OrderRow = {
 }
 
 interface Props {
-  myBrands: { id: string; name: string }[]
+  brandId: string | null
 }
 
 function currentYm(): string {
@@ -65,8 +64,7 @@ function formatGrowth(current: number, prev: number): string {
   return `${sign}${pct.toFixed(1)}%`
 }
 
-export default function BrandTabSettlement({ myBrands }: Props) {
-  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
+export default function BrandTabSettlement({ brandId }: Props) {
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [companyName, setCompanyName] = useState('')
   const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
@@ -109,9 +107,9 @@ export default function BrandTabSettlement({ myBrands }: Props) {
     [salonNameFromOrders, storeNames, ownerNameFromOrders, profileNames],
   )
 
-  // 선택된 브랜드 → 소속 컴퍼니 + 그 컴퍼니의 전체 브랜드ID 목록 resolve
+  // 허브 brandId → 소속 컴퍼니 + 그 컴퍼니의 전체 브랜드ID 목록 resolve
   useEffect(() => {
-    if (!selectedBrandId) {
+    if (!brandId) {
       setCompanyId(null)
       setCompanyName('')
       setCompanyBrandIds([])
@@ -122,7 +120,7 @@ export default function BrandTabSettlement({ myBrands }: Props) {
       const { data: brandRow } = await supabase
         .from('brands')
         .select('company_id')
-        .eq('id', selectedBrandId)
+        .eq('id', brandId)
         .maybeSingle()
       const cid = brandRow?.company_id ? String(brandRow.company_id) : null
       if (cancelled) return
@@ -144,7 +142,7 @@ export default function BrandTabSettlement({ myBrands }: Props) {
     return () => {
       cancelled = true
     }
-  }, [selectedBrandId, supabase])
+  }, [brandId, supabase])
 
   const load = useCallback(async () => {
     if (!companyId) {
@@ -269,9 +267,8 @@ export default function BrandTabSettlement({ myBrands }: Props) {
 
   return (
     <div>
-      <TabBrandSelector myBrands={myBrands} storageKey="settlement-brand" onSelect={setSelectedBrandId} />
-      {!selectedBrandId ? (
-        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
+      {!companyId ? (
+        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>컴퍼니 정보를 불러오는 중…</div>
       ) : (
       <>
       {toast && (

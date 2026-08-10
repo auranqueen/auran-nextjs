@@ -140,10 +140,21 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
     setLinkLoading(true)
     const { data: brandRow } = await supabase
       .from('brands')
-      .select('auto_approve_owner_invite')
+      .select('company_id')
       .eq('id', brandId)
       .maybeSingle()
-    setAutoApprove(Boolean((brandRow as { auto_approve_owner_invite?: boolean | null } | null)?.auto_approve_owner_invite))
+    const cid = (brandRow as { company_id?: string | null } | null)?.company_id
+    if (cid) {
+      setCompanyId(String(cid))
+      const { data: companyRow } = await supabase
+        .from('brand_companies')
+        .select('auto_approve_owner_invite')
+        .eq('id', cid)
+        .maybeSingle()
+      setAutoApprove(Boolean((companyRow as { auto_approve_owner_invite?: boolean | null } | null)?.auto_approve_owner_invite))
+    } else {
+      setAutoApprove(false)
+    }
 
     const { data: links } = await supabase
       .from('brand_owner_links')
@@ -339,12 +350,12 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
     return { label: '승인대기', color: GOLD, bg: 'rgba(201,169,110,0.12)', border: 'rgba(201,169,110,0.35)' }
   }
   const copyInviteLink = async () => {
-    if (!brandId) {
-      showToast('브랜드 정보를 불러오는 중이에요')
+    if (!companyId) {
+      showToast('회사 정보를 불러오는 중이에요')
       return
     }
     const origin = typeof window !== 'undefined' ? window.location.origin : 'https://www.auran.kr'
-    const url = `${origin}/signup/owner-v2?brand_id=${brandId}`
+    const url = `${origin}/signup/owner-v2?company_id=${companyId}`
     try {
       await navigator.clipboard.writeText(url)
       showToast('초대 링크가 복사됐어요')
@@ -353,17 +364,17 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
     }
   }
   const toggleAutoApprove = async () => {
-    if (!brandId || autoApproveBusy) return
+    if (!companyId || autoApproveBusy) return
     setAutoApproveBusy(true)
     const next = !autoApprove
-    const { error } = await supabase.from('brands').update({ auto_approve_owner_invite: next }).eq('id', brandId)
+    const { error } = await supabase.from('brand_companies').update({ auto_approve_owner_invite: next }).eq('id', companyId)
     setAutoApproveBusy(false)
     if (error) {
       showToast('설정 저장에 실패했어요')
       return
     }
     setAutoApprove(next)
-    showToast(next ? '신규 원장 자동승인 ON' : '신규 원장 자동승인 OFF')
+    showToast(next ? '신규 원장 자동승인 ON (회사 전체)' : '신규 원장 자동승인 OFF (회사 전체)')
   }
   const approveBrandLink = async (linkId: string) => {
     setLinkSaving(linkId)
@@ -599,7 +610,7 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
           <span style={{ fontSize: 12, color: TEXT }}>신규 원장 자동승인</span>
           <button
             type="button"
-            disabled={!brandId || autoApproveBusy}
+            disabled={!companyId || autoApproveBusy}
             onClick={() => void toggleAutoApprove()}
             style={{
               fontSize: 11,
@@ -608,7 +619,7 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
               border: `0.5px solid ${autoApprove ? GOLD : 'rgba(255,255,255,0.15)'}`,
               background: autoApprove ? 'rgba(201,169,110,0.15)' : 'transparent',
               color: autoApprove ? GOLD : SUB,
-              cursor: !brandId || autoApproveBusy ? 'not-allowed' : 'pointer',
+              cursor: !companyId || autoApproveBusy ? 'not-allowed' : 'pointer',
               opacity: autoApproveBusy ? 0.6 : 1,
             }}
           >
@@ -617,7 +628,7 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
         </div>
         <button
           type="button"
-          disabled={!brandId}
+          disabled={!companyId}
           onClick={() => void copyInviteLink()}
           style={{
             width: '100%',
@@ -627,8 +638,8 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
             background: 'rgba(123,94,167,0.1)',
             color: '#c4a8f0',
             fontSize: 12,
-            cursor: brandId ? 'pointer' : 'not-allowed',
-            opacity: brandId ? 1 : 0.5,
+            cursor: companyId ? 'pointer' : 'not-allowed',
+            opacity: companyId ? 1 : 0.5,
           }}
         >
           초대 링크 복사

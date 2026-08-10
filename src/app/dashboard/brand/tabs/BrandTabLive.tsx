@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import TabBrandSelector from '../components/TabBrandSelector'
+import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import type { CSSProperties } from 'react'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -31,10 +31,10 @@ interface Live {
 }
 interface Props {
   myBrands: { id: string; name: string }[]
+  brandId: string | null
 }
-export default function BrandTabLive({ myBrands }: Props) {
-  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
-  const brandId = selectedBrandId
+export default function BrandTabLive({ myBrands, brandId }: Props) {
+  const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
   const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
   const supabase = createClient()
   const [lives, setLives] = useState<Live[]>([])
@@ -49,18 +49,27 @@ export default function BrandTabLive({ myBrands }: Props) {
   const [targetGrades, setTargetGrades] = useState<string[]>(['전체'])
   const [saving, setSaving] = useState(false)
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
+  useEffect(() => {
+    if (!brandId) { setCompanyBrandIds([]); return }
+    let cancelled = false
+    void (async () => {
+      const ids = await resolveCompanyBrandIds(supabase, brandId)
+      if (!cancelled) setCompanyBrandIds(ids)
+    })()
+    return () => { cancelled = true }
+  }, [brandId, supabase])
   const fetchLives = useCallback(async () => {
-    if (!brandId) return
+    if (!companyBrandIds.length) return
     setLoading(true)
     const { data } = await supabase
       .from('brand_lives')
       .select('id, title, description, platform, live_url, scheduled_at, status, registrant_count, viewer_count, target_grades, recording_url')
-      .eq('brand_id', brandId)
+      .in('brand_id', companyBrandIds)
       .order('scheduled_at', { ascending: false })
       .limit(20)
     setLives((data || []) as Live[])
     setLoading(false)
-  }, [brandId])
+  }, [companyBrandIds])
   useEffect(() => { void fetchLives() }, [fetchLives])
   const toggleGrade = (g: string) => {
     if (g === '전체') { setTargetGrades(['전체']); return }
@@ -140,7 +149,6 @@ export default function BrandTabLive({ myBrands }: Props) {
       .in('auth_id', authIds)
     const allIds = (profiles || []).map((p: { id: string }) => String(p.id))
     if (grades.includes('전체') || grades.length === 0) return allIds
-
     const wantArete = grades.includes('아레테클럽')
     const gradeOnly = grades.filter(g => g !== '아레테클럽' && g !== '전체')
     const idSet = new Set<string>()
@@ -191,17 +199,14 @@ export default function BrandTabLive({ myBrands }: Props) {
   }
   const upcoming = lives.filter(l => l.status === 'scheduled' || l.status === 'live')
   const past = lives.filter(l => l.status === 'done' || l.status === 'cancelled')
+  if (!companyBrandIds.length) {
+    return <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>불러오는 중…</div>
+  }
   return (
     <div>
-      <TabBrandSelector myBrands={myBrands} storageKey="live-brand" onSelect={setSelectedBrandId} />
-      {!selectedBrandId ? (
-        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
-      ) : (
-      <>
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>{toast}</div>
       )}
-      {/* 예정된 라이브 */}
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 12 }}>📡 예정된 라이브</div>
         {loading ? (
@@ -243,7 +248,6 @@ export default function BrandTabLive({ myBrands }: Props) {
           })
         )}
       </div>
-      {/* 새 라이브 예약 */}
       {showForm ? (
         <div style={CARD}>
           <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>+ 새 라이브 예약</div>
@@ -285,7 +289,6 @@ export default function BrandTabLive({ myBrands }: Props) {
           + 새 라이브 예약
         </button>
       )}
-      {/* 교육 이수 */}
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>🏅 교육 이수 관리</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.02)', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 9, padding: 12 }}>
@@ -302,7 +305,6 @@ export default function BrandTabLive({ myBrands }: Props) {
             style={{ fontSize: 11, padding: '4px 10px', borderRadius: 6, border: '0.5px solid rgba(201,169,110,0.35)', background: 'transparent', color: GOLD, cursor: 'pointer', flexShrink: 0 }}>발급</button>
         </div>
       </div>
-      {/* 다시보기 */}
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>📼 다시보기</div>
         {past.length === 0 ? (
@@ -322,8 +324,6 @@ export default function BrandTabLive({ myBrands }: Props) {
           ))
         )}
       </div>
-      </>
-      )}
     </div>
   )
 }

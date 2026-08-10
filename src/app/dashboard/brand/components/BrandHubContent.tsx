@@ -248,15 +248,15 @@ export default function BrandHubContent({
           {mainTab === 'tierPackages' && <BrandTabTierPackages myBrands={brandOpts} staffId={staffId} isCEO={isCEO} />}
           {mainTab === 'owners' && <OwnersBrandWrapper myBrands={brandOpts} authId={authId} />}
           {mainTab === 'sales' && <BrandTabSales myBrands={brandOpts} initialSub={mainSub} />}
-          {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} authId={authId} />}
-          {mainTab === 'live' && <BrandTabLive myBrands={brandOpts} />}
+          {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} brandId={brandId} />}
+          {mainTab === 'live' && <BrandTabLive myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} />}
           {mainTab === 'expand' && <BrandTabExpand myBrands={brandOpts} />}
           {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} staffRole={staffRole} />}
           {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} />}
-          {mainTab === 'report' && <BrandTabReport myBrands={brandOpts} />}
+          {mainTab === 'report' && <BrandTabReport myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'settlement' && isCEO && (
-            <BrandTabSettlement myBrands={brandOpts} />
+            <BrandTabSettlement brandId={brandId} />
           )}
           {mainTab === 'staff' && (
             <BrandTabAdminAccount brandId={brandId} companyId={companyId} currentUserRole={loginRole === 'ceo' ? 'ceo' : 'director'} />

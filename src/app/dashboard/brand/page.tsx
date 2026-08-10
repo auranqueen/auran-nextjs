@@ -116,7 +116,7 @@ export default function BrandDashboardPage() {
     setUserPk(u.id)
     const { data: brandList } = await supabase
       .from('brands')
-      .select('id,name,slug,apply_status,welcome_shown,manager_name,origin_country,settlement_cycle,approved_at,logo_url,created_at')
+      .select('id,name,slug,company_id,apply_status,welcome_shown,manager_name,origin_country,settlement_cycle,approved_at,logo_url,created_at')
       .eq('user_id', u.id)
       .order('created_at', { ascending: true })
     const b = brandList?.[0] || null
@@ -124,7 +124,7 @@ export default function BrandDashboardPage() {
 
     const { data: memberRows } = await supabase
       .from('brand_members')
-      .select('brand_id, role, brands(id, name, slug)')
+      .select('brand_id, role, brands(id, name, slug, company_id)')
       .eq('user_id', u.id)
 
     const memberList: BrandOption[] =
@@ -138,20 +138,47 @@ export default function BrandDashboardPage() {
         : []
 
     const merged = mergeMyBrands(brandList, memberList)
-    setMyBrands(merged)
+    const knownCompanyIds = Array.from(
+      new Set(
+        [
+          ...(brandList || []).map((b: { company_id?: string | null }) => b.company_id),
+          ...(memberRows || []).map((m: any) => m.brands?.company_id as string | null | undefined),
+        ]
+          .map((cid) => (cid ? String(cid) : ''))
+          .filter(Boolean),
+      ),
+    )
+    let finalBrands = merged
+    if (knownCompanyIds.length) {
+      const { data: companyBrands } = await supabase
+        .from('brands')
+        .select('id, name, slug')
+        .in('company_id', knownCompanyIds)
+      const existingIds = new Set(merged.map((m) => m.id))
+      const extra: BrandOption[] = (companyBrands || [])
+        .filter((cb) => !existingIds.has(String(cb.id)))
+        .map((cb) => ({
+          id: String(cb.id),
+          name: String(cb.name || ''),
+          role: 'company',
+          slug: cb.slug != null ? String(cb.slug) : null,
+        }))
+      finalBrands = [...merged, ...extra]
+    }
+    setMyBrands(finalBrands)
 
     // 상단 전환 UI 없음 → myBrands[0]을 허브/폼 fallback 기본값으로 사용
-    const defaultId = merged[0]?.id ?? null
+    const defaultId = finalBrands[0]?.id ?? null
 
     setCurrentBrandId((prev) => {
-      const nextId = prev && merged.some((brand) => brand.id === prev) ? prev : defaultId
-      const pick = merged.find((brand) => brand.id === nextId)
+      const nextId = prev && finalBrands.some((brand) => brand.id === prev) ? prev : defaultId
+      const pick = finalBrands.find((brand) => brand.id === nextId)
       if (pick) setBrandName(pick.name)
       else setBrandName(String((b as { name?: string } | null)?.name || ''))
       return nextId
     })
     {
-      const companyLookupId = (defaultId ?? merged[0]?.id) as string | undefined
+      const companyLookupId = (defaultId ?? finalBrands[0]?.id) as string | undefined
       if (companyLookupId) {
         const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', companyLookupId).maybeSingle()
         const cid = brandRow?.company_id ? String(brandRow.company_id) : null
@@ -163,20 +190,12 @@ export default function BrandDashboardPage() {
       }
     }
 
-    const brandIdSet = new Set<string>()
-    for (const owned of brandList || []) {
-      if (owned?.id) brandIdSet.add(String(owned.id))
-    }
-    for (const member of memberList) {
-      if (member.id) brandIdSet.add(String(member.id))
-    }
-    const allBrandIds = Array.from(brandIdSet)
+    const allBrandIds = finalBrands.map((fb) => fb.id)
 
     if (allBrandIds.length > 0) {
       const { data: pr } = await supabase
         .from('brand_products')
         .select('*, brands(id,name)')
-        .eq('brand_user_id', u.id)
         .in('brand_id', allBrandIds)
         .order('created_at', { ascending: false })
       setRows((pr || []) as Row[])
@@ -271,7 +290,6 @@ export default function BrandDashboardPage() {
     const { data: pr } = await supabase
       .from('brand_products')
       .select('*, brands(id,name)')
-      .eq('brand_user_id', userPk)
       .in('brand_id', allBrandIds)
       .order('created_at', { ascending: false })
 
@@ -420,6 +438,7 @@ export default function BrandDashboardPage() {
               brandName={brandName}
               myBrands={myBrands.map(({ id, name }) => ({ id, name }))}
               authUserId={authId!}
+              staffId={pinAuth?.id ?? null}
               productId={editProduct?.id}
               onClose={() => {
                 setFormOpen(false)

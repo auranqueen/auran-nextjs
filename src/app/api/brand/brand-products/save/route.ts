@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 import { resolveBrandOriginCountry } from '@/lib/brand/brandOrigin'
+import { assertStaffPermission } from '@/lib/brand/assertStaffPermission'
 import {
   buildEventBanner,
   stringArrayOrEmpty,
@@ -11,6 +12,7 @@ import {
 type Body = {
   id?: string
   brand_id?: string
+  staff_id?: string | null
   name?: string
   supply_price?: number
   consumer_price?: number
@@ -91,6 +93,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'forbidden_brand' }, { status: 403 })
   }
 
+  const { data: brandForCompany } = await supabase.from('brands').select('company_id, user_id').eq('id', brandId).maybeSingle()
+  const isBrandOwner = brandForCompany?.user_id === me.id
+  if (!isBrandOwner) {
+    const staffId = typeof body.staff_id === 'string' ? body.staff_id : null
+    if (!staffId || !brandForCompany?.company_id) {
+      return NextResponse.json({ ok: false, error: 'forbidden_no_permission' }, { status: 403 })
+    }
+    const hasPermission = await assertStaffPermission(supabase, staffId, brandForCompany.company_id, 'product_manage')
+    if (!hasPermission) {
+      return NextResponse.json({ ok: false, error: 'forbidden_no_permission' }, { status: 403 })
+    }
+  }
+
   const { data: brandRow } = await supabase
     .from('brands')
     .select('id, name')
@@ -138,7 +153,8 @@ export async function POST(req: NextRequest) {
       .eq('id', body.id)
       .maybeSingle()
 
-    if (!existing?.id || existing.brand_user_id !== me.id || existing.brand_id !== brandRow.id) {
+    // 소유자·product_manage 통과 스태프는 동일 브랜드 제품 수정 가능 (brand_user_id 단독 비교 제거)
+    if (!existing?.id || existing.brand_id !== brandRow.id) {
       return NextResponse.json({ ok: false, error: 'forbidden' }, { status: 403 })
     }
 

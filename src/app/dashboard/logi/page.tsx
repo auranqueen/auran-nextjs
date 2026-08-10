@@ -47,12 +47,30 @@ function LogiDashboardInner() {
   const loadBrand = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.replace(`/logi/${slug}`); return }
+    const { data: myUser } = await supabase.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+    const myUserId = myUser?.id
+    if (!myUserId) { router.replace(`/logi/${slug || 'civasan'}`); return }
     const { data: brand } = await supabase
       .from('brands')
-      .select('id, name, brand_name_kr, company_id')
-      .eq('user_id', user.id)
+      .select('id, name, brand_name_kr, company_id, user_id')
+      .eq('slug', slug)
       .maybeSingle()
     if (!brand) { router.replace(`/logi/${slug || 'civasan'}`); return }
+    let allowed = myUserId === brand.user_id
+    if (!allowed && brand.company_id) {
+      const { data: companyBrands } = await supabase.from('brands').select('id').eq('company_id', brand.company_id)
+      const brandIds = (companyBrands || []).map((b) => b.id)
+      if (brandIds.length) {
+        const { data: membership } = await supabase
+          .from('brand_members')
+          .select('id')
+          .eq('user_id', myUserId)
+          .in('brand_id', brandIds)
+          .maybeSingle()
+        allowed = Boolean(membership)
+      }
+    }
+    if (!allowed) { router.replace(`/logi/${slug || 'civasan'}`); return }
     setBrandId(brand.id)
     setCompanyId(brand.company_id ?? null)
     setBrandName((brand as { brand_name_kr?: string | null }).brand_name_kr || brand.name)

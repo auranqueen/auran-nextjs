@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
-import TabBrandSelector from '../components/TabBrandSelector'
 const BrandReportCompare = dynamic(() => import('./BrandReportCompare'), { ssr: false })
 const BrandReportStaff = dynamic(() => import('./BrandReportStaff'), { ssr: false })
 const BrandReportHQ = dynamic(() => import('./BrandReportHQ'), { ssr: false })
@@ -21,23 +20,22 @@ const SUBTABS = [
 type SubTab = typeof SUBTABS[number]['key']
 interface Props {
   myBrands: { id: string; name: string }[]
+  brandId: string | null
 }
-export default function BrandTabReport({ myBrands }: Props) {
+export default function BrandTabReport({ myBrands, brandId }: Props) {
   const supabase = createClient()
-  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
   const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
   const [brandNames, setBrandNames] = useState<Record<string, string>>({})
   const [sub, setSub] = useState<SubTab>('compare')
-
   useEffect(() => {
-    if (!selectedBrandId) {
+    if (!brandId) {
       setCompanyBrandIds([])
       setBrandNames({})
       return
     }
     let cancelled = false
     void (async () => {
-      const ids = await resolveCompanyBrandIds(supabase, selectedBrandId)
+      const ids = await resolveCompanyBrandIds(supabase, brandId)
       const { data: rows } = await supabase.from('brands').select('id, name').in('id', ids)
       const map: Record<string, string> = {}
       for (const r of rows || []) {
@@ -52,15 +50,9 @@ export default function BrandTabReport({ myBrands }: Props) {
       }
     })()
     return () => { cancelled = true }
-  }, [selectedBrandId, supabase, myBrands])
-
+  }, [brandId, supabase, myBrands])
   return (
     <div>
-      <TabBrandSelector myBrands={myBrands} storageKey="report-brand" onSelect={setSelectedBrandId} />
-      {!selectedBrandId ? (
-        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
-      ) : (
-      <>
       <div style={{ display: 'flex', gap: 0, overflowX: 'auto' as const, marginBottom: 14, borderBottom: '0.5px solid rgba(255,255,255,0.07)' }}>
         {SUBTABS.map(t => (
           <button key={t.key} type="button" onClick={() => setSub(t.key)}
@@ -79,8 +71,6 @@ export default function BrandTabReport({ myBrands }: Props) {
           {sub === 'logistics' && <BrandReportLogistics companyBrandIds={companyBrandIds} brandNames={brandNames} />}
           {sub === 'mismatch' && <BrandReportMismatch companyBrandIds={companyBrandIds} brandNames={brandNames} />}
         </>
-      )}
-      </>
       )}
     </div>
   )

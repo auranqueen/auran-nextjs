@@ -27,6 +27,12 @@ const PERMISSION_MODULES = [
     ]
   },
   {
+    group: '제품',
+    modules: [
+      { key: 'product_manage', label: '제품 등록/수정' },
+    ]
+  },
+  {
     group: '마케팅',
     modules: [
       { key: 'marketing_create', label: '이벤트 생성/오렌톡 발송' },
@@ -64,7 +70,7 @@ const PERMISSION_MODULES = [
     ]
   },
 ] as const
-type ModuleKey = 'order_view' | 'order_approve' | 'order_ship' | 'inventory_view' | 'inventory_edit' | 'inventory_lot' | 'inventory_close' | 'inventory_emergency' | 'marketing_create' | 'marketing_bundle' | 'report_view' | 'report_staff' | 'report_mismatch' | 'returns_view' | 'returns_approve' | 'returns_receive' | 'staff_manage' | 'staff_grant' | 'sample_manage' | 'community_post'
+type ModuleKey = 'order_view' | 'order_approve' | 'order_ship' | 'inventory_view' | 'inventory_edit' | 'inventory_lot' | 'inventory_close' | 'inventory_emergency' | 'product_manage' | 'marketing_create' | 'marketing_bundle' | 'report_view' | 'report_staff' | 'report_mismatch' | 'returns_view' | 'returns_approve' | 'returns_receive' | 'staff_manage' | 'staff_grant' | 'sample_manage' | 'community_post'
 interface StaffRow {
   id: string
   name: string

@@ -9,6 +9,7 @@ interface BrandInfo {
   logo_url: string | null
   slug: string
   user_id: string
+  company_id: string | null
 }
 export default function LogiLoginPage() {
   const supabase = createClient()
@@ -27,15 +28,34 @@ export default function LogiLoginPage() {
     const loadBrand = async () => {
       const { data } = await supabase
         .from('brands')
-        .select('id, name, brand_name_kr, logo_url, slug, user_id')
+        .select('id, name, brand_name_kr, logo_url, slug, user_id, company_id')
         .eq('slug', slug)
         .maybeSingle()
       if (!data) { setNotFound(true); setLoadingBrand(false); return }
       setBrand(data as BrandInfo)
       setLoadingBrand(false)
       const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user && session.user.id === (data as BrandInfo).user_id) {
-        router.replace(`/dashboard/logi?slug=${slug}`)
+      if (session?.user) {
+        const { data: myUser } = await supabase.from('users').select('id').eq('auth_id', session.user.id).maybeSingle()
+        const myUserId = myUser?.id
+        const brandInfo = data as BrandInfo
+        let allowed = Boolean(myUserId && myUserId === brandInfo.user_id)
+        if (!allowed && myUserId && brandInfo.company_id) {
+          const { data: companyBrands } = await supabase.from('brands').select('id').eq('company_id', brandInfo.company_id)
+          const brandIds = (companyBrands || []).map((b) => b.id)
+          if (brandIds.length) {
+            const { data: membership } = await supabase
+              .from('brand_members')
+              .select('id')
+              .eq('user_id', myUserId)
+              .in('brand_id', brandIds)
+              .maybeSingle()
+            allowed = Boolean(membership)
+          }
+        }
+        if (allowed) {
+          router.replace(`/dashboard/logi?slug=${slug}`)
+        }
       }
     }
     void loadBrand()
@@ -51,7 +71,23 @@ export default function LogiLoginPage() {
       setError('아이디 또는 비밀번호가 올바르지 않아요')
       setLoading(false); return
     }
-    if (data.user.id !== brand.user_id) {
+    const { data: myUser } = await supabase.from('users').select('id').eq('auth_id', data.user.id).maybeSingle()
+    const myUserId = myUser?.id
+    let allowed = Boolean(myUserId && myUserId === brand.user_id)
+    if (!allowed && myUserId && brand.company_id) {
+      const { data: companyBrands } = await supabase.from('brands').select('id').eq('company_id', brand.company_id)
+      const brandIds = (companyBrands || []).map((b) => b.id)
+      if (brandIds.length) {
+        const { data: membership } = await supabase
+          .from('brand_members')
+          .select('id')
+          .eq('user_id', myUserId)
+          .in('brand_id', brandIds)
+          .maybeSingle()
+        allowed = Boolean(membership)
+      }
+    }
+    if (!allowed) {
       await supabase.auth.signOut()
       setError('이 물류 허브에 접근 권한이 없어요')
       setLoading(false); return

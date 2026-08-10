@@ -11,6 +11,7 @@ interface BrandInfo {
   slug: string
   user_id: string
   login_role: string
+  company_id: string | null
 }
 export default function BrandLoginPage() {
   const supabase = createClient()
@@ -49,7 +50,7 @@ export default function BrandLoginPage() {
 
       const { data, error: brandError } = await supabase
         .from('brands')
-        .select('id, name, brand_name_kr, logo_url, slug, user_id, login_role')
+        .select('id, name, brand_name_kr, logo_url, slug, user_id, login_role, company_id')
         .eq('slug', slug)
         .maybeSingle()
       if (brandError) {
@@ -62,8 +63,26 @@ export default function BrandLoginPage() {
       setBrand(data as BrandInfo)
       setLoadingBrand(false)
       const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user && session.user.id === data.user_id) {
-        router.replace(`/dashboard/brand?login_role=${data.login_role || 'director'}`)
+      if (session?.user) {
+        const { data: myUser } = await supabase.from('users').select('id').eq('auth_id', session.user.id).maybeSingle()
+        const myUserId = myUser?.id
+        let allowed = Boolean(myUserId && myUserId === data.user_id)
+        if (!allowed && myUserId && data.company_id) {
+          const { data: companyBrands } = await supabase.from('brands').select('id').eq('company_id', data.company_id)
+          const brandIds = (companyBrands || []).map((b: { id: string }) => b.id)
+          if (brandIds.length) {
+            const { data: membership } = await supabase
+              .from('brand_members')
+              .select('id')
+              .eq('user_id', myUserId)
+              .in('brand_id', brandIds)
+              .maybeSingle()
+            allowed = Boolean(membership)
+          }
+        }
+        if (allowed) {
+          router.replace(`/dashboard/brand?login_role=${data.login_role || 'director'}`)
+        }
       }
     }
     void loadBrand()
@@ -81,19 +100,33 @@ export default function BrandLoginPage() {
       setLoading(false)
       return
     }
-    if (data.user.id !== brand.user_id) {
-      const { data: memberRow } = await supabase
-        .from('brand_members')
-        .select('id')
-        .eq('brand_id', brand.id)
-        .eq('user_id', data.user.id)
-        .maybeSingle()
-      const { data: roleRow } = await supabase
-        .from('users')
-        .select('role')
-        .eq('auth_id', data.user.id)
-        .maybeSingle()
-      if (!memberRow && roleRow?.role !== 'admin') {
+    const { data: myUser } = await supabase.from('users').select('id, role').eq('auth_id', data.user.id).maybeSingle()
+    const myUserId = myUser?.id
+    if (myUserId !== brand.user_id) {
+      let memberFound = false
+      if (myUserId) {
+        const { data: directMember } = await supabase
+          .from('brand_members')
+          .select('id')
+          .eq('brand_id', brand.id)
+          .eq('user_id', myUserId)
+          .maybeSingle()
+        memberFound = Boolean(directMember)
+        if (!memberFound && brand.company_id) {
+          const { data: companyBrands } = await supabase.from('brands').select('id').eq('company_id', brand.company_id)
+          const brandIds = (companyBrands || []).map((b: { id: string }) => b.id)
+          if (brandIds.length) {
+            const { data: companyMember } = await supabase
+              .from('brand_members')
+              .select('id')
+              .eq('user_id', myUserId)
+              .in('brand_id', brandIds)
+              .maybeSingle()
+            memberFound = Boolean(companyMember)
+          }
+        }
+      }
+      if (!memberFound && myUser?.role !== 'admin') {
         await supabase.auth.signOut()
         setError('이 브랜드 허브에 접근 권한이 없어요')
         setLoading(false)
