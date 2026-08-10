@@ -4,6 +4,10 @@
 ---
 
 
+## 2026-08-10
+### feat: Community 컴퍼니 통합(TabBrandSelector 제거)
+- BrandTabCommunity 컴퍼니 통합: TabBrandSelector 제거, 게시글 조회를 resolveCompanyBrandIds 기반 companyBrandIds 전체로 확장(.in), 작성은 허브 brandId로 귀속
+
 ## 2026-08-09
 ### feat: 정산배치 이력(번호/기간/세부보기/출력) 전체 구현
 - hq_settlement_batches(142) + settle_monthly_sponsor_commission RPC(143) 추가: 월정산 실행시 정산번호(batch_seq)+기간 스냅샷 생성, ledger.batch_id로 연결, 원자적 트랜잭션 처리

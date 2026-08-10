@@ -250,7 +250,7 @@ export default function BrandHubContent({
           {mainTab === 'sales' && <BrandTabSales myBrands={brandOpts} initialSub={mainSub} />}
           {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'live' && <BrandTabLive myBrands={brandOpts} brandId={brandId} />}
-          {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} />}
+          {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'expand' && <BrandTabExpand myBrands={brandOpts} />}
           {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} staffRole={staffRole} />}
           {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} />}

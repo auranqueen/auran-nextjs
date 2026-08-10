@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import TabBrandSelector from '../components/TabBrandSelector'
+import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import type { CSSProperties } from 'react'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -20,10 +20,10 @@ interface Post {
 }
 interface Props {
   myBrands: { id: string; name: string }[]
+  brandId: string | null
 }
-export default function BrandTabCommunity({ myBrands }: Props) {
-  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
-  const brandId = selectedBrandId
+export default function BrandTabCommunity({ myBrands, brandId }: Props) {
+  const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
   const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
   const supabase = createClient()
   const [posts, setPosts] = useState<Post[]>([])
@@ -35,19 +35,28 @@ export default function BrandTabCommunity({ myBrands }: Props) {
   const [toast, setToast] = useState('')
   const [showForm, setShowForm] = useState(false)
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
+  useEffect(() => {
+    if (!brandId) { setCompanyBrandIds([]); return }
+    let cancelled = false
+    void (async () => {
+      const ids = await resolveCompanyBrandIds(supabase, brandId)
+      if (!cancelled) setCompanyBrandIds(ids)
+    })()
+    return () => { cancelled = true }
+  }, [brandId, supabase])
   const fetchPosts = useCallback(async () => {
-    if (!brandId) return
+    if (!companyBrandIds.length) return
     setLoading(true)
     const { data } = await supabase
       .from('brand_posts')
       .select('id, title, body, is_pinned, reply_count, author_type, created_at')
-      .eq('brand_id', brandId)
+      .in('brand_id', companyBrandIds)
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(20)
     setPosts((data || []) as Post[])
     setLoading(false)
-  }, [brandId])
+  }, [companyBrandIds])
   useEffect(() => { void fetchPosts() }, [fetchPosts])
   const submitPost = async () => {
     if (!body.trim()) { showToast('내용을 입력해주세요'); return }
@@ -102,17 +111,14 @@ export default function BrandTabCommunity({ myBrands }: Props) {
     if (h < 24) return `${h}시간 전`
     return `${Math.floor(h / 24)}일 전`
   }
+  if (!companyBrandIds.length) {
+    return <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>불러오는 중…</div>
+  }
   return (
     <div>
-      <TabBrandSelector myBrands={myBrands} storageKey="community-brand" onSelect={setSelectedBrandId} />
-      {!selectedBrandId ? (
-        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
-      ) : (
-      <>
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>{toast}</div>
       )}
-      {/* 글쓰기 */}
       {showForm ? (
         <div style={CARD}>
           <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>✍️ 새 게시글</div>
@@ -161,10 +167,9 @@ export default function BrandTabCommunity({ myBrands }: Props) {
           onClick={() => setShowForm(true)}
           style={{ width: '100%', padding: '10px', borderRadius: 8, border: `0.5px solid ${PURPLE}`, background: 'rgba(123,94,167,0.1)', color: '#c4a7e7', fontSize: 12, cursor: 'pointer', marginBottom: 10 }}
         >
-          ✍️ 새 게시글 작성
+          ✏️ 새 게시글 작성
         </button>
       )}
-      {/* 게시글 목록 */}
       <div style={CARD}>
         <div style={{ fontSize: 12, color: SUB, marginBottom: 12 }}>💬 게시글</div>
         {loading ? (
@@ -210,8 +215,6 @@ export default function BrandTabCommunity({ myBrands }: Props) {
           ))
         )}
       </div>
-      </>
-      )}
     </div>
   )
 }
