@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import OwnerOrenTalkButton from '../components/OwnerOrenTalkButton'
 const CARD = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
@@ -71,6 +72,7 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
   const [toast, setToast] = useState('')
   const [autoApprove, setAutoApprove] = useState(false)
   const [autoApproveBusy, setAutoApproveBusy] = useState(false)
+  const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
   const [linkRows, setLinkRows] = useState<BrandOwnerLinkRow[]>([])
   const [linkLoading, setLinkLoading] = useState(false)
   const [linkSaving, setLinkSaving] = useState<string | null>(null)
@@ -159,10 +161,15 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
     const { data: links } = await supabase
       .from('brand_owner_links')
       .select('id, owner_id, status, approved_at')
-      .eq('brand_id', brandId)
+      .in('brand_id', companyBrandIds.length ? companyBrandIds : [brandId])
       .order('approved_at', { ascending: false })
 
-    const rows = (links || []) as { id: string; owner_id: string; status: string; approved_at: string | null }[]
+    const seenOwners = new Set<string>()
+    const rows = ((links || []) as { id: string; owner_id: string; status: string; approved_at: string | null }[]).filter((r) => {
+      if (seenOwners.has(r.owner_id)) return false
+      seenOwners.add(r.owner_id)
+      return true
+    })
     const ownerIds = Array.from(new Set(rows.map((r) => r.owner_id).filter(Boolean)))
     let userMap: Record<string, { name: string; email: string }> = {}
     if (ownerIds.length > 0) {
@@ -185,10 +192,20 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
   }
 
   useEffect(() => {
+    if (!brandId) { setCompanyBrandIds([]); return }
+    let cancelled = false
+    void (async () => {
+      const ids = await resolveCompanyBrandIds(supabase, brandId)
+      if (!cancelled) setCompanyBrandIds(ids)
+    })()
+    return () => { cancelled = true }
+  }, [brandId, supabase])
+
+  useEffect(() => {
     void loadBrandOwnerLinks()
     void loadPointBalances()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brandId])
+  }, [brandId, companyBrandIds])
 
   useEffect(() => {
     setShowCsvReupload(false)
@@ -208,7 +225,7 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
       const { data: activeLinks } = await supabase
         .from('brand_owner_links')
         .select('owner_id')
-        .eq('brand_id', brandId)
+        .in('brand_id', companyBrandIds.length ? companyBrandIds : [brandId])
         .eq('status', 'active')
 
       const linkedUserIds = Array.from(
@@ -243,13 +260,17 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
       const matched = profiles || []
       let gradeMap: Record<string, string> = {}
       if (matched.length > 0) {
-        const { data: gradeRows } = await supabase
-          .from('brand_owner_grades')
-          .select('owner_id, grade')
-          .eq('brand_id', brandId)
-          .in('owner_id', matched.map((p: { id: string }) => p.id))
-        if (gradeRows) {
-          for (const row of gradeRows) gradeMap[row.owner_id] = row.grade
+        const ownerIdList = matched.map((p: { id: string }) => p.id)
+        if (companyId) {
+          const { data: gradeRows } = await supabase
+            .from('brand_owner_grades')
+            .select('owner_id, grade')
+            .eq('company_id', companyId)
+            .eq('origin_track', 'A')
+            .in('owner_id', ownerIdList)
+          if (gradeRows) {
+            for (const row of gradeRows) gradeMap[row.owner_id] = row.grade
+          }
         }
       }
       setOwners(matched.map((p: any) => ({
@@ -266,7 +287,7 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
       setLoading(false)
     }
     void fetchOwners()
-  }, [brandId, pointBalances])
+  }, [brandId, pointBalances, companyBrandIds, companyId])
   const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(''), 2500) }
   const csvRowStyle = (status: CsvRowResult['status']) => {
     if (status === 'ok') {
@@ -398,11 +419,11 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
     return matchGrade && matchSearch
   })
   const updateGrade = async (ownerId: string, grade: string) => {
-    if (!brandId) return
+    if (!companyId) return
     setSaving(ownerId + '_grade')
     await supabase.from('brand_owner_grades').upsert(
-      { brand_id: brandId, owner_id: ownerId, grade },
-      { onConflict: 'brand_id,owner_id' }
+      { company_id: companyId, brand_id: brandId, owner_id: ownerId, origin_track: 'A', grade, payment_status: 'paid' },
+      { onConflict: 'company_id,owner_id,origin_track' }
     )
     setOwners(prev => prev.map(o => o.id === ownerId ? { ...o, grade } : o))
     setSaving(null)

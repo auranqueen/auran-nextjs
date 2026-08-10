@@ -5,6 +5,9 @@
 
 
 ## 2026-08-10
+### feat: Owners 컴퍼니 통합(링크/현황/등급) + 149 마이그레이션 레포기록
+- BrandTabOwners 컴퍼니 통합 — 링크목록/원장현황 조회를 companyBrandIds 전체로 확장(owner dedupe 포함), 수기등급을 company_id+origin_track='A'+payment_status='paid'로 통합해 결제등급과 동일한 자리에 저장(onConflict company_id,owner_id,origin_track), 149번 백필로 구버전 수기행 이관
+
 ### feat: 트랙B 원장도 브랜드 커뮤니티 열람 가능(getOwnerLinkedBrandIds 확장)
 - getOwnerLinkedBrandIds에 트랙B 경로 추가: brand_owner_grades(origin_track='B', payment_status='paid')로 company_id 확인 후 그 회사 brands.id 전체를 A links와 합집합 반환. 커뮤니티/홈피드 등 이 헬퍼 호출처 전체가 별도수정 없이 트랙B 원장도 형제브랜드 콘텐츠를 볼 수 있게 됨
 
