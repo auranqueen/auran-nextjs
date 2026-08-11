@@ -43,7 +43,6 @@ export default function AdminCompaniesPage() {
   const [detailId, setDetailId] = useState<string | null>(null)
   const [form, setForm] = useState<DetailForm>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
 
   const showToast = (t: string) => {
     setToast(t)
@@ -92,23 +91,6 @@ export default function AdminCompaniesPage() {
   const closeDetail = () => {
     setDetailId(null)
     setForm(EMPTY_FORM)
-  }
-
-  const handleLogoUpload = async (file: File) => {
-    setUploading(true)
-    try {
-      const ext = file.name.split('.').pop() || 'png'
-      const path = `company-logos/${Date.now()}.${ext}`
-      const { data, error } = await supabase.storage.from('brand-assets').upload(path, file, { upsert: true })
-      if (error || !data) {
-        showToast('로고 업로드 실패')
-        return
-      }
-      const { data: urlData } = supabase.storage.from('brand-assets').getPublicUrl(path)
-      setForm((f) => ({ ...f, logoUrl: urlData.publicUrl }))
-    } finally {
-      setUploading(false)
-    }
   }
 
   const save = async () => {
@@ -164,7 +146,7 @@ export default function AdminCompaniesPage() {
 
       <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text)', marginBottom: 4 }}>제휴 브랜드사 관리</div>
       <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 16 }}>
-        회사(컴퍼니) 단위로 PayApp 결제연동, 로고 관리
+        회사(컴퍼니) 단위로 PayApp 결제연동 관리 (로고는 각 브랜드사가 브랜드허브 세금계산서 탭에서 직접 설정)
       </div>
 
       {loading ? (
@@ -276,7 +258,7 @@ export default function AdminCompaniesPage() {
             </label>
 
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 6 }}>로고</div>
+              <div style={{ fontSize: 11, color: 'var(--text2)', marginBottom: 6 }}>로고 (브랜드사가 브랜드허브에서 직접 설정)</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 {form.logoUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -284,16 +266,6 @@ export default function AdminCompaniesPage() {
                 ) : (
                   <div style={{ width: 48, height: 48, borderRadius: 8, background: 'var(--bg3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>🏢</div>
                 )}
-                <label style={{ fontSize: 12, color: ACC, cursor: 'pointer', border: `1px solid ${ACC}`, borderRadius: 8, padding: '6px 12px' }}>
-                  {uploading ? '업로드 중...' : '이미지 선택'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    disabled={uploading}
-                    onChange={(e) => { const f = e.target.files?.[0]; if (f) void handleLogoUpload(f) }}
-                    style={{ display: 'none' }}
-                  />
-                </label>
               </div>
             </div>
 
