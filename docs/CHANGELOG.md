@@ -5,6 +5,9 @@
 
 
 ## 2026-08-11
+### docs: 신규 브랜드사(컴퍼니) 온보딩 체크리스트 추가 — 9단계(문서화) 완료
+- docs/ONBOARDING_NEW_COMPANY.md 신설 — 신규 컴퍼니 온보딩 SQL+UI 혼합 체크리스트(회사생성→허브브랜드신청/승인→company_id연결→CEO PIN부트스트랩→로고/PayApp→형제브랜드), 컴퍼니기준 근본수정 프로젝트 9단계(문서화) 완료로 전체 프로젝트 마무리
+
 ### feat: 원장님현황(Owners) 컴퍼니통합 완성 - OwnersBrandWrapper 제거
 - OwnersBrandWrapper.tsx 제거: BrandHubContent에서 BrandTabOwners를 허브 brandId로 직접 렌더링하도록 변경(TabBrandSelector 간접경유 제거). 다른 탭들과 렌더 패턴 통일. orphan 파일 삭제
 
