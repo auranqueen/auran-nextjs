@@ -1,5 +1,6 @@
 'use client'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.85)'
@@ -32,6 +33,7 @@ interface Props {
 }
 export default function BrandPinGate({ brandId, companyId: companyIdProp, brandName, onAuth, hub = 'brand', logiHref = '/dashboard/logi' }: Props) {
   const supabase = createClient()
+  const router = useRouter()
   const [staffList, setStaffList] = useState<StaffRow[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<StaffRow | null>(null)
@@ -105,11 +107,12 @@ export default function BrandPinGate({ brandId, companyId: companyIdProp, brandN
       }
       return
     }
-    // Brand Hub에서는 물류 역할(ops_*) 진입 차단 — 물류 허브로 안내
+    // Brand Hub에서는 물류 역할(ops_*) 진입시 물류 허브로 자동 이동
     if (hub === 'brand' && (selected.role === 'ops_manager' || selected.role === 'ops_staff')) {
       setOpsBlocked(true)
       setError('')
       setPin('')
+      router.replace(logiHref)
       return
     }
     setChecking(true)

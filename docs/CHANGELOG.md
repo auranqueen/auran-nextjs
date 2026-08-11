@@ -5,6 +5,9 @@
 
 
 ## 2026-08-11
+### feat: 물류role PIN인증시 물류허브 자동리다이렉트
+- BrandPinGate에서 물류role(ops_manager/ops_staff) PIN인증 성공시 수동 안내화면 대신 router.replace(logiHref)로 물류허브(/dashboard/logi)에 자동 진입하도록 변경. opsBlocked UI는 전환 중 화면으로 유지
+
 ### fix: 재고매칭 실패시 무음스킵 대신 경고로그 기록(트랙A/B)
 - BrandBatchFulfillmentList(A)/BrandInventoryFulfillment(B)의 재고차감 로직에서, product_id-재고 매칭 실패시 조용히 스킵되던 것을 brand_stock_logs(type:'adjust')에 경고 로그 남기도록 수정. 매칭실패 상황을 추적 가능하게 함
 
