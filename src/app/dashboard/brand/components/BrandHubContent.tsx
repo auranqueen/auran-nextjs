@@ -75,7 +75,7 @@ export default function BrandHubContent({
         { key: 'products', label: '제품 관리', icon: 'ti-package' },
         { key: 'tierPackages', label: '등급 패키지 관리', icon: 'ti-medal' },
         { key: 'owners', label: '원장님 현황', icon: 'ti-building-store' },
-        { key: 'expand', label: '입점 확장', icon: 'ti-arrow-bar-up' },
+        // { key: 'expand', label: '입점 확장', icon: 'ti-arrow-bar-up' }, // 2026-08-10 숨김: 컴퍼니통합으로 브랜드단위 개념이 의미없어져서 임시숨김. 필요시 이 줄 주석만 해제하면 복구됨
       ],
     },
     {
@@ -250,7 +250,7 @@ export default function BrandHubContent({
           {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'live' && <BrandTabLive myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} brandId={brandId} />}
-          {mainTab === 'expand' && <BrandTabExpand myBrands={brandOpts} />}
+          {mainTab === 'expand' && <BrandTabExpand myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} staffRole={staffRole} brandId={brandId} />}
           {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} />}
           {mainTab === 'report' && <BrandTabReport myBrands={brandOpts} brandId={brandId} />}

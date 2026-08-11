@@ -1,7 +1,6 @@
 'use client'
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
-import TabBrandSelector from '../components/TabBrandSelector'
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
@@ -9,10 +8,9 @@ const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
 interface Props {
   myBrands: { id: string; name: string }[]
+  brandId: string | null
 }
-export default function BrandTabExpand({ myBrands }: Props) {
-  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
-  const brandId = selectedBrandId
+export default function BrandTabExpand({ myBrands, brandId }: Props) {
   const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
   const [toast, setToast] = useState('')
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
@@ -29,11 +27,6 @@ export default function BrandTabExpand({ myBrands }: Props) {
   ]
   return (
     <div>
-      <TabBrandSelector myBrands={myBrands} storageKey="expand-brand" onSelect={setSelectedBrandId} />
-      {!selectedBrandId ? (
-        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
-      ) : (
-      <>
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>{toast}</div>
       )}
@@ -68,8 +61,6 @@ export default function BrandTabExpand({ myBrands }: Props) {
       >
         + 신규 지역 확장 상담 신청
       </button>
-      </>
-      )}
     </div>
   )
 }

@@ -5,6 +5,9 @@
 
 
 ## 2026-08-11
+### feat: Expand 컴퍼니 통합 + 메뉴숨김
+- BrandTabExpand에서 TabBrandSelector 제거, 허브 brandId로 브랜드명 표시(데이터는 그대로 플레이스홀더). "입점 확장" 메뉴항목을 네비게이션에서 임시숨김(주석처리, 실제 기능 고도화/삭제 여부는 추후 결정)
+
 ### feat: Invoice 셀렉터 제거(허브 brandId 사용)
 - BrandTabInvoice에서 TabBrandSelector 제거, 허브 brandId를 직접 사용하도록 변경. 데이터구조(브랜드별 invoice_settings/로고, 회사 로고)는 미변경
 
