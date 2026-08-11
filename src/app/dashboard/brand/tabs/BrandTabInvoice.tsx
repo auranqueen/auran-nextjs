@@ -1,7 +1,6 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import TabBrandSelector from '../components/TabBrandSelector'
 interface InvoiceSettings {
   logo_name: string
   brand_sub: string
@@ -18,6 +17,7 @@ interface InvoiceSettings {
 interface Props {
   myBrands: { id: string; name: string }[]
   staffRole: string | null
+  brandId: string | null
 }
 const DEFAULT_SETTINGS: InvoiceSettings = {
   logo_name: '',
@@ -33,10 +33,8 @@ const DEFAULT_SETTINGS: InvoiceSettings = {
   ceo_name: '',
 }
 const PURPLE = '#7B5EA7'
-export default function BrandTabInvoice({ myBrands, staffRole }: Props) {
+export default function BrandTabInvoice({ myBrands, staffRole, brandId }: Props) {
   const canManageLogo = staffRole === 'ceo' || staffRole === 'director' || staffRole === 'manager'
-  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
-  const brandId = selectedBrandId
   const brandName = myBrands.find((b) => b.id === brandId)?.name || ''
   const supabase = createClient()
   const [settings, setSettings] = useState<InvoiceSettings>({ ...DEFAULT_SETTINGS, logo_name: brandName })
@@ -137,13 +135,11 @@ export default function BrandTabInvoice({ myBrands, staffRole }: Props) {
   const TEXT_COLOR = 'rgba(255,255,255,0.65)'
   const CARD_STYLE = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
   const INPUT_STYLE = { width: '100%', background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '8px 10px', fontSize: 12, color: TEXT_COLOR, outline: 'none' }
+  if (!brandId) {
+    return <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>불러오는 중…</div>
+  }
   return (
     <div>
-      <TabBrandSelector myBrands={myBrands} storageKey="invoice-brand" onSelect={setSelectedBrandId} />
-      {!selectedBrandId ? (
-        <div style={{ textAlign: 'center', padding: 24, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>브랜드 선택 중…</div>
-      ) : (
-      <>
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999, whiteSpace: 'nowrap' }}>{toast}</div>
       )}
@@ -226,8 +222,6 @@ export default function BrandTabInvoice({ myBrands, staffRole }: Props) {
           {saving ? '저장 중...' : '저장하기'}
         </button>
       </div>
-      </>
-      )}
     </div>
   )
 }

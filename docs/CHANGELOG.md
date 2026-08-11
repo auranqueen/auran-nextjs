@@ -5,6 +5,9 @@
 
 
 ## 2026-08-11
+### feat: Invoice 셀렉터 제거(허브 brandId 사용)
+- BrandTabInvoice에서 TabBrandSelector 제거, 허브 brandId를 직접 사용하도록 변경. 데이터구조(브랜드별 invoice_settings/로고, 회사 로고)는 미변경
+
 ### feat: Returns 컴퍼니 통합(TabBrandSelector 제거)
 - Returns(반품) 컴퍼니 통합: BrandTabReturns에서 TabBrandSelector 제거, resolveCompanyBrandIds로 companyBrandIds 생성해 List/Receive에 전달. 목록/수령대기 조회를 companyBrandIds 전체(.in)로 확장, 승인/수령 처리는 hub brandId 유지
 
