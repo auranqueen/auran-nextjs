@@ -5,6 +5,9 @@
 
 
 ## 2026-08-11
+### fix: monthly_skin_reports 키 컬럼 auth_id → user_id 정렬
+- 크론 upsert(expire-coupons runMonthlySkinReportJob)와 마이페이지 조회를 DB 컬럼명 user_id에 맞게 변경(auth_id → user_id, onConflict 포함)
+
 ### feat: 물류role PIN인증시 물류허브 자동리다이렉트
 - BrandPinGate에서 물류role(ops_manager/ops_staff) PIN인증 성공시 수동 안내화면 대신 router.replace(logiHref)로 물류허브(/dashboard/logi)에 자동 진입하도록 변경. opsBlocked UI는 전환 중 화면으로 유지
 

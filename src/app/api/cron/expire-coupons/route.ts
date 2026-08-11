@@ -123,14 +123,14 @@ async function runMonthlySkinReportJob(): Promise<{ users: number }> {
 
     const { error } = await admin.from('monthly_skin_reports').upsert(
       {
-        auth_id: uid,
+        user_id: uid,
         report_month: reportMonth,
         hormone_pattern,
         checkin_summary,
         purchase_summary,
         skin_changes,
       } as any,
-      { onConflict: 'auth_id,report_month' }
+      { onConflict: 'user_id,report_month' }
     )
     if (!error) users += 1
   }

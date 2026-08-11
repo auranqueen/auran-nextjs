@@ -254,7 +254,7 @@ export default function MyPage() {
         supabase
           .from('monthly_skin_reports')
           .select('*')
-          .eq('auth_id', data.user.id)
+          .eq('user_id', data.user.id)
           .order('created_at', { ascending: false })
           .limit(1)
           .then(({ data: reps }) => {
