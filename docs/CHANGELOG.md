@@ -5,6 +5,9 @@
 
 
 ## 2026-08-11
+### fix: middleware.ts /dashboard/logi 강제라우팅 예외처리 (물류대시보드 접근 버그 근본수정)
+- 물류대시보드(/dashboard/logi) 접근 버그 근본원인 수정: middleware.ts의 role기반 대시보드 강제라우팅이 /dashboard/logi에 대한 예외가 없어 brand/admin role 전부 /dashboard/brand 또는 홈으로 강제 리다이렉트되던 문제. /dashboard/logi를 role 강제라우팅에서 예외처리(target 계산 직후, admin 홈 리다이렉트보다 먼저)하여 페이지 자체 인증로직(계정소유권/컴퍼니멤버십+PIN게이트)에 맡기도록 수정
+
 ### feat: 물류허브 접근을 사이드바로 이동 + 권한체계(logi_hub_access) 신설
 - 물류허브 접근 UX 개편: BrandTabInventory의 "물류허브 열기" 버튼을 사이드바(브랜드명 옆)로 이동. 신규 권한모듈 logi_hub_access 추가, 노출조건은 isCEO(URL기반) || staffRole==='ceo'(PIN인증대표) || permissions.includes('logi_hub_access')(권한부여직원) || userRole==='admin'(플랫폼관리자). userRole prop을 page.tsx→BrandHubContent로 신규배선
 

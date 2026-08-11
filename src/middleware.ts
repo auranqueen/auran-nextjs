@@ -250,6 +250,10 @@ export async function middleware(req: NextRequest) {
       admin: '/admin',
     }
     const target = normalizedRole && map[normalizedRole] ? map[normalizedRole] : '/dashboard/customer'
+    if (pathname.startsWith('/dashboard/logi')) {
+      // 물류허브는 role 강제라우팅 예외 — 페이지 자체(소유권/컴퍼니멤버십+PIN게이트)에서 인증 처리
+      return res
+    }
     if (pathname.startsWith('/dashboard/admin')) {
       const appRole = (user as any)?.app_metadata?.role ?? ''
       const isSuperAdmin = appRole === 'super_admin'
