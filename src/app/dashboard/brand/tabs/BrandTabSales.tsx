@@ -42,7 +42,7 @@ export default function BrandTabSales({ myBrands, initialSub, brandId }: Props) 
         ))}
       </div>
       {sub === 'orders' && <BrandTabOrders myBrands={myBrands} />}
-      {sub === 'returns' && <BrandTabReturns myBrands={myBrands} />}
+      {sub === 'returns' && <BrandTabReturns myBrands={myBrands} brandId={brandId} />}
       {sub === 'sample' && <BrandTabSample myBrands={myBrands} brandId={brandId} />}
     </div>
   )

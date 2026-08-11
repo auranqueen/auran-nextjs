@@ -34,8 +34,8 @@ interface ReturnRow {
   created_at: string
   order_id: string | null
 }
-interface Props { brandId: string | null }
-export default function BrandReturnsList({ brandId }: Props) {
+interface Props { brandId: string | null; companyBrandIds: string[] }
+export default function BrandReturnsList({ brandId, companyBrandIds }: Props) {
   const supabase = createClient()
   const [returns, setReturns] = useState<ReturnRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -46,17 +46,17 @@ export default function BrandReturnsList({ brandId }: Props) {
   const [saving, setSaving] = useState(false)
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const loadData = useCallback(async () => {
-    if (!brandId) return
+    if (!companyBrandIds.length) return
     setLoading(true)
     const { data } = await supabase
       .from('brand_returns')
       .select('id, type, reason_code, reason_detail, status, qty, return_code, photos, requested_by, approved_by, received_by, denied_reason, condition, process, created_at, order_id')
-      .eq('brand_id', brandId)
+      .in('brand_id', companyBrandIds)
       .order('created_at', { ascending: false })
       .limit(30)
     setReturns((data || []) as ReturnRow[])
     setLoading(false)
-  }, [brandId])
+  }, [companyBrandIds])
   useEffect(() => { void loadData() }, [loadData])
   const generateCode = () => {
     const now = new Date()

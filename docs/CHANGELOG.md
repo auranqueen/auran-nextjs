@@ -4,6 +4,10 @@
 ---
 
 
+## 2026-08-11
+### feat: Returns 컴퍼니 통합(TabBrandSelector 제거)
+- Returns(반품) 컴퍼니 통합: BrandTabReturns에서 TabBrandSelector 제거, resolveCompanyBrandIds로 companyBrandIds 생성해 List/Receive에 전달. 목록/수령대기 조회를 companyBrandIds 전체(.in)로 확장, 승인/수령 처리는 hub brandId 유지
+
 ## 2026-08-10
 ### feat: Owners 컴퍼니 통합(링크/현황/등급) + 149 마이그레이션 레포기록
 - BrandTabOwners 컴퍼니 통합 — 링크목록/원장현황 조회를 companyBrandIds 전체로 확장(owner dedupe 포함), 수기등급을 company_id+origin_track='A'+payment_status='paid'로 통합해 결제등급과 동일한 자리에 저장(onConflict company_id,owner_id,origin_track), 149번 백필로 구버전 수기행 이관

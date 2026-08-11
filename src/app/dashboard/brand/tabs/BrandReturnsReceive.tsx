@@ -32,8 +32,8 @@ interface ReturnRow {
   photos: string[] | null
   created_at: string
 }
-interface Props { brandId: string | null }
-export default function BrandReturnsReceive({ brandId }: Props) {
+interface Props { brandId: string | null; companyBrandIds: string[] }
+export default function BrandReturnsReceive({ brandId, companyBrandIds }: Props) {
   const supabase = createClient()
   const [codeInput, setCodeInput] = useState('')
   const [matched, setMatched] = useState<ReturnRow | null>(null)
@@ -48,17 +48,17 @@ export default function BrandReturnsReceive({ brandId }: Props) {
   const [loading, setLoading] = useState(true)
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const loadPending = useCallback(async () => {
-    if (!brandId) return
+    if (!companyBrandIds.length) return
     setLoading(true)
     const { data } = await supabase
       .from('brand_returns')
       .select('id, type, reason_code, reason_detail, status, qty, return_code, inventory_id, photos, created_at')
-      .eq('brand_id', brandId)
+      .in('brand_id', companyBrandIds)
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
     setPending((data || []) as ReturnRow[])
     setLoading(false)
-  }, [brandId])
+  }, [companyBrandIds])
   useEffect(() => { void loadPending() }, [loadPending])
   const selectMatch = (row: ReturnRow) => {
     setMatched(row)

@@ -14,7 +14,6 @@ const BrandTabExpand = dynamic(() => import('../tabs/BrandTabExpand'), { ssr: fa
 const BrandTabInvoice = dynamic(() => import('../tabs/BrandTabInvoice'), { ssr: false })
 const BrandTabInventory = dynamic(() => import('../tabs/BrandTabInventory'), { ssr: false })
 const BrandTabReport = dynamic(() => import('../tabs/BrandTabReport'), { ssr: false })
-const BrandTabReturns = dynamic(() => import('../tabs/BrandTabReturns'), { ssr: false })
 const BrandTabTierPackages = dynamic(() => import('../tabs/BrandTabTierPackages'), { ssr: false })
 const BrandTabSettlement = dynamic(() => import('../tabs/BrandTabSettlement'), { ssr: false })
 const BrandInventoryStaff = dynamic(() => import('../tabs/BrandInventoryStaff'), { ssr: false })
