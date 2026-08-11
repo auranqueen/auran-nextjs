@@ -5,6 +5,9 @@
 
 
 ## 2026-08-11
+### feat: 재고출고 로그 판매/증정 분리기록(is_gift) + 중복방지 로직 수정
+- brand_stock_logs에 is_gift(boolean) 컬럼 추가. 재고출고 로그를 판매분/증정분 2줄로 분리기록하도록 트랙A(BrandBatchFulfillmentList)/트랙B(BrandInventoryFulfillment) 수정 — RPC 차감은 기존처럼 qty+bonus 합계 1회, 로그만 판매분(is_gift:false)/증정분(is_gift:true) 체이닝. alreadyLogged 중복방지 체크를 .maybeSingle()에서 .limit(1)로 변경(2행 로그 대응)
+
 ### fix: middleware.ts /dashboard/logi 강제라우팅 예외처리 (물류대시보드 접근 버그 근본수정)
 - 물류대시보드(/dashboard/logi) 접근 버그 근본원인 수정: middleware.ts의 role기반 대시보드 강제라우팅이 /dashboard/logi에 대한 예외가 없어 brand/admin role 전부 /dashboard/brand 또는 홈으로 강제 리다이렉트되던 문제. /dashboard/logi를 role 강제라우팅에서 예외처리(target 계산 직후, admin 홈 리다이렉트보다 먼저)하여 페이지 자체 인증로직(계정소유권/컴퍼니멤버십+PIN게이트)에 맡기도록 수정
 

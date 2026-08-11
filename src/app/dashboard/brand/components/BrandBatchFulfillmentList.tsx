@@ -261,8 +261,8 @@ export default function BrandBatchFulfillmentList({
       .eq('brand_id', order.brand_id)
       .eq('ref_type', 'order')
       .eq('ref_id', order.id)
-      .maybeSingle()
-    if (alreadyLogged) return
+      .limit(1)
+    if (alreadyLogged && alreadyLogged.length > 0) return
     for (const item of order.items) {
       const invQuery = supabase
         .from('brand_inventory')
@@ -287,20 +287,39 @@ export default function BrandBatchFulfillmentList({
         })
         continue
       }
-      const outQty = item.qty + (item.bonus || 0)
+      const bonusQty = item.bonus || 0
+      const outQty = item.qty + bonusQty
       await supabase.rpc('decrement_inventory_stock', { p_inventory_id: invRow.id, p_qty: outQty })
-      await supabase.from('brand_stock_logs').insert({
+      const midStock = Math.max(0, invRow.total_stock - item.qty)
+      const logRows: Record<string, unknown>[] = [{
         brand_id: order.brand_id,
         inventory_id: invRow.id,
         type: 'out',
-        qty: outQty,
+        qty: item.qty,
         before_qty: invRow.total_stock,
-        after_qty: Math.max(0, invRow.total_stock - outQty),
+        after_qty: midStock,
         ref_type: 'order',
         ref_id: order.id,
         staff_name: '발주 자동 출고',
-        memo: `배치 발송 출고: ${item.name} ${outQty}개`,
-      })
+        memo: `배치 발송 출고(판매): ${item.name} ${item.qty}개`,
+        is_gift: false,
+      }]
+      if (bonusQty > 0) {
+        logRows.push({
+          brand_id: order.brand_id,
+          inventory_id: invRow.id,
+          type: 'out',
+          qty: bonusQty,
+          before_qty: midStock,
+          after_qty: Math.max(0, midStock - bonusQty),
+          ref_type: 'order',
+          ref_id: order.id,
+          staff_name: '발주 자동 출고',
+          memo: `배치 발송 출고(증정): ${item.name} ${bonusQty}개`,
+          is_gift: true,
+        })
+      }
+      await supabase.from('brand_stock_logs').insert(logRows)
     }
   }
 
