@@ -271,7 +271,22 @@ export default function BrandBatchFulfillmentList({
       const { data: invRow } = item.product_id
         ? await invQuery.eq('product_id', item.product_id).maybeSingle()
         : await invQuery.eq('product_name', item.name).maybeSingle()
-      if (!invRow) continue
+      if (!invRow) {
+        console.warn(`[재고차감 실패] 매칭 안 됨: ${item.name} (order ${order.id})`)
+        await supabase.from('brand_stock_logs').insert({
+          brand_id: order.brand_id,
+          inventory_id: null,
+          type: 'adjust',
+          qty: item.qty + (item.bonus || 0),
+          before_qty: 0,
+          after_qty: 0,
+          ref_type: 'order',
+          ref_id: order.id,
+          staff_name: '발주 자동 출고',
+          memo: `재고매칭 실패로 미차감: ${item.name} (product_id: ${item.product_id || '없음'})`,
+        })
+        continue
+      }
       const outQty = item.qty + (item.bonus || 0)
       await supabase.rpc('decrement_inventory_stock', { p_inventory_id: invRow.id, p_qty: outQty })
       await supabase.from('brand_stock_logs').insert({

@@ -5,6 +5,9 @@
 
 
 ## 2026-08-11
+### fix: 재고매칭 실패시 무음스킵 대신 경고로그 기록(트랙A/B)
+- BrandBatchFulfillmentList(A)/BrandInventoryFulfillment(B)의 재고차감 로직에서, product_id-재고 매칭 실패시 조용히 스킵되던 것을 brand_stock_logs(type:'adjust')에 경고 로그 남기도록 수정. 매칭실패 상황을 추적 가능하게 함
+
 ### docs: 신규 브랜드사(컴퍼니) 온보딩 체크리스트 추가 — 9단계(문서화) 완료
 - docs/ONBOARDING_NEW_COMPANY.md 신설 — 신규 컴퍼니 온보딩 SQL+UI 혼합 체크리스트(회사생성→허브브랜드신청/승인→company_id연결→CEO PIN부트스트랩→로고/PayApp→형제브랜드), 컴퍼니기준 근본수정 프로젝트 9단계(문서화) 완료로 전체 프로젝트 마무리
 
