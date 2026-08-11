@@ -67,10 +67,11 @@ const PERMISSION_MODULES = [
     modules: [
       { key: 'sample_manage',   label: '샘플 등록/발송' },
       { key: 'community_post',  label: '커뮤니티 공지 작성' },
+      { key: 'logi_hub_access', label: '물류허브 접근' },
     ]
   },
 ] as const
-type ModuleKey = 'order_view' | 'order_approve' | 'order_ship' | 'inventory_view' | 'inventory_edit' | 'inventory_lot' | 'inventory_close' | 'inventory_emergency' | 'product_manage' | 'marketing_create' | 'marketing_bundle' | 'report_view' | 'report_staff' | 'report_mismatch' | 'returns_view' | 'returns_approve' | 'returns_receive' | 'staff_manage' | 'staff_grant' | 'sample_manage' | 'community_post'
+type ModuleKey = 'order_view' | 'order_approve' | 'order_ship' | 'inventory_view' | 'inventory_edit' | 'inventory_lot' | 'inventory_close' | 'inventory_emergency' | 'product_manage' | 'marketing_create' | 'marketing_bundle' | 'report_view' | 'report_staff' | 'report_mismatch' | 'returns_view' | 'returns_approve' | 'returns_receive' | 'staff_manage' | 'staff_grant' | 'sample_manage' | 'community_post' | 'logi_hub_access'
 interface StaffRow {
   id: string
   name: string

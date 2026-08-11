@@ -5,6 +5,9 @@
 
 
 ## 2026-08-11
+### feat: 물류허브 접근을 사이드바로 이동 + 권한체계(logi_hub_access) 신설
+- 물류허브 접근 UX 개편: BrandTabInventory의 "물류허브 열기" 버튼을 사이드바(브랜드명 옆)로 이동. 신규 권한모듈 logi_hub_access 추가, 노출조건은 isCEO(URL기반) || staffRole==='ceo'(PIN인증대표) || permissions.includes('logi_hub_access')(권한부여직원) || userRole==='admin'(플랫폼관리자). userRole prop을 page.tsx→BrandHubContent로 신규배선
+
 ### fix: monthly_skin_reports 키 컬럼 auth_id → user_id 정렬
 - 크론 upsert(expire-coupons runMonthlySkinReportJob)와 마이페이지 조회를 DB 컬럼명 user_id에 맞게 변경(auth_id → user_id, onConflict 포함)
 

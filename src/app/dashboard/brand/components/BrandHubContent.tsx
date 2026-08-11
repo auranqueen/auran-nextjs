@@ -31,6 +31,8 @@ interface Props {
   loginRole: string
   staffRole: string | null
   staffId: string | null
+  permissions: string[]
+  userRole: string | null
   rows: Array<Record<string, unknown> & { id: string; name?: string | null; status?: string | null; thumb_img?: string | null }>
   tab: 'pending' | 'active' | 'hidden'
   onTabChange: (t: 'pending' | 'active' | 'hidden') => void
@@ -38,16 +40,16 @@ interface Props {
   onNew: () => void
 }
 export default function BrandHubContent({
-  brandId, brandName, myBrands, onBrandChange: _onBrandChange, authId, isCEO, loginRole, staffRole, staffId,
+  brandId, brandName, myBrands, onBrandChange: _onBrandChange, authId, isCEO, loginRole, staffRole, staffId, permissions, userRole,
   rows, tab, onTabChange, onEdit, onNew
 }: Props) {
+  const supabase = createClient()
   const [mainTab, setMainTab] = useState<MainTab>('home')
   const [mainSub, setMainSub] = useState<string | undefined>(undefined)
   const [helpOpen, setHelpOpen] = useState(false)
   const [companyId, setCompanyId] = useState<string | null>(null)
   useEffect(() => {
     if (!brandId) { setCompanyId(null); return }
-    const supabase = createClient()
     supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
       .then(({ data }) => setCompanyId(data?.company_id ?? null))
   }, [brandId])
@@ -95,7 +97,24 @@ export default function BrandHubContent({
         {/* 브랜드명 */}
         <div style={{ padding: '14px 14px 10px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
           <div style={{ fontSize: 10, color: '#C9A96E', letterSpacing: 4, marginBottom: 3 }}>AURAN</div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginBottom: 0 }}>{brandName}</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)' }}>{brandName}</div>
+            {(isCEO || staffRole === 'ceo' || permissions?.includes('logi_hub_access') || userRole === 'admin') && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!brandId) return
+                  const { data } = await supabase.from('brands').select('slug').eq('id', brandId).maybeSingle()
+                  const slug = data?.slug != null ? String(data.slug) : null
+                  const href = slug ? `/dashboard/logi?slug=${encodeURIComponent(slug)}` : '/dashboard/logi'
+                  window.open(href, '_blank', 'noopener,noreferrer')
+                }}
+                style={{ fontSize: 10, padding: '3px 8px', borderRadius: 6, border: '0.5px solid rgba(76,175,80,0.4)', background: 'rgba(76,175,80,0.1)', color: '#81C784', cursor: 'pointer', flexShrink: 0 }}
+              >
+                🚚 물류허브
+              </button>
+            )}
+          </div>
         </div>
         {/* 메뉴 */}
         <div style={{ flex: 1, padding: '6px 0' }}>
