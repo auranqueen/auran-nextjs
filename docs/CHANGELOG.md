@@ -5,6 +5,9 @@
 
 
 ## 2026-08-11
+### feat: 원장님현황(Owners) 컴퍼니통합 완성 - OwnersBrandWrapper 제거
+- OwnersBrandWrapper.tsx 제거: BrandHubContent에서 BrandTabOwners를 허브 brandId로 직접 렌더링하도록 변경(TabBrandSelector 간접경유 제거). 다른 탭들과 렌더 패턴 통일. orphan 파일 삭제
+
 ### feat: Expand 컴퍼니 통합 + 메뉴숨김
 - BrandTabExpand에서 TabBrandSelector 제거, 허브 brandId로 브랜드명 표시(데이터는 그대로 플레이스홀더). "입점 확장" 메뉴항목을 네비게이션에서 임시숨김(주석처리, 실제 기능 고도화/삭제 여부는 추후 결정)
 

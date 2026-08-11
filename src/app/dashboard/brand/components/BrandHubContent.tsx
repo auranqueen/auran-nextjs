@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 const BrandTabHome = dynamic(() => import('../tabs/BrandTabHome'), { ssr: false })
 const BrandTabProducts = dynamic(() => import('../tabs/BrandTabProducts'), { ssr: false })
-const OwnersBrandWrapper = dynamic(() => import('./OwnersBrandWrapper'), { ssr: false })
+const BrandTabOwners = dynamic(() => import('../tabs/BrandTabOwners'), { ssr: false })
 const BrandTabOrders = dynamic(() => import('../tabs/BrandTabOrders'), { ssr: false })
 const BrandTabOrenTalk = dynamic(() => import('../tabs/BrandTabOrenTalk'), { ssr: false })
 const BrandTabLive = dynamic(() => import('../tabs/BrandTabLive'), { ssr: false })
@@ -245,7 +245,7 @@ export default function BrandHubContent({
           {mainTab === 'home' && <BrandTabHome brandName={brandName} brandId={brandId} onTabChange={(t, s) => { setMainTab(t as MainTab); setMainSub(s) }} />}
           {mainTab === 'products' && <BrandTabProducts rows={rows} tab={tab} onTabChange={onTabChange} onEdit={onEdit} onNew={onNew} currentBrandName={brandName} />}
           {mainTab === 'tierPackages' && <BrandTabTierPackages myBrands={brandOpts} staffId={staffId} isCEO={isCEO} />}
-          {mainTab === 'owners' && <OwnersBrandWrapper myBrands={brandOpts} authId={authId} />}
+          {mainTab === 'owners' && <BrandTabOwners brandId={brandId} brandName={brandName} authId={authId} />}
           {mainTab === 'sales' && <BrandTabSales myBrands={brandOpts} initialSub={mainSub} brandId={brandId} />}
           {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'live' && <BrandTabLive myBrands={brandOpts} brandId={brandId} />}
