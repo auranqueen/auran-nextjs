@@ -19,7 +19,8 @@ const BrandTabSettlement = dynamic(() => import('../tabs/BrandTabSettlement'), {
 const BrandInventoryStaff = dynamic(() => import('../tabs/BrandInventoryStaff'), { ssr: false })
 const BrandTabAdminAccount = dynamic(() => import('../tabs/BrandTabAdminAccount'), { ssr: false })
 const BrandTabSales = dynamic(() => import('../tabs/BrandTabSales'), { ssr: false })
-type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages' | 'staff' | 'sales'
+const BrandTabArete = dynamic(() => import('../tabs/BrandTabArete'), { ssr: false })
+type MainTab = 'home' | 'products' | 'owners' | 'orders' | 'orentalk' | 'live' | 'sample' | 'community' | 'expand' | 'invoice' | 'inventory' | 'report' | 'returns' | 'settlement' | 'tierPackages' | 'staff' | 'sales' | 'arete'
 type BrandOption = { id: string; name: string; role: string; slug?: string | null }
 interface Props {
   brandId: string | null
@@ -77,6 +78,7 @@ export default function BrandHubContent({
         { key: 'products', label: '제품 관리', icon: 'ti-package' },
         { key: 'tierPackages', label: '등급·이벤트 관리', icon: 'ti-medal' },
         { key: 'owners', label: '원장님 현황', icon: 'ti-building-store' },
+        { key: 'arete', label: '아레테클럽', icon: 'ti-crown' },
         // { key: 'expand', label: '입점 확장', icon: 'ti-arrow-bar-up' }, // 2026-08-10 숨김: 컴퍼니통합으로 브랜드단위 개념이 의미없어져서 임시숨김. 필요시 이 줄 주석만 해제하면 복구됨
       ],
     },
@@ -265,6 +267,7 @@ export default function BrandHubContent({
           {mainTab === 'products' && <BrandTabProducts rows={rows} tab={tab} onTabChange={onTabChange} onEdit={onEdit} onNew={onNew} currentBrandName={brandName} />}
           {mainTab === 'tierPackages' && <BrandTabTierPackages myBrands={brandOpts} staffId={staffId} isCEO={isCEO} />}
           {mainTab === 'owners' && <BrandTabOwners brandId={brandId} brandName={brandName} authId={authId} />}
+          {mainTab === 'arete' && <BrandTabArete companyId={companyId} />}
           {mainTab === 'sales' && <BrandTabSales myBrands={brandOpts} initialSub={mainSub} brandId={brandId} />}
           {mainTab === 'orentalk' && <BrandTabOrenTalk myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'live' && <BrandTabLive myBrands={brandOpts} brandId={brandId} />}
