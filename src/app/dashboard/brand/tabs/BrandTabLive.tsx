@@ -162,11 +162,15 @@ export default function BrandTabLive({ myBrands, brandId }: Props) {
       for (const r of gradeRows || []) idSet.add(String((r as { owner_id: string }).owner_id))
     }
     if (wantArete) {
-      const { data: areteRows } = await supabase
-        .from('brand_arete_members')
-        .select('owner_id')
-        .eq('brand_id', brandId)
-        .eq('status', 'active')
+      const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
+      const areteCompanyId = (brandRow as { company_id?: string | null } | null)?.company_id
+      const { data: areteRows } = areteCompanyId
+        ? await supabase
+            .from('brand_arete_members')
+            .select('owner_id')
+            .eq('company_id', areteCompanyId)
+            .eq('status', 'active')
+        : { data: [] }
       for (const r of areteRows || []) {
         const oid = String((r as { owner_id: string }).owner_id)
         if (allIds.includes(oid)) idSet.add(oid)

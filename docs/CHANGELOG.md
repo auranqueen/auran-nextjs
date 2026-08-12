@@ -5,6 +5,9 @@
 
 
 ## 2026-08-12
+### feat: 아레테클럽 company_id 전면전환(포인트/멤버십/대상필터/뱃지)
+- 아레테클럽 관련 데이터를 브랜드단위→컴퍼니단위로 전면 전환: brand_points/brand_arete_members에 company_id 컬럼 추가+백필+유니크제약(151번 마이그레이션 레포기록). toggleArete(BrandTabOwners), 아레테 대상필터(BrandTabLive/BrandTabSample), 살롱페이지 뱃지표시(salons/[id]) 전부 company_id 기준으로 전환 — 형제브랜드 전체에 아레테 멤버십/포인트/뱃지가 일관되게 적용됨
+
 ### fix: 미납청구 발주차단을 company_id 기준으로 수정(brand_id 미스매치 버그)
 - insertBrandOrder.ts의 미납청구 발주차단 로직 버그수정: 청구서(brand_billing_invoices)는 company_id 기준으로 저장되는데 차단조회는 brand_id 기준이라 매칭 실패로 차단이 안 걸릴 수 있던 문제 — brands.company_id 조회 후 company_id 기준으로 필터하도록 수정
 

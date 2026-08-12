@@ -133,11 +133,15 @@ export default function BrandTabSample({ myBrands, brandId }: Props) {
     const allProfiles = (profiles || []) as { id: string; full_name?: string | null; owner_store_name?: string | null; auth_id?: string | null }[]
     let filtered: typeof allProfiles = []
     if (grade === '아레테클럽') {
-      const { data: areteRows } = await supabase
-        .from('brand_arete_members')
-        .select('owner_id')
-        .eq('brand_id', brandId)
-        .eq('status', 'active')
+      const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
+      const areteCompanyId = (brandRow as { company_id?: string | null } | null)?.company_id
+      const { data: areteRows } = areteCompanyId
+        ? await supabase
+            .from('brand_arete_members')
+            .select('owner_id')
+            .eq('company_id', areteCompanyId)
+            .eq('status', 'active')
+        : { data: [] }
       const areteIds = new Set((areteRows || []).map((r: { owner_id: string }) => String(r.owner_id)))
       filtered = allProfiles.filter(p => areteIds.has(p.id))
     } else {
