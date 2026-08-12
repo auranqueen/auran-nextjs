@@ -62,7 +62,7 @@ function prevPeriod(type: PeriodType, y: number, m: number, d: number) {
   }
   return { y: y - 1, m: 1, d: 1 }
 }
-export default function BrandInventoryDailyClose({ companyBrandIds }: Props) {
+export default function BrandInventoryDailyClose({ brandId, companyBrandIds }: Props) {
   const supabase = createClient()
   const init = todayParts()
   const [periodType, setPeriodType] = useState<PeriodType>('day')
@@ -79,6 +79,9 @@ export default function BrandInventoryDailyClose({ companyBrandIds }: Props) {
   const [loading, setLoading] = useState(true)
   const [expandedProduct, setExpandedProduct] = useState<string | null>(null)
   const [showLowStockDetail, setShowLowStockDetail] = useState(false)
+  const [confirmedByName, setConfirmedByName] = useState('')
+  const [closeRecord, setCloseRecord] = useState<{ confirmed_by: string | null; confirmed_at: string } | null>(null)
+  const [closeSaving, setCloseSaving] = useState(false)
   const range = useMemo(() => periodRange(periodType, y, m, d), [periodType, y, m, d])
   const prevYmd = useMemo(() => prevPeriod(periodType, y, m, d), [periodType, y, m, d])
   const prevRange = useMemo(() => periodRange(periodType, prevYmd.y, prevYmd.m, prevYmd.d), [periodType, prevYmd])
@@ -151,6 +154,21 @@ export default function BrandInventoryDailyClose({ companyBrandIds }: Props) {
     setLoading(false)
   }, [resolvedBrandIds, range, prevRange, supabase])
   useEffect(() => { void load() }, [load])
+  useEffect(() => {
+    if (periodType !== 'day' || !brandId) { setCloseRecord(null); return }
+    let cancelled = false
+    void (async () => {
+      const closeDate = `${y}-${pad(m)}-${pad(d)}`
+      const { data } = await supabase
+        .from('brand_daily_close')
+        .select('confirmed_by, confirmed_at')
+        .eq('brand_id', brandId)
+        .eq('close_date', closeDate)
+        .maybeSingle()
+      if (!cancelled) setCloseRecord(data as { confirmed_by: string | null; confirmed_at: string } | null)
+    })()
+    return () => { cancelled = true }
+  }, [periodType, brandId, y, m, d])
   const filteredLogs = useMemo(() => {
     if (trackFilter === 'all') return periodLogs
     return periodLogs.filter((l) => l.ref_id && ownerByRef[l.ref_id]?.track === trackFilter)
@@ -193,7 +211,6 @@ export default function BrandInventoryDailyClose({ companyBrandIds }: Props) {
     return arr
   }, [inventory, sortMode])
   const periodLabel = periodType === 'day' ? '전일대비' : periodType === 'month' ? '지난달대비' : '작년대비'
-  const closeLabel = periodType === 'day' ? `${range.label} 마감을 확인했어요.` : ''
   if (loading) {
     return <div style={{ textAlign: 'center', padding: 24, color: SUB, fontSize: 12 }}>불러오는 중…</div>
   }
@@ -334,11 +351,43 @@ export default function BrandInventoryDailyClose({ companyBrandIds }: Props) {
         </table>
       </div>
       {periodType === 'day' && (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 14 }}>
-          <button type="button" onClick={() => window.alert(closeLabel)}
-            style={{ fontSize: 13, padding: '8px 16px', borderRadius: 8, border: 'none', background: GREEN, color: '#fff', cursor: 'pointer' }}>
-            🔒 오늘 마감 확인
-          </button>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 8, marginTop: 14 }}>
+          {closeRecord ? (
+            <div style={{ fontSize: 12, color: GREEN }}>
+              ✅ {range.label} 마감 확인됨 · {closeRecord.confirmed_by || '이름없음'} · {new Date(closeRecord.confirmed_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+            </div>
+          ) : (
+            <>
+              <input
+                value={confirmedByName}
+                onChange={(e) => setConfirmedByName(e.target.value)}
+                placeholder="확인자 이름"
+                style={{ fontSize: 12, width: 90, background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 6, padding: '6px 8px', color: TEXT }}
+              />
+              <button
+                type="button"
+                disabled={closeSaving || !confirmedByName.trim() || !brandId}
+                onClick={async () => {
+                  if (!brandId) return
+                  setCloseSaving(true)
+                  const closeDate = `${y}-${pad(m)}-${pad(d)}`
+                  const { error } = await supabase.from('brand_daily_close').insert({
+                    brand_id: brandId,
+                    close_date: closeDate,
+                    confirmed_by: confirmedByName.trim(),
+                  })
+                  setCloseSaving(false)
+                  if (!error) {
+                    setCloseRecord({ confirmed_by: confirmedByName.trim(), confirmed_at: new Date().toISOString() })
+                  } else {
+                    window.alert('저장 실패: ' + error.message)
+                  }
+                }}
+                style={{ fontSize: 13, padding: '8px 16px', borderRadius: 8, border: 'none', background: closeSaving || !confirmedByName.trim() ? 'rgba(76,175,80,0.4)' : GREEN, color: '#fff', cursor: closeSaving || !confirmedByName.trim() ? 'not-allowed' : 'pointer' }}>
+                🔒 오늘 마감 확인
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
