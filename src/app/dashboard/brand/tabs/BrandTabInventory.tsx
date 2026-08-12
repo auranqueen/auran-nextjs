@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import TabBrandSelector from '../components/TabBrandSelector'
 const BrandInventoryStock = dynamic(() => import('./BrandInventoryStock'), { ssr: false })
+const BrandInventoryDailyClose = dynamic(() => import('../components/BrandInventoryDailyClose'), { ssr: false })
 const BrandInventoryLots = dynamic(() => import('./BrandInventoryLots'), { ssr: false })
 const BrandInventoryScan = dynamic(() => import('./BrandInventoryScan'), { ssr: false })
 const BrandInventoryQR = dynamic(() => import('./BrandInventoryQR'), { ssr: false })
@@ -14,6 +15,7 @@ const PURPLE = '#7B5EA7'
 const SUB = 'rgba(255,255,255,0.3)'
 const SUBTABS = [
   { key: 'stock', label: '재고현황', icon: '📦' },
+  { key: 'daily', label: '일일마감', icon: '🗓️' },
   { key: 'lots', label: '로트관리', icon: '🏷️' },
   { key: 'scan', label: '스캔입출고', icon: '📲' },
   { key: 'qr', label: 'QR발행', icon: '🔲' },
@@ -95,6 +97,7 @@ export default function BrandTabInventory({ myBrands, authId, loginRole = 'direc
         ))}
       </div>
       {sub === 'stock' && <BrandInventoryStock brandId={brandId} companyBrandIds={companyBrandIds} brandName={brandId === 'all' ? '전체' : brandName} authId={authId} />}
+      {sub === 'daily' && <BrandInventoryDailyClose brandId={effectiveBrandId} companyBrandIds={companyBrandIds} brandName={brandName} />}
       {sub === 'lots' && <BrandInventoryLots brandId={effectiveBrandId} />}
       {sub === 'scan' && <BrandInventoryScan brandId={effectiveBrandId} brandName={brandName} />}
       {sub === 'qr' && <BrandInventoryQR brandId={effectiveBrandId} brandName={brandName} />}

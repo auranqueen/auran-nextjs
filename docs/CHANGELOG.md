@@ -4,6 +4,10 @@
 ---
 
 
+## 2026-08-12
+### feat: 일일마감/재고현황 화면 신설
+- 신규 BrandInventoryDailyClose.tsx — 재고물류 탭에 "일일마감" 서브탭 추가. 일/월/년 기간전환, 트랙(전체/A/B) 필터, 제품별 판매·증정·잔여재고·기간대비 표시(많이남은순/적게남은순 정렬), 행 클릭시 원장별 기간누적 내역 펼침(트랙A는 brand_orders, 트랙B는 hq_stock_order_lines→hq_stock_orders 경로로 원장 조인), 재고부족 카드 클릭시 부족제품 세부목록, 인쇄 지원. "전체" 브랜드 선택시 멈추던 버그 수정(부모 companyBrandIds prop 직접사용)
+
 ## 2026-08-11
 ### feat: 재고출고 로그 판매/증정 분리기록(is_gift) + 중복방지 로직 수정
 - brand_stock_logs에 is_gift(boolean) 컬럼 추가. 재고출고 로그를 판매분/증정분 2줄로 분리기록하도록 트랙A(BrandBatchFulfillmentList)/트랙B(BrandInventoryFulfillment) 수정 — RPC 차감은 기존처럼 qty+bonus 합계 1회, 로그만 판매분(is_gift:false)/증정분(is_gift:true) 체이닝. alreadyLogged 중복방지 체크를 .maybeSingle()에서 .limit(1)로 변경(2행 로그 대응)
