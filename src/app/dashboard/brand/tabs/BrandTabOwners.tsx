@@ -432,23 +432,25 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
     setSaving(ownerId + '_arete')
     const next = !current
     await supabase.from('profiles').update({ arete_member: next }).eq('id', ownerId)
-    if (next && brandId) {
+    if (next && brandId && companyId) {
       await supabase.from('brand_arete_members').upsert({
         brand_id: brandId,
+        company_id: companyId,
         owner_id: ownerId,
         status: 'active',
         started_at: new Date().toISOString(),
-      }, { onConflict: 'brand_id,owner_id' })
+      }, { onConflict: 'company_id,owner_id' })
       await supabase.from('brand_points').upsert({
         brand_id: brandId,
+        company_id: companyId,
         owner_id: ownerId,
         track: 'B',
         balance: 500000,
         total_earned: 500000,
-      }, { onConflict: 'brand_id,owner_id,track' })
-    } else if (!next && brandId) {
+      }, { onConflict: 'company_id,owner_id,track' })
+    } else if (!next && companyId) {
       await supabase.from('brand_arete_members').update({ status: 'cancelled' })
-        .eq('brand_id', brandId).eq('owner_id', ownerId)
+        .eq('company_id', companyId).eq('owner_id', ownerId)
     }
     setOwners(prev => prev.map(o => o.id === ownerId ? { ...o, arete: next } : o))
     setSaving(null)
