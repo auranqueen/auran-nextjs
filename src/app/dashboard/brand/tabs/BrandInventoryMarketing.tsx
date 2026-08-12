@@ -34,9 +34,10 @@ interface LotRow {
 interface Props {
   brandId: string | null
   brandName: string
+  companyBrandIds: string[]
   initialViewMode?: 'expiry' | 'normal' | 'bundle'
 }
-export default function BrandInventoryMarketing({ brandId, initialViewMode }: Props) {
+export default function BrandInventoryMarketing({ brandId, companyBrandIds, initialViewMode }: Props) {
   const supabase = createClient()
   const [lots, setLots] = useState<LotRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -56,12 +57,12 @@ export default function BrandInventoryMarketing({ brandId, initialViewMode }: Pr
     return d.toISOString().slice(0, 10)
   }
   const loadData = useCallback(async () => {
-    if (!brandId) return
+    if (!companyBrandIds.length) { setLoading(false); return }
     setLoading(true)
     const { data: lotData } = await supabase
       .from('brand_inventory_lots')
       .select('id, lot_number, initial_qty, remaining_qty, expires_at, status, brand_inventory(product_name)')
-      .eq('brand_id', brandId)
+      .in('brand_id', companyBrandIds)
       .eq('status', 'active')
       .order('expires_at', { ascending: true, nullsFirst: false })
     const now = Date.now()
@@ -77,7 +78,7 @@ export default function BrandInventoryMarketing({ brandId, initialViewMode }: Pr
     }))
     setLots(mapped)
     setLoading(false)
-  }, [brandId])
+  }, [companyBrandIds])
   useEffect(() => { void loadData() }, [loadData])
   const emergencyLots = lots.filter(l => l.days !== null && l.days <= 30)
   const urgentLots = lots.filter(l => l.days !== null && l.days > 30 && l.days <= 90)

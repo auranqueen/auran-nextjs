@@ -106,7 +106,7 @@ export default function BrandTabInventory({ myBrands, authId, loginRole = 'direc
       {sub === 'qr' && <BrandInventoryQR brandId={effectiveBrandId} brandName={brandName} />}
       {sub === 'close' && <BrandInventoryClose brandId={effectiveBrandId} />}
       {sub === 'emergency' && <BrandInventoryEmergency brandId={effectiveBrandId} brandName={brandName} />}
-      {sub === 'marketing' && <BrandInventoryMarketing brandId={effectiveBrandId} brandName={brandName} initialViewMode={initialViewModeHint as 'expiry' | 'normal' | 'bundle' | undefined} />}
+      {sub === 'marketing' && <BrandInventoryMarketing brandId={effectiveBrandId} brandName={brandName} companyBrandIds={companyBrandIds} initialViewMode={initialViewModeHint as 'expiry' | 'normal' | 'bundle' | undefined} />}
       </>
       )}
     </div>

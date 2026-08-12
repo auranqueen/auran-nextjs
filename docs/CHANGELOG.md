@@ -5,6 +5,9 @@
 
 
 ## 2026-08-12
+### fix: BrandInventoryMarketing 무한로딩 근본수정(companyBrandIds 전환)
+- BrandInventoryMarketing 무한로딩 근본수정: "전체" 브랜드 선택시(effectiveBrandId=null) 조회가 조용히 멈춰 로딩스피너에 갇히던 문제를 companyBrandIds 기준 .in() 조회로 전환하여 해결. 발송(brand_messages/brand_posts insert)은 기존처럼 허브 brandId 단일귀속 유지(전체선택시 발송버튼 비활성 — 의도된 동작)
+
 ### fix: 홈 대시보드 카드 목적지 버그 2건(번들구성/프로모션이벤트)
 - BrandTabHome 대시보드 카드 목적지 버그 수정 2건: (1) "아레테클럽 번들 구성하기"가 재고물류 기본서브탭(재고현황)에만 가던 것을 마케팅자료→번들구성까지 자동이동(initialSub 'marketing:bundle' 배선, BrandTabInventory/BrandInventoryMarketing/BrandHubContent 수정) (2) "이달 프로모션 이벤트"가 이벤트·라이브 탭으로 잘못 가던 것을 등급패키지관리(HQ캠페인 실제화면)로 수정
 
