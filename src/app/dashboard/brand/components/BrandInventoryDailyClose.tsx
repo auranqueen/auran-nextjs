@@ -34,6 +34,7 @@ const SUB = 'rgba(255,255,255,0.3)'
 const DANGER = '#E53935'
 const WARN = '#FFC107'
 const GREEN = '#4CAF50'
+const IS_GIFT_CUTOFF = '2026-08-11'
 function pad(n: number) { return String(n).padStart(2, '0') }
 function todayParts() {
   const d = new Date()
@@ -211,6 +212,7 @@ export default function BrandInventoryDailyClose({ brandId, companyBrandIds }: P
     return arr
   }, [inventory, sortMode])
   const periodLabel = periodType === 'day' ? '전일대비' : periodType === 'month' ? '지난달대비' : '작년대비'
+  const includesLegacyData = range.start.slice(0, 10) < IS_GIFT_CUTOFF
   if (loading) {
     return <div style={{ textAlign: 'center', padding: 24, color: SUB, fontSize: 12 }}>불러오는 중…</div>
   }
@@ -273,6 +275,11 @@ export default function BrandInventoryDailyClose({ brandId, companyBrandIds }: P
           <div style={{ fontSize: 20, fontWeight: 600, color: lowStockList.length > 0 ? DANGER : TEXT }}>{lowStockList.length}종</div>
         </div>
       </div>
+      {includesLegacyData && (
+        <div style={{ background: 'rgba(255,255,255,0.04)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 8, padding: '8px 14px', marginBottom: 14, fontSize: 11, color: SUB }}>
+          ℹ️ 2026년 8월 11일 이전 데이터는 판매/증정 구분이 안 되어있어요 — 그 이전 출고는 전부 판매로 표시돼요.
+        </div>
+      )}
       {showLowStockDetail && lowStockList.length > 0 && (
         <div style={{ background: 'rgba(229,57,53,0.08)', border: `0.5px solid ${DANGER}55`, borderRadius: 8, padding: '10px 14px', marginBottom: 14 }}>
           <div style={{ fontSize: 11, color: DANGER, marginBottom: 6, fontWeight: 500 }}>재고 부족 제품 (지금 남은 수량)</div>
