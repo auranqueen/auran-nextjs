@@ -75,7 +75,7 @@ export default function BrandHubContent({
       label: '제품·파트너',
       items: [
         { key: 'products', label: '제품 관리', icon: 'ti-package' },
-        { key: 'tierPackages', label: '등급 패키지 관리', icon: 'ti-medal' },
+        { key: 'tierPackages', label: '등급·이벤트 관리', icon: 'ti-medal' },
         { key: 'owners', label: '원장님 현황', icon: 'ti-building-store' },
         // { key: 'expand', label: '입점 확장', icon: 'ti-arrow-bar-up' }, // 2026-08-10 숨김: 컴퍼니통합으로 브랜드단위 개념이 의미없어져서 임시숨김. 필요시 이 줄 주석만 해제하면 복구됨
       ],

@@ -5,6 +5,9 @@
 
 
 ## 2026-08-12
+### refactor: 등급·이벤트 관리 탭 재구성(서브탭3개분리+라벨변경)
+- 등급 패키지 관리 탭 재구성: SUBTABS를 3개로 분리(등급·가격/이벤트/발송오더), 기존에 등급·가격 서브탭 안에 섞여있던 BrandHqCampaignSection(HQ강제이벤트)을 "이벤트" 서브탭으로 분리 이동. 사이드바 라벨도 "등급 패키지 관리" → "등급·이벤트 관리"로 변경(실제 내용과 이름 불일치 해소)
+
 ### feat: 아레테클럽 company_id 전면전환(포인트/멤버십/대상필터/뱃지)
 - 아레테클럽 관련 데이터를 브랜드단위→컴퍼니단위로 전면 전환: brand_points/brand_arete_members에 company_id 컬럼 추가+백필+유니크제약(151번 마이그레이션 레포기록). toggleArete(BrandTabOwners), 아레테 대상필터(BrandTabLive/BrandTabSample), 살롱페이지 뱃지표시(salons/[id]) 전부 company_id 기준으로 전환 — 형제브랜드 전체에 아레테 멤버십/포인트/뱃지가 일관되게 적용됨
 

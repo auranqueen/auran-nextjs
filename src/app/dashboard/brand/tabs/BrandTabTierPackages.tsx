@@ -9,6 +9,7 @@ const SUB = 'rgba(255,255,255,0.3)'
 const KIT_TYPES = ['부자재', '인증패', '진열장', '기타'] as const
 const SUBTABS = [
   { key: 'price', label: '등급·가격' },
+  { key: 'events', label: '이벤트' },
   { key: 'orders', label: '발송오더' },
 ] as const
 type SubTab = typeof SUBTABS[number]['key']
@@ -329,7 +330,6 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
       ) : null}
       {sub === 'price' && (
         <>
-        <BrandHqCampaignSection companyId={companyId} staffId={staffId} isCEO={isCEO} />
         {loading ? (
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)' }}>불러오는 중…</div>
         ) : rows.length === 0 ? (
@@ -498,6 +498,9 @@ export default function BrandTabTierPackages({ myBrands, staffId, isCEO }: Props
           </div>
         )}
         </>
+      )}
+      {sub === 'events' && (
+        <BrandHqCampaignSection companyId={companyId} staffId={staffId} isCEO={isCEO} />
       )}
       {sub === 'orders' && (
         <BrandTierOrderApprovalSection companyId={companyId} />
