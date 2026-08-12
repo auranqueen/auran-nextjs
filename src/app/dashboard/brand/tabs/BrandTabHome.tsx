@@ -385,7 +385,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
         <div style={{ ...CARD, marginBottom: 0, background: 'rgba(123,94,167,0.06)', border: '1px solid rgba(123,94,167,0.15)' }}>
           <div style={{ fontSize: 10, color: SUB, marginBottom: 10, display: 'flex', justifyContent: 'space-between' }}>
             <span>📣 마케팅·이벤트</span>
-            <span style={{ cursor: 'pointer' }} onClick={() => onTabChange('live')}>전체 ›</span>
+            <span style={{ cursor: 'pointer' }} onClick={() => onTabChange('tierPackages')}>전체 ›</span>
           </div>
           {!closedEvents.includes('promo') && (
             <div style={{ background: 'rgba(232,85,85,0.06)', border: '1px solid rgba(232,85,85,0.15)', borderRadius: 7, padding: '8px 10px', marginBottom: 7 }}>
@@ -398,7 +398,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
                   style={{ background: 'none', border: 'none', color: SUB, fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: '0 2px' }}>×</button>
               </div>
               <div style={{ fontSize: 10, color: SUB, marginBottom: 7 }}></div>
-              <button type="button" onClick={() => onTabChange('live')}
+              <button type="button" onClick={() => onTabChange('tierPackages')}
                 style={{ fontSize: 10, padding: '4px 10px', borderRadius: 5, border: '1px solid rgba(232,85,85,0.3)', background: 'transparent', color: '#e85555', cursor: 'pointer' }}>
                 관리하기 →
               </button>
@@ -415,7 +415,7 @@ export default function BrandTabHome({ brandId, onTabChange }: Props) {
                   style={{ background: 'none', border: 'none', color: SUB, fontSize: 14, cursor: 'pointer', lineHeight: 1, padding: '0 2px' }}>×</button>
               </div>
               <div style={{ fontSize: 10, color: SUB, marginBottom: 7 }}></div>
-              <button type="button" onClick={() => onTabChange('inventory')}
+              <button type="button" onClick={() => onTabChange('inventory', 'marketing:bundle')}
                 style={{ fontSize: 10, padding: '4px 10px', borderRadius: 5, border: '1px solid rgba(123,94,167,0.35)', background: 'transparent', color: '#c4a8f0', cursor: 'pointer' }}>
                 번들 구성하기 →
               </button>

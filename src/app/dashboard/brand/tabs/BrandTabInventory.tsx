@@ -28,8 +28,9 @@ interface Props {
   myBrands: { id: string; name: string; slug?: string | null }[]
   authId: string | null
   loginRole?: string
+  initialSub?: string
 }
-export default function BrandTabInventory({ myBrands, authId, loginRole = 'director' }: Props) {
+export default function BrandTabInventory({ myBrands, authId, loginRole = 'director', initialSub }: Props) {
   const supabase = createClient()
   const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null)
   const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
@@ -73,7 +74,9 @@ export default function BrandTabInventory({ myBrands, authId, loginRole = 'direc
   useEffect(() => {
     void loadLowStockCounts()
   }, [loadLowStockCounts])
-  const [sub, setSub] = useState<SubTab>('stock')
+  const initialSubParts = (initialSub || 'stock').split(':')
+  const [sub, setSub] = useState<SubTab>((initialSubParts[0] as SubTab) || 'stock')
+  const initialViewModeHint = initialSubParts[1]
   return (
     <div>
       <TabBrandSelector
@@ -103,7 +106,7 @@ export default function BrandTabInventory({ myBrands, authId, loginRole = 'direc
       {sub === 'qr' && <BrandInventoryQR brandId={effectiveBrandId} brandName={brandName} />}
       {sub === 'close' && <BrandInventoryClose brandId={effectiveBrandId} />}
       {sub === 'emergency' && <BrandInventoryEmergency brandId={effectiveBrandId} brandName={brandName} />}
-      {sub === 'marketing' && <BrandInventoryMarketing brandId={effectiveBrandId} brandName={brandName} />}
+      {sub === 'marketing' && <BrandInventoryMarketing brandId={effectiveBrandId} brandName={brandName} initialViewMode={initialViewModeHint as 'expiry' | 'normal' | 'bundle' | undefined} />}
       </>
       )}
     </div>

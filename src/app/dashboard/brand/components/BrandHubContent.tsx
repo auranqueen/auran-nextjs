@@ -271,7 +271,7 @@ export default function BrandHubContent({
           {mainTab === 'community' && <BrandTabCommunity myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'expand' && <BrandTabExpand myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'invoice' && <BrandTabInvoice myBrands={brandOpts} staffRole={staffRole} brandId={brandId} />}
-          {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} />}
+          {mainTab === 'inventory' && <BrandTabInventory myBrands={brandOpts} authId={authId} loginRole={loginRole} initialSub={mainSub} />}
           {mainTab === 'report' && <BrandTabReport myBrands={brandOpts} brandId={brandId} />}
           {mainTab === 'settlement' && isCEO && (
             <BrandTabSettlement brandId={brandId} />

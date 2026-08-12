@@ -34,8 +34,9 @@ interface LotRow {
 interface Props {
   brandId: string | null
   brandName: string
+  initialViewMode?: 'expiry' | 'normal' | 'bundle'
 }
-export default function BrandInventoryMarketing({ brandId }: Props) {
+export default function BrandInventoryMarketing({ brandId, initialViewMode }: Props) {
   const supabase = createClient()
   const [lots, setLots] = useState<LotRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -48,7 +49,7 @@ export default function BrandInventoryMarketing({ brandId }: Props) {
   const [deadline, setDeadline] = useState('')
   const [msgText, setMsgText] = useState('')
   const [saving, setSaving] = useState(false)
-  const [viewMode, setViewMode] = useState<'expiry' | 'normal' | 'bundle'>('expiry')
+  const [viewMode, setViewMode] = useState<'expiry' | 'normal' | 'bundle'>(initialViewMode || 'expiry')
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
   const defaultDeadline = () => {
     const d = new Date(); d.setDate(d.getDate() + 7)
