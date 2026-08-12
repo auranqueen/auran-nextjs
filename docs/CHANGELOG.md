@@ -5,6 +5,9 @@
 
 
 ## 2026-08-12
+### fix: 미납청구 발주차단을 company_id 기준으로 수정(brand_id 미스매치 버그)
+- insertBrandOrder.ts의 미납청구 발주차단 로직 버그수정: 청구서(brand_billing_invoices)는 company_id 기준으로 저장되는데 차단조회는 brand_id 기준이라 매칭 실패로 차단이 안 걸릴 수 있던 문제 — brands.company_id 조회 후 company_id 기준으로 필터하도록 수정
+
 ### fix: BrandInventoryMarketing 무한로딩 근본수정(companyBrandIds 전환)
 - BrandInventoryMarketing 무한로딩 근본수정: "전체" 브랜드 선택시(effectiveBrandId=null) 조회가 조용히 멈춰 로딩스피너에 갇히던 문제를 companyBrandIds 기준 .in() 조회로 전환하여 해결. 발송(brand_messages/brand_posts insert)은 기존처럼 허브 brandId 단일귀속 유지(전체선택시 발송버튼 비활성 — 의도된 동작)
 

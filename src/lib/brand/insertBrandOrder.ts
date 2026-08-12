@@ -57,13 +57,23 @@ export async function insertBrandOrder(
   const pointsEarned = Math.trunc(Number(input.points_earned) || 0)
   const status = input.status || 'pending'
 
-  const { data: unpaidRows } = await svc
-    .from('brand_billing_invoices')
-    .select('id, billing_month, status')
-    .eq('owner_id', profileId)
-    .eq('brand_id', brandId)
-    .eq('status', 'unpaid')
-    .gt('total_amount', 0)
+  const { data: brandRow } = await svc
+    .from('brands')
+    .select('company_id')
+    .eq('id', brandId)
+    .maybeSingle()
+  const companyId = (brandRow as { company_id?: string | null } | null)?.company_id
+  let unpaidRows: { billing_month?: string }[] | null = null
+  if (companyId) {
+    const { data } = await svc
+      .from('brand_billing_invoices')
+      .select('id, billing_month, status')
+      .eq('owner_id', profileId)
+      .eq('company_id', companyId)
+      .eq('status', 'unpaid')
+      .gt('total_amount', 0)
+    unpaidRows = data
+  }
 
   const today = startOfTodayLocal()
   const overdue = (unpaidRows || []).some((inv: { billing_month?: string }) => {
