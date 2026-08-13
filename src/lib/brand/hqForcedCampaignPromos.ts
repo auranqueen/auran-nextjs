@@ -20,6 +20,10 @@ export type HqForcedCampaign = {
   start_at: string
   end_at: string
   tiers?: HqForcedCampaignTier[]
+  title?: string
+  description?: string | null
+  image_url?: string | null
+  badge_text?: string | null
 }
 type CartItem = { product_id: string; qty: number; unit_price: number }
 function resolveTierEffects(

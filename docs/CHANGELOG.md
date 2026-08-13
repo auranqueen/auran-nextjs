@@ -5,6 +5,9 @@
 
 
 ## 2026-08-13
+### feat: 발주화면 이벤트패키지 섹션 신설(EventPackageSection)
+- 원장 발주화면(brand-orders)에 "이번달 이벤트 패키지" 섹션 신규추가(EventPackageSection.tsx): HQ강제이벤트를 개별상품 나열이 아닌 하나의 패키지 상품처럼 표시(대표이미지+제목+합계금액), 3열그리드+더보기, 클릭시 상세시트(마케팅이미지+설명+포함구성 품목리스트+아레테포인트 선택결제). hqForcedCampaigns select/타입에 title/description/image_url/badge_text 추가(발주페이지+공용lib타입 양쪽). 등급뱃지 바로 아래 삽입, 일반카탈로그와 구분선으로 분리. 실제 발주insert/재고차감/포인트차감 연동은 다음 단계(현재는 UI+toast placeholder)
+
 ### feat: HQ이벤트 목록조회에 description/image_url 추가
 - BrandHqCampaignSection.tsx 목록조회 select에 description/image_url 추가(Campaign 타입도 반영) — 원장쪽 이벤트 패키지 카드 표시를 위한 선행작업
 

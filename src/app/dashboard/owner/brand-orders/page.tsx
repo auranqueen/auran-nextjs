@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import BrandOrderProductCard, { type BrandOrderProduct } from './BrandOrderProductCard'
+import EventPackageSection from './components/EventPackageSection'
 import {
   buildOrderLineItem,
   calcPointsEarned,
@@ -259,7 +260,7 @@ export default function BrandOrdersPage() {
     if (companyIdsForGrade.length > 0) {
       const { data: campaignRows } = await supabase
         .from('hq_forced_campaigns')
-        .select('id, company_id, target_product_ids, start_at, end_at, target_grades')
+        .select('id, company_id, title, description, image_url, badge_text, target_product_ids, start_at, end_at, target_grades')
         .in('company_id', companyIdsForGrade)
         .is('owner_id', null)
         .eq('is_active', true)
@@ -798,7 +799,8 @@ export default function BrandOrdersPage() {
           {headerGrade} · 적립 {gradePointRate(headerGrade, headerGradeRateMap)}%
         </span>
       </div>
-
+      <EventPackageSection campaigns={hqForcedCampaigns} ownerProfileId={ownerProfileId} />
+      <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.07)', margin: '0 16px 12px' }} />
       {linkedBrandOptions.length > 0 && (
         <div style={{ display: 'flex', gap: 8, padding: '0 16px 10px', flexWrap: 'wrap' }}>
           <button
