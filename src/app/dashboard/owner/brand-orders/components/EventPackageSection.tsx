@@ -68,7 +68,7 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
         .select('company_id, balance')
         .in('company_id', companyIds)
         .eq('owner_id', ownerProfileId)
-        .eq('track', 'B')
+        .eq('track', 'ARETE')
       if (cancelled) return
       const map: Record<string, number> = {}
       for (const r of (data || []) as { company_id: string; balance: number }[]) {

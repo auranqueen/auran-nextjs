@@ -444,7 +444,7 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
         brand_id: brandId,
         company_id: companyId,
         owner_id: ownerId,
-        track: 'B',
+        track: 'ARETE',
         balance: 500000,
         total_earned: 500000,
       }, { onConflict: 'company_id,owner_id,track' })

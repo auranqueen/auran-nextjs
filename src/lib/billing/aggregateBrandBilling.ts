@@ -125,7 +125,7 @@ export async function aggregateBrandBilling(
       .select('balance')
       .eq('company_id', companyId)
       .eq('owner_id', profileId)
-      .eq('track', 'B')
+      .eq('track', 'ARETE')
       .maybeSingle()
     const currentBalance = Math.trunc(Number((pointRow as { balance?: number } | null)?.balance) || 0)
     const nextBalance = Math.max(0, currentBalance - pointsDelta)
@@ -134,7 +134,7 @@ export async function aggregateBrandBilling(
       .update({ balance: nextBalance })
       .eq('company_id', companyId)
       .eq('owner_id', profileId)
-      .eq('track', 'B')
+      .eq('track', 'ARETE')
   }
 
   return {

@@ -55,7 +55,7 @@ export default function BrandTabArete({ companyId }: Props) {
     if (ownerIds.length) {
       const [{ data: profiles }, { data: pointRows }] = await Promise.all([
         supabase.from('profiles').select('id, full_name').in('id', ownerIds),
-        supabase.from('brand_points').select('owner_id, balance').eq('company_id', companyId).eq('track', 'B').in('owner_id', ownerIds),
+        supabase.from('brand_points').select('owner_id, balance').eq('company_id', companyId).eq('track', 'ARETE').in('owner_id', ownerIds),
       ])
       const balanceMap: Record<string, number> = {}
       for (const p of pointRows || []) balanceMap[(p as { owner_id: string }).owner_id] = Number((p as { balance: number }).balance || 0)

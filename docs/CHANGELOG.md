@@ -5,6 +5,9 @@
 
 
 ## 2026-08-13
+### refactor: 아레테포인트 track값 'B'→'ARETE' 이름변경(혼동방지)
+- 아레테 포인트 라벨 명확화: brand_points.track의 'B' 값이 실제 플랫폼 트랙B(스폰서 커미션)와 이름이 같아 혼동을 유발해온 문제를 근본수정. CHECK제약에 'ARETE' 추가허용 후 기존 'B'행을 'ARETE'로 마이그레이션, 관련 코드 4곳(toggleArete/BrandTabArete/EventPackageSection/aggregateBrandBilling) 전부 'ARETE'로 통일
+
 ### feat: 월말정산 아레테 포인트 실차감(중복차감 방지 델타처리)
 - aggregateBrandBilling.ts에 아레테 포인트 실차감 로직 추가: 월청구액 계산을 sum(total_amount)-sum(points_used)로 변경, brand_billing_invoices에 points_used 누적저장, brand_points 잔액은 이전값 대비 증가분(델타)만 차감하여 크론 재실행시 중복차감 방지. 이벤트패키지 구매→월말정산 차감까지 전 구간 연결 완료
 
