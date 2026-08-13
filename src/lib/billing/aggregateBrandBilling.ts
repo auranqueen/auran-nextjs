@@ -62,7 +62,7 @@ export async function aggregateBrandBilling(
 
   const { data: orderRows, error: orderErr } = await supabase
     .from('brand_orders')
-    .select('id, total_amount, points_earned, status')
+    .select('id, total_amount, points_earned, points_used, status')
     .eq('profile_id', profileId)
     .in('brand_id', brandIds)
     .gte('created_at', startIso)
@@ -74,9 +74,21 @@ export async function aggregateBrandBilling(
   }
 
   const orders = orderRows || []
-  const totalAmount = orders.reduce((s, o) => s + Math.trunc(Number(o.total_amount) || 0), 0)
+  const rawTotalAmount = orders.reduce((s, o) => s + Math.trunc(Number(o.total_amount) || 0), 0)
+  const pointsUsedThisCycle = orders.reduce((s, o) => s + Math.trunc(Number((o as { points_used?: number }).points_used) || 0), 0)
   const pointsTotal = orders.reduce((s, o) => s + Math.trunc(Number(o.points_earned) || 0), 0)
+  const totalAmount = Math.max(0, rawTotalAmount - pointsUsedThisCycle)
   const pouchTier = calcPouchTier(totalAmount)
+
+  const { data: existingInvoice } = await supabase
+    .from('brand_billing_invoices')
+    .select('id, points_used')
+    .eq('company_id', companyId)
+    .eq('owner_id', profileId)
+    .eq('billing_month', monthDate)
+    .maybeSingle()
+  const previousPointsUsed = Math.trunc(Number((existingInvoice as { points_used?: number } | null)?.points_used) || 0)
+  const pointsDelta = pointsUsedThisCycle - previousPointsUsed
 
   const { data: row, error: upsertErr } = await supabase
     .from('brand_billing_invoices')
@@ -87,12 +99,13 @@ export async function aggregateBrandBilling(
         billing_month: monthDate,
         total_amount: totalAmount,
         points_total: pointsTotal,
+        points_used: pointsUsedThisCycle,
         pouch_tier: pouchTier,
       },
       { onConflict: 'company_id,owner_id,billing_month' },
     )
     .select(
-      'id, company_id, owner_id, billing_month, total_amount, points_total, pouch_tier, pouch_sent_qty, pouch_sent_note, status, paid_at',
+      'id, company_id, owner_id, billing_month, total_amount, points_total, points_used, pouch_tier, pouch_sent_qty, pouch_sent_note, status, paid_at',
     )
     .single()
 
@@ -104,6 +117,24 @@ export async function aggregateBrandBilling(
       pouch_tier: pouchTier,
       error: upsertErr?.message || 'upsert_failed',
     }
+  }
+
+  if (pointsDelta > 0) {
+    const { data: pointRow } = await supabase
+      .from('brand_points')
+      .select('balance')
+      .eq('company_id', companyId)
+      .eq('owner_id', profileId)
+      .eq('track', 'B')
+      .maybeSingle()
+    const currentBalance = Math.trunc(Number((pointRow as { balance?: number } | null)?.balance) || 0)
+    const nextBalance = Math.max(0, currentBalance - pointsDelta)
+    await supabase
+      .from('brand_points')
+      .update({ balance: nextBalance })
+      .eq('company_id', companyId)
+      .eq('owner_id', profileId)
+      .eq('track', 'B')
   }
 
   return {

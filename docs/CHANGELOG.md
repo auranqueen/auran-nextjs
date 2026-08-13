@@ -5,6 +5,9 @@
 
 
 ## 2026-08-13
+### feat: 월말정산 아레테 포인트 실차감(중복차감 방지 델타처리)
+- aggregateBrandBilling.ts에 아레테 포인트 실차감 로직 추가: 월청구액 계산을 sum(total_amount)-sum(points_used)로 변경, brand_billing_invoices에 points_used 누적저장, brand_points 잔액은 이전값 대비 증가분(델타)만 차감하여 크론 재실행시 중복차감 방지. 이벤트패키지 구매→월말정산 차감까지 전 구간 연결 완료
+
 ### feat: 이벤트패키지 실제주문연동(브랜드그룹핑+할인재계산+points_used기록)
 - 이벤트패키지(EventPackageSection) 실제 주문 연동 완료: brand_products select에 brand_id 추가, 제품을 브랜드별로 그룹핑해 기존 검증된 brand-order-batches/create API(submitOrderBatch)로 실제 발주 생성. 클라이언트에서도 resolveHqCampaignEffects로 HQ할인을 동일하게 재계산해 total_amount를 서버 재검증값과 정확히 일치시킴(할인형 이벤트 주문거부 방지). 신규 소형API(/api/brand-orders/apply-event-points)로 주문 성공 후 아레테 포인트 사용액(points_used)만 별도기록(total_amount는 원본 유지, 실제 잔액차감은 월말정산 단계에서 처리 예정)
 
