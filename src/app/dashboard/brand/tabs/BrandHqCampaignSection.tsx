@@ -8,6 +8,8 @@ type CampaignTier = { min_qty: number; discount_pct: number | null; discount_amo
 type Campaign = {
   id: string
   title: string
+  description: string | null
+  image_url: string | null
   badge_text: string | null
   campaign_type: 'bundle' | 'gift' | 'discount'
   target_product_ids: string[]
@@ -80,7 +82,7 @@ export default function BrandHqCampaignSection({ companyId, staffId, isCEO }: Pr
     }
     const { data: campaignRows } = await supabase
       .from('hq_forced_campaigns')
-      .select('id, title, badge_text, campaign_type, target_product_ids, start_at, end_at, is_active')
+      .select('id, title, description, image_url, badge_text, campaign_type, target_product_ids, start_at, end_at, is_active')
       .eq('company_id', companyId)
       .is('owner_id', null)
       .order('start_at', { ascending: false })

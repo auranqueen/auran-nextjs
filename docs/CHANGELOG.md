@@ -5,6 +5,9 @@
 
 
 ## 2026-08-13
+### feat: HQ이벤트 목록조회에 description/image_url 추가
+- BrandHqCampaignSection.tsx 목록조회 select에 description/image_url 추가(Campaign 타입도 반영) — 원장쪽 이벤트 패키지 카드 표시를 위한 선행작업
+
 ### feat: 아레테클럽 전용탭 신설(번들구성/가이드업로드/회원포인트/해지)
 - 아레테클럽 전용탭 신설(BrandTabArete.tsx, 사이드바 "제품·파트너" 그룹): 회원수 KPI, 이번달 번들 구성(제품검색+수량설정+저장, brand_arete_monthly_bundles), 프로그램 가이드 이미지 업로드(brand_arete_guide_images), 회원별 포인트 잔액 목록, 즉시 해지 버튼. 신규 마이그레이션 레포기록
 
