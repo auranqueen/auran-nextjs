@@ -5,6 +5,9 @@
 
 
 ## 2026-08-13
+### feat: 이벤트패키지 실제주문연동(브랜드그룹핑+할인재계산+points_used기록)
+- 이벤트패키지(EventPackageSection) 실제 주문 연동 완료: brand_products select에 brand_id 추가, 제품을 브랜드별로 그룹핑해 기존 검증된 brand-order-batches/create API(submitOrderBatch)로 실제 발주 생성. 클라이언트에서도 resolveHqCampaignEffects로 HQ할인을 동일하게 재계산해 total_amount를 서버 재검증값과 정확히 일치시킴(할인형 이벤트 주문거부 방지). 신규 소형API(/api/brand-orders/apply-event-points)로 주문 성공 후 아레테 포인트 사용액(points_used)만 별도기록(total_amount는 원본 유지, 실제 잔액차감은 월말정산 단계에서 처리 예정)
+
 ### feat: 발주화면 이벤트패키지 섹션 신설(EventPackageSection)
 - 원장 발주화면(brand-orders)에 "이번달 이벤트 패키지" 섹션 신규추가(EventPackageSection.tsx): HQ강제이벤트를 개별상품 나열이 아닌 하나의 패키지 상품처럼 표시(대표이미지+제목+합계금액), 3열그리드+더보기, 클릭시 상세시트(마케팅이미지+설명+포함구성 품목리스트+아레테포인트 선택결제). hqForcedCampaigns select/타입에 title/description/image_url/badge_text 추가(발주페이지+공용lib타입 양쪽). 등급뱃지 바로 아래 삽입, 일반카탈로그와 구분선으로 분리. 실제 발주insert/재고차감/포인트차감 연동은 다음 단계(현재는 UI+toast placeholder)
 

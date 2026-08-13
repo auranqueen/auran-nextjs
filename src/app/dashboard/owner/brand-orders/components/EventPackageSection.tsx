@@ -3,12 +3,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { HqForcedCampaign } from '@/lib/brand/hqForcedCampaignPromos'
+import { submitOrderBatch } from '@/lib/brand/submitOrderBatch'
+import { resolveHqCampaignEffects } from '@/lib/brand/hqForcedCampaignPromos'
 interface Props {
   campaigns: HqForcedCampaign[]
   ownerProfileId: string | null
 }
 interface ProductInfo {
   id: string
+  brand_id: string
   name: string
   thumb_img: string | null
   supply_price: number
@@ -47,7 +50,7 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
     void (async () => {
       const { data } = await supabase
         .from('brand_products')
-        .select('id, name, thumb_img, supply_price')
+        .select('id, brand_id, name, thumb_img, supply_price')
         .in('id', allProductIds)
       if (cancelled) return
       const map: Record<string, ProductInfo> = {}
@@ -88,18 +91,76 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
   const selectedTotal = selected ? campaignTotal(selected) : 0
   const finalAmount = usePoints ? Math.max(0, selectedTotal - selectedBalance) : selectedTotal
   const submitOrder = async () => {
-    if (!selected) return
+    if (!selected || !ownerProfileId) return
     setOrdering(true)
-    showToast('주문 접수됐어요! (발주 연동은 다음 단계)')
-    setOrdering(false)
-    setSelected(null)
+    try {
+      const groups: Record<string, { brand_id: string; items: { product_id: string; name: string; qty: number; unit_price: number; line_amount: number }[]; amount: number }> = {}
+      for (const pid of selected.target_product_ids || []) {
+        const p = productMap[pid]
+        if (!p) continue
+        if (!groups[p.brand_id]) groups[p.brand_id] = { brand_id: p.brand_id, items: [], amount: 0 }
+        groups[p.brand_id].items.push({ product_id: p.id, name: p.name, qty: 1, unit_price: p.supply_price, line_amount: p.supply_price })
+        groups[p.brand_id].amount += p.supply_price
+      }
+      const groupList = Object.values(groups)
+      if (!groupList.length) { showToast('구성 제품 정보를 불러오지 못했어요'); setOrdering(false); return }
+      const allCartItemsForEffects = groupList.flatMap((g) =>
+        g.items.map((i) => ({ product_id: i.product_id, qty: i.qty, unit_price: i.unit_price })),
+      )
+      const { discountTotal } = resolveHqCampaignEffects(allCartItemsForEffects, [selected])
+      const rawGrandTotal = groupList.reduce((s, g) => s + g.amount, 0)
+      let remainingDiscount = discountTotal
+      const cartItems = groupList.map((g, idx) => {
+        const isLast = idx === groupList.length - 1
+        const share = isLast ? remainingDiscount : Math.round(discountTotal * (g.amount / rawGrandTotal))
+        remainingDiscount -= share
+        return {
+          brand_id: g.brand_id,
+          profile_id: ownerProfileId,
+          items: g.items,
+          total_qty: g.items.length,
+          total_amount: g.amount - share,
+        }
+      })
+      const result = await submitOrderBatch(cartItems)
+      if (!result?.ok) {
+        showToast('주문 실패: ' + (result?.error || '다시 시도해주세요'))
+        setOrdering(false)
+        return
+      }
+      const orderIds: string[] = result.order_ids || []
+      if (usePoints && selectedBalance > 0 && orderIds.length) {
+        const grandTotal = rawGrandTotal - discountTotal
+        const pointsUsedTotal = Math.min(selectedBalance, grandTotal)
+        let remaining = pointsUsedTotal
+        const pointsByOrder: Record<string, number> = {}
+        orderIds.forEach((id, idx) => {
+          const g = groupList[idx]
+          if (!g) return
+          const share = idx === orderIds.length - 1 ? remaining : Math.round(pointsUsedTotal * (g.amount / grandTotal))
+          pointsByOrder[id] = Math.min(share, remaining)
+          remaining -= pointsByOrder[id]
+        })
+        await fetch('/api/brand-orders/apply-event-points', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ points_by_order: pointsByOrder }),
+        }).catch(() => {})
+      }
+      showToast('패키지 주문이 접수됐어요!')
+      setSelected(null)
+    } catch {
+      showToast('주문 중 오류가 발생했어요')
+    } finally {
+      setOrdering(false)
+    }
   }
   return (
     <div style={{ padding: '0 16px 16px', background: 'rgba(123,94,167,0.04)' }}>
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999 }}>{toast}</div>
       )}
-      <div style={{ fontSize: 11, color: SUB, padding: '10px 0 8px' }}>🎉 이번달 이벤트 패키지</div>
+      <div style={{ fontSize: 11, color: SUB, padding: '10px 0 8px' }}>이번달 이벤트 패키지</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
         {visibleCampaigns.map((c) => {
           const meta = c as unknown as { title?: string; image_url?: string | null }
