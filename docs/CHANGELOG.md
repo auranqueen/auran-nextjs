@@ -5,6 +5,9 @@
 
 
 ## 2026-08-14
+### feat: 이벤트패키지에 REWARD 포인트 체크박스 추가
+- EventPackageSection.tsx에 REWARD(일반적립금) 체크박스 병렬추가: rewardBalances state+useEffect(track='REWARD' 조회), finalAmount는 아레테 먼저 차감후 REWARD 순차차감(afterArete→rewardApplied), 팝업 UI는 아레테 체크박스 바로아래 REWARD 체크박스 배치(사용가능잔액 있을때만 노출). 주문성공후 apply-reward-points 추가 호출로 points_used_reward 기록. ARETE 관련 코드(조회/체크박스/apply-event-points)는 완전 무수정
+
 ### feat: 일반카탈로그 발주에 REWARD 포인트 사용 체크박스 추가
 - 일반카탈로그 발주(brand-orders/page.tsx)에 REWARD(일반적립금) 체크박스 추가: brandCompanyMap을 state로 유지, 카트에 담긴 브랜드의 company_id별로 brand_points(track='REWARD') 잔액 조회, 팝업에 회사단위 사용가능 잔액 있을때만 체크박스 노출+최종결제금액 표시반영(popupFinalAfterReward). 서버전송 total_amount는 변경없음(amount_mismatch 방지, 표시/기록에만 REWARD 반영). 주문성공후 order_ids를 cartItems 인덱스로 매핑해 회사별 라인비율로 분배, apply-reward-points API로 points_used_reward 기록. ARETE(apply-event-points)는 완전 별개 경로로 무수정
 

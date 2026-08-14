@@ -25,9 +25,11 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
   const supabase = createClient()
   const [productMap, setProductMap] = useState<Record<string, ProductInfo>>({})
   const [pointBalances, setPointBalances] = useState<Record<string, number>>({})
+  const [rewardBalances, setRewardBalances] = useState<Record<string, number>>({})
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [selected, setSelected] = useState<HqForcedCampaign | null>(null)
   const [usePoints, setUsePoints] = useState(true)
+  const [usePointsReward, setUsePointsReward] = useState(true)
   const [ordering, setOrdering] = useState(false)
   const [toast, setToast] = useState('')
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
@@ -78,6 +80,25 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
     })()
     return () => { cancelled = true }
   }, [ownerProfileId, companyIds, supabase])
+  useEffect(() => {
+    if (!ownerProfileId || !companyIds.length) { setRewardBalances({}); return }
+    let cancelled = false
+    void (async () => {
+      const { data } = await supabase
+        .from('brand_points')
+        .select('company_id, balance')
+        .in('company_id', companyIds)
+        .eq('owner_id', ownerProfileId)
+        .eq('track', 'REWARD')
+      if (cancelled) return
+      const map: Record<string, number> = {}
+      for (const r of (data || []) as { company_id: string; balance: number }[]) {
+        map[r.company_id] = Number(r.balance) || 0
+      }
+      setRewardBalances(map)
+    })()
+    return () => { cancelled = true }
+  }, [ownerProfileId, companyIds, supabase])
   const campaignTotal = useCallback((c: HqForcedCampaign) => {
     return (c.target_product_ids || []).reduce((sum, pid) => {
       const p = productMap[pid]
@@ -88,8 +109,11 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
   const visibleCampaigns = campaigns.slice(0, visibleCount)
   const selectedCompanyId = selected ? (selected as unknown as { company_id?: string }).company_id : null
   const selectedBalance = selectedCompanyId ? (pointBalances[selectedCompanyId] || 0) : 0
+  const selectedRewardBalance = selectedCompanyId ? (rewardBalances[selectedCompanyId] || 0) : 0
   const selectedTotal = selected ? campaignTotal(selected) : 0
-  const finalAmount = usePoints ? Math.max(0, selectedTotal - selectedBalance) : selectedTotal
+  const afterArete = usePoints ? Math.max(0, selectedTotal - selectedBalance) : selectedTotal
+  const rewardApplied = usePointsReward ? Math.min(selectedRewardBalance, afterArete) : 0
+  const finalAmount = Math.max(0, afterArete - rewardApplied)
   const submitOrder = async () => {
     if (!selected || !ownerProfileId) return
     setOrdering(true)
@@ -146,6 +170,26 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ points_by_order: pointsByOrder }),
         }).catch(() => {})
+      }
+      if (usePointsReward && selectedRewardBalance > 0 && orderIds.length) {
+        const afterAreteTotal = usePoints ? Math.max(0, rawGrandTotal - discountTotal - selectedBalance) : rawGrandTotal - discountTotal
+        const rewardUsedTotal = Math.min(selectedRewardBalance, afterAreteTotal)
+        if (rewardUsedTotal > 0) {
+          let remainingReward = rewardUsedTotal
+          const rewardByOrder: Record<string, number> = {}
+          orderIds.forEach((id, idx) => {
+            const g = groupList[idx]
+            if (!g) return
+            const share = idx === orderIds.length - 1 ? remainingReward : Math.round(rewardUsedTotal * (g.amount / afterAreteTotal))
+            rewardByOrder[id] = Math.min(share, remainingReward)
+            remainingReward -= rewardByOrder[id]
+          })
+          await fetch('/api/brand-orders/apply-reward-points', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ points_by_order: rewardByOrder }),
+          }).catch(() => {})
+        }
       }
       showToast('패키지 주문이 접수됐어요!')
       setSelected(null)
@@ -214,8 +258,14 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
                       <input type="checkbox" checked={usePoints} onChange={(e) => setUsePoints(e.target.checked)} />
                       아레테 포인트로 결제할게요 (누적잔액 {selectedBalance.toLocaleString()}P)
                     </label>
+                    {selectedRewardBalance > 0 && (
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: TEXT, marginBottom: 8, cursor: 'pointer' }}>
+                        <input type="checkbox" checked={usePointsReward} onChange={(e) => setUsePointsReward(e.target.checked)} />
+                        일반적립금으로 결제할게요 (누적잔액 {selectedRewardBalance.toLocaleString()}P)
+                      </label>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 600, color: TEXT }}>
-                      <span>{usePoints ? '추가 결제금액' : '패키지 합계'}</span>
+                      <span>{(usePoints || usePointsReward) ? '추가 결제금액' : '패키지 합계'}</span>
                       <span>{finalAmount.toLocaleString()}원</span>
                     </div>
                   </div>
