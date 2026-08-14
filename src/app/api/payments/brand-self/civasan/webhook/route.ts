@@ -8,6 +8,7 @@ type BrandPaymentIntentRow = {
   tier_package_id: string | null
   tier_order_id: string | null
   invoice_id: string | null
+  arete_invoice_id: string | null
   kind: string | null
   amount: number
   status: string
@@ -43,14 +44,14 @@ export async function POST(req: NextRequest) {
   if (intentId) {
     const { data: found } = await svc
       .from('brand_payment_intents')
-      .select('id, brand_id, company_id, owner_id, tier_package_id, tier_order_id, invoice_id, kind, amount, status, provider_trade_id, is_demo')
+      .select('id, brand_id, company_id, owner_id, tier_package_id, tier_order_id, invoice_id, arete_invoice_id, kind, amount, status, provider_trade_id, is_demo')
       .eq('id', intentId)
       .maybeSingle()
     intent = (found as BrandPaymentIntentRow | null) ?? null
   } else if (mulNo) {
     const { data: found } = await svc
       .from('brand_payment_intents')
-      .select('id, brand_id, company_id, owner_id, tier_package_id, tier_order_id, invoice_id, kind, amount, status, provider_trade_id, is_demo')
+      .select('id, brand_id, company_id, owner_id, tier_package_id, tier_order_id, invoice_id, arete_invoice_id, kind, amount, status, provider_trade_id, is_demo')
       .eq('provider_trade_id', mulNo)
       .maybeSingle()
     intent = (found as BrandPaymentIntentRow | null) ?? null
@@ -106,6 +107,18 @@ export async function POST(req: NextRequest) {
       .from('brand_billing_invoices')
       .update({ status: 'paid', paid_at: nowIso })
       .eq('id', intent.invoice_id)
+      .eq('status', 'unpaid')
+    return new NextResponse('SUCCESS', { status: 200 })
+  }
+  if (intent.kind === 'arete' && intent.arete_invoice_id) {
+    await svc
+      .from('brand_payment_intents')
+      .update({ status: 'paid', provider_trade_id: mulNo || intent.provider_trade_id, updated_at: nowIso })
+      .eq('id', intent.id)
+    await svc
+      .from('brand_arete_invoices')
+      .update({ status: 'paid', paid_at: nowIso })
+      .eq('id', intent.arete_invoice_id)
       .eq('status', 'unpaid')
     return new NextResponse('SUCCESS', { status: 200 })
   }

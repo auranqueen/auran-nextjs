@@ -4,6 +4,10 @@
 ---
 
 
+## 2026-08-14
+### feat: 매월3일 아레테청구서 자동생성+포인트재지급(크론+결제라우트+웹훅)
+- 매월 3일 아레테클럽 청구서 자동생성 + 포인트 재지급 신규구축: brand_arete_invoices 테이블 신설(100만원 정액, 회사+원장+월 단위 UNIQUE), 크론(/api/cron/generate-arete-invoices, 매월3일 KST0시1분)이 활성 아레테회원 전원에게 청구서 생성+ARETE 포인트 50만점 누적지급(재실행 안전, 중복생성 방지). 100만원 전용 결제라우트(civasan/arete/create, 포인트차감 불가) + 웹훅 arete분기 신설. brand_payment_intents.kind에 'arete' 추가, invoice_id FK타입 불일치 문제 발견하여 별도 컬럼 arete_invoice_id 신설로 해결
+
 ## 2026-08-13
 ### refactor: 아레테포인트 track값 'B'→'ARETE' 이름변경(혼동방지)
 - 아레테 포인트 라벨 명확화: brand_points.track의 'B' 값이 실제 플랫폼 트랙B(스폰서 커미션)와 이름이 같아 혼동을 유발해온 문제를 근본수정. CHECK제약에 'ARETE' 추가허용 후 기존 'B'행을 'ARETE'로 마이그레이션, 관련 코드 4곳(toggleArete/BrandTabArete/EventPackageSection/aggregateBrandBilling) 전부 'ARETE'로 통일
