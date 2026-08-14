@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
 import BrandOrderProductCard, { type BrandOrderProduct } from './BrandOrderProductCard'
 import EventPackageSection from './components/EventPackageSection'
+import AreteMembershipCard from './components/AreteMembershipCard'
 import {
   buildOrderLineItem,
   calcPointsEarned,
@@ -800,6 +801,7 @@ export default function BrandOrdersPage() {
         </span>
       </div>
       <EventPackageSection campaigns={hqForcedCampaigns} ownerProfileId={ownerProfileId} />
+      <AreteMembershipCard ownerProfileId={ownerProfileId} />
       <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.07)', margin: '0 16px 12px' }} />
       {linkedBrandOptions.length > 0 && (
         <div style={{ display: 'flex', gap: 8, padding: '0 16px 10px', flexWrap: 'wrap' }}>

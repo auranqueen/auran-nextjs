@@ -5,6 +5,9 @@
 
 
 ## 2026-08-14
+### feat: 원장 발주화면에 아레테 회원카드 신설(결제+제품꾸러미+포인트)
+- 원장 발주화면(brand-orders)에 아레테 회원카드 신규추가(AreteMembershipCard.tsx): 100만원 정액결제(포인트차감불가, /api/payments/brand-self/civasan/arete/create 연동), 이번달 받을 제품꾸러미 표시(brand_arete_monthly_bundles, 정보성 — 별도 주문 불필요), 아레테 포인트 누적잔액(brand_points track='ARETE'). EventPackageSection 바로 아래 삽입. 8/13 승인된 목업v2 그대로 구현 완료. 비활성 회원/당월데이터 없으면 카드 자동숨김
+
 ### fix: 반품 승인/반려/수령 알림 개인지정 전환
 - BrandReturnsList(승인/반려)·BrandReturnsReceive(수령) target_type:'all'→'selected'+target_owner_id 전환, order_id→brand_orders.profile_id 조회(폴백 requested_by)
 - insertBrandOrder 발주접수 알림도 개인지정(target_owner_id)+본인 수신용 문구로 수정
