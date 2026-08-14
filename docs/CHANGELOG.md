@@ -5,6 +5,9 @@
 
 
 ## 2026-08-14
+### feat: REWARD 포인트 사용/정산 로직 추가(points_used_reward 분리)
+- REWARD(일반적립금) 사용/정산 로직 추가: brand_orders/brand_billing_invoices에 points_used_reward 컬럼 신설(ARETE전용 points_used와 완전분리), apply-reward-points 신규API(apply-event-points와 동일골격, points_used_reward에 기록), aggregateBrandBilling.ts에 REWARD 델타차감 병렬블록 추가(track='REWARD' 잔액차감, 기존 ARETE track='ARETE' 차감로직 무수정). 청구액계산은 ARETE+REWARD 사용액 둘다 차감(rawTotal-points_used-points_used_reward)
+
 ### feat: 웹훅에 일반적립금(REWARD) 포인트 적립 로직 추가
 - 웹훅(civasan/webhook/route.ts) kind==='invoice' 분기에 REWARD 포인트 적립 로직 추가: 월청구서 결제완료(unpaid→paid) 시 invoice.points_total만큼 brand_points(track='REWARD') 잔액 가산(select→있으면update/없으면insert). status='unpaid' 조건+update().select().maybeSingle() 조합으로 재호출시 자동 중복적립 방지. brand_points_track_check 제약에 'REWARD' 추가(DB마이그레이션 병행)
 
