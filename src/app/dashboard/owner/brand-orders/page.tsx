@@ -131,6 +131,9 @@ export default function BrandOrdersPage() {
   const [gradeByBrandId, setGradeByBrandId] = useState<Record<string, string>>({})
   const [linkedBrandIds, setLinkedBrandIds] = useState<string[]>([])
   const [linkedBrandNames, setLinkedBrandNames] = useState<Record<string, string>>({})
+  const [brandCompanyMap, setBrandCompanyMap] = useState<Record<string, string>>({})
+  const [rewardBalances, setRewardBalances] = useState<Record<string, number>>({})
+  const [usePointsReward, setUsePointsReward] = useState(true)
   const [brandFilter, setBrandFilter] = useState<'all' | string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
@@ -189,6 +192,8 @@ export default function BrandOrdersPage() {
       setGradeByBrandId({})
       setLinkedBrandIds([])
       setLinkedBrandNames({})
+      setBrandCompanyMap({})
+      setRewardBalances({})
       setBrandFilter('all')
       setSearchQuery('')
       setLoading(false)
@@ -231,6 +236,7 @@ export default function BrandOrdersPage() {
       }
     }
     setLinkedBrandNames(brandNameMap)
+    setBrandCompanyMap(brandCompanyMap)
     let gradeMap: Record<string, string> = {}
     const tierPackageByCompany: Record<string, string> = {}
     const gradeByCompanyOuter: Record<string, string> = {}
@@ -545,6 +551,32 @@ export default function BrandOrdersPage() {
     })
     return pts
   })()
+  const popupCompanyTotals = (() => {
+    const byBrand = new Map<string, typeof popupCart>()
+    for (const c of popupCart) {
+      const id = c.product.brand_id
+      if (!byBrand.has(id)) byBrand.set(id, [])
+      byBrand.get(id)!.push(c)
+    }
+    const totals: Record<string, number> = {}
+    Array.from(byBrand.entries()).forEach(([brandId, rows]) => {
+      const amount = rows.reduce(
+        (s, c) => s + buildOrderLineItem(c.product, c.qty, promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)), c.selectedPromo).line_amount,
+        0,
+      )
+      const cid = brandCompanyMap[brandId]
+      if (!cid) return
+      totals[cid] = (totals[cid] || 0) + amount
+    })
+    return totals
+  })()
+  const popupRewardBalanceTotal = Object.keys(popupCompanyTotals).reduce((s, cid) => s + (rewardBalances[cid] || 0), 0)
+  const popupRewardUsable = Object.entries(popupCompanyTotals).reduce(
+    (s, [cid, amount]) => s + Math.min(rewardBalances[cid] || 0, amount),
+    0,
+  )
+  const popupRewardApplied = usePointsReward ? Math.min(popupRewardUsable, popupFinalAmount) : 0
+  const popupFinalAfterReward = Math.max(0, popupFinalAmount - popupRewardApplied)
   const totalQty = cart.reduce((s, c) => s + c.qty, 0)
 
   const applyPromo = (prod: BrandOrderProduct, promo: SupplyPromoRow) => {
@@ -586,6 +618,34 @@ export default function BrandOrdersPage() {
       .map((c) => (c.product.id === id ? { ...c, qty: Math.max(0, c.qty + delta), selectedPromo: null } : c))
       .filter((c) => c.qty > 0))
   }
+
+  useEffect(() => {
+    const companyIds = Array.from(
+      new Set(cart.map((c) => brandCompanyMap[c.product.brand_id]).filter(Boolean)),
+    ) as string[]
+    if (!ownerProfileId || companyIds.length === 0) {
+      setRewardBalances({})
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      const { data } = await supabase
+        .from('brand_points')
+        .select('company_id, balance')
+        .in('company_id', companyIds)
+        .eq('owner_id', ownerProfileId)
+        .eq('track', 'REWARD')
+      if (cancelled) return
+      const map: Record<string, number> = {}
+      for (const row of data || []) {
+        const cid = String((row as { company_id?: string }).company_id || '')
+        if (!cid) continue
+        map[cid] = Math.trunc(Number((row as { balance?: number }).balance) || 0)
+      }
+      setRewardBalances(map)
+    })()
+    return () => { cancelled = true }
+  }, [cart, brandCompanyMap, ownerProfileId])
 
   const submitOrder = async () => {
     if (cart.length === 0) { showToast('제품을 선택해주세요'); return }
@@ -671,6 +731,41 @@ export default function BrandOrdersPage() {
     if (!result.ok) {
       showToast(result.message || ('발주 실패: ' + result.error))
     } else {
+      if (usePointsReward && result.order_ids && result.order_ids.length === cartItems.length) {
+        const companyAmounts: Record<string, number> = {}
+        cartItems.forEach((item) => {
+          const cid = brandCompanyMap[item.brand_id]
+          if (!cid) return
+          companyAmounts[cid] = (companyAmounts[cid] || 0) + item.total_amount
+        })
+        const pointsByOrder: Record<string, number> = {}
+        Object.entries(companyAmounts).forEach(([cid, companyTotal]) => {
+          const balance = rewardBalances[cid] || 0
+          const rewardForCompany = Math.min(balance, companyTotal)
+          if (rewardForCompany <= 0 || companyTotal <= 0) return
+          const idxList = cartItems
+            .map((item, idx) => ({ item, idx }))
+            .filter(({ item }) => brandCompanyMap[item.brand_id] === cid)
+          let remaining = rewardForCompany
+          idxList.forEach(({ item, idx }, i) => {
+            const orderId = result.order_ids![idx]
+            if (!orderId) return
+            const share = i === idxList.length - 1
+              ? remaining
+              : Math.round(rewardForCompany * (item.total_amount / companyTotal))
+            const applied = Math.min(share, remaining)
+            if (applied > 0) pointsByOrder[orderId] = applied
+            remaining -= applied
+          })
+        })
+        if (Object.keys(pointsByOrder).length > 0) {
+          await fetch('/api/brand-orders/apply-reward-points', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ points_by_order: pointsByOrder }),
+          }).catch(() => {})
+        }
+      }
       setCart([])
       setShowPopup(false)
       showToast(`발주 요청 완료! 주문번호 ${result.order_no}`)
@@ -1018,10 +1113,16 @@ export default function BrandOrdersPage() {
                   🎁 {g.label}
                 </div>
               ))}
-              {hqCampaignEffects.discountTotal > 0 && (
+              {popupRewardUsable > 0 && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: TEXT, marginBottom: 8, cursor: 'pointer' }}>
+                  <input type="checkbox" checked={usePointsReward} onChange={(e) => setUsePointsReward(e.target.checked)} />
+                  일반적립금으로 결제할게요 (누적잔액 {popupRewardBalanceTotal.toLocaleString()}P)
+                </label>
+              )}
+              {(hqCampaignEffects.discountTotal > 0 || popupRewardApplied > 0) && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 500 }}>
                   <span>최종 결제금액</span>
-                  <span>{popupFinalAmount.toLocaleString()}원</span>
+                  <span>{popupFinalAfterReward.toLocaleString()}원</span>
                 </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 600, color: '#1E6B40' }}>
