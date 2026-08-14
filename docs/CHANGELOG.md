@@ -5,6 +5,9 @@
 
 
 ## 2026-08-14
+### feat: 웹훅에 일반적립금(REWARD) 포인트 적립 로직 추가
+- 웹훅(civasan/webhook/route.ts) kind==='invoice' 분기에 REWARD 포인트 적립 로직 추가: 월청구서 결제완료(unpaid→paid) 시 invoice.points_total만큼 brand_points(track='REWARD') 잔액 가산(select→있으면update/없으면insert). status='unpaid' 조건+update().select().maybeSingle() 조합으로 재호출시 자동 중복적립 방지. brand_points_track_check 제약에 'REWARD' 추가(DB마이그레이션 병행)
+
 ### feat: 원장 발주화면에 아레테 회원카드 신설(결제+제품꾸러미+포인트)
 - 원장 발주화면(brand-orders)에 아레테 회원카드 신규추가(AreteMembershipCard.tsx): 100만원 정액결제(포인트차감불가, /api/payments/brand-self/civasan/arete/create 연동), 이번달 받을 제품꾸러미 표시(brand_arete_monthly_bundles, 정보성 — 별도 주문 불필요), 아레테 포인트 누적잔액(brand_points track='ARETE'). EventPackageSection 바로 아래 삽입. 8/13 승인된 목업v2 그대로 구현 완료. 비활성 회원/당월데이터 없으면 카드 자동숨김
 

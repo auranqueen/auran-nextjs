@@ -103,11 +103,41 @@ export async function POST(req: NextRequest) {
       .from('brand_payment_intents')
       .update({ status: 'paid', provider_trade_id: mulNo || intent.provider_trade_id, updated_at: nowIso })
       .eq('id', intent.id)
-    await svc
+    const { data: updatedInvoice } = await svc
       .from('brand_billing_invoices')
       .update({ status: 'paid', paid_at: nowIso })
       .eq('id', intent.invoice_id)
       .eq('status', 'unpaid')
+      .select('id, points_total')
+      .maybeSingle()
+    if (updatedInvoice && Number(updatedInvoice.points_total) > 0) {
+      const rewardAmount = Math.trunc(Number(updatedInvoice.points_total) || 0)
+      const { data: pointRow } = await svc
+        .from('brand_points')
+        .select('balance, total_earned')
+        .eq('company_id', intent.company_id)
+        .eq('owner_id', intent.owner_id)
+        .eq('track', 'REWARD')
+        .maybeSingle()
+      if (pointRow) {
+        const nextBalance = Math.trunc(Number((pointRow as { balance?: number }).balance) || 0) + rewardAmount
+        const nextEarned = Math.trunc(Number((pointRow as { total_earned?: number }).total_earned) || 0) + rewardAmount
+        await svc
+          .from('brand_points')
+          .update({ balance: nextBalance, total_earned: nextEarned })
+          .eq('company_id', intent.company_id)
+          .eq('owner_id', intent.owner_id)
+          .eq('track', 'REWARD')
+      } else {
+        await svc.from('brand_points').insert({
+          company_id: intent.company_id,
+          owner_id: intent.owner_id,
+          track: 'REWARD',
+          balance: rewardAmount,
+          total_earned: rewardAmount,
+        })
+      }
+    }
     return new NextResponse('SUCCESS', { status: 200 })
   }
   if (intent.kind === 'arete' && intent.arete_invoice_id) {
