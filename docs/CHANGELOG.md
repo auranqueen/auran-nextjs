@@ -5,6 +5,9 @@
 
 
 ## 2026-08-14
+### fix: 발송완료 알림 개인지정 전환(target_owner_id), 전체발송 버그 수정
+- BrandBatchFulfillmentList 발송완료 알림 target_type:'all'→'selected'+target_owner_id 전환(brand_order_batches.profile_id 활용), profile_id 없는 구배치는 all 폴백
+
 ### feat: 매월3일 아레테청구서 자동생성+포인트재지급(크론+결제라우트+웹훅)
 - 매월 3일 아레테클럽 청구서 자동생성 + 포인트 재지급 신규구축: brand_arete_invoices 테이블 신설(100만원 정액, 회사+원장+월 단위 UNIQUE), 크론(/api/cron/generate-arete-invoices, 매월3일 KST0시1분)이 활성 아레테회원 전원에게 청구서 생성+ARETE 포인트 50만점 누적지급(재실행 안전, 중복생성 방지). 100만원 전용 결제라우트(civasan/arete/create, 포인트차감 불가) + 웹훅 arete분기 신설. brand_payment_intents.kind에 'arete' 추가, invoice_id FK타입 불일치 문제 발견하여 별도 컬럼 arete_invoice_id 신설로 해결
 

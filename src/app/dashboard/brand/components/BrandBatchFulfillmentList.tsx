@@ -44,6 +44,7 @@ type BatchCard = {
   status: string
   created_at: string
   approved_at: string | null
+  profile_id: string | null
   orders: BatchOrderLine[]
   courier: string | null
   tracking_no: string | null
@@ -129,7 +130,7 @@ export default function BrandBatchFulfillmentList({
     const pending = filter === 'approved'
     let batchQ = supabase
       .from('brand_order_batches')
-      .select('id, order_no, owner_name, salon_name, status, created_at, approved_at')
+      .select('id, order_no, owner_name, salon_name, status, created_at, approved_at, profile_id')
       .in('id', batchIds)
       .order('created_at', { ascending: false })
       .limit(80)
@@ -147,6 +148,7 @@ export default function BrandBatchFulfillmentList({
       status: string
       created_at: string
       approved_at: string | null
+      profile_id: string | null
     }>
 
     if (batchList.length === 0) {
@@ -396,7 +398,8 @@ export default function BrandBatchFulfillmentList({
       await supabase.from('brand_messages').insert({
         brand_id: firstBrandId,
         message_type: 'auto_order',
-        target_type: 'all',
+        target_type: batch.profile_id ? 'selected' : 'all',
+        target_owner_id: batch.profile_id || null,
         title: `발주 ${batch.order_no} 배송 시작`,
         body: `주문하신 제품이 발송됐어요. 택배사: ${input.courier} · 운송장: ${trackingNo}`,
         send_count: 1,
