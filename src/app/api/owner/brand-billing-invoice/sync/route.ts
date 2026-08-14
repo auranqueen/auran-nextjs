@@ -13,6 +13,10 @@ export async function POST(req: NextRequest) {
   const billingMonth = typeof body?.billing_month === 'string' ? body.billing_month.trim() : ''
   const totalAmount = Math.trunc(Number(body?.total_amount) || 0)
   const pointsTotal = Math.trunc(Number(body?.points_total) || 0)
+  const pouchBasisAmountRaw = body?.pouch_basis_amount
+  const pouchBasisAmount = pouchBasisAmountRaw === undefined || pouchBasisAmountRaw === null
+    ? totalAmount
+    : Math.trunc(Number(pouchBasisAmountRaw) || 0)
 
   if (!companyId || !billingMonth) {
     return NextResponse.json({ ok: false, error: 'company_id_and_billing_month_required' }, { status: 400 })
@@ -24,7 +28,7 @@ export async function POST(req: NextRequest) {
   const svc = tryCreateServiceClient()
   if (!svc) return NextResponse.json({ ok: false, error: 'service_unavailable' }, { status: 500 })
 
-  const pouchTier = calcPouchTier(totalAmount)
+  const pouchTier = calcPouchTier(pouchBasisAmount)
 
   const { data: row, error } = await svc
     .from('brand_billing_invoices')

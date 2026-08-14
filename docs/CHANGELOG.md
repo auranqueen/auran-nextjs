@@ -5,6 +5,9 @@
 
 
 ## 2026-08-14
+### fix: 파우치등급 계산공식 3곳 통일(ARETE만 제외)
+- 파우치등급(calcPouchTier) 계산공식을 화면(invoice/page.tsx)·SYNC_API(brand-billing-invoice/sync)·월말정산크론(aggregateBrandBilling.ts) 3곳 모두 통일: 기준액 = 발주총액 − 아레테사용액만(REWARD는 제외 안 함, 청구액 계산에만 반영). SYNC_API는 pouch_basis_amount 필드를 새로 받고 하위호환 폴백(없으면 total_amount 사용) 처리
+
 ### feat: 이벤트패키지에 REWARD 포인트 체크박스 추가
 - EventPackageSection.tsx에 REWARD(일반적립금) 체크박스 병렬추가: rewardBalances state+useEffect(track='REWARD' 조회), finalAmount는 아레테 먼저 차감후 REWARD 순차차감(afterArete→rewardApplied), 팝업 UI는 아레테 체크박스 바로아래 REWARD 체크박스 배치(사용가능잔액 있을때만 노출). 주문성공후 apply-reward-points 추가 호출로 points_used_reward 기록. ARETE 관련 코드(조회/체크박스/apply-event-points)는 완전 무수정
 

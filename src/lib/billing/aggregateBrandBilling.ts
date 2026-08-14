@@ -68,7 +68,8 @@ export async function aggregateBrandBilling(
   const pointsUsedRewardThisCycle = orders.reduce((s, o) => s + Math.trunc(Number((o as { points_used_reward?: number }).points_used_reward) || 0), 0)
   const pointsTotal = orders.reduce((s, o) => s + Math.trunc(Number(o.points_earned) || 0), 0)
   const totalAmount = Math.max(0, rawTotalAmount - pointsUsedThisCycle - pointsUsedRewardThisCycle)
-  const pouchTier = calcPouchTier(totalAmount)
+  const pouchBasisAmount = Math.max(0, rawTotalAmount - pointsUsedThisCycle)
+  const pouchTier = calcPouchTier(pouchBasisAmount)
   const { data: existingInvoice } = await supabase
     .from('brand_billing_invoices')
     .select('id, points_used, points_used_reward')

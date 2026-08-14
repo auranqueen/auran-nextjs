@@ -59,6 +59,8 @@ function BrandOrdersInvoiceContent() {
   const [lines, setLines] = useState<InvoiceLineRow[]>([])
   const [totalAmount, setTotalAmount] = useState(0)
   const [pointsTotal, setPointsTotal] = useState(0)
+  const [pointsUsedTotal, setPointsUsedTotal] = useState(0)
+  const [pointsUsedRewardTotal, setPointsUsedRewardTotal] = useState(0)
   const [pouchTier, setPouchTier] = useState<number | null>(null)
   const [invoice, setInvoice] = useState<BillingInvoice | null>(null)
   const [payappActive, setPayappActive] = useState(false)
@@ -132,7 +134,7 @@ function BrandOrdersInvoiceContent() {
 
     const { data: orderRows } = await supabase
       .from('brand_orders')
-      .select('id, created_at, items, total_amount, points_earned')
+      .select('id, created_at, items, total_amount, points_earned, points_used, points_used_reward')
       .eq('profile_id', profile.id)
       .in('brand_id', brandIds)
       .gte('created_at', startIso)
@@ -143,11 +145,17 @@ function BrandOrdersInvoiceContent() {
     const expanded = expandOrderItemsToLines(orders)
     const sumAmount = orders.reduce((s, o) => s + Math.trunc(Number(o.total_amount) || 0), 0)
     const sumPoints = orders.reduce((s, o) => s + Math.trunc(Number(o.points_earned) || 0), 0)
-    const tier = calcPouchTier(sumAmount)
+    const sumUsed = orders.reduce((s, o) => s + Math.trunc(Number((o as { points_used?: number }).points_used) || 0), 0)
+    const sumUsedReward = orders.reduce((s, o) => s + Math.trunc(Number((o as { points_used_reward?: number }).points_used_reward) || 0), 0)
+    const netAmount = Math.max(0, sumAmount - sumUsed - sumUsedReward)
+    const pouchBasisAmount = Math.max(0, sumAmount - sumUsed)
+    const tier = calcPouchTier(pouchBasisAmount)
 
     setLines(expanded)
-    setTotalAmount(sumAmount)
+    setTotalAmount(netAmount)
     setPointsTotal(sumPoints)
+    setPointsUsedTotal(sumUsed)
+    setPointsUsedRewardTotal(sumUsedReward)
     setPouchTier(tier)
 
     const syncRes = await fetch(SYNC_API, {
@@ -157,8 +165,9 @@ function BrandOrdersInvoiceContent() {
       body: JSON.stringify({
         company_id: companyId,
         billing_month: billingMonth,
-        total_amount: sumAmount,
+        total_amount: netAmount,
         points_total: sumPoints,
+        pouch_basis_amount: pouchBasisAmount,
       }),
     })
     const syncJson = await syncRes.json().catch(() => ({}))
@@ -288,6 +297,24 @@ function BrandOrdersInvoiceContent() {
         )}
 
         <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 10, padding: 14, marginBottom: 12 }}>
+          {(pointsUsedTotal > 0 || pointsUsedRewardTotal > 0) && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
+              <span style={{ color: SUB }}>발주 합계</span>
+              <span>₩{(totalAmount + pointsUsedTotal + pointsUsedRewardTotal).toLocaleString()}</span>
+            </div>
+          )}
+          {pointsUsedTotal > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
+              <span style={{ color: SUB }}>아레테 포인트 사용</span>
+              <span style={{ color: '#e74c3c' }}>-{pointsUsedTotal.toLocaleString()}P</span>
+            </div>
+          )}
+          {pointsUsedRewardTotal > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
+              <span style={{ color: SUB }}>일반적립금 사용</span>
+              <span style={{ color: '#e74c3c' }}>-{pointsUsedRewardTotal.toLocaleString()}P</span>
+            </div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 6 }}>
             <span style={{ color: SUB }}>합계금액</span>
             <span style={{ fontWeight: 600, color: PURPLE }}>₩{totalAmount.toLocaleString()}</span>
