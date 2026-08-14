@@ -122,9 +122,10 @@ export async function insertBrandOrder(
   await svc.from('brand_messages').insert({
     brand_id: brandId,
     message_type: 'auto_order',
-    target_type: 'all',
-    title: `${ownerName} 원장님 발주 접수`,
-    body: `${ownerName} 원장님(${salonName})이 발주를 요청했습니다. ${itemSummary}`,
+    target_type: profileId ? 'selected' : 'all',
+    target_owner_id: profileId || null,
+    title: `발주가 접수됐어요`,
+    body: `${salonName} 발주가 정상 접수됐습니다. ${itemSummary}`,
     send_count: 1,
   })
 

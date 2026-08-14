@@ -31,6 +31,8 @@ interface ReturnRow {
   inventory_id: string | null
   photos: string[] | null
   created_at: string
+  order_id: string | null
+  requested_by: string | null
 }
 interface Props { brandId: string | null; companyBrandIds: string[] }
 export default function BrandReturnsReceive({ brandId, companyBrandIds }: Props) {
@@ -52,7 +54,7 @@ export default function BrandReturnsReceive({ brandId, companyBrandIds }: Props)
     setLoading(true)
     const { data } = await supabase
       .from('brand_returns')
-      .select('id, type, reason_code, reason_detail, status, qty, return_code, inventory_id, photos, created_at')
+      .select('id, type, reason_code, reason_detail, status, qty, return_code, inventory_id, photos, created_at, order_id, requested_by')
       .in('brand_id', companyBrandIds)
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
@@ -136,10 +138,18 @@ export default function BrandReturnsReceive({ brandId, companyBrandIds }: Props)
           memo: `[폐기] ${condition} · ${disposeMemo.trim()}`,
         })
       }
+      let targetOwnerId: string | null = null
+      if (matched.order_id) {
+        const { data: ord } = await supabase.from('brand_orders').select('profile_id').eq('id', matched.order_id).maybeSingle()
+        targetOwnerId = (ord as { profile_id?: string } | null)?.profile_id || matched.requested_by || null
+      } else if (matched.requested_by) {
+        targetOwnerId = matched.requested_by
+      }
       await supabase.from('brand_messages').insert({
         brand_id: brandId,
         message_type: 'auto_order',
-        target_type: 'all',
+        target_type: targetOwnerId ? 'selected' : 'all',
+        target_owner_id: targetOwnerId,
         title: `반품 수령 완료`,
         body: `반품 제품이 수령됐어요. 상태: ${condition} · 처리: ${isRestock ? '재고 반영' : '폐기 처리(본사 확인 필요)'}`,
         send_count: 1,

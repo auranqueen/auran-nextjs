@@ -5,6 +5,10 @@
 
 
 ## 2026-08-14
+### fix: 반품 승인/반려/수령 알림 개인지정 전환
+- BrandReturnsList(승인/반려)·BrandReturnsReceive(수령) target_type:'all'→'selected'+target_owner_id 전환, order_id→brand_orders.profile_id 조회(폴백 requested_by)
+- insertBrandOrder 발주접수 알림도 개인지정(target_owner_id)+본인 수신용 문구로 수정
+
 ### fix: 발송완료 알림 개인지정 전환(target_owner_id), 전체발송 버그 수정
 - BrandBatchFulfillmentList 발송완료 알림 target_type:'all'→'selected'+target_owner_id 전환(brand_order_batches.profile_id 활용), profile_id 없는 구배치는 all 폴백
 

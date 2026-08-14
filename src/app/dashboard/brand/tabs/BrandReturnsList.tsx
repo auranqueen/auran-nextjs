@@ -71,10 +71,19 @@ export default function BrandReturnsList({ brandId, companyBrandIds }: Props) {
       .eq('id', id)
     if (!error) {
       setReturns(prev => prev.map(r => r.id === id ? { ...r, status: 'approved', return_code: code } : r))
+      const row = returns.find(r => r.id === id)
+      let targetOwnerId: string | null = null
+      if (row?.order_id) {
+        const { data: ord } = await supabase.from('brand_orders').select('profile_id').eq('id', row.order_id).maybeSingle()
+        targetOwnerId = ord?.profile_id || row.requested_by || null
+      } else if (row?.requested_by) {
+        targetOwnerId = row.requested_by
+      }
       await supabase.from('brand_messages').insert({
         brand_id: brandId,
         message_type: 'auto_order',
-        target_type: 'all',
+        target_type: targetOwnerId ? 'selected' : 'all',
+        target_owner_id: targetOwnerId,
         title: '반품·교환 승인 완료',
         body: `반품·교환 신청이 승인됐어요. 반품 코드: ${code}\n코드를 제품과 함께 보내주세요.`,
         send_count: 1,
@@ -94,10 +103,19 @@ export default function BrandReturnsList({ brandId, companyBrandIds }: Props) {
       .eq('id', id)
     if (!error) {
       setReturns(prev => prev.map(r => r.id === id ? { ...r, status: 'denied', denied_reason: denyReason } : r))
+      const row = returns.find(r => r.id === id)
+      let targetOwnerId: string | null = null
+      if (row?.order_id) {
+        const { data: ord } = await supabase.from('brand_orders').select('profile_id').eq('id', row.order_id).maybeSingle()
+        targetOwnerId = ord?.profile_id || row.requested_by || null
+      } else if (row?.requested_by) {
+        targetOwnerId = row.requested_by
+      }
       await supabase.from('brand_messages').insert({
         brand_id: brandId,
         message_type: 'auto_order',
-        target_type: 'all',
+        target_type: targetOwnerId ? 'selected' : 'all',
+        target_owner_id: targetOwnerId,
         title: '반품·교환 반려 안내',
         body: `반품·교환 신청이 반려됐어요. 사유: ${denyReason.trim()}`,
         send_count: 1,
