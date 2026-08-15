@@ -4,12 +4,14 @@ import dynamic from 'next/dynamic'
 const BrandTabOrders = dynamic(() => import('./BrandTabOrders'), { ssr: false })
 const BrandTabReturns = dynamic(() => import('./BrandTabReturns'), { ssr: false })
 const BrandTabSample = dynamic(() => import('./BrandTabSample'), { ssr: false })
+const BrandTabPouch = dynamic(() => import('./BrandTabPouch'), { ssr: false })
 const PURPLE = '#7B5EA7'
 const SUB = 'rgba(255,255,255,0.3)'
 const SUBTABS = [
   { key: 'orders', label: '발주 관리' },
   { key: 'returns', label: '반품 관리' },
   { key: 'sample', label: '샘플 발송' },
+  { key: 'pouch', label: '등급파우치' },
 ] as const
 type SubTab = typeof SUBTABS[number]['key']
 type Props = {
@@ -44,6 +46,7 @@ export default function BrandTabSales({ myBrands, initialSub, brandId }: Props) 
       {sub === 'orders' && <BrandTabOrders myBrands={myBrands} />}
       {sub === 'returns' && <BrandTabReturns myBrands={myBrands} brandId={brandId} />}
       {sub === 'sample' && <BrandTabSample myBrands={myBrands} brandId={brandId} />}
+      {sub === 'pouch' && <BrandTabPouch myBrands={myBrands} brandId={brandId} />}
     </div>
   )
 }

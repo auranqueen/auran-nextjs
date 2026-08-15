@@ -5,6 +5,9 @@
 
 
 ## 2026-08-15
+### feat: 등급파우치 서브탭 신규(구성설정+승인)
+- 판매관리에 「등급파우치」 서브탭 신규 추가(BrandTabPouch.tsx). 본사가 등급구간(200/300/500)별 파우치 구성(제품+수량)을 사전 설정(pouch_tier_kits 신규테이블), 결제완료+파우치등급 확정된 청구서를 승인대상 리스트로 표시, 승인시 그 시점 구성을 pouch_kit_snapshot(jsonb)에 스냅샷 고정+pouch_status='approved'로 전환(brand_billing_invoices 컬럼 추가, 159번 마이그레이션). 중복승인 방지 가드 포함. 실제 발송(송장입력+재고차감+알림)은 물류허브 연동으로 다음 단계 진행 예정
+
 ### fix: REWARD결제분도 적립제외+아레테미사용시 적립0버그 수정
 - 적립금(points_earned) 계산원칙 수정: 아레테뿐 아니라 REWARD로 결제한 부분도 적립기준에서 제외(실결제금액만 적립). apply-reward-points API 확장(earned_by_order 필드 신규수신, points_earned도 업데이트). 이벤트패키지 순서재설계 — apply-event-points가 이제 아레테 사용여부와 무관하게 항상 호출되도록 수정(기존엔 아레테를 안 쓰면 적립 계산 자체가 실행 안 되어 적립이 영구히 0으로 남는 버그였음). 일반카탈로그도 REWARD 사용시 실결제액 기준으로 points_earned 재계산 추가
 
