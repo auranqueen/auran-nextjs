@@ -5,6 +5,9 @@
 
 
 ## 2026-08-15
+### feat: 제품등록에 is_sample_pouch 체크박스 추가
+- brand_products에 is_sample_pouch 컬럼 신설. 제품등록폼(BrandProductFormV2+BrandProductPriceSection)에 "샘플파우치" 체크박스 추가, buildSaveBody+save API row객체 전체 경로 반영(state→UI→payload→API→DB). edit모드 복원도 포함. 이 플래그로 나중에 월말 파우치등급 산정시 샘플파우치 구매액을 제외하는 연동에 사용 예정
+
 ### feat: 이벤트패키지 등급적립 추가(아레테결제분 제외)
 - 이벤트패키지 주문에 등급별 적립(points_earned) 신규 추가, 단 아레테포인트로 결제한 금액은 적립기준에서 제외(실결제액 기준). apply-event-points API 확장(earned_by_order 필드로 points_used와 함께 points_earned도 같은 요청에서 업데이트). EventPackageSection에 회사별 등급(brand_owner_grades)+적립율(brand_grade_point_rates) 자체조회 추가, 등급정보 없는 회사는 적립 스킵. REWARD(apply-reward-points) 로직은 무수정
 

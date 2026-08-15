@@ -51,6 +51,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
   const [categorySearch, setCategorySearch] = useState('')
   const [manufacturer, setManufacturer] = useState('')
   const [isExclusive, setIsExclusive] = useState(false)
+  const [isSamplePouch, setIsSamplePouch] = useState(false)
 
   const [thumbImages, setThumbImages] = useState<(string | null)[]>([null, null, null, null, null])
   const [videoUrl, setVideoUrl] = useState('')
@@ -143,6 +144,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
       setEventEndsAt(ev?.ends_at?.slice(0, 10) || '')
 
       setIsActive(data.status === 'active')
+      setIsSamplePouch(data.is_sample_pouch ?? false)
       workingIdRef.current = editId
       setLoading(false)
     })
@@ -222,6 +224,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
       detail_images: detailImages,
       skin_concern: skinConcerns,
       skin_type: skinTypes,
+      is_sample_pouch: isSamplePouch,
       status: statusOverride ?? (isActive ? 'active' : 'hidden'),
     }
   }, [
@@ -252,6 +255,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
     detailImages,
     skinConcerns,
     skinTypes,
+    isSamplePouch,
     isActive,
   ])
 
@@ -361,6 +365,7 @@ export default function BrandProductFormV2({ brandId: propBrandId, brandName, my
             onOpenCategory={() => { setCategoryPickerTab('select'); setShowCategoryPicker(true) }}
             manufacturer={manufacturer} setManufacturer={setManufacturer}
             isExclusive={isExclusive} setIsExclusive={setIsExclusive}
+            isSamplePouch={isSamplePouch} setIsSamplePouch={setIsSamplePouch}
           />
 
           <BrandProductMediaSection

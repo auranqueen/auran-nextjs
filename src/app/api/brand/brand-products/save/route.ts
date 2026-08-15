@@ -30,6 +30,7 @@ type Body = {
   detail_images?: string[]
   skin_concern?: string[]
   skin_type?: string[]
+  is_sample_pouch?: boolean
   origin_country?: string
 }
 
@@ -140,6 +141,7 @@ export async function POST(req: NextRequest) {
     detail_images: stringArrayOrEmpty(body.detail_images),
     skin_concern: stringArrayOrEmpty(body.skin_concern),
     skin_type: stringArrayOrEmpty(body.skin_type),
+    is_sample_pouch: Boolean(body.is_sample_pouch),
     updated_at: now,
   }
 

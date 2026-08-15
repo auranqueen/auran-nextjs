@@ -27,6 +27,8 @@ type Props = {
   setManufacturer: (value: string) => void
   isExclusive: boolean
   setIsExclusive: (value: boolean) => void
+  isSamplePouch: boolean
+  setIsSamplePouch: (value: boolean) => void
 }
 
 const S = {
@@ -60,6 +62,8 @@ export default function BrandProductPriceSection({
   setManufacturer,
   isExclusive,
   setIsExclusive,
+  isSamplePouch,
+  setIsSamplePouch,
 }: Props) {
   return (
     <div style={S.sec}>
@@ -106,6 +110,9 @@ export default function BrandProductPriceSection({
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 8 }}>
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
           <input type="checkbox" checked={isExclusive} onChange={e => setIsExclusive(e.target.checked)} style={{ accentColor: '#7b5ea7' }} />AURAN 독점
+        </label>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'rgba(255,255,255,0.5)', cursor: 'pointer' }}>
+          <input type="checkbox" checked={isSamplePouch} onChange={e => setIsSamplePouch(e.target.checked)} style={{ accentColor: '#7b5ea7' }} />샘플파우치 (파우치등급 산정 제외)
         </label>
       </div>
     </div>
