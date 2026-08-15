@@ -53,7 +53,7 @@ export async function aggregateBrandBilling(
   }
   const { data: orderRows, error: orderErr } = await supabase
     .from('brand_orders')
-    .select('id, total_amount, points_earned, points_used, points_used_reward, status')
+    .select('id, total_amount, points_earned, points_used, points_used_reward, status, items')
     .eq('profile_id', profileId)
     .in('brand_id', brandIds)
     .gte('created_at', startIso)
@@ -68,7 +68,22 @@ export async function aggregateBrandBilling(
   const pointsUsedRewardThisCycle = orders.reduce((s, o) => s + Math.trunc(Number((o as { points_used_reward?: number }).points_used_reward) || 0), 0)
   const pointsTotal = orders.reduce((s, o) => s + Math.trunc(Number(o.points_earned) || 0), 0)
   const totalAmount = Math.max(0, rawTotalAmount - pointsUsedThisCycle - pointsUsedRewardThisCycle)
-  const pouchBasisAmount = Math.max(0, rawTotalAmount - pointsUsedThisCycle)
+  const { data: samplePouchRows } = await supabase
+    .from('brand_products')
+    .select('id')
+    .eq('is_sample_pouch', true)
+    .in('brand_id', brandIds)
+  const samplePouchIds = new Set((samplePouchRows || []).map((r: { id: string }) => String(r.id)))
+  const samplePouchAmount = orders.reduce((s, o) => {
+    const items = Array.isArray((o as { items?: unknown[] }).items) ? (o as { items: { product_id?: string; qty?: number; unit_price?: number; line_amount?: number }[] }).items : []
+    return s + items.reduce((s2, it) => {
+      if (it.product_id && samplePouchIds.has(String(it.product_id))) {
+        return s2 + Math.trunc(Number(it.line_amount) || (Number(it.qty) || 0) * (Number(it.unit_price) || 0))
+      }
+      return s2
+    }, 0)
+  }, 0)
+  const pouchBasisAmount = Math.max(0, rawTotalAmount - pointsUsedThisCycle - samplePouchAmount)
   const pouchTier = calcPouchTier(pouchBasisAmount)
   const { data: existingInvoice } = await supabase
     .from('brand_billing_invoices')

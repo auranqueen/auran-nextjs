@@ -5,6 +5,9 @@
 
 
 ## 2026-08-15
+### feat: 샘플파우치 구매액 파우치등급 산정에서 제외
+- 파우치등급(calcPouchTier) 산정에 샘플파우치 구매액 제외 연동 완료. invoice/page.tsx+aggregateBrandBilling.ts 2곳에서 brand_products.is_sample_pouch=true 제품ID를 조회한 뒤, 주문 items에서 해당 라인금액(samplePouchAmount)을 pouchBasisAmount에서만 차감(청구액은 정상 그대로 유지). 이걸로 샘플파우치 증정시스템 1단계(제품등록+파우치등급 제외) 완료 — 남은 것은 청구서 안내표시 고도화와 일괄발송 처리(백로그)
+
 ### feat: 제품등록에 is_sample_pouch 체크박스 추가
 - brand_products에 is_sample_pouch 컬럼 신설. 제품등록폼(BrandProductFormV2+BrandProductPriceSection)에 "샘플파우치" 체크박스 추가, buildSaveBody+save API row객체 전체 경로 반영(state→UI→payload→API→DB). edit모드 복원도 포함. 이 플래그로 나중에 월말 파우치등급 산정시 샘플파우치 구매액을 제외하는 연동에 사용 예정
 
