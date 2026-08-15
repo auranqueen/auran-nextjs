@@ -5,6 +5,9 @@
 
 
 ## 2026-08-15
+### feat: 물류허브에 등급파우치 발송처리 연동
+- 물류허브 「발송 처리」에 등급파우치 섹션 추가(BrandPouchFulfillmentList.tsx 신규, BrandInventoryFulfillment.tsx에 통합). 승인된(pouch_status='approved') 청구서를 발송대기 목록으로 표시, 택배사/운송장번호 입력 후 발송완료시: 1)pouch_kit_snapshot의 각 제품 재고차감(decrement_inventory_stock RPC+brand_stock_logs, ref_type:'pouch') 2)brand_billing_invoices pouch_status='shipped'+추적정보 업데이트(중복발송 방지 가드) 3)원장 개인알림(brand_messages, target_owner_id). 마이그레이션 160(pouch_tracking_no/pouch_courier/pouch_shipped_at). 이걸로 등급파우치 트랙A 전체 파이프라인(구성설정→승인→발송) 완료
+
 ### feat: 등급파우치 서브탭 신규(구성설정+승인)
 - 판매관리에 「등급파우치」 서브탭 신규 추가(BrandTabPouch.tsx). 본사가 등급구간(200/300/500)별 파우치 구성(제품+수량)을 사전 설정(pouch_tier_kits 신규테이블), 결제완료+파우치등급 확정된 청구서를 승인대상 리스트로 표시, 승인시 그 시점 구성을 pouch_kit_snapshot(jsonb)에 스냅샷 고정+pouch_status='approved'로 전환(brand_billing_invoices 컬럼 추가, 159번 마이그레이션). 중복승인 방지 가드 포함. 실제 발송(송장입력+재고차감+알림)은 물류허브 연동으로 다음 단계 진행 예정
 

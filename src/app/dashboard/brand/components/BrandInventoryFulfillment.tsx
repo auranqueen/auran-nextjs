@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import BrandLogisticsDailyClose from './BrandLogisticsDailyClose'
 import BrandBatchFulfillmentList from './BrandBatchFulfillmentList'
+import BrandPouchFulfillmentList from './BrandPouchFulfillmentList'
 import BrandTierOrderFulfillmentList from './BrandTierOrderFulfillmentList'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
@@ -495,6 +496,18 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
         ) : (
           <div style={{ textAlign: 'center', padding: 16, color: SUB, fontSize: 12 }}>브랜드 범위 확인 중…</div>
         )}
+      </div>
+
+      <div style={{ fontSize: 11, color: GOLD, marginTop: 20, marginBottom: 8 }}>
+        등급파우치 · {filter === 'approved' ? '발송대기' : '발송이력'}
+      </div>
+      <div style={CARD}>
+        <BrandPouchFulfillmentList
+          companyId={companyId}
+          filter={filter}
+          onToast={showToast}
+          onShipped={() => setBatchTick((n) => n + 1)}
+        />
       </div>
 
       <div style={{ fontSize: 11, color: GOLD, marginTop: 20, marginBottom: 8 }}>등급혜택 · 발송대기</div>
