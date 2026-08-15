@@ -5,6 +5,7 @@ import BrandOrdersSummary from '../components/BrandOrdersSummary'
 import BrandOrderBatchApproval from '../components/BrandOrderBatchApproval'
 import BrandLogisticsClosingReview from '../components/BrandLogisticsClosingReview'
 import BrandShippedOrderReport from '../components/BrandShippedOrderReport'
+import BrandOrdersPromoSettings from '../components/BrandOrdersPromoSettings'
 import type { CSSProperties } from 'react'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
@@ -51,9 +52,9 @@ export default function BrandTabOrders({ myBrands }: Props) {
         selectedBrandId={selectedBrandId}
         onBrandChange={handleBrandChange}
       />
-      <div style={{ textAlign: 'center', padding: 12, color: 'rgba(255,255,255,0.3)', fontSize: 11 }}>
-        재구매 프로모션은 "등급 패키지관리" 탭에서 등급별로 설정할 수 있어요
-      </div>
+      {selectedBrandId && companyId && (
+        <BrandOrdersPromoSettings brandId={selectedBrandId} companyId={companyId} />
+      )}
       <BrandOrderBatchApproval
         brandId={selectedBrandId}
         brandIds={myBrands.map((b) => b.id)}

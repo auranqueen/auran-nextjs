@@ -503,8 +503,10 @@ export default function BrandOrdersPage() {
   const activeGrade = gradeForBrand(gradeByBrandId, popupBrandId)
   const headerBrandId = brandFilter !== 'all' ? brandFilter : linkedBrandIds[0]
   const headerGrade = gradeForBrand(gradeByBrandId, headerBrandId)
-  const { rateMap: gradeRateMap } = useBrandGradeRates(supabase, popupBrandId)
-  const { rateMap: headerGradeRateMap } = useBrandGradeRates(supabase, headerBrandId)
+  const popupCompanyId = popupBrandId ? (brandCompanyMap[popupBrandId] || null) : null
+  const headerCompanyId = headerBrandId ? (brandCompanyMap[headerBrandId] || null) : null
+  const { rateMap: gradeRateMap } = useBrandGradeRates(supabase, popupCompanyId)
+  const { rateMap: headerGradeRateMap } = useBrandGradeRates(supabase, headerCompanyId)
 
   const popupTotalAmount = popupCart.reduce(
     (s, c) => s + buildOrderLineItem(
@@ -667,6 +669,19 @@ export default function BrandOrdersPage() {
       if (!byBrand.has(id)) byBrand.set(id, [])
       byBrand.get(id)!.push(c)
     }
+    const cartCompanyIds = Array.from(new Set(Array.from(byBrand.keys()).map((bid) => brandCompanyMap[bid]).filter(Boolean))) as string[]
+    const ratesByCompany: Record<string, Record<string, number>> = {}
+    if (cartCompanyIds.length > 0) {
+      const { data: rateRows } = await supabase
+        .from('brand_grade_point_rates')
+        .select('company_id, grade, rate')
+        .in('company_id', cartCompanyIds)
+      for (const row of rateRows || []) {
+        const cid = String((row as { company_id: string }).company_id)
+        if (!ratesByCompany[cid]) ratesByCompany[cid] = {}
+        ratesByCompany[cid][String((row as { grade: string }).grade)] = Number((row as { rate: number }).rate)
+      }
+    }
     const wholeCartItems = cart.map((c) => ({
       product_id: c.product.id,
       qty: c.qty,
@@ -712,7 +727,8 @@ export default function BrandOrdersPage() {
         : 0
       const totalAmount = brandLineTotal - brandShareDiscount
       const promoApplied = items.map((i) => i.promo).filter(Boolean).join(', ') || null
-      const pointsEarned = calcPointsEarned(totalAmount, orderGrade, null)
+      const companyIdForBrand = brandCompanyMap[brandId]
+      const pointsEarned = calcPointsEarned(totalAmount, orderGrade, companyIdForBrand ? (ratesByCompany[companyIdForBrand] ?? null) : null)
       return {
         brand_id: brandId,
         profile_id: ownerProfileId,

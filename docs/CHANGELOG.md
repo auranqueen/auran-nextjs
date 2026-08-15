@@ -4,6 +4,10 @@
 ---
 
 
+## 2026-08-15
+### feat: brand_grade_point_rates 컴퍼니화(brand_id→company_id) + 설정화면 재연결
+- brand_grade_point_rates(등급별 발주 적립율)를 brand_id 기준에서 company_id 기준으로 전환("컴퍼니가 모든 걸 지배한다" 원칙 적용). DB: company_id 컬럼 추가+백필+중복정리+UNIQUE(company_id,grade)+RLS 5개 재작성. 코드: useBrandGradeRates 훅 시그니처 변경, BrandOrdersPromoSettings.tsx(고아컴포넌트였던 것을 재활용, 적립율 부분만 company_id화, 프로모션supply_promos는 brand_id 유지)를 BrandTabOrders.tsx에 재연결, 원장 발주화면(brand-orders/page.tsx) 미리보기+실제 적립계산(submitOrder) 전부 companyId 기준으로 전환
+
 ## 2026-08-14
 ### fix: 파우치등급 계산공식 3곳 통일(ARETE만 제외)
 - 파우치등급(calcPouchTier) 계산공식을 화면(invoice/page.tsx)·SYNC_API(brand-billing-invoice/sync)·월말정산크론(aggregateBrandBilling.ts) 3곳 모두 통일: 기준액 = 발주총액 − 아레테사용액만(REWARD는 제외 안 함, 청구액 계산에만 반영). SYNC_API는 pouch_basis_amount 필드를 새로 받고 하위호환 폴백(없으면 total_amount 사용) 처리

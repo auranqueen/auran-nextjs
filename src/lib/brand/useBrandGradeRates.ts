@@ -3,12 +3,12 @@
 import { useCallback, useEffect, useState } from 'react'
 
 /** brand_grade_point_rates → grade→rate 맵. 없으면 빈 객체. */
-export function useBrandGradeRates(supabase: any, brandId: string | null | undefined) {
+export function useBrandGradeRates(supabase: any, companyId: string | null | undefined) {
   const [rateMap, setRateMap] = useState<Record<string, number>>({})
   const [loading, setLoading] = useState(false)
 
   const reload = useCallback(async () => {
-    if (!brandId) {
+    if (!companyId) {
       setRateMap({})
       setLoading(false)
       return
@@ -17,7 +17,7 @@ export function useBrandGradeRates(supabase: any, brandId: string | null | undef
     const { data, error } = await supabase
       .from('brand_grade_point_rates')
       .select('grade, rate')
-      .eq('brand_id', brandId)
+      .eq('company_id', companyId)
     if (error) {
       console.warn('[useBrandGradeRates]', error.message)
       setRateMap({})
@@ -31,7 +31,7 @@ export function useBrandGradeRates(supabase: any, brandId: string | null | undef
       setRateMap(map)
     }
     setLoading(false)
-  }, [brandId])
+  }, [companyId])
 
   useEffect(() => {
     void reload()

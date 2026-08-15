@@ -66,9 +66,9 @@ function DraftFields({ draft, setDraft }: { draft: PromoDraft; setDraft: Dispatc
   )
 }
 
-interface Props { brandId: string }
+interface Props { brandId: string; companyId: string }
 
-export default function BrandOrdersPromoSettings({ brandId }: Props) {
+export default function BrandOrdersPromoSettings({ brandId, companyId }: Props) {
   const supabase = createClient()
   const [toast, setToast] = useState('')
   const [rates, setRates] = useState<Record<string, number>>({ ...GRADE_POINT_RATES })
@@ -89,7 +89,7 @@ export default function BrandOrdersPromoSettings({ brandId }: Props) {
 
   const loadRates = useCallback(async () => {
     const base = { ...GRADE_POINT_RATES }
-    const { data, error } = await supabase.from('brand_grade_point_rates').select('grade, rate').eq('brand_id', brandId)
+    const { data, error } = await supabase.from('brand_grade_point_rates').select('grade, rate').eq('company_id', companyId)
     if (!error && data) {
       for (const row of data as { grade?: string; rate?: number }[]) {
         const g = String(row.grade || '').trim()
@@ -98,7 +98,7 @@ export default function BrandOrdersPromoSettings({ brandId }: Props) {
       }
     }
     setRates(base)
-  }, [brandId])
+  }, [companyId])
 
   const loadPromos = useCallback(async () => {
     setLoadingPromos(true)
@@ -123,10 +123,10 @@ export default function BrandOrdersPromoSettings({ brandId }: Props) {
     const rate = Number(draftRate)
     if (!Number.isFinite(rate) || rate < 0) { showToast('적립율을 숫자로 입력해주세요'); return }
     setSavingRate(true)
-    const { data: existing } = await supabase.from('brand_grade_point_rates').select('id').eq('brand_id', brandId).eq('grade', grade).maybeSingle()
+    const { data: existing } = await supabase.from('brand_grade_point_rates').select('id').eq('company_id', companyId).eq('grade', grade).maybeSingle()
     const { error } = existing?.id
       ? await supabase.from('brand_grade_point_rates').update({ rate }).eq('id', existing.id)
-      : await supabase.from('brand_grade_point_rates').insert({ brand_id: brandId, grade, rate })
+      : await supabase.from('brand_grade_point_rates').insert({ company_id: companyId, grade, rate })
     setSavingRate(false)
     if (error) { showToast('적립율 저장 실패: ' + error.message); return }
     setRates((prev) => ({ ...prev, [grade]: rate }))
@@ -185,7 +185,7 @@ export default function BrandOrdersPromoSettings({ brandId }: Props) {
       )}
       <div style={CARD}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 12 }}>
-          <div style={{ fontSize: 12, color: SUB }}>📊 등급별 적립율</div>
+          <div style={{ fontSize: 12, color: SUB }}>📊 등급별 적립율 (회사 전체 브랜드 공통 적용)</div>
           {!promoOpen ? (
             <button
               type="button"
