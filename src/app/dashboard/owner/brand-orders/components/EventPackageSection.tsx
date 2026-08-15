@@ -202,6 +202,21 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
           remaining -= pointsByOrder[id]
         })
       }
+      const rewardByOrder: Record<string, number> = {}
+      if (usePointsReward && selectedRewardBalance > 0 && orderIds.length) {
+        const afterAreteTotal = usePoints ? Math.max(0, rawGrandTotal - discountTotal - selectedBalance) : rawGrandTotal - discountTotal
+        const rewardUsedTotal = Math.min(selectedRewardBalance, afterAreteTotal)
+        if (rewardUsedTotal > 0) {
+          let remainingReward = rewardUsedTotal
+          orderIds.forEach((id, idx) => {
+            const g = groupList[idx]
+            if (!g) return
+            const share = idx === orderIds.length - 1 ? remainingReward : Math.round(rewardUsedTotal * (g.amount / afterAreteTotal))
+            rewardByOrder[id] = Math.min(share, remainingReward)
+            remainingReward -= rewardByOrder[id]
+          })
+        }
+      }
       const earnedByOrder: Record<string, number> = {}
       if (selectedCompanyId && gradeByCompany[selectedCompanyId] && orderIds.length) {
         const grade = gradeByCompany[selectedCompanyId]
@@ -210,37 +225,26 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
           const item = cartItems[idx]
           if (!item) return
           const areteUsed = pointsByOrder[id] || 0
-          const netForEarning = Math.max(0, item.total_amount - areteUsed)
+          const rewardUsed = rewardByOrder[id] || 0
+          const netForEarning = Math.max(0, item.total_amount - areteUsed - rewardUsed)
           earnedByOrder[id] = calcPointsEarned(netForEarning, grade, rateMap)
         })
       }
-      if ((Object.keys(pointsByOrder).length > 0 || Object.keys(earnedByOrder).length > 0) && orderIds.length) {
+      if (orderIds.length) {
         await fetch('/api/brand-orders/apply-event-points', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ points_by_order: pointsByOrder, earned_by_order: earnedByOrder }),
         }).catch(() => {})
       }
-      if (usePointsReward && selectedRewardBalance > 0 && orderIds.length) {
-        const afterAreteTotal = usePoints ? Math.max(0, rawGrandTotal - discountTotal - selectedBalance) : rawGrandTotal - discountTotal
-        const rewardUsedTotal = Math.min(selectedRewardBalance, afterAreteTotal)
-        if (rewardUsedTotal > 0) {
-          let remainingReward = rewardUsedTotal
-          const rewardByOrder: Record<string, number> = {}
-          orderIds.forEach((id, idx) => {
-            const g = groupList[idx]
-            if (!g) return
-            const share = idx === orderIds.length - 1 ? remainingReward : Math.round(rewardUsedTotal * (g.amount / afterAreteTotal))
-            rewardByOrder[id] = Math.min(share, remainingReward)
-            remainingReward -= rewardByOrder[id]
-          })
-          await fetch('/api/brand-orders/apply-reward-points', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ points_by_order: rewardByOrder }),
-          }).catch(() => {})
-        }
+      if (Object.keys(rewardByOrder).length > 0) {
+        await fetch('/api/brand-orders/apply-reward-points', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ points_by_order: rewardByOrder }),
+        }).catch(() => {})
       }
+
       showToast('패키지 주문이 접수됐어요!')
       setSelected(null)
     } catch {

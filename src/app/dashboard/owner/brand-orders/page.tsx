@@ -774,11 +774,21 @@ export default function BrandOrdersPage() {
             remaining -= applied
           })
         })
-        if (Object.keys(pointsByOrder).length > 0) {
+        const earnedByOrder: Record<string, number> = {}
+        cartItems.forEach((item, idx) => {
+          const orderId = result.order_ids![idx]
+          if (!orderId) return
+          const cid = brandCompanyMap[item.brand_id]
+          const rateMap = cid ? (ratesByCompany[cid] ?? null) : null
+          const rewardUsed = pointsByOrder[orderId] || 0
+          const netForEarning = Math.max(0, item.total_amount - rewardUsed)
+          earnedByOrder[orderId] = calcPointsEarned(netForEarning, item.grade, rateMap)
+        })
+        if (Object.keys(pointsByOrder).length > 0 || Object.keys(earnedByOrder).length > 0) {
           await fetch('/api/brand-orders/apply-reward-points', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ points_by_order: pointsByOrder }),
+            body: JSON.stringify({ points_by_order: pointsByOrder, earned_by_order: earnedByOrder }),
           }).catch(() => {})
         }
       }
