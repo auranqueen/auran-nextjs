@@ -7,7 +7,8 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ ok: false, error: 'not_logged_in' }, { status: 401 })
   const body = await req.json().catch(() => ({}))
   const pointsByOrder = (body?.points_by_order || {}) as Record<string, number>
-  const orderIds = Object.keys(pointsByOrder)
+  const earnedByOrder = (body?.earned_by_order || {}) as Record<string, number>
+  const orderIds = Array.from(new Set([...Object.keys(pointsByOrder), ...Object.keys(earnedByOrder)]))
   if (!orderIds.length) {
     return NextResponse.json({ ok: false, error: 'no_orders' }, { status: 400 })
   }
@@ -24,8 +25,12 @@ export async function POST(req: NextRequest) {
     .map((o: { id: string }) => o.id)
   for (const id of validIds) {
     const pts = Math.trunc(Number(pointsByOrder[id]) || 0)
-    if (pts > 0) {
-      await svc.from('brand_orders').update({ points_used: pts }).eq('id', id)
+    const earned = Math.trunc(Number(earnedByOrder[id]) || 0)
+    const update: Record<string, number> = {}
+    if (pts > 0) update.points_used = pts
+    if (earnedByOrder[id] !== undefined && earned >= 0) update.points_earned = earned
+    if (Object.keys(update).length > 0) {
+      await svc.from('brand_orders').update(update).eq('id', id)
     }
   }
   return NextResponse.json({ ok: true, updated: validIds.length })

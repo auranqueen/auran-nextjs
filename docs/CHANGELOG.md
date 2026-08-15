@@ -5,6 +5,9 @@
 
 
 ## 2026-08-15
+### feat: 이벤트패키지 등급적립 추가(아레테결제분 제외)
+- 이벤트패키지 주문에 등급별 적립(points_earned) 신규 추가, 단 아레테포인트로 결제한 금액은 적립기준에서 제외(실결제액 기준). apply-event-points API 확장(earned_by_order 필드로 points_used와 함께 points_earned도 같은 요청에서 업데이트). EventPackageSection에 회사별 등급(brand_owner_grades)+적립율(brand_grade_point_rates) 자체조회 추가, 등급정보 없는 회사는 적립 스킵. REWARD(apply-reward-points) 로직은 무수정
+
 ### feat: brand_grade_point_rates 컴퍼니화(brand_id→company_id) + 설정화면 재연결
 - brand_grade_point_rates(등급별 발주 적립율)를 brand_id 기준에서 company_id 기준으로 전환("컴퍼니가 모든 걸 지배한다" 원칙 적용). DB: company_id 컬럼 추가+백필+중복정리+UNIQUE(company_id,grade)+RLS 5개 재작성. 코드: useBrandGradeRates 훅 시그니처 변경, BrandOrdersPromoSettings.tsx(고아컴포넌트였던 것을 재활용, 적립율 부분만 company_id화, 프로모션supply_promos는 brand_id 유지)를 BrandTabOrders.tsx에 재연결, 원장 발주화면(brand-orders/page.tsx) 미리보기+실제 적립계산(submitOrder) 전부 companyId 기준으로 전환
 

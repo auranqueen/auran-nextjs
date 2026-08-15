@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { HqForcedCampaign } from '@/lib/brand/hqForcedCampaignPromos'
 import { submitOrderBatch } from '@/lib/brand/submitOrderBatch'
 import { resolveHqCampaignEffects } from '@/lib/brand/hqForcedCampaignPromos'
+import { calcPointsEarned } from '@/lib/brand/brandOrderPromos'
 interface Props {
   campaigns: HqForcedCampaign[]
   ownerProfileId: string | null
@@ -26,6 +27,8 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
   const [productMap, setProductMap] = useState<Record<string, ProductInfo>>({})
   const [pointBalances, setPointBalances] = useState<Record<string, number>>({})
   const [rewardBalances, setRewardBalances] = useState<Record<string, number>>({})
+  const [gradeByCompany, setGradeByCompany] = useState<Record<string, string>>({})
+  const [ratesByCompany, setRatesByCompany] = useState<Record<string, Record<string, number>>>({})
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [selected, setSelected] = useState<HqForcedCampaign | null>(null)
   const [usePoints, setUsePoints] = useState(true)
@@ -99,6 +102,39 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
     })()
     return () => { cancelled = true }
   }, [ownerProfileId, companyIds, supabase])
+  useEffect(() => {
+    if (!ownerProfileId || !companyIds.length) { setGradeByCompany({}); setRatesByCompany({}); return }
+    let cancelled = false
+    void (async () => {
+      const [{ data: gradeRows }, { data: rateRows }] = await Promise.all([
+        supabase
+          .from('brand_owner_grades')
+          .select('company_id, grade')
+          .eq('owner_id', ownerProfileId)
+          .eq('origin_track', 'A')
+          .eq('payment_status', 'paid')
+          .in('company_id', companyIds),
+        supabase
+          .from('brand_grade_point_rates')
+          .select('company_id, grade, rate')
+          .in('company_id', companyIds),
+      ])
+      if (cancelled) return
+      const gMap: Record<string, string> = {}
+      for (const r of (gradeRows || []) as { company_id: string; grade: string }[]) {
+        gMap[r.company_id] = r.grade
+      }
+      const rMap: Record<string, Record<string, number>> = {}
+      for (const r of (rateRows || []) as { company_id: string; grade: string; rate: number }[]) {
+        if (!rMap[r.company_id]) rMap[r.company_id] = {}
+        rMap[r.company_id][r.grade] = Number(r.rate)
+      }
+      setGradeByCompany(gMap)
+      setRatesByCompany(rMap)
+    })()
+    return () => { cancelled = true }
+  }, [ownerProfileId, companyIds, supabase])
+
   const campaignTotal = useCallback((c: HqForcedCampaign) => {
     return (c.target_product_ids || []).reduce((sum, pid) => {
       const p = productMap[pid]
@@ -153,11 +189,11 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
         return
       }
       const orderIds: string[] = result.order_ids || []
+      const pointsByOrder: Record<string, number> = {}
       if (usePoints && selectedBalance > 0 && orderIds.length) {
         const grandTotal = rawGrandTotal - discountTotal
         const pointsUsedTotal = Math.min(selectedBalance, grandTotal)
         let remaining = pointsUsedTotal
-        const pointsByOrder: Record<string, number> = {}
         orderIds.forEach((id, idx) => {
           const g = groupList[idx]
           if (!g) return
@@ -165,10 +201,24 @@ export default function EventPackageSection({ campaigns, ownerProfileId }: Props
           pointsByOrder[id] = Math.min(share, remaining)
           remaining -= pointsByOrder[id]
         })
+      }
+      const earnedByOrder: Record<string, number> = {}
+      if (selectedCompanyId && gradeByCompany[selectedCompanyId] && orderIds.length) {
+        const grade = gradeByCompany[selectedCompanyId]
+        const rateMap = ratesByCompany[selectedCompanyId] ?? null
+        orderIds.forEach((id, idx) => {
+          const item = cartItems[idx]
+          if (!item) return
+          const areteUsed = pointsByOrder[id] || 0
+          const netForEarning = Math.max(0, item.total_amount - areteUsed)
+          earnedByOrder[id] = calcPointsEarned(netForEarning, grade, rateMap)
+        })
+      }
+      if ((Object.keys(pointsByOrder).length > 0 || Object.keys(earnedByOrder).length > 0) && orderIds.length) {
         await fetch('/api/brand-orders/apply-event-points', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ points_by_order: pointsByOrder }),
+          body: JSON.stringify({ points_by_order: pointsByOrder, earned_by_order: earnedByOrder }),
         }).catch(() => {})
       }
       if (usePointsReward && selectedRewardBalance > 0 && orderIds.length) {
