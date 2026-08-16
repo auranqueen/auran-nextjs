@@ -8,6 +8,8 @@ import DashboardBottomNav from '@/components/DashboardBottomNav'
 import BrandOrderProductCard, { type BrandOrderProduct } from './BrandOrderProductCard'
 import EventPackageSection from './components/EventPackageSection'
 import AreteMembershipCard from './components/AreteMembershipCard'
+import OwnerOrderStatement from './components/OwnerOrderStatement'
+import { BORDER, PURPLE, SUB, TEXT } from './brandOrdersUi'
 import {
   buildOrderLineItem,
   calcPointsEarned,
@@ -22,10 +24,6 @@ import { submitOrderBatch } from '@/lib/brand/submitOrderBatch'
 import { resolveHqCampaignEffects, type HqForcedCampaign } from '@/lib/brand/hqForcedCampaignPromos'
 
 const BG = '#ffffff'
-const PURPLE = '#7B5EA7'
-const BORDER = '#ede9f7'
-const TEXT = '#1A1A2E'
-const SUB = '#888888'
 const LIGHT = '#f8f7fc'
 const QTY_STEP = 5
 const DEFAULT_GRADE = '취급점'
@@ -53,11 +51,6 @@ interface OrderItem {
   line_amount?: number
   bonus?: number
   promo?: string
-}
-
-function formatOrderItemLine(it: OrderItem): string {
-  const bonus = Math.trunc(Number(it.bonus) || 0)
-  return `${it.name} ${it.qty}ea${bonus > 0 ? ` (+${bonus} 증정)` : ''}`
 }
 
 function gradeForBrand(gradeByBrandId: Record<string, string>, brandId: string | null | undefined): string {
@@ -850,24 +843,6 @@ export default function BrandOrdersPage() {
     setReturnSaving(false)
   }
 
-  const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
-    pending: { label: '대기중', color: '#A07830', bg: '#FBF5E8' },
-    approved: { label: '승인됨', color: '#1E6B40', bg: '#EAF5EE' },
-    shipping: { label: '배송중', color: '#185FA5', bg: '#E6F1FB' },
-    done: { label: '완료', color: '#888888', bg: '#F5F5F5' },
-    cancelled: { label: '취소', color: '#C0392B', bg: '#FAEAEA' },
-  }
-
-  const timeAgo = (iso: string) => {
-    const diff = Date.now() - new Date(iso).getTime()
-    const m = Math.floor(diff / 60000)
-    if (m < 1) return '방금 전'
-    if (m < 60) return `${m}분 전`
-    const h = Math.floor(m / 60)
-    if (h < 24) return `${h}시간 전`
-    return `${Math.floor(h / 24)}일 전`
-  }
-
   if (loading) {
     return (
       <div style={{ background: BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: SUB }}>
@@ -1035,44 +1010,13 @@ export default function BrandOrdersPage() {
 
       {tab === 'orders' && (
         <div style={{ padding: '0 16px' }}>
-          {orders.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '60px 0', color: SUB, fontSize: 14 }}>발주 내역이 없어요</div>
-          ) : (
-            orders.map((o) => {
-              const st = STATUS_MAP[o.status] || { label: o.status, color: SUB, bg: '#F5F5F5' }
-              return (
-                <div key={o.id} style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 10, padding: '12px', marginBottom: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: TEXT }}>{o.brand_name}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 11, color: SUB }}>{timeAgo(o.created_at)}</span>
-                      <span style={{ fontSize: 11, padding: '2px 9px', borderRadius: 10, background: st.bg, color: st.color }}>{st.label}</span>
-                    </div>
-                  </div>
-                  <div style={{ fontSize: 12, color: SUB, marginBottom: 4 }}>
-                    {o.items.map((it) => formatOrderItemLine(it)).join(' · ')}
-                  </div>
-                  {o.total_amount > 0 && (
-                    <div style={{ fontSize: 12, color: TEXT, marginBottom: 4 }}>₩{o.total_amount.toLocaleString()}</div>
-                  )}
-                  {o.promo_applied && <div style={{ fontSize: 11, color: PURPLE }}>{o.promo_applied} 적용</div>}
-                  {o.points_earned > 0 && <div style={{ fontSize: 11, color: '#1E6B40', marginTop: 2 }}>+{o.points_earned}T 적립 예정</div>}
-                  {o.tracking_no && (
-                    <div style={{ fontSize: 11, color: '#185FA5', marginTop: 4, padding: '4px 8px', background: '#E6F1FB', borderRadius: 6, display: 'inline-block' }}>
-                      📦 {o.courier} {o.tracking_no}
-                    </div>
-                  )}
-                  {(o.status === 'shipping' || o.status === 'done') && (
-                    <button type="button"
-                      onClick={() => { setReturnPopup({ open: true, order: o }); setReturnQty(o.items.reduce((s, i) => s + i.qty, 0)) }}
-                      style={{ marginTop: 6, fontSize: 11, padding: '4px 10px', borderRadius: 5, border: '0.5px solid rgba(229,57,53,0.3)', background: 'rgba(229,57,53,0.06)', color: '#E53935', cursor: 'pointer', display: 'block' }}>
-                      반품·교환 신청
-                    </button>
-                  )}
-                </div>
-              )
-            })
-          )}
+          <OwnerOrderStatement
+            ownerProfileId={ownerProfileId}
+            onReturnRequest={(o) => {
+              setReturnPopup({ open: true, order: o as Order })
+              setReturnQty(o.items.reduce((s, i) => s + i.qty, 0))
+            }}
+          />
         </div>
       )}
 

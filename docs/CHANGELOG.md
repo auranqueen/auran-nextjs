@@ -5,6 +5,9 @@
 
 
 ## 2026-08-16
+### feat: 원장 발주내역 명세화면 전면개편
+- 원장 발주내역탭을 명세형태로 전면 개편(OwnerOrderStatement.tsx 신규). 주문별 품목+발주합계+아레테/REWARD 사용액+실결제금액+적립예정 상세표시, 파우치 상태(트랙A brand_billing_invoices+트랙B hq_pouch_records 병합, 승인전/준비중/도착 3단계 원장친화 문구), 아레테/REWARD 잔여포인트 요약. "발송완료" 대신 "배송완료"로 수신자 관점 용어 통일. 공용UI상수는 brandOrdersUi.ts로 분리(순환import 방지). 탭카운트/명세 둘다 20건 통일, 반품·교환 버튼 콜백prop으로 복원
+
 ### feat: 등급파우치 트랙B(오렌몰) 통합
 - 등급파우치 시스템에 트랙B(오렌몰) 통합 완료. 신규테이블 hq_pouch_records(company_id+owner_id+billing_month 유니크, 트랙A의 brand_billing_invoices 파우치컬럼과 동일구조지만 완전분리)로 트랙 격리 유지. BrandTabPouch.tsx에 aggregateTrackB() 추가 — hq_stock_orders를 당월(1일~말일) 결제완료/배송완료/구매확정 상태로 집계해 등급판정(트랙A와 동일 200/300/500만원 기준, calcPouchTier 공유). 승인대상 리스트/발송처리(BrandPouchFulfillmentList) 둘다 트랙A/B를 뱃지로 구분해 통합표시, 승인·발송 액션은 track별로 올바른 테이블에 분기 처리. pouch_tier_kits(파우치 구성)는 트랙 무관 공용 재사용. 마이그레이션 161.
 
