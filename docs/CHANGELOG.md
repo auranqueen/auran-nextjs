@@ -5,6 +5,9 @@
 
 
 ## 2026-08-16
+### fix: 시바산 물류 로그인 계정문의 이메일 교체
+- auran.kr/logi/civasan(및 logi/[slug]) 하단 「계정 문의」 이메일을 queen8039@gmail.com → civasandesign@gmail.com으로 교체. 해당 문구만 수정.
+
 ### feat: 원장 발주내역 명세화면 전면개편
 - 원장 발주내역탭을 명세형태로 전면 개편(OwnerOrderStatement.tsx 신규). 주문별 품목+발주합계+아레테/REWARD 사용액+실결제금액+적립예정 상세표시, 파우치 상태(트랙A brand_billing_invoices+트랙B hq_pouch_records 병합, 승인전/준비중/도착 3단계 원장친화 문구), 아레테/REWARD 잔여포인트 요약. "발송완료" 대신 "배송완료"로 수신자 관점 용어 통일. 공용UI상수는 brandOrdersUi.ts로 분리(순환import 방지). 탭카운트/명세 둘다 20건 통일, 반품·교환 버튼 콜백prop으로 복원
 
