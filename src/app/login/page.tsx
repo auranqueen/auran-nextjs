@@ -3,6 +3,7 @@ import FindAccountModalImport from '@/components/FindAccountModal'
 import { useEffect, useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { suppressAuthRedirect } from '@/lib/auth/suppressRedirect'
 import { normalizePosition, positionToDashboardPath, POSITION_STORAGE_KEY } from '@/lib/position'
 import { useAdminSettings } from '@/hooks/useAdminSettings'
 import Loading from '@/app/loading'
@@ -139,6 +140,7 @@ function LoginForm() {
 
       if (userData?.status === 'suspended') {
         setError('정지된 계정입니다. 고객센터에 문의해주세요.')
+        suppressAuthRedirect()
         await supabase.auth.signOut()
         return
       }
@@ -153,6 +155,7 @@ function LoginForm() {
           effectiveRole === 'brand' ||
           effectiveRole === 'salon')
       if (needsApproval) {
+        suppressAuthRedirect()
         await supabase.auth.signOut()
         const r = effectiveRole === 'salon' ? 'owner' : effectiveRole
         router.replace(`/auth/pending-approval?role=${encodeURIComponent(r)}`)

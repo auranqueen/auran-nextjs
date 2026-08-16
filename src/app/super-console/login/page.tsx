@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { suppressAuthRedirect } from '@/lib/auth/suppressRedirect'
 
 export default function SuperConsoleLoginPage() {
   const router = useRouter()
@@ -58,6 +59,7 @@ export default function SuperConsoleLoginPage() {
       // role check: server-side verify (service role, avoids RLS issues)
       const res = await fetch('/api/super-console/verify', { method: 'GET' })
       if (!res.ok) {
+        suppressAuthRedirect()
         await supabase.auth.signOut()
         setError('접근 권한이 없습니다')
         return

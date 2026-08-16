@@ -3,6 +3,7 @@ import FindAccountModal from '@/components/FindAccountModal'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { suppressAuthRedirect } from '@/lib/auth/suppressRedirect'
 interface BrandInfo {
   id: string
   name: string
@@ -127,6 +128,7 @@ export default function BrandLoginPage() {
         }
       }
       if (!memberFound && myUser?.role !== 'admin') {
+        suppressAuthRedirect()
         await supabase.auth.signOut()
         setError('이 브랜드 허브에 접근 권한이 없어요')
         setLoading(false)

@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { suppressAuthRedirect } from '@/lib/auth/suppressRedirect'
 interface BrandInfo {
   id: string
   name: string
@@ -88,6 +89,7 @@ export default function LogiLoginPage() {
       }
     }
     if (!allowed) {
+      suppressAuthRedirect()
       await supabase.auth.signOut()
       setError('이 물류 허브에 접근 권한이 없어요')
       setLoading(false); return

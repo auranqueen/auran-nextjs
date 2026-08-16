@@ -1,6 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
+import { isAuthRedirectSuppressed } from '@/lib/auth/suppressRedirect'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
@@ -18,10 +19,9 @@ export function AuthSessionProvider({ children }: { children: React.ReactNode })
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, _session) => {
       if (event === 'SIGNED_OUT') {
-        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login') && !window.location.pathname.startsWith('/signup') && !window.location.pathname.startsWith('/auth/pending-approval') && !window.location.pathname.startsWith('/auth/done') && !window.location.pathname.startsWith('/auth/callback') && !window.location.pathname.startsWith('/auth/exchange') && !window.location.pathname.startsWith('/owner/') && !window.location.pathname.startsWith('/partner/') && !window.location.pathname.startsWith('/brand/')) {
+        if (typeof window !== 'undefined' && !isAuthRedirectSuppressed()) {
           setTimeout(() => {
-            const p = window.location.pathname
-            if (p.startsWith('/login') || p.startsWith('/signup') || p.startsWith('/auth/')) return
+            if (isAuthRedirectSuppressed()) return
             void supabase.auth.getSession().then(({ data }) => {
               if (data.session?.user) return
               router.replace('/login')

@@ -3,6 +3,7 @@ import FindAccountModal from '@/components/FindAccountModal'
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { suppressAuthRedirect } from '@/lib/auth/suppressRedirect'
 interface OwnerInfo {
   id: string
   full_name: string | null
@@ -65,6 +66,7 @@ export default function OwnerLoginPage() {
       return
     }
     if (data.user.id !== owner.auth_id) {
+      suppressAuthRedirect()
       await supabase.auth.signOut()
       setError('이 원장님 콘솔에 접근 권한이 없어요')
       setLoading(false)

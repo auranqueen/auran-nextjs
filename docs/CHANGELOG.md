@@ -5,6 +5,9 @@
 
 
 ## 2026-08-16
+### fix: 권한실패 signOut 시 전역 /login 강제이동 억제
+- suppressRedirect 플래그(3초) 도입. login·logi·brand·owner·partner·super-console에서 권한 실패 직전 suppressAuthRedirect() 후 signOut. AuthSessionProvider는 경로 화이트리스트 대신 isAuthRedirectSuppressed()로 SIGNED_OUT→/login 리다이렉트 억제.
+
 ### fix: 시바산 물류 로그인 계정문의 이메일 교체
 - auran.kr/logi/civasan(및 logi/[slug]) 하단 「계정 문의」 이메일을 queen8039@gmail.com → civasandesign@gmail.com으로 교체. 해당 문구만 수정.
 
