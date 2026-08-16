@@ -2,8 +2,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
+import { calcPouchTier } from '@/lib/brand/brandBilling'
 import type { CSSProperties } from 'react'
-
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
@@ -13,13 +13,12 @@ const BORDER = 'rgba(255,255,255,0.05)'
 const GREEN = 'rgba(76,175,80,0.8)'
 const TIERS = [200, 300, 500] as const
 type Tier = (typeof TIERS)[number]
-
 const TIER_COLOR: Record<Tier, string> = {
   200: 'rgba(100,181,246,0.85)',
   300: GOLD,
   500: 'rgba(229,115,115,0.9)',
 }
-
+const HQ_PAID_STATUSES = ['결제완료', '배송완료', '구매확정']
 type KitRow = {
   id: string
   company_id: string
@@ -28,44 +27,46 @@ type KitRow = {
   qty: number
   product_name?: string
 }
-
 type SampleProduct = { id: string; name: string }
-
-type InvoiceRow = {
+type PouchRow = {
   id: string
+  track: 'A' | 'B'
   owner_id: string
   billing_month: string
   total_amount: number
   pouch_tier: number | null
   pouch_status: string | null
-  status: string
 }
-
 type OwnerInfo = { name: string; salon: string }
 type DraftLine = { product_id: string; qty: number }
-
 type Props = {
   myBrands: { id: string; name: string }[]
   brandId: string | null
 }
-
 function monthLabel(ym: string) {
   return String(ym || '').slice(0, 7) || '-'
 }
-
 function pouchStatusMeta(status: string | null) {
   if (status === 'shipped') return { label: '발송완료', color: GREEN }
   if (status === 'approved') return { label: '승인됨', color: 'rgba(100,181,246,0.85)' }
   return { label: '승인대기', color: 'rgba(255,193,7,0.85)' }
 }
-
+function currentMonthRange() {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = now.getMonth()
+  const start = new Date(y, m, 1)
+  const end = new Date(y, m + 1, 1)
+  const billingMonth = `${y}-${String(m + 1).padStart(2, '0')}-01`
+  return { startIso: start.toISOString(), endIso: end.toISOString(), billingMonth }
+}
 export default function BrandTabPouch({ myBrands: _myBrands, brandId }: Props) {
   const supabase = createClient()
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
   const [kits, setKits] = useState<KitRow[]>([])
   const [sampleProducts, setSampleProducts] = useState<SampleProduct[]>([])
-  const [invoices, setInvoices] = useState<InvoiceRow[]>([])
+  const [rows, setRows] = useState<PouchRow[]>([])
   const [owners, setOwners] = useState<Record<string, OwnerInfo>>({})
   const [months, setMonths] = useState<string[]>([])
   const [monthFilter, setMonthFilter] = useState<string>('')
@@ -76,9 +77,7 @@ export default function BrandTabPouch({ myBrands: _myBrands, brandId }: Props) {
   const [savingKit, setSavingKit] = useState(false)
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [approving, setApproving] = useState(false)
-
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
-
   useEffect(() => {
     if (!brandId) {
       setCompanyId(null)
@@ -97,7 +96,6 @@ export default function BrandTabPouch({ myBrands: _myBrands, brandId }: Props) {
     })()
     return () => { cancelled = true }
   }, [brandId, supabase])
-
   const loadKitsAndProducts = useCallback(async () => {
     if (!companyId || !companyBrandIds.length) {
       setKits([])
@@ -127,27 +125,81 @@ export default function BrandTabPouch({ myBrands: _myBrands, brandId }: Props) {
     })))
     setSampleProducts(products)
   }, [companyId, companyBrandIds, supabase])
-
-  const loadInvoices = useCallback(async () => {
+  const aggregateTrackB = useCallback(async () => {
+    if (!companyId) return
+    const { startIso, endIso, billingMonth } = currentMonthRange()
+    const { data: orderRows } = await supabase
+      .from('hq_stock_orders')
+      .select('profile_id, final_amount, status, ordered_at')
+      .eq('company_id', companyId)
+      .in('status', HQ_PAID_STATUSES)
+      .gte('ordered_at', startIso)
+      .lt('ordered_at', endIso)
+    const sums: Record<string, number> = {}
+    for (const r of (orderRows || []) as { profile_id?: string; final_amount?: number }[]) {
+      const pid = r.profile_id ? String(r.profile_id) : ''
+      if (!pid) continue
+      sums[pid] = (sums[pid] || 0) + Math.trunc(Number(r.final_amount) || 0)
+    }
+    for (const [profileId, total] of Object.entries(sums)) {
+      const tier = calcPouchTier(total)
+      if (!tier) continue
+      const { data: existing } = await supabase
+        .from('hq_pouch_records')
+        .select('id, pouch_status')
+        .eq('company_id', companyId)
+        .eq('owner_id', profileId)
+        .eq('billing_month', billingMonth)
+        .maybeSingle()
+      if (existing?.pouch_status) continue
+      if (existing?.id) {
+        await supabase
+          .from('hq_pouch_records')
+          .update({ total_amount: total, pouch_tier: tier, updated_at: new Date().toISOString() })
+          .eq('id', existing.id)
+      } else {
+        await supabase.from('hq_pouch_records').insert({
+          company_id: companyId,
+          owner_id: profileId,
+          billing_month: billingMonth,
+          total_amount: total,
+          pouch_tier: tier,
+        })
+      }
+    }
+  }, [companyId, supabase])
+  const loadRows = useCallback(async () => {
     if (!companyId) {
-      setInvoices([])
+      setRows([])
       setOwners({})
       setMonths([])
       return
     }
-    const { data: invData } = await supabase
-      .from('brand_billing_invoices')
-      .select('id, owner_id, billing_month, total_amount, pouch_tier, pouch_status, status')
-      .eq('company_id', companyId)
-      .eq('status', 'paid')
-      .not('pouch_tier', 'is', null)
-      .order('billing_month', { ascending: false })
-    const rows = (invData || []) as InvoiceRow[]
-    setInvoices(rows)
-    const monthSet = Array.from(new Set(rows.map((r) => String(r.billing_month).slice(0, 10))))
+    const [{ data: invData }, { data: hqData }] = await Promise.all([
+      supabase
+        .from('brand_billing_invoices')
+        .select('id, owner_id, billing_month, total_amount, pouch_tier, pouch_status, status')
+        .eq('company_id', companyId)
+        .eq('status', 'paid')
+        .not('pouch_tier', 'is', null)
+        .order('billing_month', { ascending: false }),
+      supabase
+        .from('hq_pouch_records')
+        .select('id, owner_id, billing_month, total_amount, pouch_tier, pouch_status')
+        .eq('company_id', companyId)
+        .not('pouch_tier', 'is', null)
+        .order('billing_month', { ascending: false }),
+    ])
+    const aRows: PouchRow[] = ((invData || []) as { id: string; owner_id: string; billing_month: string; total_amount: number; pouch_tier: number | null; pouch_status: string | null }[])
+      .map((r) => ({ ...r, track: 'A' as const }))
+    const bRows: PouchRow[] = ((hqData || []) as { id: string; owner_id: string; billing_month: string; total_amount: number; pouch_tier: number | null; pouch_status: string | null }[])
+      .map((r) => ({ ...r, track: 'B' as const }))
+    const merged = [...aRows, ...bRows]
+    setRows(merged)
+    const monthSet = Array.from(new Set(merged.map((r) => String(r.billing_month).slice(0, 10))))
     setMonths(monthSet)
     setMonthFilter((prev) => (prev && monthSet.includes(prev) ? prev : (monthSet[0] || '')))
-    const ownerIds = Array.from(new Set(rows.map((r) => r.owner_id).filter(Boolean)))
+    const ownerIds = Array.from(new Set(merged.map((r) => r.owner_id).filter(Boolean)))
     if (!ownerIds.length) {
       setOwners({})
       return
@@ -166,15 +218,13 @@ export default function BrandTabPouch({ myBrands: _myBrands, brandId }: Props) {
     }
     setOwners(map)
   }, [companyId, supabase])
-
   const fetchAll = useCallback(async () => {
     setLoading(true)
-    await Promise.all([loadKitsAndProducts(), loadInvoices()])
+    await aggregateTrackB()
+    await Promise.all([loadKitsAndProducts(), loadRows()])
     setLoading(false)
-  }, [loadKitsAndProducts, loadInvoices])
-
+  }, [aggregateTrackB, loadKitsAndProducts, loadRows])
   useEffect(() => { void fetchAll() }, [fetchAll])
-
   const kitsByTier = useMemo(() => {
     const map: Record<Tier, KitRow[]> = { 200: [], 300: [], 500: [] }
     for (const k of kits) {
@@ -182,23 +232,19 @@ export default function BrandTabPouch({ myBrands: _myBrands, brandId }: Props) {
     }
     return map
   }, [kits])
-
-  const filteredInvoices = useMemo(() => {
-    if (!monthFilter) return invoices
-    return invoices.filter((r) => String(r.billing_month).slice(0, 10) === monthFilter)
-  }, [invoices, monthFilter])
-
-  const pendingInvoices = useMemo(
-    () => filteredInvoices.filter((r) => !r.pouch_status),
-    [filteredInvoices],
+  const filteredRows = useMemo(() => {
+    if (!monthFilter) return rows
+    return rows.filter((r) => String(r.billing_month).slice(0, 10) === monthFilter)
+  }, [rows, monthFilter])
+  const pendingRows = useMemo(
+    () => filteredRows.filter((r) => !r.pouch_status),
+    [filteredRows],
   )
-
   const openEdit = (tier: Tier) => {
     const lines = kitsByTier[tier].map((k) => ({ product_id: k.product_id, qty: k.qty }))
     setDraftLines(lines.length ? lines : [{ product_id: '', qty: 1 }])
     setEditTier(tier)
   }
-
   const saveKit = async () => {
     if (!companyId || !editTier) return
     setSavingKit(true)
@@ -246,7 +292,6 @@ export default function BrandTabPouch({ myBrands: _myBrands, brandId }: Props) {
     setSavingKit(false)
     await loadKitsAndProducts()
   }
-
   const buildSnapshotForTier = (tier: number) => {
     return kits
       .filter((k) => k.tier === tier)
@@ -256,8 +301,7 @@ export default function BrandTabPouch({ myBrands: _myBrands, brandId }: Props) {
         qty: k.qty,
       }))
   }
-
-  const approveInvoices = async (ids: string[]) => {
+  const approveRows = async (ids: string[]) => {
     if (!ids.length) {
       showToast('승인할 대상을 선택해주세요')
       return
@@ -265,16 +309,17 @@ export default function BrandTabPouch({ myBrands: _myBrands, brandId }: Props) {
     setApproving(true)
     let ok = 0
     for (const id of ids) {
-      const inv = invoices.find((r) => r.id === id)
-      if (!inv || inv.pouch_status || !inv.pouch_tier) continue
-      const snapshot = buildSnapshotForTier(inv.pouch_tier)
+      const row = rows.find((r) => r.id === id)
+      if (!row || row.pouch_status || !row.pouch_tier) continue
+      const snapshot = buildSnapshotForTier(row.pouch_tier)
       if (!snapshot.length) {
-        showToast(`${inv.pouch_tier}만 구성이 비어 있어요. 먼저 구성을 저장하세요.`)
+        showToast(`${row.pouch_tier}만 구성이 비어 있어요. 먼저 구성을 저장하세요.`)
         setApproving(false)
         return
       }
+      const table = row.track === 'A' ? 'brand_billing_invoices' : 'hq_pouch_records'
       const { error } = await supabase
-        .from('brand_billing_invoices')
+        .from(table)
         .update({
           pouch_kit_snapshot: snapshot,
           pouch_status: 'approved',
@@ -286,32 +331,26 @@ export default function BrandTabPouch({ myBrands: _myBrands, brandId }: Props) {
     showToast(ok > 0 ? `${ok}건 승인 완료` : '승인 실패')
     setSelectedIds([])
     setApproving(false)
-    await loadInvoices()
+    await loadRows()
   }
-
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]))
   }
-
   const toggleSelectAllPending = () => {
-    const pendingIds = pendingInvoices.map((r) => r.id)
+    const pendingIds = pendingRows.map((r) => r.id)
     const allSelected = pendingIds.length > 0 && pendingIds.every((id) => selectedIds.includes(id))
     setSelectedIds(allSelected ? [] : pendingIds)
   }
-
   if (!brandId) {
     return <div style={{ fontSize: 13, color: SUB, padding: 16 }}>브랜드를 선택해주세요</div>
   }
-
   return (
     <div>
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999, whiteSpace: 'nowrap' }}>{toast}</div>
       )}
-
       <div style={{ fontSize: 13, color: TEXT, marginBottom: 8, fontWeight: 600 }}>등급별 파우치 구성</div>
-      <div style={{ fontSize: 11, color: SUB, marginBottom: 12 }}>샘플파우치 제품만 구성에 넣을 수 있어요. 승인 시 이 구성이 스냅샷으로 고정됩니다.</div>
-
+      <div style={{ fontSize: 11, color: SUB, marginBottom: 12 }}>샘플파우치 제품만 구성에 넣을 수 있어요. 승인 시 이 구성이 스냅샷으로 고정됩니다. (트랙A·트랙B 공통 구성)</div>
       {loading ? (
         <div style={{ fontSize: 12, color: SUB, padding: 16 }}>불러오는 중…</div>
       ) : (
@@ -342,7 +381,6 @@ export default function BrandTabPouch({ myBrands: _myBrands, brandId }: Props) {
               </div>
             ))}
           </div>
-
           {editTier !== null && (
             <div style={{ ...CARD, border: `1px solid ${PURPLE}`, marginBottom: 20 }}>
               <div style={{ fontSize: 13, color: GOLD, marginBottom: 10 }}>{editTier}만 구성 수정</div>
@@ -409,7 +447,6 @@ export default function BrandTabPouch({ myBrands: _myBrands, brandId }: Props) {
               </div>
             </div>
           )}
-
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
             <div style={{ fontSize: 13, color: TEXT, fontWeight: 600 }}>파우치 승인 대상</div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -418,7 +455,7 @@ export default function BrandTabPouch({ myBrands: _myBrands, brandId }: Props) {
                 onChange={(e) => setMonthFilter(e.target.value)}
                 style={{ background: '#12101a', color: TEXT, border: `0.5px solid ${BORDER}`, borderRadius: 6, padding: '5px 8px', fontSize: 12 }}
               >
-                {months.length === 0 && <option value="">청구월 없음</option>}
+                {months.length === 0 && <option value="">해당월 없음</option>}
                 {months.map((m) => (
                   <option key={m} value={m}>{monthLabel(m)}</option>
                 ))}
@@ -426,45 +463,47 @@ export default function BrandTabPouch({ myBrands: _myBrands, brandId }: Props) {
               <button
                 type="button"
                 disabled={approving || selectedIds.length === 0}
-                onClick={() => void approveInvoices(selectedIds)}
+                onClick={() => void approveRows(selectedIds)}
                 style={{ fontSize: 12, padding: '6px 12px', borderRadius: 6, border: 'none', background: selectedIds.length ? PURPLE : 'rgba(255,255,255,0.08)', color: '#fff', cursor: selectedIds.length && !approving ? 'pointer' : 'not-allowed' }}
               >
                 {approving ? '승인 중…' : `선택승인 (${selectedIds.length})`}
               </button>
             </div>
           </div>
-
           <div style={CARD}>
-            {filteredInvoices.length === 0 ? (
-              <div style={{ fontSize: 12, color: SUB, textAlign: 'center', padding: 12 }}>이번 조건의 유료 청구서(파우치 등급)가 없어요</div>
+            {filteredRows.length === 0 ? (
+              <div style={{ fontSize: 12, color: SUB, textAlign: 'center', padding: 12 }}>이번 조건의 파우치 등급 대상이 없어요</div>
             ) : (
               <>
-                {pendingInvoices.length > 0 && (
+                {pendingRows.length > 0 && (
                   <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: SUB, marginBottom: 10, cursor: 'pointer' }}>
                     <input
                       type="checkbox"
-                      checked={pendingInvoices.every((r) => selectedIds.includes(r.id)) && pendingInvoices.length > 0}
+                      checked={pendingRows.every((r) => selectedIds.includes(r.id)) && pendingRows.length > 0}
                       onChange={toggleSelectAllPending}
                       style={{ accentColor: PURPLE }}
                     />
                     승인대기 전체 선택
                   </label>
                 )}
-                {filteredInvoices.map((inv) => {
-                  const st = pouchStatusMeta(inv.pouch_status)
-                  const tier = (inv.pouch_tier === 200 || inv.pouch_tier === 300 || inv.pouch_tier === 500) ? inv.pouch_tier as Tier : null
-                  const owner = owners[inv.owner_id]
-                  const waiting = !inv.pouch_status
+                {filteredRows.map((row) => {
+                  const st = pouchStatusMeta(row.pouch_status)
+                  const tier = (row.pouch_tier === 200 || row.pouch_tier === 300 || row.pouch_tier === 500) ? row.pouch_tier as Tier : null
+                  const owner = owners[row.owner_id]
+                  const waiting = !row.pouch_status
                   return (
-                    <div key={inv.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 0', borderBottom: `0.5px solid ${BORDER}`, flexWrap: 'wrap' }}>
+                    <div key={row.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 0', borderBottom: `0.5px solid ${BORDER}`, flexWrap: 'wrap' }}>
                       {waiting ? (
-                        <input type="checkbox" checked={selectedIds.includes(inv.id)} onChange={() => toggleSelect(inv.id)} style={{ accentColor: PURPLE }} />
+                        <input type="checkbox" checked={selectedIds.includes(row.id)} onChange={() => toggleSelect(row.id)} style={{ accentColor: PURPLE }} />
                       ) : (
                         <span style={{ width: 16 }} />
                       )}
                       <div style={{ flex: 1, minWidth: 140 }}>
-                        <div style={{ fontSize: 13, color: TEXT }}>{owner?.name || '원장님'}</div>
-                        <div style={{ fontSize: 11, color: SUB }}>{owner?.salon || '-'}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 4, background: row.track === 'A' ? 'rgba(100,181,246,0.15)' : 'rgba(201,169,110,0.15)', color: row.track === 'A' ? '#64B5F6' : GOLD }}>트랙{row.track}</span>
+                          <div style={{ fontSize: 13, color: TEXT }}>{owner?.name || '원장님'}</div>
+                        </div>
+                        <div style={{ fontSize: 11, color: SUB }}>{owner?.salon || '-'} · ₩{row.total_amount.toLocaleString()}</div>
                       </div>
                       {tier && (
                         <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: 'rgba(255,255,255,0.06)', color: TIER_COLOR[tier] }}>{tier}만</span>
@@ -474,7 +513,7 @@ export default function BrandTabPouch({ myBrands: _myBrands, brandId }: Props) {
                         <button
                           type="button"
                           disabled={approving}
-                          onClick={() => void approveInvoices([inv.id])}
+                          onClick={() => void approveRows([row.id])}
                           style={{ fontSize: 11, padding: '4px 12px', borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', cursor: approving ? 'not-allowed' : 'pointer' }}
                         >
                           승인

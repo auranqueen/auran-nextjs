@@ -4,6 +4,10 @@
 ---
 
 
+## 2026-08-16
+### feat: 등급파우치 트랙B(오렌몰) 통합
+- 등급파우치 시스템에 트랙B(오렌몰) 통합 완료. 신규테이블 hq_pouch_records(company_id+owner_id+billing_month 유니크, 트랙A의 brand_billing_invoices 파우치컬럼과 동일구조지만 완전분리)로 트랙 격리 유지. BrandTabPouch.tsx에 aggregateTrackB() 추가 — hq_stock_orders를 당월(1일~말일) 결제완료/배송완료/구매확정 상태로 집계해 등급판정(트랙A와 동일 200/300/500만원 기준, calcPouchTier 공유). 승인대상 리스트/발송처리(BrandPouchFulfillmentList) 둘다 트랙A/B를 뱃지로 구분해 통합표시, 승인·발송 액션은 track별로 올바른 테이블에 분기 처리. pouch_tier_kits(파우치 구성)는 트랙 무관 공용 재사용. 마이그레이션 161.
+
 ## 2026-08-15
 ### feat: 물류허브에 등급파우치 발송처리 연동
 - 물류허브 「발송 처리」에 등급파우치 섹션 추가(BrandPouchFulfillmentList.tsx 신규, BrandInventoryFulfillment.tsx에 통합). 승인된(pouch_status='approved') 청구서를 발송대기 목록으로 표시, 택배사/운송장번호 입력 후 발송완료시: 1)pouch_kit_snapshot의 각 제품 재고차감(decrement_inventory_stock RPC+brand_stock_logs, ref_type:'pouch') 2)brand_billing_invoices pouch_status='shipped'+추적정보 업데이트(중복발송 방지 가드) 3)원장 개인알림(brand_messages, target_owner_id). 마이그레이션 160(pouch_tracking_no/pouch_courier/pouch_shipped_at). 이걸로 등급파우치 트랙A 전체 파이프라인(구성설정→승인→발송) 완료

@@ -17,6 +17,7 @@ type KitItem = { product_id?: string; name?: string; qty?: number }
 
 type PouchInvoice = {
   id: string
+  track: 'A' | 'B'
   owner_id: string
   billing_month: string
   pouch_tier: number | null
@@ -71,9 +72,16 @@ export default function BrandPouchFulfillmentList({ companyId, filter, onToast, 
     }
     setLoading(true)
     const pouchStatus = filter === 'approved' ? 'approved' : 'shipped'
-    const [{ data: invData }, { data: brandRow }] = await Promise.all([
+    const [{ data: invData }, { data: hqData }, { data: brandRow }] = await Promise.all([
       supabase
         .from('brand_billing_invoices')
+        .select('id, owner_id, billing_month, pouch_tier, pouch_status, pouch_kit_snapshot, pouch_tracking_no, pouch_courier, pouch_shipped_at')
+        .eq('company_id', companyId)
+        .eq('pouch_status', pouchStatus)
+        .not('pouch_tier', 'is', null)
+        .order('billing_month', { ascending: false }),
+      supabase
+        .from('hq_pouch_records')
         .select('id, owner_id, billing_month, pouch_tier, pouch_status, pouch_kit_snapshot, pouch_tracking_no, pouch_courier, pouch_shipped_at')
         .eq('company_id', companyId)
         .eq('pouch_status', pouchStatus)
@@ -83,7 +91,7 @@ export default function BrandPouchFulfillmentList({ companyId, filter, onToast, 
     ])
     setRepBrandId(brandRow?.id ? String(brandRow.id) : null)
 
-    const list = (invData || []) as Array<{
+    type RawRow = {
       id: string
       owner_id: string
       billing_month: string
@@ -93,7 +101,11 @@ export default function BrandPouchFulfillmentList({ companyId, filter, onToast, 
       pouch_tracking_no: string | null
       pouch_courier: string | null
       pouch_shipped_at: string | null
-    }>
+    }
+    const aList = ((invData || []) as RawRow[]).map((r) => ({ ...r, track: 'A' as const }))
+    const bList = ((hqData || []) as RawRow[]).map((r) => ({ ...r, track: 'B' as const }))
+    const list = [...aList, ...bList]
+
     const ownerIds = Array.from(new Set(list.map((r) => r.owner_id).filter(Boolean)))
     const nameMap: Record<string, { name: string; salon: string }> = {}
     if (ownerIds.length) {
@@ -111,6 +123,7 @@ export default function BrandPouchFulfillmentList({ companyId, filter, onToast, 
     }
     setRows(list.map((r) => ({
       id: r.id,
+      track: r.track,
       owner_id: r.owner_id,
       billing_month: r.billing_month,
       pouch_tier: r.pouch_tier,
@@ -217,15 +230,16 @@ export default function BrandPouchFulfillmentList({ companyId, filter, onToast, 
     setBusyId(inv.id)
     const trackingNo = input.no.trim()
     const now = new Date().toISOString()
+    const table = inv.track === 'A' ? 'brand_billing_invoices' : 'hq_pouch_records'
 
     // 1) 재고차감 + 로그
     for (const item of kit) {
       await decrementStockForPouchItem(repBrandId, inv.id, item)
     }
 
-    // 2) 청구서 발송상태 업데이트 (중복발송 방지)
+    // 2) 발송상태 업데이트 (중복발송 방지)
     const { data: updated, error: updErr } = await supabase
-      .from('brand_billing_invoices')
+      .from(table)
       .update({
         pouch_status: 'shipped',
         pouch_tracking_no: trackingNo,
@@ -298,8 +312,9 @@ export default function BrandPouchFulfillmentList({ companyId, filter, onToast, 
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2, flexWrap: 'wrap' }}>
                   <span style={{
                     fontSize: 9, padding: '1px 5px', borderRadius: 4,
-                    background: 'rgba(201,169,110,0.18)', color: GOLD,
-                  }}>파우치</span>
+                    background: inv.track === 'A' ? 'rgba(100,181,246,0.15)' : 'rgba(201,169,110,0.18)',
+                    color: inv.track === 'A' ? '#64B5F6' : GOLD,
+                  }}>트랙{inv.track}</span>
                   <span style={{ fontSize: 13, color: TEXT }}>{inv.owner_name}</span>
                   {tier != null && (
                     <span style={{
