@@ -5,6 +5,9 @@
 
 
 ## 2026-08-17
+### fix: 브랜드허브 brand_members 회사폴백 조회에 limit(1) 추가
+- /brand/[slug]에서 .in('brand_id', brandIds)+maybeSingle 2곳(세션 자동진입·handleLogin 회사폴백)에 .limit(1) 추가. 단일 brand_id 직접조회는 미변경. 물류허브와 동일하게 다중행+maybeSingle 오류 방지.
+
 ### fix: 물류허브 brand_members 조회에 limit(1) 추가
 - /logi/[slug] membership 조회(세션 자동진입·handleLogin)에서 .in('brand_id', brandIds) 다음 .limit(1) 후 .maybeSingle(). 형제 브랜드에 멤버십이 여러 건이어도 1건만 확인하면 충분해 PostgREST 다중행+maybeSingle 오류를 방지.
 
