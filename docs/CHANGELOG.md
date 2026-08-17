@@ -4,6 +4,10 @@
 ---
 
 
+## 2026-08-17
+### fix: 물류허브 brand_members 조회에 limit(1) 추가
+- /logi/[slug] membership 조회(세션 자동진입·handleLogin)에서 .in('brand_id', brandIds) 다음 .limit(1) 후 .maybeSingle(). 형제 브랜드에 멤버십이 여러 건이어도 1건만 확인하면 충분해 PostgREST 다중행+maybeSingle 오류를 방지.
+
 ## 2026-08-16
 ### fix: 권한실패 signOut 시 전역 /login 강제이동 억제
 - suppressRedirect 플래그(3초) 도입. login·logi·brand·owner·partner·super-console에서 권한 실패 직전 suppressAuthRedirect() 후 signOut. AuthSessionProvider는 경로 화이트리스트 대신 isAuthRedirectSuppressed()로 SIGNED_OUT→/login 리다이렉트 억제.
