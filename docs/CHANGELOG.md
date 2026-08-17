@@ -5,6 +5,9 @@
 
 
 ## 2026-08-17
+### fix: 물류 대시보드 brand_members 조회에 limit(1) 추가
+- /dashboard/logi loadBrand의 .in('brand_id', brandIds)+maybeSingle 앞에 .limit(1) 추가. 로그인 게이트(/logi, /brand)와 동일 패턴.
+
 ### fix: 브랜드허브 brand_members 회사폴백 조회에 limit(1) 추가
 - /brand/[slug]에서 .in('brand_id', brandIds)+maybeSingle 2곳(세션 자동진입·handleLogin 회사폴백)에 .limit(1) 추가. 단일 brand_id 직접조회는 미변경. 물류허브와 동일하게 다중행+maybeSingle 오류 방지.
 

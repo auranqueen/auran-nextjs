@@ -66,6 +66,7 @@ function LogiDashboardInner() {
           .select('id')
           .eq('user_id', myUserId)
           .in('brand_id', brandIds)
+          .limit(1)
           .maybeSingle()
         allowed = Boolean(membership)
       }
