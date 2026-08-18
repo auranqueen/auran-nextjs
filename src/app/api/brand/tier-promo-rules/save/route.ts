@@ -39,6 +39,8 @@ export async function POST(req: NextRequest) {
   const brandId = typeof body?.brand_id === 'string' ? body.brand_id.trim() : ''
   const minQty = Math.trunc(Number(body?.min_qty))
   const bonusQty = Math.trunc(Number(body?.bonus_qty))
+  const rawOptionNo = Math.trunc(Number(body?.option_no))
+  const optionNo = Number.isFinite(rawOptionNo) && rawOptionNo >= 1 ? rawOptionNo : 1
   if (!companyId || !tierPackageId || !brandId) {
     return NextResponse.json({ ok: false, error: 'missing_ids' }, { status: 400 })
   }
@@ -82,10 +84,11 @@ export async function POST(req: NextRequest) {
         brand_id: brandId,
         min_qty: minQty,
         bonus_qty: bonusQty,
+        option_no: optionNo,
       },
-      { onConflict: 'tier_package_id,brand_id' },
+      { onConflict: 'tier_package_id,brand_id,option_no' },
     )
-    .select('id, tier_package_id, brand_id, min_qty, bonus_qty, is_active')
+    .select('id, tier_package_id, brand_id, min_qty, bonus_qty, is_active, option_no')
     .single()
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true, rule: data })
