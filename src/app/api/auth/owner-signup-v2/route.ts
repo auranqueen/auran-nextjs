@@ -141,6 +141,7 @@ export async function POST(req: NextRequest) {
       auth_id: authUserId,
       email,
       name,
+      phone: cleanPhone,
       role: 'owner',
       status: 'pending',
       referred_by: referredBy,

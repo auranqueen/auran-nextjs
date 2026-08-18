@@ -5,6 +5,9 @@
 
 
 ## 2026-08-18
+### fix: owner-signup-v2 users insert에 phone(숫자-only) 저장 추가
+- /api/auth/owner-signup-v2의 users insert에 검증된 cleanPhone을 같이 저장. salons.phone 저장은 기존 유지. find-id가 users.phone만 조회해도 트랙A 원장 아이디 찾기가 가능하도록 맞춤.
+
 ### fix: owner-signup-v2 전화번호 필수/형식 검증 추가
 - /api/auth/owner-signup-v2 validate 단계에서 address 검증 다음에 phone 검증을 추가. 빈값은 missing_phone으로 차단하고, 하이픈 유무와 무관하게 숫자만 정규화해 01로 시작하는 휴대폰 형식(10~11자리)만 허용.
 
