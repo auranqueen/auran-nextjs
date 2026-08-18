@@ -5,6 +5,9 @@
 
 
 ## 2026-08-18
+### fix: owner-signup-v2 전화번호 필수/형식 검증 추가
+- /api/auth/owner-signup-v2 validate 단계에서 address 검증 다음에 phone 검증을 추가. 빈값은 missing_phone으로 차단하고, 하이픈 유무와 무관하게 숫자만 정규화해 01로 시작하는 휴대폰 형식(10~11자리)만 허용.
+
 ### fix: 원장 라이브 프로모션 저장 brand_owner_links 조회에 limit(1) 추가
 - /api/owner/live-promotions/save에서 .in('brand_id', brandIds)+maybeSingle 앞에 .limit(1) 추가. 형제 브랜드 링크가 여러 건이어도 연결 여부만 확인하면 충분해 다중행+maybeSingle 오류를 방지.
 

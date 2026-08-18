@@ -58,6 +58,13 @@ export async function POST(req: NextRequest) {
   if (!address) {
     return NextResponse.json({ ok: false, error: 'missing_address', stage: 'validate' }, { status: 400 })
   }
+  if (!phone) {
+    return NextResponse.json({ ok: false, error: 'missing_phone', stage: 'validate' }, { status: 400 })
+  }
+  const cleanPhone = phone.replace(/\D/g, '')
+  if (!/^01\d{8,9}$/.test(cleanPhone)) {
+    return NextResponse.json({ ok: false, error: 'invalid_phone', stage: 'validate' }, { status: 400 })
+  }
 
   const svc = tryCreateServiceClient()
   if (!svc) {
