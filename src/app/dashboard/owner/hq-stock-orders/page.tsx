@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-import BrandOrderProductCard, { type BrandOrderProduct } from '../brand-orders/BrandOrderProductCard'
+import BrandOrderProductCard from '../brand-orders/BrandOrderProductCard'
 import {
   buildOrderLineItem,
   hasValidSupplyPrice,
@@ -231,24 +231,6 @@ function HqStockOrdersContent() {
       return true
     })
   }, [products, brandFilter, searchQuery])
-  const cartQty = (id: string) => cart.find((c) => c.product.id === id)?.qty || 0
-  const addToCart = (prod: BrandOrderProduct) => {
-    if (!hasValidSupplyPrice(prod.supply_price)) {
-      showToast('가격 미설정 제품이에요')
-      return
-    }
-    const full = products.find((p) => p.id === prod.id)
-    if (!full) return
-    setCart((prev) => {
-      const ex = prev.find((c) => c.product.id === prod.id)
-      if (ex) {
-        return prev.map((c) =>
-          c.product.id === prod.id ? { ...c, qty: c.qty + QTY_STEP, selectedPromo: null } : c,
-        )
-      }
-      return [...prev, { product: full, qty: QTY_STEP, selectedPromo: null }]
-    })
-  }
   const changeQty = (id: string, delta: number) => {
     setCart((prev) =>
       prev
@@ -257,6 +239,30 @@ function HqStockOrdersContent() {
         )
         .filter((c) => c.qty > 0),
     )
+  }
+  const changeSet = (productId: string, promoId: string, delta: number) => {
+    const full = products.find((p) => p.id === productId)
+    const promo = promoRules.find((p) => p.id === promoId)
+    if (!full || !promo) return
+    if (delta > 0 && !hasValidSupplyPrice(full.supply_price)) {
+      showToast('가격 미설정 제품이에요')
+      return
+    }
+    const unit = Math.max(1, Math.trunc(promo.qty ?? 1))
+    setCart((prev) => {
+      const ex = prev.find((c) => c.product.id === productId)
+      if (ex) {
+        const same = ex.selectedPromo?.id === promoId
+        const currentSets = same ? Math.max(0, Math.round(ex.qty / unit)) : 0
+        const sets = currentSets + delta
+        if (sets <= 0) return prev.filter((c) => c.product.id !== productId)
+        return prev.map((c) =>
+          c.product.id === productId ? { ...c, qty: unit * sets, selectedPromo: promo } : c,
+        )
+      }
+      if (delta <= 0) return prev
+      return [...prev, { product: full, qty: unit * delta, selectedPromo: promo }]
+    })
   }
   const cartTotal = cart.reduce((s, c) => {
     const line = buildOrderLineItem(c.product, c.qty, promoRules, c.selectedPromo)
@@ -415,19 +421,26 @@ function HqStockOrdersContent() {
         />
       </div>
       <div style={{ padding: '0 16px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
-        {filtered.map((prod) => (
+        {filtered.map((prod) => {
+          const item = cart.find((c) => c.product.id === prod.id)
+          const setsByPromoId: Record<string, number> = {}
+          for (const p of promoRules.filter((r) => r.brand_id === prod.brand_id)) {
+            const unit = Math.max(1, Math.trunc(p.qty ?? 1))
+            setsByPromoId[p.id] = item && item.selectedPromo?.id === p.id
+              ? Math.max(0, Math.round(item.qty / unit))
+              : 0
+          }
+          return (
           <BrandOrderProductCard
             key={prod.id}
             prod={prod}
             supplyPromos={promoRules.filter((r) => r.brand_id === prod.brand_id)}
-            qty={cartQty(prod.id)}
-            activePromoId={undefined}
-            onApplyPromo={() => {}}
-            onAdd={addToCart}
-            onChangeQty={changeQty}
+            setsByPromoId={setsByPromoId}
+            onChangeSet={changeSet}
             stock={stockMap[prod.id]}
           />
-        ))}
+          )
+        })}
       </div>
       {filtered.length === 0 && (
         <div style={{ textAlign: 'center', padding: 40, color: SUB, fontSize: 13 }}>발주 가능 제품이 없어요</div>

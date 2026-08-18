@@ -978,19 +978,15 @@ export default function BrandOrdersPage() {
                   {prods.map((prod) => {
                     const cartLines = cart.filter((c) => c.product.id === prod.id)
                     const brandGrade = gradeForBrand(gradeByBrandId, prod.brand_id)
+                    const setsByPromoId: Record<string, number> = {}
+                    for (const line of cartLines) setsByPromoId[line.promo.id] = line.sets
                     return (
                       <BrandOrderProductCard
                         key={prod.id}
                         prod={prod}
                         supplyPromos={promosForBrandGrade(supplyPromos, prod.brand_id, brandGrade)}
-                        qty={cartLines.reduce((s, c) => s + cartLineQty(c), 0)}
-                        activePromoId={cartLines.length === 1 ? cartLines[0].promo.id : undefined}
-                        onApplyPromo={(p, promo) => changeSet(p.id, promo.id, 1)}
-                        onAdd={() => showToast('옵션을 선택해주세요')}
-                        onChangeQty={(id, delta) => {
-                          const lines = cart.filter((c) => c.product.id === id)
-                          if (lines.length === 1) changeSet(id, lines[0].promo.id, delta > 0 ? 1 : -1)
-                        }}
+                        setsByPromoId={setsByPromoId}
+                        onChangeSet={changeSet}
                         stock={stockMap[prod.id]}
                       />
                     )

@@ -4,6 +4,12 @@
 ---
 
 
+## 2026-08-19
+### feat: 트랙A 발주 옵션UI + 트랙B 어댑터 연결
+- BrandOrderProductCard: 옵션(프로모)마다 세트 ± 스테퍼. 매칭 옵션이 없으면 「옵션 없음」만 표시하고 담기 불가. 장바구니에 담긴 카드는 보라 테두리.
+- brand-orders(트랙A): 카드에 setsByPromoId/onChangeSet 연결. 같은 제품에 5+1·10+4를 각각 세트로 담음.
+- hq-stock-orders(트랙B): 같은 카드를 쓰되 제품당 한 줄만 유지. 선택한 옵션 수량=promo.qty×sets. 발주 API·결제 로직 미변경.
+
 ## 2026-08-18
 ### fix: 원장 발주 장바구니 증정개수에 세트수 반영
 - brand-orders/page.tsx: buildOrderLineItem 반환 bonus(1세트 기준)에 sets를 곱해 팝업 표시·발주 items.bonus에 사용. 5+1 3세트 → 주문 15·증정 3, 10+4 5세트 → 주문 50·증정 20. buildOrderLineItem 본체는 미변경.

@@ -1,6 +1,5 @@
 'use client'
 import {
-  buildOrderLineItem,
   hasValidSupplyPrice,
   promoLabel,
   promosForBrand,
@@ -11,7 +10,6 @@ const BORDER = '#ede9f7'
 const TEXT = '#1A1A2E'
 const SUB = '#888888'
 const LIGHT = '#f8f7fc'
-const QTY_STEP = 5
 export type BrandOrderProduct = {
   id: string
   name: string
@@ -23,30 +21,30 @@ export type BrandOrderProduct = {
 type Props = {
   prod: BrandOrderProduct
   supplyPromos: SupplyPromoRow[]
-  qty: number
-  activePromoId: string | undefined
-  onApplyPromo: (prod: BrandOrderProduct, promo: SupplyPromoRow) => void
-  onAdd: (prod: BrandOrderProduct) => void
-  onChangeQty: (id: string, delta: number) => void
+  setsByPromoId: Record<string, number>
+  onChangeSet: (productId: string, promoId: string, delta: number) => void
   stock?: number
 }
 export default function BrandOrderProductCard({
   prod,
   supplyPromos,
-  qty,
-  activePromoId,
-  onApplyPromo,
-  onAdd,
-  onChangeQty,
+  setsByPromoId,
+  onChangeSet,
   stock,
 }: Props) {
   const priced = hasValidSupplyPrice(prod.supply_price)
   const outOfStock = stock !== undefined && stock <= 0
   const brandPromos = promosForBrand(supplyPromos, prod.brand_id)
-  const selectedPromo = activePromoId ? brandPromos.find((p) => p.id === activePromoId) ?? null : null
-  const line = qty > 0 ? buildOrderLineItem(prod, qty, supplyPromos, selectedPromo) : null
+  const inCart = brandPromos.some((p) => (setsByPromoId[p.id] || 0) > 0)
+  const interactive = priced && !outOfStock
   return (
-    <div style={{ background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 10, overflow: 'hidden', opacity: priced && !outOfStock ? 1 : 0.5 }}>
+    <div style={{
+      background: inCart ? `${PURPLE}08` : '#fff',
+      border: `1px solid ${inCart ? PURPLE : BORDER}`,
+      borderRadius: 10,
+      overflow: 'hidden',
+      opacity: interactive ? 1 : 0.5,
+    }}>
       <div style={{ aspectRatio: '1 / 1', width: '100%', background: LIGHT, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
         {prod.thumb_img
           ? <img src={prod.thumb_img} alt={prod.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -62,50 +60,37 @@ export default function BrandOrderProductCard({
         ) : stock !== undefined ? (
           <div style={{ fontSize: 10, color: SUB, marginBottom: 4 }}>재고 {stock}개</div>
         ) : null}
-        {priced && !outOfStock && brandPromos.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 6 }}>
-            {brandPromos.map((promo) => (
-              <button
-                key={promo.id}
-                type="button"
-                onClick={() => onApplyPromo(prod, promo)}
-                style={{
-                  fontSize: 10,
-                  padding: '3px 8px',
-                  borderRadius: 6,
-                  border: `1px solid ${activePromoId === promo.id ? PURPLE : BORDER}`,
-                  background: activePromoId === promo.id ? `${PURPLE}18` : LIGHT,
-                  color: activePromoId === promo.id ? PURPLE : SUB,
-                  cursor: 'pointer',
-                }}
-              >
-                {promoLabel(promo)}
-              </button>
-            ))}
-          </div>
-        )}
-        {line?.promo && (
-          <div style={{ fontSize: 10, color: PURPLE, marginBottom: 4 }}>
-            {line.promo}{line.bonus > 0 ? ` (+${line.bonus})` : ''}
-          </div>
-        )}
         {!priced || outOfStock ? (
           <button type="button" disabled
             style={{ width: '100%', padding: '5px', borderRadius: 6, border: `1px solid ${BORDER}`, background: LIGHT, color: SUB, fontSize: 11, cursor: 'not-allowed' }}>
             {outOfStock ? '품절' : '발주 불가'}
           </button>
-        ) : qty === 0 ? (
-          <button type="button" onClick={() => onAdd(prod)}
-            style={{ width: '100%', padding: '5px', borderRadius: 6, border: `1px solid ${PURPLE}`, background: `${PURPLE}15`, color: PURPLE, fontSize: 11, cursor: 'pointer' }}>
-            + 담기
-          </button>
+        ) : brandPromos.length === 0 ? (
+          <div style={{ fontSize: 10, color: SUB }}>옵션 없음</div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <button type="button" onClick={() => onChangeQty(prod.id, -QTY_STEP)}
-              style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${BORDER}`, background: LIGHT, fontSize: 14, cursor: 'pointer', color: TEXT }}>−</button>
-            <span style={{ fontSize: 13, fontWeight: 500, color: TEXT }}>{qty}</span>
-            <button type="button" onClick={() => onChangeQty(prod.id, QTY_STEP)}
-              style={{ width: 26, height: 26, borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', fontSize: 14, cursor: 'pointer' }}>+</button>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {brandPromos.map((promo) => {
+              const sets = setsByPromoId[promo.id] || 0
+              return (
+                <div key={promo.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+                  <span style={{ fontSize: 10, color: sets > 0 ? PURPLE : SUB, minWidth: 0 }}>{promoLabel(promo)}</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      onClick={() => onChangeSet(prod.id, promo.id, -1)}
+                      disabled={sets <= 0}
+                      style={{ width: 22, height: 22, borderRadius: 5, border: `1px solid ${BORDER}`, background: LIGHT, fontSize: 13, cursor: sets <= 0 ? 'default' : 'pointer', color: TEXT, lineHeight: 1 }}
+                    >−</button>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: TEXT, minWidth: 14, textAlign: 'center' }}>{sets}</span>
+                    <button
+                      type="button"
+                      onClick={() => onChangeSet(prod.id, promo.id, 1)}
+                      style={{ width: 22, height: 22, borderRadius: 5, border: 'none', background: PURPLE, color: '#fff', fontSize: 13, cursor: 'pointer', lineHeight: 1 }}
+                    >+</button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
