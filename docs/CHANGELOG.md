@@ -4,6 +4,10 @@
 ---
 
 
+## 2026-08-18
+### fix: 원장 라이브 프로모션 저장 brand_owner_links 조회에 limit(1) 추가
+- /api/owner/live-promotions/save에서 .in('brand_id', brandIds)+maybeSingle 앞에 .limit(1) 추가. 형제 브랜드 링크가 여러 건이어도 연결 여부만 확인하면 충분해 다중행+maybeSingle 오류를 방지.
+
 ## 2026-08-17
 ### fix: 물류 대시보드 brand_members 조회에 limit(1) 추가
 - /dashboard/logi loadBrand의 .in('brand_id', brandIds)+maybeSingle 앞에 .limit(1) 추가. 로그인 게이트(/logi, /brand)와 동일 패턴.

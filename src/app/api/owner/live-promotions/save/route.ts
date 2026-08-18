@@ -60,6 +60,7 @@ export async function POST(req: NextRequest) {
     .eq('owner_id', me.id)
     .in('brand_id', brandIds)
     .eq('status', 'active')
+    .limit(1)
     .maybeSingle()
   if (!linkRow?.id) {
     return NextResponse.json({ ok: false, error: 'not_linked_to_brand' }, { status: 403 })
