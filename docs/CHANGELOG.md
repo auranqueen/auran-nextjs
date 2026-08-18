@@ -5,6 +5,12 @@
 
 
 ## 2026-08-18
+### fix: 원장 발주 장바구니 증정개수에 세트수 반영
+- brand-orders/page.tsx: buildOrderLineItem 반환 bonus(1세트 기준)에 sets를 곱해 팝업 표시·발주 items.bonus에 사용. 5+1 3세트 → 주문 15·증정 3, 10+4 5세트 → 주문 50·증정 20. buildOrderLineItem 본체는 미변경.
+
+### feat: 원장 발주 장바구니를 제품+옵션 세트 단위로 재구성
+- CartItem을 { product, promo, sets }로 변경. 같은 제품에 5+1과 10+4를 별도 줄로 담을 수 있음. 수량=promo.qty*sets. BrandOrderProductCard·buildOrderLineItem은 미변경.
+
 ### feat: 등급패키지 재구매 프로모션 UI 옵션 여러 줄
 - BrandTierPromoRulesSection: 브랜드×등급당 옵션 줄을 "옵션 추가"로 늘릴 수 있게 확장. 저장 시 option_no 1,2,3… 순으로 save API 호출, 줄 삭제는 기존 delete API(id)로 해당 행만 제거. 화면에는 브랜드당 최소 1줄 유지. 부모 등급선택/브랜드목록 로직은 미변경.
 

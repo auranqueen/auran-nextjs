@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import DashboardBottomNav from '@/components/DashboardBottomNav'
-import BrandOrderProductCard, { type BrandOrderProduct } from './BrandOrderProductCard'
+import BrandOrderProductCard from './BrandOrderProductCard'
 import EventPackageSection from './components/EventPackageSection'
 import AreteMembershipCard from './components/AreteMembershipCard'
 import OwnerOrderStatement from './components/OwnerOrderStatement'
@@ -15,7 +15,6 @@ import {
   calcPointsEarned,
   gradePointRate,
   hasValidSupplyPrice,
-  promoLabel,
   type SupplyPromoRow,
 } from '@/lib/brand/brandOrderPromos'
 import { useBrandGradeRates } from '@/lib/brand/useBrandGradeRates'
@@ -25,7 +24,6 @@ import { resolveHqCampaignEffects, type HqForcedCampaign } from '@/lib/brand/hqF
 
 const BG = '#ffffff'
 const LIGHT = '#f8f7fc'
-const QTY_STEP = 5
 const DEFAULT_GRADE = '취급점'
 
 interface Product {
@@ -40,8 +38,16 @@ interface Product {
 
 interface CartItem {
   product: Product
-  qty: number
-  selectedPromo: SupplyPromoRow | null
+  promo: SupplyPromoRow
+  sets: number
+}
+
+function cartLineQty(item: CartItem): number {
+  return Math.max(1, Math.trunc(item.promo.qty ?? 1)) * item.sets
+}
+
+function cartLineBonus(bonus: number, sets: number): number {
+  return Math.trunc(bonus) * sets
 }
 
 interface OrderItem {
@@ -504,21 +510,21 @@ export default function BrandOrdersPage() {
   const popupTotalAmount = popupCart.reduce(
     (s, c) => s + buildOrderLineItem(
       c.product,
-      c.qty,
+      cartLineQty(c),
       promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)),
-      c.selectedPromo,
+      c.promo,
     ).line_amount,
     0,
   )
   const hqCampaignEffects = resolveHqCampaignEffects(
     popupCart.map((c) => ({
       product_id: c.product.id,
-      qty: c.qty,
+      qty: cartLineQty(c),
       unit_price: buildOrderLineItem(
         c.product,
-        c.qty,
+        cartLineQty(c),
         promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)),
-        c.selectedPromo,
+        c.promo,
       ).unit_price,
     })),
     hqForcedCampaigns,
@@ -536,9 +542,9 @@ export default function BrandOrdersPage() {
       const amount = rows.reduce(
         (s, c) => s + buildOrderLineItem(
           c.product,
-          c.qty,
+          cartLineQty(c),
           promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)),
-          c.selectedPromo,
+          c.promo,
         ).line_amount,
         0,
       )
@@ -556,7 +562,7 @@ export default function BrandOrdersPage() {
     const totals: Record<string, number> = {}
     Array.from(byBrand.entries()).forEach(([brandId, rows]) => {
       const amount = rows.reduce(
-        (s, c) => s + buildOrderLineItem(c.product, c.qty, promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)), c.selectedPromo).line_amount,
+        (s, c) => s + buildOrderLineItem(c.product, cartLineQty(c), promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)), c.promo).line_amount,
         0,
       )
       const cid = brandCompanyMap[brandId]
@@ -572,46 +578,28 @@ export default function BrandOrdersPage() {
   )
   const popupRewardApplied = usePointsReward ? Math.min(popupRewardUsable, popupFinalAmount) : 0
   const popupFinalAfterReward = Math.max(0, popupFinalAmount - popupRewardApplied)
-  const totalQty = cart.reduce((s, c) => s + c.qty, 0)
+  const totalQty = cart.reduce((s, c) => s + cartLineQty(c), 0)
 
-  const applyPromo = (prod: BrandOrderProduct, promo: SupplyPromoRow) => {
-    if (!hasValidSupplyPrice(prod.supply_price)) {
-      showToast('가격 미설정 제품이에요')
-      return
-    }
-    const full = products.find((p) => p.id === prod.id)
-    if (!full) return
-    const qty = Math.max(1, Math.trunc(promo.qty ?? 1))
-    setCart((prev) => {
-      const ex = prev.find((c) => c.product.id === prod.id)
-      if (ex) {
-        return prev.map((c) =>
-          c.product.id === prod.id ? { ...c, qty, selectedPromo: promo } : c,
-        )
+  const changeSet = (productId: string, promoId: string, delta: number) => {
+    const full = products.find((p) => p.id === productId)
+    const promo = supplyPromos.find((p) => p.id === promoId)
+    if (delta > 0) {
+      if (!full || !promo) return
+      if (!hasValidSupplyPrice(full.supply_price)) {
+        showToast('가격 미설정 제품이에요')
+        return
       }
-      return [...prev, { product: full, qty, selectedPromo: promo }]
-    })
-    showToast(`${promoLabel(promo)} · ${qty}개 담김`)
-  }
-
-  const addToCart = (prod: BrandOrderProduct) => {
-    if (!hasValidSupplyPrice(prod.supply_price)) {
-      showToast('가격 미설정 제품이에요')
-      return
     }
-    const full = products.find((p) => p.id === prod.id)
-    if (!full) return
     setCart((prev) => {
-      const ex = prev.find((c) => c.product.id === prod.id)
-      if (ex) return prev.map((c) => (c.product.id === prod.id ? { ...c, qty: c.qty + QTY_STEP, selectedPromo: null } : c))
-      return [...prev, { product: full, qty: QTY_STEP, selectedPromo: null }]
+      const ex = prev.find((c) => c.product.id === productId && c.promo.id === promoId)
+      if (ex) {
+        const sets = ex.sets + delta
+        if (sets <= 0) return prev.filter((c) => !(c.product.id === productId && c.promo.id === promoId))
+        return prev.map((c) => (c.product.id === productId && c.promo.id === promoId ? { ...c, sets } : c))
+      }
+      if (delta <= 0 || !full || !promo) return prev
+      return [...prev, { product: full, promo, sets: delta }]
     })
-  }
-
-  const changeQty = (id: string, delta: number) => {
-    setCart((prev) => prev
-      .map((c) => (c.product.id === id ? { ...c, qty: Math.max(0, c.qty + delta), selectedPromo: null } : c))
-      .filter((c) => c.qty > 0))
   }
 
   useEffect(() => {
@@ -677,19 +665,22 @@ export default function BrandOrdersPage() {
     }
     const wholeCartItems = cart.map((c) => ({
       product_id: c.product.id,
-      qty: c.qty,
-      unit_price: buildOrderLineItem(c.product, c.qty, promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)), c.selectedPromo).unit_price,
+      qty: cartLineQty(c),
+      unit_price: buildOrderLineItem(c.product, cartLineQty(c), promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)), c.promo).unit_price,
     }))
     const wholeCartEffects = resolveHqCampaignEffects(wholeCartItems, hqForcedCampaigns)
     const wholeCartLineTotal = wholeCartItems.reduce((s, i) => s + i.qty * i.unit_price, 0)
     const cartItems = Array.from(byBrand.entries()).map(([brandId, rows]) => {
       const orderGrade = gradeForBrand(gradeByBrandId, brandId)
-      const items = rows.map((c) => buildOrderLineItem(
-        c.product,
-        c.qty,
-        promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)),
-        c.selectedPromo,
-      ))
+      const items = rows.map((c) => {
+        const line = buildOrderLineItem(
+          c.product,
+          cartLineQty(c),
+          promosForBrandGrade(supplyPromos, c.product.brand_id, gradeForBrand(gradeByBrandId, c.product.brand_id)),
+          c.promo,
+        )
+        return { ...line, bonus: cartLineBonus(line.bonus, c.sets) }
+      })
       const giftItemsForBrand = wholeCartEffects.giftLines
         .filter((g) => {
           if (g.effect_type !== 'gift' || !g.product_id) return false
@@ -985,18 +976,21 @@ export default function BrandOrdersPage() {
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: `repeat(${productGridCols}, 1fr)`, gap: 8 }}>
                   {prods.map((prod) => {
-                    const cartItem = cart.find((c) => c.product.id === prod.id)
+                    const cartLines = cart.filter((c) => c.product.id === prod.id)
                     const brandGrade = gradeForBrand(gradeByBrandId, prod.brand_id)
                     return (
                       <BrandOrderProductCard
                         key={prod.id}
                         prod={prod}
                         supplyPromos={promosForBrandGrade(supplyPromos, prod.brand_id, brandGrade)}
-                        qty={cartItem?.qty || 0}
-                        activePromoId={cartItem?.selectedPromo?.id}
-                        onApplyPromo={applyPromo}
-                        onAdd={addToCart}
-                        onChangeQty={changeQty}
+                        qty={cartLines.reduce((s, c) => s + cartLineQty(c), 0)}
+                        activePromoId={cartLines.length === 1 ? cartLines[0].promo.id : undefined}
+                        onApplyPromo={(p, promo) => changeSet(p.id, promo.id, 1)}
+                        onAdd={() => showToast('옵션을 선택해주세요')}
+                        onChangeQty={(id, delta) => {
+                          const lines = cart.filter((c) => c.product.id === id)
+                          if (lines.length === 1) changeSet(id, lines[0].promo.id, delta > 0 ? 1 : -1)
+                        }}
                         stock={stockMap[prod.id]}
                       />
                     )
@@ -1035,24 +1029,25 @@ export default function BrandOrdersPage() {
 
             {popupCart.map((item) => {
               const brandGrade = gradeForBrand(gradeByBrandId, item.product.brand_id)
+              const lineQty = cartLineQty(item)
               const line = buildOrderLineItem(
                 item.product,
-                item.qty,
+                lineQty,
                 promosForBrandGrade(supplyPromos, item.product.brand_id, brandGrade),
-                item.selectedPromo,
+                item.promo,
               )
               return (
-                <div key={item.product.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
+                <div key={`${item.product.id}-${item.promo.id}`} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: `1px solid ${BORDER}` }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, color: TEXT, marginBottom: 2 }}>{item.product.name}</div>
-                    <div style={{ fontSize: 11, color: SUB }}>₩{line.unit_price.toLocaleString()} × {item.qty} = ₩{line.line_amount.toLocaleString()}</div>
-                    {line.promo && <div style={{ fontSize: 11, color: PURPLE }}>{line.promo} → +{line.bonus}개 증정</div>}
+                    <div style={{ fontSize: 11, color: SUB }}>₩{line.unit_price.toLocaleString()} × {lineQty} = ₩{line.line_amount.toLocaleString()}</div>
+                    {line.promo && <div style={{ fontSize: 11, color: PURPLE }}>{line.promo} × {item.sets}세트 → +{cartLineBonus(line.bonus, item.sets)}개 증정</div>}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                    <button type="button" onClick={() => changeQty(item.product.id, -QTY_STEP)}
+                    <button type="button" onClick={() => changeSet(item.product.id, item.promo.id, -1)}
                       style={{ width: 28, height: 28, borderRadius: 6, border: `1px solid ${BORDER}`, background: LIGHT, fontSize: 14, cursor: 'pointer', color: TEXT }}>−</button>
-                    <span style={{ fontSize: 14, fontWeight: 500, minWidth: 20, textAlign: 'center', color: TEXT }}>{item.qty}</span>
-                    <button type="button" onClick={() => changeQty(item.product.id, QTY_STEP)}
+                    <span style={{ fontSize: 14, fontWeight: 500, minWidth: 20, textAlign: 'center', color: TEXT }}>{item.sets}</span>
+                    <button type="button" onClick={() => changeSet(item.product.id, item.promo.id, 1)}
                       style={{ width: 28, height: 28, borderRadius: 6, border: 'none', background: PURPLE, color: '#fff', fontSize: 14, cursor: 'pointer' }}>+</button>
                   </div>
                 </div>
