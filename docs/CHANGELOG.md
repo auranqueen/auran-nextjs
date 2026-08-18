@@ -5,6 +5,9 @@
 
 
 ## 2026-08-18
+### feat: 등급패키지 재구매 프로모션 UI 옵션 여러 줄
+- BrandTierPromoRulesSection: 브랜드×등급당 옵션 줄을 "옵션 추가"로 늘릴 수 있게 확장. 저장 시 option_no 1,2,3… 순으로 save API 호출, 줄 삭제는 기존 delete API(id)로 해당 행만 제거. 화면에는 브랜드당 최소 1줄 유지. 부모 등급선택/브랜드목록 로직은 미변경.
+
 ### feat: brand_tier_promo_rules 옵션 여러 행 저장 (option_no)
 - 마이그레이션 162: option_no(integer, not null, default 1) 추가. UNIQUE(tier_package_id, brand_id) 제거 후 UNIQUE(tier_package_id, brand_id, option_no)로 교체 — 같은 등급×브랜드에 5+1 / 10+4 등을 별도 행으로 저장 가능.
 - /api/brand/tier-promo-rules/save: body.option_no 수신(기본값 1), upsert onConflict를 tier_package_id,brand_id,option_no로 변경. 기존 컬럼·권한검증·min_qty/bonus_qty 로직은 미변경.
