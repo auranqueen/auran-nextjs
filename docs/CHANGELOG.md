@@ -5,6 +5,9 @@
 
 
 ## 2026-08-19
+### fix: BrandTabOwners 등급 저장 시 tier_package_id 동시 저장
+- updateGrade: 저장 직전 brand_tier_packages에서 brand_id+tier_name, 없으면 company_id+tier_name으로 패키지를 찾아 upsert에 tier_package_id 포함. 매칭 없으면 null로 진행(에러 없음). 기존 NULL 행 일괄 보정 없음.
+
 ### fix: 원장 발주 등급옵션 매칭 — tier_package_id NULL 폴백
 - brand-orders/page.tsx: brand_owner_grades.tier_package_id가 비어 있으면 brand_tier_packages.tier_name과 원장 grade 문자열을 맞춰 패키지를 찾고, 그 패키지 프로모 규칙만 로드. 매칭 실패 시 기존처럼 옵션 없음(잘못된 취급점 계산 방지). gradeByTierPackage condition은 gradeByCompanyOuter와 동일 값만 사용(headerGrade와 옵션 매칭 등급 일치).
 

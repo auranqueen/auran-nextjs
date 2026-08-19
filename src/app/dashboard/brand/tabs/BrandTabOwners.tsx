@@ -421,8 +421,31 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
   const updateGrade = async (ownerId: string, grade: string) => {
     if (!companyId) return
     setSaving(ownerId + '_grade')
+    let tierPackageId: string | null = null
+    if (brandId) {
+      const { data: pkgByBrand } = await supabase
+        .from('brand_tier_packages')
+        .select('id')
+        .eq('brand_id', brandId)
+        .eq('tier_name', grade)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle()
+      if (pkgByBrand?.id) tierPackageId = String(pkgByBrand.id)
+    }
+    if (!tierPackageId) {
+      const { data: pkgByCompany } = await supabase
+        .from('brand_tier_packages')
+        .select('id')
+        .eq('company_id', companyId)
+        .eq('tier_name', grade)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle()
+      if (pkgByCompany?.id) tierPackageId = String(pkgByCompany.id)
+    }
     await supabase.from('brand_owner_grades').upsert(
-      { company_id: companyId, brand_id: brandId, owner_id: ownerId, origin_track: 'A', grade, payment_status: 'paid' },
+      { company_id: companyId, brand_id: brandId, owner_id: ownerId, origin_track: 'A', grade, payment_status: 'paid', tier_package_id: tierPackageId },
       { onConflict: 'company_id,owner_id,origin_track' }
     )
     setOwners(prev => prev.map(o => o.id === ownerId ? { ...o, grade } : o))
