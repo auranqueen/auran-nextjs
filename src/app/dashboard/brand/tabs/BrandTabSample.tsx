@@ -145,12 +145,16 @@ export default function BrandTabSample({ myBrands, brandId }: Props) {
       const areteIds = new Set((areteRows || []).map((r: { owner_id: string }) => String(r.owner_id)))
       filtered = allProfiles.filter(p => areteIds.has(p.id))
     } else {
-      const { data: gradeRows } = await supabase
-        .from('brand_owner_grades')
-        .select('owner_id, grade')
-        .eq('brand_id', brandId)
-        .eq('grade', grade)
-        .in('owner_id', allProfiles.map(p => p.id))
+      const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
+      const companyId = (brandRow as { company_id?: string | null } | null)?.company_id
+      const { data: gradeRows } = companyId
+        ? await supabase
+            .from('brand_owner_grades')
+            .select('owner_id, grade')
+            .eq('company_id', companyId)
+            .eq('grade', grade)
+            .in('owner_id', allProfiles.map(p => p.id))
+        : { data: [] }
       const gradeIds = new Set((gradeRows || []).map((r: { owner_id: string }) => String(r.owner_id)))
       filtered = allProfiles.filter(p => gradeIds.has(p.id))
     }

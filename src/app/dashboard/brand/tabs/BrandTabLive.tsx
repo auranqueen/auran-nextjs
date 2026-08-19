@@ -153,12 +153,16 @@ export default function BrandTabLive({ myBrands, brandId }: Props) {
     const gradeOnly = grades.filter(g => g !== '아레테클럽' && g !== '전체')
     const idSet = new Set<string>()
     if (gradeOnly.length > 0 && allIds.length > 0) {
-      const { data: gradeRows } = await supabase
-        .from('brand_owner_grades')
-        .select('owner_id, grade')
-        .eq('brand_id', brandId)
-        .in('grade', gradeOnly)
-        .in('owner_id', allIds)
+      const { data: brandRow } = await supabase.from('brands').select('company_id').eq('id', brandId).maybeSingle()
+      const companyId = (brandRow as { company_id?: string | null } | null)?.company_id
+      const { data: gradeRows } = companyId
+        ? await supabase
+            .from('brand_owner_grades')
+            .select('owner_id, grade')
+            .eq('company_id', companyId)
+            .in('grade', gradeOnly)
+            .in('owner_id', allIds)
+        : { data: [] }
       for (const r of gradeRows || []) idSet.add(String((r as { owner_id: string }).owner_id))
     }
     if (wantArete) {

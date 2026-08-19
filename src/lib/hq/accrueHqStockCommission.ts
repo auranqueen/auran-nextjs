@@ -24,11 +24,20 @@ export async function accrueHqStockCommission(
     .maybeSingle()
   if (dup?.id) return
 
+  const { data: brandRow } = await client
+    .from('brands')
+    .select('company_id')
+    .eq('id', order.brand_id)
+    .maybeSingle()
+  const companyId = brandRow?.company_id ? String(brandRow.company_id) : ''
+  if (!companyId) return
+
   const { data: buyerGrade } = await client
     .from('brand_owner_grades')
     .select('sponsor_owner_id')
-    .eq('brand_id', order.brand_id)
+    .eq('company_id', companyId)
     .eq('owner_id', order.profile_id)
+    .eq('origin_track', 'B')
     .maybeSingle()
 
   const sponsorOwnerId = buyerGrade?.sponsor_owner_id
@@ -39,8 +48,9 @@ export async function accrueHqStockCommission(
   const { data: sponsorGradeRow } = await client
     .from('brand_owner_grades')
     .select('id, grade, payment_status')
-    .eq('brand_id', order.brand_id)
+    .eq('company_id', companyId)
     .eq('owner_id', sponsorOwnerId)
+    .eq('origin_track', 'B')
     .eq('payment_status', 'paid')
     .maybeSingle()
 

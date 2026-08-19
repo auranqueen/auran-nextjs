@@ -5,6 +5,11 @@
 
 
 ## 2026-08-19
+### fix: brand_owner_grades 조회 4곳을 company_id 기준으로 전환
+- BrandTabSample / BrandTabLive: 등급 대상 원장을 brands.company_id로 조회. brand_id 필터 제거.
+- accrueHqStockCommission: 주문 brand_id → brands.company_id 후 회사 단위로 구매자·스폰서 등급 조회. 요율(hq_commission_rates)·계산식 미변경.
+- admin/track-b-system: 스폰서 등급을 회사 단위(origin_track B)로 조회. 커미션 금액·요율 표시 로직 미변경.
+
 ### feat: 트랙A 발주 옵션UI + 트랙B 어댑터 연결
 - BrandOrderProductCard: 옵션(프로모)마다 세트 ± 스테퍼. 매칭 옵션이 없으면 「옵션 없음」만 표시하고 담기 불가. 장바구니에 담긴 카드는 보라 테두리.
 - brand-orders(트랙A): 카드에 setsByPromoId/onChangeSet 연결. 같은 제품에 5+1·10+4를 각각 세트로 담음.

@@ -284,6 +284,7 @@ export default function AdminTrackBSystemPage() {
     const nameById: Record<string, string> = {}
     const bankById: Record<string, { bank_name: string; bank_account: string; bank_holder: string }> = {}
     const gradeByKey: Record<string, string> = {}
+    const companyByBrand: Record<string, string> = {}
     if (sponsorIds.length) {
       const { data: profiles } = await supabase
         .from('profiles')
@@ -299,13 +300,26 @@ export default function AdminTrackBSystemPage() {
         }
       }
       const brandIds = Array.from(new Set(ledgersList.map((l) => l.brand_id)))
-      const { data: grades } = await supabase
-        .from('brand_owner_grades')
-        .select('owner_id, brand_id, grade')
-        .in('owner_id', sponsorIds)
-        .in('brand_id', brandIds)
-      for (const g of grades || []) {
-        gradeByKey[`${g.owner_id}:${g.brand_id}`] = String(g.grade || '-')
+      const { data: brandRows } = await supabase
+        .from('brands')
+        .select('id, company_id')
+        .in('id', brandIds)
+      for (const b of brandRows || []) {
+        const bid = String((b as { id: string }).id)
+        const cid = String((b as { company_id?: string | null }).company_id || '')
+        if (bid && cid) companyByBrand[bid] = cid
+      }
+      const companyIds = Array.from(new Set(Object.values(companyByBrand)))
+      if (companyIds.length) {
+        const { data: grades } = await supabase
+          .from('brand_owner_grades')
+          .select('owner_id, company_id, grade')
+          .in('owner_id', sponsorIds)
+          .in('company_id', companyIds)
+          .eq('origin_track', 'B')
+        for (const g of grades || []) {
+          gradeByKey[`${g.owner_id}:${g.company_id}`] = String(g.grade || '-')
+        }
       }
     }
 
@@ -317,7 +331,7 @@ export default function AdminTrackBSystemPage() {
         aggMap[key] = {
           sponsor_owner_id: key,
           name: nameById[key] || key.slice(0, 8),
-          grade: gradeByKey[`${key}:${l.brand_id}`] || '-',
+          grade: gradeByKey[`${key}:${companyByBrand[l.brand_id] || ''}`] || '-',
           pending_amount: 0,
           paid_amount: 0,
           pending_count: 0,
