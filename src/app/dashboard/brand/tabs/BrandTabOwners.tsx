@@ -158,35 +158,28 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
       setAutoApprove(false)
     }
 
-    const { data: links } = await supabase
-      .from('brand_owner_links')
-      .select('id, owner_id, status, approved_at')
-      .in('brand_id', companyBrandIds.length ? companyBrandIds : [brandId])
-      .order('approved_at', { ascending: false })
-
+    const { data: roster } = await supabase.rpc('get_brand_owner_roster', { p_brand_id: brandId })
     const seenOwners = new Set<string>()
-    const rows = ((links || []) as { id: string; owner_id: string; status: string; approved_at: string | null }[]).filter((r) => {
-      if (seenOwners.has(r.owner_id)) return false
-      seenOwners.add(r.owner_id)
+    const rows = ((roster || []) as Array<{
+      link_id?: string
+      owner_user_id?: string
+      owner_name?: string | null
+      owner_phone?: string | null
+      status?: string
+      full_name?: string | null
+    }>).filter((r) => {
+      const oid = String(r.owner_user_id || '')
+      if (!oid || seenOwners.has(oid)) return false
+      seenOwners.add(oid)
       return true
     })
-    const ownerIds = Array.from(new Set(rows.map((r) => r.owner_id).filter(Boolean)))
-    let userMap: Record<string, { name: string; email: string }> = {}
-    if (ownerIds.length > 0) {
-      const { data: users } = await supabase.from('users').select('id, name, email').in('id', ownerIds)
-      if (users) {
-        for (const u of users as { id: string; name?: string | null; email?: string | null }[]) {
-          userMap[u.id] = { name: u.name || '이름 없음', email: u.email || '—' }
-        }
-      }
-    }
     setLinkRows(rows.map((r) => ({
-      id: r.id,
-      owner_id: r.owner_id,
+      id: String(r.link_id || ''),
+      owner_id: String(r.owner_user_id || ''),
       status: r.status || 'pending',
-      approved_at: r.approved_at,
-      name: userMap[r.owner_id]?.name || '이름 없음',
-      email: userMap[r.owner_id]?.email || '—',
+      approved_at: null,
+      name: String(r.owner_name || r.full_name || '') || '이름 없음',
+      email: String(r.owner_phone || '') || '—',
     })))
     setLinkLoading(false)
   }
@@ -221,69 +214,48 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
         return
       }
 
-      // brand_owner_links.owner_id = users.id → auth_id → profiles (bulk-import 패턴)
-      const { data: activeLinks } = await supabase
-        .from('brand_owner_links')
-        .select('owner_id')
-        .in('brand_id', companyBrandIds.length ? companyBrandIds : [brandId])
-        .eq('status', 'active')
-
-      const linkedUserIds = Array.from(
-        new Set((activeLinks || []).map((r: { owner_id: string }) => String(r.owner_id)).filter(Boolean)),
-      )
-      if (linkedUserIds.length === 0) {
+      const { data: roster } = await supabase.rpc('get_brand_owner_roster', { p_brand_id: brandId })
+      const activeRows = ((roster || []) as Array<{
+        owner_user_id?: string
+        owner_name?: string | null
+        status?: string
+        profile_id?: string | null
+        full_name?: string | null
+        owner_store_name?: string | null
+      }>).filter((r) => String(r.status || '').toLowerCase() === 'active')
+      if (activeRows.length === 0) {
         setOwners([])
         setLoading(false)
         return
       }
 
-      const { data: userRows } = await supabase
-        .from('users')
-        .select('id, auth_id')
-        .in('id', linkedUserIds)
-        .eq('role', 'owner')
-
-      const authIds = Array.from(
-        new Set((userRows || []).map((u: { auth_id?: string | null }) => String(u.auth_id || '')).filter(Boolean)),
-      )
-      if (authIds.length === 0) {
-        setOwners([])
-        setLoading(false)
-        return
-      }
-
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('id, full_name, owner_store_name, region, arete_member, phone, last_order_at, monthly_order')
-        .in('auth_id', authIds)
-
-      const matched = profiles || []
+      const ownerIdList = activeRows.map((r) => String(r.profile_id || '')).filter(Boolean)
       let gradeMap: Record<string, string> = {}
-      if (matched.length > 0) {
-        const ownerIdList = matched.map((p: { id: string }) => p.id)
-        if (companyId) {
-          const { data: gradeRows } = await supabase
-            .from('brand_owner_grades')
-            .select('owner_id, grade')
-            .eq('company_id', companyId)
-            .eq('origin_track', 'A')
-            .in('owner_id', ownerIdList)
-          if (gradeRows) {
-            for (const row of gradeRows) gradeMap[row.owner_id] = row.grade
-          }
+      if (ownerIdList.length > 0 && companyId) {
+        const { data: gradeRows } = await supabase
+          .from('brand_owner_grades')
+          .select('owner_id, grade')
+          .eq('company_id', companyId)
+          .eq('origin_track', 'A')
+          .in('owner_id', ownerIdList)
+        if (gradeRows) {
+          for (const row of gradeRows) gradeMap[row.owner_id] = row.grade
         }
       }
-      setOwners(matched.map((p: any) => ({
-        id: p.id,
-        name: p.full_name || p.name || '이름 없음',
-        salon_name: p.owner_store_name || '-',
-        region: p.region || '-',
-        grade: gradeMap[p.id] || '취급점',
-        arete: p.arete_member || false,
-        last_order: p.last_order_at || null,
-        monthly: p.monthly_order || 0,
-        point_balance: pointBalances[p.id] ?? 0,
-      })))
+      setOwners(activeRows.map((r) => {
+        const id = String(r.profile_id || r.owner_user_id || '')
+        return {
+          id,
+          name: String(r.full_name || r.owner_name || '') || '이름 없음',
+          salon_name: String(r.owner_store_name || '') || '-',
+          region: '-',
+          grade: gradeMap[id] || '취급점',
+          arete: false,
+          last_order: null,
+          monthly: 0,
+          point_balance: pointBalances[id] ?? 0,
+        }
+      }))
       setLoading(false)
     }
     void fetchOwners()

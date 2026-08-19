@@ -5,6 +5,9 @@
 
 
 ## 2026-08-19
+### fix: BrandTabOwners 원장 목록을 get_brand_owner_roster RPC로 조회
+- loadBrandOwnerLinks / fetchOwners: brand_owner_links→users→profiles 개별 조회를 supabase.rpc('get_brand_owner_roster') 한 호출로 교체. 제휴 카드는 전체 status, 원장 현황은 active만. 등급(brand_owner_grades)·companyBrandIds 이펙트는 미변경.
+
 ### fix: BrandTabOwners 등급 저장 시 tier_package_id 동시 저장
 - updateGrade: 저장 직전 brand_tier_packages에서 brand_id+tier_name, 없으면 company_id+tier_name으로 패키지를 찾아 upsert에 tier_package_id 포함. 매칭 없으면 null로 진행(에러 없음). 기존 NULL 행 일괄 보정 없음.
 
