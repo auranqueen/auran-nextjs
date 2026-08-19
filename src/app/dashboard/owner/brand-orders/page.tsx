@@ -259,6 +259,24 @@ export default function BrandOrdersPage() {
         const cid = brandCompanyMap[bid]
         if (cid && gradeByCompanyOuter[cid]) gradeMap[bid] = gradeByCompanyOuter[cid]
       }
+      const missingPkgCompanyIds = Object.keys(gradeByCompanyOuter).filter(
+        (cid) => Boolean(gradeByCompanyOuter[cid]) && !tierPackageByCompany[cid],
+      )
+      if (missingPkgCompanyIds.length > 0) {
+        const { data: fallbackPkgs } = await supabase
+          .from('brand_tier_packages')
+          .select('id, company_id, tier_name')
+          .in('company_id', missingPkgCompanyIds)
+          .eq('is_active', true)
+        for (const pkg of fallbackPkgs || []) {
+          const cid = String((pkg as { company_id?: string }).company_id || '')
+          if (!cid || tierPackageByCompany[cid]) continue
+          const ownerGrade = gradeByCompanyOuter[cid]
+          if (ownerGrade && String((pkg as { tier_name?: string }).tier_name || '') === ownerGrade) {
+            tierPackageByCompany[cid] = String((pkg as { id: string }).id)
+          }
+        }
+      }
     }
     setGradeByBrandId(gradeMap)
     // HQ 강제이벤트 조회 (본사 강제노출, owner_id is null, 활성+기간내)
@@ -323,7 +341,8 @@ export default function BrandOrdersPage() {
       const tierPackageIds = Array.from(new Set(Object.values(tierPackageByCompany)))
       const gradeByTierPackage: Record<string, string> = {}
       for (const cid of Object.keys(tierPackageByCompany)) {
-        gradeByTierPackage[tierPackageByCompany[cid]] = gradeByCompanyOuter[cid] || DEFAULT_GRADE
+        const mappedGrade = gradeByCompanyOuter[cid]
+        if (mappedGrade) gradeByTierPackage[tierPackageByCompany[cid]] = mappedGrade
       }
       const [{ data: prodRows }, { data: promoRuleRows }] = await Promise.all([
         supabase

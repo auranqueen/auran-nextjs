@@ -5,6 +5,9 @@
 
 
 ## 2026-08-19
+### fix: 원장 발주 등급옵션 매칭 — tier_package_id NULL 폴백
+- brand-orders/page.tsx: brand_owner_grades.tier_package_id가 비어 있으면 brand_tier_packages.tier_name과 원장 grade 문자열을 맞춰 패키지를 찾고, 그 패키지 프로모 규칙만 로드. 매칭 실패 시 기존처럼 옵션 없음(잘못된 취급점 계산 방지). gradeByTierPackage condition은 gradeByCompanyOuter와 동일 값만 사용(headerGrade와 옵션 매칭 등급 일치).
+
 ### fix: 살롱 페이지 원장 등급뱃지를 company_id 기준으로 전환
 - salons/[id]/page.tsx: brand_owner_grades에서 company_id, grade를 읽고, 해당 회사의 brands로 뱃지를 매핑. 살롱 기본정보·리뷰 로직 미변경.
 
