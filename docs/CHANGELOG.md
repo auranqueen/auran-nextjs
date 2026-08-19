@@ -5,6 +5,9 @@
 
 
 ## 2026-08-19
+### fix: 살롱 페이지 원장 등급뱃지를 company_id 기준으로 전환
+- salons/[id]/page.tsx: brand_owner_grades에서 company_id, grade를 읽고, 해당 회사의 brands로 뱃지를 매핑. 살롱 기본정보·리뷰 로직 미변경.
+
 ### fix: brand_owner_grades 조회 4곳을 company_id 기준으로 전환
 - BrandTabSample / BrandTabLive: 등급 대상 원장을 brands.company_id로 조회. brand_id 필터 제거.
 - accrueHqStockCommission: 주문 brand_id → brands.company_id 후 회사 단위로 구매자·스폰서 등급 조회. 요율(hq_commission_rates)·계산식 미변경.

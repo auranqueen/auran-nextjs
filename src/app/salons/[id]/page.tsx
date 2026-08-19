@@ -259,36 +259,43 @@ export default function SalonHomePage() {
 
         if (profileOwnerId) {
           const [{ data: gradeRows }, { data: areteRows }] = await Promise.all([
-            sb.from('brand_owner_grades').select('brand_id, grade').eq('owner_id', profileOwnerId),
+            sb.from('brand_owner_grades').select('company_id, grade').eq('owner_id', profileOwnerId),
             sb.from('brand_arete_members').select('company_id').eq('owner_id', profileOwnerId).eq('status', 'active'),
           ])
+          const gradeCompanyIds = Array.from(new Set(
+            (gradeRows || []).map((r: { company_id?: string | null }) => r.company_id).filter(Boolean),
+          )) as string[]
           const areteCompanyIds = Array.from(new Set(
             (areteRows || []).map((r: { company_id?: string | null }) => r.company_id).filter(Boolean),
           )) as string[]
-          let areteBrandIds: string[] = []
-          if (areteCompanyIds.length) {
-            const { data: areteBrandRows } = await sb.from('brands').select('id').in('company_id', areteCompanyIds)
-            areteBrandIds = (areteBrandRows || []).map((b: { id: string }) => b.id)
-          }
-          const brandIds = Array.from(new Set([
-            ...((gradeRows || []).map((r: { brand_id: string }) => r.brand_id)),
-            ...areteBrandIds,
-          ]))
-          let brandNameMap: Record<string, string> = {}
-          if (brandIds.length) {
-            const { data: brandRows } = await sb.from('brands').select('id, name').in('id', brandIds)
-            if (brandRows) {
-              for (const b of brandRows) brandNameMap[b.id] = String(b.name || '')
+          const allCompanyIds = Array.from(new Set([...gradeCompanyIds, ...areteCompanyIds]))
+          const brandsByCompany: Record<string, { id: string; name: string }[]> = {}
+          const brandNameMap: Record<string, string> = {}
+          if (allCompanyIds.length) {
+            const { data: brandRows } = await sb.from('brands').select('id, name, company_id').in('company_id', allCompanyIds)
+            for (const b of brandRows || []) {
+              const cid = String((b as { company_id?: string | null }).company_id || '')
+              const bid = String(b.id)
+              if (!cid || !bid) continue
+              brandNameMap[bid] = String(b.name || '')
+              if (!brandsByCompany[cid]) brandsByCompany[cid] = []
+              brandsByCompany[cid].push({ id: bid, name: String(b.name || '') })
             }
           }
+          const areteBrandIds = areteCompanyIds.flatMap((cid) => (brandsByCompany[cid] || []).map((b) => b.id))
           const areteSet = new Set(areteBrandIds)
           const byBrand: Record<string, { brandId: string; brandName: string; grade: string; arete: boolean }> = {}
           for (const r of gradeRows || []) {
-            byBrand[r.brand_id] = {
-              brandId: r.brand_id,
-              brandName: brandNameMap[r.brand_id] || '브랜드',
-              grade: r.grade || '취급점',
-              arete: areteSet.has(r.brand_id),
+            const cid = String((r as { company_id?: string | null }).company_id || '')
+            if (!cid) continue
+            const grade = String((r as { grade?: string | null }).grade || '취급점')
+            for (const b of brandsByCompany[cid] || []) {
+              byBrand[b.id] = {
+                brandId: b.id,
+                brandName: brandNameMap[b.id] || b.name || '브랜드',
+                grade,
+                arete: areteSet.has(b.id),
+              }
             }
           }
           for (const bid of areteBrandIds) {
