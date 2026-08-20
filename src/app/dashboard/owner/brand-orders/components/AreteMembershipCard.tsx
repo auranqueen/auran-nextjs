@@ -25,7 +25,6 @@ const CARD: CSSProperties = {
 const TEXT = 'rgba(255,255,255,0.65)'
 const SUB = 'rgba(255,255,255,0.3)'
 const PURPLE = '#7B5EA7'
-const GOLD = '#C9A96E'
 
 function thisMonthDate() {
   const d = new Date()
@@ -40,6 +39,7 @@ export default function AreteMembershipCard({ ownerProfileId }: Props) {
   const [invoice, setInvoice] = useState<{ id: string; amount: number; status: string } | null>(null)
   const [bundleItems, setBundleItems] = useState<BundleItem[]>([])
   const [pointBalance, setPointBalance] = useState(0)
+  const [rewardBalance, setRewardBalance] = useState(0)
   const [paying, setPaying] = useState(false)
   const [toast, setToast] = useState('')
 
@@ -50,6 +50,8 @@ export default function AreteMembershipCard({ ownerProfileId }: Props) {
 
   const load = useCallback(async () => {
     if (!ownerProfileId) {
+      setPointBalance(0)
+      setRewardBalance(0)
       setLoading(false)
       return
     }
@@ -63,10 +65,12 @@ export default function AreteMembershipCard({ ownerProfileId }: Props) {
     const cid = (memberRow as { company_id?: string } | null)?.company_id || null
     setCompanyId(cid)
     if (!cid) {
+      setPointBalance(0)
+      setRewardBalance(0)
       setLoading(false)
       return
     }
-    const [{ data: invRow }, { data: bundleRow }, { data: pointRow }] = await Promise.all([
+    const [{ data: invRow }, { data: bundleRow }, { data: pointRow }, { data: rewardRow }] = await Promise.all([
       supabase
         .from('brand_arete_invoices')
         .select('id, amount, status')
@@ -87,10 +91,18 @@ export default function AreteMembershipCard({ ownerProfileId }: Props) {
         .eq('owner_id', ownerProfileId)
         .eq('track', 'ARETE')
         .maybeSingle(),
+      supabase
+        .from('brand_points')
+        .select('balance')
+        .eq('company_id', cid)
+        .eq('owner_id', ownerProfileId)
+        .eq('track', 'REWARD')
+        .maybeSingle(),
     ])
     setInvoice((invRow as { id: string; amount: number; status: string } | null) || null)
     setBundleItems(((bundleRow as { items?: BundleItem[] } | null)?.items) || [])
     setPointBalance(Math.trunc(Number((pointRow as { balance?: number } | null)?.balance) || 0))
+    setRewardBalance(Math.trunc(Number((rewardRow as { balance?: number } | null)?.balance) || 0))
     setLoading(false)
   }, [ownerProfileId, billingMonth])
 
@@ -225,10 +237,19 @@ export default function AreteMembershipCard({ ownerProfileId }: Props) {
           </div>
         </div>
       )}
-      <div style={CARD}>
-        <div style={{ fontSize: 12, color: SUB, marginBottom: 6 }}>아레테 포인트</div>
-        <div style={{ fontSize: 20, fontWeight: 600, color: GOLD }}>{pointBalance.toLocaleString()}P</div>
-        <div style={{ fontSize: 10, color: SUB, marginTop: 4 }}>포인트 누적잔액 · 이벤트 상품 결제시 사용 가능</div>
+      <div style={{ display: 'flex', gap: 10, margin: '0 16px 12px' }}>
+        <div style={{ flex: 1, background: 'linear-gradient(160deg, #fff 0%, #faf3e6 100%)', border: '1px solid #ecdfc4', borderRadius: 16, padding: 14 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 9, background: '#c9a96e', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8, color: '#fff', fontSize: 12, fontWeight: 600 }}>P</div>
+          <div style={{ fontSize: 11, color: '#a8863f', marginBottom: 4 }}>적립포인트</div>
+          <div style={{ fontSize: 17, fontWeight: 500, color: '#1A1A2E' }}>{rewardBalance.toLocaleString()}P</div>
+          <div style={{ borderTop: '1px solid #ecdfc4', marginTop: 10, paddingTop: 8, fontSize: 10, color: '#888888' }}>발주 시 등급 비율로 적립</div>
+        </div>
+        <div style={{ flex: 1, background: 'linear-gradient(160deg, #fff 0%, #f1ecf7 100%)', border: '1px solid #e2d5f0', borderRadius: 16, padding: 14 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 9, background: '#7b5ea7', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8, color: '#fff', fontSize: 12, fontWeight: 600 }}>P</div>
+          <div style={{ fontSize: 11, color: '#7b5ea7', marginBottom: 4 }}>아레테포인트</div>
+          <div style={{ fontSize: 17, fontWeight: 500, color: '#1A1A2E' }}>{pointBalance.toLocaleString()}P</div>
+          <div style={{ borderTop: '1px solid #e2d5f0', marginTop: 10, paddingTop: 8, fontSize: 10, color: '#888888' }}>포인트 누적잔액 · 이벤트 상품 결제시 사용 가능</div>
+        </div>
       </div>
     </div>
   )
