@@ -9,7 +9,6 @@ import {
   SUB,
   TEXT,
   formatOrderItemLine,
-  timeAgo,
   type OrderItemLine,
 } from '../brandOrdersUi'
 
@@ -79,12 +78,23 @@ function pouchTitle(row: PouchRow): string {
   return `🎁 ${month}엔 ${tier}장 파우치를 받으실 예정이에요`
 }
 
+function formatOrderDateTime(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const h24 = d.getHours()
+  const period = h24 < 12 ? '오전' : '오후'
+  const h12 = h24 % 12 || 12
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} ${period} ${h12}:${min}`
+}
+
 const cardStyle = {
   background: '#fff',
   border: `1px solid ${BORDER}`,
   borderRadius: 10,
   padding: '12px',
   marginBottom: 10,
+  borderBottom: '1px dashed #ede9f7',
 } as const
 
 export default function OwnerOrderStatement({ ownerProfileId, onReturnRequest }: Props) {
@@ -263,7 +273,7 @@ export default function OwnerOrderStatement({ ownerProfileId, onReturnRequest }:
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
               <div style={{ fontSize: 13, fontWeight: 500, color: TEXT }}>{o.brand_name}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 11, color: SUB }}>{timeAgo(o.created_at)}</span>
+                <span style={{ fontSize: 11, color: SUB }}>{formatOrderDateTime(o.created_at)}</span>
                 <span style={{ fontSize: 11, padding: '2px 9px', borderRadius: 10, background: st.bg, color: st.color }}>{st.label}</span>
               </div>
             </div>

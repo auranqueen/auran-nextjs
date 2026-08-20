@@ -5,6 +5,10 @@
 
 
 ## 2026-08-20
+### fix: 발주내역 날짜를 년월일 시분으로 표시하고 카드 구분선 추가
+- OwnerOrderStatement: timeAgo 대신 이 파일 전용 formatOrderDateTime(예: 2026.8.20 오후 4:27). brandOrdersUi.timeAgo 미변경. cardStyle에 borderBottom dashed 추가, marginBottom 10 유지. 조회·정렬·금액 미변경.
+- 쉽게: 발주내역에 몇 시에 주문했는지까지 보이도록, 그리고 항목끼리 구분선을 넣어서 언제 시킨 발주인지 한눈에 알아보기 쉽게 만들었다.
+
 ### fix: 원장 발주 상품카드 뱃지를 주문·증정 개수로 표시
 - BrandOrderProductCard 뱃지: 세트 합 대신 qty×sets(주문) + bonus_qty×sets(증정). 예: 5+1 1세트 → 「5개 주문 → 총 6개 받아요 (증정 1개 포함)」. 증정 0이면 괄호 생략. 담기/스테퍼/트랙B 어댑터 미변경.
 - 쉽게: 상품카드 뱃지가 세트 개수만 보여주던 걸, 원장님이 한눈에 '얼마 시키면 얼마나 오는지' 바로 알 수 있게 주문개수와 증정포함 총개수를 같이 보여주도록 고쳤다.
