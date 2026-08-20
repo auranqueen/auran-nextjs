@@ -5,6 +5,10 @@
 
 
 ## 2026-08-20
+### fix: 하단 네비 홈 탭이 하위 경로에서 같이 켜지던 문제
+- DashboardBottomNav: 같은 role 탭 중 다른 href의 접두사인 항목(홈 `/dashboard/owner` 등)은 pathname 완전 일치만 active. 그 외는 기존 startsWith 유지. owner/partner/salon/brand 공통(admin role 없음).
+- 쉽게: 예약·시술차트 같은 다른 메뉴에 들어가도 홈 버튼이 같이 켜지지 않게 고쳤다.
+
 ### feat: 원장 발주 화면에 「이번 달 발주 현황」 카드 추가
 - brand-orders/page.tsx: 등급뱃지 아래·EventPackageSection 위에 카드. billingCycleRange(현재)로 brand_orders 건수·net 금액, brand_billing_invoices unpaid total_amount 합산. headerCompanyId 소속 브랜드만. 「결제하러 가기」→ invoice. 로딩 중엔 미표시.
 - 쉽게: 발주 화면에서 이번 청구 기간에 몇 건·얼마 시켰는지, 결제 대기 금액이 있으면 바로 보이고, 결제 화면으로 갈 수 있게 했다.

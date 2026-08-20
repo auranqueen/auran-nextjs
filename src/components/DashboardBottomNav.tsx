@@ -4,8 +4,18 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useCart } from '@/context/CartContext'
 
 type Role = 'customer' | 'partner' | 'salon' | 'owner' | 'brand'
+type NavItem = { icon: string; label: string; href: string }
 
-const NAV: Record<Role, { icon: string; label: string; href: string }[]> = {
+function isNavTabActive(pathname: string | null, tabHref: string, items: NavItem[]): boolean {
+  if (!pathname) return false
+  const isPrefixOfSibling = items.some(
+    (other) => other.href !== tabHref && other.href.startsWith(tabHref + '/'),
+  )
+  if (isPrefixOfSibling) return pathname === tabHref
+  return pathname === tabHref || (tabHref !== '/' && pathname.startsWith(tabHref + '/'))
+}
+
+const NAV: Record<Role, NavItem[]> = {
   customer: [
     { icon: '🏠', label: '홈', href: '/' },
     { icon: '🛍️', label: '샵', href: '/products' },
@@ -66,7 +76,7 @@ export default function DashboardBottomNav({ role }: { role: Role }) {
       }}
     >
       {items.map(t => {
-        const active = pathname === t.href || (t.href !== '/' && pathname?.startsWith(t.href + '/'))
+        const active = isNavTabActive(pathname, t.href, items)
         return (
           <button
             key={t.label}
