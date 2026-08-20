@@ -49,11 +49,19 @@ export default function BrandOrderProductCard({
       alignItems: 'flex-start',
       gap: 10,
     }}>
-      {inCart ? (
-        <div style={{ flexBasis: '100%', fontSize: 11, padding: '4px 8px', borderRadius: 8, background: '#fbeef2', color: '#c96a86' }}>
-          ✨ 담은 수량 총 {brandPromos.reduce((s, p) => s + (setsByPromoId[p.id] || 0), 0)}개
-        </div>
-      ) : null}
+      {inCart ? (() => {
+        const totals = brandPromos.reduce((acc, p) => {
+          const sets = setsByPromoId[p.id] || 0
+          const orderQty = Math.max(1, Math.trunc(p.qty ?? 1)) * sets
+          const bonusQty = Math.trunc(p.bonus_qty ?? 0) * sets
+          return { order: acc.order + orderQty, bonus: acc.bonus + bonusQty }
+        }, { order: 0, bonus: 0 })
+        return (
+          <div style={{ flexBasis: '100%', fontSize: 11, padding: '4px 8px', borderRadius: 8, background: '#fbeef2', color: '#c96a86' }}>
+            ✨ {totals.order}개 주문 → 총 {totals.order + totals.bonus}개 받아요{totals.bonus > 0 ? ` (증정 ${totals.bonus}개 포함)` : ''}
+          </div>
+        )
+      })() : null}
       <div style={{ width: 52, height: 52, borderRadius: 12, background: 'linear-gradient(135deg, #faf3e6, #f1ecf7)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', flexShrink: 0 }}>
         {prod.thumb_img
           ? <img src={prod.thumb_img} alt={prod.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 12 }} />
