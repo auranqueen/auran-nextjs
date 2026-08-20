@@ -598,6 +598,7 @@ export default function BrandOrdersPage() {
   const popupRewardApplied = usePointsReward ? Math.min(popupRewardUsable, popupFinalAmount) : 0
   const popupFinalAfterReward = Math.max(0, popupFinalAmount - popupRewardApplied)
   const totalQty = cart.reduce((s, c) => s + cartLineQty(c), 0)
+  const cartKindCount = new Set(cart.map((c) => c.product.id)).size
 
   const changeSet = (productId: string, promoId: string, delta: number) => {
     const full = products.find((p) => p.id === productId)
@@ -876,7 +877,7 @@ export default function BrandOrdersPage() {
   }
 
   return (
-    <div style={{ background: BG, minHeight: '100vh', paddingBottom: 80 }}>
+    <div style={{ background: BG, minHeight: '100vh', paddingBottom: totalQty > 0 ? 160 : 80 }}>
       {toast && (
         <div style={{ position: 'fixed', top: 14, left: '50%', transform: 'translateX(-50%)', background: PURPLE, color: '#fff', fontSize: 12, padding: '7px 18px', borderRadius: 20, zIndex: 999, whiteSpace: 'nowrap' }}>
           {toast}
@@ -886,25 +887,26 @@ export default function BrandOrdersPage() {
       <div style={{ padding: '16px 16px 0', display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
         <button type="button" onClick={() => router.back()} style={{ background: 'none', border: 'none', fontSize: 20, cursor: 'pointer', color: TEXT, padding: 0 }}>←</button>
         <div style={{ fontSize: 16, fontWeight: 500, color: TEXT }}>브랜드 발주</div>
-        <button
-          type="button"
-          onClick={() => router.push('/dashboard/owner/brand-orders/invoice')}
-          style={{ marginLeft: 'auto', fontSize: 11, padding: '4px 10px', borderRadius: 16, border: `1px solid ${PURPLE}`, background: `${PURPLE}10`, color: PURPLE, cursor: 'pointer' }}
-        >
-          월청구서
-        </button>
-        <button type="button" onClick={() => router.push('/dashboard/owner/delivery-history')} style={{ fontSize: 12, color: '#7B5EA7', background: 'none', border: 'none', cursor: 'pointer' }}>배송이력 보기</button>
-        {totalQty > 0 && (
-          <div style={{ fontSize: 12, padding: '4px 12px', borderRadius: 20, background: PURPLE, color: '#fff', cursor: 'pointer' }} onClick={() => setShowPopup(true)}>
-            전체 발주하기 {totalQty}개
-          </div>
-        )}
       </div>
 
-      <div style={{ padding: '8px 16px 12px' }}>
+      <div style={{ padding: '8px 16px 12px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 12, padding: '3px 10px', borderRadius: 20, background: `${PURPLE}15`, color: PURPLE, border: `0.5px solid ${PURPLE}40` }}>
           {headerGrade} · 적립 {gradePointRate(headerGrade, headerGradeRateMap)}%
         </span>
+        <button
+          type="button"
+          onClick={() => router.push('/dashboard/owner/brand-orders/invoice')}
+          style={{ background: 'none', border: 'none', padding: 0, fontSize: 12, color: PURPLE, cursor: 'pointer' }}
+        >
+          월청구서
+        </button>
+        <button
+          type="button"
+          onClick={() => router.push('/dashboard/owner/delivery-history')}
+          style={{ background: 'none', border: 'none', padding: 0, fontSize: 12, color: PURPLE, cursor: 'pointer' }}
+        >
+          배송이력 보기
+        </button>
       </div>
       <EventPackageSection campaigns={hqForcedCampaigns} ownerProfileId={ownerProfileId} />
       <AreteMembershipCard ownerProfileId={ownerProfileId} />
@@ -1194,6 +1196,30 @@ export default function BrandOrdersPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {totalQty > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowPopup(true)}
+          style={{
+            position: 'fixed',
+            left: 16,
+            right: 16,
+            bottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+            zIndex: 31,
+            padding: '14px 16px',
+            border: 'none',
+            borderRadius: 999,
+            background: PURPLE,
+            color: '#fff',
+            fontSize: 15,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          전체 발주하기 {cartKindCount}가지 제품
+        </button>
       )}
 
       <DashboardBottomNav role="owner" />
