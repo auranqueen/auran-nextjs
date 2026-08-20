@@ -4,6 +4,10 @@
 ---
 
 
+## 2026-08-20
+### style: 원장 발주 상품카드 목업 스타일
+- BrandOrderProductCard: 카드 radius 16·패딩 12, 담긴 상태 연보라 그라데이션/테두리, 52px 썸네일, 골드 가격, 옵션칩·선택행 강조, 스테퍼 원형 radius, 담은 수량 핑크 뱃지. props/담기 로직 미변경.
+
 ## 2026-08-19
 ### fix: BrandTabOwners 원장 목록을 get_brand_owner_roster RPC로 조회
 - loadBrandOwnerLinks / fetchOwners: brand_owner_links→users→profiles 개별 조회를 supabase.rpc('get_brand_owner_roster') 한 호출로 교체. 제휴 카드는 전체 status, 원장 현황은 active만. 등급(brand_owner_grades)·companyBrandIds 이펙트는 미변경.
