@@ -85,7 +85,32 @@ function formatOrderDateTime(iso: string): string {
   const period = h24 < 12 ? '오전' : '오후'
   const h12 = h24 % 12 || 12
   const min = String(d.getMinutes()).padStart(2, '0')
-  return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} ${period} ${h12}:${min}`
+  return `${period} ${h12}:${min}`
+}
+
+function formatOrderDateLabel(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`
+}
+
+function groupOrdersByDate(list: StatementOrder[]): { dateLabel: string; items: StatementOrder[] }[] {
+  const groups: { dateLabel: string; items: StatementOrder[] }[] = []
+  const indexByKey: Record<string, number> = {}
+  for (const o of list) {
+    const d = new Date(o.created_at)
+    const key = Number.isNaN(d.getTime())
+      ? ''
+      : `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`
+    const existing = indexByKey[key]
+    if (existing === undefined) {
+      indexByKey[key] = groups.length
+      groups.push({ dateLabel: formatOrderDateLabel(o.created_at), items: [o] })
+    } else {
+      groups[existing].items.push(o)
+    }
+  }
+  return groups
 }
 
 const cardStyle = {
@@ -256,6 +281,7 @@ export default function OwnerOrderStatement({ ownerProfileId, onReturnRequest }:
   }
 
   const empty = orders.length === 0 && pouches.length === 0
+  const ordersByDate = groupOrdersByDate(orders)
 
   return (
     <div>
@@ -265,7 +291,12 @@ export default function OwnerOrderStatement({ ownerProfileId, onReturnRequest }:
         </div>
       )}
 
-      {orders.map((o) => {
+      {ordersByDate.map((group, gi) => (
+        <div key={group.dateLabel || gi} style={{ marginTop: gi === 0 ? 0 : 20 }}>
+          <div style={{ fontSize: 12, color: SUB, textAlign: 'left', margin: '8px 0' }}>
+            {group.dateLabel}
+          </div>
+          {group.items.map((o) => {
         const st = STATUS_MAP[o.status] || { label: o.status, color: SUB, bg: '#F5F5F5' }
         const gross = o.total_amount + o.points_used + o.points_used_reward
         return (
@@ -326,7 +357,9 @@ export default function OwnerOrderStatement({ ownerProfileId, onReturnRequest }:
             )}
           </div>
         )
-      })}
+          })}
+        </div>
+      ))}
 
       {pouches.map((p) => {
         const kit = p.pouch_kit_snapshot || []

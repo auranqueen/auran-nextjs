@@ -5,6 +5,10 @@
 
 
 ## 2026-08-20
+### fix: 발주내역을 날짜별 그룹 헤더로 묶고 카드에는 시분만 표시
+- OwnerOrderStatement: created_at 최신순 배열을 년월일 키로 그룹핑. 헤더 「2026년 8월 20일」, 카드는 「오후 4:27」. 그룹 사이 marginTop 20. 점선 구분선·조회·금액·파우치 미변경.
+- 쉽게: 발주내역을 날짜별로 묶어서, 몇 월 며칠에 시킨 발주인지 헤더로 딱 보이게 하고 그 안에서는 몇 시에 시켰는지만 표시하도록 바꿨다.
+
 ### fix: 발주내역 날짜를 년월일 시분으로 표시하고 카드 구분선 추가
 - OwnerOrderStatement: timeAgo 대신 이 파일 전용 formatOrderDateTime(예: 2026.8.20 오후 4:27). brandOrdersUi.timeAgo 미변경. cardStyle에 borderBottom dashed 추가, marginBottom 10 유지. 조회·정렬·금액 미변경.
 - 쉽게: 발주내역에 몇 시에 주문했는지까지 보이도록, 그리고 항목끼리 구분선을 넣어서 언제 시킨 발주인지 한눈에 알아보기 쉽게 만들었다.
