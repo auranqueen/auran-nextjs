@@ -5,6 +5,10 @@
 
 
 ## 2026-08-20
+### feat: 원장 발주 화면에 「이번 달 발주 현황」 카드 추가
+- brand-orders/page.tsx: 등급뱃지 아래·EventPackageSection 위에 카드. billingCycleRange(현재)로 brand_orders 건수·net 금액, brand_billing_invoices unpaid total_amount 합산. headerCompanyId 소속 브랜드만. 「결제하러 가기」→ invoice. 로딩 중엔 미표시.
+- 쉽게: 발주 화면에서 이번 청구 기간에 몇 건·얼마 시켰는지, 결제 대기 금액이 있으면 바로 보이고, 결제 화면으로 갈 수 있게 했다.
+
 ### style: 원장 발주 헤더를 정리하고 하단 발주 알약 버튼 추가
 - brand-orders/page.tsx: 헤더에서 월청구서·배송이력 버튼을 제거하고 등급뱃지 옆 작은 텍스트 링크로 이동. 헤더의 「전체 발주하기 N개」 제거. 하단 고정 알약 버튼 신설 — totalQty>0일 때 「전체 발주하기 {cartKindCount}가지 제품」(담긴 상품 id 종류 수, 주문+증정 합산 아님). 하단 네비와 안 겹치도록 paddingBottom 80→160(담았을 때). onClick은 기존 setShowPopup. 팝업·장바구니 로직 미변경.
 - 쉽게: 위쪽 작은 버튼들을 등급 뱃지 옆 링크로 옮기고, 담긴 제품이 있으면 아래 큰 보라 알약 버튼으로 발주 팝업을 열게 했다. 아래 메뉴바에 가리지 않게 여백도 늘렸다.

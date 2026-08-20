@@ -21,6 +21,7 @@ import { useBrandGradeRates } from '@/lib/brand/useBrandGradeRates'
 import { resolveOwnerIds } from '@/lib/brand/resolveOwnerIds'
 import { submitOrderBatch } from '@/lib/brand/submitOrderBatch'
 import { resolveHqCampaignEffects, type HqForcedCampaign } from '@/lib/brand/hqForcedCampaignPromos'
+import { billingCycleRange } from '@/lib/billing/aggregateBrandBilling'
 
 const BG = '#ffffff'
 const LIGHT = '#f8f7fc'
@@ -154,6 +155,10 @@ export default function BrandOrdersPage() {
   const [ownerProfileId, setOwnerProfileId] = useState<string | null>(null)
   const [trackAllowed, setTrackAllowed] = useState<boolean | null>(null)
   const [productGridCols, setProductGridCols] = useState(3)
+  const [monthlyOrderCount, setMonthlyOrderCount] = useState(0)
+  const [monthlyOrderAmount, setMonthlyOrderAmount] = useState(0)
+  const [unpaidAmount, setUnpaidAmount] = useState(0)
+  const [monthlySummaryLoading, setMonthlySummaryLoading] = useState(true)
   const overlayRef = useRef<HTMLDivElement>(null)
 
   const showToast = (t: string) => { setToast(t); setTimeout(() => setToast(''), 2500) }
@@ -650,6 +655,83 @@ export default function BrandOrdersPage() {
     return () => { cancelled = true }
   }, [cart, brandCompanyMap, ownerProfileId])
 
+  useEffect(() => {
+    if (!headerCompanyId || !ownerProfileId) {
+      setMonthlyOrderCount(0)
+      setMonthlyOrderAmount(0)
+      setUnpaidAmount(0)
+      setMonthlySummaryLoading(false)
+      return
+    }
+    const brandIds = Object.entries(brandCompanyMap)
+      .filter(([, cid]) => cid === headerCompanyId)
+      .map(([bid]) => bid)
+    if (brandIds.length === 0) {
+      setMonthlyOrderCount(0)
+      setMonthlyOrderAmount(0)
+      setUnpaidAmount(0)
+      setMonthlySummaryLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setMonthlySummaryLoading(true)
+    const { startIso, endIso } = billingCycleRange(new Date())
+
+    void (async () => {
+      try {
+        const [{ data: orderRows, error: orderErr }, { data: invoiceRows, error: invoiceErr }] = await Promise.all([
+          supabase
+            .from('brand_orders')
+            .select('total_amount, points_used, points_used_reward')
+            .eq('profile_id', ownerProfileId)
+            .in('brand_id', brandIds)
+            .gte('created_at', startIso)
+            .lt('created_at', endIso),
+          supabase
+            .from('brand_billing_invoices')
+            .select('total_amount')
+            .eq('owner_id', ownerProfileId)
+            .eq('company_id', headerCompanyId)
+            .eq('status', 'unpaid'),
+        ])
+        if (cancelled) return
+        if (orderErr) console.error('[monthly-summary] brand_orders', orderErr)
+        if (invoiceErr) console.error('[monthly-summary] brand_billing_invoices', invoiceErr)
+
+        const rows = orderErr ? [] : (orderRows || [])
+        const count = rows.length
+        const amount = rows.reduce((s, o) => {
+          const total = Math.trunc(Number((o as { total_amount?: number }).total_amount) || 0)
+          const used = Math.trunc(Number((o as { points_used?: number }).points_used) || 0)
+          const usedReward = Math.trunc(Number((o as { points_used_reward?: number }).points_used_reward) || 0)
+          return s + Math.max(0, total - used - usedReward)
+        }, 0)
+        const unpaid = invoiceErr
+          ? 0
+          : (invoiceRows || []).reduce(
+            (s, inv) => s + Math.trunc(Number((inv as { total_amount?: number }).total_amount) || 0),
+            0,
+          )
+
+        setMonthlyOrderCount(count)
+        setMonthlyOrderAmount(amount)
+        setUnpaidAmount(unpaid)
+      } catch (e) {
+        console.error('[monthly-summary]', e)
+        if (!cancelled) {
+          setMonthlyOrderCount(0)
+          setMonthlyOrderAmount(0)
+          setUnpaidAmount(0)
+        }
+      } finally {
+        if (!cancelled) setMonthlySummaryLoading(false)
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [headerCompanyId, brandCompanyMap, ownerProfileId, supabase])
+
   const submitOrder = async () => {
     if (cart.length === 0) { showToast('제품을 선택해주세요'); return }
 
@@ -908,6 +990,66 @@ export default function BrandOrdersPage() {
           배송이력 보기
         </button>
       </div>
+      {!monthlySummaryLoading && (
+        <div
+          style={{
+            background: '#fff',
+            border: '1px solid #ECE7DE',
+            borderRadius: 16,
+            padding: '16px 18px',
+            margin: '0 16px 12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ fontSize: 14, color: '#8A7E72', fontWeight: 500 }}>이번 달 발주 현황</div>
+            <div style={{ fontSize: 12, color: '#B4A99A' }}>{new Date().getMonth() + 1}월</div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: unpaidAmount > 0 ? 10 : 12 }}>
+            <div style={{ background: '#FBF7EE', border: '1px solid #EFE3C8', borderRadius: 12, padding: 12 }}>
+              <div style={{ fontSize: 12, color: '#B08A46', marginBottom: 6 }}>발주 건수</div>
+              <div style={{ fontSize: 22, fontWeight: 600, color: '#8A6A2E' }}>{monthlyOrderCount}건</div>
+            </div>
+            <div style={{ background: '#F5F1FA', border: '1px solid #E1D8F0', borderRadius: 12, padding: 12 }}>
+              <div style={{ fontSize: 12, color: '#7B5EA7', marginBottom: 6 }}>발주 금액</div>
+              <div style={{ fontSize: 22, fontWeight: 600, color: '#5A4380' }}>{monthlyOrderAmount.toLocaleString()}원</div>
+            </div>
+          </div>
+          {unpaidAmount > 0 && (
+            <div
+              style={{
+                background: '#FBF0EC',
+                border: '1px solid #F0D9CF',
+                borderRadius: 12,
+                padding: '12px 14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 12,
+              }}
+            >
+              <div style={{ fontSize: 13, color: '#C0724E', fontWeight: 500 }}>결제대기</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: '#A85B38' }}>{unpaidAmount.toLocaleString()}원</div>
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => router.push('/dashboard/owner/brand-orders/invoice')}
+            style={{
+              width: '100%',
+              background: '#7B5EA7',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 999,
+              padding: 13,
+              fontSize: 14,
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            결제하러 가기
+          </button>
+        </div>
+      )}
       <EventPackageSection campaigns={hqForcedCampaigns} ownerProfileId={ownerProfileId} />
       <AreteMembershipCard ownerProfileId={ownerProfileId} />
       <div style={{ borderTop: '0.5px solid rgba(255,255,255,0.07)', margin: '0 16px 12px' }} />
