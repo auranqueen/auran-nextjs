@@ -3,6 +3,14 @@ import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import OwnerOrenTalkButton from '../components/OwnerOrenTalkButton'
+import {
+  type OwnerRow,
+  type CsvRowResult,
+  type BulkImportResult,
+  type BrandOwnerLinkRow,
+  type Props,
+  downloadCsvTemplate,
+} from './BrandTabOwners.helpers'
 const CARD = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
@@ -14,50 +22,6 @@ const GRADE_COLORS: Record<string, string> = {
   '프리미엄전문점': '#C9A96E',
   '전문점': '#9C7FD4',
   '취급점': '#64B5F6',
-}
-interface OwnerRow {
-  id: string
-  name: string
-  salon_name: string
-  region: string
-  grade: string
-  arete: boolean
-  last_order: string | null
-  monthly: number
-  point_balance: number
-}
-type CsvRowResult = {
-  line: number
-  store_name: string
-  amount?: number
-  status: 'ok' | 'skipped' | 'no_match' | 'conflict' | 'error'
-  reason?: string
-  owner_id?: string
-  matched_owner_name?: string
-  matched_store_name?: string
-  conflict_owners?: { profile_id: string; owner_store_name: string; owner_name: string }[]
-}
-type BulkImportResult = {
-  imported: number
-  skipped: number
-  failed: number
-  conflicts: number
-  dry_run: boolean
-  eligible_owners?: number
-  results?: CsvRowResult[]
-}
-interface BrandOwnerLinkRow {
-  id: string
-  owner_id: string
-  status: string
-  approved_at: string | null
-  name: string
-  email: string
-}
-interface Props {
-  brandId: string | null
-  brandName: string
-  authId: string | null
 }
 export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
   const supabase = createClient()
@@ -275,16 +239,6 @@ export default function BrandTabOwners({ brandId, brandName, authId }: Props) {
       return { color: '#f48fb1', bg: 'rgba(244,143,177,0.12)', label: '매칭실패' }
     }
     return { color: '#f48fb1', bg: 'rgba(244,143,177,0.12)', label: '오류' }
-  }
-  const downloadCsvTemplate = () => {
-    const sample = '매장명,금액,메모\n스킨파우더룸,10000,초기 적립\n'
-    const blob = new Blob([sample], { type: 'text/csv;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = 'owner_points_init_template.csv'
-    a.click()
-    URL.revokeObjectURL(url)
   }
   const runCsvBulkImport = async (file: File, dryRun: boolean) => {
     if (!brandId) {
