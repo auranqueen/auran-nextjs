@@ -193,6 +193,19 @@ export default function SalonHomePage() {
   const [customerPhase, setCustomerPhase] = useState<string | null>(null)
   type SalonTab = 'menu' | 'products' | 'story' | 'reviews' | 'info'
   const [tab, setTab] = useState<SalonTab>('menu')
+  const isSalonTab = (v: string | null): v is SalonTab =>
+    v === 'menu' || v === 'products' || v === 'story' || v === 'reviews' || v === 'info'
+  const syncTabToUrl = (next: SalonTab) => {
+    if (typeof window === 'undefined') return
+    const url = new URL(window.location.href)
+    url.searchParams.set('tab', next)
+    const qs = url.searchParams.toString()
+    window.history.replaceState({}, '', qs ? `${url.pathname}?${qs}` : url.pathname)
+  }
+  const selectTab = (next: SalonTab) => {
+    setTab(next)
+    syncTabToUrl(next)
+  }
   const [brandProducts, setBrandProducts] = useState<SalonBrandProductItem[]>([])
   const [brandProductsLocked, setBrandProductsLocked] = useState(false)
   const [brandProductsLoading, setBrandProductsLoading] = useState(false)
@@ -380,6 +393,8 @@ export default function SalonHomePage() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     const p = new URLSearchParams(window.location.search)
+    const tabParam = p.get('tab')
+    if (isSalonTab(tabParam)) setTab(tabParam)
     const reviewerIdParam = p.get('reviewer_id') || ''
     if (reviewerIdParam) setReviewerId(reviewerIdParam)
     if (p.get('booking_paid') === 'true') {
@@ -510,7 +525,7 @@ export default function SalonHomePage() {
           setShowProductsTab(true)
         } else if (list.length === 0) {
           setShowProductsTab(false)
-          setTab('menu')
+          selectTab('menu')
         }
       } catch {
         if (!cancelled) {
@@ -518,7 +533,7 @@ export default function SalonHomePage() {
           setBrandProductsLocked(false)
           setBrandProductsLoaded(true)
           setShowProductsTab(false)
-          setTab('menu')
+          selectTab('menu')
         }
       } finally {
         if (!cancelled) setBrandProductsLoading(false)
@@ -925,7 +940,7 @@ export default function SalonHomePage() {
           <button
             key={key}
             type="button"
-            onClick={() => key === 'products' ? router.push(`/salons/${id}/products`) : setTab(key)}
+            onClick={() => selectTab(key as SalonTab)}
             style={{
               flex: 1,
               border: 'none',

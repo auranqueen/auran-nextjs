@@ -5,6 +5,10 @@
 
 
 ## 2026-08-21
+### fix: 살롱홈 탭 상태를 ?tab= 쿼리와 동기화
+- 마운트 시 URL tab 복원, 탭 클릭·강제 menu 전환 시 history.replaceState로 ?tab= 반영. 브랜드제품 탭도 페이지 이동 대신 인탭+쿼리(패널 제품 상세 push는 유지).
+- 쉽게: 브랜드제품 탭에서 상품 들어갔다 뒤로가면 다시 브랜드제품 탭이 열린다.
+
 ### feat: 살롱홈「스토리」탭 추가 · products 페이지 스토리 섹션 제거
 - salons/[id]/page: SalonTab에 story, 브랜드제품·리뷰 사이 탭. 탭 진입 시 GET /api/salons/{id}/stories, 그리드(PC3/모바일2)·상세 이동·빈 상태.
 - salons/[id]/products: 스토리 state/fetch/UI 삭제(검색·정렬·제품그리드 유지).
