@@ -374,8 +374,8 @@ export default function StoryManageSection({ salonId }: { salonId: string }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {(
                 [
-                  { key: 'pc' as const, label: 'PC용 배너 업로드', url: bannerPc },
-                  { key: 'mobile' as const, label: '모바일용 배너 업로드', url: bannerMobile },
+                  { key: 'pc' as const, label: 'PC용 배너 업로드', url: bannerPc, sizeHint: '1100×410px 권장' },
+                  { key: 'mobile' as const, label: '모바일용 배너 업로드', url: bannerMobile, sizeHint: '480×180px 권장' },
                 ] as const
               ).map((slot) => (
                 <div key={slot.key} style={{ minWidth: 0 }}>
@@ -416,11 +416,12 @@ export default function StoryManageSection({ salonId }: { salonId: string }) {
                       {!slot.url && <span style={{ fontSize: 12, color: SUB, textAlign: 'center', padding: '0 8px' }}>{slot.label}</span>}
                     </label>
                   </div>
+                  <div style={{ fontSize: 10, color: SUB, marginTop: 6, lineHeight: 1.4 }}>{slot.sizeHint}</div>
                 </div>
               ))}
             </div>
             <div style={{ fontSize: 11, color: SUB, lineHeight: 1.6, marginTop: 8 }}>
-              PC용 1100×410px · 모바일용 480×180px 권장, 하나만 올리면 나머지도 자동 적용돼요
+              하나만 올리면 나머지도 자동 적용돼요
             </div>
           </div>
 

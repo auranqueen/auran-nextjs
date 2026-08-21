@@ -5,6 +5,10 @@
 
 
 ## 2026-08-21
+### ui: 스토리 배너 사이즈 안내를 PC/모바일 박스별로 분리
+- StoryManageSection: 각 드롭존 아래 `1100×410px 권장` / `480×180px 권장`. 공통은 「하나만 올리면 나머지도 자동 적용돼요」만 유지.
+- 쉽게: PC·모바일 칸마다 권장 해상도가 바로 보인다.
+
 ### ui: 살롱홈 브랜드제품 탭 2열 그리드(6개)
 - brand-products fetch limit 4→6. SalonBrandProductsPanel `repeat(2,1fr)` gap 10. 카드 썸네일·폰트 축소·ellipsis/line-clamp. 전체보기 버튼 유지.
 - 쉽게: 살롱홈 브랜드제품이 두 줄로 더 많이 보인다.
