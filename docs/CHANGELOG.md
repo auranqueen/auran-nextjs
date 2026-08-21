@@ -5,6 +5,10 @@
 
 
 ## 2026-08-21
+### feat: 물류「오늘 마감」사전확인 팝업
+- BrandLogisticsDailyClose: 발송 조회에 salon_name/items 추가. 버튼은 조회·살롱별 그룹만 하고 팝업 표시. INSERT는 「마감 확정」만. 0건은 기존 토스트·팝업 없음. order_batch_ids 저장 유지, UI에 배치 미노출. 순수함수 helpers.ts, 팝업 LogisticsCloseConfirmPopup.
+- 쉽게: 오늘 마감 누르기 전에 살롱별 발송 목록을 확인하고 확정할 수 있다.
+
 ### fix: 재고 INSERT brand_id를 hub 대신 inventory row 값으로
 - Emergency/Close/Scan/Lots: select에 `brand_id` 포함, INSERT(및 Close payload)에 `inv.brand_id || brandId`. UPDATE 체인·RPC·RLS 미변경.
 - 쉽게: 회사 공용 목록에서 고른 제품은 그 제품 소유 브랜드로 로그가 남는다.

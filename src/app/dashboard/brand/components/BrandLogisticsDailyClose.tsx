@@ -1,43 +1,20 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-
-const PURPLE = '#7B5EA7'
-const GOLD = '#C9A96E'
-const SUB = 'rgba(255,255,255,0.3)'
-const CARD: CSSProperties = {
-  background: '#1a1520',
-  border: '0.5px solid rgba(255,255,255,0.07)',
-  borderRadius: 10,
-  padding: 14,
-  marginBottom: 10,
-}
-
-function todayKst(): string {
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(new Date())
-}
-
-function nextKstDay(ymd: string): string {
-  const [y, m, d] = ymd.split('-').map(Number)
-  const dt = new Date(Date.UTC(y, m - 1, d + 1))
-  const yy = dt.getUTCFullYear()
-  const mm = String(dt.getUTCMonth() + 1).padStart(2, '0')
-  const dd = String(dt.getUTCDate()).padStart(2, '0')
-  return `${yy}-${mm}-${dd}`
-}
-
-function staffSubmittedBy(): string {
-  if (typeof window === 'undefined') return 'unknown'
-  const name = sessionStorage.getItem('brand_staff_name') || '물류'
-  const role = sessionStorage.getItem('brand_staff_role') || ''
-  return role ? `${name} (${role})` : name
-}
+import LogisticsCloseConfirmPopup from './LogisticsCloseConfirmPopup'
+import {
+  CARD,
+  GOLD,
+  PURPLE,
+  SUB,
+  groupBySalon,
+  nextKstDay,
+  staffSubmittedBy,
+  todayKst,
+  type ClosePreviewGroup,
+  type OrderRow,
+} from './BrandLogisticsDailyClose.helpers'
 
 interface Props {
   brandId: string
@@ -52,6 +29,11 @@ export default function BrandLogisticsDailyClose({ brandId, onToast, onClosedCha
   const [submittedBy, setSubmittedBy] = useState<string | null>(null)
   const [companyId, setCompanyId] = useState<string | null>(null)
   const [companyBrandIds, setCompanyBrandIds] = useState<string[]>([])
+  const [showConfirmPopup, setShowConfirmPopup] = useState(false)
+  const [previewGroups, setPreviewGroups] = useState<ClosePreviewGroup[]>([])
+  const [pendingTotalCount, setPendingTotalCount] = useState(0)
+  const [pendingBatchIds, setPendingBatchIds] = useState<string[]>([])
+  const [pendingClosingDate, setPendingClosingDate] = useState<string | null>(null)
   const onClosedChangeRef = useRef(onClosedChange)
   onClosedChangeRef.current = onClosedChange
 
@@ -99,6 +81,14 @@ export default function BrandLogisticsDailyClose({ brandId, onToast, onClosedCha
 
   useEffect(() => { void refreshClosed() }, [refreshClosed])
 
+  const resetConfirm = () => {
+    setShowConfirmPopup(false)
+    setPreviewGroups([])
+    setPendingTotalCount(0)
+    setPendingBatchIds([])
+    setPendingClosingDate(null)
+  }
+
   const handleClose = async () => {
     if (busy || closed) return
     const ids = companyBrandIds.length > 0 ? companyBrandIds : [brandId]
@@ -111,20 +101,21 @@ export default function BrandLogisticsDailyClose({ brandId, onToast, onClosedCha
     const [{ data: aRows }, { data: bRows }] = await Promise.all([
       supabase
         .from('brand_orders')
-        .select('id, batch_id, shipped_at')
+        .select('id, batch_id, shipped_at, salon_name, items')
         .in('brand_id', ids)
         .not('shipped_at', 'is', null)
         .gte('shipped_at', start)
         .lt('shipped_at', end),
       supabase
         .from('hq_stock_orders')
-        .select('id, status, updated_at')
+        .select('id, status, updated_at, salon_name, items')
         .in('brand_id', ids)
         .eq('status', '배송완료')
         .gte('updated_at', start)
         .lt('updated_at', end),
     ])
 
+    const rows = ([...(aRows || []), ...(bRows || [])] as OrderRow[])
     const batchIds = Array.from(
       new Set(
         ((aRows || []) as Array<{ batch_id?: string | null }>)
@@ -132,8 +123,7 @@ export default function BrandLogisticsDailyClose({ brandId, onToast, onClosedCha
           .filter((id): id is string => !!id),
       ),
     )
-
-    const totalCount = (aRows?.length || 0) + (bRows?.length || 0)
+    const totalCount = rows.length
 
     if (totalCount === 0 && batchIds.length === 0) {
       setBusy(false)
@@ -141,32 +131,42 @@ export default function BrandLogisticsDailyClose({ brandId, onToast, onClosedCha
       return
     }
 
+    setPreviewGroups(groupBySalon(rows))
+    setPendingTotalCount(totalCount)
+    setPendingBatchIds(batchIds)
+    setShowConfirmPopup(true)
+    setPendingClosingDate(closingDate)
+    setBusy(false)
+  }
+
+  const confirmClose = async () => {
+    if (busy || closed || !pendingClosingDate) return
     if (!companyId) {
-      setBusy(false)
       onToast('company_id가 없어요. 브랜드 회사 연결을 확인해주세요')
       return
     }
-
+    setBusy(true)
     const { error } = await supabase.from('brand_logistics_daily_closings').insert({
       company_id: companyId,
       brand_id: brandId,
-      closing_date: closingDate,
-      order_batch_ids: batchIds,
-      total_count: totalCount,
+      closing_date: pendingClosingDate,
+      order_batch_ids: pendingBatchIds,
+      total_count: pendingTotalCount,
       submitted_by: staffSubmittedBy(),
     })
-
     setBusy(false)
     if (error) {
       if (error.code === '23505' || /duplicate|unique/i.test(error.message)) {
         onToast('이미 마감했습니다')
+        resetConfirm()
         void refreshClosed()
         return
       }
       onToast('마감 실패: ' + error.message)
       return
     }
-    onToast(`오늘 마감 완료 (${totalCount}건, 배치 ${batchIds.length})`)
+    onToast(`오늘 마감 완료 (${pendingTotalCount}건)`)
+    resetConfirm()
     void refreshClosed()
   }
 
@@ -199,9 +199,19 @@ export default function BrandLogisticsDailyClose({ brandId, onToast, onClosedCha
             opacity: busy ? 0.7 : 1,
           }}
         >
-          {busy ? '마감 처리 중…' : '오늘 마감'}
+          {busy && !showConfirmPopup ? '확인 중…' : '오늘 마감'}
         </button>
       )}
+
+      {showConfirmPopup ? (
+        <LogisticsCloseConfirmPopup
+          totalCount={pendingTotalCount}
+          groups={previewGroups}
+          busy={busy}
+          onCancel={resetConfirm}
+          onConfirm={() => { void confirmClose() }}
+        />
+      ) : null}
     </div>
   )
 }
