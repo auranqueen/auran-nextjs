@@ -191,13 +191,25 @@ export default function SalonHomePage() {
   const [ownerAvatarUrl, setOwnerAvatarUrl] = useState('')
   const [reviews, setReviews] = useState<ReviewRow[]>([])
   const [customerPhase, setCustomerPhase] = useState<string | null>(null)
-  type SalonTab = 'menu' | 'products' | 'reviews' | 'info'
+  type SalonTab = 'menu' | 'products' | 'story' | 'reviews' | 'info'
   const [tab, setTab] = useState<SalonTab>('menu')
   const [brandProducts, setBrandProducts] = useState<SalonBrandProductItem[]>([])
   const [brandProductsLocked, setBrandProductsLocked] = useState(false)
   const [brandProductsLoading, setBrandProductsLoading] = useState(false)
   const [brandProductsLoaded, setBrandProductsLoaded] = useState(false)
   const [showProductsTab, setShowProductsTab] = useState(true)
+  const [salonStories, setSalonStories] = useState<
+    {
+      id: string
+      story_type: 'treatment' | 'homecare'
+      title: string
+      banner_image_url_pc: string | null
+      banner_image_url_mobile: string | null
+    }[]
+  >([])
+  const [salonStoriesLoading, setSalonStoriesLoading] = useState(false)
+  const [salonStoriesLoaded, setSalonStoriesLoaded] = useState(false)
+  const [storyGridPc, setStoryGridPc] = useState(false)
   const [phaseFilter, setPhaseFilter] = useState<string>('전체')
   const [reviewLimit, setReviewLimit] = useState(5)
   const [shareToast, setShareToast] = useState('')
@@ -445,6 +457,30 @@ export default function SalonHomePage() {
   useEffect(() => {
     setBannerIndex(0)
   }, [id])
+
+  useEffect(() => {
+    const check = () => setStoryGridPc(window.innerWidth >= 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  useEffect(() => {
+    if (tab !== 'story' || !id || salonStoriesLoaded) return
+    setSalonStoriesLoading(true)
+    void (async () => {
+      try {
+        const res = await fetch(`/api/salons/${id}/stories`).then((r) => r.json())
+        if (res.ok) setSalonStories(res.stories || [])
+        else setSalonStories([])
+      } catch {
+        setSalonStories([])
+      } finally {
+        setSalonStoriesLoading(false)
+        setSalonStoriesLoaded(true)
+      }
+    })()
+  }, [tab, id, salonStoriesLoaded])
 
   useEffect(() => {
     if (tab !== 'products' || !id || brandProductsLoaded) return
@@ -881,6 +917,7 @@ export default function SalonHomePage() {
           [
             ['menu', '시술 메뉴'],
             ...(showProductsTab ? [['products', '브랜드 제품'] as const] : []),
+            ['story', '스토리'],
             ['reviews', `리뷰 ${reviewTotal}`],
             ['info', '샵 정보'],
           ] as const
@@ -996,6 +1033,73 @@ export default function SalonHomePage() {
               })
             )}
           </>
+        ) : null}
+
+        {tab === 'story' ? (
+          salonStoriesLoading ? (
+            <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 13, padding: 32 }}>불러오는 중…</div>
+          ) : salonStories.length === 0 ? (
+            <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 13, padding: 32 }}>아직 등록된 스토리가 없어요</div>
+          ) : (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: storyGridPc ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
+                gap: 10,
+              }}
+            >
+              {salonStories.map((s) => {
+                const thumb = storyGridPc
+                  ? s.banner_image_url_pc || s.banner_image_url_mobile
+                  : s.banner_image_url_mobile || s.banner_image_url_pc
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => router.push(`/salons/${id}/story/${s.id}`)}
+                    style={{
+                      border: 'none',
+                      background: 'transparent',
+                      padding: 0,
+                      textAlign: 'left',
+                      cursor: 'pointer',
+                      minWidth: 0,
+                      color: 'inherit',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '100%',
+                        aspectRatio: '2.7',
+                        borderRadius: 10,
+                        background: PURPLE_LIGHT,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {thumb ? (
+                        <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : null}
+                    </div>
+                    <div style={{ fontSize: 11, color: TEXT, marginTop: 6, lineHeight: 1.3 }}>{s.title}</div>
+                    <div
+                      style={{
+                        display: 'inline-block',
+                        marginTop: 4,
+                        fontSize: 10,
+                        padding: '2px 7px',
+                        borderRadius: 20,
+                        background: PURPLE_LIGHT,
+                        color: PURPLE,
+                        border: `0.5px solid ${BORDER}`,
+                      }}
+                    >
+                      {s.story_type === 'treatment' ? '관리프로그램' : '홈케어'}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          )
         ) : null}
 
         {tab === 'reviews' ? (

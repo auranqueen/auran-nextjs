@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 const CARD = 'rgba(255,255,255,0.05)'
 const BORDER = 'rgba(255,255,255,0.08)'
-const GOLD = '#C9A96E'
 const PURPLE = '#7B5EA7'
 const PURPLE_LIGHT = 'rgba(123,94,167,0.15)'
 const TEXT_SUB = 'rgba(255,255,255,0.55)'
@@ -37,16 +36,6 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
   const [brandOptions, setBrandOptions] = useState<{ id: string; name: string }[]>([])
   const [copied, setCopied] = useState(false)
   const [isPc, setIsPc] = useState(false)
-  const [stories, setStories] = useState<
-    {
-      id: string
-      story_type: 'treatment' | 'homecare'
-      title: string
-      banner_image_url_pc: string | null
-      banner_image_url_mobile: string | null
-      created_at: string
-    }[]
-  >([])
   const requestRef = useRef(0)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const syncUrl = useCallback((next: { q?: string; brandId?: string; categoryId?: string; concerns?: string[]; sort?: string }) => {
@@ -117,14 +106,6 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
-  useEffect(() => {
-    fetch(`/api/salons/${params.id}/stories`)
-      .then((r) => r.json())
-      .then((res) => {
-        if (res.ok) setStories(res.stories || [])
-      })
-      .catch(() => {})
-  }, [params.id])
   const handleShare = async () => {
     const url = window.location.href
     if (navigator.share) {
@@ -156,61 +137,6 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
           {copied ? '복사됨' : '공유'}
         </button>
       </div>
-      {stories.length > 0 && (
-        <div style={{ paddingBottom: 16 }}>
-          <div style={{ padding: '0 16px 8px', fontSize: 12, color: GOLD }}>스토리</div>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: isPc ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
-              gap: 10,
-              padding: '0 16px',
-            }}
-          >
-            {stories.map((s) => {
-              const thumb = isPc
-                ? s.banner_image_url_pc || s.banner_image_url_mobile
-                : s.banner_image_url_mobile || s.banner_image_url_pc
-              return (
-                <a
-                  key={s.id}
-                  href={`/salons/${params.id}/story/${s.id}`}
-                  style={{ textDecoration: 'none', color: 'inherit', minWidth: 0 }}
-                >
-                  <div
-                    style={{
-                      width: '100%',
-                      aspectRatio: '2.7',
-                      borderRadius: 10,
-                      background: PURPLE_LIGHT,
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {thumb ? (
-                      <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : null}
-                  </div>
-                  <div style={{ fontSize: 11, color: '#fff', marginTop: 6, lineHeight: 1.3 }}>{s.title}</div>
-                  <div
-                    style={{
-                      display: 'inline-block',
-                      marginTop: 4,
-                      fontSize: 10,
-                      padding: '2px 7px',
-                      borderRadius: 20,
-                      background: PURPLE_LIGHT,
-                      color: PURPLE,
-                      border: `0.5px solid ${BORDER}`,
-                    }}
-                  >
-                    {s.story_type === 'treatment' ? '관리프로그램' : '홈케어'}
-                  </div>
-                </a>
-              )
-            })}
-          </div>
-        </div>
-      )}
       <div style={{ display: 'flex', gap: 12, padding: '6px 16px 8px', borderTop: `1px solid ${BORDER}`, overflowX: 'auto' }}>
         {SORT_OPTIONS.map(([val, label]) => (
           <button
