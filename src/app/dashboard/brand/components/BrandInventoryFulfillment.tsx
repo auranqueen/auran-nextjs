@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import BrandLogisticsDailyClose from './BrandLogisticsDailyClose'
 import BrandBatchFulfillmentList from './BrandBatchFulfillmentList'
 import BrandPouchFulfillmentList from './BrandPouchFulfillmentList'
+import BrandAreteFulfillmentList from './BrandAreteFulfillmentList'
 import BrandTierOrderFulfillmentList from './BrandTierOrderFulfillmentList'
 
 const CARD: CSSProperties = { background: '#1a1520', border: '0.5px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: 14, marginBottom: 10 }
@@ -503,6 +504,18 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
       </div>
       <div style={CARD}>
         <BrandPouchFulfillmentList
+          companyId={companyId}
+          filter={filter}
+          onToast={showToast}
+          onShipped={() => setBatchTick((n) => n + 1)}
+        />
+      </div>
+
+      <div style={{ fontSize: 11, color: GOLD, marginTop: 20, marginBottom: 8 }}>
+        아레테 월간번들 · {filter === 'approved' ? '발송대기' : '발송이력'}
+      </div>
+      <div style={CARD}>
+        <BrandAreteFulfillmentList
           companyId={companyId}
           filter={filter}
           onToast={showToast}

@@ -3,8 +3,16 @@
 
 ---
 
+## 2026-08-22
+### feat: 아레테 월간번들 물류 발송(API+admin)
+- 물류「발송 처리」파우치 아래 아레테 섹션. 목록은 paid+ship_status SELECT. 발송은 POST `/api/brand-arete/ship`(admin)에서 번들 스냅샷·재고차감·운송장. RLS 미변경.
+- 쉽게: 결제한 아레테 번들을 물류에서 파우치처럼 보내고, 쓰기는 서버가 한다.
 
 ## 2026-08-21
+### feat: 원장 발주 요청사항(owner_note)을 승인·물류 화면에 표시
+- brand-orders 확인 팝업에 「요청사항 (선택)」. submitOrderBatch → batches/create INSERT `owner_note`. 승인·물류는 읽기전용 카드. 본사 「물류 전달사항」 체크리스트는 미변경. EventPackage는 note 없이 기존 호출.
+- 쉽게: 원장이 발주할 때 적은 요청이 본사 승인·물류 발송 화면에 그대로 보인다.
+
 ### feat: 물류「오늘 마감」사전확인 팝업
 - BrandLogisticsDailyClose: 발송 조회에 salon_name/items 추가. 버튼은 조회·살롱별 그룹만 하고 팝업 표시. INSERT는 「마감 확정」만. 0건은 기존 토스트·팝업 없음. order_batch_ids 저장 유지, UI에 배치 미노출. 순수함수 helpers.ts, 팝업 LogisticsCloseConfirmPopup.
 - 쉽게: 오늘 마감 누르기 전에 살롱별 발송 목록을 확인하고 확정할 수 있다.
