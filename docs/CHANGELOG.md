@@ -5,6 +5,10 @@
 
 
 ## 2026-08-21
+### perf: 원장 v3 홈 데이터 로딩을 웨이브별 Promise.all로 병렬화
+- owner/page.tsx v3 블록: 쿼리 조건·테이블은 유지하고 실행만 웨이브2(bookings/orders/salon/chat/profiles/links)·웨이브3(cs/bpo/posts/items)·웨이브4(A/B 등급 패키지 분리)로 묶음. 모집원장 orders는 원본과 동일 개별 쿼리를 Promise.all(map)으로만 병렬. v=1 레거시 미변경. A/B Promise.all 혼입 없음.
+- 쉽게: 원장 홈이 데이터를 하나씩 기다리지 않고, 서로 안 기다리는 조회는 한꺼번에 해서 화면이 더 빨리 뜨게 했다. 등급·커미션 계산 방식은 그대로다.
+
 ### fix: 비로그인 대시보드 접근 시 /login에 role 쿼리 전달
 - middleware.ts 대시보드 비로그인 fallback만: pathname 2번째 토큰이 owner/brand/partner/admin이면 searchParams.set('role'). logi·customer·그 외는 role 없음. redirect= 기존 유지. softAuth·wallet/checkout·super-console 미변경.
 - 쉽게: 로그아웃한 뒤 원장·브랜드·파트너 화면에 들어가면, 카카오 없는 그 역할 로그인 화면이 뜨게 했다. 고객 마이월드 로그인은 그대로다.
