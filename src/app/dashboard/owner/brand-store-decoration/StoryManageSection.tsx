@@ -14,6 +14,7 @@ const PURPLE_BORDER = '#E1D8F0'
 const TEXT = '#1A1A2E'
 const SUB = '#666666'
 const CARD = '#ffffff'
+const WARN = '#D94B4B'
 
 type StoryType = 'treatment' | 'homecare'
 type Mode = 'list' | 'pickType' | 'form'
@@ -374,8 +375,8 @@ export default function StoryManageSection({ salonId }: { salonId: string }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
               {(
                 [
-                  { key: 'pc' as const, label: 'PC용 배너 업로드', url: bannerPc, sizeHint: '1100×410px 권장' },
-                  { key: 'mobile' as const, label: '모바일용 배너 업로드', url: bannerMobile, sizeHint: '480×180px 권장' },
+                  { key: 'pc' as const, label: 'PC용 배너 업로드', url: bannerPc, sizeHint: '1100×410px 필수' },
+                  { key: 'mobile' as const, label: '모바일용 배너 업로드', url: bannerMobile, sizeHint: '480×180px 필수' },
                 ] as const
               ).map((slot) => (
                 <div key={slot.key} style={{ minWidth: 0 }}>
@@ -416,12 +417,12 @@ export default function StoryManageSection({ salonId }: { salonId: string }) {
                       {!slot.url && <span style={{ fontSize: 12, color: SUB, textAlign: 'center', padding: '0 8px' }}>{slot.label}</span>}
                     </label>
                   </div>
-                  <div style={{ fontSize: 10, color: SUB, marginTop: 6, lineHeight: 1.4 }}>{slot.sizeHint}</div>
+                  <div style={{ fontSize: 10, color: WARN, fontWeight: 600, marginTop: 6, lineHeight: 1.4 }}>{slot.sizeHint}</div>
                 </div>
               ))}
             </div>
-            <div style={{ fontSize: 11, color: SUB, lineHeight: 1.6, marginTop: 8 }}>
-              하나만 올리면 나머지도 자동 적용돼요
+            <div style={{ fontSize: 11, color: WARN, fontWeight: 600, lineHeight: 1.6, marginTop: 8 }}>
+              ⚠️ 사이즈가 다르면 이미지가 찌그러져 보일 수 있어요 — PC/모바일 각각 정확한 사이즈로 올려주세요
             </div>
           </div>
 
