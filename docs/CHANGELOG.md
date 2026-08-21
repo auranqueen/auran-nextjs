@@ -5,6 +5,10 @@
 
 
 ## 2026-08-21
+### ui: StoryManageSection PC/모바일 배너 업로드 박스 동일화
+- 모바일용 텍스트 링크를 PC용과 같은 dashed 드롭존으로 맞추고 `1fr 1fr` 나란히 배치. 미리보기·클릭 업로드·한쪽 올리면 자동 복제 로직 유지. 안내: 1100×410 / 480×180 권장.
+- 쉽게: 원장이 PC·모바일 배너를 같은 크기의 칸에서 올릴 수 있다.
+
 ### feat: 스토리「지금 예약하기」→ open_booking · 꾸미기 페이지 제목 통일
 - StoryDetailClient treatment CTA: `/salons/{id}?open_booking=1`. brand-store-decoration 상단 제목 「오렌포스팅관리」(사이드바와 동일).
 - 쉽게: 스토리에서 예약 누르면 살롱 홈 예약창이 바로 열리고, 원장 화면 제목도 메뉴 이름과 같다.

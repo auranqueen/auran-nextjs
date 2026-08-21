@@ -369,48 +369,58 @@ export default function StoryManageSection({ salonId }: { salonId: string }) {
             {TYPE_LABEL[storyType]} · {editingId ? '수정' : '새 글'}
           </div>
 
-          <div>
+<div>
             <div style={{ fontSize: 11, color: SUB, marginBottom: 6 }}>배너 이미지</div>
-            <div
-              style={{
-                width: '100%',
-                aspectRatio: '2.7',
-                borderRadius: 10,
-                background: bannerPc ? `url(${bannerPc}) center/cover` : PURPLE_BG,
-                border: `1px dashed ${PURPLE_BORDER}`,
-                marginBottom: 8,
-                position: 'relative',
-              }}
-            >
-              <label style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: uploading ? 'wait' : 'pointer' }}>
-                <input
-                  type="file"
-                  accept="image/*"
-                  style={{ display: 'none' }}
-                  disabled={uploading}
-                  onChange={(e) => {
-                    const f = e.target.files?.[0]
-                    if (f) void uploadStoryBanner(f, 'pc')
-                  }}
-                />
-                {!bannerPc && <span style={{ fontSize: 12, color: SUB }}>PC용 배너 업로드</span>}
-              </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {(
+                [
+                  { key: 'pc' as const, label: 'PC용 배너 업로드', url: bannerPc },
+                  { key: 'mobile' as const, label: '모바일용 배너 업로드', url: bannerMobile },
+                ] as const
+              ).map((slot) => (
+                <div key={slot.key} style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 11, color: PURPLE, fontWeight: 600, marginBottom: 6 }}>
+                    {slot.key === 'pc' ? 'PC용' : '모바일용'}
+                  </div>
+                  <div
+                    style={{
+                      width: '100%',
+                      aspectRatio: '2.7',
+                      borderRadius: 10,
+                      background: slot.url ? `url(${slot.url}) center/cover` : PURPLE_BG,
+                      border: `1px dashed ${PURPLE_BORDER}`,
+                      position: 'relative',
+                    }}
+                  >
+                    <label
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: uploading ? 'wait' : 'pointer',
+                      }}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        disabled={uploading}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0]
+                          if (f) void uploadStoryBanner(f, slot.key)
+                          e.target.value = ''
+                        }}
+                      />
+                      {!slot.url && <span style={{ fontSize: 12, color: SUB, textAlign: 'center', padding: '0 8px' }}>{slot.label}</span>}
+                    </label>
+                  </div>
+                </div>
+              ))}
             </div>
-            <label style={{ fontSize: 12, color: PURPLE, cursor: uploading ? 'wait' : 'pointer' }}>
-              <input
-                type="file"
-                accept="image/*"
-                style={{ display: 'none' }}
-                disabled={uploading}
-                onChange={(e) => {
-                  const f = e.target.files?.[0]
-                  if (f) void uploadStoryBanner(f, 'mobile')
-                }}
-              />
-              모바일용 배너 {bannerMobile ? '변경' : '업로드'}
-            </label>
             <div style={{ fontSize: 11, color: SUB, lineHeight: 1.6, marginTop: 8 }}>
-              실제 사진일수록 좋아요 (과보정보다는 시술 전후·매장 분위기 사진을 추천해요)
+              PC용 1100×410px · 모바일용 480×180px 권장, 하나만 올리면 나머지도 자동 적용돼요
             </div>
           </div>
 
