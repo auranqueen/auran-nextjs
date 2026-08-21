@@ -5,6 +5,13 @@
 
 
 ## 2026-08-21
+## 2026-08-21
+### perf: 원장 예약·시술차트·꾸미기 진입 조회 웨이브 병렬화
+- BookingManagePage: 진입시 salons∥bookings(+이름맵), 이름맵은 external_customers∥users. 탭/날짜 변경시 auth·users·salons 재호출 없이 loadBookings만. 마운트 이중 load 방지(탭 effect deps=tab/selectedDate).
+- charts-v2/page: refreshData에서 profiles∥hormone_cycle만 Promise.all. 기존 charts∥externals·게이트 유지.
+- store-decoration/page: 진입시 profiles∥salons만 Promise.all. 업로드/저장 미변경. ChartPopup·salon-chat 미포함.
+- 쉽게: 예약·차트·꾸미기 들어갈 때 서로 안 기다리는 조회를 한꺼번에 하고, 예약 탭만 바꿔도 로그인 조회를 다시 안 한다.
+
 ### perf: 원장 v3 홈 데이터 로딩을 웨이브별 Promise.all로 병렬화
 - owner/page.tsx v3 블록: 쿼리 조건·테이블은 유지하고 실행만 웨이브2(bookings/orders/salon/chat/profiles/links)·웨이브3(cs/bpo/posts/items)·웨이브4(A/B 등급 패키지 분리)로 묶음. 모집원장 orders는 원본과 동일 개별 쿼리를 Promise.all(map)으로만 병렬. v=1 레거시 미변경. A/B Promise.all 혼입 없음.
 - 쉽게: 원장 홈이 데이터를 하나씩 기다리지 않고, 서로 안 기다리는 조회는 한꺼번에 해서 화면이 더 빨리 뜨게 했다. 등급·커미션 계산 방식은 그대로다.

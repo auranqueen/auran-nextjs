@@ -140,23 +140,34 @@ export default function OwnerChartsV2Page() {
     const authIds = userList.map((u) => u.auth_id).filter(Boolean)
     const userIds = userList.map((u) => u.id).filter(Boolean)
 
+    // 웨이브4: profiles ∥ hormone_cycle (select/필터 동일, 실행만 병렬)
+    const [{ data: profiles }, { data: hcRows }] = await Promise.all([
+      authIds.length
+        ? sb
+            .from('profiles')
+            .select('auth_id,skin_type,skin_concerns,birth_date,body_status,allergy_ingredients,gender')
+            .in('auth_id', authIds)
+        : Promise.resolve({ data: null as any[] | null }),
+      userIds.length
+        ? sb
+            .from('hormone_cycle')
+            .select('user_id,last_period_date,track,created_at')
+            .in('user_id', userIds)
+            .order('created_at', { ascending: false })
+        : Promise.resolve({ data: null as any[] | null }),
+    ])
+
     let profileMap: Record<string, Record<string, unknown>> = {}
-    if (authIds.length) {
-      const { data: profiles } = await sb.from('profiles').select('auth_id,skin_type,skin_concerns,birth_date,body_status,allergy_ingredients,gender').in('auth_id', authIds)
-      for (const p of (profiles as any[]) || []) {
-        if (p.auth_id) profileMap[p.auth_id] = p
-      }
+    for (const p of (profiles as any[]) || []) {
+      if (p.auth_id) profileMap[p.auth_id] = p
     }
 
     let hormoneMap: Record<string, string> = {}
     let trackMap: Record<string, string> = {}
-    if (userIds.length) {
-      const { data: hcRows } = await sb.from('hormone_cycle').select('user_id,last_period_date,track,created_at').in('user_id', userIds).order('created_at', { ascending: false })
-      for (const h of (hcRows as any[]) || []) {
-        const uid = String(h.user_id || '')
-        if (uid && !hormoneMap[uid] && h.last_period_date) hormoneMap[uid] = String(h.last_period_date)
-        if (uid && !trackMap[uid] && h.track != null) trackMap[uid] = String(h.track)
-      }
+    for (const h of (hcRows as any[]) || []) {
+      const uid = String(h.user_id || '')
+      if (uid && !hormoneMap[uid] && h.last_period_date) hormoneMap[uid] = String(h.last_period_date)
+      if (uid && !trackMap[uid] && h.track != null) trackMap[uid] = String(h.track)
     }
 
     const visitByCustomer: Record<string, { count: number; last: string | null }> = {}

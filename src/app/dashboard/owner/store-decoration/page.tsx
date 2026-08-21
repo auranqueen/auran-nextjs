@@ -126,22 +126,27 @@ export default function StoreDecorationPage() {
       }
       const oid = String(urow.id)
       setOwnerUserId(oid)
-      const { data: prof } = await sb
-        .from('profiles')
-        .select('slug, avatar_url, owner_bank_name, owner_bank_account, owner_bank_holder')
-        .eq('auth_id', auth.user.id)
-        .maybeSingle()
+
+      // 웨이브2: profiles ∥ salons (select/eq 동일)
+      const [{ data: prof }, { data: salon }] = await Promise.all([
+        sb
+          .from('profiles')
+          .select('slug, avatar_url, owner_bank_name, owner_bank_account, owner_bank_holder')
+          .eq('auth_id', auth.user.id)
+          .maybeSingle(),
+        sb
+          .from('salons')
+          .select('id, banner_urls, banner_links, story_url, story_type, phase_greetings, phase_reco_enabled, main_cta, map_url, sns_links')
+          .eq('owner_id', oid)
+          .maybeSingle(),
+      ])
+
+      if (cancelled) return
       if (prof?.slug) setOwnerSlug(String(prof.slug))
       if (prof?.avatar_url) setAvatarUrl(String(prof.avatar_url))
       setBankName(String((prof as { owner_bank_name?: string | null } | null)?.owner_bank_name || ''))
       setBankAccount(String((prof as { owner_bank_account?: string | null } | null)?.owner_bank_account || ''))
       setBankHolder(String((prof as { owner_bank_holder?: string | null } | null)?.owner_bank_holder || ''))
-      const { data: salon } = await sb
-        .from('salons')
-        .select('id, banner_urls, banner_links, story_url, story_type, phase_greetings, phase_reco_enabled, main_cta, map_url, sns_links')
-        .eq('owner_id', oid)
-        .maybeSingle()
-      if (cancelled) return
       if (salon) {
         setSalonId(String(salon.id))
         const urls = Array.isArray(salon.banner_urls) ? salon.banner_urls.map(String) : []

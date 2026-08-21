@@ -126,16 +126,23 @@ export default function BookingManagePage() {
     const extIds = Array.from(new Set(list.map((b) => b.external_customer_id).filter(Boolean) as string[]))
     const userIds = Array.from(new Set(list.map((b) => b.customer_id).filter(Boolean) as string[]))
 
-    const extMap = new Map<string, string>()
-    if (extIds.length) {
-      const { data: extRows } = await sb.from('external_customers').select('id, name').in('id', extIds)
-      for (const e of (extRows as { id: string; name?: string }[]) || []) extMap.set(e.id, String(e.name || ''))
-    }
+    // 웨이브3: 이름맵 병렬 (쿼리 조건·select 동일)
+    const [{ data: extRows }, { data: userRows }] = await Promise.all([
+      extIds.length
+        ? sb.from('external_customers').select('id, name').in('id', extIds)
+        : Promise.resolve({ data: null as { id: string; name?: string }[] | null }),
+      userIds.length
+        ? sb.from('users').select('id, name').in('id', userIds)
+        : Promise.resolve({ data: null as { id: string; name?: string }[] | null }),
+    ])
 
+    const extMap = new Map<string, string>()
+    for (const e of (extRows as { id: string; name?: string }[] | null) || []) {
+      extMap.set(e.id, String(e.name || ''))
+    }
     const userMap = new Map<string, string>()
-    if (userIds.length) {
-      const { data: userRows } = await sb.from('users').select('id, name').in('id', userIds)
-      for (const u of (userRows as { id: string; name?: string }[]) || []) userMap.set(u.id, String(u.name || ''))
+    for (const u of (userRows as { id: string; name?: string }[] | null) || []) {
+      userMap.set(u.id, String(u.name || ''))
     }
 
     setRows(
@@ -150,6 +157,7 @@ export default function BookingManagePage() {
     )
   }
 
+  // 진입 1회: 게이트 유지 + 웨이브2(salons ∥ bookings(+이름맵))
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -167,15 +175,36 @@ export default function BookingManagePage() {
       }
       const oid = String(me.id)
       setOwnerId(oid)
-      const { data: salon } = await sb.from('salons').select('id, services').eq('owner_id', oid).maybeSingle()
+
+      const [{ data: salon }] = await Promise.all([
+        sb.from('salons').select('id, services').eq('owner_id', oid).maybeSingle(),
+        loadBookings(oid, tab, selectedDate),
+      ])
+      if (cancelled) return
       if (salon?.id) setSalonId(String(salon.id))
-      await loadBookings(oid, tab, selectedDate)
+      setLoading(false)
+    })()
+    return () => {
+      cancelled = true
+    }
+    // 탭/날짜는 아래 effect에서만 — auth/users/salons 재호출 방지
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router])
+
+  // 탭·날짜 변경: loadBookings만 (마운트 시 ownerId 미설정 → skip, 이중 호출 방지)
+  useEffect(() => {
+    if (!ownerId) return
+    let cancelled = false
+    ;(async () => {
+      await loadBookings(ownerId, tab, selectedDate)
       if (!cancelled) setLoading(false)
     })()
     return () => {
       cancelled = true
     }
-  }, [router, tab, selectedDate])
+    // ownerId는 게이트용 early-return만 — deps에 넣으면 진입 직후 이중 loadBookings
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, selectedDate])
 
   useOwnerBookingRealtime(ownerId, () => { if (ownerId) void loadBookings(ownerId, tab, selectedDate) })
 
