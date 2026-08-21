@@ -5,9 +5,14 @@
 
 
 ## 2026-08-21
-## 2026-08-21
-## 2026-08-21
-## 2026-08-21
+### fix: StoryManageSection — 작성/수정 중에도 목록 유지
+- mode가 pickType/form이어도 스토리 카드 목록은 항상 렌더. 타입선택·작성폼은 목록 위 확장 영역으로만 펼침. 「목록으로」는 확장 영역만 접음. 수정 중인 카드는 퍼플 테두리로 표시.
+- 쉽게: 새 스토리 쓰거나 고칠 때도 아래 목록이 안 사라지고 그대로 보인다.
+
+### fix: StoryManageSection Tiptap Link 중복 extension 경고 제거
+- StarterKit v3가 Link를 기본 포함하므로 별도 `@tiptap/extension-link` import·등록 제거. `StarterKit.configure({ link: { openOnClick:false, ... } })`로만 설정.
+- 쉽게: 스토리 글쓰기 에디터에서 Link가 두 번 등록돼 나오던 경고를 없앴다.
+
 ### feat: 배너·추천제품을 스토리 시스템으로 교체 (원장·고객)
 - brand-store-decoration: 옛 배너/추천 UI 제거, StoryManageSection을 상단으로. 알림 섹션 유지.
 - 공개 API: GET `/api/salons/[id]/stories`, GET `/api/salons/[id]/story/[storyId]` (is_published만, admin client).

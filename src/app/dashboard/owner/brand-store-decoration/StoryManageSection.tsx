@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import Link from '@tiptap/extension-link'
 import { createClient } from '@/lib/supabase/client'
 
 const GOLD = '#B08A46'
@@ -62,8 +61,13 @@ function StoryEditor({
 }) {
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      Link.configure({ openOnClick: false, HTMLAttributes: { style: `color:${PURPLE}` } }),
+      StarterKit.configure({
+        // StarterKit v3 includes Link — do not add @tiptap/extension-link again
+        link: {
+          openOnClick: false,
+          HTMLAttributes: { style: `color:${PURPLE}` },
+        },
+      }),
     ],
     content: value || '',
     onUpdate: ({ editor: ed }) => onChange(ed.getHTML()),
@@ -297,7 +301,7 @@ export default function StoryManageSection({ salonId }: { salonId: string }) {
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
         <span style={{ fontSize: 13, color: GOLD, fontWeight: 600 }}>스토리 관리</span>
-        {mode === 'list' && (
+        {mode === 'list' ? (
           <button
             type="button"
             onClick={openNew}
@@ -305,8 +309,7 @@ export default function StoryManageSection({ salonId }: { salonId: string }) {
           >
             새 스토리 작성
           </button>
-        )}
-        {mode !== 'list' && (
+        ) : (
           <button
             type="button"
             onClick={() => {
@@ -321,7 +324,7 @@ export default function StoryManageSection({ salonId }: { salonId: string }) {
       </div>
 
       {mode === 'pickType' && (
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 16 }}>
           {(['treatment', 'homecare'] as StoryType[]).map((t) => (
             <button
               key={t}
@@ -350,7 +353,18 @@ export default function StoryManageSection({ salonId }: { salonId: string }) {
       )}
 
       {mode === 'form' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            marginBottom: 16,
+            padding: 12,
+            borderRadius: 12,
+            border: `1px solid ${PURPLE_BORDER}`,
+            background: CARD,
+          }}
+        >
           <div style={{ fontSize: 12, color: PURPLE }}>
             {TYPE_LABEL[storyType]} · {editingId ? '수정' : '새 글'}
           </div>
@@ -500,75 +514,76 @@ export default function StoryManageSection({ salonId }: { salonId: string }) {
         </div>
       )}
 
-      {mode === 'list' && (
-        <div>
-          {loadingList && <div style={{ fontSize: 12, color: SUB }}>불러오는 중…</div>}
-          {!loadingList && stories.length === 0 && (
-            <div style={{ fontSize: 12, color: SUB, lineHeight: 1.6 }}>아직 작성한 스토리가 없어요. 새 스토리를 만들어 보세요.</div>
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {stories.map((s) => (
-              <div
-                key={s.id}
-                style={{
-                  background: CARD,
-                  border: `1px solid ${GOLD_BORDER}`,
-                  borderRadius: 10,
-                  padding: 12,
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontSize: 13, color: TEXT, fontWeight: 600, marginBottom: 6 }}>{s.title}</div>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      <span
-                        style={{
-                          fontSize: 10,
-                          padding: '3px 8px',
-                          borderRadius: 20,
-                          background: PURPLE_BG,
-                          color: PURPLE,
-                          border: `1px solid ${PURPLE_BORDER}`,
-                        }}
-                      >
-                        {TYPE_LABEL[s.story_type] || s.story_type}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: 10,
-                          padding: '3px 8px',
-                          borderRadius: 20,
-                          background: s.is_published ? GOLD_BG : '#f3f3f3',
-                          color: s.is_published ? GOLD : SUB,
-                          border: `1px solid ${s.is_published ? GOLD_BORDER : '#e5e5e5'}`,
-                        }}
-                      >
-                        {s.is_published ? '발행됨' : '초안'}
-                      </span>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
-                    <button
-                      type="button"
-                      onClick={() => openEdit(s)}
-                      style={{ border: `1px solid ${PURPLE_BORDER}`, background: PURPLE_BG, color: PURPLE, borderRadius: 8, padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}
+      <div>
+        {(mode === 'pickType' || mode === 'form') && (
+          <div style={{ fontSize: 12, color: GOLD, fontWeight: 600, marginBottom: 8 }}>내 스토리 목록</div>
+        )}
+        {loadingList && <div style={{ fontSize: 12, color: SUB }}>불러오는 중…</div>}
+        {!loadingList && stories.length === 0 && (
+          <div style={{ fontSize: 12, color: SUB, lineHeight: 1.6 }}>아직 작성한 스토리가 없어요. 새 스토리를 만들어 보세요.</div>
+        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {stories.map((s) => (
+            <div
+              key={s.id}
+              style={{
+                background: CARD,
+                border: editingId === s.id && mode === 'form' ? `1.5px solid ${PURPLE}` : `1px solid ${GOLD_BORDER}`,
+                borderRadius: 10,
+                padding: 12,
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'flex-start' }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 13, color: TEXT, fontWeight: 600, marginBottom: 6 }}>{s.title}</div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        padding: '3px 8px',
+                        borderRadius: 20,
+                        background: PURPLE_BG,
+                        color: PURPLE,
+                        border: `1px solid ${PURPLE_BORDER}`,
+                      }}
                     >
-                      수정
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleDelete(s.id)}
-                      style={{ border: `1px solid ${GOLD_BORDER}`, background: CARD, color: SUB, borderRadius: 8, padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}
+                      {TYPE_LABEL[s.story_type] || s.story_type}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        padding: '3px 8px',
+                        borderRadius: 20,
+                        background: s.is_published ? GOLD_BG : '#f3f3f3',
+                        color: s.is_published ? GOLD : SUB,
+                        border: `1px solid ${s.is_published ? GOLD_BORDER : '#e5e5e5'}`,
+                      }}
                     >
-                      삭제
-                    </button>
+                      {s.is_published ? '발행됨' : '초안'}
+                    </span>
                   </div>
                 </div>
+                <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <button
+                    type="button"
+                    onClick={() => openEdit(s)}
+                    style={{ border: `1px solid ${PURPLE_BORDER}`, background: PURPLE_BG, color: PURPLE, borderRadius: 8, padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}
+                  >
+                    수정
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleDelete(s.id)}
+                    style={{ border: `1px solid ${GOLD_BORDER}`, background: CARD, color: SUB, borderRadius: 8, padding: '6px 10px', fontSize: 11, cursor: 'pointer' }}
+                  >
+                    삭제
+                  </button>
+                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   )
 }
