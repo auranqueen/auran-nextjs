@@ -397,6 +397,9 @@ export default function SalonHomePage() {
         })()
       }
     }
+    if (p.get('open_booking') === '1') {
+      setShowBooking(true)
+    }
   }, [])
 
   useEffect(() => {

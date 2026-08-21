@@ -5,6 +5,19 @@
 
 
 ## 2026-08-21
+### feat: 스토리「지금 예약하기」→ open_booking · 꾸미기 페이지 제목 통일
+- StoryDetailClient treatment CTA: `/salons/{id}?open_booking=1`. brand-store-decoration 상단 제목 「오렌포스팅관리」(사이드바와 동일).
+- 쉽게: 스토리에서 예약 누르면 살롱 홈 예약창이 바로 열리고, 원장 화면 제목도 메뉴 이름과 같다.
+
+### feat: 살롱 홈 `?open_booking=1` 로 예약 모달 자동 오픈
+- salons/[id]/page: 마운트 URLSearchParams 처리에 `open_booking=1`이면 `setShowBooking(true)`만. booking_paid 분기·step 3 로직 미변경(기본 step으로 열림).
+- 쉽게: 스토리 등에서 살롱 홈에 open_booking=1로 들어오면 예약창이 처음부터 열린다.
+
+### chore: 사이드바「오렌포스팅관리」·살롱 스토어 스토리 그리드
+- OwnerSidebarShell: 「브랜드 스토어 꾸미기」→「오렌포스팅관리」(href 동일).
+- salons/[id]/products: 스토리 가로스크롤 → isPc 기준 3열/모바일 2열 그리드(제품 그리드와 동일 isPc 패턴). 꾸미기 페이지 제목 문구는 미변경.
+- 쉽게: 메뉴 이름이 오렌포스팅관리로 보이고, 스토어 스토리 카드가 가로로 밀리지 않고 칸에 맞춰 줄바꿈된다.
+
 ### fix: StoryManageSection — 작성/수정 중에도 목록 유지
 - mode가 pickType/form이어도 스토리 카드 목록은 항상 렌더. 타입선택·작성폼은 목록 위 확장 영역으로만 펼침. 「목록으로」는 확장 영역만 접음. 수정 중인 카드는 퍼플 테두리로 표시.
 - 쉽게: 새 스토리 쓰거나 고칠 때도 아래 목록이 안 사라지고 그대로 보인다.

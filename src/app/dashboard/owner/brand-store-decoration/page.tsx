@@ -48,7 +48,7 @@ export default function BrandStoreDecorationPage() {
 
   return (
     <div style={{ background: '#0a0c0f', minHeight: '100vh', padding: 20, color: '#fff' }}>
-      <div style={{ fontSize: 16, marginBottom: 16 }}>브랜드 스토어 꾸미기</div>
+      <div style={{ fontSize: 16, marginBottom: 16 }}>오렌포스팅관리</div>
       {salonId ? <StoryManageSection salonId={salonId} /> : null}
       <div style={{ background: 'rgba(255,255,255,0.04)', border: `0.5px solid ${BORDER}`, borderRadius: 12, padding: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>

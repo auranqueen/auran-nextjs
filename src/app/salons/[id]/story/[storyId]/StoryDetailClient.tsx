@@ -130,7 +130,7 @@ export default function StoryDetailClient({ data }: { data: StoryDetailData }) {
       {story.story_type === 'treatment' && (
         <div style={{ padding: '0 16px' }}>
           <a
-            href={`/salons/${salon.id}`}
+            href={`/salons/${salon.id}?open_booking=1`}
             style={{
               display: 'block',
               textAlign: 'center',

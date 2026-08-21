@@ -159,7 +159,14 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
       {stories.length > 0 && (
         <div style={{ paddingBottom: 16 }}>
           <div style={{ padding: '0 16px 8px', fontSize: 12, color: GOLD }}>스토리</div>
-          <div style={{ display: 'flex', gap: 10, padding: '0 16px', overflowX: 'auto' }}>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: isPc ? 'repeat(3, 1fr)' : 'repeat(2, 1fr)',
+              gap: 10,
+              padding: '0 16px',
+            }}
+          >
             {stories.map((s) => {
               const thumb = isPc
                 ? s.banner_image_url_pc || s.banner_image_url_mobile
@@ -168,11 +175,11 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
                 <a
                   key={s.id}
                   href={`/salons/${params.id}/story/${s.id}`}
-                  style={{ flexShrink: 0, width: 140, textDecoration: 'none', color: 'inherit' }}
+                  style={{ textDecoration: 'none', color: 'inherit', minWidth: 0 }}
                 >
                   <div
                     style={{
-                      width: 140,
+                      width: '100%',
                       aspectRatio: '2.7',
                       borderRadius: 10,
                       background: PURPLE_LIGHT,
