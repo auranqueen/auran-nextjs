@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import StoryManageSection from './StoryManageSection'
 const BORDER = 'rgba(255,255,255,0.08)'
 const PURPLE = '#7B5EA7'
 const GOLD = '#C9A96E'
@@ -135,6 +136,7 @@ export default function BrandStoreDecorationPage() {
         </div>
         <div style={{ fontSize: 11, color: TEXT_SUB, marginTop: 8 }}>제품을 눌러서 추천에 추가/제거해요</div>
       </div>
+      {salonId ? <StoryManageSection salonId={salonId} /> : null}
       <div style={{ background: 'rgba(255,255,255,0.04)', border: `0.5px solid ${BORDER}`, borderRadius: 12, padding: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
           <span style={{ fontSize: 13 }}>스토어알림받기 고객</span>

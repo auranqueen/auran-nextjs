@@ -6,6 +6,13 @@
 
 ## 2026-08-21
 ## 2026-08-21
+## 2026-08-21
+### feat: 브랜드 스토어 꾸미기에 스토리(관리프로그램/홈케어) 작성·관리 추가
+- API: POST/GET/PATCH/DELETE `/api/brand-product-orders/story` — salon owner 검증 후 brand_product_salon_story(+story_products). is_published 기본 false.
+- API: GET `/api/brand-product-orders/story/product-search` — active brand_owner_links → brand_products 검색(consumer_price→price).
+- UI: StoryManageSection(골드/퍼플 라이트톤) — 타입선택·Tiptap·배너업로드·홈케어 제품검색 그리드·발행 체크·목록 수정/삭제. page는 추천제품 아래·알림 위에 한 줄 연결만. 기존 배너/추천 UI 미변경. 고객 공개 페이지는 미포함.
+- 쉽게: 원장이 브랜드 스토어 꾸미기에서 스토리 초안을 쓰고, 발행하기를 켠 글만 나중에 고객에게 보여줄 수 있게 준비했다.
+
 ### perf: 원장 예약·시술차트·꾸미기 진입 조회 웨이브 병렬화
 - BookingManagePage: 진입시 salons∥bookings(+이름맵), 이름맵은 external_customers∥users. 탭/날짜 변경시 auth·users·salons 재호출 없이 loadBookings만. 마운트 이중 load 방지(탭 effect deps=tab/selectedDate).
 - charts-v2/page: refreshData에서 profiles∥hormone_cycle만 Promise.all. 기존 charts∥externals·게이트 유지.
