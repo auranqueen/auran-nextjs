@@ -5,6 +5,10 @@
 
 
 ## 2026-08-21
+### ui: 살롱홈 브랜드제품 탭 2열 그리드(6개)
+- brand-products fetch limit 4→6. SalonBrandProductsPanel `repeat(2,1fr)` gap 10. 카드 썸네일·폰트 축소·ellipsis/line-clamp. 전체보기 버튼 유지.
+- 쉽게: 살롱홈 브랜드제품이 두 줄로 더 많이 보인다.
+
 ### fix: 살롱홈 탭 상태를 ?tab= 쿼리와 동기화
 - 마운트 시 URL tab 복원, 탭 클릭·강제 menu 전환 시 history.replaceState로 ?tab= 반영. 브랜드제품 탭도 페이지 이동 대신 인탭+쿼리(패널 제품 상세 push는 유지).
 - 쉽게: 브랜드제품 탭에서 상품 들어갔다 뒤로가면 다시 브랜드제품 탭이 열린다.

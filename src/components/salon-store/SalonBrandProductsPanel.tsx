@@ -33,14 +33,22 @@ export default function SalonBrandProductsPanel({ loading, products, salonId }: 
 
   return (
     <div>
-      {products.map((item) => (
-        <SalonBrandProductCard
-          key={item.id}
-          item={item}
-          salonId={salonId}
-          onSelect={() => router.push(`/salons/${salonId}/products/${item.id}`)}
-        />
-      ))}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, 1fr)',
+          gap: 10,
+        }}
+      >
+        {products.map((item) => (
+          <SalonBrandProductCard
+            key={item.id}
+            item={item}
+            salonId={salonId}
+            onSelect={() => router.push(`/salons/${salonId}/products/${item.id}`)}
+          />
+        ))}
+      </div>
       <button
         onClick={() => router.push(`/salons/${salonId}/products`)}
         style={{
