@@ -184,7 +184,13 @@ export async function middleware(req: NextRequest) {
     const loginUrl = req.nextUrl.clone()
     loginUrl.pathname = '/login'
     loginUrl.search = ''
-    if (isDashboard) loginUrl.searchParams.set('redirect', redirectTarget)
+    if (isDashboard) {
+      loginUrl.searchParams.set('redirect', redirectTarget)
+      const dashRole = pathname.split('/')[2]
+      if (dashRole === 'owner' || dashRole === 'brand' || dashRole === 'partner' || dashRole === 'admin') {
+        loginUrl.searchParams.set('role', dashRole)
+      }
+    }
     return redirectPreservingSupabaseCookies(res, NextResponse.redirect(loginUrl))
   }
 

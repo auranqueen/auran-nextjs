@@ -4,6 +4,11 @@
 ---
 
 
+## 2026-08-21
+### fix: 비로그인 대시보드 접근 시 /login에 role 쿼리 전달
+- middleware.ts 대시보드 비로그인 fallback만: pathname 2번째 토큰이 owner/brand/partner/admin이면 searchParams.set('role'). logi·customer·그 외는 role 없음. redirect= 기존 유지. softAuth·wallet/checkout·super-console 미변경.
+- 쉽게: 로그아웃한 뒤 원장·브랜드·파트너 화면에 들어가면, 카카오 없는 그 역할 로그인 화면이 뜨게 했다. 고객 마이월드 로그인은 그대로다.
+
 ## 2026-08-20
 ### fix: 하단 네비 홈 탭이 하위 경로에서 같이 켜지던 문제
 - DashboardBottomNav: 같은 role 탭 중 다른 href의 접두사인 항목(홈 `/dashboard/owner` 등)은 pathname 완전 일치만 active. 그 외는 기존 startsWith 유지. owner/partner/salon/brand 공통(admin role 없음).
