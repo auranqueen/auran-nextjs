@@ -37,8 +37,16 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
   const [brandOptions, setBrandOptions] = useState<{ id: string; name: string }[]>([])
   const [copied, setCopied] = useState(false)
   const [isPc, setIsPc] = useState(false)
-  const [banner, setBanner] = useState<{ image_url_mobile: string; image_url_pc: string; link_url: string | null } | null>(null)
-  const [curatedProducts, setCuratedProducts] = useState<{ id: string; name: string; thumb_img: string | null; consumer_price: number }[]>([])
+  const [stories, setStories] = useState<
+    {
+      id: string
+      story_type: 'treatment' | 'homecare'
+      title: string
+      banner_image_url_pc: string | null
+      banner_image_url_mobile: string | null
+      created_at: string
+    }[]
+  >([])
   const requestRef = useRef(0)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const syncUrl = useCallback((next: { q?: string; brandId?: string; categoryId?: string; concerns?: string[]; sort?: string }) => {
@@ -110,13 +118,10 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
     return () => window.removeEventListener('resize', check)
   }, [])
   useEffect(() => {
-    fetch(`/api/salons/${params.id}/curation`)
-      .then(r => r.json())
-      .then(res => {
-        if (res.ok) {
-          setBanner(res.banner)
-          setCuratedProducts(res.products || [])
-        }
+    fetch(`/api/salons/${params.id}/stories`)
+      .then((r) => r.json())
+      .then((res) => {
+        if (res.ok) setStories(res.stories || [])
       })
       .catch(() => {})
   }, [params.id])
@@ -151,38 +156,51 @@ export default function SalonProductsPage({ params }: { params: { id: string } }
           {copied ? '복사됨' : '공유'}
         </button>
       </div>
-      {banner && (banner.image_url_pc || banner.image_url_mobile) && (
-        <div style={{ padding: '0 16px 14px' }}>
-          {banner.link_url ? (
-            <a href={banner.link_url}>
-              <img
-                src={isPc ? (banner.image_url_pc || banner.image_url_mobile) : (banner.image_url_mobile || banner.image_url_pc)}
-                alt=""
-                style={{ width: '100%', borderRadius: 12, display: 'block' }}
-              />
-            </a>
-          ) : (
-            <img
-              src={isPc ? (banner.image_url_pc || banner.image_url_mobile) : (banner.image_url_mobile || banner.image_url_pc)}
-              alt=""
-              style={{ width: '100%', borderRadius: 12, display: 'block' }}
-            />
-          )}
-        </div>
-      )}
-      {curatedProducts.length > 0 && (
+      {stories.length > 0 && (
         <div style={{ paddingBottom: 16 }}>
-          <div style={{ padding: '0 16px 8px', fontSize: 12, color: GOLD }}>추천 제품</div>
+          <div style={{ padding: '0 16px 8px', fontSize: 12, color: GOLD }}>스토리</div>
           <div style={{ display: 'flex', gap: 10, padding: '0 16px', overflowX: 'auto' }}>
-            {curatedProducts.map(p => (
-              <a key={p.id} href={`/salons/${params.id}/products/${p.id}`} style={{ flexShrink: 0, width: 100, textDecoration: 'none', color: 'inherit' }}>
-                <div style={{ width: 100, height: 100, borderRadius: 10, background: PURPLE_LIGHT, overflow: 'hidden' }}>
-                  {p.thumb_img && <img src={p.thumb_img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
-                </div>
-                <div style={{ fontSize: 11, color: '#fff', marginTop: 6 }}>{p.name}</div>
-                <div style={{ fontSize: 11, color: TEXT_SUB }}>{p.consumer_price.toLocaleString()}원</div>
-              </a>
-            ))}
+            {stories.map((s) => {
+              const thumb = isPc
+                ? s.banner_image_url_pc || s.banner_image_url_mobile
+                : s.banner_image_url_mobile || s.banner_image_url_pc
+              return (
+                <a
+                  key={s.id}
+                  href={`/salons/${params.id}/story/${s.id}`}
+                  style={{ flexShrink: 0, width: 140, textDecoration: 'none', color: 'inherit' }}
+                >
+                  <div
+                    style={{
+                      width: 140,
+                      aspectRatio: '2.7',
+                      borderRadius: 10,
+                      background: PURPLE_LIGHT,
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {thumb ? (
+                      <img src={thumb} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : null}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#fff', marginTop: 6, lineHeight: 1.3 }}>{s.title}</div>
+                  <div
+                    style={{
+                      display: 'inline-block',
+                      marginTop: 4,
+                      fontSize: 10,
+                      padding: '2px 7px',
+                      borderRadius: 20,
+                      background: PURPLE_LIGHT,
+                      color: PURPLE,
+                      border: `0.5px solid ${BORDER}`,
+                    }}
+                  >
+                    {s.story_type === 'treatment' ? '관리프로그램' : '홈케어'}
+                  </div>
+                </a>
+              )
+            })}
           </div>
         </div>
       )}

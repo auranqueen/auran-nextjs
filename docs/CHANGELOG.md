@@ -7,6 +7,14 @@
 ## 2026-08-21
 ## 2026-08-21
 ## 2026-08-21
+## 2026-08-21
+### feat: 배너·추천제품을 스토리 시스템으로 교체 (원장·고객)
+- brand-store-decoration: 옛 배너/추천 UI 제거, StoryManageSection을 상단으로. 알림 섹션 유지.
+- 공개 API: GET `/api/salons/[id]/stories`, GET `/api/salons/[id]/story/[storyId]` (is_published만, admin client).
+- products 페이지: curation 배너/추천 → 발행 스토리 가로 카드. 상세 `/salons/[id]/story/[storyId]` (generateMetadata + addItem 장바구니, treatment는 살롱 홈 예약 CTA).
+- sitemap.ts에 발행 스토리 URL 추가.
+- 쉽게: 살롱 스토어에 스토리 카드가 보이고, 누르면 글·예약/장바구니까지 이어진다. 미발행 초안은 고객·검색엔진에 안 나간다.
+
 ### feat: 브랜드 스토어 꾸미기에 스토리(관리프로그램/홈케어) 작성·관리 추가
 - API: POST/GET/PATCH/DELETE `/api/brand-product-orders/story` — salon owner 검증 후 brand_product_salon_story(+story_products). is_published 기본 false.
 - API: GET `/api/brand-product-orders/story/product-search` — active brand_owner_links → brand_products 검색(consumer_price→price).
