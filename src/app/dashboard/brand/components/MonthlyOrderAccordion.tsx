@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import { resolveOwnerSalonNames } from '@/lib/brand/resolveOwnerSalonNames'
 
 const CARD: CSSProperties = {
@@ -100,6 +101,7 @@ export default function MonthlyOrderAccordion({ brandId, onClose }: Props) {
       thisMonth.setDate(1)
       thisMonth.setHours(0, 0, 0, 0)
       const thisMonthIso = thisMonth.toISOString()
+      const companyBrandIds = await resolveCompanyBrandIds(supabase, brandId)
 
       const [{ data: monthRows }, { data: hqMonthRows }] = await Promise.all([
         supabase
@@ -107,13 +109,13 @@ export default function MonthlyOrderAccordion({ brandId, onClose }: Props) {
           .select(
             'id, batch_id, brand_id, total_amount, status, created_at, owner_name, salon_name, items, brands(name), profile_id, profiles(full_name)',
           )
-          .eq('brand_id', brandId)
+          .in('brand_id', companyBrandIds)
           .gte('created_at', thisMonthIso)
           .order('created_at', { ascending: false }),
         supabase
           .from('hq_stock_orders')
           .select('id, final_amount, status, ordered_at, created_at, profile_id')
-          .eq('brand_id', brandId)
+          .in('brand_id', companyBrandIds)
           .gte('created_at', thisMonthIso)
           .order('created_at', { ascending: false }),
       ])

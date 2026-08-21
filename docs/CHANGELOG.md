@@ -5,6 +5,14 @@
 
 
 ## 2026-08-21
+### fix: 재고 INSERT brand_id를 hub 대신 inventory row 값으로
+- Emergency/Close/Scan/Lots: select에 `brand_id` 포함, INSERT(및 Close payload)에 `inv.brand_id || brandId`. UPDATE 체인·RPC·RLS 미변경.
+- 쉽게: 회사 공용 목록에서 고른 제품은 그 제품 소유 브랜드로 로그가 남는다.
+
+### fix: 브랜드 재고탭·월간주문 조회를 companyBrandIds(.in)로 전환
+- Emergency/QR/Close/Scan/Lots + MonthlyOrderAccordion: `resolveCompanyBrandIds` 후 조회만 `.in('brand_id', companyBrandIds)`. INSERT/쓰기·batch 형제 로직·RLS 미변경. Home과 동일 패턴.
+- 쉽게: 같은 회사 브랜드 재고·월 주문이 한 화면에서 같이 보인다.
+
 ### ui: 스토리 배너 사이즈 안내를「필수」경고톤으로 강화
 - StoryManageSection: PC/모바일 박스 밑 `…px 필수`(WARN 코랄). 공통 문구를 찌그러짐 경고로 교체. 한쪽만 올려도 저장되는 폴백 로직은 미변경.
 - 쉽게: 배너 사이즈를 꼭 맞춰 올리라는 안내가 더 눈에 띈다.

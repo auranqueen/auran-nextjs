@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import { notifyRestockIfNeeded } from '@/lib/brand/notifyRestock'
 import type { CSSProperties } from 'react'
 const PURPLE = '#7B5EA7'
@@ -12,6 +13,7 @@ interface InventoryRow {
   product_name: string
   total_stock: number
   safety_stock: number
+  brand_id: string
 }
 interface LotRow {
   id: string
@@ -97,10 +99,11 @@ export default function BrandInventoryScan({ brandId, brandName }: Props) {
   }
   const loadData = useCallback(async () => {
     if (!brandId) return
+    const companyBrandIds = await resolveCompanyBrandIds(supabase, brandId)
     const [{ data: invData }, { data: lotData }, { data: logData }] = await Promise.all([
-      supabase.from('brand_inventory').select('id, product_name, total_stock, safety_stock').eq('brand_id', brandId).order('product_name'),
-      supabase.from('brand_inventory_lots').select('id, inventory_id, lot_number, remaining_qty, expires_at, brand_inventory(product_name)').eq('brand_id', brandId).eq('status', 'active').order('expires_at', { ascending: true }),
-      supabase.from('brand_stock_logs').select('id, type, qty, memo, staff_name, created_at, brand_inventory(product_name)').eq('brand_id', brandId).order('created_at', { ascending: false }).limit(20),
+      supabase.from('brand_inventory').select('id, product_name, total_stock, safety_stock, brand_id').in('brand_id', companyBrandIds).order('product_name'),
+      supabase.from('brand_inventory_lots').select('id, inventory_id, lot_number, remaining_qty, expires_at, brand_inventory(product_name)').in('brand_id', companyBrandIds).eq('status', 'active').order('expires_at', { ascending: true }),
+      supabase.from('brand_stock_logs').select('id, type, qty, memo, staff_name, created_at, brand_inventory(product_name)').in('brand_id', companyBrandIds).order('created_at', { ascending: false }).limit(20),
     ])
     setInventories((invData || []) as InventoryRow[])
     setLots((lotData || []) as unknown as LotRow[])
@@ -133,7 +136,7 @@ export default function BrandInventoryScan({ brandId, brandName }: Props) {
     const before = inv.total_stock
     const after = mode === 'in' ? before + qty : before - qty
     const { error } = await supabase.from('brand_stock_logs').insert({
-      brand_id: brandId,
+      brand_id: inv?.brand_id || brandId,
       inventory_id: selInv,
       lot_id: selLot || null,
       type: mode,
@@ -160,7 +163,7 @@ export default function BrandInventoryScan({ brandId, brandName }: Props) {
       }
       if (mode === 'out' && after <= inv.safety_stock && inv.safety_stock > 0) {
         await supabase.from('brand_messages').insert({
-          brand_id: brandId,
+          brand_id: inv?.brand_id || brandId,
           message_type: 'auto_order',
           target_type: 'all',
           title: `⚠️ ${inv.product_name} 안전재고 이하`,

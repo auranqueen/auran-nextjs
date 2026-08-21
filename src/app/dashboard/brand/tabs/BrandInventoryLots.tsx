@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import { notifyRestockIfNeeded } from '@/lib/brand/notifyRestock'
 import type { CSSProperties } from 'react'
 const PURPLE = '#7B5EA7'
@@ -21,6 +22,7 @@ interface LotRow {
 interface InventoryRow {
   id: string
   product_name: string
+  brand_id: string
 }
 interface Props {
   brandId: string | null
@@ -46,15 +48,16 @@ export default function BrandInventoryLots({ brandId }: Props) {
   const loadData = useCallback(async () => {
     if (!brandId) return
     setLoading(true)
+    const companyBrandIds = await resolveCompanyBrandIds(supabase, brandId)
     const [{ data: lotData }, { data: invData }] = await Promise.all([
       supabase.from('brand_inventory_lots')
         .select('id, inventory_id, lot_number, initial_qty, remaining_qty, produced_at, expires_at, status, brand_inventory(product_name)')
-        .eq('brand_id', brandId)
+        .in('brand_id', companyBrandIds)
         .order('created_at', { ascending: false })
         .limit(30),
       supabase.from('brand_inventory')
-        .select('id, product_name')
-        .eq('brand_id', brandId)
+        .select('id, product_name, brand_id')
+        .in('brand_id', companyBrandIds)
         .order('product_name'),
     ])
     setLots((lotData || []) as unknown as LotRow[])
@@ -76,9 +79,10 @@ export default function BrandInventoryLots({ brandId }: Props) {
   const addLot = async () => {
     if (!selInv || !lotQty || !brandId) { showToast('제품과 수량을 입력해주세요'); return }
     setSaving(true)
+    const inv = inventories.find(i => i.id === selInv)
     const num = lotNum.trim() || autoLotNum(lots.length)
     const { error } = await supabase.from('brand_inventory_lots').insert({
-      brand_id: brandId,
+      brand_id: inv?.brand_id || brandId,
       inventory_id: selInv,
       lot_number: num,
       initial_qty: lotQty,
@@ -89,7 +93,7 @@ export default function BrandInventoryLots({ brandId }: Props) {
     })
     if (!error) {
       await supabase.from('brand_stock_logs').insert({
-        brand_id: brandId,
+        brand_id: inv?.brand_id || brandId,
         inventory_id: selInv,
         type: 'in',
         qty: lotQty,
@@ -107,7 +111,6 @@ export default function BrandInventoryLots({ brandId }: Props) {
       if (invRow) {
         await notifyRestockIfNeeded(supabase, { brandId, productName: invRow.product_name, beforeStock: Math.trunc(Number(invRow.total_stock) || 0) })
       }
-      const inv = inventories.find(i => i.id === selInv)
       setLotNum(''); setLotQty(0); setProdDate(''); setExpDate('')
       setShowForm(false)
       showToast(`${inv?.product_name || '제품'} ${lotQty.toLocaleString()}개 입고 완료!`)

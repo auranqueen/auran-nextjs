@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import type { CSSProperties } from 'react'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
@@ -53,9 +54,10 @@ export default function BrandInventoryQR({ brandId, brandName }: Props) {
   const loadData = useCallback(async () => {
     if (!brandId) return
     setLoading(true)
+    const companyBrandIds = await resolveCompanyBrandIds(supabase, brandId)
     const [{ data: invData }, { data: lotData }] = await Promise.all([
-      supabase.from('brand_inventory').select('id, product_name, total_stock').eq('brand_id', brandId).order('product_name'),
-      supabase.from('brand_inventory_lots').select('id, inventory_id, lot_number, remaining_qty, expires_at, brand_inventory(product_name)').eq('brand_id', brandId).eq('status', 'active').order('expires_at', { ascending: true }),
+      supabase.from('brand_inventory').select('id, product_name, total_stock').in('brand_id', companyBrandIds).order('product_name'),
+      supabase.from('brand_inventory_lots').select('id, inventory_id, lot_number, remaining_qty, expires_at, brand_inventory(product_name)').in('brand_id', companyBrandIds).eq('status', 'active').order('expires_at', { ascending: true }),
     ])
     setInventories((invData || []) as InventoryRow[])
     setLots((lotData || []) as unknown as LotRow[])

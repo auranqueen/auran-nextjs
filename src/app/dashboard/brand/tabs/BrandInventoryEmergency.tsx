@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import type { CSSProperties } from 'react'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
@@ -13,7 +14,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; bg: string }> =
   confirmed: { label: '확인완료', color: '#4CAF50', bg: 'rgba(76,175,80,0.1)' },
   disputed:  { label: '이의제기', color: DANGER, bg: 'rgba(229,57,53,0.1)' },
 }
-interface InventoryRow { id: string; product_name: string; total_stock: number }
+interface InventoryRow { id: string; product_name: string; total_stock: number; brand_id: string }
 interface StaffRow { id: string; name: string; pin: string | null }
 interface LogRow {
   id: string
@@ -47,12 +48,13 @@ export default function BrandInventoryEmergency({ brandId, brandName, isHQ = fal
   const loadData = useCallback(async () => {
     if (!brandId) return
     setLoading(true)
+    const companyBrandIds = await resolveCompanyBrandIds(supabase, brandId)
     const [{ data: invData }, { data: staffData }, { data: logData }] = await Promise.all([
-      supabase.from('brand_inventory').select('id, product_name, total_stock').eq('brand_id', brandId).order('product_name'),
-      supabase.from('brand_staff').select('id, name, pin').eq('brand_id', brandId).eq('is_active', true),
+      supabase.from('brand_inventory').select('id, product_name, total_stock, brand_id').in('brand_id', companyBrandIds).order('product_name'),
+      supabase.from('brand_staff').select('id, name, pin').in('brand_id', companyBrandIds).eq('is_active', true),
       supabase.from('brand_stock_logs')
         .select('id, type, qty, memo, staff_name, created_at, hq_status, brand_inventory(product_name)')
-        .eq('brand_id', brandId)
+        .in('brand_id', companyBrandIds)
         .eq('ref_type', 'emergency')
         .order('created_at', { ascending: false })
         .limit(20),
@@ -89,7 +91,7 @@ export default function BrandInventoryEmergency({ brandId, brandName, isHQ = fal
     const before = inv?.total_stock || 0
     const after = Math.max(0, before - qty)
     const { error } = await supabase.from('brand_stock_logs').insert({
-      brand_id: brandId,
+      brand_id: inv?.brand_id || brandId,
       inventory_id: selInv,
       type: 'out',
       qty,
@@ -103,7 +105,7 @@ export default function BrandInventoryEmergency({ brandId, brandName, isHQ = fal
     if (!error) {
       await supabase.rpc('decrement_inventory_stock', { p_inventory_id: selInv, p_qty: qty })
       await supabase.from('brand_messages').insert({
-        brand_id: brandId,
+        brand_id: inv?.brand_id || brandId,
         message_type: 'auto_order',
         target_type: 'all',
         title: `⚠️ 비상 수동 출고 발생 — 즉시 확인 필요`,

@@ -1,6 +1,7 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { resolveCompanyBrandIds } from '@/lib/brand/resolveCompanyBrandIds'
 import type { CSSProperties } from 'react'
 const PURPLE = '#7B5EA7'
 const TEXT = 'rgba(255,255,255,0.65)'
@@ -16,6 +17,7 @@ interface InventoryRow {
   id: string
   product_name: string
   total_stock: number
+  brand_id: string
 }
 interface CloseRow {
   id: string
@@ -65,24 +67,25 @@ export default function BrandInventoryClose({ brandId }: Props) {
   const loadData = useCallback(async () => {
     if (!brandId) return
     setLoading(true)
+    const companyBrandIds = await resolveCompanyBrandIds(supabase, brandId)
     const [ym1, ym2] = yearMonth.split('-').map(Number)
     const startDate = new Date(ym1, ym2 - 1, 1).toISOString()
     const endDate = new Date(ym1, ym2, 1).toISOString()
     const [{ data: invData }, { data: closeData }, { data: logData }] = await Promise.all([
       supabase
         .from('brand_inventory')
-        .select('id, product_name, total_stock')
-        .eq('brand_id', brandId)
+        .select('id, product_name, total_stock, brand_id')
+        .in('brand_id', companyBrandIds)
         .order('product_name'),
       supabase
         .from('brand_monthly_close')
         .select('*')
-        .eq('brand_id', brandId)
+        .in('brand_id', companyBrandIds)
         .eq('year_month', yearMonth),
       supabase
         .from('brand_stock_logs')
         .select('inventory_id, type, qty')
-        .eq('brand_id', brandId)
+        .in('brand_id', companyBrandIds)
         .gte('created_at', startDate)
         .lt('created_at', endDate),
     ])
@@ -131,7 +134,7 @@ export default function BrandInventoryClose({ brandId }: Props) {
       if (difference !== null && difference !== 0) diffCount++
       const existing = closes.find(c => c.inventory_id === inv.id)
       const payload = {
-        brand_id: brandId,
+        brand_id: inv.brand_id || brandId,
         inventory_id: inv.id,
         year_month: yearMonth,
         total_in: totalIn,
