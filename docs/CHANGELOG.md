@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-22
+### fix: store-decoration 프로필 사진 원형 미리보기 클릭으로 업로드
+- store-decoration/page.tsx: 64x64 원형 미리보기를 label 안으로 이동 — 원·텍스트 모두 클릭 시 파일 선택. onChange/handleAvatarUpload 로직 미변경.
+- 쉽게: 프로필 사진 동그라미를 눌러도 사진 고를 수 있게 됐다.
+
 ### ui: 오렌포스팅관리(brand-store-decoration) 라이트테마
 - brand-store-decoration/page.tsx: BORDER/GOLD/TEXT_SUB·배경·알림 카드 라이트톤. StoryManageSection은 기존 라이트 팔레트 유지. 기능·API 미변경.
 - 쉽게: 오렌포스팅관리 화면이 밝은 톤으로 맞춰졌다.

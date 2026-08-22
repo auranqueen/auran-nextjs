@@ -305,11 +305,11 @@ export default function StoreDecorationPage() {
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14 }}>
           <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 10 }}>프로필 사진</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: avatarUrl ? `url(${avatarUrl}) center/cover` : '#F5F1FA', border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0, overflow: 'hidden' }}>
-              {!avatarUrl ? '🌸' : null}
-            </div>
-            <label style={{ fontSize: 11, color: P, cursor: 'pointer' }}>
-              사진 업로드
+            <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14, fontSize: 11, color: P }}>
+              <div style={{ width: 64, height: 64, borderRadius: '50%', background: avatarUrl ? `url(${avatarUrl}) center/cover` : '#F5F1FA', border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0, overflow: 'hidden' }}>
+                {!avatarUrl ? '🌸' : null}
+              </div>
+              <span>사진 업로드</span>
               <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { void handleAvatarUpload(e.target.files?.[0] || null) }} />
             </label>
           </div>
