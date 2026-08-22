@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-22
+### ui: 오렌포스팅관리(brand-store-decoration) 라이트테마
+- brand-store-decoration/page.tsx: BORDER/GOLD/TEXT_SUB·배경·알림 카드 라이트톤. StoryManageSection은 기존 라이트 팔레트 유지. 기능·API 미변경.
+- 쉽게: 오렌포스팅관리 화면이 밝은 톤으로 맞춰졌다.
+
 ### ui: 원장 살롱꾸미기(store-decoration) 라이트테마
 - store-decoration/page.tsx·SalonInfoForm.tsx: BG/CARD/BORDER/TEXT/GOLD 등 색상 상수 라이트톤 교체, 하드코딩 rgba(255,255,255…) 배경 정리. 기능·저장 로직 미변경.
 - 쉽게: 스토어 꾸미기·살롱 정보 탭이 밝은 화면으로 맞춰졌다.
