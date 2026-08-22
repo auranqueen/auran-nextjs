@@ -59,6 +59,10 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}))
   const cartItems = Array.isArray(body?.cartItems) ? (body.cartItems as CartBrandGroup[]) : null
+  const ownerNote =
+    typeof body?.owner_note === 'string' && body.owner_note.trim()
+      ? body.owner_note.trim()
+      : null
   if (!cartItems || cartItems.length === 0) {
     return NextResponse.json({ ok: false, error: 'invalid_request', message: '잘못된 요청입니다' }, { status: 400 })
   }
@@ -151,6 +155,7 @@ export async function POST(req: NextRequest) {
         salon_name: salonName,
         total_amount: totalAmount,
         status: '승인대기',
+        owner_note: ownerNote,
       })
       .select('id, order_no')
       .single()

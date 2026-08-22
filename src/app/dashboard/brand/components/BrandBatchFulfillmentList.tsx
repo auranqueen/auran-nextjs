@@ -45,6 +45,7 @@ type BatchCard = {
   created_at: string
   approved_at: string | null
   profile_id: string | null
+  owner_note: string | null
   orders: BatchOrderLine[]
   courier: string | null
   tracking_no: string | null
@@ -130,7 +131,7 @@ export default function BrandBatchFulfillmentList({
     const pending = filter === 'approved'
     let batchQ = supabase
       .from('brand_order_batches')
-      .select('id, order_no, owner_name, salon_name, status, created_at, approved_at, profile_id')
+      .select('id, order_no, owner_name, salon_name, status, created_at, approved_at, profile_id, owner_note')
       .in('id', batchIds)
       .order('created_at', { ascending: false })
       .limit(80)
@@ -149,6 +150,7 @@ export default function BrandBatchFulfillmentList({
       created_at: string
       approved_at: string | null
       profile_id: string | null
+      owner_note: string | null
     }>
 
     if (batchList.length === 0) {
@@ -539,6 +541,23 @@ export default function BrandBatchFulfillmentList({
                 </div>
               )
             })}
+
+            {batch.owner_note?.trim() ? (
+              <div
+                style={{
+                  marginBottom: 8,
+                  padding: '10px 12px',
+                  borderRadius: 8,
+                  background: 'rgba(123,94,167,0.12)',
+                  border: '0.5px solid rgba(123,94,167,0.35)',
+                }}
+              >
+                <div style={{ fontSize: 11, color: '#c4a7e7', marginBottom: 4 }}>원장님 요청사항</div>
+                <div style={{ fontSize: 12, color: TEXT, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                  {batch.owner_note.trim()}
+                </div>
+              </div>
+            ) : null}
 
             {(checklists[batch.id]?.length || 0) > 0 && (
               <div style={{

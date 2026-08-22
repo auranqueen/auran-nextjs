@@ -44,6 +44,7 @@ type BatchRow = {
   status: string
   created_at: string
   approved_at: string | null
+  owner_note: string | null
   orders: OrderRow[]
 }
 
@@ -134,7 +135,7 @@ export default function BrandOrderBatchApproval({ brandId = null, brandIds = [],
 
     let batchQ = supabase
       .from('brand_order_batches')
-      .select('id, order_no, profile_id, owner_name, salon_name, total_amount, status, created_at, approved_at')
+      .select('id, order_no, profile_id, owner_name, salon_name, total_amount, status, created_at, approved_at, owner_note')
       .in('id', batchIds)
       .order('created_at', { ascending: false })
 
@@ -153,6 +154,7 @@ export default function BrandOrderBatchApproval({ brandId = null, brandIds = [],
       status: string
       created_at: string
       approved_at: string | null
+      owner_note: string | null
     }>
 
     // 배치에 속한 전 브랜드 주문(같은 배치 내 타 브랜드 라인 포함 표시)
@@ -393,6 +395,23 @@ export default function BrandOrderBatchApproval({ brandId = null, brandIds = [],
                 <span>합계</span>
                 <span style={{ color: PURPLE }}>₩{Math.trunc(Number(batch.total_amount) || 0).toLocaleString()}</span>
               </div>
+
+              {batch.owner_note?.trim() ? (
+                <div
+                  style={{
+                    marginBottom: 10,
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    background: 'rgba(123,94,167,0.12)',
+                    border: '0.5px solid rgba(123,94,167,0.35)',
+                  }}
+                >
+                  <div style={{ fontSize: 11, color: '#c4a7e7', marginBottom: 4 }}>원장님 요청사항</div>
+                  <div style={{ fontSize: 12, color: TEXT, whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                    {batch.owner_note.trim()}
+                  </div>
+                </div>
+              ) : null}
 
               {waiting && (
                 <>

@@ -137,6 +137,7 @@ export default function BrandOrdersPage() {
   const [brandFilter, setBrandFilter] = useState<'all' | string>('all')
   const [searchQuery, setSearchQuery] = useState('')
   const [cart, setCart] = useState<CartItem[]>([])
+  const [ownerNote, setOwnerNote] = useState('')
   const [stockMap, setStockMap] = useState<Record<string, number>>({})
   const [showPopup, setShowPopup] = useState(false)
   const [sending, setSending] = useState(false)
@@ -829,7 +830,7 @@ export default function BrandOrdersPage() {
       }
     })
 
-    const result = await submitOrderBatch(cartItems)
+    const result = await submitOrderBatch(cartItems, ownerNote)
     if (!result.ok) {
       showToast(result.message || ('발주 실패: ' + result.error))
     } else {
@@ -879,6 +880,7 @@ export default function BrandOrdersPage() {
         }
       }
       setCart([])
+      setOwnerNote('')
       setShowPopup(false)
       showToast(`발주 요청 완료! 주문번호 ${result.order_no}`)
       void load()
@@ -1252,6 +1254,26 @@ export default function BrandOrdersPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 600, color: '#1E6B40' }}>
                 <span>적립 예정</span><span>{popupPointsEarned}T</span>
               </div>
+            </div>
+
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ fontSize: 12, color: SUB, marginBottom: 6 }}>요청사항 (선택)</div>
+              <textarea
+                value={ownerNote}
+                onChange={(e) => setOwnerNote(e.target.value)}
+                placeholder="특별히 전달할 내용이 있으면 적어주세요"
+                rows={3}
+                style={{
+                  width: '100%',
+                  boxSizing: 'border-box',
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  border: `1px solid ${BORDER}`,
+                  fontSize: 13,
+                  resize: 'vertical',
+                  color: TEXT,
+                }}
+              />
             </div>
 
             <button type="button" onClick={() => void submitOrder()} disabled={sending}

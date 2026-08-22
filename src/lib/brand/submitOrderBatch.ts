@@ -21,15 +21,20 @@ export type SubmitOrderBatchResult =
  */
 export async function submitOrderBatch(
   cartGroupedByBrand: SubmitOrderBatchGroup[],
+  ownerNote?: string | null,
 ): Promise<SubmitOrderBatchResult> {
   if (!Array.isArray(cartGroupedByBrand) || cartGroupedByBrand.length === 0) {
     return { ok: false, error: 'invalid_request', message: '발주할 상품이 없습니다' }
   }
 
+  const note = typeof ownerNote === 'string' ? ownerNote.trim() : ''
   const res = await fetch('/api/brand-order-batches/create', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cartItems: cartGroupedByBrand }),
+    body: JSON.stringify({
+      cartItems: cartGroupedByBrand,
+      owner_note: note || null,
+    }),
   })
   const result = await res.json().catch(() => ({})) as {
     ok?: boolean
