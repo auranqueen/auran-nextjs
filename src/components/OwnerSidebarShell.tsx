@@ -7,8 +7,8 @@ import { useIsTrackA } from '@/hooks/useIsTrackA'
 import { useOwnerStorePeriod } from '@/hooks/useOwnerStorePeriod'
 
 const PURPLE = '#7B5EA7'
-const SIDEBAR_BG = '#120a18'
-const BORDER = 'rgba(255,255,255,0.08)'
+const SIDEBAR_BG = '#FBFAFE'
+const BORDER = '#ECE7DE'
 
 const MENU_ITEMS = [
   { label: '홈', href: '/dashboard/owner' },
@@ -32,24 +32,24 @@ function periodBadge(phase: 'trial' | 'active' | 'expired', daysLeft: number) {
   if (phase === 'trial') {
     return {
       text: `무료체험 D-${daysLeft}`,
-      color: '#c4a7e7',
-      bg: 'rgba(123,94,167,0.2)',
-      border: 'rgba(123,94,167,0.45)',
+      color: '#7B5EA7',
+      bg: '#F5F1FA',
+      border: '#E1D8F0',
     }
   }
   if (phase === 'active') {
     return {
       text: `이용기간 D-${daysLeft}`,
-      color: '#8fd4a8',
-      bg: 'rgba(76,173,126,0.18)',
-      border: 'rgba(76,173,126,0.4)',
+      color: '#2d8a56',
+      bg: '#e8f8ef',
+      border: 'rgba(76,173,126,0.35)',
     }
   }
   return {
     text: '구독 필요',
-    color: '#f0a0a0',
-    bg: 'rgba(190,70,70,0.18)',
-    border: 'rgba(190,70,70,0.4)',
+    color: '#A85B38',
+    bg: '#FBF0EC',
+    border: 'rgba(168,91,56,0.35)',
   }
 }
 
@@ -95,7 +95,7 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
   }
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
+    <div data-theme="light" style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
       <aside
         style={{
           width: 240,
@@ -126,9 +126,9 @@ export default function OwnerSidebarShell({ children }: { children: ReactNode })
                 padding: '10px 12px',
                 borderRadius: 10,
                 border: 'none',
-                background: active ? 'rgba(123,94,167,0.22)' : 'transparent',
+                background: active ? 'rgba(123,94,167,0.12)' : 'transparent',
                 borderLeft: active ? `2px solid ${PURPLE}` : '2px solid transparent',
-                color: active ? '#fff' : 'rgba(255,255,255,0.55)',
+                color: active ? '#3A3540' : '#8A7E72',
                 fontSize: 13,
                 fontWeight: active ? 700 : 400,
                 cursor: 'pointer',

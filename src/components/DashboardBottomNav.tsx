@@ -60,6 +60,7 @@ export default function DashboardBottomNav({ role }: { role: Role }) {
 
   return (
     <div
+      {...(role === 'owner' ? { 'data-theme': 'light' as const } : {})}
       style={{
         position: 'fixed',
         bottom: 0,
@@ -67,7 +68,7 @@ export default function DashboardBottomNav({ role }: { role: Role }) {
         transform: 'translateX(-50%)',
         width: '100%',
         maxWidth: 480,
-        background: 'rgba(10,12,15,0.95)',
+        background: role === 'owner' ? 'rgba(255,255,255,0.97)' : 'rgba(10,12,15,0.95)',
         backdropFilter: 'blur(12px)',
         borderTop: '1px solid var(--border)',
         display: 'flex',

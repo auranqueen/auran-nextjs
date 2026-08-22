@@ -4,6 +4,18 @@
 ---
 
 ## 2026-08-22
+### ui: 원장 하단탭(DashboardBottomNav) owner만 라이트
+- DashboardBottomNav: `role==='owner'`일 때만 `data-theme="light"` + 배경 `rgba(255,255,255,0.97)`. 다른 role 배경·속성 미변경. 장바구니 뱃지 색 유지.
+- 쉽게: 원장 모바일 하단 메뉴만 밝게 맞춰지고, 고객·파트너 등은 그대로 어둡다.
+
+### ui: 원장 사이드바(OwnerSidebarShell) 라이트테마
+- OwnerSidebarShell: `data-theme="light"`, SIDEBAR_BG/BORDER·메뉴 텍스트·구독뱃지 색만 라이트톤 교체. 메뉴 클릭·구독일수·트랙A 필터 로직 미변경.
+- 쉽게: 원장 PC 사이드바가 어두운 톤에서 밝은 톤으로 맞춰졌다.
+
+### ui: 원장 홈(OwnerHomeV3) 라이트테마 + 포인트/바로가기 섹션
+- OwnerHomeV3: `data-theme="light"`, 헤더 파스텔 그라디언트, 핑크/라벤더→골드·퍼플. KPI 아래 적립/아레테 포인트 카드(아레테 멤버만) + 예약/발주/시술차트/스토어꾸미기 2×2 바로가기. 기존 KPI·매출 조회 로직 미변경.
+- 쉽게: 원장 홈이 밝아지고, 포인트·자주 쓰는 메뉴가 한눈에 보인다.
+
 ### feat: 등급구매 발송목록에 filter(발송이력) 지원 + 중복차감 방지
 - BrandTierOrderFulfillmentList: `filter: approved|shipped` 추가. shipped는 shipped_at NOT NULL·최신순·운송장 읽기전용. brand_stock_logs alreadyLogged로 RPC 중복차감 스킵. Inventory 호출부에 filter 전달·섹션 제목 분기.
 - 쉽게: 물류「발송 이력」탭에서 등급구매 발송분도 같이 보이고, 재고는 두 번 안 깎인다.
