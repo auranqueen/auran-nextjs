@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-22
+### fix: 원장 홈「스토어 꾸미기」바로가기를 store-decoration으로 연결
+- OwnerHomeV3: 바로가기 href `brand-store-decoration` → `store-decoration`. 예약/발주/시술차트 미변경.
+- 쉽게: 홈 바로가기가 오렌포스팅이 아니라 살롱 꾸미기(주소·프로필) 화면으로 간다.
+
 ### fix: 원장 홈 포인트 조회 ID를 profiles.id로 교정
 - OwnerHomeV3 loadPoints: `resolveOwnerIds(profile.auth_id)` → `profileId`로 brand_arete_members·brand_points 조회. users.id(ownerProfileId)는 다른 용도로 유지.
 - 쉽게: 원장 홈 포인트 카드가 발주 화면과 같은 프로필 ID로 잔액을 불러온다.
