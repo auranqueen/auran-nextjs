@@ -3,12 +3,12 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
-const BG = '#0D0B09'
-const CARD = '#181520'
-const BORDER = 'rgba(255,255,255,0.07)'
+const BG = '#f8f7fc'
+const CARD = '#ffffff'
+const BORDER = '#ECE7DE'
 const P = '#7B5EA7'
-const TEXT_MAIN = 'rgba(255,255,255,0.9)'
-const TEXT_SUB = 'rgba(255,255,255,0.45)'
+const TEXT_MAIN = '#3A3540'
+const TEXT_SUB = '#8A7E72'
 
 const PHASE_OPTIONS = ['달빛기', '황금기', '만개기', '물들기', '갱년기'] as const
 
@@ -48,7 +48,7 @@ const emptyMenu = (): MenuItem => ({
 const fieldStyle: CSSProperties = {
   width: '100%',
   boxSizing: 'border-box',
-  background: 'rgba(255,255,255,0.03)',
+  background: '#F5F1FA',
   border: `1px solid ${BORDER}`,
   borderRadius: 8,
   padding: 10,
@@ -299,7 +299,7 @@ export default function SalonInfoForm() {
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {menus.map((menu, idx) => (
-              <div key={idx} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
+              <div key={idx} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: 10, background: '#F5F1FA' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <input value={menu.name} onChange={e => updateMenu(idx, { name: e.target.value })} placeholder="메뉴명" style={fieldStyle} />
                   <div style={{ display: 'flex', gap: 8 }}>
@@ -326,7 +326,7 @@ export default function SalonInfoForm() {
                               padding: '4px 8px',
                               borderRadius: 6,
                               border: `1px solid ${on ? 'rgba(123,94,167,0.5)' : BORDER}`,
-                              background: on ? 'rgba(123,94,167,0.2)' : 'transparent',
+                              background: on ? 'rgba(123,94,167,0.12)' : 'transparent',
                               color: on ? P : TEXT_SUB,
                               cursor: 'pointer',
                             }}
@@ -357,9 +357,9 @@ export default function SalonInfoForm() {
           <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 10 }}>고객이 스토어 상세에서 확인할 수 있어요</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {certificates.map((cert, idx) => (
-              <div key={`${cert.url}-${idx}`} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: 10, background: 'rgba(255,255,255,0.02)' }}>
+              <div key={`${cert.url}-${idx}`} style={{ border: `1px solid ${BORDER}`, borderRadius: 10, padding: 10, background: '#F5F1FA' }}>
                 <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                  <img src={cert.url} alt="" style={{ width: 72, height: 72, borderRadius: 8, objectFit: 'cover', flexShrink: 0, background: 'rgba(255,255,255,0.05)' }} />
+                  <img src={cert.url} alt="" style={{ width: 72, height: 72, borderRadius: 8, objectFit: 'cover', flexShrink: 0, background: '#F5F1FA' }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <input
                       value={cert.label}

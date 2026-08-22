@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-22
+### ui: 원장 살롱꾸미기(store-decoration) 라이트테마
+- store-decoration/page.tsx·SalonInfoForm.tsx: BG/CARD/BORDER/TEXT/GOLD 등 색상 상수 라이트톤 교체, 하드코딩 rgba(255,255,255…) 배경 정리. 기능·저장 로직 미변경.
+- 쉽게: 스토어 꾸미기·살롱 정보 탭이 밝은 화면으로 맞춰졌다.
+
 ### fix: 원장 홈「스토어 꾸미기」바로가기를 store-decoration으로 연결
 - OwnerHomeV3: 바로가기 href `brand-store-decoration` → `store-decoration`. 예약/발주/시술차트 미변경.
 - 쉽게: 홈 바로가기가 오렌포스팅이 아니라 살롱 꾸미기(주소·프로필) 화면으로 간다.

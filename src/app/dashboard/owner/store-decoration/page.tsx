@@ -5,14 +5,14 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import SalonInfoForm from './SalonInfoForm'
 
-const BG = '#0D0B09'
-const CARD = '#181520'
-const BORDER = 'rgba(255,255,255,0.07)'
+const BG = '#f8f7fc'
+const CARD = '#ffffff'
+const BORDER = '#ECE7DE'
 const P = '#7B5EA7'
-const GOLD = '#C9A96E'
-const TEXT = 'rgba(255,255,255,0.9)'
-const TEXT_SUB = 'rgba(255,255,255,0.45)'
-const SURFACE = 'rgba(255,255,255,0.08)'
+const GOLD = '#B08A46'
+const TEXT = '#3A3540'
+const TEXT_SUB = '#8A7E72'
+const SURFACE = '#F5F1FA'
 
 const PHASE_KEYS = ['달빛기', '황금기', '만개기', '물들기'] as const
 const MAIN_CTA_OPTIONS = [
@@ -29,7 +29,7 @@ type SnsLinks = { instagram?: string; kakao?: string; youtube?: string }
 const fieldStyle: CSSProperties = {
   width: '100%',
   boxSizing: 'border-box',
-  background: 'rgba(255,255,255,0.03)',
+  background: '#F5F1FA',
   border: `1px solid ${BORDER}`,
   borderRadius: 8,
   padding: 10,
@@ -44,7 +44,7 @@ function chip(on: boolean): CSSProperties {
     padding: '8px 14px',
     borderRadius: 20,
     border: `1px solid ${on ? P : BORDER}`,
-    background: on ? 'rgba(123,94,167,0.2)' : 'transparent',
+    background: on ? 'rgba(123,94,167,0.12)' : 'transparent',
     color: on ? TEXT : TEXT_SUB,
     cursor: 'pointer',
   }
@@ -305,7 +305,7 @@ export default function StoreDecorationPage() {
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14 }}>
           <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 10 }}>프로필 사진</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: avatarUrl ? `url(${avatarUrl}) center/cover` : 'rgba(255,255,255,0.06)', border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0, overflow: 'hidden' }}>
+            <div style={{ width: 64, height: 64, borderRadius: '50%', background: avatarUrl ? `url(${avatarUrl}) center/cover` : '#F5F1FA', border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0, overflow: 'hidden' }}>
               {!avatarUrl ? '🌸' : null}
             </div>
             <label style={{ fontSize: 11, color: P, cursor: 'pointer' }}>
@@ -368,7 +368,7 @@ export default function StoreDecorationPage() {
           {[0, 1, 2].map((idx) => (
             <div key={idx} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: idx < 2 ? `1px solid ${BORDER}` : 'none' }}>
               <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 6 }}>배너 {idx + 1}</div>
-              <div style={{ aspectRatio: '16/9', borderRadius: 10, background: bannerUrls[idx] ? `url(${bannerUrls[idx]}) center/cover` : 'rgba(255,255,255,0.04)', border: `1px dashed ${BORDER}`, marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: TEXT_SUB, fontSize: 11 }}>
+              <div style={{ aspectRatio: '16/9', borderRadius: 10, background: bannerUrls[idx] ? `url(${bannerUrls[idx]}) center/cover` : '#F5F1FA', border: `1px dashed ${BORDER}`, marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: TEXT_SUB, fontSize: 11 }}>
                 {!bannerUrls[idx] ? '이미지 없음' : null}
               </div>
               <label style={{ display: 'block', fontSize: 11, color: P, cursor: 'pointer', marginBottom: 8 }}>
