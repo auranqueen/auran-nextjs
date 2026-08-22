@@ -40,7 +40,7 @@ export default function BrandTierOrderFulfillmentList({ companyId, filter, onToa
       if (filter === 'approved') {
         q = q.is('shipped_at', null).order('approved_at', { ascending: true })
       } else {
-        q = q.not('shipped_at', 'is', null).order('shipped_at', { ascending: false })
+        q = q.not('shipped_at', 'is', null).order('shipped_at', { ascending: false }).limit(100)
       }
       const { data: orderRows } = await q
       const rows = (orderRows || []) as OrderRow[]
