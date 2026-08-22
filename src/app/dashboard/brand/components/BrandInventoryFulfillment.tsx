@@ -523,8 +523,10 @@ export default function BrandInventoryFulfillment({ brandId, brandName }: Props)
         />
       </div>
 
-      <div style={{ fontSize: 11, color: GOLD, marginTop: 20, marginBottom: 8 }}>등급혜택 · 발송대기</div>
-      <BrandTierOrderFulfillmentList companyId={companyId} onToast={showToast} />
+      <div style={{ fontSize: 11, color: GOLD, marginTop: 20, marginBottom: 8 }}>
+        등급혜택 · {filter === 'approved' ? '발송대기' : '발송이력'}
+      </div>
+      <BrandTierOrderFulfillmentList companyId={companyId} filter={filter} onToast={showToast} />
 
       <div style={CARD}>
         <div style={{ fontSize: 11, color: '#c4a8f0', marginBottom: 8 }}>트랙B · 라인별 발송 (체크박스)</div>

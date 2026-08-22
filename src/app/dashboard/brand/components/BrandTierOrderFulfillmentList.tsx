@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 const PURPLE = '#7B5EA7'
+const GREEN = 'rgba(61,184,100,0.9)'
+const SUB = 'var(--text3, #888)'
 const COURIERS = ['CJ', '한진', '로젠', '우체국', '롯데']
 type OrderRow = {
   id: string
@@ -17,9 +19,10 @@ type OrderItem = { product_id: string; item_name: string; qty: number; brand_id:
 type Enriched = OrderRow & { ownerName: string; tierName: string; items: OrderItem[] }
 type Props = {
   companyId: string | null
+  filter: 'approved' | 'shipped'
   onToast: (t: string) => void
 }
-export default function BrandTierOrderFulfillmentList({ companyId, onToast }: Props) {
+export default function BrandTierOrderFulfillmentList({ companyId, filter, onToast }: Props) {
   const supabase = createClient()
   const [orders, setOrders] = useState<Enriched[]>([])
   const [loading, setLoading] = useState(false)
@@ -29,13 +32,17 @@ export default function BrandTierOrderFulfillmentList({ companyId, onToast }: Pr
     if (!companyId) return
     setLoading(true)
     try {
-      const { data: orderRows } = await supabase
+      let q = supabase
         .from('brand_tier_orders')
         .select('id, owner_id, tier_package_id, amount, approved_at, shipped_at, tracking_carrier, tracking_number')
         .eq('company_id', companyId)
         .not('approved_at', 'is', null)
-        .is('shipped_at', null)
-        .order('approved_at', { ascending: true })
+      if (filter === 'approved') {
+        q = q.is('shipped_at', null).order('approved_at', { ascending: true })
+      } else {
+        q = q.not('shipped_at', 'is', null).order('shipped_at', { ascending: false })
+      }
+      const { data: orderRows } = await q
       const rows = (orderRows || []) as OrderRow[]
       if (rows.length === 0) {
         setOrders([])
@@ -87,13 +94,22 @@ export default function BrandTierOrderFulfillmentList({ companyId, onToast }: Pr
     } finally {
       setLoading(false)
     }
-  }, [companyId, supabase])
+  }, [companyId, filter, supabase])
   useEffect(() => {
     void load()
   }, [load])
   const decrementInventoryForOrder = async (order: Enriched) => {
     for (const item of order.items) {
       if (!item.qty || item.qty <= 0) continue
+      const outMemo = `등급구매 발송: ${item.item_name} ${item.qty}개`
+      const { data: alreadyLogged } = await supabase
+        .from('brand_stock_logs')
+        .select('id')
+        .eq('ref_type', 'tier_order')
+        .eq('ref_id', order.id)
+        .eq('memo', outMemo)
+        .limit(1)
+      if (alreadyLogged && alreadyLogged.length > 0) continue
       let invRow: { id: string; total_stock: number } | null = null
       const byProduct = await supabase
         .from('brand_inventory')
@@ -122,7 +138,7 @@ export default function BrandTierOrderFulfillmentList({ companyId, onToast }: Pr
         ref_type: 'tier_order',
         ref_id: order.id,
         staff_name: '등급구매 자동출고',
-        memo: `등급구매 발송: ${item.item_name} ${item.qty}개`,
+        memo: outMemo,
       })
     }
   }
@@ -160,10 +176,14 @@ export default function BrandTierOrderFulfillmentList({ companyId, onToast }: Pr
     }
   }
   if (loading) {
-    return <div style={{ fontSize: 12, color: 'var(--text3, #888)' }}>불러오는 중…</div>
+    return <div style={{ fontSize: 12, color: SUB }}>불러오는 중…</div>
   }
   if (orders.length === 0) {
-    return <div style={{ fontSize: 12, color: 'var(--text3, #888)', padding: '12px 0' }}>발송대기 중인 등급구매 건이 없어요</div>
+    return (
+      <div style={{ fontSize: 12, color: SUB, padding: '12px 0' }}>
+        {filter === 'shipped' ? '발송이력이 없어요' : '발송대기 중인 등급구매 건이 없어요'}
+      </div>
+    )
   }
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -172,46 +192,59 @@ export default function BrandTierOrderFulfillmentList({ companyId, onToast }: Pr
         return (
           <div key={o.id} style={{ padding: 14, borderRadius: 12, border: '1px solid rgba(123,94,167,0.3)', background: 'rgba(123,94,167,0.05)' }}>
             <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4 }}>{o.ownerName}</div>
-            <div style={{ fontSize: 12, color: 'var(--text3, #888)', marginBottom: 10 }}>
+            <div style={{ fontSize: 12, color: SUB, marginBottom: 10 }}>
               {o.tierName} · 담은금액 {Math.trunc(o.amount).toLocaleString()}원 · 품목 {o.items.length}종
             </div>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
-              {COURIERS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setInputs((prev) => ({ ...prev, [o.id]: { ...input, courier: c } }))}
-                  style={{
-                    fontSize: 12,
-                    padding: '5px 12px',
-                    borderRadius: 8,
-                    border: `1px solid ${input.courier === c ? PURPLE : 'rgba(255,255,255,0.15)'}`,
-                    background: input.courier === c ? PURPLE : 'transparent',
-                    color: input.courier === c ? '#fff' : 'var(--text3, #888)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input
-                type="text"
-                placeholder="운송장 번호 입력"
-                value={input.no}
-                onChange={(e) => setInputs((prev) => ({ ...prev, [o.id]: { ...input, no: e.target.value } }))}
-                style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 13 }}
-              />
-              <button
-                type="button"
-                disabled={submittingId === o.id}
-                onClick={() => void submit(o)}
-                style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: PURPLE, color: '#fff', fontSize: 13, fontWeight: 600, cursor: submittingId === o.id ? 'wait' : 'pointer', opacity: submittingId === o.id ? 0.7 : 1 }}
-              >
-                {submittingId === o.id ? '처리 중…' : '발송완료'}
-              </button>
-            </div>
+            {filter === 'shipped' ? (
+              <div style={{ fontSize: 11, color: GREEN }}>
+                발송완료 · {o.tracking_carrier || '-'} · {o.tracking_number || '-'}
+                {o.shipped_at ? (
+                  <div style={{ color: SUB, marginTop: 2 }}>
+                    {new Date(o.shipped_at).toLocaleDateString('ko-KR')}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <>
+                <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+                  {COURIERS.map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setInputs((prev) => ({ ...prev, [o.id]: { ...input, courier: c } }))}
+                      style={{
+                        fontSize: 12,
+                        padding: '5px 12px',
+                        borderRadius: 8,
+                        border: `1px solid ${input.courier === c ? PURPLE : 'rgba(255,255,255,0.15)'}`,
+                        background: input.courier === c ? PURPLE : 'transparent',
+                        color: input.courier === c ? '#fff' : SUB,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {c}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="text"
+                    placeholder="운송장 번호 입력"
+                    value={input.no}
+                    onChange={(e) => setInputs((prev) => ({ ...prev, [o.id]: { ...input, no: e.target.value } }))}
+                    style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(0,0,0,0.25)', color: '#fff', fontSize: 13 }}
+                  />
+                  <button
+                    type="button"
+                    disabled={submittingId === o.id}
+                    onClick={() => void submit(o)}
+                    style={{ padding: '8px 16px', borderRadius: 8, border: 'none', background: PURPLE, color: '#fff', fontSize: 13, fontWeight: 600, cursor: submittingId === o.id ? 'wait' : 'pointer', opacity: submittingId === o.id ? 0.7 : 1 }}
+                  >
+                    {submittingId === o.id ? '처리 중…' : '발송완료'}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )
       })}

@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-22
+### feat: 등급구매 발송목록에 filter(발송이력) 지원 + 중복차감 방지
+- BrandTierOrderFulfillmentList: `filter: approved|shipped` 추가. shipped는 shipped_at NOT NULL·최신순·운송장 읽기전용. brand_stock_logs alreadyLogged로 RPC 중복차감 스킵. Inventory 호출부에 filter 전달·섹션 제목 분기.
+- 쉽게: 물류「발송 이력」탭에서 등급구매 발송분도 같이 보이고, 재고는 두 번 안 깎인다.
+
 ### fix: 발송 UPDATE 실패 시 재고 복구·감사로그 보존
 - 아레테 API·파우치 발송: 차감 후 상태 UPDATE 실패면 increment 복구. 출고 로그는 삭제하지 않고 memo에 `[복구됨]`, 별도 `return_in` 로그. alreadyLogged/RLS 미변경.
 - 쉽게: 발송 저장이 실패해도 재고는 돌아오고, 차감 기록은 복구 표시로 남는다.
