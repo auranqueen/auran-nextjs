@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-22
+### fix: 원장 홈 포인트 조회 ID를 profiles.id로 교정
+- OwnerHomeV3 loadPoints: `resolveOwnerIds(profile.auth_id)` → `profileId`로 brand_arete_members·brand_points 조회. users.id(ownerProfileId)는 다른 용도로 유지.
+- 쉽게: 원장 홈 포인트 카드가 발주 화면과 같은 프로필 ID로 잔액을 불러온다.
+
 ### ui: 원장 하단탭(DashboardBottomNav) owner만 라이트
 - DashboardBottomNav: `role==='owner'`일 때만 `data-theme="light"` + 배경 `rgba(255,255,255,0.97)`. 다른 role 배경·속성 미변경. 장바구니 뱃지 색 유지.
 - 쉽게: 원장 모바일 하단 메뉴만 밝게 맞춰지고, 고객·파트너 등은 그대로 어둡다.

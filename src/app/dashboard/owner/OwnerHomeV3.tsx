@@ -8,6 +8,7 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'rec
 import { OwnerBadgeTierSection, type TierBadgeBrand } from './OwnerBadgeTierSection'
 import { OwnerBrandSelfTierSection, type SelfTierBrand } from './OwnerBrandSelfTierSection'
 import OwnerBrandProductRevenueRow from '@/components/salon-store/OwnerBrandProductRevenueRow'
+import { resolveOwnerIds } from '@/lib/brand/resolveOwnerIds'
 
 const GRADE_COLORS: Record<string, string> = {
   debut: 'var(--text3)',
@@ -106,7 +107,11 @@ export default function OwnerHomeV3({
   const [pointsReady, setPointsReady] = useState(false)
 
   const loadPoints = useCallback(async () => {
-    if (!ownerProfileId) {
+    const authId = profile?.auth_id ? String(profile.auth_id) : null
+    const resolved = authId ? await resolveOwnerIds(supabase, authId) : null
+    const profileId = resolved?.profileId ?? null
+
+    if (!profileId) {
       setAreteCompanyId(null)
       setPointBalance(0)
       setRewardBalance(0)
@@ -116,7 +121,7 @@ export default function OwnerHomeV3({
     const { data: memberRow } = await supabase
       .from('brand_arete_members')
       .select('company_id')
-      .eq('owner_id', ownerProfileId)
+      .eq('owner_id', profileId)
       .eq('status', 'active')
       .maybeSingle()
     const cid = (memberRow as { company_id?: string } | null)?.company_id || null
@@ -132,21 +137,21 @@ export default function OwnerHomeV3({
         .from('brand_points')
         .select('balance')
         .eq('company_id', cid)
-        .eq('owner_id', ownerProfileId)
+        .eq('owner_id', profileId)
         .eq('track', 'ARETE')
         .maybeSingle(),
       supabase
         .from('brand_points')
         .select('balance')
         .eq('company_id', cid)
-        .eq('owner_id', ownerProfileId)
+        .eq('owner_id', profileId)
         .eq('track', 'REWARD')
         .maybeSingle(),
     ])
     setPointBalance(Math.trunc(Number((pointRow as { balance?: number } | null)?.balance) || 0))
     setRewardBalance(Math.trunc(Number((rewardRow as { balance?: number } | null)?.balance) || 0))
     setPointsReady(true)
-  }, [ownerProfileId, supabase])
+  }, [profile?.auth_id, supabase])
 
   useEffect(() => {
     void loadPoints()
