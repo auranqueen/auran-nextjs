@@ -14,6 +14,15 @@ const COURIERS = ['CJ대한통운', '한진', '로젠', '우체국', '롯데'] a
 
 type FilterTab = 'approved' | 'shipped'
 type KitItem = { product_id?: string; name?: string; qty?: number }
+type AppliedDecrement = {
+  inventory_id: string
+  brand_id: string
+  qty: number
+  name: string
+  before_qty: number
+  log_id: string
+  log_memo: string
+}
 
 type PouchInvoice = {
   id: string
@@ -196,7 +205,8 @@ export default function BrandPouchFulfillmentList({ companyId, filter, onToast, 
     }
 
     await supabase.rpc('decrement_inventory_stock', { p_inventory_id: invRow.id, p_qty: qty })
-    await supabase.from('brand_stock_logs').insert({
+    const outMemo = `등급파우치 출고: ${name} ${qty}개`
+    const { data: outLog } = await supabase.from('brand_stock_logs').insert({
       brand_id: invBrandId,
       inventory_id: invRow.id,
       type: 'out',
@@ -206,9 +216,19 @@ export default function BrandPouchFulfillmentList({ companyId, filter, onToast, 
       ref_type: 'pouch',
       ref_id: invoiceId,
       staff_name: '등급파우치 출고',
-      memo: `등급파우치 출고: ${name} ${qty}개`,
+      memo: outMemo,
       is_gift: true,
-    })
+    }).select('id, memo').maybeSingle()
+    if (!outLog?.id) return
+    return {
+      inventory_id: String(invRow.id),
+      brand_id: invBrandId,
+      qty,
+      name,
+      before_qty: Number(invRow.total_stock) || 0,
+      log_id: String(outLog.id),
+      log_memo: String(outLog.memo || outMemo),
+    }
   }
 
   const shipPouch = async (inv: PouchInvoice) => {
@@ -233,8 +253,10 @@ export default function BrandPouchFulfillmentList({ companyId, filter, onToast, 
     const table = inv.track === 'A' ? 'brand_billing_invoices' : 'hq_pouch_records'
 
     // 1) 재고차감 + 로그
+    const applied: AppliedDecrement[] = []
     for (const item of kit) {
-      await decrementStockForPouchItem(repBrandId, inv.id, item)
+      const row = await decrementStockForPouchItem(repBrandId, inv.id, item)
+      if (row) applied.push(row)
     }
 
     // 2) 발송상태 업데이트 (중복발송 방지)
@@ -252,8 +274,32 @@ export default function BrandPouchFulfillmentList({ companyId, filter, onToast, 
       .maybeSingle()
 
     if (updErr || !updated?.id) {
+      for (const row of applied) {
+        await supabase.rpc('increment_inventory_stock', {
+          p_inventory_id: row.inventory_id,
+          p_qty: row.qty,
+        })
+        const restoredMemo = row.log_memo.includes('[복구됨]')
+          ? row.log_memo
+          : `${row.log_memo} [복구됨]`
+        await supabase.from('brand_stock_logs')
+          .update({ memo: restoredMemo })
+          .eq('id', row.log_id)
+        await supabase.from('brand_stock_logs').insert({
+          brand_id: row.brand_id,
+          inventory_id: row.inventory_id,
+          type: 'return_in',
+          qty: row.qty,
+          before_qty: Math.max(0, row.before_qty - row.qty),
+          after_qty: row.before_qty,
+          ref_type: 'pouch',
+          ref_id: inv.id,
+          staff_name: '등급파우치 출고',
+          memo: `발송실패로 재고 복구: ${row.name} ${row.qty}개`,
+        })
+      }
       setBusyId(null)
-      onToast(updErr ? `발송 실패: ${updErr.message}` : '이미 발송 처리됐거나 승인 상태가 아니에요')
+      onToast('발송 처리 실패, 재고는 복구됐어요')
       return
     }
 

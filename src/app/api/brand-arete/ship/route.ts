@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
-import { decrementStockForAreteItem, parseKitSnapshot } from './decrementStock'
+import { decrementStockForAreteItem, parseKitSnapshot, restoreAreteDecrements, type AppliedDecrement } from './decrementStock'
 
 function monthKey(raw: string) {
   return String(raw || '').slice(0, 10)
@@ -99,8 +99,10 @@ export async function POST(req: NextRequest) {
   if (!brandRow?.id) return fail(400, 'brand_missing', '브랜드 정보를 찾을 수 없어요')
   const repBrandId = String(brandRow.id)
 
+  const applied: AppliedDecrement[] = []
   for (const item of kit) {
-    await decrementStockForAreteItem(svc, repBrandId, invoice.id, item)
+    const row = await decrementStockForAreteItem(svc, repBrandId, invoice.id, item)
+    if (row) applied.push(row)
   }
 
   const now = new Date().toISOString()
@@ -120,11 +122,8 @@ export async function POST(req: NextRequest) {
     .maybeSingle()
 
   if (updErr || !updated?.id) {
-    return fail(
-      400,
-      'update_failed',
-      updErr ? `발송 실패: ${updErr.message}` : '이미 발송 처리됐거나 결제 완료 상태가 아니에요',
-    )
+    await restoreAreteDecrements(svc, invoice.id, applied)
+    return fail(400, 'update_failed', '발송 처리 실패, 재고는 복구됐어요')
   }
 
   const kitSummary = kit.map((k) => `${k.name || ''}×${k.qty || 0}`).join(', ')

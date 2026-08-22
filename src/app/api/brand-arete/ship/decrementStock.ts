@@ -3,6 +3,16 @@ import { tryCreateAdminClient } from '@/lib/supabase/admin'
 type KitItem = { product_id?: string; name?: string; qty?: number }
 type AdminClient = NonNullable<ReturnType<typeof tryCreateAdminClient>>
 
+export type AppliedDecrement = {
+  inventory_id: string
+  brand_id: string
+  qty: number
+  name: string
+  before_qty: number
+  log_id: string
+  log_memo: string
+}
+
 export function parseKitSnapshot(raw: unknown): KitItem[] {
   if (!Array.isArray(raw)) return []
   return raw.map((x) => {
@@ -72,7 +82,8 @@ export async function decrementStockForAreteItem(
   }
 
   await svc.rpc('decrement_inventory_stock', { p_inventory_id: invRow.id, p_qty: qty })
-  await svc.from('brand_stock_logs').insert({
+  const outMemo = `아레테 출고: ${name} ${qty}개`
+  const { data: outLog } = await svc.from('brand_stock_logs').insert({
     brand_id: invBrandId,
     inventory_id: invRow.id,
     type: 'out',
@@ -82,6 +93,47 @@ export async function decrementStockForAreteItem(
     ref_type: 'arete',
     ref_id: invoiceId,
     staff_name: '아레테 출고',
-    memo: `아레테 출고: ${name} ${qty}개`,
-  })
+    memo: outMemo,
+  }).select('id, memo').maybeSingle()
+  if (!outLog?.id) return
+  return {
+    inventory_id: String(invRow.id),
+    brand_id: invBrandId,
+    qty,
+    name,
+    before_qty: Number(invRow.total_stock) || 0,
+    log_id: String(outLog.id),
+    log_memo: String(outLog.memo || outMemo),
+  }
+}
+
+export async function restoreAreteDecrements(
+  svc: AdminClient,
+  invoiceId: string,
+  applied: AppliedDecrement[],
+) {
+  for (const row of applied) {
+    await svc.rpc('increment_inventory_stock', {
+      p_inventory_id: row.inventory_id,
+      p_qty: row.qty,
+    })
+    const restoredMemo = row.log_memo.includes('[복구됨]')
+      ? row.log_memo
+      : `${row.log_memo} [복구됨]`
+    await svc.from('brand_stock_logs')
+      .update({ memo: restoredMemo })
+      .eq('id', row.log_id)
+    await svc.from('brand_stock_logs').insert({
+      brand_id: row.brand_id,
+      inventory_id: row.inventory_id,
+      type: 'return_in',
+      qty: row.qty,
+      before_qty: Math.max(0, row.before_qty - row.qty),
+      after_qty: row.before_qty,
+      ref_type: 'arete',
+      ref_id: invoiceId,
+      staff_name: '아레테 출고',
+      memo: `발송실패로 재고 복구: ${row.name} ${row.qty}개`,
+    })
+  }
 }

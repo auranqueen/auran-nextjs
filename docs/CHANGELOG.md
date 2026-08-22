@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-22
+### fix: 발송 UPDATE 실패 시 재고 복구·감사로그 보존
+- 아레테 API·파우치 발송: 차감 후 상태 UPDATE 실패면 increment 복구. 출고 로그는 삭제하지 않고 memo에 `[복구됨]`, 별도 `return_in` 로그. alreadyLogged/RLS 미변경.
+- 쉽게: 발송 저장이 실패해도 재고는 돌아오고, 차감 기록은 복구 표시로 남는다.
+
 ### feat: 아레테 월간번들 물류 발송(API+admin)
 - 물류「발송 처리」파우치 아래 아레테 섹션. 목록은 paid+ship_status SELECT. 발송은 POST `/api/brand-arete/ship`(admin)에서 번들 스냅샷·재고차감·운송장. RLS 미변경.
 - 쉽게: 결제한 아레테 번들을 물류에서 파우치처럼 보내고, 쓰기는 서버가 한다.
