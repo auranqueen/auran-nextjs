@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-23
+### ui: 스토어꾸미기 배너 링크 칩 hover 말풍선
+- store-decoration/page.tsx: 없음/예약/상담/URL 칩에 hoveredChip + 말풍선. 저장·링크 로직 미변경.
+- 쉽게: 배너 링크 칩에 마우스를 올리면, 언제 고르면 좋은지 짧은 안내가 뜬다.
+
 ### feat: 살롱홈 배너 PC/모바일·노출여부 반영
 - salons/[id]/page.tsx: isPc(innerWidth>=768) + 배너 useMemo를 pc/mobile/active/link_urls 기준으로 슬롯 정렬. 21:9·스와이프·점·클릭 if분기는 미변경. url칩은 banner_link_urls를 링크 배열에 넣어 기존 http 체크가 동작.
 - 쉽게: 원장이 올린 PC/모바일 배너가 화면 크기에 맞게 보이고, 끈 배너는 안 보인다.

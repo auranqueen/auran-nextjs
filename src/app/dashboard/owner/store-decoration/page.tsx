@@ -21,6 +21,12 @@ const MAIN_CTA_OPTIONS = [
   { id: 'product', label: '🛍️ 제품' },
 ] as const
 const BANNER_LINK_OPTIONS = ['none', 'booking', 'chat', 'url'] as const
+const BANNER_LINK_HINTS: Record<(typeof BANNER_LINK_OPTIONS)[number], string> = {
+  none: '배너를 그냥 이미지로만 보여주고 싶을 때 선택하세요',
+  booking: '고객이 바로 예약하길 원할 때 선택하세요',
+  chat: '고객과 먼저 상담하고 싶을 때 선택하세요',
+  url: '인스타그램, 블로그 이벤트, 외부 예약사이트 등 원하는 링크로 유도하고 싶을 때 선택하세요',
+}
 const STORY_TYPES = ['image', 'video'] as const
 
 type PhaseGreetings = Record<(typeof PHASE_KEYS)[number], string>
@@ -126,6 +132,7 @@ export default function StoreDecorationPage() {
   const [bannerSaving, setBannerSaving] = useState(false)
   const [bannerLinks, setBannerLinks] = useState<string[]>(['none', 'none', 'none'])
   const [bannerLinkUrls, setBannerLinkUrls] = useState<string[]>(['', '', ''])
+  const [hoveredChip, setHoveredChip] = useState<string | null>(null)
   const [storyUrl, setStoryUrl] = useState('')
   const [storyType, setStoryType] = useState<(typeof STORY_TYPES)[number]>('image')
   const [phaseGreetings, setPhaseGreetings] = useState<PhaseGreetings>({ 달빛기: '', 황금기: '', 만개기: '', 물들기: '' })
@@ -553,8 +560,35 @@ export default function StoreDecorationPage() {
             <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 6 }}>배너 링크</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
               {BANNER_LINK_OPTIONS.map((opt) => (
-                <button key={opt} type="button" onClick={() => setBannerLinks((p) => { const n = [...p]; n[activeBannerIdx] = opt; return n })} style={chip(bannerLinks[activeBannerIdx] === opt)}>
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => setBannerLinks((p) => { const n = [...p]; n[activeBannerIdx] = opt; return n })}
+                  onMouseEnter={() => setHoveredChip(opt)}
+                  onMouseLeave={() => setHoveredChip(null)}
+                  style={{ ...chip(bannerLinks[activeBannerIdx] === opt), position: 'relative' }}
+                >
                   {opt === 'none' ? '없음' : opt === 'booking' ? '예약' : opt === 'chat' ? '상담' : 'URL'}
+                  {hoveredChip === opt ? (
+                    <span style={{
+                      position: 'absolute',
+                      bottom: 'calc(100% + 8px)',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      background: CARD,
+                      border: `1px solid ${BORDER}`,
+                      borderRadius: 8,
+                      padding: '6px 10px',
+                      fontSize: 10,
+                      color: TEXT,
+                      whiteSpace: 'nowrap',
+                      boxShadow: '0 4px 12px rgba(58,53,64,0.12)',
+                      zIndex: 10,
+                      pointerEvents: 'none',
+                    }}>
+                      {BANNER_LINK_HINTS[opt]}
+                    </span>
+                  ) : null}
                 </button>
               ))}
             </div>
