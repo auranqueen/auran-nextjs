@@ -249,10 +249,8 @@ export default function StoreDecorationPage() {
     if (!url) return
     if (target === 'pc') {
       setBannerUrlsPc((p) => setSlot3(p, idx, url))
-      setBannerUrlsMobile((p) => (p[idx] ? p : setSlot3(p, idx, url)))
     } else {
       setBannerUrlsMobile((p) => setSlot3(p, idx, url))
-      setBannerUrlsPc((p) => (p[idx] ? p : setSlot3(p, idx, url)))
     }
   }
 
@@ -554,6 +552,9 @@ export default function StoreDecorationPage() {
                       }}
                     />
                   </label>
+                  {slot.key === 'mobile' ? (
+                    <div style={{ fontSize: 9, color: GOLD, marginTop: 4 }}>모바일 이미지를 안 넣으면 고객 폰 화면에는 안 떠요</div>
+                  ) : null}
                 </div>
               ))}
             </div>

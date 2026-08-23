@@ -590,7 +590,7 @@ export default function SalonHomePage() {
       if (active[i] === false) continue
       const pcUrl = pc[i] ? String(pc[i]) : ''
       const moUrl = mobile[i] ? String(mobile[i]) : ''
-      const url = isPc ? (pcUrl || moUrl) : (moUrl || pcUrl)
+      const url = isPc ? pcUrl : moUrl
       if (!url) continue
       const rawLink = links[i] != null && links[i] !== '' ? String(links[i]) : 'none'
       const rawLinkUrl = linkUrls[i] ? String(linkUrls[i]) : ''

@@ -4,6 +4,18 @@
 ---
 
 ## 2026-08-23
+### ui: 스토어꾸미기 모바일 배너 미업로드 경고
+- store-decoration/page.tsx: 모바일 이미지 슬롯 아래 GOLD 톤 안내. 업로드·저장 로직 미변경.
+- 쉽게: 모바일 사진을 안 올리면 고객 폰에는 배너가 안 보인다는 안내가 칸 아래에 있다.
+
+### fix: 살롱홈 배너 뷰포트 폴백 제거 — 해당 기기 슬롯만 표시
+- salons/[id]/page.tsx useMemo: isPc면 pc[i]만, 아니면 mobile[i]만. 비면 push 안 함. active·링크·21:9·스와이프·점 미변경.
+- 쉽게: 휴대폰에서는 모바일 칸에 올린 배너만 보이고, PC 사진으로 대신 채워지지 않는다.
+
+### fix: 스토어꾸미기 배너 업로드 시 반대편 슬롯 자동복사 제거
+- store-decoration/page.tsx handleBannerUpload: pc면 setBannerUrlsPc만, mobile이면 setBannerUrlsMobile만. 살롱홈 표시 폴백(pc||mobile) 미변경.
+- 쉽게: PC 사진을 올려도 모바일 칸이 자동으로 채워지지 않고, 각각 따로 올린다.
+
 ### ui: 스토어꾸미기 배너 링크 칩 hover 말풍선
 - store-decoration/page.tsx: 없음/예약/상담/URL 칩에 hoveredChip + 말풍선. 저장·링크 로직 미변경.
 - 쉽게: 배너 링크 칩에 마우스를 올리면, 언제 고르면 좋은지 짧은 안내가 뜬다.
