@@ -20,11 +20,9 @@ const MAIN_CTA_OPTIONS = [
   { id: 'chat', label: '💬 상담' },
   { id: 'product', label: '🛍️ 제품' },
 ] as const
-const BANNER_LINK_OPTIONS = ['none', 'booking', 'chat', 'url'] as const
+const BANNER_LINK_OPTIONS = ['none', 'url'] as const
 const BANNER_LINK_HINTS: Record<(typeof BANNER_LINK_OPTIONS)[number], string> = {
   none: '배너를 그냥 이미지로만 보여주고 싶을 때 선택하세요',
-  booking: '고객이 바로 예약하길 원할 때 선택하세요',
-  chat: '고객과 먼저 상담하고 싶을 때 선택하세요',
   url: '인스타그램, 블로그 이벤트, 외부 예약사이트 등 원하는 링크로 유도하고 싶을 때 선택하세요',
 }
 const STORY_TYPES = ['image', 'video'] as const
@@ -107,6 +105,10 @@ function setSlot3<T>(prev: [T, T, T], idx: number, value: T): [T, T, T] {
   const next: [T, T, T] = [prev[0], prev[1], prev[2]]
   next[idx] = value
   return next
+}
+
+function bannerLinkChipView(raw: string): (typeof BANNER_LINK_OPTIONS)[number] {
+  return raw === 'url' ? 'url' : 'none'
 }
 
 export default function StoreDecorationPage() {
@@ -333,6 +335,44 @@ export default function StoreDecorationPage() {
     setToast('배너가 저장됐어요')
   }
 
+  const deleteBannerSlot = async () => {
+    if (!salonId) {
+      setToast('살롱 정보를 먼저 등록해주세요')
+      return
+    }
+    if (!window.confirm('이 배너를 삭제할까요?')) return
+    const idx = activeBannerIdx
+    const nextPc = setSlot3(bannerUrlsPc, idx, '')
+    const nextMobile = setSlot3(bannerUrlsMobile, idx, '')
+    const nextActive = setSlot3(bannerActive, idx, true)
+    const nextLinks = [...bannerLinks]
+    nextLinks[idx] = 'none'
+    const nextLinkUrls = [...bannerLinkUrls]
+    nextLinkUrls[idx] = ''
+    setBannerUrlsPc(nextPc)
+    setBannerUrlsMobile(nextMobile)
+    setBannerActive(nextActive)
+    setBannerLinks(nextLinks)
+    setBannerLinkUrls(nextLinkUrls)
+    setBannerSaving(true)
+    const sb = supabaseRef.current
+    const linksPayload = nextLinks.map((l, i) => (l === 'url' ? nextLinkUrls[i] || 'none' : l))
+    const { error } = await sb.from('salons').update({
+      banner_urls: nextPc,
+      banner_urls_pc: nextPc,
+      banner_urls_mobile: nextMobile,
+      banner_active: nextActive,
+      banner_links: linksPayload,
+      banner_link_urls: nextLinkUrls,
+    }).eq('id', salonId)
+    setBannerSaving(false)
+    if (error) {
+      setToast('저장에 실패했어요')
+      return
+    }
+    setToast('배너가 삭제됐어요')
+  }
+
   const saveBankInfo = async () => {
     setBankSaving(true)
     try {
@@ -463,7 +503,7 @@ export default function StoreDecorationPage() {
         </div>
 
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14 }}>
-          <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 6 }}>배너 (최대 3장)</div>
+          <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 6 }}>프로모션 배너 관리</div>
           <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 10 }}>예: 신메뉴 홍보, 시즌 이벤트, 오픈 기념 할인 등을 올려보세요</div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
             {[0, 1, 2].map((idx) => {
@@ -567,9 +607,9 @@ export default function StoreDecorationPage() {
                   onClick={() => setBannerLinks((p) => { const n = [...p]; n[activeBannerIdx] = opt; return n })}
                   onMouseEnter={() => setHoveredChip(opt)}
                   onMouseLeave={() => setHoveredChip(null)}
-                  style={{ ...chip(bannerLinks[activeBannerIdx] === opt), position: 'relative' }}
+                  style={{ ...chip(bannerLinkChipView(bannerLinks[activeBannerIdx]) === opt), position: 'relative' }}
                 >
-                  {opt === 'none' ? '없음' : opt === 'booking' ? '예약' : opt === 'chat' ? '상담' : 'URL'}
+                  {opt === 'none' ? '없음' : 'URL'}
                   {hoveredChip === opt ? (
                     <span style={{
                       position: 'absolute',
@@ -597,17 +637,31 @@ export default function StoreDecorationPage() {
             {bannerLinks[activeBannerIdx] === 'url' ? (
               <input value={bannerLinkUrls[activeBannerIdx]} onChange={(e) => setBannerLinkUrls((p) => { const n = [...p]; n[activeBannerIdx] = e.target.value; return n })} placeholder="https://" style={{ ...fieldStyle, marginBottom: 10 }} />
             ) : null}
-            <button
-              type="button"
-              disabled={bannerSaving}
-              onClick={() => void saveBannerSlot()}
-              style={{
-                width: '100%', border: 'none', borderRadius: 10, background: P, color: '#fff',
-                padding: '10px 0', fontSize: 13, cursor: bannerSaving ? 'wait' : 'pointer', opacity: bannerSaving ? 0.7 : 1,
-              }}
-            >
-              {bannerSaving ? '저장 중...' : '이 배너 저장'}
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                type="button"
+                disabled={bannerSaving}
+                onClick={() => void saveBannerSlot()}
+                style={{
+                  flex: 1, border: 'none', borderRadius: 10, background: P, color: '#fff',
+                  padding: '10px 0', fontSize: 13, cursor: bannerSaving ? 'wait' : 'pointer', opacity: bannerSaving ? 0.7 : 1,
+                }}
+              >
+                {bannerSaving ? '저장 중...' : '이 배너 저장'}
+              </button>
+              <button
+                type="button"
+                disabled={bannerSaving}
+                onClick={() => void deleteBannerSlot()}
+                style={{
+                  flexShrink: 0, minWidth: 72, border: `1px solid ${BORDER}`, borderRadius: 10,
+                  background: 'transparent', color: TEXT_SUB, padding: '10px 16px', fontSize: 13,
+                  cursor: bannerSaving ? 'wait' : 'pointer', opacity: bannerSaving ? 0.7 : 1,
+                }}
+              >
+                삭제
+              </button>
+            </div>
           </div>
         </div>
 
