@@ -281,7 +281,7 @@ export default function StoreDecorationPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: TEXT, padding: '16px 16px 120px' }}>
+    <div style={{ minHeight: '100vh', background: BG, color: TEXT, padding: '16px 16px 120px', maxWidth: 1100, margin: '0 auto', width: '100%', boxSizing: 'border-box' }}>
       {toast ? (
         <div style={{ position: 'fixed', top: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 200, background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: '10px 16px', fontSize: 12 }}>
           {toast}

@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-23
+### ui: 스토어꾸미기 최상위 폭을 원장홈과 동일(1100)
+- store-decoration/page.tsx wrapper: maxWidth 1100, margin 0 auto, width 100%, boxSizing border-box. 저장·업로드 로직 미변경.
+- 쉽게: PC에서 배너 미리보기가 화면 전체로 안 커지고, 원장 홈과 같은 폭 안에서만 보인다.
+
 ### ui: 스토어꾸미기 배너 링크 칩 아래 노출 안내
 - store-decoration/page.tsx: BANNER_LINK_OPTIONS 칩 목록과 URL 입력 사이에 안내 한 줄 추가. 저장·링크 로직 미변경.
 - 쉽게: 배너 링크는 다시 바꾸기 전까지 계속 보인다는 안내가 칩 바로 아래에 있다.
