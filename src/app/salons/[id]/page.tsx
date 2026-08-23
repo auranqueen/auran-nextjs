@@ -600,6 +600,14 @@ export default function SalonHomePage() {
     }
     return { salonBannerUrls: urls, salonBannerLinks: linksOut, salonBannerLinkUrls: linkUrlsOut }
   }, [salon, isPc])
+  useEffect(() => {
+    const n = salonBannerUrls.length
+    if (n < 2) return
+    const t = setInterval(() => {
+      setBannerIndex((i) => (i + 1) % n)
+    }, 4000)
+    return () => clearInterval(t)
+  }, [salonBannerUrls.length, bannerIndex])
   const salonName = String(salon?.name || '샵')
   const ownerId = salon?.owner_id ? String(salon.owner_id) : ''
 
