@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-23
+### db: salons lat/lng 컬럼 마이그레이션 파일만 추가
+- 169_salons_lat_lng.sql: lat·lng double precision nullable, IF NOT EXISTS. 레포에 파일만 추가(미실행).
+- 쉽게: 살롱에 위도·경도를 넣을 수 있는 SQL이 준비됐고, 실제 DB 적용은 대시보드에서 한다.
+
 ### ui: 원장홈 티어 섹션 강조색을 라이트배경용 진한 보라로
 - OwnerBadgeTierSection.tsx·OwnerBrandSelfTierSection.tsx: ACCENT_COLOR #C084FC→#7B5EA7. 카드/텍스트용 rgba·#bf5f90·모달 #fff 등 하드코딩만 라이트톤 조정. CSS변수·결제 로직 미변경. client.tsx 미수정.
 - 쉽게: 원장 홈 등급 칸의 연한 보랏빛이 밝은 배경에서도 잘 보이게 진해졌다.
