@@ -796,6 +796,8 @@ export default function SalonHomePage() {
                 setShowBooking(true)
               } else if (link === 'chat') {
                 router.push(`/dashboard/customer/salon-chat/new?salon_id=${salon.id}&owner_id=${salon.owner_id || ''}`)
+              } else if (link === 'story') {
+                router.push(`/salons/${salon.id}/story/${salonBannerLinkUrls[bannerIndex]}`)
               } else if (link.startsWith('http')) {
                 window.open(link, '_blank', 'noopener,noreferrer')
               }

@@ -20,10 +20,11 @@ const MAIN_CTA_OPTIONS = [
   { id: 'chat', label: '💬 상담' },
   { id: 'product', label: '🛍️ 제품' },
 ] as const
-const BANNER_LINK_OPTIONS = ['none', 'url'] as const
+const BANNER_LINK_OPTIONS = ['none', 'url', 'story'] as const
 const BANNER_LINK_HINTS: Record<(typeof BANNER_LINK_OPTIONS)[number], string> = {
   none: '배너를 그냥 이미지로만 보여주고 싶을 때 선택하세요',
   url: '인스타그램, 블로그 이벤트, 외부 예약사이트 등 원하는 링크로 유도하고 싶을 때 선택하세요',
+  story: '이미 만든 스토리를 연결해서 여러 제품을 한번에 보여주고 싶을 때 선택하세요',
 }
 const STORY_TYPES = ['image', 'video'] as const
 
@@ -93,6 +94,9 @@ function parseBannerLinkState(links: unknown, urlsCol: unknown): { types: [strin
     if (l === 'none' || l === 'booking' || l === 'chat') {
       types[i] = l
       urls[i] = urlsArr[i] || ''
+    } else if (l === 'story') {
+      types[i] = 'story'
+      urls[i] = urlsArr[i] || ''
     } else if (l === 'url' || l.startsWith('http')) {
       types[i] = 'url'
       urls[i] = urlsArr[i] || (l.startsWith('http') ? l : '')
@@ -108,7 +112,9 @@ function setSlot3<T>(prev: [T, T, T], idx: number, value: T): [T, T, T] {
 }
 
 function bannerLinkChipView(raw: string): (typeof BANNER_LINK_OPTIONS)[number] {
-  return raw === 'url' ? 'url' : 'none'
+  if (raw === 'url') return 'url'
+  if (raw === 'story') return 'story'
+  return 'none'
 }
 
 export default function StoreDecorationPage() {
@@ -135,6 +141,8 @@ export default function StoreDecorationPage() {
   const [bannerLinks, setBannerLinks] = useState<string[]>(['none', 'none', 'none'])
   const [bannerLinkUrls, setBannerLinkUrls] = useState<string[]>(['', '', ''])
   const [hoveredChip, setHoveredChip] = useState<string | null>(null)
+  const [publishedStories, setPublishedStories] = useState<{ id: string; title: string }[]>([])
+  const [publishedStoriesLoaded, setPublishedStoriesLoaded] = useState(false)
   const [storyUrl, setStoryUrl] = useState('')
   const [storyType, setStoryType] = useState<(typeof STORY_TYPES)[number]>('image')
   const [phaseGreetings, setPhaseGreetings] = useState<PhaseGreetings>({ 달빛기: '', 황금기: '', 만개기: '', 물들기: '' })
@@ -156,6 +164,30 @@ export default function StoreDecorationPage() {
     const t = setTimeout(() => setToast(''), 2400)
     return () => clearTimeout(t)
   }, [toast])
+
+  const storyChipOn = bannerLinks[activeBannerIdx] === 'story'
+  useEffect(() => {
+    if (!storyChipOn) return
+    let cancelled = false
+    setPublishedStoriesLoaded(false)
+    void (async () => {
+      try {
+        const res = await fetch('/api/brand-product-orders/story').then((r) => r.json())
+        if (cancelled) return
+        const list = res.ok && Array.isArray(res.stories)
+          ? (res.stories as { id?: unknown; title?: unknown; is_published?: unknown }[])
+              .filter((s) => s.is_published === true && s.id)
+              .map((s) => ({ id: String(s.id), title: String(s.title || '제목 없음') }))
+          : []
+        setPublishedStories(list)
+      } catch {
+        if (!cancelled) setPublishedStories([])
+      } finally {
+        if (!cancelled) setPublishedStoriesLoaded(true)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [storyChipOn])
 
   useEffect(() => {
     let cancelled = false
@@ -503,7 +535,7 @@ export default function StoreDecorationPage() {
         </div>
 
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14 }}>
-          <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 6 }}>프로모션 배너 관리</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: TEXT, marginBottom: 6 }}>프로모션 배너 관리</div>
           <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 10 }}>예: 신메뉴 홍보, 시즌 이벤트, 오픈 기념 할인 등을 올려보세요</div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
             {[0, 1, 2].map((idx) => {
@@ -604,12 +636,18 @@ export default function StoreDecorationPage() {
                 <button
                   key={opt}
                   type="button"
-                  onClick={() => setBannerLinks((p) => { const n = [...p]; n[activeBannerIdx] = opt; return n })}
+                  onClick={() => {
+                    const prev = bannerLinkChipView(bannerLinks[activeBannerIdx])
+                    setBannerLinks((p) => { const n = [...p]; n[activeBannerIdx] = opt; return n })
+                    if ((opt === 'story' && prev !== 'story') || (opt === 'url' && prev !== 'url')) {
+                      setBannerLinkUrls((p) => { const n = [...p]; n[activeBannerIdx] = ''; return n })
+                    }
+                  }}
                   onMouseEnter={() => setHoveredChip(opt)}
                   onMouseLeave={() => setHoveredChip(null)}
                   style={{ ...chip(bannerLinkChipView(bannerLinks[activeBannerIdx]) === opt), position: 'relative' }}
                 >
-                  {opt === 'none' ? '없음' : 'URL'}
+                  {opt === 'none' ? '없음' : opt === 'url' ? 'URL' : '스토리'}
                   {hoveredChip === opt ? (
                     <span style={{
                       position: 'absolute',
@@ -636,6 +674,24 @@ export default function StoreDecorationPage() {
             <div style={{ fontSize: 10, color: TEXT_SUB, marginTop: 4, marginBottom: 8 }}>한번 설정하면 별도 변경 전까지 계속 노출돼요</div>
             {bannerLinks[activeBannerIdx] === 'url' ? (
               <input value={bannerLinkUrls[activeBannerIdx]} onChange={(e) => setBannerLinkUrls((p) => { const n = [...p]; n[activeBannerIdx] = e.target.value; return n })} placeholder="https://" style={{ ...fieldStyle, marginBottom: 10 }} />
+            ) : null}
+            {bannerLinks[activeBannerIdx] === 'story' ? (
+              !publishedStoriesLoaded ? (
+                <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 8 }}>스토리 목록을 불러오는 중...</div>
+              ) : publishedStories.length === 0 ? (
+                <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 8 }}>발행된 스토리가 없어요. 오렌포스팅관리에서 먼저 만들어보세요</div>
+              ) : (
+                <select
+                  value={bannerLinkUrls[activeBannerIdx] || ''}
+                  onChange={(e) => setBannerLinkUrls((p) => { const n = [...p]; n[activeBannerIdx] = e.target.value; return n })}
+                  style={{ ...fieldStyle, marginBottom: 10 }}
+                >
+                  <option value="">스토리 선택</option>
+                  {publishedStories.map((s) => (
+                    <option key={s.id} value={s.id}>{s.title}</option>
+                  ))}
+                </select>
+              )
             ) : null}
             <div style={{ display: 'flex', gap: 8 }}>
               <button

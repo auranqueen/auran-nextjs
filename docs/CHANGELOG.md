@@ -4,6 +4,15 @@
 ---
 
 ## 2026-08-23
+### feat: 살롱 배너 링크에 발행 스토리 연결
+- store-decoration/page.tsx: BANNER_LINK_OPTIONS에 story 추가. 칩이 story면 GET /api/brand-product-orders/story 후 is_published===true만 select. 선택 시 bannerLinkUrls[idx]에 story id. 발행 0건 안내. hover 힌트 추가. 기존 none/url·booking/chat 유지.
+- salons/[id]/page.tsx: salonBannerLinks[bannerIndex]==='story'이면 /salons/{id}/story/{bannerLinkUrls}로 push. booking/chat/http 분기 미변경.
+- 쉽게: 배너에 이미 만든 스토리를 연결하면, 살롱 홈에서 그 배너를 눌렀을 때 스토리 상세로 간다.
+
+### ui: 스토어꾸미기 프로모션 배너 제목 강조
+- store-decoration/page.tsx: 「프로모션 배너 관리」 fontSize 14, fontWeight 600, color TEXT. 안내문구·기능 미변경.
+- 쉽게: 프로모션 배너 관리 제목이 조금 더 크고 진하게 보인다.
+
 ### ui: 살롱홈 배너 2장 이상이면 4초 자동 전환
 - salons/[id]/page.tsx: length>=2일 때 setInterval 4초, bannerIndex 변경 시 타이머 재시작. 스와이프·점·클릭·21:9 핸들러 미변경.
 - 쉽게: 배너가 두 장 이상이면 잠깐씩 다음 장으로 넘어가고, 직접 넘기면 그때부터 다시 센다.
