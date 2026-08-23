@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-23
+### feat: 살롱 전체보기 목록 페이지 추가
+- salons/page.tsx 신규. status=active 조회. 이번주 인기 가로카드 + 거리/인기/리뷰 칩 + 세로 리스트. 커버는 banner_urls_pc[0]→banner_urls[0]→banner_url. 거리는 geolocation+haversine. 홈·살롱상세 미변경.
+- 쉽게: 살롱을 한눈에 둘러보고, 위치 허용 시 가까운 순으로 볼 수 있다.
+
 ### db: salons lat/lng 컬럼 마이그레이션 파일만 추가
 - 169_salons_lat_lng.sql: lat·lng double precision nullable, IF NOT EXISTS. 레포에 파일만 추가(미실행).
 - 쉽게: 살롱에 위도·경도를 넣을 수 있는 SQL이 준비됐고, 실제 DB 적용은 대시보드에서 한다.
