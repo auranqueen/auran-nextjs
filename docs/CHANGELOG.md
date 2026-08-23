@@ -4,6 +4,11 @@
 ---
 
 ## 2026-08-23
+### ui: 스토어꾸미기 배너 PC/모바일·슬롯편집·노출토글
+- store-decoration/page.tsx: 배너 3칸 그리드 + 선택 슬롯만 편집. PC/모바일 업로드(스토리와 같은 한쪽 폴백). banner_urls_pc/mobile/active 저장, banner_urls는 PC값 legacy 병행. 프로필·계좌·살롱정보 탭 미변경.
+- 168_salons_banner_link_urls.sql: banner_link_urls text[] 컬럼 파일만 추가(미실행).
+- 쉽게: 배너를 작은 칸에서 고르고, PC/모바일 사진을 따로 올리고, 노출을 켜고 끌 수 있다. 살롱홈이 새 컬럼을 읽기 전에는 예전 배너 배열도 같이 저장된다.
+
 ### ui: 스토어꾸미기 최상위 폭을 원장홈과 동일(1100)
 - store-decoration/page.tsx wrapper: maxWidth 1100, margin 0 auto, width 100%, boxSizing border-box. 저장·업로드 로직 미변경.
 - 쉽게: PC에서 배너 미리보기가 화면 전체로 안 커지고, 원장 홈과 같은 폭 안에서만 보인다.

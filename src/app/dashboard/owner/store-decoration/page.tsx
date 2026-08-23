@@ -69,6 +69,40 @@ function parseSns(raw: unknown): SnsLinks {
   }
 }
 
+function pad3Strings(raw: unknown, fallback: [string, string, string] = ['', '', '']): [string, string, string] {
+  const arr = Array.isArray(raw) ? raw.map((v) => (v ? String(v) : '')) : []
+  return [arr[0] || fallback[0] || '', arr[1] || fallback[1] || '', arr[2] || fallback[2] || '']
+}
+
+function pad3Active(raw: unknown): [boolean, boolean, boolean] {
+  if (!Array.isArray(raw)) return [true, true, true]
+  return [raw[0] !== false, raw[1] !== false, raw[2] !== false]
+}
+
+function parseBannerLinkState(links: unknown, urlsCol: unknown): { types: [string, string, string]; urls: [string, string, string] } {
+  const linksArr = Array.isArray(links) ? links.map(String) : []
+  const urlsArr = Array.isArray(urlsCol) ? urlsCol.map((v) => (v ? String(v) : '')) : []
+  const types: [string, string, string] = ['none', 'none', 'none']
+  const urls: [string, string, string] = ['', '', '']
+  for (let i = 0; i < 3; i++) {
+    const l = linksArr[i] || 'none'
+    if (l === 'none' || l === 'booking' || l === 'chat') {
+      types[i] = l
+      urls[i] = urlsArr[i] || ''
+    } else if (l === 'url' || l.startsWith('http')) {
+      types[i] = 'url'
+      urls[i] = urlsArr[i] || (l.startsWith('http') ? l : '')
+    }
+  }
+  return { types, urls }
+}
+
+function setSlot3<T>(prev: [T, T, T], idx: number, value: T): [T, T, T] {
+  const next: [T, T, T] = [prev[0], prev[1], prev[2]]
+  next[idx] = value
+  return next
+}
+
 export default function StoreDecorationPage() {
   const router = useRouter()
   const supabaseRef = useRef(createClient())
@@ -85,7 +119,11 @@ export default function StoreDecorationPage() {
   const [bankHolder, setBankHolder] = useState('')
   const [bankSaving, setBankSaving] = useState(false)
 
-  const [bannerUrls, setBannerUrls] = useState<(string | null)[]>([null, null, null])
+  const [bannerUrlsPc, setBannerUrlsPc] = useState<[string, string, string]>(['', '', ''])
+  const [bannerUrlsMobile, setBannerUrlsMobile] = useState<[string, string, string]>(['', '', ''])
+  const [bannerActive, setBannerActive] = useState<[boolean, boolean, boolean]>([true, true, true])
+  const [activeBannerIdx, setActiveBannerIdx] = useState(0)
+  const [bannerSaving, setBannerSaving] = useState(false)
   const [bannerLinks, setBannerLinks] = useState<string[]>(['none', 'none', 'none'])
   const [bannerLinkUrls, setBannerLinkUrls] = useState<string[]>(['', '', ''])
   const [storyUrl, setStoryUrl] = useState('')
@@ -136,7 +174,7 @@ export default function StoreDecorationPage() {
           .maybeSingle(),
         sb
           .from('salons')
-          .select('id, banner_urls, banner_links, story_url, story_type, phase_greetings, phase_reco_enabled, main_cta, map_url, sns_links')
+          .select('id, banner_urls, banner_urls_pc, banner_urls_mobile, banner_active, banner_links, banner_link_urls, story_url, story_type, phase_greetings, phase_reco_enabled, main_cta, map_url, sns_links')
           .eq('owner_id', oid)
           .maybeSingle(),
       ])
@@ -149,10 +187,23 @@ export default function StoreDecorationPage() {
       setBankHolder(String((prof as { owner_bank_holder?: string | null } | null)?.owner_bank_holder || ''))
       if (salon) {
         setSalonId(String(salon.id))
-        const urls = Array.isArray(salon.banner_urls) ? salon.banner_urls.map(String) : []
-        setBannerUrls([urls[0] || null, urls[1] || null, urls[2] || null])
-        const links = Array.isArray(salon.banner_links) ? salon.banner_links.map(String) : []
-        setBannerLinks([links[0] || 'none', links[1] || 'none', links[2] || 'none'])
+        const row = salon as {
+          banner_urls?: unknown
+          banner_urls_pc?: unknown
+          banner_urls_mobile?: unknown
+          banner_active?: unknown
+          banner_links?: unknown
+          banner_link_urls?: unknown
+        }
+        const legacy = pad3Strings(row.banner_urls)
+        const pcRaw = row.banner_urls_pc
+        const moRaw = row.banner_urls_mobile
+        setBannerUrlsPc(Array.isArray(pcRaw) && pcRaw.some(Boolean) ? pad3Strings(pcRaw) : legacy)
+        setBannerUrlsMobile(Array.isArray(moRaw) && moRaw.some(Boolean) ? pad3Strings(moRaw) : legacy)
+        setBannerActive(pad3Active(row.banner_active))
+        const parsedLinks = parseBannerLinkState(row.banner_links, row.banner_link_urls)
+        setBannerLinks([...parsedLinks.types])
+        setBannerLinkUrls([...parsedLinks.urls])
         setStoryUrl(salon.story_url ? String(salon.story_url) : '')
         setStoryType(salon.story_type === 'video' ? 'video' : 'image')
         setPhaseGreetings(parsePhaseGreetings(salon.phase_greetings))
@@ -185,15 +236,29 @@ export default function StoreDecorationPage() {
     return data.publicUrl || ''
   }, [ownerUserId])
 
-  const handleBannerUpload = async (idx: number, file: File | null) => {
+  const handleBannerUpload = async (idx: number, target: 'pc' | 'mobile', file: File | null) => {
     if (!file) return
-    const url = await uploadFile(file, `banner${idx}`)
+    const url = await uploadFile(file, `banner${idx}_${target}`)
     if (!url) return
-    setBannerUrls((prev) => {
-      const next = [...prev]
-      next[idx] = url
-      return next
-    })
+    if (target === 'pc') {
+      setBannerUrlsPc((p) => setSlot3(p, idx, url))
+      setBannerUrlsMobile((p) => (p[idx] ? p : setSlot3(p, idx, url)))
+    } else {
+      setBannerUrlsMobile((p) => setSlot3(p, idx, url))
+      setBannerUrlsPc((p) => (p[idx] ? p : setSlot3(p, idx, url)))
+    }
+  }
+
+  const bannerUpdatePayload = () => {
+    const linksPayload = bannerLinks.map((l, i) => (l === 'url' ? bannerLinkUrls[i] || 'none' : l))
+    return {
+      banner_urls: bannerUrlsPc,
+      banner_urls_pc: bannerUrlsPc,
+      banner_urls_mobile: bannerUrlsMobile,
+      banner_active: bannerActive,
+      banner_links: linksPayload,
+      banner_link_urls: bannerLinkUrls,
+    }
   }
 
   const handleStoryUpload = async (file: File | null) => {
@@ -218,12 +283,10 @@ export default function StoreDecorationPage() {
     }
     setSaving(true)
     const sb = supabaseRef.current
-    const linksPayload = bannerLinks.map((l, i) => (l === 'url' ? bannerLinkUrls[i] || 'none' : l))
     const { error } = await sb
       .from('salons')
       .update({
-        banner_urls: bannerUrls.filter(Boolean),
-        banner_links: linksPayload,
+        ...bannerUpdatePayload(),
         story_url: storyUrl || null,
         story_type: storyType,
         phase_greetings: phaseGreetings,
@@ -247,6 +310,22 @@ export default function StoreDecorationPage() {
       }
     }
     setToast('저장되었어요 💜')
+  }
+
+  const saveBannerSlot = async () => {
+    if (!salonId) {
+      setToast('살롱 정보를 먼저 등록해주세요')
+      return
+    }
+    setBannerSaving(true)
+    const sb = supabaseRef.current
+    const { error } = await sb.from('salons').update(bannerUpdatePayload()).eq('id', salonId)
+    setBannerSaving(false)
+    if (error) {
+      setToast('저장에 실패했어요')
+      return
+    }
+    setToast('배너가 저장됐어요')
   }
 
   const saveBankInfo = async () => {
@@ -379,37 +458,122 @@ export default function StoreDecorationPage() {
         </div>
 
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14 }}>
-          <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 10 }}>배너 (최대 3장)</div>
-          <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 10 }}>권장 1200×675px · 16:9 · 최대 5MB</div>
-          {[0, 1, 2].map((idx) => (
-            <div key={idx} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: idx < 2 ? `1px solid ${BORDER}` : 'none' }}>
-              <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 6 }}>배너 {idx + 1}</div>
-              <label style={{ display: 'block', cursor: 'pointer', marginBottom: 8 }}>
-                <div style={{ aspectRatio: '16/9', borderRadius: 10, background: bannerUrls[idx] ? `url(${bannerUrls[idx]}) center/cover` : '#F5F1FA', border: `1px dashed ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: TEXT_SUB, fontSize: 11, position: 'relative', overflow: 'hidden' }}>
-                  {!bannerUrls[idx] ? '이미지 없음' : null}
-                  <div style={{
-                    position: 'absolute', left: 0, right: 0, bottom: 0, padding: '6px 0', textAlign: 'center', fontSize: 10,
-                    color: bannerUrls[idx] ? '#fff' : TEXT_SUB,
-                    background: bannerUrls[idx] ? 'rgba(58,53,64,0.35)' : 'transparent',
-                  }}>탭하여 변경</div>
-                </div>
-                <span style={{ display: 'block', fontSize: 11, color: P, marginTop: 8 }}>파일 선택</span>
-                <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { void handleBannerUpload(idx, e.target.files?.[0] || null) }} />
-              </label>
-              <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 6 }}>배너 링크</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
-                {BANNER_LINK_OPTIONS.map((opt) => (
-                  <button key={opt} type="button" onClick={() => setBannerLinks((p) => { const n = [...p]; n[idx] = opt; return n })} style={chip(bannerLinks[idx] === opt)}>
-                    {opt === 'none' ? '없음' : opt === 'booking' ? '예약' : opt === 'chat' ? '상담' : 'URL'}
-                  </button>
-                ))}
-              </div>
-              <div style={{ fontSize: 10, color: TEXT_SUB, marginTop: 4 }}>한번 설정하면 별도 변경 전까지 계속 노출돼요</div>
-              {bannerLinks[idx] === 'url' ? (
-                <input value={bannerLinkUrls[idx]} onChange={(e) => setBannerLinkUrls((p) => { const n = [...p]; n[idx] = e.target.value; return n })} placeholder="https://" style={fieldStyle} />
-              ) : null}
+          <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 6 }}>배너 (최대 3장)</div>
+          <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 10 }}>예: 신메뉴 홍보, 시즌 이벤트, 오픈 기념 할인 등을 올려보세요</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+            {[0, 1, 2].map((idx) => {
+              const filled = !!(bannerUrlsPc[idx] || bannerUrlsMobile[idx])
+              const thumb = bannerUrlsPc[idx] || bannerUrlsMobile[idx]
+              const selected = activeBannerIdx === idx
+              const dim = bannerActive[idx] === false
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setActiveBannerIdx(idx)}
+                  style={{
+                    width: 100,
+                    flexShrink: 0,
+                    aspectRatio: '1100/410',
+                    borderRadius: 8,
+                    border: `2px solid ${selected ? P : BORDER}`,
+                    background: filled ? `url(${thumb}) center/cover` : SURFACE,
+                    cursor: 'pointer',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    opacity: dim ? 0.45 : 1,
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {filled ? (
+                    <span style={{
+                      position: 'absolute', top: 4, right: 4, fontSize: 9, padding: '1px 6px', borderRadius: 8,
+                      background: bannerActive[idx] ? P : 'rgba(58,53,64,0.55)', color: '#fff',
+                    }}>{bannerActive[idx] ? 'ON' : 'OFF'}</span>
+                  ) : (
+                    <span style={{ fontSize: 10, color: TEXT_SUB }}>+ 배너 {idx + 1} 추가</span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+          <div style={{ borderTop: `1px solid ${BORDER}`, paddingTop: 12 }}>
+            <div style={{ fontSize: 13, color: TEXT, marginBottom: 10 }}>배너 {activeBannerIdx + 1} 설정</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ fontSize: 11, color: TEXT_SUB }}>노출 여부</div>
+              <button
+                type="button"
+                onClick={() => setBannerActive((p) => setSlot3(p, activeBannerIdx, !p[activeBannerIdx]))}
+                style={{
+                  width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', position: 'relative',
+                  background: bannerActive[activeBannerIdx] ? P : BORDER,
+                }}
+                aria-label={bannerActive[activeBannerIdx] ? '노출 켜짐' : '노출 꺼짐'}
+              >
+                <span style={{
+                  position: 'absolute', top: 2, left: bannerActive[activeBannerIdx] ? 22 : 2,
+                  width: 20, height: 20, borderRadius: '50%', background: '#fff', display: 'block',
+                }} />
+              </button>
             </div>
-          ))}
+            <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+              {([
+                { key: 'pc' as const, label: 'PC 이미지 (권장 1100×410px)', url: bannerUrlsPc[activeBannerIdx] },
+                { key: 'mobile' as const, label: '모바일 이미지 (권장 480×180px)', url: bannerUrlsMobile[activeBannerIdx] },
+              ]).map((slot) => (
+                <div key={slot.key} style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 6 }}>{slot.label}</div>
+                  <label style={{ display: 'block', cursor: 'pointer' }}>
+                    <div style={{
+                      aspectRatio: slot.key === 'pc' ? '1100/410' : '480/180',
+                      borderRadius: 10,
+                      background: slot.url ? `url(${slot.url}) center/cover` : SURFACE,
+                      border: `1px dashed ${BORDER}`,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      color: TEXT_SUB, fontSize: 11, position: 'relative', overflow: 'hidden',
+                    }}>
+                      {!slot.url ? '탭하여 업로드' : null}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => {
+                        void handleBannerUpload(activeBannerIdx, slot.key, e.target.files?.[0] || null)
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 6 }}>배너 링크</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+              {BANNER_LINK_OPTIONS.map((opt) => (
+                <button key={opt} type="button" onClick={() => setBannerLinks((p) => { const n = [...p]; n[activeBannerIdx] = opt; return n })} style={chip(bannerLinks[activeBannerIdx] === opt)}>
+                  {opt === 'none' ? '없음' : opt === 'booking' ? '예약' : opt === 'chat' ? '상담' : 'URL'}
+                </button>
+              ))}
+            </div>
+            <div style={{ fontSize: 10, color: TEXT_SUB, marginTop: 4, marginBottom: 8 }}>한번 설정하면 별도 변경 전까지 계속 노출돼요</div>
+            {bannerLinks[activeBannerIdx] === 'url' ? (
+              <input value={bannerLinkUrls[activeBannerIdx]} onChange={(e) => setBannerLinkUrls((p) => { const n = [...p]; n[activeBannerIdx] = e.target.value; return n })} placeholder="https://" style={{ ...fieldStyle, marginBottom: 10 }} />
+            ) : null}
+            <button
+              type="button"
+              disabled={bannerSaving}
+              onClick={() => void saveBannerSlot()}
+              style={{
+                width: '100%', border: 'none', borderRadius: 10, background: P, color: '#fff',
+                padding: '10px 0', fontSize: 13, cursor: bannerSaving ? 'wait' : 'pointer', opacity: bannerSaving ? 0.7 : 1,
+              }}
+            >
+              {bannerSaving ? '저장 중...' : '이 배너 저장'}
+            </button>
+          </div>
         </div>
 
         <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14 }}>
