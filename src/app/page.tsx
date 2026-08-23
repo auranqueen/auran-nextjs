@@ -918,7 +918,7 @@ export default function CustomerHomePage() {
         setMagazines((data as any[]) || [])
       })
 
-    supabase.from('salons').select('*').limit(3).then(({ data }) => {
+    supabase.from('salons').select('id, name, area, avg_rating, review_count, status').eq('status', 'active').order('avg_rating', { ascending: false }).limit(3).then(({ data }) => {
       if (data && data.length > 0) setSalons(data)
     })
 
@@ -3402,45 +3402,32 @@ export default function CustomerHomePage() {
       <div style={{ padding: '16px 16px 0' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <span style={{ fontSize: '13px', fontWeight: 400, color: 'rgba(255,255,255,0.75)' }}>📍 내 주변 관리샵</span>
-          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }}>지도보기 ›</span>
+          <span style={{ fontSize: '11px', color: GOLD, cursor: 'pointer' }} onClick={() => router.push('/salons')}>전체보기 ›</span>
         </div>
         <div style={{ display: 'flex', gap: '7px', overflowX: 'auto', paddingBottom: '10px', scrollbarWidth: 'none' }}>
-          {['📍 거리순', '🔥 인기순', '⭐ 리뷰순', '💆 페이셜', '🌿 바디', '✨ 클리닉'].map((f, i) => (
-            <div key={i} style={{
+          {[
+            { label: '📍 거리순', href: '/salons?sort=distance' },
+            { label: '🔥 인기순', href: '/salons?sort=popular' },
+            { label: '⭐ 리뷰순', href: '/salons?sort=reviews' },
+          ].map((f, i) => (
+            <div key={f.href} onClick={() => router.push(f.href)} style={{
               padding: '5px 12px', whiteSpace: 'nowrap', cursor: 'pointer', fontSize: '10px',
               background: i === 0 ? 'rgba(201,169,110,0.15)' : CARD_BG,
               border: i === 0 ? '1px solid rgba(201,169,110,0.4)' : CARD_BORDER,
               borderRadius: '20px',
               color: i === 0 ? GOLD : TEXT_MUTED,
-            }}>{f}</div>
+            }}>{f.label}</div>
           ))}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {salonList.map((salon: any, i: number) => (
-            <div key={i} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '16px', padding: '13px 14px', display: 'flex', gap: '12px', alignItems: 'center', cursor: 'pointer' }}>
+          {salonList.map((salon: any) => (
+            <div key={salon.id} onClick={() => router.push(`/salons/${salon.id}`)} style={{ background: CARD_BG, border: CARD_BORDER, borderRadius: '16px', padding: '13px 14px', display: 'flex', gap: '12px', alignItems: 'center', cursor: 'pointer' }}>
               <div style={{ width: '50px', height: '50px', borderRadius: '12px', background: 'linear-gradient(135deg,#1a1520,#2a1a30)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', flexShrink: 0 }}>💆</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: '13px', fontWeight: 400, marginBottom: '2px' }}>{salon.name}</div>
                 <div style={{ fontSize: '10px', color: TEXT_MUTED, marginBottom: '4px' }}>
-                  {salon.open && (
-                    <span style={{ display: 'inline-block', width: '5px', height: '5px', borderRadius: '50%', background: '#3ab870', marginRight: '4px' }} />
-                  )}
-                  ⭐ {salon.rating} · 리뷰 {salon.reviews} · {salon.area}
+                  ⭐ {salon.avg_rating} · 리뷰 {salon.review_count} · {salon.area}
                 </div>
-                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap' }}>
-                  {(salon.tags || []).map((tag: string, ti: number) => (
-                    <span key={ti} style={{ fontSize: '8px', background: 'rgba(255,255,255,0.05)', color: TEXT_MUTED, borderRadius: '5px', padding: '2px 6px' }}>{tag}</span>
-                  ))}
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px', flexShrink: 0 }}>
-                <div style={{
-                  fontSize: '9px', padding: '3px 8px', borderRadius: '10px',
-                  background: salon.open ? 'rgba(74,200,120,0.15)' : 'rgba(200,80,80,0.1)',
-                  color: salon.open ? '#3ab870' : '#c05050',
-                }}>{salon.open ? '영업중' : '영업종료'}</div>
-                <div style={{ fontSize: '9px', color: TEXT_DIM }}>{salon.dist}</div>
-                <div style={{ padding: '6px 10px', background: 'rgba(201,169,110,0.15)', border: '1px solid rgba(201,169,110,0.3)', borderRadius: '8px', fontSize: '10px', color: GOLD, cursor: 'pointer' }}>예약하기</div>
               </div>
             </div>
           ))}

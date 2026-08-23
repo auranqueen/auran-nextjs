@@ -3,6 +3,12 @@
 
 ---
 
+## 2026-08-24
+### feat: 홈 내 주변 관리샵을 살롱 전체보기와 연결
+- page.tsx 살롱 섹션만: active 3건을 avg_rating desc로 조회. 카드는 avg_rating·review_count·area. 카드→/salons/{id}, 전체보기→/salons. 칩 3개(거리/인기/리뷰)는 /salons?sort=. 페이셜·바디·클리닉·영업/거리/태그 UI 제거.
+- salons/page.tsx: useSearchParams의 sort로 초기 정렬 탭 세팅(distance|popular|reviews).
+- 쉽게: 홈에서 살롱 카드·전체보기·정렬 칩을 누르면 살롱 목록/상세로 이어진다.
+
 ## 2026-08-23
 ### feat: 살롱 전체보기 목록 페이지 추가
 - salons/page.tsx 신규. status=active 조회. 이번주 인기 가로카드 + 거리/인기/리뷰 칩 + 세로 리스트. 커버는 banner_urls_pc[0]→banner_urls[0]→banner_url. 거리는 geolocation+haversine. 홈·살롱상세 미변경.

@@ -1,7 +1,7 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 const BG = '#0D0B09'
@@ -63,11 +63,17 @@ function num(v: unknown): number {
   return Number.isFinite(n) ? n : 0
 }
 
-export default function SalonsBrowsePage() {
+function parseSortParam(raw: string | null): SortKey {
+  if (raw === 'distance' || raw === 'popular' || raw === 'reviews') return raw
+  return 'popular'
+}
+
+function SalonsBrowsePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [rows, setRows] = useState<SalonRow[]>([])
   const [loading, setLoading] = useState(true)
-  const [sort, setSort] = useState<SortKey>('popular')
+  const [sort, setSort] = useState<SortKey>(() => parseSortParam(searchParams.get('sort')))
   const [userLat, setUserLat] = useState<number | null>(null)
   const [userLng, setUserLng] = useState<number | null>(null)
   const [geoAsking, setGeoAsking] = useState(false)
@@ -360,5 +366,13 @@ export default function SalonsBrowsePage() {
         )}
       </div>
     </div>
+  )
+}
+
+export default function SalonsPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: BG }} />}>
+      <SalonsBrowsePage />
+    </Suspense>
   )
 }
