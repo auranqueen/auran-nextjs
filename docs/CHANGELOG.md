@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-23
+### ui: 스토어꾸미기 배너 업로드 사이즈 안내를 스토리와 동일 톤
+- store-decoration/page.tsx: WARN #D94B4B. 슬롯 라벨은 PC/모바일 이미지만, 아래 줄에 1100×410px·480×180px 필수. 두 슬롯 아래 산호 경고 박스. 업로드·저장 로직 미변경.
+- 쉽게: 배너 사진 올릴 때 정확한 크기가 빨간 안내로 보이고, 크기가 다르면 찌그러질 수 있다고 알려준다.
+
 ### feat: 살롱 배너 링크에 발행 스토리 연결
 - store-decoration/page.tsx: BANNER_LINK_OPTIONS에 story 추가. 칩이 story면 GET /api/brand-product-orders/story 후 is_published===true만 select. 선택 시 bannerLinkUrls[idx]에 story id. 발행 0건 안내. hover 힌트 추가. 기존 none/url·booking/chat 유지.
 - salons/[id]/page.tsx: salonBannerLinks[bannerIndex]==='story'이면 /salons/{id}/story/{bannerLinkUrls}로 push. booking/chat/http 분기 미변경.

@@ -13,6 +13,7 @@ const GOLD = '#B08A46'
 const TEXT = '#3A3540'
 const TEXT_SUB = '#8A7E72'
 const SURFACE = '#F5F1FA'
+const WARN = '#D94B4B'
 
 const PHASE_KEYS = ['달빛기', '황금기', '만개기', '물들기'] as const
 const MAIN_CTA_OPTIONS = [
@@ -596,13 +597,14 @@ export default function StoreDecorationPage() {
                 }} />
               </button>
             </div>
-            <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+            <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
               {([
-                { key: 'pc' as const, label: 'PC 이미지 (권장 1100×410px)', url: bannerUrlsPc[activeBannerIdx] },
-                { key: 'mobile' as const, label: '모바일 이미지 (권장 480×180px)', url: bannerUrlsMobile[activeBannerIdx] },
+                { key: 'pc' as const, label: 'PC 이미지', sizeHint: '1100×410px 필수', url: bannerUrlsPc[activeBannerIdx] },
+                { key: 'mobile' as const, label: '모바일 이미지', sizeHint: '480×180px 필수', url: bannerUrlsMobile[activeBannerIdx] },
               ]).map((slot) => (
                 <div key={slot.key} style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 6 }}>{slot.label}</div>
+                  <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 4 }}>{slot.label}</div>
+                  <div style={{ fontSize: 10, color: WARN, fontWeight: 600, marginBottom: 6, lineHeight: 1.4 }}>{slot.sizeHint}</div>
                   <label style={{ display: 'block', cursor: 'pointer' }}>
                     <div style={{
                       aspectRatio: slot.key === 'pc' ? '1100/410' : '480/180',
@@ -629,6 +631,19 @@ export default function StoreDecorationPage() {
                   ) : null}
                 </div>
               ))}
+            </div>
+            <div style={{
+              fontSize: 10,
+              color: WARN,
+              fontWeight: 600,
+              background: 'rgba(217, 75, 75, 0.1)',
+              border: `1px solid ${WARN}`,
+              padding: '8px 10px',
+              borderRadius: 8,
+              marginBottom: 12,
+              lineHeight: 1.5,
+            }}>
+              ⚠️ 사이즈가 다르면 이미지가 찌그러져 보일 수 있어요 — PC/모바일 각각 정확한 사이즈로 올려주세요
             </div>
             <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 6 }}>배너 링크</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
