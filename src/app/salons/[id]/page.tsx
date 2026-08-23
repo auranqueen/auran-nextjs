@@ -960,6 +960,13 @@ export default function SalonHomePage() {
               >
                 📍 길찾기
               </button>
+              <button
+                type="button"
+                onClick={() => router.push('/salons')}
+                style={{ width: '100%', padding: '7px 0', borderRadius: 9, border: '0.5px solid rgba(255,255,255,0.14)', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+              >
+                다른 스토어 둘러보기
+              </button>
             </div>
         </div>
       </div>

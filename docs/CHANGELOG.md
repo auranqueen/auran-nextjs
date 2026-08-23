@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-24
+### ui: 살롱홈에 다른 스토어 둘러보기 버튼 추가
+- salons/[id]/page.tsx: 예약하기/상담 요청/길찾기 아래에 outline 버튼. router.push('/salons'). 헤더·배너·예약 로직 미변경.
+- 쉽게: 살롱 상세에서 다른 살롱 목록으로 바로 갈 수 있다.
+
 ### feat: 홈 내 주변 관리샵을 살롱 전체보기와 연결
 - page.tsx 살롱 섹션만: active 3건을 avg_rating desc로 조회. 카드는 avg_rating·review_count·area. 카드→/salons/{id}, 전체보기→/salons. 칩 3개(거리/인기/리뷰)는 /salons?sort=. 페이셜·바디·클리닉·영업/거리/태그 UI 제거.
 - salons/page.tsx: useSearchParams의 sort로 초기 정렬 탭 세팅(distance|popular|reviews).
