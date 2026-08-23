@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { canUpgradeToTier } from '@/lib/brandTierGrade'
-const ACCENT_COLOR = '#C084FC'
+const ACCENT_COLOR = '#7B5EA7'
 const PURPLE = '#7B5EA7'
 export type SelfTierPackage = {
   id: string
@@ -108,8 +108,8 @@ export function OwnerBrandSelfTierSection({
                     color: ACCENT_COLOR,
                     padding: '12px 10px',
                     borderRadius: 10,
-                    border: '1px solid rgba(123,94,167,0.35)',
-                    background: 'rgba(123,94,167,0.1)',
+                    border: '1px solid rgba(123,94,167,0.4)',
+                    background: 'rgba(123,94,167,0.08)',
                     textAlign: 'center',
                   }}
                 >
@@ -184,7 +184,7 @@ export function OwnerBrandSelfTierSection({
               width: '100%',
               maxWidth: 380,
               background: 'var(--bg3)',
-              border: '1px solid rgba(123,94,167,0.35)',
+              border: '1px solid rgba(123,94,167,0.4)',
               borderRadius: 14,
               padding: 20,
               maxHeight: '80vh',
@@ -201,13 +201,13 @@ export function OwnerBrandSelfTierSection({
               style={{
                 padding: '12px 14px',
                 borderRadius: 10,
-                border: '1px solid rgba(123,94,167,0.25)',
+                border: '1px solid rgba(123,94,167,0.3)',
                 background: 'rgba(123,94,167,0.08)',
                 marginBottom: 16,
               }}
             >
               <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>필요 결제금액</div>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#fff' }}>
+              <div style={{ fontSize: 18, fontWeight: 700, color: '#3A3540' }}>
                 {Math.trunc(Number(infoModal.pkg.price)).toLocaleString()}원 이상
               </div>
             </div>
@@ -229,7 +229,7 @@ export function OwnerBrandSelfTierSection({
                       gap: 8,
                       padding: '8px 10px',
                       borderRadius: 8,
-                      background: 'rgba(255,255,255,0.04)',
+                      background: 'rgba(123,94,167,0.06)',
                     }}
                   >
                     <span
@@ -237,7 +237,7 @@ export function OwnerBrandSelfTierSection({
                         fontSize: 10,
                         padding: '2px 7px',
                         borderRadius: 20,
-                        background: 'rgba(123,94,167,0.2)',
+                        background: 'rgba(123,94,167,0.12)',
                         color: ACCENT_COLOR,
                       }}
                     >

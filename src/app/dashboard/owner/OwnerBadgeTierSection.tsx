@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { canUpgradeToTier } from '@/lib/brandTierGrade'
 
-const ACCENT_COLOR = '#C084FC'
+const ACCENT_COLOR = '#7B5EA7'
 
 const COMMISSION_INTRO_COPY =
   '보유하신 등급으로 원장님을 추천하시면, 해당 등급에 정해진 커미션율만큼 리워드가 쌓여요 💜 한 번 소개하고 끝이 아니에요 — 추천하신 원장님이 꾸준히 활동하실수록, 지속적으로 커미션이 이어질 수 있어요. 잘 이끌어주실수록 오래오래 함께 받으실 수 있어요!'
@@ -109,7 +109,7 @@ export function OwnerBadgeTierSection({ brands }: Props) {
                 marginBottom: 10,
                 padding: '8px 10px',
                 borderRadius: 10,
-                border: '1px solid rgba(123,94,167,0.35)',
+                border: '1px solid rgba(123,94,167,0.4)',
                 background: 'rgba(123,94,167,0.08)',
                 color: ACCENT_COLOR,
                 fontSize: 11,
@@ -127,8 +127,8 @@ export function OwnerBadgeTierSection({ brands }: Props) {
                   marginBottom: 10,
                   padding: '10px 12px',
                   borderRadius: 10,
-                  background: 'rgba(191,95,144,0.06)',
-                  border: '1px solid rgba(191,95,144,0.15)',
+                  background: 'rgba(123,94,167,0.06)',
+                  border: '1px solid rgba(123,94,167,0.18)',
                 }}
               >
                 {COMMISSION_INTRO_COPY}
@@ -149,8 +149,8 @@ export function OwnerBadgeTierSection({ brands }: Props) {
                   color: ACCENT_COLOR,
                   padding: '12px 10px',
                   borderRadius: 10,
-                  border: '1px solid rgba(123,94,167,0.35)',
-                  background: 'rgba(123,94,167,0.1)',
+                  border: '1px solid rgba(123,94,167,0.4)',
+                  background: 'rgba(123,94,167,0.08)',
                   textAlign: 'center',
                 }}
               >
@@ -182,7 +182,7 @@ export function OwnerBadgeTierSection({ brands }: Props) {
                           </span>
                         </div>
                         {rateLabel ? (
-                          <div style={{ fontSize: 10, color: '#bf5f90', marginTop: 4 }}>
+                          <div style={{ fontSize: 10, color: '#9B4A72', marginTop: 4 }}>
                             커미션 {rateLabel}%
                           </div>
                         ) : null}
@@ -213,7 +213,7 @@ export function OwnerBadgeTierSection({ brands }: Props) {
         )
       })}
 
-      {toast && <div style={{ fontSize: 11, color: '#bf5f90', marginTop: 8 }}>{toast}</div>}
+      {toast && <div style={{ fontSize: 11, color: '#9B4A72', marginTop: 8 }}>{toast}</div>}
     </div>
   )
 }

@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-23
+### ui: 원장홈 티어 섹션 강조색을 라이트배경용 진한 보라로
+- OwnerBadgeTierSection.tsx·OwnerBrandSelfTierSection.tsx: ACCENT_COLOR #C084FC→#7B5EA7. 카드/텍스트용 rgba·#bf5f90·모달 #fff 등 하드코딩만 라이트톤 조정. CSS변수·결제 로직 미변경. client.tsx 미수정.
+- 쉽게: 원장 홈 등급 칸의 연한 보랏빛이 밝은 배경에서도 잘 보이게 진해졌다.
+
 ### ui: 스토어꾸미기 배너 업로드 사이즈 안내를 스토리와 동일 톤
 - store-decoration/page.tsx: WARN #D94B4B. 슬롯 라벨은 PC/모바일 이미지만, 아래 줄에 1100×410px·480×180px 필수. 두 슬롯 아래 산호 경고 박스. 업로드·저장 로직 미변경.
 - 쉽게: 배너 사진 올릴 때 정확한 크기가 빨간 안내로 보이고, 크기가 다르면 찌그러질 수 있다고 알려준다.
