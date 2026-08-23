@@ -329,6 +329,22 @@ export default function StoreDecorationPage() {
             <option value="우리은행">우리은행</option>
             <option value="하나은행">하나은행</option>
             <option value="농협은행">농협은행</option>
+            <option value="카카오뱅크">카카오뱅크</option>
+            <option value="토스뱅크">토스뱅크</option>
+            <option value="케이뱅크">케이뱅크</option>
+            <option value="IBK기업은행">IBK기업은행</option>
+            <option value="새마을금고">새마을금고</option>
+            <option value="신협">신협</option>
+            <option value="우체국">우체국</option>
+            <option value="SC제일은행">SC제일은행</option>
+            <option value="씨티은행">씨티은행</option>
+            <option value="수협은행">수협은행</option>
+            <option value="부산은행">부산은행</option>
+            <option value="대구은행">대구은행</option>
+            <option value="경남은행">경남은행</option>
+            <option value="광주은행">광주은행</option>
+            <option value="전북은행">전북은행</option>
+            <option value="제주은행">제주은행</option>
           </select>
           <input
             value={bankAccount}
@@ -368,11 +384,16 @@ export default function StoreDecorationPage() {
           {[0, 1, 2].map((idx) => (
             <div key={idx} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: idx < 2 ? `1px solid ${BORDER}` : 'none' }}>
               <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 6 }}>배너 {idx + 1}</div>
-              <div style={{ aspectRatio: '16/9', borderRadius: 10, background: bannerUrls[idx] ? `url(${bannerUrls[idx]}) center/cover` : '#F5F1FA', border: `1px dashed ${BORDER}`, marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: TEXT_SUB, fontSize: 11 }}>
-                {!bannerUrls[idx] ? '이미지 없음' : null}
-              </div>
-              <label style={{ display: 'block', fontSize: 11, color: P, cursor: 'pointer', marginBottom: 8 }}>
-                파일 선택
+              <label style={{ display: 'block', cursor: 'pointer', marginBottom: 8 }}>
+                <div style={{ aspectRatio: '16/9', borderRadius: 10, background: bannerUrls[idx] ? `url(${bannerUrls[idx]}) center/cover` : '#F5F1FA', border: `1px dashed ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: TEXT_SUB, fontSize: 11, position: 'relative', overflow: 'hidden' }}>
+                  {!bannerUrls[idx] ? '이미지 없음' : null}
+                  <div style={{
+                    position: 'absolute', left: 0, right: 0, bottom: 0, padding: '6px 0', textAlign: 'center', fontSize: 10,
+                    color: bannerUrls[idx] ? '#fff' : TEXT_SUB,
+                    background: bannerUrls[idx] ? 'rgba(58,53,64,0.35)' : 'transparent',
+                  }}>탭하여 변경</div>
+                </div>
+                <span style={{ display: 'block', fontSize: 11, color: P, marginTop: 8 }}>파일 선택</span>
                 <input type="file" accept="image/*" style={{ display: 'none' }} onChange={(e) => { void handleBannerUpload(idx, e.target.files?.[0] || null) }} />
               </label>
               <div style={{ fontSize: 10, color: TEXT_SUB, marginBottom: 6 }}>배너 링크</div>
@@ -383,6 +404,7 @@ export default function StoreDecorationPage() {
                   </button>
                 ))}
               </div>
+              <div style={{ fontSize: 10, color: TEXT_SUB, marginTop: 4 }}>한번 설정하면 별도 변경 전까지 계속 노출돼요</div>
               {bannerLinks[idx] === 'url' ? (
                 <input value={bannerLinkUrls[idx]} onChange={(e) => setBannerLinkUrls((p) => { const n = [...p]; n[idx] = e.target.value; return n })} placeholder="https://" style={fieldStyle} />
               ) : null}

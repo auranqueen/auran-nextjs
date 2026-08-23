@@ -3,6 +3,19 @@
 
 ---
 
+## 2026-08-23
+### ui: 스토어꾸미기 배너 링크 칩 아래 노출 안내
+- store-decoration/page.tsx: BANNER_LINK_OPTIONS 칩 목록과 URL 입력 사이에 안내 한 줄 추가. 저장·링크 로직 미변경.
+- 쉽게: 배너 링크는 다시 바꾸기 전까지 계속 보인다는 안내가 칩 바로 아래에 있다.
+
+### fix: 스토어꾸미기 배너 미리보기 클릭으로 업로드
+- store-decoration/page.tsx: 16:9 미리보기를 label 안으로 이동. 미리보기·「파일 선택」모두 클릭 시 파일 선택. handleBannerUpload 미변경.
+- 쉽게: 배너 미리보기를 눌러도 사진을 고를 수 있다.
+
+### ui: 스토어꾸미기 정산계좌 은행 목록 확대
+- store-decoration/page.tsx: 기존 5개 유지 + 인터넷·지방은행 16개 옵션 추가. 저장 컬럼·로직 미변경.
+- 쉽게: 정산 계좌에서 카카오뱅크·토스 등도 고를 수 있다.
+
 ## 2026-08-22
 ### fix: store-decoration 프로필 사진 원형 미리보기 클릭으로 업로드
 - store-decoration/page.tsx: 64x64 원형 미리보기를 label 안으로 이동 — 원·텍스트 모두 클릭 시 파일 선택. onChange/handleAvatarUpload 로직 미변경.
