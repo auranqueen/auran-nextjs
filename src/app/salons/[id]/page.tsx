@@ -251,6 +251,7 @@ export default function SalonHomePage() {
   const [customerGender, setCustomerGender] = useState<string | null>(null)
   const [skinConcernFilter, setSkinConcernFilter] = useState<string | null>(null)
   const [bannerIndex, setBannerIndex] = useState(0)
+  const [isPc, setIsPc] = useState(false)
   const [showStory, setShowStory] = useState(false)
   const [certLightbox, setCertLightbox] = useState<{ url: string; label: string } | null>(null)
   const [brandAuthItems, setBrandAuthItems] = useState<{ brandId: string; brandName: string; grade: string; arete: boolean }[]>([])
@@ -481,6 +482,13 @@ export default function SalonHomePage() {
   }, [])
 
   useEffect(() => {
+    const onResize = () => setIsPc(window.innerWidth >= 768)
+    onResize()
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  useEffect(() => {
     if (tab !== 'story' || !id || salonStoriesLoaded) return
     setSalonStoriesLoading(true)
     void (async () => {
@@ -560,14 +568,38 @@ export default function SalonHomePage() {
   }, [salon?.certificates])
   const hoursToday = useMemo(() => todayHours(salon?.open_hours ?? null), [salon?.open_hours])
   const openNow = useMemo(() => isOpenNow(salon?.open_hours ?? null), [salon?.open_hours])
-  const salonBannerUrls = useMemo(() => {
-    const raw = salon?.banner_urls
-    return Array.isArray(raw) ? raw.filter(Boolean).map(String) : []
-  }, [salon?.banner_urls])
-  const salonBannerLinks = useMemo(() => {
-    const raw = salon?.banner_links
-    return Array.isArray(raw) ? raw.map(String) : []
-  }, [salon?.banner_links])
+  const { salonBannerUrls, salonBannerLinks, salonBannerLinkUrls } = useMemo(() => {
+    const empty = { salonBannerUrls: [] as string[], salonBannerLinks: [] as string[], salonBannerLinkUrls: [] as string[] }
+    if (!salon) return empty
+    const s = salon as SalonRow & {
+      banner_urls_pc?: unknown
+      banner_urls_mobile?: unknown
+      banner_active?: unknown
+      banner_link_urls?: unknown
+    }
+    const legacy = Array.isArray(s.banner_urls) ? s.banner_urls : []
+    const pc = Array.isArray(s.banner_urls_pc) ? s.banner_urls_pc : legacy
+    const mobile = Array.isArray(s.banner_urls_mobile) ? s.banner_urls_mobile : legacy
+    const active = Array.isArray(s.banner_active) ? s.banner_active : []
+    const links = Array.isArray(s.banner_links) ? s.banner_links : []
+    const linkUrls = Array.isArray(s.banner_link_urls) ? s.banner_link_urls : []
+    const urls: string[] = []
+    const linksOut: string[] = []
+    const linkUrlsOut: string[] = []
+    for (let i = 0; i < 3; i++) {
+      if (active[i] === false) continue
+      const pcUrl = pc[i] ? String(pc[i]) : ''
+      const moUrl = mobile[i] ? String(mobile[i]) : ''
+      const url = isPc ? (pcUrl || moUrl) : (moUrl || pcUrl)
+      if (!url) continue
+      const rawLink = links[i] != null && links[i] !== '' ? String(links[i]) : 'none'
+      const rawLinkUrl = linkUrls[i] ? String(linkUrls[i]) : ''
+      urls.push(url)
+      linksOut.push(rawLink === 'url' ? (rawLinkUrl || 'none') : rawLink)
+      linkUrlsOut.push(rawLinkUrl)
+    }
+    return { salonBannerUrls: urls, salonBannerLinks: linksOut, salonBannerLinkUrls: linkUrlsOut }
+  }, [salon, isPc])
   const salonName = String(salon?.name || '샵')
   const ownerId = salon?.owner_id ? String(salon.owner_id) : ''
 

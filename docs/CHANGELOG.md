@@ -4,6 +4,10 @@
 ---
 
 ## 2026-08-23
+### feat: 살롱홈 배너 PC/모바일·노출여부 반영
+- salons/[id]/page.tsx: isPc(innerWidth>=768) + 배너 useMemo를 pc/mobile/active/link_urls 기준으로 슬롯 정렬. 21:9·스와이프·점·클릭 if분기는 미변경. url칩은 banner_link_urls를 링크 배열에 넣어 기존 http 체크가 동작.
+- 쉽게: 원장이 올린 PC/모바일 배너가 화면 크기에 맞게 보이고, 끈 배너는 안 보인다.
+
 ### ui: 스토어꾸미기 배너 PC/모바일·슬롯편집·노출토글
 - store-decoration/page.tsx: 배너 3칸 그리드 + 선택 슬롯만 편집. PC/모바일 업로드(스토리와 같은 한쪽 폴백). banner_urls_pc/mobile/active 저장, banner_urls는 PC값 legacy 병행. 프로필·계좌·살롱정보 탭 미변경.
 - 168_salons_banner_link_urls.sql: banner_link_urls text[] 컬럼 파일만 추가(미실행).
