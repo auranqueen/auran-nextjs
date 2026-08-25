@@ -443,6 +443,7 @@ export async function POST(req: NextRequest) {
           const totalSessions = Number(parts[3] || 1)
           const partnerFeeRate = Number(parts[4] || 0)
           const reviewerId = parts[8] || ''
+          const sourceScenePostId = parts[9] || ''
           const paymentAmount = Number(intent.amount || 0)
           // 수수료 계산
           const platformFeeRate = 8.8
@@ -497,6 +498,7 @@ export async function POST(req: NextRequest) {
                 partner_fee_remaining: partnerFee,
                 owner_amount: ownerAmount,
                 reviewer_id: reviewerId || null,
+                source_scene_post_id: sourceScenePostId || null,
                 status: 'active',
                 settlement_status: 'pending',
                 purchased_at: new Date().toISOString(),
