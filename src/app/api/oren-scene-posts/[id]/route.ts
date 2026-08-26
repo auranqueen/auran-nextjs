@@ -93,6 +93,17 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
     meId = me?.id || null
   }
 
+  let liked = false
+  if (meId) {
+    const { data: likeRow } = await service
+      .from('oren_scene_likes')
+      .select('id')
+      .eq('scene_post_id', params.id)
+      .eq('user_id', meId)
+      .maybeSingle()
+    liked = !!likeRow?.id
+  }
+
   return NextResponse.json({
     ok: true,
     post,
@@ -100,6 +111,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
     salon,
     cta,
     meId,
+    liked,
     isOwner: !!(meId && post.uploader_user_id === meId),
   })
 }
@@ -126,4 +138,62 @@ export async function DELETE(_req: NextRequest, { params }: Ctx) {
   const { error } = await service.from('oren_scene_posts').delete().eq('id', params.id)
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
+}
+
+export async function PATCH(req: NextRequest, { params }: Ctx) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ ok: false, error: 'not_logged_in' }, { status: 401 })
+  const service = tryCreateAdminClient()
+  if (!service) return NextResponse.json({ ok: false, error: 'service_unavailable' }, { status: 500 })
+
+  const { data: me } = await service.from('users').select('id').eq('auth_id', user.id).maybeSingle()
+  if (!me?.id) return NextResponse.json({ ok: false, error: 'user_not_found' }, { status: 403 })
+
+  const { data: post } = await service
+    .from('oren_scene_posts')
+    .select('id, uploader_user_id')
+    .eq('id', params.id)
+    .maybeSingle()
+  if (!post || post.uploader_user_id !== me.id) {
+    return NextResponse.json({ ok: false, error: 'forbidden' }, { status: 403 })
+  }
+
+  const body = await req.json().catch(() => ({}))
+  const patch: Record<string, unknown> = { updated_at: new Date().toISOString() }
+
+  if (Object.prototype.hasOwnProperty.call(body, 'title')) {
+    const title = typeof body.title === 'string' ? body.title.trim() : ''
+    if (!title) return NextResponse.json({ ok: false, error: 'missing_title' }, { status: 400 })
+    if (title.length > 80) return NextResponse.json({ ok: false, error: 'title_too_long' }, { status: 400 })
+    patch.title = title
+  }
+  if (Object.prototype.hasOwnProperty.call(body, 'highlight_tag')) {
+    const tag =
+      body.highlight_tag === null || body.highlight_tag === undefined
+        ? null
+        : typeof body.highlight_tag === 'string'
+          ? body.highlight_tag.trim() || null
+          : null
+    if (tag && tag.length > 40) {
+      return NextResponse.json({ ok: false, error: 'highlight_tag_too_long' }, { status: 400 })
+    }
+    patch.highlight_tag = tag
+  }
+
+  if (!('title' in patch) && !('highlight_tag' in patch)) {
+    return NextResponse.json({ ok: false, error: 'no_fields' }, { status: 400 })
+  }
+
+  const { data: updated, error } = await service
+    .from('oren_scene_posts')
+    .update(patch)
+    .eq('id', params.id)
+    .select('id, title, highlight_tag')
+    .single()
+
+  if (error || !updated) {
+    return NextResponse.json({ ok: false, error: error?.message || 'update_failed' }, { status: 500 })
+  }
+  return NextResponse.json({ ok: true, post: updated })
 }

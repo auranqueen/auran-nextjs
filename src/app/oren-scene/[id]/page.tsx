@@ -48,10 +48,15 @@ export default function OrenSceneViewerPage() {
   const [cta, setCta] = useState<{ itemName: string; price: number; targetId: string | null } | null>(null)
   const [isOwner, setIsOwner] = useState(false)
   const [likes, setLikes] = useState(0)
+  const [liked, setLiked] = useState(false)
   const [views, setViews] = useState(0)
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [payOpen, setPayOpen] = useState(false)
   const [loginOpen, setLoginOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editTitle, setEditTitle] = useState('')
+  const [editTag, setEditTag] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [error, setError] = useState('')
 
@@ -72,6 +77,7 @@ export default function OrenSceneViewerPage() {
       setSalon(json.salon)
       setCta(json.cta)
       setIsOwner(!!json.isOwner)
+      setLiked(!!json.liked)
       setLikes(Number(json.post.like_count || 0))
       setViews(Number(json.post.view_count || 0))
     } catch {
@@ -114,7 +120,58 @@ export default function OrenSceneViewerPage() {
       body: JSON.stringify({ action: 'like' }),
     })
     const json = await res.json().catch(() => ({}))
-    if (json?.ok && typeof json.like_count === 'number') setLikes(json.like_count)
+    if (json?.error === 'not_logged_in') {
+      setLoginOpen(true)
+      return
+    }
+    if (json?.ok && typeof json.like_count === 'number') {
+      setLikes(json.like_count)
+      if (typeof json.liked === 'boolean') setLiked(json.liked)
+    }
+  }
+
+  const openEdit = () => {
+    if (!post) return
+    setEditTitle(String(post.title || ''))
+    setEditTag(String(post.highlight_tag || ''))
+    setEditOpen(true)
+  }
+
+  const saveEdit = async () => {
+    if (!id || editSaving) return
+    const title = editTitle.trim()
+    if (!title) {
+      alert('제목을 입력해주세요')
+      return
+    }
+    setEditSaving(true)
+    try {
+      const res = await fetch(`/api/oren-scene-posts/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          highlight_tag: editTag.trim() || null,
+        }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!json?.ok) {
+        alert(json?.error || '수정 실패')
+        return
+      }
+      setPost((prev) =>
+        prev
+          ? {
+              ...prev,
+              title: json.post?.title ?? title,
+              highlight_tag: json.post?.highlight_tag ?? (editTag.trim() || null),
+            }
+          : prev,
+      )
+      setEditOpen(false)
+    } finally {
+      setEditSaving(false)
+    }
   }
 
   const onDelete = async () => {
@@ -223,7 +280,7 @@ export default function OrenSceneViewerPage() {
       {/* right actions */}
       <div style={{ position: 'absolute', right: 12, bottom: isOwner || showCta ? 120 : 80, zIndex: 2, display: 'flex', flexDirection: 'column', gap: 16, alignItems: 'center' }}>
         <button type="button" onClick={() => void onLike()} style={{ background: 'transparent', border: 'none', color: TEXT, textAlign: 'center' }}>
-          <div style={{ fontSize: 26 }}>♡</div>
+          <div style={{ fontSize: 26, color: liked ? '#FF6B8A' : TEXT }}>{liked ? '♥' : '♡'}</div>
           <div style={{ fontSize: 11, marginTop: 2 }}>{likes}</div>
         </button>
         <button type="button" onClick={() => setCommentsOpen(true)} style={{ background: 'transparent', border: 'none', color: TEXT, textAlign: 'center' }}>
@@ -261,7 +318,7 @@ export default function OrenSceneViewerPage() {
             <div style={{ display: 'flex', gap: 8 }}>
               <button
                 type="button"
-                onClick={() => alert('수정은 곧 지원됩니다')}
+                onClick={openEdit}
                 style={{ flex: 1, borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: TEXT, padding: '10px 0', fontSize: 13, fontWeight: 700 }}
               >
                 수정
@@ -274,6 +331,45 @@ export default function OrenSceneViewerPage() {
                 삭제
               </button>
             </div>
+            {editOpen ? (
+              <div style={{ marginTop: 12, borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 12 }}>
+                <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 8 }}>제목 · 태그 수정 (영상 변경은 삭제 후 재업로드)</div>
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  placeholder="제목"
+                  maxLength={80}
+                  style={{ width: '100%', boxSizing: 'border-box', marginBottom: 8, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, padding: '10px 12px', color: TEXT, fontSize: 13 }}
+                />
+                <input
+                  type="text"
+                  value={editTag}
+                  onChange={(e) => setEditTag(e.target.value)}
+                  placeholder="하이라이트 태그 (선택)"
+                  maxLength={40}
+                  style={{ width: '100%', boxSizing: 'border-box', marginBottom: 10, background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, padding: '10px 12px', color: TEXT, fontSize: 13 }}
+                />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setEditOpen(false)}
+                    disabled={editSaving}
+                    style={{ flex: 1, borderRadius: 10, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: TEXT, padding: '10px 0', fontSize: 13 }}
+                  >
+                    취소
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void saveEdit()}
+                    disabled={editSaving}
+                    style={{ flex: 1, borderRadius: 10, border: 'none', background: PURPLE, color: TEXT, padding: '10px 0', fontSize: 13, fontWeight: 700, opacity: editSaving ? 0.7 : 1 }}
+                  >
+                    {editSaving ? '저장 중…' : '저장'}
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         ) : showCta ? (
           <button
