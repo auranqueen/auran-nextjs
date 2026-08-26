@@ -15,11 +15,12 @@ type Body = {
   brand_product_id?: string | null
   product_id?: string | null
   title?: string | null
+  highlight_tag?: string | null
 }
 
 const CONTENT_TYPES: ContentType[] = ['verified', 'free', 'owner']
-const OWNER_LINK_TYPES: LinkType[] = ['product', 'brand_product', 'none']
-const FREE_LINK_TYPES: LinkType[] = ['product', 'none']
+const OWNER_LINK_TYPES: LinkType[] = ['booking', 'brand_product', 'none']
+const FREE_LINK_TYPES: LinkType[] = ['brand_product', 'product', 'none']
 const VERIFIED_ORDER_STATUSES = ['배송완료', '구매확정'] as const
 
 function parseOptionalId(value: unknown): string | null {
@@ -46,6 +47,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'title_too_long' }, { status: 400 })
   }
 
+  let highlightTag: string | null = null
+  if (body.highlight_tag !== undefined && body.highlight_tag !== null) {
+    const raw = typeof body.highlight_tag === 'string' ? body.highlight_tag.trim() : ''
+    if (raw.length > 40) {
+      return NextResponse.json({ ok: false, error: 'highlight_tag_too_long' }, { status: 400 })
+    }
+    highlightTag = raw || null
+  }
+
   const contentTypeRaw = typeof body.content_type === 'string' ? body.content_type.trim() : 'verified'
   if (!CONTENT_TYPES.includes(contentTypeRaw as ContentType)) {
     return NextResponse.json({ ok: false, error: 'invalid_content_type' }, { status: 400 })
@@ -67,6 +77,7 @@ export async function POST(req: NextRequest) {
     content_type: contentType,
     video_url: videoUrl,
     title,
+    highlight_tag: highlightTag,
     created_at: now,
     updated_at: now,
   }
@@ -183,7 +194,14 @@ export async function POST(req: NextRequest) {
 
     const brandProductId = parseOptionalId(body.brand_product_id)
     const productId = parseOptionalId(body.product_id)
-    if (linkType === 'product') {
+    if (linkType === 'brand_product') {
+      if (!brandProductId) {
+        return NextResponse.json({ ok: false, error: 'missing_brand_product_id' }, { status: 400 })
+      }
+      if (productId) {
+        return NextResponse.json({ ok: false, error: 'invalid_link_fields' }, { status: 400 })
+      }
+    } else if (linkType === 'product') {
       if (!productId) {
         return NextResponse.json({ ok: false, error: 'missing_product_id' }, { status: 400 })
       }
@@ -212,7 +230,7 @@ export async function POST(req: NextRequest) {
     row.booking_id = null
     row.order_item_id = null
     row.link_type = linkType
-    row.brand_product_id = null
+    row.brand_product_id = linkType === 'brand_product' ? brandProductId : null
     row.product_id = linkType === 'product' ? productId : null
   } else {
     if (me.role !== 'owner') {
@@ -251,11 +269,9 @@ export async function POST(req: NextRequest) {
       if (productId) {
         return NextResponse.json({ ok: false, error: 'invalid_link_fields' }, { status: 400 })
       }
-    } else if (linkType === 'product') {
-      if (!productId) {
-        return NextResponse.json({ ok: false, error: 'missing_product_id' }, { status: 400 })
-      }
-      if (brandProductId) {
+    } else if (linkType === 'booking' || linkType === 'none') {
+      // salon-level booking CTA or no CTA — no product/booking evidence ids
+      if (brandProductId || productId) {
         return NextResponse.json({ ok: false, error: 'invalid_link_fields' }, { status: 400 })
       }
     } else if (brandProductId || productId) {
@@ -273,7 +289,7 @@ export async function POST(req: NextRequest) {
     row.order_item_id = null
     row.link_type = linkType
     row.brand_product_id = linkType === 'brand_product' ? brandProductId : null
-    row.product_id = linkType === 'product' ? productId : null
+    row.product_id = null
   }
 
   const svc = tryCreateServiceClient()

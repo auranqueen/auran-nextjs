@@ -245,6 +245,7 @@ export default function SalonHomePage() {
   const [bookingNotes, setBookingNotes] = useState('')
   const [bookingAgree, setBookingAgree] = useState(false)
   const [bookingSubmitting, setBookingSubmitting] = useState(false)
+  const [isSalonOwner, setIsSalonOwner] = useState(false)
   const [customerUserId, setCustomerUserId] = useState<string | null>(null)
   const [lastPeriodDate, setLastPeriodDate] = useState<string | null>(null)
   const [hormoneTrack, setHormoneTrack] = useState<string | null>(null)
@@ -357,6 +358,7 @@ export default function SalonHomePage() {
         const { data: urow } = await sb.from('users').select('id').eq('auth_id', auth.user.id).maybeSingle()
         if (urow?.id) {
           setCustomerUserId(String(urow.id))
+          setIsSalonOwner(String(salonData.owner_id || '') === String(urow.id))
           const [{ data: hcRows }, { data: prof }] = await Promise.all([
             sb
               .from('hormone_cycle')
@@ -1100,7 +1102,32 @@ export default function SalonHomePage() {
         ) : null}
 
         {tab === 'story' ? (
-          salonStoriesLoading ? (
+          <>
+          {isSalonOwner ? (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
+              <button
+                type="button"
+                onClick={() => router.push(`/oren-scene/upload?salon_id=${encodeURIComponent(id)}`)}
+                style={{
+                  border: 'none',
+                  borderRadius: 999,
+                  background: PURPLE,
+                  color: TEXT,
+                  width: 36,
+                  height: 36,
+                  fontSize: 22,
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  lineHeight: 1,
+                }}
+                aria-label="오렌씬 업로드"
+                title="오렌씬 업로드"
+              >
+                +
+              </button>
+            </div>
+          ) : null}
+          {salonStoriesLoading ? (
             <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 13, padding: 32 }}>불러오는 중…</div>
           ) : salonStories.length === 0 ? (
             <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 13, padding: 32 }}>아직 등록된 스토리가 없어요</div>
@@ -1163,7 +1190,8 @@ export default function SalonHomePage() {
                 )
               })}
             </div>
-          )
+          )}
+          </>
         ) : null}
 
         {tab === 'reviews' ? (
