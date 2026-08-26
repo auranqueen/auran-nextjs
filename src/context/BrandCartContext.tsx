@@ -10,6 +10,8 @@ export interface BrandCartItem {
   thumb_img: string | null
   quantity: number
   customer_toast_rate: number
+  /** 오렌씬 유입 추적 (optional) */
+  scene_post_id?: string | null
 }
 interface BrandCartContextType {
   items: BrandCartItem[]
@@ -38,7 +40,16 @@ export function BrandCartProvider({ children }: { children: React.ReactNode }) {
     setItems(prev => {
       const existing = prev.find(i => i.brand_product_id === item.brand_product_id)
       const next = existing
-        ? prev.map(i => i.brand_product_id === item.brand_product_id ? { ...i, quantity: i.quantity + qty } : i)
+        ? prev.map(i =>
+            i.brand_product_id === item.brand_product_id
+              ? {
+                  ...i,
+                  quantity: i.quantity + qty,
+                  // 새 유입 소스가 있으면 덮어씀 (오렌씬 CTA 재유입)
+                  scene_post_id: item.scene_post_id ?? i.scene_post_id ?? null,
+                }
+              : i,
+          )
         : [...prev, { ...item, quantity: qty }]
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)) } catch {}
       return next

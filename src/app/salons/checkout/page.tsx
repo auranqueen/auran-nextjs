@@ -95,6 +95,7 @@ export default function BrandCheckoutPage() {
           recipient_phone: selectedAddr.phone,
           address: selectedAddr.address,
           address_detail: selectedAddr.address_detail,
+          scene_post_id: group.items.find(i => i.scene_post_id)?.scene_post_id || null,
         }),
       }).then(r => r.json())
       if (!orderRes.ok) {

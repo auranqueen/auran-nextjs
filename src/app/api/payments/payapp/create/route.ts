@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { tryCreateServiceClient } from '@/lib/supabase/service'
 
 const PAYAPP_API_URL = 'https://api.payapp.kr/oapi/apiLoad.html'
 
@@ -49,16 +48,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'invalid_amount' }, { status: 400 })
   }
 
-  async function attachScenePostToBrandOrders() {
-    if (!scenePostId || kind !== 'brand_product_order' || !targetId) return
-    const svc = tryCreateServiceClient()
-    if (!svc) return
-    await svc
-      .from('brand_product_orders')
-      .update({ source_scene_post_id: scenePostId })
-      .eq('checkout_batch_id', targetId)
-  }
-
   // Load my profile (for user_id and recvphone)
   const { data: p, error: perr } = await supabase
     .from('users')
@@ -96,7 +85,6 @@ export async function POST(req: NextRequest) {
       .select('id')
       .single()
     if (ierr || !intent?.id) return NextResponse.json({ ok: false, error: ierr?.message || 'intent_create_failed' }, { status: 500 })
-    await attachScenePostToBrandOrders()
     return NextResponse.json({
       ok: true,
       intent_id: intent.id,
@@ -188,8 +176,6 @@ export async function POST(req: NextRequest) {
       updated_at: new Date().toISOString(),
     })
     .eq('id', intent.id)
-
-  await attachScenePostToBrandOrders()
 
   return NextResponse.json({ ok: true, intent_id: intent.id, pay_url: parsed.payurl, mul_no: parsed.mul_no })
 }

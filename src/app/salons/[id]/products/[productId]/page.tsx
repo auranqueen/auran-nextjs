@@ -12,7 +12,15 @@ const PURPLE_LIGHT = 'rgba(123,94,167,0.15)'
 const TEXT_SUB = 'rgba(255,255,255,0.55)'
 export default async function ProductDetailPage({
   params,
-}: { params: { id: string; productId: string } }) {
+  searchParams,
+}: {
+  params: { id: string; productId: string }
+  searchParams?: { scene_post_id?: string }
+}) {
+  const scenePostId =
+    typeof searchParams?.scene_post_id === 'string' && searchParams.scene_post_id.trim()
+      ? searchParams.scene_post_id.trim()
+      : null
   const service = tryCreateAdminClient()
   if (!service) return notFound()
   const { data: product } = await service
@@ -185,9 +193,10 @@ export default async function ProductDetailPage({
             salon_id: salon.id,
             salon_name: salon.name,
             name: product.name,
-              price: displayPrice,
+            price: displayPrice,
             thumb_img: product.thumb_img,
             customer_toast_rate: product.customer_toast_rate,
+            scene_post_id: scenePostId,
           }}
           campaign={effectiveCampaign}
         />
