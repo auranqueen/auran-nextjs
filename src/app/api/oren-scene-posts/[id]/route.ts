@@ -11,7 +11,7 @@ export async function GET(_req: NextRequest, { params }: Ctx) {
   const { data: post, error } = await service
     .from('oren_scene_posts')
     .select(`
-      id, content_type, uploader_type, uploader_user_id, video_url, thumbnail_url,
+      id, content_type, uploader_type, uploader_user_id, video_url, thumbnail_url, highlight_tag, title,
       link_type, booking_id, order_item_id, brand_product_id, product_id, salon_id,
       view_count, like_count, booking_conversion_count, revenue_generated,
       is_published, created_at

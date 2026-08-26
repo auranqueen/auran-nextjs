@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import SceneCtaPaymentModal from '@/components/oren-scene/SceneCtaPaymentModal'
 import SceneCommentSheet from '@/components/oren-scene/SceneCommentSheet'
+import ShareBottomSheet from '@/components/ShareBottomSheet'
 import { createClient } from '@/lib/supabase/client'
 
 type LinkType = 'booking' | 'brand_product' | 'product' | 'none'
@@ -15,6 +16,9 @@ type Post = {
   uploader_type: string
   uploader_user_id: string | null
   video_url: string
+  thumbnail_url: string | null
+  highlight_tag: string | null
+  title: string | null
   link_type: LinkType
   booking_id: string | null
   order_item_id: string | null
@@ -48,6 +52,7 @@ export default function OrenSceneViewerPage() {
   const [commentsOpen, setCommentsOpen] = useState(false)
   const [payOpen, setPayOpen] = useState(false)
   const [loginOpen, setLoginOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
   const [error, setError] = useState('')
 
   const load = useCallback(async () => {
@@ -144,6 +149,28 @@ export default function OrenSceneViewerPage() {
   const modalLinkType =
     post.link_type === 'booking' ? 'booking' : post.link_type === 'product' ? 'product' : 'brand_product'
 
+  const shareOrigin =
+    (typeof window !== 'undefined' && window.location?.origin?.includes('auran.kr')
+      ? 'https://auran.kr'
+      : typeof window !== 'undefined' && window.location?.origin
+        ? window.location.origin
+        : 'https://auran.kr')
+  const shareTitle = (post.title && post.title.trim()) || '오렌씬'
+  const shareDescription =
+    contentType === 'verified'
+      ? '인증후기'
+      : contentType === 'owner'
+        ? '살롱소개'
+        : '함께 보는 오렌씬 이야기'
+  const sharePayload = {
+    link: `${shareOrigin}/oren-scene/${post.id}`,
+    title: shareTitle,
+    description: shareDescription,
+    imageUrl: post.thumbnail_url || null,
+    buttonTitle: '오렌씬 보러가기',
+  }
+
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#000', color: TEXT, maxWidth: 480, margin: '0 auto' }}>
       <video
@@ -202,6 +229,14 @@ export default function OrenSceneViewerPage() {
         <button type="button" onClick={() => setCommentsOpen(true)} style={{ background: 'transparent', border: 'none', color: TEXT, textAlign: 'center' }}>
           <div style={{ fontSize: 24 }}>💬</div>
           <div style={{ fontSize: 11, marginTop: 2 }}>댓글</div>
+        </button>
+        <button
+          type="button"
+          onClick={() => setShareOpen(true)}
+          style={{ background: 'transparent', border: 'none', color: TEXT, textAlign: 'center' }}
+        >
+          <div style={{ fontSize: 24 }}>↗</div>
+          <div style={{ fontSize: 11, marginTop: 2 }}>공유</div>
         </button>
       </div>
 
@@ -361,6 +396,30 @@ export default function OrenSceneViewerPage() {
           onClose={() => setPayOpen(false)}
         />
       ) : null}
+
+      <div
+        id="oren-scene-share-card"
+        aria-hidden
+        style={{
+          position: 'fixed',
+          left: -9999,
+          top: 0,
+          width: 320,
+          padding: 16,
+          background: '#0D0B09',
+          color: '#fff',
+        }}
+      >
+        <div style={{ fontSize: 15, fontWeight: 800, color: GOLD, marginBottom: 6 }}>{sharePayload.title}</div>
+        <div style={{ fontSize: 12, color: TEXT_SUB, lineHeight: 1.5 }}>{sharePayload.description}</div>
+      </div>
+
+      <ShareBottomSheet
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        cardDomId="oren-scene-share-card"
+        payload={sharePayload}
+      />
     </div>
   )
 }

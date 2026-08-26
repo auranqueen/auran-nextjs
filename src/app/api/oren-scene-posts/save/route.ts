@@ -14,6 +14,7 @@ type Body = {
   order_item_id?: string | null
   brand_product_id?: string | null
   product_id?: string | null
+  title?: string | null
 }
 
 const CONTENT_TYPES: ContentType[] = ['verified', 'free', 'owner']
@@ -37,6 +38,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'missing_video_url' }, { status: 400 })
   }
 
+  const title = typeof body.title === 'string' ? body.title.trim() : ''
+  if (!title) {
+    return NextResponse.json({ ok: false, error: 'missing_title' }, { status: 400 })
+  }
+  if (title.length > 80) {
+    return NextResponse.json({ ok: false, error: 'title_too_long' }, { status: 400 })
+  }
+
   const contentTypeRaw = typeof body.content_type === 'string' ? body.content_type.trim() : 'verified'
   if (!CONTENT_TYPES.includes(contentTypeRaw as ContentType)) {
     return NextResponse.json({ ok: false, error: 'invalid_content_type' }, { status: 400 })
@@ -57,6 +66,7 @@ export async function POST(req: NextRequest) {
   const row: Record<string, unknown> = {
     content_type: contentType,
     video_url: videoUrl,
+    title,
     created_at: now,
     updated_at: now,
   }
