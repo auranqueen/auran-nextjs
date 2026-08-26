@@ -3,6 +3,44 @@
 
 ---
 
+## 2026-08-25
+### naming: 오렌씬 명칭 확정(후보명 폐기)
+- 오렌스타/오렌릴스/오렌픽스 후보 폐기. 제품·문서·코드 경로를 기존 확정명 「오렌씬」(oren-scene / oren_scene_*)로 통합.
+- 쉽게: 짧은 영상 기능 이름을 오렌씬으로 통일했다.
+
+### db: oren_scene_posts + content_type 3분류 + title
+- migrations 165~169, 174: oren_scene_posts 생성, content_type(verified/free/owner), order_item_id, salon_id nullable, title TEXT NULL, RLS.
+- verified=완료 예약/구매 인증, free=고객 자유, owner=원장. save API title 필수.
+- 쉽게: 릴스 종류를 세 가지로 나누고 제목을 저장할 수 있다.
+
+### feat: 트랙A 제품구매 인증 + 업로드 시 구매확정
+- save/route.ts: verified + order_item_id → brand_product_order_items/orders 검증(배송완료|구매확정). 배송완료 주문은 업로드 성공 시 구매확정+confirmed_at.
+- 쉽게: 살롱 스토어 구매 인증 릴스를 올리면 주문이 자동으로 구매확정된다.
+
+### feat: 오렌씬 추천추적 source_scene_post_id
+- 170/171: bookings·purchases·brand_product_orders에 source_scene_post_id. CTA→checkout/create·payapp booking pipe 연동.
+- 쉽게: 릴스를 보고 한 예약·구매가 어느 영상에서 왔는지 남는다.
+
+### feat: 댓글·신고·차단 + 좋아요 토글
+- 172/173/175: oren_scene_comments(1단 답글·@멘션), comment_reports(≥3 자동 is_hidden), blocks, oren_scene_likes UNIQUE 토글 + RLS.
+- SceneCommentSheet, engage like 토글, GET liked. 원장 답글 시 스토어 카드 노출.
+- 쉽게: 댓글·신고·차단과 중복 없는 좋아요가 동작한다.
+
+### feat: 릴스 뷰어 + 결제 CTA 카드
+- /oren-scene/[id]: 좋아요/댓글/공유(ShareBottomSheet)/CTA/본인 통계/title·highlight_tag 수정(PATCH)/삭제.
+- SceneCtaPaymentModal: booking·brand_product 바로결제, shipping_addresses 앵커시트, dry_run 배송비 합산, 페이지 로그인가드.
+- 쉽게: 릴스를 보고 바로 결제하거나 공유·댓글할 수 있다.
+
+### ops: 마이그레이션 165~175 Supabase 적용 완료
+- oren_scene_* 및 추천추적·likes 관련 SQL 운영 반영 완료(레포 파일과 동기).
+- 쉽게: 오렌씬용 DB가 서버에도 올라가 있다.
+
+### note: 다음 세션 이월
+- 업로드 UI(원장/고객) 미구현.
+- 결제완료 알림 3종(원장/원본업로더/적립예정) 미구현.
+- 결제완료 감성문구 팝업(카테고리 선행) 미구현.
+- 브랜드 콘텐츠(플렉스라운지) 별도 테이블 미착수.
+
 ## 2026-08-24
 ### ui: 살롱홈에 다른 스토어 둘러보기 버튼 추가
 - salons/[id]/page.tsx: 예약하기/상담 요청/길찾기 아래에 outline 버튼. router.push('/salons'). 헤더·배너·예약 로직 미변경.
