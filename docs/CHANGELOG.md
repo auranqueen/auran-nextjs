@@ -4,6 +4,12 @@
 ---
 
 ## 2026-08-28
+### feat: 오렌씬 허브페이지 (/oren-scene)
+- page.tsx(허브): 큰 탭 인기(기본)/최신/전체, 칩 전체/✓인증/✨자유. popularity.ts: like×1 + view×0.1 + booking_conversion×15 + revenue×0.005. 인기 탭=최근 7일 생성분·누적값 정렬(주간 증가분 스냅샷은 이월), 로그인+위치 시 거리 가산. 상위 20% 🔥인기 뱃지, 3열 9:16 그리드·무한스크롤, 카드→/oren-scene/[id].
+- page.tsx(홈): 오렌씬 섹션 전체보기 → /oren-scene 연결(TODO 해제).
+- 177_oren_scene_popularity.sql: VIEW oren_scene_posts_with_popularity(동일 계산식), 인덱스(미적용·파일만).
+- 쉽게: 오렌씬 전체 목록·인기순 탐색 허브가 생겼고 홈 전체보기와 연결됐다.
+
 ### feat: 살롱페이지 스토리탭 오렌씬 섹션
 - salons/[id] 스토리탭: SalonOrenSceneSection(oren_scene_posts) 추가. highlight_tag별 원형 하이라이트(대표 썸네일·재생·조회수 합산), 9:16 그리드 최근 9건, 더보기 → /salons/[id]/oren-scene 전체 목록.
 - lib/orenScene/display.ts: 태그 그룹핑·뱃지·중복 제거 공통화. 원장은 원형 + → /oren-scene/upload?salon_id=.
