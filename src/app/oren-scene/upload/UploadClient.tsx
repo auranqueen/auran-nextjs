@@ -180,7 +180,7 @@ export default function OrenSceneUploadInner() {
           .from('bookings')
           .select('id, salon_id, service_name, status, salons(name)')
           .eq('customer_id', me.id)
-          .eq('status', '완료')
+          .eq('status', 'completed')
           .order('created_at', { ascending: false })
           .limit(40),
         supabase

@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
       if (booking.customer_id !== me.id) {
         return NextResponse.json({ ok: false, error: 'forbidden_booking' }, { status: 403 })
       }
-      if (booking.status !== '완료') {
+      if (booking.status !== 'completed') {
         return NextResponse.json({ ok: false, error: 'booking_not_completed' }, { status: 400 })
       }
 
