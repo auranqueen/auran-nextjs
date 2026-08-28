@@ -1,8 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import SceneCtaPaymentModal from '@/components/oren-scene/SceneCtaPaymentModal'
+import ScenePaymentCompleteModal from '@/components/oren-scene/ScenePaymentCompleteModal'
 import SceneCommentSheet from '@/components/oren-scene/SceneCommentSheet'
 import ShareBottomSheet from '@/components/ShareBottomSheet'
 import { createClient } from '@/lib/supabase/client'
@@ -39,6 +40,7 @@ const TEXT_SUB = 'rgba(255,255,255,0.65)'
 export default function OrenSceneViewerPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const id = String(params?.id || '')
 
   const [loading, setLoading] = useState(true)
@@ -58,7 +60,20 @@ export default function OrenSceneViewerPage() {
   const [editTag, setEditTag] = useState('')
   const [editSaving, setEditSaving] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
+  const [paidModal, setPaidModal] = useState<{ linkType: 'booking' | 'brand_product'; serviceName?: string; salonId?: string } | null>(null)
   const [error, setError] = useState('')
+
+
+  useEffect(() => {
+    const scenePaid = searchParams.get('scene_paid')
+    if (scenePaid !== 'booking' && scenePaid !== 'brand_product') return
+    setPaidModal({
+      linkType: scenePaid,
+      serviceName: searchParams.get('service_name') || undefined,
+      salonId: searchParams.get('salon_id') || undefined,
+    })
+    router.replace(`/oren-scene/${id}`, { scroll: false })
+  }, [searchParams, id, router])
 
   const load = useCallback(async () => {
     if (!id) return
@@ -475,6 +490,21 @@ export default function OrenSceneViewerPage() {
             </button>
           </div>
         </div>
+      ) : null}
+
+
+      {paidModal ? (
+        <ScenePaymentCompleteModal
+          linkType={paidModal.linkType}
+          serviceName={paidModal.serviceName}
+          salonId={paidModal.salonId}
+          onClose={() => setPaidModal(null)}
+          onPickDate={() => {
+            const sid = paidModal.salonId || post?.salon_id
+            setPaidModal(null)
+            if (sid) router.push(`/salons/${sid}?booking_paid=true`)
+          }}
+        />
       ) : null}
 
       {payOpen && cta ? (

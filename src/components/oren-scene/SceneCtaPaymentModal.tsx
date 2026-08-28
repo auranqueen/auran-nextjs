@@ -266,6 +266,7 @@ export default function SceneCtaPaymentModal(props: {
             kind: 'brand_product_order',
             amount,
             target_id: checkoutBatchId,
+            scene_post_id: scenePostId,
           }),
         }).then((r) => r.json())
         if (!payRes?.ok || !payRes?.pay_url) {

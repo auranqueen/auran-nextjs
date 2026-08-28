@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
+import { handleSceneUploaderOnBrandProductConfirm } from '@/lib/orenScene/scenePaymentNotifications'
 
 function json(data: object, status = 200) {
   return NextResponse.json(data, { status })
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
     .update({ status: '구매확정', confirmed_at: nowIso })
     .eq('status', '배송완료')          // 트랙A + 배송완료만
     .lt('auto_confirm_at', nowIso)     // 자동확정 예정시각 경과
-    .select('id, customer_id, customer_toast_amount, customer_toast_paid')
+    .select('id, customer_id, customer_toast_amount, customer_toast_paid, source_scene_post_id')
 
   if (error) return json({ ok: false, error: error.message }, 500)
   for (const order of data || []) {
@@ -56,6 +57,7 @@ export async function GET(req: NextRequest) {
         is_read: false,
       })
     }
+    await handleSceneUploaderOnBrandProductConfirm(service, order)
   }
   return json({ ok: true, confirmed: data?.length ?? 0 })
 }

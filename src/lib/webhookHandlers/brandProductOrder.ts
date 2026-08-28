@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { notifyScenePaymentComplete } from '@/lib/orenScene/scenePaymentNotifications'
 
 type PaymentIntentRow = {
   id: string
@@ -15,7 +16,7 @@ export async function handleBrandProductOrderComplete(
   if (!intent.target_id || !intent.user_id) return
   const { data: orders } = await client
     .from('brand_product_orders')
-    .select('id, customer_id, status, customer_toast_amount, final_amount')
+    .select('id, customer_id, status, customer_toast_amount, final_amount, source_scene_post_id, salon_id')
     .eq('checkout_batch_id', intent.target_id)
   if (!orders || orders.length === 0) return
   const totalAmount = orders.reduce((sum, o) => sum + Number(o.final_amount || 0), 0)
@@ -65,6 +66,29 @@ export async function handleBrandProductOrderComplete(
         link_url: '/my/orders',
         is_read: false,
       })
+      if (order.source_scene_post_id && order.salon_id) {
+        const { data: salonRow } = await client
+          .from('salons')
+          .select('owner_id')
+          .eq('id', order.salon_id)
+          .maybeSingle()
+        const { data: orderItems } = await client
+          .from('brand_product_order_items')
+          .select('product_name')
+          .eq('order_id', order.id)
+          .limit(1)
+        const itemName = orderItems?.[0]?.product_name || '상품'
+        if (salonRow?.owner_id) {
+          await notifyScenePaymentComplete(client, {
+            kind: 'brand_product',
+            sourceScenePostId: order.source_scene_post_id,
+            ownerId: salonRow.owner_id,
+            itemName,
+            paymentAmount: Number(order.final_amount || 0),
+            expectedToastAmount: Number(order.customer_toast_amount || 0),
+          })
+        }
+      }
     } catch (e) {
       console.error('[brand_product_order individual processing failed]', { order_id: order.id, error: e })
       const { data: admins } = await client.from('users').select('id').in('role', ['admin', 'master'])

@@ -7,6 +7,7 @@ import { sendPpurioAlimtalk } from '@/lib/ppurio/sendAlimtalk'
 import { handleBrandTierPurchase } from '@/lib/webhookHandlers/brandTierPurchase'
 import { handleBrandProductOrderComplete, handleBrandProductOrderCancel } from '@/lib/webhookHandlers/brandProductOrder'
 import { handleHqStockOrderComplete, handleHqStockOrderCancel } from '@/lib/webhookHandlers/hqStockOrder'
+import { notifyScenePaymentComplete } from '@/lib/orenScene/scenePaymentNotifications'
 
 const ANNUAL_STORE_PLAN_SLUGS = new Set([
   'track_a_store_annual',
@@ -516,13 +517,24 @@ export async function POST(req: NextRequest) {
             } as any)
             // 원장님 알림
             if (salonRow?.owner_id) {
-              await client.from('notifications').insert({
-                user_id: salonRow.owner_id,
-                type: 'payment',
-                title: '새 시술권 결제 💜',
-                body: `${serviceName} ${totalSessions}회권 · 정산 예정 ₩${ownerAmount.toLocaleString()}`,
-                is_read: false,
-              } as any)
+              if (sourceScenePostId) {
+                await notifyScenePaymentComplete(client, {
+                  kind: 'booking',
+                  sourceScenePostId,
+                  ownerId: salonRow.owner_id,
+                  serviceName,
+                  paymentAmount,
+                  salonId,
+                })
+              } else {
+                await client.from('notifications').insert({
+                  user_id: salonRow.owner_id,
+                  type: 'payment',
+                  title: '새 시술권 결제 💜',
+                  body: `${serviceName} ${totalSessions}회권 · 정산 예정 ₩${ownerAmount.toLocaleString()}`,
+                  is_read: false,
+                } as any)
+              }
             }
             // 파트너스 알림
             if (partnerId && partnerFee > 0) {

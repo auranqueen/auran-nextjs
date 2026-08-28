@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { handleSceneUploaderOnBrandProductConfirm } from '@/lib/orenScene/scenePaymentNotifications'
 export async function POST(req: NextRequest) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
   }
   const { data: order } = await service
     .from('brand_product_orders')
-    .select('id, customer_id, status, review_toast_rate, review_toast_paid, subtotal, customer_toast_amount, customer_toast_paid, delivered_at')
+    .select('id, customer_id, status, review_toast_rate, review_toast_paid, subtotal, customer_toast_amount, customer_toast_paid, delivered_at, source_scene_post_id')
     .eq('id', order_id)
     .maybeSingle()
   if (!order || order.customer_id !== me.id) {
@@ -55,6 +56,7 @@ export async function POST(req: NextRequest) {
     .from('brand_product_orders')
     .update({ status: '구매확정', confirmed_at: new Date().toISOString() })
     .eq('id', order_id)
+  await handleSceneUploaderOnBrandProductConfirm(service, order)
   await service.rpc('increment_brand_product_review_stats', {
     pid: brand_product_id,
     r: rating,

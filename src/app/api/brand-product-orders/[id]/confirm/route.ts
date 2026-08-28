@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
+import { handleSceneUploaderOnBrandProductConfirm } from '@/lib/orenScene/scenePaymentNotifications'
+
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -11,7 +13,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!me) return NextResponse.json({ ok: false, error: 'user_not_found' }, { status: 404 })
   const { data: order } = await service
     .from('brand_product_orders')
-    .select('id, customer_id, status')
+    .select('id, customer_id, status, source_scene_post_id, customer_toast_amount')
     .eq('id', params.id)
     .maybeSingle()
   if (!order || order.customer_id !== me.id) {
@@ -25,5 +27,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     .update({ status: '구매확정', confirmed_at: new Date().toISOString() })
     .eq('id', order.id)
   if (error) return NextResponse.json({ ok: false, error: 'update_failed' }, { status: 500 })
+  await handleSceneUploaderOnBrandProductConfirm(service, order)
   return NextResponse.json({ ok: true })
 }

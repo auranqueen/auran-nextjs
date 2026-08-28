@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
 import { normalizeHighlightTag } from '@/lib/orenScene/display'
+import { handleSceneUploaderOnBrandProductConfirm } from '@/lib/orenScene/scenePaymentNotifications'
 
 type ContentType = 'verified' | 'free' | 'owner'
 type LinkType = 'booking' | 'brand_product' | 'product' | 'none'
@@ -84,6 +85,11 @@ export async function POST(req: NextRequest) {
 
   /** verified 제품구매 업로드 시 배송완료 → 구매확정 전환용 */
   let confirmOrderId: string | null = null
+  let confirmOrderSnapshot: {
+    id: string
+    source_scene_post_id?: string | null
+    customer_toast_amount?: number | null
+  } | null = null
   /** 트랙A 주문 조회/확정용 service (order_item 분기에서만 설정) */
   let orderService: NonNullable<ReturnType<typeof tryCreateServiceClient>> | null = null
 
@@ -148,7 +154,7 @@ export async function POST(req: NextRequest) {
 
       const { data: order } = await service
         .from('brand_product_orders')
-        .select('id, customer_id, salon_id, status')
+        .select('id, customer_id, salon_id, status, source_scene_post_id, customer_toast_amount')
         .eq('id', item.order_id)
         .maybeSingle()
 
@@ -175,6 +181,11 @@ export async function POST(req: NextRequest) {
 
       if (order.status === '배송완료') {
         confirmOrderId = order.id
+        confirmOrderSnapshot = {
+          id: order.id,
+          source_scene_post_id: order.source_scene_post_id,
+          customer_toast_amount: order.customer_toast_amount,
+        }
       }
     }
   } else if (contentType === 'free') {
@@ -306,12 +317,17 @@ export async function POST(req: NextRequest) {
   }
 
   // 릴스 업로드 = 구매확정 (배송완료였던 주문만; confirm API와 동일 — service only)
-  if (confirmOrderId && orderService) {
-    await orderService
+  if (confirmOrderId && orderService && confirmOrderSnapshot) {
+    const { data: confirmed } = await orderService
       .from('brand_product_orders')
       .update({ status: '구매확정', confirmed_at: new Date().toISOString() })
       .eq('id', confirmOrderId)
       .eq('status', '배송완료')
+      .select('id')
+      .maybeSingle()
+    if (confirmed?.id) {
+      await handleSceneUploaderOnBrandProductConfirm(orderService, confirmOrderSnapshot)
+    }
   }
 
   return NextResponse.json({ ok: true, post: data })

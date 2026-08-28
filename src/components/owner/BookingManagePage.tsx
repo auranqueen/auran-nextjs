@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useOwnerBookingRealtime } from '@/hooks/useOwnerBookingRealtime'
 import { useSalonBookingMessage } from '@/hooks/useSalonBookingMessage'
+import { notifySceneConfirmedReward } from '@/lib/orenScene/scenePaymentNotifications'
 
 const BG = '#ffffff'
 const SURFACE = '#f9f8fc'
@@ -319,7 +320,7 @@ export default function BookingManagePage() {
       if (booking?.customer_id) {
         const honeyBaseQuery = supabaseRef.current
           .from('purchases')
-          .select('id, reviewer_id, honey_amount')
+          .select('id, reviewer_id, honey_amount, source_scene_post_id')
         const { data: purchase } = booking.purchase_id
           ? await honeyBaseQuery.eq('id', booking.purchase_id).single()
           : await honeyBaseQuery
@@ -328,7 +329,7 @@ export default function BookingManagePage() {
               .order('created_at', { ascending: false })
               .limit(1)
               .single()
-        if (purchase?.reviewer_id) {
+        if (purchase) {
           const { data: salonData } = await supabaseRef.current
             .from('salons')
             .select('services')
@@ -336,46 +337,80 @@ export default function BookingManagePage() {
             .single()
           const services = salonData?.services ?? []
           const svc = Array.isArray(services)
-            ? services.find((s: any) => s.name === booking.service_name)
+            ? services.find((s: { name?: string; honey_toast?: number }) => s.name === booking.service_name)
             : null
           const honeyAmt = svc?.honey_toast ?? 1000
-          await supabaseRef.current
-            .from('honey_logs')
-            .insert({
-              reviewer_id: purchase.reviewer_id,
-              buyer_id: booking.customer_id,
-              purchase_id: purchase.id,
-              salon_id: salonId,
-              service_name: booking.service_name,
-              amount: honeyAmt,
-            })
-          await supabaseRef.current
-            .from('profiles')
-            .update({ toast_balance: supabaseRef.current.rpc('increment_toast', { uid: purchase.reviewer_id, amt: honeyAmt }) })
-          await supabaseRef.current
-            .from('purchases')
-            .update({ honey_amount: honeyAmt })
-            .eq('id', purchase.id)
-          const { data: reviewerChannel } = await supabaseRef.current
-            .from('chat_channels')
-            .select('id')
-            .eq('customer_id', purchase.reviewer_id)
-            .eq('channel_type', 'salon')
-            .eq('owner_id', ownerId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single()
-          if (reviewerChannel?.id) {
+
+          let rewardUserId: string | null = null
+          const sourceScenePostId =
+            typeof purchase.source_scene_post_id === 'string' && purchase.source_scene_post_id.trim()
+              ? purchase.source_scene_post_id.trim()
+              : null
+
+          if (sourceScenePostId) {
+            const { data: scenePost } = await supabaseRef.current
+              .from('oren_scene_posts')
+              .select('uploader_user_id')
+              .eq('id', sourceScenePostId)
+              .maybeSingle()
+            rewardUserId = scenePost?.uploader_user_id || null
+          } else if (purchase.reviewer_id) {
+            rewardUserId = purchase.reviewer_id
+          }
+
+          if (rewardUserId) {
             await supabaseRef.current
-              .from('salon_messages')
+              .from('honey_logs')
               .insert({
-                channel_id: reviewerChannel.id,
-                sender_id: ownerId,
-                sender_type: 'owner',
-                body: `꿀 떨어졌어요 🍯 +${honeyAmt}T\n내 리뷰를 보고 누군가 관리권을 구매했어요!\n토스트가 적립됐습니다 💜`,
-                is_from_customer: false,
-                message_kind: 'text',
+                reviewer_id: rewardUserId,
+                buyer_id: booking.customer_id,
+                purchase_id: purchase.id,
+                salon_id: salonId,
+                service_name: booking.service_name,
+                amount: honeyAmt,
               })
+            if (sourceScenePostId) {
+              await supabaseRef.current.rpc('increment_toast', { uid: rewardUserId, amt: honeyAmt })
+            } else {
+              await supabaseRef.current
+                .from('profiles')
+                .update({ toast_balance: supabaseRef.current.rpc('increment_toast', { uid: purchase.reviewer_id, amt: honeyAmt }) })
+            }
+            await supabaseRef.current
+              .from('purchases')
+              .update({ honey_amount: honeyAmt })
+              .eq('id', purchase.id)
+
+            if (sourceScenePostId) {
+              await notifySceneConfirmedReward(supabaseRef.current, {
+                kind: 'booking',
+                sourceScenePostId,
+                amount: honeyAmt,
+                uploaderUserId: rewardUserId,
+              })
+            } else {
+              const { data: reviewerChannel } = await supabaseRef.current
+                .from('chat_channels')
+                .select('id')
+                .eq('customer_id', purchase.reviewer_id)
+                .eq('channel_type', 'salon')
+                .eq('owner_id', ownerId)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single()
+              if (reviewerChannel?.id) {
+                await supabaseRef.current
+                  .from('salon_messages')
+                  .insert({
+                    channel_id: reviewerChannel.id,
+                    sender_id: ownerId,
+                    sender_type: 'owner',
+                    body: `꿀 떨어졌어요 🍯 +${honeyAmt}T\n내 리뷰를 보고 누군가 관리권을 구매했어요!\n토스트가 적립됐습니다 💜`,
+                    is_from_customer: false,
+                    message_kind: 'text',
+                  })
+              }
+            }
           }
         }
       }

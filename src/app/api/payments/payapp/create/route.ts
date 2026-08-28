@@ -58,12 +58,22 @@ export async function POST(req: NextRequest) {
   if (perr || !p?.id) return NextResponse.json({ ok: false, error: 'user_row_missing' }, { status: 400 })
 
   const base = process.env.NEXT_PUBLIC_APP_URL || req.nextUrl.origin
+  const bookingParts = (targetId || '').split('|')
+  const sceneReturnParams = scenePostId
+    ? `scene_post_id=${encodeURIComponent(scenePostId)}&scene_link=${kind === 'booking' ? 'booking' : 'brand_product'}`
+    : null
   const returnurl = kind === 'order'
     ? `${base}/api/payments/payapp/return?order_id=${targetId}`
     : kind === 'membership_gift'
     ? `${base}/membership/gift/complete?gift_id=${targetId}`
     : kind === 'booking'
-    ? `${base}/api/payments/payapp/return?booking=true&salon_id=${(targetId || '').split('|')[0]}`
+    ? sceneReturnParams
+      ? `${base}/api/payments/payapp/return?${sceneReturnParams}&salon_id=${encodeURIComponent(bookingParts[0] || '')}&service_name=${encodeURIComponent(bookingParts[1] || '')}`
+      : `${base}/api/payments/payapp/return?booking=true&salon_id=${bookingParts[0] || ''}`
+    : kind === 'brand_product_order'
+    ? sceneReturnParams
+      ? `${base}/api/payments/payapp/return?${sceneReturnParams}`
+      : `${base}/api/payments/payapp/return`
     : kind === 'hq_stock_order'
     ? `${base}/dashboard/owner/hq-stock-orders?paid=1`
     : `${base}/api/payments/payapp/return`
