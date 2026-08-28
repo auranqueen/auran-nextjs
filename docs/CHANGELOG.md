@@ -3,6 +3,12 @@
 
 ---
 
+## 2026-08-27
+### feat: 고객홈 스킨스타 → 오렌씬 섹션 교체
+- page.tsx: SkinstarSection(skinstar_videos) 제거, OrenSceneSection(oren_scene_posts 최신 8건) 추가.
+- 가로 카드·유형뱃지(인증/자유/원장)·살롱명·좋아요/조회, 클릭 시 /oren-scene/[id]. 전체보기 허브는 TODO(no-op).
+- 쉽게: 홈에서 스킨스타 대신 오렌씬 미리보기가 나온다.
+
 ## 2026-08-25
 ### naming: 오렌씬 명칭 확정(후보명 폐기)
 - 오렌스타/오렌릴스/오렌픽스 후보 폐기. 제품·문서·코드 경로를 기존 확정명 「오렌씬」(oren-scene / oren_scene_*)로 통합.

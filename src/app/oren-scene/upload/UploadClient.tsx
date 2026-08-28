@@ -272,7 +272,7 @@ export default function OrenSceneUploadInner() {
         }
         const rows = Array.isArray(json?.products) ? json.products : []
         setFreeProducts(
-          rows.map((row) => ({
+          rows.map((row: { id?: string; name?: string; brand_id?: string; brand_name?: string | null }) => ({
             id: String(row.id),
             name: String(row.name || '제품'),
             brand_id: String(row.brand_id || ''),
