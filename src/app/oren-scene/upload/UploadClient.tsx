@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { uploadVideoToStorage } from '@/lib/product/productFormUtils'
+import { dedupeHighlightTags } from '@/lib/orenScene/display'
 
 const BG = '#0D0B09'
 const CARD = 'rgba(255,255,255,0.04)'
@@ -81,6 +82,7 @@ export default function OrenSceneUploadInner() {
   const [ownerLink, setOwnerLink] = useState<OwnerLink>('booking')
   const [brandProducts, setBrandProducts] = useState<BrandProductOpt[]>([])
   const [brandProductId, setBrandProductId] = useState<string>('')
+  const [pastHighlightTags, setPastHighlightTags] = useState<string[]>([])
 
   // customer
   const modeParam = search.get('mode')
@@ -106,6 +108,13 @@ export default function OrenSceneUploadInner() {
     () => evidence.find((e) => `${e.kind}:${e.id}` === evidenceKey) || null,
     [evidence, evidenceKey],
   )
+
+  const suggestedHighlightTags = useMemo(() => {
+    if (role !== 'owner') return []
+    const q = highlightTag.trim().toLowerCase()
+    if (!q) return pastHighlightTags.slice(0, 12)
+    return pastHighlightTags.filter((tag) => tag.toLowerCase().includes(q)).slice(0, 12)
+  }, [role, highlightTag, pastHighlightTags])
 
   const bootstrap = useCallback(async () => {
     setLoading(true)
@@ -173,6 +182,15 @@ export default function OrenSceneUploadInner() {
       } catch {
         /* keep fallback */
       }
+      const { data: tagRows } = await supabase
+        .from('oren_scene_posts')
+        .select('highlight_tag')
+        .eq('salon_id', picked.id)
+        .eq('uploader_type', 'owner')
+        .not('highlight_tag', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(80)
+      setPastHighlightTags(dedupeHighlightTags(tagRows || []))
     } else if (r === 'customer') {
       // verified evidence
       const [{ data: bookings }, { data: orders }] = await Promise.all([
@@ -525,6 +543,28 @@ export default function OrenSceneUploadInner() {
             placeholder={role === 'owner' ? '예: 수분관리, 여드름케어' : '태그'}
             style={{ width: '100%', boxSizing: 'border-box', background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: '11px 12px', color: TEXT, fontSize: 14 }}
           />
+          {role === 'owner' && suggestedHighlightTags.length > 0 ? (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+              {suggestedHighlightTags.map((tag) => (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => setHighlightTag(tag)}
+                  style={{
+                    border: highlightTag === tag ? `1px solid ${GOLD}` : `1px solid ${BORDER}`,
+                    borderRadius: 999,
+                    background: highlightTag === tag ? 'rgba(201,169,110,0.12)' : CARD,
+                    color: TEXT,
+                    fontSize: 11,
+                    padding: '5px 10px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {tag}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
 

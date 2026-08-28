@@ -8,6 +8,7 @@ import StoreRepurchaseCard from '@/components/salon-store/StoreRepurchaseCard'
 import StoreSnsMapInfo from '@/components/salon-store/StoreSnsMapInfo'
 import SalonBrandProductsLocked from '@/components/salon-store/SalonBrandProductsLocked'
 import SalonBrandProductsPanel from '@/components/salon-store/SalonBrandProductsPanel'
+import SalonOrenSceneSection from '@/components/oren-scene/SalonOrenSceneSection'
 import { EmptyBannerHook } from '@/components/salon-store/EmptyBannerHook'
 import type { SalonBrandProductItem } from '@/types/salonBrandProducts'
 import { useSalonBookingMessage } from '@/hooks/useSalonBookingMessage'
@@ -1103,30 +1104,6 @@ export default function SalonHomePage() {
 
         {tab === 'story' ? (
           <>
-          {isSalonOwner ? (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 10 }}>
-              <button
-                type="button"
-                onClick={() => router.push(`/oren-scene/upload?salon_id=${encodeURIComponent(id)}`)}
-                style={{
-                  border: 'none',
-                  borderRadius: 999,
-                  background: PURPLE,
-                  color: TEXT,
-                  width: 36,
-                  height: 36,
-                  fontSize: 22,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  lineHeight: 1,
-                }}
-                aria-label="오렌씬 업로드"
-                title="오렌씬 업로드"
-              >
-                +
-              </button>
-            </div>
-          ) : null}
           {salonStoriesLoading ? (
             <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 13, padding: 32 }}>불러오는 중…</div>
           ) : salonStories.length === 0 ? (
@@ -1191,6 +1168,7 @@ export default function SalonHomePage() {
               })}
             </div>
           )}
+          <SalonOrenSceneSection salonId={id} isSalonOwner={isSalonOwner} />
           </>
         ) : null}
 

@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import StoryManageSection from './StoryManageSection'
 
@@ -12,6 +13,7 @@ const BG = '#f8f7fc'
 const CARD = '#ffffff'
 
 export default function BrandStoreDecorationPage() {
+  const router = useRouter()
   const supabaseRef = useRef(createClient())
   const [salonId, setSalonId] = useState<string | null>(null)
   const [subscriberCount, setSubscriberCount] = useState(0)
@@ -52,6 +54,44 @@ export default function BrandStoreDecorationPage() {
   return (
     <div style={{ background: BG, minHeight: '100vh', padding: 20, color: TEXT }}>
       <div style={{ fontSize: 16, marginBottom: 16, fontWeight: 600 }}>오렌포스팅관리</div>
+      {salonId ? (
+        <div
+          style={{
+            background: CARD,
+            border: `0.5px solid ${BORDER}`,
+            borderRadius: 12,
+            padding: '14px 16px',
+            marginBottom: 12,
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: TEXT }}>🎬 오렌씬</div>
+            <div style={{ fontSize: 11, color: TEXT_SUB, marginTop: 4 }}>관리·홈케어 릴스 영상을 업로드해요</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => router.push(`/oren-scene/upload?salon_id=${encodeURIComponent(salonId)}`)}
+            style={{
+              flexShrink: 0,
+              border: 'none',
+              background: PURPLE,
+              color: '#fff',
+              borderRadius: 10,
+              padding: '10px 14px',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            오렌씬 업로드
+          </button>
+        </div>
+      ) : null}
       {salonId ? <StoryManageSection salonId={salonId} /> : null}
       <div style={{ background: CARD, border: `0.5px solid ${BORDER}`, borderRadius: 12, padding: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
