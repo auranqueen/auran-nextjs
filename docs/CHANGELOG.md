@@ -4,6 +4,12 @@
 ---
 
 ## 2026-08-28
+### feat: 오렌씬 진짜 주간인기 스냅샷 시스템
+- 180_oren_scene_daily_snapshots.sql: `oren_scene_daily_stats`(누적 스냅샷, UNIQUE post+date) + `get_oren_scene_hub` 주간델타 점수(오늘−7일전; 스냅 없으면 VIEW 누적+created_at fallback).
+- cron/snapshot-oren-scene-stats: 공개 포스트 upsert, KST 날짜. vercel.json `0 18 * * *`(UTC)=KST 03:00.
+- popularity.ts: `computeWeeklyDeltaPopularityScore` 추가.
+- 쉽게: 7일 스냅이 쌓이면 진짜 주간 인기, 그 전엔 기존 누적 방식 유지. (마이그레이션 미적용·파일만)
+
 ### feat: 오렌씬 결제완료 흐름(팝업+알림3종, 예약+제품)
 - ScenePaymentCompleteModal + payapp return/create: 결제 후 `/oren-scene/{id}?scene_paid=` 복귀. booking=감성문구+날짜선택/다음에, brand_product=심플 확인.
 - scenePaymentNotifications: 결제완료 원장/업로더 알림, `notifySceneConfirmedReward` 공통 헬퍼. 확정적립은 booking(완료) + brand_product(구매확정: confirm/cron/리뷰/릴스업로드).
