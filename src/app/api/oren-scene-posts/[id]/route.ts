@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateAdminClient } from '@/lib/supabase/admin'
+import { normalizeHighlightTag } from '@/lib/orenScene/display'
 
 type Ctx = { params: { id: string } }
 
@@ -172,9 +173,7 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     const tag =
       body.highlight_tag === null || body.highlight_tag === undefined
         ? null
-        : typeof body.highlight_tag === 'string'
-          ? body.highlight_tag.trim() || null
-          : null
+        : normalizeHighlightTag(body.highlight_tag)
     if (tag && tag.length > 40) {
       return NextResponse.json({ ok: false, error: 'highlight_tag_too_long' }, { status: 400 })
     }

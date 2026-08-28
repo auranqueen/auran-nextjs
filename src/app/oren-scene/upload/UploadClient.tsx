@@ -4,15 +4,98 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { uploadVideoToStorage } from '@/lib/product/productFormUtils'
-import { dedupeHighlightTags } from '@/lib/orenScene/display'
+import { dedupeHighlightTags, normalizeHighlightTag } from '@/lib/orenScene/display'
+import type { CSSProperties } from 'react'
 
-const BG = '#0D0B09'
-const CARD = 'rgba(255,255,255,0.04)'
-const BORDER = 'rgba(255,255,255,0.12)'
-const PURPLE = '#7B5EA7'
-const GOLD = '#C9A96E'
-const TEXT = '#fff'
-const TEXT_SUB = 'rgba(255,255,255,0.55)'
+type UploadTheme = {
+  BG: string
+  CARD: string
+  BORDER: string
+  PURPLE: string
+  GOLD: string
+  TEXT: string
+  TEXT_SUB: string
+  SURFACE: string
+  ERROR: string
+  colorScheme: 'light' | 'dark'
+}
+
+/** 고객 업로드 폼 — 다크 (향후 data-theme 토글 시 재사용) */
+const DARK_THEME: UploadTheme = {
+  BG: '#0D0B09',
+  CARD: 'rgba(255,255,255,0.04)',
+  BORDER: 'rgba(255,255,255,0.12)',
+  PURPLE: '#7B5EA7',
+  GOLD: '#C9A96E',
+  TEXT: '#fff',
+  TEXT_SUB: 'rgba(255,255,255,0.55)',
+  SURFACE: '#1a1816',
+  ERROR: '#E57373',
+  colorScheme: 'dark',
+}
+
+/** 원장 대시보드 업로드 — store-decoration / brand-store-decoration 동일 팔레트 */
+const LIGHT_THEME: UploadTheme = {
+  BG: '#f8f7fc',
+  CARD: '#ffffff',
+  BORDER: '#ECE7DE',
+  PURPLE: '#7B5EA7',
+  GOLD: '#B08A46',
+  TEXT: '#3A3540',
+  TEXT_SUB: '#8A7E72',
+  SURFACE: '#F5F1FA',
+  ERROR: '#D94B4B',
+  colorScheme: 'light',
+}
+
+function fieldStyle(t: UploadTheme): CSSProperties {
+  return {
+    width: '100%',
+    boxSizing: 'border-box',
+    background: t.SURFACE,
+    border: `1px solid ${t.BORDER}`,
+    borderRadius: 10,
+    padding: '11px 12px',
+    color: t.TEXT,
+    fontSize: 14,
+    outline: 'none',
+  }
+}
+
+function selectStyle(t: UploadTheme): CSSProperties {
+  return {
+    width: '100%',
+    boxSizing: 'border-box',
+    background: t.SURFACE,
+    border: `1px solid ${t.BORDER}`,
+    borderRadius: 10,
+    padding: 10,
+    color: t.TEXT,
+    fontSize: 14,
+    colorScheme: t.colorScheme,
+  }
+}
+
+function optionStyle(t: UploadTheme): CSSProperties {
+  return {
+    background: t.colorScheme === 'light' ? '#ffffff' : '#1a1816',
+    color: t.TEXT,
+  }
+}
+
+function toggleBtnStyle(t: UploadTheme, on: boolean): CSSProperties {
+  return {
+    flex: 1,
+    borderRadius: 10,
+    padding: '10px 6px',
+    background: on ? t.PURPLE : t.CARD,
+    color: on ? '#fff' : t.TEXT,
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: 'pointer',
+    border: on ? 'none' : `1px solid ${t.BORDER}`,
+  }
+}
 
 type Role = 'owner' | 'customer' | 'other'
 type CustomerMode = 'verified' | 'free'
@@ -104,6 +187,8 @@ export default function OrenSceneUploadInner() {
   const [videoFile, setVideoFile] = useState<File | null>(null)
   const [videoPreview, setVideoPreview] = useState<string | null>(null)
 
+  const t = role === 'owner' ? LIGHT_THEME : DARK_THEME
+
   const selectedEvidence = useMemo(
     () => evidence.find((e) => `${e.kind}:${e.id}` === evidenceKey) || null,
     [evidence, evidenceKey],
@@ -111,9 +196,9 @@ export default function OrenSceneUploadInner() {
 
   const suggestedHighlightTags = useMemo(() => {
     if (role !== 'owner') return []
-    const q = highlightTag.trim().toLowerCase()
+    const q = normalizeHighlightTag(highlightTag) || ''
     if (!q) return pastHighlightTags.slice(0, 12)
-    return pastHighlightTags.filter((tag) => tag.toLowerCase().includes(q)).slice(0, 12)
+    return pastHighlightTags.filter((tag) => tag.includes(q)).slice(0, 12)
   }, [role, highlightTag, pastHighlightTags])
 
   const bootstrap = useCallback(async () => {
@@ -420,16 +505,16 @@ export default function OrenSceneUploadInner() {
 
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', background: BG, color: TEXT_SUB, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: DARK_THEME.BG, color: DARK_THEME.TEXT_SUB, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         불러오는 중…
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, color: TEXT, maxWidth: 480, margin: '0 auto', padding: '16px 16px 40px' }}>
+    <div style={{ minHeight: '100vh', background: t.BG, color: t.TEXT, maxWidth: 480, margin: '0 auto', padding: '16px 16px 40px' }} data-theme={t.colorScheme}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-        <button type="button" onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: TEXT, fontSize: 20, cursor: 'pointer' }}>
+        <button type="button" onClick={() => router.back()} style={{ border: 'none', background: 'transparent', color: t.TEXT, fontSize: 20, cursor: 'pointer' }}>
           ←
         </button>
         <div style={{ fontSize: 16, fontWeight: 800 }}>오렌씬 업로드</div>
@@ -445,8 +530,8 @@ export default function OrenSceneUploadInner() {
               border: 'none',
               borderRadius: 10,
               padding: '10px 0',
-              background: customerMode === 'verified' ? PURPLE : CARD,
-              color: TEXT,
+              background: customerMode === 'verified' ? t.PURPLE : t.CARD,
+              color: customerMode === 'verified' ? '#fff' : t.TEXT,
               fontWeight: 700,
               cursor: 'pointer',
             }}
@@ -461,8 +546,8 @@ export default function OrenSceneUploadInner() {
               border: 'none',
               borderRadius: 10,
               padding: '10px 0',
-              background: customerMode === 'free' ? PURPLE : CARD,
-              color: TEXT,
+              background: customerMode === 'free' ? t.PURPLE : t.CARD,
+              color: customerMode === 'free' ? '#fff' : t.TEXT,
               fontWeight: 700,
               cursor: 'pointer',
             }}
@@ -473,17 +558,17 @@ export default function OrenSceneUploadInner() {
       ) : null}
 
       {role === 'owner' ? (
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: 12, marginBottom: 12 }}>
-          <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 4 }}>내 살롱</div>
+        <div style={{ background: t.CARD, border: `1px solid ${t.BORDER}`, borderRadius: 12, padding: 12, marginBottom: 12 }}>
+          <div style={{ fontSize: 11, color: t.TEXT_SUB, marginBottom: 4 }}>내 살롱</div>
           <div style={{ fontSize: 14, fontWeight: 700 }}>{salonName}</div>
         </div>
       ) : null}
 
       {role === 'customer' && customerMode === 'verified' ? (
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 8 }}>인증할 예약·구매 선택</div>
+          <div style={{ fontSize: 12, color: t.TEXT_SUB, marginBottom: 8 }}>인증할 예약·구매 선택</div>
           {evidence.length === 0 ? (
-            <div style={{ fontSize: 13, color: TEXT_SUB, padding: 16, border: `1px dashed ${BORDER}`, borderRadius: 12 }}>
+            <div style={{ fontSize: 13, color: t.TEXT_SUB, padding: 16, border: `1px dashed ${t.BORDER}`, borderRadius: 12 }}>
               완료된 예약 또는 배송완료/구매확정 주문이 없어요
             </div>
           ) : (
@@ -498,18 +583,18 @@ export default function OrenSceneUploadInner() {
                       display: 'flex',
                       gap: 10,
                       alignItems: 'flex-start',
-                      border: on ? `1px solid ${GOLD}` : `1px solid ${BORDER}`,
+                      border: on ? `1px solid ${t.GOLD}` : `1px solid ${t.BORDER}`,
                       borderRadius: 10,
                       padding: 10,
                       cursor: 'pointer',
-                      background: CARD,
+                      background: t.CARD,
                     }}
                   >
                     <input type="radio" name="evidence" checked={on} onChange={() => setEvidenceKey(key)} />
                     <span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{e.label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: t.TEXT }}>{e.label}</span>
                       <br />
-                      <span style={{ fontSize: 11, color: TEXT_SUB }}>{e.sub}</span>
+                      <span style={{ fontSize: 11, color: t.TEXT_SUB }}>{e.sub}</span>
                     </span>
                   </label>
                 )
@@ -520,20 +605,20 @@ export default function OrenSceneUploadInner() {
       ) : null}
 
       <div style={{ marginBottom: 12 }}>
-        <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 6 }}>제목 (필수)</div>
+        <div style={{ fontSize: 12, color: t.TEXT_SUB, marginBottom: 6 }}>제목 (필수)</div>
         <input
           value={title}
           maxLength={80}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="릴스 제목"
-          style={{ width: '100%', boxSizing: 'border-box', background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: '11px 12px', color: TEXT, fontSize: 14 }}
+          style={fieldStyle(t)}
         />
-        <div style={{ fontSize: 10, color: TEXT_SUB, marginTop: 4, textAlign: 'right' }}>{title.length}/80</div>
+        <div style={{ fontSize: 10, color: t.TEXT_SUB, marginTop: 4, textAlign: 'right' }}>{title.length}/80</div>
       </div>
 
       {role === 'owner' || (role === 'customer' && customerMode === 'free') ? (
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 6 }}>
+          <div style={{ fontSize: 12, color: t.TEXT_SUB, marginBottom: 6 }}>
             {role === 'owner' ? '하이라이트 태그 / 시술 소개 (선택)' : '태그 (선택)'}
           </div>
           <input
@@ -541,28 +626,31 @@ export default function OrenSceneUploadInner() {
             maxLength={40}
             onChange={(e) => setHighlightTag(e.target.value)}
             placeholder={role === 'owner' ? '예: 수분관리, 여드름케어' : '태그'}
-            style={{ width: '100%', boxSizing: 'border-box', background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: '11px 12px', color: TEXT, fontSize: 14 }}
+            style={fieldStyle(t)}
           />
           {role === 'owner' && suggestedHighlightTags.length > 0 ? (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
-              {suggestedHighlightTags.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => setHighlightTag(tag)}
-                  style={{
-                    border: highlightTag === tag ? `1px solid ${GOLD}` : `1px solid ${BORDER}`,
-                    borderRadius: 999,
-                    background: highlightTag === tag ? 'rgba(201,169,110,0.12)' : CARD,
-                    color: TEXT,
-                    fontSize: 11,
-                    padding: '5px 10px',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {tag}
-                </button>
-              ))}
+              {suggestedHighlightTags.map((tag) => {
+                const active = normalizeHighlightTag(highlightTag) === tag
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setHighlightTag(tag)}
+                    style={{
+                      border: active ? `1px solid ${t.GOLD}` : `1px solid ${t.BORDER}`,
+                      borderRadius: 999,
+                      background: active ? 'rgba(123,94,167,0.12)' : t.CARD,
+                      color: t.TEXT,
+                      fontSize: 11,
+                      padding: '5px 10px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {tag}
+                  </button>
+                )
+              })}
             </div>
           ) : null}
         </div>
@@ -570,7 +658,7 @@ export default function OrenSceneUploadInner() {
 
       {role === 'owner' ? (
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 8 }}>연결 타입</div>
+          <div style={{ fontSize: 12, color: t.TEXT_SUB, marginBottom: 8 }}>연결 타입</div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
             <button
               type="button"
@@ -578,51 +666,33 @@ export default function OrenSceneUploadInner() {
                 setOwnerLink('booking')
                 setBrandProductId('')
               }}
-              style={{
-                flex: 1,
-                border: 'none',
-                borderRadius: 10,
-                padding: '10px 6px',
-                background: ownerLink === 'booking' ? PURPLE : CARD,
-                color: TEXT,
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
+              style={toggleBtnStyle(t, ownerLink === 'booking')}
             >
               관리/시술 소개
             </button>
             <button
               type="button"
               onClick={() => setOwnerLink('brand_product')}
-              style={{
-                flex: 1,
-                border: 'none',
-                borderRadius: 10,
-                padding: '10px 6px',
-                background: ownerLink === 'brand_product' ? PURPLE : CARD,
-                color: TEXT,
-                fontSize: 12,
-                fontWeight: 700,
-                cursor: 'pointer',
-              }}
+              style={toggleBtnStyle(t, ownerLink === 'brand_product')}
             >
               브랜드 제품
             </button>
           </div>
           {ownerLink === 'booking' ? (
-            <div style={{ fontSize: 11, color: TEXT_SUB, lineHeight: 1.45 }}>
+            <div style={{ fontSize: 11, color: t.TEXT_SUB, lineHeight: 1.45 }}>
               이 살롱에서 예약 가능한 관리/시술 소개로 올라가요. (일반 예약 CTA · 특정 예약건 연결 없음)
             </div>
           ) : (
             <select
               value={brandProductId}
               onChange={(e) => setBrandProductId(e.target.value)}
-              style={{ width: '100%', background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 10, color: TEXT }}
+              style={selectStyle(t)}
             >
-              <option value="">제품 선택</option>
+              <option value="" style={optionStyle(t)}>
+                제품 선택
+              </option>
               {brandProducts.map((p) => (
-                <option key={p.id} value={p.id}>
+                <option key={p.id} value={p.id} style={optionStyle(t)}>
                   {p.name}
                 </option>
               ))}
@@ -633,7 +703,7 @@ export default function OrenSceneUploadInner() {
 
       {role === 'customer' && customerMode === 'free' ? (
         <div style={{ marginBottom: 12 }}>
-          <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 6 }}>제품 태깅 (살롱스토어 브랜드제품 · 선택)</div>
+          <div style={{ fontSize: 12, color: t.TEXT_SUB, marginBottom: 6 }}>제품 태깅 (살롱스토어 브랜드제품 · 선택)</div>
           <select
             value={freeSalonId}
             onChange={(e) => {
@@ -642,11 +712,13 @@ export default function OrenSceneUploadInner() {
               setFreeProductQuery('')
               setFreeProducts([])
             }}
-            style={{ width: '100%', background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 10, color: TEXT, marginBottom: 8 }}
+            style={{ ...selectStyle(t), marginBottom: 8 }}
           >
-            <option value="">살롱 선택 (태깅 시 필요)</option>
+            <option value="" style={optionStyle(t)}>
+              살롱 선택 (태깅 시 필요)
+            </option>
             {freeSalons.map((salon) => (
-              <option key={salon.id} value={salon.id}>
+              <option key={salon.id} value={salon.id} style={optionStyle(t)}>
                 {salon.name}
               </option>
             ))}
@@ -660,36 +732,28 @@ export default function OrenSceneUploadInner() {
                   setFreeProductId('')
                 }}
                 placeholder="제품명 검색 (2자 이상, 비우면 인기순)"
-                style={{
-                  width: '100%',
-                  boxSizing: 'border-box',
-                  background: CARD,
-                  border: `1px solid ${BORDER}`,
-                  borderRadius: 10,
-                  padding: '11px 12px',
-                  color: TEXT,
-                  fontSize: 14,
-                  marginBottom: 8,
-                }}
+                style={{ ...fieldStyle(t), marginBottom: 8 }}
               />
               <select
                 value={freeProductId}
                 onChange={(e) => setFreeProductId(e.target.value)}
-                style={{ width: '100%', background: CARD, border: `1px solid ${BORDER}`, borderRadius: 10, padding: 10, color: TEXT }}
+                style={selectStyle(t)}
               >
-                <option value="">{freeProductsLoading ? '불러오는 중…' : '태깅 안 함'}</option>
+                <option value="" style={optionStyle(t)}>
+                  {freeProductsLoading ? '불러오는 중…' : '태깅 안 함'}
+                </option>
                 {freeProducts.map((prod) => (
-                  <option key={prod.id} value={prod.id}>
+                  <option key={prod.id} value={prod.id} style={optionStyle(t)}>
                     {prod.brand_name ? `${prod.brand_name} · ${prod.name}` : prod.name}
                   </option>
                 ))}
               </select>
-              <div style={{ fontSize: 11, color: TEXT_SUB, marginTop: 6, lineHeight: 1.45 }}>
+              <div style={{ fontSize: 11, color: t.TEXT_SUB, marginTop: 6, lineHeight: 1.45 }}>
                 선택하면 살롱스토어 브랜드제품으로 연결돼요. (구매 인증 없이 태깅만)
               </div>
             </>
           ) : (
-            <div style={{ fontSize: 11, color: TEXT_SUB, lineHeight: 1.45 }}>
+            <div style={{ fontSize: 11, color: t.TEXT_SUB, lineHeight: 1.45 }}>
               태깅 없이 올리면 연결 없음으로 저장돼요.
             </div>
           )}
@@ -697,12 +761,12 @@ export default function OrenSceneUploadInner() {
       ) : null}
 
       <div style={{ marginBottom: 14 }}>
-        <div style={{ fontSize: 12, color: TEXT_SUB, marginBottom: 6 }}>영상 (9:16 · mp4 · 60초 이내)</div>
+        <div style={{ fontSize: 12, color: t.TEXT_SUB, marginBottom: 6 }}>영상 (9:16 · mp4 · 60초 이내)</div>
         <input
           type="file"
           accept="video/mp4,.mp4"
           onChange={(e) => void onPickVideo(e.target.files?.[0] || null)}
-          style={{ width: '100%', color: TEXT_SUB, fontSize: 12 }}
+          style={{ width: '100%', color: t.TEXT_SUB, fontSize: 12 }}
         />
         {videoPreview ? (
           <video
@@ -715,7 +779,7 @@ export default function OrenSceneUploadInner() {
       </div>
 
       {error ? (
-        <div style={{ color: '#E57373', fontSize: 12, marginBottom: 10, textAlign: 'center' }}>{error}</div>
+        <div style={{ color: t.ERROR, fontSize: 12, marginBottom: 10, textAlign: 'center' }}>{error}</div>
       ) : null}
 
       <button
@@ -726,8 +790,8 @@ export default function OrenSceneUploadInner() {
           width: '100%',
           border: 'none',
           borderRadius: 12,
-          background: submitting ? 'rgba(123,94,167,0.45)' : PURPLE,
-          color: TEXT,
+          background: submitting ? 'rgba(123,94,167,0.45)' : t.PURPLE,
+          color: '#fff',
           padding: '14px 0',
           fontSize: 15,
           fontWeight: 800,

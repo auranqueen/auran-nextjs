@@ -4,6 +4,20 @@
 ---
 
 ## 2026-08-28
+### fix: highlight_tag 정규화(공백제거·소문자통일)
+- lib/orenScene/display.ts: `normalizeHighlightTag`(trim → 공백 제거 → toLowerCase). `dedupeHighlightTags`·`groupOrenSceneByHighlightTag` 정규화 키 기준.
+- save/route.ts·[id]/route.ts PATCH: DB 저장 전 동일 정규화 적용(40자 검증은 정규화 후).
+- UploadClient: 칩 필터·선택 상태도 정규화 비교.
+- 쉽게: 태그 표기 차이로 쪼개지던 그룹핑·자동완성이 한 기준으로 묶인다.
+
+### fix: 원장 업로드 브랜드제품 드롭다운 가시성
+- UploadClient: `<select>`·`<option>`에 `selectStyle`/`optionStyle` + `colorScheme`. 흰 배경 옵션 목록에서 글자가 안 보이던 문제 수정.
+- 쉽게: 브랜드 제품 고르는 드롭다운이 제대로 보인다.
+
+### feat: 오렌씬 업로드 원장화면 라이트테마
+- UploadClient: `LIGHT_THEME`/`DARK_THEME` 분리. `role === 'owner'`만 store-decoration 동일 팔레트(`#f8f7fc` BG 등). 고객 폼은 `DARK_THEME` 유지. `data-theme` 속성.
+- 쉽게: 원장 업로드는 밝은 대시보드 톤, 고객 업로드는 기존 다크 그대로다.
+
 ### feat: 오렌씬 허브 서버사이드 정렬 + 진짜 페이지네이션 + 거리가중치 RPC
 - 177_oren_scene_popularity.sql: VIEW `oren_scene_posts_with_popularity`(popularity_score 계산식).
 - 178_oren_scene_hub_view_grants.sql: VIEW 재정의·security_invoker·anon/authenticated SELECT GRANT.

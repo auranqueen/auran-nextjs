@@ -30,10 +30,19 @@ export function orenSceneBadgeLabel(
   return '✨ 자유'
 }
 
+export function normalizeHighlightTag(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null
+  if (typeof raw !== 'string') return null
+  let s = raw.trim()
+  if (!s) return null
+  s = s.replace(/\s+/g, '').toLowerCase()
+  return s || null
+}
+
 export function groupOrenSceneByHighlightTag(posts: OrenScenePostItem[]): OrenSceneHighlightGroup[] {
   const map = new Map<string, OrenScenePostItem[]>()
   for (const post of posts) {
-    const tag = String(post.highlight_tag || '').trim()
+    const tag = normalizeHighlightTag(post.highlight_tag)
     if (!tag) continue
     const list = map.get(tag) || []
     list.push(post)
@@ -61,7 +70,7 @@ export function dedupeHighlightTags(rows: { highlight_tag: string | null }[]): s
   const seen = new Set<string>()
   const out: string[] = []
   for (const row of rows) {
-    const tag = String(row.highlight_tag || '').trim()
+    const tag = normalizeHighlightTag(row.highlight_tag)
     if (!tag || seen.has(tag)) continue
     seen.add(tag)
     out.push(tag)

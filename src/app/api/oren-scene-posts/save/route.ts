@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { tryCreateServiceClient } from '@/lib/supabase/service'
+import { normalizeHighlightTag } from '@/lib/orenScene/display'
 
 type ContentType = 'verified' | 'free' | 'owner'
 type LinkType = 'booking' | 'brand_product' | 'product' | 'none'
@@ -49,11 +50,10 @@ export async function POST(req: NextRequest) {
 
   let highlightTag: string | null = null
   if (body.highlight_tag !== undefined && body.highlight_tag !== null) {
-    const raw = typeof body.highlight_tag === 'string' ? body.highlight_tag.trim() : ''
-    if (raw.length > 40) {
+    highlightTag = normalizeHighlightTag(body.highlight_tag)
+    if (highlightTag && highlightTag.length > 40) {
       return NextResponse.json({ ok: false, error: 'highlight_tag_too_long' }, { status: 400 })
     }
-    highlightTag = raw || null
   }
 
   const contentTypeRaw = typeof body.content_type === 'string' ? body.content_type.trim() : 'verified'
