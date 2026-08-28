@@ -3,6 +3,24 @@
 
 ---
 
+## 2026-08-28
+### feat: 살롱페이지 스토리탭 오렌씬 섹션
+- salons/[id] 스토리탭: SalonOrenSceneSection(oren_scene_posts) 추가. highlight_tag별 원형 하이라이트(대표 썸네일·재생·조회수 합산), 9:16 그리드 최근 9건, 더보기 → /salons/[id]/oren-scene 전체 목록.
+- lib/orenScene/display.ts: 태그 그룹핑·뱃지·중복 제거 공통화. 원장은 원형 + → /oren-scene/upload?salon_id=.
+- 쉽게: 살롱 스토리 탭 아래에서 그 살롱 오렌씬을 태그별·그리드로 볼 수 있다.
+
+### feat: 업로드 highlight_tag 자동완성
+- UploadClient: 원장 업로드 시 해당 salon_id·uploader_type owner의 과거 highlight_tag를 조회해 칩으로 표시. 칩 선택 또는 새 태그 자유 입력.
+- 쉽게: 원장이 예전에 쓴 태그를 다시 고르기 쉽다.
+
+### feat: 원장 대시보드 오렌씬 업로드 진입점
+- brand-store-decoration/page.tsx: StoryManageSection(오렌포스팅) 위에 오렌씬 업로드 카드 추가. 클릭 시 /oren-scene/upload?salon_id=. 사이드바 메뉴 추가 없음.
+- 쉽게: 오렌포스팅관리 화면에서 바로 오렌씬을 올릴 수 있다.
+
+### fix: 오렌씬 예약완료 상태값 불일치
+- UploadClient·save/route.ts: bookings.status 검증/조회 `'완료'` → `'completed'` (DB 실값과 일치).
+- 쉽게: 완료된 예약이 인증 릴스 업로드 목록에 안 보이던 문제를 고쳤다.
+
 ## 2026-08-27
 ### feat: 고객홈 스킨스타 → 오렌씬 섹션 교체
 - page.tsx: SkinstarSection(skinstar_videos) 제거, OrenSceneSection(oren_scene_posts 최신 8건) 추가.
