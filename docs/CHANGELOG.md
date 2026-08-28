@@ -4,6 +4,15 @@
 ---
 
 ## 2026-08-28
+### feat: 오렌씬 허브 서버사이드 정렬 + 진짜 페이지네이션 + 거리가중치 RPC
+- 177_oren_scene_popularity.sql: VIEW `oren_scene_posts_with_popularity`(popularity_score 계산식).
+- 178_oren_scene_hub_view_grants.sql: VIEW 재정의·security_invoker·anon/authenticated SELECT GRANT.
+- 179_oren_scene_nearby_rpc.sql: `haversine_km` + `get_oren_scene_hub`(VIEW×salons 조인, 거리보너스, sort_score 정렬, OFFSET/LIMIT).
+- oren-scene/page.tsx: 인기/전체 → geolocation 후 `.rpc('get_oren_scene_hub')`(거부 시 lat/lng null=순수 인기순). 최신 → VIEW created_at + range. content_type 서버 필터.
+- popularity.ts: 정렬용 클라이언트 계산(거리부스트·computeSortScore 등) 제거, 뱃지·7일 필터 헬퍼만 유지.
+- 거리보너스: 3km 이내 +30, 10km 이내 +15, 그 외 0. salon_id/좌표 없으면 0.
+- 쉽게: 허브 인기·전체가 DB RPC로 정렬되고, 가까운 살롱 릴스가 가산되며, 스크롤마다 24개씩만 불러온다.
+
 ### feat: 오렌씬 허브페이지 (/oren-scene)
 - page.tsx(허브): 큰 탭 인기(기본)/최신/전체, 칩 전체/✓인증/✨자유. popularity.ts: like×1 + view×0.1 + booking_conversion×15 + revenue×0.005. 인기 탭=최근 7일 생성분·누적값 정렬(주간 증가분 스냅샷은 이월), 로그인+위치 시 거리 가산. 상위 20% 🔥인기 뱃지, 3열 9:16 그리드·무한스크롤, 카드→/oren-scene/[id].
 - page.tsx(홈): 오렌씬 섹션 전체보기 → /oren-scene 연결(TODO 해제).

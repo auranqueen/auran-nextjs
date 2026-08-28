@@ -1,3 +1,5 @@
+/** Mirrors oren_scene_posts_with_popularity VIEW (177/178). Sorting uses the VIEW server-side. */
+
 export type PopularityInput = {
   like_count?: number | null
   view_count?: number | null
@@ -14,49 +16,15 @@ export function computePopularityScore(post: PopularityInput): number {
   )
 }
 
-export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371
-  const toRad = (d: number) => (d * Math.PI) / 180
-  const dLat = toRad(lat2 - lat1)
-  const dLng = toRad(lng2 - lng1)
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2
-  return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)))
-}
-
-export function distanceBoostKm(km: number): number {
-  if (km <= 3) return 8
-  if (km <= 10) return 4
-  if (km <= 30) return 2
-  return 0
-}
-
-export function computeSortScore(
-  post: PopularityInput & { salonLat?: number | null; salonLng?: number | null },
-  opts: { userLat?: number | null; userLng?: number | null; applyDistance?: boolean },
-): number {
-  let score = computePopularityScore(post)
-  if (
-    opts.applyDistance &&
-    opts.userLat != null &&
-    opts.userLng != null &&
-    post.salonLat != null &&
-    post.salonLng != null
-  ) {
-    score += distanceBoostKm(haversineKm(opts.userLat, opts.userLng, post.salonLat, post.salonLng))
-  }
-  return score
-}
-
-export function isHotRank(rankIndex: number, total: number, score: number): boolean {
-  if (total === 0 || score <= 0) return false
-  const hotCount = Math.max(1, Math.ceil(total * 0.2))
-  return rankIndex < hotCount
-}
-
 export function sevenDaysAgoIso(): string {
   const d = new Date()
   d.setDate(d.getDate() - 7)
   return d.toISOString()
+}
+
+/** Top ~20% badge: score must meet threshold from server (min score at rank ceil(count*0.2)). */
+export function isHotByScore(score: number | null | undefined, minThreshold: number | null): boolean {
+  if (minThreshold == null) return false
+  const s = Number(score || 0)
+  return s > 0 && s >= minThreshold
 }
