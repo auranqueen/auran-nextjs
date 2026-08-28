@@ -63,15 +63,23 @@ export default function SceneCommentSheet(props: {
     setErr('')
     try {
       const res = await fetch(`/api/oren-scene-posts/${scenePostId}/comments`)
-      const json = await res.json()
+      const json = await res.json().catch(() => ({}))
       if (!json?.ok) {
-        setErr(json?.error || 'load_failed')
+        setErr(
+          json?.error === 'not_logged_in'
+            ? '로그인이 필요해요'
+            : '불러오지 못했어요',
+        )
+        setComments([])
         return
       }
       setComments(json.comments || [])
       setUsersById(json.usersById || {})
       setUploaderUserId(json.uploaderUserId || null)
       setSalon(json.salon || null)
+    } catch {
+      setErr('불러오지 못했어요')
+      setComments([])
     } finally {
       setLoading(false)
     }
@@ -170,6 +178,25 @@ export default function SceneCommentSheet(props: {
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 14px 12px' }}>
           {loading ? (
             <div style={{ color: TEXT_SUB, fontSize: 12, padding: 16 }}>불러오는 중…</div>
+          ) : err && comments.length === 0 ? (
+            <div style={{ color: TEXT_SUB, fontSize: 12, padding: 16, textAlign: 'center' }}>
+              <div style={{ marginBottom: 10, color: '#E57373' }}>{err}</div>
+              <button
+                type="button"
+                onClick={() => void load()}
+                style={{
+                  border: `1px solid ${PURPLE}`,
+                  background: 'rgba(123,94,167,0.2)',
+                  color: TEXT,
+                  borderRadius: 10,
+                  padding: '8px 12px',
+                  fontSize: 12,
+                  cursor: 'pointer',
+                }}
+              >
+                다시 시도
+              </button>
+            </div>
           ) : roots.length === 0 ? (
             <div style={{ color: TEXT_SUB, fontSize: 12, padding: 16 }}>첫 댓글을 남겨보세요</div>
           ) : (

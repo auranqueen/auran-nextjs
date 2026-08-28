@@ -165,6 +165,7 @@ export default function SceneCtaPaymentModal(props: {
         if (cancelled) return
         if (!res?.ok) {
           setQuote(null)
+          setError('배송비 계산에 실패했어요. 배송지를 다시 확인해주세요')
           return
         }
         setQuote({
@@ -172,8 +173,12 @@ export default function SceneCtaPaymentModal(props: {
           shipping_fee: Math.trunc(Number(res.shipping_fee) || 0),
           final_amount: Math.trunc(Number(res.final_amount) || 0),
         })
+        setError('')
       } catch {
-        if (!cancelled) setQuote(null)
+        if (!cancelled) {
+          setQuote(null)
+          setError('배송비 계산에 실패했어요. 잠시 후 다시 시도해주세요')
+        }
       } finally {
         if (!cancelled) setQuoting(false)
       }

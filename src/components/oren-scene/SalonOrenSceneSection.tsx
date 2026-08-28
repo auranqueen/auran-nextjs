@@ -26,9 +26,13 @@ export default function SalonOrenSceneSection({ salonId, isSalonOwner }: Props) 
   const supabase = createClient()
   const [posts, setPosts] = useState<OrenScenePostItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
+    setLoading(true)
+    setError('')
     void supabase
       .from('oren_scene_posts')
       .select(
@@ -37,15 +41,21 @@ export default function SalonOrenSceneSection({ salonId, isSalonOwner }: Props) 
       .eq('salon_id', salonId)
       .eq('is_published', true)
       .order('created_at', { ascending: false })
-      .then(({ data }) => {
+      .then(({ data, error: qErr }) => {
         if (cancelled) return
-        setPosts((data as OrenScenePostItem[]) ?? [])
+        if (qErr) {
+          console.error('salon oren-scene load error', qErr.message)
+          setPosts([])
+          setError('불러오지 못했어요')
+        } else {
+          setPosts((data as OrenScenePostItem[]) ?? [])
+        }
         setLoading(false)
       })
     return () => {
       cancelled = true
     }
-  }, [salonId, supabase])
+  }, [salonId, supabase, reloadKey])
 
   const highlightGroups = useMemo(() => groupOrenSceneByHighlightTag(posts), [posts])
   const gridPosts = posts.slice(0, 9)
@@ -55,6 +65,33 @@ export default function SalonOrenSceneSection({ salonId, isSalonOwner }: Props) 
       <div style={{ marginTop: 28, paddingTop: 20, borderTop: `1px solid ${BORDER}` }}>
         <div style={{ fontSize: 13, color: TEXT, marginBottom: 12, fontWeight: 700 }}>🎬 오렌씬</div>
         <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 13, padding: 24 }}>불러오는 중…</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div style={{ marginTop: 28, paddingTop: 20, borderTop: `1px solid ${BORDER}` }}>
+        <div style={{ fontSize: 13, color: TEXT, marginBottom: 12, fontWeight: 700 }}>🎬 오렌씬</div>
+        <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 13, padding: 16 }}>
+          <div style={{ marginBottom: 10 }}>{error}</div>
+          <button
+            type="button"
+            onClick={() => setReloadKey((k) => k + 1)}
+            style={{
+              border: `1px solid ${PURPLE}`,
+              background: PURPLE_LIGHT,
+              color: TEXT,
+              borderRadius: 10,
+              padding: '8px 14px',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            다시 시도
+          </button>
+        </div>
       </div>
     )
   }

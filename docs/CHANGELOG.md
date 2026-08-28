@@ -4,6 +4,12 @@
 ---
 
 ## 2026-08-28
+### fix: 오렌씬 전체 에러핸들링 보완
+- hub page: RPC 실패 시 안내+재시도+VIEW created_at fallback.
+- SalonOrenSceneSection / salons/.../oren-scene / viewer / SceneCommentSheet: 조회 실패 안내+재시도.
+- viewer 좋아요 alert, SceneCtaPaymentModal 배송비 견적 실패 setError (create/payapp 실패 안내 유지).
+- 쉽게: 조용히 빈 화면·무반응이던 실패 지점을 사용자 안내로 바꿨다.
+
 ### feat: 오렌씬 진짜 주간인기 스냅샷 시스템
 - 180_oren_scene_daily_snapshots.sql: `oren_scene_daily_stats`(누적 스냅샷, UNIQUE post+date) + `get_oren_scene_hub` 주간델타 점수(오늘−7일전; 스냅 없으면 VIEW 누적+created_at fallback).
 - cron/snapshot-oren-scene-stats: 공개 포스트 upsert, KST 날짜. vercel.json `0 18 * * *`(UTC)=KST 03:00.

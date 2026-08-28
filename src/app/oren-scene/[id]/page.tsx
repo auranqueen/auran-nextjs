@@ -129,19 +129,25 @@ export default function OrenSceneViewerPage() {
 
   const onLike = async () => {
     if (!id) return
-    const res = await fetch(`/api/oren-scene-posts/${id}/engage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'like' }),
-    })
-    const json = await res.json().catch(() => ({}))
-    if (json?.error === 'not_logged_in') {
-      setLoginOpen(true)
-      return
-    }
-    if (json?.ok && typeof json.like_count === 'number') {
-      setLikes(json.like_count)
-      if (typeof json.liked === 'boolean') setLiked(json.liked)
+    try {
+      const res = await fetch(`/api/oren-scene-posts/${id}/engage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'like' }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (json?.error === 'not_logged_in') {
+        setLoginOpen(true)
+        return
+      }
+      if (json?.ok && typeof json.like_count === 'number') {
+        setLikes(json.like_count)
+        if (typeof json.liked === 'boolean') setLiked(json.liked)
+        return
+      }
+      alert(json?.error || '좋아요에 실패했어요')
+    } catch {
+      alert('좋아요에 실패했어요')
     }
   }
 
@@ -207,9 +213,10 @@ export default function OrenSceneViewerPage() {
 
   if (!post || error) {
     return (
-      <div style={{ minHeight: '100vh', background: '#000', color: TEXT, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-        <div>{error || '없음'}</div>
-        <button type="button" onClick={() => router.back()} style={{ border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: TEXT, borderRadius: 10, padding: '8px 14px' }}>뒤로</button>
+      <div style={{ minHeight: '100vh', background: '#000', color: TEXT, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: 24 }}>
+        <div style={{ textAlign: 'center' }}>{error || '불러오지 못했어요'}</div>
+        <button type="button" onClick={() => void load()} style={{ border: '1px solid rgba(123,94,167,0.6)', background: 'rgba(123,94,167,0.25)', color: TEXT, borderRadius: 10, padding: '8px 14px', cursor: 'pointer' }}>다시 시도</button>
+        <button type="button" onClick={() => router.back()} style={{ border: '1px solid rgba(255,255,255,0.2)', background: 'transparent', color: TEXT, borderRadius: 10, padding: '8px 14px', cursor: 'pointer' }}>뒤로</button>
       </div>
     )
   }

@@ -175,13 +175,40 @@ async function fetchHotScoreThreshold(
   return minScore > 0 ? minScore : null
 }
 
+type FetchPageResult = {
+  posts: HubPost[]
+  error: string | null
+  usedFallback: boolean
+}
+
+const HUB_RETRY_MSG = '잠시 후 다시 시도해주세요'
+
+async function fetchPostsPageFromView(
+  supabase: SupabaseClient,
+  tab: MainTab,
+  filter: ContentFilter,
+  offset: number,
+): Promise<FetchPageResult> {
+  const to = offset + PAGE_SIZE - 1
+  let query = supabase.from(VIEW).select(SELECT_FIELDS)
+  query = applyContentFilter(query, filter)
+  if (tab === 'popular') query = applyTabFilter(query, tab)
+  query = query.order('created_at', { ascending: false })
+  const { data, error } = await query.range(offset, to)
+  if (error) {
+    console.error('oren-scene hub view fetch error', error.message)
+    return { posts: [], error: HUB_RETRY_MSG, usedFallback: false }
+  }
+  return { posts: (data as HubPost[]) ?? [], error: null, usedFallback: false }
+}
+
 async function fetchPostsPageRpc(
   supabase: SupabaseClient,
   tab: MainTab,
   filter: ContentFilter,
   geo: UserGeo,
   offset: number,
-): Promise<HubPost[]> {
+): Promise<FetchPageResult> {
   const { data, error } = await supabase.rpc('get_oren_scene_hub', {
     p_lat: geo?.lat ?? null,
     p_lng: geo?.lng ?? null,
@@ -192,26 +219,25 @@ async function fetchPostsPageRpc(
   })
   if (error) {
     console.error('oren-scene hub rpc error', error.message)
-    return []
+    const fallback = await fetchPostsPageFromView(supabase, tab, filter, offset)
+    if (fallback.posts.length > 0) {
+      return {
+        posts: fallback.posts,
+        error: HUB_RETRY_MSG,
+        usedFallback: true,
+      }
+    }
+    return {
+      posts: [],
+      error: fallback.error || HUB_RETRY_MSG,
+      usedFallback: false,
+    }
   }
-  return ((data as RpcHubRow[]) ?? []).map(mapRpcRow)
-}
-
-async function fetchPostsPageLatest(
-  supabase: SupabaseClient,
-  filter: ContentFilter,
-  offset: number,
-): Promise<HubPost[]> {
-  const to = offset + PAGE_SIZE - 1
-  let query = supabase.from(VIEW).select(SELECT_FIELDS)
-  query = applyContentFilter(query, filter)
-  query = query.order('created_at', { ascending: false })
-  const { data, error } = await query.range(offset, to)
-  if (error) {
-    console.error('oren-scene hub fetch error', error.message)
-    return []
+  return {
+    posts: ((data as RpcHubRow[]) ?? []).map(mapRpcRow),
+    error: null,
+    usedFallback: false,
   }
-  return (data as HubPost[]) ?? []
 }
 
 async function fetchPostsPage(
@@ -220,9 +246,9 @@ async function fetchPostsPage(
   filter: ContentFilter,
   geo: UserGeo,
   offset: number,
-): Promise<HubPost[]> {
+): Promise<FetchPageResult> {
   if (tab === 'latest') {
-    return fetchPostsPageLatest(supabase, filter, offset)
+    return fetchPostsPageFromView(supabase, tab, filter, offset)
   }
   return fetchPostsPageRpc(supabase, tab, filter, geo, offset)
 }
@@ -244,6 +270,8 @@ export default function OrenSceneHubPage() {
   const [hasMore, setHasMore] = useState(true)
   const [hotScoreMin, setHotScoreMin] = useState<number | null>(null)
   const [hasGeoBonus, setHasGeoBonus] = useState(false)
+  const [listError, setListError] = useState<string | null>(null)
+  const [usedFallback, setUsedFallback] = useState(false)
 
   const ensureGeo = useCallback(async (): Promise<UserGeo> => {
     if (userGeoRef.current !== undefined) return userGeoRef.current
@@ -260,18 +288,22 @@ export default function OrenSceneHubPage() {
     offsetRef.current = 0
     setHasMore(true)
     hasMoreRef.current = true
+    setListError(null)
+    setUsedFallback(false)
 
     const geo = mainTab === 'latest' ? null : await ensureGeo()
 
-    const [threshold, rows] = await Promise.all([
+    const [threshold, page] = await Promise.all([
       fetchHotScoreThreshold(supabase, mainTab, contentFilter, geo),
       fetchPostsPage(supabase, mainTab, contentFilter, geo, 0),
     ])
 
     setHotScoreMin(threshold)
-    setPosts(rows)
-    offsetRef.current = rows.length
-    const more = rows.length === PAGE_SIZE
+    setPosts(page.posts)
+    setListError(page.error)
+    setUsedFallback(page.usedFallback)
+    offsetRef.current = page.posts.length
+    const more = page.posts.length === PAGE_SIZE
     setHasMore(more)
     hasMoreRef.current = more
     setLoading(false)
@@ -284,16 +316,19 @@ export default function OrenSceneHubPage() {
 
     const geo = mainTab === 'latest' ? null : userGeoRef.current ?? null
     const from = offsetRef.current
-    const rows = await fetchPostsPage(supabase, mainTab, contentFilter, geo, from)
+    const page = await fetchPostsPage(supabase, mainTab, contentFilter, geo, from)
+    if (page.error && page.posts.length === 0) {
+      setListError(page.error)
+    }
 
     setPosts((prev) => {
       const seen = new Set(prev.map((p) => p.id))
-      const next = rows.filter((r) => !seen.has(r.id))
+      const next = page.posts.filter((r) => !seen.has(r.id))
       return next.length ? [...prev, ...next] : prev
     })
 
-    offsetRef.current = from + rows.length
-    const more = rows.length === PAGE_SIZE
+    offsetRef.current = from + page.posts.length
+    const more = page.posts.length === PAGE_SIZE
     setHasMore(more)
     hasMoreRef.current = more
     loadingMoreRef.current = false
@@ -422,11 +457,48 @@ export default function OrenSceneHubPage() {
       <div style={{ padding: '12px 12px 32px' }}>
         {loading ? (
           <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 13, padding: 48 }}>불러오는 중…</div>
-        ) : posts.length === 0 ? (
-          <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 13, padding: 48 }}>
-            {mainTab === 'popular' ? '이번 주 등록된 오렌씬이 없어요' : '등록된 오렌씬이 없어요'}
-          </div>
         ) : (
+          <>
+            {listError ? (
+              <div
+                style={{
+                  marginBottom: 12,
+                  padding: '12px 14px',
+                  borderRadius: 12,
+                  border: `1px solid ${BORDER}`,
+                  background: CARD,
+                  textAlign: 'center',
+                }}
+              >
+                <div style={{ fontSize: 13, color: TEXT, marginBottom: 6 }}>{listError}</div>
+                {usedFallback && posts.length > 0 ? (
+                  <div style={{ fontSize: 11, color: TEXT_SUB, marginBottom: 10 }}>
+                    임시로 최신순으로 보여드려요
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  onClick={() => void loadInitial()}
+                  style={{
+                    border: `1px solid ${PURPLE}`,
+                    background: 'rgba(123,94,167,0.2)',
+                    color: TEXT,
+                    borderRadius: 10,
+                    padding: '8px 14px',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                  }}
+                >
+                  다시 시도
+                </button>
+              </div>
+            ) : null}
+            {posts.length === 0 && !listError ? (
+              <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 13, padding: 48 }}>
+                {mainTab === 'popular' ? '이번 주 등록된 오렌씬이 없어요' : '등록된 오렌씬이 없어요'}
+              </div>
+            ) : posts.length === 0 && listError ? null : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
             {posts.map((post) => {
               const thumb = String(post.thumbnail_url || '').trim()
@@ -545,6 +617,8 @@ export default function OrenSceneHubPage() {
               )
             })}
           </div>
+            )}
+          </>
         )}
 
         {!loading && hasMore ? (

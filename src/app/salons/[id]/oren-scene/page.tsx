@@ -19,11 +19,15 @@ export default function SalonOrenSceneListPage({ params }: { params: { id: strin
   const [salonName, setSalonName] = useState('살롱')
   const [posts, setPosts] = useState<OrenScenePostItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let cancelled = false
     void (async () => {
-      const [{ data: salon }, { data: rows }] = await Promise.all([
+      setLoading(true)
+      setError('')
+      const [salonRes, postsRes] = await Promise.all([
         supabase.from('salons').select('name').eq('id', salonId).maybeSingle(),
         supabase
           .from('oren_scene_posts')
@@ -35,14 +39,20 @@ export default function SalonOrenSceneListPage({ params }: { params: { id: strin
           .order('created_at', { ascending: false }),
       ])
       if (cancelled) return
-      if (salon?.name) setSalonName(String(salon.name))
-      setPosts((rows as OrenScenePostItem[]) ?? [])
+      if (salonRes.data?.name) setSalonName(String(salonRes.data.name))
+      if (postsRes.error) {
+        console.error('salon oren-scene list error', postsRes.error.message)
+        setPosts([])
+        setError('불러오지 못했어요')
+      } else {
+        setPosts((postsRes.data as OrenScenePostItem[]) ?? [])
+      }
       setLoading(false)
     })()
     return () => {
       cancelled = true
     }
-  }, [salonId, supabase])
+  }, [salonId, supabase, reloadKey])
 
   return (
     <div style={{ minHeight: '100vh', background: BG, color: TEXT, maxWidth: 480, margin: '0 auto', padding: '16px 16px 40px' }}>
@@ -62,6 +72,26 @@ export default function SalonOrenSceneListPage({ params }: { params: { id: strin
 
       {loading ? (
         <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 13, padding: 32 }}>불러오는 중…</div>
+      ) : error ? (
+        <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 13, padding: 32 }}>
+          <div style={{ marginBottom: 12 }}>{error}</div>
+          <button
+            type="button"
+            onClick={() => setReloadKey((k) => k + 1)}
+            style={{
+              border: `1px solid ${PURPLE}`,
+              background: 'rgba(123,94,167,0.2)',
+              color: TEXT,
+              borderRadius: 10,
+              padding: '8px 14px',
+              fontSize: 12,
+              fontWeight: 700,
+              cursor: 'pointer',
+            }}
+          >
+            다시 시도
+          </button>
+        </div>
       ) : posts.length === 0 ? (
         <div style={{ textAlign: 'center', color: TEXT_SUB, fontSize: 13, padding: 32 }}>등록된 오렌씬이 없어요</div>
       ) : (
