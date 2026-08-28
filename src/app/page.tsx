@@ -350,14 +350,11 @@ function OrenSceneSection() {
     <div style={{ margin: '12px 16px 0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
         <div style={{ fontSize: 13, color: '#fff' }}>🎬 오렌씬</div>
-        {/* TODO: /oren-scene 허브 라우트 생기면 연결 — 현재는 no-op */}
         <div
           role="button"
           tabIndex={0}
-          onClick={() => {
-            // router.push('/oren-scene')
-          }}
-          style={{ fontSize: 11, color: '#7B5EA7', cursor: 'default' }}
+          onClick={() => router.push('/oren-scene')}
+          style={{ fontSize: 11, color: '#7B5EA7', cursor: 'pointer' }}
         >
           전체보기 ›
         </div>
