@@ -331,7 +331,7 @@ export default function BrandArchiveEducationManage({ companyId, staffId }: Prop
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
             <div style={{ fontSize: 11, color: SUB }}>📎 출력용 자료 첨부 (선택)</div>
             <span
-              title="세션 설명과는 별개예요 — 원장님이 통째로 출력하거나 다운로드할 수 있는 자료(디자인팀 완성본 등)를 올리는 자리예요"
+              title="💰 원장님이 바로 뽑아 써서 관리권 매출을 팡팡 올릴 수 있는 완성 자료를 넣어주세요!"
               style={{ fontSize: 12, color: SUB, cursor: 'help' }}
             >
               ❓
@@ -352,7 +352,7 @@ export default function BrandArchiveEducationManage({ companyId, staffId }: Prop
             <div style={{ fontSize: 11, color: PURPLE, marginTop: 6, wordBreak: 'break-all' }}>{assetUrl}</div>
           )}
           <div style={{ fontSize: 10, color: SUB, marginTop: 6, lineHeight: 1.45 }}>
-            세션 설명과 별개 — 원장이 출력·다운로드할 자료(디자인 완성본 등)
+            💰 원장님이 바로 뽑아 써서 관리권 매출을 팡팡 올릴 수 있는 완성 자료를 넣어주세요!
           </div>
         </div>
         <button
@@ -467,7 +467,7 @@ export default function BrandArchiveEducationManage({ companyId, staffId }: Prop
                   </label>
                 )}
                 <span
-                  title="세션 설명과는 별개예요 — 원장님이 통째로 출력하거나 다운로드할 수 있는 자료(디자인팀 완성본 등)를 올리는 자리예요"
+                  title="💰 원장님이 바로 뽑아 써서 관리권 매출을 팡팡 올릴 수 있는 완성 자료를 넣어주세요!"
                   style={{ fontSize: 12, color: SUB, cursor: 'help' }}
                 >
                   ❓

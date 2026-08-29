@@ -4,6 +4,9 @@
 ---
 
 ## 2026-08-29
+### chore: 자료실·에듀케이션 첨부 안내문구 — 관리권 매출 동기부여 톤
+- BrandArchiveManage / BrandArchiveEducationManage: 첨부 안내(❓·하단 문구)를 「원장님이 바로 뽑아 써서 관리권 매출을 팡팡 올릴 수 있는 완성 자료」톤으로 교체. (기능은 기존 출력용 첨부·원장 출력/다운로드와 동일)
+- 쉽게: 브랜드가 왜 완성본을 올리는지, 관리권 매출로 바로 와닿게 안내한다.
 ### feat: 자료·에듀케이션 출력용 파일 첨부 (브랜드 등록 후 + 원장 출력/다운로드)
 - BrandArchiveManage: 등록 후 리스트에서 📎첨부/📄첨부됨·교체. `PATCH /api/brand/archive/attach-file`. 원장 미리보기 🖨️출력·⬇️다운로드.
 - BrandArchiveEducationManage: 등록폼·리스트 출력용 첨부. save에 `asset_url`. `PATCH /api/brand/education/sessions/attach-file` (`education_manage`).

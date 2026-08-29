@@ -485,14 +485,14 @@ export default function BrandArchiveManage({ companyId, staffId, category, fixed
                       </label>
                     )}
                     <span
-                      title="본문 에디터에 넣는 사진과 달라요 — 여기 첨부하는 파일은 원장님이 통째로 출력하거나 다운로드할 수 있는 별도 자료예요 (예: 디자인팀이 만든 완성 포스터/PDF)"
+                      title="💰 원장님이 바로 뽑아 써서 관리권 매출을 팡팡 올릴 수 있는 완성 자료를 넣어주세요! (본문에 쓴 사진이랑은 또 달라요 🙈)"
                       style={{ fontSize: 12, color: SUB, cursor: 'help' }}
                     >
                       ❓
                     </span>
                   </div>
                   <div style={{ fontSize: 10, color: SUB, marginTop: 6, lineHeight: 1.45 }}>
-                    본문 사진과 달라요 — 여기 파일은 원장이 출력·다운로드할 별도 자료예요 (포스터/PDF 등)
+                    💰 원장님이 바로 뽑아 써서 관리권 매출을 팡팡 올릴 수 있는 완성 자료를 넣어주세요! (본문에 쓴 사진이랑은 또 달라요 🙈)
                   </div>
                 </div>
               </div>
